@@ -1,0 +1,829 @@
+{
+  "captured_at": "2026-10-20T08:52:43.133620+08:00",
+  "scope": "read-only metadata; no service, model or database requests",
+  "hostname": "lychee-VMware-Virtual-Platform",
+  "architecture": "x86_64",
+  "docker_version": "29.9.1",
+  "compose_version": "Docker Compose version v5.6.0",
+  "containers": [
+    {
+      "name": "aisoc-qdrant",
+      "id": "d831111aa30f738c842608ef5975007282e8e53cd3cd76e57df5039eacaba58b",
+      "project": "beenuar",
+      "service": "qdrant",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:33:45.245120736Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "qdrant/qdrant:v1.7.0",
+      "image_id": "sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f",
+      "image_repo_digests": [
+        "qdrant/qdrant@sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f",
+        "docker.m.daocloud.io/qdrant/qdrant@sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f"
+      ],
+      "image_revision": null,
+      "ports": {
+        "6333/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "6333"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "beenuar_qdrant_data",
+          "Source": "/var/lib/docker/volumes/beenuar_qdrant_data/_data",
+          "Destination": "/qdrant/storage",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-agents",
+      "id": "7c012baf676362430be0344bbc59875a662f857142ed268362bf1e8aab08af47",
+      "project": "beenuar",
+      "service": "agents",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:33:46.555575681Z",
+      "finished_at": "2026-10-19T23:33:46.402441702Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-agents:latest",
+      "image_id": "sha256:ca23dee24aeb48ea7c9cf05ce5d2c6e2d585323faa1896c0df0c87db17766ad8",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-agents@sha256:ca23dee24aeb48ea7c9cf05ce5d2c6e2d585323faa1896c0df0c87db17766ad8"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8084/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8001"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/calls/agents",
+          "Destination": "/embedding-records",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/aisoc_local_embeddings.py",
+          "Destination": "/app/aisoc_local_embeddings.py",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/generated/attck.py",
+          "Destination": "/app/app/tools/mitre_full.py",
+          "RW": false
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-threatintel",
+      "id": "299d9d6f97a58e88709d279f3855199e36d80e68f6d314dc7b6964e926a25980",
+      "project": "beenuar",
+      "service": "threatintel",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:33:46.196069212Z",
+      "finished_at": "2026-10-19T23:33:46.049001449Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-threatintel:latest",
+      "image_id": "sha256:c802a1cff66cf482f10851683f7fc094043d530efa4a4bf03ca8cf516cf81c60",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-threatintel@sha256:c802a1cff66cf482f10851683f7fc094043d530efa4a4bf03ca8cf516cf81c60"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8005/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8005"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/calls/threatintel",
+          "Destination": "/embedding-records",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/original-iocs.json",
+          "Destination": "/embedding-source.json",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/aisoc_local_embeddings.py",
+          "Destination": "/app/aisoc_local_embeddings.py",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/generated/intel.py",
+          "Destination": "/app/app/storage/qdrant.py",
+          "RW": false
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-api",
+      "id": "3f027a29bc23a157deb99ea6bcfe6b962518a7aac1e4fab4e70c6734e97a12e0",
+      "project": "beenuar",
+      "service": "api",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:33:47.036510579Z",
+      "finished_at": "2026-10-19T23:33:46.845726173Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-core-api:latest",
+      "image_id": "sha256:2aa26ad620d629b48d57733b34df8468ffc5535f54a446fd1f8ea6a546cc877d",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-core-api@sha256:2aa26ad620d629b48d57733b34df8468ffc5535f54a446fd1f8ea6a546cc877d"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8000/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8000"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/calls/api",
+          "Destination": "/embedding-records",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/aisoc_local_embeddings.py",
+          "Destination": "/app/aisoc_local_embeddings.py",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/deployment/embedding/generated/memory.py",
+          "Destination": "/app/app/services/semantic_memory.py",
+          "RW": false
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-ollama-embedding",
+      "id": "53e3221dfa508ff6243222235d8eb0657388b157ac2b61d07b1de96f56e2fd51",
+      "project": "beenuar",
+      "service": "ollama-embedding",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:31:24.074695776Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ollama/ollama:0.40.6",
+      "image_id": "sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7",
+      "image_repo_digests": [
+        "ollama/ollama@sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7",
+        "docker.m.daocloud.io/ollama/ollama@sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7"
+      ],
+      "image_revision": null,
+      "ports": {
+        "11434/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "11434"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "beenuar_embedding_data",
+          "Source": "/var/lib/docker/volumes/beenuar_embedding_data/_data",
+          "Destination": "/root/.ollama",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-litellm",
+      "id": "2ea556ddf9979ba76365b0c71bf643e2ee117a86c13c8f2c4718bf26963ef0e0",
+      "project": "beenuar",
+      "service": "litellm",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:12:43.410401948Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/berriai/litellm:main-stable",
+      "image_id": "sha256:2e4c0371f3a8c28e4da131d77abaa8341cd3b0c2fcc4d34d7c5900431af7b9d0",
+      "image_repo_digests": [
+        "ghcr.io/berriai/litellm@sha256:2e4c0371f3a8c28e4da131d77abaa8341cd3b0c2fcc4d34d7c5900431af7b9d0"
+      ],
+      "image_revision": "955bdaafa8b72b2b6ff728048f272fbc06049f63",
+      "ports": {
+        "4000/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "4000"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/infra/litellm/config.yaml",
+          "Destination": "/etc/litellm/config.yaml",
+          "RW": false
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-web",
+      "id": "4dbc3859d3b190f99f33cb5488d89265b6677a7457e044887adbe6cc44b628df",
+      "project": "beenuar",
+      "service": "web",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:51.488778488Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-web:latest",
+      "image_id": "sha256:9725f7e4645f276a86a54a497ee2c640d5bb256102301c0bde20f4ef01ecad28",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-web@sha256:9725f7e4645f276a86a54a497ee2c640d5bb256102301c0bde20f4ef01ecad28"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "3000/tcp": [
+          {
+            "HostIp": "192.168.1.20",
+            "HostPort": "3000"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-fusion",
+      "id": "919ef6d33c054d521db8df6be26d03c1091f5dfa9145d091242ef316f8bf028c",
+      "project": "beenuar",
+      "service": "fusion",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:50.543278409Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-fusion:latest",
+      "image_id": "sha256:d89ccf0dda6ee82bf0fc2a58674ef5c1688183379c5aaf4cb73fd407e5a640ca",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-fusion@sha256:d89ccf0dda6ee82bf0fc2a58674ef5c1688183379c5aaf4cb73fd407e5a640ca"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8003/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8003"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-connectors",
+      "id": "64dc4edacc64dba4c4612f303e6c0b5d18557284910833381d928f163dc1acd7",
+      "project": "beenuar",
+      "service": "connectors",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:50.420101837Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-connectors:latest",
+      "image_id": "sha256:c42c2a91e8bdf173de70fcc262f1d4351544c41c58357344b55d92b105b3e2b1",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-connectors@sha256:c42c2a91e8bdf173de70fcc262f1d4351544c41c58357344b55d92b105b3e2b1"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8003/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8088"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-realtime",
+      "id": "ec6bbbf8569b6662309ed0f37238f688dfd0b71ffa44a0e1f749a2d3c2ee54a2",
+      "project": "beenuar",
+      "service": "realtime",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:51.336643478Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-realtime:latest",
+      "image_id": "sha256:baf900ae12cf0843807372e8e7e7d0420a58ff23368232991451c68a6a81b3fb",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-realtime@sha256:baf900ae12cf0843807372e8e7e7d0420a58ff23368232991451c68a6a81b3fb"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "4000/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8086"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-actions",
+      "id": "075ed8c02d4025928a5c1e3c67936a18387a3c106d5443c13637eb047dbf10bb",
+      "project": "beenuar",
+      "service": "actions",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:51.201770485Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-actions:latest",
+      "image_id": "sha256:c2b5a9d7376c7611d99d8c7a5d138407a914354ba82d197cefb29c72b4ad57ec",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-actions@sha256:c2b5a9d7376c7611d99d8c7a5d138407a914354ba82d197cefb29c72b4ad57ec"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8085/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8002"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-ingest",
+      "id": "691c0e44961c5ff040e4d15d514546612ff40f770978097a20e0b28d2f694ccf",
+      "project": "beenuar",
+      "service": "ingest-worker",
+      "state": "running",
+      "health": null,
+      "started_at": "2026-10-19T23:11:50.932004119Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "ghcr.io/beenuar/aisoc-ingest:latest",
+      "image_id": "sha256:3acdf88b174a27cb15ba4f92b9ef97b35e23597747ae68b3f44c40aaf311596f",
+      "image_repo_digests": [
+        "ghcr.io/beenuar/aisoc-ingest@sha256:3acdf88b174a27cb15ba4f92b9ef97b35e23597747ae68b3f44c40aaf311596f"
+      ],
+      "image_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "ports": {
+        "8080/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "8081"
+          }
+        ],
+        "9090/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "9090"
+          }
+        ]
+      },
+      "mounts": [],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-kafka",
+      "id": "3e30fa66f7906c21d8e4255bcfe757b679117119731a4ef949d652a795648376",
+      "project": "beenuar",
+      "service": "kafka",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:11:33.781005751Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "confluentinc/cp-kafka:7.5.0",
+      "image_id": "sha256:fbbb6fa11b258a88b83f54d4f0bddfcffbf2279f99d66a843486e3da7bdfbf41",
+      "image_repo_digests": [
+        "confluentinc/cp-kafka@sha256:fbbb6fa11b258a88b83f54d4f0bddfcffbf2279f99d66a843486e3da7bdfbf41",
+        "docker.m.daocloud.io/confluentinc/cp-kafka@sha256:fbbb6fa11b258a88b83f54d4f0bddfcffbf2279f99d66a843486e3da7bdfbf41"
+      ],
+      "image_revision": null,
+      "ports": {
+        "9092/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "9092"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "0b65d25f7e3de3917d0c46af0b1ff63603d4ad59a920ef543cb0224df70e4a02",
+          "Source": "/var/lib/docker/volumes/0b65d25f7e3de3917d0c46af0b1ff63603d4ad59a920ef543cb0224df70e4a02/_data",
+          "Destination": "/etc/kafka/secrets",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "beenuar_kafka_data",
+          "Source": "/var/lib/docker/volumes/beenuar_kafka_data/_data",
+          "Destination": "/var/lib/kafka/data",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-zookeeper",
+      "id": "1e4579224014e4f2d4d6d2db31b83b65d904cb7fd3aa46f0eb3c95261387be49",
+      "project": "beenuar",
+      "service": "zookeeper",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:11:23.162025183Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "confluentinc/cp-zookeeper:7.5.0",
+      "image_id": "sha256:02f6c042bb9a7844382fc4cedc513a44585d8a5acae873fb9e510e3ca9dcabc6",
+      "image_repo_digests": [
+        "confluentinc/cp-zookeeper@sha256:02f6c042bb9a7844382fc4cedc513a44585d8a5acae873fb9e510e3ca9dcabc6",
+        "docker.m.daocloud.io/confluentinc/cp-zookeeper@sha256:02f6c042bb9a7844382fc4cedc513a44585d8a5acae873fb9e510e3ca9dcabc6"
+      ],
+      "image_revision": null,
+      "ports": {},
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "83219471187cd863c1102760805294c6209d23526cf0a7a34093674430bab06c",
+          "Source": "/var/lib/docker/volumes/83219471187cd863c1102760805294c6209d23526cf0a7a34093674430bab06c/_data",
+          "Destination": "/etc/zookeeper/secrets",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "beenuar_zookeeper_data",
+          "Source": "/var/lib/docker/volumes/beenuar_zookeeper_data/_data",
+          "Destination": "/var/lib/zookeeper/data",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "beenuar_zookeeper_log",
+          "Source": "/var/lib/docker/volumes/beenuar_zookeeper_log/_data",
+          "Destination": "/var/lib/zookeeper/log",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-postgres",
+      "id": "3797bd9235533ac9338e0f58ae8fcc1480e17f212bbd82a28b312c9fabe2cff8",
+      "project": "beenuar",
+      "service": "postgres",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:10:40.120667334Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "postgres:16-alpine",
+      "image_id": "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
+      "image_repo_digests": [
+        "postgres@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
+        "docker.m.daocloud.io/library/postgres@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685"
+      ],
+      "image_revision": null,
+      "ports": {
+        "5432/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "15432"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/infra/postgres/initdb",
+          "Destination": "/docker-entrypoint-initdb.d",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/home/lychee/beenuar/services/api/migrations",
+          "Destination": "/aisoc/migrations",
+          "RW": false
+        },
+        {
+          "Type": "volume",
+          "Name": "beenuar_postgres_data",
+          "Source": "/var/lib/docker/volumes/beenuar_postgres_data/_data",
+          "Destination": "/var/lib/postgresql/data",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    },
+    {
+      "name": "aisoc-redis",
+      "id": "bdfe9ac2834c5b3e03d3b1c5eca9d161179172892712c4cfa7d2f4bfcf7b8953",
+      "project": "beenuar",
+      "service": "redis",
+      "state": "running",
+      "health": "healthy",
+      "started_at": "2026-10-19T23:10:40.258402545Z",
+      "finished_at": "0001-01-01T00:00:00Z",
+      "restart_count": 0,
+      "restart_policy": "unless-stopped",
+      "image_reference": "redis:7-alpine",
+      "image_id": "sha256:025f768c63f3aa52d6fe70efa140983644822784a97dfe48334385c7e99bdfef",
+      "image_repo_digests": [
+        "redis@sha256:025f768c63f3aa52d6fe70efa140983644822784a97dfe48334385c7e99bdfef"
+      ],
+      "image_revision": null,
+      "ports": {
+        "6379/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "6379"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "beenuar_redis_data",
+          "Source": "/var/lib/docker/volumes/beenuar_redis_data/_data",
+          "Destination": "/data",
+          "RW": true
+        }
+      ],
+      "networks": [
+        "beenuar_aisoc"
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "name": "0b65d25f7e3de3917d0c46af0b1ff63603d4ad59a920ef543cb0224df70e4a02",
+      "driver": "local",
+      "project": null,
+      "compose_volume": null,
+      "mountpoint": "/var/lib/docker/volumes/0b65d25f7e3de3917d0c46af0b1ff63603d4ad59a920ef543cb0224df70e4a02/_data"
+    },
+    {
+      "name": "83219471187cd863c1102760805294c6209d23526cf0a7a34093674430bab06c",
+      "driver": "local",
+      "project": null,
+      "compose_volume": null,
+      "mountpoint": "/var/lib/docker/volumes/83219471187cd863c1102760805294c6209d23526cf0a7a34093674430bab06c/_data"
+    },
+    {
+      "name": "beenuar_embedding_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "embedding_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_embedding_data/_data"
+    },
+    {
+      "name": "beenuar_kafka_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "kafka_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_kafka_data/_data"
+    },
+    {
+      "name": "beenuar_postgres_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "postgres_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_postgres_data/_data"
+    },
+    {
+      "name": "beenuar_qdrant_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "qdrant_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_qdrant_data/_data"
+    },
+    {
+      "name": "beenuar_redis_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "redis_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_redis_data/_data"
+    },
+    {
+      "name": "beenuar_zookeeper_data",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "zookeeper_data",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_zookeeper_data/_data"
+    },
+    {
+      "name": "beenuar_zookeeper_log",
+      "driver": "local",
+      "project": "beenuar",
+      "compose_volume": "zookeeper_log",
+      "mountpoint": "/var/lib/docker/volumes/beenuar_zookeeper_log/_data"
+    }
+  ],
+  "networks": [
+    {
+      "name": "beenuar_aisoc",
+      "driver": "bridge",
+      "project": "beenuar",
+      "ipam": [
+        {
+          "Subnet": "172.18.0.0/16",
+          "Gateway": "172.18.0.1"
+        }
+      ]
+    },
+    {
+      "name": "bridge",
+      "driver": "bridge",
+      "project": null,
+      "ipam": [
+        {
+          "Subnet": "172.17.0.0/16",
+          "Gateway": "172.17.0.1"
+        }
+      ]
+    },
+    {
+      "name": "host",
+      "driver": "host",
+      "project": null,
+      "ipam": null
+    },
+    {
+      "name": "none",
+      "driver": "null",
+      "project": null,
+      "ipam": null
+    }
+  ],
+  "listening_tcp": [
+    "LISTEN 0      4096         0.0.0.0:22    0.0.0.0:*",
+    "LISTEN 0      4096      127.0.0.54:53    0.0.0.0:*",
+    "LISTEN 0      200          0.0.0.0:5432  0.0.0.0:*",
+    "LISTEN 0      4096   127.0.0.53%lo:53    0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:11434 0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:9092  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:9090  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:15432 0.0.0.0:*",
+    "LISTEN 0      4096    192.168.1.20:3000  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:4000  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:631   0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8005  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8002  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8003  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8000  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8001  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8086  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8081  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:8088  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:6379  0.0.0.0:*",
+    "LISTEN 0      4096       127.0.0.1:6333  0.0.0.0:*",
+    "LISTEN 0      4096           [::1]:631      [::]:*",
+    "LISTEN 0      4096            [::]:22       [::]:*",
+    "LISTEN 0      200             [::]:5432     [::]:*"
+  ],
+  "memory": "total        used        free      shared  buff/cache   available\nMem:     135163920384  6000091136 97920159744    52592640 32381108224 129163829248\nSwap:     8589930496           0  8589930496",
+  "disk": "Filesystem                            1B-blocks         Used    Available Use% Mounted on\n/dev/mapper/ubuntu--vg-ubuntu--lv 1078983184384 204149608448 819948802048  20% /\n/dev/mapper/ubuntu--vg-ubuntu--lv 1078983184384 204149608448 819948802048  20% /",
+  "compose_projects": [
+    {
+      "Name": "beenuar",
+      "Status": "running(16)",
+      "ConfigFiles": "/home/lychee/beenuar/docker-compose.yml,/home/lychee/beenuar/docker-compose.override.yml"
+    }
+  ],
+  "reference_files": {
+    "docker-compose.yml": {
+      "sha256": "0d327167b05048b5bdf1f644eba2b86953d46041be2a4e11482b0976584e51d1",
+      "bytes": 84280
+    },
+    "docker-compose.override.yml": {
+      "sha256": "63855626a0afb216316ad86e12a4e59d4233171bbb7eade0f9c1990bf5654219",
+      "bytes": 2528
+    },
+    "infra/litellm/config.yaml": {
+      "sha256": "747579258745b60bf7a8e7821f0a87a1e30b00a52fb877d85cbfc0f61e9ff693",
+      "bytes": 12801
+    },
+    "deployment/image-inventory.json": {
+      "sha256": "abf872ec2033e63de84b9facbcefabd6c4bbfefdb604be42303624281c458da9",
+      "bytes": 6468
+    }
+  },
+  "embedding_artifacts": [
+    "deployment/embedding/agents-retrieval.json",
+    "deployment/embedding/aisoc_local_embeddings.py",
+    "deployment/embedding/data-sources.json",
+    "deployment/embedding/final-service-check.json",
+    "deployment/embedding/final-state.json",
+    "deployment/embedding/memory-smoke.first-failed.json",
+    "deployment/embedding/memory-smoke.json",
+    "deployment/embedding/native-smoke.json",
+    "deployment/embedding/original-iocs.json",
+    "deployment/embedding/prepare.py",
+    "deployment/embedding/reindex_intel.py",
+    "deployment/embedding/service-status.json",
+    "deployment/embedding/test_embeddings.py",
+    "deployment/embedding/threatintel-retrieval.json",
+    "deployment/embedding/verify_memory.py"
+  ]
+}

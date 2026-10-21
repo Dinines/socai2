@@ -1,0 +1,22 @@
+--- a/services/fusion/app/services/correlator.py
++++ b/services/fusion/app/services/correlator.py
+@@ -54,7 +54,7 @@
+         if incident_id_bytes:
+             incident_id = incident_id_bytes.decode()
+             incident = await self._load_incident(incident_id)
+-            if incident and incident.alert_count < self._max_alerts:
++            if incident and (str(alert.id) in incident.alert_ids or incident.alert_count < self._max_alerts):
+                 # Update existing incident
+                 incident = await self._merge_alert(incident, alert)
+                 await self._save_incident(incident)
+@@ -99,6 +99,10 @@
+         return incident
+ 
+     async def _merge_alert(self, incident: IncidentSummary, alert: RawAlert) -> IncidentSummary:
++        # A dedup-cache miss can re-deliver a member already in this incident.
++        # Preserve its original observation rather than counting it twice.
++        if str(alert.id) in incident.alert_ids:
++            return incident
+         incident.alert_count += 1
+         incident.alert_ids.append(str(alert.id))
+         incident.severity = _max_severity(incident.severity, alert.severity)

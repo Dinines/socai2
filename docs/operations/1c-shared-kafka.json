@@ -1,0 +1,320 @@
+{
+  "date": "2026-10-20",
+  "batch": "1c-20261020",
+  "status": "passed with scope limits",
+  "level": "Real shared Kafka infrastructure; synthetic records only; no application service/model/vendor calls",
+  "source_manifest": "docs/handoff/1c-source-manifest.json",
+  "resource_mapping": "deploy/aisoc21/kafka-resources.json",
+  "probe_installed_packages": [
+    {
+      "name": "aiokafka",
+      "version": "0.10.0",
+      "wheel": "aiokafka-0.10.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "12d703317812262feac6577ff488f2ccddc4408da0ff608a5454062782b5a80d"
+    },
+    {
+      "name": "async-timeout",
+      "version": "5.0.1",
+      "wheel": "async_timeout-5.0.1-py3-none-any.whl",
+      "sha256": "39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "wheel": "packaging-26.3-py3-none-any.whl",
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+    }
+  ],
+  "client_before": {
+    "mode": "before",
+    "python": "3.12.15",
+    "packages": {
+      "aiokafka": "0.10.0",
+      "async-timeout": "5.0.1",
+      "packaging": "26.3"
+    },
+    "bootstrap": "192.168.1.21:9092",
+    "advertised_brokers": [
+      {
+        "node_id": 1,
+        "host": "192.168.1.21",
+        "port": 9092
+      }
+    ],
+    "transport": {
+      "production_cleartext_refused": true,
+      "test_transport": {
+        "security_protocol": "PLAINTEXT"
+      }
+    },
+    "project_topics_created": {
+      "socai2.alerts.raw": 3,
+      "socai2.alerts.fused": 3,
+      "socai2.alerts.fused.dlq": 1
+    },
+    "smoke_topic": "socai2.verify.1c-20261020",
+    "group": "socai2.verify.1c-20261020.reader",
+    "input_payloads": [
+      {
+        "batch": "1c-20261020",
+        "kind": "infrastructure-probe",
+        "sequence": 1,
+        "text": "告警传输标记样本"
+      },
+      {
+        "batch": "1c-20261020",
+        "kind": "infrastructure-probe",
+        "sequence": 2,
+        "text": "告警传输标记样本"
+      }
+    ],
+    "producer_acks": "all",
+    "producer_idempotence": true,
+    "producer_acknowledged_coordinates": [
+      {
+        "topic": "socai2.verify.1c-20261020",
+        "partition": 0,
+        "offset": 0
+      },
+      {
+        "topic": "socai2.verify.1c-20261020",
+        "partition": 0,
+        "offset": 1
+      }
+    ],
+    "first_consumer_record": {
+      "topic": "socai2.verify.1c-20261020",
+      "partition": 0,
+      "offset": 0,
+      "key": "socai2-1c",
+      "sha256": "223ddfb5d391fc7b45cefd8b124618c92998cdcb0a10f51d35f34b7a35b7d3c3",
+      "payload": {
+        "batch": "1c-20261020",
+        "kind": "infrastructure-probe",
+        "sequence": 1,
+        "text": "告警传输标记样本"
+      }
+    },
+    "committed_next_offset": 1,
+    "second_record_deliberately_uncommitted": true
+  },
+  "restart_summary": {
+    "action": "docker restart --time 30 sting-infra21-kafka-1",
+    "elapsed_until_ready_seconds": 17.45,
+    "cluster_id": "MkU3OEVBNTcwNTJENDM2Qg",
+    "same_cluster_id": true,
+    "same_container_image_mounts_configuration": true,
+    "all_shared_groups_inactive_before_restart": true,
+    "existing_user_topics_preserved": 53,
+    "old_user_topic_start_and_end_offsets_unchanged": true,
+    "before_started_at": "2026-10-14T11:35:17.867283266Z",
+    "after_started_at": "2026-10-20T02:00:29.327590991Z",
+    "limitations": [
+      "Single broker/controller, replication factor 1; no high-availability claim",
+      "No TLS or broker authorization added; test traffic only"
+    ]
+  },
+  "client_after": {
+    "mode": "after",
+    "bootstrap": "192.168.1.21:9092",
+    "transport": {
+      "production_cleartext_refused": true,
+      "test_transport": {
+        "security_protocol": "PLAINTEXT"
+      }
+    },
+    "committed_before_restart": 1,
+    "first_record_on_fresh_group_session": {
+      "topic": "socai2.verify.1c-20261020",
+      "partition": 0,
+      "offset": 1,
+      "key": "socai2-1c",
+      "sha256": "1e15d69deadf3b633d5d81e4cc36cc7f78fdc168a438dcda6a61ebb07a7ab730",
+      "payload": {
+        "batch": "1c-20261020",
+        "kind": "infrastructure-probe",
+        "sequence": 2,
+        "text": "告警传输标记样本"
+      }
+    },
+    "first_record_not_redelivered_to_committed_group": true,
+    "new_write_acknowledged_after_restart": {
+      "topic": "socai2.verify.1c-20261020",
+      "partition": 0,
+      "offset": 2
+    },
+    "new_write_consumed_after_restart": {
+      "topic": "socai2.verify.1c-20261020",
+      "partition": 0,
+      "offset": 2,
+      "key": "socai2-1c",
+      "sha256": "f921b91f3dafd343f760fd57fa7b346dc6a1dc11f0c6d9dced04b0cb2e7d7f41",
+      "payload": {
+        "batch": "1c-20261020",
+        "kind": "infrastructure-probe",
+        "sequence": 3,
+        "text": "告警传输标记样本"
+      }
+    },
+    "committed_next_offset": 3,
+    "independent_replay_from_earliest": [
+      {
+        "topic": "socai2.verify.1c-20261020",
+        "partition": 0,
+        "offset": 0,
+        "key": "socai2-1c",
+        "sha256": "223ddfb5d391fc7b45cefd8b124618c92998cdcb0a10f51d35f34b7a35b7d3c3",
+        "payload": {
+          "batch": "1c-20261020",
+          "kind": "infrastructure-probe",
+          "sequence": 1,
+          "text": "告警传输标记样本"
+        }
+      },
+      {
+        "topic": "socai2.verify.1c-20261020",
+        "partition": 0,
+        "offset": 1,
+        "key": "socai2-1c",
+        "sha256": "1e15d69deadf3b633d5d81e4cc36cc7f78fdc168a438dcda6a61ebb07a7ab730",
+        "payload": {
+          "batch": "1c-20261020",
+          "kind": "infrastructure-probe",
+          "sequence": 2,
+          "text": "告警传输标记样本"
+        }
+      },
+      {
+        "topic": "socai2.verify.1c-20261020",
+        "partition": 0,
+        "offset": 2,
+        "key": "socai2-1c",
+        "sha256": "f921b91f3dafd343f760fd57fa7b346dc6a1dc11f0c6d9dced04b0cb2e7d7f41",
+        "payload": {
+          "batch": "1c-20261020",
+          "kind": "infrastructure-probe",
+          "sequence": 3,
+          "text": "告警传输标记样本"
+        }
+      }
+    ],
+    "all_payload_hashes_and_coordinates_match": true
+  },
+  "resources": {
+    "cli_version": "7.5.0-ccs",
+    "apache_kafka_jars": [
+      "/usr/share/java/kafka/kafka_2.13-7.5.0-ccs.jar"
+    ],
+    "project_topic_descriptions": {
+      "socai2.alerts.raw": "Topic: socai2.alerts.raw\tTopicId: BSVFfNxWRuy-Pu_KsPnSZQ\tPartitionCount: 3\tReplicationFactor: 1\tConfigs: min.insync.replicas=1,cleanup.policy=delete,retention.ms=604800000\n\tTopic: socai2.alerts.raw\tPartition: 0\tLeader: 1\tReplicas: 1\tIsr: 1\n\tTopic: socai2.alerts.raw\tPartition: 1\tLeader: 1\tReplicas: 1\tIsr: 1\n\tTopic: socai2.alerts.raw\tPartition: 2\tLeader: 1\tReplicas: 1\tIsr: 1\n",
+      "socai2.alerts.fused": "Topic: socai2.alerts.fused\tTopicId: 9yp5R2CvRDmT-bwuTQVFRg\tPartitionCount: 3\tReplicationFactor: 1\tConfigs: min.insync.replicas=1,cleanup.policy=delete,retention.ms=604800000\n\tTopic: socai2.alerts.fused\tPartition: 0\tLeader: 1\tReplicas: 1\tIsr: 1\n\tTopic: socai2.alerts.fused\tPartition: 1\tLeader: 1\tReplicas: 1\tIsr: 1\n\tTopic: socai2.alerts.fused\tPartition: 2\tLeader: 1\tReplicas: 1\tIsr: 1\n",
+      "socai2.alerts.fused.dlq": "Topic: socai2.alerts.fused.dlq\tTopicId: 61BnD6zqQlCWGLUnuTgJVw\tPartitionCount: 1\tReplicationFactor: 1\tConfigs: min.insync.replicas=1,cleanup.policy=delete,retention.ms=604800000\n\tTopic: socai2.alerts.fused.dlq\tPartition: 0\tLeader: 1\tReplicas: 1\tIsr: 1\n"
+    },
+    "project_topic_end_offsets": "socai2.alerts.fused:0:0\nsocai2.alerts.fused:1:0\nsocai2.alerts.fused:2:0\nsocai2.alerts.fused.dlq:0:0\nsocai2.alerts.raw:0:0\nsocai2.alerts.raw:1:0\nsocai2.alerts.raw:2:0\n"
+  },
+  "cleanup": {
+    "only_smoke_topic_deleted": "socai2.verify.1c-20261020",
+    "only_smoke_group_deleted": "socai2.verify.1c-20261020.reader",
+    "project_topics_retained": [
+      "socai2.alerts.fused",
+      "socai2.alerts.fused.dlq",
+      "socai2.alerts.raw"
+    ],
+    "old_topics_deleted": false
+  },
+  "observations": {
+    "initial_create_produce_transient": "aiokafka logged NotLeaderForPartitionError immediately after creating the smoke topic; it retried automatically, final send_and_wait acknowledgments were offsets 0 and 1",
+    "final_before_probe_succeeded": true,
+    "meaning": "Leader election transient retained; no application message failure or exactly-once business claim"
+  },
+  "environment_comparison": {
+    "containers_before": 30,
+    "containers_after": 30,
+    "volumes_before": 18,
+    "volumes_after": 18,
+    "added_names": [],
+    "removed_names": [],
+    "changed_containers": [
+      {
+        "name": "sting-infra21-kafka-1",
+        "changes": {
+          "started_at": [
+            "2026-10-14T11:35:17.867283266Z",
+            "2026-10-20T02:00:29.327590991Z"
+          ]
+        }
+      }
+    ],
+    "volumes_unchanged": true,
+    "other_29_container_metadata_unchanged": true,
+    "other_project_business_transactions_tested": false
+  },
+  "final_old_state_comparison": {
+    "existing_user_topics": 53,
+    "start_and_end_offsets_unchanged": true,
+    "cluster_id_unchanged": true,
+    "existing_group_names_preserved": true
+  },
+  "private_local_evidence_files": [
+    {
+      "name": "after.json",
+      "sha256": "99244a436e249ae6aa4f65f0623a643e7d609dd41e0eeb3103d0fe1f251d8a24"
+    },
+    {
+      "name": "before.json",
+      "sha256": "45120286b7362da6af56fb98e957b0f22fb951a45373f280033f86f7dc7d8877"
+    },
+    {
+      "name": "cleanup.json",
+      "sha256": "9a6dada8da8d4d8f53b13713a92dc54cdb692fb3e7f3858b6a7ec511cc9465a0"
+    },
+    {
+      "name": "client-after.json",
+      "sha256": "c09bf86cef025ce96fe6b44e35a792b846a9117bf6c6f6d8d343d89c76d36629"
+    },
+    {
+      "name": "client-before.json",
+      "sha256": "ade9ba3c5886718cf23745e799aa82827ef57c28968a700ba73f3ea93afe2a88"
+    },
+    {
+      "name": "environment-comparison.json",
+      "sha256": "6e69c87459f28343aad3712507fcf8dd605d6359bb44e7e0efbffa533605cfbb"
+    },
+    {
+      "name": "final-kafka-state.json",
+      "sha256": "b2cee8e2219e5db4fdb03bf92d49f8f9bfaea0e211d8f5dc2a424199b85621bc"
+    },
+    {
+      "name": "observations.json",
+      "sha256": "63c0cc0ed40f8668840c8b2e12fa8b8336e9248aa807df14ed6934ae3dc508bd"
+    },
+    {
+      "name": "pip-report.json",
+      "sha256": "39b1b3ddde74e4bf2e94b1f0c361048bb009c3024bc8fc4616a984bef5fa44ba"
+    },
+    {
+      "name": "resources.json",
+      "sha256": "1939615f9c1bf30bf309b56c8e341b67c9d9d997a65d90da9130238bed8c7deb"
+    },
+    {
+      "name": "restart-after.json",
+      "sha256": "6ed89894b8fdd1a8be8bfe0e2c9e789e7818ba8ffb953ccb445816e1cc4c5ea1"
+    },
+    {
+      "name": "restart-before.json",
+      "sha256": "c99a6a0a858ff08396e84e5d4a79e630c6f8f678bdabbe49670a3a6f78438a7b"
+    },
+    {
+      "name": "restart-summary.json",
+      "sha256": "dd12a3d255a00de41f8448ce2b93e6ed7ce01274a1b00a048ad83b84df443d35"
+    }
+  ],
+  "limits": [
+    "Single broker/controller RF1, no HA or cross-store transactional guarantee",
+    "PLAINTEXT without broker authentication; production resolver still refuses; no override set",
+    "Python3.12 probe, actual Python3.11 service builds and API/Fusion path remain 1F",
+    "Project business groups are planned, not active; Agents group_id still requires main wiring in 1G",
+    "Other projects checked by container metadata, not business transactions"
+  ],
+  "next_batch": "1F: API/Fusion source builds, transport/auth configuration and first alert data chain"
+}

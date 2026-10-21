@@ -1,0 +1,257 @@
+{
+  "date": "2026-10-20",
+  "scope": "Read-only migration provenance, correctness and actual runtime source audit",
+  "fixed_upstream_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+  "method_reasonable": true,
+  "overall_correctness_accepted": false,
+  "worker_admission_accepted": false,
+  "runtime_source_changes": 0,
+  "deployment_changes": 0,
+  "new_models": 0,
+  "business_data_mutations": 0,
+  "real_shared_service_faults_injected": false,
+  "existing_handoff_documents_verified_before_audit_docs": 441,
+  "source_layers_verified": 19,
+  "current_compose_layers": 22,
+  "current_source_hash_items_verified": 1803,
+  "upstream_original_blobs_and_sha_verified": 1578,
+  "dependency_original_files_checked": 90,
+  "runtime": {
+    "api": {
+      "image": "sha256:39f68fdb755ec51f3738a7cbdc4879d8ccfd9850d46e068fcf30cd20089091b2",
+      "healthy": "healthy",
+      "started_at": "2026-10-20T13:10:56.697203798Z",
+      "selected_env": {
+        "AISOC_AGENT_KAFKA_DISABLE": null,
+        "AISOC_AGENT_RAISE_APPROVALS": null,
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "KAFKA_CONSUMER_GROUP": null,
+        "KAFKA_TOPIC_ALERTS_FUSED_DLQ": null,
+        "AISOC_SCOPED_BASELINE": null
+      },
+      "python_files_hash_verified": 439
+    },
+    "agents": {
+      "image": "sha256:ab6f563f65455d4f4bdf0b40f2373d5bf0e6b4303acc69795483a29419ce10f5",
+      "healthy": "healthy",
+      "started_at": "2026-10-20T14:19:06.807306401Z",
+      "selected_env": {
+        "AISOC_AGENT_KAFKA_DISABLE": "1",
+        "AISOC_AGENT_RAISE_APPROVALS": "0",
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "KAFKA_CONSUMER_GROUP": "socai2-agents-triage",
+        "KAFKA_TOPIC_ALERTS_FUSED_DLQ": null,
+        "AISOC_SCOPED_BASELINE": "1"
+      },
+      "python_files_hash_verified": 184
+    },
+    "fusion": {
+      "image": "sha256:9be177b961edd6bbc0951dbb92966aaccb53c81438f82e5677ede6ae47f2d07b",
+      "healthy": "healthy",
+      "started_at": "2026-10-20T07:18:25.942439761Z",
+      "selected_env": {
+        "AISOC_AGENT_KAFKA_DISABLE": null,
+        "AISOC_AGENT_RAISE_APPROVALS": null,
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "KAFKA_CONSUMER_GROUP": "socai2-fusion-consumer",
+        "KAFKA_TOPIC_ALERTS_FUSED_DLQ": null,
+        "AISOC_SCOPED_BASELINE": null
+      },
+      "python_files_hash_verified": 55
+    },
+    "actions": {
+      "image": "sha256:8f449d06f54cd225df3365704384d5465410f05c5964d8234c0ef15b15d25da1",
+      "healthy": "healthy",
+      "started_at": "2026-10-20T03:39:17.88063475Z",
+      "selected_env": {
+        "AISOC_AGENT_KAFKA_DISABLE": null,
+        "AISOC_AGENT_RAISE_APPROVALS": null,
+        "KAFKA_TOPIC_ALERTS_FUSED": null,
+        "KAFKA_CONSUMER_GROUP": null,
+        "KAFKA_TOPIC_ALERTS_FUSED_DLQ": null,
+        "AISOC_SCOPED_BASELINE": "1"
+      },
+      "python_files_hash_verified": 90
+    }
+  },
+  "offline_probes": 4,
+  "offline_scenario_groups": 8,
+  "findings": [
+    {
+      "id": "R1",
+      "priority": "P1",
+      "summary": "Fusion commits without durable sink or fused-delivery confirmation; later success can cross failed offsets",
+      "origin": "inherited upstream",
+      "locations": [
+        {
+          "path": "services/fusion/app/workers/consumer.py",
+          "line": 488
+        },
+        {
+          "path": "services/fusion/app/workers/consumer.py",
+          "line": 504
+        },
+        {
+          "path": "services/fusion/app/workers/consumer.py",
+          "line": 248
+        }
+      ],
+      "proofs": [
+        "data_path_probe_results.json",
+        "fusion_skip_failed_probe_results.json"
+      ]
+    },
+    {
+      "id": "R2",
+      "priority": "P1",
+      "summary": "build_state discards ordinary description and event_time before triage",
+      "origin": "inherited upstream omission",
+      "locations": [
+        {
+          "path": "services/agents/app/workers/fused_alert_consumer.py",
+          "line": 336
+        }
+      ],
+      "proofs": [
+        "data_path_probe_results.json"
+      ]
+    },
+    {
+      "id": "R3",
+      "priority": "P2",
+      "summary": "source-v1 warm duplicate missing-row repair persists null incident relationship",
+      "origin": "local source-v1 adaptation interacting with upstream duplicate branch",
+      "locations": [
+        {
+          "path": "services/fusion/app/services/fusion_engine.py",
+          "line": 169
+        },
+        {
+          "path": "services/fusion/app/services/alert_sink.py",
+          "line": 330
+        },
+        {
+          "path": "services/fusion/app/services/alert_sink.py",
+          "line": 285
+        }
+      ],
+      "proofs": [
+        "data_path_probe_results.json"
+      ]
+    },
+    {
+      "id": "R4",
+      "priority": "P2",
+      "summary": "Governor caches pre-gate verdict; next new alert revives rejected FP without rationale",
+      "origin": "inherited upstream",
+      "locations": [
+        {
+          "path": "services/agents/app/workers/fused_alert_consumer.py",
+          "line": 1032
+        },
+        {
+          "path": "services/agents/app/workers/fused_alert_consumer.py",
+          "line": 906
+        },
+        {
+          "path": "services/agents/app/workers/fused_alert_consumer.py",
+          "line": 1533
+        }
+      ],
+      "proofs": [
+        "repro_governor_grounding_result.json"
+      ],
+      "auto_close_demonstrated": false
+    },
+    {
+      "id": "R5",
+      "priority": "P2",
+      "summary": "consumer.stop exception skips lane and lifespan task cleanup",
+      "origin": "inherited early exception ordering remains outside local cleanup guards",
+      "locations": [
+        {
+          "path": "services/agents/app/workers/fused_alert_consumer.py",
+          "line": 764
+        },
+        {
+          "path": "services/agents/app/main.py",
+          "line": 177
+        }
+      ],
+      "proofs": [
+        "repro_stop_consumer_error_result.json"
+      ]
+    },
+    {
+      "id": "R6",
+      "priority": "P2",
+      "summary": "Prior admission documentation falsely calls project Kafka mapping absent",
+      "origin": "review documentation error; no missing runtime implementation",
+      "locations": [
+        {
+          "path": "docs/operations/3a-triage-admission-config.md",
+          "line": 37
+        },
+        {
+          "path": "deploy/aisoc21/prepare_services_1g.py",
+          "line": 29
+        }
+      ],
+      "corrected_mutable_navigation": true,
+      "frozen_receipts_overwritten": false
+    }
+  ],
+  "raw_evidence_locations": {
+    "workstation_ignored": ".local/aisoc21/migration-review-20261020",
+    "remote_deployed": false
+  },
+  "raw_artifacts": [
+    {
+      "path": "data_path_probe.py",
+      "sha256": "bd9aed41e8140fbeb58a59d69cfc79191fc00d4c77721799d984be35c8fd6c1b"
+    },
+    {
+      "path": "data_path_probe_results.json",
+      "sha256": "1c39954214015e4bd4538c2d08ef0051f09ee267545d8b558a3a4c58d0a1d0c2"
+    },
+    {
+      "path": "fusion_skip_failed_probe.py",
+      "sha256": "4d61596397958d1d10515ac1d4811ad52d1acc7e016aaeed0b2f038218094ddd"
+    },
+    {
+      "path": "fusion_skip_failed_probe_results.json",
+      "sha256": "26301cabfc7398fec23e7a6702e943ce579f60899a4a5c4ac6c18d7f9ef4be03"
+    },
+    {
+      "path": "llm_worker_review_sources.json",
+      "sha256": "63f6d96343e56417f1eb224f65b6ca3745b6eff6ac6ed6d7477318c057c213b6"
+    },
+    {
+      "path": "repro_governor_grounding.py",
+      "sha256": "2c73f9d6c76a3156074ff60c2709ada1f85b6064ab4a4cf84e1ef75fbd4f311b"
+    },
+    {
+      "path": "repro_governor_grounding_result.json",
+      "sha256": "1022bb64b6be4dc572d980a0d2bf78b524639d10df0b8cae989431461aedbeca"
+    },
+    {
+      "path": "repro_stop_consumer_error.py",
+      "sha256": "dd91cedc320c6bc6f81bc6ff4b92de9a59fc1dac77533f375ae9acbfe76d95ca"
+    },
+    {
+      "path": "repro_stop_consumer_error_result.json",
+      "sha256": "2d20c1af8e53489cd143fd1d4d73de9c3a9e3a396964cc198e4f2ae0d69b98ea"
+    },
+    {
+      "path": "runtime-proof.json",
+      "sha256": "a50d0754bcd1774bab2bdb7a3f9db36f92f1fbe79b8676125d2960f97cd95360"
+    }
+  ],
+  "limits": [
+    "AST production functions run with explicit in-memory infrastructure substitutes; not full installed-service regression",
+    "No real PG/Kafka fault/rebalance or model-quality rerun",
+    "Current source correspondence and endpoint health are distinct from semantic correctness",
+    "Only documentation/navigation corrected; all reported runtime defects remain unfixed"
+  ],
+  "recommended_next": "Fusion durable delivery and source-v1 missing-row relationship recovery (R1/R3), then triage input projection (R2); prompt plan remains pending"
+}

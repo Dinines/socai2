@@ -1,0 +1,232 @@
+--- a/services/actions/app/main.py
++++ b/services/actions/app/main.py
+@@ -85,3 +85,6 @@
+ @app.get("/health")
+ async def health() -> dict[str, str]:
+     return {"status": "healthy", "service": "aisoc-actions"}
++
++from app.core.scoped_baseline import apply_scope
++apply_scope(app, "actions")
+--- a/services/agents/app/api/investigate.py
++++ b/services/agents/app/api/investigate.py
+@@ -375,10 +375,24 @@
+ ):
+     """Launch a Pillar-1 autonomous investigation for a case."""
+     body.tenant_id = str(scoped_tenant_or_403(principal, body.tenant_id))
++    from app.core.scoped_baseline import enabled
++    if enabled():
++        pool = await ledger.get_pool()
++        if pool is None:
++            raise HTTPException(status_code=503, detail="Investigation ledger unavailable")
++        try:
++            case_uuid = UUID(case_id)
++        except ValueError:
++            raise HTTPException(status_code=422, detail="Case ID must be a UUID")
++        async with pool.acquire() as conn:
++            owned = await conn.fetchval("SELECT EXISTS(SELECT 1 FROM aisoc_cases WHERE id=$1 AND tenant_id=$2)", case_uuid, UUID(body.tenant_id))
++        if not owned:
++            raise HTTPException(status_code=404, detail="Case not found")
+     run_id = str(uuid4())
+     _runs[run_id] = {
+         "run_id": run_id,
+         "case_id": case_id,
++        "tenant_id": body.tenant_id,
+         "status": "running",
+         "started_at": datetime.utcnow().isoformat(),
+     }
+@@ -392,12 +406,17 @@
+     )
+ 
+ 
++def _scoped_run(run_id: str, principal: TenantPrincipal):
++    run = _runs.get(run_id)
++    if not run or run.get("tenant_id") not in {str(t) for t in principal.tenant_ids}:
++        raise HTTPException(status_code=404, detail="Investigation run not found")
++    return run
++
++
+ @router.get("/investigations/{run_id}")
+ async def get_investigation(run_id: str, principal: ScopedPrincipal):
+     """Poll investigation status and results."""
+-    run = _runs.get(run_id)
+-    if not run:
+-        raise HTTPException(status_code=404, detail="Investigation run not found")
++    run = _scoped_run(run_id, principal)
+     # Strip large fields from polling response — use dedicated endpoints instead
+     slim = {k: v for k, v in run.items() if k not in ("report_md", "report_html")}
+     return slim
+@@ -406,9 +425,7 @@
+ @router.get("/investigations/{run_id}/report.md", response_class=PlainTextResponse)
+ async def get_report_md(run_id: str, principal: ScopedPrincipal):
+     """Download the Markdown incident report."""
+-    run = _runs.get(run_id)
+-    if not run:
+-        raise HTTPException(status_code=404, detail="Run not found")
++    run = _scoped_run(run_id, principal)
+     if run["status"] != "completed":
+         raise HTTPException(status_code=409, detail=f"Investigation is {run['status']}")
+     return run.get("report_md", "")
+@@ -417,9 +434,7 @@
+ @router.get("/investigations/{run_id}/report.html", response_class=HTMLResponse)
+ async def get_report_html(run_id: str, principal: ScopedPrincipal):
+     """Download the HTML incident report."""
+-    run = _runs.get(run_id)
+-    if not run:
+-        raise HTTPException(status_code=404, detail="Run not found")
++    run = _scoped_run(run_id, principal)
+     if run["status"] != "completed":
+         raise HTTPException(status_code=409, detail=f"Investigation is {run['status']}")
+     return run.get("report_html", "<html><body>No report yet.</body></html>")
+@@ -430,9 +445,7 @@
+     """Download the PDF incident report (rendered from HTML via weasyprint)."""
+     from fastapi.responses import Response as FastAPIResponse
+ 
+-    run = _runs.get(run_id)
+-    if not run:
+-        raise HTTPException(status_code=404, detail="Run not found")
++    run = _scoped_run(run_id, principal)
+     if run["status"] != "completed":
+         raise HTTPException(status_code=409, detail=f"Investigation is {run['status']}")
+ 
+--- a/services/agents/app/core/cost_telemetry.py
++++ b/services/agents/app/core/cost_telemetry.py
+@@ -65,7 +65,7 @@
+ 
+ import structlog
+ 
+-from app.core.gateway_cost import GatewayCost, extract_gateway_cost, extract_resolved_model
++from app.core.gateway_cost import GatewayCost, extract_gateway_cost, extract_resolved_model, response_headers
+ from app.core.schema_bootstrap import ensure_columns, ensure_table
+ 
+ logger = structlog.get_logger()
+@@ -467,6 +467,7 @@
+     persist: bool = True
+ 
+     _records: list[CallRecord] = field(default_factory=list, init=False)
++    _response_records: dict[str, CallRecord] = field(default_factory=dict, init=False, repr=False)
+     _start: float = field(default_factory=time.monotonic, init=False)
+ 
+     _token: Any = field(default=None, init=False, repr=False)
+@@ -696,8 +697,14 @@
+     tracker = current_cost_tracker()
+     if tracker is None:
+         return None
++    identity = response_headers(response).get("x-litellm-call-id") or getattr(response, "id", None)
++    if identity and str(identity) in tracker._response_records:
++        record = tracker._response_records[str(identity)]
++        if step is not None: record.step = step
++        if tool is not None: record.tool = tool
++        return record
+     prompt_tokens, completion_tokens = _extract_token_usage(response)
+-    return tracker.record(
++    record = tracker.record(
+         model=model,
+         prompt_tokens=prompt_tokens,
+         completion_tokens=completion_tokens,
+@@ -707,3 +714,6 @@
+         gateway_cost=extract_gateway_cost(response),
+         resolved_model=extract_resolved_model(response),
+     )
++    if identity:
++        tracker._response_records[str(identity)] = record
++    return record
+--- a/services/agents/app/core/gateway_cost.py
++++ b/services/agents/app/core/gateway_cost.py
+@@ -59,6 +59,7 @@
+ from __future__ import annotations
+ 
+ import math
++import os
+ from dataclasses import dataclass
+ from typing import Any
+ 
+@@ -142,6 +143,8 @@
+     ``None`` means *not measurable here* — no gateway, or a client that did not
+     keep the headers. Callers must not substitute zero for it.
+     """
++    if os.getenv("AISOC_GATEWAY_COST_TRUST", "1") == "0":
++        return None
+     headers = response_headers(response)
+     if not headers:
+         return None
+--- a/services/agents/app/investigator/recon_agent.py
++++ b/services/agents/app/investigator/recon_agent.py
+@@ -176,7 +176,7 @@
+                 args={"value": ioc["value"], "type": ioc["type"], "cached": True},
+                 result=cached,
+                 latency_ms=0,
+-                success=True,
++                success=bool(cached) and "error" not in cached,
+             )
+             return ioc["value"], cached
+         t_enrich = time.monotonic()
+@@ -187,7 +187,7 @@
+             args={"value": ioc["value"], "type": ioc["type"]},
+             result=result,
+             latency_ms=int((time.monotonic() - t_enrich) * 1000),
+-            success=bool(result),
++            success=bool(result) and "error" not in result,
+         )
+         return ioc["value"], result
+ 
+--- a/services/agents/app/main.py
++++ b/services/agents/app/main.py
+@@ -63,13 +63,14 @@
+ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+     """Load resources on startup."""
+     # Seed playbook store with default templates
+-    try:
+-        store = PlaybookStore.default()
+-        n = store.seed_defaults()
+-        if n:
+-            logger.info("playbook_store.seeded", count=n)
+-    except Exception as exc:
+-        logger.warning("Playbook store seed failed", error=str(exc))
++    if os.getenv("AISOC_PLAYBOOK_SEED_DISABLE", "0") != "1":
++        try:
++            store = PlaybookStore.default()
++            n = store.seed_defaults()
++            if n:
++                logger.info("playbook_store.seeded", count=n)
++        except Exception as exc:
++            logger.warning("Playbook store seed failed", error=str(exc))
+ 
+     # Wave 1 — surface an unroutable LLM gateway/alias config at boot instead of
+     # silently degrading to heuristics on the first (400ing) live call.
+@@ -77,15 +78,16 @@
+         logger.warning("llm_preflight", detail=warning)
+ 
+     # Load full MITRE ATT&CK corpus
+-    try:
+-        await load_attck_corpus()
+-    except Exception as exc:
+-        logger.warning("MITRE ATT&CK corpus load failed at startup", error=str(exc))
++    if os.getenv("AISOC_ATTCK_STARTUP_DISABLE", "0") != "1":
++        try:
++            await load_attck_corpus()
++        except Exception as exc:
++            logger.warning("MITRE ATT&CK corpus load failed at startup", error=str(exc))
+ 
+     # Embed into Qdrant for RAG (only if configured)
+     qdrant_url = os.getenv("QDRANT_URL", "")
+     openai_key = os.getenv("OPENAI_API_KEY", "")
+-    if qdrant_url and openai_key:
++    if qdrant_url and openai_key and os.getenv("AISOC_ATTCK_INDEX_DISABLE", "0") != "1":
+         try:
+             await embed_techniques_into_qdrant(
+                 qdrant_url=qdrant_url,
+@@ -125,6 +127,7 @@
+                 bootstrap_servers=os.environ["KAFKA_BOOTSTRAP_SERVERS"],
+                 topic=os.getenv("KAFKA_TOPIC_ALERTS_FUSED", "aisoc.alerts.fused"),
+                 business_context=applier,
++                group_id=os.getenv("KAFKA_CONSUMER_GROUP", "aisoc-agents-triage"),
+             )
+             app.state.triage_worker = triage_worker
+             task = asyncio.create_task(triage_worker.start())
+@@ -262,3 +265,6 @@
+         "service": "aisoc-agents",
+         "attck_corpus": summary,
+     }
++
++from app.core.scoped_baseline import apply_scope
++apply_scope(app, "agents")

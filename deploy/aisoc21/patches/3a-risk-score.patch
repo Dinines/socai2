@@ -1,0 +1,194 @@
+--- a/services/api/app/schemas/fusion_alert.py
++++ b/services/api/app/schemas/fusion_alert.py
+@@ -76,7 +76,8 @@
+     # Raw event
+     raw_event: dict[str, Any] = Field(default_factory=dict)
+     tags: list[str] = Field(default_factory=list)
+-    risk_score: float = 0.0
++    # Missing is unknown; zero is an explicitly supplied score.
++    risk_score: float | None = Field(default=None, allow_inf_nan=False)
+ 
+     # Provenance (issue #568) — carried first-class end-to-end so downstream
+     # (auto-triage, the investigation graph, the Splunk evidence tool) can
+--- a/services/fusion/app/models/alert.py
++++ b/services/fusion/app/models/alert.py
+@@ -76,7 +76,8 @@
+     # Raw event
+     raw_event: dict[str, Any] = Field(default_factory=dict)
+     tags: list[str] = Field(default_factory=list)
+-    risk_score: float = 0.0
++    # Missing is unknown; zero is an explicitly supplied score.
++    risk_score: float | None = Field(default=None, allow_inf_nan=False)
+ 
+     # Provenance (issue #568) — carried first-class end-to-end so downstream
+     # (auto-triage, the investigation graph, the Splunk evidence tool) can
+--- a/services/fusion/app/services/entity_risk.py
++++ b/services/fusion/app/services/entity_risk.py
+@@ -229,7 +229,7 @@
+     def _build_signals(self, alert: RawAlert) -> list[EntitySignal]:
+         weight = self._weights.get(alert.severity, self._weights[AlertSeverity.MEDIUM])
+         # Detection-confidence boost: higher upstream risk_score amplifies points.
+-        confidence_factor = 1.0 + min(max(alert.risk_score, 0.0), 1.0)
++        confidence_factor = 1.0 + min(max(alert.risk_score or 0.0, 0.0), 1.0)
+         points = round(weight * confidence_factor, 2)
+         detection = alert.title or alert.source
+         occurred = alert.event_time or alert.created_at
+--- a/services/fusion/app/services/confidence.py
++++ b/services/fusion/app/services/confidence.py
+@@ -262,14 +262,14 @@
+             )
+         )
+ 
+-        # 6. Upstream vendor risk score
++        # 6. Publisher-provided score; an internal baseline is not a measurement.
+         upstream = max(0.0, min(1.0, alert.risk_score or 0.0))
+         upstream_contribution = _ml_contribution(upstream)
+         rationale.append(
+             ConfidenceFactor(
+                 factor="upstream_risk",
+-                label="Upstream vendor risk score",
+-                value=f"{upstream:.2f}",
++                label="Upstream provided risk score (source unverified)",
++                value=(f"{upstream:.2f}" if alert.risk_score is not None else "not supplied; numeric feature baseline only"),
+                 contribution=upstream_contribution,
+                 weight=WEIGHT_UPSTREAM_RISK,
+             )
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -41,6 +41,8 @@
+ from typing import Any
+ 
+ import structlog
++
++from app.score_input import supplied_risk_score
+ 
+ from app.agents.auto_triage_agent import run_auto_triage
+ from app.agents.dispositions import AUTO_CLOSEABLE_DISPOSITIONS, NEEDS_REVIEW, normalize_disposition
+@@ -272,7 +274,7 @@
+         "domain": alert.get("domain"),
+         "url": alert.get("url"),
+         "mitre_techniques": alert.get("mitre_techniques", []),
+-        "risk_score": alert.get("risk_score", 0.0),
++        "risk_score": supplied_risk_score(alert.get("risk_score")),
+         "raw_event": alert.get("raw_event", {}),
+         "confidence": message.get("confidence_score"),
+         "fusion_decision": message.get("fusion_decision"),
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -28,6 +28,8 @@
+ from langchain_core.messages import HumanMessage, SystemMessage
+ 
+ from app import closure as closure_policy
++from app.score_input import supplied_risk_score
++
+ from app.agents.dispositions import (
+     AUTO_CLOSEABLE_DISPOSITIONS,
+     BENIGN,
+@@ -179,10 +181,12 @@
+     exactly as an MCP reply does. See ``app.context.knowledge_base``.
+     """
+     raw = state.raw_alert
++    risk = supplied_risk_score(raw.get("risk_score"))
++    risk_text = "not provided or unknown (not zero)" if risk is None else f"{risk:g} (publisher supplied; source/scale not independently verified)"
+     parts = [
+         f"Alert Summary: {sanitize_text(state.alert_summary)}",
+         f"Severity (vendor): {sanitize_text(str(raw.get('severity', 'unknown')))}",
+-        f"Risk Score (vendor): {sanitize_text(str(raw.get('risk_score', 'N/A')))}",
++        f"Provided alert risk score: {risk_text}",
+     ]
+ 
+     ioc_fields = {
+--- a/services/agents/app/agents/triage_agent.py
++++ b/services/agents/app/agents/triage_agent.py
+@@ -6,6 +6,8 @@
+ from __future__ import annotations
+ 
+ import structlog
++
++from app.score_input import supplied_risk_score
+ 
+ from app.confidence import score_triage
+ from app.models.state import ActionRisk, AgentStatus, InvestigationState, ProposedAction
+@@ -44,7 +46,7 @@
+ def _score_alert(state: InvestigationState) -> tuple[str, float]:
+     """Return (severity, risk_score) based on alert content heuristics."""
+     text = (state.alert_summary + " " + str(state.raw_alert)).lower()
+-    risk = state.raw_alert.get("risk_score", 0.0)
++    risk = supplied_risk_score(state.raw_alert.get("risk_score")) or 0.0
+ 
+     if any(kw in text for kw in _CRITICAL_KEYWORDS):
+         return "critical", max(risk, 0.9)
+@@ -68,7 +70,7 @@
+ 
+     # --- Severity scoring ---
+     severity, risk_score = _score_alert(state)
+-    state.add_finding(f"Triage severity: {severity} (risk_score={risk_score:.2f})")
++    state.add_finding(f"Triage severity: {severity} (heuristic risk_score={risk_score:.2f}; not a vendor measurement)")
+ 
+     # --- IOC extraction from raw alert ---
+     iocs: list[dict] = []
+--- a/services/agents/app/confidence/scoring.py
++++ b/services/agents/app/confidence/scoring.py
+@@ -23,6 +23,8 @@
+ from __future__ import annotations
+ 
+ from typing import Any
++
++from app.score_input import supplied_risk_score
+ 
+ from app.models.state import InvestigationState
+ 
+@@ -92,9 +94,9 @@
+     basis: list[str] = []
+     weight = 0.0
+ 
+-    risk = float(state.raw_alert.get("risk_score", 0.0) or 0.0)
++    risk = supplied_risk_score(state.raw_alert.get("risk_score")) or 0.0
+     if risk > 0:
+-        basis.append(f"vendor risk_score={risk:.2f}")
++        basis.append(f"provided alert risk_score={risk:.2f} (source unverified)")
+         # vendor risk maps roughly linearly to weight; cap at 0.6
+         weight += min(risk * 0.6, 0.6)
+ 
+--- a/services/agents/app/replay/normalize.py
++++ b/services/agents/app/replay/normalize.py
+@@ -49,6 +49,8 @@
+ 
+ from collections.abc import Mapping
+ from typing import Any, Protocol, runtime_checkable
++
++from app.score_input import supplied_risk_score
+ 
+ from app.replay.findings import HistoricalFinding
+ 
+@@ -140,6 +142,10 @@
+     def pick(*keys: str) -> Any:
+         return _first(normalized, *keys) or _first(vendor_row, *keys)
+ 
++    risk = _first(normalized, "risk_score")
++    if risk is None:
++        risk = _first(vendor_row, "risk_score")
++
+     alert: dict[str, Any] = {
+         "id": finding.finding_id,
+         "title": normalized.get("title") or finding.title,
+@@ -154,7 +160,7 @@
+         "domain": pick("domain"),
+         "url": pick("url"),
+         "mitre_techniques": pick("mitre_techniques", "annotations.mitre_attack") or [],
+-        "risk_score": pick("risk_score") or 0.0,
++        "risk_score": supplied_risk_score(risk),
+         "raw_event": dict(vendor_row),
+         "connector_id": connector_id,
+         "connector_type": finding.vendor,
+--- a/services/agents/tests/test_replay_runner.py
++++ b/services/agents/tests/test_replay_runner.py
+@@ -191,7 +191,7 @@
+     envelope = to_fused_envelope(finding, _SplunkLikeNormalizer().normalize(dict(finding.raw)), tenant_id="t-1")
+ 
+     assert "confidence_score" not in envelope
+-    assert envelope["alert"]["risk_score"] == 0.0
++    assert envelope["alert"]["risk_score"] is None
+ 
+ 
+ # --------------------------------------------------------------------------

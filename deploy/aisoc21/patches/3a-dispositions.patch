@@ -1,0 +1,1058 @@
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -43,6 +43,7 @@
+ from app.closure.qa_sampling import ClosureQaSampler
+ from app.context.dispositions import basis as disposition_basis
+ from app.context.dispositions import render_for_prompt as render_dispositions
++from app.context.dispositions import render_read_status as render_dispositions_read_status
+ from app.context.identity import basis as identity_basis
+ from app.context.identity import render_for_prompt as render_identity
+ from app.context.knowledge_base import build_prompt_material, citation_basis, record_model_citations, unresolvable_citations
+@@ -240,15 +241,15 @@
+         # rather than silently truncating it again at the generic field cap.
+         preamble.append(sanitize_text(memory, max_len=0))
+ 
+-    # Both first-party, so both sit in the preamble beside organisation memory
+-    # rather than inside the fence. A disposition and a reason code come from
+-    # a closed server-owned vocabulary and the note is typed by an
+-    # authenticated analyst; a directory record comes from the tenant's own
+-    # import. Each renderer sanitises and caps its own fields, and
+-    # `sanitize_text` here is the second pass the memory block already gets.
++    # The dispositions reader cleans each adopted field once and reserves
++    # the complete advisory within its existing 3000-character budget. Keep
++    # that exact block so its rows and hashes describe what the model saw.
++    decisions_status = render_dispositions_read_status(state.recent_dispositions_read)
++    if decisions_status:
++        preamble.append(decisions_status)
+     decisions = render_dispositions(state.recent_dispositions)
+     if decisions:
+-        preamble.append(sanitize_text(decisions, max_len=_MAX_CONTEXT_BLOCK_CHARS))
++        preamble.append(decisions)
+     who = render_identity(state.identity_context)
+     if who:
+         preamble.append(sanitize_text(who, max_len=_MAX_CONTEXT_BLOCK_CHARS))
+--- a/services/agents/app/context/dispositions.py
++++ b/services/agents/app/context/dispositions.py
+@@ -15,8 +15,10 @@
+ corroboration threshold, and that is what this reads: the raw decisions, in
+ order, with the reason each analyst gave.
+ 
+-``aisoc_analyst_feedback`` is append-only, one row per tagged disagreement, so
+-it can answer "the last N" at all. The override row in institutional memory
++The application appends one ``aisoc_analyst_feedback`` row per tagged
++disagreement. The table has no immutable-history constraint, so this reads the
++current rows and a creation-time cutoff cannot reconstruct later edits. It
++can answer "the last N" at all. The override row in institutional memory
+ cannot: it is upserted per signature, so it holds the latest decision and no
+ history.
+ 
+@@ -58,16 +60,21 @@
+ 
+ from __future__ import annotations
+ 
++import hashlib
++import json
+ import os
++import uuid
+ import time
+ from collections.abc import Mapping, Sequence
+-from dataclasses import dataclass
+-from datetime import datetime
+-from typing import Any
++from copy import deepcopy
++from dataclasses import dataclass, field, replace
++from datetime import UTC, datetime
++from typing import Any, Literal, TypedDict
+ 
+ import httpx
+ import structlog
+ 
++from app.context.organisation_memory import _credential
+ from app.investigator.prompt_sanitizer import sanitize_text
+ 
+ logger = structlog.get_logger()
+@@ -80,6 +87,10 @@
+     "entities_for",
+     "fetch_recent_dispositions",
+     "render_for_prompt",
++    "RecentDispositionsRead",
++    "make_read",
++    "render_read_status",
++    "enforce_cutoff",
+ ]
+ 
+ _API_URL = os.getenv("API_SERVICE_URL", "http://api:8000")
+@@ -94,7 +105,36 @@
+ 
+ _CACHE_TTL_S = float(os.getenv("AISOC_TRIAGE_DISPOSITIONS_TTL_S", "120"))
+ 
+-_cache: dict[str, tuple[float, dict[str, Any]]] = {}
++_cache: dict[tuple[Any, ...], tuple[float, str, dict[str, Any]]] = {}
++_SOURCE = "api.feedback.recent-dispositions"
++_MAX_PROMPT_CHARS = 3000
++_TRUNCATED = "…[truncated]"
++_HEADER = "Recent analyst decisions on alerts of this shape in this tenant, newest first:\n"
++_ADVISORY = (
++    "\nThese are individual decisions, not compiled organisation memory: some have not "
++    "been corroborated by a second analyst, and any of them may have been wrong. Treat a "
++    "repeated benign decision as a reason to consider benign_true_positive and to say which "
++    "decision you are following. It never overrides direct evidence of compromise in this "
++    "alert's own telemetry, and a single decision is one person's opinion."
++)
++# Fixed-upstream REASON_CODES labels; no new vocabulary or inference is added.
++_REASON_LABELS = {
++    "known_admin_tool": "Known administrative tool", "approved_pentest": "Approved penetration test",
++    "expected_service_account": "Expected service-account behaviour", "known_scanner": "Known vulnerability scanner",
++    "business_application": "Sanctioned business application", "bad_detection_logic": "Bad detection logic",
++    "missing_context": "Missing context", "true_positive_confirmed": "Confirmed true positive",
++}
++# Mirror the fixed upstream closed vocabulary. Importing app.agents here
++# executes that package's __init__, which imports auto_triage_agent back
++# into this reader before it has finished defining basis/render functions.
++# The fresh-process tests also compare this mirror to the canonical module.
++_AI_VERDICTS = frozenset({"true_positive", "benign_true_positive", "false_positive", "benign", "needs_review", "escalate"})
++_ANALYST_VERDICTS = _AI_VERDICTS - {"needs_review"}
++_SOURCE_FIELDS = (
++    "feedback_id", "created_at", "decided_at", "analyst_disposition", "ai_disposition", "reason_code",
++    "reason_label", "note", "scope", "scope_value", "rule_id", "by_rule", "by_entity",
++)
++
+ 
+ 
+ def enabled() -> bool:
+@@ -106,27 +146,102 @@
+     _cache.clear()
+ 
+ 
++class RecentDispositionsRead(TypedDict, total=False):
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"]
++    reason: str | None
++    tenant_id: str | None
++    source: str
++    read_at: str
++    rule_id: str
++    entities: list[str]
++    limit: int
++    requested_as_of: str | None
++    as_of: str | None
++    cache: dict[str, Any]
++    http_status: int | None
++    received_count: int
++    valid_count: int
++    adopted_count: int
++    excluded_after_cutoff: int
++    without_timestamp: int
++    decisions: list[dict[str, Any]]
++    feedback_ids: list[str]
++    budget: dict[str, Any]
++    prompt_block: str
++    prompt_sha256: str
++
++
++def _now() -> datetime:
++    return datetime.now(UTC)
++
++
++def _sha(text: str) -> str:
++    return hashlib.sha256(text.encode("utf-8")).hexdigest()
++
++
++def _source_hash(tenant_id: str, row: Mapping[str, Any]) -> str:
++    value = {"tenant_id": tenant_id, **{key: row[key] for key in _SOURCE_FIELDS}}
++    return _sha(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
++
++
++def _stamp(value: datetime | None) -> str | None:
++    if value is None:
++        return None
++    return (value.replace(tzinfo=UTC) if value.tzinfo is None else value).astimezone(UTC).isoformat()
++
++
++def _date(value: Any) -> datetime:
++    if not isinstance(value, str) or not value.strip():
++        raise ValueError("invalid disposition timestamp")
++    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
++    if result.tzinfo is None or result.utcoffset() is None or result.utcoffset().total_seconds() != 0:
++        raise ValueError("disposition timestamps must be UTC")
++    return result
++
++
++def make_read(
++    tenant_id: str | None, *, rule_id: str = "", entities: Sequence[str] = (), limit: int = MAX_DISPOSITIONS_IN_PROMPT,
++    as_of: datetime | None = None,
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"] = "not_requested",
++    reason: str | None = None,
++) -> RecentDispositionsRead:
++    return {
++        "status": status, "reason": reason, "tenant_id": tenant_id, "source": _SOURCE,
++        "read_at": _stamp(as_of) or _now().isoformat(), "rule_id": rule_id, "entities": list(entities), "limit": limit,
++        "requested_as_of": _stamp(as_of), "as_of": None,
++        "cache": {"source": "none", "freshness": "not_available", "age_seconds": None, "ttl_seconds": _CACHE_TTL_S},
++        "http_status": None, "received_count": 0, "valid_count": 0, "adopted_count": 0,
++        "excluded_after_cutoff": 0, "without_timestamp": 0, "decisions": [], "feedback_ids": [],
++        "budget": {"max_prompt_chars": _MAX_PROMPT_CHARS, "max_note_chars": _MAX_NOTE_CHARS,
++                   "max_decisions": MAX_DISPOSITIONS_IN_PROMPT, "dropped_for_limit": 0, "dropped_for_budget": 0},
++        "prompt_block": "", "prompt_sha256": _sha(""),
++    }
++
++
+ @dataclass(frozen=True)
+ class RecentDispositions:
+-    """What one lookup returned, and what a replay has to publish about it."""
++    """Compatibility projection with explicit read and literal-adoption facts."""
+ 
+     decisions: tuple[Mapping[str, Any], ...] = ()
+-
+-    #: The instant the server says it cut off at, echoed rather than
+-    #: remembered, so a server that ignored the parameter cannot be reported
+-    #: as having honoured it. ``None`` means no cutoff was applied.
+     as_of: str | None = None
+-
+     excluded_after_cutoff: int = 0
+     without_timestamp: int = 0
++    read: RecentDispositionsRead = field(default_factory=dict)
++    budget: dict[str, Any] = field(default_factory=dict)
++    prompt_block: str = ""
+ 
+     def as_state(self) -> dict[str, Any]:
+-        return {
+-            "decisions": [dict(d) for d in self.decisions],
+-            "as_of": self.as_of,
+-            "excluded_after_cutoff": self.excluded_after_cutoff,
+-            "without_timestamp": self.without_timestamp,
+-        }
++        return {"decisions": deepcopy(list(self.decisions)), "as_of": self.as_of,
++                "excluded_after_cutoff": self.excluded_after_cutoff, "without_timestamp": self.without_timestamp,
++                "budget": deepcopy(self.budget), "prompt_block": self.prompt_block,
++                "prompt_sha256": _sha(self.prompt_block)}
++
++    def as_read(self) -> RecentDispositionsRead:
++        read = deepcopy(self.read) if self.read else make_read(None, status="success" if self.decisions else "no_match")
++        read.update(self.as_state())
++        read["adopted_count"] = len(self.decisions)
++        read["feedback_ids"] = [row.get("feedback_id") for row in self.decisions if row.get("feedback_id")]
++        return read
+ 
+     def __bool__(self) -> bool:
+         return bool(self.decisions)
+@@ -153,134 +268,287 @@
+     return sorted({v.lower() for v in out})[:10]
+ 
+ 
++def _count(value: Any) -> int:
++    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
++        raise ValueError("invalid disposition count")
++    return value
++
++
++def _matching(row: Mapping[str, Any], rule_id: str, entities: Sequence[str]) -> bool:
++    by_rule = bool(rule_id and row.get("rule_id") == rule_id)
++    scope_value = row.get("scope_value")
++    by_entity = bool(isinstance(scope_value, str) and scope_value and scope_value.lower() in entities)
++    return (isinstance(row.get("by_rule"), bool) and isinstance(row.get("by_entity"), bool)
++            and row["by_rule"] == by_rule and row["by_entity"] == by_entity and (by_rule or by_entity))
++
++
++def _validate(payload: Any, *, tenant_id: str, rule_id: str, entities: Sequence[str], as_of: datetime | None, limit: int) -> None:
++    if not isinstance(payload, dict) or payload.get("tenant_id") != tenant_id or not isinstance(payload.get("dispositions"), list):
++        raise ValueError("invalid dispositions response tenant or shape")
++    if "as_of" not in payload:
++        if as_of is not None:
++            raise LookupError("missing disposition cutoff echo")
++        raise ValueError("missing disposition cutoff echo")
++    echo = payload["as_of"]
++    if as_of is None:
++        if echo is not None:
++            raise ValueError("unexpected disposition cutoff")
++    else:
++        try:
++            if echo is None or _date(echo) != _date(_stamp(as_of)):
++                raise LookupError("disposition cutoff not honoured")
++        except (ValueError, TypeError) as exc:
++            raise LookupError("disposition cutoff not provable") from exc
++    _count(payload.get("excluded_after_cutoff")); _count(payload.get("without_timestamp"))
++    rows = payload["dispositions"]
++    if len(rows) > limit:
++        raise ValueError("disposition rows exceed requested limit")
++    seen: set[str] = set()
++    for row in rows:
++        if not isinstance(row, dict):
++            raise ValueError("invalid disposition row")
++        if not set(_SOURCE_FIELDS).issubset(row):
++            raise ValueError("missing disposition source fields")
++        identity = str(uuid.UUID(row.get("feedback_id")))
++        if identity in seen:
++            raise ValueError("duplicate disposition ID")
++        seen.add(identity)
++        if row.get("analyst_disposition") not in _ANALYST_VERDICTS or row.get("ai_disposition") not in _AI_VERDICTS:
++            raise ValueError("invalid disposition vocabulary")
++        if row.get("reason_code") not in _REASON_LABELS or row.get("reason_label") != _REASON_LABELS[row["reason_code"]]:
++            raise ValueError("invalid disposition reason")
++        if row.get("scope") not in {"rule", "entity", "binary", "tenant"}:
++            raise ValueError("invalid disposition scope")
++        for key in ("note", "scope_value"):
++            if not isinstance(row.get(key), str):
++                raise ValueError("invalid disposition text")
++            row[key].encode("utf-8")
++        if row.get("rule_id") is not None and not isinstance(row["rule_id"], str):
++            raise ValueError("invalid disposition rule")
++        if not _matching(row, rule_id, entities):
++            raise ValueError("invalid disposition matching basis")
++        created, decided = _date(row.get("created_at")), _date(row.get("decided_at"))
++        if created != decided:
++            raise ValueError("disposition timestamp aliases disagree")
++        if as_of is not None and created > _date(_stamp(as_of)):
++            raise LookupError("disposition row postdates cutoff")
++        if row.get("row_source_sha256") != _source_hash(tenant_id, row):
++            raise ValueError("disposition source fingerprint differs")
++
++
++def _failure(read: RecentDispositionsRead, reason: str, payload: Any = None) -> RecentDispositions:
++    facts = deepcopy(read)
++    facts.update(status="unavailable", reason=reason, valid_count=0, adopted_count=0, decisions=[], feedback_ids=[],
++                 prompt_block="", prompt_sha256=_sha(""))
++    if isinstance(payload, Mapping):
++        facts["as_of"] = payload.get("as_of") if isinstance(payload.get("as_of"), str) else None
++        rows = payload.get("dispositions")
++        facts["received_count"] = len(rows) if isinstance(rows, list) else 0
++        for key in ("excluded_after_cutoff", "without_timestamp"):
++            value = payload.get(key)
++            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
++                facts[key] = value
++    return RecentDispositions(as_of=facts.get("as_of"), excluded_after_cutoff=facts.get("excluded_after_cutoff", 0),
++                              without_timestamp=facts.get("without_timestamp", 0), read=facts,
++                              budget=deepcopy(facts["budget"]))
++
++
+ async def fetch_recent_dispositions(
+-    tenant_id: str | None,
+-    *,
+-    rule_id: str = "",
+-    entities: Sequence[str] = (),
+-    as_of: datetime | None = None,
++    tenant_id: str | None, *, rule_id: str = "", entities: Sequence[str] = (), as_of: datetime | None = None,
+     limit: int = MAX_DISPOSITIONS_IN_PROMPT,
+ ) -> RecentDispositions:
+-    """The last few analyst decisions matching this alert. Never raises.
+-
+-    ``as_of`` has no default, for the same reason it has none on the runbook
+-    reader: a default of "now" lets an unfrozen caller look frozen, and a
+-    default of the epoch silently returns nothing on every live triage.
+-    """
+-    if not enabled() or not tenant_id:
+-        return RecentDispositions()
+-    rule = (rule_id or "").strip()
+-    entity_list = [e for e in entities if e]
++    """Tenant-authorised current decisions; no failed read adopts old material."""
++    rule = rule_id.strip() if isinstance(rule_id, str) else ""
++    valid_entities = isinstance(entities, Sequence) and not isinstance(entities, (str, bytes)) and all(isinstance(value, str) for value in entities)
++    entity_list = sorted({value.strip().lower() for value in entities if value.strip()}) if valid_entities else []
++    if as_of is not None and not isinstance(as_of, datetime):
++        return _failure(make_read(tenant_id, rule_id=rule, entities=entity_list, limit=limit), "invalid_request")
++    read = make_read(tenant_id, rule_id=rule, entities=entity_list, limit=limit, as_of=as_of)
++    if not enabled():
++        read.update(status="disabled")
++        return RecentDispositions(read=read, budget=deepcopy(read["budget"]))
++    if not tenant_id:
++        return _failure(read, "missing_tenant")
++    if not valid_entities or not isinstance(rule_id, str) or isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20:
++        return _failure(read, "invalid_request")
+     if not rule and not entity_list:
+-        return RecentDispositions()
+-
+-    cache_key = f"{tenant_id}|{as_of.isoformat() if as_of else ''}|{limit}|{rule}|{','.join(sorted(entity_list))}"
+-    cached = _cache.get(cache_key)
+-    now = time.monotonic()
+-    if cached is not None and now - cached[0] < _CACHE_TTL_S:
+-        return _shape(cached[1], limit=limit)
+-
+-    token = os.getenv("AISOC_AGENTS_SERVICE_TOKEN", "").strip() or os.getenv("AISOC_SERVICE_TOKEN", "").strip()
++        read.update(reason="empty_match")
++        return RecentDispositions(read=read, budget=deepcopy(read["budget"]))
++    token = _credential(tenant_id, keys_file_env="AISOC_TRIAGE_DISPOSITIONS_KEYS_FILE")
+     if not token:
+-        # Loud, like the other context readers: without the shared secret the
+-        # API refuses the service path, so every triage would run without the
+-        # decisions the operator's own analysts recorded.
+-        logger.warning(
+-            "triage_dispositions.no_service_token",
+-            reason="AISOC_AGENTS_SERVICE_TOKEN is unset, so recent analyst decisions cannot be read",
+-        )
+-        return RecentDispositions()
+-
++        logger.warning("triage_dispositions.not_configured")
++        return _failure(read, "not_configured")
++    url = f"{_API_URL.rstrip('/')}/api/v1/feedback/recent-dispositions"
++    key = (tenant_id, url, _sha(token), rule, tuple(entity_list), _stamp(as_of), limit)
++    cached = _cache.get(key)
++    clock = time.monotonic()
++    age = max(0.0, clock - cached[0]) if cached else None
++    read["cache"] = {"source": "none", "freshness": "expired" if cached else "not_available", "age_seconds": age, "ttl_seconds": _CACHE_TTL_S}
++    if cached is not None and age is not None and age < _CACHE_TTL_S:
++        try:
++            _validate(cached[2], tenant_id=tenant_id, rule_id=rule, entities=entity_list, as_of=as_of, limit=limit)
++        except LookupError:
++            _cache.pop(key, None)
++            return _failure(read, "cutoff_not_honoured", cached[2])
++        except (ValueError, TypeError, AttributeError, OverflowError):
++            _cache.pop(key, None)
++            return _failure(read, "invalid_response", cached[2])
++        read.update(http_status=200)
++        read["cache"].update(source="memory", freshness="fresh", fetched_at=cached[1])
++        return _shape(cached[2], limit=limit, read=read)
++    # Once a refresh is required, a failed refresh must not leave an old
++    # entry available for a subsequent adoption (including a TTL change).
++    _cache.pop(key, None)
+     params: list[tuple[str, str]] = [("tenant_id", tenant_id), ("rule_id", rule), ("limit", str(limit))]
+-    params.extend(("entities", e) for e in entity_list)
++    params.extend(("entities", entity) for entity in entity_list)
+     if as_of is not None:
+-        params.append(("as_of", as_of.isoformat()))
+-
+-    url = f"{_API_URL.rstrip('/')}/api/v1/feedback/recent-dispositions"
++        params.append(("as_of", _stamp(as_of)))
+     try:
+         async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+-            response = await client.get(url, params=params, headers={"X-AiSOC-Service-Token": token})
+-    except httpx.HTTPError as exc:
+-        logger.warning("triage_dispositions.unreachable", error=str(exc)[:300])
+-        return RecentDispositions()
+-
+-    if response.status_code >= 400:
++            response = await client.get(url, params=params, headers={"Authorization": f"Bearer {token}"})
++    except httpx.HTTPError:
++        logger.warning("triage_dispositions.unreachable")
++        return _failure(read, "transport_error")
++    read["http_status"] = response.status_code
++    if response.status_code != 200:
+         logger.warning("triage_dispositions.refused", status_code=response.status_code)
+-        return RecentDispositions()
+-
++        return _failure(read, "auth_failed" if response.status_code in {401, 403} else "http_error")
++    payload = None
+     try:
+         payload = response.json()
+-    except ValueError:
+-        logger.warning("triage_dispositions.bad_response")
+-        return RecentDispositions()
+-
+-    if not isinstance(payload, dict):
+-        return RecentDispositions()
+-    _cache[cache_key] = (now, payload)
+-    return _shape(payload, limit=limit)
+-
+-
+-def _shape(payload: Mapping[str, Any], *, limit: int) -> RecentDispositions:
+-    rows = payload.get("dispositions")
+-    rows = [r for r in rows if isinstance(r, Mapping)] if isinstance(rows, list) else []
+-    echoed = payload.get("as_of")
+-    return RecentDispositions(
+-        decisions=tuple(dict(r) for r in rows[: max(1, limit)]),
+-        as_of=str(echoed) if echoed else None,
+-        excluded_after_cutoff=int(payload.get("excluded_after_cutoff") or 0),
+-        without_timestamp=int(payload.get("without_timestamp") or 0),
+-    )
++        _validate(payload, tenant_id=tenant_id, rule_id=rule, entities=entity_list, as_of=as_of, limit=limit)
++    except LookupError:
++        return _failure(read, "cutoff_not_honoured", payload)
++    except (ValueError, TypeError, AttributeError, OverflowError):
++        return _failure(read, "invalid_response", payload)
++    fetched_at = _stamp(as_of) or _now().isoformat()
++    _cache[key] = (clock, fetched_at, deepcopy(payload))
++    read["cache"] = {"source": "network", "freshness": "fresh", "age_seconds": 0.0, "ttl_seconds": _CACHE_TTL_S, "fetched_at": fetched_at}
++    return _shape(payload, limit=limit, read=read)
++
++
++def _cap(text: str, width: int) -> str:
++    if len(text) <= width:
++        return text
++    return text[:max(0, width - len(_TRUNCATED))] + _TRUNCATED if width >= len(_TRUNCATED) else text[:width]
++
++
++def _line(row: Mapping[str, Any]) -> str:
++    verdict = row["analyst_disposition"]
++    when = str(row.get("decided_at") or "")[:10]
++    parts = [f"- {when or 'undated'}: an analyst closed this as **{verdict}**"]
++    overturned = row.get("ai_disposition") or ""
++    if overturned and overturned != verdict:
++        parts.append(f", overturning an automated {overturned}")
++    if row.get("reason_label"):
++        parts.append(f". Reason: {row['reason_label']}")
++    if row.get("scope_text"):
++        parts.append(f" (scoped to {row['scope_text']})")
++    if row.get("note"):
++        parts.append(f'. Note: "{row["note"]}"')
++    return "".join(parts)
++
++
++def _adopt(rows: list[Mapping[str, Any]], *, limit: int) -> tuple[list[dict[str, Any]], str, dict[str, Any]]:
++    kept: list[dict[str, Any]] = []
++    used = len(_HEADER) + len(_ADVISORY)
++    candidates = rows[:min(max(1, limit), MAX_DISPOSITIONS_IN_PROMPT)]
++    for original in candidates:
++        row = deepcopy(dict(original))
++        raw_note = str(row.get("note") or "")
++        note = sanitize_text(raw_note, max_len=0)
++        raw_scope = str(row.get("scope_value") or "")
++        row.update(analyst_disposition=_cap(sanitize_text(str(row.get("analyst_disposition") or ""), max_len=0), 40),
++                   ai_disposition=_cap(sanitize_text(str(row.get("ai_disposition") or ""), max_len=0), 40),
++                   reason_label=_cap(sanitize_text(str(row.get("reason_label") or row.get("reason_code") or ""), max_len=0), 80),
++                   scope_text=_cap(sanitize_text(raw_scope, max_len=0), 120), note=_cap(note, _MAX_NOTE_CHARS),
++                   raw_note_sha256=_sha(raw_note), scope_truncated=len(raw_scope) > 120)
++        if not row["analyst_disposition"]:
++            continue
++        separator = 1 if kept else 0
++        remaining = _MAX_PROMPT_CHARS - used - separator
++        if len(_line(row)) > remaining:
++            base = {**row, "note": ""}
++            if len(_line(base)) > remaining:
++                break
++            allowance = max(0, remaining - len(_line(base)) - len('. Note: ""'))
++            row["note"] = _cap(row["note"], allowance) if allowance else ""
++        text = _line(row)
++        assert len(text) <= remaining
++        row.update(note_truncated=row["note"] != note, note_sha256=_sha(row["note"]),
++                   rendered_text=text, rendered_sha256=_sha(text))
++        kept.append(row)
++        used += separator + len(text)
++    block = _HEADER + "\n".join(row["rendered_text"] for row in kept) + _ADVISORY if kept else ""
++    assert len(block) <= _MAX_PROMPT_CHARS
++    return kept, block, {"max_prompt_chars": _MAX_PROMPT_CHARS, "max_note_chars": _MAX_NOTE_CHARS,
++                         "max_decisions": MAX_DISPOSITIONS_IN_PROMPT, "dropped_for_limit": len(rows) - len(candidates),
++                         "dropped_for_budget": len(candidates) - len(kept), "prompt_chars": len(block),
++                         "truncated_notes": sum(bool(row["note_truncated"]) for row in kept)}
++
++
++def _shape(payload: Mapping[str, Any], *, limit: int, read: RecentDispositionsRead | None = None) -> RecentDispositions:
++    """Compatibility shaping; HTTP calls validate source rows before adoption."""
++    raw = payload.get("dispositions")
++    rows = [row for row in raw if isinstance(row, Mapping)] if isinstance(raw, list) else []
++    adopted, block, budget = _adopt(rows, limit=limit)
++    facts = deepcopy(read) if read is not None else make_read(payload.get("tenant_id"), rule_id=str(payload.get("rule_id") or ""), entities=payload.get("entities") or [], limit=limit)
++    echo = str(payload["as_of"]) if payload.get("as_of") else None
++    facts.update(status="success" if rows else "no_match", received_count=len(rows), valid_count=len(rows), adopted_count=len(adopted), as_of=echo)
++    return RecentDispositions(decisions=tuple(adopted), as_of=echo,
++                              excluded_after_cutoff=int(payload.get("excluded_after_cutoff") or 0),
++                              without_timestamp=int(payload.get("without_timestamp") or 0), read=facts, budget=budget, prompt_block=block)
++
++
++def enforce_cutoff(found: RecentDispositions, *, tenant_id: str | None, rule_id: str, entities: Sequence[str], as_of: datetime) -> RecentDispositions:
++    facts = found.as_read()
++    if facts.get("tenant_id") != tenant_id:
++        return _failure(facts, "invalid_response")
++    normalized_entities = sorted({value.strip().lower() for value in entities if value.strip()})
++    facts.update(rule_id=rule_id, entities=normalized_entities, requested_as_of=_stamp(as_of), read_at=_stamp(as_of))
++    facts["cache"] = {**facts.get("cache", {}), "source": "cutoff", "freshness": "frozen", "split_at": _stamp(as_of)}
++    if facts.get("status") not in {"success", "no_match"}:
++        return replace(found, decisions=(), prompt_block="", read=facts)
++    try:
++        if _date(found.as_of) != _date(_stamp(as_of)):
++            return _failure(facts, "cutoff_not_honoured")
++        for row in found.decisions:
++            uuid.UUID(row.get("feedback_id"))
++            if _date(row.get("created_at")) != _date(row.get("decided_at")):
++                return _failure(facts, "invalid_response")
++            if _date(row.get("created_at")) > _date(_stamp(as_of)):
++                return _failure(facts, "cutoff_not_honoured")
++            if not _matching(row, rule_id, normalized_entities):
++                return _failure(facts, "invalid_response")
++    except (ValueError, TypeError, AttributeError):
++        return _failure(facts, "cutoff_not_honoured")
++    return replace(found, read=facts)
+ 
+ 
+ def render_for_prompt(state_value: Mapping[str, Any] | None) -> str:
+-    """The prompt block, or ``""`` when there is nothing to say.
+-
+-    Empty for an empty list, for the reason organisation memory is: a heading
+-    reading "Recent decisions: none" teaches the model this tenant's analysts
+-    have never dispositioned an alert of this shape, which is a claim rather
+-    than the absence of one.
+-    """
+-    rows = (state_value or {}).get("decisions")
+-    rows = [r for r in rows if isinstance(r, Mapping)] if isinstance(rows, list) else []
+-    if not rows:
++    """The literal adopted block; no second sanitizer or hidden truncation."""
++    if not state_value:
+         return ""
+-
+-    lines: list[str] = []
+-    for row in rows:
+-        verdict = sanitize_text(str(row.get("analyst_disposition") or ""), max_len=40)
+-        if not verdict:
+-            continue
+-        reason = sanitize_text(str(row.get("reason_label") or row.get("reason_code") or ""), max_len=80)
+-        scope = sanitize_text(str(row.get("scope_value") or ""), max_len=120)
+-        when = str(row.get("decided_at") or "")[:10]
+-        note = sanitize_text(str(row.get("note") or ""), max_len=_MAX_NOTE_CHARS)
+-        # The AI verdict travels with the analyst's. "The agent said
+-        # true_positive and an analyst called it benign" is a different and
+-        # much more useful fact than either half alone.
+-        overturned = sanitize_text(str(row.get("ai_disposition") or ""), max_len=40)
+-        parts = [f"- {when or 'undated'}: an analyst closed this as **{verdict}**"]
+-        if overturned and overturned != verdict:
+-            parts.append(f", overturning an automated {overturned}")
+-        if reason:
+-            parts.append(f". Reason: {reason}")
+-        if scope:
+-            parts.append(f" (scoped to {scope})")
+-        if note:
+-            parts.append(f'. Note: "{note}"')
+-        lines.append("".join(parts))
+-
+-    if not lines:
++    block = state_value.get("prompt_block")
++    if isinstance(block, str):
++        return block
++    rows = state_value.get("decisions")
++    rows = [row for row in rows if isinstance(row, Mapping)] if isinstance(rows, list) else []
++    return _adopt(rows, limit=MAX_DISPOSITIONS_IN_PROMPT)[1]
++
++
++def render_read_status(read: Mapping[str, Any]) -> str:
++    status = read.get("status", "not_requested")
++    if status == "not_requested":
+         return ""
+-
+-    return (
+-        "Recent analyst decisions on alerts of this shape in this tenant, newest first:\n"
+-        + "\n".join(lines)
+-        + "\nThese are individual decisions, not compiled organisation memory: some have not "
+-        "been corroborated by a second analyst, and any of them may have been wrong. Treat a "
+-        "repeated benign decision as a reason to consider benign_true_positive and to say which "
+-        "decision you are following. It never overrides direct evidence of compromise in this "
+-        "alert's own telemetry, and a single decision is one person's opinion."
+-    )
++    result = f"Recent analyst decisions read: status={status}; freshness={(read.get('cache') or {}).get('freshness', 'not_available')}; source={read.get('source') or _SOURCE}."
++    if read.get("reason"):
++        result += f" Reason={read['reason']}."
++    if status in {"unavailable", "disabled"}:
++        result += " No analyst-decision material was adopted; this does not establish that this tenant has no analyst history."
++    elif status == "no_match":
++        result += " No permitted decisions matched this rule or these entities; individual opinions are not current authorization."
++    return result
+ 
+ 
+ def basis(state_value: Mapping[str, Any] | None) -> list[str]:
+--- a/services/agents/app/investigator/ledger.py
++++ b/services/agents/app/investigator/ledger.py
+@@ -532,6 +532,7 @@
+     organisation_memory_read: dict[str, Any] | None = None,
+     tenant_skill_read: dict[str, Any] | None = None,
+     knowledge_base_read: dict[str, Any] | None = None,
++    recent_dispositions_read: dict[str, Any] | None = None,
+ ) -> bool:
+     """Durably record an auto-triage outcome (issue #571) in ONE transaction:
+ 
+@@ -657,6 +658,7 @@
+                             **({"organisation_memory_read": organisation_memory_read} if organisation_memory_read is not None else {}),
+                             **({"tenant_skill_read": tenant_skill_read} if tenant_skill_read is not None else {}),
+                             **({"knowledge_base_read": knowledge_base_read} if knowledge_base_read is not None else {}),
++                            **({"recent_dispositions_read": recent_dispositions_read} if recent_dispositions_read is not None else {}),
+                         }
+                     ),
+                     first.get("input_hash"),
+@@ -688,7 +690,8 @@
+                     # either source's immutable receipt.
+                     for kind, receipt in (("organisation_memory_read", organisation_memory_read),
+                                           ("tenant_skill_read", tenant_skill_read),
+-                                          ("knowledge_base_read", knowledge_base_read)):
++                                          ("knowledge_base_read", knowledge_base_read),
++                                          ("recent_dispositions_read", recent_dispositions_read)):
+                         if receipt is None:
+                             continue
+                         blob = json.dumps(receipt, sort_keys=True, ensure_ascii=False)
+--- a/services/agents/app/models/state.py
++++ b/services/agents/app/models/state.py
+@@ -145,6 +145,7 @@
+     # `app.context.identity.IdentityContext.as_state()` renders it. Dicts
+     # rather than the dataclasses for the same import-cycle reason as above.
+     recent_dispositions: dict[str, Any] | None = None
++    recent_dispositions_read: dict[str, Any] = Field(default_factory=lambda: {"status": "not_requested"})
+     identity_context: dict[str, Any] | None = None
+ 
+     # Findings accumulated during investigation
+--- a/services/agents/app/replay/shadow.py
++++ b/services/agents/app/replay/shadow.py
+@@ -557,7 +557,13 @@
+             entities=entities,
+             as_of=self._snapshot.split_at,
+         )
++        found = dispositions_module.enforce_cutoff(
++            found, tenant_id=tenant_id, rule_id=rule_id, entities=entities, as_of=self._snapshot.split_at)
+         self._account("dispositions", found, served=len(found.decisions))
++        # _account already counts an absent echo. A wrong nonempty echo or
++        # a post-split row needs one additional refusal, never two.
++        if found.read.get("reason") == "cutoff_not_honoured" and found.as_of:
++            self.cutoff_totals["dispositions"]["cutoff_not_honoured"] += 1
+         return found
+ 
+     async def fetch_identity_context(self, tenant_id: str | None, *, accounts: list[str]) -> IdentityContext:
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -1056,24 +1056,24 @@
+             state.injection_suspected = True
+ 
+     async def _attach_recent_dispositions(self, state: InvestigationState) -> None:
+-        """Record what this tenant's analysts decided the last few times.
+-
+-        Best-effort in one direction, like the two above: a lookup that fails
+-        leaves the state without decisions and triage proceeds as it did.
+-        """
++        """Record the read and the exact bounded analyst opinions adopted."""
++        tenant = str(state.tenant_id)
+         raw = state.raw_alert or {}
+         rule_id = str(raw.get("rule_id") or "").strip()
+         entities = dispositions_module.entities_for(raw)
++        state.recent_dispositions = None
+         if not rule_id and not entities:
++            state.recent_dispositions_read = dispositions_module.make_read(tenant, reason="empty_match")
+             return
+         try:
+-            found = await self._reader.recent_dispositions(str(state.tenant_id), rule_id=rule_id, entities=entities)
+-        except Exception as exc:  # noqa: BLE001 - past decisions are advisory, triage is not
+-            logger.warning("auto_triage_worker.disposition_lookup_failed", error=str(exc)[:200])
+-            return
+-        if not found.decisions:
++            found = await self._reader.recent_dispositions(tenant, rule_id=rule_id, entities=entities)
++        except Exception:  # noqa: BLE001 - a failed advisory read is not a valid empty set
++            logger.warning("auto_triage_worker.disposition_lookup_failed")
++            state.recent_dispositions_read = dispositions_module.make_read(
++                tenant, rule_id=rule_id, entities=entities, status="unavailable", reason="reader_error")
+             return
+         state.recent_dispositions = found.as_state()
++        state.recent_dispositions_read = found.as_read()
+         _METRICS["recent_dispositions_read"] += len(found.decisions)
+ 
+     async def _attach_identity_context(self, state: InvestigationState) -> None:
+@@ -1374,6 +1374,7 @@
+             organisation_memory_read=dict(state.organisation_memory_read),
+             tenant_skill_read=dict(state.tenant_skill_read),
+             knowledge_base_read=dict(state.knowledge_base_read),
++            recent_dispositions_read=dict(state.recent_dispositions_read),
+         )
+ 
+     @staticmethod
+--- a/services/agents/tests/test_replay_leakage.py
++++ b/services/agents/tests/test_replay_leakage.py
+@@ -821,6 +821,9 @@
+             excluded = len(self.rows) - len(kept)
+         return self.shape(
+             {
++                "tenant_id": tenant_id,
++                "rule_id": _.get("rule_id", ""),
++                "entities": _.get("entities", []),
+                 "as_of": as_of.isoformat() if as_of else None,
+                 self.key: kept[:limit],
+                 "excluded_after_cutoff": excluded,
+@@ -864,6 +867,10 @@
+                 "reason_code": "known_admin_tool",
+                 "reason_label": "Known administrative tool",
+                 "note": "Before the split.",
++                "feedback_id": "11111111-1111-1111-1111-111111111111",
++                "created_at": "2026-04-02T00:00:00+00:00",
++                "by_rule": True,
++                "by_entity": False,
+                 "scope": "rule",
+                 "scope_value": "rule-service-logon",
+                 "rule_id": "rule-service-logon",
+@@ -875,6 +882,10 @@
+                 "reason_code": "known_admin_tool",
+                 "reason_label": "Known administrative tool",
+                 "note": "POISON: decided inside the test window.",
++                "feedback_id": "22222222-2222-2222-2222-222222222222",
++                "created_at": "2026-06-01T00:00:00+00:00",
++                "by_rule": True,
++                "by_entity": False,
+                 "scope": "rule",
+                 "scope_value": "rule-service-logon",
+                 "rule_id": "rule-service-logon",
+--- a/services/agents/tests/test_triage_dispositions_and_identity.py
++++ b/services/agents/tests/test_triage_dispositions_and_identity.py
+@@ -160,7 +160,7 @@
+ 
+     @pytest.mark.asyncio
+     async def test_an_unreachable_api_leaves_triage_as_it_was(self, monkeypatch: pytest.MonkeyPatch) -> None:
+-        monkeypatch.setenv("AISOC_AGENTS_SERVICE_TOKEN", "tok")
++        monkeypatch.setattr(dispo, "_credential", lambda tenant_id, **kwargs: "dedicated-reader-key")
+         dispo.clear_cache()
+ 
+         class _Boom:
+@@ -174,7 +174,9 @@
+                 raise httpx.ConnectError("no route to host")
+ 
+         monkeypatch.setattr(httpx, "AsyncClient", lambda **_: _Boom())
+-        assert not await dispo.fetch_recent_dispositions("t-1", rule_id="rule-x", entities=[])
++        found = await dispo.fetch_recent_dispositions("t-1", rule_id="rule-x", entities=[])
++        assert not found
++        assert found.as_read()["reason"] == "transport_error"
+ 
+ 
+ # --------------------------------------------------------------------------
+--- a/services/api/app/api/v1/endpoints/feedback.py
++++ b/services/api/app/api/v1/endpoints/feedback.py
+@@ -53,6 +53,8 @@
+ 
+ from __future__ import annotations
+ 
++import hashlib
++import json
+ import uuid
+ from datetime import UTC, datetime
+ from typing import Annotated, Any
+@@ -540,6 +542,7 @@
+ class RecentDispositionModel(BaseModel):
+     """One analyst decision, with the part that generalises."""
+ 
++    feedback_id: uuid.UUID
+     analyst_disposition: str
+     ai_disposition: str
+     reason_code: str
+@@ -549,6 +552,35 @@
+     scope_value: str
+     rule_id: str | None
+     decided_at: str
++    created_at: str
++    by_rule: bool
++    by_entity: bool
++    row_source_sha256: str
++
++
++def _recent_disposition_model(row: Any, tenant_id: uuid.UUID) -> RecentDispositionModel:
++    """Fingerprint this current API projection, not an old DB row version.
++
++    The stable identity is feedback_id. This digest includes tenant, rendered
++    reason label and query-dependent match flags, so it identifies the exact
++    source projection provided by this request. The store has no update time
++    or version history from which to reconstruct later-edited old notes.
++    """
++    timestamp = row.created_at.isoformat() if row.created_at else ""
++    source = {
++        "feedback_id": str(row.feedback_id),
++        "analyst_disposition": str(row.analyst_disposition),
++        "ai_disposition": str(row.ai_disposition),
++        "reason_code": str(row.reason_code),
++        "reason_label": REASON_CODES[row.reason_code].label if row.reason_code in REASON_CODES else str(row.reason_code),
++        "note": str(row.note or ""), "scope": str(row.scope),
++        "scope_value": str(row.scope_value or ""), "rule_id": str(row.rule_id) if row.rule_id else None,
++        "created_at": timestamp, "decided_at": timestamp,
++        "by_rule": bool(row.by_rule), "by_entity": bool(row.by_entity),
++    }
++    encoded = json.dumps({"tenant_id": str(tenant_id), **source}, sort_keys=True,
++                         separators=(",", ":"), ensure_ascii=False).encode("utf-8")
++    return RecentDispositionModel(**source, row_source_sha256=hashlib.sha256(encoded).hexdigest())
+ 
+ 
+ class RecentDispositionsResponse(BaseModel):
+@@ -574,9 +606,10 @@
+ #: they are the only thing that varies. See ``recent_dispositions_sql``.
+ _RECENT_DISPOSITIONS_SQL = """
+ WITH matches AS (
+-    SELECT analyst_disposition, ai_disposition, reason_code, scope, scope_value,
++    SELECT id AS feedback_id, analyst_disposition, ai_disposition, reason_code, scope, scope_value,
+            note, created_at, context ->> 'rule_id' AS rule_id,
+-           (context ->> 'rule_id' IS NOT NULL AND context ->> 'rule_id' = :rule_id) AS by_rule
++           (context ->> 'rule_id' IS NOT NULL AND context ->> 'rule_id' = :rule_id) AS by_rule,
++           (scope_value <> '' AND lower(scope_value) = ANY(CAST(:entities AS text[]))) AS by_entity
+     FROM aisoc_analyst_feedback
+     WHERE tenant_id = :tenant_id
+       AND (
+@@ -592,12 +625,12 @@
+ )
+ SELECT c.excluded_after_cutoff, c.without_timestamp,
+        m.analyst_disposition, m.ai_disposition, m.reason_code, m.scope,
+-       m.scope_value, m.note, m.created_at, m.rule_id
++       m.feedback_id, m.scope_value, m.note, m.created_at, m.rule_id, m.by_rule, m.by_entity
+ FROM counted c
+ LEFT JOIN LATERAL (
+     SELECT * FROM matches
+     {cutoff}
+-    ORDER BY by_rule DESC, created_at DESC
++    ORDER BY by_rule DESC, created_at DESC, feedback_id
+     LIMIT :limit
+ ) m ON TRUE
+ """
+@@ -623,8 +656,9 @@
+     summary="Recent analyst decisions for this rule or entity, as of a point in time",
+ )
+ async def recent_dispositions(
++    user: AuthUser,
+     db: DBSession,
+-    tenant_id: uuid.UUID,
++    tenant_id: uuid.UUID | None = None,
+     rule_id: str = "",
+     entities: Annotated[list[str] | None, Query()] = None,
+     as_of: datetime | None = None,
+@@ -640,29 +674,31 @@
+     raw decisions, including the ones that have not yet crossed corroboration,
+     which is the signal an analyst reading the queue by hand would have.
+ 
+-    ``aisoc_analyst_feedback`` is append-only, one row per tagged
+-    disagreement, so unlike the override row in institutional memory (one per
+-    signature, upserted) it can answer "the last N" at all.
+-
+-    Service-token only, same shape as ``/tenant-skills/resolved/active``: the
+-    caller is a service with no session, and ``tenant_id`` is the scope rather
+-    than a narrowing of one because a service token carries no tenant to
+-    intersect with.
++    Feedback writes append rows, but the database does not enforce immutable
++    text and has no update time/history. A creation-time cutoff cannot prove
++    that a later-edited note had the same content at the split.
++
++    A standard Bearer principal with ``alerts:read`` authorises the read.
++    The optional tenant narrows the principal's scope and defaults to its own
++    tenant; the retained shared X header grants no authority.
+ 
+     ``as_of`` has no default. A default of "now" would let an unfrozen caller
+     look frozen in a replay report; a default of the epoch would silently
+     return nothing on every live triage.
+     """
+-    if not service_token_valid(x_aisoc_service_token):
++    if user is None:  # Defensive for direct calls; HTTP resolves AuthUser first.
+         raise HTTPException(
+             status_code=status.HTTP_401_UNAUTHORIZED,
+-            detail="this route is reachable only by an AiSOC service holding the shared service token",
+-        )
+-
+-    await set_rls_context(db, tenant_id)
++            detail="Bearer authentication required",
++            headers={"WWW-Authenticate": "Bearer"},
++        )
++
++    user.require_permission("alerts:read")
++    scoped = scoped_tenant_or_403(user, tenant_id)
++    await set_rls_context(db, scoped)
+ 
+     params: dict[str, Any] = {
+-        "tenant_id": tenant_id,
++        "tenant_id": scoped,
+         "rule_id": (rule_id or "").strip(),
+         "entities": sorted({e.strip().lower() for e in (entities or []) if e and e.strip()}),
+         "limit": limit,
+@@ -679,24 +715,10 @@
+     excluded = int(rows[0].excluded_after_cutoff) if rows else 0
+     undated = int(rows[0].without_timestamp) if rows else 0
+     return RecentDispositionsResponse(
+-        tenant_id=str(tenant_id),
++        tenant_id=str(scoped),
+         as_of=as_of,
+         dispositions=[
+-            RecentDispositionModel(
+-                analyst_disposition=str(r.analyst_disposition),
+-                ai_disposition=str(r.ai_disposition),
+-                reason_code=str(r.reason_code),
+-                # The label rather than only the code, because "the rule is
+-                # wrong, not the environment" is what a reader of the prompt
+-                # needs and `bad_detection_logic` is a key in a table they do
+-                # not have.
+-                reason_label=REASON_CODES[r.reason_code].label if r.reason_code in REASON_CODES else str(r.reason_code),
+-                note=str(r.note or ""),
+-                scope=str(r.scope),
+-                scope_value=str(r.scope_value or ""),
+-                rule_id=str(r.rule_id) if r.rule_id else None,
+-                decided_at=r.created_at.isoformat() if r.created_at else "",
+-            )
++            _recent_disposition_model(r, scoped)
+             # The LATERAL yields one all-NULL row when nothing survives the
+             # cutoff, which is the case the counts above exist to describe.
+             for r in rows
+--- a/services/api/tests/test_triage_context_routes.py
++++ b/services/api/tests/test_triage_context_routes.py
+@@ -33,6 +33,7 @@
+ TENANT = uuid.UUID("aaaaaaaa-0000-0000-0000-0000000000df")
+ SERVICE_TOKEN = "service-token-for-the-agents-worker"
+ HEADERS = {"X-AiSOC-Service-Token": SERVICE_TOKEN}
++_DISPOSITIONS_READER = CurrentUser(user_id=uuid.uuid4(), tenant_id=TENANT, role="viewer", email="reader@example.invalid", scopes=["alerts:read"])
+ 
+ 
+ class _Row:
+@@ -76,6 +77,7 @@
+     fields: dict[str, Any] = {
+         "excluded_after_cutoff": 0,
+         "without_timestamp": 0,
++        "feedback_id": uuid.uuid4(),
+         "analyst_disposition": "benign_true_positive",
+         "ai_disposition": "true_positive",
+         "reason_code": "known_admin_tool",
+@@ -84,6 +86,8 @@
+         "note": "Nightly reconciliation batch.",
+         "created_at": datetime(2026, 4, 2, tzinfo=UTC),
+         "rule_id": "rule-encoded-powershell",
++        "by_rule": True,
++        "by_entity": False,
+     }
+     fields.update(over)
+     return _Row(**fields)
+@@ -109,21 +113,20 @@
+         client = TestClient(_app(_Session([])))
+         assert client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}).status_code == 401
+ 
+-    def test_a_valid_console_session_is_still_refused(self, _service_token) -> None:
+-        """Unlike ``/feedback/context-statements`` next door, which is dual-mode.
+-
+-        That route also serves a console panel. This one has a single caller,
+-        and a route with one caller should accept one kind of credential.
+-        """
++    def test_an_authorised_console_principal_can_read(self, _service_token) -> None:
+         user = CurrentUser(user_id=uuid.uuid4(), tenant_id=TENANT, role="tenant_admin", email="a@example.invalid", scopes=["*"])
+         client = TestClient(_app(_Session([]), user=user))
+-        assert client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}).status_code == 401
++        assert client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}).status_code == 200
++
++    def test_a_configured_shared_header_alone_is_refused(self, _service_token) -> None:
++        client = TestClient(_app(_Session([])))
++        assert client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}, headers=HEADERS).status_code == 401
+ 
+ 
+ class TestRecentDispositionsCutoff:
+     def test_no_instant_named_means_no_predicate_and_no_echo(self, _service_token) -> None:
+         session = _Session([_decision_row()])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         response = client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "rule-encoded-powershell"}, headers=HEADERS)
+ 
+         assert response.status_code == 200
+@@ -134,7 +137,7 @@
+ 
+     def test_naming_an_instant_puts_the_predicate_in_and_echoes_it(self, _service_token) -> None:
+         session = _Session([_decision_row()])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         response = client.get(
+             _DISPO_URL,
+             params={"tenant_id": str(TENANT), "rule_id": "r", "as_of": "2026-05-01T12:00:00+00:00"},
+@@ -148,7 +151,7 @@
+ 
+     def test_the_counts_survive_a_cutoff_that_refused_everything(self, _service_token) -> None:
+         session = _Session([_decision_row(analyst_disposition=None, excluded_after_cutoff=9, without_timestamp=1)])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         body = client.get(
+             _DISPO_URL,
+             params={"tenant_id": str(TENANT), "rule_id": "r", "as_of": "2026-05-01T12:00:00+00:00"},
+@@ -162,7 +165,7 @@
+     def test_the_reason_label_travels_with_the_code(self, _service_token) -> None:
+         """``bad_detection_logic`` is a key in a table the prompt's reader lacks."""
+         session = _Session([_decision_row(reason_code="bad_detection_logic")])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         body = client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}, headers=HEADERS).json()
+ 
+         assert body["dispositions"][0]["reason_label"] == "Bad detection logic"
+@@ -170,14 +173,14 @@
+     def test_an_unknown_reason_code_falls_back_to_the_code_rather_than_raising(self, _service_token) -> None:
+         """A row written before a code was retired must not 500 the route."""
+         session = _Session([_decision_row(reason_code="retired_code")])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         body = client.get(_DISPO_URL, params={"tenant_id": str(TENANT), "rule_id": "r"}, headers=HEADERS).json()
+ 
+         assert body["dispositions"][0]["reason_label"] == "retired_code"
+ 
+     def test_entities_are_lowercased_and_deduplicated_before_binding(self, _service_token) -> None:
+         session = _Session([_decision_row()])
+-        client = TestClient(_app(session))
++        client = TestClient(_app(session, user=_DISPOSITIONS_READER))
+         client.get(
+             _DISPO_URL,
+             params=[("tenant_id", str(TENANT)), ("rule_id", "r"), ("entities", "FIN-APP-03"), ("entities", "fin-app-03")],

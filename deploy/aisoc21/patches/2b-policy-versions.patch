@@ -1,0 +1,293 @@
+--- a/services/api/app/api/v1/endpoints/business_context.py
++++ b/services/api/app/api/v1/endpoints/business_context.py
+@@ -117,6 +117,15 @@
+     then: RuleActionWire
+ 
+ 
++def policy_revision(yaml_text: str, enabled: bool) -> str:
++    """Content identity, independent of process counters and read timestamps."""
++    import hashlib
++    import json
++
++    content = json.dumps({"enabled": bool(enabled), "yaml": yaml_text}, sort_keys=True, ensure_ascii=False)
++    return "sha256:" + hashlib.sha256(content.encode()).hexdigest()
++
++
+ class RulesEnvelope(BaseModel):
+     """Response payload for ``GET /rules``.
+ 
+@@ -134,6 +143,8 @@
+     rules: list[RuleWire]
+     enabled: bool
+     updated_at: str
++    policy_revision: str
++    load_status: str = "current"
+ 
+ 
+ class ReplaceRulesRequest(BaseModel):
+@@ -209,6 +220,7 @@
+     yaml_text: str,
+     enabled: bool,
+     updated_at: datetime,
++    load_status: str = "current",
+ ) -> RulesEnvelope:
+     return RulesEnvelope(
+         tenant_id=str(tenant_id),
+@@ -217,6 +229,8 @@
+         rules=[_wire_rule(r) for r in snapshot.rules],
+         enabled=enabled,
+         updated_at=updated_at.isoformat(),
++        policy_revision=policy_revision(yaml_text, enabled),
++        load_status=load_status,
+     )
+ 
+ 
+@@ -257,7 +271,6 @@
+     decision ever.
+     """
+     now = datetime.now(UTC)
+-    _rule_store[tenant_id] = {"yaml": yaml_text, "enabled": enabled, "updated_at": now}
+     try:
+         await db.execute(
+             text(
+@@ -287,8 +300,9 @@
+         )
+         raise HTTPException(
+             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+-            detail=("Could not save business-context rules. They were not persisted, so nothing has changed."),
++            detail=("Could not confirm saving business-context rules. Read back the stored rules before retrying."),
+         ) from exc
++    _rule_store[tenant_id] = {"yaml": yaml_text, "enabled": enabled, "updated_at": now}
+     return now
+ 
+ 
+@@ -320,10 +334,14 @@
+             tenant_id=str(tenant_id),
+             error=str(exc).replace("\r", " ").replace("\n", " ")[:500],
+         )
+-        return _rule_store.get(tenant_id, default)
++        cached = _rule_store.get(tenant_id)
++        if cached is None:
++            raise HTTPException(status_code=503, detail="Business-context rules unavailable; no confirmed cached version") from exc
++        return {**cached, "load_status": "stale_cache"}
+ 
+     if row is None:
+-        return _rule_store.get(tenant_id, default)
++        cached = _rule_store.get(tenant_id)
++        return {**cached, "load_status": "missing_row_cache"} if cached else default
+ 
+     entry: _RuleStoreEntry = {
+         "yaml": row[0] or "",
+@@ -458,6 +476,7 @@
+         yaml_text=yaml_text,
+         enabled=enabled,
+         updated_at=entry["updated_at"],
++        load_status=entry.get("load_status", "current"),
+     )
+ 
+ 
+--- a/services/agents/app/workers/business_context.py
++++ b/services/agents/app/workers/business_context.py
+@@ -27,6 +27,8 @@
+ from __future__ import annotations
+ 
+ import os
++import hashlib
++import json
+ import time
+ import uuid
+ from dataclasses import dataclass
+@@ -61,6 +63,12 @@
+ )
+ _ENABLED_ENV = "AISOC_BUSINESS_CONTEXT_ENABLED"
+ _RULES_FILE_ENV = "AISOC_BUSINESS_CONTEXT_RULES_FILE"
++
++
++def policy_revision(yaml_text: str, enabled: bool) -> str:
++    """Content identity, independent of process counters and read timestamps."""
++    content = json.dumps({"enabled": bool(enabled), "yaml": yaml_text}, sort_keys=True, ensure_ascii=False)
++    return "sha256:" + hashlib.sha256(content.encode()).hexdigest()
+ 
+ 
+ def is_enabled() -> bool:
+@@ -255,6 +263,7 @@
+     suppressed: bool
+     severity_before: Any
+     severity_after: Any
++    provenance: dict[str, Any] = dc_field(default_factory=dict)
+ 
+     @property
+     def changed(self) -> bool:
+@@ -317,6 +326,10 @@
+         self._rules: list[BusinessContextRule] = []
+         self._mtime: float | None = None
+         self._tenant_rules: dict[str, tuple[float, list[BusinessContextRule]]] = {}
++        self._tenant_versions: dict[str, dict[str, Any]] = {}
++        self._tenant_load_status: dict[str, str] = {}
++        self._file_revision: str | None = None
++        self._file_status = "unconfigured"
+         #: Set by `seed_tenant_rules` for the replay path. When present, these
+         #: replace the Postgres read entirely -- see that method.
+         self._seeded_rules: list[BusinessContextRule] | None = None
+@@ -327,15 +340,18 @@
+     async def _load_tenant_rules(self, tenant_id: str) -> list[BusinessContextRule]:
+         """Read and cache the tenant's authored rules. Never raises."""
+         if self._seeded_rules is not None:
++            self._tenant_load_status[tenant_id] = "seeded"
+             return self._seeded_rules
+         cached = self._tenant_rules.get(tenant_id)
+         now = time.monotonic()
+         if cached is not None and now - cached[0] < _TENANT_CACHE_TTL_SECONDS:
++            self._tenant_load_status[tenant_id] = "cache"
+             return cached[1]
+ 
+         dsn = os.environ.get("DATABASE_DSN") or os.environ.get("DATABASE_URL") or ""
+         dsn = dsn.strip().replace("postgresql+asyncpg://", "postgresql://")
+         if not dsn:
++            self._tenant_load_status[tenant_id] = "unconfigured"
+             return []
+ 
+         try:
+@@ -345,7 +361,7 @@
+             try:
+                 row = await conn.fetchrow(
+                     """
+-                    SELECT yaml_text, enabled
++                    SELECT yaml_text, enabled, updated_at
+                     FROM aisoc_business_context_rule_sets
+                     WHERE tenant_id = $1
+                     """,
+@@ -357,10 +373,11 @@
+             logger.warning(
+                 "business_context.tenant_load_failed",
+                 tenant_id=tenant_id,
+-                error=str(exc),
++                error=type(exc).__name__,
+             )
+             # Serve the last known rules rather than silently dropping a
+             # tenant's suppressions during a brief outage.
++            self._tenant_load_status[tenant_id] = "stale_cache" if cached else "unavailable"
+             return cached[1] if cached else []
+ 
+         rules: list[BusinessContextRule] = []
+@@ -376,6 +393,15 @@
+                 rules = []
+ 
+         self._tenant_rules[tenant_id] = (now, rules)
++        yaml_text = row["yaml_text"] or "" if row is not None else ""
++        enabled = bool(row["enabled"]) if row is not None else True
++        updated_at = row.get("updated_at") if row is not None else None
++        self._tenant_versions[tenant_id] = {
++            "policy_revision": policy_revision(yaml_text, enabled),
++            "enabled": enabled,
++            "updated_at": updated_at.isoformat() if updated_at else None,
++        }
++        self._tenant_load_status[tenant_id] = "current" if row is not None else "empty"
+         return rules
+ 
+     async def apply_for_tenant(self, tenant_id: str | None, alert: dict[str, Any]) -> BusinessContextResult:
+@@ -383,17 +409,31 @@
+         self._load()  # cheap mtime check on the file-based rules
+         tenant_rules = await self._load_tenant_rules(str(tenant_id)) if tenant_id else []
+         rules = [*tenant_rules, *self._rules]
++        provenance = {
++            "tenant_id": str(tenant_id) if tenant_id else None,
++            **self._tenant_versions.get(str(tenant_id), {}),
++            "load_status": self._tenant_load_status.get(str(tenant_id), "unscoped" if not tenant_id else "unobserved"),
++            "file_revision": self._file_revision,
++            "file_status": self._file_status,
++            "cache_ttl_seconds": _TENANT_CACHE_TTL_SECONDS,
++        }
++        if provenance["load_status"] in {"unconfigured", "unavailable", "seeded", "unscoped", "unobserved"}:
++            provenance["policy_revision"] = None
+         if not rules:
+-            return BusinessContextResult(dict(alert), [], False, alert.get("severity"), alert.get("severity"))
++            return BusinessContextResult(dict(alert), [], False, alert.get("severity"), alert.get("severity"), provenance)
+         try:
+-            return apply_rules(alert, rules)
++            result = apply_rules(alert, rules)
++            result.provenance = provenance
++            return result
+         except Exception as exc:  # noqa: BLE001 — never break triage
+             logger.warning("business_context.apply_failed", error=str(exc))
+-            return BusinessContextResult(dict(alert), [], False, alert.get("severity"), alert.get("severity"))
++            return BusinessContextResult(dict(alert), [], False, alert.get("severity"), alert.get("severity"), {**provenance, "evaluation_failed": True})
+ 
+     def clear_tenant_cache(self) -> None:
+         """Drop cached tenant rules. Used by tests."""
+         self._tenant_rules.clear()
++        self._tenant_versions.clear()
++        self._tenant_load_status.clear()
+ 
+     def seed_tenant_rules(self, rules: list[BusinessContextRule]) -> None:
+         """Apply these rules to every tenant, instead of reading Postgres.
+@@ -412,21 +452,26 @@
+     def _load(self) -> None:
+         if not self._path:
+             self._rules = []
++            self._file_revision, self._file_status = None, "unconfigured"
+             return
+         try:
+             p = Path(self._path)
+             if not p.exists():
+                 self._rules = []
++                self._file_revision, self._file_status = None, "missing"
+                 return
+             mtime = p.stat().st_mtime
+             if mtime == self._mtime:
+                 return
+-            self._rules = load_rules_from_yaml(p.read_text(encoding="utf-8"))
++            yaml_text = p.read_text(encoding="utf-8")
++            self._rules = load_rules_from_yaml(yaml_text)
++            self._file_revision, self._file_status = policy_revision(yaml_text, True), "current"
+             self._mtime = mtime
+             logger.info("business_context.rules_loaded", count=len(self._rules), path=self._path)
+         except Exception as exc:  # noqa: BLE001 — fail-soft: no rules applied
+             logger.warning("business_context.load_failed", error=str(exc), path=self._path)
+             self._rules = []
++            self._file_revision, self._file_status = None, "error"
+ 
+     @property
+     def rule_count(self) -> int:
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -587,6 +587,7 @@
+         # any triage work. A suppress rule drops the alert (no triage spend); a
+         # severity/route/tag rule mutates the alert the agent reasons over.
+         bc_matched: list[str] = []
++        bc_provenance: dict[str, Any] = {}
+         if self._business_context is not None and isinstance(message, dict) and isinstance(message.get("alert"), dict):
+             # Per tenant, not one global rule set. The console writes
+             # business-context rules per tenant and this worker only ever read
+@@ -597,6 +598,7 @@
+                 message["alert"],
+             )
+             bc_matched = bc.matched_rule_ids
++            bc_provenance = bc.provenance
+             if bc.suppressed:
+                 _METRICS["bc_suppressed"] += 1
+                 logger.info("auto_triage_worker.bc_suppressed", matched=bc_matched)
+@@ -605,6 +607,7 @@
+                     "suppressed": True,
+                     "cost": _cost_payload(CostSummary(), 0),
+                     "business_context_rules": bc_matched,
++                    "business_context_policy": bc_provenance,
+                     "response_dispatched": False,
+                 }
+             if bc.changed:
+@@ -634,6 +637,7 @@
+         if _memory_suppression_enabled():
+             suppressed = await self._maybe_suppress_from_memory(state, fingerprint, bc_matched, writer=writer)
+             if suppressed is not None:
++                suppressed["business_context_policy"] = bc_provenance
+                 return suppressed
+ 
+         decision = governor.check(str(state.tenant_id), fingerprint)
+@@ -854,6 +858,7 @@
+             "findings": list(state.findings),
+             "confidence_basis": list(state.confidence_basis),
+             "business_context_rules": bc_matched,
++            "business_context_policy": bc_provenance,
+             # Copilot default: triage is read-only, response requires approval.
+             "response_dispatched": False,
+             "approvals_raised": approvals,

@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-20",
+  "batch": "1C",
+  "bootstrap_servers": "192.168.1.21:19093",
+  "existing_broker": "sting-infra21-kafka-1",
+  "broker_mode": "KRaft broker/controller node 1",
+  "security_protocol": "SSL",
+  "broker_authorization": false,
+  "application_services_enabled": {
+    "api": true,
+    "fusion": true,
+    "agents": false
+  },
+  "topics": {
+    "raw": {
+      "name": "socai2.alerts.raw",
+      "partitions": 3
+    },
+    "fused": {
+      "name": "socai2.alerts.fused",
+      "partitions": 3
+    },
+    "agents_dlq": {
+      "name": "socai2.alerts.fused.dlq",
+      "partitions": 1
+    }
+  },
+  "replication_factor": 1,
+  "min_insync_replicas": 1,
+  "retention_ms": 604800000,
+  "fusion_environment_mapping": {
+    "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+    "KAFKA_TOPIC_ALERTS_RAW": "socai2.alerts.raw",
+    "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+    "KAFKA_CONSUMER_GROUP": "socai2-fusion-consumer",
+    "KAFKA_SECURITY_PROTOCOL": "SSL",
+    "KAFKA_SSL_CAFILE": "/run/certs/ca.crt"
+  },
+  "agents_environment_mapping": {
+    "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+    "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+    "KAFKA_TOPIC_ALERTS_FUSED_DLQ": "socai2.alerts.fused.dlq",
+    "KAFKA_SECURITY_PROTOCOL": "SSL",
+    "KAFKA_SSL_CAFILE": "/run/certs/ca.crt"
+  },
+  "agents_group": {
+    "planned_name": "socai2-agents-triage",
+    "upstream_default": "aisoc-agents-triage",
+    "env_mapping_available": false,
+    "requires": "1G main.py must pass the project group_id explicitly or add a documented scoped setting; not wired in 1C"
+  },
+  "fusion_dlq": "Upstream main wires PostgresDLQ when alert sink is available; do not infer Kafka DLQ routing from topic creation",
+  "first_fusion_flags": {
+    "AISOC_EVENT_PROMOTION_ENABLED": "false",
+    "AISOC_DETECTION_ENGINE_ENABLED": "false",
+    "AISOC_WINDOWED_DETECTION_ENABLED": "false",
+    "AISOC_LAKE_WRITER_ENABLED": "false",
+    "AISOC_UEBA_FUSION_ENABLED": "false"
+  },
+  "transport_boundary": "1F API/Fusion use production settings with CA/IP-verified SSL. Original production cleartext refusal retained, no override. Old 9092 PLAINTEXT endpoint remains for existing consumers; broker has no client identity/topic ACL.",
+  "consumer_groups_not_created_yet": [
+    "socai2-fusion-consumer",
+    "socai2-agents-triage"
+  ],
+  "last_updated_batch": "1F"
+}

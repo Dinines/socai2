@@ -1,0 +1,232 @@
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -24,9 +24,9 @@
+ 3. otherwise → LLM auto-triage (``run_auto_triage``), falling back to
+    deterministic triage if the LLM call fails.
+ 
+-Everything is fail-soft: a bad message is logged and skipped; a ledger/DB
+-outage degrades to "triage still runs, audit write is a no-op"; the Kafka loop
+-never dies on one poison alert.
++Invalid broker inputs require a confirmed DLQ write. A verdict whose ledger
++write is unconfirmed follows the bounded failure/DLQ path; an unconfirmed DLQ
++stops the consume window before its offsets can advance.
+ """
+ 
+ from __future__ import annotations
+@@ -231,6 +231,57 @@
+     """
+     text = str(value).strip() if value is not None else ""
+     return text or None
++
++
++def _uuid_text(value: Any) -> str | None:
++    """An explicit UUID, without inventing an identity for missing input."""
++    if not isinstance(value, (str, uuid.UUID)):
++        return None
++    try:
++        return str(uuid.UUID(str(value)))
++    except (ValueError, TypeError, AttributeError):
++        return None
++
++
++def _broker_identity(message: Any) -> tuple[str | None, Any]:
++    """Recover only consistent tenant and explicitly selected alert identity.
++
++    A present malformed/empty field wins the same priority as a valid field;
++    falling through to another alias would hide a broken broker envelope.
++    Nested alert.id may be an upstream source ID distinct from alert_row_id.
++    """
++    if not isinstance(message, dict):
++        return None, None
++    alert = message.get("alert")
++    alert = alert if isinstance(alert, dict) else {}
++    tenants = [_uuid_text(container["tenant_id"]) for container in (message, alert) if "tenant_id" in container]
++    tenant = tenants[0] if tenants and None not in tenants and len(set(tenants)) == 1 else None
++    for container, key in ((message, "alert_row_id"), (message, "id"), (alert, "id")):
++        if key in container:
++            return tenant, container[key]
++    return tenant, None
++
++
++def _broker_schema_error(message: Any) -> str | None:
++    """Validate the live broker boundary; direct replay mapping stays compatible.
++
++    UUID syntax proves neither tenant existence nor alert ownership. Those
++    checks remain the responsibility of the existing scoped persistence path.
++    """
++    if not isinstance(message, dict):
++        return "envelope_not_object"
++    alert = message.get("alert")
++    if not isinstance(alert, dict) or not alert:
++        return "alert_not_object_or_empty"
++    tenant_values = [_uuid_text(container["tenant_id"]) for container in (message, alert) if "tenant_id" in container]
++    if not tenant_values or None in tenant_values:
++        return "missing_or_invalid_tenant_id"
++    if len(set(tenant_values)) != 1:
++        return "tenant_id_conflict"
++    _, alert_ref = _broker_identity(message)
++    if _uuid_text(alert_ref) is None:
++        return "missing_or_invalid_alert_id"
++    return None
+ 
+ 
+ def _rationale_of(state: InvestigationState) -> str:
+@@ -502,11 +553,21 @@
+         Returns True on durable success, False if the message was dead-lettered.
+         Either way the caller commits (a poison alert must not wedge the loop).
+         """
++        schema_error = _broker_schema_error(message)
++        if schema_error is not None:
++            _METRICS["errors"] += 1
++            await self._send_to_dlq(message, attempts=1, stage="schema", error=schema_error)
++            return False
++
+         last_error: str = ""
+         stage = "triage"
+         for attempt in range(1, self._max_attempts + 1):
+             try:
+-                await self.triage(message)
++                result = await self.triage(message)
++                if result is None:
++                    stage = "schema"
++                    last_error = "triage_returned_no_result"
++                    break
+                 return True
+             except ledger_module.LedgerPersistError as exc:
+                 stage = "persist"
+@@ -520,7 +581,7 @@
+             if attempt < self._max_attempts:
+                 await asyncio.sleep(self._retry_backoff(attempt))
+         _METRICS["errors"] += 1
+-        await self._send_to_dlq(message, attempts=self._max_attempts, stage=stage, error=last_error)
++        await self._send_to_dlq(message, attempts=attempt, stage=stage, error=last_error)
+         return False
+ 
+     def _retry_backoff(self, attempt: int) -> float:
+@@ -546,17 +607,26 @@
+ 
+     async def _send_to_dlq(self, message: Any, *, attempts: int, stage: str, error: str) -> None:
+         """Publish a poison alert to the DLQ with alert id, attempts, and stage."""
+-        alert_id = ""
+-        if isinstance(message, dict):
+-            alert = message.get("alert") if isinstance(message.get("alert"), dict) else {}
+-            alert_id = str(message.get("alert_row_id") or message.get("id") or alert.get("id") or "")
++        tenant, alert_ref = _broker_identity(message)
++        alert = message.get("alert") if isinstance(message, dict) else None
++        alert = alert if isinstance(alert, dict) else {}
++        source_ids = alert.get("source_event_ids")
++        if not isinstance(source_ids, list) or not all(isinstance(item, str) and item.strip() for item in source_ids):
++            source_ids = None
++        alert_id = alert_ref if isinstance(alert_ref, str) else str(alert_ref) if isinstance(alert_ref, uuid.UUID) else ""
+         record = {
+             "alert_id": alert_id,
++            "canonical_alert_id": _uuid_text(alert_ref),
++            "tenant_id": tenant,
++            "source": alert.get("source") if isinstance(alert.get("source"), str) and alert["source"].strip() else None,
++            "connector_id": alert.get("connector_id") if isinstance(alert.get("connector_id"), str) and alert["connector_id"].strip() else None,
++            "connector_type": alert.get("connector_type") if isinstance(alert.get("connector_type"), str) and alert["connector_type"].strip() else None,
++            "source_event_ids": source_ids,
+             "attempts": attempts,
+             "failure_stage": stage,
+             "error": (error or "")[:2000],
+             "dead_lettered_at": datetime.now(UTC).isoformat(),
+-            "original": message if isinstance(message, dict) else {"raw": str(message)[:2000]},
++            "original": message,
+         }
+         producer = await self._ensure_producer()
+         if producer is None:
+@@ -1324,10 +1394,10 @@
+         """Durably persist the triage outcome (issue #571).
+ 
+         Writes the verdict/confidence/rationale/recommendations to BOTH the
+-        ledger and the ``alerts`` row in one transaction. No DB configured =>
+-        no-op (returns without raising). A real DB error raises
+-        :class:`LedgerPersistError` so the caller retries / dead-letters — the
+-        Kafka offset is not committed until this succeeds.
++        ledger and the ``alerts`` row in one transaction. The live writer
++        requires an explicit ledger confirmation; missing DB, skipped writes
++        and DB errors enter the bounded retry / dead-letter path. An
++        unconfirmed DLQ leaves the Kafka offset uncommitted.
+         """
+         rationale = _rationale_of(state)
+         recommendations = [
+--- a/services/agents/app/workers/triage_persistence.py
++++ b/services/agents/app/workers/triage_persistence.py
+@@ -340,7 +340,9 @@
+         return await persist_policy_suppression(**fields)
+ 
+     async def persist_auto_triage(self, **fields: Any) -> None:
+-        await ledger_module.persist_auto_triage(**fields)
++        confirmed = await ledger_module.persist_auto_triage(**fields)
++        if confirmed is not True:
++            raise ledger_module.LedgerPersistError("Auto-triage ledger did not confirm persistence")
+ 
+     async def record_outcome(
+         self,
+--- a/services/agents/tests/test_business_context_hotpath.py
++++ b/services/agents/tests/test_business_context_hotpath.py
+@@ -6,6 +6,8 @@
+ """
+ 
+ from __future__ import annotations
++
++from unittest.mock import AsyncMock
+ 
+ import pytest
+ from app.workers import business_context as bc
+@@ -138,6 +140,7 @@
+ 
+ async def test_worker_severity_mutation_flows_into_triage(tmp_path, monkeypatch):
+     monkeypatch.setattr("app.workers.fused_alert_consumer.resolve_llm_config", _fake_llm_config_unavailable())
++    monkeypatch.setattr("app.workers.fused_alert_consumer.ledger_module.persist_auto_triage", AsyncMock(return_value=True))
+     f = tmp_path / "rules.yaml"
+     f.write_text(_RULES_YAML)
+     worker = FusedAlertTriageWorker(bootstrap_servers="unused", business_context=BusinessContextApplier(rules_file=str(f)))
+@@ -149,6 +152,7 @@
+ 
+ async def test_worker_without_business_context_is_unaffected(monkeypatch):
+     monkeypatch.setattr("app.workers.fused_alert_consumer.resolve_llm_config", _fake_llm_config_unavailable())
++    monkeypatch.setattr("app.workers.fused_alert_consumer.ledger_module.persist_auto_triage", AsyncMock(return_value=True))
+     worker = FusedAlertTriageWorker(bootstrap_servers="unused")  # no applier
+     result = await worker.triage(_fused(source="scanner", maintenance=True))
+     assert result is not None
+--- a/services/agents/tests/test_fused_alert_worker.py
++++ b/services/agents/tests/test_fused_alert_worker.py
+@@ -48,13 +48,14 @@
+ 
+ @pytest.fixture(autouse=True)
+ def _no_ledger_db(monkeypatch):
+-    # No DB in unit tests: the durable persist path no-ops. Stub it explicitly
+-    # so a stray DATABASE_URL in the CI env can't make tests hit a real DB.
++    # Successful-path tests use an explicitly confirmed persistence double,
++    # so a stray DATABASE_URL cannot make them hit a real DB. Rejected and
++    # failed confirmations are exercised separately.
+     async def _noop(*args, **kwargs):  # noqa: ANN002, ANN003
+         return None
+ 
+     async def _persist_noop(*args, **kwargs):  # noqa: ANN002, ANN003
+-        return False
++        return True
+ 
+     monkeypatch.setattr(worker_mod.ledger_module, "start_run", _noop)
+     monkeypatch.setattr(worker_mod.ledger_module, "complete_run", _noop)
+@@ -218,7 +219,7 @@
+ async def test_successful_triage_returns_true_and_commits(monkeypatch):
+     monkeypatch.setattr(worker_mod, "resolve_llm_config", _fake_llm_config(allowed=False))
+     worker = FusedAlertTriageWorker(bootstrap_servers="unused", max_attempts=2)
+-    # persist_auto_triage is stubbed to no-op by the autouse fixture.
++    # The autouse persistence double explicitly confirms this write.
+     assert await worker._process_with_retry(_fused()) is True
+ 
+ 
+--- a/services/agents/tests/test_outcome_memory.py
++++ b/services/agents/tests/test_outcome_memory.py
+@@ -57,7 +57,7 @@
+     institutional._FALLBACK.clear()
+ 
+     async def _persist_noop(*args, **kwargs):  # noqa: ANN002, ANN003
+-        return False
++        return True  # Explicit confirmation double; no database is contacted.
+ 
+     async def _rec_supp(*args, **kwargs):  # noqa: ANN002, ANN003
+         return True

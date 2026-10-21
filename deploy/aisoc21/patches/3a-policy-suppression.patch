@@ -1,0 +1,175 @@
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -406,6 +406,7 @@
+             group=self._group_id,
+             entity_concurrency=self._lanes.limit,
+         )
++        durability_failed = False
+         last_commit = time.monotonic()
+         try:
+             async for msg in self._consumer:
+@@ -436,9 +437,11 @@
+                 offset = getattr(msg, "offset", None)
+ 
+                 async def _handle(value=msg.value, partition=partition, offset=offset) -> None:
++                    nonlocal durability_failed
+                     try:
+                         await self._process_with_retry(value)
+-                    except Exception as exc:  # noqa: BLE001 — one alert must not end the subscription
++                    except Exception as exc:  # noqa: BLE001 — retain the uncommitted window
++                        durability_failed = True
+                         _METRICS["errors"] += 1
+                         logger.error(
+                             "auto_triage_worker.handler_escaped",
+@@ -467,6 +470,8 @@
+                 window_old = (time.monotonic() - last_commit) >= _COMMIT_WINDOW_SECONDS
+                 if window_full or window_old:
+                     await self._lanes.drain()
++                    if durability_failed:
++                        raise ledger_module.LedgerPersistError("Triage window lacks durable outcome or DLQ")
+                     last_commit = time.monotonic()
+                     try:
+                         await self._consumer.commit()
+@@ -475,6 +480,8 @@
+                     continue
+ 
+                 await self._lanes.drain()
++                if durability_failed:
++                    raise ledger_module.LedgerPersistError("Triage window lacks durable outcome or DLQ")
+                 try:
+                     await self._consumer.commit()
+                 except Exception as commit_exc:  # noqa: BLE001 — reprocess on restart
+@@ -549,14 +556,13 @@
+         }
+         producer = await self._ensure_producer()
+         if producer is None:
+-            logger.error("auto_triage_worker.dlq_unavailable", alert_id=alert_id, stage=stage)
+-            return
++            raise ledger_module.LedgerPersistError("DLQ producer unavailable; offset must remain uncommitted")
+         try:
+-            await producer.send(self._dlq_topic, value=record)
++            await producer.send_and_wait(self._dlq_topic, value=record)
+             _METRICS["dead_lettered"] += 1
+             logger.error("auto_triage_worker.dead_lettered", alert_id=alert_id, stage=stage, attempts=attempts)
+-        except Exception as exc:  # noqa: BLE001 — never wedge the loop on a DLQ failure
+-            logger.error("auto_triage_worker.dlq_send_failed", alert_id=alert_id, error=str(exc))
++        except Exception as exc:  # noqa: BLE001 — no durable completion, no offset advance
++            raise ledger_module.LedgerPersistError(f"DLQ not confirmed ({type(exc).__name__})") from exc
+ 
+     @property
+     def topic(self) -> str:
+@@ -600,14 +606,28 @@
+             bc_matched = bc.matched_rule_ids
+             bc_provenance = bc.provenance
+             if bc.suppressed:
++                state = build_state(message)
++                if state is None:
++                    raise ledger_module.LedgerPersistError("Invalid policy-suppression input")
++                fingerprint = get_governor().evidence_fingerprint(str(state.tenant_id), state.raw_alert)
++                writer = await self._sink_for(state, fingerprint)
++                receipt = await writer.persist_policy_suppression(
++                    tenant_ref=str(message.get("tenant_id") or message["alert"].get("tenant_id") or ""),
++                    alert_id=str((state.raw_alert or {}).get("id") or ""),
++                    raw_alert=message["alert"], policy=bc_provenance, matched_rules=bc_matched,
++                )
+                 _METRICS["bc_suppressed"] += 1
+                 logger.info("auto_triage_worker.bc_suppressed", matched=bc_matched)
+                 return {
+                     "incident_id": str(message.get("incident_id") or message.get("id") or ""),
+                     "suppressed": True,
++                    "tenant_id": str(state.tenant_id),
++                    "run_id": receipt.get("run_id"),
++                    "policy_receipt": receipt,
++                    "shadow": receipt.get("shadow", False),
+                     "cost": _cost_payload(CostSummary(), 0),
+-                    "business_context_rules": bc_matched,
+-                    "business_context_policy": bc_provenance,
++                    "business_context_rules": receipt.get("business_context_rules", bc_matched),
++                    "business_context_policy": receipt.get("business_context_policy", bc_provenance),
+                     "response_dispatched": False,
+                 }
+             if bc.changed:
+--- a/services/agents/app/workers/triage_persistence.py
++++ b/services/agents/app/workers/triage_persistence.py
+@@ -164,6 +164,9 @@
+         something that already happened.
+         """
+ 
++    async def persist_policy_suppression(self, **fields: Any) -> dict[str, Any]:
++        """Record a rule decision, separate from model verdicts and priors."""
++
+     async def persist_auto_triage(self, **fields: Any) -> None:
+         """Write the verdict to the ledger and the ``alerts`` row.
+ 
+@@ -323,6 +326,10 @@
+         something that already happened.
+         """
+         return True
++
++    async def persist_policy_suppression(self, **fields: Any) -> dict[str, Any]:
++        from app.investigator.policy_decisions import persist_policy_suppression
++        return await persist_policy_suppression(**fields)
+ 
+     async def persist_auto_triage(self, **fields: Any) -> None:
+         await ledger_module.persist_auto_triage(**fields)
+--- a/services/agents/app/workers/shadow_mode.py
++++ b/services/agents/app/workers/shadow_mode.py
+@@ -345,6 +345,11 @@
+         # describes a different workload from the one it is predicting.
+         return True
+ 
++    async def persist_policy_suppression(self, **fields: Any) -> dict[str, Any]:
++        # Observation only; never populate model-agreement/autonomy metrics.
++        fields["shadow"] = True
++        return await self._delegate.persist_policy_suppression(**fields)
++
+     async def persist_auto_triage(self, **fields: Any) -> None:
+         """Record the verdict without letting it stand in for the analyst's."""
+         fields["auto_closed"] = False
+--- a/services/agents/app/replay/shadow.py
++++ b/services/agents/app/replay/shadow.py
+@@ -178,6 +178,10 @@
+     def total_writes(self) -> int:
+         """How many writes production would have made. Zero is the claim under test."""
+         return sum(self.calls.values())
++
++    async def persist_policy_suppression(self, **fields: Any) -> dict[str, Any]:
++        self.calls["persist_policy_suppression"] += 1
++        return {"persisted": False, "mode": "replay", "shadow": True}
+ 
+     async def persist_auto_triage(self, **fields: Any) -> None:
+         self.calls["persist_auto_triage"] += 1
+--- a/services/agents/tests/test_business_context_hotpath.py
++++ b/services/agents/tests/test_business_context_hotpath.py
+@@ -127,6 +127,8 @@
+     f = tmp_path / "rules.yaml"
+     f.write_text(_RULES_YAML)
+     worker = FusedAlertTriageWorker(bootstrap_servers="unused", business_context=BusinessContextApplier(rules_file=str(f)))
++    from app.replay.shadow import ShadowTriageWriter
++    worker._writer = ShadowTriageWriter()
+     result = await worker.triage(_fused(source="scanner", maintenance=True))
+     assert result is not None
+     assert result["suppressed"] is True
+--- a/services/agents/tests/test_fused_alert_worker.py
++++ b/services/agents/tests/test_fused_alert_worker.py
+@@ -194,7 +194,7 @@
+     sent: list[tuple[str, dict]] = []
+ 
+     class _FakeProducer:
+-        async def send(self, topic, value):  # noqa: ANN001
++        async def send_and_wait(self, topic, value):  # noqa: ANN001
+             sent.append((topic, value))
+ 
+     worker = FusedAlertTriageWorker(bootstrap_servers="unused", max_attempts=2)
+--- a/tests/porting/test_policy_agents.py
++++ b/tests/porting/test_policy_agents.py
+@@ -31,7 +31,8 @@
+     assert not second.suppressed and second.provenance['policy_revision']!=first.provenance['policy_revision']
+     row['yaml_text']=YAML;applier.clear_tenant_cache();restored=await applier.apply_for_tenant(tenant,alert)
+     assert restored.suppressed and restored.provenance['policy_revision']==first.provenance['policy_revision']
+-    worker=FusedAlertTriageWorker(bootstrap_servers='',business_context=applier)
++    from app.replay.shadow import ShadowTriageWriter
++    worker=FusedAlertTriageWorker(bootstrap_servers='',business_context=applier,writer=ShadowTriageWriter())
+     summary=await worker.triage({'tenant_id':tenant,'id':str(uuid4()),'alert':alert})
+     assert summary['suppressed'] and summary['business_context_policy']['policy_revision']==first.provenance['policy_revision']
+     assert not summary['response_dispatched']

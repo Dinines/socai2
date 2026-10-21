@@ -1,0 +1,12 @@
+# Runtime dependency for the existing Agents report.pdf endpoint.
+# Parent identity is checked against candidate02 before building.
+FROM socai2-agents:integrity-r2-20261021
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+USER 10001:10001
+RUN python -c "from weasyprint import HTML; data=HTML(string='<html><body><h1>Investigation report</h1><p>Dependency probe.</p></body></html>').write_pdf(); assert data.startswith(b'%PDF-') and len(data)>1000"

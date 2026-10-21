@@ -1,0 +1,237 @@
+--- a/services/fusion/app/services/entity_risk.py
++++ b/services/fusion/app/services/entity_risk.py
+@@ -34,6 +34,7 @@
+ 
+ from __future__ import annotations
+ 
++import asyncio
+ import json
+ import math
+ import time
+@@ -42,6 +43,7 @@
+ from uuid import UUID
+ 
+ import redis.asyncio as aioredis
++from redis.exceptions import WatchError
+ import structlog
+ 
+ from app.core.config import settings
+@@ -56,6 +58,10 @@
+ _ENTITY_PREFIX = "aisoc:fusion:rba:entity:"
+ _TOPN_KEY = "aisoc:fusion:rba:topn:"
+ _PROMOTED_KEY = "aisoc:fusion:rba:promoted:"
++# Complete membership is independent of the last-50 display list. It expires
++# with its entity after a window without NEW contributions (replays do not
++# extend either TTL). Continuously active entities retain their full set.
++_SEEN_PREFIX = "aisoc:fusion:rba:seen:"
+ 
+ ENTITY_TYPES: tuple[str, ...] = ("user", "host", "src_ip", "domain")
+ 
+@@ -149,9 +155,17 @@
+ 
+         promoted: list[EntityRiskRecord] = []
+         for sig in signals:
+-            record = await self._apply_signal(alert.tenant_id, sig)
+-            if record.score >= self._threshold and record.promoted_at is None:
+-                record = await self._promote(alert.tenant_id, record)
++            record, newly_promoted = await self._apply_signal(alert.tenant_id, sig)
++            if newly_promoted:
++                logger.info(
++                    "rba_entity_promoted",
++                    tenant_id=str(alert.tenant_id),
++                    entity_type=record.entity_type,
++                    entity_value=record.entity_value,
++                    score=round(record.score, 2),
++                    alert_count=record.alert_count,
++                    contributing_alerts=record.contributing_alerts[-10:],
++                )
+                 promoted.append(record)
+ 
+         return promoted
+@@ -243,8 +257,44 @@
+             )
+         return signals
+ 
+-    async def _apply_signal(self, tenant_id: UUID, sig: EntitySignal) -> EntityRiskRecord:
+-        record = await self._load(str(tenant_id), sig.entity_type, sig.entity_value)
++    async def _apply_signal(self, tenant_id: UUID, sig: EntitySignal) -> tuple[EntityRiskRecord, bool]:
++        suffix = f"{tenant_id}:{sig.entity_type}:{sig.entity_value}"
++        key, seen_key = _ENTITY_PREFIX + suffix, _SEEN_PREFIX + suffix
++        # Watch both keys: a contribution and its claim must commit together.
++        # A separate SET NX before _save would lose risk on a failed write.
++        for attempt in range(32):
++            try:
++                async with self._redis.pipeline(transaction=True) as pipe:
++                    await pipe.watch(key, seen_key)
++                    record = await self._load(str(tenant_id), sig.entity_type, sig.entity_value, client=pipe)
++                    if record is not None and (
++                        sig.alert_id in record.contributing_alerts or await pipe.sismember(seen_key, sig.alert_id)
++                    ):
++                        return record, False
++                    # Seed only observable legacy membership; older truncated
++                    # history is unknown and must not be presented as recovered.
++                    prior_ids = record.contributing_alerts[:] if record else []
++                    record = self._accumulate(tenant_id, sig, record)
++                    newly_promoted = record.score >= self._threshold and record.promoted_at is None
++                    if newly_promoted:
++                        record.promoted_at = record.last_seen
++                    pipe.multi()
++                    self._queue_save(pipe, record)
++                    pipe.sadd(seen_key, *prior_ids, sig.alert_id)
++                    pipe.expire(seen_key, self._window)
++                    if newly_promoted:
++                        promoted_key = _PROMOTED_KEY + str(tenant_id)
++                        pipe.zadd(promoted_key, {self._member(record): time.time()})
++                        pipe.expire(promoted_key, self._window)
++                    await pipe.execute()
++                    return record, newly_promoted
++            except WatchError:
++                if attempt == 31:
++                    raise
++                await asyncio.sleep(min(0.001 * (attempt + 1), 0.025))
++        raise AssertionError("unreachable")
++
++    def _accumulate(self, tenant_id: UUID, sig: EntitySignal, record: EntityRiskRecord | None) -> EntityRiskRecord:
+         now = datetime.utcnow()
+ 
+         if record is None:
+@@ -284,7 +334,6 @@
+             contributors = contributors[-25:]
+         record.contributors = contributors
+ 
+-        await self._save(record)
+         return record
+ 
+     def _decay(self, prior: float, prior_seen: datetime, now: datetime) -> float:
+@@ -297,28 +346,11 @@
+         decayed = prior * decay
+         return decayed if decayed > 0.05 else 0.0
+ 
+-    async def _promote(self, tenant_id: UUID, record: EntityRiskRecord) -> EntityRiskRecord:
+-        record.promoted_at = datetime.utcnow()
+-        await self._save(record)
+-        promoted_key = _PROMOTED_KEY + str(tenant_id)
+-        await self._redis.zadd(promoted_key, {self._member(record): time.time()})
+-        await self._redis.expire(promoted_key, self._window)
+-        logger.info(
+-            "rba_entity_promoted",
+-            tenant_id=str(tenant_id),
+-            entity_type=record.entity_type,
+-            entity_value=record.entity_value,
+-            score=round(record.score, 2),
+-            alert_count=record.alert_count,
+-            contributing_alerts=record.contributing_alerts[-10:],
+-        )
+-        return record
+-
+     @staticmethod
+     def _member(record: EntityRiskRecord) -> str:
+         return f"{record.entity_type}::{record.entity_value}"
+ 
+-    async def _save(self, record: EntityRiskRecord) -> None:
++    def _queue_save(self, pipe: aioredis.client.Pipeline, record: EntityRiskRecord) -> None:
+         key = _ENTITY_PREFIX + f"{record.tenant_id}:{record.entity_type}:{record.entity_value}"
+         payload = {
+             "score": str(record.score),
+@@ -329,16 +361,16 @@
+             "promoted_at": record.promoted_at.isoformat() if record.promoted_at else "",
+             "contributors": json.dumps(record.contributors or []),
+         }
+-        await self._redis.hset(key, mapping=payload)
+-        await self._redis.expire(key, self._window)
++        pipe.hset(key, mapping=payload)
++        pipe.expire(key, self._window)
+         topn_key = _TOPN_KEY + record.tenant_id
+-        await self._redis.zadd(topn_key, {self._member(record): record.score})
+-        await self._redis.zremrangebyrank(topn_key, 0, -(self._max_top + 1))
+-        await self._redis.expire(topn_key, self._window)
+-
+-    async def _load(self, tenant_id: str, entity_type: str, entity_value: str) -> EntityRiskRecord | None:
++        pipe.zadd(topn_key, {self._member(record): record.score})
++        pipe.zremrangebyrank(topn_key, 0, -(self._max_top + 1))
++        pipe.expire(topn_key, self._window)
++
++    async def _load(self, tenant_id: str, entity_type: str, entity_value: str, *, client=None) -> EntityRiskRecord | None:
+         key = _ENTITY_PREFIX + f"{tenant_id}:{entity_type}:{entity_value}"
+-        data = await self._redis.hgetall(key)
++        data = await (client if client is not None else self._redis).hgetall(key)
+         if not data:
+             return None
+         decoded = {
+--- a/services/fusion/tests/test_entity_risk.py
++++ b/services/fusion/tests/test_entity_risk.py
+@@ -33,6 +33,20 @@
+     def __init__(self) -> None:
+         self.hashes: dict[str, dict[bytes, bytes]] = {}
+         self.zsets: dict[str, dict[str, float]] = {}
++        self.sets: dict[str, set[str]] = {}
++        self.fail_next_execute: Exception | None = None
++
++    def pipeline(self, transaction: bool = True):
++        return _FakePipeline(self)
++
++    async def sismember(self, key: str, member: str) -> bool:
++        return member in self.sets.get(key, set())
++
++    async def sadd(self, key: str, *members: str) -> int:
++        bucket = self.sets.setdefault(key, set())
++        before = len(bucket)
++        bucket.update(members)
++        return len(bucket) - before
+ 
+     async def hset(self, key: str, mapping: dict[str, Any]) -> int:
+         bucket = self.hashes.setdefault(key, {})
+@@ -44,7 +58,7 @@
+         return dict(self.hashes.get(key, {}))
+ 
+     async def expire(self, key: str, ttl: int) -> bool:
+-        return key in self.hashes or key in self.zsets
++        return key in self.hashes or key in self.zsets or key in self.sets
+ 
+     async def zadd(self, key: str, mapping: dict[str, float]) -> int:
+         bucket = self.zsets.setdefault(key, {})
+@@ -85,6 +99,44 @@
+         for member, _ in to_remove:
+             bucket.pop(member, None)
+         return len(to_remove)
++
++
++class _FakePipeline:
++    """Serial test double; real-Redis acceptance covers WATCH concurrency/TTL."""
++
++    def __init__(self, redis):
++        self.redis = redis
++        self.commands = []
++
++    async def __aenter__(self):
++        return self
++
++    async def __aexit__(self, *args):
++        pass
++
++    async def watch(self, *keys):
++        pass
++
++    async def hgetall(self, key):
++        return await self.redis.hgetall(key)
++
++    async def sismember(self, key, member):
++        return await self.redis.sismember(key, member)
++
++    def multi(self):
++        pass
++
++    def __getattr__(self, name):
++        def queue(*args, **kwargs):
++            self.commands.append((name, args, kwargs))
++            return self
++        return queue
++
++    async def execute(self):
++        if self.redis.fail_next_execute is not None:
++            exc, self.redis.fail_next_execute = self.redis.fail_next_execute, None
++            raise exc
++        return [await getattr(self.redis, name)(*args, **kwargs) for name, args, kwargs in self.commands]
+ 
+ 
+ # ---------------------------------------------------------------------------

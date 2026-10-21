@@ -1,0 +1,38 @@
+name: socai2
+services:
+  api:
+    image: socai2-api:1f-20261020
+    env_file: /opt/sting-aisoc-socai2/private/api-1f.env
+    user: "10001:10001"
+    ports: ["127.0.0.1:18000:8000"]
+    volumes:
+      - /opt/sting-aisoc-socai2/certificates/socai2-ca.crt:/run/certs/ca.crt:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,size=256m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    mem_limit: 2g
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz',timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  fusion:
+    image: socai2-fusion:1f-20261020
+    env_file: /opt/sting-aisoc-socai2/private/fusion-1f.env
+    user: "10001:10001"
+    ports: ["127.0.0.1:18003:8003"]
+    volumes:
+      - /opt/sting-aisoc-socai2/certificates/socai2-ca.crt:/run/certs/ca.crt:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,size=128m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    mem_limit: 1g
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/readyz',timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6

@@ -1,0 +1,500 @@
+--- a/services/agents/app/main.py
++++ b/services/agents/app/main.py
+@@ -1,7 +1,7 @@
+ import asyncio
+ import os
+ from collections.abc import AsyncGenerator
+-from contextlib import asynccontextmanager
++from contextlib import asynccontextmanager, suppress
+ 
+ import structlog
+ from fastapi import FastAPI
+@@ -177,6 +177,8 @@
+             await app.state.triage_worker.stop()
+             if app.state.triage_worker_task is not None:
+                 app.state.triage_worker_task.cancel()
++                with suppress(asyncio.CancelledError, Exception):
++                    await app.state.triage_worker_task
+         except Exception as exc:  # noqa: BLE001
+             logger.warning("auto_triage_worker.stop_failed", error=str(exc))
+ 
+--- a/services/agents/app/llm/contract.py
++++ b/services/agents/app/llm/contract.py
+@@ -104,13 +104,23 @@
+     (or :func:`safe_astream` for streaming) so the contract is uniformly
+     enforced. Raises :class:`LLMContractViolation` on contract breach.
+     """
++    # Lazy: investigator.__init__ imports agents which in turn import this
++    # package. Admission must not introduce a cycle during plain LLM imports.
++    from app.workers.triage_budget import current_invocation
++
++    budget = current_invocation()
+     materialised = list(messages)
+-    LLMInputContract.validate(materialised)
++    try:
++        LLMInputContract.validate(materialised)
++    except LLMContractViolation:
++        if budget is not None:
++            await budget.no_request()
++        raise
+ 
+     model = _model_name(llm)
+     prompt, user_input = _cache_parts(materialised)
+     # Only cache plain calls (no per-call kwargs like temperature overrides).
+-    use_cache = _RESPONSE_CACHE_ENABLED and bool(model) and bool(user_input) and not kwargs
++    use_cache = _RESPONSE_CACHE_ENABLED and bool(model) and bool(user_input) and not kwargs and budget is None
+     if use_cache:
+         cached = _RESPONSE_CACHE.lookup(model=model, prompt=prompt, user_input=user_input)
+         if cached is not None:
+@@ -129,7 +139,11 @@
+     outbound = egress.redact_messages(materialised)
+ 
+     t0 = time.monotonic()
++    if budget is not None:
++        await budget.before_request(llm, outbound, kwargs)
+     result = await llm.ainvoke(outbound, **kwargs)
++    if budget is not None:
++        await budget.responded(result)
+     latency_ms = (time.monotonic() - t0) * 1000.0
+     result = egress.restore(result)
+     # Record token/cost against the active CostTracker (no-op if none bound), so
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -74,7 +74,7 @@
+ from app.security.llm_resolver import resolve_llm_config
+ from app.workers.business_context import BusinessContextApplier
+ from app.workers.entity_lane import EntityLanes, entity_of
+-from app.workers import triage_delivery
++from app.workers import triage_budget, triage_delivery
+ from app.workers.shadow_mode import (
+     LiveShadowModePolicy,
+     ShadowDecision,
+@@ -457,6 +457,7 @@
+         self._consumer: Any | None = None
+         self._producer: Any | None = None  # lazily created for the DLQ
+         self._running = False
++        self._stopping = False
+         self._attached = False
+         # Phase B4 — environment-specific noise reduction applied post-fusion →
+         # pre-triage. None = disabled (no rules file / flag off).
+@@ -531,7 +532,9 @@
+     async def start(self) -> None:
+         from aiokafka import AIOKafkaConsumer  # noqa: PLC0415 — optional dep, only at runtime
+ 
+-        self._consumer = AIOKafkaConsumer(
++        if self._stopping:
++            raise triage_budget.BudgetHold("Stopped worker instances cannot be restarted")
++        consumer = self._consumer = AIOKafkaConsumer(
+             self._topic,
+             bootstrap_servers=self._bootstrap,
+             group_id=self._group_id,
+@@ -585,6 +588,9 @@
+                     nonlocal durability_failed
+                     try:
+                         await self._process_with_retry(value)
++                    except asyncio.CancelledError:
++                        durability_failed = True
++                        raise
+                     except Exception as exc:  # noqa: BLE001 — retain the uncommitted window
+                         durability_failed = True
+                         _METRICS["errors"] += 1
+@@ -615,7 +621,7 @@
+                 window_old = (time.monotonic() - last_commit) >= _COMMIT_WINDOW_SECONDS
+                 if window_full or window_old:
+                     await self._lanes.drain()
+-                    if durability_failed:
++                    if durability_failed or self._stopping:
+                         raise ledger_module.LedgerPersistError("Triage window lacks durable outcome or DLQ")
+                     last_commit = time.monotonic()
+                     try:
+@@ -625,7 +631,7 @@
+                     continue
+ 
+                 await self._lanes.drain()
+-                if durability_failed:
++                if durability_failed or self._stopping:
+                     raise ledger_module.LedgerPersistError("Triage window lacks durable outcome or DLQ")
+                 try:
+                     await self._consumer.commit()
+@@ -635,7 +641,9 @@
+             # Cleared before the teardown await, which can itself raise on a
+             # broker that has gone away.
+             self._attached = False
+-            await self._consumer.stop()
++            self._running = False
++            await self._lanes.cancel()
++            await consumer.stop()
+ 
+     async def _process_with_retry(self, message: Any) -> bool:
+         """Triage one alert with bounded retries; dead-letter on exhaustion.
+@@ -643,6 +651,8 @@
+         Returns True on durable success, False if the message was dead-lettered.
+         Either way the caller commits (a poison alert must not wedge the loop).
+         """
++        if getattr(self, "_stopping", False):
++            raise triage_budget.BudgetHold("Triage worker is stopping")
+         schema_error = _broker_schema_error(message)
+         if schema_error is not None:
+             _METRICS["errors"] += 1
+@@ -655,12 +665,16 @@
+             stage = "triage"
+             for attempt in range(1, self._max_attempts + 1):
+                 try:
++                    if getattr(self, "_stopping", False):
++                        raise triage_budget.BudgetHold("Triage worker is stopping")
+                     result = await self.triage(message)
+                     if result is None:
+                         stage = "schema"
+                         last_error = "triage_returned_no_result"
+                         break
+                     return True
++                except triage_budget.BudgetHold:
++                    raise  # A transient admission hold is backlog, not poison/DLQ.
+                 except ledger_module.LedgerPersistError as exc:
+                     stage = "persist"
+                     last_error = str(exc)
+@@ -743,11 +757,16 @@
+         return self._attached
+ 
+     async def stop(self) -> None:
++        self._stopping = True
+         self._running = False
+         self._attached = False
+         if self._consumer is not None:
+             await self._consumer.stop()
+-            self._consumer = None
++        try:
++            async with asyncio.timeout(10.0):
++                await self._lanes.drain()
++        except TimeoutError:
++            await self._lanes.cancel()
+         if self._producer is not None:
+             with contextlib.suppress(Exception):
+                 await self._producer.stop()
+@@ -844,6 +863,12 @@
+                 suppressed["business_context_policy"] = bc_provenance
+                 return suppressed
+ 
++        decision = governor.check(str(state.tenant_id), fingerprint)
++        cached = decision.decision is Decision.DEDUPLICATED and decision.cached_verdict and writer.uses_dedup_cache
++        cfg = None if cached else await self._resolve_tenant_llm(state.tenant_id)
++        use_llm = not cached and decision.use_llm and not is_deterministic_mode() and cfg is not None
++        budget = triage_budget.policy_for(state.tenant_id) if delivery_guard and use_llm else None
++        invocation = None
+         if delivery_guard:
+             assert delivery_key is not None
+             # A second coroutine can arrive while lookup/business rules await.
+@@ -854,7 +879,8 @@
+                 raise ledger_module.LedgerPersistError("Auto-triage pending-result capacity reached")
+             self._pending()[delivery_key] = None
+             try:
+-                prior = await triage_delivery.claim(**self._delivery_fields(state))
++                extra = {"budget": budget} if budget is not None else {}
++                prior = await triage_delivery.claim(**self._delivery_fields(state), **extra)
+             except BaseException:
+                 # No model method has been entered. The next bounded attempt
+                 # must query PG again, rather than treating a failed read as a
+@@ -864,8 +890,9 @@
+             if prior is not None:
+                 self._pending().pop(delivery_key)
+                 return deepcopy(prior)
+-
+-        decision = governor.check(str(state.tenant_id), fingerprint)
++            if budget is not None:
++                invocation = triage_budget.Invocation(state.run_id, state.tenant_id,
++                                                      lambda: getattr(self, "_stopping", False))
+ 
+         tier: str
+         # None, not 0.0: a cached or deterministic verdict placed no LLM call,
+@@ -876,14 +903,12 @@
+         # verdict production already produced: that measures the cache rather
+         # than the agent, and the figure describes something that already
+         # happened.
+-        if decision.decision is Decision.DEDUPLICATED and decision.cached_verdict and writer.uses_dedup_cache:
++        if cached:
+             _METRICS["deduplicated"] += 1
+             verdict = decision.cached_verdict.get("verdict")
+             confidence = float(decision.cached_verdict.get("confidence", 0.0))
+             tier = "cached"
+         else:
+-            cfg = await self._resolve_tenant_llm(state.tenant_id)
+-            use_llm = decision.use_llm and not is_deterministic_mode() and cfg is not None
+             if use_llm:
+                 # What analysts have repeatedly taught this tenant's platform,
+                 # read once here rather than inside the agent so the round trip
+@@ -932,7 +957,7 @@
+                     # the gateway as a bearer token, which 401s. Left unset,
+                     # make_chat_model resolves the key that pairs with the route
+                     # it actually chose.
+-                    with llm_override(
++                    with triage_budget.invocation_scope(invocation), llm_override(
+                         api_key=cfg.api_key if getattr(cfg, "api_key_from_tenant", False) else None,
+                         base_url=cfg.base_url if getattr(cfg, "base_url_from_tenant", False) else None,
+                         model=cfg.model if getattr(cfg, "model_from_tenant", False) else None,
+@@ -1471,6 +1496,9 @@
+             _METRICS["llm"] += 1
+             return state, "llm"
+         except Exception as exc:  # noqa: BLE001 — fall back to deterministic triage
++            hold = triage_budget.hold_in_chain(exc)
++            if hold is not None:
++                raise hold
+             logger.warning("auto_triage_worker.llm_failed_fallback", error=str(exc))
+             state = await run_triage(state)
+             _METRICS["deterministic"] += 1
+--- a/services/agents/app/workers/triage_delivery.py
++++ b/services/agents/app/workers/triage_delivery.py
+@@ -17,6 +17,7 @@
+ from app.agents.dispositions import CANONICAL_DISPOSITIONS
+ from app.investigator import ledger
+ from app.investigator.ledger import LedgerPersistError
++from app.workers import triage_budget
+ 
+ _NAMESPACE = uuid5(NAMESPACE_URL, "tryaisoc.com/agents/auto-triage")
+ 
+@@ -290,7 +291,7 @@
+ 
+ 
+ async def claim(*, run_id: UUID, tenant_id: UUID, alert_id: str,
+-                workflow_version: str) -> dict[str, Any] | None:
++                workflow_version: str, budget: triage_budget.Policy | None = None) -> dict[str, Any] | None:
+     """None authorizes one new owner only after its start transaction commits.
+ 
+     A concurrent loser uses a new READ COMMITTED statement snapshot; unfinished
+@@ -306,6 +307,8 @@
+                                             alert_id=alert_id, workflow_version=workflow_version)
+                 if existing is not None:
+                     return existing
++                if budget is not None:
++                    await triage_budget.check_locked(conn, tenant_id, budget)
+                 alert = await conn.fetchrow("SELECT id, tenant_id FROM alerts WHERE id = $1 AND tenant_id = $2",
+                                             UUID(alert_id), tenant_id)
+                 if alert is None or not _same_uuid(alert["id"], UUID(alert_id)) or not _same_uuid(alert["tenant_id"], tenant_id):
+@@ -333,11 +336,17 @@
+                     "owner_token": str(uuid4()), "workflow_version": workflow_version,
+                     "tenant_id": str(tenant_id), "alert_id": alert_id,
+                     "processing_started": True, "model_invocation_established": False}))
++                if budget is not None:
++                    await triage_budget.reserve(conn, run_id=run_id, tenant_id=tenant_id, policy=budget)
+             # This return is intentionally outside transaction.__aexit__.
+             return None
+-    except LedgerPersistError:
++    except LedgerPersistError as exc:
++        if budget is not None and not isinstance(exc, triage_budget.BudgetHold):
++            raise triage_budget.BudgetHold("Triage budget claim not confirmed") from exc
+         raise
+     except Exception as exc:
++        if budget is not None:
++            raise triage_budget.BudgetHold("Triage budget claim failed; offset must be retained") from exc
+         raise LedgerPersistError("Auto-triage delivery claim failed") from exc
+ 
+ 
+--- a/services/agents/app/workers/entity_lane.py
++++ b/services/agents/app/workers/entity_lane.py
+@@ -183,3 +183,17 @@
+         """
+         while self._tasks:
+             await asyncio.gather(*tuple(self._tasks), return_exceptions=True)
++
++    async def cancel(self) -> None:
++        """Cancel and join owned tasks before the consumer/DB lifecycle ends."""
++        tasks = tuple(self._tasks)
++        for task in tasks:
++            task.cancel()
++        if tasks:
++            await asyncio.gather(*tasks, return_exceptions=True)
++        self._tasks.difference_update(tasks)
++        if not self._tasks:
++            # A task cancelled before its coroutine first runs never reaches
++            # that coroutine's finally block.
++            self._locks.clear()
++            self._waiters.clear()
+--- /dev/null
++++ b/services/agents/app/workers/triage_budget.py
+@@ -0,0 +1,187 @@
++"""Conservative, durable admission for configured ordinary live Kafka triage.
++
++Charges are reservations, never claims about provider usage or dollars. Unknown
++calls retain their concurrency slot until explicitly resolved outside this path.
++"""
++from __future__ import annotations
++
++import contextlib
++from contextvars import ContextVar
++from dataclasses import dataclass
++import hashlib
++import json
++import os
++from pathlib import Path
++from typing import Any, Callable, Iterator
++from uuid import UUID
++
++from app.investigator import ledger
++
++POLICY_FILE_ENV = 'AISOC_TRIAGE_BUDGET_POLICY_FILE'
++PROMPT_BYTE_CAP = 16000
++RESERVED_TOKENS = 20000
++
++
++class BudgetHold(ledger.LedgerPersistError):
++    """No durable authority for further work: retain the Kafka offset, no DLQ."""
++
++
++@dataclass(frozen=True)
++class Policy:
++    window_seconds: int
++    max_calls: int
++    max_reserved_tokens: int
++    max_unsettled: int
++
++    @property
++    def sha256(self) -> str:
++        fields = {**self.__dict__, 'schema_version': 1, 'per_request_reserved_tokens': RESERVED_TOKENS,
++                  'prompt_byte_cap': PROMPT_BYTE_CAP, 'output_token_cap': 512}
++        return hashlib.sha256(json.dumps(fields, sort_keys=True).encode()).hexdigest()
++
++
++def policy_for(tenant_id: UUID) -> Policy | None:
++    filename = os.getenv(POLICY_FILE_ENV, '').strip()
++    if not filename:
++        return None  # Preserve callers/deployments which have not opted in.
++    try:
++        raw = Path(filename).read_bytes()
++        if len(raw) > 65536:
++            raise ValueError('oversized policy')
++        data = json.loads(raw)
++        if set(data) != {'schema_version', 'tenants'} or type(data['schema_version']) is not int or data['schema_version'] != 1:
++            raise ValueError('policy version')
++        if not isinstance(data['tenants'], dict) or len(data['tenants']) > 100:
++            raise ValueError('tenant mapping')
++        if any(str(UUID(k)) != k for k in data['tenants']):
++            raise ValueError('canonical tenant mapping')
++        row = data['tenants'][str(tenant_id)]
++        bounds = {'window_seconds': (60, 86400), 'max_calls': (1, 1000),
++                  'max_reserved_tokens': (1, 20000000), 'max_unsettled': (1, 8)}
++        if not isinstance(row, dict) or set(row) != set(bounds):
++            raise ValueError('policy fields')
++        if any(type(row[k]) is not int or not low <= row[k] <= high for k, (low, high) in bounds.items()):
++            raise ValueError('policy bounds')
++        return Policy(**row)
++    except Exception as exc:
++        raise BudgetHold('Triage budget policy unavailable or invalid') from exc
++
++
++async def check_locked(conn: Any, tenant_id: UUID, policy: Policy) -> None:
++    key = int.from_bytes(hashlib.sha256(('socai2:triage-budget:' + str(tenant_id)).encode()).digest()[:8],
++                         'big', signed=True)
++    await conn.execute('SELECT pg_advisory_xact_lock($1::bigint)', key)
++    # Lock first, then use a fresh READ COMMITTED snapshot shared by every
++    # policy version. Changing a file cannot reset prior charges/unknown calls.
++    row = await conn.fetchrow('''
++SELECT count(*) FILTER (WHERE reserved_at > clock_timestamp() - $2 * interval '1 second') AS calls,
++       COALESCE(sum(charged_tokens) FILTER (WHERE reserved_at > clock_timestamp() - $2 * interval '1 second'), 0) AS tokens,
++       count(*) FILTER (WHERE settled_at IS NULL) AS unsettled
++  FROM socai2_triage_budget_reservations WHERE tenant_id = $1
++''', tenant_id, policy.window_seconds)
++    if (row['calls'] + 1 > policy.max_calls or row['tokens'] + RESERVED_TOKENS > policy.max_reserved_tokens
++            or row['unsettled'] + 1 > policy.max_unsettled):
++        raise BudgetHold('Triage budget exhausted or prior invocation unconfirmed')
++
++
++async def reserve(conn: Any, *, run_id: UUID, tenant_id: UUID, policy: Policy) -> None:
++    await conn.execute('''
++INSERT INTO socai2_triage_budget_reservations(run_id,tenant_id,policy_sha256,charged_tokens)
++VALUES ($1,$2,$3,$4)
++''', run_id, tenant_id, policy.sha256, RESERVED_TOKENS)
++
++
++async def _update(run_id: UUID, tenant_id: UUID, statement: str, *args: Any) -> None:
++    try:
++        pool = await ledger.get_pool()
++        if pool is None:
++            raise BudgetHold('Triage budget database unavailable')
++        async with pool.acquire() as conn:
++            async with conn.transaction():
++                await ledger._set_rls_context(conn, tenant_id)
++                row = await conn.fetchrow(statement, run_id, tenant_id, *args)
++                if row is None:
++                    raise BudgetHold('Triage budget reservation identity or state mismatch')
++    except BudgetHold:
++        raise
++    except Exception as exc:
++        raise BudgetHold('Triage budget confirmation failed; invocation remains unconfirmed') from exc
++
++
++@dataclass
++class Invocation:
++    run_id: UUID
++    tenant_id: UUID
++    stopping: Callable[[], bool]
++    request_marked: bool = False
++    response_seen: bool = False
++
++    async def before_request(self, llm: Any, outbound: Any, kwargs: dict[str, Any]) -> None:
++        from app.llm.contract_rules import LLMInputContract
++
++        if self.stopping():
++            raise BudgetHold('Triage worker is stopping')
++        body = LLMInputContract.validate(outbound)
++        size = len(json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
++        root = getattr(llm, 'root_async_client', None)
++        if (self.request_marked or kwargs or size > PROMPT_BYTE_CAP
++                or getattr(llm, 'max_tokens', None) != 512
++                or getattr(llm, 'request_timeout', None) != 45.0
++                or getattr(root, 'max_retries', None) != 0 or getattr(root, 'timeout', None) != 45.0
++                or (getattr(llm, 'extra_body', None) or {}).get('max_tokens', 512) != 512):
++            raise BudgetHold('Triage invocation exceeds its reserved request contract')
++        await _update(self.run_id, self.tenant_id, '''
++UPDATE socai2_triage_budget_reservations SET request_started_at=clock_timestamp()
++ WHERE run_id=$1 AND tenant_id=$2 AND outcome='reserved' AND request_started_at IS NULL
++ RETURNING run_id
++''')
++        self.request_marked = True
++        # A stop could have arrived while the transaction awaited its commit.
++        if self.stopping():
++            raise BudgetHold('Triage worker stopped after request intent; outcome unconfirmed')
++
++    async def responded(self, response: Any) -> None:
++        self.response_seen = True
++        usage = getattr(response, 'usage_metadata', None)
++        tokens = usage.get('total_tokens') if isinstance(usage, dict) else None
++        if tokens is not None and (type(tokens) is not int or not 0 <= tokens <= RESERVED_TOKENS):
++            raise BudgetHold('Triage response usage exceeds or invalidates its reservation')
++        await _update(self.run_id, self.tenant_id, '''
++UPDATE socai2_triage_budget_reservations
++ SET outcome='responded',settled_at=clock_timestamp(),observed_tokens=$3
++ WHERE run_id=$1 AND tenant_id=$2 AND outcome='reserved' AND request_started_at IS NOT NULL
++ RETURNING run_id
++''', tokens)
++
++    async def no_request(self) -> None:
++        await _update(self.run_id, self.tenant_id, '''
++UPDATE socai2_triage_budget_reservations SET outcome='no_request',settled_at=clock_timestamp()
++ WHERE run_id=$1 AND tenant_id=$2 AND outcome='reserved' AND request_started_at IS NULL
++ RETURNING run_id
++''')
++
++
++_INVOCATION: ContextVar[Invocation | None] = ContextVar('socai2_triage_budget', default=None)
++
++
++def current_invocation() -> Invocation | None:
++    return _INVOCATION.get()
++
++
++@contextlib.contextmanager
++def invocation_scope(invocation: Invocation | None) -> Iterator[None]:
++    token = _INVOCATION.set(invocation)
++    try:
++        yield
++    finally:
++        _INVOCATION.reset(token)
++
++
++def hold_in_chain(error: BaseException) -> BudgetHold | None:
++    seen = set()
++    while error is not None and id(error) not in seen:
++        if isinstance(error, BudgetHold):
++            return error
++        seen.add(id(error))
++        error = error.__cause__
++    return None

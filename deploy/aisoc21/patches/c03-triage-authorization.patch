@@ -1,0 +1,72 @@
+--- a/services/agents/app/llm/prompt_registry.py
++++ b/services/agents/app/llm/prompt_registry.py
+@@ -228,9 +228,10 @@
+ - Missing matching jobs or approvals are evidence gaps, not proof that no
+   authorization existed. Being outside a supplied window alone proves neither
+   maliciousness nor the absence of another authorization.
+-- Separate supplied facts, behavioral inferences and unknowns in the short
+-  rationale. Direct destructive evidence may support true_positive; unresolved
+-  evidence calls for needs_review.
++- Distinguish observed harm from authorization status. Harmful behavior may
++  support true_positive while authorization remains unknown. Assert an
++  authorization decision only when an applicable decision is supplied.
++  Use needs_review when remaining gaps prevent judging threat.
+ """
+ 
+ _CLOUD_SYSTEM = """You are the Cloud Infrastructure Analysis Agent of an AI Security Operations
+@@ -566,7 +567,7 @@
+     reg.register("hunt.system", "1", _HUNT_SYSTEM)
+     # Version 3 constrains time and authorization claims to supplied evidence.
+     # Verdict/schema, request limits and every other prompt remain unchanged.
+-    reg.register("triage.system", "3", _TRIAGE_SYSTEM)
++    reg.register("triage.system", "4", _TRIAGE_SYSTEM)
+     reg.register("cloud.system", "1", _CLOUD_SYSTEM)
+     reg.register("identity.system", "1", _IDENTITY_SYSTEM)
+     reg.register("insider_threat.system", "1", _INSIDER_THREAT_SYSTEM)
+--- a/services/agents/app/llm/prompts.lock.json
++++ b/services/agents/app/llm/prompts.lock.json
+@@ -84,7 +84,7 @@
+     "version": "1"
+   },
+   "triage.system": {
+-    "sha256": "dea980a5d75a483c40680a0de51e043f389050ebf174882bcabec067d3942c18",
+-    "version": "3"
++    "sha256": "a6ed50114304c7cde38d3d9b58c85f4253ec269baa92235809616abdea594871",
++    "version": "4"
+   }
+ }
+--- a/tests/porting/test_triage_reasoning_prompt_c03.py
++++ b/tests/porting/test_triage_reasoning_prompt_c03.py
+@@ -1,4 +1,4 @@
+-"""C03-01 prompt transport, preservation and existing budget boundaries.
++"""C03 prompt transport, preservation and existing budget boundaries.
+ 
+ The production state builder, safe-call, SDK and accounting paths are real;
+ HTTP and budget/closure database dependencies are explicit offline substitutes.
+@@ -133,10 +133,10 @@
+     return requests, updates, invocation, tracker, result
+ 
+ 
+-def test_prompt_v3_lock_and_unchanged_taxonomy_schema_other_prompts():
++def test_prompt_v4_lock_and_unchanged_taxonomy_schema_other_prompts():
+     registry = default_registry()
+     assert registry.verify_against_lock(load_lock()) == []
+-    assert registry.get('triage.system').version == '3'
++    assert registry.get('triage.system').version == '4'
+     unchanged = {name: entry for name, entry in registry.as_lock().items() if name != 'triage.system'}
+     canonical = json.dumps(unchanged, sort_keys=True, separators=(',', ':')).encode()
+     assert len(unchanged) == 21 and hashlib.sha256(canonical).hexdigest() == OTHER_PROMPTS_SHA256
+@@ -164,9 +164,10 @@
+         'organisation habits and historical dispositions do not establish approval',
+         'Missing matching jobs or approvals are evidence gaps, not proof that no',
+         'maliciousness nor the absence of another authorization.',
+-        'Separate supplied facts, behavioral inferences and unknowns',
+-        'Direct destructive evidence may support true_positive; unresolved',
+-        'evidence calls for needs_review.',
++        'Distinguish observed harm from authorization status.',
++        'support true_positive while authorization remains unknown.',
++        'authorization decision only when an applicable decision is supplied.',
++        'Use needs_review when remaining gaps prevent judging threat.',
+     ):
+         assert rule in system
+     start, end = user.index('<UNTRUSTED_DATA source="alert_telemetry">'), user.index('</UNTRUSTED_DATA>')

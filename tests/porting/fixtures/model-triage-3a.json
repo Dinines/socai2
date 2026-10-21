@@ -1,0 +1,57 @@
+{
+  "source": "socai2 synthetic bounded model-triage contract",
+  "batch": "3a-model-triage-20261020",
+  "synthetic": true,
+  "samples": {
+    "malicious": {
+      "tenant": "a",
+      "title": "Ransomware activity: shadow copies deleted and canary files encrypted",
+      "severity": "critical",
+      "hostname": "SOCAI2-3A-ENC01",
+      "username": "svc-unknown",
+      "mitre_techniques": ["T1490", "T1486"],
+      "raw_event": {
+        "evidence_summary": "Endpoint recorded vssadmin delete shadows /all /quiet, followed by 247 canary files renamed .locked by the same process within 60 seconds. No matching approved change record was supplied.",
+        "source_ref": "synthetic:3a-model-triage/malicious"
+      },
+      "expected": "true_positive or needs_review; never high-confidence benign closure"
+    },
+    "authorized": {
+      "tenant": "a",
+      "title": "Approved vulnerability scanner detected during change CHG-SOCAI2-3A-001",
+      "severity": "medium",
+      "hostname": "SOCAI2-3A-SCAN01",
+      "username": "svc-scanner",
+      "raw_event": {
+        "evidence_summary": "A valid port-scan detection matches the supplied authorized scan: account svc-scanner, host SOCAI2-3A-SCAN01, approved change CHG-SOCAI2-3A-001, asset range TEST-LAB, 2026-10-20 06:00-08:00 UTC. No credential theft, persistence or data exfiltration evidence was supplied.",
+        "authorization_source": "Synthetic source-supplied change record; external approval service not queried",
+        "source_ref": "synthetic:3a-model-triage/authorized"
+      },
+      "expected": "benign_true_positive or needs_review if authorization cannot be verified; valid detection is not a false positive"
+    },
+    "insufficient": {
+      "tenant": "a",
+      "title": "Unusual account activity with no corroborating telemetry",
+      "severity": "medium",
+      "hostname": "SOCAI2-3A-UNKNOWN01",
+      "username": "unknown-user",
+      "raw_event": {
+        "evidence_summary": "Only a vendor unusual-activity label is available. No process, authentication history, IP address, authorization record, UEBA score or tool result was supplied. Outcome is unconfirmed.",
+        "source_ref": "synthetic:3a-model-triage/insufficient"
+      },
+      "expected": "needs_review or uncertainty preserved; never high-confidence benign closure"
+    },
+    "model_failure": {
+      "tenant": "b",
+      "title": "Critical unexplained execution on a sensitive host",
+      "severity": "critical",
+      "hostname": "SOCAI2-3A-FAIL01",
+      "username": "svc-unverified",
+      "raw_event": {
+        "evidence_summary": "Critical upstream alert; insufficient evidence to authorize closure. Model endpoint failure must not be interpreted as proof of benign activity.",
+        "source_ref": "synthetic:3a-model-triage/model-failure"
+      },
+      "expected": "deterministic fallback, needs_review and no model success"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+services:
+  postgres:
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:15432:5432"
+  redis:
+    restart: unless-stopped
+  zookeeper:
+    restart: unless-stopped
+  kafka:
+    restart: unless-stopped
+  qdrant:
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+  ollama:
+    profiles: ["bundled"]
+  ollama-pull:
+    profiles: ["bundled"]
+  litellm:
+    depends_on: !reset null
+  api:
+    depends_on:
+      ollama-embedding:
+        condition: service_healthy
+    environment:
+      AISOC_EMBEDDING_MODEL: qwen3-embedding:0.6b
+      EMBEDDING_SERVICE_NAME: api
+      EMBEDDING_RECORD_DIR: /embedding-records
+    volumes:
+      - ./deployment/embedding/aisoc_local_embeddings.py:/app/aisoc_local_embeddings.py:ro
+      - ./deployment/embedding/generated/memory.py:/app/app/services/semantic_memory.py:ro
+      - ./deployment/embedding/calls/api:/embedding-records
+  agents:
+    depends_on:
+      ollama-embedding:
+        condition: service_healthy
+    environment:
+      AISOC_EMBEDDING_MODEL: qwen3-embedding:0.6b
+      EMBEDDING_SERVICE_NAME: agents
+      EMBEDDING_RECORD_DIR: /embedding-records
+    volumes:
+      - ./deployment/embedding/aisoc_local_embeddings.py:/app/aisoc_local_embeddings.py:ro
+      - ./deployment/embedding/generated/attck.py:/app/app/tools/mitre_full.py:ro
+      - ./deployment/embedding/calls/agents:/embedding-records
+  threatintel:
+    depends_on:
+      ollama-embedding:
+        condition: service_healthy
+    environment:
+      AISOC_EMBEDDING_MODEL: qwen3-embedding:0.6b
+      EMBEDDING_SERVICE_NAME: threatintel
+      EMBEDDING_RECORD_DIR: /embedding-records
+    volumes:
+      - ./deployment/embedding/aisoc_local_embeddings.py:/app/aisoc_local_embeddings.py:ro
+      - ./deployment/embedding/generated/intel.py:/app/app/storage/qdrant.py:ro
+      - ./deployment/embedding/original-iocs.json:/embedding-source.json:ro
+      - ./deployment/embedding/calls/threatintel:/embedding-records
+  ollama-embedding:
+    image: ollama/ollama:0.40.6
+    pull_policy: never
+    container_name: aisoc-ollama-embedding
+    ports:
+      - "127.0.0.1:11434:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - embedding_data:/root/.ollama
+    networks:
+      - aisoc
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "show", "qwen3-embedding:0.6b"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+volumes:
+  embedding_data:

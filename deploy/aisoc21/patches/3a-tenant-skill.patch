@@ -1,0 +1,823 @@
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -47,6 +47,7 @@
+ from app.context.knowledge_base import citation_basis, unresolvable_citations
+ from app.context.knowledge_base import render_for_prompt as render_runbooks
+ from app.context.organisation_memory import render_for_prompt, render_read_status
++from app.context.tenant_skills import render_read_status as render_skill_read_status
+ from app.investigator.prompt_sanitizer import sanitize_text, wrap_untrusted
+ from app.llm import safe_ainvoke
+ from app.llm.factory import make_chat_model
+@@ -217,8 +218,17 @@
+     preamble: list[str] = []
+     skill = state.tenant_skill or {}
+     skill_guidance = str(skill.get("triage_guidance") or "").strip()
++    skill_status = render_skill_read_status(state.tenant_skill_read)
++    if skill_status:
++        preamble.append(skill_status)
+     if skill_guidance:
+-        preamble.append(sanitize_text(skill_guidance)[:_MAX_SKILL_PROMPT_CHARS])
++        if (state.tenant_skill_read.get("selection") or {}).get("status") == "selected":
++            # Already sanitised and capped once by the worker; preserve the
++            # literal block whose hash and bytes the verdict artifact records.
++            preamble.append(skill_guidance)
++        else:
++            # Compatibility for direct callers constructing legacy state.
++            preamble.append(sanitize_text(skill_guidance)[:_MAX_SKILL_PROMPT_CHARS])
+     memory_status = render_read_status(state.organisation_memory_read)
+     if memory_status:
+         preamble.append(sanitize_text(memory_status))
+--- a/services/agents/app/context/organisation_memory.py
++++ b/services/agents/app/context/organisation_memory.py
+@@ -72,8 +72,8 @@
+     _cache.clear()
+ 
+ 
+-def _credential(tenant_id: str) -> str | None:
+-    location = os.getenv("AISOC_ORG_MEMORY_KEYS_FILE", "").strip()
++def _credential(tenant_id: str, *, keys_file_env: str = "AISOC_ORG_MEMORY_KEYS_FILE") -> str | None:
++    location = os.getenv(keys_file_env, "").strip()
+     if not location:
+         return None
+     try:
+--- a/services/agents/app/context/tenant_skills.py
++++ b/services/agents/app/context/tenant_skills.py
+@@ -43,16 +43,20 @@
+ 
+ from __future__ import annotations
+ 
++import hashlib
+ import os
+ import time
++from copy import deepcopy
+ from dataclasses import dataclass, field
+-from typing import Any
++from datetime import UTC, datetime
++from typing import Any, Literal, TypedDict
+ 
+ import httpx
+ import structlog
+ 
+ from app.investigator.prompt_sanitizer import sanitize_text
+ from app.investigator.strategies import Strategy
++from app.context.organisation_memory import _credential
+ 
+ logger = structlog.get_logger()
+ 
+@@ -62,6 +66,12 @@
+     "clear_cache",
+     "enabled",
+     "fetch_skills",
++    "fetch_tenant_skills",
++    "TenantSkillsRead",
++    "make_read",
++    "select_skill_with_provenance",
++    "adopt_triage_guidance",
++    "render_read_status",
+     "select_skill",
+     "skills_from_payload",
+ ]
+@@ -84,7 +94,33 @@
+ _MAX_BLOCK_CHARS = 1200
+ _MAX_ITEM_CHARS = 400
+ 
+-_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
++_SOURCE = "api.tenant-skills.resolved.active"
++# Keep the old effective prompt budget; previously the generic sanitizer's
++# 2000-character ceiling ran before the nominal 4000-character slice.
++_TRIAGE_GUIDANCE_CHARS = 2000
++
++
++class TenantSkillsRead(TypedDict):
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"]
++    reason: str | None
++    tenant_id: str | None
++    source: str
++    read_at: str
++    cache: dict[str, Any]
++    http_status: int | None
++    received_count: int
++    expired_count: int
++    valid_count: int
++    candidate_count: int
++    truncated_count: int
++    skills: list[dict[str, Any]]
++
++
++_cache: dict[tuple[str, str, str], tuple[float, str, list[dict[str, Any]]]] = {}
++
++
++def _now() -> datetime:
++    return datetime.now(UTC)
+ 
+ 
+ def enabled() -> bool:
+@@ -259,7 +295,8 @@
+ 
+     try:
+         version = int(row.get("version") or 0)
+-    except (TypeError, ValueError):
++        minimum = int(body.get("min_pivots") or 2)
++    except (TypeError, ValueError, OverflowError):
+         version = 0
+     if version < 1:
+         # A version of zero is not a version. The pair recorded on the
+@@ -275,7 +312,7 @@
+         owner=str(body.get("owner") or ""),
+         plan=plan,
+         expected_pivots=pivots,
+-        min_pivots=max(1, min(int(body.get("min_pivots") or 2), len(pivots))),
++        min_pivots=max(1, min(minimum, len(pivots))),
+         applies_when=str(body.get("applies_when") or ""),
+         guidance=str(body.get("guidance") or ""),
+         verdict_guidance=str(body.get("verdict_guidance") or ""),
+@@ -290,21 +327,19 @@
+     )
+ 
+ 
+-def select_skill(
++def select_skill_with_provenance(
+     rows: list[dict[str, Any]],
+     *,
+     summary: str = "",
+     techniques: list[str] | None = None,
+     rule_id: str | None = None,
+     source: str | None = None,
+-) -> ResolvedSkill | None:
++) -> tuple[ResolvedSkill | None, dict[str, Any]]:
+     """Pick the skill that best matches an alert, or ``None``.
+ 
+-    Scoring mirrors :func:`app.investigator.strategies.select_strategy` so an
+-    author who understands one understands the other: a deliberate
+-    classification outranks a keyword. A rule id is the most specific claim an
+-    author can make, so it outranks a technique; a technique outranks a
+-    source, which is a whole product's worth of alerts; keywords are last.
++    Preserve the existing additive scoring: rule id 20, technique 10,
++    source 5 and each matching keyword 2. These are weights rather than
++    strict precedence: sufficiently many keywords can outweigh a rule id.
+ 
+     Ties break on skill id, not on list order. A tenant with two skills
+     scoring equally must get the same one on every alert, or the same alert
+@@ -345,71 +380,171 @@
+         if best is None or candidate.score > best.score or (candidate.score == best.score and skill.skill_id < best.skill.skill_id):
+             best = candidate
+ 
++    inputs = {"summary": summary or "", "techniques": list(techniques or []), "rule_id": rule_id, "source": source}
+     if best is None:
+-        return None
++        return None, {"status": "no_match", "inputs": inputs, "score": 0, "reasons": []}
+     logger.info(
+         "tenant_skills.selected",
+         skill=best.skill.ref,
+         score=best.score,
+         matched_on=",".join(best.reasons),
+     )
+-    return best.skill
+-
+-
+-async def fetch_skills(tenant_id: str | None) -> list[dict[str, Any]]:
+-    """Active, unexpired skills for a tenant, or ``[]``. Never raises.
+-
+-    Fail-soft for the same reason organisation memory is: an investigation
+-    without the tenant's skill is degraded, and one that dies because a skill
+-    lookup failed is worse than the gap it was closing. A cached set is served
+-    through a brief outage rather than dropping the tenant's guidance.
+-    """
+-    if not enabled() or not tenant_id:
+-        return []
+-
+-    cached = _cache.get(tenant_id)
+-    now = time.monotonic()
+-    if cached is not None and now - cached[0] < _CACHE_TTL_S:
+-        return cached[1]
+-
+-    token = os.getenv("AISOC_AGENTS_SERVICE_TOKEN", "").strip() or os.getenv("AISOC_SERVICE_TOKEN", "").strip()
++    return best.skill, {
++        "status": "selected", "inputs": inputs, "skill_id": best.skill.skill_id,
++        "version": best.skill.version, "ref": best.skill.ref,
++        "score": best.score, "reasons": list(best.reasons),
++    }
++
++
++def select_skill(
++    rows: list[dict[str, Any]], *, summary: str = "", techniques: list[str] | None = None,
++    rule_id: str | None = None, source: str | None = None,
++) -> ResolvedSkill | None:
++    """Compatibility projection; matching scores and tie-breaking are unchanged."""
++    return select_skill_with_provenance(rows, summary=summary, techniques=techniques, rule_id=rule_id, source=source)[0]
++
++
++def _date(value: Any) -> datetime:
++    if not isinstance(value, str) or not value.strip():
++        raise ValueError("invalid skill timestamp")
++    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
++    return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed
++
++
++def _validate_rows(rows: list[Any]) -> list[dict[str, Any]]:
++    seen: set[str] = set()
++    for row in rows:
++        if not isinstance(row, dict):
++            raise ValueError("invalid skill row")
++        skill_id, version, body = row.get("skill_id"), row.get("version"), row.get("body")
++        if not isinstance(skill_id, str) or not skill_id.strip() or skill_id != skill_id.strip() or skill_id in seen:
++            raise ValueError("missing or duplicate skill id")
++        seen.add(skill_id)
++        if isinstance(version, bool) or not isinstance(version, int) or version < 1 or not isinstance(body, dict):
++            raise ValueError("invalid version or body")
++        if "id" in body and body["id"] != skill_id:
++            raise ValueError("skill body id differs")
++        _date(row.get("expires_at"))
++        if row.get("activated_at") is not None:
++            _date(row["activated_at"])
++        for key in ("name", "owner", "applies_when", "guidance", "verdict_guidance"):
++            if key in body and not isinstance(body[key], str):
++                raise ValueError("invalid skill text")
++        for key in ("plan", "expected_pivots", "required_evidence", "escalate_when"):
++            values = body.get(key, [])
++            if not isinstance(values, list) or any(not isinstance(item, str) or not item.strip() for item in values):
++                raise ValueError("invalid skill list")
++            if key in {"plan", "expected_pivots"} and not values:
++                raise ValueError("missing skill plan")
++        minimum = body.get("min_pivots", 2)
++        if isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 1:
++            raise ValueError("invalid min_pivots")
++        match = body.get("match")
++        if not isinstance(match, dict):
++            raise ValueError("invalid skill match")
++        for key in ("techniques", "rule_ids", "sources", "keywords"):
++            values = match.get(key, [])
++            if not isinstance(values, list) or any(not isinstance(item, str) or not item.strip() for item in values):
++                raise ValueError("invalid skill match list")
++    return deepcopy(rows)
++
++
++def _active_rows(rows: list[dict[str, Any]], now: datetime) -> tuple[list[dict[str, Any]], int]:
++    active = [deepcopy(row) for row in rows if _date(row.get("expires_at")) > now]
++    return active, len(rows) - len(active)
++
++
++def make_read(
++    tenant_id: str | None, *, rows: list[dict[str, Any]] | None = None,
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"] | None = None,
++    reason: str | None = None, source: str = _SOURCE, read_at: str | None = None,
++    cache: dict[str, Any] | None = None, http_status: int | None = None,
++    received_count: int | None = None, expired_count: int = 0,
++) -> TenantSkillsRead:
++    current = deepcopy(rows or [])
++    return {
++        "status": status or ("success" if current else "no_match"), "reason": reason,
++        "tenant_id": tenant_id, "source": source, "read_at": read_at or _now().isoformat(),
++        "cache": cache or {"source": "none", "freshness": "not_available", "age_seconds": None, "ttl_seconds": _CACHE_TTL_S},
++        "http_status": http_status, "received_count": len(current) if received_count is None else received_count,
++        "expired_count": expired_count, "valid_count": len(current),
++        "candidate_count": min(len(current), MAX_SKILLS_IN_PROMPT),
++        "truncated_count": max(0, len(current) - MAX_SKILLS_IN_PROMPT),
++        "skills": current[:MAX_SKILLS_IN_PROMPT],
++    }
++
++
++async def fetch_tenant_skills(tenant_id: str | None) -> TenantSkillsRead:
++    """Read current tenant skills without shared credentials or stale adoption."""
++    if not enabled():
++        return make_read(tenant_id, status="disabled")
++    if not tenant_id:
++        return make_read(tenant_id, status="unavailable", reason="missing_tenant")
++    token = _credential(tenant_id, keys_file_env="AISOC_TENANT_SKILLS_KEYS_FILE")
+     if not token:
+-        # Loud, like the organisation-memory and MCP-registry equivalents:
+-        # without the shared secret the API refuses the service path, so every
+-        # investigation would silently run without the guidance an operator
+-        # authored, backtested and activated.
+-        logger.warning(
+-            "tenant_skills.no_service_token",
+-            reason="AISOC_AGENTS_SERVICE_TOKEN is unset, so active tenant skills cannot be read",
+-        )
+-        return []
+-
+-    # Two path segments rather than one. A single `/resolved` would be matched
+-    # by `GET /tenant-skills/{skill_id}` on any deployment where the route
+-    # order changed, and the symptom would be a 404 for a tenant whose skill
+-    # happened not to be called "resolved".
++        logger.warning("tenant_skills.not_configured")
++        return make_read(tenant_id, status="unavailable", reason="not_configured")
+     url = f"{_API_URL.rstrip('/')}/api/v1/tenant-skills/resolved/active"
++    key = (tenant_id, url, hashlib.sha256(token.encode("utf-8")).hexdigest())
++    cached = _cache.get(key)
++    clock, now = time.monotonic(), _now()
++    age = max(0.0, clock - cached[0]) if cached else None
++    info: dict[str, Any] = {"source": "none", "freshness": "expired" if cached else "not_available", "age_seconds": age, "ttl_seconds": _CACHE_TTL_S}
++    if cached is not None and age is not None and age < _CACHE_TTL_S:
++        try:
++            active, expired = _active_rows(cached[2], now)
++        except (ValueError, TypeError, OverflowError):
++            _cache.pop(key, None)
++            return make_read(tenant_id, status="unavailable", reason="invalid_response", cache=info)
++        return make_read(tenant_id, rows=active, received_count=len(cached[2]), expired_count=expired, http_status=200,
++                         cache={**info, "source": "memory", "freshness": "fresh", "fetched_at": cached[1]})
+     try:
+         async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+-            response = await client.get(
+-                url,
+-                params={"tenant_id": tenant_id},
+-                headers={"X-AiSOC-Service-Token": token},
+-            )
+-    except httpx.HTTPError as exc:
+-        logger.warning("tenant_skills.unreachable", error=str(exc)[:300])
+-        return cached[1] if cached else []
+-
+-    if response.status_code >= 400:
++            response = await client.get(url, params={"tenant_id": tenant_id}, headers={"Authorization": f"Bearer {token}"})
++    except httpx.HTTPError:
++        logger.warning("tenant_skills.unreachable")
++        return make_read(tenant_id, status="unavailable", reason="transport_error", cache=info)
++    if response.status_code != 200:
++        reason = "auth_failed" if response.status_code in {401, 403} else "http_error"
+         logger.warning("tenant_skills.refused", status_code=response.status_code)
+-        return cached[1] if cached else []
+-
++        return make_read(tenant_id, status="unavailable", reason=reason, http_status=response.status_code, cache=info)
+     try:
+-        payload = response.json()
+-    except ValueError:
++        body = response.json()
++        if not isinstance(body, dict) or body.get("tenant_id") != tenant_id or not isinstance(body.get("skills"), list):
++            raise ValueError("invalid skills response")
++        rows = _validate_rows(body["skills"])
++        active, expired = _active_rows(rows, _now())
++    except (ValueError, TypeError, OverflowError):
+         logger.warning("tenant_skills.bad_response")
+-        return cached[1] if cached else []
+-
+-    rows = skills_from_payload(payload)
+-    _cache[tenant_id] = (now, rows)
+-    return rows
++        return make_read(tenant_id, status="unavailable", reason="invalid_response", http_status=200, cache=info)
++    fetched = now.isoformat()
++    _cache[key] = (clock, fetched, deepcopy(rows))
++    return make_read(tenant_id, rows=active, received_count=len(rows), expired_count=expired, http_status=200,
++                     cache={"source": "network", "freshness": "fresh", "age_seconds": 0.0, "ttl_seconds": _CACHE_TTL_S, "fetched_at": fetched})
++
++
++async def fetch_skills(tenant_id: str | None) -> list[dict[str, Any]]:
++    """Compatibility projection for investigation callers outside auto-triage."""
++    return (await fetch_tenant_skills(tenant_id))["skills"]
++
++
++def adopt_triage_guidance(skill: ResolvedSkill) -> str:
++    """The literal bounded block adopted once and recorded with selection."""
++    return sanitize_text(skill.triage_guidance(), max_len=_TRIAGE_GUIDANCE_CHARS)
++
++
++def render_read_status(read: dict[str, Any]) -> str:
++    status = read.get("status", "not_requested")
++    if status == "not_requested":
++        return ""
++    selection = (read.get("selection") or {}).get("status", "not_requested")
++    result = f"Tenant skills read: status={status}; selection={selection}; freshness={(read.get('cache') or {}).get('freshness', 'not_available')}; source={read.get('source') or _SOURCE}."
++    if read.get("reason"):
++        result += f" Reason={read['reason']}."
++    if status in {"unavailable", "disabled"}:
++        result += " No skill material was adopted; this does not establish that this tenant has no skills."
++    elif selection == "no_match":
++        result += " No skill matched this alert within the returned candidate set."
++    if read.get("truncated_count"):
++        result += f" Candidate limit={MAX_SKILLS_IN_PROMPT}; {int(read['truncated_count'])} active skills were outside selection."
++    return result
+--- a/services/agents/app/investigator/ledger.py
++++ b/services/agents/app/investigator/ledger.py
+@@ -530,6 +530,7 @@
+     shadow: bool = False,
+     llm_exchanges: list[dict[str, Any]] | None = None,
+     organisation_memory_read: dict[str, Any] | None = None,
++    tenant_skill_read: dict[str, Any] | None = None,
+ ) -> bool:
+     """Durably record an auto-triage outcome (issue #571) in ONE transaction:
+ 
+@@ -653,6 +654,7 @@
+                             "proposed_actions": recommendations,
+                             "auto_closed": auto_closed,
+                             **({"organisation_memory_read": organisation_memory_read} if organisation_memory_read is not None else {}),
++                            **({"tenant_skill_read": tenant_skill_read} if tenant_skill_read is not None else {}),
+                         }
+                     ),
+                     first.get("input_hash"),
+@@ -678,23 +680,26 @@
+                 # pass while the events it explains stayed at one.
+                 if not _inserted_a_row(written):
+                     llm_exchanges = []
+-                elif organisation_memory_read is not None:
+-                    # The actual adopted subset and read status belong to the
+-                    # same first-write transaction as the verdict/transcript.
+-                    # A retry must neither replace provenance nor append a copy.
+-                    memory_blob = json.dumps(organisation_memory_read, sort_keys=True, ensure_ascii=False)
+-                    await conn.execute(
+-                        """
+-                        INSERT INTO investigation_artifacts
+-                          (id, run_id, event_id, tenant_id, kind, content,
+-                           sha256, size_bytes, created_at)
+-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+-                        """,
+-                        uuid.uuid4(), run_id, verdict_event_id, tenant_id,
+-                        "organisation_memory_read", memory_blob,
+-                        hashlib.sha256(memory_blob.encode("utf-8")).hexdigest(),
+-                        len(memory_blob.encode("utf-8")),
+-                    )
++                else:
++                    # Adopted material/read states share the first-write
++                    # verdict transaction. A retry does not replace or append
++                    # either source's immutable receipt.
++                    for kind, receipt in (("organisation_memory_read", organisation_memory_read),
++                                          ("tenant_skill_read", tenant_skill_read)):
++                        if receipt is None:
++                            continue
++                        blob = json.dumps(receipt, sort_keys=True, ensure_ascii=False)
++                        await conn.execute(
++                            """
++                            INSERT INTO investigation_artifacts
++                              (id, run_id, event_id, tenant_id, kind, content,
++                               sha256, size_bytes, created_at)
++                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
++                            """,
++                            uuid.uuid4(), run_id, verdict_event_id, tenant_id,
++                            kind, blob, hashlib.sha256(blob.encode("utf-8")).hexdigest(),
++                            len(blob.encode("utf-8")),
++                        )
+                 for exchange in llm_exchanges or []:
+                     for kind, text in (
+                         ("llm_prompt", exchange.get("prompt")),
+--- a/services/agents/app/models/state.py
++++ b/services/agents/app/models/state.py
+@@ -112,6 +112,9 @@
+     # re-running the resolver against a store that has since changed.
+     # `{"skill_id": ..., "version": N, "ref": "id@vN", "owner": ...}`.
+     tenant_skill: dict[str, Any] | None = None
++    # A read can succeed without selecting a skill; failures never claim
++    # confirmed absence. Carries the exact prompt block and selection facts.
++    tenant_skill_read: dict[str, Any] = Field(default_factory=lambda: {"status": "not_requested"})
+ 
+     # Knowledge-base runbook chunks retrieved for this alert, as
+     # `app.context.knowledge_base.RunbookRetrieval.as_state()` renders them:
+--- a/services/agents/app/replay/shadow.py
++++ b/services/agents/app/replay/shadow.py
+@@ -97,7 +97,7 @@
+ 
+ from app.context import dispositions as dispositions_module
+ from app.context import identity as identity_module
+-from app.context import knowledge_base, organisation_memory
++from app.context import knowledge_base, organisation_memory, tenant_skills
+ from app.context.dispositions import RecentDispositions
+ from app.context.identity import IdentityContext
+ from app.context.knowledge_base import RunbookRetrieval
+@@ -508,6 +508,17 @@
+         # alert's guidance.
+         return [dict(row) for row in self._snapshot.all_skills()]
+ 
++    async def fetch_tenant_skills(self, tenant_id: str | None) -> tenant_skills.TenantSkillsRead:
++        self.reads["fetch_tenant_skills"] += 1
++        # These are the captured historical rows, including published
++        # skills_under_test. Do not apply today's expiry clock or live reads.
++        return tenant_skills.make_read(
++            tenant_id, rows=[dict(row) for row in self._snapshot.all_skills()],
++            source="replay.snapshot", read_at=self._snapshot.split_at.isoformat(),
++            cache={"source": "snapshot", "freshness": "frozen", "age_seconds": None, "ttl_seconds": None,
++                   "split_at": self._snapshot.split_at.isoformat()},
++        )
++
+     async def retrieve_runbooks(self, tenant_id: str | None, *, query: str) -> RunbookRetrieval:
+         self.reads["retrieve_runbooks"] += 1
+         # The one line that makes this a freeze. ``split_at`` comes off the
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -33,6 +33,7 @@
+ 
+ import asyncio
+ import contextlib
++import hashlib
+ import json
+ import os
+ import time
+@@ -51,7 +52,7 @@
+ from app.context import dispositions as dispositions_module
+ from app.context import identity as identity_module
+ from app.context import knowledge_base
+-from app.context.tenant_skills import select_skill
++from app.context import tenant_skills
+ from app.core.cost_governor import Decision, get_governor
+ from app.core.cost_telemetry import CostSummary, CostTracker
+ from app.core.kafka_security import kafka_client_kwargs
+@@ -283,6 +284,7 @@
+         # originating connector instance.
+         "connector_id": alert.get("connector_id"),
+         "connector_type": alert.get("connector_type"),
++        "source": alert.get("source"),
+         "source_event_ids": alert.get("source_event_ids", []),
+     }
+     # Deterministic, replay-stable run id (issue #571) — same alert + workflow
+@@ -1001,37 +1003,34 @@
+         return raised
+ 
+     async def _attach_tenant_skill(self, state: InvestigationState) -> None:
+-        """Resolve the tenant skill matching this alert and record it on the state.
+-
+-        Best-effort in exactly one direction: a lookup that fails leaves the
+-        state without a skill and triage proceeds as it did before. The
+-        opposite failure, a skill that matched and was not recorded, is the one
+-        that matters, because the verdict would then carry guidance with no
+-        provenance. So the selection and the record happen together.
+-        """
++        """Record read limits, selection and the literal adopted prompt together."""
++        tenant = str(state.tenant_id)
++        state.tenant_skill = None
+         try:
+-            rows = await self._reader.fetch_skills(str(state.tenant_id))
+-        except Exception as exc:  # noqa: BLE001 - guidance is advisory, triage is not
+-            logger.warning("auto_triage_worker.skill_lookup_failed", error=str(exc)[:200])
++            read = await self._reader.fetch_tenant_skills(tenant)
++        except Exception:  # noqa: BLE001 - advisory context never invents absence
++            logger.warning("auto_triage_worker.skill_lookup_failed")
++            read = tenant_skills.make_read(tenant, status="unavailable", reason="reader_error")
++        state.tenant_skill_read = dict(read)
++        state.tenant_skill_read.update(selection={"status": "not_requested"}, prompt_block="",
++                                      prompt_sha256=hashlib.sha256(b"").hexdigest())
++        if read["status"] not in {"success", "no_match"}:
+             return
+-        if not rows:
+-            return
+-
+         raw = state.raw_alert or {}
+-        skill = select_skill(
+-            rows,
+-            summary=state.alert_summary or "",
+-            techniques=list(state.mitre_mappings or []),
++        # Fused MITRE tags live on raw_alert; no broader graph-mapping change.
++        techniques = state.mitre_mappings or raw.get("mitre_techniques") or []
++        skill, selection = tenant_skills.select_skill_with_provenance(
++            read["skills"], summary=state.alert_summary or "", techniques=list(techniques),
+             rule_id=str(raw.get("rule_id") or "") or None,
+             source=str(raw.get("connector_type") or raw.get("source") or "") or None,
+         )
++        state.tenant_skill_read["selection"] = selection
+         if skill is None:
+             return
+-
+-        state.tenant_skill = skill.as_provenance()
+-        guidance = skill.triage_guidance()
+-        if guidance:
+-            state.tenant_skill["triage_guidance"] = guidance
++        guidance = tenant_skills.adopt_triage_guidance(skill)
++        state.tenant_skill = {**skill.as_provenance(), "triage_guidance": guidance}
++        state.tenant_skill_read["prompt_block"] = guidance
++        state.tenant_skill_read["prompt_sha256"] = hashlib.sha256(guidance.encode("utf-8")).hexdigest()
+         _METRICS["tenant_skill_applied"] += 1
+ 
+     async def _attach_runbooks(self, state: InvestigationState) -> None:
+@@ -1383,6 +1382,7 @@
+             # there — no model was asked, so there is nothing to replay.
+             llm_exchanges=list(state.llm_exchanges),
+             organisation_memory_read=dict(state.organisation_memory_read),
++            tenant_skill_read=dict(state.tenant_skill_read),
+         )
+ 
+     @staticmethod
+--- a/services/agents/app/workers/triage_persistence.py
++++ b/services/agents/app/workers/triage_persistence.py
+@@ -103,6 +103,7 @@
+     "fetch_organisation_memory": SNAPSHOT,
+     "lookup_prior": SNAPSHOT,
+     "fetch_skills": SNAPSHOT,
++    "fetch_tenant_skills": SNAPSHOT,
+     "retrieve_runbooks": CUTOFF,
+     "recent_dispositions": CUTOFF,
+     "fetch_identity_context": CUTOFF,
+@@ -258,6 +259,9 @@
+ 
+     async def fetch_skills(self, tenant_id: str | None) -> list[dict[str, Any]]:
+         """The tenant's active, unexpired investigation skills."""
++
++    async def fetch_tenant_skills(self, tenant_id: str | None) -> tenant_skills.TenantSkillsRead:
++        """Current skill rows with identity, freshness and failure facts."""
+ 
+     async def retrieve_runbooks(self, tenant_id: str | None, *, query: str) -> RunbookRetrieval:
+         """Knowledge-base runbook chunks relevant to one alert, with citations.
+@@ -426,6 +430,9 @@
+     async def fetch_skills(self, tenant_id: str | None) -> list[dict[str, Any]]:
+         return await tenant_skills.fetch_skills(tenant_id)
+ 
++    async def fetch_tenant_skills(self, tenant_id: str | None) -> tenant_skills.TenantSkillsRead:
++        return await tenant_skills.fetch_tenant_skills(tenant_id)
++
+     async def retrieve_runbooks(self, tenant_id: str | None, *, query: str) -> RunbookRetrieval:
+         # ``as_of=None`` is production: retrieve against the knowledge base as
+         # it stands. Stated explicitly rather than left to the default, so the
+--- a/services/agents/tests/test_replay_leakage.py
++++ b/services/agents/tests/test_replay_leakage.py
+@@ -455,13 +455,13 @@
+     async def _resolve(tenant_id: str) -> _StubLlmConfig:
+         return _StubLlmConfig()
+ 
+-    async def _live_skills(tenant_id: str | None) -> list[dict[str, Any]]:
+-        return [_skill_row("poison-skill", activated_at="2026-06-01T00:00:00Z", guidance="POISON: activated after the split")]
++    async def _live_skills(tenant_id: str | None) -> tenant_skills_module.TenantSkillsRead:
++        return tenant_skills_module.make_read(tenant_id, rows=[_skill_row("poison-skill", activated_at="2026-06-01T00:00:00Z", guidance="POISON: activated after the split")])
+ 
+     monkeypatch.delenv("AISOC_DETERMINISTIC", raising=False)
+     monkeypatch.setattr(worker_module, "run_auto_triage", _capture)
+     monkeypatch.setattr(worker_module, "resolve_llm_config", _resolve)
+-    monkeypatch.setattr(tenant_skills_module, "fetch_skills", _live_skills)
++    monkeypatch.setattr(tenant_skills_module, "fetch_tenant_skills", _live_skills)
+     tenant_skills_module.clear_cache()
+ 
+     frozen = capture_context(
+@@ -476,13 +476,15 @@
+     assert frozen.dropped_skills == 1
+     assert frozen.undated_skills == 0
+ 
++    reader = FrozenTriageContextReader(frozen)
+     worker = FusedAlertTriageWorker(
+         bootstrap_servers="",
+         writer=ShadowTriageWriter(),
+-        context_reader=FrozenTriageContextReader(frozen),
++        context_reader=reader,
+     )
+     summary = await worker.triage(_envelope())
+     assert summary is not None
++    assert reader.reads["fetch_tenant_skills"] == 1
+ 
+     assert len(captured) == 1 and captured[0] is not None
+     assert captured[0]["skill_id"] == "frozen-skill"
+--- a/services/api/app/api/v1/endpoints/tenant_skills.py
++++ b/services/api/app/api/v1/endpoints/tenant_skills.py
+@@ -6,22 +6,15 @@
+ activate, retire and delete. The seventh is internal and is how the agents
+ service reads the active set on the path of an investigation.
+ 
+-The tenant never appears in a request
+---------------------------------------
++Tenant scope and read credentials
++--------------------------------
+ Every console route takes ``user.tenant_id`` from the authenticated
+ principal. The skill id is the author's own slug and is scoped to that tenant
+ by the query, so naming another tenant's skill is a 404 rather than a read.
+-The internal route names a tenant explicitly for the same reason
+-``/mcp-servers/resolved`` does: a service token carries no tenant of its own,
+-so there is nothing to intersect it with.
+-
+-Why the internal route accepts a service token and not a session
+------------------------------------------------------------------
+-Unlike ``/mcp-servers/resolved`` this one returns no credential, so the
+-narrow reason that route gives for refusing a session does not apply. It is
+-still service-token only, on a simpler ground: it exists for one caller, and a
+-route with one caller should accept one kind of credential. The console reads
+-the same rows through ``GET /tenant-skills``, which returns more, not less.
++The resolved read uses the same standard Bearer principal and
++``settings:read`` permission as the other skill reads. Agents present a
++tenant-scoped reader key. Its optional tenant parameter narrows the
++principal's scope; the legacy shared service header grants no authority.
+ 
+ What the backtest route does, and does not, build
+ --------------------------------------------------
+@@ -46,12 +39,12 @@
+ from sqlalchemy import select
+ 
+ from app.api.v1.deps import AuthUser, DBSession
+-from app.api.v1.endpoints.alert_writeback import service_token_valid
+ from app.db.database import AsyncSessionLocal
+ from app.db.rls import TenantDBSession, set_rls_context
+ from app.models.connector import Connector
+ from app.models.tenant_skill import TenantSkill as TenantSkillRow
+ from app.models.tenant_skill import TenantSkillVersion
++from app.security.tenant_scope import scoped_tenant_or_403
+ from app.services.replay_evaluation import store as replay_store
+ from app.services.replay_evaluation.job import (
+     BOOTSTRAP_RESAMPLES,
+@@ -578,38 +571,31 @@
+ 
+ @router.get("/resolved/active", response_model=ResolvedSkillsResponse, include_in_schema=False)
+ async def resolve_tenant_skills(
++    user: AuthUser,
+     db: DBSession,
+-    tenant_id: uuid.UUID,
++    tenant_id: uuid.UUID | None = None,
+     x_aisoc_service_token: Annotated[str | None, Header()] = None,
+ ) -> ResolvedSkillsResponse:
+     """Active, unexpired skills for the agents service.
+ 
+-    The token is checked in band rather than through a bearer dependency, the
+-    same shape ``/mcp-servers/resolved`` and ``/feedback/context-statements``
+-    use, because the caller is a service with no session.
+-    ``service_token_valid`` compares in constant time and fails closed when the
+-    shared secret is unset, so an unconfigured deployment has this route shut.
+-
+-    ``tenant_id`` is required and is the scope rather than a narrowing of one:
+-    a service token carries no tenant, so there is nothing to intersect it
+-    with, and defaulting an omitted parameter to "every tenant" would serve
+-    one customer's guidance into another's investigation.
+-
+-    ``TenantDBSession`` cannot be used here because it resolves the tenant
+-    from a session this caller does not have, so the RLS context is set from
+-    the named tenant explicitly. The query layer filters on the same value, so
+-    the two agree by construction rather than by convention.
+-    """
+-    if not service_token_valid(x_aisoc_service_token):
++    The standard Bearer principal must hold ``settings:read``. A requested
++    tenant must equal that principal's tenant, and an omitted tenant uses the
++    principal's own. The old X-AiSOC-Service-Token argument is retained for
++    callers but grants no authority. RLS and the resolver use the same
++    authorised tenant; skill lifecycle and version selection are unchanged.
++    """
++    if user is None:  # Defensive for direct calls; HTTP resolves AuthUser first.
+         raise HTTPException(
+             status_code=status.HTTP_401_UNAUTHORIZED,
+-            detail="this route is reachable only by an AiSOC service holding the shared service token",
++            detail="Bearer authentication required",
++            headers={"WWW-Authenticate": "Bearer"},
+         )
+-
+-    await set_rls_context(db, tenant_id)
+-    skills = await store.resolve_active_skills(db, tenant_id)
+-    logger.info("tenant_skill.resolved_for_agent", tenant_id=str(tenant_id), skills=len(skills))
++    user.require_permission("settings:read")
++    scoped = scoped_tenant_or_403(user, tenant_id)
++    await set_rls_context(db, scoped)
++    skills = await store.resolve_active_skills(db, scoped)
++    logger.info("tenant_skill.resolved_for_agent", tenant_id=str(scoped), skills=len(skills))
+     return ResolvedSkillsResponse(
+-        tenant_id=str(tenant_id),
++        tenant_id=str(scoped),
+         skills=[ResolvedSkillModel(**s) for s in skills],
+     )
+--- a/services/api/tests/test_tenant_skills.py
++++ b/services/api/tests/test_tenant_skills.py
+@@ -15,8 +15,8 @@
+   the message names which one, including the two refusals that need the
+   replay rows themselves: a run that did not complete, and a window holding
+   no alert this skill's match block selects
+-* the internal route is service-token only, and a valid console session is not
+-  enough
++* the resolved read requires a standard Bearer principal with settings:read;
++  a shared service header does not grant access or widen its tenant
+ 
+ The database is a real one, the same way ``test_mcp_registry.py`` does it:
+ Postgres-only column types compile down to their SQLite equivalents so these
+@@ -1061,19 +1061,25 @@
+         assert other_client.get("/api/v1/tenant-skills/finance-batch-powershell").status_code == 404
+         assert other_client.get("/api/v1/tenant-skills").json()["skills"] == []
+ 
+-    def test_the_internal_route_refuses_a_missing_token(self, session_factory, _service_token) -> None:
++    def test_the_internal_route_refuses_a_missing_bearer(self, session_factory, _service_token) -> None:
+         client = TestClient(_app(session_factory, user=None))
+         response = client.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(TENANT)})
+         assert response.status_code == 401
+ 
+-    def test_the_internal_route_refuses_a_valid_console_session(self, session_factory, _service_token) -> None:
+-        """A session is a credential for the console routes, not for this one.
+-
+-        The route has exactly one caller, and a route with one caller should
+-        accept one kind of credential.
+-        """
++    def test_the_internal_route_accepts_an_authorised_console_principal(self, session_factory, _service_token) -> None:
++        """The same skill-read permission authorises this narrower projection."""
+         client = TestClient(_app(session_factory, user=_console_user()))
+         response = client.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(TENANT)})
++        assert response.status_code == 200
++        assert response.json() == {"tenant_id": str(TENANT), "skills": []}
++
++    def test_the_internal_route_refuses_the_shared_header_without_a_bearer(self, session_factory, _service_token) -> None:
++        client = TestClient(_app(session_factory, user=None))
++        response = client.get(
++            "/api/v1/tenant-skills/resolved/active",
++            params={"tenant_id": str(TENANT)},
++            headers={"X-AiSOC-Service-Token": SERVICE_TOKEN},
++        )
+         assert response.status_code == 401
+ 
+     def test_the_internal_route_serves_only_active_unexpired_skills_for_the_named_tenant(self, session_factory, _service_token) -> None:
+@@ -1081,7 +1087,7 @@
+         console.put("/api/v1/tenant-skills", json={"source_yaml": _yaml()})
+         console.put("/api/v1/tenant-skills", json={"source_yaml": _yaml(skill_id="never-activated")})
+ 
+-        agent = TestClient(_app(session_factory, user=None))
++        agent = TestClient(_app(session_factory, user=_console_user()))
+         headers = {"X-AiSOC-Service-Token": SERVICE_TOKEN}
+         before = agent.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(TENANT)}, headers=headers)
+         assert before.status_code == 200
+@@ -1095,9 +1101,15 @@
+         assert served[0]["version"] == 1
+         assert served[0]["body"]["plan"]
+ 
+-        # And nothing at all for a tenant that authored nothing.
+-        other = agent.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(OTHER_TENANT)}, headers=headers)
+-        assert other.json()["skills"] == []
++        # A header cannot widen the principal's tenant. The other tenant's
++        # own principal sees its empty set, rather than this tenant's skill.
++        refused = agent.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(OTHER_TENANT)}, headers=headers)
++        assert refused.status_code == 403
++        other_user = CurrentUser(user_id=uuid.uuid4(), tenant_id=OTHER_TENANT, role="viewer", email="other@example.invalid", scopes=["settings:read"])
++        other_agent = TestClient(_app(session_factory, user=other_user))
++        other = other_agent.get("/api/v1/tenant-skills/resolved/active", params={"tenant_id": str(OTHER_TENANT)}, headers=headers)
++        assert other.status_code == 200
++        assert other.json() == {"tenant_id": str(OTHER_TENANT), "skills": []}
+ 
+ 
+ def _activate(session_factory, skill_id: str) -> None:

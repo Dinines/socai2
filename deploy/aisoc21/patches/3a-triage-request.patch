@@ -1,0 +1,81 @@
+--- a/services/agents/app/llm/factory.py
++++ b/services/agents/app/llm/factory.py
+@@ -120,6 +120,10 @@
+ #: A trailing OpenAI-compatible API version segment — `/v1`, and `/v2` etc. so
+ #: the rule does not have to be revisited for a provider that moves on.
+ _VERSION_SUFFIX = re.compile(r"/v\d+$")
++
++# Bounded defaults for the migrated auto-triage path. The gateway's own
++# timeout/retry policy does not constrain the SDK client talking to it.
++TRIAGE_REQUEST_TIMEOUT_SECONDS = 45.0
+ 
+ 
+ def completions_url_for_base(base_url: str) -> str:
+@@ -235,6 +239,9 @@
+     if INCLUDE_HEADERS_PARAM in getattr(ChatOpenAI, "model_fields", {}):
+         params.setdefault(INCLUDE_HEADERS_PARAM, True)
+     params.update(kwargs)
++    if role == "triage":
++        params.setdefault("max_retries", 0)
++        params.setdefault("timeout", TRIAGE_REQUEST_TIMEOUT_SECONDS)
+     return ChatOpenAI(**params)
+ 
+ 
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -18,6 +18,7 @@
+ 
+ from __future__ import annotations
+ 
++import asyncio
+ import hashlib
+ import json
+ import os
+@@ -53,7 +54,7 @@
+ from app.context.tenant_skills import render_read_status as render_skill_read_status
+ from app.investigator.prompt_sanitizer import sanitize_text, wrap_untrusted
+ from app.llm import safe_ainvoke
+-from app.llm.factory import make_chat_model
++from app.llm.factory import TRIAGE_REQUEST_TIMEOUT_SECONDS, make_chat_model
+ from app.llm.prompt_registry import prompt_text
+ from app.llm.structured_output import extract_json_block
+ from app.models.state import AgentStatus, InvestigationState
+@@ -470,13 +471,18 @@
+         # configuration problem the deterministic path handles fine.
+         llm = make_chat_model("triage", temperature=0.0, max_tokens=512, json_output=True)
+         system_prompt = prompt_text("triage.system") + "\n\n" + system_rule(nonce)
+-        response = await safe_ainvoke(
+-            llm,
+-            [
+-                SystemMessage(content=system_prompt),
+-                HumanMessage(content=alert_context),
+-            ],
+-        )
++        # SDK timeouts bound transport phases, not the whole await. A response
++        # that keeps delivering bytes must not keep this invocation alive
++        # indefinitely. Expiry retains the original typed fallback; external
++        # cancellation propagates and the delivery claim remains unknown.
++        async with asyncio.timeout(TRIAGE_REQUEST_TIMEOUT_SECONDS):
++            response = await safe_ainvoke(
++                llm,
++                [
++                    SystemMessage(content=system_prompt),
++                    HumanMessage(content=alert_context),
++                ],
++            )
+         raw_text = response.content
+         # Recorded before parsing, so a verdict that fails to parse still
+         # leaves behind what the model was asked and what it said. The
+--- a/services/api/app/api/v1/endpoints/investigations.py
++++ b/services/api/app/api/v1/endpoints/investigations.py
+@@ -506,8 +506,8 @@
+     db: TenantDBSession,
+     since: int | None = Query(
+         default=None,
+-        ge=0,
+-        description="Return only events with seq strictly greater than this value (long-poll)",
++        ge=-1,
++        description="Return events with seq strictly greater than this cursor; -1 is the triage start cursor",
+     ),
+     limit: int = Query(default=200, ge=1, le=1000),
+ ) -> EventListResponse:

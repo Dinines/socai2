@@ -1,0 +1,103 @@
+{
+  "probe_passed": true,
+  "classification": "composition defects reproduced with explicit doubles",
+  "warm_first_result": {
+    "persist_calls": 1,
+    "escalation_calls": 0,
+    "returned_first_triage": true
+  },
+  "cold_first_result": {
+    "lookup_calls": 1,
+    "escalation_calls": 0,
+    "returned_first_triage": true
+  },
+  "graph_completion": {
+    "tokens_before": 18,
+    "tokens_after": 0,
+    "unpriced_calls_before": 1,
+    "unpriced_calls_after": 0
+  },
+  "triage_recovery_after_graph": {
+    "rejected": true,
+    "reason": "Auto-triage delivery is not recoverable: recovery usage differs from completed run"
+  },
+  "method": "verbatim AST-extracted current production functions; in-memory dependencies",
+  "doubles": [
+    "state/model",
+    "live admission and pending/lookup stores",
+    "writer",
+    "PostgreSQL pool/connection",
+    "tenant resolver",
+    "no-op graph"
+  ],
+  "network_calls": 0,
+  "sdk_calls": 0,
+  "model_calls": 0,
+  "business_writes": 0,
+  "deployed_failure_claimed": false,
+  "limitations": [
+    "No production dependency imports, real graph node/model, Kafka or PostgreSQL execution",
+    "Warm/cold branches prove early return before escalation, not a deployed outage",
+    "Graph was disabled in the latest accepted deployment; these probes do not change flags"
+  ],
+  "prior_probe_attempt": {
+    "result": "harness NameError after warm/cold checks",
+    "cause": "time was not injected into the extracted graph._run namespace",
+    "correction": "time injected; complete corrected probe passed",
+    "product_failure": false
+  },
+  "sources": {
+    "services/agents/app/workers/fused_alert_consumer.py": {
+      "sha256": "277f3695ecd5eb04f09944980114a26826fbf8130c97450da3e58f38c3194051",
+      "functions": {
+        "triage": {
+          "start_line": 876,
+          "end_line": 1293
+        },
+        "_save_pending": {
+          "start_line": 551,
+          "end_line": 572
+        }
+      }
+    },
+    "services/agents/app/investigator/ledger.py": {
+      "sha256": "ded30e04033b112927eb3178591c170c51ba99ebcd35ae53f1f6546eac575cea",
+      "functions": {
+        "complete_run": {
+          "start_line": 340,
+          "end_line": 410
+        }
+      }
+    },
+    "services/agents/app/graph/runner.py": {
+      "sha256": "32efe1d6c56dcef8ad40dde9aebebe39f8273a8957c3e21c4ddeb449bf6d88a7",
+      "functions": {
+        "_run": {
+          "start_line": 72,
+          "end_line": 184
+        }
+      }
+    },
+    "services/agents/app/workers/triage_delivery.py": {
+      "sha256": "413aa70ab148ed93c3e85f457e1cecdd503b97182a0a7beef550fd3f9780de6f",
+      "functions": {
+        "_fail": {
+          "start_line": 51,
+          "end_line": 53
+        },
+        "_object": {
+          "start_line": 72,
+          "end_line": 80
+        },
+        "_number": {
+          "start_line": 83,
+          "end_line": 85
+        },
+        "_projection": {
+          "start_line": 115,
+          "end_line": 185
+        }
+      }
+    }
+  }
+}

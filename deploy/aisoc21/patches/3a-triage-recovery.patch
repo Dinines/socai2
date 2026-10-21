@@ -1,0 +1,391 @@
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -27,12 +27,19 @@
+ Invalid broker inputs require a confirmed DLQ write. A verdict whose ledger
+ write is unconfirmed follows the bounded failure/DLQ path; an unconfirmed DLQ
+ stops the consume window before its offsets can advance.
++
++Durable lookup/claim and exact-result recovery apply only inside the Kafka
++processing boundary with a live persistence sink. Direct ``triage`` calls,
++historical replay IDs and frozen-context evaluation retain their contracts.
+ """
+ 
+ from __future__ import annotations
+ 
+ import asyncio
+ import contextlib
++from contextvars import ContextVar
++from copy import deepcopy
++from dataclasses import dataclass
+ import hashlib
+ import json
+ import os
+@@ -67,6 +74,7 @@
+ from app.security.llm_resolver import resolve_llm_config
+ from app.workers.business_context import BusinessContextApplier
+ from app.workers.entity_lane import EntityLanes, entity_of
++from app.workers import triage_delivery
+ from app.workers.shadow_mode import (
+     LiveShadowModePolicy,
+     ShadowDecision,
+@@ -96,6 +104,22 @@
+ # reuses the same run_id and cannot duplicate ledger runs/outcomes. Bump this
+ # when the triage workflow changes in a way that should re-run past alerts.
+ WORKFLOW_VERSION = "auto-triage-v1"
++
++_BROKER_DELIVERY: ContextVar[bool] = ContextVar("auto_triage_broker_delivery", default=False)
++_MAX_PENDING_RESULTS = 128
++
++
++@dataclass
++class _PendingResult:
++    state: InvestigationState
++    tier: str
++    verdict: Any
++    confidence: float
++    tokens: int
++    cost: CostSummary
++    writer: TriageWriter
++    projection: dict[str, Any]
++    saving: bool = False
+ 
+ # Bounded retries before dead-lettering a poison alert (issue #571).
+ _MAX_ATTEMPTS = int(os.getenv("AISOC_AGENT_MAX_ATTEMPTS", "3"))
+@@ -398,6 +422,10 @@
+     #: at class level for the same reason as the two above, so a worker built
+     #: with ``__new__`` still resolves a policy rather than raising.
+     _shadow_policy: ShadowModePolicy = LiveShadowModePolicy()
++    # Per-instance exact Run recovery, distinct from the governor's evidence
++    # cache (which deliberately groups different upstream alerts). None in the
++    # map is a reserved/started slot without a recoverable returned result.
++    _pending_results: dict[tuple[str, str], _PendingResult | None] | None = None
+ 
+     def __init__(
+         self,
+@@ -423,6 +451,7 @@
+         self._writer: TriageWriter = writer or LiveTriageWriter()
+         self._reader: TriageContextReader = context_reader or LiveTriageContextReader()
+         self._shadow_policy: ShadowModePolicy = shadow_policy or LiveShadowModePolicy()
++        self._pending_results = {}
+         self._dlq_topic = dlq_topic or os.getenv("KAFKA_TOPIC_ALERTS_FUSED_DLQ", f"{topic}.dlq")
+         self._max_attempts = max(1, max_attempts)
+         self._consumer: Any | None = None
+@@ -437,6 +466,67 @@
+         # builds this worker without a broker still has lanes — the same
+         # reason the sinks above are class-level defaults.
+         self._lanes = EntityLanes(entity_concurrency)
++
++    def _pending(self) -> dict[tuple[str, str], _PendingResult | None]:
++        # Preserve workers constructed with __new__ by direct method tests;
++        # never put a mutable pending map on the shared class default.
++        if self._pending_results is None:
++            self._pending_results = {}
++        return self._pending_results
++
++    def _uses_delivery_guard(self) -> bool:
++        writer = self._writer
++        while isinstance(writer, ShadowModeTriageWriter):
++            writer = writer._delegate
++        return _BROKER_DELIVERY.get() and isinstance(writer, LiveTriageWriter)
++
++    @staticmethod
++    def _delivery_fields(state: InvestigationState) -> dict[str, Any]:
++        return {"run_id": state.run_id, "tenant_id": state.tenant_id,
++                "alert_id": str((state.raw_alert or {}).get("id") or ""),
++                "workflow_version": WORKFLOW_VERSION}
++
++    @staticmethod
++    def _recovery_projection(
++        state: InvestigationState, *, tier: str, verdict: Any, confidence: float,
++        tokens: int, cost: CostSummary, writer: TriageWriter,
++        business_context_rules: list[str] | None = None,
++        business_context_policy: dict[str, Any] | None = None,
++    ) -> dict[str, Any]:
++        return {"schema_version": 1, "workflow_version": WORKFLOW_VERSION,
++                "run_id": str(state.run_id), "tenant_id": str(state.tenant_id),
++                "alert_id": str((state.raw_alert or {}).get("id") or ""),
++                "incident_id": str(state.incident_id),
++                "shadow": isinstance(writer, ShadowModeTriageWriter),
++                "verdict": str(verdict) if verdict else NEEDS_REVIEW,
++                "confidence": float(confidence or 0.0), "tier": tier,
++                "cost": _cost_payload(cost, tokens), "findings": list(state.findings),
++                "confidence_basis": list(state.confidence_basis),
++                "business_context_rules": list(business_context_rules or []),
++                "business_context_policy": deepcopy(business_context_policy or {}),
++                "proposed_actions": [{"action_type": action.action_type,
++                                      "requires_approval": action.requires_approval}
++                                     for action in state.proposed_actions],
++                "response_dispatched": False, "approvals_raised": [],
++                "source_writeback": None, "effect_status": "not_replayed"}
++
++    async def _save_pending(self, key: tuple[str, str]) -> dict[str, Any]:
++        pending = self._pending()[key]
++        if pending is None or pending.saving:
++            raise ledger_module.LedgerPersistError("Auto-triage is started or saving; result is not yet recoverable")
++        pending.saving = True
++        try:
++            await self._record(
++                pending.state.model_copy(deep=True), tier=pending.tier,
++                verdict=deepcopy(pending.verdict), confidence=pending.confidence,
++                tokens=pending.tokens, cost=deepcopy(pending.cost), writer=pending.writer,
++                recovery_projection=deepcopy(pending.projection),
++            )
++        except BaseException:
++            pending.saving = False
++            raise
++        self._pending().pop(key)
++        return deepcopy(pending.projection)
+ 
+     async def start(self) -> None:
+         from aiokafka import AIOKafkaConsumer  # noqa: PLC0415 — optional dep, only at runtime
+@@ -559,30 +649,34 @@
+             await self._send_to_dlq(message, attempts=1, stage="schema", error=schema_error)
+             return False
+ 
+-        last_error: str = ""
+-        stage = "triage"
+-        for attempt in range(1, self._max_attempts + 1):
+-            try:
+-                result = await self.triage(message)
+-                if result is None:
+-                    stage = "schema"
+-                    last_error = "triage_returned_no_result"
+-                    break
+-                return True
+-            except ledger_module.LedgerPersistError as exc:
+-                stage = "persist"
+-                last_error = str(exc)
+-                _METRICS["persist_retries"] += 1
+-                logger.warning("auto_triage_worker.persist_retry", attempt=attempt, error=last_error)
+-            except Exception as exc:  # noqa: BLE001 — retry, then dead-letter
+-                stage = "triage"
+-                last_error = str(exc)
+-                logger.warning("auto_triage_worker.triage_retry", attempt=attempt, error=last_error)
+-            if attempt < self._max_attempts:
+-                await asyncio.sleep(self._retry_backoff(attempt))
+-        _METRICS["errors"] += 1
+-        await self._send_to_dlq(message, attempts=attempt, stage=stage, error=last_error)
+-        return False
++        token = _BROKER_DELIVERY.set(True)
++        try:
++            last_error: str = ""
++            stage = "triage"
++            for attempt in range(1, self._max_attempts + 1):
++                try:
++                    result = await self.triage(message)
++                    if result is None:
++                        stage = "schema"
++                        last_error = "triage_returned_no_result"
++                        break
++                    return True
++                except ledger_module.LedgerPersistError as exc:
++                    stage = "persist"
++                    last_error = str(exc)
++                    _METRICS["persist_retries"] += 1
++                    logger.warning("auto_triage_worker.persist_retry", attempt=attempt, error=last_error)
++                except Exception as exc:  # noqa: BLE001 — retry, then dead-letter
++                    stage = "triage"
++                    last_error = str(exc)
++                    logger.warning("auto_triage_worker.triage_retry", attempt=attempt, error=last_error)
++                if attempt < self._max_attempts:
++                    await asyncio.sleep(self._retry_backoff(attempt))
++            _METRICS["errors"] += 1
++            await self._send_to_dlq(message, attempts=attempt, stage=stage, error=last_error)
++            return False
++        finally:
++            _BROKER_DELIVERY.reset(token)
+ 
+     def _retry_backoff(self, attempt: int) -> float:
+         return _RETRY_BACKOFF_S * attempt
+@@ -662,7 +756,23 @@
+ 
+     async def triage(self, message: dict[str, Any]) -> dict[str, Any] | None:
+         """Auto-triage one fused alert. Read-only (copilot): never dispatches a
+-        response. Returns a verdict summary dict, or None if unprocessable."""
++        response. Returns a verdict summary dict, or None if unprocessable.
++
++        The persistent delivery guard is set only by ``_process_with_retry``.
++        Calling this method directly keeps replay's original mapping and reads.
++        """
++        delivery_guard = self._uses_delivery_guard()
++        delivery_key: tuple[str, str] | None = None
++        if delivery_guard:
++            identity = build_state(message)
++            if identity is None:
++                raise ledger_module.LedgerPersistError("Cannot recover an unprocessable broker alert")
++            delivery_key = (str(identity.run_id), str(identity.tenant_id))
++            if delivery_key in self._pending():
++                return await self._save_pending(delivery_key)
++            prior = await triage_delivery.lookup(**self._delivery_fields(identity))
++            if prior is not None:
++                return deepcopy(prior)
+         # Phase B4 — apply business-context rules on the post-fusion alert BEFORE
+         # any triage work. A suppress rule drops the alert (no triage spend); a
+         # severity/route/tag rule mutates the alert the agent reasons over.
+@@ -733,6 +843,27 @@
+             if suppressed is not None:
+                 suppressed["business_context_policy"] = bc_provenance
+                 return suppressed
++
++        if delivery_guard:
++            assert delivery_key is not None
++            # A second coroutine can arrive while lookup/business rules await.
++            # Reserve capacity before a claim/model; never evict a known result.
++            if delivery_key in self._pending():
++                return await self._save_pending(delivery_key)
++            if len(self._pending()) >= _MAX_PENDING_RESULTS:
++                raise ledger_module.LedgerPersistError("Auto-triage pending-result capacity reached")
++            self._pending()[delivery_key] = None
++            try:
++                prior = await triage_delivery.claim(**self._delivery_fields(state))
++            except BaseException:
++                # No model method has been entered. The next bounded attempt
++                # must query PG again, rather than treating a failed read as a
++                # missing claim or retaining a fictitious returned result.
++                self._pending().pop(delivery_key)
++                raise
++            if prior is not None:
++                self._pending().pop(delivery_key)
++                return deepcopy(prior)
+ 
+         decision = governor.check(str(state.tenant_id), fingerprint)
+ 
+@@ -892,7 +1023,30 @@
+         verdict, confidence = self._apply_groundedness_gate(state, verdict, confidence)
+ 
+         _METRICS["triaged"] += 1
+-        await self._record(state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens, cost=cost, writer=writer)
++        projection = self._recovery_projection(
++            state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens,
++            cost=cost, writer=writer, business_context_rules=bc_matched,
++            business_context_policy=bc_provenance,
++        )
++        if delivery_guard:
++            assert delivery_key is not None
++            pending = _PendingResult(
++                state=state.model_copy(deep=True), tier=tier, verdict=deepcopy(verdict),
++                confidence=confidence, tokens=tokens, cost=deepcopy(cost), writer=writer,
++                projection=deepcopy(projection), saving=True,
++            )
++            self._pending()[delivery_key] = pending
++        try:
++            await self._record(
++                state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens,
++                cost=cost, writer=writer, recovery_projection=projection,
++            )
++        except BaseException:
++            if delivery_guard:
++                pending.saving = False
++            raise
++        if delivery_guard:
++            self._pending().pop(delivery_key)
+ 
+         # Wave 1 — write the durable outcome back as a per-signature prior so
+         # autonomous closures compound (a later identical alert can suppress).
+@@ -1390,6 +1544,7 @@
+         tokens: int = 0,
+         cost: CostSummary | None = None,
+         writer: TriageWriter,
++        recovery_projection: dict[str, Any] | None = None,
+     ) -> None:
+         """Durably persist the triage outcome (issue #571).
+ 
+@@ -1444,6 +1599,10 @@
+             knowledge_base_read=dict(state.knowledge_base_read),
+             recent_dispositions_read=dict(state.recent_dispositions_read),
+             identity_context_read=dict(state.identity_context_read),
++            recovery_projection=deepcopy(recovery_projection) if recovery_projection is not None else self._recovery_projection(
++                state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens,
++                cost=cost or CostSummary(), writer=writer,
++            ),
+         )
+ 
+     @staticmethod
+--- a/services/agents/app/investigator/ledger.py
++++ b/services/agents/app/investigator/ledger.py
+@@ -534,6 +534,7 @@
+     knowledge_base_read: dict[str, Any] | None = None,
+     recent_dispositions_read: dict[str, Any] | None = None,
+     identity_context_read: dict[str, Any] | None = None,
++    recovery_projection: dict[str, Any] | None = None,
+ ) -> bool:
+     """Durably record an auto-triage outcome (issue #571) in ONE transaction:
+ 
+@@ -543,9 +544,10 @@
+     * write the disposition/verdict + rationale + recommendations back onto the
+       ``alerts`` row so the alert API surfaces the automated verdict.
+ 
+-    Idempotent: a replay reuses the deterministic ``run_id`` (ON CONFLICT DO
+-    NOTHING on the run + the ``(run_id, seq)`` event key), so it never
+-    duplicates ledger rows or outcomes.
++    The first verdict event and its artifacts have first-write keys. The
++    generic run/alert updates below are not a replay guard: the Kafka worker
++    must recover completed results or own a durable start before reaching
++    this write. Other callers retain their existing entry-point contracts.
+ 
+     Returns ``True`` when written, ``False`` when skipped (no database
+     configured, or an unknown tenant — neither is retryable). Raises
+@@ -656,6 +658,7 @@
+                             "findings": findings or [],
+                             "proposed_actions": recommendations,
+                             "auto_closed": auto_closed,
++                            **({"recovery": recovery_projection} if recovery_projection is not None else {}),
+                             **({"organisation_memory_read": organisation_memory_read} if organisation_memory_read is not None else {}),
+                             **({"tenant_skill_read": tenant_skill_read} if tenant_skill_read is not None else {}),
+                             **({"knowledge_base_read": knowledge_base_read} if knowledge_base_read is not None else {}),
+@@ -764,7 +767,10 @@
+                            estimated_cost_usd = COALESCE($6, estimated_cost_usd),
+                            estimated_call_count = $7,
+                            unpriced_call_count = $8,
+-                           completed_at = now()
++                           completed_at = now(),
++                           model_used = CASE WHEN model_used = 'kafka:auto_triage:claimed' THEN $9 ELSE model_used END,
++                           raw_alert = CASE WHEN model_used = 'kafka:auto_triage:claimed' THEN $10::jsonb ELSE raw_alert END,
++                           alert_summary = CASE WHEN model_used = 'kafka:auto_triage:claimed' THEN $11 ELSE alert_summary END
+                      WHERE id = $1
+                     """,
+                     run_id,
+@@ -775,6 +781,9 @@
+                     estimated_cost_usd,
+                     estimated_call_count,
+                     unpriced_call_count,
++                    f"kafka:auto_triage:{tier}",
++                    json.dumps(raw_alert or {}),
++                    (alert_summary or "")[:8000] or None,
+                 )
+                 if alert_uuid is not None:
+                     # Surface the automated verdict on the alert row. Status is
+--- a/services/agents/tests/test_fused_alert_worker.py
++++ b/services/agents/tests/test_fused_alert_worker.py
+@@ -10,6 +10,7 @@
+ from __future__ import annotations
+ 
+ import uuid
++from unittest.mock import AsyncMock
+ 
+ import pytest
+ from app.core.cost_governor import Decision, GovernorDecision
+@@ -60,6 +61,10 @@
+     monkeypatch.setattr(worker_mod.ledger_module, "start_run", _noop)
+     monkeypatch.setattr(worker_mod.ledger_module, "complete_run", _noop)
+     monkeypatch.setattr(worker_mod.ledger_module, "persist_auto_triage", _persist_noop)
++    # This module exercises the triage/persist branches, with no database.
++    # The exact-delivery port has its own claim/recovery integration tests.
++    monkeypatch.setattr(worker_mod.triage_delivery, "lookup", AsyncMock(return_value=None))
++    monkeypatch.setattr(worker_mod.triage_delivery, "claim", AsyncMock(return_value=None))
+     # Force the deterministic path unless a test overrides (no LLM key in CI).
+     monkeypatch.setenv("AISOC_DETERMINISTIC", "0")
+     # Escalation runs the full graph (external calls); off by default in unit
+--- a/tests/porting/test_triage_durability_3a.py
++++ b/tests/porting/test_triage_durability_3a.py
+@@ -233,6 +233,10 @@
+         allowed=False, api_key=None, base_url=None, model=None)))
+     persist = AsyncMock(return_value=False)
+     monkeypatch.setattr(ledger, 'persist_auto_triage', persist)
++    # Keep the original no-pool confirmation fault as the measured boundary;
++    # exact-delivery lookup/claim are independent database substitutes here.
++    monkeypatch.setattr(module.triage_delivery, 'lookup', AsyncMock(return_value=None))
++    monkeypatch.setattr(module.triage_delivery, 'claim', AsyncMock(return_value=None))
+     worker = module.FusedAlertTriageWorker(bootstrap_servers='unused', max_attempts=2, entity_concurrency=1)
+     worker._sink_for = AsyncMock(return_value=LiveTriageWriter())
+     worker._retry_backoff = lambda attempt: 0

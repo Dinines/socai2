@@ -1,0 +1,1130 @@
+--- a/services/fusion/app/workers/consumer.py
++++ b/services/fusion/app/workers/consumer.py
+@@ -12,13 +12,15 @@
+ 
+ import structlog
+ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
++from aiokafka.structs import TopicPartition
+ 
+ from app.core.config import settings
+ from app.core.kafka_security import kafka_client_kwargs
+ from app.models.alert import FusionDecision, RawAlert
+ from app.services.ai_asset_recorder import AiAssetRecorder
+-from app.services.alert_sink import AlertSink, PersistOutcome, PersistResult
++from app.services.alert_sink import AlertSink, PersistOutcome
+ from app.services.detection_engine import DetectionEngine
++from app.services.delivery_recovery import DeliveryHold, DeliveryRecovery, make_snapshot, restore_snapshot
+ from app.services.dlq import DeadLetter, DeadLetterQueue, LoggingDLQ, safe_record
+ from app.services.event_schema import validate_event
+ from app.services.fusion_engine import FusionEngine
+@@ -248,15 +250,20 @@
+                 except Exception as exc:
+                     _METRICS["errors"] += 1
+                     logger.error("Failed to process message", error=str(exc), exc_info=True)
++                    # No later success may commit past this failed input.
++                    # Exiting also clears attached/readiness; recovery needs
++                    # an explicit restart, rather than a tight failure loop.
++                    raise
+                 else:
+                     # At-least-once: commit only after the message is handled
+                     # (validated + laked + promoted, or dead-lettered). A crash
+                     # before this line re-delivers the in-flight message on restart
+                     # instead of losing it. Commit failure => reprocess on restart.
+                     try:
+-                        await consumer.commit()
++                        await consumer.commit({TopicPartition(msg.topic, msg.partition): msg.offset + 1})
+                     except Exception as commit_exc:  # noqa: BLE001
+                         logger.warning("fusion.commit_failed", error=str(commit_exc))
++                        raise
+                 # Flush any stale lake batch so archival isn't stranded during a
+                 # low-traffic window (batch fills by size OR age).
+                 #
+@@ -293,8 +300,9 @@
+         refused message means re-reading it from Kafka, and these are the only
+         way back to it (deferral 5b).
+         """
+-        _METRICS["dead_lettered"] += 1
+-        await safe_record(
++        if isinstance(self._dlq, LoggingDLQ):
++            raise DeliveryHold("fusion live poison input has no durable DLQ")
++        confirmed = await safe_record(
+             self._dlq,
+             DeadLetter.build(
+                 topic=topic,
+@@ -307,6 +315,9 @@
+                 offset=offset,
+             ),
+         )
++        if not confirmed:
++            raise DeliveryHold("fusion dead-letter persistence was not confirmed")
++        _METRICS["dead_lettered"] += 1
+ 
+     async def _process_message(
+         self, payload: dict, topic: str | None = None, partition: int | None = None, offset: int | None = None
+@@ -462,17 +473,51 @@
+             alert.source_event_ids.append(source_event_id)
+         alert.id = alert.deterministic_id()
+ 
+-        fused = await self._engine.process(alert)
++        if self._sink is None:
++            raise DeliveryHold("fusion live alert has no PostgreSQL sink")
++
++        fresh_result = True
++        recovery = None
++        # PG is authoritative even when Redis has expired or contains a
++        # different candidate. Never reconstruct an old row from current
++        # raw/enrichment data and call it the first result.
++        previous = await self._sink.lookup_delivery(alert)
++        if previous.exists:
++            if previous.snapshot is None:
++                raise DeliveryHold("fusion existing row has no provable first-result snapshot")
++            fused = restore_snapshot(previous.snapshot, alert)
++            fresh_result = False
++        else:
++            dedup = getattr(self._engine, "_dedup", None)
++            redis = getattr(dedup, "_redis", None)
++            if redis is None:
++                raise DeliveryHold("fusion alert has no first-result recovery cache")
++            recovery = DeliveryRecovery(redis, settings.dedup_window_seconds)
++            fused = await recovery.load(alert)
++            if fused is None:
++                duplicate, _ = await dedup.is_duplicate(alert)
++                if duplicate:
++                    # The old engine registers before correlation. A
++                    # crash in that gap has no completed result to reuse.
++                    raise DeliveryHold("fusion dedup hit has no provable first-result snapshot")
++                fused = await self._engine.process(alert)
++            else:
++                fresh_result = False
+         _METRICS["processed"] += 1
+ 
+         # Depth plan 2.4. Attached after fusion rather than before, because
+         # fusion builds the FusedAlert and anything set on the RawAlert first
+         # would have to survive that construction — which is the kind of
+         # assumption that holds until someone adds a field.
+-        if session is not None:
++        if fresh_result and session is not None:
+             fused.session_id = session.id
+             fused.session_key_kind = session.key_kind
+             fused.originating_human = session.originating_human
++
++        if recovery is not None:
++            # Store the full result before PG insertion. The finite TTL and
++            # NX policy preserve exact evidence for a warm missing-row retry.
++            fused = await recovery.remember(fused)
+ 
+         if fused.fusion_decision == FusionDecision.DUPLICATE:
+             _METRICS["duplicates"] += 1
+@@ -481,27 +526,33 @@
+         else:
+             _METRICS["new_incidents"] += 1
+ 
+-        # Persist FIRST (Phase 3.1 sink). Fail-soft + idempotent — see
+-        # app/services/alert_sink.py. Duplicates are handled inside.
+-        result = PersistResult(PersistOutcome.UNAVAILABLE, str(fused.id))
+-        if self._sink is not None:
+-            result = await self._sink.persist(fused)
+-            if result.outcome is PersistOutcome.INSERTED:
+-                _METRICS["persisted"] += 1
+-            elif result.outcome is PersistOutcome.UNAVAILABLE:
+-                _METRICS["persist_unavailable"] += 1
+-            elif result.outcome is PersistOutcome.FAILED:
+-                _METRICS["persist_failed"] += 1
++        result = await self._sink.persist(fused, replay=alert, delivery_snapshot=make_snapshot(fused))
++        if result.outcome is PersistOutcome.INSERTED:
++            _METRICS["persisted"] += 1
++        elif result.outcome is PersistOutcome.UNAVAILABLE:
++            _METRICS["persist_unavailable"] += 1
++        elif result.outcome is PersistOutcome.FAILED:
++            _METRICS["persist_failed"] += 1
++        if not result.durable:
++            raise DeliveryHold("fusion alert persistence was not confirmed")
++        confirmed = await self._sink.lookup_delivery(alert)
++        if not confirmed.exists:
++            # In particular, legacy DUPLICATE is a dedup decision, not proof
++            # of a PG row: the upstream sink can return it while disconnected.
++            raise DeliveryHold("fusion dedup result has no confirmed PostgreSQL row")
++        if confirmed.snapshot is None:
++            raise DeliveryHold("fusion PostgreSQL row has no provable first-result snapshot")
++        fused = restore_snapshot(confirmed.snapshot, alert)
+ 
+         # Publish fused alert (even duplicates, so downstream can track),
+         # carrying the durable row id + persistence outcome (issue #568).
+         envelope = fused.model_dump(mode="json")
+-        envelope["alert_row_id"] = result.alert_id
++        envelope["alert_row_id"] = confirmed.alert_id
+         envelope["persist_outcome"] = result.outcome.value
+         producer = self._producer
+         if producer is None:  # pragma: no cover — assigned by start()
+             raise RuntimeError("fusion produced a fused alert before the Kafka producer started")
+-        await producer.send(
++        await producer.send_and_wait(
+             settings.kafka_topic_alerts_fused,
+             value=envelope,
+         )
+--- a/services/fusion/app/services/alert_sink.py
++++ b/services/fusion/app/services/alert_sink.py
+@@ -29,7 +29,8 @@
+ import asyncpg
+ import structlog
+ 
+-from app.models.alert import FusedAlert, FusionDecision
++from app.models.alert import FusedAlert, FusionDecision, RawAlert
++from app.services.delivery_recovery import DeliveryHold, SnapshotLookup, restore_snapshot
+ 
+ logger = structlog.get_logger()
+ 
+@@ -234,7 +235,7 @@
+     return hosts, users, ips
+ 
+ 
+-def _insert_args(fused: FusedAlert) -> tuple[Any, ...]:
++def _insert_args(fused: FusedAlert, *, delivery_snapshot: dict[str, Any] | None = None) -> tuple[Any, ...]:
+     """The positional arguments `_INSERT_SQL` takes, in order.
+ 
+     One definition, used by both the single and the batch path. They
+@@ -243,6 +244,25 @@
+     narrative without anything failing.
+     """
+     alert = fused.alert
++    fusion_metadata = {
++        "identity": {
++            "version": getattr(alert, "identity_version", "legacy-v1"),
++            "source_alert_id": str(alert.source_alert_id) if getattr(alert, "source_alert_id", None) else None,
++            "source": getattr(alert, "source", None),
++            "connector_id": str(alert.connector_id) if alert.connector_id else None,
++        },
++        "incident_id": str(fused.incident_id) if getattr(fused, "incident_id", None) else None,
++        "ioc_lookup": (getattr(fused, "enrichments", None) or {}).get("ioc_lookup"),
++    }
++    if delivery_snapshot is not None:
++        restored = restore_snapshot(delivery_snapshot, alert)
++        if restored.model_dump(mode="json") != fused.model_dump(mode="json"):
++            raise DeliveryHold("fusion INSERT differs from its first-result snapshot")
++        # The first INSERT freezes the complete outbound result with the
++        # alert row. ON CONFLICT never backfills a snapshot from a replay.
++        # New legacy results get the same recovery record without changing
++        # their fingerprint, canonical UUID, or folded-event semantics.
++        fusion_metadata["delivery_snapshot"] = delivery_snapshot
+     hosts, users, ips = _affected(fused)
+     return (
+         fused.id,
+@@ -275,16 +295,7 @@
+         fused.session_id,
+         fused.session_key_kind,
+         fused.originating_human,
+-        json.dumps({"socai2_fusion": {
+-            "identity": {
+-                "version": getattr(alert, "identity_version", "legacy-v1"),
+-                "source_alert_id": str(alert.source_alert_id) if getattr(alert, "source_alert_id", None) else None,
+-                "source": getattr(alert, "source", None),
+-                "connector_id": str(alert.connector_id) if alert.connector_id else None,
+-            },
+-            "incident_id": str(fused.incident_id) if getattr(fused, "incident_id", None) else None,
+-            "ioc_lookup": (getattr(fused, "enrichments", None) or {}).get("ioc_lookup"),
+-        }}),
++        json.dumps({"socai2_fusion": fusion_metadata}),
+     )
+ 
+ 
+@@ -318,7 +329,47 @@
+             await self.start()
+         return self._pool
+ 
+-    async def persist(self, fused: FusedAlert) -> PersistResult:
++    async def lookup_delivery(self, alert: RawAlert) -> SnapshotLookup:
++        """Confirm a tenant-scoped row; never treat a Redis hit as durable.
++
++        Legacy rows predating deterministic IDs resolve by their unchanged
++        fingerprint. Source-v1 must resolve the exact canonical row. An old
++        row without a full snapshot is returned as such, never reconstructed
++        or modified with the incoming replay's material.
++        """
++        pool = await self._ensure_pool()
++        if pool is None:
++            raise DeliveryHold("fusion PostgreSQL delivery cannot be confirmed")
++        try:
++            async with pool.acquire() as conn:
++                row = await conn.fetchrow(
++                    """SELECT id, enrichment_data FROM alerts
++                       WHERE tenant_id = $1
++                         AND (id = $2 OR ($4::boolean AND dedup_hash = $3::text))
++                       ORDER BY (id = $2) DESC, created_at, id LIMIT 1""",
++                    alert.tenant_id, alert.deterministic_id(), alert.fingerprint(),
++                    alert.identity_version == "legacy-v1",
++                )
++            if row is None:
++                return SnapshotLookup(False)
++            metadata = row["enrichment_data"] or {}
++            if isinstance(metadata, str):
++                metadata = json.loads(metadata)
++            if not isinstance(metadata, dict):
++                raise DeliveryHold("fusion PostgreSQL delivery metadata is invalid")
++            fusion = metadata.get("socai2_fusion") or {}
++            if not isinstance(fusion, dict):
++                raise DeliveryHold("fusion PostgreSQL delivery metadata is invalid")
++            return SnapshotLookup(True, fusion.get("delivery_snapshot"), str(row["id"]))
++        except DeliveryHold:
++            raise
++        except Exception as exc:
++            raise DeliveryHold("fusion PostgreSQL delivery lookup failed") from exc
++
++    async def persist(
++        self, fused: FusedAlert, *, replay: RawAlert | None = None,
++        delivery_snapshot: dict[str, Any] | None = None,
++    ) -> PersistResult:
+         """Insert one fused alert, returning a structured :class:`PersistResult`.
+ 
+         The canonical alert id is ``fused.id`` (deterministic — issue #568), so
+@@ -327,6 +378,9 @@
+         """
+         canonical_id = str(fused.id)
+         alert = fused.alert
++        if replay is not None and (replay.tenant_id != alert.tenant_id or replay.fingerprint() != alert.fingerprint()):
++            return PersistResult(PersistOutcome.FAILED, None)
++        provenance = replay if replay is not None else alert
+         if fused.fusion_decision == FusionDecision.DUPLICATE and getattr(fused.alert, "identity_version", "legacy-v1") == "legacy-v1":
+             # Fusion has already decided: there is no row to write, and a
+             # database outage cannot change that verdict. The folded-away
+@@ -336,7 +390,7 @@
+             if self._pool is not None:
+                 try:
+                     async with self._pool.acquire() as conn:
+-                        await self._record_deduplicated_event(conn, alert)
++                        await self._record_deduplicated_event(conn, provenance)
+                 except Exception as exc:  # noqa: BLE001 — provenance is not worth the verdict
+                     logger.warning("alert_sink.dedup_provenance_failed", error=str(exc))
+             return PersistResult(PersistOutcome.DUPLICATE, canonical_id)
+@@ -351,11 +405,15 @@
+ 
+         try:
+             async with pool.acquire() as conn:
+-                row = await conn.fetchrow(_INSERT_SQL, *_insert_args(fused))
++                row = await conn.fetchrow(_INSERT_SQL, *_insert_args(fused, delivery_snapshot=delivery_snapshot))
+                 if row is None:
+                     logger.debug("alert_sink.dedup_skip", fingerprint=alert.fingerprint())
+-                    await self._record_deduplicated_event(conn, alert)
++                    await self._record_deduplicated_event(conn, provenance)
+                     return PersistResult(PersistOutcome.DUPLICATE, canonical_id)
++                if replay is not None:
++                    # Only lineage may grow on replay; the full first result
++                    # above remains byte-for-byte frozen in the INSERT data.
++                    await self._record_deduplicated_event(conn, provenance)
+             await self._link_source_finding(pool, alert, alert_id=row["id"])
+             return PersistResult(PersistOutcome.INSERTED, str(row["id"]))
+         except asyncpg.ForeignKeyViolationError:
+--- a/services/fusion/app/services/dlq.py
++++ b/services/fusion/app/services/dlq.py
+@@ -98,7 +98,7 @@
+ 
+ @runtime_checkable
+ class DeadLetterQueue(Protocol):
+-    async def record(self, dead_letter: DeadLetter) -> None:
++    async def record(self, dead_letter: DeadLetter) -> bool | None:
+         """Persist/emit a rejected message so it is never silently lost."""
+ 
+ 
+@@ -131,8 +131,9 @@
+         self._producer = producer
+         self._topic = topic
+ 
+-    async def record(self, dead_letter: DeadLetter) -> None:
+-        await self._producer.send(self._topic, value=dead_letter.to_dict())
++    async def record(self, dead_letter: DeadLetter) -> bool:
++        await self._producer.send_and_wait(self._topic, value=dead_letter.to_dict())
++        return True
+ 
+ 
+ async def safe_record(dlq: DeadLetterQueue | None, dead_letter: DeadLetter) -> bool:
+@@ -144,8 +145,10 @@
+     if dlq is None:
+         return False
+     try:
+-        await dlq.record(dead_letter)
+-        return True
++        # Older nonpersistent/test sinks use the original None-returning
++        # protocol. Persistent sinks explicitly return False when storage
++        # was not confirmed; a swallowed exception is not a successful DLQ.
++        return await dlq.record(dead_letter) is not False
+     except Exception as exc:  # noqa: BLE001 — fail-soft by contract
+         logger.error("fusion.dlq_sink_failed", error=str(exc), topic=dead_letter.topic, reason=dead_letter.reason)
+         return False
+--- a/services/fusion/app/services/dlq_sink.py
++++ b/services/fusion/app/services/dlq_sink.py
+@@ -12,11 +12,12 @@
+ 
+ This persists them. Two properties matter more than the writing:
+ 
+-**A DLQ that fails must not take the pipeline with it.** The whole point
+-of routing a poison message aside is to keep consuming; if recording that
+-decision can raise, the DLQ becomes a second way for one bad event to stop
+-everything. Every failure here is logged and swallowed, which is the one
+-place in this codebase where swallowing is the correct behaviour.
++**Recording has an explicit confirmation result.** Direct callers retain
++the fail-soft interface: missing storage or an INSERT failure is logged
++and returns False rather than raising. A confirmed INSERT returns True.
++The live worker must not treat False as a stored dead letter: it holds
++the input and stops that consumption round before any later offset can
++pass it. Logging a failure is not proof that the rejected input survived.
+ 
+ **The payload is truncated, never stored whole.** It is untrusted by
+ definition — it is the thing the pipeline refused — and may be large or
+@@ -70,7 +71,7 @@
+     def _pool_now(self) -> asyncpg.Pool | None:
+         return self._pool_provider()
+ 
+-    async def record(self, letter: DeadLetter) -> None:
++    async def record(self, letter: DeadLetter) -> bool:
+         excerpt = (letter.payload_excerpt or "")[:MAX_EXCERPT]
+         tenant_id = _as_uuid(letter.tenant_id)
+ 
+@@ -84,11 +85,11 @@
+                 topic=letter.topic,
+                 reason=letter.reason,
+             )
+-            return
++            return False
+ 
+         try:
+             async with pool.acquire() as conn:
+-                await conn.execute(
++                status = await conn.execute(
+                     _INSERT_SQL,
+                     tenant_id,
+                     letter.topic,
+@@ -102,18 +103,19 @@
+                     letter.partition,
+                     letter.offset,
+                 )
++                if status != "INSERT 0 1":
++                    raise RuntimeError("PostgreSQL dead-letter INSERT was not confirmed")
+         except Exception as exc:  # noqa: BLE001 - see the module docstring
+-            # Losing the record of a dropped event is bad. Stopping the
+-            # consumer because we could not record it is worse: one poison
+-            # message would then halt the pipeline, which is precisely the
+-            # outcome the DLQ exists to prevent.
++            # Preserve the direct fail-soft call while making the failure
++            # explicit to safe_record and the live worker. The input may be
++            # committed only after a confirmed durable dead-letter INSERT.
+             logger.warning(
+                 "dlq.persist_failed",
+                 topic=letter.topic,
+                 reason=letter.reason,
+                 error=str(exc),
+             )
+-            return
++            return False
+ 
+         logger.info(
+             "dlq.recorded",
+@@ -121,6 +123,7 @@
+             reason=letter.reason,
+             tenant_id=letter.tenant_id,
+         )
++        return True
+ 
+ 
+ def _as_uuid(value: str | None):
+--- a/services/fusion/tests/test_consumer_dlq.py
++++ b/services/fusion/tests/test_consumer_dlq.py
+@@ -3,18 +3,22 @@
+ Before Phase 5 the consumer logged a warning and dropped a malformed message —
+ silent data loss. These tests drive ``FusionWorker._process_message`` directly
+ (no Kafka) with an in-memory DLQ and prove: a valid event is processed and the
+-DLQ stays empty; every poison shape is captured in the DLQ with a reason; and a
+-DLQ that itself fails does not crash the consumer.
++DLQ stays empty; every poison shape is captured in the DLQ with a reason; and
++an unconfirmed DLQ stops live consumption before a later input can pass it.
++PG, Redis, and Kafka in this module are explicit in-memory/async doubles.
+ """
+ 
+ from __future__ import annotations
+ 
+ from types import SimpleNamespace
+ from unittest.mock import AsyncMock
++from uuid import UUID
+ 
+ import pytest
+ from app.core.config import settings
+-from app.models.alert import FusionDecision
++from app.models.alert import FusedAlert, FusionDecision
++from app.services.alert_sink import PersistOutcome, PersistResult
++from app.services.delivery_recovery import DeliveryHold, SnapshotLookup
+ from app.services.dlq import InMemoryDLQ
+ from app.workers.consumer import FusionWorker
+ 
+@@ -40,16 +44,43 @@
+ 
+ def _worker_with_dlq() -> tuple[FusionWorker, InMemoryDLQ]:
+     dlq = InMemoryDLQ()
++
++    class Redis:
++        def __init__(self):
++            self.data = {}
++
++        async def get(self, key):
++            return self.data.get(key)
++
++        async def set(self, key, value, *, nx, ex):
++            assert nx is True and ex > 0
++            if key in self.data:
++                return None
++            self.data[key] = value
++            return True
++
++    class Sink:
++        def __init__(self):
++            self.snapshot = None
++
++        async def lookup_delivery(self, alert):
++            return SnapshotLookup(self.snapshot is not None, self.snapshot, str(alert.id))
++
++        async def persist(self, value, *, replay, delivery_snapshot):
++            self.snapshot = delivery_snapshot
++            return PersistResult(PersistOutcome.INSERTED, str(value.id))
++
++    async def process(alert):
++        return FusedAlert(
++            id=alert.id, tenant_id=alert.tenant_id, alert=alert,
++            incident_id=UUID(int=9001), fusion_decision=FusionDecision.NEW_INCIDENT,
++        )
++
+     engine = SimpleNamespace(
+-        process=AsyncMock(
+-            return_value=SimpleNamespace(
+-                id="fused-1",
+-                fusion_decision=FusionDecision.NEW_ALERT,
+-                model_dump=lambda mode="json": {"id": "fused-1"},
+-            )
+-        )
++        _dedup=SimpleNamespace(_redis=Redis(), is_duplicate=AsyncMock(return_value=(False, None))),
++        process=AsyncMock(side_effect=process),
+     )
+-    worker = FusionWorker(engine=engine, sink=None, dlq=dlq)
++    worker = FusionWorker(engine=engine, sink=Sink(), dlq=dlq)
+     worker._producer = AsyncMock()  # noqa: SLF001 — test drives the internals
+     return worker, dlq
+ 
+@@ -59,7 +90,11 @@
+     await worker._process_message(_valid_raw_event(), topic=RAW_EVENTS)  # noqa: SLF001
+     assert dlq.records == []
+     worker._engine.process.assert_awaited_once()  # noqa: SLF001
+-    worker._producer.send.assert_awaited_once()  # noqa: SLF001
++    worker._producer.send_and_wait.assert_awaited_once()  # noqa: SLF001
++    worker._producer.send.assert_not_awaited()  # noqa: SLF001
++    envelope = worker._producer.send_and_wait.await_args.kwargs["value"]  # noqa: SLF001
++    assert envelope["incident_id"] == str(UUID(int=9001))
++    assert worker._sink.snapshot["fused"]["id"] == envelope["alert_row_id"]  # noqa: SLF001
+ 
+ 
+ async def test_missing_ocsf_event_is_dead_lettered_not_dropped():
+@@ -98,7 +133,7 @@
+     worker._engine.process.assert_not_awaited()  # noqa: SLF001
+ 
+ 
+-async def test_dead_letter_never_crashes_the_consumer_when_sink_fails():
++async def test_failed_dead_letter_holds_the_live_input():
+     class ExplodingDLQ:
+         async def record(self, dead_letter):  # noqa: ANN001, ARG002
+             raise RuntimeError("dlq sink down")
+@@ -106,5 +141,51 @@
+     engine = SimpleNamespace(process=AsyncMock())
+     worker = FusionWorker(engine=engine, sink=None, dlq=ExplodingDLQ())
+     worker._producer = AsyncMock()  # noqa: SLF001
+-    # Poison message + failing DLQ: must return cleanly, not raise.
+-    await worker._process_message({"tenant_id": TENANT}, topic=RAW_EVENTS)  # noqa: SLF001
++    # safe_record catches the sink exception; the live worker must then hold
++    # the input instead of treating that missing DLQ row as delivery success.
++    with pytest.raises(DeliveryHold, match="dead-letter persistence was not confirmed"):
++        await worker._process_message({"tenant_id": TENANT}, topic=RAW_EVENTS)  # noqa: SLF001
++    engine.process.assert_not_awaited()
++    worker._producer.send_and_wait.assert_not_awaited()  # noqa: SLF001
++
++
++@pytest.mark.parametrize("failure", ["false", "exception"])
++async def test_unconfirmed_poison_prevents_the_next_valid_input_and_commit(failure):
++    worker, _ = _worker_with_dlq()
++    record = AsyncMock(return_value=False)
++    if failure == "exception":
++        record.side_effect = RuntimeError("DLQ unavailable")
++    worker._dlq = SimpleNamespace(record=record)  # noqa: SLF001
++
++    class Consumer:
++        def __init__(self):
++            self.messages = iter([
++                SimpleNamespace(value={"tenant_id": TENANT}, topic=RAW_EVENTS, partition=0, offset=0),
++                SimpleNamespace(value=_valid_raw_event(), topic=RAW_EVENTS, partition=0, offset=1),
++            ])
++            self.yielded = 0
++            self.commit = AsyncMock()
++
++        def __aiter__(self):
++            return self
++
++        async def __anext__(self):
++            try:
++                message = next(self.messages)
++            except StopIteration:
++                raise StopAsyncIteration
++            self.yielded += 1
++            return message
++
++    consumer = Consumer()
++    worker._consumer = consumer  # noqa: SLF001
++    worker._running = True  # noqa: SLF001
++    # Drive the real _consume_loop -> _process_message -> _dead_letter chain.
++    with pytest.raises(DeliveryHold):
++        await worker._consume_loop()  # noqa: SLF001
++    assert consumer.yielded == 1
++    consumer.commit.assert_not_awaited()
++    record.assert_awaited_once()
++    worker._engine.process.assert_not_awaited()  # noqa: SLF001
++    worker._producer.send_and_wait.assert_not_awaited()  # noqa: SLF001
++    assert worker.attached is False
+--- /dev/null
++++ b/services/fusion/app/services/delivery_recovery.py
+@@ -0,0 +1,120 @@
++"""Bounded, verifiable first-result snapshots for the live alert path.
++
++An ID-only dedup hit is not evidence of an incident or of the enrichments
++originally used. Missing/expired snapshots therefore stop delivery rather
++than manufacturing a replacement result. This is not a distributed claim
++or a promise of recovery after loss of both Postgres and Redis.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++from dataclasses import dataclass
++from typing import Any
++
++from app.models.alert import FusedAlert, FusionDecision, RawAlert
++
++SNAPSHOT_VERSION = 1
++MAX_SNAPSHOT_BYTES = 1024 * 1024
++_PREFIX = "aisoc:fusion:delivery:v1:"
++
++
++class DeliveryHold(RuntimeError):
++    """A live input must remain uncommitted until its evidence is resolved."""
++
++
++@dataclass(frozen=True)
++class SnapshotLookup:
++    exists: bool
++    snapshot: dict[str, Any] | None = None
++    alert_id: str | None = None
++
++
++def _canonical(value: Any) -> bytes:
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
++
++
++def _check_identity(fused: FusedAlert, expected: RawAlert) -> None:
++    if (
++        fused.alert.identity_version != expected.identity_version
++        or fused.id != expected.deterministic_id()
++        or fused.alert.id != fused.id
++        or fused.alert.deterministic_id() != fused.id
++        or fused.tenant_id != expected.tenant_id
++        or fused.alert.tenant_id != expected.tenant_id
++        or fused.alert.fingerprint() != expected.fingerprint()
++        or fused.incident_id is None
++        or fused.fusion_decision == FusionDecision.DUPLICATE
++    ):
++        raise DeliveryHold("fusion first-result snapshot identity or incident is unproven")
++
++
++def make_snapshot(fused: FusedAlert) -> dict[str, Any]:
++    _check_identity(fused, fused.alert)
++    payload = fused.model_dump(mode="json")
++    snapshot = {"version": SNAPSHOT_VERSION, "sha256": hashlib.sha256(_canonical(payload)).hexdigest(), "fused": payload}
++    if len(_canonical(snapshot)) > MAX_SNAPSHOT_BYTES:
++        raise DeliveryHold("fusion first-result snapshot exceeds the bounded size")
++    return snapshot
++
++
++def restore_snapshot(snapshot: Any, expected: RawAlert) -> FusedAlert:
++    try:
++        if isinstance(snapshot, (str, bytes)):
++            if len(snapshot.encode("utf-8") if isinstance(snapshot, str) else snapshot) > MAX_SNAPSHOT_BYTES:
++                raise ValueError("oversize")
++            snapshot = json.loads(snapshot)
++        if not isinstance(snapshot, dict) or snapshot.get("version") != SNAPSHOT_VERSION:
++            raise ValueError("version")
++        if len(_canonical(snapshot)) > MAX_SNAPSHOT_BYTES:
++            raise ValueError("oversize")
++        payload = snapshot["fused"]
++        if hashlib.sha256(_canonical(payload)).hexdigest() != snapshot.get("sha256"):
++            raise ValueError("hash")
++        fused = FusedAlert.model_validate(payload)
++        _check_identity(fused, expected)
++        return fused
++    except DeliveryHold:
++        raise
++    except Exception as exc:
++        raise DeliveryHold("fusion first-result snapshot is invalid") from exc
++
++
++class DeliveryRecovery:
++    """A finite-TTL first-write cache; PostgreSQL remains authoritative."""
++
++    def __init__(self, redis: Any, ttl_seconds: int) -> None:
++        self._redis = redis
++        self._ttl = max(1, int(ttl_seconds))
++
++    @staticmethod
++    def key(alert: RawAlert) -> str:
++        return f"{_PREFIX}{alert.tenant_id}:{alert.deterministic_id()}"
++
++    async def load(self, alert: RawAlert) -> FusedAlert | None:
++        try:
++            value = await self._redis.get(self.key(alert))
++            return None if value is None else restore_snapshot(value, alert)
++        except DeliveryHold:
++            raise
++        except Exception as exc:
++            raise DeliveryHold("fusion first-result cache cannot be read") from exc
++
++    async def remember(self, fused: FusedAlert) -> FusedAlert:
++        snapshot = make_snapshot(fused)
++        try:
++            # NX preserves the first completed result even when two callers
++            # raced before the upstream dedup marker was visible. It does
++            # not claim the upstream correlation/scoring side effects once.
++            stored = await self._redis.set(self.key(fused.alert), _canonical(snapshot), ex=self._ttl, nx=True)
++            if stored:
++                return fused
++            existing = await self.load(fused.alert)
++            if existing is None:
++                raise DeliveryHold("fusion first-result cache expired during recovery")
++            return existing
++        except DeliveryHold:
++            raise
++        except Exception as exc:
++            raise DeliveryHold("fusion first-result cache cannot be confirmed") from exc
+--- /dev/null
++++ b/tests/porting/test_fusion_delivery_recovery.py
+@@ -0,0 +1,421 @@
++"""C01 direct production seams, with explicit in-memory PG/Kafka/Redis doubles.
++
++These do not claim a real broker, a real database failure, or model quality.
++The transport and storage confirmations below are the inputs under test.
++"""
++
++from __future__ import annotations
++
++import asyncio
++import copy
++import hashlib
++import json
++from contextlib import asynccontextmanager
++from types import SimpleNamespace
++from unittest.mock import AsyncMock
++from uuid import UUID
++
++import pytest
++from aiokafka.structs import TopicPartition
++
++from app.models.alert import FusedAlert, FusionDecision, RawAlert
++from app.services import delivery_recovery as snapshots
++from app.services.alert_sink import AlertSink, PersistOutcome, PersistResult, _insert_args
++from app.services.delivery_recovery import DeliveryHold, DeliveryRecovery, SnapshotLookup, make_snapshot, restore_snapshot
++from app.services.dlq import DeadLetter, InMemoryDLQ, KafkaDLQ, LoggingDLQ, safe_record
++from app.services.dlq_sink import PostgresDLQ
++from app.workers.consumer import FusionWorker
++
++
++def raw(version="source-v1"):
++    alert = RawAlert(
++        tenant_id=UUID(int=101), source="c01-offline", title="Finding",
++        description="First description", identity_version=version,
++        source_alert_id=UUID(int=102) if version == "source-v1" else None,
++        source_event_ids=["first-event"], raw_event={"first": True},
++        event_time="2026-10-20T11:01:00Z", hostname="c01-host",
++    )
++    alert.id = alert.deterministic_id()
++    return alert
++
++
++def fused(alert=None):
++    alert = alert or raw()
++    return FusedAlert(
++        id=alert.id, tenant_id=alert.tenant_id, alert=alert,
++        incident_id=UUID(int=103), fusion_decision=FusionDecision.NEW_INCIDENT,
++        enrichments={"ioc_lookup": {"status": "matched", "first": True}, "other": ["original"]},
++        confidence_score=.83, anomaly_score=.2, priority_score=.7,
++        narrative="Original narrative", session_id=UUID(int=104), session_key_kind="derived",
++    )
++
++
++class Redis:
++    def __init__(self):
++        self.data = {}
++        self.writes = []
++
++    async def get(self, key):
++        return self.data.get(key)
++
++    async def set(self, key, value, *, ex, nx):
++        self.writes.append((key, ex, nx))
++        if nx and key in self.data:
++            return None
++        self.data[key] = value
++        return True
++
++
++class Pool:
++    def __init__(self, conn):
++        self.conn = conn
++
++    @asynccontextmanager
++    async def acquire(self):
++        yield self.conn
++
++
++class MemorySink:
++    def __init__(self):
++        self.snapshot = None
++        self.exists = False
++        self.outcome = PersistOutcome.INSERTED
++        self.persist_calls = []
++        self.lookup_calls = 0
++
++    async def lookup_delivery(self, alert):
++        self.lookup_calls += 1
++        return SnapshotLookup(self.exists, self.snapshot, str(alert.id) if self.exists else None)
++
++    async def persist(self, value, *, replay=None, delivery_snapshot=None):
++        self.persist_calls.append((value.model_copy(deep=True), replay.model_copy(deep=True)))
++        if self.outcome == PersistOutcome.INSERTED:
++            if not self.exists:
++                self.snapshot = copy.deepcopy(delivery_snapshot)
++            self.exists = True
++        return PersistResult(self.outcome, str(value.id))
++
++
++def worker_fixture(alert=None):
++    alert = alert or raw()
++    redis = Redis()
++    dedup = SimpleNamespace(_redis=redis, is_duplicate=AsyncMock(return_value=(False, None)))
++    engine = SimpleNamespace(_dedup=dedup, process=AsyncMock(return_value=fused(alert)))
++    sink = MemorySink()
++    worker = FusionWorker(engine=engine, sink=sink, dlq=InMemoryDLQ())
++    worker._producer = SimpleNamespace(send_and_wait=AsyncMock())
++    return worker, sink, engine, redis
++
++
++@pytest.mark.parametrize("version", ["source-v1", "legacy-v1"])
++def test_full_first_snapshot_roundtrip_includes_original_material(version):
++    original = fused(raw(version))
++    saved = make_snapshot(original)
++    restored = restore_snapshot(saved, original.alert)
++    assert restored.model_dump(mode="json") == original.model_dump(mode="json")
++    metadata = json.loads(_insert_args(original, delivery_snapshot=saved)[-1])["socai2_fusion"]
++    assert metadata["delivery_snapshot"] == saved
++    assert metadata["incident_id"] == str(original.incident_id)
++
++
++@pytest.mark.parametrize("fault", ["hash", "tenant", "id", "source", "incident", "decision", "version", "oversize"])
++def test_unproven_snapshot_is_rejected(fault):
++    alert = raw()
++    saved = make_snapshot(fused(alert))
++    if fault == "hash":
++        saved["sha256"] = "0" * 64
++    elif fault == "version":
++        saved["version"] = 99
++    else:
++        payload = saved["fused"]
++        if fault == "tenant":
++            payload["tenant_id"] = str(UUID(int=999))
++        elif fault == "id":
++            payload["id"] = str(UUID(int=999))
++        elif fault == "source":
++            payload["alert"]["source"] = "another-source"
++        elif fault == "incident":
++            payload["incident_id"] = None
++        elif fault == "decision":
++            payload["fusion_decision"] = "duplicate"
++        elif fault == "oversize":
++            payload["alert"]["description"] = "大" * snapshots.MAX_SNAPSHOT_BYTES
++        saved["sha256"] = hashlib.sha256(snapshots._canonical(payload)).hexdigest()
++    with pytest.raises(DeliveryHold):
++        restore_snapshot(saved, alert)
++
++
++@pytest.mark.parametrize("fault", ["incident", "duplicate", "oversize"])
++def test_cannot_cache_an_incomplete_or_truncated_first_result(fault):
++    value = fused()
++    if fault == "incident":
++        value.incident_id = None
++    elif fault == "duplicate":
++        value.fusion_decision = FusionDecision.DUPLICATE
++    else:
++        value.alert.description = "x" * snapshots.MAX_SNAPSHOT_BYTES
++    with pytest.raises(DeliveryHold):
++        make_snapshot(value)
++
++
++@pytest.mark.asyncio
++async def test_nx_finite_cache_keeps_first_completed_result():
++    redis = Redis()
++    cache = DeliveryRecovery(redis, 300)
++    original = fused()
++    await cache.remember(original)
++    later = original.model_copy(deep=True)
++    later.incident_id = UUID(int=999)
++    later.enrichments = {"changed": True}
++    retained = await DeliveryRecovery(redis, 300).remember(later)
++    assert retained.model_dump(mode="json") == original.model_dump(mode="json")
++    assert redis.writes == [(cache.key(original.alert), 300, True)] * 2
++
++
++@pytest.mark.parametrize("operation", ["get", "set"])
++@pytest.mark.asyncio
++async def test_cache_outage_is_an_explicit_hold(operation):
++    redis = Redis()
++    setattr(redis, operation, AsyncMock(side_effect=RuntimeError("offline Redis")))
++    cache = DeliveryRecovery(redis, 300)
++    with pytest.raises(DeliveryHold):
++        await (cache.load(raw()) if operation == "get" else cache.remember(fused()))
++
++
++@pytest.mark.parametrize("version", ["source-v1", "legacy-v1"])
++@pytest.mark.asyncio
++async def test_lookup_is_tenant_scoped_and_reports_old_snapshotless_rows(version):
++    alert = raw(version)
++    old_id = UUID(int=900)
++    conn = SimpleNamespace(fetchrow=AsyncMock(return_value={"id": old_id, "enrichment_data": {"old": True}}))
++    sink = AlertSink("unused")
++    sink._ensure_pool = AsyncMock(return_value=Pool(conn))
++    result = await sink.lookup_delivery(alert)
++    assert result == SnapshotLookup(True, None, str(old_id))
++    sql, tenant, identity, fingerprint, allow_legacy_fingerprint = conn.fetchrow.await_args.args
++    assert "tenant_id = $1" in sql
++    assert tenant == alert.tenant_id and identity == alert.deterministic_id()
++    assert fingerprint == alert.fingerprint()
++    assert allow_legacy_fingerprint is (version == "legacy-v1")
++
++
++@pytest.mark.parametrize("fault", ["unavailable", "query", "metadata"])
++@pytest.mark.asyncio
++async def test_pg_lookup_never_masks_outage_or_bad_metadata_as_missing(fault):
++    conn = SimpleNamespace(fetchrow=AsyncMock(return_value={"id": raw().id, "enrichment_data": "not json"}))
++    if fault == "query":
++        conn.fetchrow.side_effect = RuntimeError("offline PG")
++    sink = AlertSink("unused")
++    sink._ensure_pool = AsyncMock(return_value=None if fault == "unavailable" else Pool(conn))
++    with pytest.raises(DeliveryHold):
++        await sink.lookup_delivery(raw())
++
++
++@pytest.mark.asyncio
++async def test_live_snapshot_sink_does_not_insert_a_null_incident():
++    value = fused()
++    original_snapshot = make_snapshot(value)
++    value.incident_id = None
++    value.fusion_decision = FusionDecision.DUPLICATE
++    conn = SimpleNamespace(fetchrow=AsyncMock())
++    sink = AlertSink("unused")
++    sink._ensure_pool = AsyncMock(return_value=Pool(conn))
++    result = await sink.persist(value, delivery_snapshot=original_snapshot)
++    assert result.outcome == PersistOutcome.FAILED
++    conn.fetchrow.assert_not_awaited()
++
++
++@pytest.mark.parametrize("version", ["source-v1", "legacy-v1"])
++@pytest.mark.asyncio
++async def test_pg_first_snapshot_recovers_after_publish_failure_and_total_redis_loss(version):
++    alert = raw(version)
++    worker, sink, engine, redis = worker_fixture(alert)
++    worker._producer.send_and_wait.side_effect = RuntimeError("broker delivery rejected")
++    with pytest.raises(RuntimeError, match="delivery rejected"):
++        await worker._fuse_and_persist(alert)
++    saved = copy.deepcopy(sink.snapshot)
++    redis.data.clear()
++    # A new worker/process may only use the PG snapshot. Its engine and cache
++    # contain no prior result, and the replay's content has changed.
++    replay = alert.model_copy(deep=True)
++    replay.description = "Later changed content"
++    replay.raw_event = {"later": True}
++    cold = FusionWorker(engine=SimpleNamespace(process=AsyncMock(side_effect=AssertionError("recomputed"))), sink=sink)
++    cold._producer = SimpleNamespace(send_and_wait=AsyncMock())
++    sink.outcome = PersistOutcome.DUPLICATE
++    await cold._fuse_and_persist(replay)
++    emitted = cold._producer.send_and_wait.await_args.kwargs["value"]
++    assert {key: emitted[key] for key in saved["fused"]} == saved["fused"]
++    assert emitted["alert_row_id"] == str(alert.id)
++    assert sink.snapshot == saved
++    assert sink.persist_calls[-1][1].raw_event == {"later": True}
++    engine.process.assert_awaited_once()
++    cold._engine.process.assert_not_awaited()
++
++
++@pytest.mark.parametrize("version", ["source-v1", "legacy-v1"])
++@pytest.mark.asyncio
++async def test_warm_snapshot_repairs_missing_pg_without_recorrelation_or_enrichment(version):
++    alert = raw(version)
++    worker, sink, engine, redis = worker_fixture(alert)
++    sink.outcome = PersistOutcome.UNAVAILABLE
++    with pytest.raises(DeliveryHold, match="persistence was not confirmed"):
++        await worker._fuse_and_persist(alert)
++    worker._producer.send_and_wait.assert_not_awaited()
++    # Fresh engine, same finite Redis cache. The dedup marker is warm, but it
++    # is not used as a substitute for the exact complete cached result.
++    engine2 = SimpleNamespace(_dedup=SimpleNamespace(_redis=redis, is_duplicate=AsyncMock(return_value=(True, str(alert.id)))),
++                              process=AsyncMock(side_effect=AssertionError("recomputed")))
++    cold = FusionWorker(engine=engine2, sink=sink)
++    cold._producer = SimpleNamespace(send_and_wait=AsyncMock())
++    sink.outcome = PersistOutcome.INSERTED
++    changed = alert.model_copy(deep=True)
++    changed.description = "Do not adopt current content"
++    await cold._fuse_and_persist(changed)
++    engine2.process.assert_not_awaited()
++    assert sink.snapshot["fused"]["incident_id"] == str(UUID(int=103))
++    assert sink.snapshot["fused"]["alert"]["description"] == "First description"
++    assert sink.snapshot["fused"]["enrichments"]["other"] == ["original"]
++    engine.process.assert_awaited_once()
++
++
++@pytest.mark.parametrize("version", ["source-v1", "legacy-v1"])
++@pytest.mark.parametrize("fault", ["warm_without_snapshot", "old_pg_without_snapshot", "invalid_cache"])
++@pytest.mark.asyncio
++async def test_unprovable_recovery_never_recomputes_or_inserts(version, fault):
++    alert = raw(version)
++    worker, sink, engine, redis = worker_fixture(alert)
++    if fault == "warm_without_snapshot":
++        engine._dedup.is_duplicate.return_value = (True, str(alert.id))
++    elif fault == "old_pg_without_snapshot":
++        sink.exists = True
++    else:
++        redis.data[DeliveryRecovery.key(alert)] = b"bad snapshot"
++    with pytest.raises(DeliveryHold):
++        await worker._fuse_and_persist(alert)
++    engine.process.assert_not_awaited()
++    assert sink.persist_calls == []
++    worker._producer.send_and_wait.assert_not_awaited()
++
++
++@pytest.mark.asyncio
++async def test_pg_snapshot_is_authoritative_over_bad_cache():
++    alert = raw()
++    worker, sink, engine, redis = worker_fixture(alert)
++    sink.exists = True
++    sink.snapshot = make_snapshot(fused(alert))
++    sink.outcome = PersistOutcome.DUPLICATE
++    redis.data[DeliveryRecovery.key(alert)] = b"corrupt"
++    await worker._fuse_and_persist(alert)
++    engine.process.assert_not_awaited()
++    worker._producer.send_and_wait.assert_awaited_once()
++
++
++@pytest.mark.asyncio
++async def test_duplicate_outcome_without_real_pg_row_is_not_durable():
++    worker, sink, engine, _ = worker_fixture(raw("legacy-v1"))
++    sink.outcome = PersistOutcome.DUPLICATE
++    with pytest.raises(DeliveryHold, match="no confirmed PostgreSQL row"):
++        await worker._fuse_and_persist(raw("legacy-v1"))
++    worker._producer.send_and_wait.assert_not_awaited()
++
++
++class Consumer:
++    def __init__(self, messages):
++        self.messages = iter(messages)
++        self.commits = []
++        self.commit_error = False
++
++    def __aiter__(self):
++        return self
++
++    async def __anext__(self):
++        try:
++            return next(self.messages)
++        except StopIteration:
++            raise StopAsyncIteration
++
++    async def commit(self, offsets):
++        self.commits.append(offsets)
++        if self.commit_error:
++            raise RuntimeError("commit not confirmed")
++
++
++def message(offset, partition=0):
++    return SimpleNamespace(value={"offset": offset}, topic="c01.raw", partition=partition, offset=offset)
++
++
++@pytest.mark.asyncio
++async def test_only_current_partition_completed_offset_is_committed():
++    worker, *_ = worker_fixture()
++    worker._consumer = Consumer([message(4, 1), message(8, 2)])
++    worker._running = True
++    worker._process_message = AsyncMock()
++    await worker._consume_loop()
++    assert worker._consumer.commits == [{TopicPartition("c01.raw", 1): 5}, {TopicPartition("c01.raw", 2): 9}]
++    assert worker.attached is False
++
++
++@pytest.mark.parametrize("failure", ["processing", "commit", "cancel"])
++@pytest.mark.asyncio
++async def test_failure_stops_before_any_later_record_can_cross_it(failure):
++    worker, *_ = worker_fixture()
++    worker._consumer = Consumer([message(0), message(1)])
++    worker._running = True
++    worker._process_message = AsyncMock()
++    if failure == "processing":
++        worker._process_message.side_effect = RuntimeError("processing failed")
++    elif failure == "commit":
++        worker._consumer.commit_error = True
++    else:
++        worker._process_message.side_effect = asyncio.CancelledError()
++    with pytest.raises(asyncio.CancelledError if failure == "cancel" else RuntimeError):
++        await worker._consume_loop()
++    worker._process_message.assert_awaited_once()
++    assert worker._consumer.commits == ([{TopicPartition("c01.raw", 0): 1}] if failure == "commit" else [])
++    assert worker.attached is False
++
++
++def letter():
++    return DeadLetter.build(topic="c01.raw", payload={"invalid": True}, reason="bad schema", schema_version="v1", partition=0, offset=1)
++
++
++@pytest.mark.parametrize("fault", ["no_pool", "exception", "bad_status", "none"])
++@pytest.mark.asyncio
++async def test_postgres_dlq_requires_explicit_insert_confirmation(fault):
++    conn = SimpleNamespace(execute=AsyncMock(return_value="INSERT 0 1"))
++    if fault == "exception":
++        conn.execute.side_effect = RuntimeError("offline PG")
++    elif fault == "bad_status":
++        conn.execute.return_value = "INSERT 0 0"
++    dlq = PostgresDLQ(lambda: None if fault == "no_pool" else Pool(conn))
++    assert await safe_record(dlq, letter()) is (fault == "none")
++
++
++@pytest.mark.asyncio
++async def test_kafka_dlq_awaits_delivery_confirmation():
++    producer = SimpleNamespace(send=AsyncMock(), send_and_wait=AsyncMock(side_effect=RuntimeError("delivery rejected")))
++    dlq = KafkaDLQ(producer)
++    assert await safe_record(dlq, letter()) is False
++    producer.send.assert_not_awaited()
++    producer.send_and_wait.assert_awaited_once()
++
++
++@pytest.mark.parametrize("dlq", [LoggingDLQ(), SimpleNamespace(record=AsyncMock(return_value=False))])
++@pytest.mark.asyncio
++async def test_live_poison_message_cannot_commit_on_unconfirmed_or_logging_dlq(dlq):
++    worker, *_ = worker_fixture()
++    worker._dlq = dlq
++    with pytest.raises(DeliveryHold):
++        await worker._dead_letter(topic="c01.raw", payload={}, reason="bad schema")
++
++
++@pytest.mark.asyncio
++async def test_confirmed_dlq_allows_the_one_poison_input_to_be_committed():
++    worker, *_ = worker_fixture()
++    worker._consumer = Consumer([message(0)])
++    worker._running = True
++    worker._process_message = lambda *args, **kwargs: worker._dead_letter(topic="c01.raw", payload={}, reason="bad schema")
++    await worker._consume_loop()
++    assert len(worker._dlq.records) == 1
++    assert worker._consumer.commits == [{TopicPartition("c01.raw", 0): 1}]

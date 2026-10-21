@@ -1,0 +1,532 @@
+{
+  "date": "2026-10-21",
+  "status": "bounded_original_function_migration_accepted",
+  "fixed_upstream_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+  "source_map": "docs/handoff/full-support-source-map.json",
+  "scope": [
+    "historical event lookup",
+    "Attack Path",
+    "UEBA",
+    "event query",
+    "IOC enrichment",
+    "OpenSearch original indexing/search"
+  ],
+  "current_report_requirement": "Markdown generation, persistence and retrieval; PDF deferred; existing valid Markdown evidence reused with no new report/model calls",
+  "runtime": {
+    "lake_and_graph": {
+      "lake-api.json": {
+        "event_id": "14c3af97-db31-4218-a885-b03c6d5dd20f",
+        "synthetic": true,
+        "same_tenant_lake": {
+          "status": 200,
+          "body": {
+            "columns": [
+              "event_id",
+              "event_time",
+              "src_hostname",
+              "user_name",
+              "process_name"
+            ],
+            "rows": [
+              [
+                "14c3af97-db31-4218-a885-b03c6d5dd20f",
+                "2026-10-21T04:12:29.733000Z",
+                "SOC-FULL-MIG-01",
+                "full-migration-user",
+                "migration-check.exe"
+              ]
+            ],
+            "row_count": 1,
+            "row_cap": 10000,
+            "referenced_tables": [
+              "aisoc.raw_events"
+            ],
+            "elapsed_ms": 9,
+            "executed_at": "2026-10-21T04:14:10.747112"
+          }
+        },
+        "other_tenant_lake": {
+          "status": 200,
+          "body": {
+            "columns": [
+              "event_id",
+              "event_time",
+              "src_hostname",
+              "user_name",
+              "process_name"
+            ],
+            "rows": [],
+            "row_count": 0,
+            "row_cap": 10000,
+            "referenced_tables": [
+              "aisoc.raw_events"
+            ],
+            "elapsed_ms": 2,
+            "executed_at": "2026-10-21T04:14:10.820018"
+          }
+        },
+        "investigation_process_activity": {
+          "status": 200,
+          "body": {
+            "tool": "process_activity",
+            "available": true,
+            "row_count": 1,
+            "rows": [
+              {
+                "event_time": "2026-10-21T04:12:29.733000Z",
+                "process_name": "migration-check.exe",
+                "file_path": "",
+                "hash_sha256": "",
+                "user_name": "full-migration-user",
+                "connector_type": "migration-fixture"
+              }
+            ],
+            "query": "processes on SOC-FULL-MIG-01 in the last 24h"
+          }
+        },
+        "unimplemented_process_tree": {
+          "status": 200,
+          "body": {
+            "tool": "process_tree",
+            "available": false,
+            "row_count": 0,
+            "rows": [],
+            "reason": "Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. An EDR connector that emits process lineage (CrowdStrike, Defender, SentinelOne) would populate it."
+          }
+        },
+        "existing_case_attack_path": {
+          "status": 503,
+          "body": "{\"detail\":\"Graph query failed: Neo4j driver not initialized. Call init_neo4j() first.\"}"
+        }
+      },
+      "attack-path-after-config.json": {
+        "status": 503,
+        "body": "{\"detail\":\"Graph query failed: {neo4j_code: Neo.ClientError.Procedure.ProcedureNotFound} {message: There is no procedure with the name `apoc.path.subgraphAll` registered for this database instance. Please ensure you've spelled the procedure name correctly and that the procedure is properly deployed.} {gql_status: 50N42} {gql_status_description: error: general processing exception - unexpected error. There is no procedure with the name `apoc.path.subgraphAll` registered for this database instance. Please ensure you've spelled the procedure name correctly and that the procedure is properly deployed.}\"}",
+        "runtime": {
+          "health": "healthy",
+          "graph_enabled": true,
+          "same_source_image": "sha256:1be37c3893f782b84ea5bfe3d1af20f20700f7e88fa9c79fee1202f3a15a3b1d"
+        }
+      },
+      "attack-path-after-apoc.json": {
+        "status": 404,
+        "body": "{\"detail\":\"Case efbdb359-8c50-41a6-9c4f-b79d0559bafd not found\"}",
+        "neo4j_health": null
+      },
+      "attack-path-existing-case.json": {
+        "status": 200,
+        "case_id": "724a7d5d-77b4-5037-9bf2-c9a459d7f7d0",
+        "tenant_id": "5ebb217f-e696-5422-b078-5f840c8fba91",
+        "body": {
+          "case_id": "724a7d5d-77b4-5037-9bf2-c9a459d7f7d0",
+          "nodes": [
+            {
+              "id": "case:724a7d5d-77b4-5037-9bf2-c9a459d7f7d0",
+              "label": "Case",
+              "properties": {
+                "title": "socai2 1g-20261020 a",
+                "severity": "medium"
+              }
+            },
+            {
+              "id": "alert:5eaaf56a-3014-5882-8679-598feffca7f0",
+              "label": "Alert",
+              "properties": {
+                "alert_id": "5eaaf56a-3014-5882-8679-598feffca7f0"
+              }
+            }
+          ],
+          "edges": [
+            {
+              "source": "case:724a7d5d-77b4-5037-9bf2-c9a459d7f7d0",
+              "target": "alert:5eaaf56a-3014-5882-8679-598feffca7f0",
+              "type": "INCLUDES"
+            }
+          ],
+          "node_count": 2,
+          "edge_count": 1
+        },
+        "prior_a_tenant_404_preserved": true
+      },
+      "neo4j-apoc.json": {
+        "same_image": true,
+        "same_data_mount": true,
+        "same_logs_mount": true,
+        "same_port_bindings": true,
+        "plugin": "image-bundled apoc-5.15.0-core.jar",
+        "original_infra_compose_unmodified": true,
+        "private_backup": "/opt/sting-aisoc-socai2/private/full-support-20261021/neo4j-container-before.json",
+        "new_container_id": "046008fdefcd"
+      }
+    },
+    "ueba": {
+      "date": "2026-10-21",
+      "scope": "Original UEBA module and minimal Agents UEBA connection; no model or global Agents worker",
+      "upstream_revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+      "original_ueba_tracked_files": 37,
+      "original_module_modified": false,
+      "source_changes": [
+        "services/agents/app/context/bundle.py",
+        "tests/porting/test_investigation_context_integrity.py",
+        "deploy/aisoc21/compose.ueba.yml",
+        "deploy/aisoc21/Dockerfile.ueba-context-agents",
+        "deploy/aisoc21/build/Dockerfile.ueba"
+      ],
+      "tests": {
+        "original_ueba": {
+          "passed": 122,
+          "environment": "existing socai2-agents-test:1g-20261020; network none; main import without startup"
+        },
+        "ueba_bundle_direct": {
+          "passed": 7,
+          "deselected": 19,
+          "duration_seconds": 1.14,
+          "selector": "test_investigation_context_integrity.py -k ueba",
+          "environment": "same cached image; network none; read-only source"
+        }
+      },
+      "build": {
+        "original_attempt_exit": 130,
+        "reason": "Stopped only slow public PyPI runtime dependency download after Poetry layer completed; preserved log",
+        "adaptation": "Original Dockerfile copied to deploy/aisoc21/build/Dockerfile.ueba; only runtime pip line adds existing Aliyun PyPI mirror. Original poetry.lock versions and require-hashes unchanged.",
+        "mirror_build_exit": 0
+      },
+      "migration": {
+        "head": "0004",
+        "applied_original_chain_once": true,
+        "own_tables": [
+          "ueba_entity_baselines",
+          "ueba_anomalies",
+          "ueba_peer_groups"
+        ],
+        "version_table": "alembic_version_ueba",
+        "preexisting_ueba_table_conflict": false
+      },
+      "readiness": {
+        "status": 200,
+        "body": {
+          "status": "ready",
+          "service": "aisoc-ueba",
+          "subscriptions": [
+            "socai2.raw_events.v1"
+          ]
+        }
+      },
+      "group_initialization": {
+        "group": "socai2.ueba.v1",
+        "topic": "socai2.raw_events.v1",
+        "previous_offsets": [
+          null,
+          null,
+          null
+        ],
+        "initialized_offsets": [
+          0,
+          0,
+          0
+        ],
+        "messages_read": 0,
+        "note": "Original consumer uses latest; only this new project group initialized before first service startup. No event republished."
+      },
+      "http_score_sample": {
+        "input": {
+          "tenant_id": "378c77c1-f3ac-4d62-9ee1-13301a5f45b1",
+          "entity_type": "user",
+          "entity_id": "socai2-ueba-http-20261021",
+          "event_type": "authentication",
+          "features": {
+            "login_count": 3.0
+          },
+          "source_event_id": "ae877188-d090-42dc-b10b-a9c0ff269605"
+        },
+        "score": {
+          "status": 200,
+          "body": null
+        },
+        "baselines": {
+          "status": 200,
+          "body": [
+            {
+              "id": "86e42218-be0b-484b-8bdb-b6c65ed06c42",
+              "tenant_id": "378c77c1-f3ac-4d62-9ee1-13301a5f45b1",
+              "entity_type": "user",
+              "entity_id": "socai2-ueba-http-20261021",
+              "feature_stats": {
+                "login_count": {
+                  "M2": 0.0,
+                  "std": 0.0,
+                  "mean": 3.0,
+                  "count": 1
+                }
+              },
+              "window_start": "2026-09-21T04:27:40.980551Z",
+              "window_end": "2026-10-21T04:27:40.983917Z"
+            }
+          ]
+        }
+      },
+      "automatic_consumer_sample": {
+        "status": 200,
+        "rows": [
+          {
+            "id": "786f1d73-eab4-4b22-9433-6bfb046d881b",
+            "tenant_id": "b282f186-3e35-5cbd-93e9-14100108da5d",
+            "entity_type": "user",
+            "entity_id": "full-migration-user",
+            "feature_stats": {
+              "bytes_sent": {
+                "M2": 0.0,
+                "std": 0.0,
+                "mean": 1024.0,
+                "count": 1
+              },
+              "is_failure": {
+                "M2": 0.0,
+                "std": 0.0,
+                "mean": 0.0,
+                "count": 1
+              },
+              "day_of_week": {
+                "M2": 0.0,
+                "std": 0.0,
+                "mean": 2.0,
+                "count": 1
+              },
+              "hour_of_day": {
+                "M2": 0.0,
+                "std": 0.0,
+                "mean": 4.0,
+                "count": 1
+              }
+            },
+            "window_start": "2026-09-21T04:26:55.890467Z",
+            "window_end": "2026-10-21T04:26:55.894792Z"
+          }
+        ],
+        "health": {
+          "status": "ok",
+          "service": "aisoc-ueba",
+          "consumer": {
+            "topic": "socai2.raw_events.v1",
+            "attached": true,
+            "processed": 1,
+            "handler_failures": 0,
+            "dead_lettered": 0,
+            "last_error": null
+          }
+        },
+        "source_event_id": "14c3af97-db31-4218-a885-b03c6d5dd20f",
+        "source_partition": 2,
+        "source_offset": 0
+      },
+      "agents_reader": {
+        "method": "ContextBundleBuilder._fetch_baselines",
+        "tenant_id": "b282f186-3e35-5cbd-93e9-14100108da5d",
+        "key": "user:full-migration-user",
+        "baseline": {
+          "entity": {
+            "type": "user",
+            "value": "full-migration-user"
+          },
+          "peer_group_id": null,
+          "activity_window_days": 30,
+          "baseline": {
+            "bytes_sent": {
+              "M2": 0.0,
+              "std": 0.0,
+              "mean": 1024.0,
+              "count": 1
+            },
+            "is_failure": {
+              "M2": 0.0,
+              "std": 0.0,
+              "mean": 0.0,
+              "count": 1
+            },
+            "day_of_week": {
+              "M2": 0.0,
+              "std": 0.0,
+              "mean": 2.0,
+              "count": 1
+            },
+            "hour_of_day": {
+              "M2": 0.0,
+              "std": 0.0,
+              "mean": 4.0,
+              "count": 1
+            }
+          },
+          "deviation_score": null,
+          "notes": ""
+        },
+        "errors": [],
+        "real_http": true,
+        "model_calls": 0
+      },
+      "agents_deployment": {
+        "image": "sha256:aec3c54f6f07c219f55922b0209e2a8edf3303e084441bb7651a27f7845a2c82",
+        "image_tag": "socai2-agents:full-ueba-context-20261021",
+        "environment_existing_preserved": true,
+        "added_environment_names": [
+          "AISOC_GRAPH_ENABLED",
+          "AISOC_UEBA_SERVICE_TOKEN",
+          "AISOC_UEBA_URL"
+        ],
+        "read_only_mounts": 7,
+        "stop_timeout_seconds": 60,
+        "worker_disabled": true,
+        "graph_enabled": true,
+        "single_runtime_file": "app/context/bundle.py",
+        "uebaservice_image": "sha256:8b04bc648c3e49022ac5622be56198a4afcb52bcced5f485182d062606115f99"
+      },
+      "configuration": {
+        "ueba_host_port": "127.0.0.1:18006",
+        "ueba_internal_port": 8004,
+        "input_topic": "socai2.raw_events.v1",
+        "output_topic": "socai2.ueba.anomalies.v1",
+        "consumer_group": "socai2.ueba.v1",
+        "postgres_tls": "verify-full using existing CA",
+        "kafka_tls": "SSL with hostname verification using existing CA",
+        "private_env_paths": [
+          "/opt/sting-aisoc-socai2/private/ueba.env",
+          "/opt/sting-aisoc-socai2/private/ueba-migrate.env",
+          "/opt/sting-aisoc-socai2/private/agents-ueba.env"
+        ]
+      },
+      "limitations": [
+        "Two distinct sample entities: one HTTP score and one root-published Kafka event; neither input replayed.",
+        "Cold baseline sample count 1 is below original minimum 30; no anomaly or deviation score claimed.",
+        "Native feature_stats and 30-day window reach Agents; missing deviation remains null/unknown.",
+        "Original consumer defaults to latest (correcting earlier earliest description); only new project group initialized to zero before first start.",
+        "No real model, no global Agents worker, no scoring algorithm changes or unrelated unpublished local graph/deep changes included."
+      ],
+      "independent_review": {
+        "reviewer": "api_auth_review",
+        "status": "accept",
+        "scope": "UEBA basic operation/authentication and native feature_stats passthrough; prior static delta plus existing runtime receipt read only",
+        "note": "No additional tests requested. Reviewer will merge TI evidence into the single overall change review separately."
+      }
+    },
+    "enrichment": {
+      "image_id": "sha256:eb59af970a5247c98353a5ba6e55a8bca6709db654cb011a29b77975a1efcebe",
+      "architecture": "amd64",
+      "healthy": true,
+      "user": "10001:10001",
+      "network": "socai2_default",
+      "loopback_port": 18002,
+      "redis_project_user": true,
+      "redis_db": 12,
+      "redis_ping_at_startup": true,
+      "provider_credentials_configured": false,
+      "health_http": 200,
+      "reserved_ioc_http": 200,
+      "reserved_ioc": "192.0.2.77",
+      "sources": null,
+      "risk_score": 0,
+      "confidence": 0,
+      "no_source_is_not_safe_verdict": true,
+      "credential_absent_from_new_log": true,
+      "preexisting_container_ids_unchanged": true,
+      "fusion_not_reconfigured": true,
+      "feed_or_model_calls": 0
+    },
+    "threatintel_opensearch": {
+      "image_id": "sha256:c15d75f4c3e75ed43ecc67a9945c57aa975f82256644066481747bb9e96fe745",
+      "initial_image_id": "sha256:772bd9f3f296a4987f87c9e037791f606dbbed7b5b0162afb7ec7fbc84979e45",
+      "healthy": true,
+      "user": "10001:10001",
+      "loopback_port": 18008,
+      "networks": [
+        "socai2_default",
+        "spirithub_default"
+      ],
+      "health_http_before_protocol_fix": 200,
+      "redis_ping_before_protocol_fix": true,
+      "airgap": true,
+      "registered_feeds": 0,
+      "kafka_disabled": true,
+      "os_store": {
+        "opensearch_version": "2.15.0",
+        "ioc_index": "socai2-threatintel-iocs",
+        "actor_index": "socai2-threatintel-actors",
+        "index_preexisted": false,
+        "written": 1,
+        "read": 1,
+        "exact_match": [
+          "192.0.2.88"
+        ],
+        "api_indicator_schema": true,
+        "source": "socai2-full-opensearch-20261021",
+        "synthetic": true,
+        "old_project_indices_accessed": false,
+        "feed_model_vendor_calls": 0
+      },
+      "os_search_http_before_protocol_fix": 200,
+      "os_search_total": 1,
+      "qdrant_browse_http": 200,
+      "qdrant_total": 0,
+      "qdrant_collections_created": {
+        "socai2_threatintel_iocs": true,
+        "socai2_threatintel_actors": true
+      },
+      "qdrant_dimension_configured": 1536,
+      "embedding_or_feed_or_model_calls": 0,
+      "fresh_ti_token": true,
+      "credential_absent_from_new_log": true,
+      "preexisting_container_ids_changed": [],
+      "old_opensearch_container_unchanged": true,
+      "api_proxy_not_yet_reconfigured": true,
+      "api_proxy_env_file": "/opt/sting-aisoc-socai2/private/full-threatintel-20261021/api-threatintel.env"
+    },
+    "api_threatintel_proxy": {
+      "status": 200,
+      "body": {
+        "indicators": [],
+        "total": 0,
+        "shown": 0,
+        "bounded": false,
+        "source": "qdrant",
+        "degraded": false,
+        "reason": ""
+      },
+      "same_api_source_image": "sha256:1be37c3893f782b84ea5bfe3d1af20f20700f7e88fa9c79fee1202f3a15a3b1d",
+      "only_added_environment_names": [
+        "THREATINTEL_SERVICE_URL",
+        "AISOC_THREATINTEL_SERVICE_TOKEN"
+      ],
+      "lake_and_graph_flags_preserved": true,
+      "separate_ti_service_credential": true,
+      "no_new_model_or_report": true
+    }
+  },
+  "validation": {
+    "ueba_original_tests_passed": 122,
+    "ueba_connection_tests_passed": 7,
+    "threatintel_selected_original_tests_passed": 41,
+    "go_original_merge_tests_passed": 3,
+    "go_build": "passed",
+    "openspec_strict": "passed",
+    "new_model_calls": 0,
+    "vendor_calls": 0,
+    "feed_calls": 0,
+    "independent_review": "api_auth_review final ACCEPT; reused existing evidence, no new HTTP/model/tests/global hashes"
+  },
+  "limits": [
+    "Synthetic controlled inputs only",
+    "UEBA count1 is not mature baseline/anomaly quality",
+    "Enrichment has no configured provider; empty sources/zero are not safe verdict",
+    "AttackPath verified PG Case/Alert fallback, not full observed event graph",
+    "OS verification covers original IOC/actor index code, not a missing platform event fulltext writer",
+    "Original not_ingested tools and unimplemented provider backends remain deferred",
+    "Global Agents worker remains OFF; no real response or unknown replay",
+    "Overall migration and original restore change remain incomplete"
+  ],
+  "independent_review": {
+    "reviewer": "api_auth_review",
+    "result": "accept",
+    "open_functional_blockers": [],
+    "scope": "This full-support batch only; not overall migration completion",
+    "extra_validation_performed": false,
+    "model_consumption_of_opensearch_verified": false
+  }
+}

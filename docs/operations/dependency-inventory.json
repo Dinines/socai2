@@ -1,0 +1,750 @@
+{
+  "date": "2026-10-20",
+  "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+  "compose_validation": {
+    "engine": "21 Docker Compose v5.6.0 config; --env-file /dev/null; no up or build",
+    "passed": true,
+    "limitation": "Static default interpolation only; missing app sources/bind inputs and runtime dependencies not validated",
+    "first_attempt": "--no-interpolate rejected unresolved pull_policy; repeated with default interpolation, no source edit",
+    "profiles": "all profiles statically parsed; no services started"
+  },
+  "services": [
+    {
+      "name": "actions",
+      "image": "ghcr.io/beenuar/aisoc-actions:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/actions",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8002",
+          "target": 8085,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "agents",
+      "image": "ghcr.io/beenuar/aisoc-agents:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/agents",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8001",
+          "target": 8084,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "alertmanager",
+      "image": "prom/alertmanager:v0.27.0",
+      "profiles": [
+        "monitoring"
+      ],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9094",
+          "target": 9093,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "image": "ghcr.io/beenuar/aisoc-core-api:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/api",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8000",
+          "target": 8000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "clickhouse",
+      "image": "clickhouse/clickhouse-server:23.8",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8123",
+          "target": 8123,
+          "protocol": "tcp"
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9000",
+          "target": 9000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "connectors",
+      "image": "ghcr.io/beenuar/aisoc-connectors:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/connectors",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8088",
+          "target": 8003,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "enrichment",
+      "image": "ghcr.io/beenuar/aisoc-enrichment:latest",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/enrichment",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8080",
+          "target": 8082,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "fusion",
+      "image": "ghcr.io/beenuar/aisoc-fusion:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/fusion",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8003",
+          "target": 8003,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "grafana",
+      "image": "grafana/grafana:10.2.0",
+      "profiles": [
+        "monitoring"
+      ],
+      "depends_on": {
+        "prometheus": "service_started",
+        "tempo": "service_started"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "3001",
+          "target": 3000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "honeytokens",
+      "image": "ghcr.io/beenuar/aisoc-honeytokens:latest",
+      "profiles": [
+        "extras"
+      ],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/honeytokens",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8008",
+          "target": 8005,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "ingest-worker",
+      "image": "ghcr.io/beenuar/aisoc-ingest:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy"
+      },
+      "build": {
+        "context": "services/ingest",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8081",
+          "target": 8080,
+          "protocol": "tcp"
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9090",
+          "target": 9090,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "kafka",
+      "image": "confluentinc/cp-kafka:7.5.0",
+      "profiles": [],
+      "depends_on": {
+        "zookeeper": "service_healthy"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9092",
+          "target": 9092,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "kafka-ui",
+      "image": "provectuslabs/kafka-ui:latest",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {
+        "kafka": "service_healthy"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8090",
+          "target": 8080,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "litellm",
+      "image": "ghcr.io/berriai/litellm:main-stable",
+      "profiles": [],
+      "depends_on": {
+        "ollama-pull": "service_completed_successfully"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "4000",
+          "target": 4000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "image": null,
+      "profiles": [
+        "mcp"
+      ],
+      "depends_on": {
+        "api": "service_started"
+      },
+      "build": {
+        "context": ".",
+        "dockerfile": "services/mcp/Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8096",
+          "target": 8096,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "neo4j",
+      "image": "neo4j:5.15-community",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "7474",
+          "target": 7474,
+          "protocol": "tcp"
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "published": "7687",
+          "target": 7687,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "ollama",
+      "image": "ollama/ollama:0.6.7",
+      "profiles": [],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "11434",
+          "target": 11434,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "ollama-pull",
+      "image": "ollama/ollama:0.6.7",
+      "profiles": [],
+      "depends_on": {
+        "ollama": "service_healthy"
+      },
+      "build": null,
+      "ports": []
+    },
+    {
+      "name": "opensearch",
+      "image": "opensearchproject/opensearch:2.11.0",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9200",
+          "target": 9200,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "osquery-tls",
+      "image": "ghcr.io/beenuar/aisoc-osquery-tls:latest",
+      "profiles": [
+        "osquery"
+      ],
+      "depends_on": {
+        "postgres": "service_healthy"
+      },
+      "build": {
+        "context": "services/osquery-tls",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8091",
+          "target": 9001,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "otel-collector",
+      "image": "otel/opentelemetry-collector-contrib:0.109.0",
+      "profiles": [
+        "monitoring"
+      ],
+      "depends_on": {
+        "tempo": "service_started"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "4317",
+          "target": 4317,
+          "protocol": "tcp"
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "published": "4318",
+          "target": 4318,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:16-alpine",
+      "profiles": [],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "5432",
+          "target": 5432,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "prometheus",
+      "image": "prom/prometheus:v2.48.0",
+      "profiles": [
+        "monitoring"
+      ],
+      "depends_on": {
+        "alertmanager": "service_started"
+      },
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "9091",
+          "target": 9090,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "purple-team",
+      "image": "ghcr.io/beenuar/aisoc-purple-team:latest",
+      "profiles": [
+        "extras"
+      ],
+      "depends_on": {
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/purple-team",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8006",
+          "target": 8006,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "qdrant",
+      "image": "qdrant/qdrant:v1.7.0",
+      "profiles": [],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "6333",
+          "target": 6333,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "realtime",
+      "image": "ghcr.io/beenuar/aisoc-realtime:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/realtime",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8086",
+          "target": 4000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "redis",
+      "image": "redis:7-alpine",
+      "profiles": [],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "6379",
+          "target": 6379,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "slack-bot",
+      "image": "ghcr.io/beenuar/aisoc-slack-bot:latest",
+      "profiles": [
+        "chatops"
+      ],
+      "depends_on": {
+        "actions": "service_started",
+        "api": "service_started"
+      },
+      "build": {
+        "context": "services/slack-bot",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8009",
+          "target": 8089,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "teams-bot",
+      "image": null,
+      "profiles": [
+        "chatops"
+      ],
+      "depends_on": {
+        "actions": "service_started",
+        "api": "service_started"
+      },
+      "build": {
+        "context": "services/teams-bot",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8010",
+          "target": 8090,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "tempo",
+      "image": "grafana/tempo:2.6.0",
+      "profiles": [
+        "monitoring"
+      ],
+      "depends_on": {},
+      "build": null,
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "3200",
+          "target": 3200,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "threatintel",
+      "image": "ghcr.io/beenuar/aisoc-threatintel:latest",
+      "profiles": [],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "qdrant": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/threatintel",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8005",
+          "target": 8005,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "ueba",
+      "image": "ghcr.io/beenuar/aisoc-ueba:latest",
+      "profiles": [
+        "full"
+      ],
+      "depends_on": {
+        "kafka": "service_healthy",
+        "postgres": "service_healthy",
+        "redis": "service_healthy"
+      },
+      "build": {
+        "context": "services/ueba",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "8007",
+          "target": 8004,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "web",
+      "image": "ghcr.io/beenuar/aisoc-web:latest",
+      "profiles": [],
+      "depends_on": {
+        "api": "service_started",
+        "realtime": "service_started"
+      },
+      "build": {
+        "context": ".",
+        "dockerfile": "apps/web/Dockerfile"
+      },
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "published": "3000",
+          "target": 3000,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    {
+      "name": "zookeeper",
+      "image": "confluentinc/cp-zookeeper:7.5.0",
+      "profiles": [],
+      "depends_on": {},
+      "build": null,
+      "ports": []
+    }
+  ],
+  "reference20": {
+    "containers": 16,
+    "source_compose_matches": true,
+    "overlay_matches_transferred_copy": true,
+    "litellm_config_matches_upstream": true,
+    "aisoc_images": [
+      {
+        "service": "agents",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:ca23dee24aeb48ea7c9cf05ce5d2c6e2d585323faa1896c0df0c87db17766ad8"
+      },
+      {
+        "service": "threatintel",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:c802a1cff66cf482f10851683f7fc094043d530efa4a4bf03ca8cf516cf81c60"
+      },
+      {
+        "service": "api",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:2aa26ad620d629b48d57733b34df8468ffc5535f54a446fd1f8ea6a546cc877d"
+      },
+      {
+        "service": "web",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:9725f7e4645f276a86a54a497ee2c640d5bb256102301c0bde20f4ef01ecad28"
+      },
+      {
+        "service": "fusion",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:d89ccf0dda6ee82bf0fc2a58674ef5c1688183379c5aaf4cb73fd407e5a640ca"
+      },
+      {
+        "service": "connectors",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:c42c2a91e8bdf173de70fcc262f1d4351544c41c58357344b55d92b105b3e2b1"
+      },
+      {
+        "service": "realtime",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:baf900ae12cf0843807372e8e7e7d0420a58ff23368232991451c68a6a81b3fb"
+      },
+      {
+        "service": "actions",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:c2b5a9d7376c7611d99d8c7a5d138407a914354ba82d197cefb29c72b4ad57ec"
+      },
+      {
+        "service": "ingest-worker",
+        "revision": "34ca18c57dd4175539e5c6dd3d04a72dc057306b",
+        "image_id": "sha256:3acdf88b174a27cb15ba4f92b9ef97b35e23597747ae68b3f44c40aaf311596f"
+      }
+    ]
+  },
+  "target21": {
+    "containers": 30,
+    "running": 22,
+    "volumes": 18,
+    "unchanged_since_stop_receipt": true,
+    "proposed_project": "socai2",
+    "existing_project_or_volume_reused": false,
+    "new_resources_created": false
+  }
+}

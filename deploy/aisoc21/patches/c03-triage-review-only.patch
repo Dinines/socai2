@@ -1,0 +1,1361 @@
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -55,6 +55,7 @@
+ from app.context.tenant_skills import render_read_status as render_skill_read_status
+ from app.investigator.prompt_sanitizer import sanitize_text, wrap_untrusted
+ from app.llm import safe_ainvoke
++from app.workers import triage_admission
+ from app.llm.factory import TRIAGE_REQUEST_TIMEOUT_SECONDS, make_chat_model
+ from app.llm.prompt_registry import prompt_text
+ from app.llm.structured_output import extract_json_block
+@@ -479,6 +480,7 @@
+     LLM-based auto-triage: classify the alert and decide whether to
+     auto-close (FP/benign with high confidence) or escalate.
+     """
++    admission_profile = triage_admission.agent_profile()
+     logger.info("Auto-triage agent starting", incident_id=str(state.incident_id))
+ 
+     state.status = AgentStatus.RUNNING
+@@ -551,11 +553,19 @@
+         _metrics["total_processed"] += 1
+         raise AutoTriageError(str(exc)) from exc
+ 
++    # The route/SDK await can span a profile change. Do not enter legacy
++    # counters, closure or QA using a profile different from this admission.
++    if triage_admission.agent_profile() != admission_profile:
++        raise triage_admission.ReviewOnlyHold("Triage admission profile changed during model invocation")
+     elapsed_ms = round((time.monotonic() - t0) * 1000)
+ 
+     verdict = result["verdict"]
+     confidence = result["confidence"]
+     rationale = result["rationale"]
++
++    if admission_profile == triage_admission.REVIEW_ONLY:
++        triage_admission.enforce(state, advice=result)
++        return state  # Before closure policy, auto-close, and closure QA.
+ 
+     _metrics["total_processed"] += 1
+     _metrics["confidence_sum"] += confidence
+@@ -638,6 +648,10 @@
+         confidence=confidence,
+         default_threshold=AUTO_CLOSE_THRESHOLD,
+     )
++    # The legacy policy lookup also awaits. A change there must not reach
++    # the following auto-close/QA actions; stable legacy retains its behavior.
++    if triage_admission.agent_profile() != admission_profile:
++        raise triage_admission.ReviewOnlyHold("Triage admission profile changed during closure policy lookup")
+     should_auto_close = verdict in AUTO_CLOSEABLE_DISPOSITIONS and closure.allowed
+ 
+     if verdict in AUTO_CLOSEABLE_DISPOSITIONS and not closure.allowed:
+--- a/services/agents/app/investigator/ledger.py
++++ b/services/agents/app/investigator/ledger.py
+@@ -22,6 +22,8 @@
+ """
+ 
+ from __future__ import annotations
++
++from app.workers import triage_admission
+ 
+ import hashlib
+ import json
+@@ -535,6 +537,7 @@
+     recent_dispositions_read: dict[str, Any] | None = None,
+     identity_context_read: dict[str, Any] | None = None,
+     recovery_projection: dict[str, Any] | None = None,
++    triage_admission_receipt: dict[str, Any] | None = None,
+ ) -> bool:
+     """Durably record an auto-triage outcome (issue #571) in ONE transaction:
+ 
+@@ -543,6 +546,11 @@
+     * mark the run completed, and
+     * write the disposition/verdict + rationale + recommendations back onto the
+       ``alerts`` row so the alert API surfaces the automated verdict.
++
++    A validated ``triage_admission_receipt`` is the selected ordinary-live
++    human-review contract: it skips the entire canonical Alert UPDATE,
++    including every ai_* column. Its first result must belong to an existing
++    ordinary live start; completed retries confirm the original receipt only.
+ 
+     The first verdict event and its artifacts have first-write keys. The
+     generic run/alert updates below are not a replay guard: the Kafka worker
+@@ -564,6 +572,15 @@
+     the caller, so a future caller that forgets to force ``auto_closed`` off
+     still cannot close an alert it was only meant to observe.
+     """
++    advisory = triage_admission_receipt is not None
++    projected = (recovery_projection or {}).get("triage_admission")
++    if advisory or projected is not None:
++        triage_admission.validate_persistence(
++            triage_admission_receipt, projection=recovery_projection,
++            run_id=str(run_id), tenant_id=str(tenant_ref), alert_id=str(alert_id or ""),
++            verdict=verdict, confidence=confidence, auto_closed=auto_closed,
++            recommendations=proposed_actions, raw_alert=raw_alert or {}, exchanges=llm_exchanges,
++        )
+     pool = await get_pool()
+     if pool is None:
+         return False
+@@ -580,6 +597,47 @@
+                 return False
+             async with conn.transaction():
+                 await _set_rls_context(conn, tenant_id)
++                if advisory:
++                    # Ordinary Kafka already committed this exact start/claim.
++                    # Do not create or reinterpret a manual, legacy or unknown Run.
++                    owner = await conn.fetchrow(
++                        "SELECT id, tenant_id, case_id, status, model_used, raw_alert FROM investigation_runs "
++                        "WHERE id=$1 FOR UPDATE", run_id,
++                    )
++                    if (owner is None or str(owner["id"]) != str(run_id) or str(owner["tenant_id"]) != str(tenant_id)
++                            or owner["case_id"] != str(alert_id or "")):
++                        raise triage_admission.ReviewOnlyHold("Advisory Run ownership mismatch")
++                    owner_raw = owner["raw_alert"]
++                    if isinstance(owner_raw, str):
++                        owner_raw = json.loads(owner_raw)
++                    if not isinstance(owner_raw, dict) or owner_raw.get("id") != str(alert_id or ""):
++                        raise triage_admission.ReviewOnlyHold("Advisory Run source identity mismatch")
++                    if owner["status"] == "completed":
++                        # A lost acknowledgement can reach warm pending again.
++                        # Reuse the existing ordinary first-result validator on
++                        # this connection; no Run/Alert/event/artifact UPDATE.
++                        from app.workers import triage_delivery
++                        prior = await triage_delivery._completed(
++                            conn, run_id=run_id, tenant_id=tenant_id,
++                            alert_id=str(alert_id or ""),
++                            workflow_version=recovery_projection["workflow_version"],
++                        )
++                        triage_admission.validate_projection(
++                            prior, run_id=str(run_id), tenant_id=str(tenant_id),
++                            alert_id=str(alert_id or ""), persisted=True,
++                        )
++                        if triage_admission._digest(owner_raw) != triage_admission_receipt["source_raw_alert_sha256"]:
++                            raise triage_admission.ReviewOnlyHold("Persisted advisory source snapshot changed")
++                        if any(prior.get(key) != value for key, value in recovery_projection.items()):
++                            raise triage_admission.ReviewOnlyHold("Advisory first result differs")
++                        return True
++                    if owner["status"] != "running" or owner["model_used"] != "kafka:auto_triage:claimed":
++                        raise triage_admission.ReviewOnlyHold("Advisory start is not an ordinary live claim")
++                    if await conn.fetchval(
++                        "SELECT EXISTS(SELECT 1 FROM investigation_events "
++                        "WHERE run_id=$1 AND seq IN (0,1))", run_id,
++                    ):
++                        raise triage_admission.ReviewOnlyHold("Partial advisory first result requires inspection")
+                 await conn.execute(
+                     """
+                     INSERT INTO investigation_runs
+@@ -649,7 +707,8 @@
+                     run_id,
+                     tenant_id,
+                     f"auto_triage:{tier}",
+-                    f"verdict={verdict} confidence={confidence:.2f}"[:8000],
++                    ("review_only: human review required; effective confidence unknown; numeric 0 policy sentinel"
++                     if advisory else f"verdict={verdict} confidence={confidence:.2f}")[:8000],
+                     json.dumps(
+                         {
+                             "verdict": verdict,
+@@ -785,7 +844,7 @@
+                     json.dumps(raw_alert or {}),
+                     (alert_summary or "")[:8000] or None,
+                 )
+-                if alert_uuid is not None:
++                if alert_uuid is not None and not advisory:
+                     # Surface the automated verdict on the alert row. Status is
+                     # only advanced to 'resolved' when auto-triage auto-closed a
+                     # benign/FP alert at high confidence; otherwise the alert
+--- a/services/agents/app/models/state.py
++++ b/services/agents/app/models/state.py
+@@ -165,6 +165,9 @@
+     # Calibrated confidence on the agent's verdict (0.0–1.0). Calibrated via
+     # the Brier-score gate in the eval harness — see services/agents/app/confidence
+     # and tests/test_confidence_calibration.py.
++    # Explicit ordinary-live human-review receipt; absent preserves legacy behavior.
++    triage_admission: dict[str, Any] | None = None
++
+     confidence: float = 0.0
+     confidence_basis: list[str] = Field(default_factory=list)
+     verdict: str | None = None
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -74,6 +74,7 @@
+ from app.security.llm_resolver import resolve_llm_config
+ from app.workers.business_context import BusinessContextApplier
+ from app.workers.entity_lane import EntityLanes, entity_of
++from app.workers import triage_admission
+ from app.workers import triage_budget, triage_delivery
+ from app.workers.shadow_mode import (
+     LiveShadowModePolicy,
+@@ -433,6 +434,7 @@
+     # cache (which deliberately groups different upstream alerts). None in the
+     # map is a reserved/started slot without a recoverable returned result.
+     _pending_results: dict[tuple[str, str], _PendingResult | None] | None = None
++    _admission_profile_name: str | None = None
+ 
+     def __init__(
+         self,
+@@ -488,6 +490,32 @@
+             writer = writer._delegate
+         return _BROKER_DELIVERY.get() and isinstance(writer, LiveTriageWriter)
+ 
++    def _review_only(self) -> bool:
++        try:
++            profile = triage_admission.configured_profile()
++            pinned = self._admission_profile_name
++            if pinned is not None and pinned != profile:
++                raise triage_admission.ReviewOnlyHold("Admission profile changed within a worker")
++            self._admission_profile_name = profile
++            return profile == triage_admission.REVIEW_ONLY
++        except triage_admission.ReviewOnlyHold as exc:
++            raise triage_budget.BudgetHold("Triage admission profile unavailable") from exc
++
++    def _review_prior(self, result: dict[str, Any], state: InvestigationState, *, persisted: bool = False) -> dict[str, Any]:
++        if self._review_only():
++            try:
++                triage_admission.validate_projection(result, **triage_admission.identity(state), persisted=persisted)
++            except triage_admission.ReviewOnlyHold as exc:
++                raise triage_budget.BudgetHold("Stored result is outside this review-only profile") from exc
++        return deepcopy(result)
++
++    def _review_state(self, state: InvestigationState) -> None:
++        if self._review_only():
++            try:
++                triage_admission.enforce(state)
++            except triage_admission.ReviewOnlyHold as exc:
++                raise triage_budget.BudgetHold("First advisory result is not recoverable") from exc
++
+     @staticmethod
+     def _delivery_fields(state: InvestigationState) -> dict[str, Any]:
+         return {"run_id": state.run_id, "tenant_id": state.tenant_id,
+@@ -516,10 +544,17 @@
+                                       "requires_approval": action.requires_approval}
+                                      for action in state.proposed_actions],
+                 "response_dispatched": False, "approvals_raised": [],
+-                "source_writeback": None, "effect_status": "not_replayed"}
++                "source_writeback": None, "effect_status": "not_replayed",
++                **({"triage_admission": deepcopy(state.triage_admission)}
++                   if state.triage_admission is not None else {})}
+ 
+     async def _save_pending(self, key: tuple[str, str]) -> dict[str, Any]:
+         pending = self._pending()[key]
++        if self._review_only():
++            if pending is None or pending.saving:
++                raise triage_budget.BudgetHold("Advisory result is started or saving")
++            self._review_prior(pending.projection, pending.state)
++            self._review_state(pending.state)
+         if pending is None or pending.saving:
+             raise ledger_module.LedgerPersistError("Auto-triage is started or saving; result is not yet recoverable")
+         pending.saving = True
+@@ -846,6 +881,9 @@
+         Calling this method directly keeps replay's original mapping and reads.
+         """
+         delivery_guard = self._uses_delivery_guard()
++        review_only = self._review_only()
++        if review_only and not delivery_guard:
++            raise triage_budget.BudgetHold("Review-only profile denies direct/replay triage")
+         delivery_key: tuple[str, str] | None = None
+         if delivery_guard:
+             identity = build_state(message)
+@@ -854,9 +892,14 @@
+             delivery_key = (str(identity.run_id), str(identity.tenant_id))
+             if delivery_key in self._pending():
+                 return await self._save_pending(delivery_key)
+-            prior = await triage_delivery.lookup(**self._delivery_fields(identity))
++            try:
++                prior = await triage_delivery.lookup(**self._delivery_fields(identity))
++            except ledger_module.LedgerPersistError as exc:
++                if review_only:
++                    raise triage_budget.BudgetHold("Review-only first result or absence is not confirmed") from exc
++                raise
+             if prior is not None:
+-                return deepcopy(prior)
++                return self._review_prior(prior, identity, persisted=True)
+         # Phase B4 — apply business-context rules on the post-fusion alert BEFORE
+         # any triage work. A suppress rule drops the alert (no triage spend); a
+         # severity/route/tag rule mutates the alert the agent reasons over.
+@@ -874,6 +917,8 @@
+             bc_matched = bc.matched_rule_ids
+             bc_provenance = bc.provenance
+             if bc.suppressed:
++                if review_only:
++                    raise triage_budget.BudgetHold("Policy suppression is outside the review-only profile")
+                 state = build_state(message)
+                 if state is None:
+                     raise ledger_module.LedgerPersistError("Invalid policy-suppression input")
+@@ -922,7 +967,7 @@
+         # prior benign/FP outcome, auto-resolve the repeat WITHOUT re-triage
+         # (this is what makes alert volume actually shrink over time). Gated on
+         # trust (human prior, or corroborated high-confidence AI prior).
+-        if _memory_suppression_enabled():
++        if not review_only and _memory_suppression_enabled():
+             suppressed = await self._maybe_suppress_from_memory(state, fingerprint, bc_matched, writer=writer)
+             if suppressed is not None:
+                 suppressed["business_context_policy"] = bc_provenance
+@@ -951,15 +996,17 @@
+             try:
+                 extra = {"budget": budget} if budget is not None else {}
+                 prior = await triage_delivery.claim(**self._delivery_fields(state), **extra)
+-            except BaseException:
++            except BaseException as exc:
+                 # No model method has been entered. The next bounded attempt
+                 # must query PG again, rather than treating a failed read as a
+                 # missing claim or retaining a fictitious returned result.
+                 self._pending().pop(delivery_key)
++                if review_only and isinstance(exc, ledger_module.LedgerPersistError):
++                    raise triage_budget.BudgetHold("Review-only live claim is not confirmed") from exc
+                 raise
+             if prior is not None:
+                 self._pending().pop(delivery_key)
+-                return deepcopy(prior)
++                return self._review_prior(prior, state, persisted=True)
+             if budget is not None:
+                 invocation = triage_budget.Invocation(state.run_id, state.tenant_id,
+                                                       lambda: getattr(self, "_stopping", False))
+@@ -1007,46 +1054,66 @@
+             # Bind a CostTracker so every LLM call on this path records its
+             # token/cost (safe_ainvoke -> record_llm_call) — previously the
+             # highest-volume LLM spend was recorded as $0 and invisible.
+-            async with CostTracker(
+-                run_id=str(state.run_id),
+-                tenant_id=str(state.tenant_id),
+-                persist=writer.persists_cost,
+-            ) as tracker:
+-                if use_llm and cfg is not None:
+-                    # Route the LLM call through the tenant's BYOK key/model so
+-                    # auto-triage actually honours per-tenant credentials.
+-                    #
+-                    # Only the fields the *tenant* set are overrides. The
+-                    # resolver also carries an env baseline, and passing that
+-                    # through here replaced the `triage` role's gateway alias
+-                    # with whatever `OPENAI_MODEL` held — `gpt-4-turbo-preview`
+-                    # in the shipped .env.example, which the gateway 400s. An
+-                    # env default is not a per-tenant override.
+-                    # The key needs the same treatment: the env baseline's key
+-                    # is a *provider* key, and forcing it here would send it to
+-                    # the gateway as a bearer token, which 401s. Left unset,
+-                    # make_chat_model resolves the key that pairs with the route
+-                    # it actually chose.
+-                    with triage_budget.invocation_scope(invocation), llm_override(
+-                        api_key=cfg.api_key if getattr(cfg, "api_key_from_tenant", False) else None,
+-                        base_url=cfg.base_url if getattr(cfg, "base_url_from_tenant", False) else None,
+-                        model=cfg.model if getattr(cfg, "model_from_tenant", False) else None,
+-                    ):
+-                        state, tier = await self._llm_triage(state)
+-                else:
+-                    state = await run_triage(state)
+-                    tier = "deterministic"
+-                    _METRICS["deterministic"] += 1
+-                cost = CostSummary.from_tracker(tracker)
+-                tokens = tracker.total_tokens
+-                # From the call that answered, not from the pin. The shadow
+-                # writer stamps a decision with `state.model_used`, and the
+-                # field did not exist, so every shadow decision recorded a
+-                # null model and per-model agreement was empty on every
+-                # deployment. `resolved_models` is what the tracker observed,
+-                # so the deterministic path correctly leaves this `None`.
+-                if cost.resolved_models:
+-                    state.model_used = ", ".join(sorted({str(m) for m in cost.resolved_models}))
++            tracker = None
++            try:
++                async with CostTracker(
++                    run_id=str(state.run_id),
++                    tenant_id=str(state.tenant_id),
++                    persist=writer.persists_cost,
++                ) as tracker:
++                    if use_llm and cfg is not None:
++                        # Route the LLM call through the tenant's BYOK key/model so
++                        # auto-triage actually honours per-tenant credentials.
++                        #
++                        # Only the fields the *tenant* set are overrides. The
++                        # resolver also carries an env baseline, and passing that
++                        # through here replaced the `triage` role's gateway alias
++                        # with whatever `OPENAI_MODEL` held — `gpt-4-turbo-preview`
++                        # in the shipped .env.example, which the gateway 400s. An
++                        # env default is not a per-tenant override.
++                        # The key needs the same treatment: the env baseline's key
++                        # is a *provider* key, and forcing it here would send it to
++                        # the gateway as a bearer token, which 401s. Left unset,
++                        # make_chat_model resolves the key that pairs with the route
++                        # it actually chose.
++                        with triage_admission.ordinary_live_scope(
++                            triage_admission.REVIEW_ONLY if review_only else triage_admission.LEGACY
++                        ), triage_budget.invocation_scope(invocation), llm_override(
++                            api_key=cfg.api_key if getattr(cfg, "api_key_from_tenant", False) else None,
++                            base_url=cfg.base_url if getattr(cfg, "base_url_from_tenant", False) else None,
++                            model=cfg.model if getattr(cfg, "model_from_tenant", False) else None,
++                        ):
++                            state, tier = await self._llm_triage(state)
++                    else:
++                        state = await run_triage(state)
++                        tier = "deterministic"
++                        _METRICS["deterministic"] += 1
++                    cost = CostSummary.from_tracker(tracker)
++                    tokens = tracker.total_tokens
++                    # From the call that answered, not from the pin. The shadow
++                    # writer stamps a decision with `state.model_used`, and the
++                    # field did not exist, so every shadow decision recorded a
++                    # null model and per-model agreement was empty on every
++                    # deployment. `resolved_models` is what the tracker observed,
++                    # so the deterministic path correctly leaves this `None`.
++                    if cost.resolved_models:
++                        state.model_used = ", ".join(sorted({str(m) for m in cost.resolved_models}))
++
++            finally:
++                # Preserve one spend observation even when strict reply/schema
++                # admission raises before a first result can be delivered.
++                if review_only and tracker is not None:
++                    cost = CostSummary.from_tracker(tracker)
++                    tokens = tracker.total_tokens
++                    try:
++                        governor.record_spend(str(state.tenant_id), usd=cost.measured_usd or 0.0, tokens=tokens)
++                    except Exception as exc:
++                        logger.debug("auto_triage_worker.governor_record_failed", error=str(exc))
++
++            if review_only:
++                if invocation is not None and not invocation.response_seen:
++                    raise triage_budget.BudgetHold("Model outcome has not been confirmed for advisory delivery")
++                self._review_state(state)
+ 
+             # Parity 5.1. `find_matching()` had no production caller, so no
+             # playbook ever ran from an alert. Three switches must agree
+@@ -1064,8 +1131,8 @@
+                 # grader was only meant to score.
+                 playbook_outcome = (
+                     await alert_trigger.run_for_alert(state)
+-                    if writer.fires_playbooks
+-                    else alert_trigger.TriggerOutcome(skipped_reason="replay: playbooks are not fired")
++                    if not review_only and writer.fires_playbooks
++                    else alert_trigger.TriggerOutcome(skipped_reason=("review-only: playbooks are not fired" if review_only else "replay: playbooks are not fired"))
+                 )
+                 if playbook_outcome.matched:
+                     state.add_finding(
+@@ -1103,7 +1170,8 @@
+                     # This guard unwraps only LiveTriageWriter and its live
+                     # shadow wrapper. Both account real spend; neither may
+                     # publish a pattern verdict for another live alert to use.
+-                    governor.record_spend(str(state.tenant_id), usd=cost.measured_usd or 0.0, tokens=tokens)
++                    if not review_only:  # Review-only accounted before its hold guards.
++                        governor.record_spend(str(state.tenant_id), usd=cost.measured_usd or 0.0, tokens=tokens)
+                 else:
+                     writer.cache_verdict(
+                         governor,
+@@ -1115,6 +1183,10 @@
+                     )
+             except Exception as exc:  # noqa: BLE001 — governance accounting is best-effort
+                 logger.debug("auto_triage_worker.governor_record_failed", error=str(exc))
++
++        if review_only:
++            self._review_state(state)
++            verdict, confidence = state.verdict, state.confidence
+ 
+         # Groundedness gate: does the verdict's reasoning cite indicators the
+         # evidence actually contained? `score_groundedness` existed as an eval
+@@ -1151,7 +1223,7 @@
+ 
+         # Wave 1 — write the durable outcome back as a per-signature prior so
+         # autonomous closures compound (a later identical alert can suppress).
+-        if _memory_writeback_enabled() and verdict:
++        if not review_only and _memory_writeback_enabled() and verdict:
+             with contextlib.suppress(Exception):
+                 await writer.record_outcome(
+                     str(state.tenant_id),
+@@ -1173,20 +1245,20 @@
+         # High-confidence FP/BTP already terminated (status COMPLETED) and
+         # skip enrichment. Best-effort: the verdict is already durable, so an
+         # enrichment/investigation failure never fails the triage outcome.
+-        if state.status is not AgentStatus.COMPLETED:
++        if not review_only and state.status is not AgentStatus.COMPLETED:
+             await self._maybe_escalate(state, writer=writer)
+ 
+         # Queue every action that needs sign-off so a human can actually give
+         # it. Until v9.0 proposed actions were persisted as JSON and stopped
+         # there, so "requires_approval" described an approval nobody could
+         # grant — the responder app's queue had no producer at all.
+-        approvals = await self._raise_approvals(state, writer=writer)
++        approvals = [] if review_only else await self._raise_approvals(state, writer=writer)
+ 
+         # Close the loop with the SIEM that raised this alert. Runs last and
+         # fails soft: the verdict is already durable, and an unreachable
+         # Splunk must not re-drive the retry path and dead-letter an alert
+         # that was triaged correctly.
+-        source_writeback = await self._write_back_to_source(state, verdict, confidence, rationale=_rationale_of(state), writer=writer)
++        source_writeback = None if review_only else await self._write_back_to_source(state, verdict, confidence, rationale=_rationale_of(state), writer=writer)
+ 
+         shadow = isinstance(writer, ShadowModeTriageWriter)
+         if isinstance(writer, ShadowModeTriageWriter) and writer.recorded:
+@@ -1217,6 +1289,7 @@
+             # run reports the same shape with `executed: False`.
+             "source_writeback": source_writeback,
+             "proposed_actions": [{"action_type": a.action_type, "requires_approval": a.requires_approval} for a in state.proposed_actions],
++            **({"triage_admission": deepcopy(state.triage_admission)} if review_only else {}),
+         }
+ 
+     async def _sink_for(self, state: InvestigationState, fingerprint: str) -> TriageWriter:
+@@ -1270,6 +1343,8 @@
+         All that happens here is the call, and the metrics that let an
+         operator see whether the loop is closing.
+         """
++        if self._review_only():
++            return None
+         alert_id = str((state.raw_alert or {}).get("id") or "")
+         if not alert_id or not verdict:
+             return None
+@@ -1300,7 +1375,7 @@
+         the agent can do. It makes the subset that was always meant to reach a
+         human reach one.
+         """
+-        if not _approvals_enabled():
++        if self._review_only() or not _approvals_enabled():
+             return []
+         raised: list[str] = []
+         for action in state.proposed_actions:
+@@ -1528,7 +1603,7 @@
+         # Two independent switches. The env flag is the operator's; the
+         # writer's is the caller's, and a shadow run declines because every
+         # graph node records itself to the ledger.
+-        if not _escalation_enabled() or not writer.escalation_allowed:
++        if self._review_only() or not _escalation_enabled() or not writer.escalation_allowed:
+             return
+         # Pre-fetch the same context an analyst-initiated investigation gets.
+         # The manual orchestrator has built a ContextBundle since T2.1; the
+@@ -1572,6 +1647,8 @@
+             _METRICS["llm"] += 1
+             return state, "llm"
+         except Exception as exc:  # noqa: BLE001 — fall back to deterministic triage
++            if triage_admission.held_in_chain(exc):
++                raise triage_budget.BudgetHold("Review-only model admission refused") from exc
+             hold = triage_budget.hold_in_chain(exc)
+             if hold is not None:
+                 raise hold
+@@ -1658,6 +1735,10 @@
+         and DB errors enter the bounded retry / dead-letter path. An
+         unconfirmed DLQ leaves the Kafka offset uncommitted.
+         """
++        if self._review_only():
++            if not self._uses_delivery_guard():
++                raise triage_budget.BudgetHold("Review-only persistence denies direct/replay")
++            self._review_state(state)
+         rationale = _rationale_of(state)
+         recommendations = [
+             {
+@@ -1669,45 +1750,51 @@
+             }
+             for a in state.proposed_actions
+         ]
+-        await writer.persist_auto_triage(
+-            run_id=state.run_id,
+-            alert_id=(state.raw_alert or {}).get("id"),
+-            tenant_ref=str(state.tenant_id),
+-            alert_summary=state.alert_summary or "",
+-            raw_alert=state.raw_alert or {},
+-            tier=tier,
+-            verdict=str(verdict) if verdict else NEEDS_REVIEW,
+-            confidence=float(confidence or 0.0),
+-            rationale=rationale,
+-            findings=list(state.findings),
+-            proposed_actions=recommendations,
+-            auto_closed=state.status is AgentStatus.COMPLETED,
+-            iterations=state.iteration_count,
+-            tokens=tokens,
+-            cost_usd=(cost or CostSummary()).measured_usd,
+-            measured_call_count=(cost or CostSummary()).measured_calls,
+-            estimated_cost_usd=(cost or CostSummary()).estimated_usd,
+-            estimated_call_count=(cost or CostSummary()).estimated_calls,
+-            unpriced_call_count=(cost or CostSummary()).unpriced_calls,
+-            # Persisted so an ungrounded auto-closure is auditable after the
+-            # fact and aggregatable on /metrics/funnel, rather than surviving
+-            # only inside a findings string.
+-            groundedness=state.groundedness,
+-            ungrounded=(state.groundedness is not None and state.groundedness < _groundedness_floor()),
+-            # The prompt and response behind the verdict (issue #1276).
+-            # Empty on the deterministic path, which is the honest value
+-            # there — no model was asked, so there is nothing to replay.
+-            llm_exchanges=list(state.llm_exchanges),
+-            organisation_memory_read=dict(state.organisation_memory_read),
+-            tenant_skill_read=dict(state.tenant_skill_read),
+-            knowledge_base_read=dict(state.knowledge_base_read),
+-            recent_dispositions_read=dict(state.recent_dispositions_read),
+-            identity_context_read=dict(state.identity_context_read),
+-            recovery_projection=deepcopy(recovery_projection) if recovery_projection is not None else self._recovery_projection(
+-                state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens,
+-                cost=cost or CostSummary(), writer=writer,
+-            ),
+-        )
++        try:
++            await writer.persist_auto_triage(
++                run_id=state.run_id,
++                alert_id=(state.raw_alert or {}).get("id"),
++                tenant_ref=str(state.tenant_id),
++                alert_summary=state.alert_summary or "",
++                raw_alert=state.raw_alert or {},
++                tier=tier,
++                verdict=str(verdict) if verdict else NEEDS_REVIEW,
++                confidence=float(confidence or 0.0),
++                rationale=rationale,
++                findings=list(state.findings),
++                proposed_actions=recommendations,
++                auto_closed=state.status is AgentStatus.COMPLETED,
++                iterations=state.iteration_count,
++                tokens=tokens,
++                cost_usd=(cost or CostSummary()).measured_usd,
++                measured_call_count=(cost or CostSummary()).measured_calls,
++                estimated_cost_usd=(cost or CostSummary()).estimated_usd,
++                estimated_call_count=(cost or CostSummary()).estimated_calls,
++                unpriced_call_count=(cost or CostSummary()).unpriced_calls,
++                # Persisted so an ungrounded auto-closure is auditable after the
++                # fact and aggregatable on /metrics/funnel, rather than surviving
++                # only inside a findings string.
++                groundedness=state.groundedness,
++                ungrounded=(state.groundedness is not None and state.groundedness < _groundedness_floor()),
++                # The prompt and response behind the verdict (issue #1276).
++                # Empty on the deterministic path, which is the honest value
++                # there — no model was asked, so there is nothing to replay.
++                llm_exchanges=list(state.llm_exchanges),
++                organisation_memory_read=dict(state.organisation_memory_read),
++                tenant_skill_read=dict(state.tenant_skill_read),
++                knowledge_base_read=dict(state.knowledge_base_read),
++                recent_dispositions_read=dict(state.recent_dispositions_read),
++                identity_context_read=dict(state.identity_context_read),
++                recovery_projection=deepcopy(recovery_projection) if recovery_projection is not None else self._recovery_projection(
++                    state, tier=tier, verdict=verdict, confidence=confidence, tokens=tokens,
++                    cost=cost or CostSummary(), writer=writer,
++                ),
++                **({"triage_admission_receipt": deepcopy(state.triage_admission)} if self._review_only() else {}),
++            )
++        except Exception as exc:
++            if triage_admission.held_in_chain(exc):
++                raise triage_budget.BudgetHold("Advisory first-result persistence refused") from exc
++            raise
+ 
+     @staticmethod
+     def get_metrics() -> dict[str, int]:
+--- /dev/null
++++ b/services/agents/app/workers/triage_admission.py
+@@ -0,0 +1,220 @@
++"""Explicit human-review admission for ordinary Kafka live triage only.
++
++No writer wrapper, I/O, model call or storage dependency. Legacy is the default.
++The policy's numeric confidence sentinel is never a model estimate or Alert score.
++"""
++from __future__ import annotations
++from contextlib import contextmanager
++from contextvars import ContextVar
++from copy import deepcopy
++import hashlib
++import json
++import math
++import os
++import re
++from typing import Any, Iterator
++from uuid import UUID
++
++ENV = 'AISOC_TRIAGE_ADMISSION_PROFILE'
++LEGACY = 'legacy'
++REVIEW_ONLY = 'review_only_v1'
++_SCOPE: ContextVar[str | None] = ContextVar('ordinary_live_triage_admission', default=None)
++_REASON = ('Human review required; effective confidence is unknown; numeric confidence 0 is a policy sentinel, '
++           'not a model estimate. Model advice has not been accepted as a decision.')
++_EFFECTIVE = {'verdict': 'needs_review', 'confidence': None, 'review_required': True, 'reason': _REASON}
++_VERDICTS = {'true_positive', 'benign_true_positive', 'false_positive', 'benign', 'needs_review'}
++
++
++class ReviewOnlyHold(RuntimeError):
++    """No permission to reinterpret an old result or enter an untested path."""
++
++
++def configured_profile() -> str:
++    value = os.getenv(ENV, LEGACY).strip()
++    if value not in {LEGACY, REVIEW_ONLY}:
++        raise ReviewOnlyHold('Invalid triage admission profile')
++    return value
++
++
++@contextmanager
++def ordinary_live_scope(profile: str) -> Iterator[None]:
++    token = _SCOPE.set(profile)
++    try:
++        yield
++    finally:
++        _SCOPE.reset(token)
++
++
++def agent_profile() -> str:
++    profile = configured_profile()
++    scope = _SCOPE.get()
++    if scope is not None and scope != profile:
++        raise ReviewOnlyHold('Triage admission profile changed within its live scope')
++    if profile == REVIEW_ONLY and scope != REVIEW_ONLY:
++        raise ReviewOnlyHold('Review-only auto-triage requires ordinary Kafka live admission')
++    return profile
++
++
++def _digest(value: Any) -> str:
++    return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()
++
++
++def identity(state: Any) -> dict[str, str]:
++    return {'run_id': str(state.run_id), 'tenant_id': str(state.tenant_id),
++            'alert_id': str((state.raw_alert or {}).get('id') or '')}
++
++
++def _strict_advice(response: str) -> dict[str, Any]:
++    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
++        obj = {}
++        for key, value in pairs:
++            if key in obj:
++                raise ValueError('Duplicate JSON key')
++            obj[key] = value
++        return obj
++    def reject_constant(value: str) -> None:
++        raise ValueError('Non-finite JSON number')
++    try:
++        value = json.loads(response, object_pairs_hook=unique_object, parse_constant=reject_constant)
++    except (TypeError, ValueError) as exc:
++        raise ReviewOnlyHold('Model advice must retain a strict original JSON object') from exc
++    if (not isinstance(value, dict) or not isinstance(value.get('verdict'), str) or value['verdict'] not in _VERDICTS
++            or type(value.get('confidence')) not in (int, float)
++            or not 0 <= value['confidence'] <= 1 or not math.isfinite(value['confidence'])
++            or not isinstance(value.get('rationale'), str) or not 0 < len(value['rationale']) <= 8000):
++        raise ReviewOnlyHold('Original advice has an invalid schema')
++    # Extra provider-visible fields stay in the original transcript; only the
++    # existing three-field contract is admitted, without normalization.
++    return {key: value[key] for key in ('verdict', 'confidence', 'rationale')}
++
++
++def _validate_exchange(advice: dict[str, Any] | None, exchanges: Any) -> None:
++    if advice is None:
++        if exchanges:
++            raise ReviewOnlyHold('A received model response cannot become advice-free fallback')
++        return
++    if (not isinstance(exchanges, list) or len(exchanges) != 1
++            or not isinstance(exchanges[0], dict)
++            or exchanges[0].get('response_truncated') or exchanges[0].get('prompt_truncated')):
++        raise ReviewOnlyHold('A complete first model exchange is required')
++    exchange = exchanges[0]
++    response = exchange.get('response')
++    if (not isinstance(response, str)
++            or hashlib.sha256(response.encode()).hexdigest() != exchange.get('output_hash')
++            or advice['raw_response_sha256'] != exchange['output_hash']
++            or _strict_advice(response) != {key: advice[key] for key in ('verdict', 'confidence', 'rationale')}):
++        raise ReviewOnlyHold('Advisory response differs from its first exchange')
++
++
++def enforce(state: Any, *, advice: dict[str, Any] | None = None) -> dict[str, Any]:
++    """Idempotently retain advice while making the effective decision inert."""
++    old = state.triage_admission
++    if old is not None:
++        validate(old, **identity(state))
++        receipt = deepcopy(old)
++        if advice is not None and (receipt['model_advice'] is None or
++                any(receipt['model_advice'][key] != advice.get(key) for key in ('verdict', 'confidence', 'rationale'))):
++            raise ReviewOnlyHold('A first advisory receipt cannot be replaced')
++    else:
++        model_advice = None
++        if advice is not None:
++            exchanges = state.llm_exchanges
++            if not isinstance(exchanges, list) or len(exchanges) != 1 or not isinstance(exchanges[0], dict):
++                raise ReviewOnlyHold('A complete first model exchange is required')
++            model_advice = {'verdict': advice['verdict'], 'confidence': advice['confidence'],
++                            'rationale': advice['rationale'], 'raw_response_sha256': exchanges[0].get('output_hash'),
++                            'stage': 'SDK_visible_egress_restored_preparse', 'review_status': 'unreviewed'}
++        receipt = {'schema_version': 1, 'profile': REVIEW_ONLY, **identity(state),
++            'source_raw_alert_sha256': _digest(state.raw_alert or {}),
++            'review_status': 'unreviewed', 'model_advice': model_advice,
++            'effective_decision': deepcopy(_EFFECTIVE),
++            'confidence_scope': 'policy_sentinel_not_model_estimate',
++            'canonical_Alert_update_allowed': False}
++        validate(receipt, **identity(state))
++    if receipt['source_raw_alert_sha256'] != _digest(state.raw_alert or {}):
++        raise ReviewOnlyHold('First advisory source snapshot changed')
++    _validate_exchange(receipt['model_advice'], state.llm_exchanges)
++    state.triage_admission = deepcopy(receipt)
++    state.verdict = 'needs_review'
++    state.confidence = 0.0  # Legacy numeric plumbing only; effective confidence is null.
++    state.status = type(state.status).RUNNING
++    state.completed_at = None
++    state.proposed_actions = []
++    # Do not let old model prose stand as the effective policy rationale.
++    state.confidence_basis = ['Review-only profile: model advice is unreviewed', 'Rationale: ' + _REASON]
++    state.findings = ['Review-only profile: human review required; no automated disposition or actions.']
++    return deepcopy(receipt)
++
++
++def validate(receipt: Any, *, run_id: str, tenant_id: str, alert_id: str) -> None:
++    expected = {'schema_version', 'profile', 'run_id', 'tenant_id', 'alert_id',
++                'source_raw_alert_sha256', 'review_status', 'model_advice', 'effective_decision',
++                'confidence_scope', 'canonical_Alert_update_allowed'}
++    if (not isinstance(receipt, dict) or set(receipt) != expected
++            or type(receipt.get('schema_version')) is not int or receipt['schema_version'] != 1
++            or receipt.get('profile') != REVIEW_ONLY or receipt.get('review_status') != 'unreviewed'
++            or any(receipt.get(k) != v for k, v in {'run_id': run_id, 'tenant_id': tenant_id, 'alert_id': alert_id}.items())
++            or not re.fullmatch('[0-9a-f]{64}', str(receipt.get('source_raw_alert_sha256', '')))
++            or receipt.get('effective_decision') != _EFFECTIVE
++            or receipt.get('confidence_scope') != 'policy_sentinel_not_model_estimate'
++            or receipt.get('canonical_Alert_update_allowed') is not False):
++        raise ReviewOnlyHold('Invalid first advisory receipt')
++    try:
++        if any(str(UUID(value)) != value for value in (run_id, tenant_id, alert_id)):
++            raise ValueError('Non-canonical UUID')
++    except (ValueError, TypeError, AttributeError) as exc:
++        raise ReviewOnlyHold('Canonical advisory identity required') from exc
++    advice = receipt['model_advice']
++    if advice is not None:
++        if (not isinstance(advice, dict) or set(advice) != {'verdict', 'confidence', 'rationale', 'raw_response_sha256', 'stage', 'review_status'}
++                or not isinstance(advice.get('verdict'), str) or advice['verdict'] not in _VERDICTS
++                or type(advice.get('confidence')) not in (float, int)
++                or not 0 <= advice['confidence'] <= 1 or not math.isfinite(advice['confidence'])
++                or not isinstance(advice.get('rationale'), str) or not 0 < len(advice['rationale']) <= 8000
++                or not re.fullmatch('[0-9a-f]{64}', str(advice.get('raw_response_sha256', '')))
++                or advice.get('stage') != 'SDK_visible_egress_restored_preparse' or advice.get('review_status') != 'unreviewed'):
++            raise ReviewOnlyHold('Invalid unreviewed model advice')
++
++
++def validate_projection(result: Any, *, run_id: str, tenant_id: str, alert_id: str, persisted: bool = False) -> None:
++    if not isinstance(result, dict):
++        raise ReviewOnlyHold('Missing first review-only projection')
++    validate(result.get('triage_admission'), run_id=run_id, tenant_id=tenant_id, alert_id=alert_id)
++    if (result.get('verdict') != 'needs_review' or type(result.get('confidence')) not in (int, float)
++            or result['confidence'] != 0 or result.get('proposed_actions') != []
++            or result.get('response_dispatched') is not False or result.get('approvals_raised') != []
++            or result.get('source_writeback') is not None):
++        raise ReviewOnlyHold('First result is not an inert review-only result')
++    if persisted:
++        # The original delivery validator already checked the first event,
++        # transcript linkage, source artifacts and artifact contents. Bind this
++        # profile's raw advice to its returned, actually hashed response artifact.
++        artifacts = result.get('persisted_artifacts')
++        if result.get('reused_persisted') is not True or not isinstance(artifacts, list):
++            raise ReviewOnlyHold('Completed advisory lacks first-result artifact proof')
++        responses = [item for item in artifacts if isinstance(item, dict) and item.get('kind') == 'llm_response']
++        advice = result['triage_admission']['model_advice']
++        if ((advice is None and responses) or (advice is not None and
++                (len(responses) != 1 or responses[0].get('sha256') != advice['raw_response_sha256']))):
++            raise ReviewOnlyHold('Persisted raw advice differs from its first response artifact')
++
++
++def validate_persistence(receipt: Any, *, projection: Any, run_id: str, tenant_id: str,
++                         alert_id: str, verdict: str, confidence: float, auto_closed: bool,
++                         recommendations: Any, raw_alert: dict[str, Any], exchanges: Any) -> None:
++    validate(receipt, run_id=run_id, tenant_id=tenant_id, alert_id=alert_id)
++    validate_projection(projection, run_id=run_id, tenant_id=tenant_id, alert_id=alert_id)
++    if (projection['triage_admission'] != receipt or verdict != 'needs_review' or confidence != 0
++            or auto_closed is not False or recommendations or _digest(raw_alert) != receipt['source_raw_alert_sha256']):
++        raise ReviewOnlyHold('Advisory persistence differs from its first receipt')
++    _validate_exchange(receipt['model_advice'], exchanges)
++
++
++def held_in_chain(error: BaseException) -> bool:
++    seen = set()
++    while error is not None and id(error) not in seen:
++        if isinstance(error, ReviewOnlyHold):
++            return True
++        seen.add(id(error))
++        error = error.__cause__ or error.__context__
++    return False
+--- /dev/null
++++ b/tests/porting/test_triage_review_only_ledger_c03.py
+@@ -0,0 +1,104 @@
++"""Actual ledger function against explicit SQL-recording doubles; not real PG.
++
++Unexecuted candidate. The central assertion covers the whole canonical Alert
++UPDATE, including ai_score: forcing shadow alone would fail these checks.
++"""
++from contextlib import asynccontextmanager
++from copy import deepcopy
++import json
++from types import SimpleNamespace
++from unittest.mock import AsyncMock
++from uuid import UUID
++
++import pytest
++
++from app.investigator import ledger
++from app.core.cost_telemetry import CostSummary
++from app.workers import fused_alert_consumer as module, triage_admission as admission, triage_delivery
++from app.workers.triage_persistence import LiveTriageWriter
++
++TENANT='11111111-1111-1111-1111-111111111111'
++ALERT='22222222-2222-2222-2222-222222222222'
++
++
++def first_fields():
++    state=module.build_state({'alert_row_id':ALERT,'tenant_id':TENANT,
++        'incident_id':'33333333-3333-3333-3333-333333333333',
++        'alert':{'id':ALERT,'title':'ledger fixture','severity':'medium'}})
++    answer={'verdict':'false_positive','confidence':.95,'rationale':'Unreviewed fixture.'}
++    state.record_llm_exchange(agent='auto_triage',purpose='triage.classify',model='unit',
++        prompt=[{'role':'user','content':'Fixture.'}],response=json.dumps(answer),duration_ms=1)
++    receipt=admission.enforce(state,advice=answer)
++    projection=module.FusedAlertTriageWorker._recovery_projection(state,tier='llm',verdict=state.verdict,
++        confidence=state.confidence,tokens=18,cost=CostSummary(),writer=LiveTriageWriter())
++    fields={'run_id':state.run_id,'alert_id':ALERT,'tenant_ref':TENANT,'alert_summary':'ledger fixture',
++        'raw_alert':state.raw_alert,'tier':'llm','verdict':'needs_review','confidence':0.0,'rationale':'Human review required.',
++        'findings':state.findings,'proposed_actions':[],'auto_closed':False,'tokens':18,
++        'llm_exchanges':state.llm_exchanges,'recovery_projection':projection,'triage_admission_receipt':receipt}
++    return state,fields
++
++
++def fake_pool(monkeypatch,state,status='running'):
++    calls=[]
++    @asynccontextmanager
++    async def transaction():yield
++    async def execute(sql,*args):
++        calls.append((sql,args));return 'INSERT 0 1'
++    conn=SimpleNamespace(transaction=transaction,execute=execute,fetchval=AsyncMock(return_value=False),
++        fetchrow=AsyncMock(return_value={'id':state.run_id,'tenant_id':UUID(TENANT),'case_id':ALERT,'status':status,
++            'model_used':'kafka:auto_triage:claimed' if status=='running' else 'kafka:auto_triage:llm',
++            'raw_alert':{'id':ALERT} if status=='running' else state.raw_alert}))
++    @asynccontextmanager
++    async def acquire():yield conn
++    monkeypatch.setattr(ledger,'get_pool',AsyncMock(return_value=SimpleNamespace(acquire=acquire)))
++    monkeypatch.setattr(ledger,'_resolve_tenant_id',AsyncMock(return_value=UUID(TENANT)))
++    monkeypatch.setattr(ledger,'_set_rls_context',AsyncMock())
++    return conn,calls
++
++
++@pytest.mark.asyncio
++async def test_first_advisory_persistence_omits_every_alert_column_update(monkeypatch):
++    state,fields=first_fields();conn,calls=fake_pool(monkeypatch,state)
++    assert await ledger.persist_auto_triage(**fields) is True
++    assert any('INSERT INTO investigation_events' in sql for sql,_ in calls)
++    assert any('UPDATE investigation_runs' in sql for sql,_ in calls)
++    assert not any('UPDATE alerts' in sql for sql,_ in calls)
++    assert not any('UPDATE alerts' in sql or 'INSERT INTO alerts' in sql for sql,_ in calls)
++    assert conn.fetchval.await_count==1  # No partial first events before writing.
++
++
++@pytest.mark.asyncio
++async def test_ack_lost_completed_retry_confirms_first_snapshot_without_sql_writes(monkeypatch):
++    state,fields=first_fields();conn,calls=fake_pool(monkeypatch,state,'completed')
++    prior=deepcopy(fields['recovery_projection'])
++    prior.update(reused_persisted=True,persisted_artifacts=[
++        {'kind':'llm_response','sha256':fields['triage_admission_receipt']['model_advice']['raw_response_sha256']}])
++    validate=AsyncMock(return_value=prior);monkeypatch.setattr(triage_delivery,'_completed',validate)
++    assert await ledger.persist_auto_triage(**fields) is True
++    assert calls==[] and validate.await_count==1
++    changed=deepcopy(prior);changed['triage_admission']['model_advice']['confidence']=.5
++    validate.return_value=changed
++    with pytest.raises(ledger.LedgerPersistError) as error:await ledger.persist_auto_triage(**fields)
++    assert admission.held_in_chain(error.value) and calls==[]
++    validate.return_value=prior
++    conn.fetchrow.return_value['raw_alert']={**state.raw_alert,'description':'Changed persisted first source'}
++    with pytest.raises(ledger.LedgerPersistError) as error:await ledger.persist_auto_triage(**fields)
++    assert admission.held_in_chain(error.value) and calls==[]
++
++
++@pytest.mark.asyncio
++async def test_missing_or_mismatched_advisory_receipt_never_reaches_database(monkeypatch):
++    _,fields=first_fields();pool=AsyncMock();monkeypatch.setattr(ledger,'get_pool',pool)
++    fields['triage_admission_receipt']=None
++    with pytest.raises(admission.ReviewOnlyHold):await ledger.persist_auto_triage(**fields)
++    pool.assert_not_awaited()
++
++
++@pytest.mark.asyncio
++async def test_legacy_without_receipt_keeps_original_alert_update(monkeypatch):
++    state,fields=first_fields();conn,calls=fake_pool(monkeypatch,state)
++    fields['triage_admission_receipt']=None
++    fields['recovery_projection'].pop('triage_admission')
++    assert await ledger.persist_auto_triage(**fields) is True
++    assert any('UPDATE alerts' in sql for sql,_ in calls)
++    conn.fetchrow.assert_not_awaited()  # New ownership branch is profile-only.
+--- /dev/null
++++ b/tests/porting/test_triage_review_only_profile_c03.py
+@@ -0,0 +1,400 @@
++"""Review-only direct regressions; SDK uses MockTransport, all stores explicit doubles.
++
++This file is an unexecuted candidate. These are delivery/effect guards, never
++classification-quality tests or provider/model calls.
++"""
++from copy import deepcopy
++import json
++from types import SimpleNamespace
++from unittest.mock import AsyncMock, Mock
++from uuid import UUID
++
++import httpx
++import pytest
++
++from app.agents import auto_triage_agent as agent
++from app.core import cost_telemetry
++from app.core.cost_governor import CostGovernor, BudgetConfig
++from app.llm import contract
++from app.llm.factory import make_chat_model
++from app.workers import fused_alert_consumer as worker_module, triage_admission as admission, triage_budget as budget
++from app.workers import shadow_mode
++
++TENANT='11111111-1111-1111-1111-111111111111'
++ALERT='22222222-2222-2222-2222-222222222222'
++ADVICE={'verdict':'false_positive','confidence':.95,'rationale':'Unreviewed transport fixture suggestion.'}
++
++
++def message():
++    return {'id':ALERT,'alert_row_id':ALERT,'tenant_id':TENANT,
++        'incident_id':'33333333-3333-3333-3333-333333333333',
++        'alert':{'id':ALERT,'tenant_id':TENANT,'title':'Review delivery fixture','source':'c03-review-unit',
++            'severity':'medium','source_event_ids':['review-first'],'raw_event':{},'description':'Synthetic guard fixture.'}}
++
++
++@pytest.fixture(autouse=True)
++def offline(monkeypatch):
++    monkeypatch.setenv(admission.ENV,admission.REVIEW_ONLY)
++    monkeypatch.setenv('AISOC_DETERMINISTIC','0')
++    # Turn every effect ON: policy guards, not these flags, must prevent them.
++    for key in ('AISOC_AGENT_MEMORY_SUPPRESSION','AISOC_AGENT_MEMORY_WRITEBACK','AISOC_AGENT_RAISE_APPROVALS',
++                'AISOC_AGENT_ESCALATE_TO_GRAPH','AISOC_ALERT_PLAYBOOKS_ENABLED'):
++        monkeypatch.setenv(key,'1')
++    monkeypatch.setenv('LLM_GATEWAY_URL','http://127.0.0.1.invalid/v1')
++    monkeypatch.setenv('LITELLM_MASTER_KEY','synthetic-offline-key')
++    monkeypatch.setenv('AISOC_GATEWAY_COST_TRUST','0')  # No measured-dollar claim.
++    for key in ('OPENAI_BASE_URL','LLM_BASE_URL'):
++        monkeypatch.delenv(key,raising=False)
++    monkeypatch.setattr(contract,'_RESPONSE_CACHE_ENABLED',False)
++    monkeypatch.setattr(contract.egress_privacy,'_FORCE','0')
++    monkeypatch.setattr(cost_telemetry,'_flush_to_db',AsyncMock())
++    monkeypatch.setattr(agent.closure_policy,'decide',AsyncMock(return_value=agent.closure_policy.ClosureDecision(
++        allowed=True,threshold=.5,reason='unit would close',source='unit')))
++    monkeypatch.setattr(agent,'_sample_for_qa',AsyncMock())
++    monkeypatch.setattr(worker_module,'_RETRY_BACKOFF_S',0)
++
++
++def sdk_response():
++    return httpx.Response(200,json={'id':'review-unit','object':'chat.completion','created':1,'model':'unit',
++        'choices':[{'index':0,'message':{'role':'assistant','content':json.dumps(ADVICE)},'finish_reason':'stop'}],
++        'usage':{'prompt_tokens':11,'completion_tokens':7,'total_tokens':18}})
++
++
++@pytest.mark.parametrize('shadow',[False,True])
++@pytest.mark.asyncio
++async def test_actual_sdk_warm_and_cold_review_never_invokes_effects(monkeypatch,shadow):
++    governor=CostGovernor(config=BudgetConfig(soft_usd=50,hard_usd=100))
++    monkeypatch.setattr(worker_module,'get_governor',lambda:governor)
++    lookup,claim=AsyncMock(return_value=None),AsyncMock(return_value=None)
++    monkeypatch.setattr(worker_module.triage_delivery,'lookup',lookup)
++    monkeypatch.setattr(worker_module.triage_delivery,'claim',claim)
++    policy=budget.Policy(3600,3,60000,2)
++    monkeypatch.setattr(budget,'policy_for',Mock(return_value=policy))
++    updates=AsyncMock();monkeypatch.setattr(budget,'_update',updates)
++    monkeypatch.setattr(worker_module,'resolve_llm_config',AsyncMock(return_value=SimpleNamespace(
++        allowed=True,api_key='synthetic-unit',base_url=None,model='unit',
++        api_key_from_tenant=False,base_url_from_tenant=False,model_from_tenant=False)))
++    reader=SimpleNamespace(fetch_organisation_memory=AsyncMock(return_value={'status':'not_requested','statements':[]}))
++    worker=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused',context_reader=reader,max_attempts=2)
++    writer=worker._writer
++    if shadow:
++        writer=shadow_mode.ShadowModeTriageWriter(writer,shadow_mode.ShadowDecision(
++            tenant_ref=TENANT,alert_class='unit',alert_id=ALERT))
++    worker._sink_for=AsyncMock(return_value=writer)
++    for name in ('_attach_tenant_skill','_attach_runbooks','_attach_recent_dispositions','_attach_identity_context'):
++        setattr(worker,name,AsyncMock())
++    forbidden=[]
++    for name in ('_maybe_suppress_from_memory','_maybe_escalate','_raise_approvals','_write_back_to_source'):
++        mock=AsyncMock(side_effect=AssertionError('Forbidden review-only effect'))
++        setattr(worker,name,mock);forbidden.append(mock)
++    trigger=AsyncMock(side_effect=AssertionError('No playbook preview or execution'))
++    monkeypatch.setattr(worker_module.alert_trigger,'run_for_alert',trigger)
++    prior=AsyncMock(side_effect=AssertionError('No outcome memory write'))
++    monkeypatch.setattr(type(writer),'record_outcome',prior)
++    # Fail persistence once after the actual SDK reply. Warm retry must save
++    # the same first result rather than re-enter the SDK or spend loop.
++    persist=AsyncMock(side_effect=[worker_module.ledger_module.LedgerPersistError('unit confirmation lost'),True])
++    monkeypatch.setattr(worker_module.ledger_module,'persist_auto_triage',persist)
++    shadow_record=AsyncMock(return_value=True)
++    monkeypatch.setattr(shadow_mode,'record_shadow_decision',shadow_record)
++    class_counts={key:agent._metrics[key] for key in ('fp_count','btp_count','tp_count','benign_count')}
++    requests=[]
++    async def transport(request):
++        requests.append(json.loads(request.content));return sdk_response()
++    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
++        model=make_chat_model('triage',max_tokens=512,json_output=True,http_async_client=client)
++        monkeypatch.setattr(agent,'make_chat_model',lambda *args,**kwargs:model)
++        assert await worker._process_with_retry(message()) is True
++        assert len(requests)==1 and updates.await_count==2 and claim.await_count==1
++        assert claim.await_args.kwargs['budget']==policy
++        assert governor.spent_tokens(TENANT)==18
++        fields=deepcopy(persist.await_args_list[-1].kwargs)
++        receipt=fields['triage_admission_receipt'];projection=fields['recovery_projection']
++        assert fields['verdict']=='needs_review' and fields['confidence']==0 and fields['auto_closed'] is False
++        assert receipt['model_advice']['verdict']=='false_positive' and receipt['model_advice']['confidence']==.95
++        assert receipt['effective_decision']['confidence'] is None and receipt['review_status']=='unreviewed'
++        assert receipt['effective_decision']['review_required'] is True
++        assert fields['proposed_actions']==[] and fields['llm_exchanges'][0]['response']==json.dumps(ADVICE)
++        assert projection['triage_admission']==receipt and worker._pending()=={}
++        assert persist.await_args_list[0].kwargs==persist.await_args_list[1].kwargs
++        # Fresh process-equivalent worker with completed PG result: no model,
++        # writer/reader selection, new claim, effects or new persistence.
++        cold=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused')
++        cold._sink_for=AsyncMock(side_effect=AssertionError('Cold recovery must precede sources'))
++        lookup.return_value=deepcopy(projection)
++        lookup.return_value.update(reused_persisted=True,persisted_artifacts=[
++            {'kind':'llm_response','sha256':receipt['model_advice']['raw_response_sha256']}])
++        assert await cold._process_with_retry(message()) is True
++        cold._sink_for.assert_not_awaited()
++        assert len(requests)==1 and claim.await_count==1 and persist.await_count==2
++        # The old delivery parser proved the artifact itself; the new profile
++        # must additionally bind its advice hash to that exact first response.
++        lookup.return_value['persisted_artifacts'][0]['sha256']='0'*64
++        with pytest.raises(budget.BudgetHold):await cold._process_with_retry(message())
++        assert len(requests)==1 and persist.await_count==2
++    agent.closure_policy.decide.assert_not_awaited();agent._sample_for_qa.assert_not_awaited()
++    trigger.assert_not_awaited();prior.assert_not_awaited()
++    for mock in forbidden:mock.assert_not_awaited()
++    assert shadow_record.await_count==int(shadow)
++    assert {key:agent._metrics[key] for key in class_counts}==class_counts
++
++
++@pytest.mark.asyncio
++async def test_legacy_default_still_runs_original_auto_close_and_qa(monkeypatch):
++    monkeypatch.delenv(admission.ENV)
++    state=worker_module.build_state(message())
++    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:sdk_response())) as client:
++        model=make_chat_model('triage',max_tokens=512,json_output=True,http_async_client=client)
++        monkeypatch.setattr(agent,'make_chat_model',lambda *args,**kwargs:model)
++        result=await agent.run_auto_triage(state)
++    assert result.triage_admission is None and result.verdict=='false_positive' and result.confidence==.95
++    assert result.status is agent.AgentStatus.COMPLETED
++    agent.closure_policy.decide.assert_awaited_once();agent._sample_for_qa.assert_awaited_once()
++
++
++@pytest.mark.asyncio
++async def test_profile_actually_denies_direct_and_replay_before_reads_or_models(monkeypatch):
++    lookup=AsyncMock();monkeypatch.setattr(worker_module.triage_delivery,'lookup',lookup)
++    for writer in (None,object()):
++        worker=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused',writer=writer)
++        with pytest.raises(budget.BudgetHold):
++            if writer is None:await worker.triage(message())
++            else:await worker._process_with_retry(message())
++    with pytest.raises(admission.ReviewOnlyHold):await agent.run_auto_triage(worker_module.build_state(message()))
++    lookup.assert_not_awaited()
++
++
++@pytest.mark.asyncio
++async def test_old_completed_result_unknown_and_explicit_suppression_are_holds(monkeypatch):
++    lookup=AsyncMock(return_value={'verdict':'false_positive','confidence':.95})
++    monkeypatch.setattr(worker_module.triage_delivery,'lookup',lookup)
++    claim=AsyncMock();monkeypatch.setattr(worker_module.triage_delivery,'claim',claim)
++    worker=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused')
++    worker._sink_for=AsyncMock(side_effect=AssertionError('No persistence or source access'))
++    with pytest.raises(budget.BudgetHold):await worker._process_with_retry(message())
++    lookup.side_effect=worker_module.ledger_module.LedgerPersistError('Original started/unknown')
++    with pytest.raises(budget.BudgetHold):await worker._process_with_retry(message())
++    lookup.side_effect=None;lookup.return_value=None
++    worker._business_context=SimpleNamespace(apply_for_tenant=AsyncMock(return_value=SimpleNamespace(
++        suppressed=True,matched_rule_ids=['policy'],provenance={})))
++    with pytest.raises(budget.BudgetHold):await worker._process_with_retry(message())
++    worker._sink_for.assert_not_awaited();claim.assert_not_awaited()
++
++
++@pytest.mark.asyncio
++async def test_original_boolean_confidence_cannot_be_admitted_as_numeric_one(monkeypatch):
++    original={'verdict':'false_positive','confidence':True,'rationale':'Original boolean must hold.'}
++    state=worker_module.build_state(message())
++    state.record_llm_exchange(agent='auto_triage',purpose='triage.classify',model='unit',
++        prompt=[{'role':'user','content':'Fixture.'}],response=json.dumps(original),duration_ms=1)
++    normalized={**original,'confidence':1.0}
++    with pytest.raises(admission.ReviewOnlyHold):admission.enforce(state,advice=normalized)
++    assert state.triage_admission is None
++
++
++@pytest.mark.parametrize('answered',[False,True])
++@pytest.mark.asyncio
++async def test_started_unknown_or_invalid_original_reply_holds_without_reentry(monkeypatch,answered):
++    governor=CostGovernor(config=BudgetConfig(soft_usd=50,hard_usd=100))
++    monkeypatch.setattr(worker_module,'get_governor',lambda:governor)
++    monkeypatch.setattr(worker_module.triage_delivery,'lookup',AsyncMock(return_value=None))
++    claim=AsyncMock(return_value=None);monkeypatch.setattr(worker_module.triage_delivery,'claim',claim)
++    monkeypatch.setattr(budget,'policy_for',Mock(return_value=budget.Policy(3600,3,60000,2)))
++    monkeypatch.setattr(budget,'_update',AsyncMock())
++    monkeypatch.setattr(worker_module,'resolve_llm_config',AsyncMock(return_value=SimpleNamespace(
++        allowed=True,api_key='synthetic-unit',base_url=None,model='unit',
++        api_key_from_tenant=False,base_url_from_tenant=False,model_from_tenant=False)))
++    reader=SimpleNamespace(fetch_organisation_memory=AsyncMock(return_value={'status':'not_requested','statements':[]}))
++    worker=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused',context_reader=reader)
++    worker._sink_for=AsyncMock(return_value=worker._writer)
++    for name in ('_attach_tenant_skill','_attach_runbooks','_attach_recent_dispositions','_attach_identity_context'):
++        setattr(worker,name,AsyncMock())
++    persist=AsyncMock();monkeypatch.setattr(worker_module.ledger_module,'persist_auto_triage',persist)
++    trigger=AsyncMock();monkeypatch.setattr(worker_module.alert_trigger,'run_for_alert',trigger)
++    requests=[]
++    async def transport(request):
++        requests.append(json.loads(request.content))
++        if not answered:raise httpx.ConnectError('Synthetic unknown transport',request=request)
++        response=sdk_response()
++        body=json.loads(response.content)
++        body['choices'][0]['message']['content']='not a JSON object'
++        return httpx.Response(200,json=body)
++    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
++        model=make_chat_model('triage',max_tokens=512,json_output=True,http_async_client=client)
++        monkeypatch.setattr(agent,'make_chat_model',lambda *args,**kwargs:model)
++        for _ in range(2):
++            with pytest.raises(budget.BudgetHold):await worker._process_with_retry(message())
++    assert len(requests)==1 and claim.await_count==1
++    assert governor.spent_tokens(TENANT)==(18 if answered else 0)  # Accounting, not an unknown-usage claim.
++    persist.assert_not_awaited();trigger.assert_not_awaited()
++    agent.closure_policy.decide.assert_not_awaited();agent._sample_for_qa.assert_not_awaited()
++
++
++# r02 branch additions share the original offline fixture/message/SDK assertions.
++# No new SDK transport; these selected branches must never enter a model method.
++def branch_harness(monkeypatch):
++    governor=CostGovernor(config=BudgetConfig(soft_usd=50,hard_usd=100))
++    monkeypatch.setattr(worker_module,'get_governor',lambda:governor)
++    lookup,claim=AsyncMock(return_value=None),AsyncMock(return_value=None)
++    monkeypatch.setattr(worker_module.triage_delivery,'lookup',lookup)
++    monkeypatch.setattr(worker_module.triage_delivery,'claim',claim)
++    policy=budget.Policy(3600,3,60000,2)
++    policy_for=Mock(return_value=policy);monkeypatch.setattr(budget,'policy_for',policy_for)
++    updates=AsyncMock();monkeypatch.setattr(budget,'_update',updates)
++    resolve=AsyncMock(return_value=SimpleNamespace(allowed=True,api_key='synthetic-unit',base_url=None,model='unit',
++        api_key_from_tenant=False,base_url_from_tenant=False,model_from_tenant=False))
++    monkeypatch.setattr(worker_module,'resolve_llm_config',resolve)
++    reader=SimpleNamespace(fetch_organisation_memory=AsyncMock(side_effect=AssertionError('No source read on this branch')))
++    worker=worker_module.FusedAlertTriageWorker(bootstrap_servers='unused',context_reader=reader)
++    worker._sink_for=AsyncMock(return_value=worker._writer)
++    forbidden=[]
++    for name in ('_attach_tenant_skill','_attach_runbooks','_attach_recent_dispositions','_attach_identity_context',
++                 '_maybe_suppress_from_memory','_maybe_escalate','_raise_approvals','_write_back_to_source'):
++        mock=AsyncMock(side_effect=AssertionError('Forbidden branch side effect'))
++        setattr(worker,name,mock);forbidden.append(mock)
++    trigger=AsyncMock(side_effect=AssertionError('No playbook preview or execution'))
++    monkeypatch.setattr(worker_module.alert_trigger,'run_for_alert',trigger);forbidden.append(trigger)
++    outcome=AsyncMock(side_effect=AssertionError('No outcome memory write'))
++    monkeypatch.setattr(type(worker._writer),'record_outcome',outcome);forbidden.append(outcome)
++    model=Mock(side_effect=AssertionError('Zero SDK branch'))
++    monkeypatch.setattr(agent,'make_chat_model',model)
++    llm=AsyncMock(side_effect=AssertionError('No model method'))
++    monkeypatch.setattr(worker_module,'run_auto_triage',llm)
++    deterministic=AsyncMock(wraps=worker_module.run_triage)
++    monkeypatch.setattr(worker_module,'run_triage',deterministic)
++    persist=AsyncMock(return_value=True)
++    monkeypatch.setattr(worker_module.ledger_module,'persist_auto_triage',persist)
++    return SimpleNamespace(worker=worker,governor=governor,lookup=lookup,claim=claim,policy=policy,
++        policy_for=policy_for,updates=updates,resolve=resolve,reader=reader,forbidden=forbidden,
++        model=model,llm=llm,deterministic=deterministic,persist=persist)
++
++
++def assert_branch_has_no_model_or_effects(h):
++    h.model.assert_not_called();h.llm.assert_not_awaited()
++    h.reader.fetch_organisation_memory.assert_not_awaited()
++    h.updates.assert_not_awaited()
++    agent.closure_policy.decide.assert_not_awaited();agent._sample_for_qa.assert_not_awaited()
++    for mock in h.forbidden:mock.assert_not_awaited()
++
++
++@pytest.mark.parametrize('reason',['configured_deterministic','hard_circuit'])
++@pytest.mark.asyncio
++async def test_profile_actual_deterministic_zero_sdk_keeps_advice_none_and_effects_off(monkeypatch,reason):
++    h=branch_harness(monkeypatch)
++    if reason=='configured_deterministic':monkeypatch.setenv('AISOC_DETERMINISTIC','1')
++    else:h.governor.record_spend(TENANT,usd=100,tokens=0)  # Exercise the actual governor circuit.
++    incoming=message()
++    incoming['alert'].update(title='ransomware on host',hostname='synthetic-guard-host')
++    assert await h.worker._process_with_retry(incoming) is True
++    h.deterministic.assert_awaited_once();h.lookup.assert_awaited_once();h.claim.assert_awaited_once()
++    assert 'budget' not in h.claim.await_args.kwargs
++    h.policy_for.assert_not_called()
++    fields=h.persist.await_args.kwargs
++    receipt=fields['triage_admission_receipt']
++    assert receipt['model_advice'] is None and fields['llm_exchanges']==[] and fields['tokens']==0
++    assert receipt['effective_decision']['review_required'] is True
++    assert receipt['effective_decision']['confidence'] is None and fields['confidence']==0
++    assert fields['verdict']=='needs_review' and fields['proposed_actions']==[] and fields['auto_closed'] is False
++    assert h.governor.spent_tokens(TENANT)==0
++    assert_branch_has_no_model_or_effects(h)
++
++
++@pytest.mark.parametrize('mode',['invalid_config','worker_profile_changed'])
++@pytest.mark.asyncio
++async def test_profile_configuration_or_instance_drift_holds_before_reads(monkeypatch,mode):
++    h=branch_harness(monkeypatch)
++    if mode=='invalid_config':monkeypatch.setenv(admission.ENV,'not-a-profile')
++    else:
++        assert h.worker._review_only() is True  # Pin this actual instance to its first configuration.
++        monkeypatch.setenv(admission.ENV,admission.LEGACY)
++        # Reader-await drift can reach the agent with the original ON scope
++        # and a now-legacy environment; it must fail before building the model.
++        with admission.ordinary_live_scope(admission.REVIEW_ONLY):
++            with pytest.raises(admission.ReviewOnlyHold):await agent.run_auto_triage(worker_module.build_state(message()))
++    with pytest.raises(budget.BudgetHold):await h.worker._process_with_retry(message())
++    h.lookup.assert_not_awaited();h.claim.assert_not_awaited();h.resolve.assert_not_awaited()
++    h.worker._sink_for.assert_not_awaited();h.persist.assert_not_awaited();h.deterministic.assert_not_awaited()
++    assert_branch_has_no_model_or_effects(h)
++
++
++@pytest.mark.parametrize('prior_kind',['profile_first','old_fp','missing_profile'])
++@pytest.mark.asyncio
++async def test_claim_race_second_guard_reuses_only_confirmed_profile_first_result(monkeypatch,prior_kind):
++    from app.core.cost_telemetry import CostSummary
++    h=branch_harness(monkeypatch)
++    state=worker_module.build_state(message())
++    # Explicit stored-result double, not a newly executed reader/model/provider.
++    state.record_llm_exchange(agent='auto_triage',purpose='triage.classify',model='unit',
++        prompt=[{'role':'user','content':'Stored first fixture.'}],response=json.dumps(ADVICE),duration_ms=1)
++    receipt=admission.enforce(state,advice=ADVICE)
++    first=h.worker._recovery_projection(state,tier='llm',verdict=state.verdict,confidence=state.confidence,
++        tokens=18,cost=CostSummary(unpriced_calls=1),writer=h.worker._writer)
++    first.update(reused_persisted=True,persisted_artifacts=[
++        {'kind':'llm_response','sha256':receipt['model_advice']['raw_response_sha256']}])
++    if prior_kind=='old_fp':first={'verdict':'false_positive','confidence':.95}
++    elif prior_kind=='missing_profile':first['triage_admission'].pop('profile')
++    h.claim.return_value=deepcopy(first)  # First lookup misses; another process won before claim.
++    if prior_kind=='profile_first':
++        token=worker_module._BROKER_DELIVERY.set(True)
++        try:result=await h.worker.triage(message())
++        finally:worker_module._BROKER_DELIVERY.reset(token)
++        assert result==first and result is not first
++        assert result['triage_admission']['model_advice']['confidence']==.95
++        assert result['verdict']=='needs_review' and result['triage_admission']['effective_decision']['confidence'] is None
++    else:
++        with pytest.raises(budget.BudgetHold):await h.worker._process_with_retry(message())
++    h.lookup.assert_awaited_once();h.claim.assert_awaited_once()
++    assert h.claim.await_args.kwargs['budget']==h.policy and h.worker._pending()=={}
++    h.persist.assert_not_awaited();h.deterministic.assert_not_awaited()
++    assert_branch_has_no_model_or_effects(h)
++
++
++@pytest.mark.parametrize('initial,changed,seam',[
++    (admission.REVIEW_ONLY,admission.LEGACY,'sdk'),
++    (admission.LEGACY,admission.REVIEW_ONLY,'sdk'),
++    (admission.LEGACY,admission.REVIEW_ONLY,'closure_policy'),
++])
++@pytest.mark.asyncio
++async def test_actual_sdk_profile_drift_at_awaits_holds_before_closure_qa_or_persist(monkeypatch,initial,changed,seam):
++    monkeypatch.setenv(admission.ENV,initial)
++    h=branch_harness(monkeypatch)
++    # Reuse the branch harness, restoring only the actual model path and its
++    # four attachment doubles. The legacy entry also needs its original prior
++    # lookup to miss before reaching the SDK drift seam. Review entry must skip
++    # that lookup; no provider/source infrastructure or effect is introduced.
++    monkeypatch.setattr(worker_module,'run_auto_triage',agent.run_auto_triage)
++    h.reader.fetch_organisation_memory=AsyncMock(return_value={'status':'not_requested','statements':[]})
++    for name in ('_attach_tenant_skill','_attach_runbooks','_attach_recent_dispositions','_attach_identity_context'):
++        setattr(h.worker,name,AsyncMock())
++    prior_miss=AsyncMock(return_value=None)
++    monkeypatch.setattr(h.worker,'_maybe_suppress_from_memory',prior_miss)
++    if seam=='closure_policy':
++        async def change_in_policy(**kwargs):
++            monkeypatch.setenv(admission.ENV,changed)
++            return agent.closure_policy.ClosureDecision(allowed=True,threshold=.5,reason='unit would close',source='unit')
++        closure=AsyncMock(side_effect=change_in_policy)
++        monkeypatch.setattr(agent.closure_policy,'decide',closure)
++    else:closure=agent.closure_policy.decide
++    requests=[]
++    async def transport(request):
++        requests.append(json.loads(request.content))
++        if seam=='sdk':monkeypatch.setenv(admission.ENV,changed)
++        return sdk_response()
++    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
++        model=make_chat_model('triage',max_tokens=512,json_output=True,http_async_client=client)
++        monkeypatch.setattr(agent,'make_chat_model',lambda *args,**kwargs:model)
++        for _ in range(2):
++            with pytest.raises(budget.BudgetHold):await h.worker._process_with_retry(message())
++    assert len(requests)==1 and h.claim.await_count==1 and h.lookup.await_count==1
++    assert prior_miss.await_count==int(initial==admission.LEGACY)
++    # The ON profile accounts before hold; a legacy entry retains its original
++    # governor timing. Both still have an observed/settled 18-token SDK reply.
++    assert h.governor.spent_tokens(TENANT)==(18 if initial==admission.REVIEW_ONLY else 0)
++    assert h.updates.await_count==2 and h.updates.await_args.args[-1]==18
++    cost_telemetry._flush_to_db.assert_awaited_once()
++    records=cost_telemetry._flush_to_db.await_args.args[2]
++    assert len(records)==1 and records[0].prompt_tokens==11 and records[0].completion_tokens==7
++    assert records[0].cost_usd is None  # Usage is known; provider USD is unpriced.
++    assert closure.await_count==int(seam=='closure_policy')
++    agent._sample_for_qa.assert_not_awaited();h.persist.assert_not_awaited()
++    for effect in h.forbidden[4:]:effect.assert_not_awaited()

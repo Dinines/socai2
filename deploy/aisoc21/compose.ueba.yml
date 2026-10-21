@@ -1,0 +1,31 @@
+name: socai2
+services:
+  ueba:
+    image: socai2-ueba:full-20261021
+    env_file: /opt/sting-aisoc-socai2/private/ueba.env
+    user: "10001:10001"
+    command: [uvicorn, app.main:app, --host, 0.0.0.0, --port, "8004"]
+    ports: ["127.0.0.1:18006:8004"]
+    volumes:
+      - /opt/sting-aisoc-socai2/certificates/socai2-ca.crt:/run/certs/ca.crt:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,size=128m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 1g
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8004/readyz',timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  agents:
+    image: socai2-agents:full-ueba-context-20261021
+    env_file: /opt/sting-aisoc-socai2/private/agents-ueba.env
+    environment:
+      AISOC_GRAPH_ENABLED: "true"
+networks:
+  default:
+    external: true
+    name: socai2_default

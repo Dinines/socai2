@@ -1,0 +1,24 @@
+name: socai2
+services:
+  ollama-embedding:
+    image: sha256:265409e1d931028a8f7d5a32bcbafddd7bffbc6cc629d77efe9560adf692a5e7
+    pull_policy: never
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      CUDA_VISIBLE_DEVICES: "-1"
+    ports: ["127.0.0.1:11435:11434"]
+    volumes:
+      - /opt/sting-aisoc-socai2/runtime-data/ollama-embedding:/root/.ollama
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    cpus: 16
+    mem_limit: 32g
+    memswap_limit: 64g
+    healthcheck:
+      test: [CMD, ollama, show, "qwen3-embedding:0.6b"]
+      interval: 10s
+      timeout: 5s
+      retries: 12

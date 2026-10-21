@@ -1,0 +1,764 @@
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -17,8 +17,8 @@
+ safely to the deterministic tier, which needs no LLM key — the air-gapped /
+ no-key / CI default):
+ 
+-1. cost-governor ``DEDUPLICATED`` → reuse the cached verdict (a flood of
+-   identical alerts costs one triage, not N);
++1. direct/replay callers retain the cost-governor's cached-verdict contract;
++   ordinary Kafka live uses exact-Run PG recovery, never a pattern verdict;
+ 2. governor ``CIRCUIT_OPEN`` / ``AISOC_DETERMINISTIC`` / no LLM key →
+    deterministic heuristic triage (``run_triage``);
+ 3. otherwise → LLM auto-triage (``run_auto_triage``), falling back to
+@@ -96,6 +96,8 @@
+ #: after a crash is cheap, and leaving finished work uncommitted
+ #: indefinitely is not.
+ _COMMIT_WINDOW_SECONDS = 5.0
++_STOP_CLIENT_TIMEOUT_SECONDS = 10.0
++_STOP_DRAIN_TIMEOUT_SECONDS = 10.0
+ 
+ _NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "tryaisoc.com/agents/auto-triage")
+ 
+@@ -362,6 +364,11 @@
+         "source": alert.get("source"),
+         "source_event_ids": alert.get("source_event_ids", []),
+     }
++    # Retain the publisher's presence/null/value distinctions. created_at is
++    # a separate source field, never a substitute for event_time.
++    for field in ("description", "event_time", "created_at"):
++        if field in alert:
++            raw_alert[field] = alert[field]
+     # Deterministic, replay-stable run id (issue #571) — same alert + workflow
+     # version ⇒ same run, so replays are idempotent in the ledger.
+     run_id = uuid.uuid5(_NAMESPACE, f"{alert_row_id}:{WORKFLOW_VERSION}") if alert_row_id else uuid.uuid4()
+@@ -556,6 +563,7 @@
+         )
+         durability_failed = False
+         last_commit = time.monotonic()
++        failure = None
+         try:
+             async for msg in self._consumer:
+                 if not self._running:
+@@ -637,13 +645,28 @@
+                     await self._consumer.commit()
+                 except Exception as commit_exc:  # noqa: BLE001 — reprocess on restart
+                     logger.warning("auto_triage_worker.commit_failed", error=str(commit_exc))
++        except BaseException as exc:
++            failure = exc
++            raise
+         finally:
+             # Cleared before the teardown await, which can itself raise on a
+             # broker that has gone away.
+             self._attached = False
+             self._running = False
+-            await self._lanes.cancel()
+-            await consumer.stop()
++            cleanup_failures: list[BaseException] = []
++            try:
++                await self._lanes.cancel()
++            except BaseException as exc:
++                cleanup_failures.append(exc)
++                logger.warning("auto_triage_worker.cleanup_failed", stage="loop_lanes", error_type=type(exc).__name__)
++            try:
++                async with asyncio.timeout(_STOP_CLIENT_TIMEOUT_SECONDS):
++                    await consumer.stop()
++            except BaseException as exc:
++                cleanup_failures.append(exc)
++                logger.warning("auto_triage_worker.cleanup_failed", stage="loop_consumer", error_type=type(exc).__name__)
++            if failure is None and cleanup_failures:
++                raise next((exc for exc in cleanup_failures if isinstance(exc, asyncio.CancelledError)), cleanup_failures[0])
+ 
+     async def _process_with_retry(self, message: Any) -> bool:
+         """Triage one alert with bounded retries; dead-letter on exhaustion.
+@@ -760,18 +783,60 @@
+         self._stopping = True
+         self._running = False
+         self._attached = False
+-        if self._consumer is not None:
+-            await self._consumer.stop()
+-        try:
+-            async with asyncio.timeout(10.0):
+-                await self._lanes.drain()
+-        except TimeoutError:
+-            await self._lanes.cancel()
+-        if self._producer is not None:
+-            with contextlib.suppress(Exception):
+-                await self._producer.stop()
+-            self._producer = None
+-        logger.info("auto_triage_worker.stopped", metrics=dict(_METRICS))
++        failures: list[BaseException] = []
++
++        async def cleanup() -> None:
++            if self._consumer is not None:
++                try:
++                    async with asyncio.timeout(_STOP_CLIENT_TIMEOUT_SECONDS):
++                        await self._consumer.stop()
++                except BaseException as exc:
++                    failures.append(exc)
++                    logger.warning("auto_triage_worker.cleanup_failed", stage="consumer", error_type=type(exc).__name__)
++            try:
++                async with asyncio.timeout(_STOP_DRAIN_TIMEOUT_SECONDS):
++                    await self._lanes.drain()
++            except TimeoutError:
++                # The existing drain deadline is followed by cooperative
++                # cancellation/join; it is not a fabricated successful result.
++                logger.warning("auto_triage_worker.drain_timed_out")
++            except BaseException as exc:
++                failures.append(exc)
++                logger.warning("auto_triage_worker.cleanup_failed", stage="drain", error_type=type(exc).__name__)
++            finally:
++                try:
++                    # Also clears locks for work cancelled before it started.
++                    await self._lanes.cancel()
++                except BaseException as exc:
++                    failures.append(exc)
++                    logger.warning("auto_triage_worker.cleanup_failed", stage="lanes", error_type=type(exc).__name__)
++            if self._producer is not None:
++                try:
++                    async with asyncio.timeout(_STOP_CLIENT_TIMEOUT_SECONDS):
++                        await self._producer.stop()
++                except BaseException as exc:
++                    failures.append(exc)
++                    logger.warning("auto_triage_worker.cleanup_failed", stage="producer", error_type=type(exc).__name__)
++                finally:
++                    self._producer = None
++
++        # External cancellation must not abandon owned child tasks or the
++        # producer. It is re-raised after the bounded, cooperative cleanup.
++        task = asyncio.create_task(cleanup())
++        cancelled = None
++        while not task.done():
++            try:
++                await asyncio.shield(task)
++            except asyncio.CancelledError as exc:
++                cancelled = exc
++        task.result()
++        logger.info("auto_triage_worker.cleanup_finished", failed=bool(failures), metrics=dict(_METRICS))
++        if cancelled is not None:
++            raise cancelled
++        if failures:
++            # Cancellation remains cancellation; all other errors retain the
++            # first failure, with every failed stage separately visible above.
++            raise next((exc for exc in failures if isinstance(exc, asyncio.CancelledError)), failures[0])
+ 
+     async def triage(self, message: dict[str, Any]) -> dict[str, Any] | None:
+         """Auto-triage one fused alert. Read-only (copilot): never dispatches a
+@@ -863,8 +928,13 @@
+                 suppressed["business_context_policy"] = bc_provenance
+                 return suppressed
+ 
+-        decision = governor.check(str(state.tenant_id), fingerprint)
+-        cached = decision.decision is Decision.DEDUPLICATED and decision.cached_verdict and writer.uses_dedup_cache
++        # Ordinary Kafka live runs retain the shared evidence/memory key but
++        # do not consult its cross-alert verdict cache. This separate lookup
++        # key is never written: the original check still enforces spend and
++        # circuit limits even when the shared pattern cache already has a hit.
++        admission_key = f"broker-live-no-cache:{state.run_id}" if delivery_guard else fingerprint
++        decision = governor.check(str(state.tenant_id), admission_key)
++        cached = not delivery_guard and decision.decision is Decision.DEDUPLICATED and decision.cached_verdict and writer.uses_dedup_cache
+         cfg = None if cached else await self._resolve_tenant_llm(state.tenant_id)
+         use_llm = not cached and decision.use_llm and not is_deterministic_mode() and cfg is not None
+         budget = triage_budget.policy_for(state.tenant_id) if delivery_guard and use_llm else None
+@@ -1018,9 +1088,9 @@
+                     state.status = AgentStatus.RUNNING
+                 _METRICS["needs_review_fallback"] += 1
+                 state.add_finding("Triage produced no verdict — defaulting to needs_review (escalated).")
+-            # Close the cost-governor loop: cache the verdict (so an alert flood
+-            # dedups instead of re-paying) and account the spend (so per-tenant
+-            # budgets + the circuit breaker actually fire). Best-effort.
++            # Close the cost-governor spend loop. Ordinary live never publishes
++            # a pattern verdict; direct/replay retain their writer's original
++            # cache/accounting behavior. Best-effort, as before.
+             try:
+                 # The budget circuit breaker gets measured spend only. Fed the
+                 # old alias-priced guess it would eventually trip
+@@ -1029,14 +1099,20 @@
+                 # spent. An unmeasured call contributes no dollars — it still
+                 # contributes tokens, which is the cap that can be enforced
+                 # honestly without a price.
+-                writer.cache_verdict(
+-                    governor,
+-                    str(state.tenant_id),
+-                    fingerprint,
+-                    {"verdict": verdict, "confidence": confidence},
+-                    usd=cost.measured_usd or 0.0,
+-                    tokens=tokens,
+-                )
++                if delivery_guard:
++                    # This guard unwraps only LiveTriageWriter and its live
++                    # shadow wrapper. Both account real spend; neither may
++                    # publish a pattern verdict for another live alert to use.
++                    governor.record_spend(str(state.tenant_id), usd=cost.measured_usd or 0.0, tokens=tokens)
++                else:
++                    writer.cache_verdict(
++                        governor,
++                        str(state.tenant_id),
++                        fingerprint,
++                        {"verdict": verdict, "confidence": confidence},
++                        usd=cost.measured_usd or 0.0,
++                        tokens=tokens,
++                    )
+             except Exception as exc:  # noqa: BLE001 — governance accounting is best-effort
+                 logger.debug("auto_triage_worker.governor_record_failed", error=str(exc))
+ 
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -24,6 +24,7 @@
+ import os
+ import re
+ import time
++from datetime import datetime
+ from typing import Any
+ 
+ import structlog
+@@ -78,6 +79,34 @@
+ #: decisions mid-sentence. A truncated list of decisions reads to the model
+ #: like a complete one.
+ _MAX_CONTEXT_BLOCK_CHARS = 3000
++_MAX_ALERT_DESCRIPTION_CHARS = 1200
++_MAX_SOURCE_TIME_CHARS = 128
++
++
++def _material_value(raw: dict[str, Any], key: str, *, max_chars: int) -> str:
++    if key not in raw:
++        return "[missing from source alert]"
++    value = raw[key]
++    if value is None:
++        return "[explicit null in source alert]"
++    if isinstance(value, datetime):
++        value = value.isoformat()
++    if not isinstance(value, str):
++        return f"[unsupported source type: {type(value).__name__}; value retained in raw state]"
++    cleaned = sanitize_text(value, max_len=max_chars)
++    return cleaned or "[empty source value]"
++
++
++def _source_time(raw: dict[str, Any], key: str) -> str:
++    text = _material_value(raw, key, max_chars=_MAX_SOURCE_TIME_CHARS)
++    value = raw.get(key)
++    if isinstance(value, str) and value:
++        try:
++            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
++        except ValueError:
++            return text + " [unparsed source timestamp; timezone not inferred]"
++        return text + (" [explicit UTC offset retained]" if parsed.utcoffset() is not None else " [timezone not provided; not assumed UTC]")
++    return text
+ 
+ 
+ class AutoTriageError(RuntimeError):
+@@ -192,6 +221,10 @@
+         f"Alert Summary: {sanitize_text(state.alert_summary)}",
+         f"Severity (vendor): {sanitize_text(str(raw.get('severity', 'unknown')))}",
+         f"Provided alert risk score: {risk_text}",
++        "Alert description (publisher supplied, untrusted):\n"
++        + _material_value(raw, "description", max_chars=_MAX_ALERT_DESCRIPTION_CHARS),
++        "Event time (source alert.event_time; no fallback): " + _source_time(raw, "event_time"),
++        "Alert created_at (source creation field; not event time): " + _source_time(raw, "created_at"),
+     ]
+ 
+     ioc_fields = {
+@@ -212,7 +245,7 @@
+     if techniques:
+         parts.append(f"MITRE Techniques: {', '.join(sanitize_text(str(t)) for t in techniques)}")
+ 
+-    extra_keys = {k for k in raw if k not in {"severity", "risk_score", "mitre_techniques", *ioc_fields}}
++    extra_keys = {k for k in raw if k not in {"severity", "risk_score", "mitre_techniques", "description", "event_time", "created_at", *ioc_fields}}
+     if extra_keys:
+         extras = {k: raw[k] for k in sorted(extra_keys)[:10]}
+         parts.append("Additional fields (summary, not raw JSON):\n" + format_extra_fields_for_llm(extras))
+--- a/services/agents/app/main.py
++++ b/services/agents/app/main.py
+@@ -1,7 +1,7 @@
+ import asyncio
+ import os
+ from collections.abc import AsyncGenerator
+-from contextlib import asynccontextmanager, suppress
++from contextlib import asynccontextmanager
+ 
+ import structlog
+ from fastapi import FastAPI
+@@ -166,45 +166,63 @@
+     # Phase 2.6 — flip /readyz to 200 once startup work is done.
+     app.state.mark_ready()
+ 
+-    yield
+-
+-    # Phase 2.6 — flip /readyz to 503 the moment we start draining.
+-    app.state.mark_not_ready()
+-
+-    # Stop the auto-triage worker first so in-flight triage can finish.
+-    if getattr(app.state, "triage_worker", None) is not None:
+-        try:
+-            await app.state.triage_worker.stop()
+-            if app.state.triage_worker_task is not None:
+-                app.state.triage_worker_task.cancel()
+-                with suppress(asyncio.CancelledError, Exception):
+-                    await app.state.triage_worker_task
+-        except Exception as exc:  # noqa: BLE001
+-            logger.warning("auto_triage_worker.stop_failed", error=str(exc))
+-
+-    if getattr(app.state, "playbook_sweeper_task", None) is not None:
+-        app.state.playbook_sweeper_task.cancel()
+-
+-    if getattr(app.state, "investigation_reaper_task", None) is not None:
+-        app.state.investigation_reaper_task.cancel()
+-
+-    # Stop the hunt scheduler before draining DB pools so in-flight runs
+-    # can flush their writes.
+-    try:
+-        await hunt_scheduler.stop_scheduler()
+-    except Exception as exc:  # noqa: BLE001
+-        logger.warning("hunt.scheduler.stop_failed", error=str(exc))
+-
+-    try:
+-        await hunt_store.close_pool()
+-    except Exception as exc:  # noqa: BLE001
+-        logger.warning("hunt.store.close_failed", error=str(exc))
+-
+-    # Drain the pool so the container exits cleanly on shutdown.
+-    try:
+-        await investigation_ledger.close_pool()
+-    except Exception as exc:  # noqa: BLE001
+-        logger.warning("investigation_ledger.close_failed", error=str(exc))
++    async def cleanup() -> None:
++        # Stop the worker before pools close. A failed stop must not skip the
++        # main task's cancel/join, including when stop itself was cancelled.
++        stop_cancelled = None
++        if getattr(app.state, "triage_worker", None) is not None:
++            try:
++                await app.state.triage_worker.stop()
++            except asyncio.CancelledError as exc:
++                stop_cancelled = exc
++            except Exception as exc:  # noqa: BLE001
++                logger.warning("auto_triage_worker.stop_failed", error=str(exc))
++            finally:
++                task = getattr(app.state, "triage_worker_task", None)
++                if task is not None:
++                    task.cancel()
++                    try:
++                        await task
++                    except asyncio.CancelledError:
++                        pass  # The child was explicitly cancelled above.
++                    except Exception as exc:  # noqa: BLE001
++                        logger.warning("auto_triage_worker.join_failed", error=str(exc))
++
++        if getattr(app.state, "playbook_sweeper_task", None) is not None:
++            app.state.playbook_sweeper_task.cancel()
++        if getattr(app.state, "investigation_reaper_task", None) is not None:
++            app.state.investigation_reaper_task.cancel()
++        try:
++            await hunt_scheduler.stop_scheduler()
++        except Exception as exc:  # noqa: BLE001
++            logger.warning("hunt.scheduler.stop_failed", error=str(exc))
++        try:
++            await hunt_store.close_pool()
++        except Exception as exc:  # noqa: BLE001
++            logger.warning("hunt.store.close_failed", error=str(exc))
++        try:
++            await investigation_ledger.close_pool()
++        except Exception as exc:  # noqa: BLE001
++            logger.warning("investigation_ledger.close_failed", error=str(exc))
++        if stop_cancelled is not None:
++            raise stop_cancelled
++
++    try:
++        yield
++    finally:
++        app.state.mark_not_ready()
++        # Shield owned cleanup from lifespan cancellation and propagate the
++        # cancellation only after the worker task has joined and pools close.
++        task = asyncio.create_task(cleanup())
++        cancelled = None
++        while not task.done():
++            try:
++                await asyncio.shield(task)
++            except asyncio.CancelledError as exc:
++                cancelled = exc
++        task.result()
++        if cancelled is not None:
++            raise cancelled
+ 
+ 
+ app = FastAPI(
+--- a/tests/porting/test_triage_recovery_3a.py
++++ b/tests/porting/test_triage_recovery_3a.py
+@@ -279,11 +279,16 @@
+     assert await test.worker._process_with_retry(first) is False
+     assert await test.worker._process_with_retry(other) is True
+     assert recorded[1]['alert_id'] != recorded[0]['alert_id'] and recorded[1]['run_id'] != recorded[0]['run_id']
+-    assert recorded[1]['tokens'] == 0 and recorded[1]['tier'] == 'cached'
+-    assert all(recorded[1][kind] == {'status': 'not_requested'} for kind in READS)
++    # C02 ordinary live must assess the new Run independently, even though
++    # the shared pattern matches an older Run whose result awaits saving.
++    assert recorded[1]['tokens'] == 37 and recorded[1]['tier'] == 'llm'
++    assert all(recorded[1][kind]['status'] == 'success' for kind in READS)
+     assert await test.worker._process_with_retry(first) is True
+     assert recorded[2] == recorded[0] and not test.worker._pending()
+-    assert harness.claim.await_count == 2 and test.worker._llm_triage.await_count == 1
++    assert harness.claim.await_count == 2 and test.worker._llm_triage.await_count == 2
++    assert harness.governor.spent_tokens(TENANT) == 74
++    assert test.reader.fetch_organisation_memory.await_count == 2
++    assert all(attachment.await_count == 2 for attachment in test.attachments)
+ 
+ 
+ @pytest.mark.asyncio
+--- /dev/null
++++ b/tests/porting/test_triage_material_cache_stop_c02.py
+@@ -0,0 +1,356 @@
++"""C02's direct runtime seams; HTTP is MockTransport, stores are explicit doubles.
++
++No Docker, broker, database, external provider, or real model is used here.
++SDK requests, safe-call validation, usage tracking and groundedness are real
++production functions. Source projection is checked before prompt formatting.
++"""
++from __future__ import annotations
++
++import asyncio
++from copy import deepcopy
++import json
++from types import SimpleNamespace
++from unittest.mock import AsyncMock, Mock
++from uuid import UUID
++
++import httpx
++import pytest
++
++from app.agents import auto_triage_agent as agent
++from app.core import cost_telemetry
++from app.core.cost_governor import BudgetConfig, CostGovernor
++from app.core.cost_telemetry import CostTracker
++from app.llm import contract
++from app.llm.factory import make_chat_model
++from app.workers import fused_alert_consumer as module
++from app.workers import triage_budget as budget
++from app.workers.shadow_mode import ShadowDecision, ShadowModeTriageWriter
++
++TENANT = '11111111-1111-1111-1111-111111111111'
++ALERT = '22222222-2222-2222-2222-222222222222'
++
++
++def envelope(alert_id=ALERT, **values):
++    return {'id': alert_id, 'alert_row_id': alert_id, 'tenant_id': TENANT,
++            'incident_id': '33333333-3333-3333-3333-333333333333',
++            'alert': {'id': alert_id, 'tenant_id': TENANT, 'source': 'c02-unit',
++                      'title': 'Synthetic fixed pattern', 'severity': 'medium', 'hostname': 'c02-unit-host',
++                      'risk_score': 0, 'source_event_ids': ['c02-first'], 'raw_event': {}, **values}}
++
++
++@pytest.fixture(autouse=True)
++def offline(monkeypatch):
++    for name in ('AISOC_AGENT_MEMORY_SUPPRESSION', 'AISOC_AGENT_MEMORY_WRITEBACK',
++                 'AISOC_AGENT_RAISE_APPROVALS', 'AISOC_AGENT_ESCALATE_TO_GRAPH', 'AISOC_ALERT_PLAYBOOKS_ENABLED'):
++        monkeypatch.setenv(name, '0')
++    monkeypatch.setenv('AISOC_DETERMINISTIC', '0')
++    monkeypatch.setenv('AISOC_AGENT_GROUNDEDNESS_GATE', '1')
++    monkeypatch.setenv('AISOC_GATEWAY_COST_TRUST', '1')  # Synthetic header values, never provider measurements.
++    monkeypatch.setenv('LLM_GATEWAY_URL', 'http://127.0.0.1.invalid/v1')
++    monkeypatch.setenv('LITELLM_MASTER_KEY', 'synthetic-unit')
++    monkeypatch.delenv('OPENAI_BASE_URL', raising=False)
++    monkeypatch.delenv('LLM_BASE_URL', raising=False)
++    monkeypatch.setattr(contract, '_RESPONSE_CACHE_ENABLED', False)
++    monkeypatch.setattr(contract.egress_privacy, '_FORCE', '0')
++    monkeypatch.setattr(agent.closure_policy, 'decide', AsyncMock(return_value=agent.closure_policy.ClosureDecision(
++        allowed=False, threshold=.85, reason='unit disabled', source='unit')))
++    # Keep the actual CostTracker and record_llm_call; decline only its DB flush.
++    monkeypatch.setattr(cost_telemetry, '_flush_to_db', AsyncMock())
++
++
++@pytest.mark.parametrize('fields', [{}, {'description': None, 'event_time': None, 'created_at': None},
++    {'description': 'line one\nline two', 'event_time': '2026-10-20T11:01:00+08:00', 'created_at': '2026-10-21T02:00:00Z'}])
++def test_source_material_preserves_presence_null_and_distinct_time_fields(fields):
++    state = module.build_state(envelope(**fields))
++    for key in ('description', 'event_time', 'created_at'):
++        assert (key in state.raw_alert) is (key in fields)
++        if key in fields:
++            assert state.raw_alert[key] == fields[key]
++    assert state.raw_alert['risk_score'] == 0
++    assert state.raw_alert['source'] == 'c02-unit' and state.raw_alert['source_event_ids'] == ['c02-first']
++    assert module.build_state(envelope()).run_id == state.run_id
++
++
++def response(content, index=1):
++    # This fixed price is a transport fixture for accounting/circuit behavior.
++    return httpx.Response(200, headers={'x-litellm-response-cost': '0.01', 'x-litellm-model-name': 'unit-observed'}, json={
++        'id': 'c02-unit-' + str(index), 'object': 'chat.completion', 'created': 1, 'model': 'unit-observed',
++        'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': json.dumps(content)}, 'finish_reason': 'stop'}],
++        'usage': {'prompt_tokens': 11, 'completion_tokens': 7, 'total_tokens': 18}})
++
++
++def test_naive_empty_and_invalid_source_time_never_fall_back_or_assume_utc():
++    created = '2026-10-20T02:00:00Z'
++    for value, marker in [('2026-10-20T11:01:00', 'timezone not provided; not assumed UTC'),
++                          ('', '[empty source value]'), ('vendor time unknown', 'unparsed source timestamp; timezone not inferred')]:
++        state = module.build_state(envelope(event_time=value, created_at=created))
++        block = agent._build_alert_context(state, nonce='c02-unit-nonce')
++        event_line = next(line for line in block.splitlines() if line.startswith('Event time (source'))
++        assert marker in event_line and created not in event_line
++        assert state.raw_alert['event_time'] == value and state.raw_alert['created_at'] == created
++
++
++@pytest.mark.parametrize('fields,expected', [
++    ({'description': 'line one\n' + 'x' * 1800, 'event_time': '2026-10-20T11:01:00+08:00'}, 'explicit UTC offset retained'),
++    ({'created_at': '2026-10-20T11:02:00Z'}, 'Event time (source alert.event_time; no fallback): [missing from source alert]'),
++    ({'description': None, 'event_time': None}, 'Event time (source alert.event_time; no fallback): [explicit null in source alert]'),
++])
++@pytest.mark.asyncio
++async def test_actual_safe_call_sdk_messages_have_dedicated_untrusted_material(monkeypatch, fields, expected):
++    requests = []
++
++    async def transport(request):
++        requests.append(json.loads(request.content))
++        return response({'verdict': 'needs_review', 'confidence': .5, 'rationale': 'Synthetic evidence requires review.'})
++
++    state = module.build_state(envelope(**fields))
++    updates = AsyncMock()
++    monkeypatch.setattr(budget, '_update', updates)
++    invocation = budget.Invocation(state.run_id, state.tenant_id, lambda: False)
++    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
++        model = make_chat_model('triage', max_tokens=512, json_output=True, http_async_client=client, include_response_headers=True)
++        monkeypatch.setattr(agent, 'make_chat_model', lambda *args, **kwargs: model)
++        with budget.invocation_scope(invocation):
++            async with CostTracker(run_id=str(state.run_id), tenant_id=TENANT, persist=False) as tracker:
++                result = await agent.run_auto_triage(state)
++    assert len(requests) == 1 and tracker.total_tokens == 18
++    messages = requests[0]['messages']
++    telemetry = messages[1]['content']
++    assert expected in telemetry
++    assert telemetry.index('<UNTRUSTED_DATA') < telemetry.index('Alert description (publisher supplied, untrusted):') < telemetry.index('</UNTRUSTED_DATA>')
++    assert 'Alert created_at (source creation field; not event time):' in telemetry
++    if fields.get('description'):
++        assert 'line one\n' in telemetry and '…[truncated]' in telemetry
++        assert 'x' * 1300 not in telemetry
++    assert json.loads(result.llm_exchanges[0]['prompt']) == messages
++    assert result.llm_exchanges[0]['prompt_truncated'] is False
++    assert len(result.llm_exchanges[0]['prompt']) <= 8000
++    assert requests[0]['max_tokens'] == 512 and updates.await_count == 2
++    assert updates.await_args.args[-1] == 18
++
++
++@pytest.mark.parametrize('shadow', [False, True])
++@pytest.mark.asyncio
++async def test_live_same_pattern_never_reads_or_publishes_rejected_verdict_but_accounts_spend(monkeypatch, shadow):
++    governor = CostGovernor(config=BudgetConfig(soft_usd=.01, hard_usd=.015))
++    monkeypatch.setattr(module, 'get_governor', lambda: governor)
++    lookup, claim = AsyncMock(return_value=None), AsyncMock(return_value=None)
++    monkeypatch.setattr(module.triage_delivery, 'lookup', lookup)
++    monkeypatch.setattr(module.triage_delivery, 'claim', claim)
++    policy = budget.Policy(3600, 3, 60000, 2)
++    monkeypatch.setattr(budget, 'policy_for', Mock(return_value=policy))
++    updates = AsyncMock()
++    monkeypatch.setattr(budget, '_update', updates)
++    monkeypatch.setattr(module, 'resolve_llm_config', AsyncMock(return_value=SimpleNamespace(
++        allowed=True, api_key='synthetic-unit', base_url=None, model='unit',
++        api_key_from_tenant=False, base_url_from_tenant=False, model_from_tenant=False)))
++    reader = SimpleNamespace(fetch_organisation_memory=AsyncMock(return_value={'status': 'not_requested', 'statements': []}))
++    worker = module.FusedAlertTriageWorker(bootstrap_servers='unused', context_reader=reader)
++    writer = worker._writer
++    if shadow:
++        writer = ShadowModeTriageWriter(writer, ShadowDecision(tenant_ref=TENANT, alert_class='unit', alert_id=ALERT))
++    worker._sink_for = AsyncMock(return_value=writer)
++    for name in ('_attach_tenant_skill', '_attach_runbooks', '_attach_recent_dispositions', '_attach_identity_context', '_maybe_escalate'):
++        setattr(worker, name, AsyncMock())
++    worker._raise_approvals = AsyncMock(return_value=[])
++    worker._write_back_to_source = AsyncMock(return_value=None)
++    worker._record = AsyncMock()
++    first = envelope(description='First body', event_time='2026-10-20T11:01:00Z')
++    second = envelope('22222222-2222-2222-2222-222222222223', description='Different body', event_time='2026-10-20T14:01:00Z')
++    fingerprint = governor.evidence_fingerprint(TENANT, module.build_state(first).raw_alert)
++    assert fingerprint == governor.evidence_fingerprint(TENANT, module.build_state(second).raw_alert)
++    governor.record_verdict(TENANT, fingerprint, {'verdict': 'false_positive', 'confidence': .99}, usd=0, tokens=0)
++    cached_before = deepcopy(governor._cache)
++    requests, results = [], []
++
++    async def transport(request):
++        requests.append(json.loads(request.content))
++        return response({'verdict': 'false_positive', 'confidence': .99, 'rationale': '203.0.113.99 is harmless.'}, len(requests))
++
++    original_triage = worker.triage
++    async def capture(message):
++        result = await original_triage(message)
++        results.append(result)
++        return result
++    worker.triage = capture
++    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
++        model = make_chat_model('triage', max_tokens=512, json_output=True, http_async_client=client, include_response_headers=True)
++        monkeypatch.setattr(agent, 'make_chat_model', lambda *args, **kwargs: model)
++        assert await worker._process_with_retry(first) is True
++        assert await worker._process_with_retry(second) is True
++        assert len(requests) == 2 and all(result['tier'] == 'llm' for result in results)
++        assert all(result['verdict'] == 'needs_review' and result['confidence_basis'] for result in results)
++        assert all(result['shadow'] is shadow for result in results)
++        assert all(result['cost']['tokens'] == 18 and result['cost']['measured_usd'] == pytest.approx(.01) for result in results)
++        assert governor.spent_tokens(TENANT) == 36 and governor.spent_usd(TENANT) == pytest.approx(.02)
++        assert governor._cache == cached_before  # Neither pattern nor admission-key verdict was published.
++        assert claim.await_count == 2 and all(call.kwargs['budget'] == policy for call in claim.await_args_list)
++        assert updates.await_count == 4
++        assert 'First body' in requests[0]['messages'][1]['content'] and 'Different body' in requests[1]['messages'][1]['content']
++        third = envelope('22222222-2222-2222-2222-222222222224', description='Circuit now open')
++        assert await worker._process_with_retry(third) is True
++        assert results[-1]['tier'] == 'deterministic' and len(requests) == 2
++        # Same-run PG recovery still returns before model/governor/budget work.
++        lookup.return_value = deepcopy(results[0])
++        before_claims = claim.await_count
++        assert await worker._process_with_retry(first) is True
++        assert claim.await_count == before_claims and len(requests) == 2
++        lookup.return_value = None
++        # Direct calls deliberately retain the prior cache contract.
++        direct = await original_triage(first)
++        assert direct['tier'] == 'cached' and direct['verdict'] == 'false_positive'
++        assert len(requests) == 2
++
++
++@pytest.mark.parametrize('failure', ['consumer_error', 'consumer_timeout', 'producer_error', 'consumer_cancel'])
++@pytest.mark.asyncio
++async def test_stop_cleans_lanes_after_each_client_failure_and_preserves_error(monkeypatch, failure):
++    monkeypatch.setattr(module, '_STOP_CLIENT_TIMEOUT_SECONDS', .01)
++    monkeypatch.setattr(module, '_STOP_DRAIN_TIMEOUT_SECONDS', .01)
++    worker = module.FusedAlertTriageWorker(bootstrap_servers='unused', entity_concurrency=1)
++    entered, finished = asyncio.Event(), asyncio.Event()
++    async def work():
++        entered.set()
++        try:
++            await asyncio.Event().wait()
++        finally:
++            finished.set()
++    await worker._lanes.submit('unit', work)
++    await worker._lanes.submit('unit', work)
++    await entered.wait()
++    consumer = SimpleNamespace(stop=AsyncMock(), commit=AsyncMock())
++    producer = SimpleNamespace(stop=AsyncMock(), send_and_wait=AsyncMock())
++    if failure == 'consumer_error':
++        consumer.stop.side_effect = RuntimeError('unit consumer stop')
++    elif failure == 'consumer_timeout':
++        async def never_stops():
++            await asyncio.Event().wait()
++        consumer.stop.side_effect = never_stops
++    elif failure == 'consumer_cancel':
++        consumer.stop.side_effect = asyncio.CancelledError()
++    else:
++        producer.stop.side_effect = RuntimeError('unit producer stop')
++    worker._consumer, worker._producer = consumer, producer
++    expected = asyncio.CancelledError if failure == 'consumer_cancel' else TimeoutError if failure == 'consumer_timeout' else RuntimeError
++    with pytest.raises(expected):
++        await worker.stop()
++    assert finished.is_set() and worker._lanes.in_flight == worker._lanes.tracked_entities == 0
++    assert worker._lanes._waiters == {} and worker._stopping is True and worker.attached is False
++    producer.stop.assert_awaited_once()
++    producer.send_and_wait.assert_not_awaited()
++    consumer.commit.assert_not_awaited()
++    with pytest.raises(budget.BudgetHold):
++        await worker._process_with_retry(envelope())
++
++
++@pytest.mark.asyncio
++async def test_external_cancel_waits_for_owned_cleanup_then_propagates(monkeypatch):
++    monkeypatch.setattr(module, '_STOP_DRAIN_TIMEOUT_SECONDS', .01)
++    worker = module.FusedAlertTriageWorker(bootstrap_servers='unused')
++    entered, release = asyncio.Event(), asyncio.Event()
++    async def stop_consumer():
++        entered.set()
++        await release.wait()
++    worker._consumer = SimpleNamespace(stop=stop_consumer)
++    producer = SimpleNamespace(stop=AsyncMock())
++    worker._producer = producer
++    await worker._lanes.submit('unit', lambda: asyncio.Event().wait())
++    task = asyncio.create_task(worker.stop())
++    await entered.wait()
++    task.cancel()
++    release.set()
++    with pytest.raises(asyncio.CancelledError):
++        await task
++    assert worker._lanes.in_flight == worker._lanes.tracked_entities == 0
++    producer.stop.assert_awaited_once()
++
++
++@pytest.mark.asyncio
++async def test_actual_worker_loop_joins_inflight_handler_without_late_commit_when_consumer_stop_fails(monkeypatch):
++    import aiokafka
++    monkeypatch.setattr(module, '_STOP_DRAIN_TIMEOUT_SECONDS', .01)
++    monkeypatch.setattr(module, '_STOP_CLIENT_TIMEOUT_SECONDS', .01)
++    monkeypatch.setattr(module, 'kafka_client_kwargs', lambda: {})
++    consumers, entered, finished = [], asyncio.Event(), asyncio.Event()
++    class Consumer:
++        def __init__(self, *args, **kwargs):
++            self.yielded = False
++            self.commit = AsyncMock()
++            self.stop = AsyncMock(side_effect=RuntimeError('unit consumer stop'))
++            consumers.append(self)
++        async def start(self):
++            pass
++        def __aiter__(self):
++            return self
++        async def __anext__(self):
++            if self.yielded:
++                await asyncio.Event().wait()
++            self.yielded = True
++            return SimpleNamespace(value=envelope(), partition=0, offset=0)
++    monkeypatch.setattr(aiokafka, 'AIOKafkaConsumer', Consumer)
++    worker = module.FusedAlertTriageWorker(bootstrap_servers='unused')
++    async def handling(message):
++        entered.set()
++        try:
++            await asyncio.Event().wait()
++        finally:
++            finished.set()
++    worker._process_with_retry = handling
++    task = asyncio.create_task(worker.start())
++    await entered.wait()
++    with pytest.raises(RuntimeError, match='unit consumer stop'):
++        await worker.stop()
++    # The cleanup failure must not replace the original unconfirmed-window
++    # failure from the actual start/_handle control flow.
++    with pytest.raises(module.ledger_module.LedgerPersistError):
++        await task
++    assert task.done() and finished.is_set() and worker.attached is False
++    assert worker._lanes.in_flight == worker._lanes.tracked_entities == 0
++    consumers[0].commit.assert_not_awaited()
++
++
++@pytest.mark.parametrize('stop_failure', [RuntimeError, asyncio.CancelledError])
++@pytest.mark.asyncio
++async def test_actual_main_lifespan_joins_worker_before_closing_ledger_on_stop_failure(monkeypatch, stop_failure):
++    from app import main
++    for key in ('AISOC_PLAYBOOK_SEED_DISABLE', 'AISOC_ATTCK_STARTUP_DISABLE', 'AISOC_ATTCK_INDEX_DISABLE', 'AISOC_HUNT_SCHEDULER_DISABLE'):
++        monkeypatch.setenv(key, '1')
++    monkeypatch.setenv('KAFKA_BOOTSTRAP_SERVERS', 'unused')
++    events, entered = [], asyncio.Event()
++    class Worker:
++        topic, attached = 'unit-fused', True
++        async def start(self):
++            entered.set()
++            try:
++                await asyncio.Event().wait()
++            finally:
++                events.append('worker_joined')
++        async def stop(self):
++            events.append('stop_attempted')
++            raise stop_failure('unit stop failure')
++    worker = Worker()
++    monkeypatch.setattr(main, 'worker_enabled', lambda: True)
++    monkeypatch.setattr(main, 'FusedAlertTriageWorker', lambda **kwargs: worker)
++    monkeypatch.setattr(main, 'business_context_enabled', lambda: False)
++    monkeypatch.setattr(main, 'preflight_llm', lambda: [])
++    monkeypatch.setattr(main, 'register_subscription', lambda *args: None)
++    monkeypatch.setattr(main.playbook_sweeper, 'start', lambda app: None)
++    monkeypatch.setattr(main.investigation_run_reaper, 'start', lambda app: None)
++    monkeypatch.setattr(main.investigation_ledger, 'get_pool', AsyncMock(return_value=None))
++    monkeypatch.setattr(main.hunt_scheduler, 'stop_scheduler', AsyncMock())
++    monkeypatch.setattr(main.hunt_store, 'close_pool', AsyncMock())
++    async def close_ledger():
++        assert app.state.triage_worker_task.done()
++        events.append('ledger_closed')
++    monkeypatch.setattr(main.investigation_ledger, 'close_pool', close_ledger)
++    app = SimpleNamespace(state=SimpleNamespace(mark_ready=lambda: None, mark_not_ready=lambda: None))
++    async def lifecycle():
++        async with main.lifespan(app):
++            await entered.wait()
++    if stop_failure is asyncio.CancelledError:
++        with pytest.raises(asyncio.CancelledError):
++            await lifecycle()
++    else:
++        await lifecycle()
++    assert events == ['stop_attempted', 'worker_joined', 'ledger_closed']
++    assert app.state.triage_worker_task.cancelled()

@@ -1,0 +1,771 @@
+--- a/services/agents/app/agents/auto_triage_agent.py
++++ b/services/agents/app/agents/auto_triage_agent.py
+@@ -46,7 +46,7 @@
+ from app.context.identity import render_for_prompt as render_identity
+ from app.context.knowledge_base import citation_basis, unresolvable_citations
+ from app.context.knowledge_base import render_for_prompt as render_runbooks
+-from app.context.organisation_memory import render_for_prompt
++from app.context.organisation_memory import render_for_prompt, render_read_status
+ from app.investigator.prompt_sanitizer import sanitize_text, wrap_untrusted
+ from app.llm import safe_ainvoke
+ from app.llm.factory import make_chat_model
+@@ -219,9 +219,15 @@
+     skill_guidance = str(skill.get("triage_guidance") or "").strip()
+     if skill_guidance:
+         preamble.append(sanitize_text(skill_guidance)[:_MAX_SKILL_PROMPT_CHARS])
++    memory_status = render_read_status(state.organisation_memory_read)
++    if memory_status:
++        preamble.append(sanitize_text(memory_status))
+     memory = render_for_prompt(state.organisation_memory)
+     if memory:
+-        preamble.append(sanitize_text(memory))
++        # Each adopted statement is already sanitised and capped at 300
++        # characters. Preserve the complete bounded block (at most 12 rows),
++        # rather than silently truncating it again at the generic field cap.
++        preamble.append(sanitize_text(memory, max_len=0))
+ 
+     # Both first-party, so both sit in the preamble beside organisation memory
+     # rather than inside the fence. A disposition and a reason code come from
+--- a/services/agents/app/context/organisation_memory.py
++++ b/services/agents/app/context/organisation_memory.py
+@@ -1,127 +1,245 @@
+-"""Read the tenant's compiled organisation memory, for the triage prompt.
+-
+-What this closes
+-----------------
+-``services/api/app/services/analyst_feedback.py`` turns repeated, tagged
+-analyst disagreement into durable statements — "PowerShell launched by
+-svc_backup on BACKUP01 is expected during the 02:00 backup window". It has a
+-closed reason vocabulary, per-code corroboration thresholds and per-code
+-expiry, and a full test suite.
+-
+-Nothing read it. A repo-wide grep for ``active_statements`` returned its own
+-definition and a line in the claim-to-gate matrix noting, accurately, that
+-the triage prompt did not consume it. So the platform recorded what analysts
+-taught it and then triaged the next identical alert knowing none of it, which
+-is the exact failure the module's docstring opens by describing.
+-
+-Why HTTP rather than a query
+-----------------------------
+-Same reasoning as ``investigator/siem_writeback.py``: the API service owns the
+-tenant-scoped session and the expiry semantics (``active_statements`` applies
+-expiry *in the query*, so a statement stops influencing verdicts the moment it
+-expires rather than whenever a worker next runs). A second copy of that SQL
+-here would be a second definition of "active", and the two would disagree
+-eventually. One authority, one round trip, cached.
+-
+-Fail-soft is a hard requirement. Triage without memory is degraded; triage
+-that dies because a memory lookup failed is worse than the gap it was fixing.
++"""Tenant-scoped organisation memory with explicit read and freshness facts.
++
++The API owns active-statement SQL. The worker additionally checks expiry on
++cache hits and never turns a failed read into a claim that no history exists.
++Only a tenant's configured read credential is used; shared credentials are
++not a fallback for a missing tenant mapping.
+ """
+ 
+ from __future__ import annotations
+ 
++import hashlib
++import json
+ import os
++import stat
+ import time
+-from typing import Any
++from copy import deepcopy
++from datetime import UTC, datetime
++from pathlib import Path
++from typing import Any, Literal, TypedDict
+ 
+ import httpx
+ import structlog
+ 
++from app.investigator.prompt_sanitizer import sanitize_text
++
+ logger = structlog.get_logger()
+-
+ _API_URL = os.getenv("API_SERVICE_URL", "http://api:8000")
+ _TIMEOUT_S = float(os.getenv("AISOC_ORG_MEMORY_TIMEOUT_S", "5"))
+-
+-#: Seconds a tenant's statements are reused before re-reading. Organisation
+-#: memory changes at human speed — a statement needs two analysts and a
+-#: corroboration threshold — while this sits on the path of every fused alert.
+ _CACHE_TTL_S = float(os.getenv("AISOC_ORG_MEMORY_TTL_S", "120"))
+-
+-#: Statements passed to the model, highest-observation first. A cap exists
+-#: because the prompt has a budget and because a hundred suppressions in a
+-#: prompt is a different product than a handful of facts.
+ MAX_STATEMENTS = 12
+-
+-#: Per-statement character cap. `compose_statement` bounds its own output, but
+-#: the values it interpolates come from alert fields.
+ _MAX_STATEMENT_CHARS = 300
+-
+-_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
++_SOURCE = "api.feedback.context-statements"
++
++
++class OrganisationMemoryRead(TypedDict):
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"]
++    reason: str | None
++    tenant_id: str | None
++    source: str
++    read_at: str
++    statement_scope: str
++    cache: dict[str, Any]
++    http_status: int | None
++    received_count: int
++    expired_count: int
++    adopted_count: int
++    statements: list[dict[str, Any]]
++    statements_sha256: str
++    prompt_block: str
++    prompt_sha256: str
++
++
++# Raw valid API rows, keyed by tenant, URL and credential identity. No stale
++# rows are returned if a refresh fails or its TTL has elapsed.
++_cache: dict[tuple[str, str, str], tuple[float, str, list[dict[str, Any]]]] = {}
++
++
++def _now() -> datetime:
++    return datetime.now(UTC)
++
++
++def _hash(value: Any) -> str:
++    text = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
++    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+ 
+ 
+ def enabled() -> bool:
+-    return os.getenv("AISOC_ORG_MEMORY_ENABLED", "1").strip().lower() not in {
+-        "0",
+-        "false",
+-        "no",
+-        "off",
++    return os.getenv("AISOC_ORG_MEMORY_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
++
++
++def clear_cache() -> None:
++    _cache.clear()
++
++
++def _credential(tenant_id: str) -> str | None:
++    location = os.getenv("AISOC_ORG_MEMORY_KEYS_FILE", "").strip()
++    if not location:
++        return None
++    try:
++        path = Path(location)
++        info = path.lstat()
++        if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077 or info.st_size > 1024 * 1024:
++            return None
++        mapping = json.loads(path.read_text(encoding="utf-8"))
++        token = mapping.get(tenant_id) if isinstance(mapping, dict) else None
++        if not isinstance(token, str) or not token.strip():
++            return None
++        token = token.strip()
++        if not token.isascii() or any(ord(char) < 32 or ord(char) == 127 for char in token) or len(token) > 8192:
++            return None
++        return token
++    except (OSError, ValueError, TypeError):
++        return None
++
++
++def _active_rows(rows: list[dict[str, Any]], now: datetime) -> tuple[list[dict[str, Any]], int]:
++    active: list[dict[str, Any]] = []
++    expired = 0
++    for row in rows:
++        expiry = row.get("expires_at")
++        if expiry is not None:
++            try:
++                parsed = datetime.fromisoformat(str(expiry).replace("Z", "+00:00"))
++                if parsed.tzinfo is None:
++                    parsed = parsed.replace(tzinfo=UTC)
++                if parsed <= now:
++                    expired += 1
++                    continue
++            except (ValueError, TypeError) as exc:
++                # An unreadable expiry is a response failure, not evidence
++                # that there are no current tenant statements.
++                raise ValueError("invalid statement expiry") from exc
++        active.append(dict(row))
++    return active, expired
++
++
++def _adopt(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
++    def count(row: dict[str, Any]) -> int:
++        try:
++            return max(0, int(row.get("observations") or 0))
++        except (ValueError, TypeError, OverflowError):
++            return 0
++    result: list[dict[str, Any]] = []
++    for row in sorted(rows, key=count, reverse=True):
++        text = sanitize_text(str(row.get("statement") or ""), max_len=0)[:_MAX_STATEMENT_CHARS].strip()
++        if not text:
++            continue
++        # Preserve the API's non-secret source fields, with the literal text
++        # and observation count exactly as the prompt renderer adopts them.
++        adopted = {key: deepcopy(row[key]) for key in ("id", "reason_code", "scope", "scope_value", "expires_at", "updated_at") if key in row}
++        adopted.update(statement=text, observations=count(row))
++        result.append(adopted)
++        if len(result) >= MAX_STATEMENTS:
++            break
++    return result
++
++
++def make_read(
++    tenant_id: str | None,
++    *,
++    rows: list[dict[str, Any]] | None = None,
++    status: Literal["success", "no_match", "disabled", "unavailable", "not_requested"] | None = None,
++    reason: str | None = None,
++    source: str = _SOURCE,
++    read_at: str | None = None,
++    cache: dict[str, Any] | None = None,
++    http_status: int | None = None,
++    received_count: int | None = None,
++    expired_count: int = 0,
++) -> OrganisationMemoryRead:
++    adopted = _adopt(rows or [])
++    block = render_for_prompt(adopted)
++    return {
++        "status": status or ("success" if adopted else "no_match"),
++        "reason": reason,
++        "tenant_id": tenant_id,
++        "source": source,
++        "read_at": read_at or _now().isoformat(),
++        "statement_scope": "tenant_active_statements",
++        "cache": cache or {"source": "none", "freshness": "not_available", "age_seconds": None, "ttl_seconds": _CACHE_TTL_S},
++        "http_status": http_status,
++        "received_count": len(rows or []) if received_count is None else received_count,
++        "expired_count": expired_count,
++        "adopted_count": len(adopted),
++        "statements": adopted,
++        "statements_sha256": _hash(adopted),
++        "prompt_block": block,
++        "prompt_sha256": hashlib.sha256(block.encode("utf-8")).hexdigest(),
+     }
+ 
+ 
+-def clear_cache() -> None:
+-    """Drop cached statements. Tests, and the tenant-settings change path."""
+-    _cache.clear()
+-
+-
+-async def fetch_statements(tenant_id: str | None) -> list[dict[str, Any]]:
+-    """Active statements for a tenant, or ``[]``. Never raises."""
+-    if not enabled() or not tenant_id:
+-        return []
+-
+-    cached = _cache.get(tenant_id)
+-    now = time.monotonic()
+-    if cached is not None and now - cached[0] < _CACHE_TTL_S:
+-        return cached[1]
+-
+-    token = os.getenv("AISOC_AGENTS_SERVICE_TOKEN", "").strip()
++async def fetch_organisation_memory(tenant_id: str | None) -> OrganisationMemoryRead:
++    """Read current tenant memory; failed reads never adopt stale statements."""
++    if not enabled():
++        return make_read(tenant_id, status="disabled")
++    if not tenant_id:
++        return make_read(tenant_id, status="unavailable", reason="missing_tenant")
++    token = _credential(tenant_id)
+     if not token:
+-        # Loud, like siem_writeback's equivalent: without the shared secret the
+-        # API refuses the service path, so every triage would silently run
+-        # without the memory the operator believes they are teaching it.
+-        logger.warning(
+-            "org_memory.no_service_token",
+-            reason="AISOC_AGENTS_SERVICE_TOKEN is unset, so organisation memory cannot be read",
+-        )
+-        return []
+-
++        logger.warning("org_memory.not_configured")
++        return make_read(tenant_id, status="unavailable", reason="not_configured")
+     url = f"{_API_URL.rstrip('/')}/api/v1/feedback/context-statements"
++    cache_key = (tenant_id, url, hashlib.sha256(token.encode("utf-8")).hexdigest())
++    cached = _cache.get(cache_key)
++    clock = time.monotonic()
++    now = _now()
++    age = max(0.0, clock - cached[0]) if cached else None
++    cache_info: dict[str, Any] = {"source": "none", "freshness": "expired" if cached else "not_available", "age_seconds": age, "ttl_seconds": _CACHE_TTL_S}
++    if cached is not None and age is not None and age < _CACHE_TTL_S:
++        try:
++            rows, expired = _active_rows(cached[2], now)
++        except ValueError:
++            _cache.pop(cache_key, None)
++            return make_read(tenant_id, status="unavailable", reason="invalid_response", cache=cache_info)
++        return make_read(tenant_id, rows=rows, received_count=len(cached[2]), expired_count=expired,
++                         cache={**cache_info, "source": "memory", "freshness": "fresh", "fetched_at": cached[1]}, http_status=200)
+     try:
+         async with httpx.AsyncClient(timeout=_TIMEOUT_S) as client:
+-            response = await client.get(
+-                url,
+-                params={"tenant_id": tenant_id},
+-                headers={"X-AiSOC-Service-Token": token},
+-            )
+-    except httpx.HTTPError as exc:
+-        logger.warning("org_memory.unreachable", error=str(exc)[:300])
+-        # Serve the last known statements rather than dropping a tenant's
+-        # memory during a brief outage.
+-        return cached[1] if cached else []
+-
+-    if response.status_code >= 400:
++            response = await client.get(url, params={"tenant_id": tenant_id}, headers={"Authorization": f"Bearer {token}"})
++    except httpx.HTTPError:
++        logger.warning("org_memory.unreachable")
++        return make_read(tenant_id, status="unavailable", reason="transport_error", cache=cache_info)
++    if response.status_code != 200:
++        reason = "auth_failed" if response.status_code in {401, 403} else "http_error"
+         logger.warning("org_memory.refused", status_code=response.status_code)
+-        return cached[1] if cached else []
+-
++        return make_read(tenant_id, status="unavailable", reason=reason, http_status=response.status_code, cache=cache_info)
+     try:
+         body = response.json()
+-    except ValueError:
++        rows = body.get("statements") if isinstance(body, dict) else None
++        if not isinstance(body, dict) or body.get("tenant_id") != tenant_id or not isinstance(rows, list):
++            raise ValueError("invalid memory response")
++        if any(not isinstance(row, dict) or not isinstance(row.get("statement"), str) or not row["statement"].strip() for row in rows):
++            raise ValueError("invalid statement row")
++        active, expired = _active_rows(rows, _now())
++    except (ValueError, TypeError):
+         logger.warning("org_memory.bad_response")
+-        return cached[1] if cached else []
+-
+-    statements = body.get("statements") if isinstance(body, dict) else None
+-    rows = [s for s in statements if isinstance(s, dict)] if isinstance(statements, list) else []
+-    _cache[tenant_id] = (now, rows)
+-    return rows
+-
++        return make_read(tenant_id, status="unavailable", reason="invalid_response", http_status=200, cache=cache_info)
++    fetched_at = now.isoformat()
++    _cache[cache_key] = (clock, fetched_at, deepcopy(rows))
++    return make_read(tenant_id, rows=active, received_count=len(rows), expired_count=expired, http_status=200,
++                     cache={"source": "network", "freshness": "fresh", "age_seconds": 0.0, "ttl_seconds": _CACHE_TTL_S, "fetched_at": fetched_at})
++
++
++async def fetch_statements(tenant_id: str | None) -> list[dict[str, Any]]:
++    """Compatibility projection of the current read, without stale fallback."""
++    return (await fetch_organisation_memory(tenant_id))["statements"]
++
++
++def render_read_status(read: dict[str, Any]) -> str:
++    """State the limits of the read without inventing absent tenant history."""
++    status = read.get("status") or "not_requested"
++    if status == "not_requested":
++        return ""
++    freshness = (read.get("cache") or {}).get("freshness", "not_available")
++    result = f"Organisation memory read: status={status}; freshness={freshness}; source={read.get('source') or _SOURCE}."
++    if read.get("reason"):
++        result += f" Reason={read['reason']}."
++    if status == "no_match":
++        result += " No active tenant statements were returned; this is not a search for statements matching this alert."
++    elif status in {"unavailable", "disabled"}:
++        result += " No organisation-memory material was adopted; this does not establish that the tenant has no history."
++    return result
+ 
+ def render_for_prompt(statements: list[dict[str, Any]]) -> str:
+     """The prompt block, or ``""`` when there is nothing to say.
+--- a/services/agents/app/investigator/ledger.py
++++ b/services/agents/app/investigator/ledger.py
+@@ -529,6 +529,7 @@
+     ungrounded: bool | None = None,
+     shadow: bool = False,
+     llm_exchanges: list[dict[str, Any]] | None = None,
++    organisation_memory_read: dict[str, Any] | None = None,
+ ) -> bool:
+     """Durably record an auto-triage outcome (issue #571) in ONE transaction:
+ 
+@@ -571,8 +572,8 @@
+             if tenant_id is None:
+                 logger.debug("ledger.auto_triage_skip", reason="unknown_tenant", tenant_ref=tenant_ref)
+                 return False
+-            await _set_rls_context(conn, tenant_id)
+             async with conn.transaction():
++                await _set_rls_context(conn, tenant_id)
+                 await conn.execute(
+                     """
+                     INSERT INTO investigation_runs
+@@ -651,6 +652,7 @@
+                             "findings": findings or [],
+                             "proposed_actions": recommendations,
+                             "auto_closed": auto_closed,
++                            **({"organisation_memory_read": organisation_memory_read} if organisation_memory_read is not None else {}),
+                         }
+                     ),
+                     first.get("input_hash"),
+@@ -676,6 +678,23 @@
+                 # pass while the events it explains stayed at one.
+                 if not _inserted_a_row(written):
+                     llm_exchanges = []
++                elif organisation_memory_read is not None:
++                    # The actual adopted subset and read status belong to the
++                    # same first-write transaction as the verdict/transcript.
++                    # A retry must neither replace provenance nor append a copy.
++                    memory_blob = json.dumps(organisation_memory_read, sort_keys=True, ensure_ascii=False)
++                    await conn.execute(
++                        """
++                        INSERT INTO investigation_artifacts
++                          (id, run_id, event_id, tenant_id, kind, content,
++                           sha256, size_bytes, created_at)
++                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
++                        """,
++                        uuid.uuid4(), run_id, verdict_event_id, tenant_id,
++                        "organisation_memory_read", memory_blob,
++                        hashlib.sha256(memory_blob.encode("utf-8")).hexdigest(),
++                        len(memory_blob.encode("utf-8")),
++                    )
+                 for exchange in llm_exchanges or []:
+                     for kind, text in (
+                         ("llm_prompt", exchange.get("prompt")),
+--- a/services/agents/app/models/state.py
++++ b/services/agents/app/models/state.py
+@@ -101,6 +101,9 @@
+     # fetched inside the agent so the network read happens once per alert on
+     # the worker's own timeline, and so a test can set it directly.
+     organisation_memory: list[dict[str, Any]] = Field(default_factory=list)
++    # Read status and the literal bounded material adopted by auto-triage.
++    # not_requested distinguishes deterministic/cache paths from an empty read.
++    organisation_memory_read: dict[str, Any] = Field(default_factory=lambda: {"status": "not_requested"})
+ 
+     # The tenant skill that matched this alert, if any, and the version of it.
+     # Carried for the same reason organisation memory is, plus one more: this
+--- a/services/agents/app/replay/shadow.py
++++ b/services/agents/app/replay/shadow.py
+@@ -97,7 +97,7 @@
+ 
+ from app.context import dispositions as dispositions_module
+ from app.context import identity as identity_module
+-from app.context import knowledge_base
++from app.context import knowledge_base, organisation_memory
+ from app.context.dispositions import RecentDispositions
+ from app.context.identity import IdentityContext
+ from app.context.knowledge_base import RunbookRetrieval
+@@ -482,6 +482,19 @@
+         # next one sees, which is the same leak by a shorter route.
+         return [dict(row) for row in self._snapshot.statements]
+ 
++    async def fetch_organisation_memory(self, tenant_id: str | None) -> organisation_memory.OrganisationMemoryRead:
++        self.reads["fetch_organisation_memory"] += 1
++        # The snapshot is historical evidence. Never consult the live reader
++        # or apply today's expiry clock to the split's captured statements.
++        return organisation_memory.make_read(
++            tenant_id,
++            rows=[dict(row) for row in self._snapshot.statements],
++            source="replay.snapshot",
++            read_at=self._snapshot.split_at.isoformat(),
++            cache={"source": "snapshot", "freshness": "frozen", "age_seconds": None, "ttl_seconds": None,
++                   "split_at": self._snapshot.split_at.isoformat()},
++        )
++
+     async def lookup_prior(self, tenant_id: str, signature: str) -> dict[str, Any] | None:
+         self.reads["lookup_prior"] += 1
+         prior = self._snapshot.priors.get(signature)
+--- a/services/agents/app/workers/fused_alert_consumer.py
++++ b/services/agents/app/workers/fused_alert_consumer.py
+@@ -685,9 +685,10 @@
+                 # What analysts have repeatedly taught this tenant's platform,
+                 # read once here rather than inside the agent so the round trip
+                 # is on the worker's timeline and is skipped entirely when no
+-                # LLM call is going to happen. Never raises; an empty list just
+-                # means the prompt is what it was before.
+-                state.organisation_memory = await self._reader.fetch_statements(str(state.tenant_id))
++                # LLM call is going to happen. Failure has a distinct status;
++                # it is never presented as confirmed absent tenant history.
++                state.organisation_memory_read = await self._reader.fetch_organisation_memory(str(state.tenant_id))
++                state.organisation_memory = list(state.organisation_memory_read["statements"])
+                 # Phase 6.1: the tenant's own skill for this shape of alert.
+                 # Read through the same port for the same reason: it is durable
+                 # state a verdict depends on, so the replay freeze has to be
+@@ -1381,6 +1382,7 @@
+             # Empty on the deterministic path, which is the honest value
+             # there — no model was asked, so there is nothing to replay.
+             llm_exchanges=list(state.llm_exchanges),
++            organisation_memory_read=dict(state.organisation_memory_read),
+         )
+ 
+     @staticmethod
+--- a/services/agents/app/workers/triage_persistence.py
++++ b/services/agents/app/workers/triage_persistence.py
+@@ -100,6 +100,7 @@
+ 
+ CONTEXT_FREEZE_KINDS: dict[str, str] = {
+     "fetch_statements": SNAPSHOT,
++    "fetch_organisation_memory": SNAPSHOT,
+     "lookup_prior": SNAPSHOT,
+     "fetch_skills": SNAPSHOT,
+     "retrieve_runbooks": CUTOFF,
+@@ -248,6 +249,9 @@
+ 
+     async def fetch_statements(self, tenant_id: str | None) -> list[dict[str, Any]]:
+         """The tenant's active organisation-memory statements."""
++
++    async def fetch_organisation_memory(self, tenant_id: str | None) -> organisation_memory.OrganisationMemoryRead:
++        """Statements actually adopted, with read/freshness provenance."""
+ 
+     async def lookup_prior(self, tenant_id: str, signature: str) -> dict[str, Any] | None:
+         """The durable outcome prior for an evidence signature, or ``None``."""
+@@ -413,6 +417,9 @@
+     async def fetch_statements(self, tenant_id: str | None) -> list[dict[str, Any]]:
+         return await organisation_memory.fetch_statements(tenant_id)
+ 
++    async def fetch_organisation_memory(self, tenant_id: str | None) -> organisation_memory.OrganisationMemoryRead:
++        return await organisation_memory.fetch_organisation_memory(tenant_id)
++
+     async def lookup_prior(self, tenant_id: str, signature: str) -> dict[str, Any] | None:
+         return await outcomes_module.lookup_prior(tenant_id, signature)
+ 
+--- a/services/agents/tests/test_organisation_memory_in_prompt.py
++++ b/services/agents/tests/test_organisation_memory_in_prompt.py
+@@ -154,16 +154,16 @@
+         assert await om.fetch_statements("") == []
+ 
+     @pytest.mark.asyncio
+-    async def test_a_missing_service_token_is_loud_and_empty(self, monkeypatch):
++    async def test_a_missing_tenant_credential_is_loud_and_empty(self, monkeypatch):
+         # Silence here means every triage runs without the memory an operator
+         # believes they are teaching it.
+-        monkeypatch.delenv("AISOC_AGENTS_SERVICE_TOKEN", raising=False)
++        monkeypatch.delenv("AISOC_ORG_MEMORY_KEYS_FILE", raising=False)
+         om.clear_cache()
+         warnings: list[str] = []
+         monkeypatch.setattr(om.logger, "warning", lambda event, **kw: warnings.append(event))
+ 
+         assert await om.fetch_statements("t-1") == []
+-        assert "org_memory.no_service_token" in warnings
++        assert "org_memory.not_configured" in warnings
+ 
+     @pytest.mark.asyncio
+     async def test_disabled_by_flag(self, monkeypatch):
+@@ -173,12 +173,17 @@
+         assert await om.fetch_statements("t-1") == []
+ 
+     @pytest.mark.asyncio
+-    async def test_an_unreachable_api_serves_the_last_known_statements(self, monkeypatch):
+-        # A brief API outage must not silently drop a tenant's suppressions and
+-        # re-raise alerts they have already dispositioned twice.
+-        monkeypatch.setenv("AISOC_AGENTS_SERVICE_TOKEN", "t")
+-        om.clear_cache()
+-        om._cache["t-1"] = (0.0, [{"statement": STATEMENT, "observations": 2}])
++    async def test_an_unreachable_api_does_not_adopt_expired_cached_statements(self, monkeypatch, tmp_path):
++        # 3A-04: a failed refresh is unavailable, rather than absent history;
++        # expired caches are no longer adopted as current evidence.
++        import hashlib
++        keys = tmp_path / "keys.json"
++        keys.write_text(json.dumps({"t-1": "t"}))
++        keys.chmod(0o600)
++        monkeypatch.setenv("AISOC_ORG_MEMORY_KEYS_FILE", str(keys))
++        om.clear_cache()
++        url = f"{om._API_URL.rstrip('/')}/api/v1/feedback/context-statements"
++        om._cache[("t-1", url, hashlib.sha256(b"t").hexdigest())] = (0.0, "2026-01-01T00:00:00+00:00", [{"statement": STATEMENT, "observations": 2}])
+ 
+         class _Boom:
+             async def __aenter__(self):
+@@ -192,6 +197,9 @@
+ 
+         monkeypatch.setattr(om.httpx, "AsyncClient", lambda **k: _Boom())
+ 
+-        rows = await om.fetch_statements("t-1")
+-
+-        assert rows and rows[0]["statement"] == STATEMENT
++        result = await om.fetch_organisation_memory("t-1")
++
++        assert result["status"] == "unavailable"
++        assert result["reason"] == "transport_error"
++        assert result["statements"] == []
++        assert result["cache"]["freshness"] == "expired"
+--- a/services/agents/tests/test_replay_leakage.py
++++ b/services/agents/tests/test_replay_leakage.py
+@@ -354,13 +354,13 @@
+     async def _resolve(tenant_id: str) -> _StubLlmConfig:
+         return _StubLlmConfig()
+ 
+-    async def _live_statements(tenant_id: str | None) -> list[dict[str, Any]]:
+-        return [{"statement": "POISON: written after the split", "observations": 99}]
++    async def _live_statements(tenant_id: str | None) -> organisation_memory.OrganisationMemoryRead:
++        return organisation_memory.make_read(tenant_id, rows=[{"statement": "POISON: written after the split", "observations": 99}])
+ 
+     monkeypatch.delenv("AISOC_DETERMINISTIC", raising=False)
+     monkeypatch.setattr(worker_module, "run_auto_triage", _capture)
+     monkeypatch.setattr(worker_module, "resolve_llm_config", _resolve)
+-    monkeypatch.setattr(organisation_memory, "fetch_statements", _live_statements)
++    monkeypatch.setattr(organisation_memory, "fetch_organisation_memory", _live_statements)
+ 
+     frozen = capture_context(
+         split_at=_SPLIT,
+--- a/services/api/app/api/v1/endpoints/feedback.py
++++ b/services/api/app/api/v1/endpoints/feedback.py
+@@ -62,8 +62,8 @@
+ from pydantic import BaseModel, Field
+ from sqlalchemy import and_, func, select, text, update
+ 
+-from app.api.v1.deps import AuthUser, CurrentUser, DBSession, require_permission
+-from app.api.v1.endpoints.alert_writeback import optional_user, service_token_valid
++from app.api.v1.deps import AuthUser, DBSession, require_permission
++from app.api.v1.endpoints.alert_writeback import service_token_valid
+ from app.db.rls import set_rls_context
+ from app.models.alert import Alert
+ from app.security.tenant_scope import scoped_tenant_or_403
+@@ -487,16 +487,17 @@
+ 
+ @router.get("/context-statements", response_model=ContextStatementsResponse)
+ async def get_context_statements(
+-    user: Annotated[CurrentUser | None, Depends(optional_user)],
++    user: AuthUser,
+     db: DBSession,
+     tenant_id: uuid.UUID | None = None,
+     x_aisoc_service_token: Annotated[str | None, Header()] = None,
+ ) -> ContextStatementsResponse:
+     """Unexpired organisation memory for a tenant.
+ 
+-    Dual-mode for the same reason ``/alerts/{id}/source-writeback`` is: the
+-    consumer is the agents service's triage worker, which has no session, and
+-    the API owns the tenant-scoped database session.
++    Uses the standard Bearer principal and ``alerts:read`` permission. The
++    agents worker presents a tenant-scoped API key; an X-AiSOC-Service-Token
++    header alone never authorizes this read. The legacy header parameter is
++    retained for callers, but grants no authority.
+ 
+     A session caller's ``tenant_id`` is **intersected** with the session rather
+     than ignored. Ignoring it is safe but dishonest — a caller who names
+@@ -505,21 +506,15 @@
+     refusal. ``scoped_tenant_or_403`` returns the caller's own tenant when the
+     parameter is absent, honours it when it matches, and 403s otherwise.
+     """
+-    if user is not None:
+-        scoped = scoped_tenant_or_403(user, tenant_id)
+-    elif service_token_valid(x_aisoc_service_token):
+-        if tenant_id is None:
+-            raise HTTPException(
+-                status_code=status.HTTP_400_BAD_REQUEST,
+-                detail="a service caller must name the tenant it is acting for",
+-            )
+-        scoped = tenant_id
+-    else:
++    if user is None:  # Defensive for direct calls; HTTP resolves AuthUser first.
+         raise HTTPException(
+             status_code=status.HTTP_401_UNAUTHORIZED,
+-            detail="a session or a valid service token is required",
+-        )
+-
++            detail="Bearer authentication required",
++            headers={"WWW-Authenticate": "Bearer"},
++        )
++    user.require_permission("alerts:read")
++    scoped = scoped_tenant_or_403(user, tenant_id)
++    await set_rls_context(db, scoped)
+     rows = await active_statements(db, scoped)
+     return ContextStatementsResponse(
+         tenant_id=str(scoped),
+--- a/services/api/tests/test_feedback_context_statements.py
++++ b/services/api/tests/test_feedback_context_statements.py
+@@ -7,8 +7,8 @@
+ 
+ These cover the two new seams in the endpoint layer: the context a compiled
+ statement is allowed to name (a thin one produces "PowerShell is expected",
+-which is a suppression waiting to hide an incident), and the dual-mode auth on
+-the read, which the agents triage worker depends on.
++which is a suppression waiting to hide an incident), and the tenant-scoped
++Bearer auth on the read, which the agents triage worker depends on.
+ """
+ 
+ from __future__ import annotations
+@@ -17,6 +17,7 @@
+ from typing import Any
+ 
+ import pytest
++from app.api.v1.deps import CurrentUser
+ from app.api.v1.endpoints import feedback
+ from app.models.alert import Alert
+ from fastapi import HTTPException
+@@ -38,11 +39,15 @@
+     return Alert(**kw)
+ 
+ 
+-class FakeUser:
+-    def __init__(self, tenant_id: uuid.UUID) -> None:
+-        self.tenant_id = tenant_id
+-        self.user_id = uuid.uuid4()
+-        self.email = "analyst@example.test"
++class FakeUser(CurrentUser):
++    def __init__(self, tenant_id: uuid.UUID, *, scopes: list[str] | None = None) -> None:
++        super().__init__(
++            user_id=uuid.uuid4(),
++            tenant_id=tenant_id,
++            role="soc_analyst",
++            email="analyst@example.test",
++            scopes=["alerts:read"] if scopes is None else scopes,
++        )
+ 
+ 
+ class TestStatementContext:
+@@ -97,12 +102,23 @@
+ 
+ 
+ class TestContextStatementsAuth:
++    @pytest.fixture
++    def _rls_calls(self, monkeypatch: pytest.MonkeyPatch) -> list[Any]:
++        calls: list[Any] = []
++
++        async def _set(db: Any, tenant_id: Any) -> None:
++            calls.append((db, tenant_id))
++
++        monkeypatch.setattr(feedback, "set_rls_context", _set)
++        return calls
++
+     @pytest.fixture(autouse=True)
+-    def _stub_query(self, monkeypatch: pytest.MonkeyPatch) -> list[Any]:
++    def _stub_query(self, monkeypatch: pytest.MonkeyPatch, _rls_calls: list[Any]) -> list[Any]:
+         """Capture the tenant `active_statements` is actually called with."""
+         seen: list[Any] = []
+ 
+         async def _fake(_db: Any, tenant_id: Any) -> list[dict[str, Any]]:
++            assert _rls_calls == [(_db, tenant_id)], "Scope RLS on the query's session before reading"
+             seen.append(tenant_id)
+             return [
+                 {
+@@ -161,23 +177,32 @@
+ 
+         assert exc.value.status_code == 401
+ 
+-    async def test_a_service_caller_must_name_the_tenant(self, monkeypatch: pytest.MonkeyPatch) -> None:
+-        # It has no session to imply one, and defaulting to "all tenants" or to
+-        # a first row is how cross-tenant reads happen.
++    async def test_a_service_header_without_a_bearer_is_refused_even_without_tenant(self, monkeypatch: pytest.MonkeyPatch) -> None:
++        # A configured legacy X header no longer authenticates this GET.
+         monkeypatch.setattr(feedback, "service_token_valid", lambda _t: True)
+ 
+         with pytest.raises(HTTPException) as exc:
+             await feedback.get_context_statements(user=None, db=object(), tenant_id=None, x_aisoc_service_token="right")
+ 
+-        assert exc.value.status_code == 400
+-
+-    async def test_a_valid_service_caller_reads_the_named_tenant(self, monkeypatch: pytest.MonkeyPatch, _stub_query: list[Any]) -> None:
++        assert exc.value.status_code == 401
++
++    async def test_a_valid_service_header_cannot_authorize_a_named_tenant(self, monkeypatch: pytest.MonkeyPatch, _stub_query: list[Any], _rls_calls: list[Any]) -> None:
+         monkeypatch.setattr(feedback, "service_token_valid", lambda _t: True)
+ 
+-        out = await feedback.get_context_statements(user=None, db=object(), tenant_id=OTHER_TENANT, x_aisoc_service_token="right")
+-
+-        assert _stub_query == [OTHER_TENANT]
+-        assert out.tenant_id == str(OTHER_TENANT)
++        with pytest.raises(HTTPException) as exc:
++            await feedback.get_context_statements(user=None, db=object(), tenant_id=OTHER_TENANT, x_aisoc_service_token="right")
++
++        assert exc.value.status_code == 401
++        assert _stub_query == []
++        assert _rls_calls == []
++
++    async def test_an_api_key_without_read_scope_never_scopes_or_reads(self, _stub_query: list[Any], _rls_calls: list[Any]) -> None:
++        with pytest.raises(HTTPException) as exc:
++            await feedback.get_context_statements(user=FakeUser(TENANT, scopes=["cases:read"]), db=object(), tenant_id=TENANT)
++
++        assert exc.value.status_code == 403
++        assert _stub_query == []
++        assert _rls_calls == []
+ 
+ 
+ class TestReasonCodeValidation:

@@ -1,0 +1,39 @@
+# Host21 batch 1E: scoped dependency acceptance. Source original retained in infra/litellm/config.yaml.
+model_list:
+  - model_name: aisoc-triage
+    litellm_params:
+      model: os.environ/AISOC_LLM_MODEL_FAST
+      api_base: os.environ/AISOC_LLM_API_BASE
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: aisoc-recon
+    litellm_params:
+      model: os.environ/AISOC_LLM_MODEL_FAST
+      api_base: os.environ/AISOC_LLM_API_BASE
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: aisoc-investigation
+    litellm_params:
+      model: os.environ/AISOC_LLM_MODEL_DEEP
+      api_base: os.environ/AISOC_LLM_API_BASE
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: aisoc-summary
+    litellm_params:
+      model: os.environ/AISOC_LLM_MODEL_FAST
+      api_base: os.environ/AISOC_LLM_API_BASE
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: aisoc-report
+    litellm_params:
+      model: os.environ/AISOC_LLM_MODEL_DEEP
+      api_base: os.environ/AISOC_LLM_API_BASE
+      api_key: os.environ/OPENAI_API_KEY
+litellm_settings:
+  drop_params: true
+  callbacks: ["prometheus"]
+  require_auth_for_metrics_endpoint: false
+  request_timeout: os.environ/AISOC_LITELLM_REQUEST_TIMEOUT
+router_settings:
+  num_retries: 0
+  fallbacks: []
+  allowed_fails: 3
+  cooldown_time: 30
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

@@ -1,0 +1,58 @@
+--- a/services/agents/app/llm/prompt_registry.py
++++ b/services/agents/app/llm/prompt_registry.py
+@@ -210,8 +210,8 @@
+ - Vendor risk_score > 0.7 with critical keywords strongly suggests true_positive.
+ - Scheduled scans and authorized penetration tests, when the rule correctly
+   detected the behaviour, are benign_true_positive — NOT false_positive.
+-- Reserve false_positive for cases where the rule misfired or its intended
+-  detection condition was not actually present.
++- Missing evidence is not a rule misfire. Use needs_review when the rule's
++  condition cannot be checked; false_positive needs supplied contrary evidence.
+ - Informational alerts with no IOCs and low risk lean benign.
+ - Be conservative: when uncertain, prefer true_positive or needs_review over
+   auto-closing, to avoid missing threats.
+@@ -567,7 +567,7 @@
+     reg.register("hunt.system", "1", _HUNT_SYSTEM)
+     # Version 3 constrains time and authorization claims to supplied evidence.
+     # Verdict/schema, request limits and every other prompt remain unchanged.
+-    reg.register("triage.system", "4", _TRIAGE_SYSTEM)
++    reg.register("triage.system", "5", _TRIAGE_SYSTEM)
+     reg.register("cloud.system", "1", _CLOUD_SYSTEM)
+     reg.register("identity.system", "1", _IDENTITY_SYSTEM)
+     reg.register("insider_threat.system", "1", _INSIDER_THREAT_SYSTEM)
+--- a/services/agents/app/llm/prompts.lock.json
++++ b/services/agents/app/llm/prompts.lock.json
+@@ -84,7 +84,7 @@
+     "version": "1"
+   },
+   "triage.system": {
+-    "sha256": "a6ed50114304c7cde38d3d9b58c85f4253ec269baa92235809616abdea594871",
+-    "version": "4"
++    "sha256": "c1c6dc825e3efe75ace5915ba46ea9ad26479fa07347c3be7fb19b1fc906e7ec",
++    "version": "5"
+   }
+ }
+--- a/tests/porting/test_triage_reasoning_prompt_c03.py
++++ b/tests/porting/test_triage_reasoning_prompt_c03.py
+@@ -133,10 +133,10 @@
+     return requests, updates, invocation, tracker, result
+ 
+ 
+-def test_prompt_v4_lock_and_unchanged_taxonomy_schema_other_prompts():
++def test_prompt_v5_lock_and_unchanged_taxonomy_schema_other_prompts():
+     registry = default_registry()
+     assert registry.verify_against_lock(load_lock()) == []
+-    assert registry.get('triage.system').version == '4'
++    assert registry.get('triage.system').version == '5'
+     unchanged = {name: entry for name, entry in registry.as_lock().items() if name != 'triage.system'}
+     canonical = json.dumps(unchanged, sort_keys=True, separators=(',', ':')).encode()
+     assert len(unchanged) == 21 and hashlib.sha256(canonical).hexdigest() == OTHER_PROMPTS_SHA256
+@@ -156,6 +156,8 @@
+     system, user = messages[0]['content'], messages[1]['content']
+     assert system.startswith(default_registry().get('triage.system').text + '\n\n')
+     for rule in (
++        "Missing evidence is not a rule misfire. Use needs_review when the rule's",
++        'condition cannot be checked; false_positive needs supplied contrary evidence.',
+         'Use event_time for the activity, never created_at or receipt time.',
+         'complete authorization start/end on one time base using explicit time zones',
+         'and offsets, including across dates.',

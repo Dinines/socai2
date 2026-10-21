@@ -1,0 +1,26 @@
+name: socai2
+services:
+  litellm:
+    # Exact local image ID verified against the running host20 reference.
+    image: sha256:2e4c0371f3a8c28e4da131d77abaa8341cd3b0c2fcc4d34d7c5900431af7b9d0
+    pull_policy: never
+    env_file: /opt/sting-aisoc-socai2/private/gateway-1e.env
+    command: ["--config", "/etc/litellm/config.yaml", "--port", "4000"]
+    user: "10001:10001"
+    ports: ["127.0.0.1:14000:4000"]
+    volumes:
+      - /opt/sting-aisoc-socai2/source/deploy/aisoc21/litellm.config.yaml:/etc/litellm/config.yaml:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,size=512m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ulimits:
+      nofile: {soft: 65536, hard: 65536}
+    cpus: 4
+    mem_limit: 8g
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness',timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
