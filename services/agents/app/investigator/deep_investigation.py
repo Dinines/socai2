@@ -328,6 +328,14 @@ def _summarise_alert(state: Any) -> str:
     parts.append("Supplied source evidence: null means unknown, not false or absent; created_at is source record creation, "
                  "not a substitute for event_time or an event window. "
                  f"source_projection_truncated={'true' if limited else 'false'}\n" + rendered)
+    # The deterministic caller's findings are not part of this model input.
+    # Explicitly append the same safe Bundle summary consumed by the default
+    # investigation agents; this adds no model node, loop turn or tool call.
+    from app.investigator.bundle_prompt import format_bundle_prompt_append
+
+    context = format_bundle_prompt_append(getattr(state, "context_bundle", None))
+    if context:
+        parts.append(context)
     return "\n".join(parts)
 
 

@@ -1,0 +1,338 @@
+{
+  "date": "2026-10-22",
+  "kind": "investigation_candidate_combination_and_build_preparation",
+  "status": "limited_ACCEPT_source_combination_and_build_preparation",
+  "openspec_change": "restore-alert-investigation-integrity",
+  "original_tasks": {
+    "total": 15,
+    "checked": 5,
+    "checkboxes_changed": false
+  },
+  "local_batch": ".local/aisoc21/investigation-candidate-20261022",
+  "parent_verification": {
+    "date": "2026-10-22",
+    "read_only": true,
+    "images": {
+      "api": {
+        "container": "socai2-api-1",
+        "tag": "socai2-api:integrity-20261021",
+        "id": "sha256:1be37c3893f782b84ea5bfe3d1af20f20700f7e88fa9c79fee1202f3a15a3b1d",
+        "container_image_matches": true,
+        "os": "linux",
+        "architecture": "amd64",
+        "working_dir": "/app",
+        "user": null,
+        "entrypoint": null,
+        "cmd": [
+          "python",
+          "-m",
+          "app.scripts.serve"
+        ],
+        "application_path_mounts": []
+      },
+      "agents": {
+        "container": "socai2-agents-1",
+        "tag": "socai2-agents:full-ueba-context-20261021",
+        "id": "sha256:aec3c54f6f07c219f55922b0209e2a8edf3303e084441bb7651a27f7845a2c82",
+        "container_image_matches": true,
+        "os": "linux",
+        "architecture": "amd64",
+        "working_dir": "/app",
+        "user": "10001:10001",
+        "entrypoint": null,
+        "cmd": [
+          "python",
+          "-m",
+          "app.scripts.serve"
+        ],
+        "application_path_mounts": []
+      }
+    },
+    "credentials_or_environment_values_read_into_report": false,
+    "containers_created_or_restarted": false,
+    "bundle": {
+      "source": "running container whose image ID matched recorded full parent; no covering app mount or file writable-layer change",
+      "path": "/app/app/context/bundle.py",
+      "sha256": "0e2c7a05e9c3ecfa4f500bec2586db0c9d94ef07b44e91096c898a5951a10025",
+      "bytes": 42259,
+      "local_source": ".local/aisoc21/investigation-candidate-20261022/baseline/full-agents-bundle.py"
+    },
+    "published_ueba_fetch_baselines_ast_unchanged_in_candidate": true
+  },
+  "image_ids_are_registry_manifest_digests": false,
+  "full_bundle_comparison": {
+    "patch": "baseline/full-to-candidate-bundle.patch",
+    "ueba_fetch_baselines_ast_unchanged": true,
+    "original_five_sources_fetch_and_adoption_unchanged": true,
+    "only_chain_context_and_necessary_timeout_support_added": true,
+    "whole_full_image_reproduction_claimed": false
+  },
+  "combination": {
+    "date": "2026-10-22",
+    "source_basis": "candidate05 runtime files verified against existing manifest; then only selected 19-file overlay",
+    "base_counts": {
+      "api": 439,
+      "agents": 188
+    },
+    "selected_overlay_count": 19,
+    "excluded_files_keep_candidate05": [
+      "services/agents/app/agents/auto_triage_agent.py",
+      "services/agents/app/agents/investigation_agent.py",
+      "services/agents/app/agents/triage_agent.py",
+      "services/agents/app/confidence/scoring.py",
+      "services/agents/app/core/cost_governor.py",
+      "services/agents/app/graph/runner.py",
+      "services/agents/app/llm/tool_loop.py"
+    ],
+    "tests_copied_into_isolated_tree": {
+      "agents": [
+        "test_kafka_graph_intake.py",
+        "test_attack_context.py",
+        "test_attack_context_orchestration.py",
+        "test_attack_path_agent.py",
+        "test_socai2_tool_failure.py"
+      ],
+      "api": [
+        "test_investigation_attack_context.py",
+        "test_graph_tenant_isolation.py",
+        "test_attack_chain.py",
+        "test_investigation_tools.py"
+      ]
+    },
+    "workspace_apps_used_as_import_root": false,
+    "live_full_bundle_proof": "baseline/parent-verification.json",
+    "not_claimed_full_image_byte_reproduction": true
+  },
+  "direct_tests": {
+    "agents": {
+      "service": "agents",
+      "exit_code": 0,
+      "passed": 55,
+      "failed_reports": 0,
+      "skipped_reports": 0,
+      "isolated_service_root": "/Users/lychee/Documents/project/socai2/.local/aisoc21/investigation-candidate-20261022/combined-source/services/agents",
+      "app_modules_imported": 129,
+      "outside_isolated_app_modules": {},
+      "all_app_imports_from_combined_tree": true,
+      "network_guard": "BaseException on socket connect/connect_ex/create_connection",
+      "database_env_removed": true,
+      "new_real_model_calls": 0,
+      "new_backend_calls": 0,
+      "image_runtime_tested": false
+    },
+    "api": {
+      "service": "api",
+      "exit_code": 0,
+      "passed": 45,
+      "failed_reports": 0,
+      "skipped_reports": 0,
+      "isolated_service_root": "/Users/lychee/Documents/project/socai2/.local/aisoc21/investigation-candidate-20261022/combined-source/services/api",
+      "app_modules_imported": 62,
+      "outside_isolated_app_modules": {},
+      "all_app_imports_from_combined_tree": true,
+      "network_guard": "BaseException on socket connect/connect_ex/create_connection",
+      "database_env_removed": true,
+      "new_real_model_calls": 0,
+      "new_backend_calls": 0,
+      "image_runtime_tested": false
+    },
+    "total_passed": 100,
+    "prior_batch_counts_added": false,
+    "warnings": "Agents: 33 existing datetime.utcnow deprecation warnings"
+  },
+  "route_registration": {
+    "route_methods": {
+      "/api/v1/graph/investigation-context": [
+        "GET",
+        "POST"
+      ],
+      "/api/v1/alerts/{alert_id}/attack-chain": [
+        "GET"
+      ],
+      "/api/v1/cases/{case_id}/investigate": [
+        "POST"
+      ]
+    },
+    "openapi_path_count": 490,
+    "all_app_imports_from_combined_tree": true,
+    "app_modules_imported": 385,
+    "lifespan_started": false,
+    "new_backend_calls": 0,
+    "new_model_calls": 0
+  },
+  "preparation_failures_retained": [
+    {
+      "kind": "local_docker_unavailable",
+      "observed": "unix:///Users/lychee/.orbstack/run/docker.sock: no such file or directory",
+      "action": "No daemon startup, build or remote-build fallback"
+    },
+    {
+      "kind": "sandbox_ssh_denied",
+      "action": "Read-only escalated retry succeeded; no approval rejection"
+    },
+    {
+      "kind": "route_script_attempt01",
+      "evidence": "route-registration-attempt01.log",
+      "error": "_IncludedRouter has no path; changed check to public OpenAPI"
+    },
+    {
+      "kind": "route_script_attempt02",
+      "evidence": "route-registration-attempt02.log",
+      "error": "Expected route path omitted /api/v1 prefix; corrected observer only"
+    }
+  ],
+  "build_preparation": {
+    "manifest": "build-context/manifest.json",
+    "manifest_sha256": "827f54b729925a9110bc21d9b0254ab3eb09aa68eea430891d0f4fe68b24f193",
+    "files": [
+      {
+        "path": "services/agents/app/agents/attack_path_agent.py",
+        "sha256": "6006e431814cfdb0210d54414be310a3d486f0345178657b3df66a0823c6f18d"
+      },
+      {
+        "path": "services/agents/app/context/attack_context.py",
+        "sha256": "600afa045fb8db6921b6c725b5a8f2cf778ee9a23767506cc820f9e33fd0bebe"
+      },
+      {
+        "path": "services/agents/app/context/bundle.py",
+        "sha256": "210f259bf860b4193ddf41168d39105cebe90dfd3de98ea68211b94342d83b72"
+      },
+      {
+        "path": "services/agents/app/investigator/bundle_prompt.py",
+        "sha256": "0a8f6f170a5e70b224c1a7f512fa11ad1803fbd16b93d2014f9d411eb1db5c35"
+      },
+      {
+        "path": "services/agents/app/investigator/deep_investigation.py",
+        "sha256": "f7e8726bc357975064da9c15fc977a746400bbc0f7855614c2d9350e55a0333b"
+      },
+      {
+        "path": "services/agents/app/investigator/ledger.py",
+        "sha256": "da543d5de0902e91568085e4cabb5475b773a5b91fefa9e8e2bed41858e940be"
+      },
+      {
+        "path": "services/agents/app/investigator/orchestrator.py",
+        "sha256": "99bc74f523186a1286be3a5124eb2e9b49eb54d7183cd8fe61a781dc468f08fb"
+      },
+      {
+        "path": "services/agents/app/investigator/tools.py",
+        "sha256": "ac0cd3144623d9b1cdca8756c24598e50cf656d563782f9e915df93f227eaf11"
+      },
+      {
+        "path": "services/agents/app/orchestrator/report.py",
+        "sha256": "6e2edd396c4ba9bb5e6c46767aaa0a7eef07ecbc843e16161df6734aa9aa0109"
+      },
+      {
+        "path": "services/agents/app/orchestrator/router.py",
+        "sha256": "ca11b85981469cb4f0a79922e770f03f0016107eb891a37e9941b01c5a614c18"
+      },
+      {
+        "path": "services/agents/app/tools/graph.py",
+        "sha256": "365a4bc3cedffd0ba451b668cb0685707b40461dea48878e88f9a27dc3ec608a"
+      },
+      {
+        "path": "services/agents/app/workers/fused_alert_consumer.py",
+        "sha256": "f8b8aa0c15dab71e9fe220ee91b19f49455965c0c9737b497dfcb3af36032d72"
+      },
+      {
+        "path": "services/api/app/api/v1/endpoints/attack_chain.py",
+        "sha256": "16ba93d7b66e35b455a2663c510fe21ab6c4faa3247e7e52866bfd65f7307eda"
+      },
+      {
+        "path": "services/api/app/api/v1/endpoints/cases.py",
+        "sha256": "086ee39ad893213db6a5fceb3a4ff65766c2991bda828df0e42e6736f31b2495"
+      },
+      {
+        "path": "services/api/app/api/v1/endpoints/graph.py",
+        "sha256": "7159362f42c67902b9cccdb855f349c8f5b67830c37034089f0f7f00787d12e6"
+      },
+      {
+        "path": "services/api/app/api/v1/router.py",
+        "sha256": "93e985501e7a05b236bb33eed88a88daec43013d1bd373ade03d11e0a02ce204"
+      },
+      {
+        "path": "services/api/app/services/graph_service.py",
+        "sha256": "68dedc4a8e13c6b8c2aefbcac7ef77d8deb0c921ea522fc82e9aa2dac67c2e52"
+      },
+      {
+        "path": "services/api/app/services/investigation_attack_context.py",
+        "sha256": "37d736a9da257c69caf04792bd5cda438a1fbf59dabde1e3db2e5e140f1a1840"
+      },
+      {
+        "path": "services/api/app/services/investigation_tools.py",
+        "sha256": "c1a30c41ea3cf0cfdb3b08d012be6b56f37c075688bb7f9c78524e11068cc9bb"
+      }
+    ],
+    "runtime_file_count": 19,
+    "api_files": 7,
+    "agents_files": 12,
+    "sources_from_previous_review_bundle_only": true,
+    "recipe_api": "deploy/aisoc21/Dockerfile.investigation-context-api",
+    "recipe_agents": "deploy/aisoc21/Dockerfile.investigation-context-agents",
+    "helper": "deploy/aisoc21/build_investigation_context_candidate.py",
+    "default_mode": "offline_plan_no_docker",
+    "execution_paths_tested_against_real_daemon": false,
+    "actual_images_built": false,
+    "default_plan": ".local/aisoc21/investigation-candidate-20261022/build-plan.json",
+    "default_plan_exit_code": 0,
+    "static_compile_and_help_exit_code": 0,
+    "manifest_identity_pinned_in_helper": true,
+    "builder": "local classic daemon builder; DOCKER_BUILDKIT=0; no remote Buildx fallback",
+    "on_execute_parent_layers_and_configuration_will_be_compared": true,
+    "recipe_sha256": {
+      "deploy/aisoc21/Dockerfile.investigation-context-api": "1c9c1609646dc92b1e6a5ac472cc57c852a5b13f012054b02a91ce3a82a96490",
+      "deploy/aisoc21/Dockerfile.investigation-context-agents": "4a4d984ea8ee6981a1a8f179a56da7d5d5bcd51d4376347dcc8d56619245a204",
+      "deploy/aisoc21/build_investigation_context_candidate.py": "e9df4bc345853da85f63d84d1aa45b8ed4b95f2e38f746f26666be3682268189"
+    }
+  },
+  "activity": {
+    "new_real_model_calls": 0,
+    "business_http_calls": 0,
+    "business_pg_or_graph_writes": 0,
+    "kafka_messages_or_commits": 0,
+    "case_or_run_creations": 0,
+    "remote_read_only_parent_and_bundle_inspection": true,
+    "local_business_source_uploaded": false,
+    "deployed": false,
+    "resident_worker_started": false,
+    "git_commit_or_push": false
+  },
+  "preserved": {
+    "excluded_seven_candidate05_sources": true,
+    "workspace_deep_with_deferred_changes": true,
+    "old_c2_quality_failure": true,
+    "unknown_and_backlog_protections": true,
+    "worker_off": true
+  },
+  "remaining": [
+    "Actual local image builds on a daemon containing the exact recorded parents",
+    "Image runtime verification and stage release review",
+    "Original restore unfinished responsibilities and prior quality limits"
+  ],
+  "end_audit": {
+    "reviewer": "candidate_preparation_audit",
+    "not_involved_in_implementation": true,
+    "status": "limited_ACCEPT",
+    "remaining_blockers": 0,
+    "raised_and_fixed": [
+      "Bind the manifest byte identity, not only self-consistent source hashes",
+      "Implement the documented post-build parent-layer and inherited-configuration comparison"
+    ],
+    "audit_only_read_existing_evidence": true,
+    "new_tests_network_or_docker_by_auditor": false,
+    "scope": "Source combination evidence and build preparation only; no actual image/runtime/deployment/quality approval"
+  },
+  "local_validation": {
+    "openspec_strict": true,
+    "diff_check": true,
+    "tasks_15_checked_5": true,
+    "no_new_business_implementation_changes": true,
+    "new_receipt_local_file_links_checked": 5,
+    "new_receipt_missing_links": 0
+  },
+  "follow_up": {
+    "receipt": "docs/operations/investigation-candidate-images-20261022.md",
+    "machine_summary": "docs/handoff/investigation-candidate-images-20261022.json",
+    "original_recipe_helper_retained_at": ".local/aisoc21/investigation-candidate-20261022/image-build/build-helper-before-optional-field-fix.py",
+    "original_no_images_built_is_preparation_stage_fact": true
+  }
+}

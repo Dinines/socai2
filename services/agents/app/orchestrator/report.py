@@ -181,6 +181,13 @@ def render_router_report_md(
         lines.extend(_bullets(state.findings))
         lines.append("")
 
+    if (state.context_bundle or {}).get("attack_context"):
+        from app.context.bundle import ContextBundle
+        context = ContextBundle.model_validate(state.context_bundle)
+        lines.extend(["## Attack-chain and graph context", ""])
+        lines.extend(_bullets(context.prompt_context_lines()))
+        lines.append("")
+
     # 5. MITRE ATT&CK mappings --------------------------------------------
     if state.mitre_mappings:
         lines.append("## MITRE ATT&CK Mappings")

@@ -1611,7 +1611,7 @@ async def case_investigate(
     # (C:\\Windows\\Temp\\malware.exe and friends). Load the case's linked
     # alerts and pass their real content, truncated so the prompt stays
     # bounded and free of multi-MB raw blobs.
-    raw_alert_payload: dict[str, Any] = {}
+    raw_alert_payload: dict[str, Any] = {"case_id": str(cid)}
     try:
         if case_alert_ids:
             rows = (
@@ -1647,7 +1647,7 @@ async def case_investigate(
                     }
                 )
             if alerts_out:
-                raw_alert_payload = {"alerts": alerts_out}
+                raw_alert_payload["alerts"] = alerts_out
     except Exception:  # noqa: BLE001 - never block launch on enrichment
         logger.warning("investigate.launch.raw_alert_enrichment_failed case_id=%s", cid, exc_info=True)
 
@@ -1703,6 +1703,12 @@ async def case_investigate(
         except Exception:  # noqa: BLE001 — never block the launch on the alert bump
             await db.rollback()
             logger.warning("investigate.launch.alerts_advance_failed case_id=%s", cid, exc_info=True)
+
+    from app.services import investigation_attack_context
+    if investigation_attack_context.enabled():
+        raw_alert_payload["attack_context_preparation"] = await investigation_attack_context.prepare_investigation_graph(
+            db, user.tenant_id, case_id=cid,
+        )
 
     resp = await _agents_proxy(
         "POST",

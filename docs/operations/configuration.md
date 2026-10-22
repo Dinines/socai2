@@ -1,5 +1,7 @@
 # 配置与凭据使用入口
 
+2026-10-22 v1.0.0已发布，生产tenant/新group/预算/凭据位置见[生产接入](../integration/v1/production.md)，运行以[16:48发布后快照](../integration/v1/service-runtime-snapshot.json)为准；下述16:02为发布前记录。后端交接优先读取[v1连接配置](../integration/v1/configuration.md)及[16:02远端白名单快照](../integration/v1/runtime-snapshot.json)：已核当前PG/Kafka/Redis/ClickHouse/OpenSearch等实际地址、对象、变量和关闭开关。下文各时间段保持原配置历史，不用早期sting库、9092明文或尚未接group的记录替代当前对接配置；真实密码/token仍通过受控位置交接。
+
 整理日期：2026-10-20。前述表格为初始化时的配置快照，1B新生效配置见文末。本页记录地址、用途和配置来源；真实密钥已按用户要求迁入本地私有目录 `.local/configuration/2026-10-20/`，由 Git 忽略，目录权限 0700、文件权限 0600。该快照采集时没有修改服务器配置、轮换密码或发起模型请求；后续1B变更单独记录。
 
 这些是参考环境/已有基础设施的连接索引，不是新服务的生效配置。当前只部署[告警处理服务端](alert-processing-scope.md)，不建设控制台或其他管理UI；21共享服务的项目对象与业务入口按[依赖计划](dependency-migration-plan.md)分批确定。未被选用的地址、别名和凭据仅保留来源。
@@ -242,6 +244,8 @@ Fusion继续读取原`private/fusion-1f.env`，仅用[2A Compose叠加层](../..
 C01新增第二十三层`compose.fusion-delivery-c01.yml`只指定Fusion镜像，env/挂载/凭据保持；仅Fusion重建。回退完整定义及原配置在21 `private/completion-c01/`，工作站受控备份`.local/aisoc21/private/completion-c01/`（7文件、0600）；两个本批操作key已停用401，十枚reader及原预算policy保持。当前完整命令见[21说明](../../deploy/aisoc21/README.md)，验收见[C01](c01-fusion-delivery.md)。
 
 ## 2026-10-21调查工具原只读服务身份
+
+当前Tool参数/执行/本地测试见[使用指南](investigation-tools.md)；第三方SIEM的PG实例、auth_config/connector_config、查询服务与分层测试见[接入示例](siem-tool-integration.md)，精确schema见[目录](../architecture/investigation-tool-catalog.md)。示例配置均未应用；独立connectors查询服务尚未迁入，不能只填远端URL就宣称可用。
 
 API与Agents通过当前第29层 `compose.integrity.yml` 加载21私有 `private/completion-integrity-20261021/api-read-service.env`，其中仅有独立的 `AISOC_API_SERVICE_TOKEN`。值不进入日志、文档或Git；与原API→Agents专用身份、五类十枚A/B reader分开，不替换旧凭据。该身份沿用固定源码既有七权限：`alerts:read`、`cases:read`、`connectors:read`、`actions:read`、`lake:query`、`hunts:read`、`threat_intel:read`；请求必须明确存在的tenant，工具闭包从Run取得tenant，模型不能通过工具参数选tenant。该配置不授予写入或执行权限，缺少实际日志/厂商来源仍记unavailable。candidate04已部署，[运行独审](../handoff/integrity-candidate04-runtime.json)及[六项HTTP](../handoff/integrity-candidate04-http.json)已通过。
 

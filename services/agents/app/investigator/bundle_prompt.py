@@ -27,13 +27,16 @@ def stable_incident_uuid(case_id: str, tenant_id: str) -> uuid.UUID:
 
 def _bundle_state_for_investigator(
     *,
-    case_id: str,
+    case_id: str | None,
     tenant_id: str,
     alert_summary: str,
     raw_alert: dict[str, Any],
+    alert_id: str | None = None,
 ) -> SimpleNamespace:
     return SimpleNamespace(
-        incident_id=stable_incident_uuid(case_id, tenant_id),
+        incident_id=stable_incident_uuid(case_id or alert_id or "unlinked", tenant_id),
+        case_id=case_id,
+        alert_id=alert_id,
         tenant_id=tenant_id,
         alert_summary=alert_summary,
         raw_alert=raw_alert,
@@ -42,10 +45,11 @@ def _bundle_state_for_investigator(
 
 async def prefetch_context_bundle_dict(
     *,
-    case_id: str,
+    case_id: str | None = None,
     tenant_id: str,
     alert_summary: str,
     raw_alert: dict[str, Any],
+    alert_id: str | None = None,
 ) -> dict[str, Any]:
     """Build a JSON-serialisable ContextBundle dict; never raises."""
     try:
@@ -64,6 +68,7 @@ async def prefetch_context_bundle_dict(
                 tenant_id=tenant_id,
                 alert_summary=alert_summary,
                 raw_alert=raw_alert,
+                alert_id=alert_id,
             )
         )
         return bundle.model_dump(mode="json")

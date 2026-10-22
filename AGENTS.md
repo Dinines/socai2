@@ -1,5 +1,59 @@
 # socai2 / stingAISOC 工作约定
 
+- **2026-10-22 v1.0.0服务已上线（最新实际状态）：** API5a1e1fd8/Agents49643b84已部署21，生产租户 `f6a5c700-69b8-44fc-8238-609362fb1a9f`、新组 `socai2-agents-v1-prod-20261022`，常驻worker及自动升级已开启，模型摘要不变。新raw Kafka合成告警自动交付15事件/14工件/MD，7回复28216tokens；graph partial、内容质量未验收，旧问题及原5/15保持。旧租户/group/积压/unknown/预算未修改，真实厂商动作关闭。service_v1_release_audit结束独审限定ACCEPT、0本轮阻塞。当前接入见[生产文档](docs/integration/v1/production.md)、[发布回执](docs/operations/service-v1-release-20261022.md)，下文OFF/未部署是以前事实。
+
+- **2026-10-22 v1.0服务发布授权（最新）：** 用户在接口文档完成后明确授权开启Kafka自动分诊/自动调查，模型沿用当前配置，并选择“新建独立生产租户”。沿原restore change推进[服务发布计划](docs/operations/service-v1-release-20261022.md)：复用已构建API5a1e1fd8/Agents49643b84候选，创建独立生产租户/最小服务身份/预算及新消费组切换起点，定向发布API/Agents。历史worker OFF/不发布是此前事实，不再限制本轮已授权发布；旧租户/积压/unknown、5/15及旧质量失败保持，不启真实厂商动作，不自动Git提交/推送。实际是否上线、自动链是否完成仍须以本批执行回执为准。
+
+- **2026-10-22后端对接发布文档v1：** 用户明确正式已有告警走Kafka，HTTP告警仅测试辅助；已整理[后端对接指引](docs/integration/v1/README.md)，含Kafka/Redis/PG/OpenSearch/ClickHouse/Neo4j/Qdrant配置、各步输入/输出位置、调查入口/节点/结论、核心表及JSON/SQL/env示例。查询API仍供后端读结果；fused不是调查完成通知，无Case自动Run从ledger工件读Markdown。现有worker OFF、本地候选未部署和5/15/旧失败保持；21先SSH超时，用户恢复后16:02已只读核15容器镜像/端口/连接白名单：湖192.168.1.21:9000/aisoc/socai2_lake、TI OpenSearch及TI/enrichment共享Redis DB12已确认；worker实际AISOC_AGENT_KAFKA_DISABLE=1、升级0。Agents enrichment仍127.0.0.1:9，非自动接通；无业务探活。backend_v1_doc_audit结束独审及恢复后配置窄复核限定ACCEPT；本批仅文档及静态校验，不实际发布服务、发消息/模型或Git提交。
+
+- **2026-10-22两会话简单收尾：** 用户本轮只要求保留进展，见[续接记录](docs/handoff/session-closeout-20261022.md)。测试数据工具已有8项离线＋2项替身合同通过；真实attempt01在联网前配置失败，探针日志已修但未重跑，真实联测/最终回执/该增量结束独审待续。产品工程建议237行最终版本的既有独审已找回，限定ACCEPT、0阻塞，已补audit；建议未选定实施。相关文件及非私有回执留存于`.local/versions/session-closeout-20261022/`。本轮不继续实施/模型/联测/部署/启worker或Git提交，原5/15与旧失败保持。
+
+- **2026-10-22智能调查产品/工程建议：** 按用户要求形成[急需问题与优化扩展方案](docs/architecture/investigation-product-engineering-roadmap-20261022.md)：优先范围/真实数据、证据与结论/报告一致性、停止后的可接手结果；三编排先共享四个小合同，保留拓扑，按场景扩展工具/策略后再考虑专业Agent。含代码落点、三场景与指标，属于建议而非已选实施或新增迁移前置；当前候选已本地构建但不含旧C2全部修正、未部署。原5/15、worker OFF与旧失败保持，无业务改动/新模型/发布。
+
+- **2026-10-22标书需求评估：** 用户要求按原件评估模块设计/迁移是否满足标书，已形成[详细评价与推进建议](docs/operations/tender-requirements-assessment-20261022.md)及[35子组164条功能矩阵](docs/requirements/socai2-requirements-matrix-20261022.md)。当前可作告警/调查服务端基础，不能认定整份标书或核心证据/行为攻击链完整满足；SFT、完整RAG、技术选型差异及成效另列。沿B5→B6使用已构建候选做阶段交付，后续优先真实资料/范围和证据/完成语义；这是评估建议，不启动新二开/模型/部署或改变任务。新增告警筛选/UEBA最近50条限制为继承原版的静态发现，入原问题表后置；原5/15、R02、worker OFF及旧失败保持。
+
+- **2026-10-22本地候选镜像已构建：** 用户继续并明确授权完整父镜像21→本地传输后，已生成API5a1e1fd8/Agents49643b84两个linux/amd64候选，见[镜像回执](docs/operations/investigation-candidate-images-20261022.md)。精确父ID/19清单、父层/启动配置继承通过；镜像内19源码编译/hash、Agents7排除项、API385/Agents129导入与4路由方法通过，Python3.11.17，两个临时非root/只读/禁网探针均exit0并删除；candidate_images_end_audit结束独审限定ACCEPT、0项本轮阻塞。构建助手仅修缺省Config字段读取、增加显式核本地Host的BuildKit选项及context调用；3次失败保留，业务源码/锁不改。OrbStack已启动并恢复11既有本地容器，未改其配置；21仍未部署/启worker/新发模型，原5/15与旧失败保持。下文未运行Docker/未构建均为准备阶段事实。
+
+- **2026-10-22候选组合与构建准备：** 已核21 API1be37/Agentsaec3父tag和容器ID，定向补取已发布full bundle/hash并确认UEBA读取接线保持；19文件隔离组合Agents55＋API45通过，完整router登记检查通过，见[本批回执](docs/operations/investigation-candidate-build-20261022.md)。构建输入仅API7/Agents12，Deep使用仅摘要变体，7项旧C2/文案保持父版本；最小Dockerfile及默认只读本地构建助手已准备，candidate_preparation_audit结束独审限定ACCEPT、0项本轮阻塞。当前本地Docker未运行，尚未构建或部署，不启动worker/发模型，原5/15和旧质量失败保持。前一轮缺full bundle与组合未验为当时事实，以本批定向新增证据为准，不能外推完整运行冻结或发布通过。
+
+- **2026-10-22阶段收口与19文件候选：** 用户确认按评估继续，已将原10项未勾责任逐项映射，并在`.local/review/investigation-stage-closeout-20261022`准备API7＋Agents12运行文件审查副本，见[收口清单](docs/operations/investigation-stage-closeout-20261022.md)与[机器摘要](docs/handoff/investigation-stage-closeout-20261022.json)。Deep以匹配candidate05的原件只追加链图摘要，现有材料交接用例对该副本1 passed；7项旧C2/文案差异未复制，工作区原件保留。fused worker实际无关闭文案差异。基线以最近full回执API1be37/Agentsaec3为记录，candidate05/Git HEAD不能当full后整个线上基线；纯full bundle hash本地未留存。候选只是可审源码，不是已构建/可部署包；组合、实际构建及发布仍需相应确认，不重跑模型矩阵/全量冻结，不部署/启worker，原5/15和旧质量失败保持。
+
+- **2026-10-22概念辨析与结论已保存：** 用户要求保留本轮讨论的概念、例子和结论，见[对象/ID](docs/architecture/attack-chain-path.md#concepts)、[四种成员组合](docs/architecture/attack-chain-path.md#membership-examples)、[调查范围](docs/architecture/attack-chain-path.md#investigation-scope)、[Case/Playbook](docs/architecture/attack-chain-path.md#case-automation)及[结论](docs/architecture/attack-chain-path.md#discussion-conclusions)。Incident键为主实体（src_ip优先）＋首战术，Fusion链按host→user→src_ip首个活跃命中，战术仅用于阶段；同Incident异链也能正常出现，不保证层级包含。Fusion链内部续组/交付/留存已实现，当前未接下游业务消费；调查Chain重新查PG Alert，Case Path展开已有关系子图，不等于行为因果。自动写图/调查不建Case，Playbook无原生create_case、investigate需要已有Case；Hunt/KEV另有专用分支。仅文档，不据此删除、合并或改算法/自动建Case，不新发模型/启worker/发布，旧5/15与质量失败保持。
+
+- **Kafka入口真实联合（2026-10-22）：** 依赖补齐后，用本地原worker/API连接21 Kafka/PG/Neo4j，独立topic/group一条新信封，在triage入口前取得真实prepare成功及同Alert直接邻域5节点4边，见[联合回执](docs/operations/kafka-graph-joint-20261022.md)。reader POST403/GET200、无Case/Run，观察入口主动hold，offset未提交、本地进程已停；业务分诊/模型未执行，未发布或改21常驻。GET影响范围另有14个可达候选（含同tenant历史测试资料），不作确认影响；累计PG合成夹具2条含旧失败。5/15、旧质量失败保持，未参与实现者joint_graph_audit结束独审限定ACCEPT、0接线阻塞。
+
+- **本地Conda依赖统一检查（2026-10-22）：** 用户要求先把依赖一次补齐；按API+Agents runtime/dev及必需extras核56项直接声明，原缺21项/6项低版本及fastembed extra，统一安装并处理本地兼容性。详见[环境回执](docs/operations/local-dependencies-20261022.md)。仅项目`.local/conda-envs/socai2`，旧socai环境/源码和21部署不变；不将环境检查当Kafka真实联合通过，后者尚未成功且未发布消息。原5/15、worker OFF和旧失败保持。
+
+- **Kafka入口写图与Conda（2026-10-22）：** 用户选择在Agents读取fused Kafka消息之后、分诊之前统一写图，避免修改Fusion；增量沿restore 2.1/3.1/3.4/4.1已本地完成，Conda环境85项直接合同通过、结束独审限定ACCEPT，见[接线回执](docs/operations/kafka-graph-intake-20261022.md)。schema通过后按tenant/canonical Alert调用原API，独立writer及review-only/shadow保护保持；后续上下文GET只读，人工Case入口仍可准备。用户允许用Conda建立项目环境，本批使用`.local/conda-envs/socai2`，不再依赖已消失的/tmp venv。实施/验证以新回执为准，不发模型、启常驻或发布，旧5/15与质量失败保持。
+
+- **阶段交接（2026-10-22）：** 沿B5→B6汇总已有功能证据并保留链图本地版本，见[交接表](docs/operations/investigation-stage-handoff-20261022.md)。第一步告警→自动实际调查→基本结果/Markdown读取已有实证；本轮不追加模型、重复业务测试或发布。外部HTTP Tool仍仅设计，未指定真实厂商合同，不自动实施假设接口。当前基本交付未发现新接线阻断；原5/15、常驻worker OFF、质量失败和未完责任保持。
+
+- **攻击链/图已本地实施（2026-10-21，未发布）：** 已补可信PG告警定向投影、Case/Alert读取、Bundle/Router/Deep摘要消费及Run工件，见[实际回执](docs/operations/attack-chain-path-local-20261021.md)与[原计划](docs/operations/attack-chain-path-integration-plan.md)。新Case四Agent实际模型消费、Neo4j11节点15边、29事件/4工件及Markdown读取已验，结束独审限定ACCEPT；Router/Deep接缝为直接测试。保原算法/编排，不自动建Case/改raw职责；无Case路径not_linked。原首Run预取失败和两Case共32329tokens保留，不追认质量/全分支通过，不部署或启worker。此前“未自动投影/仅规划”是实施前或旧发布事实。
+
+- **调查模块本地实测（2026-10-21）：** 新四Run三路径、78项直接测试；14次模型尝试/13回复/已知31995tokens，Forensic一条连接失败用量未知；Router Identity/Cloud MD可运行、默认四节点带Forensic兜底MD、Deep7工具/六轮预算停无narrative，不能统称完成或质量通过。认证IPv6查询/单IOC请求字段最小本地修正均有真实接缝验证但未部署，不重调旧Run/不启常驻；连接可用性及其余质量后置。最新[回执](docs/operations/investigation-functional-20261021.md)与JSON为准，原5/15不变，结束独审ACCEPT，本地增量版本已保存（非部署镜像）。
+
+- **2026-10-21模型输入输出交接粒度：** 用户要求每次调用说明目的、模型实际输入、可见输出格式及代码采用；预处理/工具说明须区分固定查询、Router代码领域路由与Deep模型tool_calls。见[专篇](docs/architecture/investigation-preprocessing-tools.md)。Case嵌套alerts不自动flatten，Router分支无工具循环；仅有工具名称/建议文字不能证明执行，需核实际请求/返回/下一轮ToolMessage。当前仅文档，不预定映射/校验/编排改造或新模型测试。
+
+- **2026-10-21 Router讨论澄清：** Router为内置可选编排，`AISOC_INVESTIGATE_USE_ROUTER`仅为Case `/investigate`在默认四节点与Router间二选一，不串跑、不影响Kafka graph/deep。专业分支各一次领域模型，无内部四节点链；Router响应仅确定性dry-run摘要、报告由renderer生成，不能当完整Forensic/响应计划等价替换。graph外层固定、deep内部模型选择查询；固定官方未找到旧四节点明确弃用计划，不擅自迁为新替旧。见[实际流程](docs/architecture/investigation.md#5-router及full-graph的差异)与[设计评价](docs/architecture/investigation-design-review.md)。本次仅同步说明，不改行为/配置。
+
+- **2026-10-21调查设计评价（用户强调）：** 修改前须详细解释自动graph/deep与默认Case四节点的业务目的、输入/输出差异、官方设计依据和四Agent分工价值/限制。核固定版本官方路线/变更日志/Case文档，区分官方声明、源码事实和工程推断；证据支持演进并存，不编造严格互补双架构。graph也可手动发起，人工默认仅是人触发，四Agent不等于四次独立复核或更准；多轮工具不等于有效证据更多。见[评价](docs/architecture/investigation-design-review.md)。当前先分析讨论，不因此合并/删除编排、新发模型或发布，旧失败及未部署边界保持。
+
+- **2026-10-21分诊与逐调用调查梳理（最新）：** Fusion后进入Agents分诊，沿同一方式核支持项、源码默认/实际配置、输入输出/依赖、规则与模型、关闭/升级和具体对比例，再讨论取舍及最小修改。用户明确调查每一步、每个智能体/模型/工具调用均需详细说明：触发、实际输入、服务与查询参数、模型角色/提示、返回与采用、条件/循环/结束、逐步审计和持久输出。按自动post-triage graph、默认人工四节点、Router/full graph分别追踪，不把节点名当模型次数或工具清单当每次必走流程；复用真实Run逐调用实例，缺记录如实说明。见[分诊](docs/architecture/triage.md)、[调查](docs/architecture/investigation.md)。本增量先规划/只读分析，沿restore既有任务，不新发模型/重调旧输入/启worker/部署；本地先测和阶段发布、复杂可用性后置保持。
+
+- **2026-10-21 Fusion阶段判断（最新）：** 已有告警主链职责/规则/输入输出及UEBA真实联合已梳理，复用B1/2A/2B/2C证据，当前可继续下游分诊模块，不再以Fusion全功能质量/复杂可用性作为下一模块前置。阶段结论见[Fusion小结](docs/architecture/fusion.md#六当前阶段小结可以转入下游分诊)。下一步先理解fused输入/上下文、规则/模型、关闭/升级及审计，再讨论取舍；不擅自改算法、开启常驻或新增模型调用。本地保留版本、按阶段发布，整体change未完与旧失败保持。
+
+- **2026-10-21本地验证与阶段发布（最新）：** 用户明确可在本地运行代码、借用21基础设施测试；先本地验证并保留一个版本/回执，需要时构建本地镜像，按阶段统一发布，不每次改动或测试通过都部署21。当前UEBA→Kafka→Fusion真实联合验证走本地源码＋21独立测试topic/group及合成数据，不改常驻服务、不上传本地业务源码、不自动Git提交/推送。
+
+- **2026-10-21 UEBA联动评分例子：** 用户已授权验证及写清开关用法；8个原FusionWorker/cache/评分交付联动例子＋原10项信号测试共18 passed，PG/Redis/Kafka为内存替身，21常驻开关仍false。配置/加分/实际结果见[UEBA第4节](docs/architecture/ueba.md#4-ueba与fusion联动评分开关及实测例子)。本批不等于真实broker、成熟基线异常或常驻启用已验；其余Fusion功能仍先讨论取舍，不继续扩测试或启用。
+
+- **2026-10-21 raw事件支路暂缓（最新）：** 用户明确规范化事件处理交由其他模块，本轮不展开其生产/规范化、入湖、事件检测/提升及派生会话/AI资产功能；当前从已有告警进入Fusion继续分析。`RawAlert`、`alerts.raw`和告警`raw_event`正文属于已有告警合同，不在此次暂缓范围。调查读取其他模块提供的历史事件、使用UEBA结果仍保留；既有源码、配置、测试及full实测保留，本次不改变订阅/运行开关，也不声称已关闭。详见[当前范围](docs/operations/alert-processing-scope.md)。
+
+- **2026-10-21 Fusion当前先理解再取舍：** 用户要求先弄明白Fusion原本做了哪些事情，再共同讨论需要/不需要的功能。当前先整理已有告警主链、normalized事件支路、辅助能力的作用/输入输出及相互区别；不预定删除、改造、修复或启用项，不做运行变更/新测试。功能清单见[说明](docs/architecture/fusion.md)，后续明确取舍再按OpenSpec实施。
+
+- **2026-10-21依赖项交接简化（最新）：** UEBA、威胁情报/IOC、知识库等依赖保持原设计，以基本功能可用和“有哪些功能、如何使用”为当前交付：必要配置/入口、调用样例及输入输出说明即可。复用既有说明与有效证据，不再扩大源码分析、算法改造、复杂测试或为每个依赖另造详细设计；只补阻碍实际使用的直接接线。深入改造留到后续二开，现有源码/测试/保护保留，发现的非阻塞问题登记即可。下文完整模块分析卡主要用于后续Fusion/调查业务，不要求每个支撑依赖全部展开。
+
+- **2026-10-21继续执行与UEBA口径：** 用户已要求按OpenSpec逐步推进change，当前以功能接通为主；已有测试原样保留并按需复用，复杂可用性/冗余专项与审查发现但不阻碍当前功能的问题登记后置。UEBA沿原设计，由上游选择投喂事件/实体；当前先说明什么消息格式发到哪个入口会纳入计算及输入输出，不新增实体名单开关或滑动窗口。先前“本轮只规划”为上一阶段事实，不阻止本次已授权执行；当前原算法、权限、unknown与worker保护保持，不自动提交/推送。
+
 - **2026-10-21二开实施最新顺序：** 用户要求先规划并记录整条路线和关键点，再逐独立模块分析、取舍、修改和功能测试。先可复用支撑能力：UEBA → 威胁情报/IOC → 20上一版既有知识库，再进入Fusion → 分诊 → 调查/攻击路径 → Markdown结果交付。UEBA重点针对哪些实体开启、基线/时间/样本/阈值配置、输入输出及偏离算法；IOC先固定命中/未命中查询，数据量/覆盖率暂不考虑；知识库历史经验相关后看，已有读者/源码保留。基础属性表及讨论纪要见[模块工作说明](docs/operations/module-review-plan.md)，顺序细化唯一总计划B1—B6；本轮只规划，不代表业务代码、运行或验收完成。不预定合并原编排或一次重构全链，复杂可用性和冗余专项继续后置。
 
 - **2026-10-21报告交付：** 当前只要求Markdown生成、持久保存及按Case/Run读取；PDF暂缓，HTML不作本轮前置。不继续格式专项或新报告模型验证；已有代码、依赖和历史结果保留。

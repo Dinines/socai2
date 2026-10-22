@@ -1,8 +1,26 @@
 # 告警二次开发：逐模块分析与实施设计
 
+**当前链/图模块工作卡：** [攻击链与Attack Path接入计划](attack-chain-path-integration-plan.md)已把已有开关/函数、缺数据投影、Case/tenant交接、三种编排实际消费及Run输出分开。先已有Case调查，原算法/编排保留、只补接线，未开始实现或启用；自动无Case沿原seed算法薄Alert入口和既有邻居/影响范围，Case专用路径not_linked，不隐式建Case。
+
+**调查交接粒度进一步明确：** 用户要求每次模型调用均按目的→实际输入→输出格式→代码采用/下游交接说明，并展开预处理和工具是否/如何调用。[专篇](../architecture/investigation-preprocessing-tools.md)给Router/默认四节点/Deep逐模型表、schema与请求/结果示意，标明嵌套alerts不会自动flatten、Router无工具循环、Deep只响应结构化tool_calls、通用registry无完整schema运行时校验及各查询真实时间默认。当前仅源码/文档交接，未据此改造字段/校验框架或新增模型/复杂验证。
+
+**Router讨论结论已交接：** [配置/流程对照](../architecture/investigation.md#5-router及full-graph的差异)明确Case `/investigate`的旧四节点/Router二选一，开关不控制Kafka graph/deep；专业分支各一次领域模型而非各走四节点，Router响应仅摘要、报告由代码渲染，功能/产物不能当等价替换。[设计评价](../architecture/investigation-design-review.md)同步“演进并存≠官方已确定淘汰旧链”和“graph外层固定、deep内部选择查询”。本次仅记录已解释事实，不据此启用、裁剪、合并或新增测试任务。
+
+**调查设计先评清楚（用户最新强调）：** 在选择/修改编排前，先对比默认Case四节点与graph/deep的目的、输入输出、官方历史依据和四Agent实际价值/限制，见[设计评价](../architecture/investigation-design-review.md)。自动/人工触发和固定/工具循环是两个维度；按固定官方资料可证明多代实现并存，不足以证明必须串跑的互补双层架构。评价结合已有人工R01/自动C2质量失败，不新增模型比较，暂不裁剪/合并原编排。
+
+**当前推进分诊，并细拆调查调用（2026-10-21）：** [分诊工作卡](../architecture/triage.md)先交接支持项/默认、字段与上下文、规则/模型、关闭/升级及真实C1/C2对比；用户进一步要求调查每一步、智能体每次调用都详细讲清。沿[调查说明](../architecture/investigation.md)逐层写触发→节点→模型轮次→工具/服务与参数→结果采用→分支/结束→审计/持久输出，分别说明自动graph、人工四节点及Router/full入口，不能只罗列Agent名。源码支持、当前配置、已实测与缺源/未验分别列；复用已有Run逐调用实例，不为讲解新发模型。先分析并讨论取舍，再做当前功能所需的最小修改/测试；本地先测、阶段发布和可用性专项后置保持。当前无业务代码/运行变更，原15项任务及5/15不变。
+
+**Fusion阶段收口（2026-10-21）：** 已有告警主链的职责、默认规则、输入输出及UEBA真实联合结果已明确，当前可继续下游分诊；结论及限制见[Fusion小结](../architecture/fusion.md#六当前阶段小结可以转入下游分诊)。下一步先梳理fused字段/上下文、规则与模型、关闭/升级条件和逐步审计，再讨论取舍；本次没有开始分诊改造、模型测试或部署。原细化待办是导航，不以全部解决作为前置。
+
+**raw事件支路最新取舍（2026-10-21）：** 规范化事件的生产/规范化、入湖、检测/提升及派生会话/AI资产交其他模块，本轮不展开；已有告警`RawAlert`/`alerts.raw`及其原正文继续作为Fusion输入。事件补查模块只负责查询其他模块提供的数据，UEBA结果消费仍保留，不承担上游事件供给。下文事件支路盘点和full实测作为参考保留，不据此继续安排该支路开发或专项测试；本次不改现有订阅/开关。
+
+**最新简化口径：** 依赖项只交付原功能的使用说明：有哪些功能、必要配置和入口、怎样调用、输入输出是什么；保证基本可用，只补直接接线。UEBA已有说明复用，不再扩写原理或另做专项。下文完整分析卡用于Fusion/调查等后续业务模块，支撑依赖无需逐栏展开；深入改造和复杂测试留到二开，非阻塞问题仅登记，原源码/测试保留。
+
 2026-10-21。按用户最新讨论，把工作粒度收敛到一个有明确业务边界的模块：查清源码职责、依赖、输入输出、配置启动和交接，再决定功能取舍、最小修改和验证。用户举的“UBI”在本文按UEBA理解。本文件细化[唯一总计划](completion-plan.md)及现有B1—B6，不是另一套迁移完成标准或产品任务树。
 
 **最新顺序已明确：先共享支撑能力，UEBA → 威胁情报/IOC → 既有知识库，再进入Fusion → 分诊 → 调查/攻击路径 → Markdown交付。** 本轮先记录整条实施路线和讨论关键点；先前“第一个模块是Fusion”的安排已被本次讨论替代。支撑能力供多处复用，不按某个调用场景各造一份。
+
+**后续执行已获授权：** 用户要求按OpenSpec继续逐模块推进，已有测试保留并按需复用，复杂可用性/冗余问题登记后置。UEBA首项按用户澄清沿上游投喂触发，先明确消息格式及入口，不新增实体名单/滑动窗口；详见[UEBA说明](../architecture/ueba.md)。下文“本次仅规划”为上一轮记录，当前增量以change执行记录为准。
 
 **当前是设计和源码分析记录。** 本次没有修改业务代码、启动服务、启用worker、调用模型或执行功能测试。下文“建议”“待定”“要验证”均不是已交付事实；现有实际状态仍见[PROGRESS](../../PROGRESS.md)和原回执。迁移主链接通与标书功能完整是两个判定：前者有实证，后者仍有调查证据、攻击链和人工复核等差距。
 
@@ -19,7 +37,7 @@
 ## 本次讨论关键点
 
 1. **先规划并记录路线，再实施。** 当前完成路线和支撑能力属性整理；后续每次只展开一个模块，按OpenSpec确定实际变化后实施。
-2. **UEBA是首项。** 配置是重点：针对哪些实体/类型开启，基线时间和样本如何设；再明确输入输出，并用简单例子解释基线偏离。实体名单、特征和真正窗口要求尚待该模块讨论，不默认替用户选定。
+2. **UEBA是首项。** 配置是重点：针对哪些实体/类型开启，基线时间和样本如何设；再明确输入输出，并用简单例子解释基线偏离。用户随后明确本批沿原码，由上游投喂决定参与材料，学清触发格式即可；不新增实体名单和真正窗口功能。已完成的原输入合同见[UEBA说明](../architecture/ueba.md)。
 3. **IOC先做到可查。** 命中/未命中合同清楚即可；暂不以情报数据量和覆盖率作为工作目标，未配置来源不能伪装成已查询。
 4. **知识库用既有资料。** 以用户指出的20上前一版已采集资料为复用目标，实际存储/索引状态待核；本地旧目录及已存盘点作线索。历史经验整理、组织记忆扩建、经验提炼和反馈写回后看，既有源码/读者保留。
 5. **后续围绕告警功能。** 支撑能力合同清楚后，继续Fusion、分诊、自动/人工调查、攻击路径、结果及审计；可用性、冗余和数据规模专项继续暂缓。报告只需Markdown。
@@ -64,7 +82,7 @@
 UEBA提供实体行为基线和偏离信号，供风险与调查参考；它不直接判定告警真假、不直接关闭告警，也不自动创建Case。
 
 - 源码：`services/ueba`；HTTP入口[api/routes.py](../../services/ueba/app/api/routes.py)，计算[scoring.py](../../services/ueba/app/services/scoring.py)，事件提取[feature_extraction.py](../../services/ueba/app/services/feature_extraction.py)。
-- 输入A：`socai2.raw_events.v1`中的原normalized `ocsf_event`信封，或预提取合同`tenant_id/entity_type/entity_id/event_type/features/source_event_id`。现提取优先user，其次device、ip；不要假定同一事件自动给所有实体各算一份。
+- 输入A：`socai2.raw_events.v1`中的原normalized `ocsf_event`信封。UEBA还兼容预提取`tenant_id/entity_type/entity_id/event_type/features/event_id`；其中event_id才映射内部source_event_id，纯预提取格式不满足共享topic中Fusion的ocsf_event要求。现normalized提取优先user，其次device、ip；不要假定同一事件自动给所有实体各算一份。
 - 输入B：认证HTTP `POST /api/v1/ueba/score`，提交实体、数值特征、可选peer/source_event_id；必须绑定tenant。
 - 实际步骤：提取实体/数值特征→按既有个人基线评分→更新基线→如有peer则计算并混合偏离→达到阈值才持久异常。默认最低30样本；方差不足时特征偏离为unknown。无异常可以只是样本不足，不能解释为正常。
 
@@ -135,7 +153,7 @@ Fusion不调用LLM做分诊，不负责完整调查。通用business context读�
 | Neo4j、OpenSearch、Qdrant、LLM | 不作为Fusion直接硬依赖；在调查、知识或TI模块中按真实调用展开 |
 | promotion、native/window detection、session、AI asset | 随包功能保留。部分会随raw_events分支被调用，不能一概写“禁用即绝不运行”；先厘清业务执行边界，不扩建原始检测平台 |
 
-当前最值得澄清的Fusion接缝有两处：UEBA基线读取通过尚未证明异常被Fusion采用；另Lake开启会订阅raw_events，源码该分支无条件调用promoter，所以`event_promotion_enabled=false`目前不足以阻止高危/Finding事件提升。后一问题在固定上游也存在，属于静态发现，尚未用高危样例复现；已有单条Medium事件未提升不能证明开关有效。二者已记[问题登记](upstream-issues.md)，本次不修改代码或运行开关。
+UEBA异常→Fusion采用已由本地原服务＋21真实基础设施联合证明，配置及5例结果见[UEBA第5节](../architecture/ueba.md#5-本地真实联合验证异常带来了什么改变)；21常驻融合仍关闭。Lake开启会订阅raw_events且分支无条件调用promoter，`event_promotion_enabled=false`不能据现有Medium样例证明关闭有效；这项上游静态问题保留在[问题登记](upstream-issues.md)，raw处理交其他模块，本轮不修或复现，不阻塞告警下游分析。
 
 ## 再进入调查：按步骤梳理，不预定合并编排
 
@@ -192,3 +210,5 @@ P为阅读版原文段落号，不是页码。需求见[正文](../requirements/
 本次分析不把所有差距提升为迁移阻塞，不改变旧质量/unknown结论，不启常驻worker，不调整模型预算，也不先建全平台统一编排、事件图平台或人工运营工作台。
 
 文档校验：未参与文档实现者api_auth_review独审ACCEPT；本change strict及本次本地引用检查通过。只确认设计与源码/证据边界相符，不是功能实施通过，记录见[execution](../../openspec/changes/restore-alert-investigation-integrity/execution.md)。
+
+当前调查批次已完成[本地模型/工具实测](investigation-functional-20261021.md)，原四节点、Router、Deep按成功/兜底/部分结果分别交接；两处接口合同最小本地修正未发布，其余质量/可用性问题沿原登记后置，不预定合并编排。

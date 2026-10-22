@@ -6,6 +6,7 @@ AiSOC — open-source AI Security Operations Center (MIT License)
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
@@ -38,12 +39,12 @@ async def upsert_host(
         **(extra or {}),
     }
     cypher = """
-    MERGE (h:Host {id: $id})
+    MERGE (h:Host {id: $id, tenant_id: $tenant_id})
     SET h += $props
     RETURN h.id AS node_id
     """
     async with get_session() as s:
-        await s.run(cypher, id=host_id, props=props)
+        await s.run(cypher, id=host_id, tenant_id=tenant_id, props=props)
 
 
 async def upsert_user(
@@ -65,12 +66,12 @@ async def upsert_user(
         "updated_at": datetime.now(UTC).isoformat(),
     }
     cypher = """
-    MERGE (u:User {id: $id})
+    MERGE (u:User {id: $id, tenant_id: $tenant_id})
     SET u += $props
     RETURN u.id AS node_id
     """
     async with get_session() as s:
-        await s.run(cypher, id=user_id, props=props)
+        await s.run(cypher, id=user_id, tenant_id=tenant_id, props=props)
 
 
 async def upsert_alert_node(
@@ -82,6 +83,11 @@ async def upsert_alert_node(
     host_id: str | None = None,
     user_id: str | None = None,
     ioc_values: list[str] | None = None,
+    *,
+    host_ids: list[str] | None = None,
+    user_ids: list[str] | None = None,
+    source_alert_id: str | None = None,
+    tenant_scoped_iocs: bool = False,
 ) -> None:
     """Create Alert node and link it to related entities."""
     alert_props = {
@@ -91,65 +97,89 @@ async def upsert_alert_node(
         "severity": severity,
         "created_at": datetime.now(UTC).isoformat(),
     }
+    if source_alert_id:
+        alert_props["source_alert_id"] = source_alert_id
+        alert_props["evidence_kind"] = "source_alert_reported_association"
 
     async with get_session() as s:
         # Upsert Alert node
         await s.run(
-            "MERGE (a:Alert {id: $id}) SET a += $props",
+            "MERGE (a:Alert {id: $id, tenant_id: $tenant_id}) SET a += $props",
             id=alert_id,
+            tenant_id=tenant_id,
             props=alert_props,
         )
 
         # Link to Host
-        if host_id:
+        for linked_host in dict.fromkeys(([host_id] if host_id else []) + (host_ids or [])):
             await s.run(
                 """
-                MATCH (a:Alert {id: $alert_id})
-                MERGE (h:Host {id: $host_id})
-                MERGE (a)-[:OBSERVED_ON]->(h)
+                MATCH (a:Alert {id: $alert_id, tenant_id: $tenant_id})
+                MERGE (h:Host {id: $host_id, tenant_id: $tenant_id})
+                MERGE (a)-[r:OBSERVED_ON]->(h)
+                SET r.source_alert_id = $source_alert_id
                 """,
                 alert_id=alert_id,
-                host_id=host_id,
+                host_id=linked_host, tenant_id=tenant_id, source_alert_id=source_alert_id or alert_id,
             )
 
         # Link to User
-        if user_id:
+        for linked_user in dict.fromkeys(([user_id] if user_id else []) + (user_ids or [])):
             await s.run(
                 """
-                MATCH (a:Alert {id: $alert_id})
-                MERGE (u:User {id: $user_id})
-                MERGE (a)-[:INVOLVES_USER]->(u)
+                MATCH (a:Alert {id: $alert_id, tenant_id: $tenant_id})
+                MERGE (u:User {id: $user_id, tenant_id: $tenant_id})
+                MERGE (a)-[r:INVOLVES_USER]->(u)
+                SET r.source_alert_id = $source_alert_id
                 """,
                 alert_id=alert_id,
-                user_id=user_id,
+                user_id=linked_user, tenant_id=tenant_id, source_alert_id=source_alert_id or alert_id,
             )
 
         # Link to MITRE Techniques
         for technique_id in mitre_techniques or []:
             await s.run(
                 """
-                MATCH (a:Alert {id: $alert_id})
+                MATCH (a:Alert {id: $alert_id, tenant_id: $tenant_id})
                 MERGE (t:Technique {technique_id: $technique_id})
                 SET t.updated_at = $ts
-                MERGE (a)-[:MAPS_TO]->(t)
+                MERGE (a)-[r:MAPS_TO]->(t)
+                SET r.source_alert_id = $source_alert_id
                 """,
                 alert_id=alert_id,
+                tenant_id=tenant_id, source_alert_id=source_alert_id or alert_id,
                 technique_id=technique_id,
                 ts=datetime.now(UTC).isoformat(),
             )
 
         # Link to IOCs
         for ioc_val in ioc_values or []:
+            if tenant_scoped_iocs:
+                # IOC.value has a legacy global uniqueness constraint. New
+                # tenant-owned projections use id and keep the raw indicator
+                # separately; no legacy node or constraint is rewritten.
+                await s.run(
+                    "MATCH (a:Alert {id: $alert_id, tenant_id: $tenant_id}) "
+                    "MERGE (i:IOC {id: $ioc_id, tenant_id: $tenant_id}) "
+                    "SET i.indicator_value = $ioc_val, i.source_alert_id = $source_alert_id "
+                    "MERGE (a)-[r:CONTAINS_IOC]->(i) SET r.source_alert_id = $source_alert_id",
+                    alert_id=alert_id, tenant_id=tenant_id, ioc_val=ioc_val,
+                    ioc_id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"aisoc:reported:{tenant_id}:ioc:{ioc_val}")),
+                    source_alert_id=source_alert_id or alert_id,
+                )
+                continue
             await s.run(
                 """
-                MATCH (a:Alert {id: $alert_id})
-                MERGE (i:IOC {value: $ioc_val})
-                SET i.tenant_id = $tenant_id, i.updated_at = $ts
-                MERGE (a)-[:CONTAINS_IOC]->(i)
+                MATCH (a:Alert {id: $alert_id, tenant_id: $tenant_id})
+                MERGE (i:IOC {value: $ioc_val, tenant_id: $tenant_id})
+                SET i.updated_at = $ts
+                MERGE (a)-[r:CONTAINS_IOC]->(i)
+                SET r.source_alert_id = $source_alert_id
                 """,
                 alert_id=alert_id,
                 ioc_val=ioc_val,
                 tenant_id=tenant_id,
+                source_alert_id=source_alert_id or alert_id,
                 ts=datetime.now(UTC).isoformat(),
             )
 
@@ -172,20 +202,23 @@ async def upsert_case_node(
 
     async with get_session() as s:
         await s.run(
-            "MERGE (c:Case {id: $id}) SET c += $props",
+            "MERGE (c:Case {id: $id, tenant_id: $tenant_id}) SET c += $props",
             id=case_id,
+            tenant_id=tenant_id,
             props=case_props,
         )
 
         for alert_id in alert_ids or []:
             await s.run(
                 """
-                MATCH (c:Case {id: $case_id})
-                MERGE (a:Alert {id: $alert_id})
-                MERGE (c)-[:CONTAINS_ALERT]->(a)
+                MATCH (c:Case {id: $case_id, tenant_id: $tenant_id})
+                MERGE (a:Alert {id: $alert_id, tenant_id: $tenant_id})
+                MERGE (c)-[r:CONTAINS_ALERT]->(a)
+                SET r.source_alert_id = $alert_id
                 """,
                 case_id=case_id,
                 alert_id=alert_id,
+                tenant_id=tenant_id,
             )
 
 
@@ -232,15 +265,16 @@ async def get_attack_path(case_id: str, tenant_id: str, max_depth: int = 6) -> d
         relationshipFilter: 'CONTAINS_ALERT>|OBSERVED_ON>|INVOLVES_USER>|CONTAINS_IOC>|MAPS_TO>'
     })
     YIELD nodes, relationships
+    WITH [n IN nodes WHERE n.tenant_id = $tenant_id OR n:Technique OR n:Tactic OR n:Mitigation] AS nodes, relationships
     RETURN
         [n IN nodes | {
             id: coalesce(n.id, n.value, n.technique_id),
             label: labels(n)[0],
             properties: properties(n)
         }] AS nodes,
-        [r IN relationships | {
-            source: startNode(r).id,
-            target: endNode(r).id,
+        [r IN relationships WHERE startNode(r) IN nodes AND endNode(r) IN nodes | {
+            source: coalesce(startNode(r).id, startNode(r).value, startNode(r).technique_id),
+            target: coalesce(endNode(r).id, endNode(r).value, endNode(r).technique_id),
             type: type(r)
         }] AS edges
     """
@@ -302,10 +336,11 @@ async def _attack_path_fallback(case_id: str, tenant_id: str) -> dict[str, Any]:
         for aid in alert_ids:
             r3 = await s.run(
                 """
-                MATCH (a:Alert {id: $aid})-[rel]->(n)
+                MATCH (a:Alert {id: $aid, tenant_id: $tenant_id})-[rel]->(n)
+                WHERE n.tenant_id = $tenant_id OR n:Technique OR n:Tactic OR n:Mitigation
                 RETURN n, type(rel) AS rel_type, labels(n)[0] AS label
                 """,
-                aid=aid,
+                aid=aid, tenant_id=tenant_id,
             )
             async for record in r3:
                 n = dict(record["n"])
@@ -372,7 +407,9 @@ async def get_blast_radius(entity_id: str, entity_type: str, tenant_id: str, hop
         "alert": "Alert",
     }
     label = label_map.get(entity_type.lower(), "Host")
-    id_prop = "value" if label == "IOC" else "id"
+    anchor_match = f"(start:{label})"
+    extra_props = {"Host": ("hostname",), "User": ("username",), "IOC": ("value", "indicator_value")}.get(label, ())
+    ioc_match = "AND (" + " OR ".join(f"start.{prop} = $entity_id" for prop in ("id", *extra_props)) + ")"
 
     # Every node of every path is scoped, not just the start node. Filtering
     # only `start` let the APOC expansion walk out through a shared entity —
@@ -380,8 +417,8 @@ async def get_blast_radius(entity_id: str, entity_type: str, tenant_id: str, hop
     # tenant's hosts and users, returning their full properties. Blast radius
     # is exactly the query an attacker would want for reconnaissance.
     cypher = f"""
-    MATCH (start:{label} {{{id_prop}: $entity_id}})
-    WHERE {_scoped("start")}
+    MATCH {anchor_match}
+    WHERE {_scoped("start")} {ioc_match}
     CALL apoc.path.expandConfig(start, {{
         maxLevel: $hops,
         bfs: true,
@@ -474,7 +511,9 @@ async def _blast_radius_fallback(entity_id: str, entity_type: str, tenant_id: st
     """Simple 2-hop blast radius without APOC."""
     label_map = {"host": "Host", "user": "User", "ioc": "IOC", "alert": "Alert"}
     label = label_map.get(entity_type.lower(), "Host")
-    id_prop = "value" if label == "IOC" else "id"
+    anchor_match = f"(start:{label})"
+    extra_props = {"Host": ("hostname",), "User": ("username",), "IOC": ("value", "indicator_value")}.get(label, ())
+    ioc_match = "AND (" + " OR ".join(f"start.{prop} = $entity_id" for prop in ("id", *extra_props)) + ")"
 
     # Scoped the same way as the APOC path above. Previously `start` had no
     # tenant predicate at all, the intermediate nodes of the variable-length
@@ -482,8 +521,8 @@ async def _blast_radius_fallback(entity_id: str, entity_type: str, tenant_id: st
     # endpoint — so an untagged node bridged straight into another tenant's
     # estate. Binding the path lets us assert every node on it.
     cypher = f"""
-    MATCH (start:{label} {{{id_prop}: $entity_id}})
-    WHERE {_scoped("start")}
+    MATCH {anchor_match}
+    WHERE {_scoped("start")} {ioc_match}
     MATCH path = (start)-[*1..{hops}]-(n)
     WHERE all(pn IN nodes(path) WHERE {_scoped("pn")})
     RETURN COLLECT(DISTINCT {{
@@ -536,7 +575,9 @@ async def get_entity_neighbors(
     """Return immediate neighbors of a node (depth 1)."""
     label_map = {"host": "Host", "user": "User", "ioc": "IOC", "alert": "Alert", "case": "Case"}
     label = label_map.get(entity_type.lower(), "Host")
-    id_prop = "value" if label == "IOC" else "id"
+    anchor_match = f"(n:{label})"
+    extra_props = {"Host": ("hostname",), "User": ("username",), "IOC": ("value", "indicator_value")}.get(label, ())
+    ioc_match = "AND (" + " OR ".join(f"n.{prop} = $entity_id" for prop in ("id", *extra_props)) + ")"
 
     # This function accepted `tenant_id` and never bound or used it: the query
     # had no tenant predicate and the parameter was not even passed to
@@ -544,8 +585,8 @@ async def get_entity_neighbors(
     # or IOC node and all of its neighbours, with full node properties, just by
     # naming the id. Both the anchor node and each neighbour are now scoped.
     cypher = f"""
-    MATCH (n:{label} {{{id_prop}: $entity_id}})
-    WHERE {_scoped("n")}
+    MATCH {anchor_match}
+    WHERE {_scoped("n")} {ioc_match}
     MATCH (n)-[r]-(neighbor)
     WHERE {_scoped("neighbor")}
     RETURN

@@ -32,6 +32,7 @@ import math
 import os
 import re
 import time
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -266,6 +267,7 @@ LLM_SAFE_KEYS = (
     "build_latency_ms",
     "sources_called",
     "errors",
+    "attack_context_summary",
 )
 
 
@@ -316,6 +318,7 @@ class ContextBundle(BaseModel):
     peer_baselines: dict[str, UEBABaseline] = Field(default_factory=dict)
     threat_intel: dict[str, ThreatIntelMatch] = Field(default_factory=dict)
     incident_context: IncidentContextDimensions = Field(default_factory=IncidentContextDimensions)
+    attack_context: dict[str, Any] = Field(default_factory=dict)
 
     # Memory (institutional tier) recall.
     historical_similar_cases: list[HistoricalCase] = Field(default_factory=list)
@@ -346,6 +349,7 @@ class ContextBundle(BaseModel):
             or self.threat_intel
             or self.historical_similar_cases
             or self.incident_context.has_content
+            or self.attack_context
         )
 
     def prompt_context_lines(self) -> list[str]:
@@ -366,6 +370,11 @@ class ContextBundle(BaseModel):
             return []
         s = self.summary_for_llm()
         parts: list[str] = ["", "Pre-fetched investigation context (ContextBundle):"]
+        # Keep the exact bounded chain/graph summary early enough that the
+        # existing overall prompt append bound does not hide it behind other
+        # dimensions. Full source results stay in the Run's artifacts.
+        if s.get("attack_context_summary"):
+            parts.append(s["attack_context_summary"])
         if self.errors:
             parts.append("- Context lookups were partial or unavailable: " + ", ".join(self.errors[:10])
                          + ". Missing evidence is unknown, not proof of no relationships, activity or risk.")
@@ -460,6 +469,7 @@ class ContextBundle(BaseModel):
             "build_latency_ms": self.build_latency_ms,
             "sources_called": sorted(self.sources_called),
             "errors": self.errors[:5],
+            "attack_context_summary": str(self.attack_context.get("model_summary") or ""),
         }
 
 
@@ -543,6 +553,11 @@ class ContextBundleBuilder:
         tenant_id = str(getattr(state, "tenant_id", "default"))
         alert_summary = getattr(state, "alert_summary", "") or ""
         raw_alert = getattr(state, "raw_alert", {}) or {}
+        from app.context.attack_context import enabled as attack_context_enabled, fetch_attack_context, model_summary, _unavailable
+
+        attack_requested = attack_context_enabled()
+        case_id = getattr(state, "case_id", None)
+        alert_id = getattr(state, "alert_id", None)
 
         bundle = ContextBundle(
             incident_id=incident_id,
@@ -581,10 +596,33 @@ class ContextBundleBuilder:
                 self._fetch_incident_context(tenant_id, raw_alert),
                 bundle,
             ),
+            # Preparation belongs to the broker/Case entry. Preserve the
+            # existing attack-context cutoff; other sources retain theirs.
+            *([self._safe("attack_context", fetch_attack_context(
+                tenant_id, case_id=case_id, alert_id=alert_id,
+            ), bundle, timeout=22.0)] if attack_requested else []),
             return_exceptions=False,
         )
 
-        neigh_result, history_result, ueba_result, ti_result, ctx_result = results
+        neigh_result, history_result, ueba_result, ti_result, ctx_result = results[:5]
+        if attack_requested:
+            bundle.attack_context = (results[5] if isinstance(results[5], dict)
+                                     else _unavailable(tenant_id, case_id, alert_id, "attack_context_lookup_unavailable"))
+            preparation = raw_alert.get("attack_context_preparation")
+            same_tenant = isinstance(preparation, dict) and str(preparation.get("tenant_id")) == tenant_id
+            case_prepared = same_tenant and case_id and str(preparation.get("case_id")) == str(case_id)
+            alert_prepared = (same_tenant and alert_id and preparation.get("scope") == "alert"
+                              and str(preparation.get("alert_id")) == str(alert_id)
+                              and preparation.get("owner") == "kafka_consumer")
+            if case_prepared or alert_prepared:
+                # Preserve entry preparation independently of GET query facts.
+                owner = "kafka_consumer" if preparation.get("owner") == "kafka_consumer" else "case_api"
+                bundle.attack_context["prepare"] = {**deepcopy(preparation), "owner": owner}
+                bundle.attack_context["model_summary"] = model_summary(bundle.attack_context)
+            for name in ("attack_chain", "attack_path", "alert_graph"):
+                part = bundle.attack_context.get(name) or {}
+                if part.get("status") in {"unavailable", "error"}:
+                    bundle.errors.append(f"attack_context:{name}:{part.get('error') or 'unavailable'}")
         if isinstance(neigh_result, dict):
             bundle.entity_neighborhoods = neigh_result
         if isinstance(history_result, list):
@@ -939,11 +977,11 @@ class ContextBundleBuilder:
     # Helpers
     # ------------------------------------------------------------------
 
-    async def _safe(self, name: str, coro: Any, bundle: ContextBundle) -> Any:
+    async def _safe(self, name: str, coro: Any, bundle: ContextBundle, *, timeout: float | None = None) -> Any:
         """Run ``coro`` with a per-source timeout; record errors instead of raising."""
         bundle.sources_called.append(name)
         try:
-            return await asyncio.wait_for(coro, timeout=self.per_source_timeout)
+            return await asyncio.wait_for(coro, timeout=self.per_source_timeout if timeout is None else timeout)
         except TimeoutError:
             bundle.errors.append(f"{name}:timeout")
             return None

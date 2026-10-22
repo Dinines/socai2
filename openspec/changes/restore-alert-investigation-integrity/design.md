@@ -1,3 +1,95 @@
+## 2026-10-22 Kafka入口有界真实联合观察
+
+直接合同完成后，补一个当前接点的真实存储观察，不扩业务回归。独立topic/group接收一个新合成fused信封，PG提前保存对应同tenant Alert；不重跑Fusion。Conda本地原worker.start及原schema/prepare，向本地只挂原graph路由的API发HTTP；API正常认证读取21 PG并写21 Neo4j，不跳过schema/权限或用假图驱动。
+
+writer为新本地SECRET_KEY签发的五分钟JWT，按既有合成活跃用户的PG角色/权限认证；reader为另一本地随机七权限服务身份。它们只对本地API有效，不创建21 API key或更改既有身份。保真实LiveShadowModePolicy，禁写策略不可用时不改成假策略。
+
+仅triage入口使用观察接缝：build_state取内部准备回执，读真实Neo4j锚点邻域后主动BudgetHold；原worker拒绝提交并退出，观察不假造分诊结果。核Alert邻域5节点/4关系（Technique可已存在）、无Case边、七RO POST403、GET可读、group未提交；分诊/模型/Run/关闭未执行，finally停止本地子进程。失败、环境补依赖及实际写入数量原样登记；生产代码和部署配置不因探针而改。
+
+## 2026-10-22 Kafka消费入口统一准备告警图
+
+写入触发从可选Alert上下文预取移到FusedAlertTriageWorker._process_with_retry：schema通过后，每次delivery准备一次，再进入原triage及其重试。以_broker_identity取得tenant/canonical Alert，API按PG真实归属读取并投影；不使用消息里的任意图数据或Fusion incident冒充Case。用现有ContextVar隔离并传递回执，build_state仅接受匹配tenant/alert的内部回执，finally复位；信封/模型不能伪造准备成功。
+
+prepare沿AISOC_ATTACK_CONTEXT_ENABLED和独立AISOC_INVESTIGATION_PREPARE_KEYS_FILE，不能借七权限reader写图；review-only、非live writer或tenant shadow禁写保持。HTTP200还须核顶层及projection内部tenant/alert/scope和状态，成功须包含本次source_alert_id。缺配置/政策禁写/异常明确记录，继续原分诊规则，不改原提交/坏消息DLQ与预算保护。这里只保证有配置且成功准备的本次投影，不宣称故障后自动补齐全量图。
+
+fetch_attack_context只GET，自动Graph/Deep不再二次POST；Bundle将本次入口回执随实际查询分开保存到原Run三工件。人工Case的可信API准备不改。API _anchor内部保留已核requested_alert，显式Alert准备只投这一条；解析到真实Case则upsert该Case与当前Alert边，既有边不删。显式Case准备仍保原50条上限，不扩全量回填。
+
+最少直接验证：schema拒绝无POST、准备先于抑制/恢复/关闭/升级、内部重试仅一次POST、tenant/canonical及writer认证、纯GET与回执消费、无配置/foreign回复/只读profile/shadow不写、当前Alert在Case前50之外仍投影。复用必要现有worker/context/API组，不新发模型、启常驻或修改Fusion，不做可用性矩阵。结束由未参与实现者审查并保留本地增量版本。
+
+## 2026-10-21外部HTTP数据接口与Tool验证（仅设计，未实施）
+
+用户要求先讨论第三方检索输入输出，随后明确重点是厂商已有HTTP数据接口，及自己设计Tool怎样接入、怎样证明正确执行。本增量形成docs/architecture/third-party-search-contract.md及导航，沿2.1/4.1交接；内部UnifiedQuery由adapter转厂商原GET/POST，不要求厂商改接口或实现全部算子。给出条件/字段/认证/时间/返回映射和注册→结构调用→fn→真实HTTP→ToolMessage→下一轮输入的验证判据，固定调用/脚本模型证明接线，真实模型选择按需另验。
+
+本轮只设计与文档，不创建已交付业务规格，不改现有API/模型schema/业务源码/配置，不实现或运行Tool/HTTP替身，不连接厂商/发模型/部署。窗口、上游截断、事件ID和call id未贯穿HTTP等当前接缝明确保留。未来实施须先补必要规格/设计/任务，本轮不授权实施；原5/15、worker OFF及旧证据保持。
+
+## 2026-10-21工具文档增量（已完成，仅文档）
+
+用户要求把当前Tool目录、设计、执行、配置和测试方法落到仓库文档，并以“本地没有实际SIEM，假设第三方开放HTTP接口”为完整配置/测试示例。沿本change 2.1/4.1维护交接，不新增产品任务或业务规格；本增量仅文档，无代码、接口行为、运行配置或部署变更，不将本业务change改成skip_specs。
+
+主入口docs/operations/investigation-tools.md，精确目录docs/architecture/investigation-tool-catalog.md，SIEM示例docs/operations/siem-tool-integration.md；含用户追加的Elastic/Sentinel统一条件→ES|QL/KQL→HTTP→返回映射说明。复用当前源代码和有效历史测试/实测，区分16内置/客户/MCP、固定查询与Deep模型选择、占位与缺源、已配置与实际查询、示例与已执行。原预处理文档对Bundle等过时表述只做必要订正。文档引用/示例语法及OpenSpec strict通过，未参与本轮编写者结束独审ACCEPT，见execution/audit；不发模型/HTTP/外部查询、不启worker/复放Run、不做复杂可用性测试或发布。原5/15保持，不归档。
+
+## 2026-10-21链/图接入开始实施（本地，不发布）
+
+用户已明确按既定计划实施、保原算法/流程，本地测通后用一个完整新告警案例解释逐步输入/输出/读取，复杂可用性后置，暂不发布。本次授权覆盖此前“仅规划”限制；原任务2.1/3.1/3.4/4.1记录本批成果，不预先勾完整任务或归档。
+
+必要接口接缝具体化：除计划中的Alert薄链入口，沿graph路由增GET investigation-context读取同tenant链/图资料，增POST同路径仅作有权限的确定性定向投影；复用原算法/upsert/查询，无新表或通用框架。Case调查POST在可信API内投影后启动原编排；自动Alert可用单独配置的tenant写入凭据调用受限prepare，模型及永久七权限只读身份不获写权限。读取与写入凭据分开，缺写凭据明确未投影/回退，不借GET隐式写Neo4j。新接线以AISOC_ATTACK_CONTEXT_ENABLED显式开启，本地开启、现21常驻配置保持。
+
+API返回统一的有界attack_context：明确Case/Alert锚点、原链、CasePath或Alert邻居/影响范围、source/status/error/查询范围；Agents Bundle显式采用，默认/Router/Deep原模型调用不增加固定步骤，按Run保存attack_chain/attack_path（Alert图另型）工件及实际摘要。真实验证只用本批新Case/三告警和必要控制，优先跑默认四节点一个完整案例，最多4次模型请求、每次completion2048/SDK retry0/45秒；失败不自动重试。必要直接测试覆盖其他消费接缝，不跑三套模型矩阵。旧失败/unknown、算法、预算、工作者开关与正式topic保持，无部署/Git提交推送/厂商动作。
+
+## 最新规划：攻击链/Attack Path接入调查（2026-10-21）
+
+用户本轮要求规划，并询问是否只是既有功能未开启。已核原算法/查询/图写入函数和配置都有，但固定原版及当前Case/告警业务均未自动调用图投影；Router/Deep与Case路径材料也未完整交接。不是只翻开关，也不是迁移时删掉已有自动图逻辑。详细实施顺序与最少验证见[专项计划](../../../docs/operations/attack-chain-path-integration-plan.md)。
+
+沿原2.1/3.1/3.4/4.1及B5：先已有Case/同tenant输入与可信PG材料，调查准备阶段定向复用upsert补图，原Attack Chain/Path预取一次，有界摘要进入默认/Router/Deep实际模型消息，原G4复用材料；按Run事件/工件与Markdown交付。不合并编排、不改链评分/时间默认、不新建raw采集或图平台，不新增固定模型调用。直接缺口只修Case/Alert/tenant交接、当前投影的节点/边ID和来源状态合同。模型不可写图，原写接口权限不扩大。
+
+本批先Case调查，再接自动Alert起点：无Case或Case关联有歧义时，候选链通过计划中的薄Alert读取入口调用原seed算法，图上下文复用已有Alert邻居/影响范围；Case专用路径明确not_linked，不伪造Case/改写旧Run。薄入口是本次明确的必要接线增量，不称已有开关。计划规定代表三告警Case、原直接测试、一个代表真实模型消费及按Run读取；复杂恢复/冗余/压力、全库回填及模型质量矩阵后置。
+
+**当前仅规划和只读源码核对**，未改业务代码、开关、写数据库/图、发模型或部署；原5/15不变，不创建另一套产品任务树、不归档未完成change。此前78项和31995tokens是上批实测，不能用于追认本计划实现。
+
+本批默认调查另真实复现单项IOC增强HTTP400：Agents发送type，原Go服务要求ioc_type。沿3.1同批只修这一请求字段（保原工具签名/返回/固定增强流程），复用已有直接工具测试并以一个保留文档域名经现有无provider服务验证HTTP合同；不重跑模型、不改IOC提取算法、默认端口或开启厂商来源。原400及报告保持，单项/批量增强分别记录。
+
+### 本地实测发现的最小功能修正
+
+本批Deep真实请求已穿过认证/API到ClickHouse；authentication_events原SQL以IPv6列source_ip比较空字符串，真实query_log确认CANNOT_PARSE_IPV6。沿3.1/4.1仅修该参数化查询与IPv6空值合同，复用原直接测试并追加该SQL回归；不改表/算法/占位后端、不部署。模型旧结果不重调，本地原查询函数借21已有只读湖仓验证一次新查询；其余缺源/预算和质量问题记录后置。
+
+## 最新增量：调查模块本地功能实测（2026-10-21）
+
+用户已要求开始测试，并同意真实部署样例、公开案例和新隔离样例均可使用。本增量覆盖此前“仅文档/不发模型”的阶段限制，沿原2.1/3.3/3.4/4.1记录，不新增产品任务树或预先勾完成。先复用Router 12项及Deep 8项直接测试，再本地运行原默认四节点、Router与Deep各一次，使用21既有模型网关及只读查询服务，保存各步真实可见输入/输出、工具请求/返回、usage与Markdown；不把替身测试当真实模型/工具证明。
+
+20仅有已调查的Golden pipeline样例，本次只作历史对照，不重调。公开事件只取官方叙述事实，测试实体/字段明确标为派生或合成，不伪称原始日志。三种路径先用三条新输入；Router首例因明确lab来源在分诊即关闭，另加一次独立公开事件叙述以观察领域分支，四个新Run累计最多16次模型回复，每次completion沿原2048上限，SDK测试进程显式retry=0/timeout=45秒，Deep沿原6轮/120秒及20k预算接缝；累计观察usage达60k即不开始后续路径。所有执行逐路径串行，不为得到预期答案重调。无DATABASE_URL的本地组件测试只保存本地工件，不声称新增生产Case/Run持久或Kafka自动触发已验；原主链证据另引用。
+
+不改常驻worker、部署、正式topic或旧unknown/积压，不做厂商动作、全链恢复/可用性矩阵、PDF/HTML专项。仅准备一次性观察脚本，不改变业务源码；如发生当前主功能阻塞，按原change先记录最小差异再修。结束做一次未参与实现者审计，保留本地版本，按阶段发布，不自动提交/推送Git。
+
+## 当前分诊与调查分析的实施切分（2026-10-21）
+
+用户追加要求预处理、工具决策/执行及每次模型目的/输入/输出详述，交付[专篇](../../../docs/architecture/investigation-preprocessing-tools.md)：按真实入口投影/字段裁剪、固定查询、Router代码领域路由和Deep结构化tool_calls分开；逐模型表与静态JSON/HTTP/ToolMessage示例用于解释，不冒充新实测。Case嵌套/真实时间默认/参数校验边界仅记录，未决定改变输入或新增框架。当前无规格级行为变化，沿2.1/4.1分析交接，原任务及运行保护保持。
+
+本轮讨论澄清同步至调查说明/评价：Case `/investigate`用Router开关二选一，Kafka graph/deep保持独立；Router专业分支一次领域模型，不内含旧四节点，其确定性响应摘要/报告不能作完整取证/响应计划等价替换。graph外层控制仍固定，模型主要在deep内部选择查询。固定官方未找到旧四节点弃用计划，不据演进先后预定替代/裁剪。本增量仅说明原实现，无新合同、实现、配置或完成承诺。
+
+用户最新强调调查设计本身很重要：[专项评价](../../../docs/architecture/investigation-design-review.md)对比默认Case四节点与graph/deep目的、输入输出及四Agent的分工价值/限制，并核固定官方路线/变更日志/Case文档。将官方陈述、当前调用和工程推断分开；证据支持演进并存，不将自动/人工等同两套必须串跑的架构，不由文档设计意图追认实测质量。当前先分析，不实施合并/裁剪或新模型比较。
+
+Fusion阶段后先交接[分诊](../../../docs/architecture/triage.md)的实际字段、规则/模型、策略关闭和升级，按原支持/默认/当前配置/实证分别列；不预定接入所有Fusion字段或按route_to切换编排。调查按[逐调用说明](../../../docs/architecture/investigation.md)区分自动post-triage graph、默认人工四节点及Router/full；每步明确触发、实际输入、模型角色/可见提示、工具服务/查询参数、返回采用、分支循环与结束、审计/持久落点。可变deep调用用原C2的真实逐轮记录举例，不把六轮上限当固定六阶段，不索取隐藏推理。
+
+推进顺序为原机制交接→共同功能取舍→只针对确定差异的最小修改→复用直接测试/必要本地联动→一次结束独审和本地版本→阶段发布。当前仅前一项分析/规划，不做业务修改、测试/模型、线上核验或发布；新行为届时补现有规格/设计，沿原15任务记录，不先增加全入口测试、通用审计框架或可用性矩阵。原报告/预算/partial失败与未部署源码修正分别标明，不能由本次说明追认为已通过。
+
+## 此前真实联合验证（2026-10-21）
+
+**用户最新执行位置与发布节奏覆盖下文初案：** UEBA/Fusion原源码在本地进程运行，连接21已有PG/Redis/Kafka做真实联合验证；不在21启动临时业务实例、不上传本地源码。通过后先保留本地版本/测试回执，需要时构建本地镜像；按阶段统一发布，不因每次更新或测试通过自动部署21。本批无发布操作。下文临时Fusion/UEBA均改指本地独立进程，独立topic/group及原样本/真实结果核对方案保持。
+
+用户明确要求联合验证，补原8个内存边界例子未覆盖的UEBA实际评分→真实Kafka→Fusion。仅在21运行已有UEBA/Fusion镜像及原类，不上传本地业务源码、不改常驻容器/全局Agents开关。使用已有受控测试tenant A、三个唯一实体和独立短期topic/group；以原BaselineService.update为每实体录入30个80/120交替样本，再各经原UEBA Kafka消费者处理一个outlier，验证medium/high/critical真实PG异常及消息、Fusion缓存和真实告警保存/发布。正常控制和关闭联动控制各一条，所有source ID新建，不重放旧unknown或正式topic。
+
+临时Fusion显式禁用raw归档/提升/检测及不相关RBA/chain/prior，使用原真实PG/Redis/Kafka配置和既有只读CA；临时UEBA只订阅本批输入。真实数据以本批前缀和ID留证，不对旧记录计数/冻结或清理；完成后移除临时容器及含凭据的临时环境文件，保留可核对结果。不得用直接写假异常或调用HTTP score代替原Kafka消费者真实生成/发布，不扩到模型或长期可靠性专项。
+
+## 当前UEBA/Fusion联动例子（2026-10-21）
+
+用户已要求实际跑几例联动评分，并写清加分与开启/关闭配置。本批沿2.1/4.1增加最少功能验证：关闭、开启无信号、medium/high/critical、多实体取最高、跨tenant及实体不匹配，共8个例子；复用原10项UEBA信号测试，不扩可用性或长期基线专项。例子运行原FusionWorker异常消息分支→UebaSignalCache→FusionEngine及原启发式/置信度，PG/Redis/Kafka交付使用已有内存边界；不得写成真实broker、常驻启用或UEBA新异常生成已验。原计划上传源码至21隔离容器被自动审批以私有源码跨主机传输拒绝，未执行；改用本地临时venv和公开依赖，不上传源码、不连接业务服务、不改21常驻配置、不发模型或正式业务输入。文档记录实际分数及配置应用/续期/先后顺序边界，原代码和旧证据保持。
+
+## 当前UEBA增量：按上游投喂触发
+
+用户澄清按原设计由上游决定哪些事件/实体送入UEBA，本批只讲清触发格式和配置接缝，不新增实体名单控制或滑动窗口算法。当前共享输入topic是`socai2.raw_events.v1`，主接入样例使用含`tenant_id/event_id/ocsf_event`的v1信封；UEBA从user→device→ip固定择一，提取数值特征后按旧基线评分并更新。纯预提取消息是UEBA原兼容合同，`event_id`映射为内部source_event_id，但同一共享topic的Fusion要求ocsf_event，不能将其当共享流的通用消息。
+
+直接HTTP `/api/v1/ueba/score`由调用方给`entity_type/entity_id/features/source_event_id`，需要原服务认证与tenant绑定，只评分/持久，不发布Kafka异常。说明包含正确JSON实例及基线/异常输出，保留冷启动unknown、累计统计和现有算法；原122项/基线消费回执复用，新说明仅作必要的零服务解析核对，无新复杂测试/框架。细节见[UEBA模块说明](../../../docs/architecture/ueba.md)。
+
 ## 2026-10-21二开分析方式（最新）
 
 按用户最新说明，本轮先规划并记录整条路线及讨论点，后续先共享支撑能力：UEBA → 威胁情报/IOC → 20上一版既有知识库，再进入Fusion → 分诊 → 调查/攻击路径 → Markdown交付。UEBA重点实体启用及基线/时间参数、输入输出、偏离算法；IOC先做命中/未命中查询，暂不考虑数据量；知识库历史经验后看。基础属性表、工作卡及纪要见[逐模块设计](../../../docs/operations/module-review-plan.md)，顺序表见[总计划](../../../docs/operations/completion-plan.md)。当前仅规划/只读核对，不改变运行、业务合同或15项完成状态；具体新行为在模块范围明确后按OpenSpec实施，不合并原编排或新增全平台前置。
@@ -65,3 +157,20 @@ C2技术材料成立而质量失败，保留原Run/判据并停止后续输入�
 原六轮cap不抬高；最后ToolMessage不是模型结论，达到cap或预算时交付partial/未知并保留实际已发生的调用和用量。复用原CostTracker及graph预算，把实际模型用量接原governor；已返回的一次reply可以跨越剩余额度，随后立即停止，不能继续下一模型/工具调用。原始分诊快照与graph结果/增量继续分开，旧Run不回填。只补本次变动的直接测试，由未参与实现者审计；不新建恢复框架或全来源专项。
 
 关闭兜底finding修正仅涉及原因文案：不在原可关闭类别时明确类别原因，只有真实低于实际tenant阈值才写小于；关闭决策、策略阈值及保护不变。默认报告candidate05是独立的两文件投影修复，不与这些尚未发布的graph/deep变更混同。
+## 依赖项交付简化（最新）
+
+用户明确依赖保持原设计，当前仅要求基本功能可用以及“有哪些功能、如何使用”的简要说明（必要配置、入口/样例、输入输出）。复用已完成UEBA说明和既有运行证据，不再增加依赖原理分析、算法改造、复杂测试或专门设计；只处理阻碍实际使用的接线，其他问题登记后置，原代码/测试/保护保留。详细改造在后续二开时再做；本次不新增业务合同、任务或运行操作。
+
+## 当前依赖增量：TI/IOC与KB使用说明
+
+按用户简化要求，仅补[依赖使用说明](../../../docs/operations/dependency-usage.md)，复用full已有查询/接口与知识读取证据，不改API/算法/部署、不新增规格级行为或测试任务。20仅只读确认原项目文档KB表为空及相关Qdrant集合存在，不读取正文、导入或调用模型。原TI OS搜索没有tenant过滤的实际边界只登记，不把认证头当私有隔离；本轮按共享公开情报入口说明，原租户PG路径保持。后续进入Fusion，遇实际使用阻塞再按已有任务处理。
+## Fusion当前讨论范围：先解释原功能
+
+用户进一步明确，先弄明白Fusion到底做什么，再共同讨论需要/不需要哪些功能。[功能说明](../../../docs/architecture/fusion.md)仅盘点已有告警主链、normalized事件支路和辅助接口，解释身份/关联/评分/候选链/Case边界及输入输出。本轮不预定promotion修复、UEBA启用或任何删除/改造，不修改行为或运行；取舍明确后再写对应最小设计及必要规格/验证，继续沿2.1/4.1记录，不另建任务树。
+# 2026-10-22 测试数据工具接入（用户授权增量）
+
+用户要求把上游数据生成/测试能力接入并做一些测试。本批沿2.1/4.1复用固定上游34ca18c的demo-producer原件和合成场景生成器；新增独立测试适配器，将场景转换为本项目ExistingAlert/source-v1合同，预期技术/处置及评分材料单独输出，不作为raw_event或模型输入。原版producer仍面向Ingest，保留源码不等于已经适配或运行；本批使用项目告警适配器。
+
+先做无网络生成与直接API/Fusion合同验证，再用少量全新合成告警、隔离topic/group和本地处理代码验证实际受理/持久/交付（如基础设施可用）。生成默认不发送；发送必须显式指定端点、认证、租户及有界批量，逐条记录accepted/unconfirmed，不自动重试；202不等于Fusion完成。直接测试中的PG/Redis/Kafka替身与真实基础设施结果分开记录。
+
+不改业务算法、模型提示或原数据，不迁Ingest/raw检测支路，不启动Purple Team/Caldera/Honeytokens或常驻Agents，不调用模型、不部署或重放旧输入。范围是测试工具与本批直接验证，不承诺分诊/调查质量、关联算法质量或性能。结果、失败、源码来源及未参与实现者独审单列回执，原5/15与旧质量失败保持。

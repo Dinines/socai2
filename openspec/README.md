@@ -32,6 +32,6 @@
 
 后续业务顺序以[总执行计划](../docs/operations/completion-plan.md)B1—B6为准，映射原六阶段，不另立目标；自动调查包含自动触发、分诊、关闭或升级、实际取证/分析及结果交付。总规划属于纯文档change，不重复建立产品任务树，也不以规划完成代替功能通过。
 
-[restore-alert-investigation-integrity](changes/restore-alert-investigation-integrity/proposal.md)：作为B1—B6的产品实施任务入口，现4项评估完成、11项产品/交付任务未完成。第一项B1，B2独立部分可并行；自动调查完整主线保留。playbook/反馈一体保留不额外改测，可用性专项后置，已有保护不回退。
+[restore-alert-investigation-integrity](changes/restore-alert-investigation-integrity/proposal.md)：作为B1—B6的产品实施任务入口，现5/15（4项评估及B1完成、10项仍未勾选）。已有主链接通及多批局部成果按原回执保留，当前沿B5→B6做[阶段交接](../docs/operations/investigation-stage-handoff-20261022.md)，不把局部验收或CLI产物齐全当作整体任务完成。playbook/反馈一体保留不额外改测，可用性专项后置，已有保护不回退。
 
 [admit-review-only-triage-worker](changes/admit-review-only-triage-worker/status.md)对应旧R02，**暂缓、不作为功能迁移前置，0/17未执行或验收**。只新增status侧附，原五文件及hash保留，不归档成完成；CLI仍可能显示in-progress/ready，实施者必须先读status和项目上下文，不据此执行。旧模型失败、unknown和运行OFF保持。

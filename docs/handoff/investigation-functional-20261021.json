@@ -1,0 +1,172 @@
+{
+  "batch": "investigation-functional-20261021",
+  "scope": "local code with21 real model/readonly services; no deployment or resident worker change",
+  "official_case_source": "https://www.microsoft.com/en-us/security/blog/2024/01/25/midnight-blizzard-guidance-for-responders-on-nation-state-attack/",
+  "host20_source": "one already-investigated Golden pipeline sample; no model replay",
+  "runs": [
+    {
+      "kind": "router_lab",
+      "run_id": "cdd00f7c-d20a-4133-aed1-f8b6152b0cca",
+      "model_invocation_attempts": 1,
+      "visible_model_replies": 1,
+      "observed_reply_tokens": 1361,
+      "private_evidence": ".local/aisoc21/investigation-functional-20261021/router-run",
+      "report": ".local/aisoc21/investigation-functional-20261021/router-run/report.md",
+      "summary_sha256": "8dc3fd3c9185232e8dfba682230fc190ed3beaff7b38e6044bb0fc7e3b7fc07d",
+      "original_status": "completed",
+      "report_kind": "deterministic router Markdown",
+      "domain_branches": []
+    },
+    {
+      "kind": "router_public_narrative",
+      "run_id": "ad4f47e3-7f81-4008-9c68-22af7e6ef3be",
+      "model_invocation_attempts": 3,
+      "visible_model_replies": 3,
+      "observed_reply_tokens": 2917,
+      "private_evidence": ".local/aisoc21/investigation-functional-20261021/router-narrative-run",
+      "report": ".local/aisoc21/investigation-functional-20261021/router-narrative-run/report.md",
+      "summary_sha256": "c79b2ee4ced8b5240107ea0256c957a8858ef01d1e6358c0dfa666d62d26123a",
+      "original_status": "completed",
+      "report_kind": "deterministic router Markdown",
+      "domain_branches": [
+        "identity",
+        "cloud"
+      ]
+    },
+    {
+      "kind": "manual_synthetic",
+      "run_id": "0834699d-b58e-409a-8166-d82efd7031ec",
+      "model_invocation_attempts": 4,
+      "visible_model_replies": 3,
+      "observed_reply_tokens": 6177,
+      "private_evidence": ".local/aisoc21/investigation-functional-20261021/manual-run",
+      "report": ".local/aisoc21/investigation-functional-20261021/manual-run/report.md",
+      "summary_sha256": "acd3f5e10ec8a6b09e137f80c63f09ab2f094784de860bd041f45a34dedb80b6",
+      "original_status": "completed",
+      "forensic_reply_received": false,
+      "forensic_used_original_fallback": true,
+      "forensic_provider_execution_and_usage": "unknown",
+      "report_kind": "model-written Markdown with fallback findings",
+      "graph_kb_memory": "local probe does not exercise these configured consumption paths"
+    },
+    {
+      "kind": "deep_public_derived",
+      "run_id": "9e0b1ae9-e0d1-4b9e-aeea-29d85c3f851e",
+      "model_invocation_attempts": 6,
+      "visible_model_replies": 6,
+      "observed_reply_tokens": 21540,
+      "private_evidence": ".local/aisoc21/investigation-functional-20261021/deep-run",
+      "report": ".local/aisoc21/investigation-functional-20261021/deep-run/report.md",
+      "summary_sha256": "0dc84986cbd6b011f839f2bc66f5af2e28ceaf2e89353e8b81c23f291046878e",
+      "truncated": true,
+      "narrative_empty": true,
+      "tool_executions": 7,
+      "distinct_successful_tool_names": 2,
+      "valid_tool_rows": 0,
+      "last_network_tool_request_executed": false,
+      "stop_reason": "token budget exhausted (21540 of 20000)"
+    }
+  ],
+  "totals": {
+    "model_invocation_attempts": 14,
+    "visible_model_replies": 13,
+    "observed_reply_tokens": 31995,
+    "unknown_usage_attempts": 1,
+    "direct_tests_passed": 78,
+    "unittest_model_and_http_boundaries": "Router12/Deep8 use model/service doubles; API51 has fake DB; tools7 uses respx/models disabled or doubled"
+  },
+  "test_groups": [
+    {
+      "group": "router",
+      "passed": 12
+    },
+    {
+      "group": "deep",
+      "passed": 8
+    },
+    {
+      "group": "authentication_sql",
+      "passed": 51
+    },
+    {
+      "group": "single_ioc_tools",
+      "passed": 7
+    }
+  ],
+  "local_fixes": [
+    {
+      "file": "services/api/app/services/investigation_tools.py",
+      "change": "source_ip != toIPv6('::')",
+      "original_failure": "ClickHouse676 CANNOT_PARSE_IPV6",
+      "real_verification": {
+        "tool": "authentication_events",
+        "available": true,
+        "row_count": 0,
+        "rows": [],
+        "query": "authentication events for lab-auth-afterfix-20261021 in the last 24h"
+      },
+      "transport_boundary": "local original typed function + test-only realHTTP API/sql adapter; not deployed typed endpoint",
+      "deployed": false
+    },
+    {
+      "file": "services/agents/app/investigator/tools.py",
+      "change": "single enrich_ioc JSON type->ioc_type",
+      "original_failure": "HTTP400 ioc_type is required",
+      "real_verification": {
+        "ioc_type": "domain",
+        "value": "ioc-contract-20261021.example",
+        "risk_score": 0,
+        "confidence": 0,
+        "malicious_votes": 0,
+        "harmless_votes": 0,
+        "total_engines": 0,
+        "reputation": 0,
+        "classification": {},
+        "is_bot": false,
+        "is_tor": false,
+        "is_vpn": false,
+        "is_datacenter": false,
+        "sources": null,
+        "enriched_at": "2026-10-21T10:23:38.403019697Z"
+      },
+      "provider_boundary": "sources null; zero scores not safety proof",
+      "deployed": false
+    }
+  ],
+  "protections": {
+    "db_dsns_removed": true,
+    "new_persisted_business_case_run": false,
+    "old_unknown_replayed": false,
+    "resident_worker_enabled": false,
+    "kafka_input_sent": false,
+    "vendor_response_actions": false,
+    "git_commit_push": false,
+    "api_read_audits_may_be_written": true
+  },
+  "remaining": [
+    "manual Forensic connection failure with no confirmed provider reply",
+    "UEBA device baseline stale closed connection",
+    "regex treats executable filenames as IOC domains",
+    "Router specialist NR/coverage and output claims",
+    "Deep soft token stop/empty-result coverage and no final narrative",
+    "original placeholder data classes and per-source credentials"
+  ],
+  "source_files": {
+    "services/api/app/services/investigation_tools.py": "c1a30c41ea3cf0cfdb3b08d012be6b56f37c075688bb7f9c78524e11068cc9bb",
+    "services/api/tests/test_investigation_tools.py": "1e240853102e8a140ec68b43771ad15bb08d565644ca32d5d5dbe191c2072114",
+    "services/agents/app/investigator/tools.py": "ac0cd3144623d9b1cdca8756c24598e50cf656d563782f9e915df93f227eaf11",
+    "services/agents/tests/test_socai2_tool_failure.py": "0dd904ad317c2ec133d5d3013c2fa70865c7112ead3d871f67ab382ee9aba3bd",
+    "deploy/aisoc21/probe_investigation_case.py": "8fbb4530cd122ecf14085822e34866385d10b5d284f761c0468ea5e122af27c1",
+    "deploy/aisoc21/probe_investigation_deep.py": "42a90fa406000526cd7997b4a048769b3936463d43489a1cab4645e578379692"
+  },
+  "python_environment_sha256": "4f1a396361ca0a9e37278366a6a56da136520f55c732a108f6f08022489e59bd",
+  "local_version": ".local/versions/investigation-functional-20261021/",
+  "end_review": {
+    "result": "ACCEPT",
+    "reviewer": "case_source_review (did not implement source or report)",
+    "scope": "source/test diffs; public report; existing real request/reply/tool evidence; call_id/content, totals, secret/reasoning and snapshot checks",
+    "blocking_findings": 0,
+    "additional_model_or_business_query_calls": 0
+  },
+  "openspec": "restore-alert-investigation-integrity; original15 tasks and5completed unchanged; no archive"
+}

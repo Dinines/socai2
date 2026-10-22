@@ -148,6 +148,15 @@ class TestUnavailableData:
         assert set(UNAVAILABLE_DATA) and (set(TOOLS) - BACKED_TOOLS)
 
 
+class TestLakeColumnTypes:
+    async def test_authentication_excludes_the_unknown_ipv6_address(self, captured: list[Any]) -> None:
+        """The lake stores missing IPs as IPv6 ::, never an empty string."""
+        await dispatch("authentication_events", TENANT, {"user_name": "j.doe"})
+        sql, _ = captured[-1]
+        assert "source_ip != toIPv6('::')" in sql
+        assert "source_ip != ''" not in sql
+
+
 class TestBounds:
     async def test_row_limit_is_clamped(self, captured: list[Any]) -> None:
         await dispatch("process_activity", TENANT, {"hostname": "h", "limit": 99_999})

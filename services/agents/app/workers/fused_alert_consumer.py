@@ -60,6 +60,7 @@ from app.context import dispositions as dispositions_module
 from app.context import identity as identity_module
 from app.context import knowledge_base
 from app.context import tenant_skills
+from app.context import attack_context
 from app.core.cost_governor import Decision, get_governor
 from app.core.cost_telemetry import CostSummary, CostTracker
 from app.core.kafka_security import kafka_client_kwargs
@@ -109,6 +110,7 @@ _NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "tryaisoc.com/agents/auto-triage")
 WORKFLOW_VERSION = "auto-triage-v1"
 
 _BROKER_DELIVERY: ContextVar[bool] = ContextVar("auto_triage_broker_delivery", default=False)
+_BROKER_GRAPH_PREPARATION: ContextVar[dict[str, Any] | None] = ContextVar("broker_graph_preparation", default=None)
 _MAX_PENDING_RESULTS = 128
 
 
@@ -370,6 +372,10 @@ def build_state(message: dict[str, Any]) -> InvestigationState | None:
     for field in ("description", "event_time", "created_at"):
         if field in alert:
             raw_alert[field] = alert[field]
+    preparation = _BROKER_GRAPH_PREPARATION.get() if _BROKER_DELIVERY.get() else None
+    if (isinstance(preparation, dict) and str(preparation.get("tenant_id")) == str(tenant)
+            and _uuid_text(preparation.get("alert_id")) == _uuid_text(alert_row_id)):
+        raw_alert["attack_context_preparation"] = deepcopy(preparation)
     # Deterministic, replay-stable run id (issue #571) — same alert + workflow
     # version ⇒ same run, so replays are idempotent in the ledger.
     run_id = uuid.uuid5(_NAMESPACE, f"{alert_row_id}:{WORKFLOW_VERSION}") if alert_row_id else uuid.uuid4()
@@ -718,7 +724,9 @@ class FusedAlertTriageWorker:
             return False
 
         token = _BROKER_DELIVERY.set(True)
+        preparation_token = _BROKER_GRAPH_PREPARATION.set(None)
         try:
+            _BROKER_GRAPH_PREPARATION.set(await self._prepare_broker_graph(message))
             last_error: str = ""
             stage = "triage"
             for attempt in range(1, self._max_attempts + 1):
@@ -748,7 +756,31 @@ class FusedAlertTriageWorker:
             await self._send_to_dlq(message, attempts=attempt, stage=stage, error=last_error)
             return False
         finally:
+            _BROKER_GRAPH_PREPARATION.reset(preparation_token)
             _BROKER_DELIVERY.reset(token)
+
+    async def _prepare_broker_graph(self, message: dict[str, Any]) -> dict[str, Any] | None:
+        """One preparation per valid delivery, before any triage early return."""
+        if not attack_context.enabled():
+            return None
+        tenant, alert_ref = _broker_identity(message)
+        alert_id = _uuid_text(alert_ref)
+        receipt: dict[str, Any] = {"tenant_id": tenant, "alert_id": alert_id,
+            "scope": "alert", "owner": "kafka_consumer", "status": "skipped"}
+        if self._review_only():
+            return {**receipt, "reason": "review_only"}
+        if not self._writer.escalation_allowed:
+            return {**receipt, "reason": "writer_disallows_graph_write"}
+        try:
+            if await self._shadow_policy.is_shadow(tenant, alert_class_of(message["alert"])):
+                return {**receipt, "reason": "shadow_mode"}
+            receipt = await attack_context.prepare_alert_graph(tenant, alert_id)
+        except Exception as exc:  # Graph coverage is a gap, not a triage/DLQ policy.
+            receipt = {**receipt, "status": "unavailable", "reason": type(exc).__name__}
+        if receipt.get("status") != "success":
+            logger.warning("auto_triage_worker.graph_preparation_unavailable", tenant_id=tenant,
+                alert_id=alert_id, status=receipt.get("status"), reason=receipt.get("reason"))
+        return receipt
 
     def _retry_backoff(self, attempt: int) -> float:
         return _RETRY_BACKOFF_S * attempt
@@ -1624,7 +1656,11 @@ class FusedAlertTriageWorker:
         # silently enter the triage approval/source-writeback path.
         investigation = state.model_copy(deep=True)
         investigation.context_bundle = await prefetch_context_bundle_dict(
-            case_id=str(state.incident_id),
+            # The historical incident/run case field may hold an Alert UUID.
+            # Only an explicit Case reference is a Case; the canonical alert
+            # is a separate anchor resolved and scoped by the API.
+            case_id=(state.raw_alert or {}).get("case_id") or (state.raw_alert or {}).get("caseId"),
+            alert_id=str((state.raw_alert or {}).get("id") or state.incident_id),
             tenant_id=str(state.tenant_id),
             alert_summary=state.alert_summary or "",
             raw_alert=state.raw_alert or {},

@@ -1,4 +1,33 @@
+**2026-10-22 v1发布代表Run增补（后置评估）：** 新生产合成告警Run `39dd7fba-5f42-5b4e-9653-ae7de5fce32c` 自动接通并交付partial，7回复28216tokens（分诊2048/graph26168），未重调旧输入。旧六轮/软20k预算、末ToolMessage作为narrative、Deep局部tokens=0/over_budget=false与外层超预算、Run completed/报告running差异再次出现；旧质量不追认通过。首次模型把缺授权材料/`curl|sh`泛化为C2/高置信恶意，报告“无恶意命中→benign prior”“Unknown→单阶段攻击”；Deep一轮把T1059.004称作PowerShell。来源边界另有TI归因401、UEBA HTTPStatusError、processing-context四维BufferError及3类not_ingested；这些为本次实际来源结果，不由healthy宣称可用。分诊前PG投影success、链图上下文及工件已发布生效，不能再把此接缝全称未部署。材料见[发布回执](service-v1-release-20261022.md)与原Run交换工件；质量/配套按原问题表后置，不扩新任务树/模型矩阵。
+
+**标书评估静态补记（2026-10-22，迁移后定向完善）：** [本次评估](tender-requirements-assessment-20261022.md)对照原件P169/P293，确认当前 `GET /alerts` 声明 `search` 但未用于filters，且缺来源、资产与时间区间参数（`services/api/app/api/v1/endpoints/alerts.py:787–906`）；已对固定上游同函数，属于继承原版。另UEBA上下文先读取同tenant/type最近50条再客户端匹配实体（`services/agents/app/context/bundle.py:813–845`、`services/ueba/app/api/routes.py:184–197`），目标不在该50条会漏取，固定原版同样如此。两项均为源码确认、未新发HTTP/规模样例，不表示已发生生产漏读或新增当前候选接线阻塞；后续按告警查询/实际实体读取需求补最小合同，不能用现有小样本验收宣称完整筛选或实体覆盖。本轮不修代码、不加任务树，不改变发布/worker或旧失败。
+
+**Kafka入口联合补记（2026-10-22，非阻塞后置）：** 当前Alert直接邻域5节点4边已真实核；原GET的blast_radius另返14个可达候选，含同tenant历史测试Alert/Case。原遍历允许经共享Technique继续扩展；可达不是本案确认受影响，也不是本次新增节点。当前Alert本身无Case关联，不据候选为其自动建Case。沿已有图语义/算法二开取舍后再评估，本轮只保数据/来源及限定表述，不扩算法或质量专项，见[回执](kafka-graph-joint-20261022.md)。
+
+链图后续限制补记：原MERGE只增/更新，不清理Case解绑或字段变化后的旧关系；持续同步尚未验证。本批新Case正常图/消费通过，不外推旧关系撤销已实现。沿现有模块二开需求再评估，不建同步/恢复框架。
+
+**链图本地增量（2026-10-21）：** 本次调查准备的可信PG告警→Neo4j投影及模型消费已本地接通，未发布，不再把此特定接缝笼统记为完全缺失。首Run被Bundle原3.5秒取消，模型/工件为unavailable，失败保原；已只给新source22秒并用新Case验证，原source截止不改。通用host图reader、UEBA/TI批查询timeout及KB未配置在本地代表例中仍不可用；单IOC200不代表数据覆盖。原链可因共用IP跨Case关联、评分不代表恶意概率；模型可泛化MITRE、把合成标签写为FP/关闭建议，未验自治质量且保持dry-run。这些限制作迁移后二开评估，不因此新增全源/质量/恢复矩阵。见[完整回执](attack-chain-path-local-20261021.md)。
+
 # 原版问题与延期边界登记
+
+
+## 调查本地实测更新（2026-10-21）
+
+[逐步回执](investigation-functional-20261021.md)保留13次真实可见回复与1次无回复、原78项直接测试和新工具结果，不由完成标签追认质量。
+
+| 问题 | 本批证据 / 归属 | 状态 |
+| --- | --- | --- |
+| 认证SQL以IPv6列比较空字符串 | 真实CH异常676/CANNOT_PARSE_IPV6；固定原版同样存在 | 仅本地改toIPv6('::')，51项/真实API SQL验证通过；未部署，旧Deep失败保持 |
+| 单IOC增强字段type不符合Go ioc_type | 原静态问题在本次两次真实HTTP400复现 | 最小本地字段修正、7项回归及真实无provider响应通过；旧400保持，零分/sources空不作安全判断 |
+| UEBA设备列表偶发500 | 真实asyncpg connection is closed；不是device参数错误，关闭原因未知 | 可用性问题后置；本轮不重启/池改造/恢复测试 |
+| Forensic无模型回复但原流程completed | 一次OpenAIConnectionError，原兜底confidence0.1；网关窗口无记录，执行/usage未知 | 不计为0/成功、不重调；连接和节点兜底状态表达后续评估 |
+| IOC regex误把exe进程名当domain | 两个exe被原确定性提取补入IOC，模型本来称无具体IOC | 算法取舍后看，不连带字段合同修复更改提取器 |
+| Router NR被专业TP取代 | Identity/Cloud本次各一次，schema无NR、无实际工具取证；MFA未开启被述成禁用动作 | 模板/字段/事实语义后续讨论，不默认取代完整取证流程 |
+| Deep软预算、空结果与深度表达 | 六轮21540/20000后停，末network tool未执行；2个不同工具名来自零行查询，narrative空 | 原失败及partial保持；空结果不证明覆盖，预算/提示词质量后置，不新建恢复框架 |
+
+本地测试未给该租户匹配图reader/KB reader且DB记忆关闭，属于测试配置/覆盖边界，不能记迁移漏源；OAuth/mailbox/persistence原占位缺源保持。对应下文旧“静态未复现”仅是此前阶段事实。
+
+**TI使用说明中的原边界：** `threatintel/app/main.py`的`/api/v1/iocs/search`已认证，但调用`OpenSearchStore.search_iocs`未传tenant，存储查询仅按value/type/source过滤。当前只按共享公开情报入口说明，不能宣称tenant头形成私有IOC隔离；租户私有IOC管理沿API的PG路径。本轮未新开放接口或写入私有情报，未复现跨租户泄露，问题登记后置，后续若需要该入口存取私有情报再处理；不扩为本轮数据规模或安全专项。
 
 ## 2026-10-21逐模块二开分析的新发现（静态，未实施）
 
@@ -7,10 +36,15 @@
 | 问题 / 来源归属 | 对功能及交接的影响 | 当前处理 / 最少后续核实 |
 | --- | --- | --- |
 | UEBA实体启用配置与时间窗口边界；固定上游及本地相同 | 原运行没有按tenant/实体名单启用评测的配置；normalized输入固定user→device→ip选一个实体。window_days仅初始化window_start，后续累计Welford，不会淘汰超期样本，不能宣称真正滚动30天 | 作为首模块的配置/机制讨论项；后续明确实体范围及真实窗口需求再确定最小改法。本次只记录，不修改算法/基线/运行或重放数据 |
-| UEBA→Fusion消费未证；Fusion缓存丢异常引用。原版两种交接合同，非文件漏迁 | 已验事件→baseline→Agents HTTP不证明异常topic→Fusion加分；仓内早期flag=false，新overlay只改topic。缓存只保实体/score/risk，未保anomaly_id/source_event_id，不能从加分精确定位唯一异常事件 | 先核必要有效配置，复用UEBA原测试及已有基线证据；当前模块若需该功能，只补异常输出→缓存→同实体新告警采用及tenant/实体边界。源引用是否补齐在模块取舍时决定 |
+| UEBA→Fusion本地真实接缝已验；常驻融合关闭及缓存丢引用仍保留。非文件漏迁 | [真实联合](../handoff/ueba-fusion-joint-20261021.json)已核原服务实际生成三档异常、Kafka/Redis及5个告警对照；21常驻flag仍false，未发布。缓存只保实体/score/risk，未保anomaly_id/source_event_id，普通结果不能精确定位唯一异常源 | 不再把“本地联合未证”当阻塞，沿阶段发布；精确引用和时间语义按后续需求取舍，不借本次验证改算法或旧记录 |
+| Fusion候选链与声明参数的能力边界；原实现保留 | 候选链仅按共享实体/固定MITRE阶段与处理时间组织，不确认因果；TA编号未映射、已有两链不完整合并。0.85相似阈值及72小时关闭仅声明，没有对应执行逻辑 | [总结](../architecture/fusion.md#六当前阶段小结可以转入下游分诊)如实交接，不当作已实现的语义聚类、真实攻击路径或自动关闭。不阻塞接入分诊；具体改动待业务取舍，不擅自裁剪或扩测试 |
+| 分诊业务规则的下游字段消费不完整；静态接缝，非本轮裁剪 | 规则支持写route_to/tags，但build_state未完整投影它们及category，worker不据route_to切Router；severity实际会进入state，tag还能影响同轮后续规则 | [分诊工作卡](../architecture/triage.md)列待讨论：先明确是否需要规则改变调查路径，不把规则引擎支持当端到端生效，不预定统一编排或当前修复 |
+| 单项IOC增强包装器与Go请求字段不一致；tools.py与固定上游相同 | Recon及deep enrich_ioc发送value/type，Go /enrich要求value/ioc_type；默认8080也与bulk包装器8082不同。bulk接通不能证明单项接通 | [调查说明](../architecture/investigation.md)保留静态事实，尚未新复现线上400；使用该工具时核实际URL/字段和必要身份，按直接接线最小处理，不扩外部情报后端/数据量 |
+| Router专业Agent的bundle及持久出口差异；原调用边界 | 四专业函数支持可选bundle，但当前Router调用未传入；Case /triage的run没有stream同等逐步ledger/Markdown持久流程 | 分别说明支持和实际采用，不用默认人工Bundle或Router stream证据代验；本次仅登记，不把全部兄弟入口改造设为分诊前置 |
+| Case到Router专业字段的嵌套接缝；静态，非本轮裁剪 | Case API实际发raw_alert.alerts（最多3条）；stream_kwargs不flatten，领域路由与专项投影主要读顶层；嵌套内容可能仅由summary/Additional fields有限送达，不能说username/MFA/原正文已完整采用 | [预处理专篇](../architecture/investigation-preprocessing-tools.md)按真实输入说明，尚未新模型复现或改字段；后续确需专业分析时再讨论最小映射，不先展开统一标准化 |
 | Lake归档启用后promotion执行门缺失；固定上游同样存在，非本地新增 | `consumer.py`订阅条件含Lake，但raw_events分支仍无条件调用promoter；promotion=false也可能把高危/Finding转为新告警。现有一条Medium未提升不能证明关闭有效 | 静态发现、未用高危样例复现；回Fusion批讨论最小执行门，直接验证lake开/promotion关仍归档但不造告警，不扩原始检测平台 |
 | 自动调查到AttackPath的目标/身份/图材料接缝；当前源码可见，归属不笼统当裁剪 | 自动state无真实Case链接，agent只认case_id/caseId/TI.case_id；旧AGENTS_API_TOKEN及未传tenant仍需对齐；仅显式upsert API未证明自动投影。当前C2未走到该节点，不能写实际skip故障已复现 | 先对比真实Case关联与Alert起点两方案，再按合同实施；复用已有tenant reader和真实关系，不把Fusion incident或PG两节点回退当完整事件图 |
-| 历史调查范围表达不足；原typed工具按当前时间回看 | 部分查询用now()-hours/days，不能完整表达某条历史告警前后UTC窗口；可能查到与调查不相干时间的数据 | 在事件补查模块先核输入范围与字段合同；本次只设计，不重放旧告警或增加数据采集 |
+| 历史调查范围表达不足；原typed工具按当前时间回看 | 部分查询用now()-hours/days，不能完整表达某条历史告警前后UTC窗口；共享hours schema描述默认24，但authentication_events函数实际默认168小时，不能统一解释全部工具 | 在事件补查模块先核输入范围与字段合同；[实际默认表](../architecture/investigation-preprocessing-tools.md#8-工具输出是什么模型如何使用)已更正说明，示例显式传24。本次仅文档，不改函数默认、不重放告警或增加采集 |
 
 ## 2026-10-21最新优先规则：问题登记与迁移分开
 

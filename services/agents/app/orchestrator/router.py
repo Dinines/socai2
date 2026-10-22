@@ -68,7 +68,7 @@ PARALLEL_TOPOLOGY_FLAG = "AISOC_AGENT_PARALLEL_TOPOLOGY"
 
 # Lazy imports of the four sub-agent runners so this module can be imported
 # at app startup even before the heavyweight LLM dependencies are wired.
-_SubAgentRunner = Callable[[InvestigationState], Awaitable[InvestigationState]]
+_SubAgentRunner = Callable[..., Awaitable[InvestigationState]]
 
 
 def is_parallel_topology_enabled() -> bool:
@@ -392,11 +392,20 @@ async def _run_auto_triage_step(state: InvestigationState) -> InvestigationState
     return await runner(state)
 
 
+async def _call_domain_runner(runner: _SubAgentRunner, state: InvestigationState) -> InvestigationState:
+    """Pass the prefetched Case/Alert context to the existing domain call."""
+    material = state.context_bundle or {}
+    if not material.get("attack_context"):
+        return await runner(state)
+    from app.context.bundle import ContextBundle
+    return await runner(state, bundle=ContextBundle.model_validate(material))
+
+
 async def _run_sequential(state: InvestigationState, signals: list[str]) -> InvestigationState:
     """Reference path — run sub-agents one at a time, then responder."""
     for name in signals:
         runner = _resolve_runner(name)
-        state = await runner(state)
+        state = await _call_domain_runner(runner, state)
     return _summarise_response(state)
 
 
@@ -411,7 +420,7 @@ async def _run_parallel(state: InvestigationState, signals: list[str]) -> Invest
         copy.iteration_count = state.iteration_count
         branch_inputs.append(copy)
 
-    coros = [_resolve_runner(name)(branch_inputs[idx]) for idx, name in enumerate(signals)]
+    coros = [_call_domain_runner(_resolve_runner(name), branch_inputs[idx]) for idx, name in enumerate(signals)]
     branch_results = await asyncio.gather(*coros, return_exceptions=True)
 
     successful: list[InvestigationState] = []
@@ -782,6 +791,11 @@ class RouterOrchestrator:
             )
             tenant_id = None
 
+        if tenant_id is not None:
+            from app.context.attack_context import attack_context_artifacts
+            for kind, content in attack_context_artifacts(state.context_bundle):
+                await ledger_module.record_artifact(run_id=run_id, tenant_id=tenant_id, kind=kind, content=content)
+
         async def _yield_step(
             *,
             agent: str,
@@ -951,7 +965,7 @@ class RouterOrchestrator:
                 async def _wrap(idx: int, signal: str, runner: _SubAgentRunner, branch: InvestigationState):
                     bt0 = time.perf_counter()
                     try:
-                        result = await runner(branch)
+                        result = await _call_domain_runner(runner, branch)
                     except Exception as exc:  # noqa: BLE001
                         logger.exception(
                             "router.stream.subagent_failed",
@@ -997,7 +1011,7 @@ class RouterOrchestrator:
                     pre_branch = _state_snapshot(branch_state)
                     bt0 = time.perf_counter()
                     try:
-                        result = await runner(branch_state)
+                        result = await _call_domain_runner(runner, branch_state)
                     except Exception as exc:  # noqa: BLE001
                         logger.exception(
                             "router.stream.subagent_failed",
@@ -1165,9 +1179,17 @@ class RouterOrchestrator:
         tenant_uuid = _coerce_uuid(tenant_id)
         run_uuid = run_id if isinstance(run_id, uuid.UUID) else uuid.uuid4()
 
+        bundle = None
+        if os.getenv("AISOC_ATTACK_CONTEXT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}:
+            from app.investigator.bundle_prompt import prefetch_context_bundle_dict
+            bundle = await prefetch_context_bundle_dict(
+                case_id=case_id, tenant_id=tenant_id,
+                alert_summary=alert_summary, raw_alert=raw_alert or {},
+            )
         state = InvestigationState(
             run_id=run_uuid,
             incident_id=incident_uuid,
+            context_bundle=bundle,
             tenant_id=tenant_uuid,
             alert_summary=alert_summary,
             raw_alert=raw_alert or {},

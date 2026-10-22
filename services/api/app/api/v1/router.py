@@ -139,6 +139,7 @@ api_router.include_router(case_depth.router)
 # of every alert that shares an entity with the case's seed alert,
 # plus the side-by-side entity graph the right column renders.
 api_router.include_router(attack_chain.router)
+api_router.include_router(attack_chain.alert_router)
 api_router.include_router(connectors.router)
 # Hosted OAuth one-click for connectors (Workstream 2 of AI Stack plan).
 # /oauth/start mints a state nonce + 302 to the provider; /oauth/callback

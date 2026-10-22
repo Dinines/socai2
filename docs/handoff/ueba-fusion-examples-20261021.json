@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-21",
+  "change": "restore-alert-investigation-integrity",
+  "method": "local original FusionWorker anomaly dispatch and alert processing, real cache/dedup/correlator/heuristic/confidence; Redis/PG/Kafka delivery are in-memory doubles",
+  "test_command": "PYTHONPATH=services/fusion <temporary-venv-python> -m pytest services/fusion/tests/test_ueba_signal.py services/fusion/tests/test_ueba_fusion_link.py -q -s -p no:cacheprovider",
+  "result": {
+    "passed": 18,
+    "existing_signal_tests": 10,
+    "new_linkage_cases": 8,
+    "warnings": 23,
+    "warnings_kind": "existing utcnow deprecation",
+    "duration_seconds": 0.34
+  },
+  "input_alert": {
+    "tenant_id": "30a948cc-fb41-420b-bc3d-d4af8e26a001",
+    "source_alert_id": "00000000-0000-0000-0000-000000001db1",
+    "severity": "high",
+    "username": "ueba-link-alice",
+    "hostname": "UEBA-LINK-H1",
+    "src_ip": "192.0.2.10",
+    "risk_score": 0.5,
+    "mitre_tactics": [
+      "execution"
+    ],
+    "mitre_techniques": [
+      "T1059.001"
+    ],
+    "file_hash": null
+  },
+  "cases": [
+    {
+      "anomaly_score": 0.15,
+      "case": "off_with_cached_critical",
+      "confidence_label": "medium",
+      "confidence_score": 0.656,
+      "enabled": false,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": null,
+      "ueba_factor_count": 0
+    },
+    {
+      "anomaly_score": 0.15,
+      "case": "on_without_signal",
+      "confidence_label": "medium",
+      "confidence_score": 0.656,
+      "enabled": true,
+      "input_signal_count": 0,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": null,
+      "ueba_factor_count": 0
+    },
+    {
+      "anomaly_score": 0.45,
+      "case": "on_medium",
+      "confidence_label": "high",
+      "confidence_score": 0.726,
+      "enabled": true,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": "user:ueba-link-alice",
+      "ueba_factor_count": 1
+    },
+    {
+      "anomaly_score": 0.75,
+      "case": "on_high",
+      "confidence_label": "high",
+      "confidence_score": 0.796,
+      "enabled": true,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": "user:ueba-link-alice",
+      "ueba_factor_count": 1
+    },
+    {
+      "anomaly_score": 1.0,
+      "case": "on_critical",
+      "confidence_label": "high",
+      "confidence_score": 0.8560000000000001,
+      "enabled": true,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": "user:ueba-link-alice",
+      "ueba_factor_count": 1
+    },
+    {
+      "anomaly_score": 1.0,
+      "case": "on_multiple_entities",
+      "confidence_label": "high",
+      "confidence_score": 0.8560000000000001,
+      "enabled": true,
+      "input_signal_count": 2,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": "device:UEBA-LINK-H1",
+      "ueba_factor_count": 1
+    },
+    {
+      "anomaly_score": 0.15,
+      "case": "on_other_tenant",
+      "confidence_label": "medium",
+      "confidence_score": 0.656,
+      "enabled": true,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": null,
+      "ueba_factor_count": 0
+    },
+    {
+      "anomaly_score": 0.15,
+      "case": "on_other_entity",
+      "confidence_label": "medium",
+      "confidence_score": 0.656,
+      "enabled": true,
+      "input_signal_count": 1,
+      "priority_score": 1.0,
+      "published_and_saved_scores_match": true,
+      "selected_entity": null,
+      "ueba_factor_count": 0
+    }
+  ],
+  "environment": {
+    "python": "3.12.14",
+    "packages": {
+      "pytest": "9.1.1",
+      "pytest-asyncio": "1.4.0",
+      "pydantic": "2.14.1",
+      "pydantic-settings": "2.16.1",
+      "fastapi": "0.141.1",
+      "redis": "5.3.1",
+      "aiokafka": "0.10.0",
+      "asyncpg": "0.29.0",
+      "SQLAlchemy": "2.1.5",
+      "structlog": "24.4.0",
+      "httpx": "0.28.1"
+    }
+  },
+  "boundaries": {
+    "business_implementation_changed": false,
+    "running_services_changed": false,
+    "production_messages": 0,
+    "model_calls": 0,
+    "real_kafka_redis_pg_exercised": false,
+    "ueba_new_baseline_or_anomaly_generation_exercised": false,
+    "expired_cache_or_restart_tested": false,
+    "startup_subscription_tested": false
+  },
+  "retained_failures": [
+    {
+      "action": "upload local Fusion source to 21 for isolated tests",
+      "result": "automatic approval rejected private source cross-host transfer; not executed",
+      "resolution": "local temporary venv; no source upload"
+    },
+    {
+      "action": "first local collection",
+      "result": "ModuleNotFoundError: test_process_delivery",
+      "resolution": "new test uses package-relative helper import; rerun 18 passed"
+    }
+  ],
+  "prior_runtime_configuration": {
+    "source": "read-only Fusion Settings inspection in current session before tests",
+    "date": "2026-10-21",
+    "ueba_fusion_enabled": false,
+    "ueba_signal_ttl_seconds": 86400,
+    "changed_by_this_work": false
+  },
+  "independent_review": {
+    "reviewer": "api_auth_review",
+    "date": "2026-10-21",
+    "result": "ACCEPT",
+    "scope": "new linkage cases, saved/published scores, configuration documentation and explicit validation limits",
+    "tests_rerun_by_reviewer": false
+  }
+}

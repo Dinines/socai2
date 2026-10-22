@@ -35,7 +35,7 @@ async def enrich_ioc(ioc_value: str, ioc_type: str) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(
                 f"{_ENRICHMENT_URL}/enrich",
-                json={"value": ioc_value, "type": ioc_type},
+                json={"value": ioc_value, "ioc_type": ioc_type},
             )
             resp.raise_for_status()
             return resp.json()

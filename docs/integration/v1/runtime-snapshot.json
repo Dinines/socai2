@@ -1,0 +1,585 @@
+{
+  "captured_at": "2026-10-22T08:02:19.905944+00:00",
+  "scope": "read-only Docker metadata; no application or database calls",
+  "containers": [
+    {
+      "container": "socai2-api-1",
+      "image_tag": "socai2-api:integrity-20261021",
+      "image_id": "sha256:1be37c3893f782b84ea5bfe3d1af20f20700f7e88fa9c79fee1202f3a15a3b1d",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8000/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18000"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "AISOC_DISABLE_CLICKHOUSE": "false",
+        "AISOC_DISABLE_NEO4J": "false",
+        "CLICKHOUSE_DATABASE": "aisoc",
+        "CLICKHOUSE_HOST": "192.168.1.21",
+        "CLICKHOUSE_PORT": "9000",
+        "CLICKHOUSE_USER": "socai2_lake",
+        "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+        "KAFKA_SECURITY_PROTOCOL": "SSL",
+        "KAFKA_SSL_CAFILE": "/run/certs/ca.crt",
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "KAFKA_TOPIC_ALERTS_RAW": "socai2.alerts.raw",
+        "NEO4J_USER": "neo4j",
+        "PGSSLROOTCERT": "/run/certs/ca.crt",
+        "DATABASE_URL": {
+          "scheme": "postgresql+asyncpg",
+          "host": "192.168.1.21",
+          "port": 5432,
+          "path": "/aisoc",
+          "username": "aisoc_app",
+          "password_present": true,
+          "tls_parameters": {
+            "sslmode": [
+              "verify-full"
+            ]
+          }
+        },
+        "NEO4J_URI": {
+          "scheme": "bolt",
+          "host": "192.168.1.21",
+          "port": 7687,
+          "path": "",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        },
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/8",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        },
+        "THREATINTEL_SERVICE_URL": {
+          "scheme": "http",
+          "host": "threatintel",
+          "port": 8005,
+          "path": "",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {
+        "AISOC_API_SERVICE_TOKEN": true,
+        "AISOC_THREATINTEL_SERVICE_TOKEN": true,
+        "CLICKHOUSE_PASSWORD": true,
+        "NEO4J_PASSWORD": true
+      }
+    },
+    {
+      "container": "socai2-fusion-1",
+      "image_tag": "socai2-fusion:integrity-b1-20261021",
+      "image_id": "sha256:c52b9aacf4099a2ace30673c7d7b3ca9bcd933c1a22af5e20a38000494441018",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8003/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18003"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "AISOC_LAKE_WRITER_ENABLED": "true",
+        "AISOC_UEBA_FUSION_ENABLED": "false",
+        "CLICKHOUSE_DATABASE": "aisoc",
+        "CLICKHOUSE_HOST": "192.168.1.21",
+        "CLICKHOUSE_PORT": "9000",
+        "CLICKHOUSE_USER": "socai2_lake",
+        "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+        "KAFKA_CONSUMER_GROUP": "socai2-fusion-consumer",
+        "KAFKA_SECURITY_PROTOCOL": "SSL",
+        "KAFKA_SSL_CAFILE": "/run/certs/ca.crt",
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "KAFKA_TOPIC_ALERTS_RAW": "socai2.alerts.raw",
+        "KAFKA_TOPIC_RAW_EVENTS": "socai2.raw_events.v1",
+        "KAFKA_TOPIC_UEBA_ANOMALIES": "socai2.ueba.anomalies.v1",
+        "PGSSLROOTCERT": "/run/certs/ca.crt",
+        "DATABASE_URL": {
+          "scheme": "postgresql+asyncpg",
+          "host": "192.168.1.21",
+          "port": 5432,
+          "path": "/aisoc",
+          "username": "aisoc_app",
+          "password_present": true,
+          "tls_parameters": {
+            "sslmode": [
+              "verify-full"
+            ]
+          }
+        },
+        "ENRICHMENT_SERVICE_URL": null,
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/9",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {
+        "CLICKHOUSE_PASSWORD": true
+      }
+    },
+    {
+      "container": "socai2-agents-1",
+      "image_tag": "socai2-agents:full-ueba-context-20261021",
+      "image_id": "sha256:aec3c54f6f07c219f55922b0209e2a8edf3303e084441bb7651a27f7845a2c82",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8084/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18004"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "AISOC_AGENT_ESCALATE_TO_GRAPH": "0",
+        "AISOC_AGENT_KAFKA_DISABLE": "1",
+        "AISOC_GRAPH_ENABLED": "true",
+        "AISOC_INVESTIGATE_USE_ROUTER": "0",
+        "AISOC_TRIAGE_ADMISSION_PROFILE": "review_only_v1",
+        "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+        "KAFKA_CONSUMER_GROUP": "socai2-agents-triage",
+        "KAFKA_SECURITY_PROTOCOL": "SSL",
+        "KAFKA_SSL_CAFILE": "/run/certs/ca.crt",
+        "KAFKA_TOPIC_ALERTS_FUSED": "socai2.alerts.fused",
+        "PGSSLROOTCERT": "/run/certs/ca.crt",
+        "AISOC_UEBA_URL": {
+          "scheme": "http",
+          "host": "ueba",
+          "port": 8004,
+          "path": "",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        },
+        "DATABASE_URL": {
+          "scheme": "postgresql",
+          "host": "192.168.1.21",
+          "port": 5432,
+          "path": "/aisoc",
+          "username": "aisoc_app",
+          "password_present": true,
+          "tls_parameters": {
+            "sslmode": [
+              "verify-full"
+            ]
+          }
+        },
+        "ENRICHMENT_SERVICE_URL": {
+          "scheme": "http",
+          "host": "127.0.0.1",
+          "port": 9,
+          "path": "",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        },
+        "OPENAI_BASE_URL": {
+          "scheme": "http",
+          "host": "litellm",
+          "port": 4000,
+          "path": "/v1",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        },
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/10",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {
+        "AISOC_API_SERVICE_TOKEN": true,
+        "AISOC_UEBA_SERVICE_TOKEN": true
+      }
+    },
+    {
+      "container": "socai2-actions-1",
+      "image_tag": "socai2-actions:1g-20261020",
+      "image_id": "sha256:8f449d06f54cd225df3365704384d5465410f05c5964d8234c0ef15b15d25da1",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8085/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18005"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "PGSSLROOTCERT": "/run/certs/ca.crt",
+        "DATABASE_URL": {
+          "scheme": "postgresql",
+          "host": "192.168.1.21",
+          "port": 5432,
+          "path": "/aisoc",
+          "username": "aisoc_app",
+          "password_present": true,
+          "tls_parameters": {
+            "sslmode": [
+              "verify-full"
+            ]
+          }
+        },
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/11",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {}
+    },
+    {
+      "container": "socai2-ueba-1",
+      "image_tag": "socai2-ueba:full-20261021",
+      "image_id": "sha256:8b04bc648c3e49022ac5622be56198a4afcb52bcced5f485182d062606115f99",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8004/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18006"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "KAFKA_BOOTSTRAP_SERVERS": "192.168.1.21:19093",
+        "KAFKA_CONSUMER_GROUP": "socai2.ueba.v1",
+        "KAFKA_INPUT_TOPIC": "socai2.raw_events.v1",
+        "KAFKA_OUTPUT_TOPIC": "socai2.ueba.anomalies.v1",
+        "KAFKA_SECURITY_PROTOCOL": "SSL",
+        "KAFKA_SSL_CAFILE": "/run/certs/ca.crt",
+        "PGSSLROOTCERT": "/run/certs/ca.crt",
+        "DATABASE_URL": {
+          "scheme": "postgresql+asyncpg",
+          "host": "192.168.1.21",
+          "port": 5432,
+          "path": "/aisoc",
+          "username": "aisoc_app",
+          "password_present": true,
+          "tls_parameters": {
+            "ssl": [
+              "verify-full"
+            ]
+          }
+        }
+      },
+      "secret_configured": {
+        "AISOC_UEBA_SERVICE_TOKEN": true
+      }
+    },
+    {
+      "container": "socai2-enrichment-1",
+      "image_tag": "socai2-enrichment:full-20261021",
+      "image_id": "sha256:eb59af970a5247c98353a5ba6e55a8bca6709db654cb011a29b77975a1efcebe",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8082/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18002"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default"
+      ],
+      "configuration": {
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/12",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {}
+    },
+    {
+      "container": "socai2-threatintel-1",
+      "image_tag": "socai2-threatintel:full-http-20261021",
+      "image_id": "sha256:c15d75f4c3e75ed43ecc67a9945c57aa975f82256644066481747bb9e96fe745",
+      "status": "running",
+      "health": "healthy",
+      "ports": {
+        "8005/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18008"
+          }
+        ]
+      },
+      "networks": [
+        "socai2_default",
+        "spirithub_default"
+      ],
+      "configuration": {
+        "KAFKA_BOOTSTRAP_SERVERS": "",
+        "NEO4J_USER": "neo4j",
+        "OPENSEARCH_HOST": "spirithub-opensearch-1",
+        "OPENSEARCH_INDEX_ACTOR": "socai2-threatintel-actors",
+        "OPENSEARCH_INDEX_IOC": "socai2-threatintel-iocs",
+        "OPENSEARCH_PORT": "9200",
+        "QDRANT_COLLECTION_ACTOR": "socai2_threatintel_actors",
+        "QDRANT_COLLECTION_IOC": "socai2_threatintel_iocs",
+        "QDRANT_HOST": "192.168.1.21",
+        "QDRANT_PORT": "6333",
+        "NEO4J_URI": {
+          "scheme": "bolt",
+          "host": "192.168.1.21",
+          "port": 7687,
+          "path": "",
+          "username": null,
+          "password_present": false,
+          "tls_parameters": {}
+        },
+        "REDIS_URL": {
+          "scheme": "redis",
+          "host": "192.168.1.21",
+          "port": 6379,
+          "path": "/12",
+          "username": "socai2",
+          "password_present": true,
+          "tls_parameters": {}
+        }
+      },
+      "secret_configured": {
+        "AISOC_THREATINTEL_SERVICE_TOKEN": true,
+        "NEO4J_PASSWORD": true,
+        "QDRANT_API_KEY": true
+      }
+    },
+    {
+      "container": "sting-infra21-kafka-1",
+      "image_tag": "confluentinc/cp-kafka:7.5.0",
+      "image_id": "sha256:fbbb6fa11b258a88b83f54d4f0bddfcffbf2279f99d66a843486e3da7bdfbf41",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "19093/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "19093"
+          }
+        ],
+        "9092/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "9092"
+          }
+        ]
+      },
+      "networks": [
+        "sting-infra21_default"
+      ],
+      "configuration": {
+        "KAFKA_ADVERTISED_LISTENERS": "INTERNAL://kafka:29092,EXTERNAL://192.168.1.21:9092,SECURE://192.168.1.21:19093",
+        "KAFKA_SSL_CLIENT_AUTH": "none"
+      },
+      "secret_configured": {}
+    },
+    {
+      "container": "sting-infra21-clickhouse-1",
+      "image_tag": "clickhouse/clickhouse-server:23.8",
+      "image_id": "sha256:512bb8a214831bfb66e0fd51368c10c13ed319a50fa0d3864f88c01c0e8295fe",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "8123/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "8123"
+          }
+        ],
+        "9000/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "9000"
+          }
+        ]
+      },
+      "networks": [
+        "sting-infra21_default"
+      ],
+      "configuration": {
+        "CLICKHOUSE_USER": "sting"
+      },
+      "secret_configured": {
+        "CLICKHOUSE_PASSWORD": true
+      }
+    },
+    {
+      "container": "sting-infra21-redis-1",
+      "image_tag": "redis:7-alpine",
+      "image_id": "sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "6379/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "6379"
+          }
+        ]
+      },
+      "networks": [
+        "sting-infra21_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    },
+    {
+      "container": "sting-infra21-neo4j-1",
+      "image_tag": "neo4j:5.15-community",
+      "image_id": "sha256:d9e2fb1ba398536e50d22ebc3d5d585baa086c1c0cf8e5b96bdc9e11e87e002a",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "7474/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "7474"
+          }
+        ],
+        "7687/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "7687"
+          }
+        ]
+      },
+      "networks": [
+        "sting-infra21_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    },
+    {
+      "container": "sting-infra21-qdrant-1",
+      "image_tag": "qdrant/qdrant:v1.7.0",
+      "image_id": "sha256:ff1639878418c0572f50a7e1314874e399537eb97e6d2f42d6b987a07a2c4c4f",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "6333/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "6333"
+          }
+        ],
+        "6334/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "6334"
+          }
+        ]
+      },
+      "networks": [
+        "sting-infra21_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    },
+    {
+      "container": "sting-infra21-shared-access-1",
+      "image_tag": "haproxy:2.9-alpine",
+      "image_id": "sha256:3e29449a6beed63262e36104adf531b4e41b359f61937303f5ea8607987b3748",
+      "status": "running",
+      "health": null,
+      "ports": {
+        "5432/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "5432"
+          }
+        ],
+        "9200/tcp": [
+          {
+            "HostIp": "192.168.1.21",
+            "HostPort": "9200"
+          }
+        ]
+      },
+      "networks": [
+        "spirithub_default",
+        "sting-infra21_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    },
+    {
+      "container": "spirithub-postgres-1",
+      "image_tag": "docker.m.daocloud.io/library/postgres:16-alpine",
+      "image_id": "sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea",
+      "status": "running",
+      "health": "healthy",
+      "ports": {},
+      "networks": [
+        "spirithub_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    },
+    {
+      "container": "spirithub-opensearch-1",
+      "image_tag": "opensearchproject/opensearch:2.15.0",
+      "image_id": "sha256:1963b3ece46dfe1a17cd633fb2e9cea22bd20753a295f39c2f513ce0070cad42",
+      "status": "running",
+      "health": "healthy",
+      "ports": {},
+      "networks": [
+        "spirithub_default"
+      ],
+      "configuration": {},
+      "secret_configured": {}
+    }
+  ]
+}

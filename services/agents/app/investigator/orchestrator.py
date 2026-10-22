@@ -21,6 +21,7 @@ from langgraph.graph import END, START, StateGraph
 from opentelemetry import trace
 
 from app.confidence import verdict_gate
+from app.context.attack_context import attack_context_artifacts
 from app.core.cost_telemetry import CostTracker
 
 from . import ledger
@@ -260,6 +261,10 @@ class InvestigatorOrchestrator:
                 raw_alert=raw_alert,
             )
 
+            if tenant_uuid is not None:
+                for kind, content in attack_context_artifacts(bundle):
+                    await ledger.record_artifact(run_id=run_uuid, tenant_id=tenant_uuid, kind=kind, content=content)
+
             logger.info("investigation.start", case_id=case_id, run_id=str(run_uuid))
             async with CostTracker(run_id=str(run_uuid), tenant_id=tenant_id) as tracker:
                 result = await self._graph.ainvoke(initial.to_dict())
@@ -385,6 +390,10 @@ class InvestigatorOrchestrator:
             alert_summary=alert_summary,
             raw_alert=raw_alert,
         )
+
+        if tenant_uuid is not None:
+            for kind, content in attack_context_artifacts(bundle):
+                await ledger.record_artifact(run_id=run_uuid, tenant_id=tenant_uuid, kind=kind, content=content)
 
         logger.info("investigation.stream.start", case_id=case_id, run_id=str(run_uuid))
         last_state: InvestigatorState | None = None

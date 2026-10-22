@@ -62,7 +62,7 @@ def _note_unavailable(reason: str) -> None:
 def _headers(api_token: str | None, tenant_id: str | None = None) -> dict[str, str]:
     headers = {"Authorization": f"Bearer {api_token}"} if api_token else {}
     if tenant_id:
-        headers["X-Tenant-ID"] = tenant_id
+        headers["X-AiSOC-Tenant-ID"] = tenant_id
     return headers
 
 

@@ -1,4 +1,15 @@
+当前本地环境以[2026-10-22依赖统一补齐回执](local-dependencies-20261022.md)为准：覆盖API/Agents runtime/dev及必需extras，已补本地动态库并移除新环境内继承的旧项目editable。两服务共享包锁版本不同，统一环境采用声明兼容的实际清单及SQLAlchemy本地覆盖，不等于任一部署锁；旧批次环境快照保原。
+
 # 环境交接
+
+2026-10-22本地开发：用户要求使用Conda创建项目专用环境，路径为`/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2`，Python 3.12；从已有socai环境克隆基础依赖并在新环境补当前测试所需包，原环境不修改。本批Kafka入口写图验证使用该解释器，实际版本保存在`.local/aisoc21/kafka-graph-intake-20261022/`，不是21部署环境或全部锁文件一致性证明。运行方式：
+
+```bash
+conda activate /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2
+PYTHONPATH=services/agents python -m pytest -q services/agents/tests/test_kafka_graph_intake.py
+```
+
+下文“最新限定结果/当前28层”等为原环境交接时的历史记录；当前发布与本地差异以[阶段交接](investigation-stage-handoff-20261022.md)及其后的[Kafka入口增量](kafka-graph-intake-20261022.md)为准，不执行旧R02或据此启worker。
 
 最新限定结果：[C03-R01](c03-triage-review-only.md)代码隔离与定向部署已限定验收：191项断网测试通过（22项新增、169项既有直接测试），0真实模型/新业务写；仅Agents一次构建、一次替换为19f8f1a5，review_only_v1已配置、worker OFF，七只读挂载/60秒宽限保持。旧14材料表、全部告警字段、12预约/240000预留单位/3unknown、十reader、其他35容器/18卷/134迁移及消息水位保持。首次观察脚本RLS错误与189通过/2夹具失败及恢复均保留。当前28层运行定义、185 Agents/770运行Py，prompt/lock v5不变。下一按[人审准入卡](c03-review-only-profile-plan.md)另冻R02，验两条新A/B输入的有限真实main消费与首次结果恢复；原自治质量失败、C04/C05及后续调查/响应仍待验，整体迁移未完成。
 

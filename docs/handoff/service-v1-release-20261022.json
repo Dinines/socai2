@@ -1,0 +1,176 @@
+{
+  "service_version": "1.0.0",
+  "date": "2026-10-22",
+  "status": "deployed_worker_enabled",
+  "scope": "Kafka alert backend and automatic investigation; content quality not accepted",
+  "production_tenant": {
+    "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+    "tenant_name": "stingAISOC Production",
+    "tenant_slug": "stingaisoc-prod"
+  },
+  "consumer_group": "socai2-agents-v1-prod-20261022",
+  "startpoint": {
+    "at": "2026-10-22T08:39:54.356160+00:00",
+    "group": "socai2-agents-v1-prod-20261022",
+    "topic": "socai2.alerts.fused",
+    "start_offsets": {
+      "0": 30,
+      "1": 32,
+      "2": 39
+    }
+  },
+  "images": {
+    "api": "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9",
+    "agents": "sha256:49643b84b8f797229d793adbc462c8c8e5428cfa585934f0345b8b3400a25ba9",
+    "fusion_unchanged": "sha256:c52b9aacf4099a2ace30673c7d7b3ca9bcd933c1a22af5e20a38000494441018"
+  },
+  "configuration": {
+    "models_unchanged": true,
+    "model_configuration_sha256": "d89b11c193accb4913999c2736c7080418a193a03ac1a4a88b222914bae5dae2",
+    "ordinary_triage_budget": {
+      "window_seconds": 86400,
+      "max_calls": 10,
+      "max_reserved_tokens": 200000,
+      "max_unsettled": 1
+    },
+    "investigation_budget_unchanged": true,
+    "real_vendor_actions_enabled": false,
+    "old_tenants_groups_unknown_untouched": true,
+    "other_selected_containers_unchanged": 13
+  },
+  "readiness": {
+    "api": {
+      "image": "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9",
+      "status": "running",
+      "health": "healthy",
+      "readiness": {
+        "status": "ready",
+        "service": "aisoc-api"
+      },
+      "model_configuration_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    "agents": {
+      "image": "sha256:49643b84b8f797229d793adbc462c8c8e5428cfa585934f0345b8b3400a25ba9",
+      "status": "running",
+      "health": "healthy",
+      "readiness": {
+        "status": "ready",
+        "service": "aisoc-agents",
+        "subscriptions": [
+          "socai2.alerts.fused"
+        ]
+      },
+      "model_configuration_sha256": "d89b11c193accb4913999c2736c7080418a193a03ac1a4a88b222914bae5dae2"
+    }
+  },
+  "canary": {
+    "synthetic": true,
+    "topic": "socai2.alerts.raw",
+    "partition": 0,
+    "offset": 37,
+    "source_alert_id": "7b9fd642-97be-52f1-8b04-4f9f5c98acb2",
+    "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+    "canonical_alert_id": "00a6434c-eaf1-563d-93dc-70946e46e1d1",
+    "incident_id": "bbb6055f-5efc-40d8-93a2-d270185839d9",
+    "run": {
+      "id": "39dd7fba-5f42-5b4e-9653-ae7de5fce32c",
+      "status": "completed",
+      "error": null,
+      "total_tokens": 28216,
+      "started_at": "2026-10-22 08:44:53.864114+00:00",
+      "completed_at": "2026-10-22 08:45:11.483690+00:00"
+    },
+    "alert_status": "triaged",
+    "first_verdict": "true_positive",
+    "first_confidence": 0.85,
+    "graph_completion": "partial",
+    "graph_state_status": "running",
+    "graph_verdict": "needs_review",
+    "graph_confidence": 0.19,
+    "event_count": 15,
+    "artifact_count": 14,
+    "model_replies": 7,
+    "triage_tokens": 2048,
+    "graph_tokens": 26168,
+    "total_tokens": 28216,
+    "tool_calls": 7,
+    "ordinary_budget": [
+      {
+        "run_id": "39dd7fba-5f42-5b4e-9653-ae7de5fce32c",
+        "charged_tokens": 20000,
+        "reserved_at": "2026-10-22 08:44:53.874169+00:00",
+        "settled_at": "2026-10-22 08:44:58.229369+00:00",
+        "outcome": "responded"
+      }
+    ],
+    "kafka": {
+      "group": "socai2-agents-v1-prod-20261022",
+      "committed": {
+        "0": 30,
+        "1": 33,
+        "2": 39
+      },
+      "end": {
+        "0": 30,
+        "1": 33,
+        "2": 39
+      }
+    },
+    "markdown_artifact": "f0f36fcf-d491-4802-b238-7b8b4d59fb4a",
+    "markdown_bytes": 6468,
+    "http_checks": {
+      "http://api:8000/readyz": {
+        "status": 200,
+        "body": {
+          "status": "ready",
+          "service": "aisoc-api"
+        }
+      },
+      "http://127.0.0.1:8084/readyz": {
+        "status": 200,
+        "body": {
+          "status": "ready",
+          "service": "aisoc-agents",
+          "subscriptions": [
+            "socai2.alerts.fused"
+          ]
+        }
+      },
+      "/api/v1/alerts/00a6434c-eaf1-563d-93dc-70946e46e1d1": {
+        "status": 200,
+        "response_bytes": 4865
+      },
+      "/api/v1/investigations/39dd7fba-5f42-5b4e-9653-ae7de5fce32c": {
+        "status": 200,
+        "response_bytes": 1715
+      },
+      "/api/v1/investigations/39dd7fba-5f42-5b4e-9653-ae7de5fce32c/events": {
+        "status": 200,
+        "response_bytes": 27754
+      },
+      "/api/v1/investigations/39dd7fba-5f42-5b4e-9653-ae7de5fce32c/artifacts": {
+        "status": 200,
+        "response_bytes": 3614
+      },
+      "/api/v1/investigations/39dd7fba-5f42-5b4e-9653-ae7de5fce32c/artifacts/f0f36fcf-d491-4802-b238-7b8b4d59fb4a": {
+        "status": 200,
+        "response_bytes": 6813
+      }
+    }
+  },
+  "quality_accepted": false,
+  "migration_tasks": "5/15",
+  "known_limits": [
+    "Deep six-step cap and soft token budget overshoot",
+    "Run completed while graph/report running; completion partial",
+    "First verdict and report contain unsupported inferences",
+    "TI attribution 401, UEBA and some processing-context source failures",
+    "Un-ingested process_tree/mailbox_activity/oauth_grants; zero-row queries do not prove safety",
+    "Persisted prompts truncated at recording limit from Deep loop3; complete actual input cannot be reconstructed from these artifacts"
+  ],
+  "independent_audit": {
+    "reviewer": "service_v1_release_audit",
+    "predeployment": "limited ACCEPT; 0 must-fix",
+    "end_review": "limited ACCEPT; 0 must-fix/release blockers"
+  }
+}

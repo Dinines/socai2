@@ -1,6 +1,30 @@
+当前v1.0.0服务已发布并启用自动分诊/调查：先读[生产接入与实际结果](integration/v1/production.md)、[发布回执](operations/service-v1-release-20261022.md)。模型保持，调查partial/质量边界如实保留。
+
+后端对接发布文档v1：[总入口与每步输入输出](integration/v1/README.md)、[数据库/Kafka等连接配置](integration/v1/configuration.md)、[Kafka消息合同](integration/v1/kafka.md)、[调查入口/逐步输出/结论读取](integration/v1/investigation.md)、[表与关系](integration/v1/database.md)。正式告警走Kafka，HTTP告警仅测试；含JSON/SQL/env示例，配置依据/待核项与运行边界明确列出。
+
+两会话收尾：[未完进展与续接入口](handoff/session-closeout-20261022.md)。测试数据工具已做离线/替身合同，真实联测待续；产品工程建议最终版本已获原独审通过，尚未选定实施，相关文件已本地留存。
+
+智能调查产品设计：[急需问题、四个共享合同、Deep优化与场景扩展](architecture/investigation-product-engineering-roadmap-20261022.md)。从安全产品与工程角度给出优先级、代码落点、首批场景及验收口径；仅建议，未新增实施或运行。
+
+标书需求评估：[模块设计、迁移正确性与后续推进](operations/tender-requirements-assessment-20261022.md)，附 [35 子组164条逐项矩阵](requirements/socai2-requirements-matrix-20261022.md)。以当前项目实证判断，区分部分满足、缺口、未验和外部模块责任；不把迁移接通当作标书验收。
+
+最新本地镜像：[候选镜像构建、镜像内核验与正确本地builder用法](operations/investigation-candidate-images-20261022.md)。API/Agents两镜像已生成，19源码/7排除项与离线导入路由通过；未部署21或启用常驻。
+
+最新候选准备：[19文件组合、父版本与最小构建用法](operations/investigation-candidate-build-20261022.md)，本地100项直接合同及路由登记通过；本地Docker未运行，尚未构建或部署。
+
+最新概念讨论：[Incident、Fusion候选链、调查Chain/Path的对象与ID](architecture/attack-chain-path.md#concepts)、[四种归组组合与例子](architecture/attack-chain-path.md#membership-examples)、[Case/Playbook自动化](architecture/attack-chain-path.md#case-automation)、[结论与未决取舍](architecture/attack-chain-path.md#discussion-conclusions)。仅文档澄清：Fusion链已留存但未接下游业务消费，调查链重查PG，Path展开已有关系，不把讨论当行为修改。
+
+最新Kafka入口实证：[有界真实联合](operations/kafka-graph-joint-20261022.md)已验证本地消费者→API→21 PG/Neo4j在分诊前写图，直接邻域5节点4边；与原GET的14个可达候选、模型调查和21常驻发布分别记录。
+
+最新本地开发环境：[Conda依赖检查与补齐](operations/local-dependencies-20261022.md)，API/Agents共同依赖清单及离线核验；与Kafka联合观察、发布状态分开记录。
+
+2026-10-22最新：按用户选择，在Agents读取fused Kafka后、分诊前统一准备图，Fusion保持不改；Conda项目环境已建立，本地85项直接合同通过，详见[Kafka入口增量](operations/kafka-graph-intake-20261022.md)。未发布、worker OFF、5/15及旧质量失败保持；此前[B5→B6交接](operations/investigation-stage-handoff-20261022.md)保留原范围。
+
+链/图本地交付：见[配置与使用](architecture/attack-chain-path.md)、[完整告警案例与读取](operations/attack-chain-path-local-20261021.md)。四Agent真实消费/Run工件/Markdown已本地实测；暂未发布，首轮失败保留。
+
 # 项目文档入口
 
-2026-10-21最新先完成路线规划及关键点记录：按[总计划](operations/completion-plan.md)先UEBA → 威胁情报/IOC → 20既有知识库，再Fusion → 分诊 → 调查/攻击路径 → Markdown交付。支撑能力基础属性表和讨论纪要见[逐模块设计](operations/module-review-plan.md)，本轮没有新增功能实施；实际运行以PROGRESS/回执为准。
+2026-10-21路线规划阶段记录：当时先按[总计划](operations/completion-plan.md)记录UEBA → 威胁情报/IOC → 20既有知识库，再Fusion → 分诊 → 调查/攻击路径 → Markdown交付的顺序。支撑能力基础属性表和讨论纪要见[逐模块设计](operations/module-review-plan.md)；该规划阶段没有功能实施，后续实际本地实施/发布以页首交接、PROGRESS和原回执为准。
 
 当前迁移已进入实施，以[总执行计划](operations/completion-plan.md)为主表、[六阶段路线](operations/service-roadmap.md)为退出标准、[知识消费计划](operations/knowledge-data-reuse-plan.md)为B3细化；自动分诊、关闭、升级并实际执行调查均列主线。B1已限定完成；人工调查、实际工具/知识消费及Markdown持久读取已有[限定实证](operations/integrity-investigation-r01.md)，自动调查亦已走通，但内容/引用/深度质量未完整通过。后续full配套的基本接线见[回执](operations/full-support-migration.md)，不计作标书功能或整体迁移全部完成。
 
@@ -14,7 +38,7 @@
 
 历史[C03-R01](operations/c03-triage-review-only.md)代码隔离与定向部署已限定验收：191项断网测试通过（22项新增、169项既有直接测试），0真实模型/新业务写；仅Agents一次构建、一次替换为19f8f1a5，review_only_v1已配置、worker OFF，七只读挂载/60秒宽限保持。旧14材料表、全部告警字段、12预约/240000预留单位/3unknown、十reader、其他35容器/18卷/134迁移及消息水位保持。首次观察脚本RLS错误与189通过/2夹具失败及恢复均保留。该批为28层运行定义、185 Agents/770运行Py，prompt/lock v5不变。当时下一项为[人审准入卡](operations/c03-review-only-profile-plan.md)R02；现已按[status](../openspec/changes/admit-review-only-triage-worker/status.md)暂缓，不据此启动旧计划，后续调查/知识及full配套结果以新回执为准。
 
-当前先完成[逐模块路线与纪要](operations/module-review-plan.md)，下一项从UEBA实体配置、时间/基线、输入输出和偏离算法展开；[完整性修复设计](../openspec/changes/restore-alert-investigation-integrity/design.md)保留迁移任务与历史成果。源码完整不等于完整功能、自治质量或真实响应通过。
+UEBA用法、Fusion阶段、[分诊机制](architecture/triage.md)、[调查每次智能体/模型/工具调用](architecture/investigation.md)及[两套流程评价](architecture/investigation-design-review.md)均已有交接，链图也已本地实施，当前按页首B5→B6汇总已有证据与版本。[逐模块路线](operations/module-review-plan.md)及[完整性修复设计](../openspec/changes/restore-alert-investigation-integrity/design.md)保留原任务与历史成果。源码完整不等于完整功能、自治质量或真实响应通过。
 
 | 问题 | 当前维护入口 |
 | --- | --- |
@@ -24,6 +48,15 @@
 | 实际做到哪里、下一项是什么 | [PROGRESS](../PROGRESS.md) |
 | 官方声明与实际实现怎样对应 | [告警与调查功能对照](operations/alert-function-alignment.md) |
 | 当前架构、对象关系和二开入口 | [告警处理服务端架构](architecture/alert-processing.md) |
+| 事件关联/调查链图目前是否够用、下一步怎样推进 | [模块评估与最小推进路线](architecture/attack-chain-path.md#module-assessment) |
+| B5→B6哪些责任还未收口、阶段发布究竟选哪些文件 | [逐项责任、19文件候选及C2排除](operations/investigation-stage-closeout-20261022.md) |
+| Fusion到底做什么，准备怎样共同取舍 | [Fusion功能清单与告警实例](architecture/fusion.md) |
+| Incident、Fusion链和调查Chain/Path怎么区分，何时同组、Case何时创建 | [概念/ID](architecture/attack-chain-path.md#concepts)、[四种组合](architecture/attack-chain-path.md#membership-examples)、[调查范围](architecture/attack-chain-path.md#investigation-scope)、[自动化](architecture/attack-chain-path.md#case-automation)、[结论](architecture/attack-chain-path.md#discussion-conclusions) |
+| 调查每次模型为什么调用、输入输出、预处理及工具怎样执行 | [逐步输入输出与工具合同](architecture/investigation-preprocessing-tools.md)、[调查流程](architecture/investigation.md) |
+| Tool有哪些、怎样配置/执行/测试，第三方SIEM开放接口怎样接 | [工具使用指南](operations/investigation-tools.md)、[精确工具目录](architecture/investigation-tool-catalog.md)、[SIEM接入与测试示例](operations/siem-tool-integration.md) |
+| 厂商只有HTTP数据接口，自己设计的Tool怎样接入并证明执行 | [外部HTTP接口与Tool执行验证设计](architecture/third-party-search-contract.md)（仅设计，未实施） |
+| UEBA发送什么格式会纳入计算、配置与输出 | [UEBA模块说明与JSON实例](architecture/ueba.md) |
+| UEBA、IOC和知识库有哪些功能、怎样调用 | [依赖项简明使用](operations/dependency-usage.md) |
 | 变更怎样提案、实施、验证与独审 | [OpenSpec实施规范](../openspec/README.md)、[完整性评估/修复change](../openspec/changes/restore-alert-investigation-integrity/proposal.md) |
 | 怎样协作、如何保留原件和数据 | [AGENTS](../AGENTS.md) |
 
@@ -108,3 +141,9 @@
 ## C03-02D-02质量失败受控收尾
 
 [回执](operations/c03-triage-validity-quality.md)、[JSON](operations/c03-triage-validity-quality.json)、[证据清单](handoff/c03-triage-validity-quality-evidence-manifest.json)与[原执行卡](operations/c03-triage-validity-quality-plan.md)/[恢复卡](operations/c03-triage-validity-quality-recovery-plan.md)分别保留。两次回复4081 tokens，case01过门、case02分类与时间理由未过，case03/04未发；技术收尾不等于质量通过。下一先另冻人审profile新准入计划，尚未实施或验收；原自治分类/理由质量及常驻准入未过，worker OFF。原C03质量硬门和本批判据保持，C04/C05调查/知识及后续响应仍待逐批验收，整体迁移未完成。
+
+- [调查功能真实本地实测与逐步案例](operations/investigation-functional-20261021.md)：原默认四节点、Router领域分支、Deep每轮模型与工具；明确成功、兜底、部分结果和两处未发布的最小修正。
+
+- [攻击链与Attack Path接入调查计划](operations/attack-chain-path-integration-plan.md)：保留原规划；[本地实施回执](operations/attack-chain-path-local-20261021.md)已包含真实图、模型消费和Run输出，未发布21。
+
+- [调查阶段功能与版本交接](operations/investigation-stage-handoff-20261022.md)：B5→B6已有证据、已部署与本地差异、本地版本及剩余范围；不代替原回执或整体验收。

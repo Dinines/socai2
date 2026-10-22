@@ -13,7 +13,6 @@ could reach the crown jewels from the observed indicators*.
 
 from __future__ import annotations
 
-import os
 from collections import Counter
 from typing import Any
 
@@ -21,13 +20,9 @@ import structlog
 
 from app.models.state import ActionRisk, AgentStatus, InvestigationState, ProposedAction
 from app.tools.graph import get_attack_path, get_blast_radius
+from app.context.attack_context import reader_token
 
 logger = structlog.get_logger()
-
-# Internal service token used when the agents service calls the API. In dev
-# this is set via the AGENTS_API_TOKEN env var; in production it is rotated
-# alongside the rest of the service-mesh creds.
-_SERVICE_TOKEN = os.getenv("AGENTS_API_TOKEN")
 
 # Score thresholds (0.0–1.0) that mirror the buckets in graph_service.py.
 _BLAST_HIGH = 0.7
@@ -42,7 +37,29 @@ async def run_attack_path(state: InvestigationState) -> InvestigationState:
     logger.info("Attack-path agent starting", incident_id=str(state.incident_id))
     state.iteration_count += 1
 
-    case_id = _resolve_case_id(state)
+    context = (state.context_bundle or {}).get("attack_context") or {}
+    if context and context.get("scope") == "alert" and not context.get("case_id"):
+        # An Alert neighborhood is useful scope context, but never a fabricated
+        # Case path. Reuse the original API query's returned graph and score.
+        part = context.get("alert_graph") or {}
+        data = part.get("data") if isinstance(part.get("data"), dict) else {}
+        state.threat_intel["alert_graph"] = {
+            "alert_id": context.get("alert_id"), "status": part.get("status"),
+            "source": part.get("source"), "error": part.get("error"),
+            **data,
+        }
+        if part.get("status") in {"unavailable", "error"} or part.get("error"):
+            state.add_finding(f"Alert graph lookup unavailable for {context.get('alert_id')} ({part.get('error') or part.get('status')}); graph scope remains unknown.")
+        else:
+            neighbors = data.get("neighbors") or {}
+            blast = data.get("blast_radius") or {}
+            blast = blast if isinstance(blast, dict) else {}
+            rows = neighbors.get("neighbors", neighbors.get("nodes", [])) if isinstance(neighbors, dict) else []
+            rows = rows if isinstance(rows, list) else []
+            state.add_finding(f"Alert-associated graph scope for {context.get('alert_id')}: {len(rows)} neighboring nodes, {blast.get('total_affected', 'unknown')} reachable entities (source={part.get('source')}). This is not a Case attack path or confirmed attack progression.")
+        return state
+
+    case_id = context.get("case_id") if context else _resolve_case_id(state)
     if not case_id:
         # No case linkage yet — agent has nothing to traverse. Stay silent so
         # we don't pollute the report with noise; the workflow is still
@@ -50,8 +67,22 @@ async def run_attack_path(state: InvestigationState) -> InvestigationState:
         logger.debug("No case_id on state; skipping attack-path agent")
         return state
 
-    path = await get_attack_path(case_id=case_id, api_token=_SERVICE_TOKEN)
-    if path.get("error") or not path.get("nodes"):
+    token = reader_token(str(state.tenant_id))
+    if context:
+        part = context.get("attack_path") or {}
+        path = part.get("data") if isinstance(part.get("data"), dict) else {}
+        if part.get("status") in {"unavailable", "error", "not_linked"}:
+            state.threat_intel["attack_path"] = {"case_id": case_id, "status": part.get("status"), "source": part.get("source"), "error": part.get("error")}
+            state.add_finding(f"Attack-path lookup unavailable for case {case_id} ({part.get('error') or part.get('status')}); the graph was not established as empty.")
+            return state
+        if part.get("error"):
+            state.add_finding(f"Attack-path uses {part.get('source')} for case {case_id}; the primary graph lookup was unavailable ({part['error']}). Returned associations retain that source limitation.")
+    else:
+        path = await get_attack_path(case_id=case_id, api_token=token, tenant_id=str(state.tenant_id))
+    if path.get("error") or path.get("available") is False:
+        state.add_finding(f"Attack-path lookup unavailable for case {case_id} ({path.get('error') or 'source unavailable'}); graph scope remains unknown.")
+        return state
+    if not path.get("nodes"):
         state.add_finding(f"Attack-path graph empty for case {case_id} (node_count={path.get('node_count', 0)}).")
         return state
 
@@ -69,7 +100,7 @@ async def run_attack_path(state: InvestigationState) -> InvestigationState:
     # how far through the kill chain the attacker has progressed.
     tactic_chain = _extract_tactic_chain(nodes)
     if tactic_chain:
-        state.add_finding(f"Kill-chain stages reached: {' → '.join(tactic_chain)}.")
+        state.add_finding(f"Associated MITRE tactic labels (not an observed attack sequence): {' → '.join(tactic_chain)}.")
 
     # ---- Pick high-value entities to compute blast radius for ----
     pivot_targets = _select_blast_targets(nodes)
@@ -79,7 +110,8 @@ async def run_attack_path(state: InvestigationState) -> InvestigationState:
         blast = await get_blast_radius(
             entity_type=pivot["entity_type"],
             entity_id=pivot["entity_id"],
-            api_token=_SERVICE_TOKEN,
+            api_token=token,
+            tenant_id=str(state.tenant_id),
         )
         if blast.get("error"):
             continue
@@ -128,6 +160,7 @@ async def run_attack_path(state: InvestigationState) -> InvestigationState:
     state.threat_intel.setdefault("attack_path", {})
     state.threat_intel["attack_path"] = {
         "case_id": case_id,
+        "source": (context.get("attack_path") or {}).get("source") if context else "legacy_graph_query",
         "node_count": path.get("node_count", len(nodes)),
         "edge_count": path.get("edge_count", len(edges)),
         "tactic_chain": tactic_chain,

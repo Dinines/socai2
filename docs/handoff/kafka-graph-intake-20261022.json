@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-22",
+  "scope": "local Kafka intake graph preparation before triage, Fusion unchanged",
+  "openspec_change": "restore-alert-investigation-integrity",
+  "openspec_tasks": "5/15",
+  "production_files": [
+    "services/agents/app/context/attack_context.py",
+    "services/agents/app/context/bundle.py",
+    "services/agents/app/workers/fused_alert_consumer.py",
+    "services/api/app/services/investigation_attack_context.py"
+  ],
+  "trigger": "FusedAlertTriageWorker._process_with_retry after schema validation, once per delivery before triage/retries",
+  "projection_owner": "trusted API using tenant-owned persisted canonical Alert",
+  "context_fetch": "GET only; entry receipt kept separately from query facts",
+  "configuration": [
+    "AISOC_ATTACK_CONTEXT_ENABLED",
+    "AISOC_INVESTIGATION_PREPARE_KEYS_FILE",
+    "API_SERVICE_URL"
+  ],
+  "preserved_guards": [
+    "independent writer, not reader/service identity",
+    "review_only and shadow no graph writes",
+    "canonical Alert and tenant verification",
+    "unchanged triage/budget/DLQ/offset rules"
+  ],
+  "case_handling": "explicit Alert projects current owned Alert, with an actual Case edge if resolved; explicit Case bound remains 50",
+  "preparation_failure": "explicit gap and original triage continues; no new recovery guarantee",
+  "tests": {
+    "kafka_intake": {
+      "passed": 24,
+      "log": ".local/aisoc21/kafka-graph-intake-20261022/kafka-intake-tests.txt"
+    },
+    "existing_agents": {
+      "passed": 47,
+      "log": ".local/aisoc21/kafka-graph-intake-20261022/agents-direct-tests.txt"
+    },
+    "api_projection": {
+      "passed": 14,
+      "log": ".local/aisoc21/kafka-graph-intake-20261022/api-direct-tests.txt"
+    },
+    "total_passed_disjoint_files": 85,
+    "http_pg_graph_doubles": true,
+    "early_collection_failures_preserved": true
+  },
+  "test_environment": {
+    "type": "Conda",
+    "prefix": ".local/conda-envs/socai2",
+    "python": "3.12.14",
+    "versions": ".local/aisoc21/kafka-graph-intake-20261022/environment.json",
+    "deployment_lock_parity_claimed": false
+  },
+  "local_version": {
+    "manifest": ".local/versions/kafka-graph-intake-20261022/manifest.json",
+    "file_count": 16,
+    "archive_sha256": "bdfb6868c4228e1dc9cf4a69bda5491b8b34f81892c1efbe6bb12fbccb1d7367",
+    "original_copy_archive_match": true
+  },
+  "real_kafka_broker_validation_this_batch": false,
+  "real_business_pg_neo4j_access_this_batch": false,
+  "new_model_calls": 0,
+  "formal_messages_published": 0,
+  "deployed_or_restarted": false,
+  "resident_worker_started": false,
+  "old_runs_unknown_backlog_replayed": false,
+  "git_commit_push": false,
+  "independent_audit": {
+    "status": "limited_ACCEPT",
+    "reviewer": "kafka_graph_audit",
+    "involved_in_implementation": false,
+    "blocking_findings_remaining": 0,
+    "verified_tests": 85,
+    "verified_version_files": 16,
+    "resolved_finding": "new shadow class check now uses original message category; targeted test added",
+    "scope": "local intake wiring/direct contracts only; no C2 or deployment approval"
+  },
+  "validation": {
+    "selected_files_original_copy_archive_verified": 16,
+    "local_links_checked": 468,
+    "missing_links": 0,
+    "openspec_strict": "passed",
+    "git_diff_check": "passed",
+    "Fusion_source_unchanged": true
+  }
+}

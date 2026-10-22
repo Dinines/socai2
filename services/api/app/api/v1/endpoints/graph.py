@@ -21,10 +21,60 @@ from app.services import graph_service
 from app.services.context_import import import_context
 from app.services.incident_context import get_incident_context, read_identity_context_for_accounts
 from app.services.investigation_tools import BACKED_TOOLS, TOOLS, dispatch
+from app.services import investigation_attack_context as attack_context
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+class InvestigationContextRequest(BaseModel):
+    case_id: uuid.UUID | None = None
+    alert_id: uuid.UUID | None = None
+    window: str = "24h"
+
+
+def _attack_context_access(user: CurrentUser, case_id: Any, alert_id: Any, *, write: bool) -> None:
+    if not case_id and not alert_id:
+        raise HTTPException(422, "case_id or alert_id is required")
+    user.require_permission(f"{'cases' if case_id else 'alerts'}:{'write' if write else 'read'}")
+    if not attack_context.enabled():
+        raise HTTPException(503, "investigation_attack_context_disabled")
+
+
+@router.get("/investigation-context")
+async def get_investigation_context(
+    db: DBSession, user: AuthUser, case_id: uuid.UUID | None = None,
+    alert_id: uuid.UUID | None = None, window: str = "24h",
+) -> dict[str, Any]:
+    """Read the owned anchor's chain/graph; never prepare or cache a graph."""
+    _attack_context_access(user, case_id, alert_id, write=False)
+    return await attack_context.read_investigation_attack_context(db, user.tenant_id, case_id, alert_id, window)
+
+
+def _require_attack_context_write():
+    """Dynamic anchor permission, resolved by the same CurrentUser gate."""
+    case_permission, alert_permission = "cases:write", "alerts:write"
+
+    async def _check(body: InvestigationContextRequest, user: AuthUser) -> CurrentUser:
+        user.require_permission(case_permission if body.case_id else alert_permission)
+        return user
+
+    return _check
+
+
+@router.post("/investigation-context")
+async def prepare_investigation_context(
+    body: InvestigationContextRequest, db: DBSession,
+    user: Annotated[CurrentUser, Depends(_require_attack_context_write())],
+) -> dict[str, Any]:
+    """Project existing PG facts only; no caller-supplied nodes or queries."""
+    _attack_context_access(user, body.case_id, body.alert_id, write=True)
+    if body.window not in attack_context.WINDOWS:
+        raise HTTPException(422, "unsupported window")
+    projection = await attack_context.prepare_investigation_graph(db, user.tenant_id, body.case_id, body.alert_id)
+    return {"tenant_id": str(user.tenant_id), "case_id": str(body.case_id) if body.case_id else None,
+            "alert_id": str(body.alert_id) if body.alert_id else None, "projection": projection}
 
 
 # ─── Graph backend availability ───────────────────────────────────────────────
@@ -78,6 +128,8 @@ class AttackPathResponse(BaseModel):
     edges: list[GraphEdge]
     node_count: int
     edge_count: int
+    source: str | None = None
+    fallback: bool = False
 
 
 class BlastRadiusResponse(BaseModel):
@@ -543,9 +595,9 @@ async def get_attack_path(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Case {case_id} has no linked entities",
             )
-        return AttackPathResponse(**fallback)
+        return AttackPathResponse(**{**fallback, "source": "postgres_fallback", "fallback": True})
 
-    return AttackPathResponse(**data)
+    return AttackPathResponse(**{**data, "source": "neo4j", "fallback": False})
 
 
 @router.get(

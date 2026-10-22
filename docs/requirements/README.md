@@ -1,5 +1,7 @@
 # 需求原件
 
+当前项目对照（2026-10-22）：[标书符合性、模块迁移评价与后续推进](../operations/tender-requirements-assessment-20261022.md)，以及 [35 子组与164条功能细项矩阵](socai2-requirements-matrix-20261022.md)。按本项目源码和实证重新判断，未沿用下列旧工程覆盖状态；技术迁移接通不等于标书完整满足。
+
 本目录保留完整产品需求，原文及历史覆盖表不为本轮范围调整而改写。**socai2当前只负责告警及后续数据处理服务端**；职责见[模块范围](../operations/alert-processing-scope.md)，实施路线见[服务端规划](../operations/service-roadmap.md)。前端、采集、原始事件检测等更广需求仍保留在原件中，但不自动成为本仓库本轮任务，也不推定外部团队已完成。
 
 - 日常阅读：[需求全文 Markdown](ai-soc2-requirements.md)，从同一原件完整提取正文、表格与3张插图，保留 Pnnn 定位。

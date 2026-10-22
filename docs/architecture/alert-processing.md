@@ -1,4 +1,8 @@
+2026-10-22 v1.0.0运行更新：生产Kafka常驻自动分诊/调查已开启，API/Agents链图候选已发布，模型保持；生产tenant/新组、真实partial结果及读取样例见[生产接入](../integration/v1/production.md)。下文各历史批次的OFF/候选未发布不是本次最新运行状态；质量与缺源限制保留。
+
 # 告警处理服务端架构与二开入口
+
+**2026-10-22后端对接口径：** 正式已有告警由上游写Kafka raw，HTTP告警只作测试辅助；API保留查询、Case和人工调查入口。Kafka/存储配置、每步输入输出与结论读取见[v1发布交接](../integration/v1/README.md)。下文历史实测保留，不把原HTTP测试证据当作正式接入推荐。
 
 **二开最新路线：** 先做可复用支撑能力UEBA、威胁情报/IOC、20上一版既有知识库，再进入Fusion、分诊、调查/攻击路径与Markdown交付。共享能力基础属性表、UEBA配置/基线问题及调查审计表见[逐模块说明](../operations/module-review-plan.md)。本轮只规划，IOC数据量及知识库历史经验后看，不预定合并不同调查状态模型。
 
@@ -17,10 +21,11 @@
 
 ```mermaid
 flowchart LR
-    Input[已有上游告警] --> Ingress[API 告警受理]
+    Input[已有上游告警] --> Raw[Kafka raw]
+    TestInput[HTTP告警测试辅助] -.-> Ingress[API 测试受理]
     Ingress --> Raw[Kafka raw]
     Raw --> Fusion[Fusion 去重 关联 增强 风险]
-    Direct[同步 process 调用] --> Fusion
+    Direct[同步 process 测试辅助] --> Fusion
     Fusion --> PG[(PostgreSQL 告警与首次材料)]
     Fusion --> Fused[Kafka fused]
     Fused --> Triage[Agents 自动分诊 常驻OFF]
@@ -38,7 +43,7 @@ flowchart LR
     Read -.受控提案与审批.-> Actions[Actions 真实执行受授权约束]
 ```
 
-API是认证、告警/Case操作和结果查询入口；Fusion拥有告警处理及持久交付；Agents拥有分诊和调查编排、工具/模型调用与结果工件。Actions实现保留，不能从调查建议推断厂商执行已获授权。Redis承担原去重/关联/缓存/风险等状态，PG承担可查询持久事实；Kafka传递raw/fused，不以连接成功代替业务完成。
+正式上游告警入口是Kafka raw；API是认证、Case操作、人工调查和结果查询入口，HTTP告警入口仅测试辅助。Fusion拥有告警处理及持久交付；Agents拥有分诊和调查编排、工具/模型调用与结果工件。Actions实现保留，不能从调查建议推断厂商执行已获授权。Redis承担原去重/关联/缓存/风险等状态，PG承担可查询持久事实；Kafka传递raw/fused，不以连接成功代替业务完成。
 
 ## 对象关系与不能混用的概念
 

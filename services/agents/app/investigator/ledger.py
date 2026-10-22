@@ -358,6 +358,8 @@ async def persist_graph_result(
                "completion": completion, "status": state.get("status"),
                "verdict": state.get("verdict"), "result_sha256": digest}
     artifacts = [("graph_result", content), ("report_md", report_md), ("report_html", report_html)]
+    from app.context.attack_context import attack_context_artifacts
+    artifacts.extend(attack_context_artifacts(state.get("context_bundle")))
     if exchanges:
         artifacts.append(("graph_llm_exchanges", json.dumps(exchanges, sort_keys=True, ensure_ascii=False)))
     payload["artifacts"] = [{"kind": kind, "sha256": hashlib.sha256(blob.encode("utf-8")).hexdigest(),

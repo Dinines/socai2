@@ -1,0 +1,32 @@
+# Apply last, after the existing 33 layers. Secrets stay on 21.
+services:
+  api:
+    image: socai2-api:v1.0.0
+    environment:
+      AISOC_ATTACK_CONTEXT_ENABLED: "true"
+  agents:
+    image: socai2-agents:v1.0.0
+    environment:
+      AISOC_AGENT_KAFKA_DISABLE: "0"
+      AISOC_AGENT_ESCALATE_TO_GRAPH: "1"
+      AISOC_TRIAGE_ADMISSION_PROFILE: legacy
+      KAFKA_CONSUMER_GROUP: socai2-agents-v1-prod-20261022
+      AISOC_TRIAGE_CONCURRENCY: "1"
+      AISOC_ATTACK_CONTEXT_ENABLED: "true"
+      API_SERVICE_URL: http://api:8000
+      ENRICHMENT_SERVICE_URL: http://enrichment:8082
+      AISOC_INVESTIGATION_CONTEXT_KEYS_FILE: /run/secrets/release-v1/context-readers.json
+      AISOC_INVESTIGATION_PREPARE_KEYS_FILE: /run/secrets/release-v1/writers.json
+      AISOC_ORG_MEMORY_KEYS_FILE: /run/secrets/release-v1/org-memory.json
+      AISOC_TENANT_SKILLS_KEYS_FILE: /run/secrets/release-v1/tenant-skills.json
+      AISOC_TRIAGE_KB_KEYS_FILE: /run/secrets/release-v1/kb.json
+      AISOC_TRIAGE_DISPOSITIONS_KEYS_FILE: /run/secrets/release-v1/dispositions.json
+      AISOC_TRIAGE_IDENTITY_KEYS_FILE: /run/secrets/release-v1/identity.json
+      AISOC_TRIAGE_BUDGET_POLICY_FILE: /run/secrets/release-v1/budget.json
+      AISOC_AGENT_RAISE_APPROVALS: "0"
+      AISOC_AGENT_MEMORY_WRITEBACK: "0"
+      AISOC_AGENT_MEMORY_SUPPRESSION: "0"
+      AISOC_SIEM_WRITEBACK_ENABLED: "0"
+      AISOC_ALERT_PLAYBOOKS_ENABLED: "0"
+    volumes:
+      - /opt/sting-aisoc-socai2/private/release-v1-20261022:/run/secrets/release-v1:ro

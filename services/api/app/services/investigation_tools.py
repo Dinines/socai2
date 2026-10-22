@@ -334,7 +334,7 @@ async def authentication_events(
         FROM {LAKE_TABLE}
         WHERE tenant_id = %(tenant_id)s
           AND user_name = %(user_name)s
-          AND source_ip != ''
+          AND source_ip != toIPv6('::')
           AND event_time >= now() - INTERVAL %(hours)s HOUR
         ORDER BY event_time DESC
         LIMIT %(limit)s

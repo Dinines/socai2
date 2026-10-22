@@ -25,6 +25,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, text
 
 from app.api.v1.deps import AuthUser, DBSession
+from app.services import investigation_attack_context
 from app.models.alert import Alert
 from app.services.attack_chain import (
     AttackChain,
@@ -35,6 +36,7 @@ from app.services.attack_chain import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
+alert_router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
 WindowLiteral = Literal["1h", "6h", "24h", "72h", "7d", "30d"]
@@ -47,6 +49,15 @@ _WINDOW_TO_TIMEDELTA: dict[str, timedelta] = {
     "7d": timedelta(days=7),
     "30d": timedelta(days=30),
 }
+
+
+@alert_router.get("/{alert_id}/attack-chain")
+async def get_alert_attack_chain(
+    alert_id: uuid.UUID, db: DBSession, user: AuthUser, window: WindowLiteral = Query(default="24h"),
+) -> dict[str, Any]:
+    """The original seed algorithm, anchored on an owned Alert; no cache write."""
+    user.require_permission("alerts:read")
+    return await investigation_attack_context.read_attack_chain(db, user.tenant_id, alert_id=alert_id, window=window)
 
 
 @router.get("/{case_id}/attack-chain")
