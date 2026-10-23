@@ -20,8 +20,9 @@ the model as structured results (via ToolRegistry.execute) rather than aborting.
 from __future__ import annotations
 
 import json
+import hashlib
 import time
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import structlog
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
@@ -44,6 +45,7 @@ async def run_with_tools(
     on_exchange: Callable[..., Any] | None = None,
     max_tokens: int | None = None,
     max_model_calls: int | None = None,
+    on_tool_complete: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
 ) -> dict[str, Any]:
     """Run a tool-calling conversation and return the final content + tool trace.
 
@@ -112,8 +114,8 @@ async def run_with_tools(
             name = call.get("name", "")
             args = call.get("args", {}) or {}
             call_id = call.get("id", "") or ""
+            tool_started = time.monotonic()
             result = await registry.execute(name, args)
-            trace.append({"tool": name, "args": args, "result_preview": str(result)[:200]})
             # The only place in this service where a tool result becomes text
             # a model reads. Depth plan 1.3 turned that from an accident of
             # layout into an invariant: `render_tool_message` is the single
@@ -122,13 +124,53 @@ async def run_with_tools(
             # rule `fabricated_tool_result` is sound only while that holds —
             # it reports a tool result inside the evidence fence as fabricated
             # by construction, which is a claim about this loop.
-            messages.append(ToolMessage(content=render_tool_message(result), tool_call_id=call_id))
+            result_text = render_tool_message(result)
+            serialized = json.dumps(result, default=str)
+            entry = {
+                "tool": name, "args": args, "call_id": call_id, "iteration": iteration,
+                "status": _tool_status(result),
+                "available": result.get("available") if isinstance(result, dict)
+                    and isinstance(result.get("available"), bool) else None,
+                "result_preview": str(result)[:200], "result_text": result_text,
+                "result_size_bytes": len(serialized.encode("utf-8")),
+                "result_sha256": hashlib.sha256(serialized.encode("utf-8")).hexdigest(),
+                "result_truncated": result_text != serialized,
+                "duration_ms": round((time.monotonic() - tool_started) * 1000),
+            }
+            trace.append(entry)
+            # Retain the completed call before another tool/model can fail.
+            # The callback persists the same bounded text sent to the model;
+            # it must not re-render or enlarge the prompt's tool channel.
+            if on_tool_complete is not None:
+                await on_tool_complete(entry)
+            messages.append(ToolMessage(content=result_text, tool_call_id=call_id))
 
     logger.info("tool_loop.truncated", iterations=max_iters, tools_called=len(trace))
     # The last item is a ToolMessage, not an analyst's final answer. Keep
     # its evidence in the trace/messages; a cap must not promote it into a
     # completed investigation narrative or spend another model call.
     return partial(max_iters, f"iteration cap ({max_iters})")
+
+
+def _tool_status(result: Any) -> str:
+    """Classify only explicit top-level execution fields, never preview prose.
+
+    Empty means a successful empty response, not evidence of safety. A plain
+    mapping with no known envelope remains unknown; nested telemetry fields
+    named ``error`` cannot turn a successful lookup into a failed call.
+    """
+    if isinstance(result, list):
+        return "success" if result else "empty"
+    if not isinstance(result, dict):
+        return "unknown"
+    if result.get("error"):
+        return "error"
+    if result.get("available") is False:
+        return "unavailable"
+    if result.get("available") is True or result.get("ok") is True:
+        rows = result.get("rows")
+        return "empty" if isinstance(rows, list) and not rows else "success"
+    return "unknown"
 
 
 def _content(message: Any) -> str:

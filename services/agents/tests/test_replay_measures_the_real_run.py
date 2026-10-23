@@ -48,8 +48,8 @@ class TestPivotsCountOnlySuccessfulCalls:
         from app.investigator.deep_investigation import _classify_pivots
 
         trace = [
-            {"tool": "lake_process_activity", "result_preview": "{'error': 'TimeoutError: '}"},
-            {"tool": "lake_network", "result_preview": '{"error": "ConnectError: refused"}'},
+            {"tool": "lake_process_activity", "status": "error", "result_preview": "{'error': 'TimeoutError: '}"},
+            {"tool": "lake_network", "status": "error", "result_preview": '{"error": "ConnectError: refused"}'},
         ]
 
         pivots, unavailable = _classify_pivots(trace)
@@ -61,7 +61,7 @@ class TestPivotsCountOnlySuccessfulCalls:
         """The case that already worked, so the fix cannot regress it."""
         from app.investigator.deep_investigation import _classify_pivots
 
-        pivots, unavailable = _classify_pivots([{"tool": "siem_search", "result_preview": "{'available': False, 'reason': 'no backend'}"}])
+        pivots, unavailable = _classify_pivots([{"tool": "siem_search", "status": "unavailable", "result_preview": "{'available': False, 'reason': 'no backend'}"}])
 
         assert pivots == []
         assert unavailable == ["siem_search"]
@@ -72,7 +72,7 @@ class TestPivotsCountOnlySuccessfulCalls:
         from app.investigator.deep_investigation import _classify_pivots
 
         pivots, unavailable = _classify_pivots(
-            [{"tool": "lake_process_activity", "result_preview": "{'available': True, 'rows': [{'host': 'WS-42'}]}"}]
+            [{"tool": "lake_process_activity", "status": "success", "result_preview": "{'available': True, 'rows': [{'host': 'WS-42'}]}"}]
         )
 
         assert pivots == ["lake_process_activity"]
@@ -87,7 +87,7 @@ class TestPivotsCountOnlySuccessfulCalls:
         """
         from app.investigator.deep_investigation import _classify_pivots
 
-        trace = [{"tool": f"tool_{n}", "result_preview": "{'error': 'RuntimeError: boom'}"} for n in range(4)]
+        trace = [{"tool": f"tool_{n}", "status": "error", "result_preview": "{'error': 'RuntimeError: boom'}"} for n in range(4)]
 
         pivots, _ = _classify_pivots(trace)
 

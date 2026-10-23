@@ -109,6 +109,9 @@ class ForensicFindings(BaseModel):
     #: that as a finding about the model. Distinct from `0.0`, which means it
     #: was scored and nothing was supported.
     groundedness: float | None = None
+    # Program-owned indicator-presence check; never supplied by the model.
+    # A passing check does not verify causality, authorization or completion.
+    validation: dict[str, Any] = Field(default_factory=dict)
 
 
 class ResponderPlan(BaseModel):

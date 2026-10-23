@@ -1,5 +1,9 @@
 # 调查逐步调用：自动链、人工链、模型、工具和审计
 
+后续设计与换账号续接统一读[调查模块规划设计文档](investigation-planning-design.md)：四块合同、程序/模型分工、旧模块融合、专用分支和逐模块测试。本文继续描述已有流程及历史实证，不把拟议统一设计当成已运行行为。
+
+2026-10-23本地小修：人工Forensic校验已前移到响应/报告之前；Deep逐次保留工具材料并以结构状态判断，异常/时限可交接已有成果。四阶段与模型参数保持，未部署；本地行为以[小修回执](../operations/investigation-result-handoff-20261023.md)为准，下文10月21日静态/旧运行记录保留。
+
 攻击链/图已按[原规划](../operations/attack-chain-path-integration-plan.md)完成一批本地接入：已有Case起点、可信定向投影、原查询、有界模型消费及Run工件，见[实际回执](../operations/attack-chain-path-local-20261021.md)。暂未发布，下文旧运行/失败事实保持；当前Tool目录、执行、配置及最少测试见[使用指南](../operations/investigation-tools.md)。
 
 本批已补[真实本地模型/工具逐步案例](../operations/investigation-functional-20261021.md)：Router Identity/Cloud、默认四节点含Forensic兜底、Deep六轮/7工具；下文静态示例及旧Run保持，不由新实测追认其质量。两处接口合同已本地最小修正，尚未发布。

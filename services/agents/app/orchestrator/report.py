@@ -167,6 +167,25 @@ def render_router_report_md(
         lines.append(f"| {label} | {value} |")
     lines.append("")
 
+    depth = state.investigation_depth or {}
+    if depth:
+        lines.extend(["## Investigation Handoff", ""])
+        partial = any(depth.get(key) for key in ("truncated", "over_budget", "cost_capped", "error"))
+        items = ["Completion: partial; a final investigation conclusion is still pending."
+                 if partial or state.budget_exhausted else "Investigation loop returned; tool execution status is not a truth judgment."]
+        stop = state.budget_exhausted_reason or depth.get("stop_reason") or depth.get("error")
+        if stop:
+            items.append(f"Stop reason: {stop}")
+        for entry in depth.get("tool_trace") or []:
+            reference = entry.get("ledger_artifact_id") or "no persisted artifact reference"
+            items.append(f"Tool {entry.get('tool', 'unknown')}: {entry.get('status', 'unknown')}; "
+                         f"material: {reference}; storage: {entry.get('ledger_status', 'unknown')}.")
+        for gap in depth.get("ledger_gaps") or []:
+            items.append(f"Storage gap: {gap}")
+        items.append("Empty or unavailable responses do not establish absence of activity. Review the retained material and unresolved sources before adopting a conclusion.")
+        lines.extend(_bullets(items))
+        lines.append("")
+
     # 3. Triage rationale --------------------------------------------------
     if state.confidence_basis:
         lines.append("## Triage Rationale")

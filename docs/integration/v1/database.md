@@ -1,6 +1,6 @@
 # v1 数据库表与结果关联
 
-[返回入口](README.md)。本篇为当前告警/调查主链的数据字典索引，不复制整个134份迁移DDL，也不要求业务后端直接改业务库。默认通过认证API查询，表结构用于明确结果归属及授权只读对账。
+[返回入口](README.md)。本篇为当前告警/调查主链的数据字典索引。按2026-10-23最新交接要求，业务后端可以按已授权身份直接查询已有表，自行完成页面聚合；HTTP说明仍保留。先看[数据库位置、页面字段与SQL](alert-investigation-ui.md)，本篇补充表关系与其他存储。
 
 22:56实际PG盘点已保存：25张表、428字段及实际主外键/约束，见[表与落地盘点](data-inventory.md)、[字段目录](table-fields.md)及[机器字典](data-catalog.json)。本轮2例的21条步骤事件、21份工件正文已读回，完整性与缺口分开记录；生产租户总量含此前发布canary。
 
@@ -79,7 +79,7 @@ SELECT set_config('app.current_tenant_id', '实际租户UUID', TRUE);
 ROLLBACK;
 ```
 
-当前若干RLS policy包含`current_tenant_id() IS NULL`兼容分支，部分内部角色还可绕过RLS；**未设置变量不能当作自动拒绝跨tenant查询**。所以对接方默认走API；如有直查需求，发放独立受控只读身份与明确表授权，不复制runtime/owner作为后端管理员。[RLS实际实现](../../../services/api/app/db/rls.py)、[初始policy](../../../services/api/migrations/002_rls.sql)、[补充policy](../../../services/api/migrations/060_rls_coverage.sql)
+当前若干RLS policy包含`current_tenant_id() IS NULL`兼容分支，部分内部角色还可绕过RLS；**未设置变量不能当作自动拒绝跨tenant查询**。直查沿用已授权的只读身份和表范围，并显式绑定/过滤租户；连接凭据由运维交接，不把runtime/owner作为后端管理员发放。[RLS实际实现](../../../services/api/app/db/rls.py)、[初始policy](../../../services/api/migrations/002_rls.sql)、[补充policy](../../../services/api/migrations/060_rls_coverage.sql)
 
 可交给数据后端的完整只读样例见[read-results.sql](examples/read-results.sql)：Alert→常见自动Run→步骤→工件摘要，以及独立Case关系读取。样例只读、不执行DDL/INSERT/UPDATE/DELETE，不修改历史步骤或报告。另有[本轮两个真实Run SQL](examples/production-two-examples.sql)，按实际字段整理；实际定向PG查询及正文校验见[核验回执](../../operations/service-v1-functional-20261022.md)。
 

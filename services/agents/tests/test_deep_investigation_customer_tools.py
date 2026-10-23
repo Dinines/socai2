@@ -283,7 +283,7 @@ def ledger_rows(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
 
     Patched on ``app.investigator.ledger``, which is the module the driver
     imports and calls, so this observes the real call rather than a copy of
-    the intent. There is no Postgres in a unit suite, and ``record_event``
+    the intent. There is no Postgres in a unit suite, and ``record_tool_result``
     returns ``None`` without one, so without this the ledger assertions would
     be vacuously satisfied by a function that did nothing.
 
@@ -298,12 +298,12 @@ def ledger_rows(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     async def _resolve(tenant_ref: str) -> uuid.UUID:
         return uuid.UUID("11111111-1111-1111-1111-111111111111")
 
-    async def _record(**kwargs: Any) -> uuid.UUID:
-        rows.append(kwargs)
-        return uuid.uuid4()
+    async def _record(**kwargs: Any) -> dict[str, str]:
+        rows.append({**kwargs, "kind": "tool_call", "payload": dict(kwargs["entry"])})
+        return {"event_id": str(uuid.uuid4()), "artifact_id": str(uuid.uuid4())}
 
     monkeypatch.setattr(ledger_module, "resolve_tenant", _resolve)
-    monkeypatch.setattr(ledger_module, "record_event", _record)
+    monkeypatch.setattr(ledger_module, "record_tool_result", _record)
     return rows
 
 

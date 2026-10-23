@@ -8,6 +8,35 @@
 
 ## ADDED Requirements
 
+### Requirement: Validate manual findings before downstream adoption
+
+人工四节点调查 SHALL 在Forensic完成后、Responder和Report采用前执行相同的程序校验，run与stream MUST 使用同一规则及实际Run身份。校验只声明其标识匹配能力，不能把匹配通过当业务断言验真；既有角色、模型参数及四次调用上限保持。
+
+#### Scenario: A forensic output cites an unsupported indicator
+- **WHEN** Forensic结论被已有标识检查降级
+- **THEN** 响应和报告采用明确待核状态及补证交接，模型原候选仍留审计；返回结构与持久报告一致，不以末尾单独降分代替前置采用
+
+#### Scenario: The model input or output requirement changes
+- **WHEN** 本批修改模型可见输入或输出采用要求
+- **THEN** 先完成直接请求/解析/下游合同测试，再以当前模型及全新隔离样例有界核查实际请求、回复、采用；替身与真实结果分别记录，失败不被后续修正覆盖
+
+### Requirement: Preserve completed tool material through investigation stop
+
+工具执行 SHALL 每次完成即记录结构状态及模型实际可见内容，并在Deep异常、时限或graph外层时限收尾时保留已完成材料。MUST 区分原始结果指纹、保存正文、展示preview及裁剪；未持久成功明确gap，不重跑查询补造回执。保原消息文本、轮数与token/时间上限，不新增总结模型调用。
+
+#### Scenario: A data row contains an error field
+- **WHEN** 调用顶层成功但rows内数据包含error文本，或顶层状态超出200字符展示范围
+- **THEN** 使用顶层结构及实际异常识别执行状态，preview不参与判断，成功空结果和缺源分别记录
+
+#### Scenario: A later call exceeds the deadline
+- **WHEN** 至少一次工具完成后，下一模型/工具异常或Deep/graph到时停止
+- **THEN** 已完成参数、调用状态及模型可见正文仍有回执或明确留存缺口；partial交接列停止原因与未完成材料，不把末工具JSON作为narrative，不继续新模型调用
+
+#### Scenario: A tool receipt cannot be persisted
+- **WHEN** 工具事件/正文写入失败或与旧seq冲突
+- **THEN** 不覆盖旧回执、不报告新的持久成功，记录留存缺口并继续交付已有partial材料；工件仅关联实际同tenant/Run事件
+
+
 ### Requirement: Prepare the alert graph at the Kafka investigation intake
 
 Agents SHALL 在合法fused Kafka告警的公共消费入口、原恢复/抑制/模型分诊之前，按真实tenant及canonical Alert准备图；MUST 复用原可信API、独立writer和PG归属校验，不修改Fusion或等到形成Case/升级Deep才写。正常写权限及功能配置缺失、政策禁写或准备失败均为明确缺口，不宣称投影成功，不改变原分诊、DLQ和offset确认合同。

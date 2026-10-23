@@ -59,6 +59,10 @@ async def _llm_responder(state: InvestigatorState) -> dict[str, Any]:
 
     prompt = (
         f"Alert: {safe_alert}\n\n"
+        "Program indicator-presence check (does not verify claim semantics): "
+        f"{sanitize_text(str(state.forensic.validation), max_len=1_500)}\n"
+        "If its status is needs_review, propose source verification only; do not adopt the prior-stage claim "
+        "as confirmed or propose containment, eradication or recovery based on it.\n"
         f"Root cause: {safe_root_cause}\n"
         f"Blast radius: {safe_blast}\n"
         f"Confidence: {state.forensic.confidence:.0%}\n"
@@ -158,6 +162,28 @@ async def run_responder(state_dict: dict[str, Any]) -> dict[str, Any]:
     logger.info("responder_agent.start", case_id=state.case_id)
 
     llm_result = await _llm_responder(state)
+
+    if state.forensic.validation.get("status") == "needs_review":
+        # The original model response remains in its existing LLM audit entry.
+        # Adoption is deterministic: free prose cannot override a failed check.
+        reason = str(state.forensic.validation.get("reason") or "Forensic indicators require review.")
+        llm_result = {
+            "recommended_actions": [{
+                "priority": 1,
+                "action": "Review source evidence and verify the unsupported indicators before adopting the forensic hypothesis.",
+                "rationale": reason,
+                "risk": "low",
+            }],
+            "containment_steps": [],
+            "eradication_steps": [],
+            "recovery_steps": [],
+            "risk_level": "unknown",
+            "summary": "Response plan requires review. Only source verification is proposed; incident risk remains unverified.",
+        }
+        state.log_decision(
+            agent="ResponderAgent", decision="response_plan_requires_review", reason=reason,
+            confidence=state.forensic.confidence,
+        )
 
     state.responder = ResponderPlan(
         recommended_actions=llm_result.get("recommended_actions", []),

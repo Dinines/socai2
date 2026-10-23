@@ -118,6 +118,9 @@ def _build_context(state: InvestigatorState) -> str:
         f"Threat actors: {safe_actors}",
         "",
         "=== FORENSIC ===",
+        "Program indicator-presence check (does not verify claim semantics): "
+        + sanitize_text(str(state.forensic.validation), max_len=1_500),
+        "When status is needs_review, keep the analysis unverified and describe the source-verification handoff.",
         safe_forensic_summary,
         f"Prior-agent root-cause hypothesis/claim (unverified, not a source observation): {safe_root_cause}",
         f"Prior-agent scope assessment (unverified): {safe_blast}",
@@ -278,6 +281,20 @@ async def run_report_writer(state_dict: dict[str, Any]) -> dict[str, Any]:
         )
         state.report_md = _fallback_report(state, reason=state.error)
 
+    requires_review = state.forensic.validation.get("status") == "needs_review"
+    if requires_review:
+        # Keep the response in its LLM audit, but deliver the checked state.
+        # A prompt alone cannot prevent a model from reconfirming a claim.
+        reason = "Indicator-presence check requires review. " + str(state.forensic.validation.get("reason") or "")
+        if state.error:
+            reason += " " + state.error
+        state.report_md = _fallback_report(state, reason=reason)
+        model_report_delivered = False
+        state.log_decision(
+            agent="ReportWriterAgent", decision="deliver_review_handoff", reason=reason,
+            confidence=state.forensic.confidence,
+        )
+
     if model_report_delivered:
         state.report_md += report_knowledge_references(state)
     state.report_html = _md_to_html(state.report_md, state.case_id)
@@ -291,7 +308,7 @@ async def run_report_writer(state_dict: dict[str, Any]) -> dict[str, Any]:
         duration_ms=elapsed_ms,
         report_hash=report_hash,
         generation_status=generation_status,
-        report_source="model" if model_report_delivered else "fallback",
+        report_source="review_handoff" if requires_review else ("model" if model_report_delivered else "fallback"),
     )
     state.status = "completed" if generation_status == "success" else "failed"
     state.completed_at = datetime.utcnow()
@@ -313,7 +330,11 @@ def _fallback_report(state: InvestigatorState, *, reason: str = "Model unavailab
 
 ## Executive Summary
 **Fallback report.** {literal(reason)}
-This report assembles supplied material and prior-stage claims; it does not establish that the model report completed successfully.
+This report assembles supplied material and prior-stage claims; it does not establish that those claims are confirmed.
+
+Program indicator-presence check: {literal(state.forensic.validation.get('status') or 'not_checked')}.
+{literal(state.forensic.validation.get('reason') or 'No check result was supplied.')}
+Forensic confidence after the check: {state.forensic.confidence:.0%}. This is not a semantic verification or an incident-completion measure.
 
 Supplied alert: {literal(state.alert_summary)}
 

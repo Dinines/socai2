@@ -285,6 +285,66 @@ async def record_event(
         return None
 
 
+async def record_tool_result(
+    *, run_id: uuid.UUID, tenant_id: uuid.UUID, seq: int, entry: dict[str, Any],
+) -> dict[str, str] | None:
+    """Atomically retain one completed tool call and its bounded visible result.
+
+    A sequence collision is a retention gap, never a newly persisted receipt.
+    Callers retain that gap and must not re-execute the tool to fill it.
+    """
+    pool = await get_pool()
+    if pool is None:
+        return None
+    event_id, artifact_id = uuid.uuid4(), uuid.uuid4()
+    # Storage state belongs to the returned receipt, not the material being
+    # inserted. In particular, never persist the callback's temporary pending.
+    material = {key: value for key, value in entry.items()
+                if key not in {"ledger_status", "ledger_event_id", "ledger_artifact_id"}}
+    content = json.dumps(material, ensure_ascii=False, default=str)
+    encoded = content.encode("utf-8")
+    visible = str(entry.get("result_text") or "").encode("utf-8")
+    payload = {key: value for key, value in material.items() if key != "result_text"}
+    payload["result_artifact_id"] = str(artifact_id)
+    payload["output_hash_layer"] = "model_visible_result_text"
+    try:
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                await _set_rls_context(conn, tenant_id)
+                owned = await conn.fetchval(
+                    "SELECT id FROM investigation_runs WHERE id=$1 AND tenant_id=$2 FOR SHARE",
+                    run_id, tenant_id,
+                )
+                if owned is None:
+                    return None
+                inserted = await conn.fetchval(
+                    """INSERT INTO investigation_events
+                       (id,run_id,tenant_id,seq,ts,kind,agent,summary,payload,
+                        input_hash,output_hash,duration_ms,created_at)
+                       VALUES ($1,$2,$3,$4,now(),'tool_call','deep-investigator',$5,$6::jsonb,$7,$8,$9,now())
+                       ON CONFLICT (run_id,seq) DO NOTHING RETURNING id""",
+                    event_id, run_id, tenant_id, seq,
+                    f"Tool {entry.get('tool', 'unknown')}: {entry.get('status', 'unknown')}"[:8000],
+                    json.dumps(payload, ensure_ascii=False, default=str),
+                    hashlib.sha256(json.dumps(entry.get("args", {}), sort_keys=True, default=str).encode()).hexdigest(),
+                    hashlib.sha256(visible).hexdigest(), int(entry.get("duration_ms") or 0),
+                )
+                if inserted is None:
+                    return None
+                await conn.execute(
+                    """INSERT INTO investigation_artifacts
+                       (id,run_id,event_id,tenant_id,kind,content,sha256,size_bytes,created_at)
+                       VALUES ($1,$2,$3,$4,'tool_result',$5,$6,$7,now())""",
+                    artifact_id, run_id, event_id, tenant_id, content,
+                    hashlib.sha256(encoded).hexdigest(), len(encoded),
+                )
+        return {"event_id": str(event_id), "artifact_id": str(artifact_id)}
+    except Exception as exc:  # Cancellation still propagates to the run's deadline.
+        logger.warning("ledger.tool_result_not_recorded", run_id=str(run_id), seq=seq,
+                       error=type(exc).__name__)
+        return None
+
+
 async def record_artifact(
     *,
     run_id: uuid.UUID,

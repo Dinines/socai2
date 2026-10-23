@@ -1,3 +1,15 @@
+## 2026-10-23 测试数据迁移修订规划结束独审
+
+root编写；未参与本次编写的handoff_audit只读对照原回执及相关源码，指出独立DLQ/消费起点、14次业务调用轮次不能当SDK/网关物理请求总数两项遗漏。主计划已补齐，并明确测试批次标记与实际Alert/Run身份映射；窄复核最终 **限定ACCEPT，0项本轮必须修项**。
+
+接受范围只限docs/operations/testdata-migration-plan-20261023.md的历史事实、设计和边界，不是工具实现或业务验收。审阅者未运行测试、连接生产、调模型或改文件；root仅做15本地链接/围栏、diff及OpenSpec静态检查。原5/15不变，原失败不覆盖，未实施/部署/Git提交推送。计划和审阅结论留存.local/versions/testdata-migration-plan-20261023/。
+
+## 2026-10-23 调查小修结束独审
+
+未参与实现的`handoff_audit`审读9业务文件、逐步回执和真实模型出站/原文/程序采用，结论限定 **ACCEPT，0项本批必须修项**。独立无外联70 passed，另核真实编译LangGraph两Run并发子任务进度及外层取消隔离PASS；复核root实际独立PG44 passed/0 skipped、SQL2、runner/报告18及逐步日志。两角色真实2回复2714tokens、原文仍有条件处置与无依据enrichment，程序采用正确；首2请求503/未知用量保留，不追认模型原文全过。
+
+详细审计`.local/verification/investigation-result-handoff-20261023/independent-audit.md`，执行回执docs/operations/investigation-result-handoff-20261023.md。保留普通外部取消不保证最终报告、普通字典unknown不计pivot、有界工具材料而非全量原始日志等限制。代码/验证版本保存于`.local/versions/investigation-result-handoff-20261023/`；本批不部署、不推送，不扩后续调查设计，原5/15与历史失败保持。
+
 ## 2026-10-23 事件级与跨事件研究结束独审（仅文档）
 
 root编写；未参与本次编写的resumed_projects_end_audit只读独审限定 **ACCEPT，0项本轮必须修项**。核本地Fusion键/摘要、worker单告警state与Run、Case摘要25/最终3条投影、agent-runs调用方材料、PG Chain无Incident过滤及Fusion chain；确认已有多告警与跨Incident候选，缺持续事件整体研判的判断准确。
@@ -185,3 +197,26 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 未参与实现者 `service_v1_release_audit` 先审具体operator/plan/overlay，再独立核实际回执和Run工件，结论**限定 ACCEPT，0项本轮必须修正/发布阻塞**。核新生产tenant/reader-writer最小身份、预算仅生产授权、一次性新组起点、原group/unknown保持、模型摘要一致、两服务healthy/readyz及fused订阅。独立比对15容器快照恰仅API/Agents改变、其余13对象一致；新raw Kafka合成告警15事件/14工件、5个授权GET200、新组仅p1前进一条且追平end，普通预算responded/settled。
 
 7个可见回复28216tokens（首次2048/graph26168），graph/报告running且completion partial、六轮/软预算、缺源和不受支持结论如实保留；不宣称自治质量、硬预算边界、全部迁移或标书满足。首次及Deep3—6轮仅持久prompt副本截断，不称实际请求截断。旧C2/原5/15不改，无旧输入重发/Git提交/厂商执行。独审同时扫描公开新增材料，生成token/私钥模式0命中。详见[发布回执](../../../docs/operations/service-v1-release-20261022.md)和[JSON](../../../docs/handoff/service-v1-release-20261022.json)。最终包/manifest窄复核仍限定ACCEPT：21项、60156字节，13份正文及6份辅助文件与当前源码一致，SHA256 `89e3b927c677ae08263a5ad38a40d0a0b124a9dbe2c23e30aeb9c5c5cd16e803`，凭据模式0命中。本条不重复业务/模型验证。
+
+
+## 2026-10-23 页面V1字段文档与取数证据结束独审
+
+未参与编写者 `ui_display_audit` 独立核本批文档、线上原GET/工件及本地持久化/冷读样例，最终限定 **ACCEPT，0项本批必须修**。发现的图范围路径和“节点数/类型数”措辞已修：当次范围取 graph_result.context_bundle.attack_context.query_scope，工件JSON先解析content；样例3跳可达6节点、5类型。交接JSON所保留Alert/Run/上下文、工件片段/MD与原件逐值一致，原件及本地源码hash匹配。
+
+验收范围为[产品展示说明](../../../docs/integration/v1/alert-investigation-ui.md)与[字段实值](../../../docs/integration/v1/ui-field-verification-20261023.json)：四页/90项信息的取数、空态、线上/本地/数据库/待补边界；41 GET200、21工件hash与字节、8本地定向用例。不代表前端实现、所有status分支、完整schema/RLS、调查内容质量或生产发布通过。两次探针初始失败与search无效问题保留，原5/15/旧失败不改。
+
+独审版本SHA256：文档 `2c60fd6e8014370255c91b8e86fa983760eaca46c1535ab0c2459a56d03a70ed`；验证JSON `18fa682ea34e073519668173a6d9a01684963e8a6d3ad38ae45658b432819419`。当时选定版本及manifest曾保存于 `.local/versions/ui-display-v1-20261023/`；用户随后要求清理旧文档版本，该文档副本包已删除，原始验证数据保持。以上hash是当时审查版本，新统一文档的审查另记下节。没有新模型/Kafka/部署/业务改码/Git提交推送；专用临时PG已stop并自动删除。
+
+
+## 2026-10-23 数据库直查与唯一最新文档增量独审
+
+未参与编写者 `ui_display_audit` 对数据库映射及后续合并做窄独审，最终 **限定ACCEPT，0本批必须修项**。核六核心表和类型、SQL38列、每例8条JSON路径；纠正first_seen_at为claim路径首次人工认领/确认，非页面查看或自动分诊时间。合并后的90项页面信息、数据库字段、HTTP和实值/SQL附件齐全，主文档及索引链接有效；两份旧稿和指定旧文档快照包已按用户要求删除。
+
+唯一主文档为[alert-investigation-ui.md](../../../docs/integration/v1/alert-investigation-ui.md)，SHA256 `6e4ccc0c7e7df8730bc5df140992cf4f90f34d778c81a91f70fe867361e9e63a`。不再保存另一份文档副本；当前校核元数据在 `.local/verification/ui-v1-20261023/latest-document-check.json`。旧审查hash为历史事实，不能代替本版本hash。结论仅覆盖文档映射/合并完整性；新增SQL仅静态校核，无生产重跑/新模型/改表/部署/Git提交推送，原5/15及旧失败保持。
+
+
+## 2026-10-23 文档按页面/表/取数/HTTP顺序重排独审
+
+未参与编写者 `ui_display_audit` 窄复核后 **限定ACCEPT，0本批必须修项**。四主部分及补充章节符合用户顺序；第1章90项产品字段无丢失，第3章数据映射和六组新SQL的表列与目录一致，HTTP方法/用途与源码一致（escalate仅升等级），链接有效。线上/本地/空态/完成度语义保持。新增查询仅静态核对，未运行生产SQL，原41 GET/21工件/8用例证据复用。
+
+唯一主文档SHA256 `5fb8885e8ab241d3c97af7ae79698610bedf5fbf4534e292aafd2308318d3a9d`，当前静态核查元数据覆盖 `.local/verification/ui-v1-20261023/latest-document-check.json`，未新建旧版本副本。结论仅覆盖本轮文档重排及映射，未改业务代码/数据库/服务，无新模型或Git提交推送，原5/15及旧质量/预算/unknown记录保持。

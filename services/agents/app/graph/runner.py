@@ -44,6 +44,20 @@ class InvestigationBudget:
 
 
 _ACTIVE_BUDGET: ContextVar[InvestigationBudget | None] = ContextVar("aisoc_graph_budget", default=None)
+_ACTIVE_PROGRESS: ContextVar[dict | None] = ContextVar("aisoc_graph_progress", default=None)
+
+
+def publish_investigation_progress(payload: dict) -> None:
+    """Keep completed Deep material even when its graph node cannot yield.
+
+    The container belongs to this runner invocation; nested graph tasks share
+    it, while unrelated runs cannot overwrite it. Identity fields are excluded.
+    """
+    progress = _ACTIVE_PROGRESS.get()
+    if progress is not None:
+        for key in ("investigation_depth", "findings"):
+            if key in payload:
+                progress[key] = payload[key]
 
 
 def current_investigation_budget() -> InvestigationBudget | None:
@@ -119,6 +133,8 @@ async def _run(
     # is the shape this project treats as worse than an absent one.
     step_started = time.monotonic()
     budget_token = _ACTIVE_BUDGET.set(budget)
+    progress: dict = {}
+    progress_token = _ACTIVE_PROGRESS.set(progress)
     try:
         async with asyncio.timeout(budget.max_seconds):
             async for step in graph.astream(state_dict):
@@ -175,6 +191,18 @@ async def _run(
         logger.warning("investigation.graph_failed", run_id=str(state.run_id), error=graph_error)
     finally:
         _ACTIVE_BUDGET.reset(budget_token)
+        _ACTIVE_PROGRESS.reset(progress_token)
+
+    if timed_out or graph_error:
+        # An interrupted node has no streamed output. Its completed tool
+        # receipts were published before cancellation and remain usable.
+        if "investigation_depth" in progress:
+            merged["investigation_depth"] = progress["investigation_depth"]
+        findings = list(merged.get("findings") or [])
+        for finding in progress.get("findings") or []:
+            if finding not in findings:
+                findings.append(finding)
+        merged["findings"] = findings
 
     try:
         result = InvestigationState.model_validate(merged)
@@ -186,8 +214,7 @@ async def _run(
         result.budget_exhausted = True
         result.budget_exhausted_reason = f"wall-clock budget exhausted ({budget.max_seconds}s)"
         result.add_finding(f"Investigation budget ({budget.max_seconds}s) exceeded — partial results, escalating.")
-        if not result.verdict:
-            result.verdict = NEEDS_REVIEW
+        result.verdict = NEEDS_REVIEW
         if result.status is AgentStatus.COMPLETED:
             result.status = AgentStatus.RUNNING
 

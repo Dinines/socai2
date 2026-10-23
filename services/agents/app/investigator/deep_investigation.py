@@ -121,6 +121,7 @@ class DeepInvestigationResult:
     #: than assumed: "every call is in the ledger" is a claim, and a run with
     #: four pivots and zero rows written is the failure it would hide.
     ledger_rows: int = 0
+    ledger_gaps: list[str] = field(default_factory=list)
     #: Namespaced MCP tools bound for this run, and what was refused and why.
     #: Recorded on the result as well as in the ledger so an operator reading
     #: one investigation can see that a tool they configured was not offered,
@@ -166,6 +167,8 @@ class DeepInvestigationResult:
             "customer_tools": self.customer_tools,
             "coverage_notes": self.coverage_notes,
             "ledger_rows": self.ledger_rows,
+            "ledger_gaps": self.ledger_gaps,
+            "tool_trace": self.tool_trace,
             "mcp_tools": self.mcp_tools,
             "mcp_refusals": self.mcp_refusals,
             "tenant_skill": self.tenant_skill,
@@ -177,8 +180,7 @@ class DeepInvestigationResult:
         out: list[str] = []
         if self.error:
             # A failed investigation must not read as a completed one.
-            out.append(f"Deep investigation did not complete ({self.error}). Findings below are from the deterministic path only.")
-            return out
+            out.append(f"Deep investigation did not complete ({self.error}). Completed tool materials below are partial evidence, not a final conclusion.")
 
         if self.narrative:
             out.append(self.narrative.strip())
@@ -189,7 +191,7 @@ class DeepInvestigationResult:
                 f"{self.tenant_skill.get('ref')} (owner: {self.tenant_skill.get('owner') or 'unrecorded'}), "
                 f"which outranks the built-in strategy for alerts of this shape."
             )
-        if self.pivots:
+        if self.pivots and not self.error:
             out.append(
                 f"Investigation depth: {self.distinct_pivots} distinct pivots "
                 f"across {self.iterations} reasoning steps "
@@ -198,8 +200,8 @@ class DeepInvestigationResult:
         if self.unavailable_data:
             # Stated as a coverage gap, never as an absence of activity.
             out.append(
-                "Coverage gap: the following data classes are not ingested, so this "
-                "investigation could not check them — "
+                "Coverage gap: the following lookups were unavailable or failed, so this "
+                "investigation could not verify their results — "
                 f"{', '.join(sorted(set(self.unavailable_data)))}. "
                 "Treat them as unknown rather than clear."
             )
@@ -215,6 +217,14 @@ class DeepInvestigationResult:
             out.append(
                 f"Investigation exceeded its {BUDGET_SECONDS:.0f}s budget and was cut short; conclusions are based on partial evidence."
             )
+        if self.tool_trace:
+            calls = ", ".join(f"{entry.get('tool', 'unknown')} ({entry.get('status', 'unknown')})"
+                              for entry in self.tool_trace)
+            out.append(f"Completed tool calls retained: {calls}. Empty responses do not establish absence of activity.")
+        if self.ledger_gaps:
+            out.append("Tool-material storage gaps: " + "; ".join(self.ledger_gaps))
+        if self.truncated or self.over_budget or self.error or self.cost_capped:
+            out.append("Unresolved: finish the investigation questions using the retained materials and verify missing sources before reaching a final disposition.")
         return out
 
 
@@ -371,33 +381,15 @@ def _account_loop_usage(result: DeepInvestigationResult, state: Any, tracker: An
 
 
 def _classify_pivots(trace: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
-    """Split the trace into pivots taken and data classes that were missing.
-
-    A tool that reported ``available: false`` is not a pivot — counting it
-    would let an investigation reach its depth floor by calling four tools
-    that all answered "not ingested".
-
-    Neither is a tool that **raised**. ``app/tools/registry.py`` returns
-    ``{"error": f"{type(exc).__name__}: {exc}"}`` when a tool throws, and that
-    shape carries no ``available`` key at all, so it used to fall into the
-    ``else`` and count. Four tools that all timed out therefore looked like
-    four pivots, and an investigation could report the depth it was required to
-    reach while having learned nothing.
-    """
+    """Classify structured execution states; historical previews are unknown."""
     pivots: list[str] = []
     unavailable: list[str] = []
     for entry in trace:
         name = entry.get("tool", "")
-        preview = str(entry.get("result_preview", ""))
-        unavailable_flag = "'available': False" in preview or '"available": false' in preview
-        # Matched on the key rather than on the word, so a *result* mentioning
-        # an error — a SIEM row whose message contains "error" — is still a
-        # pivot. Only the registry's own failure envelope has the key at the
-        # top of the mapping.
-        errored = "'error':" in preview or '"error":' in preview
-        if unavailable_flag or errored:
+        status = entry.get("status", "unknown")
+        if status in {"error", "unavailable"}:
             unavailable.append(name)
-        else:
+        elif status in {"success", "empty"}:
             pivots.append(name)
     return pivots, unavailable
 
@@ -413,31 +405,8 @@ def _classify_pivots(trace: list[dict[str, Any]]) -> tuple[list[str], list[str]]
 _TOOL_CALL_SEQ_BASE = 10_000
 
 
-async def _record_tool_calls(state: Any, trace: list[dict[str, Any]]) -> int:
-    """Write every tool call the loop made to the Investigation Ledger.
-
-    ``run_with_tools`` builds a trace and returns it, and nothing carried that
-    trace anywhere durable. The trace lived for the length of one function
-    call, so an investigation's own record held a narrative and a pivot count
-    with no evidence of which tools produced them, which is exactly what makes
-    a shallow run indistinguishable from a deep one after the fact.
-
-    Written here rather than through ``InvestigatorState.log_tool_call``,
-    which was the obvious route and is the wrong one. Two state classes exist:
-    ``app.investigator.state.InvestigatorState``, which has an ``audit_log``
-    the orchestrator drains into the ledger, and
-    ``app.models.state.InvestigationState``, which has neither. The production
-    caller of this module (``agents/investigation_agent.py``) passes the
-    **second**, so a version of this that called ``log_tool_call`` behind a
-    ``hasattr`` guard would have been a no-op on every real investigation
-    while passing a test that constructed the first. That is this
-    repository's most-repeated defect shape and it very nearly landed again.
-
-    Best-effort, and deliberately so: a ledger write failing must not take a
-    completed investigation down with it. Returns how many rows were written
-    so a caller can tell "nothing to record" from "the ledger is not
-    configured", which a bare ``None`` would not.
-    """
+async def _record_tool_calls(state: Any, trace: list[dict[str, Any]], *, seq_offset: int = 0) -> int:
+    """Confirm bounded tool materials without retrying a business query."""
     if not trace:
         return 0
     run_id = getattr(state, "run_id", None)
@@ -460,29 +429,18 @@ async def _record_tool_calls(state: Any, trace: list[dict[str, Any]]) -> int:
     written = 0
     for offset, entry in enumerate(trace):
         tool = str(entry.get("tool") or "unknown")
-        args = entry.get("args") or {}
         try:
-            event_id = await ledger.record_event(
-                run_id=run_id,
-                tenant_id=tenant_uuid,
-                seq=_TOOL_CALL_SEQ_BASE + offset,
-                kind="tool_call",
-                agent="deep-investigator",
-                summary=f"{tool}({', '.join(sorted(args))})",
-                payload={
-                    "tool": tool,
-                    "args": args,
-                    # The preview rather than the whole result. The loop
-                    # already caps each tool message at 4000 characters, and a
-                    # ledger row is not the place for a second copy of a
-                    # customer's SIEM rows.
-                    "result_preview": entry.get("result_preview"),
-                },
+            receipt = await ledger.record_tool_result(
+                run_id=run_id, tenant_id=tenant_uuid,
+                seq=_TOOL_CALL_SEQ_BASE + seq_offset + offset, entry=entry,
             )
         except Exception:  # noqa: BLE001 - a ledger write must not fail an investigation
             logger.warning("deep_investigation.tool_call_not_recorded", tool=tool)
             continue
-        if event_id is not None:
+        if receipt is not None:
+            entry["ledger_event_id"] = receipt["event_id"]
+            entry["ledger_artifact_id"] = receipt["artifact_id"]
+            entry["ledger_status"] = "recorded"
             written += 1
     return written
 
@@ -530,10 +488,35 @@ async def run_deep_investigation(
     tracker_start = tracker.calls_made if tracker is not None else 0
     # The runner already owns this budget. Pass its existing limits down to
     # the loop, rather than checking them only after an entire graph node.
-    from app.graph.runner import current_investigation_budget
+    from app.graph.runner import current_investigation_budget, publish_investigation_progress
     graph_budget = current_investigation_budget()
     token_limits = [limit for limit in (MAX_TOKENS_PER_INVESTIGATION,
                     graph_budget.max_tokens if graph_budget else None) if limit and limit > 0]
+
+    def publish_progress() -> None:
+        result.pivots, result.unavailable_data = _classify_pivots(result.tool_trace)
+        result.distinct_pivots = len(set(result.pivots))
+        result.ledger_gaps = [
+            f"{entry.get('tool', 'unknown')} call {index + 1}: {entry.get('ledger_status', 'unconfirmed')}"
+            for index, entry in enumerate(result.tool_trace)
+            if entry.get("ledger_status") != "recorded"
+        ]
+        publish_investigation_progress({"investigation_depth": result.as_dict(), "findings": result.findings()})
+
+    async def retain_tool(entry: dict[str, Any]) -> None:
+        offset = len(result.tool_trace)
+        result.tool_trace.append(entry)
+        result.iterations = max(result.iterations, int(entry.get("iteration", 0) or 0))
+        entry["ledger_status"] = "pending"
+        publish_progress()
+        try:
+            result.ledger_rows += await _record_tool_calls(state, [entry], seq_offset=offset)
+            if entry["ledger_status"] == "pending":
+                entry["ledger_status"] = "not_recorded"
+        finally:
+            if entry["ledger_status"] == "pending":
+                entry["ledger_status"] = "retention_interrupted"
+            publish_progress()
 
     try:
         model = llm if llm is not None else make_chat_model("investigation", max_tokens=max_completion_tokens())
@@ -589,24 +572,41 @@ async def run_deep_investigation(
                 on_exchange=getattr(state, "record_llm_exchange", None),
                 max_tokens=min(token_limits) if token_limits else None,
                 max_model_calls=graph_budget.max_tool_calls if graph_budget else None,
+                on_tool_complete=retain_tool,
             ),
             timeout=BUDGET_SECONDS,
         )
+        result.narrative = loop.get("content", "") or ""
+        result.iterations = int(loop.get("iterations", 0) or 0)
+        result.truncated = bool(loop.get("truncated"))
+        result.stop_reason = loop.get("stop_reason")
+        # Adapters/tests returning a trace without invoking the callback retain
+        # their materials too. The real loop has already written each entry;
+        # it must never rewrite those receipts at the end of the conversation.
+        if not result.tool_trace:
+            for entry in loop.get("tool_trace", []) or []:
+                await retain_tool(entry)
     except TimeoutError:
         result.over_budget = True
         result.error = f"exceeded the {BUDGET_SECONDS:.0f}s budget"
-        result.latency_ms = int((time.monotonic() - started) * 1000)
+        result.truncated = True
+        result.stop_reason = result.error
         logger.warning("deep_investigation.over_budget", strategy=strategy.id)
-        return result
+    except asyncio.CancelledError:
+        result.error = "cancelled before investigation completed"
+        result.truncated = True
+        result.stop_reason = result.error
+        raise
     except Exception as exc:
         result.error = f"{type(exc).__name__}: {exc}"
-        result.latency_ms = int((time.monotonic() - started) * 1000)
+        result.truncated = True
+        result.stop_reason = f"{type(exc).__name__} before investigation completed"
         logger.warning("deep_investigation.failed", strategy=strategy.id, error=type(exc).__name__)
-        return result
     finally:
         _account_loop_usage(result, state, tracker, tracker_start, governor)
+        result.latency_ms = int((time.monotonic() - started) * 1000)
+        publish_progress()
 
-    result.latency_ms = int((time.monotonic() - started) * 1000)
     if result.cost_capped:
         logger.warning(
             "deep_investigation.cost_capped",
@@ -614,16 +614,6 @@ async def run_deep_investigation(
             usd=None if result.usd_cost is None else round(result.usd_cost, 4),
             tokens=result.tokens,
         )
-    result.narrative = loop.get("content", "") or ""
-    result.tool_trace = loop.get("tool_trace", []) or []
-    result.iterations = int(loop.get("iterations", 0) or 0)
-    result.truncated = bool(loop.get("truncated"))
-    result.stop_reason = loop.get("stop_reason")
-
-    result.pivots, result.unavailable_data = _classify_pivots(result.tool_trace)
-    result.distinct_pivots = len(set(result.pivots))
-    result.ledger_rows = await _record_tool_calls(state, result.tool_trace)
-
     # Depth plan 1.3. The narrative is graded against the trace that just
     # became `tool_call` rows, so a tool the model credits with a result it
     # never called is named rather than read as a pivot that happened. The

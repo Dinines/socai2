@@ -48,6 +48,7 @@ def _trace(*entries: tuple[str, bool]) -> list[dict[str, Any]]:
         {
             "tool": name,
             "args": {},
+            "status": "success" if available else "unavailable",
             "result_preview": str({"tool": name, "available": available, "rows": []}),
         }
         for name, available in entries

@@ -1,5 +1,7 @@
 # 调查预处理与工具调用：每次模型的目的、输入和输出
 
+2026-10-23本地变化：Responder/Report输入新增有界程序校验状态，输出格式/模型参数保持；Deep工具文本仍沿原4000字符通道，现逐次留存该表示及结构状态/hash/裁剪，而非仅preview。实际两调用和采用边界见[回执](../operations/investigation-result-handoff-20261023.md)。下文旧调用示例保持，未部署本批。
+
 当前工具目录、配置及最少测试方法另见[Tool使用指南](../operations/investigation-tools.md)与[SIEM接入示例](../operations/siem-tool-integration.md)。本地链/图上下文已接入，见[本批实测](../operations/attack-chain-path-local-20261021.md)；历史模型结果和未部署状态保持。
 
 本批已补[真实本地模型/工具逐步案例](../operations/investigation-functional-20261021.md)：Router Identity/Cloud、默认四节点含Forensic兜底、Deep六轮/7工具；下文静态示例及旧Run保持，不由新实测追认其质量。两处接口合同已本地最小修正，尚未发布。

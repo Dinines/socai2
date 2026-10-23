@@ -124,7 +124,7 @@ def _build_graph():
     builder = StateGraph(dict)
 
     builder.add_node("recon", _safe_node(run_recon))
-    builder.add_node("forensic", _safe_node(run_forensic))
+    builder.add_node("forensic", _safe_node(_run_forensic_checked))
     builder.add_node("responder", _safe_node(run_responder))
     builder.add_node("report_writer", _safe_node(run_report_writer))
 
@@ -164,11 +164,10 @@ def _apply_groundedness(state: InvestigatorState) -> None:
     `services/api` loads the case's alerts and their raw events -- so the
     measurement means something.
 
-    The intervention differs from auto-triage's on purpose. Nothing
-    auto-closes here; a human reads this. So rather than demoting a verdict
-    it lowers the reported confidence to the measured groundedness and writes
-    the caveat into the summary the analyst actually reads. A number quietly
-    reduced with no explanation would be worse than leaving it alone.
+    Nothing auto-closes here. A failed indicator check lowers confidence and
+    sets a program-owned review requirement consumed by the response and
+    report stages. A passing check measures indicator presence only; it does
+    not establish whether a causal or authorization claim is true.
     """
     forensic = state.forensic
     reasoning = " ".join(
@@ -195,6 +194,25 @@ def _apply_groundedness(state: InvestigatorState) -> None:
     )
 
     forensic.groundedness = outcome.score
+    forensic.validation = {
+        "scope": "indicator_presence",
+        "status": "needs_review" if outcome.demoted else (
+            "indicator_check_passed" if outcome.score is not None else "not_scored"
+        ),
+        "reason": outcome.reason or (
+            "Cited indicators passed the presence check; claim semantics remain unverified."
+            if outcome.score is not None else "Indicator-presence check did not produce a score."
+        ),
+        "unsupported_indicators": list(outcome.hallucinated),
+    }
+    state.log(
+        StepKind.DECISION_REASON,
+        "ForensicValidation",
+        f"Indicator-presence check: {forensic.validation['status']}",
+        validation=forensic.validation,
+        groundedness=outcome.score,
+        confidence=outcome.confidence,
+    )
     if not outcome.demoted:
         return
 
@@ -212,6 +230,19 @@ def _apply_groundedness(state: InvestigatorState) -> None:
         "Treat them as unverified."
     )
     forensic.summary = f"{forensic.summary}\n\n{caveat}" if forensic.summary else caveat
+
+
+async def _run_forensic_checked(state_dict: dict[str, Any]) -> dict[str, Any]:
+    """Keep the forensic stage and its evidence check on the same graph edge.
+
+    Both public entry points use this graph. Checking here means the response
+    and report stages receive the same confidence and limitations that callers
+    receive, without introducing another model call or graph stage.
+    """
+    state = InvestigatorState.from_dict(await run_forensic(state_dict))
+    if state.status != "failed":
+        _apply_groundedness(state)
+    return state.to_dict()
 
 
 class InvestigatorOrchestrator:
@@ -244,7 +275,9 @@ class InvestigatorOrchestrator:
                 alert_summary=alert_summary,
                 raw_alert=raw_alert or {},
             )
+            run_uuid = run_id or uuid.uuid4()
             initial = InvestigatorState(
+                run_id=run_uuid,
                 case_id=case_id,
                 alert_summary=alert_summary,
                 raw_alert=raw_alert or {},
@@ -252,7 +285,6 @@ class InvestigatorOrchestrator:
                 context_bundle=bundle,
             )
 
-            run_uuid = run_id or uuid.uuid4()
             tenant_uuid = await ledger.start_run(
                 run_id=run_uuid,
                 case_id=case_id,
@@ -374,7 +406,9 @@ class InvestigatorOrchestrator:
             alert_summary=alert_summary,
             raw_alert=raw_alert or {},
         )
+        run_uuid = run_id or uuid.uuid4()
         initial = InvestigatorState(
+            run_id=run_uuid,
             case_id=case_id,
             alert_summary=alert_summary,
             raw_alert=raw_alert or {},
@@ -382,7 +416,6 @@ class InvestigatorOrchestrator:
             context_bundle=bundle,
         )
 
-        run_uuid = run_id or uuid.uuid4()
         tenant_uuid = await ledger.start_run(
             run_id=run_uuid,
             case_id=case_id,
@@ -444,10 +477,6 @@ class InvestigatorOrchestrator:
             cost_summary = tracker.summary()
             if last_state is not None:
                 last_state.cost_summary = cost_summary
-                # After the run and before anything is persisted or emitted,
-                # so the ledger, the report and the `done` event all carry the
-                # same caveated numbers.
-                _apply_groundedness(last_state)
 
             # Emit the final "done" event with the complete state payload
             if last_state is not None:

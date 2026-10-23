@@ -4,6 +4,8 @@ executes the model's selected calls, feeds results back, and terminates."""
 from __future__ import annotations
 
 from types import SimpleNamespace
+import hashlib
+import json
 
 import pytest
 from app.agents.tool_loop import run_with_tools
@@ -75,3 +77,50 @@ async def test_tool_loop_is_bounded_by_max_iters():
     assert out["truncated"] is True
     assert out["iterations"] == 3
     assert len(out["tool_trace"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_completed_tool_callback_precedes_next_model_and_keeps_actual_bounded_text(monkeypatch):
+    from app.llm import tool_loop
+
+    result = {"rows": [{"error": "ordinary event field", "body": "界" * 5000}], "available": True}
+    observed = []
+    turns = 0
+
+    async def invoke(_, messages):
+        nonlocal turns
+        turns += 1
+        if turns == 1:
+            return _tool_call("read", {"hostname": "host-1"})
+        assert len(observed) == 1
+        assert messages[-1].content == observed[0]["result_text"]
+        raise RuntimeError("next model failed")
+
+    async def retain(entry):
+        observed.append(entry)
+
+    monkeypatch.setattr(tool_loop, "safe_ainvoke", invoke)
+    registry = ToolRegistry([Tool("read", "read", {"type": "object"}, lambda **_: result)])
+    with pytest.raises(RuntimeError, match="next model failed"):
+        await run_with_tools(_FakeLLM([]), system="s", user="u", registry=registry, on_tool_complete=retain)
+    entry = observed[0]
+    serialized = json.dumps(result, default=str)
+    assert entry["status"] == "success" and entry["available"] is True
+    assert entry["result_text"] == serialized[:4000] and entry["result_truncated"]
+    assert entry["result_size_bytes"] == len(serialized.encode("utf-8"))
+    assert entry["result_sha256"] == hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+    assert entry["args"] == {"hostname": "host-1"} and entry["call_id"] == "c1"
+
+
+@pytest.mark.parametrize(("result", "status"), [
+    ({"rows": [{"error": "telemetry field"}], "available": True}, "success"),
+    ({"padding": "x" * 300, "available": False}, "unavailable"),
+    ({"padding": "x" * 300, "error": "lookup failed"}, "error"),
+    ({"available": True, "rows": []}, "empty"),
+    ({"message": "error: unavailable"}, "unknown"),
+    ([], "empty"),
+])
+def test_tool_state_uses_explicit_top_level_fields(result, status):
+    from app.llm.tool_loop import _tool_status
+
+    assert _tool_status(result) == status

@@ -87,11 +87,18 @@ def _entities(telemetry: list[dict[str, Any]]) -> dict[str, str]:
     return projected
 
 
-def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int = 3, out: Path) -> dict[str, Any]:
+def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int | None = None,
+                   out: Path, template_ids: list[str] | None = None) -> dict[str, Any]:
     if not RUN_ID.fullmatch(run_id):
         raise ValueError("run-id must be 1..64 letters, digits, dots, underscores or hyphens")
     tenant = str(UUID(tenant))
     event_time = _event_time(event_time)
+    if template_ids is not None:
+        if not template_ids or len(set(template_ids)) != len(template_ids):
+            raise ValueError("template IDs must be nonempty and unique")
+        if count is not None and count != len(template_ids):
+            raise ValueError("count must equal the number of selected templates")
+    count = count if count is not None else (len(template_ids) if template_ids else 3)
     if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= MAX_COUNT:
         raise ValueError("count must be 1..20")
     out = Path(out)
@@ -103,7 +110,15 @@ def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int = 3,
                          if row["upstream_path"] == "scripts/generate_eval_incidents.py")
     if generator_hash != expected_hash:
         raise ValueError("upstream generator differs from its source manifest")
-    scenarios = _generator().generate_incidents(count)
+    generator = _generator()
+    if template_ids is None:
+        scenarios = generator.generate_incidents(count)
+    else:
+        # Preserve the upstream template's stable index, placeholders and scenario ID.
+        available = {item["template_id"]: item for item in generator.generate_incidents(len(generator.TEMPLATES))}
+        if any(name not in available for name in template_ids):
+            raise ValueError("unknown template ID")
+        scenarios = [available[name] for name in template_ids]
     # Validate/build all requests before creating the output directory.
     materials = []
     for index, scenario in enumerate(scenarios, 1):
@@ -146,6 +161,8 @@ def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int = 3,
                 "limitations": ["No detection, model or business request runs during generation.",
                                 "Template narratives contain authored conclusions; this is not a blind quality corpus.",
                                 "No case/incident membership or attack-chain ground truth is supplied."]}
+    if template_ids is not None:
+        manifest["selected_template_ids"] = template_ids
     (out / "manifest.json").write_bytes(json_bytes(manifest))
     return manifest
 
@@ -276,18 +293,40 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--run-id", required=True)
     generate.add_argument("--tenant", required=True)
     generate.add_argument("--event-time", required=True)
-    generate.add_argument("--count", type=int, default=3)
+    generate.add_argument("--count", type=int, help="1..20; defaults to 3, or selected template count")
+    generate.add_argument("--template-id", dest="template_ids", action="append", help="explicit upstream template; repeat in desired order")
     generate.add_argument("--out", required=True, type=Path)
     send = sub.add_parser("send", help="explicitly send 1..20 alerts once; no retries or redirects")
     send.add_argument("--input-dir", required=True, type=Path)
     send.add_argument("--url", required=True)
     send.add_argument("--token-env", required=True)
     send.add_argument("--receipt", required=True, type=Path)
+    prepare = sub.add_parser("prepare-kafka", help="convert a local batch to source-v1 wire; no network")
+    prepare.add_argument("--input-dir", required=True, type=Path)
+    prepare.add_argument("--tenant", required=True)
+    prepare.add_argument("--out", required=True, type=Path)
+    kafka = sub.add_parser("send-kafka", help="send a prepared batch to its isolated raw topic")
+    kafka.add_argument("--wire-dir", required=True, type=Path)
+    kafka.add_argument("--tenant", required=True)
+    kafka.add_argument("--topic", required=True)
+    kafka.add_argument("--kafka-env", required=True, type=Path)
+    kafka.add_argument("--receipt", required=True, type=Path)
     args = parser.parse_args(argv)
     values = vars(args).copy()
     command = values.pop("command")
     try:
-        result = generate_batch(**values) if command == "generate" else send_batch(**values)
+        if command == "generate":
+            result = generate_batch(**values)
+        elif command == "send":
+            result = send_batch(**values)
+        elif command == "prepare-kafka":
+            from alert_kafka import prepare_kafka
+            result = prepare_kafka(**values)
+        else:
+            import asyncio
+            from alert_kafka import kafka_config, send_kafka
+            values["config"] = kafka_config(values.pop("kafka_env"))
+            result = asyncio.run(send_kafka(**values))
     except (OSError, ValueError, KeyError) as exc:
         # Avoid exception bodies that might contain a token or a server response.
         print(f"{command} refused ({type(exc).__name__}); check arguments, input manifest and fresh output path", file=sys.stderr)

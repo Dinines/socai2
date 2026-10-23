@@ -1,5 +1,7 @@
 # 调查设计评价：默认Case四节点与graph/deep
 
+2026-10-23本地小修已将Forensic标识检查统一放在Responder/Report之前，两入口一致；降级采用与工具停止交接见[回执](../operations/investigation-result-handoff-20261023.md)。它不构成语义验真或模型拓扑重构，下文旧校验位置为修正前事实；后续设计等待讨论。
+
 后续产品与工程建议见[智能调查优化与扩展方案](investigation-product-engineering-roadmap-20261022.md)：明确急需问题、范围/证据/结论/结果合同和场景演进；仅设计建议，不将下文三编排现状改写为已重构。
 
 本批已补[真实本地模型/工具逐步案例](../operations/investigation-functional-20261021.md)：Router Identity/Cloud、默认四节点含Forensic兜底、Deep六轮/7工具；下文静态示例及旧Run保持，不由新实测追认其质量。两处接口合同已本地最小修正，尚未发布。
