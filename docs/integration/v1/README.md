@@ -6,9 +6,16 @@
 
 [16:02发布前快照](runtime-snapshot.json)保留历史事实；[16:48发布后快照](service-runtime-snapshot.json)为当前脱敏容器配置，业务验证另见发布回执。
 
-后端表/数据对接先读[数据落地盘点](data-inventory.md)：25张实际表、428字段/约束、两条新例子的真实ID/正文校验、未完整留存项及读取分页约束均已说明；附[字段目录](table-fields.md)、[机器字典](data-catalog.json)和[只读SQL](examples/production-two-examples.sql)。
+## 两份主要交接文档
 
-**最新统一交接文档：[告警与调查 V1：页面、数据库取数与 HTTP 接口](alert-investigation-ui.md)**。第1章为四个页面的功能与90项展示字段；第2章为数据库位置、六核心表及关系；第3章为逐功能取数映射与六组SQL实例；第4章集中已有HTTP接口；第5章为版本/口径/验证等补充说明。可直接查询 `192.168.1.21:5432/aisoc`，HTTP作为另一种读取方式保留。[实际字段验证数据](ui-field-verification-20261023.json)及SQL为附件，不另保留旧版交接主文档。
+| 阅读目的 | 文档 | 包含什么 |
+| --- | --- | --- |
+| **了解当前数据设计** | [当前数据库设计与字段字典](table-fields.md) | 25张已盘点表、428个字段；表职责、关系、每字段含义、SQL类型、空值、默认值、枚举层级、JSON结构及证据时点 |
+| **了解页面展示建议** | [页面功能与展示要素建议](page-elements.md) | 四个页面、90项展示字段；核心/辅助/条件开放、状态和空态语义；这是建议，不是已实现清单 |
+
+配套附件按需阅读：[页面取数映射、SQL与HTTP](page-data-mapping.md)连接展示字段与实际数据；[七张Mermaid功能示意](ui-wireframes/README.md)用于要素对照；[完整审计](ui-functional-data-audit.md)及[90项机器矩阵](ui-functional-data-audit.json)说明必要性和数据可得性。示意图不作为UI或交互设计稿，网页截图及截图对照已取消。
+
+[原始数据库元数据](data-catalog.json)、[实际字段验证数据](ui-field-verification-20261023.json)和[落地盘点回执](data-inventory.md)保留为事实证据。旧混合文档只保留[阅读导航](alert-investigation-ui.md)，不再维护重复正文。
 
 ## 1. 先按角色选择对接点
 

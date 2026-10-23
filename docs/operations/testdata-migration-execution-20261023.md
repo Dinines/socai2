@@ -36,4 +36,4 @@
 
 按用户追加要求，核132份本轮运行材料/本地快照均被根`/.local/`规则忽略，0份已被Git跟踪。补工具目录`generated/`、`runs/`、`private/`三个可选输出目录规则，并验证不会忽略工具源码、tests或upstream来源清单。凭据、wire/payload/expected批次、模型/工具逐次正文及PG快照保持本地；公开只交付代码、必要测试、固定上游原件和摘要文档。检查记录为`gitignore-check.json`，不将此范围外推为整个仓库的秘密扫描。
 
-结束独审与本地保版结果补于原change audit/execution；不把工作区其他会话的修改算入本批。
+未参与实现的handoff_audit结束独审限定ACCEPT、0项本批必须修；结论仅限本批工具/接线/持久观察和partial交付，详见原change audit/execution。选定代码、文档、无凭据回执及审阅结论留存在`.local/versions/testdata-migration-20261023/`，不把其他会话修改算入本批。

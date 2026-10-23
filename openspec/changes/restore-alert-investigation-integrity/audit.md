@@ -1,3 +1,11 @@
+## 2026-10-23 测试数据工具迁移结束独审
+
+root与manual_design/deep_design分别实现工具、观察器与探针；未参与本次实现的handoff_audit只读独审，最终 **限定ACCEPT，本批0项必须修**。独立44 passed/39子项；核3条真实Fusion、2例原worker、29工件正文/hash/关联及6回复26492tokens一致。188个Agents源码和6上游原件hash保持，sender未知/隔离、observer完成语义/用量、原worker实调用/提交与清理准确；未新增审阅网络或模型。
+
+审阅要求修README的Agents输出目录示例，已改为实际允许的仓库.local。测试身份停用/预算2 responded正确RLS补查保留；初次缺RLS空观察不冒充业务结果。Git忽略覆盖本批运行材料，无已跟踪.local文件，不误忽略代码/测试/上游。工具、接线、持久观察与partial交付接受，标记影响推理、软预算超额、报告running/Run completed及无有效取证pivot等限制保持，不追认内容质量或生产发布。详见docs/operations/testdata-migration-execution-20261023.md，原5/15不变。
+
+root静态核20链接/围栏、diff与OpenSpec strict通过；选定源码、文档、无凭据回执及本次审阅结论留存.local/versions/testdata-migration-20261023/。共享文档含此前历史修改，快照不是独立部署包或完整工作区diff；未提交/push或部署。
+
 ## 2026-10-23 测试数据迁移修订规划结束独审
 
 root编写；未参与本次编写的handoff_audit只读对照原回执及相关源码，指出独立DLQ/消费起点、14次业务调用轮次不能当SDK/网关物理请求总数两项遗漏。主计划已补齐，并明确测试批次标记与实际Alert/Run身份映射；窄复核最终 **限定ACCEPT，0项本轮必须修项**。
@@ -220,3 +228,17 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 未参与编写者 `ui_display_audit` 窄复核后 **限定ACCEPT，0本批必须修项**。四主部分及补充章节符合用户顺序；第1章90项产品字段无丢失，第3章数据映射和六组新SQL的表列与目录一致，HTTP方法/用途与源码一致（escalate仅升等级），链接有效。线上/本地/空态/完成度语义保持。新增查询仅静态核对，未运行生产SQL，原41 GET/21工件/8用例证据复用。
 
 唯一主文档SHA256 `5fb8885e8ab241d3c97af7ae79698610bedf5fbf4534e292aafd2308318d3a9d`，当前静态核查元数据覆盖 `.local/verification/ui-v1-20261023/latest-document-check.json`，未新建旧版本副本。结论仅覆盖本轮文档重排及映射，未改业务代码/数据库/服务，无新模型或Git提交推送，原5/15及旧质量/预算/unknown记录保持。
+
+
+### 2026-10-23 页面示意附件结束独审
+
+未参与实现者 `ui_display_audit` 只读复核7份示意与主文档/实值JSON，首次指出I12混用调查材料与首次Fusion快照；已明确 `graph_result.raw_alert` 本例无status，`source_snapshot.status=new`仅属首次交付快照。修后限定 **ACCEPT，0本批必须修项**：四页七图、90项字段各覆盖一次且名称一致，时间/状态/用量/工件实值匹配，生产/本地及拟建控件边界明确，所有相对链接有效。独审不覆盖渲染，主执行者另以Mermaid 11.12.0实际渲染7/7并核布局；之后仅调字号、换行宽度和短分区标题。最终文件hash见 `.local/verification/ui-v1-20261023/wireframes/document-check.json`。
+
+
+## 2026-10-23 页面功能必要性与数据可得性结束独审
+
+`ui_display_audit`核原版render/handler与90项必要性、`local_display_data`核90项路径/值/空态及版本边界，两者再审最终合稿，均**限定ACCEPT，0本批必须修项**。发现的A27组合字段、技能源采用数、工具默认零耗时、报告空态及MD/JSON发现ID冲突均修正；最终D01—D08为文档已修，G01—G08是后续接入条件。
+
+独立复算21份工件正文hash/字节及21个Run/事件关联；六核心表167列、7份本地源码/测试证据和2份本地样例hash保持。主执行者静态核90编号/名称、七Mermaid用途声明、164本地链接/51源行有效、凭据特征0命中；本轮未重新渲染截图。原change strict本轮已通过，未扩业务测试。结论只覆盖文档、产品取舍及读合同，不代表所有90项非空、页面/聚合后端实现或调查质量验收。
+
+最新[审计](../../../docs/integration/v1/ui-functional-data-audit.md)SHA256 `f3eee64388b9b6fad4baf5c78d479d672a28c0ab3aef4dde9966506a4e24b567`；[JSON](../../../docs/integration/v1/ui-functional-data-audit.json)SHA256 `95be20e995c31a7a47f47016a69009c354a220e0b69b37a8928081f65fd41b5d`。独审选定版本hash保留在JSON，最终只补审计回执；最终文件与链接校核元数据在`.local/verification/ui-v1-20261023/final-audit-check.json`，不另存旧主文档副本。原5/15与旧失败保持，无业务改码/新模型/部署/Git提交推送。
