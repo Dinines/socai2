@@ -543,7 +543,7 @@ C、D也必须先拆出有输入输出和预期的模块，逐块验证，不能
 | 后续调查应如何设计和实施 | 本文；第12节为逐模块执行要求，第10节为源码落点 |
 | 当前实际调查流程及工具 | [现状调查流程](investigation.md)、[设计评价](investigation-design-review.md)、[模型输入输出/工具说明](investigation-preprocessing-tools.md)、[工具目录](investigation-tool-catalog.md) |
 | 线上v1与本地未部署小修 | [生产接入](../integration/v1/production.md)、[小修回执](../operations/investigation-result-handoff-20261023.md)；不能用一份版本替代另一份 |
-| 现有账本、字段与读结果接口 | [页面与数据库交接](../integration/v1/alert-investigation-ui.md)、[调查入口](../integration/v1/investigation.md) |
+| 现有账本、字段与读结果接口 | [页面与数据库交接](../integration/v1/page-elements.md)、[调查入口](../integration/v1/investigation.md) |
 | 已有验证材料和生成工具 | [测试数据迁移计划](../operations/testdata-migration-plan-20261023.md)、[执行记录](../operations/testdata-migration-execution-20261023.md)；工具迁移是另一个批次，本规划不代写其结果或改变其范围 |
 | 实施与旧问题记在哪里 | [原change设计](../../openspec/changes/restore-alert-investigation-integrity/design.md)、[任务](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)、[执行](../../openspec/changes/restore-alert-investigation-integrity/execution.md)、[问题表](../operations/upstream-issues.md) |
 

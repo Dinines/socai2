@@ -211,7 +211,7 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 
 未参与编写者 `ui_display_audit` 独立核本批文档、线上原GET/工件及本地持久化/冷读样例，最终限定 **ACCEPT，0项本批必须修**。发现的图范围路径和“节点数/类型数”措辞已修：当次范围取 graph_result.context_bundle.attack_context.query_scope，工件JSON先解析content；样例3跳可达6节点、5类型。交接JSON所保留Alert/Run/上下文、工件片段/MD与原件逐值一致，原件及本地源码hash匹配。
 
-验收范围为[产品展示说明](../../../docs/integration/v1/alert-investigation-ui.md)与[字段实值](../../../docs/integration/v1/ui-field-verification-20261023.json)：四页/90项信息的取数、空态、线上/本地/数据库/待补边界；41 GET200、21工件hash与字节、8本地定向用例。不代表前端实现、所有status分支、完整schema/RLS、调查内容质量或生产发布通过。两次探针初始失败与search无效问题保留，原5/15/旧失败不改。
+验收范围为[产品展示说明](../../../docs/integration/v1/page-elements.md)与[字段实值](../../../docs/integration/v1/ui-field-verification-20261023.json)：四页/90项信息的取数、空态、线上/本地/数据库/待补边界；41 GET200、21工件hash与字节、8本地定向用例。不代表前端实现、所有status分支、完整schema/RLS、调查内容质量或生产发布通过。两次探针初始失败与search无效问题保留，原5/15/旧失败不改。
 
 独审版本SHA256：文档 `2c60fd6e8014370255c91b8e86fa983760eaca46c1535ab0c2459a56d03a70ed`；验证JSON `18fa682ea34e073519668173a6d9a01684963e8a6d3ad38ae45658b432819419`。当时选定版本及manifest曾保存于 `.local/versions/ui-display-v1-20261023/`；用户随后要求清理旧文档版本，该文档副本包已删除，原始验证数据保持。以上hash是当时审查版本，新统一文档的审查另记下节。没有新模型/Kafka/部署/业务改码/Git提交推送；专用临时PG已stop并自动删除。
 
@@ -220,7 +220,7 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 
 未参与编写者 `ui_display_audit` 对数据库映射及后续合并做窄独审，最终 **限定ACCEPT，0本批必须修项**。核六核心表和类型、SQL38列、每例8条JSON路径；纠正first_seen_at为claim路径首次人工认领/确认，非页面查看或自动分诊时间。合并后的90项页面信息、数据库字段、HTTP和实值/SQL附件齐全，主文档及索引链接有效；两份旧稿和指定旧文档快照包已按用户要求删除。
 
-唯一主文档为[alert-investigation-ui.md](../../../docs/integration/v1/alert-investigation-ui.md)，SHA256 `6e4ccc0c7e7df8730bc5df140992cf4f90f34d778c81a91f70fe867361e9e63a`。不再保存另一份文档副本；当前校核元数据在 `.local/verification/ui-v1-20261023/latest-document-check.json`。旧审查hash为历史事实，不能代替本版本hash。结论仅覆盖文档映射/合并完整性；新增SQL仅静态校核，无生产重跑/新模型/改表/部署/Git提交推送，原5/15及旧失败保持。
+唯一主文档为[page-elements.md](../../../docs/integration/v1/page-elements.md)，SHA256 `6e4ccc0c7e7df8730bc5df140992cf4f90f34d778c81a91f70fe867361e9e63a`。不再保存另一份文档副本；当前校核元数据在 `.local/verification/ui-v1-20261023/latest-document-check.json`。旧审查hash为历史事实，不能代替本版本hash。结论仅覆盖文档映射/合并完整性；新增SQL仅静态校核，无生产重跑/新模型/改表/部署/Git提交推送，原5/15及旧失败保持。
 
 
 ## 2026-10-23 文档按页面/表/取数/HTTP顺序重排独审
@@ -242,3 +242,10 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 独立复算21份工件正文hash/字节及21个Run/事件关联；六核心表167列、7份本地源码/测试证据和2份本地样例hash保持。主执行者静态核90编号/名称、七Mermaid用途声明、164本地链接/51源行有效、凭据特征0命中；本轮未重新渲染截图。原change strict本轮已通过，未扩业务测试。结论只覆盖文档、产品取舍及读合同，不代表所有90项非空、页面/聚合后端实现或调查质量验收。
 
 最新[审计](../../../docs/integration/v1/ui-functional-data-audit.md)SHA256 `f3eee64388b9b6fad4baf5c78d479d672a28c0ab3aef4dde9966506a4e24b567`；[JSON](../../../docs/integration/v1/ui-functional-data-audit.json)SHA256 `95be20e995c31a7a47f47016a69009c354a220e0b69b37a8928081f65fd41b5d`。独审选定版本hash保留在JSON，最终只补审计回执；最终文件与链接校核元数据在`.local/verification/ui-v1-20261023/final-audit-check.json`，不另存旧主文档副本。原5/15与旧失败保持，无业务改码/新模型/部署/Git提交推送。
+
+
+## 2026-10-23 数据库字典与页面建议拆分独审
+
+未参与本轮编写者`split_docs_review`完成极窄结束独审：**限定ACCEPT，0项当前交付阻塞**。独立按data-catalog核25表428列名称/顺序、SQL类型/UDT、可NULL、默认表达式和101条实际约束全部一致，每列含义/取值说明非空，字典160个文件/源码行链接有效。graph完成度completed/partial、Case六状态DB CHECK/API别名、Alert状态非DB封闭枚举、Run状态与完成度分开均正确。结论限静态文档，不代表每列均有实值、业务质量或新生产验证。
+
+最终文档为[数据库设计与字段字典](../../../docs/integration/v1/table-fields.md)、[页面展示建议](../../../docs/integration/v1/page-elements.md)，取数/SQL/HTTP另附。3份旧混合/重复正文已移入并删除，无跳转占位；页面建议已去掉原系统对比。90项编号与七图一致，主执行者277链接/25表428列/diff检查通过，元数据在`.local/verification/ui-v1-20261023/split-final-check.json`。未新访问生产/模型/改表/业务改码/部署或执行Git提交推送，原5/15及旧失败保持。

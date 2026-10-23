@@ -15,7 +15,7 @@
 
 配套附件按需阅读：[页面取数映射、SQL与HTTP](page-data-mapping.md)连接展示字段与实际数据；[七张Mermaid功能示意](ui-wireframes/README.md)用于要素对照；[完整审计](ui-functional-data-audit.md)及[90项机器矩阵](ui-functional-data-audit.json)说明必要性和数据可得性。示意图不作为UI或交互设计稿，网页截图及截图对照已取消。
 
-[原始数据库元数据](data-catalog.json)、[实际字段验证数据](ui-field-verification-20261023.json)和[落地盘点回执](data-inventory.md)保留为事实证据。旧混合文档只保留[阅读导航](alert-investigation-ui.md)，不再维护重复正文。
+[原始数据库元数据](data-catalog.json)、[实际字段验证数据](ui-field-verification-20261023.json)和[落地盘点回执](page-data-mapping.md)保留为事实证据。原混合文档和重复盘点正文在内容迁入后删除，不保留旧版或跳转占位。
 
 ## 1. 先按角色选择对接点
 
@@ -25,7 +25,7 @@
 | 业务后端 | API 查询；需要人工调查时创建/关联 Case 后启动 | Alert、Run 事件、工件内容、Markdown | API Bearer、租户及 scopes；通常不需直连全部存储 |
 | 自有结果订阅服务 | 独立消费组订阅 `socai2.alerts.fused` | 融合结果及可查询告警 ID | 自己的 group/起点/幂等；fused 不代表最终调查完成 |
 | 历史事件提供模块 | Kafka `socai2.raw_events.v1`，规范化事件合同 | ClickHouse 历史、UEBA 基线/异常 | 与已有告警不同的合同；[UEBA 输入说明](../../architecture/ueba.md) |
-| 运维/数据管理员 | 已有部署配置、存储访问身份 | 状态、DLQ、授权只读查询 | [连接配置](configuration.md)、[表与关系](database.md) |
+| 运维/数据管理员 | 已有部署配置、存储访问身份 | 状态、DLQ、授权只读查询 | [连接配置](configuration.md)、[表与关系](table-fields.md) |
 
 正式主链：
 
@@ -84,7 +84,7 @@ A5 的“分诊前统一 PG→Neo4j 写图”、Case/Alert链图接口及摘要/
 1. [连接、认证、部署配置位置](configuration.md)：Kafka/Redis/PG/OpenSearch/ClickHouse/Neo4j/Qdrant及服务端口。
 2. [Kafka 输入输出合同](kafka.md)：字段、source-v1、重投、fused、DLQ、事件支路。
 3. [调查入口、每步输出、结论及读取样例](investigation.md)：自动/人工/Router三个入口的区别。
-4. [数据库表、关联及只读查询](database.md)：核心表字段、上下文表和其他存储。
+4. [数据库表、关联及只读查询](table-fields.md)：核心表字段、上下文表和其他存储。
 5. [远端运行配置白名单快照](runtime-snapshot.json)：实际地址/库/开关/镜像，密码仅标有无。
 6. `examples/`：[raw 输入](examples/raw-alert.json)、[fused 输出](examples/fused-alert.json)、[认领与结论事件](examples/result-events.json)、[Kafka配置模板](examples/kafka-client.env.example)、[只读SQL](examples/read-results.sql)。示例均未发送/执行，UUID和凭据需替换。
 
@@ -92,6 +92,6 @@ A5 的“分诊前统一 PG→Neo4j 写图”、Case/Alert链图接口及摘要/
 
 先发放接入网络/CA、真实 tenant/source/connector 映射和查询身份；再约定 raw payload 与稳定身份；联调时观察 raw→Fusion→PG→fused，再读取已授权 Run 事件/工件。需要开启自动分诊/调查时沿现有运行准入另行处理，不能因这份文档直接启动旧积压消费。
 
-本版已同步v1.0.0服务实际发布，生产参数见[生产接入](production.md)。真实资料覆盖及调查质量限制继续保留；密码/token通过指定受控文件交接。文档阅读包不包含可直接source的私有配置。测试数据工具真实联测仍按[原停点](../../handoff/session-closeout-20261022.md)待续。
+本版已同步v1.0.0服务实际发布，生产参数见[生产接入](production.md)。真实资料覆盖及调查质量限制继续保留；密码/token通过指定受控文件交接。文档阅读包不包含可直接source的私有配置。测试数据工具已进行后续真实联测，当前结果及限制见[最新执行回执](../../operations/testdata-migration-execution-20261023.md)。
 
 本版各篇和examples可独立交接阅读；源代码、旧回执和部署文件的相对链接用于仓库内追溯。压缩阅读包保留`docs/integration/v1/`路径，放回本仓库根目录解压后这些引用完整可用；阅读包本身不包含私有env或整套源码。

@@ -6,7 +6,7 @@
 
 - **2026-10-23统一调查设计（仅方案，最新讨论口径）：** 用户明确四角色及graph/Deep/Router可以融合，不必固定保留；已形成[问题/证据/分析判断/执行状态设计](docs/architecture/unified-investigation-design-20261023.md)，含程序/模型所有权、逐步输入输出、Deep子任务、旧模块迁移、同版结果与停止交接。旧保拓扑约束适用于此前小修，不自动限制新设计；新设计未实施。独立设计审阅修订后限定ACCEPT、0剩余必须修项，只校核文档，不是业务验收。本轮不改代码/配置/运行、模型或业务测试、部署、提交推送，原5/15与旧失败保持。
 
-- **2026-10-23页面与数据库统一交接：** 用户要求先交接库表供自行查询、保留HTTP，并只保留最新文档。已合并为[唯一交接主文档](docs/integration/v1/alert-investigation-ui.md)：四页90项展示信息、21 PG aisoc/public六核心表、字段/JSON映射、关联及SQL、HTTP说明和实测边界。结构按用户要求调整为页面/功能/字段→数据库表→功能取数与六例→已有HTTP→补充说明。删除本轮两份dated旧稿及旧文档快照包，索引统一；实值JSON/SQL及原始测试证据保留。此前41 GET/21工件/8本地用例复用，本次仅核38列及两例8路径，无新生产查询/模型/改表/部署/提交推送；原5/15与旧失败保持。 增量独审限定ACCEPT、0必须修项；不再另存旧文档副本。
+- **2026-10-23页面与数据库统一交接：** 用户要求先交接库表供自行查询、保留HTTP，并只保留最新文档。已合并为[唯一交接主文档](docs/integration/v1/page-elements.md)：四页90项展示信息、21 PG aisoc/public六核心表、字段/JSON映射、关联及SQL、HTTP说明和实测边界。结构按用户要求调整为页面/功能/字段→数据库表→功能取数与六例→已有HTTP→补充说明。删除本轮两份dated旧稿及旧文档快照包，索引统一；实值JSON/SQL及原始测试证据保留。此前41 GET/21工件/8本地用例复用，本次仅核38列及两例8路径，无新生产查询/模型/改表/部署/提交推送；原5/15与旧失败保持。 增量独审限定ACCEPT、0必须修项；不再另存旧文档副本。
 - **2026-10-23测试数据迁移实施授权（最新）：** 用户确认按修订计划开始迁移；若必须修改后续调查设计，先停止并讨论。沿原restore推进测试工具场景选择/Kafka wire与有界发送、隔离Fusion、只读结果观察及两例自动分诊/调查，每步测试留回执；不顺带改模型职责/输入输出合同/编排/算法，不自动部署或Git提交推送。执行及旧失败保留见docs/operations/testdata-migration-execution-20261023.md，原5/15暂不勾完整任务。下条仅规划是前一阶段。
 
 
@@ -23,7 +23,7 @@
 
 - **2026-10-22两个暂停项目恢复：** 用户要求继续并逐步记录；测试工具attempt02三条新输入真实入口/Kafka/Fusion/PG通过，3Alert/new/无Case、6消息、关联Run0/模型0，隔离topic/Redis前缀，本地进程已停。原8离线＋2替身结果复用，attempt01及一次source_event_ids观察假设失败保留；产品建议已补v1已上线和两例数据事实，未实施未选定方案。见[逐步记录](docs/operations/two-projects-resume-20261022.md)、[工具回执](docs/operations/testdata-tools-20261022.md)。resumed_projects_end_audit结束独审限定ACCEPT、0本轮必须修项，选定版本与逐步记录已留存；原5/15/旧unknown预算/质量失败保持；无业务源码/部署配置修改、Git提交推送，生产v1维持原授权状态。
 
-- **2026-10-22 v1两例落库及后端数据盘点：** 用户授权正式服务跑1—2例后，已通过raw Kafka新增2条合成告警：例1自动BTP0.95关闭（3事件/7工件/2033tokens），例2自动NR0.85升级调查（18事件/14工件/29755tokens，graph partial）。21工件正文的UTF-8字节/hash均通过，21份event关联完整；成本3行共8回复31788tokens，全部unpriced。22:56真实PG补查生产tenant总计3Alert/3Run/36事件/35工件（含旧发布canary），选定25表428字段/实际约束已留存；23:09实际只读执行后端SQL9个SELECT通过。见[后端盘点](docs/integration/v1/data-inventory.md)、[两例回执](docs/operations/service-v1-functional-20261022.md)。graph_step仅node/无输入输出hash，工具200字符preview、prompt副本截断、seq并非严格写入游标已明示；不能宣称所有步骤原文完整或质量通过。原5/15、旧unknown/预算保持，无新部署/业务改码，v1_two_examples_audit限定ACCEPT、0本轮收口阻塞。
+- **2026-10-22 v1两例落库及后端数据盘点：** 用户授权正式服务跑1—2例后，已通过raw Kafka新增2条合成告警：例1自动BTP0.95关闭（3事件/7工件/2033tokens），例2自动NR0.85升级调查（18事件/14工件/29755tokens，graph partial）。21工件正文的UTF-8字节/hash均通过，21份event关联完整；成本3行共8回复31788tokens，全部unpriced。22:56真实PG补查生产tenant总计3Alert/3Run/36事件/35工件（含旧发布canary），选定25表428字段/实际约束已留存；23:09实际只读执行后端SQL9个SELECT通过。见[后端盘点](docs/integration/v1/page-data-mapping.md)、[两例回执](docs/operations/service-v1-functional-20261022.md)。graph_step仅node/无输入输出hash，工具200字符preview、prompt副本截断、seq并非严格写入游标已明示；不能宣称所有步骤原文完整或质量通过。原5/15、旧unknown/预算保持，无新部署/业务改码，v1_two_examples_audit限定ACCEPT、0本轮收口阻塞。
 
 - **2026-10-22 v1.0.0服务已上线（最新实际状态）：** API5a1e1fd8/Agents49643b84已部署21，生产租户 `f6a5c700-69b8-44fc-8238-609362fb1a9f`、新组 `socai2-agents-v1-prod-20261022`，常驻worker及自动升级已开启，模型摘要不变。新raw Kafka合成告警自动交付15事件/14工件/MD，7回复28216tokens；graph partial、内容质量未验收，旧问题及原5/15保持。旧租户/group/积压/unknown/预算未修改，真实厂商动作关闭。service_v1_release_audit结束独审限定ACCEPT、0本轮阻塞。当前接入见[生产文档](docs/integration/v1/production.md)、[发布回执](docs/operations/service-v1-release-20261022.md)，下文OFF/未部署是以前事实。
 

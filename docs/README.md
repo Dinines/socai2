@@ -1,10 +1,10 @@
 后续调查设计与换账号续接统一读[调查模块规划设计文档](architecture/investigation-planning-design.md)：问题/证据/分析判断/执行状态、程序与模型分工、旧模块融合、完整案例和官方参考。未来在专用分支逐模块明确预期、开发测试，通过后再推进；统一设计尚未实施。旧产品研究及工程建议保留为依据，不作为第二份实施主方案。
 
-后端表/数据交接新增[25表428字段与实际落库盘点](integration/v1/data-inventory.md)，附真实两例ID、完整性/截断边界及已执行的只读SQL。
+后端表/数据交接新增[25表428字段与实际落库盘点](integration/v1/page-data-mapping.md)，附真实两例ID、完整性/截断边界及已执行的只读SQL。
 
 当前v1.0.0服务已发布并启用自动分诊/调查：先读[生产接入与实际结果](integration/v1/production.md)、[发布回执](operations/service-v1-release-20261022.md)。模型保持，调查partial/质量边界如实保留。
 
-后端对接发布文档v1：[总入口与每步输入输出](integration/v1/README.md)、[数据库/Kafka等连接配置](integration/v1/configuration.md)、[Kafka消息合同](integration/v1/kafka.md)、[调查入口/逐步输出/结论读取](integration/v1/investigation.md)、[表与关系](integration/v1/database.md)。正式告警走Kafka，HTTP告警仅测试；含JSON/SQL/env示例，配置依据/待核项与运行边界明确列出。
+后端对接发布文档v1：[总入口与每步输入输出](integration/v1/README.md)、[数据库/Kafka等连接配置](integration/v1/configuration.md)、[Kafka消息合同](integration/v1/kafka.md)、[调查入口/逐步输出/结论读取](integration/v1/investigation.md)、[表与关系](integration/v1/table-fields.md)。正式告警走Kafka，HTTP告警仅测试；含JSON/SQL/env示例，配置依据/待核项与运行边界明确列出。
 
 两个暂停项目已恢复：[逐步执行记录](operations/two-projects-resume-20261022.md)。[测试工具](operations/testdata-tools-20261022.md)3条新隔离告警真实入口/Kafka/Fusion/PG已通过；产品建议已补v1实际状态，优化方案尚未选定实施。原[收尾停点](handoff/session-closeout-20261022.md)保留为历史。
 

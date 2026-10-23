@@ -341,3 +341,56 @@ API在21主机为`http://127.0.0.1:18000`，同项目容器网络为`http://api:
 
 此前数据库映射补充和结构调整只复用已有证据；后续本轮审计另有上述16:42只读复核。各阶段均未新调用模型、改变表结构、业务源码或部署。本地暂存测试容器已经清理。首次取数误查source列、首次本地连接被沙箱拒绝的记录保留；修正后分别取数/测试通过，不改写原失败。
 
+
+## 4. 已核样例的落地坐标与留存边界
+
+本章合并原盘点文档的独有实测信息，时点为2026-10-22两条样例产生及22:56复核，后续14:39/16:42验证见前章。这里的“本轮/本例”指原样例批次，不是这次文档拆分的新执行。完整回执见[两例验证](../../operations/service-v1-functional-20261022.md)。
+
+22:56生产总量含发布canary：3 Alert、3 Run、36事件、35工件、5成本行；本章两例只对应其中2 Alert/2 Run/21事件/21工件/3成本行。两份普通分诊预算预留各20000、responded且settled，不代表后续整个调查硬用量上限。没有独立`socai2_triage_deliveries`表，原认领复用Run与seq=-1开始事件；其他表当时行数见[数据库字典](table-fields.md)。
+
+### 4.1 两条既有样例的完整关联坐标
+
+| 项目 | 例1：例行盘点 | 例2：未知脚本联网 |
+| --- | --- | --- |
+| raw Kafka | partition2 / offset45 | partition0 / offset38 |
+| source_alert_id | `c3ac1e6d-980c-5077-8790-6fd698aeff2f` | `ca8fdfeb-d19d-5c6b-a84b-60a5d6f83a07` |
+| canonical Alert | `bc625c39-56af-5403-a378-9bfb99c610d2` | `e5f593f0-b328-59c3-8238-379db33d8bfe` |
+| Run | `4f5a0a57-050a-57a4-8443-504550fbc5fd` | `bdccd907-7f36-558f-8ed4-4be2e417b101` |
+| 首次分诊/告警 | benign_true_positive /0.95，resolved，关闭时间非空 | needs_review /0.85，triaged，未关闭 |
+| 调查 | 自动关闭后没有升级，未生成MD是预期 | 自动执行triage、enrichment、investigation；Deep6轮/10次工具调用；partial |
+| PG事件 / 工件 | 3 / 7 | 18 / 14 |
+| 用量 | 1次回复，2033 tokens | 7次回复，29755 tokens＝分诊2058＋调查27697 |
+| Neo4j | Alert＋3个直接邻点/3关系 | Alert＋5个直接邻点/5关系 |
+| Redis DB9 | dedup、delivery、incident均在观察时存在；恢复快照校验通过 | 同左；它们是TTL缓存，不承诺长期存在 |
+| 后端读取 | Alert/Run/events/artifact目录GET均200 | 前述4项及MD正文GET均200 |
+
+两个Run的21份工件都从PG读取了`content`正文，不只是列表；UTF-8字节数及SHA256与库内记录全部一致。22:56补查确认21份均有`event_id`关联。费用3行与Run总量吻合，8次回复均unpriced；无测量定价，不能将0USD解释为免费。
+
+### 4.2 各阶段实际留存的内容
+
+| 环节 | 已保存 | 本例证据 | 后端能否拿到完整原文 |
+| --- | --- | --- | --- |
+| Kafka输入/首次融合 | PG告警原文、source-v1身份、delivery_snapshot/fused | 两条canonical与输入身份匹配 | 本例已有；Broker保留期与Redis TTL另算 |
+| 普通认领 | seq=-1 `triage_started` | 两Run均存在 | 开始意图，不证明模型已回复；首次events不传since才含-1 |
+| 五类资料读取 | 5份`*_read`JSON工件，状态/来源/各自采用信息（技能源无统一采用数） | 两例均HTTP200、no_match | 有完整读取回执；没有匹配资料，不能声称真实知识已消费 |
+| 首次模型分诊 | llm_call、prompt/response工件、triage_verdict | 两例回复完整，首次prompt副本截断 | 回复可回查；请求全文不能靠截断副本重建 |
+| graph triage / enrichment / investigation | 各1个graph_step、最终聚合state | 例2 seq2/3/4，payload仅`{node}`，input/output_hash均null | **没有每节点完整独立输入/输出快照**；最终state不能替代逐节点快照 |
+| Deep模型6轮 | graph_llm_exchanges，final graph_result内合并交换 | 6个回复完整；前2轮prompt完整，第3—6轮副本8000字符截断 | **不能完整重建后4轮实际请求** |
+| 10次工具 | tool_call参数/名称、`result_preview` | 例2 seq10000—10009；preview最多200字符 | **不能保证完整工具返回**；graph_result.messages为空，不能假定另有全量ToolMessage归档 |
+| attack_path节点 | 本次没有该节点完成事件 | 调查节点后外层token预算停止 | **未执行，不伪装成有该节点输出**；已有attack_path工件是上下文读取结果且无Case |
+| 调查交付 | graph_result事件/JSON、graph_usage、3类链图、MD/HTML | 例2全部落库，report_md正文可读 | 聚合partial结果已留存；Run completed与graph/report running存在差异 |
+
+结论：**主链和结果已落地；“每一步完整原文都已保存”不成立。** 原样例批次只做测试和交接盘点，不修改旧工件补造正文、不重放输入或提高预算掩盖问题。留存完善项沿原问题表后续评估。
+
+### 4.3 原样例批次的其他存储观察
+
+| 存储 | 本例核对 | 对接要求 |
+| --- | --- | --- |
+| Kafka | 两条raw真实ack；fused生产组各处理1条，提交追平观察end | 保存坐标/幂等身份，fused不等于调查完成通知 |
+| Redis DB9 | 精确key只读查到dedup/incident及验证过的delivery快照 | 只作缓存/运行状态，不能替代PG结果长期保存；本例TTL已记到回执 |
+| Neo4j | 两个同tenant Alert的直接关系3条和5条真实读回 | 用于关联上下文；可达/技术映射不等于确认行为因果 |
+| ClickHouse aisoc.raw_events | 本轮只投已有告警，未投规范化事件；工具可用零行已留存 | 不要求每条RawAlert都写历史事件表；历史事件由相应上游按独立合同提供 |
+| OpenSearch / Qdrant | 本轮没有TI/知识导入，不制造IOC/向量行 | 它们是资料来源；不存在“每条告警必须各写一行”的合同 |
+| UEBA / KB / 资产 / 身份 | 本生产tenant相关PG表当前0行，五类读取no_match | 接口可达不等于资料覆盖；需后端/上游按模块合同提供资料 |
+
+当前例2仍有TI归因401、部分processing-context BufferError、process_tree缺父进程字段/network_connections查询失败、零行及六轮及软20k预算超限等真实边界，见[测试回执](../../operations/service-v1-functional-20261022.md)。这些不能改写成“所有模块正常”；对接交付成立的部分是输入、关联、自动执行、已有结果的持久化与读取。

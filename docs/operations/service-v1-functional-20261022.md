@@ -2,7 +2,7 @@
 
 状态：两个新例子已实际执行，已完成只读落库核对；v1_two_examples_audit结束独审限定ACCEPT、0本轮测试收口阻塞。完整逐步骤原文留存及调查质量不通过。用户明确允许正式服务上运行1—2例，并要求盘点表/数据方便后端对接。本轮正好2条新raw Kafka输入，不重跑旧canary、不改模型/业务代码/服务配置/预算、不执行真实厂商动作。
 
-[后端盘点入口](../integration/v1/data-inventory.md) · [实际字段](../integration/v1/table-fields.md) · [机器盘点](../integration/v1/data-catalog.json) · [只读SQL](../integration/v1/examples/production-two-examples.sql)
+[后端盘点入口](../integration/v1/page-data-mapping.md) · [实际字段](../integration/v1/table-fields.md) · [机器盘点](../integration/v1/data-catalog.json) · [只读SQL](../integration/v1/examples/production-two-examples.sql)
 
 PG补查采集：`2026-10-22T22:56:23.350081+08:00`。模型执行于17:09—17:10，数小时后仍能从新进程读回；不通过进程内缓存判断持久化。上次补充只读查询因自动审批额度错误未执行；用户要求继续后本次只读盘点成功。原失败记录保持，不把它当产品功能失败。
 

@@ -95,7 +95,7 @@ curl --fail-with-body -H "Authorization: Bearer $STINGAISOC_API_TOKEN" \
 
 [示例payload](examples/result-events.json)只说明结构，不是实际Run、真实模型或质量通过证明。当前没有独立统一`/conclusion`接口，也没有全编排统一结构化“证据→finding→结论”输出合同；四个共享合同仍是[建议](../../architecture/investigation-product-engineering-roadmap-20261022.md)。
 
-本轮真实例子另确认：外层graph使用低seq、工具使用10000+，高seq工具可先入库、低seq graph_result后入库。`since`不是严格写入时间游标，运行中只追max(seq)可能漏后写的低seq。取得调查交付后须从不带since的首页重新分页补齐，按(run_id,seq)去重；首屏不传since才能包含-1。完整读取与留存边界见[数据盘点](data-inventory.md#5-给后端的读取顺序与分页约束)。
+本轮真实例子另确认：外层graph使用低seq、工具使用10000+，高seq工具可先入库、低seq graph_result后入库。`since`不是严格写入时间游标，运行中只追max(seq)可能漏后写的低seq。取得调查交付后须从不带since的首页重新分页补齐，按(run_id,seq)去重；首屏不传since才能包含-1。完整读取与留存边界见[数据盘点](page-data-mapping.md#5-给后端的读取顺序与分页约束)。
 
 ## 5. 链图及版本边界
 

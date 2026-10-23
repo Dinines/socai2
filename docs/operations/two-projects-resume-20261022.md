@@ -29,4 +29,4 @@
 
 - [测试工具原回执](testdata-tools-20261022.md)、[工具使用方法](../../tools/testdata/README.md)、[真实探针](../../deploy/aisoc21/probe_testdata_ingress.py)。
 - [产品与工程建议](../architecture/investigation-product-engineering-roadmap-20261022.md)、[原建议独审](../../openspec/changes/restore-alert-investigation-integrity/audit.md)。
-- [v1发布](service-v1-release-20261022.md)、[生产两例](service-v1-functional-20261022.md)、[后端数据盘点](../integration/v1/data-inventory.md)。
+- [v1发布](service-v1-release-20261022.md)、[生产两例](service-v1-functional-20261022.md)、[后端数据盘点](../integration/v1/page-data-mapping.md)。

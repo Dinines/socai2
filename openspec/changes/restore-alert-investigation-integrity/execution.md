@@ -45,7 +45,7 @@ attempt02于23:22执行：3条新合成输入经本地最小认证API发布独�
 
 ## 2026-10-22 用户授权两例真实测试与数据交接
 
-正式v1新raw Kafka输入2条，自动关闭及自动调查分别实跑；新增21步骤事件/21工件，正文长度/hash、event关联及8回复31788tokens成本可核。用户随后要求做好表/数据盘点，22:56只读核生产租户25表428字段/约束及实际行数，23:09实际只读执行交接SQL9个SELECT成功。新增[数据盘点](../../../docs/integration/v1/data-inventory.md)、字段/JSON/SQL、[两例回执](../../../docs/operations/service-v1-functional-20261022.md)；完整逐步原文留存/质量不通过，原5/15保持。未改业务代码/模型配置/预算，不重放旧输入，不部署或Git提交。结束独审限定ACCEPT，范围为本轮测试及交接。
+正式v1新raw Kafka输入2条，自动关闭及自动调查分别实跑；新增21步骤事件/21工件，正文长度/hash、event关联及8回复31788tokens成本可核。用户随后要求做好表/数据盘点，22:56只读核生产租户25表428字段/约束及实际行数，23:09实际只读执行交接SQL9个SELECT成功。新增[数据盘点](../../../docs/integration/v1/page-data-mapping.md)、字段/JSON/SQL、[两例回执](../../../docs/operations/service-v1-functional-20261022.md)；完整逐步原文留存/质量不通过，原5/15保持。未改业务代码/模型配置/预算，不重放旧输入，不部署或Git提交。结束独审限定ACCEPT，范围为本轮测试及交接。
 
 ## 2026-10-22 v1.0.0实际发布结果
 
@@ -407,7 +407,7 @@ C2质量失败STOP后已确认两个有限窗口退出、0活动有限容器。c
 
 ## 2026-10-23 V1页面字段对接说明与实值核验
 
-用户要求从产品经理角度逐字段确定告警和调查展示，并确认当前线上/本地确有数据。新增[页面说明](../../../docs/integration/v1/alert-investigation-ui.md)及[字段实值](../../../docs/integration/v1/ui-field-verification-20261023.json)，README增加入口。参考20已部署页面的信息组织，实际数据以21 API5a1e1fd8/Agents49643b84的两既有合成样例为准：41 GET200、21工件正文hash/字节匹配；PG两目标只读查询补核source快照/负责人/解决时间。
+用户要求从产品经理角度逐字段确定告警和调查展示，并确认当前线上/本地确有数据。新增[页面说明](../../../docs/integration/v1/page-elements.md)及[字段实值](../../../docs/integration/v1/ui-field-verification-20261023.json)，README增加入口。参考20已部署页面的信息组织，实际数据以21 API5a1e1fd8/Agents49643b84的两既有合成样例为准：41 GET200、21工件正文hash/字节匹配；PG两目标只读查询补核source快照/负责人/解决时间。
 
 本地独立临时PG两例先完成工具查询后模拟超时/模型异常，原runner/Deep/ledger持久化与read_persisted_run冷读通过；与6个已有handoff直接用例共8 passed。模型/工具是替身，临时表不是完整生产schema/RLS；复用当天真实人工采用样例，不重跑模型。临时容器已stop并自动删除。本地source哈希和测试日志哈希见字段实值JSON。
 
@@ -416,12 +416,12 @@ C2质量失败STOP后已确认两个有限窗口退出、0活动有限容器。c
 
 ## 2026-10-23 数据库直查交接补充
 
-用户要求保留HTTP但先给数据库表/位置，由后端自行查。新增[直查指引](../../../docs/integration/v1/alert-investigation-ui.md)及[告警SQL](../../../docs/integration/v1/examples/ui-alert-fields.sql)，六核心表及90项展示信息映射；明确派生HTTP键没有同名表/列、工件正文TEXT、成本关联TEXT、目标关联及租户范围。本次只复用实测数据，38个SQL列对照实际catalog、8条JSON路径逐例核既有原件，链接/只读语句检查通过；新增展开SQL未重跑生产，已有production-two-examples.sql原9 SELECT通过记录保持。不新建接口/账号、改表/部署/模型或Git提交推送。原5/15及所有旧失败保持；独审另记audit。
+用户要求保留HTTP但先给数据库表/位置，由后端自行查。新增[直查指引](../../../docs/integration/v1/page-elements.md)及[告警SQL](../../../docs/integration/v1/examples/ui-alert-fields.sql)，六核心表及90项展示信息映射；明确派生HTTP键没有同名表/列、工件正文TEXT、成本关联TEXT、目标关联及租户范围。本次只复用实测数据，38个SQL列对照实际catalog、8条JSON路径逐例核既有原件，链接/只读语句检查通过；新增展开SQL未重跑生产，已有production-two-examples.sql原9 SELECT通过记录保持。不新建接口/账号、改表/部署/模型或Git提交推送。原5/15及所有旧失败保持；独审另记audit。
 
 
 ### 用户追加：只保留一份最新交接文档
 
-页面与数据库两稿合并为[alert-investigation-ui.md](../../../docs/integration/v1/alert-investigation-ui.md)，HTTP、90项展示定义、表/字段映射和实测边界均保留；SQL和字段实值作为附件。删除两份dated旧稿与本轮旧文档快照包4文件，README/数据库索引/根记忆/本change链接统一到新文件。不删除其他主题基础文档或原始测试证据。独审发现first_seen_at当前由首次claim写入，已明确为首次人工认领/确认时间，非页面打开或自动分诊时间。本次仍仅文档清理，无业务操作。
+页面与数据库两稿合并为[page-elements.md](../../../docs/integration/v1/page-elements.md)，HTTP、90项展示定义、表/字段映射和实测边界均保留；SQL和字段实值作为附件。删除两份dated旧稿与本轮旧文档快照包4文件，README/数据库索引/根记忆/本change链接统一到新文件。不删除其他主题基础文档或原始测试证据。独审发现first_seen_at当前由首次claim写入，已明确为首次人工认领/确认时间，非页面打开或自动分诊时间。本次仍仅文档清理，无业务操作。
 
 
 ### 2026-10-23 统一文档按使用顺序重排
