@@ -59,7 +59,7 @@ Router领域分支与此表不同：按领域走一次领域分析，响应摘�
 
 | 步骤 | 请求 | 返回/用途 |
 | --- | --- | --- |
-| 查告警 | `GET /alerts/{canonical_alert_id}` | Alert详情、原文、disposition/状态；有些新字段只属于候选API |
+| 查告警 | `GET /alerts/{canonical_alert_id}` | Alert详情、原文、disposition/状态；DB列不保证逐列同名出现在API响应 |
 | 找自动分诊Run | `GET /investigations?case_id={canonical_alert_id}&limit=20` | 普通Kafka triage当前将关联字符串记为canonical Alert ID；独立graph按其Incident/已返回run_id查，不能当通用全入口过滤 |
 | 找人工Run | `GET /investigations?case_id={case_uuid}&limit=20` | Case调查的ledger Run列表；也有Case下列表接口，返回封装不同 |
 | Run摘要 | `GET /investigations/{run_id}` | id、status、error、tokens、费用及event/artifact数量；不是完整state接口 |
@@ -94,6 +94,8 @@ curl --fail-with-body -H "Authorization: Bearer $STINGAISOC_API_TOKEN" \
 - **业务落地**：Alert disposition/status/resolved_at、Case status、报告中的建议分别表达；Run completed可能只说明首次分诊已落账，不能单独解释成后续graph完整、事实已确认或业务已结案。
 
 [示例payload](examples/result-events.json)只说明结构，不是实际Run、真实模型或质量通过证明。当前没有独立统一`/conclusion`接口，也没有全编排统一结构化“证据→finding→结论”输出合同；四个共享合同仍是[建议](../../architecture/investigation-product-engineering-roadmap-20261022.md)。
+
+本轮真实例子另确认：外层graph使用低seq、工具使用10000+，高seq工具可先入库、低seq graph_result后入库。`since`不是严格写入时间游标，运行中只追max(seq)可能漏后写的低seq。取得调查交付后须从不带since的首页重新分页补齐，按(run_id,seq)去重；首屏不传since才能包含-1。完整读取与留存边界见[数据盘点](data-inventory.md#5-给后端的读取顺序与分页约束)。
 
 ## 5. 链图及版本边界
 

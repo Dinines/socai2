@@ -1,8 +1,10 @@
+后端表/数据交接新增[25表428字段与实际落库盘点](integration/v1/data-inventory.md)，附真实两例ID、完整性/截断边界及已执行的只读SQL。
+
 当前v1.0.0服务已发布并启用自动分诊/调查：先读[生产接入与实际结果](integration/v1/production.md)、[发布回执](operations/service-v1-release-20261022.md)。模型保持，调查partial/质量边界如实保留。
 
 后端对接发布文档v1：[总入口与每步输入输出](integration/v1/README.md)、[数据库/Kafka等连接配置](integration/v1/configuration.md)、[Kafka消息合同](integration/v1/kafka.md)、[调查入口/逐步输出/结论读取](integration/v1/investigation.md)、[表与关系](integration/v1/database.md)。正式告警走Kafka，HTTP告警仅测试；含JSON/SQL/env示例，配置依据/待核项与运行边界明确列出。
 
-两会话收尾：[未完进展与续接入口](handoff/session-closeout-20261022.md)。测试数据工具已做离线/替身合同，真实联测待续；产品工程建议最终版本已获原独审通过，尚未选定实施，相关文件已本地留存。
+两个暂停项目已恢复：[逐步执行记录](operations/two-projects-resume-20261022.md)。[测试工具](operations/testdata-tools-20261022.md)3条新隔离告警真实入口/Kafka/Fusion/PG已通过；产品建议已补v1实际状态，优化方案尚未选定实施。原[收尾停点](handoff/session-closeout-20261022.md)保留为历史。
 
 智能调查产品设计：[急需问题、四个共享合同、Deep优化与场景扩展](architecture/investigation-product-engineering-roadmap-20261022.md)。从安全产品与工程角度给出优先级、代码落点、首批场景及验收口径；仅建议，未新增实施或运行。
 

@@ -6,6 +6,8 @@
 
 [16:02发布前快照](runtime-snapshot.json)保留历史事实；[16:48发布后快照](service-runtime-snapshot.json)为当前脱敏容器配置，业务验证另见发布回执。
 
+后端表/数据对接先读[数据落地盘点](data-inventory.md)：25张实际表、428字段/约束、两条新例子的真实ID/正文校验、未完整留存项及读取分页约束均已说明；附[字段目录](table-fields.md)、[机器字典](data-catalog.json)和[只读SQL](examples/production-two-examples.sql)。
+
 ## 1. 先按角色选择对接点
 
 | 接入方 | 输入点 | 输出/读取点 | 需要哪些配置 |

@@ -1,5 +1,13 @@
 # socai2 / stingAISOC 工作约定
 
+- **2026-10-23事件级及跨事件分析研究（仅方案）：** 用户要求参考主流安全产品评估必要性。已核本地入口/分组/图上下文与Microsoft Defender XDR、Sentinel、Security Copilot、CrowdStrike Falcon、SentinelOne官方资料，见[研究](docs/architecture/incident-analysis-product-comparison-20261023.md)。当前有Case多告警和跨Incident候选检索，缺持续事件整体研判；建议事件结果→增量更新→候选关联验证，自动合并/Campaign后置。明确微软Incident cases Preview、Endpoint AIR 2026-09变化及Falcon共享上下文调查Pre-beta。统一证据材料供主分析，补查/领域分析可组合；仅保存文档，不据此启动实施、业务测试/模型/生产访问/部署，原5/15及旧失败保持。
+
+- **2026-10-23优化方案仅保存：** 用户明确“不是执行，是方案保存”。已将审核意见融入[调查产品工程方案](docs/architecture/investigation-product-engineering-roadmap-20261022.md)：三批改为结果一致与停止交接→查询有效性与一个真实场景→共享结构与扩展；补参数来源/绝对窗口、认证字段缺口、校验先于响应和报告、逐次留存与结构化工具状态、Router待核结论汇合。异常登录保留为有数据条件的候选，先审已有未全发布C2；新增验收材料均未执行。本次仅文档，不授权改码/模型/业务测试/运行/部署；原5/15、线上v1及旧失败保持。后续不能因方案已保存自动启动实施。
+
+- **2026-10-22两个暂停项目恢复：** 用户要求继续并逐步记录；测试工具attempt02三条新输入真实入口/Kafka/Fusion/PG通过，3Alert/new/无Case、6消息、关联Run0/模型0，隔离topic/Redis前缀，本地进程已停。原8离线＋2替身结果复用，attempt01及一次source_event_ids观察假设失败保留；产品建议已补v1已上线和两例数据事实，未实施未选定方案。见[逐步记录](docs/operations/two-projects-resume-20261022.md)、[工具回执](docs/operations/testdata-tools-20261022.md)。resumed_projects_end_audit结束独审限定ACCEPT、0本轮必须修项，选定版本与逐步记录已留存；原5/15/旧unknown预算/质量失败保持；无业务源码/部署配置修改、Git提交推送，生产v1维持原授权状态。
+
+- **2026-10-22 v1两例落库及后端数据盘点：** 用户授权正式服务跑1—2例后，已通过raw Kafka新增2条合成告警：例1自动BTP0.95关闭（3事件/7工件/2033tokens），例2自动NR0.85升级调查（18事件/14工件/29755tokens，graph partial）。21工件正文的UTF-8字节/hash均通过，21份event关联完整；成本3行共8回复31788tokens，全部unpriced。22:56真实PG补查生产tenant总计3Alert/3Run/36事件/35工件（含旧发布canary），选定25表428字段/实际约束已留存；23:09实际只读执行后端SQL9个SELECT通过。见[后端盘点](docs/integration/v1/data-inventory.md)、[两例回执](docs/operations/service-v1-functional-20261022.md)。graph_step仅node/无输入输出hash，工具200字符preview、prompt副本截断、seq并非严格写入游标已明示；不能宣称所有步骤原文完整或质量通过。原5/15、旧unknown/预算保持，无新部署/业务改码，v1_two_examples_audit限定ACCEPT、0本轮收口阻塞。
+
 - **2026-10-22 v1.0.0服务已上线（最新实际状态）：** API5a1e1fd8/Agents49643b84已部署21，生产租户 `f6a5c700-69b8-44fc-8238-609362fb1a9f`、新组 `socai2-agents-v1-prod-20261022`，常驻worker及自动升级已开启，模型摘要不变。新raw Kafka合成告警自动交付15事件/14工件/MD，7回复28216tokens；graph partial、内容质量未验收，旧问题及原5/15保持。旧租户/group/积压/unknown/预算未修改，真实厂商动作关闭。service_v1_release_audit结束独审限定ACCEPT、0本轮阻塞。当前接入见[生产文档](docs/integration/v1/production.md)、[发布回执](docs/operations/service-v1-release-20261022.md)，下文OFF/未部署是以前事实。
 
 - **2026-10-22 v1.0服务发布授权（最新）：** 用户在接口文档完成后明确授权开启Kafka自动分诊/自动调查，模型沿用当前配置，并选择“新建独立生产租户”。沿原restore change推进[服务发布计划](docs/operations/service-v1-release-20261022.md)：复用已构建API5a1e1fd8/Agents49643b84候选，创建独立生产租户/最小服务身份/预算及新消费组切换起点，定向发布API/Agents。历史worker OFF/不发布是此前事实，不再限制本轮已授权发布；旧租户/积压/unknown、5/15及旧质量失败保持，不启真实厂商动作，不自动Git提交/推送。实际是否上线、自动链是否完成仍须以本批执行回执为准。

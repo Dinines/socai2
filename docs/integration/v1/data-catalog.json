@@ -1,0 +1,5171 @@
+{
+  "schema_version": 1,
+  "service_version": "1.0.0",
+  "captured_at": "2026-10-22T14:56:23.350081+00:00",
+  "captured_at_asia_shanghai": "2026-10-22T22:56:23.350081+08:00",
+  "scope": "selected tables in production tenant, two new runs only",
+  "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+  "tables": {
+    "tenants": {
+      "exists": true,
+      "tenant_rows": 1,
+      "count_filter": "id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "name",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "slug",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "plan",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": "'starter'::character varying"
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "YES",
+          "column_default": "true"
+        },
+        {
+          "column_name": "settings",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "limits",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "parent_tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "mssp_role",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'standalone'::text"
+        },
+        {
+          "column_name": "provisioned_from_waitlist_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "provisioned_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "data_region",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "residency_enforced",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "tenants_mssp_role_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((mssp_role = ANY (ARRAY['standalone'::text, 'parent'::text, 'child'::text])))"
+        },
+        {
+          "conname": "tenants_parent_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (parent_tenant_id) REFERENCES tenants(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "tenants_provisioned_from_waitlist_fk",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (provisioned_from_waitlist_id) REFERENCES aisoc_waitlist_entries(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "tenants_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "tenants_slug_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (slug)"
+        }
+      ]
+    },
+    "connectors": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "connector_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "connector_config",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "auth_config",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "is_enabled",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "YES",
+          "column_default": "true"
+        },
+        {
+          "column_name": "health_status",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": "'unknown'::character varying"
+        },
+        {
+          "column_name": "last_sync",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "events_ingested",
+          "data_type": "bigint",
+          "udt_name": "int8",
+          "is_nullable": "YES",
+          "column_default": "0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "category",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": "''::character varying"
+        },
+        {
+          "column_name": "last_health_check",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "error_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": "0"
+        },
+        {
+          "column_name": "tags",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "schema_fingerprint",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_schema_drift_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_drift_details",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "events_dropped",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "last_event_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_event_kind",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ingest_token",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "oauth_provisioned",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "allowed_capabilities",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "oauth_refresh_failures",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "oauth_last_refresh_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_outage_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_backfill_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "connectors_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "connectors_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "connectors_ingest_token_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (ingest_token)"
+        }
+      ]
+    },
+    "alerts": {
+      "exists": true,
+      "tenant_rows": 3,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "severity",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": "'medium'::character varying"
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": "'new'::character varying"
+        },
+        {
+          "column_name": "priority",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": "50"
+        },
+        {
+          "column_name": "category",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "mitre_tactics",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "mitre_techniques",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "connector_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "connector_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "source_event_ids",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "ocsf_class_uid",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ai_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ai_summary",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ai_recommendations",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "false_positive_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "anomaly_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "iocs",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "entities",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "raw_event",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "dedup_hash",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "case_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "first_seen",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "last_seen",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "event_time",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "resolved_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "snoozed_until",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "snoozed_by_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "disposition",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "first_seen_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "confidence",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "confidence_label",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "confidence_rationale",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "narrative",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "affected_ips",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "affected_hosts",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "affected_users",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "affected_assets",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "parent_alert_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "child_alert_ids",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "is_merged",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "assigned_to_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "assigned_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "enrichment_data",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "tags",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "idempotency_key",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "rule_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "rule_name",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "triage_groundedness",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "triage_ungrounded",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "is_synthetic",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "synthetic_source",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "synthetic_scenario",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "external_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "priority_score",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "priority_rationale",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "session_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "session_key_kind",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "originating_human",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "ck_alerts_confidence_label_enum",
+          "contype": "b'c'",
+          "definition": "CHECK (((confidence_label IS NULL) OR (confidence_label = ANY (ARRAY['high'::text, 'medium'::text, 'low'::text]))))"
+        },
+        {
+          "conname": "ck_alerts_confidence_range",
+          "contype": "b'c'",
+          "definition": "CHECK (((confidence IS NULL) OR ((confidence >= 0) AND (confidence <= 100))))"
+        },
+        {
+          "conname": "alerts_session_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "alerts_snoozed_by_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (snoozed_by_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "alerts_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "alerts_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "alert_source_links": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "alert_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "vendor",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "connector_instance_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "external_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "external_url",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_disposition",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_writeback_action",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_writeback_status",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_writeback_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_writeback_detail",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "executed",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "alert_source_links_alert_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "alert_source_links_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "alert_source_links_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "uq_alert_source_link",
+          "contype": "b'u'",
+          "definition": "UNIQUE (alert_id, vendor, external_id)"
+        }
+      ]
+    },
+    "aisoc_cases": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "severity",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'medium'::text"
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'new'::text"
+        },
+        {
+          "column_name": "assignee",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "mitre_techniques",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "alert_ids",
+          "data_type": "ARRAY",
+          "udt_name": "_uuid",
+          "is_nullable": "YES",
+          "column_default": "ARRAY[]::uuid[]"
+        },
+        {
+          "column_name": "observable_graph",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "evidence_chain",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "compliance_frameworks",
+          "data_type": "ARRAY",
+          "udt_name": "_text",
+          "is_nullable": "YES",
+          "column_default": "ARRAY[]::text[]"
+        },
+        {
+          "column_name": "opened_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "triaged_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "resolved_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "closed_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "created_by",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "tags",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "sla_due_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "case_number",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "priority",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "case_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "mitre_tactics",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "assigned_to_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "assigned_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_by_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "sla_deadline",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "sla_breached",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "ioc_ids",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "artifact_ids",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "ticket_refs",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'[]'::jsonb"
+        },
+        {
+          "column_name": "summary",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "resolution",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "lessons_learned",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "queue_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "sla_policy_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ack_due_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "resolve_due_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "acknowledged_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "escalation_level",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "reopened_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "reopen_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "reopen_reason",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "merged_into_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "merged_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "merged_by",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_cases_severity_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((severity = ANY (ARRAY['info'::text, 'low'::text, 'medium'::text, 'high'::text, 'critical'::text])))"
+        },
+        {
+          "conname": "aisoc_cases_status_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((status = ANY (ARRAY['new'::text, 'triaged'::text, 'investigating'::text, 'contained'::text, 'resolved'::text, 'closed'::text])))"
+        },
+        {
+          "conname": "aisoc_cases_merged_into_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (merged_into_id) REFERENCES aisoc_cases(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_cases_queue_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (queue_id) REFERENCES case_queues(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_cases_sla_policy_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (sla_policy_id) REFERENCES case_sla_policies(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_cases_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "investigation_runs": {
+      "exists": true,
+      "tenant_rows": 3,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "case_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "alert_summary",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "raw_alert",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "model_used",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "status",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": "'running'::character varying"
+        },
+        {
+          "column_name": "error",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "total_tokens",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "total_cost_usd",
+          "data_type": "numeric",
+          "udt_name": "numeric",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "iterations",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "started_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "completed_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "measured_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "estimated_cost_usd",
+          "data_type": "numeric",
+          "udt_name": "numeric",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "estimated_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "unpriced_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "investigation_runs_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_runs_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "investigation_events": {
+      "exists": true,
+      "tenant_rows": 36,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "run_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "seq",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "ts",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "kind",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "agent",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "summary",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "payload",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "input_hash",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "output_hash",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "duration_ms",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "investigation_events_run_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (run_id) REFERENCES investigation_runs(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_events_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_events_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "investigation_events_run_id_seq_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (run_id, seq)"
+        }
+      ]
+    },
+    "investigation_artifacts": {
+      "exists": true,
+      "tenant_rows": 35,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "run_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "event_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "kind",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "blob_ref",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "sha256",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "size_bytes",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "investigation_artifacts_event_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (event_id) REFERENCES investigation_events(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_artifacts_run_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (run_id) REFERENCES investigation_runs(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_artifacts_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "investigation_artifacts_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "aisoc_run_costs": {
+      "exists": true,
+      "tenant_rows": 5,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "run_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "model",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "total_prompt_tokens",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "total_completion_tokens",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "total_cost_usd",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "total_latency_ms",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "recorded_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "measured_cost_usd",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "measured_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "estimated_cost_usd",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "estimated_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "unpriced_call_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "resolved_model",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_run_costs_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (run_id, tenant_id, model)"
+        }
+      ]
+    },
+    "socai2_triage_budget_reservations": {
+      "exists": true,
+      "tenant_rows": 3,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "run_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "policy_sha256",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "charged_tokens",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "reserved_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "clock_timestamp()"
+        },
+        {
+          "column_name": "request_started_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "settled_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "outcome",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": "'reserved'::character varying"
+        },
+        {
+          "column_name": "observed_tokens",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "socai2_triage_budget_reservations_charged_tokens_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((charged_tokens > 0))"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_check",
+          "contype": "b'c'",
+          "definition": "CHECK (((((outcome)::text = 'reserved'::text) AND (settled_at IS NULL)) OR (((outcome)::text <> 'reserved'::text) AND (settled_at IS NOT NULL))))"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_check1",
+          "contype": "b'c'",
+          "definition": "CHECK ((((outcome)::text <> 'responded'::text) OR (request_started_at IS NOT NULL)))"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_observed_tokens_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((observed_tokens >= 0))"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_outcome_check",
+          "contype": "b'c'",
+          "definition": "CHECK (((outcome)::text = ANY ((ARRAY['reserved'::character varying, 'responded'::character varying, 'no_request'::character varying])::text[])))"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_run_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (run_id) REFERENCES investigation_runs(id)"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id)"
+        },
+        {
+          "conname": "socai2_triage_budget_reservations_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (run_id)"
+        }
+      ]
+    },
+    "aisoc_dead_letters": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "topic",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "reason",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "schema_version",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'unknown'::text"
+        },
+        {
+          "column_name": "payload_excerpt",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "''::text"
+        },
+        {
+          "column_name": "source_event_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "occurred_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "acknowledged_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "acknowledged_by",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "topic_partition",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "kafka_offset",
+          "data_type": "bigint",
+          "udt_name": "int8",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_dead_letters_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "aisoc_dead_letters_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "assets": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "asset_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'host'::text"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "fqdn",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ip_addresses",
+          "data_type": "ARRAY",
+          "udt_name": "_text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "cloud_provider",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "cloud_region",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "cloud_account",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "os",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "os_version",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "criticality",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'medium'::text"
+        },
+        {
+          "column_name": "tags",
+          "data_type": "ARRAY",
+          "udt_name": "_text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "owner_email",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "last_seen",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "first_seen",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "metadata",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "assets_asset_type_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((asset_type = ANY (ARRAY['host'::text, 'container'::text, 'cloud_resource'::text, 'user_account'::text, 'service'::text, 'network_device'::text, 'domain'::text, 'ip'::text])))"
+        },
+        {
+          "conname": "assets_criticality_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((criticality = ANY (ARRAY['critical'::text, 'high'::text, 'medium'::text, 'low'::text, 'info'::text])))"
+        },
+        {
+          "conname": "assets_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "assets_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "asset_vulnerabilities": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "asset_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "cve_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "description",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "severity",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'medium'::text"
+        },
+        {
+          "column_name": "cvss_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "cvss_vector",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "epss_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "is_exploited",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "external_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "first_found",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "last_found",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "remediated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "metadata",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "environment",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "patch_due_date",
+          "data_type": "date",
+          "udt_name": "date",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "patch_status",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'tracked'::text"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "asset_vulnerabilities_severity_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((severity = ANY (ARRAY['critical'::text, 'high'::text, 'medium'::text, 'low'::text, 'info'::text])))"
+        },
+        {
+          "conname": "asset_vulnerabilities_asset_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "asset_vulnerabilities_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "asset_vulnerabilities_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "alert_asset_correlations": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "alert_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "asset_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "vuln_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "match_field",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'ip'::text"
+        },
+        {
+          "column_name": "confidence",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "1.0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "alert_asset_correlations_asset_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "alert_asset_correlations_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "alert_asset_correlations_vuln_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (vuln_id) REFERENCES asset_vulnerabilities(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "alert_asset_correlations_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "identity_privilege": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "principal",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "privilege_tier",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'standard'::text"
+        },
+        {
+          "column_name": "is_service",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "is_break_glass",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        },
+        {
+          "column_name": "source",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "ck_identity_privilege_tier",
+          "contype": "b'c'",
+          "definition": "CHECK ((privilege_tier = ANY (ARRAY['standard'::text, 'elevated'::text, 'admin'::text, 'domain_admin'::text])))"
+        },
+        {
+          "conname": "identity_privilege_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "identity_privilege_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "identity_privilege_tenant_id_principal_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, principal)"
+        }
+      ]
+    },
+    "identity_nodes": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "node_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "external_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "display_name",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "source_system",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "risk_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "0.0"
+        },
+        {
+          "column_name": "privilege_tier",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "is_active",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "true"
+        },
+        {
+          "column_name": "last_activity",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "attributes",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "identity_nodes_node_type_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((node_type = ANY (ARRAY['human_user'::text, 'service_account'::text, 'device'::text, 'application'::text, 'group'::text, 'role'::text])))"
+        },
+        {
+          "conname": "identity_nodes_privilege_tier_check",
+          "contype": "b'c'",
+          "definition": "CHECK (((privilege_tier >= 0) AND (privilege_tier <= 3)))"
+        },
+        {
+          "conname": "identity_nodes_risk_score_check",
+          "contype": "b'c'",
+          "definition": "CHECK (((risk_score >= (0.0)::double precision) AND (risk_score <= (100.0)::double precision)))"
+        },
+        {
+          "conname": "identity_nodes_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "identity_nodes_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "identity_nodes_tenant_id_source_system_external_id_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, source_system, external_id)"
+        }
+      ]
+    },
+    "identity_edges": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "source_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "target_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "edge_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "weight",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": "1.0"
+        },
+        {
+          "column_name": "valid_from",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "valid_until",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "evidence",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "identity_edges_edge_type_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((edge_type = ANY (ARRAY['member_of'::text, 'manages'::text, 'owns'::text, 'delegates_to'::text, 'authenticated_to'::text, 'assumed_role'::text, 'accessed'::text, 'created'::text, 'lateral_movement_candidate'::text])))"
+        },
+        {
+          "conname": "identity_edges_source_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (source_id) REFERENCES identity_nodes(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "identity_edges_target_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (target_id) REFERENCES identity_nodes(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "identity_edges_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "identity_edges_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "identity_edges_tenant_id_source_id_target_id_edge_type_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, source_id, target_id, edge_type)"
+        }
+      ]
+    },
+    "aisoc_context_statements": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "statement",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "reason_code",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "scope",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "scope_value",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "''::text"
+        },
+        {
+          "column_name": "observations",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "1"
+        },
+        {
+          "column_name": "expires_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_context_statements_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "uq_context_statement",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, reason_code, scope, scope_value)"
+        }
+      ]
+    },
+    "aisoc_analyst_feedback": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "uuid_generate_v4()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "alert_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "ai_disposition",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "analyst_disposition",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "reason_code",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "scope",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "scope_value",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "''::text"
+        },
+        {
+          "column_name": "analyst_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "note",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "''::text"
+        },
+        {
+          "column_name": "context",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_analyst_feedback_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "aisoc_kb_documents": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "title",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "source_url",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "doc_kind",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'runbook'::text"
+        },
+        {
+          "column_name": "content",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "chunk_index",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": "0"
+        },
+        {
+          "column_name": "chunk_total",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": "1"
+        },
+        {
+          "column_name": "tags",
+          "data_type": "ARRAY",
+          "udt_name": "_text",
+          "is_nullable": "YES",
+          "column_default": "ARRAY[]::text[]"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "created_by",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_kb_documents_doc_kind_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((doc_kind = ANY (ARRAY['runbook'::text, 'policy'::text, 'playbook'::text, 'sop'::text, 'wiki'::text, 'other'::text])))"
+        },
+        {
+          "conname": "aisoc_kb_documents_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "aisoc_tenant_skills": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "skill_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "version",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "1"
+        },
+        {
+          "column_name": "status",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": "'draft'::text"
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "owner",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "expires_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "body",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "source_yaml",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "backtest_evaluation_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "backtest_baseline_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "backtest_version",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "activated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "activated_by",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_by",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_tenant_skills_active_is_backtested",
+          "contype": "b'c'",
+          "definition": "CHECK (((status <> 'active'::text) OR ((backtest_evaluation_id IS NOT NULL) AND (backtest_baseline_id IS NOT NULL) AND (backtest_version = version))))"
+        },
+        {
+          "conname": "aisoc_tenant_skills_skill_id_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((skill_id ~ '^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'::text))"
+        },
+        {
+          "conname": "aisoc_tenant_skills_status_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'backtested'::text, 'active'::text, 'retired'::text])))"
+        },
+        {
+          "conname": "aisoc_tenant_skills_version_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((version >= 1))"
+        },
+        {
+          "conname": "aisoc_tenant_skills_activated_by_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (activated_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skills_backtest_baseline_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (backtest_baseline_id) REFERENCES aisoc_replay_evaluations(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skills_backtest_evaluation_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (backtest_evaluation_id) REFERENCES aisoc_replay_evaluations(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skills_created_by_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skills_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "aisoc_tenant_skills_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "aisoc_tenant_skills_tenant_id_skill_id_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, skill_id)"
+        }
+      ]
+    },
+    "aisoc_tenant_skill_versions": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "skill_row_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "skill_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "version",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "name",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "owner",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "expires_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "body",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "source_yaml",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "backtest_evaluation_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "backtest_baseline_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "authored_by",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "authored_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "activated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "activated_by",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "retired_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "aisoc_tenant_skill_versions_version_check",
+          "contype": "b'c'",
+          "definition": "CHECK ((version >= 1))"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_activated_by_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (activated_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_authored_by_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (authored_by) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_backtest_baseline_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (backtest_baseline_id) REFERENCES aisoc_replay_evaluations(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_backtest_evaluation_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (backtest_evaluation_id) REFERENCES aisoc_replay_evaluations(id) ON DELETE SET NULL"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_skill_row_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (skill_row_id) REFERENCES aisoc_tenant_skills(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_tenant_id_fkey",
+          "contype": "b'f'",
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "conname": "aisoc_tenant_skill_versions_tenant_id_skill_id_version_key",
+          "contype": "b'u'",
+          "definition": "UNIQUE (tenant_id, skill_id, version)"
+        }
+      ]
+    },
+    "ueba_entity_baselines": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "feature_stats",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "window_start",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "window_end",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "observation_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "peer_group_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "ueba_entity_baselines_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "ueba_anomalies": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": "gen_random_uuid()"
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "entity_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "event_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "anomaly_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "risk_level",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "features",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "z_scores",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "peer_group_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "peer_deviation_score",
+          "data_type": "double precision",
+          "udt_name": "float8",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "source_event_id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "YES",
+          "column_default": null
+        },
+        {
+          "column_name": "detected_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "acknowledged",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO",
+          "column_default": "false"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "ueba_anomalies_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    },
+    "ueba_peer_groups": {
+      "exists": true,
+      "tenant_rows": 0,
+      "count_filter": "tenant_id",
+      "columns": [
+        {
+          "column_name": "id",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "tenant_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "label",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "entity_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO",
+          "column_default": null
+        },
+        {
+          "column_name": "feature_stats",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO",
+          "column_default": "'{}'::jsonb"
+        },
+        {
+          "column_name": "member_count",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO",
+          "column_default": "0"
+        },
+        {
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        },
+        {
+          "column_name": "updated_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES",
+          "column_default": "now()"
+        }
+      ],
+      "constraints": [
+        {
+          "conname": "ueba_peer_groups_pkey",
+          "contype": "b'p'",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ]
+    }
+  },
+  "not_applicable_objects": {
+    "socai2_triage_deliveries": "No standalone table; existing investigation_runs + seq=-1 claim and budget reservation implement this path"
+  },
+  "examples": [
+    {
+      "example": 1,
+      "synthetic": true,
+      "source_and_broker": {
+        "topic": "socai2.alerts.raw",
+        "partition": 2,
+        "offset": 45,
+        "source_alert_id": "c3ac1e6d-980c-5077-8790-6fd698aeff2f",
+        "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+        "canonical_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+        "fingerprint": "df5b7d4dfc01d455e6f7d9d3b4f4d442dc6810514075634d22ddfc774622cf31"
+      },
+      "alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+      "run": {
+        "id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+        "status": "completed",
+        "error": null,
+        "total_tokens": 2033,
+        "started_at": "2026-10-22 09:09:32.926264+00:00",
+        "completed_at": "2026-10-22 09:09:35.590617+00:00"
+      },
+      "first_disposition": "benign_true_positive",
+      "first_confidence": 0.95,
+      "alert_status": "resolved",
+      "resolved_at": "2026-10-22 09:09:35.590617+00:00",
+      "events": [
+        {
+          "seq": -1,
+          "kind": "triage_started",
+          "agent": "auto_triage:delivery",
+          "summary": "Processing claimed; model invocation is not established"
+        },
+        {
+          "seq": 0,
+          "kind": "llm_call",
+          "agent": "auto_triage",
+          "summary": "model call: triage.classify"
+        },
+        {
+          "seq": 1,
+          "kind": "triage_verdict",
+          "agent": "auto_triage:llm",
+          "summary": "verdict=benign_true_positive confidence=0.95"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "687dc16a-ba49-44ed-98d1-b500d71243f5",
+          "kind": "organisation_memory_read",
+          "size_bytes": 669,
+          "sha256": "6fee5681722afc7dd48a1442e134a03dddb5b9029d6184f778ff2c444ea0898b"
+        },
+        {
+          "id": "3630b5f1-bac1-4206-9b6d-ac608ca1b787",
+          "kind": "tenant_skill_read",
+          "size_bytes": 1382,
+          "sha256": "b1792c7d626a2ded239d0d8c4be6c1d3551afb61ce0ba8160018ecb950a6a8e4"
+        },
+        {
+          "id": "e561ac9e-ba71-4af5-8c2b-41d40814b504",
+          "kind": "knowledge_base_read",
+          "size_bytes": 1447,
+          "sha256": "0c72d180e8b179f53d91dfb7b8d0be26f44d6dd219e591ddba4e37a1bbb0225b"
+        },
+        {
+          "id": "4ed2c6cd-fd59-44ad-9493-90352042164b",
+          "kind": "recent_dispositions_read",
+          "size_bytes": 923,
+          "sha256": "e3f44ac2c69124b06c6a319865a2ca16e8b5b4d823e96aad7f79ecbd8cb7a8d4"
+        },
+        {
+          "id": "ea2928a9-2b23-4244-9f72-ef886277a38b",
+          "kind": "identity_context_read",
+          "size_bytes": 1417,
+          "sha256": "2c5e6627f21dec9498899e213230bec5b9c1a4f63ce27e5d995e5d377f773810"
+        },
+        {
+          "id": "fd85319a-3ad5-4d9a-9bcd-f0a69d29186e",
+          "kind": "llm_prompt",
+          "size_bytes": 8000,
+          "sha256": "8c228c624012021d100187f1dab2b67b64168f6cbd5a27cd57f64ac462703f5e"
+        },
+        {
+          "id": "94f31620-5495-495b-8b88-3c844010ea9a",
+          "kind": "llm_response",
+          "size_bytes": 416,
+          "sha256": "6ba2ddd0dba5dece8463dc8b303527b0fa18fe4a1ba54ce44845a6e387aa81f5"
+        }
+      ],
+      "integrity_checks": [
+        {
+          "id": "687dc16a-ba49-44ed-98d1-b500d71243f5",
+          "kind": "organisation_memory_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "3630b5f1-bac1-4206-9b6d-ac608ca1b787",
+          "kind": "tenant_skill_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "e561ac9e-ba71-4af5-8c2b-41d40814b504",
+          "kind": "knowledge_base_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "4ed2c6cd-fd59-44ad-9493-90352042164b",
+          "kind": "recent_dispositions_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "ea2928a9-2b23-4244-9f72-ef886277a38b",
+          "kind": "identity_context_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "fd85319a-3ad5-4d9a-9bcd-f0a69d29186e",
+          "kind": "llm_prompt",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "94f31620-5495-495b-8b88-3c844010ea9a",
+          "kind": "llm_response",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        }
+      ],
+      "inline_bodies_verified": 7,
+      "api_read_checks": {
+        "http://api:8000/readyz": {
+          "status": 200,
+          "body": {
+            "status": "ready",
+            "service": "aisoc-api"
+          }
+        },
+        "http://127.0.0.1:8084/readyz": {
+          "status": 200,
+          "body": {
+            "status": "ready",
+            "service": "aisoc-agents",
+            "subscriptions": [
+              "socai2.alerts.fused"
+            ]
+          }
+        },
+        "/api/v1/alerts/bc625c39-56af-5403-a378-9bfb99c610d2": {
+          "status": 200,
+          "response_bytes": 4374
+        },
+        "/api/v1/investigations/4f5a0a57-050a-57a4-8443-504550fbc5fd": {
+          "status": 200,
+          "response_bytes": 1401
+        },
+        "/api/v1/investigations/4f5a0a57-050a-57a4-8443-504550fbc5fd/events": {
+          "status": 200,
+          "response_bytes": 19111
+        },
+        "/api/v1/investigations/4f5a0a57-050a-57a4-8443-504550fbc5fd/artifacts": {
+          "status": 200,
+          "response_bytes": 1826
+        }
+      },
+      "kafka_at_observation": {
+        "group": "socai2-agents-v1-prod-20261022",
+        "committed": {
+          "0": 30,
+          "1": 33,
+          "2": 40
+        },
+        "end": {
+          "0": 30,
+          "1": 33,
+          "2": 40
+        }
+      },
+      "graph_completion": null,
+      "graph_status": null,
+      "graph_verdict": null,
+      "budget_exhausted_reason": null
+    },
+    {
+      "example": 2,
+      "synthetic": true,
+      "source_and_broker": {
+        "topic": "socai2.alerts.raw",
+        "partition": 0,
+        "offset": 38,
+        "source_alert_id": "ca8fdfeb-d19d-5c6b-a84b-60a5d6f83a07",
+        "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+        "canonical_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+        "fingerprint": "59184b8296f526aa78e8807b92719daff96fbac92b28dd3132e9f48db0d7a95a"
+      },
+      "alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+      "run": {
+        "id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+        "status": "completed",
+        "error": null,
+        "total_tokens": 29755,
+        "started_at": "2026-10-22 09:10:18.418939+00:00",
+        "completed_at": "2026-10-22 09:10:40.277839+00:00"
+      },
+      "first_disposition": "needs_review",
+      "first_confidence": 0.85,
+      "alert_status": "triaged",
+      "resolved_at": null,
+      "events": [
+        {
+          "seq": -1,
+          "kind": "triage_started",
+          "agent": "auto_triage:delivery",
+          "summary": "Processing claimed; model invocation is not established"
+        },
+        {
+          "seq": 0,
+          "kind": "llm_call",
+          "agent": "auto_triage",
+          "summary": "model call: triage.classify"
+        },
+        {
+          "seq": 1,
+          "kind": "triage_verdict",
+          "agent": "auto_triage:llm",
+          "summary": "verdict=needs_review confidence=0.85"
+        },
+        {
+          "seq": 2,
+          "kind": "graph_step",
+          "agent": "triage",
+          "summary": "graph node 'triage' completed"
+        },
+        {
+          "seq": 3,
+          "kind": "graph_step",
+          "agent": "enrichment",
+          "summary": "graph node 'enrichment' completed"
+        },
+        {
+          "seq": 4,
+          "kind": "graph_step",
+          "agent": "investigation",
+          "summary": "graph node 'investigation' completed"
+        },
+        {
+          "seq": 5,
+          "kind": "graph_result",
+          "agent": "graph:investigation",
+          "summary": "graph partial"
+        },
+        {
+          "seq": 6,
+          "kind": "graph_usage",
+          "agent": "graph:investigation",
+          "summary": "Observed investigation usage; separate from first triage"
+        },
+        {
+          "seq": 10000,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "process_activity(hostname, hours)"
+        },
+        {
+          "seq": 10001,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "process_tree(hostname)"
+        },
+        {
+          "seq": 10002,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "network_connections(hostname, hours)"
+        },
+        {
+          "seq": 10003,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "entity_timeline(hostname, hours)"
+        },
+        {
+          "seq": 10004,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "authentication_events(hours, user_name)"
+        },
+        {
+          "seq": 10005,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "enrich_ioc(ioc_type, ioc_value)"
+        },
+        {
+          "seq": 10006,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "lookup_technique(technique_id)"
+        },
+        {
+          "seq": 10007,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "technique_activity(days, technique_id)"
+        },
+        {
+          "seq": 10008,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "historical_execution(days, process_name)"
+        },
+        {
+          "seq": 10009,
+          "kind": "tool_call",
+          "agent": "deep-investigator",
+          "summary": "historical_execution(days, process_name)"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "55b7c3cd-6f0d-4a3c-92d5-dfbd8a540fb0",
+          "kind": "organisation_memory_read",
+          "size_bytes": 682,
+          "sha256": "8c86476927884b172013819dc705a707903f7632a389b46ed840c238a5b9be52"
+        },
+        {
+          "id": "5f2983f9-5406-4ac1-91f2-5fc2e8965662",
+          "kind": "tenant_skill_read",
+          "size_bytes": 1429,
+          "sha256": "eaa65d46c11ce2c1fd32557d1c18713f7ba046f536f6778f332d1639be5dae0c"
+        },
+        {
+          "id": "eab52653-14fa-4813-8567-0bb63af5a68e",
+          "kind": "knowledge_base_read",
+          "size_bytes": 1442,
+          "sha256": "afd1fbb05a79d553b56acfb7441f912e9a81ce4d411058d5bac07a4acd215f89"
+        },
+        {
+          "id": "5af0031c-b6c6-4071-a700-50ab40aca0ab",
+          "kind": "recent_dispositions_read",
+          "size_bytes": 923,
+          "sha256": "51202fecd88951b12291e2a888425c058f6a3165995d780119c96d5d5dffd015"
+        },
+        {
+          "id": "e33283ae-f047-411d-8d07-d299ea47a0b7",
+          "kind": "identity_context_read",
+          "size_bytes": 1417,
+          "sha256": "561c0b29909741ba95c9f2c36c102a4b353cb782c3b4b1c014130ccbf5e4701a"
+        },
+        {
+          "id": "84a179b5-a760-4b2f-81e8-4d8388e09132",
+          "kind": "llm_prompt",
+          "size_bytes": 8000,
+          "sha256": "9dd68f962d9579d4373d410d4abaa23ff8d6fed6c0ebc496f4ffa2351c5b2d69"
+        },
+        {
+          "id": "6ff7d79a-fc06-4906-bccf-304e22f74762",
+          "kind": "llm_response",
+          "size_bytes": 739,
+          "sha256": "b096d09988406a623a70bd1414a39830e09ade3edaa5f171c4e6049e65b83690"
+        },
+        {
+          "id": "ada5349e-2c22-48b5-9bb9-4b70d791a270",
+          "kind": "graph_result",
+          "size_bytes": 90598,
+          "sha256": "f473e790298ec3d302707838aa355a7b462a1f057c1243cbc146bc76c19d7df7"
+        },
+        {
+          "id": "72e0c864-41a0-4096-bfa2-8aa0ebe3a641",
+          "kind": "report_md",
+          "size_bytes": 6413,
+          "sha256": "68a09887c164b35407beeb5ffcfeaa806db2e0e445d0c062cd697a361fcf5e8b"
+        },
+        {
+          "id": "52ed4875-9341-4d40-9fdb-3f2b13d3c168",
+          "kind": "report_html",
+          "size_bytes": 7953,
+          "sha256": "8fade1666c765752095d27e4416e1ae3f2b2410d9833a0f545edc3771f92adea"
+        },
+        {
+          "id": "26c36e3d-bd01-4b6d-bea4-382cd842c968",
+          "kind": "attack_chain",
+          "size_bytes": 3865,
+          "sha256": "88a6e3545c448260de0c8cf42a69c985995e425df7d5cd0a1b1df6b7785e0ba0"
+        },
+        {
+          "id": "2d1807a4-0e3d-4fc4-81db-6849a3d78cee",
+          "kind": "attack_path",
+          "size_bytes": 2458,
+          "sha256": "4b75e4b214491974805bb3db78fe7073dd83d5a35d288f9345a844615953332a"
+        },
+        {
+          "id": "36913795-c5e2-47a2-9b22-536a09e06203",
+          "kind": "alert_graph",
+          "size_bytes": 6491,
+          "sha256": "9e75d2a1461ac8d4d6336b5fc28c86d13b51979d176a10e56dd252a5bf10ba35"
+        },
+        {
+          "id": "433819b5-d3d6-473b-9b18-13fca0c8e0bf",
+          "kind": "graph_llm_exchanges",
+          "size_bytes": 54555,
+          "sha256": "0b225c6a0a3b94b30a444ec596ac1d1258ea99b2f81cfb39cdf842498b5821ed"
+        }
+      ],
+      "integrity_checks": [
+        {
+          "id": "55b7c3cd-6f0d-4a3c-92d5-dfbd8a540fb0",
+          "kind": "organisation_memory_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "5f2983f9-5406-4ac1-91f2-5fc2e8965662",
+          "kind": "tenant_skill_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "eab52653-14fa-4813-8567-0bb63af5a68e",
+          "kind": "knowledge_base_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "5af0031c-b6c6-4071-a700-50ab40aca0ab",
+          "kind": "recent_dispositions_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "e33283ae-f047-411d-8d07-d299ea47a0b7",
+          "kind": "identity_context_read",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "84a179b5-a760-4b2f-81e8-4d8388e09132",
+          "kind": "llm_prompt",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "6ff7d79a-fc06-4906-bccf-304e22f74762",
+          "kind": "llm_response",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "ada5349e-2c22-48b5-9bb9-4b70d791a270",
+          "kind": "graph_result",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "72e0c864-41a0-4096-bfa2-8aa0ebe3a641",
+          "kind": "report_md",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "52ed4875-9341-4d40-9fdb-3f2b13d3c168",
+          "kind": "report_html",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "26c36e3d-bd01-4b6d-bea4-382cd842c968",
+          "kind": "attack_chain",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "2d1807a4-0e3d-4fc4-81db-6849a3d78cee",
+          "kind": "attack_path",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "36913795-c5e2-47a2-9b22-536a09e06203",
+          "kind": "alert_graph",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        },
+        {
+          "id": "433819b5-d3d6-473b-9b18-13fca0c8e0bf",
+          "kind": "graph_llm_exchanges",
+          "content_present": true,
+          "bytes_match": true,
+          "sha256_match": true
+        }
+      ],
+      "inline_bodies_verified": 14,
+      "api_read_checks": {
+        "http://api:8000/readyz": {
+          "status": 200,
+          "body": {
+            "status": "ready",
+            "service": "aisoc-api"
+          }
+        },
+        "http://127.0.0.1:8084/readyz": {
+          "status": 200,
+          "body": {
+            "status": "ready",
+            "service": "aisoc-agents",
+            "subscriptions": [
+              "socai2.alerts.fused"
+            ]
+          }
+        },
+        "/api/v1/alerts/e5f593f0-b328-59c3-8238-379db33d8bfe": {
+          "status": 200,
+          "response_bytes": 4925
+        },
+        "/api/v1/investigations/bdccd907-7f36-558f-8ed4-4be2e417b101": {
+          "status": 200,
+          "response_bytes": 1727
+        },
+        "/api/v1/investigations/bdccd907-7f36-558f-8ed4-4be2e417b101/events": {
+          "status": 200,
+          "response_bytes": 29298
+        },
+        "/api/v1/investigations/bdccd907-7f36-558f-8ed4-4be2e417b101/artifacts": {
+          "status": 200,
+          "response_bytes": 3614
+        },
+        "/api/v1/investigations/bdccd907-7f36-558f-8ed4-4be2e417b101/artifacts/72e0c864-41a0-4096-bfa2-8aa0ebe3a641": {
+          "status": 200,
+          "response_bytes": 6757
+        }
+      },
+      "kafka_at_observation": {
+        "group": "socai2-agents-v1-prod-20261022",
+        "committed": {
+          "0": 31,
+          "1": 33,
+          "2": 40
+        },
+        "end": {
+          "0": 31,
+          "1": 33,
+          "2": 40
+        }
+      },
+      "graph_completion": "partial",
+      "graph_status": "running",
+      "graph_verdict": "needs_review",
+      "budget_exhausted_reason": "token budget exhausted (27697 of 20000)",
+      "model_exchange_recording": [
+        {
+          "purpose": "triage.classify",
+          "prompt_chars": 8000,
+          "prompt_truncated": true,
+          "response_chars": 739,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:1",
+          "prompt_chars": 7265,
+          "prompt_truncated": false,
+          "response_chars": 362,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:2",
+          "prompt_chars": 7863,
+          "prompt_truncated": false,
+          "response_chars": 458,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:3",
+          "prompt_chars": 8000,
+          "prompt_truncated": true,
+          "response_chars": 744,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:4",
+          "prompt_chars": 8000,
+          "prompt_truncated": true,
+          "response_chars": 683,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:5",
+          "prompt_chars": 8000,
+          "prompt_truncated": true,
+          "response_chars": 624,
+          "response_truncated": false
+        },
+        {
+          "purpose": "tool_loop:6",
+          "prompt_chars": 8000,
+          "prompt_truncated": true,
+          "response_chars": 622,
+          "response_truncated": false
+        }
+      ],
+      "tool_calls": [
+        {
+          "args": {
+            "hours": 24,
+            "hostname": "v1-functional-host-2"
+          },
+          "tool": "process_activity",
+          "result_preview": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on v1-functional-host-2 in the last 24h'}"
+        },
+        {
+          "args": {
+            "hostname": "v1-functional-host-2"
+          },
+          "tool": "process_tree",
+          "result_preview": "{'tool': 'process_tree', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. "
+        },
+        {
+          "args": {
+            "hours": 24,
+            "hostname": "v1-functional-host-2"
+          },
+          "tool": "network_connections",
+          "result_preview": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+        },
+        {
+          "args": {
+            "hours": 24,
+            "hostname": "v1-functional-host-2"
+          },
+          "tool": "entity_timeline",
+          "result_preview": "{'tool': 'entity_timeline', 'available': True, 'row_count': 0, 'rows': [], 'query': 'timeline for v1-functional-host-2 over the last 24h'}"
+        },
+        {
+          "args": {
+            "hours": 24,
+            "user_name": "v1-functional-user-2"
+          },
+          "tool": "authentication_events",
+          "result_preview": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for v1-functional-user-2 in the last 24h'}"
+        },
+        {
+          "args": {
+            "ioc_type": "ip",
+            "ioc_value": "192.0.2.82"
+          },
+          "tool": "enrich_ioc",
+          "result_preview": "{'ioc_type': 'ip', 'value': '192.0.2.82', 'risk_score': 0, 'confidence': 0, 'malicious_votes': 0, 'harmless_votes': 0, 'total_engines': 0, 'reputation': 0, 'classification': {}, 'is_bot': False, 'is_t"
+        },
+        {
+          "args": {
+            "technique_id": "T1059.001"
+          },
+          "tool": "lookup_technique",
+          "result_preview": "{'id': 'T1059.001', 'name': 'Unknown', 'tactic': 'Unknown'}"
+        },
+        {
+          "args": {
+            "days": 24,
+            "technique_id": "T1059.001"
+          },
+          "tool": "technique_activity",
+          "result_preview": "{'tool': 'technique_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'activity mapped to T1059.001 in the last 24d'}"
+        },
+        {
+          "args": {
+            "days": 24,
+            "process_name": "v1-functional-host-2"
+          },
+          "tool": "historical_execution",
+          "result_preview": "{'tool': 'historical_execution', 'available': True, 'row_count': 0, 'rows': [], 'query': 'executions of v1-functional-host-2 across the fleet, last 24d'}"
+        },
+        {
+          "args": {
+            "days": 24,
+            "process_name": "v1-functional-user-2"
+          },
+          "tool": "historical_execution",
+          "result_preview": "{'tool': 'historical_execution', 'available': True, 'row_count': 0, 'rows': [], 'query': 'executions of v1-functional-user-2 across the fleet, last 24d'}"
+        }
+      ],
+      "graph_step_payloads": [
+        {
+          "node": "triage"
+        },
+        {
+          "node": "enrichment"
+        },
+        {
+          "node": "investigation"
+        }
+      ]
+    }
+  ],
+  "direct_store_observation": {
+    "at": "2026-10-22T09:11:48.862930+00:00",
+    "neo4j": [
+      {
+        "alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+        "rows": [
+          {
+            "alert": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "title": "V1 functional example 1: scheduled inventory command",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:09:32.812660+00:00",
+              "severity": "low"
+            },
+            "relation": "CONTAINS_IOC",
+            "provenance": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2"
+            },
+            "labels": [
+              "IOC"
+            ],
+            "node": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "id": "7ec27432-a1ae-537a-a085-c963c87d90b4",
+              "indicator_value": "192.0.2.81",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f"
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "title": "V1 functional example 1: scheduled inventory command",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:09:32.812660+00:00",
+              "severity": "low"
+            },
+            "relation": "INVOLVES_USER",
+            "provenance": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2"
+            },
+            "labels": [
+              "User"
+            ],
+            "node": {
+              "id": "96c26e5a-473e-5f2f-b9d8-c680d00cddbc",
+              "username": "v1-functional-user-1",
+              "updated_at": "2026-10-22T09:09:32.807314+00:00",
+              "email": "",
+              "department": "",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "risk_score": 0.0
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+              "title": "V1 functional example 1: scheduled inventory command",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:09:32.812660+00:00",
+              "severity": "low"
+            },
+            "relation": "OBSERVED_ON",
+            "provenance": {
+              "source_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2"
+            },
+            "labels": [
+              "Host"
+            ],
+            "node": {
+              "id": "80b5d17b-15dd-52a1-93e5-132288550297",
+              "os": "",
+              "criticality": "medium",
+              "ip_address": "",
+              "updated_at": "2026-10-22T09:09:32.797037+00:00",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "hostname": "v1-functional-host-1"
+            }
+          }
+        ]
+      },
+      {
+        "alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+        "rows": [
+          {
+            "alert": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "title": "V1 functional example 2: unfamiliar script with outbound connection",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:10:18.341717+00:00",
+              "severity": "high"
+            },
+            "relation": "CONTAINS_IOC",
+            "provenance": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+            },
+            "labels": [
+              "IOC"
+            ],
+            "node": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "1eb68f32-84ee-5c9c-a1ff-967bc7932153",
+              "indicator_value": "203.0.113.82",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f"
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "title": "V1 functional example 2: unfamiliar script with outbound connection",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:10:18.341717+00:00",
+              "severity": "high"
+            },
+            "relation": "CONTAINS_IOC",
+            "provenance": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+            },
+            "labels": [
+              "IOC"
+            ],
+            "node": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "a2bad755-caa1-5553-9eda-2504815a7cdf",
+              "indicator_value": "192.0.2.82",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f"
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "title": "V1 functional example 2: unfamiliar script with outbound connection",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:10:18.341717+00:00",
+              "severity": "high"
+            },
+            "relation": "MAPS_TO",
+            "provenance": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+            },
+            "labels": [
+              "Technique"
+            ],
+            "node": {
+              "updated_at": "2026-10-22T09:10:18.351670+00:00",
+              "technique_id": "T1059.001"
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "title": "V1 functional example 2: unfamiliar script with outbound connection",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:10:18.341717+00:00",
+              "severity": "high"
+            },
+            "relation": "INVOLVES_USER",
+            "provenance": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+            },
+            "labels": [
+              "User"
+            ],
+            "node": {
+              "id": "f9199635-e91b-5c29-8a1e-bd354e3226e8",
+              "username": "v1-functional-user-2",
+              "updated_at": "2026-10-22T09:10:18.336846+00:00",
+              "email": "",
+              "department": "",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "risk_score": 0.0
+            }
+          },
+          {
+            "alert": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+              "title": "V1 functional example 2: unfamiliar script with outbound connection",
+              "evidence_kind": "source_alert_reported_association",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "created_at": "2026-10-22T09:10:18.341717+00:00",
+              "severity": "high"
+            },
+            "relation": "OBSERVED_ON",
+            "provenance": {
+              "source_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+            },
+            "labels": [
+              "Host"
+            ],
+            "node": {
+              "id": "822f5a88-c750-52ae-99fe-56efe063f885",
+              "os": "",
+              "criticality": "medium",
+              "ip_address": "",
+              "updated_at": "2026-10-22T09:10:18.329671+00:00",
+              "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+              "hostname": "v1-functional-host-2"
+            }
+          }
+        ]
+      }
+    ],
+    "fusion_redis": [
+      {
+        "alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2",
+        "entries": {
+          "dedup": {
+            "key": "aisoc:fusion:dedup:df5b7d4dfc01d455e6f7d9d3b4f4d442dc6810514075634d22ddfc774622cf31",
+            "exists": true,
+            "ttl": 163
+          },
+          "delivery": {
+            "key": "aisoc:fusion:delivery:v1:f6a5c700-69b8-44fc-8238-609362fb1a9f:bc625c39-56af-5403-a378-9bfb99c610d2",
+            "exists": true,
+            "ttl": 163,
+            "snapshot_valid": true,
+            "canonical_alert_id": "bc625c39-56af-5403-a378-9bfb99c610d2"
+          },
+          "incident": {
+            "key": "aisoc:fusion:incident:6d28b687-d975-41f2-8539-8138df0e6cb0",
+            "exists": 1,
+            "ttl": 3463
+          }
+        }
+      },
+      {
+        "alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe",
+        "entries": {
+          "dedup": {
+            "key": "aisoc:fusion:dedup:59184b8296f526aa78e8807b92719daff96fbac92b28dd3132e9f48db0d7a95a",
+            "exists": true,
+            "ttl": 208
+          },
+          "delivery": {
+            "key": "aisoc:fusion:delivery:v1:f6a5c700-69b8-44fc-8238-609362fb1a9f:e5f593f0-b328-59c3-8238-379db33d8bfe",
+            "exists": true,
+            "ttl": 208,
+            "snapshot_valid": true,
+            "canonical_alert_id": "e5f593f0-b328-59c3-8238-379db33d8bfe"
+          },
+          "incident": {
+            "key": "aisoc:fusion:incident:dd3f0bf9-d5e1-4b41-85df-4e16bc540578",
+            "exists": 1,
+            "ttl": 3508
+          }
+        }
+      }
+    ]
+  },
+  "cost_rows_for_two_examples": [
+    {
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+      "model": "aisoc-triage",
+      "total_prompt_tokens": 1930,
+      "total_completion_tokens": 103,
+      "total_cost_usd": 0.0,
+      "total_latency_ms": 2247.737592086196,
+      "call_count": 1,
+      "recorded_at": "2026-10-22 09:09:35.585527+00:00",
+      "measured_cost_usd": 0.0,
+      "measured_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "estimated_call_count": 0,
+      "unpriced_call_count": 1,
+      "resolved_model": "openai/aisoc-test-investigation"
+    },
+    {
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+      "model": "aisoc-investigation",
+      "total_prompt_tokens": 26826,
+      "total_completion_tokens": 871,
+      "total_cost_usd": 0.0,
+      "total_latency_ms": 17950.62420400791,
+      "call_count": 6,
+      "recorded_at": "2026-10-22 09:10:40.280909+00:00",
+      "measured_cost_usd": 0.0,
+      "measured_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "estimated_call_count": 0,
+      "unpriced_call_count": 6,
+      "resolved_model": "openai/aisoc-test-investigation"
+    },
+    {
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+      "model": "aisoc-triage",
+      "total_prompt_tokens": 1911,
+      "total_completion_tokens": 147,
+      "total_cost_usd": 0.0,
+      "total_latency_ms": 3080.0901690963656,
+      "call_count": 1,
+      "recorded_at": "2026-10-22 09:10:21.582153+00:00",
+      "measured_cost_usd": 0.0,
+      "measured_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "estimated_call_count": 0,
+      "unpriced_call_count": 1,
+      "resolved_model": "openai/aisoc-test-investigation"
+    }
+  ],
+  "artifact_event_relationships_for_two_examples": [
+    {
+      "id": "ea2928a9-2b23-4244-9f72-ef886277a38b",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "identity_context_read",
+      "blob_ref": null,
+      "size_bytes": 1417
+    },
+    {
+      "id": "e561ac9e-ba71-4af5-8c2b-41d40814b504",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "knowledge_base_read",
+      "blob_ref": null,
+      "size_bytes": 1447
+    },
+    {
+      "id": "fd85319a-3ad5-4d9a-9bcd-f0a69d29186e",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "llm_prompt",
+      "blob_ref": null,
+      "size_bytes": 8000
+    },
+    {
+      "id": "94f31620-5495-495b-8b88-3c844010ea9a",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "llm_response",
+      "blob_ref": null,
+      "size_bytes": 416
+    },
+    {
+      "id": "687dc16a-ba49-44ed-98d1-b500d71243f5",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "organisation_memory_read",
+      "blob_ref": null,
+      "size_bytes": 669
+    },
+    {
+      "id": "4ed2c6cd-fd59-44ad-9493-90352042164b",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "recent_dispositions_read",
+      "blob_ref": null,
+      "size_bytes": 923
+    },
+    {
+      "id": "3630b5f1-bac1-4206-9b6d-ac608ca1b787",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "event_id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "kind": "tenant_skill_read",
+      "blob_ref": null,
+      "size_bytes": 1382
+    },
+    {
+      "id": "36913795-c5e2-47a2-9b22-536a09e06203",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "alert_graph",
+      "blob_ref": null,
+      "size_bytes": 6491
+    },
+    {
+      "id": "26c36e3d-bd01-4b6d-bea4-382cd842c968",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "attack_chain",
+      "blob_ref": null,
+      "size_bytes": 3865
+    },
+    {
+      "id": "2d1807a4-0e3d-4fc4-81db-6849a3d78cee",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "attack_path",
+      "blob_ref": null,
+      "size_bytes": 2458
+    },
+    {
+      "id": "433819b5-d3d6-473b-9b18-13fca0c8e0bf",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "graph_llm_exchanges",
+      "blob_ref": null,
+      "size_bytes": 54555
+    },
+    {
+      "id": "ada5349e-2c22-48b5-9bb9-4b70d791a270",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "graph_result",
+      "blob_ref": null,
+      "size_bytes": 90598
+    },
+    {
+      "id": "e33283ae-f047-411d-8d07-d299ea47a0b7",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "identity_context_read",
+      "blob_ref": null,
+      "size_bytes": 1417
+    },
+    {
+      "id": "eab52653-14fa-4813-8567-0bb63af5a68e",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "knowledge_base_read",
+      "blob_ref": null,
+      "size_bytes": 1442
+    },
+    {
+      "id": "84a179b5-a760-4b2f-81e8-4d8388e09132",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "llm_prompt",
+      "blob_ref": null,
+      "size_bytes": 8000
+    },
+    {
+      "id": "6ff7d79a-fc06-4906-bccf-304e22f74762",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "llm_response",
+      "blob_ref": null,
+      "size_bytes": 739
+    },
+    {
+      "id": "55b7c3cd-6f0d-4a3c-92d5-dfbd8a540fb0",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "organisation_memory_read",
+      "blob_ref": null,
+      "size_bytes": 682
+    },
+    {
+      "id": "5af0031c-b6c6-4071-a700-50ab40aca0ab",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "recent_dispositions_read",
+      "blob_ref": null,
+      "size_bytes": 923
+    },
+    {
+      "id": "52ed4875-9341-4d40-9fdb-3f2b13d3c168",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "report_html",
+      "blob_ref": null,
+      "size_bytes": 7953
+    },
+    {
+      "id": "72e0c864-41a0-4096-bfa2-8aa0ebe3a641",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "kind": "report_md",
+      "blob_ref": null,
+      "size_bytes": 6413
+    },
+    {
+      "id": "5f2983f9-5406-4ac1-91f2-5fc2e8965662",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "event_id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "kind": "tenant_skill_read",
+      "blob_ref": null,
+      "size_bytes": 1429
+    }
+  ],
+  "event_hash_metadata_for_two_examples": [
+    {
+      "id": "ae26b5c6-3755-44d2-99a2-57af1fac3d77",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "seq": -1,
+      "kind": "triage_started",
+      "agent": "auto_triage:delivery",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "f87d0a83-ad5b-4b58-a878-14963c6c8e9d",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "seq": 0,
+      "kind": "llm_call",
+      "agent": "auto_triage",
+      "input_hash": "bd6ec024c6e19d0fb980dcc45595d97199e41a55f386ccf1febdcbba86ecc295",
+      "output_hash": "6ba2ddd0dba5dece8463dc8b303527b0fa18fe4a1ba54ce44845a6e387aa81f5",
+      "duration_ms": 2251
+    },
+    {
+      "id": "42c0f2b5-f0f2-451a-8e88-63e5cf7a3ae1",
+      "run_id": "4f5a0a57-050a-57a4-8443-504550fbc5fd",
+      "seq": 1,
+      "kind": "triage_verdict",
+      "agent": "auto_triage:llm",
+      "input_hash": "bd6ec024c6e19d0fb980dcc45595d97199e41a55f386ccf1febdcbba86ecc295",
+      "output_hash": "6ba2ddd0dba5dece8463dc8b303527b0fa18fe4a1ba54ce44845a6e387aa81f5",
+      "duration_ms": 2251
+    },
+    {
+      "id": "cdc61bad-1814-48a7-89b5-cae3890c8195",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": -1,
+      "kind": "triage_started",
+      "agent": "auto_triage:delivery",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "f5cf34c8-d314-48b3-aa7f-735b7aa2d5a4",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 0,
+      "kind": "llm_call",
+      "agent": "auto_triage",
+      "input_hash": "d5b1f2c82c95b1afcc6c3c34e58b4ac342cee4d4733405c1ae519589374023de",
+      "output_hash": "b096d09988406a623a70bd1414a39830e09ade3edaa5f171c4e6049e65b83690",
+      "duration_ms": 3082
+    },
+    {
+      "id": "c3aa129d-e23a-4700-bf7a-94b92432f98a",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 1,
+      "kind": "triage_verdict",
+      "agent": "auto_triage:llm",
+      "input_hash": "d5b1f2c82c95b1afcc6c3c34e58b4ac342cee4d4733405c1ae519589374023de",
+      "output_hash": "b096d09988406a623a70bd1414a39830e09ade3edaa5f171c4e6049e65b83690",
+      "duration_ms": 3082
+    },
+    {
+      "id": "94bc4d86-5a2f-4b8b-a607-acce09a78c3b",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 2,
+      "kind": "graph_step",
+      "agent": "triage",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 3
+    },
+    {
+      "id": "ee63841e-c1f8-498e-9b42-cd515b98e791",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 3,
+      "kind": "graph_step",
+      "agent": "enrichment",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 12
+    },
+    {
+      "id": "df6a7f4f-7e1e-482a-b825-95e91482d592",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 4,
+      "kind": "graph_step",
+      "agent": "investigation",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 18292
+    },
+    {
+      "id": "b3fccce7-6c5e-419e-a719-e4d1f2d7c30a",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 5,
+      "kind": "graph_result",
+      "agent": "graph:investigation",
+      "input_hash": null,
+      "output_hash": "2ba793cd23bfd1cc8e0380147829aa654b6b252da6da7eb30618c1e2595fe3b3",
+      "duration_ms": 0
+    },
+    {
+      "id": "0bd01bf0-98e0-461c-97c0-964f15d6fcd5",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 6,
+      "kind": "graph_usage",
+      "agent": "graph:investigation",
+      "input_hash": null,
+      "output_hash": "03bba6757eccbba88f98210cf846afaabe8213628baf3b23b5bf65ba25ee77e2",
+      "duration_ms": 0
+    },
+    {
+      "id": "849631e7-7359-4ab1-a707-dd55168e94c7",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10000,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "06b1b6dd-e093-47c6-bbcd-47666896953d",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10001,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "abda333b-51a8-486a-b6fb-85ac7ff07daf",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10002,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "7e0a96d6-c382-45ca-9329-91ff174ce331",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10003,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "fa3793d5-3474-4c39-bc03-c48a2333595e",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10004,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "ed6543f0-73e8-4dcb-adae-64faf34017b0",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10005,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "e48518ba-66f8-40b4-9a85-771e6cd58765",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10006,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "d23368ee-5a51-4dd2-bb12-2dbff1d273d8",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10007,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "f095618f-493c-4e37-9bf9-356489ff48eb",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10008,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    },
+    {
+      "id": "1ffc0d16-517e-46e6-ba87-b63594294dc0",
+      "run_id": "bdccd907-7f36-558f-8ed4-4be2e417b101",
+      "seq": 10009,
+      "kind": "tool_call",
+      "agent": "deep-investigator",
+      "input_hash": null,
+      "output_hash": null,
+      "duration_ms": 0
+    }
+  ],
+  "whole_step_retention_complete": false,
+  "quality_accepted": false,
+  "independent_review": {
+    "reviewer": "v1_two_examples_audit",
+    "result": "limited ACCEPT",
+    "blocking_items": 0,
+    "whole_step_original_retention": "NOT PASS",
+    "investigation_quality": "NOT ACCEPTED",
+    "scope": "local readback evidence, table/field/constraint mapping, artifact byte/hash verification, final document semantics"
+  },
+  "backend_sql_validation": {
+    "at": "2026-10-22T15:09:08.399119+00:00",
+    "transaction_read_only": true,
+    "select_statements": 9,
+    "result": "SELECT 2",
+    "passed": true
+  }
+}

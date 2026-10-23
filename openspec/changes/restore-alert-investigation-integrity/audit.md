@@ -1,3 +1,31 @@
+## 2026-10-23 事件级与跨事件研究结束独审（仅文档）
+
+root编写；未参与本次编写的resumed_projects_end_audit只读独审限定 **ACCEPT，0项本轮必须修项**。核本地Fusion键/摘要、worker单告警state与Run、Case摘要25/最终3条投影、agent-runs调用方材料、PG Chain无Incident过滤及Fusion chain；确认已有多告警与跨Incident候选，缺持续事件整体研判的判断准确。
+
+独审本次联网只读抽核7个正文官方来源，确认Microsoft Incident cases Preview、Endpoint AIR自2026-09-01的变化、Falcon共享上下文调查Pre-beta；关联/相似与合并、候选与因果、三个同名Fusion均区分。用户随后要求整理设计、链接和参考点，新增第9节13项资料采用点索引及2项补充链接，独审再作仅该索引窄核，限定ACCEPT、0阻塞，未重复联网。
+
+root核文档本地链接/围栏、git diff --check和OpenSpec strict通过，任务仍5/15。本次仅研究文档及交接准确性审查，不是厂商效果、本项目实现/质量或完整change验收。无生产访问、业务测试/模型/消息、部署或Git提交推送；文档前稿、最终副本、增量、hash、逐步记录及审阅结论留存.local/versions/incident-analysis-research-20261023/。研究正文见docs/architecture/incident-analysis-product-comparison-20261023.md。
+
+## 2026-10-23 调查优化方案保存结束独审（仅文档）
+
+root修订方案和交接记录；未参与本次编写的resumed_projects_end_audit只读对照before四文件增量，抽核人工run/stream及校验顺序、typed认证/网络查询、Deep异常与trace落库、工具preview、Identity/Cloud解析和Router汇合，结论限定 **ACCEPT，0项本轮必须修项**。既有v1例2参数误填、六轮十工具、27697/20000及末工具JSON与回执一致；C2 source05未终审和未全发布事实保持。
+
+三批结果/交接→查询/场景→共享结构/扩展自洽，四合同属目标、首批不全做，Router扩大使用前修正可独立提前；验收材料均为未来要求。AGENTS、PROGRESS、execution明确用户只要求方案保存，不构成实施授权。47本地链接及围栏通过，原任务5/15保持；root另核git diff --check和OpenSpec strict通过。审核未联网、改文件或跑业务测试。
+
+仅确认本次文档事实、建议及边界，不是业务实现、质量或发布验收。前稿、修订稿、增量和检查/审阅记录保存在.local/versions/investigation-plan-review-20261023/；原历史证据不改写。无业务源码/合同/运行修改、新业务测试/模型/消息/生产访问/部署，不归档或Git提交推送。
+
+## 2026-10-22 两个暂停项目恢复结束独审
+
+实现/执行/记录root；未参与实现者`resumed_projects_end_audit`只读结束独审，**限定ACCEPT，0项本轮必须修项**。独立核3份payload/expected的manifest hash、HTTP/raw/fused坐标、三份snapshot规范hash及原FusedAlert正文等价（信封alert_row_id/persist_outcome另核）、8字段保留、答案四键未入消息、source_event_ids原引用+上游Alert ID符合原worker合同。原3Alert/new/无Case、6消息、关联Run0/模型0、未启动Fusion消费循环、group_id=None/禁提交、独立topic/Redis前缀与临时进程停止均有原探针及回执支持。未重新联网/执行测试或业务，根原8离线＋2替身合同结果仅复用。
+
+独审核初始before9项hash、工具/探针本轮无改，237行原产品文/hash与旧独审吻合；本次只同步后来v1发布/两例/留存缺口并完成交接，不实施未选定优化，原任务逐行仍5/15。首次本地材料观察对source_event_ids完全相同的假设错误及修正已保留，无业务重发；旧attempt01保持。原始独审回复留.local/versions/two-projects-resume-20261022/independent-audit.txt，工具结果见docs/operations/testdata-tools-20261022.md及docs/handoff/testdata-tools-20261022.json，步骤见docs/operations/two-projects-resume-20261022.md。
+
+root另做64本地链接/围栏/机器JSON、git diff --check及restore strict检查，选定非私有文件/合成回执/逐步日志按项目路径留存该版本目录，排除private签名配置与凭据。范围只限本次恢复交付；不追认调查/关联质量、生产offset恢复或完整change完成，不新增部署、worker配置变化、模型/厂商动作或Git提交推送。生产v1沿此前授权保持。
+
+## 2026-10-22 两例落地及数据盘点结束独审
+
+未参与实现者 `v1_two_examples_audit` 直接读取本地真实PG正文/元数据/图缓存回执，独立重算21份工件字节/hash通过，核21份event关联、成本3行/8回复31788tokens、25表428字段及约束、两例发送/读取坐标均与原回执一致，最终交接正文限定ACCEPT、0项本轮收口阻塞。机器字典未含凭据或prompt正文。完整逐步骤原文留存及调查质量不通过；graph_step仅node、tool preview200、prompt副本截断、seq后写低值问题已说明。分类源码未改，不由本批追认旧质量或原5/15完成。SQL实际执行校验由root在只读事务完成9 SELECT通过，不冒称独审者重新运行。新版交接包94331字节/26项，manifest覆盖17份正文及7份辅助文件，SHA256 `ac6d29a15d6ad2117bc1147f917219c0ca4216047c5cf135273f69f8cce8e058`；124链接/3锚点/7JSON、diff/OpenSpec strict通过，旧包不覆盖。v1_two_examples_audit随后独立窄核最终ZIP、17+7文件及manifest/本地一致、无私有配置或prompt正文，限定ACCEPT、0收口阻塞；只读SQL执行回执为readonly开启/9SELECT成功，原留存/质量不通过结论保持。见[回执](../../../docs/operations/service-v1-functional-20261022.md)。
+
 ## 2026-10-22 后端对接发布文档v1结束独审
 
 root编写docs/integration/v1/五篇文档及JSON/env/只读SQL示例；backend_kafka_inventory、backend_database_inventory只读提供topic/schema及表关系事实。未参与研究/编写的backend_v1_doc_audit结束独审**限定ACCEPT，0项本批必须修项**。核正式Kafka输入/HTTP告警仅测试、source-v1稳定身份、PG确认后fused与DLQ、API与Agents路由、Case/Run归属、各步state/事件/工件/Markdown持久边界、公开Compose端口与迁移DDL；不把fused当调查完成、graph_step当完整节点JSON、Run completed当业务结案。root在审查前已将独立graph入口修为原Agents `/api/v1/agent-runs`，Agents/Actions内部端口核为8084/8085。

@@ -1,3 +1,32 @@
+## 2026-10-23 事件级与跨事件分析研究（仅文档）
+
+用户要求依已有分析评估必要性，并查阅微软等主流产品。root只读核Fusion分组、自动单告警Run、Case多材料、incident_id入口及跨Incident图候选；联网查官方产品文档并标明版本/预览边界。形成docs/architecture/incident-analysis-product-comparison-20261023.md，原产品方案加入口。建议以事件整体结果、持续增量和候选关系验证补齐现有能力，不自动实施或改变原5/15。研究步骤/前稿保存在.local/versions/incident-analysis-research-20261023/。结束文档检查及独审另记audit；无生产访问、业务模型/消息/测试、部署或Git提交推送。
+
+## 2026-10-23 调查优化方案审核修订并保存（非实施）
+
+用户先要求审核意见，随后明确“不是执行，是方案保存”。本次只修订docs/architecture/investigation-product-engineering-roadmap-20261022.md，沿现有2.1/4.1保留文档记录，不新建执行任务树、不改规格行为、不勾原任务。
+
+1. 只读对照原建议、当前相关源码及10月22日v1两例回执；区分实际调用问题、静态缺口、未全发布C2和未来设计。
+2. 保存原稿及本次记录文件到.local/versions/investigation-plan-review-20261023/before/；将查询参数/时间语义、认证字段前提、校验顺序、停止留存、Router汇合及分层证据建议融入正文。
+3. 将原宽泛首批拆为结果一致与交接、查询有效性与真实场景、共享结构与扩展三批；新增有限验收材料，全部明确尚未执行。异常登录仅为满足数据前提后的候选。
+4. 做文档链接/格式及增量核对，独立文档审阅结果另记audit；修订版本保留在上述本地目录。
+
+本次无业务代码、API/DB合同、运行配置或部署修改，无新业务测试/模型/消息/生产访问。原5/15、v1已上线和旧质量失败保持；不归档，不Git提交/推送，保存方案不构成后续实施指令。
+
+## 2026-10-22 两项目恢复实际结果（结束独审已完成）
+
+attempt02于23:22执行：3条新合成输入经本地最小认证API发布独立raw topic，原Fusion方法实际落PG/首次快照并交付独立fused topic，各p0 offset0/1/2，共6消息/3Alert/new/无Case/关联Run0/模型0。未启动Fusion消费循环、无group/offset提交；隔离Redis前缀访问12键，临时本地API与客户端已停且cleanup_errors为空。原8离线＋2替身测试复用未重跑。初次本地材料观察误要求source_event_ids完全相同；核原worker追加上游Alert ID后修观察，失败保留，无业务修改或重发。8字段材料及答案分离核验通过。
+
+产品建议只补后来v1已部署/生产worker已启、两例数据与留存缺口；不实施全部建议，不重复构建/发布。逐步回执见docs/operations/two-projects-resume-20261022.md；测试工具最终交付见docs/operations/testdata-tools-20261022.md及docs/handoff/testdata-tools-20261022.json。未参与实现者resumed_projects_end_audit结束独审限定ACCEPT、0项本轮必须修项；64链接/围栏/JSON/diff/OpenSpec strict通过，选定非私有版本与步骤日志留存.local/versions/two-projects-resume-20261022。原5/15、旧unknown/预算/失败保持，不归档。
+
+## 2026-10-22 两个额度中断项目恢复（执行前登记）
+
+用户要求继续两个暂停项目并逐步记录。沿原2.1/4.1恢复测试工具隔离小批量真实联测，最多3条新输入/独立topic/Redis前缀/测试tenant，0模型、无生产部署或开关修改；保留attempt01。产品建议已审，补v1最新事实并交付，不据此实施未选定方案。步骤、时间与结果见docs/operations/two-projects-resume-20261022.md和.local/versions/two-projects-resume-20261022/steps.jsonl。执行前restore strict通过；结束一次未参与实现者独审，原5/15和旧失败保持。
+
+## 2026-10-22 用户授权两例真实测试与数据交接
+
+正式v1新raw Kafka输入2条，自动关闭及自动调查分别实跑；新增21步骤事件/21工件，正文长度/hash、event关联及8回复31788tokens成本可核。用户随后要求做好表/数据盘点，22:56只读核生产租户25表428字段/约束及实际行数，23:09实际只读执行交接SQL9个SELECT成功。新增[数据盘点](../../../docs/integration/v1/data-inventory.md)、字段/JSON/SQL、[两例回执](../../../docs/operations/service-v1-functional-20261022.md)；完整逐步原文留存/质量不通过，原5/15保持。未改业务代码/模型配置/预算，不重放旧输入，不部署或Git提交。结束独审限定ACCEPT，范围为本轮测试及交接。
+
 ## 2026-10-22 v1.0.0实际发布结果
 
 API/Agents已按固定候选ID定向替换，生产租户/最小身份/生产预算及新组起点就绪，worker与升级开启、模型摘要不变。新raw Kafka告警自动取得Run/partial graph/Markdown，15事件/14工件及提交offset/读取200可回查；7回复28216tokens，质量及原软预算限制保留。未重放旧输入、修改旧group/unknown/预算或启真实响应，未Git提交/推送。详见[发布回执](../../../docs/operations/service-v1-release-20261022.md)。原5/15不改，结束独审另记。

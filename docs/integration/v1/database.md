@@ -2,6 +2,8 @@
 
 [返回入口](README.md)。本篇为当前告警/调查主链的数据字典索引，不复制整个134份迁移DDL，也不要求业务后端直接改业务库。默认通过认证API查询，表结构用于明确结果归属及授权只读对账。
 
+22:56实际PG盘点已保存：25张表、428字段及实际主外键/约束，见[表与落地盘点](data-inventory.md)、[字段目录](table-fields.md)及[机器字典](data-catalog.json)。本轮2例的21条步骤事件、21份工件正文已读回，完整性与缺口分开记录；生产租户总量含此前发布canary。
+
 ## 1. ID关系
 
 | ID | 产生位置 | 关联方式 |
@@ -61,7 +63,7 @@
 | ClickHouse aisoc.raw_events | event_id/tenant_id UUID、event_time DateTime64(3,UTC)、实体/进程/OCSF/raw数据 | Kafka规范化事件→湖→SQL/调查工具 | ReplacingMergeTree(ingest_time)，不是实时唯一主键；去重查询按FINAL或适当LIMIT 1 BY |
 | ClickHouse其他定义 | aisoc.alert_metrics、aisoc.ioc_enrichments等DDL | 以实际writer/已有资料为准 | DDL存在不等于每张表已持续写入或有完整数据 |
 | OpenSearch | socai2-threatintel-iocs / socai2-threatintel-actors | TI导入/Feed代码→IOC/actor检索 | 仅IOC/actor项目索引已有基本实证；原始事件全文索引未接 |
-| Neo4j | Alert/Host/User/IOC/Case、共享Technique；OBSERVED_ON/INVOLVES_USER/MAPS_TO/CONTAINS_IOC/CONTAINS_ALERT等 | 已有关系及候选PG投影→上下文/Path | 新告警自动投影仍候选未部署；关系连通不等于攻击因果 |
+| Neo4j | Alert/Host/User/IOC/Case、共享Technique；OBSERVED_ON/INVOLVES_USER/MAPS_TO/CONTAINS_IOC/CONTAINS_ALERT等 | 已有关系及候选PG投影→上下文/Path | v1.0.0已部署；本轮两Alert直接关系3/5条已读回；关系连通不等于攻击因果 |
 | Qdrant | socai2_threatintel_iocs / socai2_threatintel_actors（1536维） | TI向量集合→语义读者 | 已配置/创建但已有实测为空；1D1024维smoke集合不作同空间证据 |
 
 [ClickHouse DDL](../../../services/api/clickhouse/001_init.sql)、[Redis关联器](../../../services/fusion/app/services/correlator.py)、[图写读实现](../../../services/api/app/services/graph_service.py)、[TI存储实现](../../../services/threatintel/app/storage/opensearch.py)、[full净化回执](../../operations/full-support-migration.json)。
@@ -79,7 +81,7 @@ ROLLBACK;
 
 当前若干RLS policy包含`current_tenant_id() IS NULL`兼容分支，部分内部角色还可绕过RLS；**未设置变量不能当作自动拒绝跨tenant查询**。所以对接方默认走API；如有直查需求，发放独立受控只读身份与明确表授权，不复制runtime/owner作为后端管理员。[RLS实际实现](../../../services/api/app/db/rls.py)、[初始policy](../../../services/api/migrations/002_rls.sql)、[补充policy](../../../services/api/migrations/060_rls_coverage.sql)
 
-可交给数据后端的完整只读样例见[read-results.sql](examples/read-results.sql)：Alert→常见自动Run→步骤→工件摘要，以及独立Case关系读取。样例只读、不执行DDL/INSERT/UPDATE/DELETE，不修改历史步骤或报告；本文未连接数据库执行。
+可交给数据后端的完整只读样例见[read-results.sql](examples/read-results.sql)：Alert→常见自动Run→步骤→工件摘要，以及独立Case关系读取。样例只读、不执行DDL/INSERT/UPDATE/DELETE，不修改历史步骤或报告。另有[本轮两个真实Run SQL](examples/production-two-examples.sql)，按实际字段整理；实际定向PG查询及正文校验见[核验回执](../../operations/service-v1-functional-20261022.md)。
 
 ## 6. 字段解释规则
 

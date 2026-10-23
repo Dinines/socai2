@@ -30,3 +30,5 @@
 ```sh
 .local/conda-envs/socai2/bin/python -m unittest discover -s tools/testdata/tests -v
 ```
+
+实际验证与边界见[测试工具回执](../../docs/operations/testdata-tools-20261022.md)：2026-10-22的3条新隔离输入已通过真实入口/Kafka/Fusion/PG，未进入模型或调查；离线/替身结果单独列出。逐步恢复及原失败见[执行记录](../../docs/operations/two-projects-resume-20261022.md)。
