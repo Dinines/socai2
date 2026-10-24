@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4c修后结束独审
+
+fresh_design合同限定ACCEPT0后实施；fresh_code初74发现合法rev2已M1/newstore保存却restore误拒，保[合法原件/应用error](../../../docs/operations/investigation-program-profile-restore-failure-20261025.json)。修复恢复而非新transition后独立75、6hash/原6+rev2全输出/3SQL全部DTO/MD/usage/refs同，额外合法rev3与4typed反例过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。新增rev2 SHA d4e513eb2bf308ff5d7bc3c523106a6fa3d9a50f2f000679bf2642cf84e27456及5失败原件/1red0fail1应用error核同；双方首scope模块误名Loader错误单列非源码。未证明previous历史/actualauth/owned来源，d owned/HTTP及a4.2仍待。
+
 ## 2026-10-25 b2.4b修后结束独审
 
 fresh_design合同限定ACCEPT0；fresh_code初127外pub receipt seq float/int窄差异保[原件1red1fail0error](../../../docs/operations/investigation-program-publication-store-failure-20261025.json)。修strictint/canonical identity并覆盖原begin/current receipt后，独立129/7hash/7完整账本cold-repeat、所有工件pin/hash/MD/Run6列同、lateactual保账而两正式操作拒stale，限定ACCEPT0。[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。额外全链selfhash假材料被原tool重建拒/写0，普通programstore对pubunknown不fallback。仅SQL替身，c合同另已ACCEPT0，保存后再实施；d/a4.2未放行。

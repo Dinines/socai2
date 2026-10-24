@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Select only a verified owned fixed or program result without caller version control
+
+b2.4d1 SHALL 新增owned兼容reader，在同tenant/Run锁内强核唯一managed begin/full原件/strictseq/canonical身份，再按explicit已核fixed或program版本走各自restore/store同conn；unknown/generic/mixed/双begin拒不fallback；同锁进入branch store前须核该Run所有unified_事件均在所选允许kind集合且agent符合该writer，未知begin/control不论位置都拒。owner来自原件而非caller，旧reader/DTO/MD不改。
+
+#### Scenario: A current permitted reader requests an existing fixed or program Run
+- **WHEN** caller已核auth/read permission且current principal允许tenant，owned唯一begin和原件/版本可完整核
+- **THEN** 同事务恢复相应原context并读当前manifest或原progress，fixed完整DTO/MD同旧、新owned_program schema明确而公共结构保持；无新行/预算/调用/发布或owner选择
+
+#### Scenario: Owned origin version type or published basis is inconsistent
+- **WHEN** nil/foreign/未知或双begin、event/receipt/hash/type/owner/manifest/material断链、late结算等出现
+- **THEN** 明确拒或脱敏交易错误，不按客户端mode换版本、不返回旧报告或偷偷publish；后续内部GET/gateway/组合兼容与a4.2另门
+
 ### Requirement: Restore only the original new program read context with current read authority
 
 b2.4c SHALL 独立new restore纯函数，从caller已核owned newbegin/body/state重建原M1和new profile/plan，当前tenant许可与历史principal分开，canonical全量比较及严格整数拒typed alias，不读活Alert或改旧restore。结构/hash不替代actual auth/owner/event链。

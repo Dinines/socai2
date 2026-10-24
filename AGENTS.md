@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4c新版冻结恢复限定通过
+
+8724920后合同/spec/strict/独审先行，仅新program_profile_restore。16新＋oldrestore11/newpubstore29/M1scope8/profile11共75直接/独立同75、6hash/原6冻结+新增rev2全request重建、3SQL全读同DTO/MD/usage，receipt docs/operations/investigation-program-profile-restore-20261025.json限定ACCEPT0。初74外合法M1 previous→rev2/plan/newstore1/2可保存却restore拒P2已修，原合法begin/源码/1red0fail1应用error保failure；先重建固定M1base再带回caller已核positive原revision+canonical全比，不伪造previous或证明历史链，额外合法rev3也通过。当前tenant许可与frozen principal分开，无liveAlert/clock/查询/重启权；oldrestore不改。下一d1 owned双版本入口（合同待审）→d2内部GET/d3gateway/d4组合，再a4.2；2.2/2.3未完，无真实访问/新Run/部署/合main。
+
 # 2026-10-25 调查b2.4b新持久发布限定通过
 
 41bc92e后先合同/spec/strict/独审ACCEPT0，再新ProgramReconPublicationStore，29新＋oldpubstore21/newpub24/newstore30/newruntime25共129直接/独立同129、7hash/7完整cold/repeat/所有event工件/Run6列重建，receipt docs/operations/investigation-program-publication-store-20261025.json限定ACCEPT0。初127外seq float/int回执窄缺口修后strictint/canonical identity及原begin/current同核，1red1fail0error原件保failure。actualtool→材料/handoff原件完整重建含未采用、唯一newmarker/4工件1TX，ACK未知不成功、repeat无通知重发；late保账而read/republish拒stale，plainprogramwriter拒unknown pub不回退。normal6/14/MD3381B，observer5/13，late7/16；仅SQLdouble未真实发布/访问/新Run/通知。下一c新恢复合同已ACCEPT0→d owned/HTTP→a4.2逐门；旧源码/MD3111B保持，2.2/2.3未完，无部署/合main。

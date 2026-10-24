@@ -1,3 +1,15 @@
+## 2026-10-25 b2.4c实际冻结只读恢复限定结果
+
+8724920后已审合同/strict再新program_profile_restore，16新＋oldrestore11/newpubstore29/M1scope8/profile11共75直接/独立同75、6hash/原3pure+3SQL冻件及新增rev2完整输出重建，限定ACCEPT0，[回执](investigation-program-profile-restore-20261025.json)。初74之外合法M1 previous→revision2，newplan/newstore接受1event2artifact，旧式initial initialize_scope(revision2)误拒的P2保[失败回执](investigation-program-profile-restore-failure-20261025.json)/5原件SHA/1red0fail1应用error（不同于双方scope模块名误写的Loader error）。修先按固定M1结构base初始化，再replace为caller已核positive原revision，完整canonical重建；独审另实际合法rev2/3都全asdict同，4typed revision/critical反例仍拒，不伪造或证明previous历史链。
+
+原formal1307B、Unicode62B、onebyte1B恢复完整；normal6/14、empty6/14、observer5/13原initial begin恢复后newpubstore冷读完整manifest/MD/usage/hash同，无新增行/调用/Run6列变化。当前principal仅验证当前tenant许可，历史principal仅复原原合同，不授owner/start/续跑权，不读liveAlert或新clock。双方首批scope测试模块名误写各有Loader导入错误，实际66＋正确M1scope8不重复累计，修后全75过/strict。0真实PG/HTTP/模型/Run/发布写，oldrestore/MD不改。下一d1双版本ownedreader合同待独审，d2—4HTTP兼容各门后a4.2；2.2/2.3未勾。
+
+**b2.4c审阅修订：** 初74项外，独立合法M1 previous→revision2/newplan/newstore1event2artifact可保存却restore拒；修前源码/合法begin全件/1red0fail1应用error（非Loader错误）保[失败回执](investigation-program-profile-restore-failure-20261025.json)。按既有profile _check_scope语义先重建固定M1 base，再带回caller已核原positive revision并全量canonical比较，不伪造previous或声称验证revision历史链；来源真实性仍caller owned链。当前修后结束独审待续。
+
+## 2026-10-25 b2.4c新冻结读上下文实施前预期
+
+b已8724920推送，c细卡/spec/strict/fresh_design合同限定ACCEPT0先行。仅new program_profile_restore/new makeplan/runtime，current tenant许可与原historical principal分离、原initialbegin/fullsource/profile/plan canonical及strict整数校验，不查询liveAlert/时间/网络，不授start/重试/预算owner。原formal1307B/任意已核M1 data-only Unicode照原字节恢复；newold互拒，复原后newpub SQL read同manifest/MD/usage不增行。caller actualauth/owned原件及event链仍前提，先本c直接/独审保存，再d owned/HTTP显式兼容和a4.2。
+
 ## 2026-10-25 b2.4b实际新持久发布限定结果
 
 a已41bc92e推送/b合同fresh_design限定ACCEPT0后，新增program_recon_publication_store。29新＋oldpubstore21/newpub24/newstore30/newruntime25共129直接/独立同129、7hash/7原SQL账本所有event/body/state/persistence/artifact UTF8/hash/size及cold/repeat全输出SHA、原Run6列重建，限定ACCEPT0，[回执](investigation-program-publication-store-20261025.json)。初127外pub receipt.seq float6.0==int6窄类型缺口保[失败回执](investigation-program-publication-store-failure-20261025.json)/修前source/test/1red1fail0error；修positive strictint/canonical identity及newpub原begin/当前nonpub receipt同核，不改parent，非权限/预算绕过或合法MD变化。独审额外自洽改材料outcome/result/prep/handoff/closing全hash仍被actual原tool重建拒，未写行。

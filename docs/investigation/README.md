@@ -1,3 +1,5 @@
+**2026-10-25 b2.4c新冻结恢复：** 75直接/独立同75、6hash/6+1完整上下文/3SQL同DTO重建限定通过，[回执](../operations/investigation-program-profile-restore-20261025.json)和[合法rev2误拒原件](../operations/investigation-program-profile-restore-failure-20261025.json)。恢复原全文/版本不读liveAlert，current许可与历史principal分开，合法rev2/3可还原但不证明修订历史。下一owned双版本入口和HTTP兼容，尚无实际启动。
+
 **2026-10-25 b2.4b新持久发布：** 129直接/独立同129、7hash/7完整账本cold/repeat重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)及[修前回执类型反例](../operations/investigation-program-publication-store-failure-20261025.json)。唯一newmanifest/4工件同事务，原tool全链核/late拒陈旧结果，旧MD保持；仅SQL替身。下一已审c新恢复，d owned/HTTP及原子启动仍后续。
 
 **2026-10-25 b2.4a新发布候选：** 111直接/独立同111、7hash/9完整包及MD重建，限定ACCEPT0；[回执](../operations/investigation-program-publication-preparation-20261025.json)和[修前两P2](../operations/investigation-program-publication-preparation-failure-20261025.json)。完整result重建/canonical类型/停止前来源约束、有限目标安全MD明确；仍candidate未持久发布。下一b新pubstore、c恢复、d owned/HTTP，各通过后才实际启动。

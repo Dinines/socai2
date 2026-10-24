@@ -1,3 +1,17 @@
+## 2026-10-25 b2.4d兼容分块及d1 owned双版本只读入口细卡（c修后结束/保存后实施）
+
+d拆d1新owned双版本reader→d2独立内部GET app→d3独立API gateway/DTO强核→d4离线组合兼容（各另卡/独审）；不改旧result_reader/result_api/gateway/已冻结函数、路由注册或部署。未知/混合begin/runtime/schema拒，不能按客户端mode/owner/scope决定版本或失败后换旧路径。所有b2.4d门过后才a4.2，真实GET/启动仍由后续实际受控新Run验。
+
+d1仅新增program_result_reader.py/CompatibleOwnedReconResultReader及测试。caller已核current auth/read permissions，read参数仅current_principal/tenant_id/run_id，无owner/scope/version/profile参数。当前tenant许可及UUID非nil先校，再同一个pool transaction/tenant GUC/owned Run FOR UPDATE精确tenant行；持同锁读唯一managed begin，候选kind覆盖通用M3 KINDS[0]、fixed CONTROL[0]、program CONTROL[0]，len必须1。只有explicit fixed kind+agent+原closedruntime或program kind+agent+newclosedruntime可选，generic/未知/双begin/不一致拒，不fallback。合同独审补清：仅查已知begin集合还不足；新reader在同锁内、分支store调用前，必须检查该Run全部unified_事件都属于所选fixed/program store的完整允许event_kinds且agent与该版本writer一致，使用显式tenant/run过滤的EXISTS拒绝任一未知/其他版本kind或不符agent（含NULL）。不能只检查最新一条，未知future begin/control无论比合法begin更早、更晚或夹在中间都拒；此检查在新reader完成，不改旧store。
+
+先同tenant/run/event JOIN核原begin input/state kind、UTF8/严格整数size/hash、full payload/persistence/实际seq strictpositiveint/canonical identity、event agent/tenant/run/in-out pin；begin.state input_ref/hash原owner等后续pure校。再依据已核原begin执行显式branch：fixed原restore/ReconPublicationStore，program新restore_program_alert_read_request/ProgramReconPublicationStore；owner仅从已核ownedbegin.state.executor_id取得非nilUUID，不能从caller/header/source正文取。当前principal与历史principal分开，无mutableAlert/新查询/时钟/重试/发布。call各store._read_result_locked同conn避免嵌套事务死锁，并沿各自原begin/manifest/currentness全链读；programtyped/canonical/late拒绝保持，fixed合法旧输出语义/MD字节保持，不私改旧函数。
+
+返回旧branch exact owned_fixed_recon_result.v1原DTO字段/值（tenant/run/profile/target/objective/legacy_run_status＋原result/progress/notification-null），新branch owned_program_recon_result.v1但相同公共字段结构、原新manifest/MD/usage/sections，新增版本只用新schema区分、不往旧DTO添字段或重渲染旧MD；Run旧status与v2执行维度继续分列。read_result无pub只progress、pub缺原件/指针错或late等拒，不偷偷publish或返回旧候选冒官方结果。权限/归属错误ExecutionRejected，driver/解析未知交易异常脱敏为ExecutionPersistenceError，不输出凭据。bootstrap对old/new都新建强元数据核验，但合法old完整DTO须同原OwnedReconResultReader逐字段和canonical字节不变。
+
+预期SQLdouble直接：fixed和program各已pub/未pub/observer/取消、program合法revision2原begin恢复均同实际原store读，旧DTO/旧3111B fixture及sample hash不变、programnew4facts有限范围state保；current同tenant另一reader可读，foreign/emptyprincipal/nilRun/不ownedRun拒且无跨tenant lookup。marker0/2/generic/unknown（已知fixed/program begin加未知future begin/control在前/中/后均拒）/mixedagent/runtime/typedfloatseq/payload/两原件hash-kind-event/owner错误及坏最终material/MD/manifest/late全部拒，无fallback。currentAlert修改与正文指令不影响原件读；no caller version/owner接口、无新行/预算/QueryAPI/model或publication，origin/progress/cold只读。固定/新完整frozen输出重放及输入/Run6列/事件工件数/调用计数不变，bootstrap使用同lock+transaction次数核。先strict/合同独审再只d1实现/直接/结束审阅，d2—4另门，0真实PG/HTTP/Run/部署。
+
+**b2.4c审阅修订：** 初74项外，独立合法M1 previous→revision2/newplan/newstore1event2artifact可保存却restore拒；修前源码/合法begin全件/1red0fail1应用error（非Loader错误）保[失败回执](../../../docs/operations/investigation-program-profile-restore-failure-20261025.json)。按既有profile _check_scope语义先重建固定M1 base，再带回caller已核原positive revision并全量canonical比较，不伪造previous或声称验证revision历史链；来源真实性仍caller owned链。当前修后结束独审待续。
+
 ## 2026-10-25 b2.4c新冻结只读恢复实施前细卡（b修后结束独审/保存后实现）
 
 只新增program_profile_restore.py/restore_program_alert_read_request及测试，复制必要旧restore的M1 typed重建逻辑，但仅new program _runtime_copy/make_program_recon_plan；旧restore不变且继续拒new begin，新restore拒old/未知runtime/混版，不用版本转换或加载当前可变Alert。只读复用稳定scope/profile/JSON helpers；无真实I/O/Run/claim/外呼/新期限。

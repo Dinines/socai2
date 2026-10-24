@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4c实际纯新恢复
+
+8724920后已审合同再newrestore。75直接/独立同75、6hash/原6+rev2完整request重建及3SQL同结果，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。合法rev2误拒原件/应用error保，base结构+原revision恢复不伪造历史；current许可与历史principal分开、不授运行权。0实际I/O/Run，d owned/HTTP与a4.2后续，2.2/2.3未勾。
+
 ## 2026-10-25 b2.4b实际新持久发布
 
 41bc92e后合同已审，新pubstore/29新＋100相关共129直接/独立同129、7hash/7完整cold/repeat/原件链重建，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。seq类型原红测/源码保留；原tool含被拒源完整核、4工件原子/ACK未知、late保账拒陈旧均过。仅SQLdouble，c合同已审，后d owned/HTTP再a4.2，2.2/2.3未勾。

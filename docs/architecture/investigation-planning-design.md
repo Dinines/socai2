@@ -1,3 +1,5 @@
+**2026-10-25 b2.4c纯新恢复：** 75直接/独立同75、6hash/原6+rev2及3SQL读完整重建限定通过，[回执](../operations/investigation-program-profile-restore-20261025.json)。合法rev2拒绝P2修后rev2/3精确恢复、typed漂移仍拒，旧restore/MD保持；caller owned真实性/权限及修订来源仍前提。下一d1 ownedreader/d2内部GET/d3gateway/d4组合后a4.2，0真实访问/Run。
+
 **2026-10-25 b2.4b新发布store：** 129直接/独立同129、7hash/7完整cold/重复及实际原tool重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)。newpub专用event强校验/唯一marker/4工件1TX/ACK未知不成功，late留账但正式读拒stale，plainstore不回落；类型回执反例已修。仅SQL替身，下一c恢复（合同已审）/d ownedHTTP兼容→a4.2，无真实Run/访问/发布。
 
 **2026-10-25 b2.4a纯新发布：** 111直接/独立同111、7hash/9完整包/MD/section重建与8额外反例限定通过，[回执](../operations/investigation-program-publication-preparation-20261025.json)。new closedmanifest/exec/renderer，validated和unadopted都完整重建，typed JSON及distinct pre-stop source保证；旧MD保持。仅candidate、0发布/真实访问，actualtool/owned/event全链后续b，再c/d兼容与a4.2。
