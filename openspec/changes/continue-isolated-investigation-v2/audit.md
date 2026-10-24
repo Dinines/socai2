@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.2结束独审
+
+fresh_design初1合同P2（repeatable-read下行锁仍可旧快照）补显式READ COMMITTED/锁后全候选重查/坏marker不漏/publication-aware同conn/独立server预算后ACCEPT0，5d6d129保存后才实施。fresh_code独立136、7SHA/11原完整账本hydrate/晚3天repeat/owned request-receipt-DTO全同，行/工件/未知保持、新HTTP0，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-20261025.json)。初21的1fail14应用error/3源码/UTF8/SHA保[失败原件](../../../docs/operations/investigation-program-admission-failure-20261025.json)，仅重建limits补USD，非Loader问题。额外Decimal及第三key连续场景不计136；真实PG隔离/认证/其他writer政策仍后续，不外推a4.3/4。a4.3a协调器合同另由fresh_design限定ACCEPT0，本块保存后才实施。
+
 ## 2026-10-25 b2.4d4结束独审
 
 fresh_design合同限定ACCEPT0，d3 dc50569保存后才仅新增probe/tests。fresh_code独立114唯一项/最新9复跑不重复计数、8hash及原attempt01完整14ledger/39HTTP/body/principal/计数全核；将原UUID完整hydrate并经两进程重放全部39row，12direct同/2unknown拒，nil另400/backend0，32backend/34stdio；真实HTTP和DurableTool guard0。原/独审Popen均exit0回收，额外7非法timeout拒，[回执](../../../docs/operations/investigation-compatible-offline-20261025.json)限定ACCEPT/0必须修。仅离线，不放行actual PG/network/auth/a4.2；下一a4.2合同初1P2（repeatable-read旧快照）补READ COMMITTED/锁后重查所有目标/缺marker拒/publication-aware强读后fresh_design限定ACCEPT0，本块保存后实施。

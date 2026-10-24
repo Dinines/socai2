@@ -1,3 +1,15 @@
+## 2026-10-25 M8a4.3显式启动分块及a协调器细卡（a4.2结束保存后实施）
+
+a4.3拆a可信调用方的一次启动协调器→b独立Agents内部写HTTP/独立配置→c API现用户鉴权/写gateway→d离线组合，各自先卡/直接/独审保存，不整链写完再测；a4.4再独立受控新Alert/真实PG并发与实际认证测试。既有API共享service principal只具read权限，原SERVICE_PRINCIPAL_PERMISSIONS及API key/catalog不改；后续c必须实际`investigation:run`＋`alerts:read`，不能用read service token代用户启动。当前没有生产写入口或legacy跨writer互斥保证。
+
+a仅新增program_start_coordinator.py及直接测试，无HTTP注册/启动进程。构造显式ProgramAlertStartStore、CompatibleOwnedReconResultReader、受控query API配置/credential和必需server target eligibility guard（无缺省allow）；current principal/actor与完整new intent由可信调用方逐次提供。guard在每次admit/read前核当前tenant/target/actor及可信政策版本，拒绝/未知/异常时0准入/0runtime。guard代表部署方当前目标域政策，不能从Alert自由正文、client profile/owner参数或自签reference取得；本块测试guard明确只是替身，不证明legacy writer关闭。b/c配置开放前须提供具体隔离目标政策并核实际边界，a4.4限单独新Alert、不送旧Kafka worker。
+
+start先current guard→a4.2.admit。只有本调用收到fresh=true/may_enter_runtime=true且committed、external_call_authorized=false，才用原受控new ProgramReconRuntime＋ProgramReconPublicationStore执行一次；不再runtime.begin，不替换owner/预算/期限，不另建Run/调用总规划模型。先原claim/M3 reserve提交再可能一次工具HTTP，正常/空/错误/unknown按既有原文/采用/停止保留。只有实际已确认stopped/handoff可调用原new publication一次，再经CompatibleOwnedReader回给同tenant/run/profile/target/objective的新owned DTO；工具记录/发布/读取仍各原强合同，协调器不重渲染MD、不制造完成或补事实。
+
+重复admit、ACK未知后显式read及任何read_operation只读：禁止runtime.execute/begin/publish或接管，返回原candidate/progress/同版published。即便原操作已停但尚未发布，也不因重复POST补发publication；缺口明确not_published，后续专门修复政策另议。admission失败/提交未知时0runtime/工具/发布；执行或发布持久异常则传播脱敏失败，不从旧路径fallback、不重试/清unknown。publication实际commit后ACK丢失不能返回success，随后显式read恢复同原pointer且无通知/调用重发。取消传播，原runtime自己的owner取消留存保持，协调器不在重复调用上封存或另发查询。
+
+预期真实新store＋SQLdouble＋httpx Mock：normal2/3→既有runtime→published7/15/1Mock且new owned DTO同manifest/MD/usage，重复及cold read仅同DTO/无新行；active repeat只progress/原owner不动；zero budget0HTTP/partial可发布，query错误和unknown不冒充ready；guard拒/未知/异常0store/runtime，invalid主体/intent同原store拒；Run/begin/intent失败及ACK未知0dispatch，运行留存/发布fail全保原件和缺口，publicationACK未知只读恢复，不补跑/重置。先strict/独立合同审阅，再a4.2保存后只a实现/直接/独审保存；b/c/d/真实PG、实际用户权限、跨writer政策和Case/Deep仍后续，2.2/2.3未完，无部署或合main。
+
 ## 2026-10-25 M8a4.2原子手动准入细卡（d4结束保存/本卡独审后实施）
 
 只新增Agents program_start_store/ProgramAlertStartStore及SQL事务替身测试，复用已冻结new intent/full canonical Alert projection/new runtime/publication store；不改旧表/DDL、旧代码或已验runtime函数。输入是可信调用方已认证的current principal/actor＋新完整intent；store另外接收可信server配置的StartBudgetPolicy，并与intent预算完整canonical比较，每请求重核tenant/actor/closed版本，不从Alert正文、caller owner/Run/deadline或retained字符串取得权限。真正HTTP authentication/调查run＋alerts read权限及当前业务启动政策留a4.3，本块只证owned持久原子性，不把纯principal当认证证明。

@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.2限定通过：** 136直接/独立同136、7SHA/11原账本完整read/repeat/owned重放，[回执](../../../docs/operations/investigation-program-admission-20261025.json)及[首轮原件](../../../docs/operations/investigation-program-admission-failure-20261025.json)。仅SQL原子准入2/3/正常pub7/15，a4.3入口/实际权限/a4.4真实并发及2.2/2.3/Case/Deep未完。
+
 **2026-10-25 b2.4d4限定通过：** 114直接/独立同114、8hash及原14ledger两进程39完整观察复放，[回执](../../../docs/operations/investigation-compatible-offline-20261025.json)。12合法双读/2未知拒、nil另拒，进程回收；仅离线，a4.2原子准入合同修隔离缺口后已审，保存后实施，2.2/2.3/Case/Deep未完。
 
 **2026-10-25 b2.4d3限定通过：** 105直接/独立同105、8hash/34HTTP全重放，[回执](../../../docs/operations/investigation-compatible-gateway-20261025.json)及[修前原件](../../../docs/operations/investigation-compatible-gateway-failure-20261025.json)。25合法输出保持，未知保null/声明与确认分离；仅离线协议，d4合同已审，a4.2/2.2/2.3仍待。

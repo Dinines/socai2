@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.2原子准入：** 136直接/独立同136、7hash/11原账本晚3天repeat/owned DTO全同，[回执](../operations/investigation-program-admission-20261025.json)。同TX Run＋begin＋独立意图2/3、READ COMMITTED/锁后全候选重查、active/unknown阻新key，commit未知和重复只读不刷新预算；normal沿原runtime/pub7/15。仅SQL替身，下一a4.3协调器/独立HTTP/用户权限逐门，再a4.4真实隔离与PG；Case/Deep仍待。
+
 **2026-10-25 b2.4d4离线组合：** 114直接/独立同114、8hash/原14账本双进程全39row复放限定通过，[回执](../operations/investigation-compatible-offline-20261025.json)。新旧完整DTO/来源账本保持，unknown/权限/轮换/篡改拒、管道有界/owned进程回收；无真实PG/network/新Run。下一a4.2原子Run+begin+event-pin意图，a4.3权限及legacy writer目标政策另门，Case/Deep仍待。
 
 **2026-10-25 b2.4d3网关：** 105直接/独立同105、8hash/34HTTP完整重放限定通过，[回执](../operations/investigation-compatible-gateway-20261025.json)。双版本exact协议/12版本/nullable evidence、同版hash、当前双read权限和有界单GET已核；3P2及合法error误拒均修并保失败，unknown不变0/false。无真实PG/network/Run；下一d4离线组合合同已审，再a4.2原子准入，Case/Deep仍待。

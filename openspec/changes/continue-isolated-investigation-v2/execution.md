@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.2实际原子准入
+
+5d6d129后按已修合同仅newstore/SQLdouble，29新＋107相关共136直接/独立同136、7hash/11原ledger hydrate全request/receipt/owned DTO/晚3天repeat同，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-20261025.json)。新Run+原begin+独立event-pin意图同TX2/3，ACK未知/重复不授权，正常runtime/pub7/15/Mock1；初USD重建漏项21/1fail14error原件保failure，修不改M3。额外Decimal/3key核不累计。无真实PG/network/Run/部署，下一a4.3协调器/独立写HTTP/现有用户权限与a4.4实际隔离，2.2/2.3未勾。
+
 ## 2026-10-25 b2.4d4实际离线双进程组合
 
 dc50569后合同ACCEPT0再新probe/9直接，API74＋Agents40共114直接/独立同114、8hash，fresh_code用原14ledger/原UUID跨两进程全39观察逐字节复放同，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-offline-20261025.json)。12合法双读/2unknown拒/nil另拒、40API请求/32Mock/34stdio，无真实HTTP/PG；原/独审Popen exit0。管道write/read共同限30秒、故障不重放/留失败/仅清owned通过；权限为原依赖＋注入撤回，不称真实RBAC。下一a4.2原子准入细卡已修隔离/锁后重查P2并限定ACCEPT0，保存后实施，a4.3/4另门，2.2/2.3未勾，无部署/合main。

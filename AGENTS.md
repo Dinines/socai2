@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a4.2原子手动准入限定通过
+
+5d6d129后先合同/strict/独审（READ COMMITTED/Alert锁后全Run重查P2修后ACCEPT0），仅新program_start_store/SQLdouble。29新＋相关107总136直接/独立同136、7hash/11完整原账本hydrate→晚3天repeat→owned全request/receipt/DTO不变，限定ACCEPT0，见docs/operations/investigation-program-admission-20261025.json。稳定tenant/key Run+原begin1/2+独立nonunified immutable-event-pin意图1/1同TX2/3；逐写失败全rollback/ACK未知0进入，重复不重开owner/期限/预算；同Alert active/unknown阻新key，已停显式新key可准入，reserved坏marker不漏。正常原runtime→pub7/15/Mock1，旧源码/Run列/MD保持；初21的1fail14应用error为重建limits漏原USD项已修，全部原source/tests/log保failure。独审额外Decimal PG Numeric及第三key连续场景通过不累计136。0真实PG/network/业务Run/模型/部署；下一a4.3a协调器合同已独审ACCEPT0，保存后实施，再b内部HTTP/c原用户run+read权限/d组合及a4.4真实接缝；不扩大只读service权限，2.2/2.3/Case/Deep未完，无合main。
+
 # 2026-10-25 调查b2.4d4双进程离线组合限定通过
 
 dc50569后先合同/strict/独审再仅新增offline probe/9直接，API74＋独立Agents40总114直接/独立同114、8hash限定ACCEPT0，见docs/operations/investigation-compatible-offline-20261025.json。12合法完整账本双读24次、2unknown账本拒，39完整观察＋nil单列=40API请求/32Mock backend/34stdio。独审hydrate原14账本/原UUID跨两进程完整复放39row/主体/全body同，不用随机新fixture冒充；原PID10960/独审4264 exit0回收，真实HTTP和DurableTool guard0。整次write/read≤30秒、EOF/JSON/帧限/读写timeout无重放/failed receipt保存及owned Popen清理通过；测试会话tenant adapter不称RLS。0实际PG/network/业务Run/模型/部署，旧源码/MD保持。下一a4.2 Run+unchanged begin+独立event-pin意图原子准入合同修READ COMMITTED/锁后重查P2后已独审ACCEPT0，保存后实施，再a4.3权限/启动政策与a4.4受控真实新Run；2.2/2.3/Case/Deep未完，无合main。

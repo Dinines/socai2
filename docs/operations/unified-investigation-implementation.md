@@ -1,3 +1,13 @@
+## 2026-10-25 M8a4.2实际原子手动准入
+
+5d6d129后先细卡/spec/strict/fresh_design独审；初合同只行锁不足以解决repeatable-read旧快照P2，补显式READ COMMITTED＋Alert锁后重查operation及全部reserved目标Run/不以known marker过滤、publication-aware同conn强读、独立server预算后ACCEPT0再实现。仅新program_start_store/ProgramAlertStartStore及SQL运输替身，旧runtime/注册/源码不改。29新＋intent18/restore16/runtime25/pubstore29/owned19共136直接/独立同136、7hash，fresh_code结束限定ACCEPT0，[回执](investigation-program-admission-20261025.json)。
+
+新稳定tenant/key Run与原begin1event/2artifacts、独立业务admission marker1event/1artifact同TX保存2/3；business marker不属于unified_状态，原guard保持。每步写失败完整rollback、ACK未知不返回运行资格，read/repeat从immutable-event-pinned意图及原begin恢复owner/scope/来源/预算/期限；同Alert active/unknown/坏marker阻另key，只有已确认停且未结算0才显式newkey。normal→原runtime→pub7/15/Mock1，zero预算0HTTP；旧Run列/源码/MD保持，无Case。
+
+首21测试1fail14应用error均根于读取limits重建漏原M3 currency USD，导致合法准入复核拒并rollback；补期望USD而不改M3，完整原3源码/tests/log保[失败原件](investigation-program-admission-failure-20261025.json)，非Loader错误。11完整冻结账本SHA6a2da64476728c81b34bfb8d3e06a67418edaff9f196433eed044b32eb68a125（1278705B）含fresh/stopped/pub/unknown/ACK/zero/cancel/claimed/2op/短deadline/当前source变；独审hydrate原件后完整read_request、晚3天repeat及owned DTO全同，所有工件UTF8/hash/行不变，所有重复fresh/enter/external权限false，无新HTTP。另Decimal实际PG Numeric类型模拟及第三key连续场景通过，不累加136。
+
+只证SQLdouble/Mock，global测试锁不证明PG行锁隔离；当前principal不证明实际认证，非此namespace legacy writer政策还须入口前核。0真实PG/network/业务Run/模型/发布/部署。下一a4.3a协调器合同已fresh_design限定ACCEPT0，a4.2保存后实施；a4.3拆a一次协调器→b独立内部写HTTP→c原investigation:run＋alerts:read用户权限/写gateway→d离线组合，每块先卡/测/独审保存，a4.4再隔离新Alert真实PG/认证。原service principal只读不可替代run权限，2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 b2.4d4实际双进程离线组合
 
 dc50569后先合同/strict/fresh_design限定ACCEPT0，再仅新offline probe及9直接；API新probe9＋既有65=74，独立Agents40，总114直接/独立同114、8SHA限定ACCEPT0，[回执](investigation-compatible-offline-20261025.json)。两个Python进程各加载自己的app，API实际认证依赖/双read权限→有界stdio HTTP→Agents实际ASGI/CompatibleOwnedReader→完整SQLdouble。12合法fixture（两族published/candidate/progress/observer/cancelled＋旧blocked两例）各双读24次同完整DTO/MD/原账本/Mock工具数；另2未知历史Run拒。39观察＋nil单列共40API请求，32Mock后台/34stdio，0真实网络。

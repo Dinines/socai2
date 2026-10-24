@@ -756,3 +756,18 @@ The new program manual admission store SHALL persist a stable tenant-operation-k
 #### Scenario: Admission transaction fails or commit acknowledgement is unknown
 - **WHEN** Run, begin or pinned intent persistence fails, or the commit acknowledgement is lost
 - **THEN** uncommitted rows roll back, an unknown outcome grants no dispatch, and an explicit cold read may only recover the original committed operation without automatic replay or owner takeover
+
+### Requirement: Manual program start coordinator enters runtime only for its confirmed fresh admission
+The new manual start coordinator SHALL require an explicit server target eligibility guard and current trusted caller identity, and SHALL use unchanged program runtime, publication and compatible owned-read contracts. It SHALL NOT register an HTTP route, widen existing service permissions, begin a second stage, infer eligibility from source text, or retry unknown work.
+
+#### Scenario: Confirmed first admission executes the bounded runtime and publishes one version
+- **WHEN** the current guard accepts and this invocation receives a confirmed committed fresh admission
+- **THEN** only that invocation may enter the original claim and M3 reservation path, publish a confirmed stopped handoff once, and return the same owned result and Markdown without replacing owner, scope, budget or deadline
+
+#### Scenario: Repeated start and explicit operation read cannot resume or publish work
+- **WHEN** an existing operation is repeated or explicitly read, including recovery after an unknown acknowledgement
+- **THEN** the coordinator only returns the owned candidate, progress or published version and does not call runtime begin, execute or publish, even if the earlier operation has stopped without publication
+
+#### Scenario: Eligibility or persistence fails
+- **WHEN** the guard refuses, is unknown or fails, or admission/execution/publication persistence is not confirmed
+- **THEN** no unconfirmed step grants later execution, no call or notification is replayed, retained unknowns and gaps remain visible, and real user authorization and legacy-writer policy remain separate HTTP-entry verification requirements

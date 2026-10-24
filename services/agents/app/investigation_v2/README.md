@@ -1,3 +1,5 @@
+`program_start_store.ProgramAlertStartStore`是独立手动原子准入，可信current principal/actor与独立server budget必需；tenant-key稳定Run、原program begin及event-pin意图同事务2/3。显式READ COMMITTED/Alert锁后重查，重复和ACK未知恢复只读，不刷新owner/预算/期限或授权外呼。136直接/独审、11原账本完整重放限定通过；本块尚无HTTP鉴权或生产writer互斥保证，后续a4.3/a4.4，旧源码不改。回执docs/operations/investigation-program-admission-20261025.json。
+
 # Investigation v2 — 独立开发线
 
 `result_api.create_app`是显式独立内部GET app，专用新read token认证可信API网关，再以tenant/actor调用owned reader；无旧token/dev/DB默认回落。58直接及独审/11 ASGI重放通过，外部用户permission/真实PG/双进程另验。回执：docs/operations/investigation-internal-read-api-20261025.json。
