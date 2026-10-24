@@ -1,3 +1,9 @@
+## 2026-10-23 数据与评估E0分步实施
+
+在codex/data-evaluation隔离工作区，按本批设计先做72条/36对语料答案隔离（6项）→原评分器离线接入（初10失败/6通过，纯模块导入修正后16→17项）→工具轨迹核对（17项）→独审费用unknown修正（18项）。最终整套79 passed/39 subtests passed，3项既有弃用warning；两项新工具无网络/业务执行。实际CLI导出72条、人工all-TP对照accuracy0.5/balanced0.25、无观察missing72/metrics=null；不是模型成绩。
+
+原trace10个模型提议、8个执行（6 unavailable/2 error），8份返回均见已记录后续请求，2个无执行回执；不证明提供方接收、真实查询成功或语义采用。详细docs/operations/data-evaluation-execution-20261023.md。E1—E4仍为设计、登录合同先讨论；0业务源码/配置/部署修改、0新模型/业务查询、0提交/push，主工作区未覆盖，原5/15保持。
+
 ## 2026-10-23 测试数据工具迁移及逐步实测
 
 按用户新授权执行：先保工具基线/源码hash，模板选择+wire12检查→sender16检查→真实3条Kafka/Fusion/PG→observer真实只读→2条新tenant自动分诊/调查。44直接测试/39子项，真实两例6回复26492tokens、29工件hash/关联全过，例A自动关闭，例B原graph/Deep4轮8工具后token停止partial/MD可读；内容标记泄漏、软预算和状态展示限制如实保留。未修改188个Agents源码或6上游原件，0新部署/生产group变更/真实动作。详细docs/operations/testdata-migration-execution-20261023.md，原5/15不改。
