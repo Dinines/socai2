@@ -4,6 +4,10 @@
 
 ## 2026-10-24 M7同版交付实施前预期
 
+**b实际测试：** 21新＋128相关149通过，publication store锁内4工件/1event，同manifest读/重复通知null、rollback与ACK未知、全引用/MD重建、late settlement/丢指针拒陈旧；[回执](investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修。fresh_code独立49后P2原tool关联缺口已补统一M3 completion event/kind/pinned hash，无prep亦核；根保[源码与6反例](investigation-publication-store-sourcecheck-failure-20261024.json)，21红测6fail→当前21通过。SQL替身非真实PG；尚未执行c或发查询/模型。
+
+**b实施前预期（9bf333f）：** publication store同Run锁内核当前state/已有发布event与全required材料，再a构包，1event/4artifacts原子保存，不改旧列。重复返回原版无新通知，cold/hot同法；未发布只有进度/候选而无正式MD。manifest按refs全核并从原stopped基线重建执行/MD/manifest；late settle账本保留但当前读取拒陈旧结果，丢publication指针/坏件不重发或回旧report。首次commit确认后才notification descriptor、delivery仍not_attempted；提交不确定显式读回，无查询/模型。先SQL替身合同及独审，c真实PG后续。
+
 **a实际放行：** recon_publication纯层16新＋112相关128项，fresh_code独立当前16及5hash/5组完整包/MD重建一致，限定ACCEPT/0必须修；[回执](investigation-publication-preparation-20261024.json)。固定section/evidence缺失、三维执行快照、finish_recon重建基线拒late settle、停止后不回算及typed事实安全呈现已核。前版51独审不累计，01原冻件/回执/可读性前源码留存，02相同输入新包；源码更新期hash不符说明后重核。纯candidate/留存未尝试，未新增真实业务/模型/PG/发布，b/c继续。
 
 基线3114609，M6.2c已独审限定ACCEPT。a纯包（固定section/发布execution snapshot/确定性MD/三维映射）→直接测试/独审→b同Run事务一次发布/按manifest读取（1event/4artifacts，不改旧Run列）→直接测试/独审→c真实PG发布前/后/清内存同版。来源缺口/unknown保留；缺件/变更基线/late settle拒绝，已停止后墙钟跨限不回算；未提交不报published/通知。前三快照共享owned handoff固定section，缺evidence显式null；execution另存避免循环。细卡见活动design/spec，M8/真实stream/Case/模型后置，先仅a。

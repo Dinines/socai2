@@ -1,3 +1,5 @@
+**2026-10-24 调查M7b代码通过测试：** 21新＋128相关149项，锁内一次发布/精确manifest读，SQL双正常增加1事件4工件，重复/冷读一致；P2原source核验缺口修复，含未采用source的原M3 event/kind/hash均钉住，6红反例/源码保留。[回执](docs/operations/investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修。仅SQL替身，未真实PG/通知投递；c下一仅追加发布/前后冷读，无新查询或模型，旧列/历史失败保持。
+
 **2026-10-24 调查M7a限定通过：** 16新＋112相关128项，独立当前16/5hash/5组同版包和MD重建一致，0必须修；固定section、缺evidence null、execution发布快照、基线/late settle拒绝及安全typed事实报告已实现。[回执](docs/operations/investigation-publication-preparation-20261024.json)。仍仅candidate，持久/通知未尝试；下一b原子发布/读取→c真实PG，无新业务网络/模型/部署或合main，旧列/unknown/失败保持，2.2/2.3未完。
 
 **2026-10-24 调查M6.2c真实接缝：** 11新＋101相关112项通过，probe独审P2全关联验收缺口修后15项通过；新Run实际runtime一次独立v2业务HTTP/CH、5事件10工件全部引用/hash/UTF-8读回、重复/冷读同交接不重查，模型0。CH预检另1次；新临时PG角色禁登录撤权/活动0，API核身份后停。[公开回执](docs/operations/investigation-fixed-runtime-seam-20261024.json)真实结束独审限定ACCEPT/0必须修。有限ready仅来源核对，性质/授权未知，候选未M7发布；不改旧Run/旧源码，无部署/合main，下一M7同版交付，2.2/2.3未完。

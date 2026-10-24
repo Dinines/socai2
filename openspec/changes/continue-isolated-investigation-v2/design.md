@@ -2,6 +2,14 @@
 
 ## 2026-10-24 M7同版交付分块细卡（基线3114609）
 
+### b实施前细化（基线9bf333f）
+
+a已独审并保存。新增ReconPublicationStore继承托管store，只增加unified_result_published支持、publish/read_result，不接旧应用。锁内读当前state/bound与已存publication event；若存在发布event但当前state丢失指针，明确拒绝，不能当未发布再次创建。首次仅stopped且owned handoff有效，读取候选引用的source/current快照及所有retained urn:uuid工件，必要tool/未确认观察另外核kind/hash/关联；再调用a构包。发布工件以同event绑定，manifest ID/hash写新版state.publication，执行快照与MD另各一件，总1event/4artifacts；无Run旧列/M3资源变更。
+
+读回必须核publication event→manifest/state edges、manifest自引用hash/身份/版本，以及其handoff/source/stopped refs、全部section、execution和MD的kind/hash/同event归属。用a从原stopped基线重建，执行快照/MD/manifest须逐值/字节等价，不能拼最新。原publication state与当前相关状态比较，只容许persistence/updated_at变化；late settle真实账本仍可保留，但正式当前读取/再次发布明确拒绝陈旧版，不改历史manifest、不把旧MD当当前。仅丢指针或坏件也拒绝，不回落旧报告。
+
+publish首次提交确认后才返回published及同manifest内部notification descriptor（delivery=not_attempted）；重复publish仅读原版，notification=null，cold read也不生成通知。提交ACK未知抛持久错误，显式read可核已提交版，不再发工具/模型。未发布的read_result仅progress/候选与not_published，正式report=null，不借旧status/report冒充。内存调用与新store冷读共用同一方法，无全局可变报告缓存。直接SQL替身测试正常/重复并发/前后冷读、MD/manifest/execution缺件异文、回滚/ACK丢失、partial/unknown/取消保资源、late settle/丢指针与跨owner/tenant；过后未参与实现者独审，再c真实PG。
+
 M6.2c已限定ACCEPT/0并保存推送。M7a纯包→b原子发布/选定读取→c真实PG前后冷读，不先接M8认证/HTTP/stream。fresh_design_audit草案复核要求钉住section、当前性、逻辑身份/版本及来源留存，以下落实，代码尚未写。
 
 a输入为checked profile、已核owned handoff及source/current M3快照与不可变artifact引用。纯层校hash/ref/schema/tenant/run/profile/plan和snapshot identity；当前attempt/limits/opening/用量/实际停止相关状态必须与handoff源快照一致，phase→stopped与handoff指针为允许结束增量。单纯墙钟流逝不使旧ready失效；late settle等改变相关状态则拒绝，不覆盖冻handoff、不自动恢复重分析。

@@ -1,3 +1,7 @@
+# 2026-10-24 调查M7b发布/读取限定通过
+
+基线9bf333f按b细卡/strict及独立合同审阅，新增publication store，21新＋128相关149通过；原子1event/4artifacts、重复/cold同manifest/通知描述仅首次确认commit后生成。来源核验P2已按M3 completion event/kind/pinned hash统一修复（含未采用来源），6红反例/源码全文保公开failure JSON，21红测6失败→当前全过。新state→stopped基线不改M3，late settle保真实账本但拒陈旧正式结果，丢指针不重发。docs/operations/investigation-publication-store-20261024.json未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修，未真实PG发布；c在原稳定Run仅追加发布、不重查。旧源码/Run列保持，无模型/部署/合main，2.2/2.3未完。
+
 # 2026-10-24 调查M7a纯同版包限定通过
 
 基线3114609按M7细卡/strict及fresh_design合同审阅，新增recon_publication与16新合同；16新＋112相关128通过，未参与实现者fresh_code当前16/5hash/5组完整包与MD重建一致，限定ACCEPT/0必须修。固定section/缺evidence null，execution独立发布快照，重用finish_recon核当前基线拒late settle，停止后墙钟不回算；typed事实安全显示，来源缺口/unknown保留。纯包publication=candidate/留存not_attempted/正式execution-report refs null，未发布/通知。回执docs/operations/investigation-publication-preparation-20261024.json。前版51不累计，原冻件保留；下一持续b同Run原子发布与按manifest读，再c仅PG，不重查模型。旧源码/Run列不改，无部署/合main，2.2/2.3未完。

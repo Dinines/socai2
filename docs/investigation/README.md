@@ -1,3 +1,5 @@
+**M7b最新：** 原子publication store/同manifest读已过21新＋128相关149项；P2工具原件核验缺口修后六反例均拒（含未采用来源），[当前回执](../operations/investigation-publication-store-20261024.json)与[修前源码/反例](../operations/investigation-publication-store-sourcecheck-failure-20261024.json)。未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修；目前仅SQL替身，真实PG由c再验，无M8/stream/Case/模型接入。
+
 **M7a最新：** 纯同版包/确定性MD已过16新＋112相关128项与独立当前16/5hash/5组重建，限定ACCEPT/0必须修。保有限目标/三维状态、实际typed事实值和缺口，late settle拒陈旧候选；[回执](../operations/investigation-publication-preparation-20261024.json)。包仍candidate、留存not_attempted，正式report/execution refs为空；下一M7b实际原子发布/按manifest读，再c PG，M8尚未接。
 
 **M6.2c实际结果：** 新Run一次runtime查询、5事件10工件完整读回，repeat/cold同交接不重查，模型0/工具1/unknown0/未结算0；CH预检另1次，新身份与临时API已清理。11新＋101相关112项，probe独审15项/P2修后通过；[真实回执及清理](../operations/investigation-fixed-runtime-seam-20261024.json)结束独审限定ACCEPT/0必须修。有限来源目标ready不等于M7正式发布/人工接手；下一M7同版交付，M8/语义Deep/Case仍待。

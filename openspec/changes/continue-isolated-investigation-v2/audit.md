@@ -1,3 +1,7 @@
+## 2026-10-24 M7b发布store审阅与修复
+
+fresh_design合同ACCEPT0后实施，初18与主动补基线guard19通过，但fresh_code独立49另发现P2：未统一核原tool completion event/kind/pinned hash，尤其source_rejected无preparation时，三坏件仍published。根复现publish/read六反例并保存完整修前源码/21项红测6失败；修统一_tool_artifact及retained/material关联，当前21＋128相关149通过。首次tenant GUC替身假设和修后late拒绝文字regex失配如实留回执。[当前](../../../docs/operations/investigation-publication-store-20261024.json)、[原失败/源码](../../../docs/operations/investigation-publication-store-sourcecheck-failure-20261024.json)。未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修，真实c尚未启动。
+
 ## 2026-10-24 M7a纯包结束窄审
 
 fresh_design_audit正式合同ACCEPT/0后实施；fresh_code_audit当前16项、5hash/02五包/MD/摘要及01冻件一致，限定ACCEPT/0必须修。前版独立51项不累计，MD谓词可读性建议采纳补typed值/转义/失败报告，当前→handoff正文关联反例追加；作者更新中hash不符先保留并待新版复核，非功能失败。当前16测试OK后多余读取错cwd令合并shell exit1，如实与测试结果分开。[回执](../../../docs/operations/investigation-publication-preparation-20261024.json)。仅candidate准备，未真实访问/发布；b/c另验。
