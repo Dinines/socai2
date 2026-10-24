@@ -1,3 +1,11 @@
+# 2026-10-24 调查M6.2a纯运行控制限定通过
+
+持续授权下从239d518先合同/strict与fresh_design_audit限定合同审阅，再仅新增recon_runtime_state及12项测试；12新＋68相关、未参与实现者fresh_code_audit独立同80项/6hash/计划与观察均通过，限定ACCEPT/0必须修。冻结runtime/完成政策/profile/scope/整窗唯一query和step/attempt，纯claim预检不增加预算或授权外呼，仍须原子提交和M3真实预留；重复claimed不接管，unknown/超额/时限/取消及账本保持，已有交接不覆盖。见docs/operations/investigation-fixed-runtime-state-20261024.json。当前仅a纯层，无真实业务/模型/部署/合main；直接继续b事务/调度、c真实接缝，不逐块等待用户。2.2/2.3不勾，旧代码/失败保持；阶段提交/推送。
+
+# 2026-10-24 调查持续推进授权
+
+用户明确授权持续推进，不再每块结束等待继续确认。沿现调查分支与主设计顺序，逐块预期/规格strict→实现→直接测试→必要独立新版真实接缝→未参与实现者复核→回执/阶段提交推送；失败先修复，旧失败/unknown保留，实际单Run额度保持。现在M6.2a纯运行计划/停止与预留限制→M6.2b原子持久/调度→M6.2c独立v2真实查询，随后M7同版交付与M8等既定计划。持续授权不含部署、自动合main或真实厂商动作；旧版严格隔离。仅出现缺少必要业务信息/外部条件且无法独立推进时才说明阻断，不以常规实现选择重复请求许可。
+
 # 2026-10-24 调查A3投影阻断交接限定通过
 
 A2保存c94eb97后按已审合同/strict推进A3：EvidenceView先核material/tenant/Run/scope/来源版本/hash，再以专用异常保投影阻断；新增纯prepare_alert_recon返回正常实际视图/有限结果或blocked_alert_recon.v1 partial，保material/query/全部source版本refs和真实来源状态，不回显自由正文，不伪造视图或新事实，六问题未评估、持久未尝试/人工仅required。10新＋90相关共100项及未参与实现者独立同100项/4hash/10观察通过，7种正常视图与前版canonical_doc逐字节相同，限定ACCEPT/0必须修。见docs/operations/investigation-material-projection-20261024.json。A2政策版本保留，I2完整messages门不变；A3仅最小可交接方案，未分离证据内核。下一M6.2实际M3准入/固定查询/去重/持久交接，2.2/2.3未勾；无真实业务HTTP/PG/CH/模型/部署/合main，旧源码/历史失败不改。阶段提交/推送调查分支。

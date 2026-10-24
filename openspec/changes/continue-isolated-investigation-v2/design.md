@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M6.2固定运行接缝逐块合同
+
+持续推进授权后，先M6.2a纯运行计划/状态，直接测试/独审通过才M6.2b原子持久/调度，最后M6.2c独立v2真实PG/HTTP/CH。先只接alert_recon有限网络路径，Run由可信调用方预先创建，正式启动认证/业务去重仍属M8。模型0、无Case动作；固定查询仅一次，M5不是前提。初始冻结runtime版本、完成政策、profile描述与scope hash；计划参数来自已核member和完整冻结窗口，确定step/attempt不能换ID重跑。
+
+M6.2a新增纯recon_runtime_state：make plan、安装托管状态、claim、冻结预留校验、实际停止判断与结束引用。输入是M3 state、已核profile和注入的权威now；复用M3状态完整性/用量重算与reserve做只读预检，不另算预算。ready首次准入只产需提交claim且仍需M3 reserve的决策；claimed重复只报in_progress_or_interrupted，不接管原调用；blocked仅准备交接，stopped仅读原交接。unknown/未结算禁止新派发，预检已知额度/时限失败映射明确停止，其他不变量错误仍抛出。已知查询恰好耗尽调用上限不使已得结果自动变partial；after-call只按unknown、真正breach、期限或已记录取消收紧。结束只保存引用/phase，不变更M3账本/旧Run终态。
+
+M6.2b拟新增ReconExecutionStore复用原ExecutionStore行锁/tenant/原子事件与工件，新增受支持event kinds和runtime版本校验，通用store拒绝托管版本，旧无标记合同保持。begin冻结profile/完成政策/执行器及计划，claim原子唯一，托管reserve仅允许冻结一次工具请求并再用M3 reserve；调用用既有DurableActivityRecords。返回后只读真实已提交工具工件，校验归属/hash后调用A3；未结算/留存缺口只部分交接，不采用未确认来源或重新查。handoff正文与state引用同事务提交，重复读取原引用，异文不覆盖；停止可晚于deadline保存，不追加模型/工具。Run状态/同版发布仍留M7；基础中断回查保持claimed可见且不自动重放，不建设通用恢复平台。
+
+每块先预期/strict、直接测试、独审、回执与Git保存；真实接缝新Run及临时身份，不重放旧批，PG独立读回hash/UTF-8/归属/状态及用量，未知提交不得换Run继续。M6.2a无IO不代替原子claim/真实预算，M6.2b替身不代替PG，M6.2c通过后才M7。具体持久实现前还须细化本小块输入输出。
+
 ## 2026-10-24 A2窗口完成与A3投影阻断合同
 
 基线070e990，先合同/预期/strict及独立设计复核，再依次实现两个纯层增量，不一次性接完整运行器。A2沿M6.1有限政策：仅alert_recon，目标为冻结成员/窗口内的来源核对；固定查询使用完整窗口。输出coverage区分target_window、query_window、covered_window、uncovered_windows及full_window_queried；query_window是回执所列请求范围，covered_window只在status ok/empty且executed true时成立。子窗口事实保留，剩余区间阻断ready；整窗empty/截断不绕过原缺证/截断阻断。ready仍只指有限目标，review_required也仅属于该目标，不解释成无需后续整体调查。没有多查询窗口合并、自动补查或生命周期映射。

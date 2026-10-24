@@ -788,6 +788,8 @@ M0已为network_observation.v1选定有限网络观察场景，M4仅Q1/Q2/Q5限�
 
 ### 12.7 v4从当前停点继续的单步验收顺序
 
+**M6.2a当前结果：** 纯运行计划/claim/预留限制/停止和结束引用经80项及独立同80项、6hash/观察限定通过，[回执](../operations/investigation-fixed-runtime-state-20261024.json)。实际准入继续b事务store/调度、c独立真实查询，不以纯决策代替原子提交或真实M3门。用户持续授权下按此依赖自动续接，其他边界不变。
+
 **A2/A3当前结果：** A2整窗完成政策已显式版本化，A3最低投影阻断交接已按合同实现，100项/独立同100项与4hash/10观察限定通过，7种正常视图与c94eb97逐字节相同；[回执](../operations/investigation-material-projection-20261024.json)。A3仍依赖有界EvidenceView，装不下则保refs/真实状态而partial，不强行分组或升上限。下一M6.2先接实际M3准入与固定查询，再去重/停止及持久交接；通过后才M7同版发布。纯层已可序列化不等于已持久/投递，I2完整messages gate保持。下段A3待实施属前一阶段。
 
 **A2当前结果：** bounded_full_window_source_check.v1整窗有限完成政策已限定通过，71项/独立同71及3hash/12观察一致；[回执](../operations/investigation-window-policy-20261024.json)。A3实施前合同已独立接受，下一纯材料准备，再实际M6.2；旧结果按原政策解释，不因代码升级重算。

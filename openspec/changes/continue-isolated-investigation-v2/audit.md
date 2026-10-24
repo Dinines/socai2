@@ -1,3 +1,7 @@
+## 2026-10-24 M6.2a纯运行控制结束窄审
+
+fresh_design_audit先限定合同ACCEPT/0，fresh_code_audit未参与实现，独立12新＋68相关共80项、6hash/完整计划/4组claim观察/已知与unknown用量及结束引用一致。补核M3超额、取消并unknown及晚到重复结束：账本保留、不重发、不覆盖。限定ACCEPT/0必须修，见[回执](../../../docs/operations/investigation-fixed-runtime-state-20261024.json)。首次相对解释器路径错误未启动，改绝对路径80通过。仅a纯层，b原子claim/版本隔离/实际reserve与工件保存、c真实接缝仍待；无真实业务/模型，旧services及历史回执未改，不勾2.2/2.3。
+
 ## 2026-10-24 A3投影阻断交接结束窄审
 
 fresh_code_audit未参与实现，独立10文件100项通过，4hash/10观察与引用一致；补核末条来源hash/版本及query count错误优先拒绝，自由body/coverage/reason标记未回显，无query回执时unknown/not_attempted保区别。专用内部阻断回执保已核material/query/source版本，facts空、六问题未评估，不伪造EvidenceView/来源不可用；正常路径7种材料与c94eb97 canonical_doc逐字节相同，view_ready不替代I2门。限定ACCEPT/0必须修，详见[A3回执](../../../docs/operations/investigation-material-projection-20261024.json)。仅纯准备/结构化交接，M6.2实际保存/人工投递/运行器未验，无真实业务/模型、旧代码/历史回执改动，不勾2.2/2.3。

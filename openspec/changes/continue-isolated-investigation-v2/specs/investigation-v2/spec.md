@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Freeze and claim one bounded fixed-recon runtime plan
+
+M6.2固定告警运行 SHALL 在任何外呼前冻结已核alert_recon业务描述、scope hash、fixed_alert_recon_runtime.v1执行器与bounded_full_window_source_check.v1完成政策、完整冻结窗口的唯一activity_records/Q1参数及确定step/attempt身份。M6.2a纯控制只构造计划/状态转换，MUST NOT 自称已提交预留或获得外呼授权；M6.2b须以同Run单writer事务提交claim，再使用既有M3真实预留门，不能省略或重开stage。
+
+#### Scenario: The same runtime is claimed or revisited
+- **WHEN** 初始ready计划准入通过，或同计划处于claimed/blocked/stopped而被再次执行
+- **THEN** 首次仅给需持久提交且仍需M3预留的dispatch决策，不增加预算计数；claimed返回进行中或中断待核且不再派发，blocked只允许交接，stopped只读既有交接。不得换attempt刷新次数，不能把重复执行当新查询
+
+#### Scenario: Admission or completion must stop
+- **WHEN** 已有unknown/未结算、额度/期限不足或预算breach，或收到明确取消
+- **THEN** 保实际M3摘要/预留和停止原因，不释放unknown或发总结模型；预算/时钟取事务权威时间，M3必要合同错误不能吞成一般额度停止。正常已完成的唯一查询恰好用满次数不等于超额，停止评估须区分后续准入与已产生结果
+
+#### Scenario: A managed runtime tries a different reservation or version
+- **WHEN** 预留不是冻结工具/Q1/member/完整参数/step/attempt，含retry、试图调用模型、改完成政策或scope，或用不支持的执行器读取托管Run
+- **THEN** 在持久预留/HTTP前拒绝，原预算和输入保持；旧M3无runtime标记的Run仍沿原合同，新托管Run不得被通用store/旧执行器接管
+
 ### Requirement: Bind limited reconnaissance readiness to the frozen window
 
 alert_recon固定来源核对 SHALL 分别交付目标窗口、查询窗口、已确认查询的窗口及未查询部分。固定路径默认查询完整冻结窗口；仅当来源明确成功/空返回、实际有界查询覆盖完整目标窗口且原有限政策无阻断时，scope_readiness才可ready。完整窗口查询不表示无行数/正文限制、全局活动完整、恶意/授权已判定或整体调查完成；六问题关键性及性质/授权轴 SHALL 保持。原子窗口准入本身不取消，但子窗口命中仅支持局部事实，不得据此满足完整冻结目标。
