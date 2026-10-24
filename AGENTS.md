@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a3.2 API只读网关限定通过
+
+c2c50ca后新增API result_gateway/result_api独立factory，强制Bearer再原认证/双read权限、CurrentUser.user_id/tenant_id转发；专用内部read URL/token单GET不redirect/retry，回包身份/manifest/MD/exec版本hash核。新API13＋原query7及另Agent13共33，与独立同33/6hash/12 HTTP完整重放通过，限定ACCEPT/0必须修。合同独审先补关原dev无凭据demo旁路，仅新GET强制凭据、旧认证/query不改。docs/operations/investigation-result-gateway-20261025.json；实际RBAC撤销/PG/network仍未验，下一a3.3两临时loopback服务读原6/14，0新Run/查询/模型/通知，无部署/合main，2.2/2.3未完。
+
 # 2026-10-25 调查M8a3.1内部只读HTTP限定通过
 
 2d92063后新增独立Agents result_api/create_app，仅内部GET+专用新read token/tenant/actor→a2，body/query覆盖拒绝、结果身份核、错误脱敏；显式新PG/TLS池只关闭自建资源。13新＋45相关58及独立同58/6hash/11完整ASGI回执重放、池超时/非法token补查通过，限定ACCEPT/0必须修。docs/operations/investigation-internal-read-api-20261025.json；无旧token/dev/DB回落、旧app/权限默认不改。仅可信网关认证/SQL双集成，外部用户permission在a3.2、真实双进程PG在a3.3待验；无启动/新账本/模型/通知/部署/合main，2.2/2.3未完。

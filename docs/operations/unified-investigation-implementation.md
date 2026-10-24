@@ -2,6 +2,14 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 M8a3.2 API只读网关实施前预期
+
+**a3.2实际放行：** API新13＋原query7=20，Agent另解释器13，共33，独立同33/6hash/12完整HTTP重放通过，限定ACCEPT/0必须修；[回执](investigation-result-gateway-20261025.json)。已有auth/permission代码实际执行，PG/内部HTTP替身；额外3 owned DTO兼容/服务凭据配置变更旧key401核过，生产RBAC撤销/真实网络未验。dev旁路实施前补关，只新GET强制Bearer，旧逻辑不改；next a3.3真实服务/PG无变。
+
+c2c50ca后仅API新result gateway/GET/factory；复用既有认证及cases:read＋alerts:read，current tenant/actor只取CurrentUser，不接客户端scope/owner/body/query。专用backend read URL/token显式、单次GET不redirect/不转外部bearer、无重试；回包身份及manifest/MD/execution哈希一致才交付，错误固定脱敏。API解释器内真实认证/permission代码＋PG/HTTP替身直接测试、原query7项兼容、独审后才a3.3真实GET/PG；不改变旧权限/default app或部署，不追认实际RBAC撤销。
+
+实施前合同审阅补清1项：既有dev bypass可在无凭据时给demo用户；新结果GET先强制非空Bearer再沿原认证，不改旧分支/query。已据源码确认只有credentials=None触发，补dev开缺/空/Basic/坏token仍拒及backend0。CurrentUser actor字段按真实user.user_id绑定。
+
 ## 2026-10-24 M8a3显式只读HTTP实施前预期
 
 **2026-10-25 a3.1实际放行：** 新result_api内部GET app＋13合同，相关owned13/restore11/pubstore21共58，独立同58/6hash/11完整ASGI重放及池超时/非法token补核通过，限定ACCEPT/0必须修；[回执](investigation-internal-read-api-20261025.json)。实际专用token比较，但认证对象是可信网关，外部用户permission和真实PG/network未验；自建池关闭/注入不关，旧app不注册。a3.2网关及a3.3真实GET下一步。

@@ -1,5 +1,17 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 M8a3.2 API只读网关实施前细卡（c2c50ca）
+
+a3.1已独审保存。只新增API investigation_v2/result_gateway.py/result_api.py及独立factory；保query_api原实现/原应用注册不改。新factory可组合原独立v2 query app及新GET /api/v2/investigation/runs/{run_id}，没有启动/Case/动作路由；新结果GET复用require_permission(cases:read)，再CurrentUser.require_permission(alerts:read)。当前tenant/actor只取user.tenant_id/user.user_id，忽略用户伪造的tenant/actor头，拒绝任何GET query/body；权限不足不调用backend。
+
+独立合同审阅发现原get_current_user在credentials=None且is_dev_mode()时返回demo主体。新结果GET单独先要求非空Bearer（含正确scheme/非空token），再调用原认证/permission，阻断demo bypass；旧认证与query路由不改。源码确认dev分支仅credentials=None，提供Bearer后仍走原workload/APIkey/service/JWT核验；不得只看到header就自建user。补“dev bypass开且无凭据/空/Basic仍401、backend0”和坏Bearer不变demo反例。
+
+ResultReadGateway只从显式AISOC_INVESTIGATION_V2_READ_URL/READ_TOKEN取backend配置（测试可注入transport或gateway），URL为HTTP(S)无userinfo/query/fragment且根path，token同a3.1专用只读密钥，无旧AGENTS/API/service URL或token fallback。httpx单次GET发内部token及当前tenant/actor、Run，不转发外部bearer、不跟redirect、10秒timeout且无重试。404/409可固定原因映射，backend401/其他异常502、持久/连接超时503；不透传raw错误/token/DSN。
+
+返回必须是owned_fixed_recon_result.v1，同tenant/Run、alert_recon/alert target与有限objective，read notification=null。published时manifest身份/profile/target/版本及逻辑ref自hash、manifest_artifact的完整manifest hash、execution snapshot身份/schema/hash、Markdown UTF8/hash与对应refs全部一致，后再返回原JSON；not_published时manifest/MD/artifact为空，保进度/候选，不拼旧report。网关只复核传输/归属/同版合同，M7 owned/来源语义仍由Agents原reader负责。
+
+先API单独解释器直接测试实际既有service认证/租户解析（PG session替身）→MockTransport内部GET、缺/错credential/tenant、两read permission分别拒绝、逐请求permission收回、伪header不覆盖、body/query拒绝、response身份/MD/manifest/execution哈希反例、redirect/timeout/状态错误脱敏及旧路径404；查询router原7项保持。此块不执行真实PG/网络，也不把mock permission收回当生产RBAC撤权已实证；a3.3两个loopback进程与PG实证另卡。先strict/独立合同，再只本块实现/直接测试/结束审阅，无旧源码/权限默认/部署变化。
+
 ## 2026-10-24 M8a3显式只读HTTP分块细卡（2d92063）
 
 a2同锁owned读取已独审保存。保持API/Agents两个app包与进程独立，a3.1先Agents内部只读app/认证并直接测、独审；a3.2再API v2认证网关及直接/独审；a3.3用原M7稳定Run做真实GET/PG读回，不重查/新Run。没有正式启动、Case、自动策略、真实通知或生产部署；旧main/router/权限矩阵不改。

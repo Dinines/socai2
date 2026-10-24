@@ -1,3 +1,5 @@
+**2026-10-25 M8a3.2：** API独立网关的新GET已过33直接/独立同33、6hash/12 HTTP重放；强制Bearer和既有双read权限、当前身份转发、回包同版hash见[回执](../operations/investigation-result-gateway-20261025.json)。现仍是ASGI/替身，a3.3真实两服务/PG读取待验，启动/Case/Deep另步。
+
 **2026-10-25 M8a3.1：** 内部只读HTTP app已过58直接/独立同58，6hash/11完整ASGI回执一致，[回执](../operations/investigation-internal-read-api-20261025.json)。仅专用token认证可信API网关，tenant/actor向owned reader传递；外部用户permission及真实双进程PG后续，不将其当正式HTTP已全部交付。
 
 **M8a2最新：** owned reader的同锁tenant/Run→唯一begin工件→冻结恢复→服务端owner→M7读已过56直接与独立同56/6hash/3组重建，[回执](../operations/investigation-owned-reader-20261024.json)。新增显式profile/target/objective和legacy状态，账本不变；仅SQL替身，实际认证/PG/HTTP接缝仍待。

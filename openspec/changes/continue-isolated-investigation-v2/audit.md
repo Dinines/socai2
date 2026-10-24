@@ -1,3 +1,7 @@
+## 2026-10-25 M8a3.2网关结束窄审
+
+fresh_design先发现1项合同缺口：原dev bypass无凭据demo可通过read权限，补新GET显式Bearer守卫后合同ACCEPT0；CurrentUser字段按真实user_id绑定。fresh_code独立33（API20/另Agent13）、6hash/12完整ASGI重放一致，补3实际owned DTO兼容及同app当前service凭据配置变更旧令牌下一次401/backend0，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-result-gateway-20261025.json)。local receipt helper清理warning纠正后观测字节同SHA，非应用失败。实际用户RBAC撤销/网络/PG后续a3.3，未部署。
+
 ## 2026-10-25 M8a3.1内部GET结束窄审
 
 fresh_design先限定合同ACCEPT0，fresh_code独立58、6hash/11 ASGI完整JSON/状态/调用计数/hash/current principal重放一致，补owned池TimeoutError→terminate一次/reader清及五种非法token拒，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-internal-read-api-20261025.json)。仅可信网关专用token边界/SQL双集成，外部用户credential/permission及真实双进程PG仍待a3.2/a3.3；无新身份或实际业务访问。

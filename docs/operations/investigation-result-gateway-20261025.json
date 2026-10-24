@@ -1,0 +1,144 @@
+{
+  "schema": "investigation_result_read_gateway.v1",
+  "date": "2026-10-25",
+  "baseline": "c2c50ca",
+  "status": "ACCEPT_limited_ASGI_result_gateway",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT_after_dev_bypass_contract_fix",
+    "must_fix_remaining": 0,
+    "finding": "Existing auth returns a demo principal with no credential in explicitly enabled dev bypass; new GET now has an explicit nonempty Bearer prerequisite, old branch/query unchanged."
+  },
+  "direct_tests": {
+    "new_api": 13,
+    "existing_query_api": 7,
+    "api_total": 20,
+    "agents_internal_api_separate_interpreter": 13,
+    "total": 33,
+    "all_exit": 0
+  },
+  "source_sha256": {
+    "services/api/app/investigation_v2/result_gateway.py": "5cadb7c8e4b170a013740b23da2aede228f8927246cc56b14784677ce9ec9acc",
+    "services/api/app/investigation_v2/result_api.py": "8ef1bc534dd6ce441770f18687808ece27a02f12cde586134c055c6625e4f0a9",
+    "services/api/tests/test_investigation_v2_result_api.py": "54e904b9d288ae2de512c79e022b28dc3660ff6dbadd2752ebd40ac20944857b",
+    "services/api/app/investigation_v2/query_api.py": "c304267a33a314b6e4293a09da40e4e678ff0e600d8d6fd1a88f5eeda2f6dcb1",
+    "services/api/app/api/v1/deps.py": "84e9721b390e7baca25b27b70480aeaef2b560e90557a2e513d8757cafc6b25e",
+    "services/api/tests/test_investigation_v2_query_api.py": "33f6ca82a29ef94dad3ab46e8f13afb79906a4824c8e1388b1e1ccda722a7042"
+  },
+  "http_observations": [
+    {
+      "case": "normal",
+      "status": 200,
+      "backend_calls": 1,
+      "output_sha256": "c0c3100424f2ba3c246577c8bef552065168bf8bda76a8f4acb3aa5a60a8e5a3",
+      "forwarded_tenant": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "forwarded_actor": "fecd2599-53c9-58b3-9048-51cb3032e569",
+      "external_bearer_not_forwarded": true
+    },
+    {
+      "case": "missing_bearer",
+      "status": 401,
+      "backend_calls": 0,
+      "output_sha256": "10d560d705443274b834c157f114f185bf56447bdcc367f08edb6eca8ef02e55"
+    },
+    {
+      "case": "missing_tenant",
+      "status": 403,
+      "backend_calls": 0,
+      "output_sha256": "a80485e3cdc59bf3ba28820f6ac26dd647a1338e49bdd6170a894993f0fff51a"
+    },
+    {
+      "case": "invalid_tenant",
+      "status": 400,
+      "backend_calls": 0,
+      "output_sha256": "7c8a890f0a6181b557cab9d85f7916914e501ab1697d43f9827749e3bf5bbfed"
+    },
+    {
+      "case": "unknown_tenant",
+      "status": 403,
+      "backend_calls": 0,
+      "output_sha256": "b4af2fc7ed6967a7cafb3ae21bc989a43b93db8bae5553a1d9212a63da20dea9"
+    },
+    {
+      "case": "cases_only",
+      "status": 403,
+      "backend_calls": 0,
+      "output_sha256": "0b4dfd4120472080db3fba74aed159e53755635952cf02cc3a143cbc3f5174bd"
+    },
+    {
+      "case": "alerts_only",
+      "status": 403,
+      "backend_calls": 0,
+      "output_sha256": "8583bb3ccee0487d230b0ee2cfd2d3dba0ef87c0da11eb57d8b2946fecb7d8c5"
+    },
+    {
+      "case": "forged_header",
+      "status": 200,
+      "backend_calls": 1,
+      "output_sha256": "c0c3100424f2ba3c246577c8bef552065168bf8bda76a8f4acb3aa5a60a8e5a3",
+      "forwarded_tenant": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "forwarded_actor": "00000000-0000-0000-0000-00000000002a",
+      "external_bearer_not_forwarded": true
+    },
+    {
+      "case": "query_owner",
+      "status": 400,
+      "backend_calls": 0,
+      "output_sha256": "c8374aebaf3780c87e4d7f71a1ac359b5786e77ff7d532d2bc7eb2e135f62fd3"
+    },
+    {
+      "case": "bad_markdown",
+      "status": 502,
+      "backend_calls": 1,
+      "output_sha256": "be4484955fd45031cb47b9b3a088a6bea5463ceb438ef98d409bd4220c078c00",
+      "forwarded_tenant": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "forwarded_actor": "fecd2599-53c9-58b3-9048-51cb3032e569",
+      "external_bearer_not_forwarded": true
+    },
+    {
+      "case": "redirect",
+      "status": 502,
+      "backend_calls": 1,
+      "output_sha256": "be4484955fd45031cb47b9b3a088a6bea5463ceb438ef98d409bd4220c078c00",
+      "forwarded_tenant": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "forwarded_actor": "fecd2599-53c9-58b3-9048-51cb3032e569",
+      "external_bearer_not_forwarded": true
+    },
+    {
+      "case": "backend_error",
+      "status": 503,
+      "backend_calls": 1,
+      "output_sha256": "f7827d5382b7014ced98ae9b919c7ff3aa2f4fdb3443fe099f05465bd7d41b6b",
+      "forwarded_tenant": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "forwarded_actor": "fecd2599-53c9-58b3-9048-51cb3032e569",
+      "external_bearer_not_forwarded": true
+    }
+  ],
+  "local_http_observations_sha256": "943492c8b8c7b25d319818d0ee7db7990f79117f32d29cbe3ac57cdcb282d91d",
+  "independent_audit": {
+    "reviewer": "fresh_code_audit",
+    "status": "ACCEPT_limited",
+    "must_fix": 0,
+    "actual_tests": {
+      "new_api": 13,
+      "existing_query_api": 7,
+      "agents_internal_api_separate_interpreter": 13,
+      "total": 33,
+      "all_exit": 0
+    },
+    "source_test_hashes_matched": 6,
+    "frozen_HTTP_cases_replayed": 12,
+    "all_complete_JSON_status_calls_hashes_forwarded_identity_equal": true,
+    "additional_owned_DTOs_checked": 3,
+    "actual_existing_service_auth_configuration_change_test": "same ASGI app first200; change currently expected API service token; next request with old token401 and no new backend call",
+    "scope": "ASGI/FakePG/MockTransport only, no real PG/network or production RBAC revocation",
+    "evidence_storage": "auditor tool observations, no separate raw audit file/SHA claimed"
+  },
+  "limits": [
+    "Actual existing API service authentication/permission code with fake PG and internal HTTP MockTransport, plus internal Agents ASGI regression; no real network/PG.",
+    "Permission withdrawal is a next-request test using a mocked current principal; not production RBAC revocation evidence. Dedicated internal token authenticates trusted gateway only.",
+    "Only explicit v2 GET/factory added; old auth/permission/query code and main app registration unchanged. No start, new Run/events/artifacts, models/activity queries or notification/deployment.",
+    "Actual dual-process HTTP and PG6/14 unchanged check remain a3.3; Case and semantic/Deep value not claimed."
+  ],
+  "tooling_note": "Initial local receipt helper had an unawaited cleanup conditional warning; corrected manual client/env cleanup. All twelve frozen observations remained byte-identical; no application/test change."
+}

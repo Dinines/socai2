@@ -4,6 +4,8 @@
 
 M8a3 SHALL 按a3.1 Agents内部只读HTTP→a3.2 API认证网关→a3.3受控真实PG/双进程GET逐块推进。旧应用/路由/认证权限默认不改。Agents独立app只接受新的专用read token和显式tenant/actor、Run UUID，调用a2；无共享旧token/dev回落、启动/写入/通知路径。API独立v2 app仅复用既有认证，并要求cases:read及alerts:read；tenant和actor只从CurrentUser得出，向内部read app转发，不采用客户端scope/owner/tenant覆盖。credential/permission在本HTTP接缝验证，纯TenantPrincipal不代替认证。
 
+新API结果GET SHALL 先强制非空Bearer凭据，再复用原get_current_user认证和两项permission；即使旧dev bypass显式开启，无凭据/空Bearer/其他scheme仍拒绝且不转发backend。MUST 不修改旧认证/dev分支或原query路由行为。
+
 #### Scenario: An authorized reader gets the same manifest over the explicit read surface
 - **WHEN** API用户已满足两项既有read权限，目标Run属于其当前tenant，内部专用read token及owned材料有效
 - **THEN** 仅GET读取同manifest/MD/execution，显式profile/target/旧状态和新publication分开；网关复核返回tenant/Run/schema及已发布MD的manifest hash，未发布无正式MD。无新Run/账本、查询、模型或通知；原旧路径不注册到新版独立应用
