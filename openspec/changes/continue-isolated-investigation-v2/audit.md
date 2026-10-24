@@ -1,3 +1,7 @@
+## 2026-10-24 A2窗口完成政策结束窄审
+
+fresh_design_audit指出完成政策变更需独立版本，实施前补completion_policy_ref后限定合同ACCEPT/0；fresh_code_audit未参与实现，独立复跑7文件71项、3hash/12观察含result_ref完全一致，另核unknown/not_attempted不计覆盖。子窗保4事实及引用、列遗漏区间，整窗空/截断和停止原阻断保持；限定ACCEPT/0必须修。仅A2纯政策，A3尚待实施、M6.2运行/持久交接未验，旧回执不重算。[回执](../../../docs/operations/investigation-window-policy-20261024.json)。
+
 ## 2026-10-24 A1地址身份修复结束窄审
 
 未参与实现的fresh_code_audit核891d07e后的新版地址差异及[公开回执](../../../docs/operations/investigation-network-identity-20261024.json)，独立复跑新8/scope8/caller8/evidence11/Deep9/profile11/fixed13/API records8/query7共9文件83项通过；实施方完整111项包含该子集，不累加。另核8组地址反例，mapped等价而compatible/NAT64/不同zone不误合并；7hash匹配，五种稳定观察一致（新query_id/时间导致新snapshot属预期）。原始来源值/路径、payload及source版本不改，Deep同任务别名指纹一致并拒重复，API/旧源码及历史审计JSON/probe未改。限定ACCEPT、0必须修；仅A1离线功能修复，无真实业务访问/持久提交证明/模型/部署。A2/A3与M6.2—M9仍待，2.2/2.3未勾。初始夹具source_run误用及修前red已登记，不改历史失败。

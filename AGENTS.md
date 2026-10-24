@@ -1,3 +1,7 @@
+# 2026-10-24 调查A2整窗完成政策限定通过
+
+基线070e990，先A2/A3合同/strict及独立设计审阅，完成政策缺版本问题已在实施前补清并留记录。A2新增bounded_full_window_source_check.v1，只完整冻结窗口的已确认有界查询才可能有限ready；子窗保事实/refs、列未覆盖区间且partial；空/截断/失败/unknown原阻断不变。7新增＋64相关共71项及未参与实现者独立71项/3hash/12观察均通过，限定ACCEPT/0必须修。见docs/operations/investigation-window-policy-20261024.json。旧回执不回填/重算，A3仅合同已核仍待实现，M6.2实际gate/查询/保存未验，2.2/2.3不勾；无真实业务访问/模型/部署/合main，阶段提交/推送。
+
 # 2026-10-24 调查A1地址接缝已限定修复
 
 用户继续推进后，891d07e先spec/design/预期与strict，再仅Agents v2共享地址身份及scope/caller/evidence/Deep使用点；8新增＋相关103共111合同通过。原始SourceField值/路径、响应/hash保留，mapped与IPv4等价、原生IPv6独立、不同地址/tenant/hash仍拒，别名不绕过去重。未参与实现的fresh_code_audit独立83项/8组反例/7hash与稳定观察复核后限定ACCEPT/0必须修。见docs/operations/investigation-network-identity-20261024.json与统一实施记录；夹具source_run误用及修前red保留。仅离线合同，无真实业务HTTP/PG/CH/模型/部署或合main，API/旧源码/历史审计不改。下一A2有限完成/窗口与A3投影阻断保refs合同，再M6.2；2.2/2.3不勾。阶段提交/推送调查分支。

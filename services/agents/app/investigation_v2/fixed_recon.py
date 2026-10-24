@@ -10,10 +10,13 @@ from dataclasses import replace
 import json
 
 from .analysis_adoption import checked_view, _predicate
+from .activity_records import _time
 from .business_profile import BusinessProfileRequest
 from .evidence_view import EvidenceView
 from .execution_store import canonical_json, content_hash
+from .scope import ScopeContext, UTCWindow
 
+COMPLETION_POLICY_REF = "bounded_full_window_source_check.v1"
 EXECUTION_STOPS = frozenset({"budget_limit", "deadline", "unknown_attempt", "retention_gap", "cancelled"})
 _BLOCKING_GAPS = frozenset({"query_rows_truncated", "source_body_truncated", "source_identity_conflict",
                             "undelivered_conflict_versions", "member_coverage_incomplete"})
@@ -22,6 +25,31 @@ _BLOCKING_GAPS = frozenset({"query_rows_truncated", "source_body_truncated", "so
 def _require(condition: bool, reason: str) -> None:
     if not condition:
         raise ValueError(reason)
+
+
+def _window_coverage(context: ScopeContext, query: dict | None) -> dict:
+    target = context.conclusion_scope.window
+
+    def describe(window: UTCWindow) -> dict:
+        return {key: getattr(window, key).isoformat(timespec="microseconds") for key in ("start", "end")}
+
+    declared = query["coverage"]["window"] if query is not None else None
+    requested = UTCWindow(_time(declared["start"]), _time(declared["end"])) if declared else None
+    if requested is not None:
+        _require(target.contains(requested), "query_window_outside_conclusion_scope")
+    confirmed = (requested if query is not None and query["status"] in {"ok", "empty"}
+                 and query["executed"] is True else None)
+    uncovered = []
+    if confirmed is None:
+        uncovered.append(describe(target))
+    else:
+        if target.start < confirmed.start:
+            uncovered.append(describe(UTCWindow(target.start, confirmed.start)))
+        if confirmed.end < target.end:
+            uncovered.append(describe(UTCWindow(confirmed.end, target.end)))
+    return {"target_window": describe(target), "query_window": describe(requested) if requested else None,
+            "covered_window": describe(confirmed) if confirmed else None, "uncovered_windows": uncovered,
+            "full_window_queried": confirmed == target, "basis": "confirmed_bounded_source_query_only"}
 
 
 def evaluate_alert_recon(request: BusinessProfileRequest, evidence: EvidenceView | None, *,
@@ -41,6 +69,7 @@ def evaluate_alert_recon(request: BusinessProfileRequest, evidence: EvidenceView
     statuses = {q.question_id: "unassessed" for q in context.questions}
     snapshot_ref = None
     revision = None
+    query = None
     if evidence is None:
         _require(current_snapshot_ref is None, "current_view_missing")
         gaps.add("committed_source_material_missing")
@@ -98,6 +127,10 @@ def evaluate_alert_recon(request: BusinessProfileRequest, evidence: EvidenceView
             gaps.add("no_exact_alert_source_link")
         if query["status"] not in {"ok", "empty"}:
             blockers.add("source_not_available")
+    coverage = _window_coverage(context, query)
+    if coverage["covered_window"] is not None and not coverage["full_window_queried"]:
+        gaps.add("query_window_coverage_incomplete")
+        blockers.add("query_window_coverage_incomplete")
     if execution_stop is not None:
         gaps.add("execution_" + execution_stop)
         blockers.add("execution_" + execution_stop)
@@ -108,13 +141,14 @@ def evaluate_alert_recon(request: BusinessProfileRequest, evidence: EvidenceView
                           "status": statuses[question.question_id],
                           "finding_ids": [fact["id"] for fact in facts if fact["question"] == question.question_id],
                           "capability_gaps": list(question.capability_gaps), "policy_reason": question.policy_reason})
-    ready = not blockers and all(statuses[q.question_id] == "supported"
+    ready = not blockers and coverage["full_window_queried"] and all(statuses[q.question_id] == "supported"
                                  for q in context.questions if q.decision_dependency)
     result = {"schema": "fixed_alert_recon.v1", "profile": request.profile, "binding_ref": binding["binding_ref"],
               "tenant_id": str(context.tenant_id), "run_id": str(context.run_id),
               "delivery_target": binding["delivery_target"], "snapshot_ref": snapshot_ref, "revision": revision,
               "facts": facts, "questions": questions, "held_refs": held_refs, "coverage_gaps": sorted(gaps),
               "blocking_gaps": sorted(blockers), "scope_readiness": "ready" if ready else "partial",
+              "completion_policy_ref": COMPLETION_POLICY_REF, "coverage": coverage,
               "completion_basis": "limited_source_observation_only", "nature": "unresolved", "authorization": "unknown",
               "status": "stopped", "execution_stop": execution_stop,
               "stop_reason": execution_stop or ("limited_objective_answered" if ready else "material_gap"),

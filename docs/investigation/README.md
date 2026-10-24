@@ -4,6 +4,8 @@
 
 # 调查新版：开发、进度与评审入口
 
+**本轮A2完成：** 整窗有限完成政策已实现并显式版本化，子窗口保事实/refs但partial；71项直接与独立复跑、3hash/12观察一致，限定ACCEPT/0必须修，见[回执](../operations/investigation-window-policy-20261024.json)。A3合同已核，下一实现投影阻断保材料；实际M6.2运行器尚待，旧回执不重算。
+
 **本轮A1修复完成：** 已统一新版scope/caller/证据/Deep的地址身份规则，IPv4及其mapped表示等价，原生IPv6保独立；原始SourceField值/路径、响应和来源hash不改。8新增＋103相关合同共111项通过，未参与实现者独立83项及地址反例/7hash复核后限定ACCEPT、0必须修，见[实施记录](../operations/unified-investigation-implementation.md)与[回执](../operations/investigation-network-identity-20261024.json)。仅离线替身接缝，无真实业务/模型；下段审计基线的A1已由本块修复，历史报告保留。下一A2/A3精确合同，再M6.2；tasks2.2/2.3仍未完。
 
 **本轮最新审计：** [独立审计与后续流程](independent-audit-20261024.md)基于7b7bb6b，三位新审阅者分核架构、代码和证据。保留总体架构；140项合同通过及39哈希条目一致，同时新增反例确认A1 mapped IPv6归一化误拒（P2，未修）；A2子窗口ready语义、A3程序路径受模型投影限制须在M6.2接线前确定。先修A1及合同，再M6.2→M7→M8a；Case整体/自动政策前验证主分析与Deep实际收益。仅审计/规划，功能代码及历史回执不改，整体未验收。下段为前批实施结果，旧ACCEPT不覆盖本次新发现。

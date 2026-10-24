@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 A2窗口完成与A3投影阻断合同
+
+基线070e990，先合同/预期/strict及独立设计复核，再依次实现两个纯层增量，不一次性接完整运行器。A2沿M6.1有限政策：仅alert_recon，目标为冻结成员/窗口内的来源核对；固定查询使用完整窗口。输出coverage区分target_window、query_window、covered_window、uncovered_windows及full_window_queried；query_window是回执所列请求范围，covered_window只在status ok/empty且executed true时成立。子窗口事实保留，剩余区间阻断ready；整窗empty/截断不绕过原缺证/截断阻断。ready仍只指有限目标，review_required也仅属于该目标，不解释成无需后续整体调查。没有多查询窗口合并、自动补查或生命周期映射。
+
+新输出固定completion_policy_ref=bounded_full_window_source_check.v1，区别于原M6.1仅存在性核对的历史结果；scope policy_ref网络问题/查询合同不改。M6.2必须在任何外呼前将完成政策与执行器版本存入冻结运行输入，不据代码升级更改旧Run政策。无新字段的旧回执按原批次解释，不补写/重算。
+
+A3采用最小可交接方案，暂不分离完整证据内核：EvidenceView必要校验全部完成后，才检查Alert摘录/完整模型视图；投影阻断用专用异常携带canonical结构化回执，含scope/revision/material、全部index引用、真实query及限制原因，不带自由正文/输入合同命中的原文。原builder继续拒绝不可消费的视图；新增纯准备函数只在内部捕获此类已核投影阻断，返回可供M6.2保存的partial交接，source_state保持真实状态且evidence_snapshot_ref null，不伪造缺失视图或来源不可用；不从未形成的视图采用新事实，六问题保未评估及材料阻断。正常视图走已验M6.1。错误hash/tenant/Run/scope/必要来源不能转投影缺口。已观察execution_stop只收紧且不外呼；持久性/人工投递尚无回执，不称已提交本交接或已接手。
+
+直接预期分两块：A2整窗、内含/边界子窗、UTC等价、空/截断/失败/unknown/缺视图及事实不丢；A3正常、10条引号/反斜杠/中文、长Alert/输入合同阻断，保全部refs/版本/原响应hash，不泄漏自由正文；长材料叠加各类必要校验失败拒绝，停止枚举只收紧。每块直接测试和独审通过才进入下一块；A3结构化交接可序列化不等于实际M3持久保存。M6.2再接真实准入、固定查询/规范化去重、停止及交接留存，M7再映射Run状态/同版发布。本批不改旧源码/注册/预算/历史失败，无真实HTTP/PG/CH/模型。
+
 ## 2026-10-24 A1地址身份接缝修复合同
 
 基线891d07e，承接独立审计A1，只修新版网络地址身份。Agents v2新增共享纯函数：输入必须为地址字符串，IPv4与IPv4-mapped IPv6输出IPv4，原生IPv6输出压缩形式；受限过滤比较保原类型检查。M1的实体使用规范值，但SourceField保原始值/路径并按地址身份核对应关系；caller入参/回执及EvidenceView查询参数同规比较，不重写已留存响应或source content hash。API records原有规范化已符合此规则，先以真实函数/替身CH跨进程结果验证，无需修改API业务代码。

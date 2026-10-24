@@ -1,5 +1,31 @@
 ## ADDED Requirements
 
+### Requirement: Bind limited reconnaissance readiness to the frozen window
+
+alert_recon固定来源核对 SHALL 分别交付目标窗口、查询窗口、已确认查询的窗口及未查询部分。固定路径默认查询完整冻结窗口；仅当来源明确成功/空返回、实际有界查询覆盖完整目标窗口且原有限政策无阻断时，scope_readiness才可ready。完整窗口查询不表示无行数/正文限制、全局活动完整、恶意/授权已判定或整体调查完成；六问题关键性及性质/授权轴 SHALL 保持。原子窗口准入本身不取消，但子窗口命中仅支持局部事实，不得据此满足完整冻结目标。
+
+此收紧政策 SHALL 在新结果中显式固定completion_policy_ref=bounded_full_window_source_check.v1；原scope policy_ref仍表示查询/问题政策，不静默替代。未来M6.2在开始运行前 SHALL 将完成政策与执行器版本写入冻结输入。旧结果缺此字段时按原批次政策解释，不回填新政策或重算旧ready。
+
+#### Scenario: A subwindow contains a checked source observation
+- **WHEN** 冻结5分钟而合法查询仅覆盖其中1微秒，命中一条来源观察
+- **THEN** 保合法来源事实和Q1支持、Q5覆盖陈述；列出两侧未覆盖区间，query_window_coverage_incomplete阻断ready，交付partial与人工核对需求，不自动补查或完成Run
+
+#### Scenario: The query window and actual execution state differ
+- **WHEN** 完整窗口查询成功、空结果、截断、失败/未执行/unknown或没有材料
+- **THEN** 成功/空结果可证明有界窗口已查询，但空/截断等原阻断仍生效；失败/unknown/缺材料不能把声明的窗口算成已覆盖。时区等价窗口按UTC微秒比较，原始回执/hash不改
+
+### Requirement: Preserve checked material when model projection is blocked
+
+新版材料准备层 SHALL 先完成material tenant/hash、caller/source Run、当前scope、查询回执及全部来源版本/正文hash必要校验，再执行Alert摘录/完整模型视图的大小和输入合同检查。仅投影大小或输入合同阻断 SHALL 返回明确material_projection_blocked/partial、原来源可用性/执行状态、全部已核材料/查询/来源版本引用、具体限制与下一步；MUST NOT 转成source unavailable、伪造空EvidenceView/snapshot或静默删支持/反证。必要校验失败 SHALL 拒绝，不能因为同时超限而进入有效材料降级。
+
+#### Scenario: Checked material cannot fit the bounded model projection
+- **WHEN** 10条各512字节引号正文使视图超12KiB，或Alert文本超512字节/违反输入合同，而必要材料校验通过
+- **THEN** 原视图builder保持阻断；新增准备层返回有界结构化交接，保artifact/查询/全部来源及版本引用和实际ok状态，事实采用暂不发生、六问题未评估及缺口明确。无新模型/查询、不升上限或改留存hash，不声称本交接已持久或已投递人工
+
+#### Scenario: Invalid source material also triggers projection limits
+- **WHEN** 同时存在长Alert/大视图及错误material hash、跨tenant/Run、超scope参数、错误来源hash或冲突版本声明
+- **THEN** 必需校验失败优先拒绝；不能生成已核投影阻断回执或采用事实。停止条件仍保原枚举与unknown，不自动重放；持久保存和实际M3停止来源在M6.2后续接线验证
+
 ### Requirement: Preserve source provenance while normalizing network address identity
 
 新版网络政策 SHALL 将合法IPv4与其IPv4-mapped IPv6表示归一为IPv4，原生IPv6归一为压缩表示；仅mapped形式可与IPv4等价，其他地址不因相近文本而等价。M1已核实体、受限caller参数/回执、EvidenceView参数采用及Deep查询指纹 SHALL 使用一致的地址身份规则，同时保持租户、绝对窗口、主机、端口、协议和来源校验。SourceField原始值/路径及已留存响应/hash SHALL 保持原文，不将归一化后的值伪装成原始字段。旧版源码、工具及入口 MUST NOT 改动。

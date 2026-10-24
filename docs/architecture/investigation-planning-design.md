@@ -788,6 +788,8 @@ M0已为network_observation.v1选定有限网络观察场景，M4仅Q1/Q2/Q5限�
 
 ### 12.7 v4从当前停点继续的单步验收顺序
 
+**A2当前结果：** bounded_full_window_source_check.v1整窗有限完成政策已限定通过，71项/独立同71及3hash/12观察一致；[回执](../operations/investigation-window-policy-20261024.json)。A3实施前合同已独立接受，下一纯材料准备，再实际M6.2；旧结果按原政策解释，不因代码升级重算。
+
 **2026-10-24 A1续接结果：** 地址身份接缝已修，111项直接合同及独立83项/反例/7hash复核限定通过，见[实施记录](../operations/unified-investigation-implementation.md)与[回执](../operations/investigation-network-identity-20261024.json)。仅Agents v2离线合同，旧版/API及历史审计不改；下段A1待修为审计基线状态。本块后先明确A2窗口/有限完成与A3投影阻断保材料合同，再M6.2，不跳到Case或自动政策。
 
 **2026-10-24新一轮独立审计后的续接门：** [审计及详细后续流程](../investigation/independent-audit-20261024.md)保留本架构，确认A1 mapped IPv6接缝误拒须先修；A2有限ready与窗口覆盖、A3纯程序材料与模型投影边界须先补合同。随后沿下表M6.2→M7→M8a，Case整体/自动政策前另验有充分来源的主分析与真正分支的Deep价值。场景定义提前，真实试验仍逐模块准入。140项合同/39哈希及离线反例不是完整调查验收；本轮只审计规划，未实施修复或勾选后续任务。下段0剩余必须修是前批限定窄审记录，不覆盖本次新发现。
