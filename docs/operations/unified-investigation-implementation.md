@@ -2,6 +2,14 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 b2.3a新runtime状态实施前预期
+
+**a实际限定通过：** 新program_runtime_state/18直接＋旧state12/M3state12/program_recon16/profile11共69及独立同69、5hash/7完整state/decision重放/额外7自洽重hash反例拒，限定ACCEPT0；[回执](investigation-program-runtime-state-20261025.json)。闭合12版本组件（含M3 execution_schema）、scope＋固定manual重建profile和plan，旧state不升级；M3预检账不变、unknown迟到实际结算保原handoff/重复只读。纯层未持久claim/reserve/外呼，后续b store/c controller/d新intent投影及b2.4仍待。
+
+合同独审发现scope不含trigger，若expected从待核plan取trigger则自洽改manual→automatic无法识别。已选定本新runtime固定manual、make/install拒automatic、按scope＋固定manual重建descriptor；旧自动路径不改，未来自动另合同，不凭pure selfhash证明归属。
+
+e2b0291后，采用a状态→b持久→c单次controller→d新intent/投影路线，当前只a：闭合新runtime/state/plan/material/事实/完成/prep/result/handoff/未采用版本组合，重建plan核hash及新step/attempt；复用M3 budget/claim/reserve/unknown/停止，不升级旧state，不授予外呼。先spec/design/strict/独审，再纯层/直接/独审；0实际PG/HTTP/Run/预算提交，b2.4兼容及a4.2后续门保留。详细枚举与预期见活动design顶卡。
+
 ## 2026-10-25 b2.2新有限事实实施前预期
 
 **实际限定通过：** 新program_recon/16直接＋ProgramMat12/旧fixed13/A3material10/adoption13共64及独立同64、5hash/11完整请求与输出重建通过；额外5类来源×6停止共30旧/新事实正文/状态/coverage/stop/handoff对照一致、fact ID不重复，限定ACCEPT0。[回执](investigation-program-recon-20261025.json)。正常全文1299B旧partial→新4程序事实有限ready，十转义同short scope新21事实有限ready但model not_requested/eligiblefalse；其余9冻结例partial，missing三态not_confirmed/null/unknown。旧fixed/A3保持、新版本/refs明确；0真实I/O/Run/运行选择/发布，下一b2.3冻结新runtime组合，b2.4兼容仍a4.2前置。

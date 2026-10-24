@@ -1,3 +1,5 @@
+**2026-10-25 b2.3a运行状态：** 新manual-only闭合版本/plan/认领停止纯合同已过69直接/独立同69、5hash/7状态重放及额外篡改拒绝，[回执](../operations/investigation-program-runtime-state-20261025.json)。预检不提交预算或授权外呼，旧state不升级、重复不接管、unknown/迟到实际回执保持；持久store/controller/新入口及b2.4兼容仍待。
+
 **2026-10-25 b2.2有限字段事实：** 新纯政策/prepare已过64直接/独立同64、5hash/11完整重建及30额外源/停止对照，[回执](../operations/investigation-program-recon-20261025.json)。正常全文可给4程序事实并有限ready，性质/授权/全文语义仍未知、模型未请求；坏源和停止仍partial或拒。未接runtime/M7/HTTP，下一冻结新版本与同版兼容后才启动准入。
 
 **2026-10-25 b2.1程序材料：** 已过59直接/独立同59、5hash/6组完整重建及2同输入对照，[回执](../operations/investigation-program-material-20261025.json)。新类型保结构记录/缺口和原全文refs，不具有模型资格；旧512/12KiB门及旧builder保持。本步尚无facts/ready，下一新事实政策、runtime冻结和发布读取兼容逐步验证后才启动准入。

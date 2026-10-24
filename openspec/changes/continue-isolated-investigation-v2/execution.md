@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3a实际新运行状态
+
+e2b0291先细卡/strict/trigger权威修订后合同独审，再program_runtime_state及18新；69直接/独立同69、5hash/7完整状态重放及7额外自洽篡改拒，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)。12固定版本组件和manual权威、new plan/step/attempt闭合，M3账/unknown/迟到实际回执/原handoff保持，旧state拒升级。0实际PG/HTTP/Run/claim预算提交/调用/发布；b持久/c单次controller/d新意图及b2.4须后续逐门，2.2/2.3未勾。
+
 ## 2026-10-25 b2.2新程序事实实际结果
 
 984646f先规格/strict/合同独审，再program_recon及16新；64直接及独立同64/5hash/11完整重建与额外30源/停止对照过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-recon-20261025.json)。新fact/完成/result/prep/ref明确，normal1299B source可4程序事实有限ready，十转义同short可21事实ready；目标外自由文/模型缺口明示，原必要源错误拒/5停止partial，missing保unknown三态。旧函数/调用选择不改、0真实I/O/Run/调用/发布，继续b2.3分块与b2.4兼容，2.2/2.3未勾。

@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.3a新运行状态限定通过
+
+e2b0291后先spec/design/strict/独审，trigger权威缺口已以新runtime固定manual关闭；新增program_runtime_state/18新＋旧state12/M3state12/program_recon16/profile11共69及独立同69、5hash/7完整状态重放/7额外重hash反例拒，receipt docs/operations/investigation-program-runtime-state-20261025.json限定ACCEPT0。闭合12组件/scope+manual重建profile/plan/new step-attempt，旧state不升级；M3单账、预检不授权I/O，重复不接管、unknown/late实际结算保原handoff。0真实PG/HTTP/Run/claim提交，下一b持久store/c单次controller/d新intent投影、b2.4兼容后才a4.2，旧automatic路径保持，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.2新有限事实限定通过
 
 984646f后spec/design/strict/合同ACCEPT0，仅新program_recon及16直接＋ProgramMat12/旧fixed13/A3material10/adoption13共64和独立同64、5hash/11完整请求输出重建、额外5源×6停止30对照一致，receipt docs/operations/investigation-program-recon-20261025.json限定ACCEPT0。新事实/完成/result/prep版本，ProgramMaterial仅读结构字段不伪model view；1299B normal新4事实有限ready/十转义同short新21事实ready，旧路径仍partial，模型未请求/无资格、全文未语义核、Q3a/b/Q4与性质授权未知。空/失败/unknown/冲突/截断/子窗/5停止partial，missing not_confirmed/null/unknown。0真实I/O/Run/runtime/发布选择，下一b2.3a状态版本→b store→c controller→d新intent投影，b2.4同版兼容后才a4.2；旧源码不改，2.2/2.3未完，无部署/合main。

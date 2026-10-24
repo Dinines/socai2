@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3a新runtime纯状态结束审阅
+
+fresh_design先发现scope不含trigger、不得从待核plan自证；新runtime固定manual并从scope重建完整descriptor后合同ACCEPT0。fresh_code独立69/5hash/7state-decision及canonicalSHA重放，scope/limits/opening/usage/attempts保持，另7类自洽hash反例拒；真实M3纯reserve→unknown停止→deadline后late responded结算保实际账与旧handoff、后续claim仅读。claim/validate/stop/cancel/finish AST除名字同原，旧源文件不改；[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)最终窄核12组合/计数/边界一致，限定ACCEPT0。pure不证明owned scope/真实clock/auth/提交，b-d/b2.4后续。
+
 ## 2026-10-25 b2.2新有限程序政策结束审阅
 
 fresh_design明确新facts/完成/result/prep版本、ready只整窗Q1/Q5/无blocker、Q2非critical保持和missing三态后合同ACCEPT0。fresh_code独立64、5hash/11完整BusinessProfile/M1与output/ref/hash重建一致，额外5类来源×6停止30对照保原事实正文/问题/coverage/ready/stop/handoff（仅新增目标外gap），fact IDs不重复，限定ACCEPT0；[公共回执](../../../docs/operations/investigation-program-recon-20261025.json)计数/哈希/观察另窄核匹配。正常全文4、十转义21事实仅有限ready，其他9冻件partial，freeText未语义核/模型未请求；旧M7/runtime未接，不能按纯政策验收实际执行或鉴权。

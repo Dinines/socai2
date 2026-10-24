@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Freeze a closed program runtime policy before any reserved work
+
+b2.3a SHALL 新增独立program runtime纯plan/state合同，固定runtime/state/plan/material/facts/completion/preparation/result/handoff/未采用结果的完整版本组合，纳入plan hash及step/attempt派生；仅已核manual alert profile/fullwindow Q1/activity_records；manual为该新runtime固定控制政策，make/install拒automatic，descriptor由scope＋固定manual重建，不从待核plan读取trigger作为权威。旧state/plan不升级，caller不得混配版本或靠源正文选择策略。复用M3预算/预检/停止语义，不产生实际提交/外呼或新Run。
+
+#### Scenario: First claim or a repeated interrupted request is considered
+- **WHEN** owned caller提供已冻结的新runtime state及真实时钟输入
+- **THEN** 仅ready首次可产生需提交的claim决策，之后仍需真实M3 reserve；重复claimed/blocked不接管、不追加尝试，stopped只读原handoff。预检、取消、停止保原共享额度/期限/unknown，纯返回外呼未授权且不改原输入
+
+#### Scenario: A closed policy or deterministic dispatch identity is changed
+- **WHEN** 新旧或未知版本混搭、额外/缺少policy项、plan/profile/query/step/attempt漂移，即使重算自身hash
+- **THEN** 重建受控plan并拒绝，不回落旧runtime、不重设M3预算或制造新attempt；必要存储归属仍由后续新store核验。后续store/controller/start intent及发布读取兼容须各自细卡验收
+
 ### Requirement: Evaluate program material under an explicitly new finite completion policy
 
 b2.2 SHALL 仅用已核当前scope/snapshot的独立ProgramMaterial生成有限字段事实及新版本program_alert_recon结果/preparation，不构造EvidenceView或模型候选；新finite_network_program_fields.v1事实政策及bounded_full_window_program_fields.v1完成政策显式入hash/refs。正常完整结构来源查询可有限ready；模型未请求/Alert全文未语义研判明确为非阻断目标外缺口，绝不表示整份Alert或恶意/授权/影响已判。旧fixed/evidence/A3路径保持。

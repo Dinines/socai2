@@ -1,3 +1,5 @@
+**2026-10-25 b2.3a限定通过：** 69直接/独立同69、5hash/7状态重放及7额外篡改拒，[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)。仅新manual纯状态，不证持久/外呼；b-d与b2.4仍a4.2前置，2.2/2.3不勾。
+
 **2026-10-25 b2.2限定通过：** 新纯有限事实/prep64直接/独立同64、5hash/11冻件及30额外对照，[回执](../../../docs/operations/investigation-program-recon-20261025.json)。有限ready不等于全文/业务完整；b2.3/4仍a4.2前置，2.2/2.3不勾。
 
 **2026-10-25 b2.1限定通过：** 59直接/独立同59、5hash/6M1冻件/2同输入对照，[回执](../../../docs/operations/investigation-program-material-20261025.json)。纯独立程序材料，无facts/ready；b2.2—4仍是a4.2前置，2.2/2.3未勾。

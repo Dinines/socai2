@@ -1,5 +1,21 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 b2.3拆分及a纯状态/闭合版本细卡（e2b0291）
+
+b2.2已64/独审限定通过并推送。采用fresh_design只读建议，b2.3a新program_runtime_state纯状态→b新program_runtime_store持久层→c薄ProgramReconRuntime/MockTransport→d1新start intent→d2新projection入口，逐块细卡/测试/独审。不改旧recon_runtime_state/store/FixedReconRuntime/start_contract/alert_projection；只读复用M3通用state/reserve、ExecutionStore锁/append/complete、DurableActivityRecords，不复制HTTP服务/预算内核。b2.4发布/恢复/owned/gateway组合兼容和旧MD字节不变后才a4.2，本b2.3无真实PG/HTTP/部署/发布。
+
+a仅新增program_runtime_state.py纯plan/install/runtime copy/claim/限定reserve/stop/cancel/finish及直接测试。runtime=program_alert_recon_runtime.v1，state schema=program_recon_runtime_state.v1，plan schema=program_recon_plan.v1/ref prefix=program-recon-plan:；scope政策仍network_observation.v1、business profile仍investigation_profiles.v1 alert_recon。完整policy_versions对象固定包含M3 execution_schema=investigation_execution.v1及上述runtime/state/plan、network_program_material.v1/network_program_material_policy.v1、finite_network_program_fields.v1、bounded_full_window_program_fields.v1、program_alert_recon_preparation.v1、program_alert_recon.v1、program_recon_runtime_handoff.v1、program_runtime_unadopted_result.v1。调用方不能逐项自配；未知/缺项/多项/混旧版本即拒，即使自洽重hash也不接受。
+
+合同独审补清trigger权威：本新runtime仅支持manual（匹配当前a4手动范围），make/install拒automatic，runtime copy用受控scope＋固定manual重建完整descriptor，不能从待核plan借trigger自证。未来automatic需独立合同/版本，旧automatic运行路径不变。make_program_recon_plan只接已核manual BusinessProfileRequest，固定全结论窗口Q1/activity_records单成员/现参数限制。用规范scope controls/业务descriptor重建closed plan，scope/profile hash、当前query完整结构、上述版本组合及所有关键字段精确；plan不能额外夹带可改变行为的字段。query fingerprint纳入完整版本组合＋scope hash＋query_input，step UUID5在新program-recon命名空间派生、attempt=uuid5(step,attempt-1)，subtask=program-source-observation-Q1。身份只确定本步请求，不授予I/O；同Run无法借改版本新增可执行attempt。
+
+install只允许已核M3初始state（现SCHEMA_VERSION统一预算）无runtime/无attempt时一次安装；新recon key仍沿phase/plan结构但schema/runtime与旧分开，旧state/plan一律不升级。state/runtime copy核基础owner/stage/scope及新schema/phase/stop/完整版本/plan/profile/step/attempt，按受控原scope重建expected plan再canonical比较，不把自hash等于合法。caller仍须核scope来自owned begin/真实权限，纯层不证明存储归属。
+
+claim/reserve/stop/cancel/finish沿已验M6.2控制语义：只ready首次可提交claim，预检用M3 reserve临时副本、预算/期限/unknown/unsettled依原M3，不另设账；claim不授权外呼，必须提交claim与真实M3 reserve后才可。claimed重复in_progress_or_interrupted、不接管；blocked重复不能抢owner交接；stopped只读原handoff。限定reserve只本plan的Q1 tool/step/attempt/完整参数/0 token和0预留费用，不接新model/其他query/重试。budget/deadline/unknown/retention/cancelled保优先级，真实late settle允许但不重跑；finish只保owner当前实际观察停止及原handoff引用，重复不覆盖。
+
+预期直接：正常fullwindow plan/旧M3预算保持、新组合及ID独立；new/old profile descriptor同M1绑定但不同runtime不可混。任一policy_versions/schema/profile/plan/参数/窗口/step/attempt/额外字段自洽改hash仍拒（必要原件归属另在store核）；ready首次/重复、真实M3预检额度0和deadline/期初unknown、限定reserve所有反例、cancel/finish当前stop/重复引用不变、原输入/预算计费列不变。0 I/O/Run/真实claim/reserve/模型/工具。先strict/合同审阅再只a实现/测试/结束独审；b以后不在本卡批准。
+
+后续b采用新control kinds unified_program_recon_started/claimed/cancelled/handoff_saved/dispatch_blocked（均≤40）及program_recon_control/handoff/unconfirmed_observation工件；通用M3 unified_attempt_reserved/settled与step_input/output/state_snapshot不改。未采用结果必须新program_runtime_unadopted_result.v1，以None新evaluator为基础、validated_source_refs=[]/无事实/partial、held refs并集，不能机械复制旧without_source的false可用性；控制归属/hash不变量错仍拒，已owned内容不合格只可明确未采用。未确认进程输出独立observation，不喂prepare，handoff/state/观察原子、重复只读。c保既有取消竞态修复/单次派发；d新intent显式钉新组合且tenant/key Run命名空间不变，新旧同key冲突、未知schema拒，不把新intent改写旧版本去投影。各块后续另审。
+
 ## 2026-10-25 b2.2程序有限事实与preparation细卡（984646f）
 
 b2.1已59/独审限定通过并推送。只新增program_recon.py新evaluator/prepare函数，保fixed_recon/recon_material/EvidenceView原函数和原版本不变，不接runtime/发布/HTTP。新ProgramMaterial仅经checked_program_material校当前scope/当前snapshot/ref后消费；不能接EvidenceView或把ProgramMaterial包装成model_view。复用纯有限谓词的字段/引用规则（内部typed records/query/alert索引），不产生模型候选/自由文判决。
