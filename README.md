@@ -1,5 +1,7 @@
 # socai2 · stingAISOC
 
+**调查新版开发与评审：** 从[调查分支入口](docs/investigation/README.md)查看设计、相对开源的变化、当前进度、已知问题、测试和共享回执。新版在`codex/investigation-working`普通项目目录开发，代码/文档提交并推送供跨机器协作；旧业务源码保持，新版独立目录，当前尚未部署或接入完整流程。下文按日期保留的旧运行状态以PROGRESS及该入口链接的最新回执为准。
+
 本批运行已增加UEBA、enrichment和ThreatIntel/OpenSearch接线；Agents仅更新UEBA上下文，worker仍OFF。报告当前只需Markdown，详细数据流与基本验证见[full配套回执](docs/operations/full-support-migration.md)；下文candidate05等镜像/层数是此前状态。
 
 
