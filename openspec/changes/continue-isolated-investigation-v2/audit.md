@@ -1,3 +1,7 @@
+## 2026-10-24 新一轮独立总体审计
+
+基线7b7bb6b，fresh_design_audit/fresh_code_audit/fresh_evidence_audit三位新审阅者分别核原设计演进、实现和证据，不承接原review_response_audit结论。140项合同通过，另25项为重叠复核；39个回执hash条目一致。新增离线反例确认A1 mapped IPv6归一化导致合法结果误拒，P2未修；A2子窗口ready与A3无模型路径的模型投影限制交叉裁定为后续合同边界，不报告为越权或既有I1/I2回归。总体架构可保留，完整调查质量不予追认，详见[审计与逐步计划](../../../docs/investigation/independent-audit-20261024.md)及[观察回执](../../../docs/operations/investigation-independent-audit-20261024.json)。本轮只改报告/索引和公开离线probe，无功能修改、真实业务访问、模型、部署或合main；历史ACCEPT按原范围保留，新发现进入续接门。
+
 ## 2026-10-24 M6.1纯固定政策结束窄审
 
 未参与实现的review_response_audit只读核新fixed_recon、专用测试、活动规格/预期及[回执](../../../docs/operations/investigation-fixed-recon-20261024.json)，独立13新/0.096s＋采用13/0.066s＋视图11/0.055s＋业务绑定11/0.027s共48项正常exit0；5份源码/测试hash匹配，6类材料状态和5类execution_stop的公共观察（result_ref/snapshot/事实/六问题/held计数）与实际纯函数重建一致。strict及diff通过，既有services源码/API/data工具和迁移archive未改，本块仅新增两个代码/测试文件。

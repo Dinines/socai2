@@ -4,7 +4,9 @@
 
 # 调查新版：开发、进度与评审入口
 
-**本轮最新结果：** 在独立v2查询接缝放行后，本块先规格/预期/strict，再新增M6.1固定有限事实与停止交接的纯政策层。13新＋M4采用13＋视图11＋业务绑定11，共48项直接通过，见[M6.1回执](../operations/investigation-fixed-recon-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)。正常来源得到4条program事实及六问题状态；空/失败/冲突/截断/正文不可读时保合法事实和全部引用、明确partial；性质unresolved、授权unknown。ready只指有限来源观察目标，所有结果均停止且不自动补查/调模型，不发布Run完成。未参与实现者独立复跑48项并重建回执，限定ACCEPT、0必须修；下一M6.2才接实际M3 gate、固定查询/去重及持久交接。本块真实模型/HTTP/PG/CH及业务写入0。正式M8入口、Deep整环、同版交付和Case继承仍待做，tasks2.2/2.3未勾，change不归档。
+**本轮最新审计：** [独立审计与后续流程](independent-audit-20261024.md)基于7b7bb6b，三位新审阅者分核架构、代码和证据。保留总体架构；140项合同通过及39哈希条目一致，同时新增反例确认A1 mapped IPv6归一化误拒（P2，未修）；A2子窗口ready语义、A3程序路径受模型投影限制须在M6.2接线前确定。先修A1及合同，再M6.2→M7→M8a；Case整体/自动政策前验证主分析与Deep实际收益。仅审计/规划，功能代码及历史回执不改，整体未验收。下段为前批实施结果，旧ACCEPT不覆盖本次新发现。
+
+**前批M6.1实施结果：** 在独立v2查询接缝放行后，本块先规格/预期/strict，再新增M6.1固定有限事实与停止交接的纯政策层。13新＋M4采用13＋视图11＋业务绑定11，共48项直接通过，见[M6.1回执](../operations/investigation-fixed-recon-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)。正常来源得到4条program事实及六问题状态；空/失败/冲突/截断/正文不可读时保合法事实和全部引用、明确partial；性质unresolved、授权unknown。ready只指有限来源观察目标，所有结果均停止且不自动补查/调模型，不发布Run完成。未参与实现者独立复跑48项并重建回执，限定ACCEPT、0必须修；下一M6.2才接实际M3 gate、固定查询/去重及持久交接。本块真实模型/HTTP/PG/CH及业务写入0。正式M8入口、Deep整环、同版交付和Case继承仍待做，tasks2.2/2.3未勾，change不归档。
 
 **前批真实接缝：** 02批新v2 HTTP→CH→PG限定通过，1命中/两对照排除、3事件/6工件独立读回，模型0，临时API/PG身份已清理；独审限定ACCEPT/0必须修。01字段假设失败保留，未重放，详见[接缝回执](../operations/investigation-v2-query-seam-20261024.json)。
 
@@ -14,6 +16,7 @@
 
 | 要看什么 | 仓库中的位置 |
 | --- | --- |
+| 最新独立审计与后续流程 | [发现、设计裁定与逐步验收](independent-audit-20261024.md)、[离线观察回执](../operations/investigation-independent-audit-20261024.json) |
 | 完整业务设计 | [主设计](../architecture/investigation-planning-design.md)：第1节业务分层，第1.10节旧版/新版隔离，第12.7节下一步顺序 |
 | 相对开源改了什么 | 主设计第16节：开源、当前实际、目标三方对照，原因、具体细节及两个例子 |
 | 当前进度和逐步过程 | [逐模块实施记录](../operations/unified-investigation-implementation.md)，先看顶部最新状态；[项目进度](../../PROGRESS.md) |

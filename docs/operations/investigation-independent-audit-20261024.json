@@ -1,0 +1,154 @@
+{
+  "schema": "investigation_independent_audit.v1",
+  "date": "2026-10-24",
+  "baseline": "7b7bb6bf67286a13b97002b998366cd2468a4036",
+  "branch": "codex/investigation-review-20261024",
+  "audit_only": true,
+  "functional_source_modified": false,
+  "findings": [
+    {
+      "id": "A1",
+      "priority": "P2",
+      "classification": "confirmed_functional_defect",
+      "status": "open",
+      "reason": "mapped_ipv6_normalization_mismatch"
+    },
+    {
+      "id": "A2",
+      "priority": "P2",
+      "classification": "completion_semantics_decision",
+      "status": "before_M6_2_M7"
+    },
+    {
+      "id": "A3",
+      "priority": "P2",
+      "classification": "confirmed_projection_coupling_limit",
+      "status": "before_M6_2_integration"
+    }
+  ],
+  "independent_review": {
+    "design_agent": "fresh_design_audit",
+    "code_agent": "fresh_code_audit",
+    "evidence_agent": "fresh_evidence_audit",
+    "code_tests_passed": 140,
+    "code_test_files": 15,
+    "overlapping_evidence_tests_passed": 25,
+    "receipt_hash_entries_matched": 39,
+    "receipt_hash_mismatches": 0,
+    "historical_model_raw_reaudit": false
+  },
+  "source_sha256": {
+    "openspec/changes/continue-isolated-investigation-v2/probes/design_audit_20261024.py": "28c29216001880d4e653dcd602481500ec8c207a3888f74b144c4ded427fa614",
+    "services/agents/app/investigation_v2/scope.py": "a5bfc6bfd174b27f10bcd18b9795a9d09e7e2f2eee700a572a8b581abc0185bd",
+    "services/agents/app/investigation_v2/activity_records.py": "c55c70909530e3c32019421249e2ca559acc56cd196c0282b88e29e8014b1261",
+    "services/agents/app/investigation_v2/evidence_view.py": "bf5303de4a00566241491dd7331c5531983cb3205e5cbd51f38f55ba407e53d5",
+    "services/agents/app/investigation_v2/fixed_recon.py": "87fbf46f652bdc2acedf250ca1ea04e2ecc879fb961e5613a3599294279fc86f",
+    "services/api/app/investigation_v2/records.py": "94618931a8f67960c508f60e18359c362c8f60392de7b4e6f7b3cd5be00ddfcb"
+  },
+  "observations": {
+    "schema": "investigation_design_audit_probe.v1",
+    "audited_revision": "7b7bb6bf67286a13b97002b998366cd2468a4036",
+    "mode": "offline_actual_code_with_mock_ch_and_http",
+    "business_network_calls": 0,
+    "model_calls": 0,
+    "business_writes": 0,
+    "mapped_ipv6": {
+      "api_status": "ok",
+      "api_ip": "192.0.2.70",
+      "api_rows": 1,
+      "caller": {
+        "mapped": {
+          "scope_ip": "::ffff:c000:246",
+          "status": "error",
+          "reason": "query_response_contract_mismatch",
+          "mock_http_attempted": true
+        },
+        "ipv4": {
+          "scope_ip": "192.0.2.70",
+          "status": "ok",
+          "reason": null,
+          "mock_http_attempted": true
+        }
+      }
+    },
+    "subwindow": {
+      "frozen_seconds": 300,
+      "query_window": {
+        "end": "2026-10-23T10:01:00.000001+00:00",
+        "start": "2026-10-23T10:01:00.000000+00:00"
+      },
+      "scope_readiness": "ready",
+      "stop_reason": "limited_objective_answered",
+      "blocking_gaps": [],
+      "coverage_gaps": [
+        "bounded_query_only",
+        "no_authorization_source",
+        "no_behavior_corroboration",
+        "no_global_identity_completeness"
+      ],
+      "review_required": false
+    },
+    "optional_excerpt_capacity": [
+      {
+        "case": "ascii_512",
+        "scope_readiness": "ready",
+        "model_bytes": 11722
+      },
+      {
+        "case": "quotes_512",
+        "error": "ValueError",
+        "reason": "complete_model_view_exceeds_byte_limit"
+      },
+      {
+        "case": "backslashes_512",
+        "error": "ValueError",
+        "reason": "complete_model_view_exceeds_byte_limit"
+      },
+      {
+        "case": "utf8_510",
+        "scope_readiness": "ready",
+        "model_bytes": 11702
+      }
+    ],
+    "long_alert_text": {
+      "error": "ValueError",
+      "reason": "data_only_excerpt_exceeds_byte_limit"
+    }
+  },
+  "audit_process_failures": [
+    {
+      "stage": "code_audit_initial_interpreter",
+      "reason": "system Python missing structlog",
+      "resolution": "project .venv used; no install"
+    },
+    {
+      "stage": "root_probe_initial_network_guard",
+      "reason": "socket.socket.connect guard blocked Windows asyncio internal socketpair before operations; diagnostic confirmed",
+      "resolution": "guard scoped inside running loop around audited calls; final probe exit0",
+      "business_calls": 0
+    }
+  ],
+  "limits": [
+    "offline mocked CH and HTTP only",
+    "no true PG/CH/HTTP/model calls",
+    "no deployment or main merge",
+    "historical M4 receipts do not establish current HEAD model quality",
+    "existing scoped ACCEPT receipts remain historical; A1 is a newly discovered case"
+  ],
+  "final_report_review": {
+    "design_must_fix": 0,
+    "code_corrections": 0,
+    "design_wording_suggestion_adopted": "projection degradation only after identity/hash/scope checks",
+    "independent_probe_observations_match": true,
+    "independent_hash_matches": 6,
+    "services_diff_from_baseline": 0
+  },
+  "validation": {
+    "openspec_strict": "pass",
+    "markdown_files": 8,
+    "local_file_links_checked": 451,
+    "missing_file_links": 0,
+    "markdown_fences": "pass",
+    "git_diff_check": "pass"
+  }
+}
