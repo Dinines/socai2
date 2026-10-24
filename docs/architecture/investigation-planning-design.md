@@ -1,3 +1,5 @@
+**2026-10-25 b2.4a纯新发布：** 111直接/独立同111、7hash/9完整包/MD/section重建与8额外反例限定通过，[回执](../operations/investigation-program-publication-preparation-20261025.json)。new closedmanifest/exec/renderer，validated和unadopted都完整重建，typed JSON及distinct pre-stop source保证；旧MD保持。仅candidate、0发布/真实访问，actualtool/owned/event全链后续b，再c/d兼容与a4.2。
+
 **2026-10-25 b2.3d2正式新投影：** 82直接/独立同82、6hash/6完整投影及SQLMock cold重建限定通过，[回执](../operations/investigation-program-alert-projection-20261025.json)。完整来源新schema/精确路径/原拼写保持，新有限4facts ready/model false且旧partial；预建Run接缝5/10/Mock1，不是a4.2原子启动，旧restore尚拒新begin。下一b2.4分a纯发布/b持久/c恢复/d owned+HTTP显式版本后再a4.2，0实际访问/新Run/发布。
 
 **2026-10-25 b2.3d1新版启动合同：** 60直接/独立同60、6hash/6完整意图决定和27额外反例限定通过，[回执](../operations/investigation-program-start-contract-20261025.json)。new intent含closed12版本，同tenant/key身份与旧相同且跨版冲突，旧不升级；纯无权限/持久或执行证明。下一d2新投影→b2.4兼容后才a4.2，0实际Run/业务访问。

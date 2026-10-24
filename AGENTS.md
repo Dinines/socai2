@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4a新发布候选限定通过
+
+ec460ae后先spec/design/strict/合同独审，unadopted完整结果重建合同缺口修后限定ACCEPT0再实现，仅新program_recon_publication。24新＋oldpub16/newstore30/newruntime25/newrecon16共111直接/独立同111、7hash/9完整package/MD/section重建及额外8反例拒，receipt docs/operations/investigation-program-publication-preparation-20261025.json限定ACCEPT0。独审初109外bool/int等值与stopped冒充source两个P2已修canonical和distinct pre-stop，修前2red2fail0error保failure；collector Request deepcopy身份误断言原件单列非源码。newmanifest/exec/full版本/安全MD明确有限目标/全文未语义核/模型资格false，normal4facts ready、escaped21facts ready，其余7partial；旧MD3111B保持。纯candidate、持久ref空无发布/通知；原tool/owned/event真实链后续b新pubstore→c恢复→d owned/HTTP，再a4.2，2.2/2.3未完，无真实访问/新Run/部署/合main。
+
 # 2026-10-25 调查b2.3d2新版来源投影限定通过
 
 fbd1b1d后合同/spec/strict/独审先行，仅新program_alert_projection及15新＋旧projection13/newstart18/newruntime25/oldrestore11共82直接/独立同82、6hash/6完整投影/两冻件及预建Run SQLMock接缝cold完整重建，receipt docs/operations/investigation-program-alert-projection-20261025.json限定ACCEPT0。新意图先完整核/新doc schema，无旧转换；原source/hash/路径及IP/UUID原拼写保全，normal1307B/最大17759B不截，新4facts有限ready/model false、旧仍partial。预建Run1/2→5/10/Mock1，重复不增，oldrestore明确拒新begin。BusinessProfileRequest不证明真实auth/owned或intent-budget-owner-Run原子绑定；0真实访问/新Run/发布。下一b2.4 a纯newpub→b持久→c恢复→d owned/HTTP显式版本，各另门后a4.2；2.2/2.3未完，旧源码/MD保持，无部署/合main。

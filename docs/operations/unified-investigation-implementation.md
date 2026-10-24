@@ -1,3 +1,15 @@
+## 2026-10-25 b2.4a实际纯新发布候选
+
+ec460ae后合同/strict先行；fresh_design初unadopted仅局部校验缺口已补全量None重建后ACCEPT0再新program_recon_publication。24新＋oldpub16/newstore30/newruntime25/newrecon16共111直接/独立同111、7hash/9完整request-M1/三工件/新包/MD逐字节/section refs及SHA重建，限定ACCEPT0。[回执](investigation-program-publication-preparation-20261025.json)。独审初109之外bool/int等值、stopped source幂等冒充两个P2保修前source/test/2red2fail0error及[失败回执](investigation-program-publication-preparation-failure-20261025.json)，修canonical state/usage与distinct claimed/blocked source后，额外8类型/停止态变体均拒；9合法包/MD未变。collector初deepcopy Request身份等值误断言，原helper/output保SHA、改method/path/body snapshot核pure无变，非源码失败。
+
+9包均candidate/持久report-execution ref空：normal3381B4facts和escaped10的7879B21facts有限ready；empty/error/unknown/observer/cancel/sourceRejected/deadline七例partial，unknown保unsettled1即使实际结构字段facts可4条，观察与被拒源无facts不伪来源。新MD明示有限目标/全文未语义核/模型不具资格、六问/实际用量/refs，旧3111B不变。actual rawtool→ProgramMaterial/owned/event全链不由pure证明；0真实PG/HTTP/模型/Run/发布/通知。下一b新pubstore合同待独审，c新恢复/d owned+HTTP显式兼容各门后才a4.2，2.2/2.3未勾。
+
+**b2.4a实现审阅修订：** 初109普通测试之外，独立发现bool true/int1等值和stopped state冒充pre-source两个P2；修前源码/2red2fail0error保[失败回执](investigation-program-publication-preparation-failure-20261025.json)。改checked/raw、finish current、usage等JSON全部canonical比较，source须claimed/blocked且source/current artifact ID distinct；实际历史seq/原件真实性仍bstore门，a不扩权限承诺。修后结束独审待续。
+
+## 2026-10-25 b2.4a纯新版发布实施前预期
+
+d2已ec460ae推送，b2.4拆a纯发布/b持久/c恢复/d owned+HTTP兼容。a先合同/strict独审：unadopted全结果重建缺口已补None evaluator+actual reason/stop/refs并canonical精确比，fresh_design修后限定ACCEPT0。仅新pure program publication/renderer，新closed版本/三工件finish全量当前性、ProgramMaterial有限结果重建或unadopted全量重建，安全MD明确全文未语义核/无模型资格；oldpub/旧MD保持。仅candidate不发布，实际tool/材料/event/归属全链后续b验证，a不证明owned真实来源。先直接/独审保存，b以后各另门才a4.2。
+
 ## 2026-10-25 b2.3d2实际新正式来源投影
 
 fbd1b1d后合同/strict先行，仅新program_alert_projection/15新＋oldprojection13/newstart18/newruntime25/oldrestore11共82直接，fresh_code独立同82/6hash/两冻件/6完整request-controls-sources-new/oldprep与摘要SHA重建、SQLseam cold全输出/重复一致，限定ACCEPT0，[回执](investigation-program-alert-projection-20261025.json)。额外6真实路径解析/映射IP/大写source UUID/长嵌套指令原文保全/输出脱离通过。6输入normal1307B、指令1407B、IPv6 1321B、JSONB1307B、UUID1307B、全文17759B均完整、新4程序facts有限ready/model false而旧partial；无全文语义或性质授权推断。预建Run begin1/2→5/10/Mock1，cold不增新调用/行且Run6列不改，oldrestore必须拒新begin而不伪兼容完成。当前BusinessProfileRequest不证明auth/owned来源或intent/budget/owner/durable Run原子绑定，0真实PG/HTTP/模型/Run/发布。下一b2.4分a纯发布/b持久/c新恢复/d owned+HTTP显式版本，全部通过后a4.2；2.2/2.3未勾。

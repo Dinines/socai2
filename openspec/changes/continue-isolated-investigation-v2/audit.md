@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4a修后结束独审
+
+fresh_design初合同1缺口（unadopted全重建）补后限定ACCEPT0；fresh_code初109之外2P2（bool/int等值、stopped source冒充pre-transition）保[失败回执](../../../docs/operations/investigation-program-publication-preparation-failure-20261025.json)。修canonical和distinct claimed/blocked pre-source后，独立111/7hash/9完整包/MD/section refs精确重建及8额外类型/停止变体拒，限定ACCEPT/0必须修。[正式回执](../../../docs/operations/investigation-program-publication-preparation-20261025.json)。2red2fail0error/4失败原件及collector辅助假设错误两文件SHA均核同，9合法输出不变。仅pure candidate，真实tool/owned/event链留bstore，c/d/a4.2未放行。
+
 ## 2026-10-25 b2.3d2结束独审
 
 fresh_design合同限定ACCEPT0后实施；fresh_code独立82/6hash/两冻件SHA/6完整投影+新旧prep+观察重建、SQLseam完整cold重复/Run6列同，另6路径/映射IP/大写UUID/长正文隔离核过，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-program-alert-projection-20261025.json)。新normal1307B/最大17759B保全、新4facts有限ready且model false、旧partial；oldrestore明确拒newbegin；不证明真实auth/owned或原子启动，无网络/PG。b2.4a细卡另待合同，b/c/d和a4.2后续。

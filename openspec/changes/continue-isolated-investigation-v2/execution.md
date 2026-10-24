@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4a纯新发布结果
+
+ec460ae后已审合同再新纯candidate。111直接/独立同111、7hash/9完整重建及8额外变体拒，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-publication-preparation-20261025.json)。2P2源码/红测保留，MD/包合法字节保持；新result/材料/执行当前性严格而非已发布。0实际访问/Run/通知；b持久、c恢复、d owned/HTTP各门后a4.2，2.2/2.3未勾。
+
 ## 2026-10-25 b2.3d2实际投影
 
 fbd1b1d后先已审合同再新投影，82直接/独立同82、6hash/6完整重建及SQLMock冷读限定ACCEPT0，[回执](../../../docs/operations/investigation-program-alert-projection-20261025.json)。原全文/paths/hash不截，正常4facts有限ready/model false、旧partial，旧restore拒newbegin；0实际Run/PG/HTTP/发布。下一b2.4兼容分块，a4.2实际准入仍后续，2.2/2.3未勾。

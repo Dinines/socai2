@@ -1,12 +1,24 @@
 ## ADDED Requirements
 
+### Requirement: Persist the new program manifest atomically and read only its complete current basis
+
+b2.4b SHALL 新增独立new publication store继承ProgramReconExecutionStore，显式适配new pub event的latest/body/state校验，保原begin/full原tool-source-handoff链；唯一pub marker/4工件同事务，JSON比较canonical，旧store/Run列不改。只SQLdouble，不发送通知或实际业务访问。
+
+#### Scenario: A current complete new handoff is published or read again
+- **WHEN** 原begin/工具/全部retained及当前停止basis完整，或已有唯一new manifest及全部sameevent工件
+- **THEN** 首次1event4artifacts全部确认后published/committed，重复只读完整同manifest/MD/execution/sections/usage且无通知/写入；无pub仅progress，不自动发布
+
+#### Scenario: Original chain currentness typed structure or commit is uncertain
+- **WHEN** bad event/pointer/owner/hash/source（即未采用也核）、bool/int伪等值、多个pub marker、later结算或rollback/ACK未知出现
+- **THEN** 拒旧交付或不确认成功，不回落/重发/刷新预算；原失败保留，完整pub状态与原stopped执行basis必须canonical同，actualtool真实性在newstore完整重建证明，不由selfhash代替
+
 ### Requirement: Prepare a separately versioned program publication without changing fixed results
 
 b2.4a SHALL 仅新增pure program publication/renderer，固定new manifest/execution/sections/mapping/renderer/package版本及完整closed组合，核new handoff/source/current全量转换/用量一致，重建ProgramMaterial有限result；不伪EvidenceView/模型资格，不改旧发布/MD。候选不等于持久交付或通知。
 
 #### Scenario: A current owned program handoff has valid material or explicit unadopted state
 - **WHEN** caller已核owned三工件、pure版本/引用/hash/当前finish转换相符且新材料有限result重建一致
-- **THEN** 生成有限三维状态/完整sections/refs/实际未知用量和确定性安全MD，性质授权全文语义边界明示，report/execution持久ref空；无材料只unadopted partial，不把observer当source
+- **THEN** 生成有限三维状态/完整sections/refs/实际未知用量和确定性安全MD，性质授权全文语义边界明示，report/execution持久ref空；无材料须由None evaluator/固定reason/实际stop/retained refs完整重建unadopted结果并canonical精确比较，sixQ/criticality/coverage自洽rehash也拒，不把observer当source
 
 #### Scenario: A result is mixed stale or rehashed beyond its finite policy
 - **WHEN** 新旧或未知版本、错误material/model标记/伪facts、late结算或scope/owner/账/状态转换不符
