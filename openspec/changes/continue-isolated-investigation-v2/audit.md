@@ -1,3 +1,13 @@
+## 2026-10-24 调查分支对main评审的响应（仅评估/计划）
+
+用户要求拉取最新main、判断调查意见是否合理/采用并制定后续计划，允许新建调查分支。已fetch至`541511ce`，本地main快进后从其建立`codex/investigation-review-20261024`；普通根目录原先clean，原调查469e9467已在main中，未复制旧树、修改Windows分支或合回main。
+
+[评审响应](../../../docs/investigation/review-response-20261024.md)逐项区分独立评审I1—I4与整合审计同名编号，I1/I2采纳修复，I3限定采用，I4落实程序确定性路径与按需Deep分别验收。原架构保留；profile后先补两处材料接缝，再独立v2查询及M6/M7/M8a有限交付，Deep/Case/领域/自动政策分步。tasks的2.1—2.3仅细化计划、保持未勾，未增加业务规格或宣布修复完成；精确spec调整留实际实施前。
+
+新增[断网反例脚本](probes/review_material_contracts.py)与[机器回执](../../../docs/operations/investigation-review-validation-20261024.json)。Python3.12.4实跑：短文成功，513ASCII/对象message整视图失败；10条视图7882B、messages14194B>12288B，7/8条跨界；DurableAnalysis在fake预留/模型调用前拒绝。仅备注不同的两个来源版本保相同字段，但Q1 supported拒绝、Q2/Q5保留。exit0仅表示反例重现，不是修复/质量通过；首次guard误拦Windows内部socketpair的脚本exit1及修正已披露。原运行源码/旧测试不改，0真实业务/模型/写湖/部署；M5.2、新HTTP及分层仍未交付，原迁移归档/失败/unknown保持。
+
+未参与本轮编写的`review_response_audit`只读窄审限定ACCEPT、0必须修项：独立重跑probe exit0，错误码、字节大小、fake预留/完成/调用0和Q1/Q2/Q5采用结果均与受控JSON一致；主设计12.7、响应及tasks的依赖一致，任务未提前勾选，I3未放松未读反证，I4未宣称模型无价值。6份MD的246个本地链接无缺失，OpenSpec strict与diff --check通过；services、tools/testdata、迁移archive和主specs相对origin/main无差异。结论仅覆盖本轮文档/计划/复现材料，不是问题已修、业务验收或整体质量通过；无真实业务/模型/数据库/部署操作。
+
 ## 2026-10-24 重新独立设计评审
 
 用户要求重新客观审查设计、不改代码。以main a82346dd为基线，从原需求、当前设计及源码重新建立判断，数据与调查由未参与实现者分别审阅，主审复核关键原文和纯内存反例，见[详细评审](../../../docs/operations/independent-design-review-20261024.md)。保留两profile共享内核、来源与判断分离、Case继承及同版发布方向；调查可选正文整视图失败、视图与完整模型消息预算不一致两项P2接缝已复现，命题冲突粒度和模型业务增益另列建议。数据标签可判定性、配对评价与非法分类指标问题分别由数据线后续讨论。
