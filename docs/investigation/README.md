@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3b内部写HTTP：** 186直接/独立同186、7hash/22冻结case限定通过，[回执](../operations/investigation-program-start-api-20261025.json)及[修前原件](../operations/investigation-program-start-api-failure-20261025.json)。独立双POST/具体受控guard/当前凭据分离、4KiB body/servernormalize，ACK未知503后只读恢复；原28 ASGI响应重放同。仅离线，下一已审c现用户run＋alerts read写gateway，真实鉴权/PG/运营隔离后续。
+
 **2026-10-25 M8a4.3a启动协调器：** 125直接/独立同125、7hash/14原件限定通过，[回执](../operations/investigation-program-coordinator-20261025.json)。首次确认准入才执行并发布，重复/读取/未知恢复不补跑或补发布；normal7/15/Mock1、错误/unknown保partial。12原账本冷读及重复输出同，2guard拒0SQL；仅替身，下一独立写HTTP/实际用户权限与真实接缝。
 
 **2026-10-25 M8a4.2原子准入：** 136直接/独立同136、7hash/11原账本完整重放限定通过，[回执](../operations/investigation-program-admission-20261025.json)和[首轮原件](../operations/investigation-program-admission-failure-20261025.json)。新Run＋原begin＋event-pin启动意图同事务，重复及未知提交恢复只读；正常发布7/15/Mock1。仅SQL替身，下一启动协调器、独立写HTTP和现有用户权限逐块验证，再真实PG接缝。

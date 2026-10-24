@@ -1,0 +1,301 @@
+{
+  "schema": "investigation_program_start_API_verification.v1",
+  "date": "2026-10-25",
+  "baseline": "5b7c0db",
+  "status": "ACCEPT_limited_isolated_internal_start_HTTP_SQL_ASGI",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "initial_must_fix": 1,
+    "repair": "Both POST coordinator refusals uniformly409 including operation missing; no string guessing or side query; independent GET404 unchanged",
+    "status": "limited_ACCEPT",
+    "must_fix_remaining": 0
+  },
+  "direct_tests": {
+    "new_policy_config": 10,
+    "new_HTTP": 30,
+    "coordinator": 23,
+    "admission": 29,
+    "runtime": 25,
+    "publication": 29,
+    "owned_reader": 19,
+    "compatible_read_API": 21,
+    "total": 186,
+    "all_passed": true
+  },
+  "selected_file_sha256": {
+    "services/agents/app/investigation_v2/program_start_api.py": "8c1d15bc6306326318b4d09622d1bae221691b431780d5a9bb32d3f1235fb6a0",
+    "services/agents/tests/test_program_start_api_config.py": "8f51cc0cfb162f751af369a79341671ce9f02f3e560fd6902e445e682141194e",
+    "services/agents/tests/test_program_start_api_contract.py": "709999c2d6daa5be7edd005e1bb9e879500fa86088eed24ffa39fa500c117b5b",
+    "services/agents/app/investigation_v2/program_start_coordinator.py": "4a989cb75e7e8715e9a133092165d1b9522f6191f3c7af67392b9b11c6546901",
+    "services/agents/app/investigation_v2/program_start_store.py": "45aedaabdf6a6f17d8b9fc2a0d1b95266c0375647378530dd6b7ea0bb01a516d",
+    "services/agents/app/investigation_v2/program_result_api.py": "610fc7be9d91f20a5934aa284a47d570e7835e7445c55ac2c7b102530dff43de",
+    "docs/investigation/examples/fixed-recon-published-20261024.md": "e5f4c3fe2d4f4130eb4ad4964260f87f4a63aea9bb31426566dedafdd8ad68ac"
+  },
+  "frozen_HTTP": {
+    "actual_coordinator_SQL_ASGI_cases": 8,
+    "fake_coordinator_boundary_cases": 14,
+    "total_cases": 22,
+    "actual_requests_including_cancelled_one": 20,
+    "fake_HTTP_responses": 14,
+    "total_requests_including_cancelled_one": 34,
+    "cancelled_requests_without_HTTP_response": 1,
+    "bytes": 1009073,
+    "sha256": "b1c887ec31763090faf1afe8306f0bdd4673af8186b87c536a08752d77700b82",
+    "scope": "Full original SQL ledger plus actual ASGI response bytes/read/repeat; fake cases only boundary status/counts, not ownership or persistence proof"
+  },
+  "actual_observations": [
+    {
+      "case": "normal",
+      "initial_status": 200,
+      "expected_failure": null,
+      "events": 7,
+      "artifacts": 15,
+      "Mock_HTTP_calls": 1,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    },
+    {
+      "case": "zero_budget",
+      "initial_status": 200,
+      "expected_failure": null,
+      "events": 5,
+      "artifacts": 11,
+      "Mock_HTTP_calls": 0,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    },
+    {
+      "case": "guard_refused",
+      "initial_status": 409,
+      "expected_failure": null,
+      "events": 0,
+      "artifacts": 0,
+      "Mock_HTTP_calls": 0,
+      "read_status": null,
+      "repeat_status": null,
+      "rows_unchanged": true
+    },
+    {
+      "case": "missing_operation",
+      "initial_status": 409,
+      "expected_failure": null,
+      "events": 0,
+      "artifacts": 0,
+      "Mock_HTTP_calls": 0,
+      "read_status": null,
+      "repeat_status": null,
+      "rows_unchanged": true
+    },
+    {
+      "case": "admission_ACK",
+      "initial_status": 503,
+      "expected_failure": null,
+      "events": 2,
+      "artifacts": 3,
+      "Mock_HTTP_calls": 0,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    },
+    {
+      "case": "publication_ACK",
+      "initial_status": 503,
+      "expected_failure": null,
+      "events": 7,
+      "artifacts": 15,
+      "Mock_HTTP_calls": 1,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    },
+    {
+      "case": "owner_cancelled",
+      "initial_status": null,
+      "expected_failure": "CancelledError",
+      "events": 7,
+      "artifacts": 13,
+      "Mock_HTTP_calls": 1,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    },
+    {
+      "case": "query_unknown",
+      "initial_status": 200,
+      "expected_failure": null,
+      "events": 7,
+      "artifacts": 15,
+      "Mock_HTTP_calls": 1,
+      "read_status": 200,
+      "repeat_status": 200,
+      "rows_unchanged": true
+    }
+  ],
+  "boundary_observations": [
+    {
+      "body_sha256": "ae9afe5fd54d0e3a0e02cf622d50a8e772bc96d1f70591a3c2dc978d671db043",
+      "case": "valid_start",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 200
+    },
+    {
+      "body_sha256": "98a2341aa0147de1e347c359a1d1f77ffb5701627a67beca6a3b8fec180751c7",
+      "case": "valid_read",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 200
+    },
+    {
+      "body_sha256": "e2d925a74c695faf29825c8647e4d3e8c09460e96aa0c69e980792f10f9c87f0",
+      "case": "missing_token",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 401
+    },
+    {
+      "body_sha256": "e2d925a74c695faf29825c8647e4d3e8c09460e96aa0c69e980792f10f9c87f0",
+      "case": "wrong_token",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 401
+    },
+    {
+      "body_sha256": "e5fc04be85f1a407dff49fadb0ad0a9e1db689f1cef378c02d1964a1461de5f7",
+      "case": "query",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 400
+    },
+    {
+      "body_sha256": "a944dd0094d7ec79c651886e378a251d8286bc353894bbbfa2d9a8c8ebf87718",
+      "case": "nil_alert",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 400
+    },
+    {
+      "body_sha256": "d59379204ffdeddd938c2da02de217e5b5c2d69ed971053983a144ab12a92bc1",
+      "case": "invalid_body",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 422
+    },
+    {
+      "body_sha256": "d59379204ffdeddd938c2da02de217e5b5c2d69ed971053983a144ab12a92bc1",
+      "case": "malformed",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 422
+    },
+    {
+      "body_sha256": "d59379204ffdeddd938c2da02de217e5b5c2d69ed971053983a144ab12a92bc1",
+      "case": "duplicate",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 422
+    },
+    {
+      "body_sha256": "aecaa3228175f6bbcecf84e8f88fda1f3231c8280ace2f3eed5dd3964c2fb7c5",
+      "case": "oversize",
+      "coordinator_calls": 0,
+      "kind": "fake_coordinator_boundary",
+      "status": 413
+    },
+    {
+      "body_sha256": "9c83ffac17ff478f3db087d8a0beb76c9a502f52cc86264babf5c26322f105c7",
+      "case": "contract",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 409
+    },
+    {
+      "body_sha256": "c8135ff2ebed7548603e06cd5e0e087ceba75ce36549badd53d450d801359675",
+      "case": "persistence",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 503
+    },
+    {
+      "body_sha256": "ace6c6c7b28b5dbc6e5fe31d94e4c09509ea164065856fdd67b3ad65ecb45cf4",
+      "case": "unexpected",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 503
+    },
+    {
+      "body_sha256": "fad5e84c0e8207b1677132af352293bcf35b8082310ee3d55f896a338ab73827",
+      "case": "bad_outcome",
+      "coordinator_calls": 1,
+      "kind": "fake_coordinator_boundary",
+      "status": 502
+    }
+  ],
+  "preserved_failures": {
+    "reference": "investigation-program-start-api-failure-20261025.json",
+    "pure_config_draft": {
+      "tests": 10,
+      "failures": 1,
+      "errors": 0,
+      "cause": "Helper accepted top-level array; downstream budget/target constructors already refused; helper strengthened before HTTP code"
+    },
+    "HTTP_import_syntax": {
+      "tests": 0,
+      "not_application_failures": true,
+      "cause": "Unclosed parenthesis, repaired before HTTP tests"
+    },
+    "independent_rotation_P2": {
+      "ordinary_tests_passed": 184,
+      "accepted_bad_operator_rotation_cases": 2,
+      "author_red_tests": 2,
+      "failures": 2,
+      "errors": 0,
+      "precondition": "Trusted operator incorrectly rotates current write token to configured read/actual tool credential, not remote client state mutation",
+      "repair": "Every request rejects currently reused configured read/tool/owned tool/actual coordinator tool token before body or DB",
+      "original_two_after_repair": "both401/SQL0/Run0/Mock0"
+    }
+  },
+  "independent_review": {
+    "reviewer": "fresh_code_audit",
+    "code_status": "limited_ACCEPT",
+    "must_fix_remaining": 0,
+    "independent_unique_tests": 186,
+    "evidence_status": "limited_ACCEPT",
+    "selected_file_hashes_checked": 7,
+    "frozen_case_counts_checked": {
+      "actual": 8,
+      "fake_boundary": 14
+    },
+    "frozen_original_responses_hash_checked": 33,
+    "cancelled_request_without_response_retained": 1,
+    "original_ledger_cases_hydrated": 6,
+    "actual_read_repeat_responses_replayed": 12,
+    "empty_ledger_guard_and_missing_operation_replayed": 2,
+    "fake_boundary_responses_replayed": 14,
+    "total_ASGI_responses_replayed": 28,
+    "full_response_UTF8_SHA_canonical_equal": true,
+    "original_artifacts_UTF8_hashes_rows_unchanged": true,
+    "runtime_begin_execute_publish_and_real_HTTP_guarded_not_called": true,
+    "all_failure_original_text_hashes_checked": true,
+    "independent_helper_sha256": "a576fa2b7a006d7707abf2d23dcced333c2dc6504f6f89aa4064427c66b86767",
+    "not_replayed_first_writes_or_cancellation": true
+  },
+  "limits": [
+    "Controlled target configuration and operational reference do not prove legacy writer exclusion or ordinary production target eligibility",
+    "Gateway credential/header assertions are not real user authentication/RBAC; c must check existing investigation:run+alerts:read without widening read-service permissions",
+    "Only injected transports/SQL doubles/ASGI; no actual PG/network/CH/model/business Run/notification/deployment/main merge",
+    "Write app only; old/read app routes, sources and settings unchanged; configured read/tool credentials cannot become write authority through the supported write-token rotation",
+    "Minimum known outcome envelope only; full DTO validation remains API gateway c and actual ownership remains backend",
+    "c user write gateway, d offline combination and a4.4 actual isolated target/PG/auth tests remain pending; Case/Deep/automatic policies/tasks2.2/2.3 incomplete"
+  ],
+  "next_contract_review": {
+    "stage": "M8a4.3c",
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix_remaining": 0,
+    "condition": "b final save before API gateway implementation;200s whole-POST-and-stream deadline, bounded close and slow-chunk tests explicit",
+    "scope": "Offline API user permission dependencies and write gateway; d actual actor binding/a4.4 JWT-RBAC-PG/operational isolation still pending"
+  }
+}

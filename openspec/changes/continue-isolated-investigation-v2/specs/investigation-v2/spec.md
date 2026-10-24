@@ -786,3 +786,18 @@ The new internal start application SHALL expose only its explicit start and oper
 #### Scenario: Controlled target configuration or persistence is unavailable
 - **WHEN** controlled target policy/configuration is absent or invalid, real admission or publication confirmation fails, or the coordinator reply has the wrong known identity or flags
 - **THEN** no default allow, replay, deployment or notification occurs; truthful errors and read-only recovery preserve the original ledger, while real user authorization and operational isolation remain later verified gates
+
+### Requirement: Explicit user start gateway requires existing run and alert permissions without widening service scopes
+The new API start factory SHALL require an explicit bearer followed by existing investigation:run and alerts:read checks, forward only the current authenticated tenant and user identity to the dedicated internal write endpoint, and validate its known outcome plus complete program owned DTO without importing Agents code or changing legacy permission defaults.
+
+#### Scenario: Current user is permitted to submit a bounded start or operation read
+- **WHEN** both existing permissions and the strict bounded request pass
+- **THEN** exactly one normalized POST uses the dedicated backend write credential and current server-resolved identity; a full valid result and Markdown are preserved byte-for-byte, with read-only recovery never granting runtime entry
+
+#### Scenario: Read-only service or current user lacks permission
+- **WHEN** the caller is the existing shared read service principal, lacks either permission, has invalid credentials, or supplies a forged identity header
+- **THEN** current authentication and authorization decide the identity and denial before backend dispatch, without granting service write scopes or accepting client identity overrides
+
+#### Scenario: Backend outcome or transport cannot be confirmed
+- **WHEN** the reply mixes versions or identities, contains invalid flags or refs or a failing nested DTO/hash, is oversized, redirects or times out
+- **THEN** the gateway rejects without fallback or retry, treats a timeout as a potentially executed operation, and leaves recovery to the existing operation-read or owned GET rather than restarting

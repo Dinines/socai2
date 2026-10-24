@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a4.3b独立内部写HTTP限定通过
+
+5b7c0db后先合同/strict/独审（两个POST协调器拒统一409，原GET404不改）再新program_start_api及先config后HTTP。10policy/config＋30HTTP及相关146共186直接/独立同186、7hash/8actual＋14fake冻结限定ACCEPT0，见docs/operations/investigation-program-start-api-20261025.json。先当前专用HMAC/tenantactor再4KiB流读/重复key/Pydanticstrict/servernormalize；controlled target config/ref不证明真实legacy隔离。独审发现轮换write token误复用当前read/tool后两例200/SQLMock7/15，已补逐请求动态分离；2red2fail/修前完整源/独立原件保failure，修后401/SQL0/Mock0，明确为可信运营误配置非客户端改state。另config10首1fail（顶层array下游本已拒）/HTTP语法0tests单列保。独审原6账本+2空case+14fake共28 ASGI raw/hash同、33原响应hash/取消无响应记录核，未冒称重做首次写/取消；normal7/15/Mock1、ACK503后readonly，旧源码/MD保持。新TLS/cleanup/注入不误关已验，无真实PG/network/userauth/业务Run/部署。下一c用户run＋alertsread写gateway合同已审（200s整次POST/stream、收尾有界），保存后实施；d/a4.4实际门及2.2/2.3/Case/Deep未完，无合main。
+
 # 2026-10-25 调查M8a4.3a一次启动协调器限定通过
 
 160b0b9后先合同/strict/独审再仅新program_start_coordinator/23直接，＋admission29/runtime25/pub29/owned19总125直接/独立同125、7hash/14原件（12原ledger全outcome冷读/repeat同、2guard拒0SQL）限定ACCEPT0，见docs/operations/investigation-program-coordinator-20261025.json。mandatory server guard/current身份→仅fresh committed入原claim/M3 reserve→confirmed stopped才pub；不再begin，repeat/read即使已停未pub也不补跑/发布，cancel/ACK未知保持。normal7/15/Mock1，zero5/11/0HTTP，unknown/错误partial，失败保缺口。独审额外两取消接缝及独立API全12 ownedDTO兼容通过不累计125；URL空白配置前置拒。guard仅替身/引用不证明实际legacy隔离，旧service scopes不扩，无真实PG/network/auth/业务Run/模型/部署。下一b独立write-only HTTP+受控目标配置合同修POST拒绝统一409后已独审ACCEPT0，保存后实施，再c用户run+read/d组合/a4.4真实接缝；2.2/2.3/Case/Deep未完，无合main。

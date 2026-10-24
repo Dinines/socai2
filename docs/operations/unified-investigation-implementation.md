@@ -1,3 +1,15 @@
+## 2026-10-25 M8a4.3b实际独立内部写HTTP
+
+5b7c0db后细卡/spec/strict/独审先行；初operation不存在404与冻结协调器脱敏合同不符，改两个POST协调器拒统一409/不猜字符串/不旁路查库，原GET404保持，修后ACCEPT0再实现。只newprogram_start_api factory，无旧app注册；先纯policy/config10直接，再HTTP28→修轮换增2为30，＋相关146共186直接/独立同186、7hash，fresh_code代码及证据两门限定ACCEPT0，[回执](investigation-program-start-api-20261025.json)。
+
+专用START配置/token、每请求HMAC/current tenant/actor、4KiB流读后重复keys/strict模型、server选manual/有限目标/预算规范intent，客户端不选owner/Run/额度/权限。具象guard only controlled_manual_start_targets.v1/isolated_manual_test/已配置tenant-alert及运营ref；ref不证明legacy停或生产目标政策。pool新TLS/可选CA/有界close/取消按实际asyncpg实现收尾及注入不误关已核。normal实际coordinator SQL链7/15/Mock1，repeat/read无新行；zero5/11/0HTTP，admissionACK5032/3和pubACK5037/15后read-only恢复，cancel7/13、unknown7/15 partial保。
+
+首config10/1fail0error为JSON helper顶层数组未拒（下游预算/策略已拒），修helper闭合object后才HTTP；一次缺括号SyntaxError0tests非应用fail。独审184普通外1P2：可信运营轮换write token误复用配置read或实际tool凭据时两个ASGI例200/SQLMock7/15；保修前源码/独立script与观察/2red2fail0error后，补每请求当前read/envtool/ownedtool/实际coordinator token分离，修后均401/SQL0/Mock0。该前提不是远程客户修改app state，[完整失败回执](investigation-program-start-api-failure-20261025.json)。
+
+frozen-http SHA b1c887ec31763090faf1afe8306f0bdd4673af8186b87c536a08752d77700b82（1009073B），8actual＋14fake=22case/34请求（取消1无响应）各原ledger/rawbody留。独审hydrate原6有账本read/repeat12＋空guard/missingop2＋fake14共28响应rawUTF8/SHA/canonical逐件同，全部33原HTTP响应hash核、取消无响应原记录保，不冒称重做首次写或取消；begin/execute/publish/realHTTP禁调用、原工件/行保持。fake只边界，不替owned证明。
+
+无真实PG/network/JWT/RBAC/运营隔离/业务Run/模型/部署，旧源码/MD保持。下一c原用户investigation:run＋alerts:read、专用write gateway/完整programDTO合同已fresh_design限定ACCEPT0，200秒覆盖整POST/stream、响应/client各收尾5秒并测慢分块；b保存后实施，再d组合及a4.4新隔离目标/PG/实际认证。2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 M8a4.3a实际一次启动协调器
 
 160b0b9后合同/spec/strict/fresh_design限定ACCEPT0，再仅新增program_start_coordinator及23直接；＋admission29/runtime25/pub29/owned19共125直接/独立同125、7hash，fresh_code代码/证据两门限定ACCEPT0，[回执](investigation-program-coordinator-20261025.json)。显式同pool admission/owned reader、可信server target guard及policy版本/当前身份、受控tool配置；guard逐请求核tenant/actor/target，拒/未知/异常无准入。only本次fresh committed receipt进入原ProgramRuntime.execute（不begin），原claim/M3 reserve后才一次Mock，confirmed stopped/handoff才原pub，最后取compatible owned同版DTO。原admission receipt是当时提交观察，当前执行状态只从owned result读，不是可重放凭据。

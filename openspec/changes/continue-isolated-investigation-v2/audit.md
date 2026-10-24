@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3b修后结束独审
+
+fresh_design初404合同缺口改POST统一409后ACCEPT0，5b7c0db保存后实施。fresh_code独立186、7hash/22case，原6账本12＋空2＋fake14共28ASGI fullbody/hash/canonical同，33原响应hash/取消无响应核，禁调用执行/发布/真实HTTP，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-api-20261025.json)。初config10/1fail、SyntaxError0tests与轮换P2/2red2fail分列，[原件](../../../docs/operations/investigation-program-start-api-failure-20261025.json)8文本SHA全同；P2前提可信运营误轮换非远程改state，当前逐请求分离后两例401/SQL0。真实asyncpg Pool.close取消窄核无连接/清coordinator，不误报模拟泄漏。c合同另ACCEPT0，补200s总POST-stream期限/收尾边界后保存再实施；不覆盖实际auth/PG/运营隔离。
+
 ## 2026-10-25 M8a4.3a结束独审
 
 fresh_design合同限定ACCEPT0，160b0b9保存后实现；fresh_code独立125唯一项/7SHA/14原件（12完整ledger hydrate后actual coordinator read/coldrepeat全outcome同、2guard拒0SQL），原UTF8/hash/行保持，actual begin/execute/publish/HTTP禁调用，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-coordinator-20261025.json)。first实际结果owned/原admission refs同账本，独立API接受12原DTO；2取消接缝、配置空白4值拒的窄复跑不累加125。仅SQL/Mock，guard非实际隔离或认证，b/c/d/a4.4仍后续。b合同初operation不存在404与冻结异常不符，补两个POST拒绝统一409/禁字符串猜测与旁路查询后fresh_design限定ACCEPT0，本a保存后才实施。
