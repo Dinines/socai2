@@ -771,3 +771,18 @@ The new manual start coordinator SHALL require an explicit server target eligibi
 #### Scenario: Eligibility or persistence fails
 - **WHEN** the guard refuses, is unknown or fails, or admission/execution/publication persistence is not confirmed
 - **THEN** no unconfirmed step grants later execution, no call or notification is replayed, retained unknowns and gaps remain visible, and real user authorization and legacy-writer policy remain separate HTTP-entry verification requirements
+
+### Requirement: Isolated internal manual write HTTP accepts only trusted gateway identity and bounded server-normalized requests
+The new internal start application SHALL expose only its explicit start and operation-read POSTs with a dedicated current write token, independent configuration, a concrete controlled-test target policy and the existing coordinator. It SHALL NOT register in a legacy app, reuse a configured read/tool credential for write authority, accept client budgets or intents, or claim that configured isolation references prove real writer exclusion.
+
+#### Scenario: Gateway submits a bounded manual request
+- **WHEN** the current dedicated write credential, gateway tenant and actor, canonical Alert path and strict bounded operation/window/version body pass
+- **THEN** the server normalizes the known manual program intent with its explicit budget and target guard and invokes exactly the selected start or read operation without retries or old-path fallback
+
+#### Scenario: A caller supplies credential or control overrides
+- **WHEN** the token is missing, stale or wrong, the request contains query overrides, forbidden or duplicate body fields, nil identity or an invalid window, or exceeds 4096 UTF-8 bytes
+- **THEN** the application rejects before coordinator dispatch and does not infer permission, budget or target policy from source text or client input
+
+#### Scenario: Controlled target configuration or persistence is unavailable
+- **WHEN** controlled target policy/configuration is absent or invalid, real admission or publication confirmation fails, or the coordinator reply has the wrong known identity or flags
+- **THEN** no default allow, replay, deployment or notification occurs; truthful errors and read-only recovery preserve the original ledger, while real user authorization and operational isolation remain later verified gates

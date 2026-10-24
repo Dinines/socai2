@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a4.3a一次启动协调器限定通过
+
+160b0b9后先合同/strict/独审再仅新program_start_coordinator/23直接，＋admission29/runtime25/pub29/owned19总125直接/独立同125、7hash/14原件（12原ledger全outcome冷读/repeat同、2guard拒0SQL）限定ACCEPT0，见docs/operations/investigation-program-coordinator-20261025.json。mandatory server guard/current身份→仅fresh committed入原claim/M3 reserve→confirmed stopped才pub；不再begin，repeat/read即使已停未pub也不补跑/发布，cancel/ACK未知保持。normal7/15/Mock1，zero5/11/0HTTP，unknown/错误partial，失败保缺口。独审额外两取消接缝及独立API全12 ownedDTO兼容通过不累计125；URL空白配置前置拒。guard仅替身/引用不证明实际legacy隔离，旧service scopes不扩，无真实PG/network/auth/业务Run/模型/部署。下一b独立write-only HTTP+受控目标配置合同修POST拒绝统一409后已独审ACCEPT0，保存后实施，再c用户run+read/d组合/a4.4真实接缝；2.2/2.3/Case/Deep未完，无合main。
+
 # 2026-10-25 调查M8a4.2原子手动准入限定通过
 
 5d6d129后先合同/strict/独审（READ COMMITTED/Alert锁后全Run重查P2修后ACCEPT0），仅新program_start_store/SQLdouble。29新＋相关107总136直接/独立同136、7hash/11完整原账本hydrate→晚3天repeat→owned全request/receipt/DTO不变，限定ACCEPT0，见docs/operations/investigation-program-admission-20261025.json。稳定tenant/key Run+原begin1/2+独立nonunified immutable-event-pin意图1/1同TX2/3；逐写失败全rollback/ACK未知0进入，重复不重开owner/期限/预算；同Alert active/unknown阻新key，已停显式新key可准入，reserved坏marker不漏。正常原runtime→pub7/15/Mock1，旧源码/Run列/MD保持；初21的1fail14应用error为重建limits漏原USD项已修，全部原source/tests/log保failure。独审额外Decimal PG Numeric及第三key连续场景通过不累计136。0真实PG/network/业务Run/模型/部署；下一a4.3a协调器合同已独审ACCEPT0，保存后实施，再b内部HTTP/c原用户run+read权限/d组合及a4.4真实接缝；不扩大只读service权限，2.2/2.3/Case/Deep未完，无合main。

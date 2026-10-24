@@ -1,3 +1,13 @@
+## 2026-10-25 M8a4.3a实际一次启动协调器
+
+160b0b9后合同/spec/strict/fresh_design限定ACCEPT0，再仅新增program_start_coordinator及23直接；＋admission29/runtime25/pub29/owned19共125直接/独立同125、7hash，fresh_code代码/证据两门限定ACCEPT0，[回执](investigation-program-coordinator-20261025.json)。显式同pool admission/owned reader、可信server target guard及policy版本/当前身份、受控tool配置；guard逐请求核tenant/actor/target，拒/未知/异常无准入。only本次fresh committed receipt进入原ProgramRuntime.execute（不begin），原claim/M3 reserve后才一次Mock，confirmed stopped/handoff才原pub，最后取compatible owned同版DTO。原admission receipt是当时提交观察，当前执行状态只从owned result读，不是可重放凭据。
+
+normal7/15/Mock1/有限ready，zero5/11/0HTTP，empty/error/unknown均partial；active已有3/5只进度，已停未pub6/11保持candidate/not_published，不因repeat补发布。admissionACK2/3、pubACK7/15均不返回success，read恢复原件且不重发通知；pub rollback6/11、handoff rollback5/9、cancel7/13均保当前缺口。主体/intent先纯校核并detach，再await guard；source/客户改字段不选政策。配置空白URL前置拒，原源码/权限不改。
+
+14冻结原件SHA a7fb02e98dec8cba497f2dd3810b8e7d53a3c0fc579660c15a2ceb58b3dd52f8（2013670B）；独审hydrate原12账本逐UUID/UTF8/hash→actual coordinator read/coldstart全outcome同，2guard拒按原失败type/message且0SQL，begin/execute/publish/HTTP被guard且未调用。独立API进程checked_compatible_result接收全部12原owned DTO；额外取消duplicate不影响owner发布7/15、freshcommit后claim前取消保2/3/0HTTP/repeat只读，补充观察不累加125。
+
+本块guard是替身，不据配置/reference宣称legacy writer关闭或实际认证；无HTTP注册/真实PG/network/业务Run/模型/通知/部署。下一b独立内部write-only POST及具体受控测试目标配置已修后fresh_design限定ACCEPT0（协调器拒绝统一409，不猜异常字符串或另查库；独立GET404保持）（不代替最终业务域政策），c原用户investigation:run＋alerts:read且不扩大只读service/catalog，d离线组合后a4.4隔离新Alert/真实PG/认证，2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 M8a4.2实际原子手动准入
 
 5d6d129后先细卡/spec/strict/fresh_design独审；初合同只行锁不足以解决repeatable-read旧快照P2，补显式READ COMMITTED＋Alert锁后重查operation及全部reserved目标Run/不以known marker过滤、publication-aware同conn强读、独立server预算后ACCEPT0再实现。仅新program_start_store/ProgramAlertStartStore及SQL运输替身，旧runtime/注册/源码不改。29新＋intent18/restore16/runtime25/pubstore29/owned19共136直接/独立同136、7hash，fresh_code结束限定ACCEPT0，[回执](investigation-program-admission-20261025.json)。

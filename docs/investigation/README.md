@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3a启动协调器：** 125直接/独立同125、7hash/14原件限定通过，[回执](../operations/investigation-program-coordinator-20261025.json)。首次确认准入才执行并发布，重复/读取/未知恢复不补跑或补发布；normal7/15/Mock1、错误/unknown保partial。12原账本冷读及重复输出同，2guard拒0SQL；仅替身，下一独立写HTTP/实际用户权限与真实接缝。
+
 **2026-10-25 M8a4.2原子准入：** 136直接/独立同136、7hash/11原账本完整重放限定通过，[回执](../operations/investigation-program-admission-20261025.json)和[首轮原件](../operations/investigation-program-admission-failure-20261025.json)。新Run＋原begin＋event-pin启动意图同事务，重复及未知提交恢复只读；正常发布7/15/Mock1。仅SQL替身，下一启动协调器、独立写HTTP和现有用户权限逐块验证，再真实PG接缝。
 
 **2026-10-25 b2.4d4离线组合：** 114直接/独立同114、8hash，独审用原14账本/原UUID在两进程完整重放39观察，限定通过，[回执](../operations/investigation-compatible-offline-20261025.json)。12合法双读同、2未知拒、nil另拒；40API请求/32Mock后台，进程已回收。无真实PG/network/Run；下一a4.2原子准入合同已修后审过，保存后实施。

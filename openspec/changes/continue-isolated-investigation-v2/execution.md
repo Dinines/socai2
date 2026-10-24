@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3a实际一次协调器
+
+160b0b9后已审合同/strict，23新＋102相关125直接/独立同125、7hash/14原件（12完整ledger cold/read-repeated全outcome同，2guard拒0SQL），两门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-coordinator-20261025.json)。currentguard/freshcommit/原claim-M3 gate，confirmedstop才pub7/15；repeat/read/ACK未知不重跑/补pub，cancel留存保持。额外2取消接缝/API12原DTO兼容/配置空白拒不加125。无真实PG/network/auth/业务Run/部署，下一b具体guard+writeHTTP/c原用户权限/d组合/a4.4真实接缝，2.2/2.3未勾。
+
 ## 2026-10-25 M8a4.2实际原子准入
 
 5d6d129后按已修合同仅newstore/SQLdouble，29新＋107相关共136直接/独立同136、7hash/11原ledger hydrate全request/receipt/owned DTO/晚3天repeat同，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-20261025.json)。新Run+原begin+独立event-pin意图同TX2/3，ACK未知/重复不授权，正常runtime/pub7/15/Mock1；初USD重建漏项21/1fail14error原件保failure，修不改M3。额外Decimal/3key核不累计。无真实PG/network/Run/部署，下一a4.3协调器/独立写HTTP/现有用户权限与a4.4实际隔离，2.2/2.3未勾。

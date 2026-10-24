@@ -1,3 +1,5 @@
+`program_start_coordinator.ProgramManualStartCoordinator`只接受显式current guard、同pool admission/owned reader和tool配置。仅fresh confirmed admission进入原runtime（不begin），确认stopped后pub并返回原owned result；重复和operation read不执行/补发布，取消及未知提交不重派。125直接/独审、14原件重放限定通过，当前guard仅测试替身，未提供真实HTTP鉴权或legacy隔离。回执docs/operations/investigation-program-coordinator-20261025.json。
+
 `program_start_store.ProgramAlertStartStore`是独立手动原子准入，可信current principal/actor与独立server budget必需；tenant-key稳定Run、原program begin及event-pin意图同事务2/3。显式READ COMMITTED/Alert锁后重查，重复和ACK未知恢复只读，不刷新owner/预算/期限或授权外呼。136直接/独审、11原账本完整重放限定通过；本块尚无HTTP鉴权或生产writer互斥保证，后续a4.3/a4.4，旧源码不改。回执docs/operations/investigation-program-admission-20261025.json。
 
 # Investigation v2 — 独立开发线

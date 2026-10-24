@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3a结束独审
+
+fresh_design合同限定ACCEPT0，160b0b9保存后实现；fresh_code独立125唯一项/7SHA/14原件（12完整ledger hydrate后actual coordinator read/coldrepeat全outcome同、2guard拒0SQL），原UTF8/hash/行保持，actual begin/execute/publish/HTTP禁调用，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-coordinator-20261025.json)。first实际结果owned/原admission refs同账本，独立API接受12原DTO；2取消接缝、配置空白4值拒的窄复跑不累加125。仅SQL/Mock，guard非实际隔离或认证，b/c/d/a4.4仍后续。b合同初operation不存在404与冻结异常不符，补两个POST拒绝统一409/禁字符串猜测与旁路查询后fresh_design限定ACCEPT0，本a保存后才实施。
+
 ## 2026-10-25 M8a4.2结束独审
 
 fresh_design初1合同P2（repeatable-read下行锁仍可旧快照）补显式READ COMMITTED/锁后全候选重查/坏marker不漏/publication-aware同conn/独立server预算后ACCEPT0，5d6d129保存后才实施。fresh_code独立136、7SHA/11原完整账本hydrate/晚3天repeat/owned request-receipt-DTO全同，行/工件/未知保持、新HTTP0，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-20261025.json)。初21的1fail14应用error/3源码/UTF8/SHA保[失败原件](../../../docs/operations/investigation-program-admission-failure-20261025.json)，仅重建limits补USD，非Loader问题。额外Decimal及第三key连续场景不计136；真实PG隔离/认证/其他writer政策仍后续，不外推a4.3/4。a4.3a协调器合同另由fresh_design限定ACCEPT0，本块保存后才实施。

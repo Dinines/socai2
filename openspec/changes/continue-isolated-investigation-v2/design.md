@@ -1,3 +1,17 @@
+## 2026-10-25 M8a4.3b独立内部写HTTP细卡（a结束保存/本卡独审后实施）
+
+只新增Agents program_start_api.py及直接测试，独立FastAPI factory/进程，无旧app或read app注册修改。仅POST `/internal/investigation-v2/alerts/{alert_id}/start` 和 `/internal/investigation-v2/alerts/{alert_id}/operation-read`；前者调用已验coordinator.start，后者只coordinator.read_operation。既有只读内部GET继续其独立read factory，不在本写app混用read token/DSN。无Case/任意工具/模型/自动策略/通知投递路由。
+
+必须新的显式START_TOKEN、START_PG_DSN、START_CA_FILE（可选CA）、START_TOOL_API_URL、START_TOOL_TOKEN、START_BUDGET_JSON、START_TARGET_POLICY_JSON（全名均AISOC_INVESTIGATION_前缀），无旧env或默认allow/production budget。WRITE token32..256 ASCII无空白，与已配置的COMPAT_READ_TOKEN和本tool service token不同；每请求HMAC核当前app.state token，轮换后旧请求下一次拒。注入coordinator仅用于ASGI测试且不代关；owned模式仅lifespan建新TLS验证PG pool min1/max2/timeouts10，同pool newstart/pub/owned/coordinator，无schema/worker。close有界5秒/超时terminate并清coordinator，配置/启动/HTTP错误均脱敏。tool URL/token沿a强校核，budget复用StartBudgetPolicy闭合schema/显式maxmodel0/maxtool0或1/期限1..180。
+
+具象server guard仅支持显式受控开发域schema=`controlled_manual_start_targets.v1`，config exact policy_ref、mode=`isolated_manual_test`、非空唯一targets，每项exact tenant_id/alert_id/operational_isolation_ref（nonnil UUID、非空已核过程证据引用）；没有wildcard、client/source标签或生产模式fallback。每次assess只对配置匹配且principal当前permit的tenant/alert/actor返回a的closed eligibility，unknown/不匹配拒。config与reference本身不证明legacy writer已停，本b不称全系统互斥或生产可用；a4.4必须实际核所选新Alert未送旧Kafka/旧writer无输入，核运营隔离证据引用，才能发一次受控调用。以后普通生产目标域政策另卡，不把本临时controlled mode替代最终业务目标。
+
+每POST先专用token和可信gateway tenant/actor UUID，再无query/strict nonnil alert path；任何非空query拒。body用流式最多4096 UTF8字节后才JSON/Pydantic解析，exact operation_key/window{start,end}/request_version（knownnewrequest）；拒owner/Run/budget/profile/trigger/target/权限/工具覆盖和重复JSON key、nilkey/时区缺失/反向或>5min窗口。tenant/actor只来自认证gateway headers，server固定manual/alert_recon/objective/newclosed版本并用当前server budget规范intent，不能接受caller完整intent或自带policy ref。read endpoint同body重建请求，仍当前guard/owned核但绝不执行；server budget已换而同key请求异文则冲突，历史结果仍可沿原GET读取。
+
+成功只接a的known outcome/current tenant-run-target-objective、新owned schema及typed flags最小envelope，不替代后续c完整DTO校验或owned backend来源证明；fresh/read只读语义按a，notification恒未发送。missing/wrongtoken401，header/nilpath/query400，oversize413，badJSON/duplicate/typedbody422，两个POST的协调器合同拒绝统一409（包含guard/owned/请求冲突及operation不存在，原协调器已统一脱敏，不猜异常字符串或另查库绕行），persistence/unknown提交503，坏coordinator回包502，unsupported method405；既有独立GET的404不改。不得重试或落旧入口，客户端取消不新建后台任务；原runtime负责已取得owner的取消留存，显式read可见原缺口。
+
+预期先纯policy/config合同再ASGI：配置非空/重复/未知mode/旧env/错token复用拒；headers/body边界/auth前置/每次token轮换/operation-read调用计数/错回包/异常脱敏；actual coordinator＋SQL/Mock first normal7/15/1Mock、repeat/read同Owned DTO/0新行，guard拒0DB、预算0partial、admission/pubACK unknown503后read-only恢复、取消不重派。fake coordinator仅边界不冒owned证明，pool TLS/owned cleanup/注入不误关均验。本b仍无实际网络/PG/用户JWT/RBAC或跨writer证据，先strict/独审再实施/直接/结束独审保存；c原用户run＋alerts read及写gateway/d组合、a4.4真实接缝后续，旧service/catalog不扩，2.2/2.3/Case/Deep未完，无部署/合main。
+
 ## 2026-10-25 M8a4.3显式启动分块及a协调器细卡（a4.2结束保存后实施）
 
 a4.3拆a可信调用方的一次启动协调器→b独立Agents内部写HTTP/独立配置→c API现用户鉴权/写gateway→d离线组合，各自先卡/直接/独审保存，不整链写完再测；a4.4再独立受控新Alert/真实PG并发与实际认证测试。既有API共享service principal只具read权限，原SERVICE_PRINCIPAL_PERMISSIONS及API key/catalog不改；后续c必须实际`investigation:run`＋`alerts:read`，不能用read service token代用户启动。当前没有生产写入口或legacy跨writer互斥保证。
