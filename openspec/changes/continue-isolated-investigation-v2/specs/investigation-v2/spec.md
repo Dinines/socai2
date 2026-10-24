@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Bind a new explicit program start intent without upgrading old operations
+
+b2.3d1 SHALL 以新request/intent/ref/decision固定manual program路径及完整closed policy_versions，复用语义不变的显式StartBudgetPolicy；同tenant/key保持与旧完全同Run/executor命名空间。旧意图不升级，新旧同key异文必须冲突，未知schema/自洽混版拒绝。纯合同不授予权限、持久性或外呼。
+
+#### Scenario: Equivalent new request or matching owned retained operation is checked
+- **WHEN** 当前caller已核tenant/actor及权限，新请求完整结构/窗口/服务端预算/版本合法
+- **THEN** 稳定new request hash/ref与同key身份；仅完整相等的原新意图可read_existing_only，缺原件仅requires_atomic_admission，两者may_begin和external_call_authorized都false
+
+#### Scenario: Same operation key is reused across old new or changed request terms
+- **WHEN** retained旧意图、新意图异文、混合或未知版本/额外字段出现，即使全部selfhash重算
+- **THEN** 验原格式/身份后拒冲突或未知版本，不改变Run身份或刷新预算，不转换成旧版本继续执行；旧函数/意图及报告保持
+
 ### Requirement: Dispatch one manual program query only after durable claim and reservation
 
 b2.3c SHALL 新增独立ProgramReconRuntime，constructor钉新ProgramReconExecutionStore/manual plan；仅首次已确认claim再经原DurableActivityRecords的M3 reserve后单次派发，重复/unknown不接管或重跑，不改旧controller/gate/预算内核。交接核实际原件，新模型/Run/Case/发布/真实业务I/O不在本块。

@@ -1,3 +1,13 @@
+## 2026-10-25 b2.3d1新启动意图实施前细卡（c结束放行后实现）
+
+仅新增program_start_contract.py的normalize_program_alert_start/program_replay_decision及新直接测试；旧start_contract原函数/旧request/intent固定版本保持，不重解释既存原意图。只读复用原StartBudgetPolicy及其fixed_alert_start_budget.v1描述（0model/0token/0cost、0或1工具、unsettled1、duration1..180、配置来源全部显式）；这些额度语义未变，不改服务器预算或引入默认。复制必要normalize/checked/replay结构，不用把新请求改写成旧版本后调用旧normalize/旧projection的方式转换。
+
+新request=program_alert_recon_start_request.v1、intent=program_alert_recon_start_intent.v1/ref=program-alert-start-intent:、decision=program_alert_recon_start_decision.v1。请求固定manual/alert/profile version/有限目标及M1政策，新runtime/new completion，新增完整policy_versions由b2.3a代码固定生成并纳入request_hash/intent_ref；调用者不能自选混合版本，未知/缺/多/旧组件即使自洽rehash仍拒。其余current principal/typed非nil tenant/actor/key/alert、UTC窗口≤5min/完整budget重建规则同旧。
+
+operation Run身份继续uuid5(NAMESPACE_URL, canonical[同OPERATION_NAMESPACE, tenant, operation_key])，executor仍uuid5(Run,exclusive-initial-start-owner)：故同tenant/key新旧及不同actor/target/window/budget/版本均落同身份，不靠版本制造新Run或刷新额度。新请求必经完整checked重建；已owned retained新意图仅全量精确相等可read_existing_only，异文冲突。retained旧intent只按旧checked函数验证原格式/身份后明确同key异请求冲突，不能升级或执行；不同key/tenant身份错另拒；未知schema拒。旧replay同样拒新intent，双方无fallback。changed current凭据同actor请求可稳定同一intent，但身份认证/permissions/retained ownership仍是caller前置而非这些selfhash证明。
+
+纯decision仍both may_begin/external_call_authorized=false及not_verified_by_pure_contract，不生成实际deadline/Run/claim/持久marker/查询/模型。预期：新全版本正确、同输入/等价UTC稳定；与旧同key同Run/executor而请求hash/ref不同且双向冲突；actor/target/window/budget变更同Run但拒复用；未知/错/缺/额外版本及结构篡改自洽重hash仍拒、所有严格整数/UUID反例维持。先spec/strict/独立合同再本d1实现/直接/结束独审；d2新projection仍另门，b2.4兼容全部通过才a4.2。
+
 ## 2026-10-25 b2.3c薄单次控制器实施前细卡（b结束放行前不实现）
 
 在b修后结束独审/提交后，仅新增program_recon_runtime.py/ProgramReconRuntime及直接测试；复制所需既有FixedReconRuntime控制骨架，新constructor只接ProgramReconExecutionStore及new make_program_recon_plan/manual request，不改旧controller/store/gate/API。复用DurableActivityRecords唯一M3 reserve/settle和activity_records限定查询，不复制预算内核/HTTP业务，不接模型、自动策略、Case、发布或真实PG/HTTP。begin仍只owned既有Run中明确begin_recon；本块不插入Run，不接启动intent。

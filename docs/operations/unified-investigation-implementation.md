@@ -1,3 +1,13 @@
+## 2026-10-25 b2.3c实际单次执行限定结果
+
+b已503f75e推送/c合同fresh_design限定ACCEPT0后，仅新增ProgramReconRuntime和25测试；＋旧Fixed18/newstore30/M3gate9共82直接与独立同82、7选中文件hash/8完整账本hydrate及cold全输出/SHA重建，限定ACCEPT0。[回执](investigation-program-runtime-20261025.json)。独审补reserve实际commit未返回取消：HTTP0、tool1/unsettled1/partial、取消重抛/重复不增行。首次与冷读包装本有receipt/artifact/repeated差异，审计辅助首全等误断言纠正后核全cold及candidate/state，不归源码。
+
+8冻件：normal5/10/Mock1/4facts ready；zero3/6/Mock0/partial；timeout5/10/Mock1/1范围字段facts/unsettled1；completegap4/9/Mock1/observer无事实；reserve ACK5/10/Mock0/unsettled1；reserve rollback4/8/Mock0/retention_gap；complete ACK5/10/Mock1/4facts ready；cancelcomplete5/11/Mock1/observer无事实/cancelled。全部cold重复Mock0新调用、账本和Run六列不变，旧MD3111B保持。初扩25中1fail1error是测试Case profile及坏wire经M2转checked error的预期错误，原测试/完整输出hash保回执，controller未因误断言修改。0真实PG/HTTP/模型/新Run/发布。d1合同已fresh_design限定ACCEPT0，c保存后新意图/再d2；b2.4兼容全部过后a4.2，2.2/2.3未勾。
+
+## 2026-10-25 b2.3c单次控制器实施前预期
+
+b已503f75e提交推送/独审限定ACCEPT0，c细卡先spec/design/strict且fresh_design合同限定ACCEPT0后实施。仅新ProgramReconRuntime/manual/newstore，复用原DurableActivityRecords/M3，一次确认claim+reserve后一次MockTransport；完整1299B新4facts有限ready/model eligiblefalse。重点分别实际提交前失败/提交后ACK未知、并发重复/取消竞态、complete gap观察保留及handoff失败buffer，旧controller/报告保持。0真实业务HTTP/PG/新Run/发布；先本c直接/独审/保存，再d新intent/投影和b2.4兼容，a4.2仍后置。
+
 ## 2026-10-25 b2.3b实际持久层限定结果
 
 f4429e0后按预期/规格/strict/合同独审推进，新增program_runtime_store和新SQL transport；30新＋旧store15/newstate18/M3state12/newrecon16共91直接，未参与实现者独立同91/7hash/8完整原账本重建限定ACCEPT、0剩余必须修。[回执](investigation-program-runtime-store-20261025.json)。原4个P2及作者追加未知kind跳过回退均已修，[修前失败](investigation-program-runtime-store-failure-20261025.json)保源码/3red3fail0error和1red1fail0error；不是普通HTTP调用者可改DB的证明。当前event/body/state与原begin基线、tool completion、真正前一managed source和finish重建的closing全核，未知不回退；late实际账可结清但candidate不变。

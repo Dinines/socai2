@@ -1,3 +1,5 @@
+**2026-10-25 b2.3c限定通过：** 82直接/独立同82、7hash/8账本cold完整输出重建，[回执](../../../docs/operations/investigation-program-runtime-20261025.json)。仅SQL/Mock单次控制，未知/取消不重派；d1合同已审，后续d2/b2.4/a4.2依次未完，2.2/2.3不勾。
+
 **2026-10-25 b2.3b限定通过：** 91直接/独立同91、7hash/8完整SQL账本重建及全部原反例拒，[回执](../../../docs/operations/investigation-program-runtime-store-20261025.json)。仅新manual持久层，0真实I/O/Run/发布；c合同已审，d及b2.4仍a4.2前置，2.2/2.3不勾。
 
 **2026-10-25 b2.3a限定通过：** 69直接/独立同69、5hash/7状态重放及7额外篡改拒，[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)。仅新manual纯状态，不证持久/外呼；b-d与b2.4仍a4.2前置，2.2/2.3不勾。

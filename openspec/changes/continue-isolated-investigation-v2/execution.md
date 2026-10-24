@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3c实际单次控制器
+
+503f75e后已审c合同再ProgramReconRuntime/25新＋57相关共82直接/独立同82、7hash/8完整账本cold重建限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-20261025.json)。pre/post commit失败分验、并发取消/owner buffer保持，normal4facts有限ready、模型未请求；旧代码/MD不变。0真实I/O/Run/发布，d1合同已审、d2/b2.4/a4.2待续，2.2/2.3未勾。
+
 ## 2026-10-25 b2.3b实际持久层
 
 新store/transport及30新＋相关61共91直接/独立同91、7hash/8完整冻结账本冷读/重复重建，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-store-20261025.json)。独审4P2和作者追加未知kind回退均修，修前失败/源码保留，原begin/current/tool/true preceding source/closing state一致；0实际PG/HTTP/Run/发布。c合同已限定ACCEPT0，本b保存后继续；d/b2.4/a4.2仍后续门，2.2/2.3未勾。

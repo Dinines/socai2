@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.3c单次控制器限定通过
+
+503f75e后c合同/strict/独审先通过再新增ProgramReconRuntime，仅接newstore/manual/closedplan并复用原M3 gate。25新＋旧Fixed18/newstore30/M3gate9共82直接/独立同82、7hash/8完整账本与cold全输出重建，限定ACCEPT0，receipt docs/operations/investigation-program-runtime-20261025.json。预留实际回滚与已提交ACK未知分开验均0HTTP，重复/owner取消/duplicate竞态/observer buffer不误采用；独审另验reserve已commit未返回取消保unsettled/partial。normal全文1299B/一次Mock可4facts有限ready，旧报告3111B不改。初扩测试1fail1error为Case profile与M2 checked-error误断言，原件已留；审计助手包装比较失误单列，不归源码。0真实PG/HTTP/Run/发布，d1合同已ACCEPT0后新意图→d2投影→b2.4兼容→a4.2逐门；2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.3b持久层限定通过
 
 f4429e0后先spec/design/strict/合同独审，新增ProgramReconExecutionStore/新30＋相关61共91和独立同91、7hash/8完整SQL账本冷读重建，receipt docs/operations/investigation-program-runtime-store-20261025.json限定ACCEPT0。初审85之外4个P2及作者unknown-kind回退缺口已修，修前3red3fail与另1red1fail/源码保failure receipt；当前/原begin/原tool/真正前一source/closing state链完整核，late actual只账变不改候选。normal1299B有限4facts ready，observer不采用/未知保持，失败和ACK未知不重派，旧Run六列不变。仅SQLdouble，0实际PG/HTTP/新Run/发布；c合同已ACCEPT0后薄controller/MockTransport→d新intent投影→b2.4兼容，再a4.2实际准入。2.2/2.3未完，无部署/合main。

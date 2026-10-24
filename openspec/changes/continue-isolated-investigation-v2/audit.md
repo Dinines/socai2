@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3c结束独审
+
+fresh_design合同限定ACCEPT0且b已保存后实施；fresh_code独立82（25+18+30+9）/7hash/8原SQL账本完整cold输出及SHA/重复/原Run6列保持、Mock0新调用，另reserve已commit未返回取消HTTP0/unsettled1/partial无重跑，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-program-runtime-20261025.json)。两初始测试误断言25中1fail1error原件hash核同，审计助手first/cold包装全等误断言修后逐组重建一致，分别归因。仅离线，d1合同另已限定ACCEPT0，保存后才能实施；实际入口/发布不放行。
+
 ## 2026-10-25 b2.3b修后结束独审
 
 fresh_design合同限定ACCEPT0；fresh_code独立85之外发现4P2（最新agent/current stopped区/handoff state缺失/挪用早source），作者另red unknown newest kind回落；修前原件和3red3fail0error/另1red1fail0error保[failure](../../../docs/operations/investigation-program-runtime-store-failure-20261025.json)。修后新30＋不变相关61独立91唯一项过、7source hash/8原冻结ledger完整hydrate与candidate/state/摘要/计数/Run六列重建一致，原4＋追加unknown拒；late5/11结账不改候选，限定ACCEPT/0剩余必须修。[正式回执](../../../docs/operations/investigation-program-runtime-store-20261025.json)。PG opt-in4仅skip不计通过，0真实访问；c合同另经fresh_design限定ACCEPT0，b保存后才实施c。
