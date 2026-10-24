@@ -1,0 +1,38 @@
+{
+  "schema": "investigation_runtime_cancel_race_failure.v1",
+  "date": "2026-10-24",
+  "baseline": "b61214a8a019b8c09a5e373ad197eb2729181098",
+  "priority": "P2",
+  "status": "fixed_limited_ACCEPT",
+  "discovered_by": "fresh_code_audit",
+  "original_runtime_sha256": "c93d2ebfbbbd5531fe99e9ff16b7418660042e23bd8ab602112fda0fd76da64d",
+  "frozen_runtime_source": "\"\"\"One owned fixed-recon invocation; explicit begin, no retries or publication.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\n\nimport httpx\n\nfrom .business_profile import BusinessProfileRequest\nfrom .execution_state import BudgetLimits, OpeningUsage, ExecutionRejected\nfrom .execution_store import ExecutionPersistenceError\nfrom .execution_tools import DurableActivityRecords\nfrom .recon_runtime_state import make_recon_plan\nfrom .recon_runtime_store import ReconExecutionStore\n\n\nclass FixedReconRuntime:\n    def __init__(self, store: ReconExecutionStore, request: BusinessProfileRequest, *, api_url: str,\n                 service_token: str, transport: httpx.AsyncBaseTransport | None = None):\n        if not isinstance(store, ReconExecutionStore):\n            raise ExecutionRejected(\"versioned recon store required\")\n        self._plan = make_recon_plan(request)\n        self._store, self._request = store, request\n        self._gate = DurableActivityRecords(store, request.context, \"Q1\", self._plan[\"query_input\"][\"member_id\"],\n                                            api_url=api_url, service_token=service_token, transport=transport)\n\n    async def begin(self, *, limits: BudgetLimits, opening: OpeningUsage, parent_deadline=None) -> dict:\n        return await self._store.begin_recon(request=self._request, limits=limits, opening=opening,\n                                             parent_deadline=parent_deadline)\n\n    async def execute(self) -> dict:\n        owns_claim = False\n        attempt = self._plan[\"attempt_id\"]\n        try:\n            claimed = await self._store.claim(self._request)\n            decision = claimed[\"decision\"]\n            action = decision[\"action\"]\n            if action == \"in_progress_or_interrupted\":\n                return {\"status\": action, \"control_retention\": \"committed\", \"handoff\": None,\n                        \"http_attempted_by_this_invocation\": False, \"receipt\": claimed[\"receipt\"]}\n            if action == \"read_handoff\":\n                saved = await self._store.read_handoff(self._request)\n                self._gate.clear_observation(attempt)\n                return {\"status\": \"stopped\", \"handoff\": saved, \"http_attempted_by_this_invocation\": False}\n            if action not in {\"dispatch_after_commit\", \"finalize_blocked\"}:\n                raise ExecutionRejected(\"unknown fixed runtime decision\")\n            owns_claim = decision[\"needs_commit\"] is True\n            http_attempted = False\n            if action == \"dispatch_after_commit\":\n                outcome = await self._gate.execute(step_id=self._plan[\"step_id\"], attempt_id=attempt,\n                                                    subtask_id=self._plan[\"subtask_id\"],\n                                                    parameters=self._plan[\"query_input\"][\"parameters\"])\n                http_attempted = outcome[\"http_attempted\"]\n                if outcome[\"execution_status\"] == \"blocked\":\n                    await self._store.mark_dispatch_block(self._request,\n                        persistence_failure=outcome.get(\"reason_type\") == \"ExecutionPersistenceError\")\n            saved = await self._store.finalize(self._request, observed_tool_output=self._gate.observed_output(attempt))\n            self._gate.clear_observation(attempt)\n            return {\"status\": \"stopped\", \"handoff\": saved, \"http_attempted_by_this_invocation\": http_attempted}\n        except asyncio.CancelledError:\n            if owns_claim:\n                try:\n                    await self._store.mark_cancelled(self._request)\n                    await self._store.finalize(self._request, observed_tool_output=self._gate.observed_output(attempt))\n                    self._gate.clear_observation(attempt)\n                except (ExecutionRejected, ExecutionPersistenceError):\n                    pass  # Preserve the last confirmed ledger; do not replay.\n            raise\n",
+  "source_snapshot_encoding": "UTF-8 with literal LF after JSON decode",
+  "before_fix_observation": {
+    "mock_http_calls": 1,
+    "repeat_status": "stopped",
+    "unconfirmed_observation_ref": null,
+    "observation_artifacts": 0,
+    "owner_memory_observation": true,
+    "unsettled_attempts": 1
+  },
+  "regression_red": {
+    "new_suite_tests": 17,
+    "failures": 1,
+    "exit": 1,
+    "case": "test_duplicate_cannot_freeze_cancelled_handoff_before_owner_observation"
+  },
+  "fix_contract": [
+    "duplicate blocked invocation reports pending instead of finalize",
+    "readback verifies process observation is retained before clearing",
+    "frozen handoff overwrite rule unchanged"
+  ],
+  "no_real_business_calls": true,
+  "not_a_current_regression_expectation": true,
+  "independent_closure": {
+    "reviewer": "fresh_code_audit",
+    "must_fix": 0,
+    "concurrent_regression_matched": true,
+    "frozen_source_hash_matched": true
+  }
+}

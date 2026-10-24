@@ -1,6 +1,10 @@
+# 2026-10-24 调查M6.2b2控制器限定通过
+
+从b61214a按细卡/strict及合同审阅写单次FixedReconRuntime、M3 gate按attempt内存观察与dispatch_block记录；18新＋79相关97项，未参与实现者独立89子集、6hash/7观察与竞争回归一致，限定ACCEPT/0剩余必须修。审阅P2（cancel标记与观察保存窗口被重复blocked抢先封存）修后非owner blocked只pending，读回先核观察已留存再清；修前源码全文SHA/反例及red保docs/operations/investigation-fixed-runtime-controller-race-20261024.json。正常仅一次MockHTTP，unknown/取消/提交失败不重查；取消重复不接管，观察不当原completion。回执docs/operations/investigation-fixed-runtime-controller-20261024.json；旧入口与历史失败不改。b1独审清单归类已透明补正115独立项，不与实施105相加。下一持续c真实独立PG/HTTP/CH，新临时角色/Run、模型0、只一次查询，实际未验前不称M6.2完成；2.2/2.3不勾，无部署/合main。
+
 # 2026-10-24 调查M6.2b1事务代码限定通过
 
-从5f388ae按合同strict/fresh_design_audit限定审阅后，新增ReconExecutionStore及SQL transport double测试，原M3 store仅可覆写kind/runtime/agent挂点及版本隔离。15新＋90相关105项和fresh_code_audit独审通过，5hash/6观察一致，限定ACCEPT/0必须修；另10项材料复核与105重叠不累加。原子begin/claim/冻结reserve/工件核验与交接、重复读取、未知预留和未确认观察均在替身验证，真实PG仍待c。回执docs/operations/investigation-fixed-runtime-store-20261024.json；补充审阅探针失误已登记，非源码缺陷。下一持续b2单次控制器/取消传播，再c真实独立v2，不等用户逐块确认，不部署/合main；旧源码/Run计费状态及历史失败不改，2.2/2.3不勾。
+从5f388ae按合同strict/fresh_design_audit限定审阅后，新增ReconExecutionStore及SQL transport double测试，原M3 store仅可覆写kind/runtime/agent挂点及版本隔离。15新＋90相关105项和fresh_code_audit独审通过，5hash/6观察一致，限定ACCEPT/0必须修；独立实际115项不同测试，清单归类更正见回执，不与实施105相加。原子begin/claim/冻结reserve/工件核验与交接、重复读取、未知预留和未确认观察均在替身验证，真实PG仍待c。回执docs/operations/investigation-fixed-runtime-store-20261024.json；补充审阅探针失误已登记，非源码缺陷。下一持续b2单次控制器/取消传播，再c真实独立v2，不等用户逐块确认，不部署/合main；旧源码/Run计费状态及历史失败不改，2.2/2.3不勾。
 
 # 2026-10-24 调查M6.2a纯运行控制限定通过
 

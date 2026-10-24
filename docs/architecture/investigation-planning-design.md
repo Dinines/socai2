@@ -788,6 +788,8 @@ M0已为network_observation.v1选定有限网络观察场景，M4仅Q1/Q2/Q5限�
 
 ### 12.7 v4从当前停点继续的单步验收顺序
 
+**M6.2b2当前结果：** 控制器离线97项/独立89子集通过，取消竞争反例修后闭合、原失败源码留存；[回执](../operations/investigation-fixed-runtime-controller-20261024.json)。下一c新Run真实M3→独立v2 HTTP/CH→候选交接及PG冷读，模型0；过真实与独审才M7，原2.3整体仍未完。
+
 **M6.2b1当前结果：** ReconExecutionStore/版本隔离及原M3复用在SQL替身下105项/独审限定通过，[回执](../operations/investigation-fixed-runtime-store-20261024.json)。原子语义仍待c实际PG证明；先继续b2唯一派发/取消/观察保留控制器，再独立真实接缝，不拿替身或a纯决策当真实运行。
 
 **M6.2a当前结果：** 纯运行计划/claim/预留限制/停止和结束引用经80项及独立同80项、6hash/观察限定通过，[回执](../operations/investigation-fixed-runtime-state-20261024.json)。实际准入继续b事务store/调度、c独立真实查询，不以纯决策代替原子提交或真实M3门。用户持续授权下按此依赖自动续接，其他边界不变。

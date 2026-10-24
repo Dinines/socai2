@@ -1,3 +1,5 @@
+**2026-10-24 调查M6.2b2控制器限定通过：** 18新＋79相关97项、独立89项子集/6hash/7观察及并发回归通过。独审P2取消窗口抢先finalize已修：重复blocked只报交接待完成，观察核已留存后才清；失败原源码/hash与反例保留。见[回执](docs/operations/investigation-fixed-runtime-controller-20261024.json)。一次实际gate＋SQL/HTTP替身，不证明真实服务；持续进入c新Run/临时身份/独立v2真实PG/HTTP/CH，模型0，原入口/预算/历史失败保持，无部署/合main。
+
 **2026-10-24 调查M6.2b1事务代码限定通过：** 实际ReconExecutionStore和M3函数在SQL事务替身下105项及独审通过，5hash/6观察一致；并发claim唯一、候选/state/未确认观察同事务，重复不覆盖，unknown不释放，通用/托管版本互拒。见[回执](docs/operations/investigation-fixed-runtime-store-20261024.json)。仅代码/替身，非真实PG原子性；持续接b2控制器、c真实PG/HTTP/CH，无模型/部署/合main，2.2/2.3不勾。
 
 **2026-10-24 调查M6.2a限定通过：** 已冻结版本化单次整窗query计划/step/attempt，claim预检不预留或授权HTTP，重复执行不接管；实际M3 unknown/超额/时限和取消保持，结束引用不覆盖。12新＋68相关及独立同80项、6hash/计划与观察一致，见[回执](docs/operations/investigation-fixed-runtime-state-20261024.json)。仅纯控制；下一b原子store/真实M3门与交接保存，再c独立真实接缝，持续授权无需逐块确认；无真实业务/模型/部署/合main。

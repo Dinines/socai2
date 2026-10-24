@@ -17,7 +17,8 @@ from .recon_material import prepare_alert_recon
 from .recon_runtime_state import (RUNTIME_VERSION, make_recon_plan, install_recon, claim_recon,
     validate_recon_reservation, observed_recon_stop, cancel_recon, finish_recon)
 
-CONTROL_KINDS = ("unified_recon_started", "unified_recon_claimed", "unified_recon_cancelled", "unified_recon_handoff_saved")
+CONTROL_KINDS = ("unified_recon_started", "unified_recon_claimed", "unified_recon_cancelled",
+                 "unified_recon_handoff_saved", "unified_recon_dispatch_blocked")
 HANDOFF_KIND = "fixed_recon_handoff"
 OBSERVATION_KIND = "fixed_recon_unconfirmed_observation"
 
@@ -117,6 +118,23 @@ class ReconExecutionStore(ExecutionStore):
                                        body_id=uuid4(), body_kind="fixed_recon_control", now=now)
         return saved
 
+    async def mark_dispatch_block(self, request: BusinessProfileRequest, *, persistence_failure: bool) -> dict:
+        _require(type(persistence_failure) is bool, "typed persistence observation required")
+        async with self._locked() as (conn, _):
+            state = await self._load(conn)
+            await self._bound(conn, state, request)
+            _require(state["recon"]["phase"] == "claimed", "dispatch block requires claimed runtime")
+            now = await conn.fetchval("SELECT clock_timestamp()")
+            stop = observed_recon_stop(state, now=now)
+            _require(stop is not None or persistence_failure, "dispatch invariant rejected without an observed stop")
+            state["recon"].update(phase="blocked", stop_reason=stop or "retention_gap")
+            state["updated_at"] = now.isoformat(timespec="microseconds")
+            body = canonical_json({"dispatch_not_authorized": True, "persistence_failure": persistence_failure,
+                                   "stop_reason": state["recon"]["stop_reason"]})
+            saved = await self._append(conn, state, kind=CONTROL_KINDS[4], body=body, body_id=uuid4(),
+                                       body_kind="fixed_recon_control", now=now)
+        return saved
+
     async def _tool_artifact(self, conn: Any, state: dict) -> dict | None:
         attempt = state["attempts"].get(state["recon"]["plan"]["attempt_id"])
         if attempt is None or not attempt.get("completion_receipt"):
@@ -143,11 +161,28 @@ class ReconExecutionStore(ExecutionStore):
                  "handoff content reference mismatch")
         return {"artifact": artifact, "candidate": candidate}
 
-    async def read_handoff(self, request: BusinessProfileRequest) -> dict:
+    async def _verify_observation(self, conn: Any, state: dict, saved: dict, observed_body: str) -> None:
+        reference = saved["candidate"].get("unconfirmed_observation_ref")
+        if reference is not None:
+            prior = await self._read_artifact(conn, UUID(reference["artifact_id"]), saved["artifact"]["event_id"])
+            record = _object(prior["content"])
+            _require(prior["kind"] == OBSERVATION_KIND and prior["sha256"] == reference["sha256"]
+                     and record["attempt_id"] == state["recon"]["plan"]["attempt_id"]
+                     and record["tool_result_hash"] == content_hash(canonical_json(record["tool_result"]))
+                     == content_hash(observed_body), "new observation differs; handoff frozen")
+        else:
+            original = await self._tool_artifact(conn, state)
+            _require(original is not None and original["sha256"] == content_hash(observed_body),
+                     "new observation cannot modify saved handoff")
+
+    async def read_handoff(self, request: BusinessProfileRequest, *, observed_tool_output: dict | None = None) -> dict:
+        observed_body = canonical_json(observed_tool_output) if observed_tool_output is not None else None
         async with self._locked() as (conn, _):
             state = await self._load(conn)
             await self._bound(conn, state, request)
             saved = await self._read_handoff(conn, state)
+            if observed_body is not None:
+                await self._verify_observation(conn, state, saved, observed_body)
         return {**saved, "state": state, "retention": "committed", "repeated": True}
 
     @staticmethod
@@ -171,15 +206,7 @@ class ReconExecutionStore(ExecutionStore):
             if state["recon"]["phase"] == "stopped":
                 saved = await self._read_handoff(conn, state)
                 if observed_body is not None:
-                    reference = saved["candidate"].get("unconfirmed_observation_ref")
-                    if reference is not None:
-                        prior = await self._read_artifact(conn, UUID(reference["artifact_id"]))
-                        _require(_object(prior["content"])["tool_result_hash"] == content_hash(observed_body),
-                                 "new observation differs; handoff frozen")
-                    else:
-                        original = await self._tool_artifact(conn, state)
-                        _require(original is not None and original["sha256"] == content_hash(observed_body),
-                                 "new observation cannot modify saved handoff")
+                    await self._verify_observation(conn, state, saved, observed_body)
                 result = {**saved, "state": state, "receipt": state["persistence"], "repeated": True}
             else:
                 now = await conn.fetchval("SELECT clock_timestamp()")

@@ -1,6 +1,10 @@
+## 2026-10-24 M6.2b2控制器结束窄审
+
+初始87项及6hash/7观察通过，但fresh_code_audit另复现取消窗口重复blocked抢先finalize的P2，b2不放行。补合同/红测后修：非本次owner blocked仅pending，读回先核观察真实留存再清，冻交接仍不可覆盖。最终独立89项、当前6hash/7观察及竞争结果一致（HTTP1、观察工件1/ref存在、facts0/unsettled1、Cancel传播），原冻结源码hash匹配，限定ACCEPT/0剩余必须修。[当前回执](../../../docs/operations/investigation-fixed-runtime-controller-20261024.json)、[失败/源码](../../../docs/operations/investigation-fixed-runtime-controller-race-20261024.json)。实施97项与独审89子集不相加；仅离线，c真实服务未验，无旧源码/部署或整体核销。
+
 ## 2026-10-24 M6.2b1事务store结束窄审
 
-fresh_design_audit先限定合同ACCEPT，fresh_code_audit未参与实现独立复跑本批105项及重叠材料10项（不累加独立能力），5hash/6观察一致；补核丢ACK、并发finalize、通用store交接后拒绝及unknown不改写。限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-fixed-runtime-store-20261024.json)。两补充探针失误（提前load消耗注入、Windows event loop socket替换）修后观察通过，未改源码。仅真实store代码/SQL替身，无真实PG/HTTP/CH/模型；b2控制器及c仍待，旧Run/旧源码及2.2/2.3未完保持。
+fresh_design_audit先限定合同ACCEPT，fresh_code_audit未参与实现独立复跑115个不同测试（原归类105＋重叠10已据文件清单更正；不与实施105相加），5hash/6观察一致；补核丢ACK、并发finalize、通用store交接后拒绝及unknown不改写。限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-fixed-runtime-store-20261024.json)。两补充探针失误（提前load消耗注入、Windows event loop socket替换）修后观察通过，未改源码。仅真实store代码/SQL替身，无真实PG/HTTP/CH/模型；b2控制器及c仍待，旧Run/旧源码及2.2/2.3未完保持。
 
 ## 2026-10-24 M6.2a纯运行控制结束窄审
 

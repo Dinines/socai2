@@ -4,7 +4,13 @@
 
 ## 2026-10-24 M6.2运行计划至真实接缝
 
-**b1实际放行：** 15新＋90相关105项实际store/SQL替身通过，fresh_code_audit独立复跑及额外材料重叠10项、5hash/6观察一致，限定ACCEPT/0必须修；[回执](investigation-fixed-runtime-store-20261024.json)。正常5事件10工件，未确认4/9且无采用/资源保留，提交ACK丢失读原候选无重发。b2取消/唯一派发控制器与c实际PG/HTTP/CH尚待，旧Run列不变。
+**b2实施前预期（基线b61214a）：** 单次控制器用实际ReconExecutionStore/M3 gate+SQL替身/MockTransport；正常只1次HTTP且交接可冷读，重复/并发不再查；claim不确定无派发；M3预留基础设施失败保真实停止/retention_gap，控制不变量错误仍抛；complete失败或取消之前已有工具输出可按attempt另存未确认观察，不采用/不释放unknown。只取消本次已确认claim，重复请求/未确认claim取消不接管他人，CancelledError继续传播，无后台任务；凭据/URL不入ledger。直接合同和独审通过才进入c真实独立服务。
+
+**b2实际放行：** 初始测试导入TestCase触发15旧项重复发现，已改module import；最终18新＋79相关97项通过。fresh_code_audit独立89项子集/6hash/7观察及取消并发回归一致，P2闭合后限定ACCEPT/0必须修；[回执](investigation-fixed-runtime-controller-20261024.json)。修前源码重建SHA匹配原回执、red17项1失败与原观察保[失败回执](investigation-fixed-runtime-controller-race-20261024.json)。本批只SQL/HTTP替身，c真实新Run/一次查询/PG冷读待执行。
+
+**b2独审必须修记录：** 原16项/相关79虽过，fresh_code_audit另以合法await屏障复现P2：complete取消后的cancel标记提交到含观察finalize之间，重复blocked调用先冻结无观察交接；原owner观察被拒且后续读分支可能直接清内存。先保留此反例，再修owner控制：重复blocked仅handoff_pending，不提前finalize；读回清理前核观察真正已留存。冻交接不放松覆盖规则，真实c尚未启动，修后定向/受影响复验与独审另记。
+
+**b1实际放行：** 15新＋90相关105项实际store/SQL替身通过，fresh_code_audit独立115项（与实施方105为不同集合）、5hash/6观察一致，限定ACCEPT/0必须修；[回执](investigation-fixed-runtime-store-20261024.json)。正常5事件10工件，未确认4/9且无采用/资源保留，提交ACK丢失读原候选无重发。b2取消/唯一派发控制器与c实际PG/HTTP/CH尚待，旧Run列不变。
 
 **b实施前细卡（基线5f388ae）：** b1先ReconExecutionStore与基类最小版本/kind挂点，b2再单次控制器，c才实际服务。预期新鲜running Run begin原子冻结、并发claim只有一人获首次决策、冻结reserve仍走M3、通用/托管版本互拒；finalize只从已核当前attempt工件走A3，unknown不释放，不确认输出仅单独观察工件；语义拒绝保原artifact但不冒充已核材料；handoff/body/state原子写，重复仅读不覆盖，取消传播。先spec/design/strict与独立合同复核，再每小块实现/直接测试/独审；真实PG未验前不称原子性已被真实环境证明。
 

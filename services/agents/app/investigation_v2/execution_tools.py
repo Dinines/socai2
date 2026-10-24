@@ -30,8 +30,17 @@ class DurableActivityRecords:
         self._scope_hash = scope_fingerprint(context)
         self._question_id = question_id
         self._member_id = str(UUID(str(member_id)))
+        self._observed_outputs: dict[str, str] = {}
         self._tool = bind_activity_records(context, question_id, member_id,
                                           api_url=api_url, service_token=service_token, transport=transport)
+
+    def observed_output(self, attempt_id: UUID | str) -> dict | None:
+        """A detached process observation, never a persistence receipt."""
+        body = self._observed_outputs.get(str(UUID(str(attempt_id))))
+        return json.loads(body) if body is not None else None
+
+    def clear_observation(self, attempt_id: UUID | str) -> None:
+        self._observed_outputs.pop(str(UUID(str(attempt_id))), None)
 
     async def execute(self, *, step_id: UUID | str, attempt_id: UUID | str, subtask_id: str,
                       parameters: dict[str, Any], retry_of: UUID | str | None = None) -> dict:
@@ -64,7 +73,8 @@ class DurableActivityRecords:
         except (ExecutionRejected, ExecutionPersistenceError) as exc:
             return {"execution_status": "blocked", "retention": "not_confirmed", "http_attempted": False,
                     "dispatch_started": False, "attempt_id": str(attempt_id),
-                    "reason": str(exc), "tool_result": None, "reservation": None, "completion": None}
+                    "reason": str(exc), "reason_type": type(exc).__name__, "tool_result": None,
+                    "reservation": None, "completion": None}
 
         state = reservation["state"]
         # The store's DB time is authoritative. Subtract the whole transaction
@@ -100,6 +110,10 @@ class DurableActivityRecords:
                 result = {"tool": "activity_records", "status": "error", "reason": "dispatch_" + type(exc).__name__,
                           "caller_receipt": {"http_attempted": None}}
 
+        try:
+            self._observed_outputs[str(UUID(str(attempt_id)))] = canonical_json(result)
+        except (ExecutionRejected, UnicodeError):
+            pass  # An unrepresentable observation is not a checked result.
         completion = None
         retention = "committed"
         try:

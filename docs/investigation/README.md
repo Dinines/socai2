@@ -4,6 +4,8 @@
 
 # 调查新版：开发、进度与评审入口
 
+**M6.2b2最新：** 单次控制器/真实M3 gate＋SQL/HTTP替身97项、独立89项及6hash/7观察通过；取消竞争P2先拒绝、修复并重验后限定ACCEPT/0剩余必须修，[回执](../operations/investigation-fixed-runtime-controller-20261024.json)、[原失败/源码](../operations/investigation-fixed-runtime-controller-race-20261024.json)。重复不抢先封存，内存观察经留存核验才清；下一c真实独立服务/PG读回，仍非M7发布或人工已接手。
+
 **M6.2b1最新：** 事务store实际代码＋SQL替身105项及独审限定通过，5hash/6观察一致；唯一claim、受限M3预留、已核工件采用/未确认观察分开、交接原子保存与重复只读见[回执](../operations/investigation-fixed-runtime-store-20261024.json)。下一b2单次控制器，c真实PG/HTTP/CH；本批不证明真实PG/投递/完整调查。
 
 **持续推进最新：** M6.2a纯运行控制已过12新＋68相关及独立同80项/6hash复核，固定版本/整窗单次计划，重复不接管，未知预算保持；[回执](../operations/investigation-fixed-runtime-state-20261024.json)。claim决策不是外呼权限，实际原子claim/M3预留/交接保存尚待b，随后c真实接缝。用户已授权持续推进，不再每块停等确认，仍逐步测试/独审；无部署或自动合main。
