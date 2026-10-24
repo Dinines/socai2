@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.1：** 纯操作身份/请求绑定与重试判定已过44直接/独立同44、5hash/4观察及6额外类型反例，限定ACCEPT0；[回执](../operations/investigation-start-contract-20261025.json)。同key异文冲突不会换Run刷新额度，匹配仅读、不授权begin/外呼；尚未持久去重或真实启动。下一先正式Alert来源投影，再原子准入/写权限/真实新Run。
+
 **2026-10-25 M8a3.3真实GET：** 两个独立loopback进程已完成16项GET（2成功/14拒绝），实际service认证及当前actor/tenant转发、原6/14全选中列/正文checksum、M7 manifest/MD3111字节/execution均核同；新身份NOLOGIN/撤权/活动0，owned进程已停。[真实回执](../operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）。probe完整DTO/JSON类型P2修前原件/red保留，12新＋24相关36直接通过；无新Run/查询/模型/通知，不代表持久启动/Case/Deep或生产用户RBAC撤销已验。
 
 **2026-10-25 M8a3.2：** API独立网关的新GET已过33直接/独立同33、6hash/12 HTTP重放；强制Bearer和既有双read权限、当前身份转发、回包同版hash见[回执](../operations/investigation-result-gateway-20261025.json)。现仍是ASGI/替身，a3.3真实两服务/PG读取待验，启动/Case/Deep另步。

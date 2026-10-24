@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Normalize stable manual alert start operations without granting execution
+
+M8a4.1 SHALL 在当前已核认证/启动permission及tenant/actor的调用方前提下，纯规范化当前alert_recon操作：稳定tenant内operation UUID、目标Alert、≤5分钟UTC半开窗口、版本和可信服务端有界预算政策。Run身份只能由固定namespace/tenant/key派生，不能将参数、actor或时间变化变成另一Run；完整请求含actor/目标/窗口/所有版本及预算政策，按规范JSON产生hash/ref。owner为内部派生值，不是caller授权。当前仅manual，无Case/自动/Deep或实际持久/外呼。
+
+#### Scenario: The same operation is retried or its terms are changed
+- **WHEN** 当前主体仍有该tenant权限且调用方已重新核启动permission，提供与已核owned保留intent相同或不同的规范请求
+- **THEN** 相同仅给原Run read_existing_only判定；同key改actor/目标/窗口/预算/版本拒，不能换Run重置额度。无保留intent仅requires_atomic_admission，两者may_begin/external_call_authorized都false；首次持久准入/commit和实际claim/M3才可能执行
+
+#### Scenario: An identity window policy or retained intent is invalid
+- **WHEN** 缺/错tenant主体、非法/nil身份、不支持profile/trigger/version、超窗口/非法预算、或保留intent结构/hash/ref/派生身份不符
+- **THEN** 明确拒绝，原输入/预算不改，无I/O/Run/调用；canonical比较区分bool与integer。duration不变成当前时间相对deadline，后续首次PG准入冻结一次，匹配重试保原值；纯自hash检查不冒称原件owned或实际认证已验
+
 ### Requirement: Verify isolated result GET across two real processes without ledger change
 
 M8a3.3 SHALL 仅对原已发布受控Run4dfd374a-17a6-5fec-833b-803bfbcb85c6执行GET，启动新的loopback API网关/Agents内部读两个进程，分别使用新测试service凭据/专用read token及新最小PG角色。MUST 无POST query/publish/start、model、Run/Case写入或旧服务切换。role仅表SELECT，Agents另Run UPDATE(id)供既有行锁，不授INSERT；旧角色/共享policy不改。

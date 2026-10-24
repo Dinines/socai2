@@ -1,5 +1,21 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 M8a4启动分块与a4.1纯操作合同（77e9f4d）
+
+a3.3已真实/独审限定通过并保存推送，只读不代表已启动。fresh_design只读预审后采用a4.1纯操作→a4.1b正式Alert投影→a4.2同库原子准入→a4.3显式写权限/派发→a4.4受控新Run顺序；新业务只手动alert_recon/现网络有限目标，不接Case/自动策略/Deep。实际PG三表41列/10约束已定向核：Run PK可竞争，case_id必填文本非Case FK，events(run_id,seq)唯一/append-only；优先评估确定性Run PK+独立不可变操作工件方案，但a4.1不证明持久唯一、不执行DDL。
+
+a4.1仅新增纯start_contract。可信调用方每请求先核当前认证/租户/actor和investigation:run＋alerts:read；TenantPrincipal/actor结构检查不是实际permission验证。只收tenant、当前actor UUID、operation key UUID、Alert UUID、显式UTCWindow及可信服务端选定的版本化预算政策；manual/profile/request版本明确，只支持当前alert_recon。后续HTTP不得接受自定Run/owner/scope/source正文或任意预算数值；策略选择/正式body与权限在a4.3另卡，不改既有service read权限。
+
+操作key在tenant内的统一调查启动命名空间唯一。Run ID只由固定namespace＋tenant＋operation key派生，owner只由该Run派生；不能把actor/目标/窗口/预算/时间混入身份以绕开同键冲突。request hash包含actor、目标、规范UTC半开窗口（复用M1≤5分钟）、profile/请求/运行/完成政策版本及完整预算政策；同键改actor/目标/窗口/预算均为冲突，不派生新Run。不同当前凭据映射到同actor可核原回执，换actor持同key不接管。IDs和hash不授予执行权。
+
+预算政策由服务端可信配置传入、无隐式生产默认。当前固定程序路径只准max_model_calls=0、max_tool_calls为0或1、max_tokens=0、max_cost_microusd=0、max_unsettled=1及duration_seconds为1—180整数/明确config_ref和旧映射说明（沿既有M3受控180秒上界，无生产默认）；0工具可保留到限交接语义。借用M3 BudgetLimits核类型/组合，纯操作只有duration，无now/absolute deadline。首次a4.2才用PG时钟冻结accepted_at/deadline；匹配重试用原保留政策/原deadline，不按当前时间重建额度。原始请求不得补交不同政策正文；明确选择不同预算政策仍是同key冲突。
+
+输出规范化alert_recon_start_intent.v1（完整请求、request_hash、稳定run/executor、intent_ref）。纯replay_decision只接调用方已核owned/hash的保留intent，先核完整结构/版本/规范hash和派生身份，再canonical JSON精确比较：无原件仅requires_atomic_admission、有匹配原件仅read_existing_only；两者may_begin/external_call_authorized均false，claimed/unknown的处理留持久层，不能纯函数冒称去重已提交。坏原件/同键异文/不同身份明确拒；输入不变，0 I/O/Run/额度/查询/模型。
+
+直接预期：同一操作及等价时区表达规范一致；更换key或tenant才更换Run；同key改actor/Alert/窗口/预算内容或config ref身份不变而hash变/replay冲突；空/跨tenant主体、nil/非法UUID、非manual/其他profile/不支持版本、超5分钟或非法窗口、bool预算/无界或非法政策拒。保留intent hash/owner/run/版本/嵌套多字段及bool/int伪等拒，匹配只返回原Run的只读判定，不测试DB并发/真实认证或执行。先strict/独立合同，再只本块实现/测试/独审/回执提交。
+
+a4.1b需另明当前canonical Alert字段和完整实际data-only正文的冻结投影，多telemetry不能默认第一条、缺源/非TCP443明确拒，不复用带synthetic和评分卡依赖的旧probe build_context。a4.2需Run+原M6 begin+独立操作工件同事务、重复先查原回执不读当前Alert、空marker/坏件/旧Run拒及ACK未知不派发；不得直接复用旧probe两事务insert/begin。a4.3使用现有investigation:run＋alerts:read、独立内部start凭据，匹配重试仅进度；只有本次首次确认commit者进入既有M3 claim/reserve，commit后claim前中断明确已接纳未派发，不自动恢复。真实a4.4另用新明确授予权限的测试身份（现service read token无run权限，API key原last_used_at写入需计入），不扩大旧权限矩阵；Case同目标互斥不自动套给Alert。
+
 ## 2026-10-25 M8a3.3双进程真实GET实施前细卡（e55c4d6）
 
 a3.2独审33/6hash/12观测后保存。c只读原M7 Run4dfd374a-17a6-5fec-833b-803bfbcb85c6，原accepted manifest/MD3111B及6/14全选中列/正文checksum为基线。公开opt-in probe先离线guards/核验合同，再新批investigation-result-http-20261025-01；新PG角色socai2_inv_m8r_20261025_01_w（SELECT三账本+UPDATE(id)锁，无INSERT）及_r（仅SELECT tenants供API原认证），不改旧角色/policy/数据。公开配置只loopback两个URL、显式本次两个token/DSN/TLS，私密值.local。

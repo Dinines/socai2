@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a4.1纯启动操作限定通过
+
+77e9f4d后先spec/design/strict及fresh_design合同ACCEPT0，新增start_contract/13新＋M3state12/M1scope8/profile11共44与独立同44通过，5hash/4 intent观察重建、6额外类型反例拒，fresh_code代码及公开receipt限定ACCEPT0。回执docs/operations/investigation-start-contract-20261025.json。tenant/key派生唯一操作身份，actor/目标/窗口/版本/服务端预算入独立request hash，同键异文冲突、匹配仅读；both may_begin/external false。duration1..180无生产默认/无真实deadline，0I/O/Run/模型。下一a4.1b正式canonical Alert投影，a4.2同事务Run+M6 begin+独立marker、a4.3写权限/首次commit后派发、a4.4新受控Run；当前不证实际auth/owned/持久唯一/Case/Deep，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查M8a3.3双进程真实只读GET限定通过
 
 基线e55c4d6，先合同/strict/离线12新＋24相关36及probe P2修后独审；原修前源码/12red7子fail0error和首修bool/int缺口保公开failure。新两个loopback apps真实16GET（2成功/14拒绝），实际service当前actor/tenant转发、原6/14全选中列/正文checksum、M7 manifest/MD3111B/execution与原M6基线不变；0新Run/查询/模型/通知。新m8r角色NOLOGIN/显式ACL0/有效ledger和auth权false/活动0，owned三PID已停。fresh_evidence独立36/10source2helper/READ ONLY PG全14和完整DTO/清理核验限定ACCEPT0；回执docs/operations/investigation-result-http-read-20261025.json。三表41列/10约束已核供启动，case_id非Case FK。下一M8a4稳定operation/owned正式Alert投影/原子Run+begin、独立写权限后受控新Run；当前真实用户JWT/RBAC撤销/启动/Case/Deep未验，2.2/2.3未完，无部署/合main。

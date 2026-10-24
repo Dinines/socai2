@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.1纯操作实际结果
+
+77e9f4d先规格/strict/合同独审ACCEPT0，再start_contract与13新测试；44直接和独立同44通过，5hash/4冻结intent完整重建一致、额外6类型反例拒，[回执](../../../docs/operations/investigation-start-contract-20261025.json)最终限定ACCEPT0。稳定ID只tenant/key，完整request hash含actor/目标/窗口/版本/显式服务端预算，匹配仅读/异文冲突、无执行授权；0业务I/O/Run/deadline/模型，下一正式Alert投影及原子准入，原2.2/2.3未勾。
+
 ## 2026-10-25 M8a3.3真实只读GET
 
 基线e55c4d6先spec/design/strict及fresh_design合同ACCEPT0，public probe离线12新＋owned13＋M7probe11共36过；fresh_code P2外层DTO漏验修前12red/7子失败0error、完整源码/测试保[failure](../../../docs/operations/investigation-result-http-probe-failure-20261025.json)。最后canonical JSON精确比较另拒True/1，8最终子反例，独立36及受影响12重跑、4hash通过。新m8r精确roles（ledger SELECT3+UPDATE(id)无INSERT，auth仅SELECT tenants），两个独立loopback app实际16probeGET（2成功/14拒绝）及当前principal转发核过；原6/14全选中列/正文checksum及MD3111B与M7原件一致。三个owned子进程已退出，新roles NOLOGIN/有效三表权false/活动0。[真实回执](../../../docs/operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）；无新Run/查询/模型/通知/部署，启动及Case/Deep后续。

@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.1纯操作结束审阅
+
+fresh_design合同限定ACCEPT0后仅新增start_contract及13直接；fresh_code独立44（13+M3state12/M1scope8/profile11）、5hash/4组完整intent/决定重建及独立UUID5身份核、输入不变通过，另6个自洽rehash布尔/浮点预算拒，限定ACCEPT/0必须修。公共[回执](../../../docs/operations/investigation-start-contract-20261025.json)计数/hash/观察/局限另窄核一致；没重跑累加44。纯结构/selfhash与samekey比较不代替当前auth/owned/持久唯一/执行，both may_begin/external false；后续a4.1b/a4.2—4另验。
+
 ## 2026-10-25 M8a3.3真实GET结束独审
 
 fresh_design合同ACCEPT0，fresh_code初35后发现P2外层DTO五字段/缺多字段未钉，修前12red/7子失败/0error和完整probe/test保[failure](../../../docs/operations/investigation-result-http-probe-failure-20261025.json)。首修又发现Python bool/int等值，保原件并改canonical JSON完整比较；最终8子反例拒、独立36及受影响12复跑、4hash/助手审阅限定ACCEPT0才live。fresh_evidence独立36项、10源码/2helper hash/全部HTTP原件比对、READ ONLY PG14工件/完整DTO重建/原M6和whole校验和/MD3111B逐字节一致；两角色NOLOGIN/显式ACL0/有效ledger及auth权限false/活动0、三PID不存在，限定ACCEPT/0剩余必须修。[真实回执](../../../docs/operations/investigation-result-http-read-20261025.json)；独审没有另写raw文件，不虚构文件或SHA。定向元数据核三表41列/10约束，case_id必填varchar而非Case FK、events(run_id,seq)唯一和append-only触发器保持，仅供下一启动合同。真实用户JWT/RBAC撤销、持久启动/Case/Deep/通知/部署未验。

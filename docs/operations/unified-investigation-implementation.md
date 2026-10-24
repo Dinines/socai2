@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 M8a4.1纯启动操作实施前预期
+
+**实际放行：** 新start_contract/13直接＋M3state12/M1scope8/profile11共44及独立同44通过；5hash/4组完整intent与重试决定重建一致，另6个自洽rehash布尔/浮点预算反例均拒，限定ACCEPT/0必须修。[回执](investigation-start-contract-20261025.json)。身份tenant/key稳定，actor/目标/窗口/预算变更同key冲突；matching仅read_existing_only、fresh仅requires_atomic_admission，均不授予begin/外呼。纯层无now/deadline/I/O/Run，实际鉴权、owned来源、持久唯一、原子准入和派发仍待下一块。
+
+77e9f4d后，a3.3真实GET/结束独审已通过。下一a4.1先规范稳定operation与完整请求绑定（当前actor/目标/窗口/版本/服务端预算）；身份只由tenant/key派生，匹配重试只读原Run、异文冲突，不把纯判定当持久去重或外呼权限。实际auth/run permission、owned canonical Alert投影及Run+begin+独立操作工件原子准入分别在a4.1b/a4.2/a4.3，a4.4才新真实Run。先活动spec/design/strict及独立合同，再只纯层/直接测试；无PG/HTTP/查询/模型/部署。详细预期和下一分块见活动design顶卡。
+
 ## 2026-10-25 M8a3.3真实两服务GET实施前预期
 
 **实际执行：** 2成功/14拒绝共16probeGET通过，API观察11/内部10（含readiness及3次转发），成功请求的实际CurrentUser actor/tenant与backend声明一致；原6事件14工件/选中列及正文checksum、M7 manifest/MD3111B/execution、M6校验和及旧Run列均无变。API18820/内部15392经本次handle/creation核后Windows terminate退出1，probe2944 exit0；新m8r角色NOLOGIN/撤有效三表权限/活动0。[真实回执](investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）；0新Run/业务查询/模型/通知。
