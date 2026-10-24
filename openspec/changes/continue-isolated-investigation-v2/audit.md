@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d2结束独审
+
+fresh_design合同限定ACCEPT0后实施；fresh_code独立82/6hash/24ASGI（7actual owned SQL DTO＋17fake边界status/calls）全重放、原账本/Run列保持、无token/诊断泄露，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-internal-api-20261025.json)。额外真实asyncio close超时取消协程/terminate1/reader清空观察单列不累计82，PG0。内部仅最小envelope/可信gatewaytoken，d3完整DTO/真实用户auth不由此验。d3合同nullable evidence五组合缺口补后另限定ACCEPT0，保存后才实施。
+
 ## 2026-10-25 b2.4d1结束独审
 
 fresh_design初known-kind-only漏unknown历史合同缺口补all managed kind+agent检查后ACCEPT0；fresh_code独立98/7hash/7ledger双读、全DTO canonical/MD/全部row pin与Run6列不变，HTTPsend0，限定ACCEPT/0必须修，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。旧3原SQLfixtures逐件同旧reader，新pub/progress/observer/rev2符合；unknown各位置及wrong/NULLagent拒，sameconn无fallback。真实旧cache只核3111B/e5f4原MD，不称PG重建。d2合同另ACCEPT0，保存后才能实现；d3/d4/a4.2待续。

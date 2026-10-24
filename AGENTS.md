@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4d2独立兼容内部GET限定通过
+
+673f225后合同/spec/strict/独审ACCEPT0先行，仅新program_result_api factory/独立COMPAT token/PG/CA配置，无oldenv fallback/旧app注册。21新＋oldAPI13/compatibleReader19/newpubstore29共82直接/独立同82、6hash/24ASGI完整重放（actual reader SQL7/fake边界17），receipt docs/operations/investigation-compatible-internal-api-20261025.json限定ACCEPT0。Bearer/currenttenantactor/nilRun/bodyquery拒、known双schema/exactidentity/pubstate最小envelope；fake只边界不代owned，实际来源d1、完整DTO/hash仍d3。pool TLS/optionalnewCA/启动脱敏/close timeout terminate/injected不关闭，独审真实asyncio超时额外核不加第83项。0真实PG/network/UserRBAC/Run/写/部署；oldAPI/MD保持。下一d3 API网关五类result/evidence组合合同修后已ACCEPT0，后d4组合再a4.2；2.2/2.3未完，无合main。
+
 # 2026-10-25 调查b2.4d1双版本owned读取限定通过
 
 ce4c14a后先合同/strict/独审；仅known begin查询会漏unknown历史事件的合同缺口补为同锁全Run unified_ kind+agent检查后ACCEPT0，再新CompatibleOwnedReconResultReader。19新＋oldreader13/newrestore16/newpubstore29/oldpub21共98直接/独立同98、7hash/7完整账本双次cold/所有原件pin/DTO canonical/Run6列核，receipt docs/operations/investigation-compatible-owned-reader-20261025.json限定ACCEPT0。显式known ownedbegin分旧/newrestore-store，owner仅原serverstate、不caller选版；unknown前中后/混版/wrong或NULLagent拒无fallback，同conn不嵌套lock。旧3 SQLfrozen全部raw/DTO/MD同旧（3087/1847B），新pub/progress/observer/rev2同；真实旧3111B仅cache/原文件SHA核不称PG账本重建。0真实访问/Run/新调用/写/发布，旧源码/入口/MD保持。下一d2独立COMPAT内部GET合同已ACCEPT0，d3gateway/d4组合后a4.2；2.2/2.3未完，无部署/合main。

@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d2内部GET：** 82直接/独立同82、6hash/24ASGI重放限定通过，[回执](../operations/investigation-compatible-internal-api-20261025.json)。新独立COMPAT config、gateway身份断言/只读覆盖拒、pool有界清理；仅最小envelope，oldAPI不变，0真实网络/PG/用户RBAC。d3完整DTO/evidence封闭组合合同已修后审过，再d4/a4.2。
+
 **2026-10-25 b2.4d1 owned双版本：** 98直接/独立同98、7hash/7完整cold重建限定通过，[回执](../operations/investigation-compatible-owned-reader-20261025.json)。同锁唯一begin/所有unified_类型agent/强原件核后选显式fixed或program，旧合法完整DTO/MD保持；无callerowner/version、无fallback。仅SQL替身，下一d2内部GET（合同已审）/d3gateway/d4组合后a4.2，0真实I/O/Run。
 
 **2026-10-25 b2.4c纯新恢复：** 75直接/独立同75、6hash/原6+rev2及3SQL读完整重建限定通过，[回执](../operations/investigation-program-profile-restore-20261025.json)。合法rev2拒绝P2修后rev2/3精确恢复、typed漂移仍拒，旧restore/MD保持；caller owned真实性/权限及修订来源仍前提。下一d1 ownedreader/d2内部GET/d3gateway/d4组合后a4.2，0真实访问/Run。

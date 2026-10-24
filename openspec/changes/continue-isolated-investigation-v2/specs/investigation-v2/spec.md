@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Validate explicit fixed or program full DTOs in a separate authenticated API gateway
+
+b2.4d3 SHALL 仅新增API兼容网关/new factory，显式Bearer＋原cases/alerts双read权限、current tenant/actor转发、独立COMPAT backend配置/一次有界GET且无fallback。新checker对known两族DTO exact结构/版本/stricttypes/manifest-execution-MD与section引用做同版校验，旧源码/DTO/MD保持；不将selfhash当实际来源或MD语义证明。
+
+#### Scenario: Current permitted user reads a consistent known result
+- **WHEN** 原认证/双权限通过，backend在new config提供完整固定或program DTO/progress，family/schema/identity/typedrefs/hash及五种result/preparation/evidence封闭组合同版（合法fixed A3 blocked/null和unadopted/null均partial）
+- **THEN** 原完整dict和MD字节透传，不重渲染/添旧字段；只server currentidentity和backendtoken进入内部GET，无callerowner/version/query控制或读写副作用
+
+#### Scenario: Input configuration backend or versioned DTO is invalid
+- **WHEN** 旧env-only、无凭据/权限、覆写参数、unknown/mixed/缺多字段/typedalias/ref或hash错误、null evidence伪ready/错族path/前缀或availability不匹配、超限/非200/redirect/timeout出现
+- **THEN** 准确拒绝/脱敏502/503/404/409无重试/旧版回落，不泄配置；真实auth/PG/网络、d4组合和a4.2仍另验
+
 ### Requirement: Expose compatible owned results only in a separately configured internal GET app
 
 b2.4d2 SHALL 新增显式独立process内部GET app及COMPAT独立token/PG/CA配置，无旧env默认回落；可信网关Bearer认证后核当前tenant/actor/Run，调用兼容ownedreader，拒body/query/owner/version覆盖。旧app/注册不改，token不等于用户RBAC，完整DTO证明留d3。

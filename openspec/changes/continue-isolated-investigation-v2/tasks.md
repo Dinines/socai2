@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d2限定通过：** 82直接/独立同82、6hash/24ASGI全重放，[回执](../../../docs/operations/investigation-compatible-internal-api-20261025.json)。只离线内部读取，d3全DTO合同已审，d4/a4.2待续，2.2/2.3不勾。
+
 **2026-10-25 b2.4d1限定通过：** 98直接/独立同98、7hash/7full ledger/DTO重建，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。仅owned SQL兼容，d2内部GET合同已审，d3/d4与a4.2待续，2.2/2.3不勾。
 
 **2026-10-25 b2.4c限定通过：** 75直接/独立同75、6hash/6+1原context及3SQL全DTO重建，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。合法rev2/3支持、typed拒、不证明来源历史；d owned/HTTP和a4.2待续，2.2/2.3不勾。

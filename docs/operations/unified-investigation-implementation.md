@@ -1,3 +1,13 @@
+## 2026-10-25 b2.4d2实际独立兼容内部GET
+
+673f225后细卡/spec/strict/fresh_design合同ACCEPT0，再仅新program_result_api及21直接；＋oldAPI13/compatibleReader19/newpubstore29共82直接/独立同82、6hash/24ASGI完整重放限定ACCEPT0，[回执](investigation-compatible-internal-api-20261025.json)。7actual CompatibleOwnedReader＋SQL账本/DTO全保持，17fake只验证边界状态和backend次数（401/400/404/409/503/502/405及valid2schema），不把fake当owned证明；全ledger/Run列无变、response无token/driver秘密。独审另实际asyncio关闭超时核close协程取消/terminate恰1/reader清空，无PG，不加第83项。
+
+新COMPAT_TOKEN/PG_DSN/CA无旧配置回落；onlyGET/每请求currenttoken/tenantactorRun/无bodyquery覆盖，pool startup错误脱敏、TLS/newCA/close有界/注入reader不误关。内部仅known双schema+exactidentity/publicationstate最小envelope，source真实性d1负责，完整DTO/hash校d3；真实用户JWT/RBAC、网络/PG均未验。旧app/注册/配置及MD保持，0真实Run/写/发布/部署。d3合同先发现合法nullableevidence封闭组合缺口，五类fixed/program result/preparation/evidence与null-onlypartial补后限定ACCEPT0；保存后d3实现，再d4组合和a4.2，2.2/2.3未勾。
+
+## 2026-10-25 b2.4d2独立兼容内部GET实施前预期
+
+d1已673f225推送，d2细卡/spec/strict/fresh_design合同ACCEPT0先行。仅新program_result_api factory/newCOMPAT token/PG/CA配置，无oldenv默认或旧app注册；可信gateway Bearer及当前tenant/actor/nilRun校验，拒body/query控制，actualCompatibleOwnedReader固定/程序DTO保持。内部最小envelope不代替d3全DTO验证，启动/pool/close超时脱敏、有界及注入reader不误关；ASGI+SQLdouble/no真实网络PG/Run/部署。先直接/独审保存，再d3 gateway和d4组合后a4.2。
+
 ## 2026-10-25 b2.4d1实际双版本owned读取
 
 ce4c14a后先d1细卡/strict/合同独审；初仅已知begin过滤会漏unknown begin/control历史，补同锁全部unified_ kind属于所选集合且agent一致（含NULL拒），修后合同ACCEPT0才新program_result_reader/CompatibleOwnedReconResultReader和运输替身。19新＋oldreader13/newrestore16/newpubstore29/oldpub21共98直接/独立同98、7hash/7完整ledger hydrate双次读/UTF8-size-hash-event-payload-persistence/全DTO canonical SHA及Run6列不变，限定ACCEPT0，[回执](investigation-compatible-owned-reader-20261025.json)。同ownedRun锁唯一generic/fixed/program marker只允许fixed/program exactkind-agent-runtime，原两工件强核后serverstate owner→各原restore/store同conn；unknown前中后/混版/错误或NULLagent、typedfloat、owner/原件/late全部拒，不回落旧版本/自动publish。

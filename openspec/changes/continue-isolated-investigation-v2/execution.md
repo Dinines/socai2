@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d2实际内部兼容GET
+
+673f225后先合同再newfactory。82直接/独立同82、6hash/24ASGI完整回执核同，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-internal-api-20261025.json)。独立COMPAT配置/只GET/当前网关身份断言，pool生命周期边界明，旧app保持。0真实PG/network/Run/部署，d3合同已修后审，d4/a4.2后续，2.2/2.3未勾。
+
 ## 2026-10-25 b2.4d1实际owned兼容入口
 
 ce4c14a后合同全history guard补清/ACCEPT0再实施。98直接/独立同98、7hash/7ledger/全DTO双读及所有pin核，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。known原begin显式分派/owner来自原件、旧valid DTO保持，unknown无fallback。0真实I/O/写/Run/发布，d2合同已审，d3/d4/a4.2未完，2.2/2.3未勾。
