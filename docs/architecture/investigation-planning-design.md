@@ -1,3 +1,5 @@
+**2026-10-25 M8a3.3真实GET：** 两个独立服务的真实共享service认证/GET已过2成功及14拒绝，原Run6/14/MD3111字节/manifest/execution及原M6已核baseline不变，临时进程和角色已清理；[实际回执](../operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）。仅显式读取，启动入口/真实用户RBAC撤销、Case/Deep和部署另步。
+
 **2026-10-25 M8a3.2网关：** API独立GET原认证/双read权限、当前身份转发及同版hash检查已过33直接/独立同33、6hash/12回执重放，[回执](../operations/investigation-result-gateway-20261025.json)。实施前补关旧dev无凭据demo仅限新GET，未动旧认证/query；真实PG/网络和生产RBAC撤销未实测，a3.3后接启动。
 
 **2026-10-25 M8a3.1内部读HTTP：** 独立Agents app专用token/tenant/actor→owned读已过58直接及独立同58/6hash/11 ASGI重放，[回执](../operations/investigation-internal-read-api-20261025.json)。旧路由/权限默认不改，仅内部可信网关边界；API外部认证/permission与真实PG/双进程另步，启动未接。

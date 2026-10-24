@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 M8a3.3双进程真实GET实施前细卡（e55c4d6）
+
+a3.2独审33/6hash/12观测后保存。c只读原M7 Run4dfd374a-17a6-5fec-833b-803bfbcb85c6，原accepted manifest/MD3111B及6/14全选中列/正文checksum为基线。公开opt-in probe先离线guards/核验合同，再新批investigation-result-http-20261025-01；新PG角色socai2_inv_m8r_20261025_01_w（SELECT三账本+UPDATE(id)锁，无INSERT）及_r（仅SELECT tenants供API原认证），不改旧角色/policy/数据。公开配置只loopback两个URL、显式本次两个token/DSN/TLS，私密值.local。
+
+独立Agents进程只加载新result_api factory/显式新read token及PG配置，API进程只加载新result_api factory/READ_URL/read token和新API service credential、旧认证DB reader连接；ENV生产/dev OFF，二者PID/创建时间留存。无worker/模型/schema初始化/旧app注册，API继承query路由但本次不调用任何POST，CH配置不新增。探针先PG READ ONLY核6/14/MD/accepted refs与当前用量，再API正确GET及认证负例（缺/错credential，缺/非法/未知tenant，body/query覆盖，随机不存在Run）；内部直接GET负例缺/错token、缺/非法actor/tenant。服务凭据仍原read权限列表，不修改权限矩阵或生产RBAC；JWT/真实用户撤销未实测边界保留。
+
+成功响应需同原manifest/MD/execution，Raw PG再核14工件全部边/hash及scope/current publication state、原M6校验和，6/14全选中列/正文前后逐值/字节hash不变、旧Run列与M3tool1/model0/unknown0/unsettled0不变。可重复GET核同版，无新publish/Run/查询/模型/Case/通知。若失败只读定位/保留本批，不启动旧路径或补查。
+
+最后按本次Popen handle＋creation time确认身份后停两子进程/close连接，本次roles NOLOGIN撤回所有新显式权限并查有效三表权限false/活动0；公开回执含真实正/负HTTP、PG不变、过程身份/清理及独立结束审计，不含实际token/DSN。先probe离线测试/独审，后真实c，前后不重放M6/M7动作；此仅显式只读入口验收，后续持久启动/M5语义与Case另步。
+
 ## 2026-10-25 M8a3.2 API只读网关实施前细卡（c2c50ca）
 
 a3.1已独审保存。只新增API investigation_v2/result_gateway.py/result_api.py及独立factory；保query_api原实现/原应用注册不改。新factory可组合原独立v2 query app及新GET /api/v2/investigation/runs/{run_id}，没有启动/Case/动作路由；新结果GET复用require_permission(cases:read)，再CurrentUser.require_permission(alerts:read)。当前tenant/actor只取user.tenant_id/user.user_id，忽略用户伪造的tenant/actor头，拒绝任何GET query/body；权限不足不调用backend。

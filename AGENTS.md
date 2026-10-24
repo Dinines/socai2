@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a3.3双进程真实只读GET限定通过
+
+基线e55c4d6，先合同/strict/离线12新＋24相关36及probe P2修后独审；原修前源码/12red7子fail0error和首修bool/int缺口保公开failure。新两个loopback apps真实16GET（2成功/14拒绝），实际service当前actor/tenant转发、原6/14全选中列/正文checksum、M7 manifest/MD3111B/execution与原M6基线不变；0新Run/查询/模型/通知。新m8r角色NOLOGIN/显式ACL0/有效ledger和auth权false/活动0，owned三PID已停。fresh_evidence独立36/10source2helper/READ ONLY PG全14和完整DTO/清理核验限定ACCEPT0；回执docs/operations/investigation-result-http-read-20261025.json。三表41列/10约束已核供启动，case_id非Case FK。下一M8a4稳定operation/owned正式Alert投影/原子Run+begin、独立写权限后受控新Run；当前真实用户JWT/RBAC撤销/启动/Case/Deep未验，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查M8a3.2 API只读网关限定通过
 
 c2c50ca后新增API result_gateway/result_api独立factory，强制Bearer再原认证/双read权限、CurrentUser.user_id/tenant_id转发；专用内部read URL/token单GET不redirect/retry，回包身份/manifest/MD/exec版本hash核。新API13＋原query7及另Agent13共33，与独立同33/6hash/12 HTTP完整重放通过，限定ACCEPT/0必须修。合同独审先补关原dev无凭据demo旁路，仅新GET强制凭据、旧认证/query不改。docs/operations/investigation-result-gateway-20261025.json；实际RBAC撤销/PG/network仍未验，下一a3.3两临时loopback服务读原6/14，0新Run/查询/模型/通知，无部署/合main，2.2/2.3未完。

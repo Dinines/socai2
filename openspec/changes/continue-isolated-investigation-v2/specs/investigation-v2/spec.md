@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Verify isolated result GET across two real processes without ledger change
+
+M8a3.3 SHALL 仅对原已发布受控Run4dfd374a-17a6-5fec-833b-803bfbcb85c6执行GET，启动新的loopback API网关/Agents内部读两个进程，分别使用新测试service凭据/专用read token及新最小PG角色。MUST 无POST query/publish/start、model、Run/Case写入或旧服务切换。role仅表SELECT，Agents另Run UPDATE(id)供既有行锁，不授INSERT；旧角色/共享policy不改。
+
+#### Scenario: Real API authentication returns the immutable PG result
+- **WHEN** 新API凭据/受控tenant认证通过，经网关发送当前tenant/actor到新内部read app，读原M7结果
+- **THEN** 200结果manifest/MD/execution与原M7回执及PG一致；缺/错凭据、缺/非法/未知tenant、GET覆盖及随机缺失Run分别拒绝，内部缺/错token或actor拒绝。前后完整6事件14工件选中列/正文hash相同，原M6基线/用量/旧列/MD3111B保持，额外activity/model/publish0。实际权限撤销不通过生产RBAC改表模拟，ASGI权限测试与真实service认证范围分列
+
+#### Scenario: Read services fail or cleanup must run
+- **WHEN** 配置/认证/PG/GET/回包核验失败或任一进程未就绪
+- **THEN** 本批留存失败，不回落旧服务或发调查；仅按持有Popen handle和创建时间清理两个新进程，新角色NOLOGIN/撤权/活动0，密码token不进公开回执。真实结束独审后才放行此只读接缝，不能据此宣称启动/Case/Deep或生产部署已完成
+
 ### Requirement: Expose fixed results through explicitly isolated authenticated read applications
 
 M8a3 SHALL 按a3.1 Agents内部只读HTTP→a3.2 API认证网关→a3.3受控真实PG/双进程GET逐块推进。旧应用/路由/认证权限默认不改。Agents独立app只接受新的专用read token和显式tenant/actor、Run UUID，调用a2；无共享旧token/dev回落、启动/写入/通知路径。API独立v2 app仅复用既有认证，并要求cases:read及alerts:read；tenant和actor只从CurrentUser得出，向内部read app转发，不采用客户端scope/owner/tenant覆盖。credential/permission在本HTTP接缝验证，纯TenantPrincipal不代替认证。

@@ -1,3 +1,7 @@
+## 2026-10-25 M8a3.3真实GET结束独审
+
+fresh_design合同ACCEPT0，fresh_code初35后发现P2外层DTO五字段/缺多字段未钉，修前12red/7子失败/0error和完整probe/test保[failure](../../../docs/operations/investigation-result-http-probe-failure-20261025.json)。首修又发现Python bool/int等值，保原件并改canonical JSON完整比较；最终8子反例拒、独立36及受影响12复跑、4hash/助手审阅限定ACCEPT0才live。fresh_evidence独立36项、10源码/2helper hash/全部HTTP原件比对、READ ONLY PG14工件/完整DTO重建/原M6和whole校验和/MD3111B逐字节一致；两角色NOLOGIN/显式ACL0/有效ledger及auth权限false/活动0、三PID不存在，限定ACCEPT/0剩余必须修。[真实回执](../../../docs/operations/investigation-result-http-read-20261025.json)；独审没有另写raw文件，不虚构文件或SHA。定向元数据核三表41列/10约束，case_id必填varchar而非Case FK、events(run_id,seq)唯一和append-only触发器保持，仅供下一启动合同。真实用户JWT/RBAC撤销、持久启动/Case/Deep/通知/部署未验。
+
 ## 2026-10-25 M8a3.2网关结束窄审
 
 fresh_design先发现1项合同缺口：原dev bypass无凭据demo可通过read权限，补新GET显式Bearer守卫后合同ACCEPT0；CurrentUser字段按真实user_id绑定。fresh_code独立33（API20/另Agent13）、6hash/12完整ASGI重放一致，补3实际owned DTO兼容及同app当前service凭据配置变更旧令牌下一次401/backend0，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-result-gateway-20261025.json)。local receipt helper清理warning纠正后观测字节同SHA，非应用失败。实际用户RBAC撤销/网络/PG后续a3.3，未部署。

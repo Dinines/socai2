@@ -1,3 +1,5 @@
+**2026-10-25 M8a3.3真实读取已执行：** probe12新＋24相关36通过、P2完整DTO及JSON类型漏验修后代码独审ACCEPT0；两个新服务16GET、原6/14和原M7结果不变，进程/身份清理。[真实回执](../../../docs/operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）；持久启动/Case/Deep及2.2/2.3未完。
+
 # Tasks: 原阶段成果接收与后续逐模块续接
 
 **2026-10-25 M8a3.2限定通过：** 33直接/独立同33及6hash/12 HTTP重放，[回执](../../../docs/operations/investigation-result-gateway-20261025.json)。ASGI/FakePG/transport，无真实网络/PG/启动；a3.3及2.2/2.3仍待。

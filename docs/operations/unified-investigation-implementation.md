@@ -2,6 +2,14 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 M8a3.3真实两服务GET实施前预期
+
+**实际执行：** 2成功/14拒绝共16probeGET通过，API观察11/内部10（含readiness及3次转发），成功请求的实际CurrentUser actor/tenant与backend声明一致；原6事件14工件/选中列及正文checksum、M7 manifest/MD3111B/execution、M6校验和及旧Run列均无变。API18820/内部15392经本次handle/creation核后Windows terminate退出1，probe2944 exit0；新m8r角色NOLOGIN/撤有效三表权限/活动0。[真实回执](investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）；0新Run/业务查询/模型/通知。
+
+实施前probe独审发现P2外层owned DTO漏验：原5字段改值及额外/缺字段7子反例仍通过。已保存[原源码、测试及red回执](investigation-result-http-probe-failure-20261025.json)，12项red/7子失败/0error；现与raw PG重建的完整14键DTO精确比较，12新＋owned13＋M7probe11共36直接通过。首次修补的target多带manifest归属ref导致2个离线正常样本失败，投影公共type/id后通过，当时真实身份/进程均尚未创建；修后fresh_code独立36/最终受影响12与8子反例限定ACCEPT0后才live。
+
+e55c4d6后先公开probe/离线guards与独审，再新loopback API/Agents两进程和新最小读角色，仅读原M7已发布Run；实际service认证/负例、回包MD/manifest/exec与PG一致，6/14选中列/正文checksum及M3/旧列前后无变。0 POST/query/publish/start/模型/Case/通知，无INSERT授权；旧角色/服务/权限默认不改。子进程按handle/创建时间清，新roles NOLOGIN撤权/活动0及结束独审才放行。实际用户RBAC撤销/启动/生产部署不算本块，详细合同见活动spec/design。
+
 ## 2026-10-25 M8a3.2 API只读网关实施前预期
 
 **a3.2实际放行：** API新13＋原query7=20，Agent另解释器13，共33，独立同33/6hash/12完整HTTP重放通过，限定ACCEPT/0必须修；[回执](investigation-result-gateway-20261025.json)。已有auth/permission代码实际执行，PG/内部HTTP替身；额外3 owned DTO兼容/服务凭据配置变更旧key401核过，生产RBAC撤销/真实网络未验。dev旁路实施前补关，只新GET强制Bearer，旧逻辑不改；next a3.3真实服务/PG无变。
