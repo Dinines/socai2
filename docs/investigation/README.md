@@ -1,3 +1,5 @@
+**2026-10-25 b2.4b新持久发布：** 129直接/独立同129、7hash/7完整账本cold/repeat重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)及[修前回执类型反例](../operations/investigation-program-publication-store-failure-20261025.json)。唯一newmanifest/4工件同事务，原tool全链核/late拒陈旧结果，旧MD保持；仅SQL替身。下一已审c新恢复，d owned/HTTP及原子启动仍后续。
+
 **2026-10-25 b2.4a新发布候选：** 111直接/独立同111、7hash/9完整包及MD重建，限定ACCEPT0；[回执](../operations/investigation-program-publication-preparation-20261025.json)和[修前两P2](../operations/investigation-program-publication-preparation-failure-20261025.json)。完整result重建/canonical类型/停止前来源约束、有限目标安全MD明确；仍candidate未持久发布。下一b新pubstore、c恢复、d owned/HTTP，各通过后才实际启动。
 
 **2026-10-25 b2.3d2新来源投影：** 82直接/独立同82、6hash/6完整投影及SQLMock接缝cold重建限定通过，[回执](../operations/investigation-program-alert-projection-20261025.json)。正常全文1307B和最长17759B不截，新有限4facts ready/model false、旧仍partial；新旧意图互拒、旧restore明确拒新begin。下一b2.4新发布/恢复/owned/HTTP兼容，实际启动仍后续。

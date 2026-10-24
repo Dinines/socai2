@@ -1,3 +1,15 @@
+## 2026-10-25 b2.4b实际新持久发布限定结果
+
+a已41bc92e推送/b合同fresh_design限定ACCEPT0后，新增program_recon_publication_store。29新＋oldpubstore21/newpub24/newstore30/newruntime25共129直接/独立同129、7hash/7原SQL账本所有event/body/state/persistence/artifact UTF8/hash/size及cold/repeat全输出SHA、原Run6列重建，限定ACCEPT0，[回执](investigation-program-publication-store-20261025.json)。初127外pub receipt.seq float6.0==int6窄类型缺口保[失败回执](investigation-program-publication-store-failure-20261025.json)/修前source/test/1red1fail0error；修positive strictint/canonical identity及newpub原begin/当前nonpub receipt同核，不改parent，非权限/预算绕过或合法MD变化。独审额外自洽改材料outcome/result/prep/handoff/closing全hash仍被actual原tool重建拒，未写行。
+
+7例normal6/14/MD3381B、empty6/14、observer5/13、cancel6/14、sourceRejected6/14、commit ACK6/14、late7/16；normal有限4facts ready，其余保原partial/未知。首次1event4artifact同事务，rollback全回，ACK未知不声称成功或返回notification；6合法cold完整同manifest/MD/usage且repeat无新通知/行，late实际结算保账后read和republish均拒stale。plain programstore拒unknown pub，不倒退读旧state；新runtime用pub subclass可执行/同版handoff读。仅SQL替身，0真实PG/HTTP/模型/Run/发布或通知投递，旧MD3111B保持。下一c纯新restore合同已ACCEPT0，保存后实现，再d owned/HTTP显式兼容；a4.2实际准入仍待，2.2/2.3未勾。
+
+**b2.4b审阅修订：** 初127普通测试外独立发现pub receipt.seq 6.0与实际int6等值被接受的窄类型缺口，修前源码/1red1fail0error保[失败回执](investigation-program-publication-store-failure-20261025.json)。new pub subclass对实际event及receipt seq严格positive int、identity数组canonical，origin/当前非pub回执同核，不改parent源码；不据此称权限/预算绕过或合法MD变化。修后结束独审待续。
+
+## 2026-10-25 b2.4b新持久发布实施前预期
+
+a已41bc92e推送，b细卡/spec/strict/独立合同fresh_design限定ACCEPT0先行。仅新ProgramReconPublicationStore继承newprogramstore，pub event专用body适配/其余super，唯一marker/canonical严格typed/current/原source链；首次5/10→6/14同event4工件，rollback/ACK未知不成功，cold重复同manifest/MD/用量且无notification重发。合法late通过pub subclass保账但正式read拒stale，plain program writer拒unknown pub不回退。先SQLdouble直接/独审保存，c/d及a4.2后续，不连真实PG/HTTP、不新Run/模型/部署或通知投递。
+
 ## 2026-10-25 b2.4a实际纯新发布候选
 
 ec460ae后合同/strict先行；fresh_design初unadopted仅局部校验缺口已补全量None重建后ACCEPT0再新program_recon_publication。24新＋oldpub16/newstore30/newruntime25/newrecon16共111直接/独立同111、7hash/9完整request-M1/三工件/新包/MD逐字节/section refs及SHA重建，限定ACCEPT0。[回执](investigation-program-publication-preparation-20261025.json)。独审初109之外bool/int等值、stopped source幂等冒充两个P2保修前source/test/2red2fail0error及[失败回执](investigation-program-publication-preparation-failure-20261025.json)，修canonical state/usage与distinct claimed/blocked source后，额外8类型/停止态变体均拒；9合法包/MD未变。collector初deepcopy Request身份等值误断言，原helper/output保SHA、改method/path/body snapshot核pure无变，非源码失败。

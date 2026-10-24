@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Restore only the original new program read context with current read authority
+
+b2.4c SHALL 独立new restore纯函数，从caller已核owned newbegin/body/state重建原M1和new profile/plan，当前tenant许可与历史principal分开，canonical全量比较及严格整数拒typed alias，不读活Alert或改旧restore。结构/hash不替代actual auth/owner/event链。
+
+#### Scenario: Another currently permitted reader restores a retained program context
+- **WHEN** current principal允许tenant，原initial newbegin及完整scope_sources/控制/profile/newplan一致
+- **THEN** 精确恢复原typed request/全文/refs/窗口/六问，新pub SQLdouble读取可得同manifest/MD/usage，不新增行/预算或I/O；不授予重启或续跑权
+
+#### Scenario: Frozen type source version or current authority is inconsistent
+- **WHEN** old/unknown/mixedruntime、自洽重hash控制漂移、bool/float整数别名、缺多source/原文hash或current tenant许可错误
+- **THEN** 拒恢复不回落旧版本/当前Alert，不重选预算/owner；oldrestore及旧MD保持，d owned/HTTP和a4.2另验
+
 ### Requirement: Persist the new program manifest atomically and read only its complete current basis
 
 b2.4b SHALL 新增独立new publication store继承ProgramReconExecutionStore，显式适配new pub event的latest/body/state校验，保原begin/full原tool-source-handoff链；唯一pub marker/4工件同事务，JSON比较canonical，旧store/Run列不改。只SQLdouble，不发送通知或实际业务访问。

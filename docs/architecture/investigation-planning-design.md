@@ -1,3 +1,5 @@
+**2026-10-25 b2.4b新发布store：** 129直接/独立同129、7hash/7完整cold/重复及实际原tool重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)。newpub专用event强校验/唯一marker/4工件1TX/ACK未知不成功，late留账但正式读拒stale，plainstore不回落；类型回执反例已修。仅SQL替身，下一c恢复（合同已审）/d ownedHTTP兼容→a4.2，无真实Run/访问/发布。
+
 **2026-10-25 b2.4a纯新发布：** 111直接/独立同111、7hash/9完整包/MD/section重建与8额外反例限定通过，[回执](../operations/investigation-program-publication-preparation-20261025.json)。new closedmanifest/exec/renderer，validated和unadopted都完整重建，typed JSON及distinct pre-stop source保证；旧MD保持。仅candidate、0发布/真实访问，actualtool/owned/event全链后续b，再c/d兼容与a4.2。
 
 **2026-10-25 b2.3d2正式新投影：** 82直接/独立同82、6hash/6完整投影及SQLMock cold重建限定通过，[回执](../operations/investigation-program-alert-projection-20261025.json)。完整来源新schema/精确路径/原拼写保持，新有限4facts ready/model false且旧partial；预建Run接缝5/10/Mock1，不是a4.2原子启动，旧restore尚拒新begin。下一b2.4分a纯发布/b持久/c恢复/d owned+HTTP显式版本后再a4.2，0实际访问/新Run/发布。

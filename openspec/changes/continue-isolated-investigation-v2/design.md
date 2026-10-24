@@ -1,3 +1,17 @@
+## 2026-10-25 b2.4c新冻结只读恢复实施前细卡（b修后结束独审/保存后实现）
+
+只新增program_profile_restore.py/restore_program_alert_read_request及测试，复制必要旧restore的M1 typed重建逻辑，但仅new program _runtime_copy/make_program_recon_plan；旧restore不变且继续拒new begin，新restore拒old/未知runtime/混版，不用版本转换或加载当前可变Alert。只读复用稳定scope/profile/JSON helpers；无真实I/O/Run/claim/外呼/新期限。
+
+caller先核current auth/read权限、tenant/Run、唯一owned newbegin event完整agent/in-out/receipt/body/state hash和实际owner归属；pure输入current_principal、原begin_input/body及原initial begin_state，只证明完整结构/原文/ref/M1/newplan一致，不代替这些来源证明。current principal必须当前允许tenant；原frozen principal只用于重建原M1绑定，不作为当前actor许可，当前其他合法read actor可读同original context。begin必须ready/无attempt/claimed_at空、new closed版本与initial M3账canonical一致；所有JSON重建比较canonical，不用Python ==吞bool/int/float。receipt seq严格positive int、UUID非nil/tenant/run/stage/attemptNone、body hash/ref、scope hash/M1 sources与完整source set都核。
+
+从原scope controls/schema重建唯一checked Alert/member/target、原窗口/六问/principal/revision/字段SourceField，data_only_text只从原scope_sources的sha/UTF8 size/ref还原且不截/不读活Alert；counts/revision/size等控制整数严格int（bool/float不接受），单成员/无omitted/total1保持。本函数不把任意data-only文本schema当控制，也不增全文语义或模型资格；接受已核原newprogram M1材料范围，不凭projection引用字符串证明SQL源。原source字段/UUID/IP原拼写和已冻结规范query/六问/raw全文全部留，fullsource/case/预算控制不从原文推断。
+
+完整scope_snapshot(context)与原controls/sources canonical精确比较，BusinessProfileRequest.descriptor与原profile/newmakeplan及begin_state.recon.plan精确一致；固定manual/alert profile/有限目标，newclosed12版本任何缺多/旧项或state/profile/窗口/fields/source变化即拒，即使selfhash重算。返回等于原请求的typed BusinessProfileRequest、输出脱离输入；不授予start/restart/unknown接管，不能从原Run推新操作或重新选择budget/owner。b中同manifest/MD read无需当前Alert，c只提供纯new恢复合同。
+
+预期：normal newformal fullsource1307B、partial/observer同newbegin均可精确恢复（传原initial begin，非当前stopped/pubstate），当前同tenant另一reader/合法扩大tenant集合不改恢复结果；原全文/refs/descriptor/newquery/newplan逐字节重建，不查询时钟或I/O。old/new/unknown互拒；source文本/ref/hash/size（含错同字节UTF8）、缺多sources、scope/主体现tenant/member/window/revision/profile/plan/closed版本任一漂移拒；self-rehashed bool/float seq/total/revision/counters/criticality等控制变化拒、当前不允许tenant/空principal拒。既有旧restore11及旧MD保持；同原b账本begin恢复后使用新pubstore read能取同newmanifest/MD/usage，SQLdouble只读无新增行/预算（actual owner前提仍caller）。先strict/合同独审再c实现/直接/结束审阅，d owned/HTTP显式分派及a4.2仍后续，不把纯恢复当所有读取兼容完成。
+
+**b2.4b审阅修订：** 初127普通测试外独立发现pub receipt.seq 6.0与实际int6等值被接受的窄类型缺口，修前源码/1red1fail0error保[失败回执](../../../docs/operations/investigation-program-publication-store-failure-20261025.json)。new pub subclass对实际event及receipt seq严格positive int、identity数组canonical，origin/当前非pub回执同核，不改parent源码；不据此称权限/预算绕过或合法MD变化。修后结束独审待续。
+
 ## 2026-10-25 b2.4b新持久发布实施前细卡（a修后结束独审/保存后实现）
 
 仅新增program_recon_publication_store.py/ProgramReconPublicationStore，继承新ProgramReconExecutionStore（不是旧fixed store），复制必要旧发布store结构，复用新pure package及原M3锁/append；不改旧pub/store/HTTP或已验Program runtime源。新event=unified_program_result_published、manifest kind=program_result_manifest、execution kind=program_recon_published_execution、report kind=program_recon_report_markdown，均≤40；pointer=program_recon_publication_pointer.v1、manifest_ref=program-recon-manifest:、notification=program_recon_result_notification.v1（仅descriptor/not_attempted，不发送）。

@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4b实际新持久发布
+
+41bc92e后合同已审，新pubstore/29新＋100相关共129直接/独立同129、7hash/7完整cold/repeat/原件链重建，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。seq类型原红测/源码保留；原tool含被拒源完整核、4工件原子/ACK未知、late保账拒陈旧均过。仅SQLdouble，c合同已审，后d owned/HTTP再a4.2，2.2/2.3未勾。
+
 ## 2026-10-25 b2.4a纯新发布结果
 
 ec460ae后已审合同再新纯candidate。111直接/独立同111、7hash/9完整重建及8额外变体拒，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-publication-preparation-20261025.json)。2P2源码/红测保留，MD/包合法字节保持；新result/材料/执行当前性严格而非已发布。0实际访问/Run/通知；b持久、c恢复、d owned/HTTP各门后a4.2，2.2/2.3未勾。

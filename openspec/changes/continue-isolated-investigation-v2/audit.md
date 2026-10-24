@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4b修后结束独审
+
+fresh_design合同限定ACCEPT0；fresh_code初127外pub receipt seq float/int窄差异保[原件1red1fail0error](../../../docs/operations/investigation-program-publication-store-failure-20261025.json)。修strictint/canonical identity并覆盖原begin/current receipt后，独立129/7hash/7完整账本cold-repeat、所有工件pin/hash/MD/Run6列同、lateactual保账而两正式操作拒stale，限定ACCEPT0。[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。额外全链selfhash假材料被原tool重建拒/写0，普通programstore对pubunknown不fallback。仅SQL替身，c合同另已ACCEPT0，保存后再实施；d/a4.2未放行。
+
 ## 2026-10-25 b2.4a修后结束独审
 
 fresh_design初合同1缺口（unadopted全重建）补后限定ACCEPT0；fresh_code初109之外2P2（bool/int等值、stopped source冒充pre-transition）保[失败回执](../../../docs/operations/investigation-program-publication-preparation-failure-20261025.json)。修canonical和distinct claimed/blocked pre-source后，独立111/7hash/9完整包/MD/section refs精确重建及8额外类型/停止变体拒，限定ACCEPT/0必须修。[正式回执](../../../docs/operations/investigation-program-publication-preparation-20261025.json)。2red2fail0error/4失败原件及collector辅助假设错误两文件SHA均核同，9合法输出不变。仅pure candidate，真实tool/owned/event链留bstore，c/d/a4.2未放行。

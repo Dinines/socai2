@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4b新持久发布限定通过
+
+41bc92e后先合同/spec/strict/独审ACCEPT0，再新ProgramReconPublicationStore，29新＋oldpubstore21/newpub24/newstore30/newruntime25共129直接/独立同129、7hash/7完整cold/repeat/所有event工件/Run6列重建，receipt docs/operations/investigation-program-publication-store-20261025.json限定ACCEPT0。初127外seq float/int回执窄缺口修后strictint/canonical identity及原begin/current同核，1red1fail0error原件保failure。actualtool→材料/handoff原件完整重建含未采用、唯一newmarker/4工件1TX，ACK未知不成功、repeat无通知重发；late保账而read/republish拒stale，plainprogramwriter拒unknown pub不回退。normal6/14/MD3381B，observer5/13，late7/16；仅SQLdouble未真实发布/访问/新Run/通知。下一c新恢复合同已ACCEPT0→d owned/HTTP→a4.2逐门；旧源码/MD3111B保持，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.4a新发布候选限定通过
 
 ec460ae后先spec/design/strict/合同独审，unadopted完整结果重建合同缺口修后限定ACCEPT0再实现，仅新program_recon_publication。24新＋oldpub16/newstore30/newruntime25/newrecon16共111直接/独立同111、7hash/9完整package/MD/section重建及额外8反例拒，receipt docs/operations/investigation-program-publication-preparation-20261025.json限定ACCEPT0。独审初109外bool/int等值与stopped冒充source两个P2已修canonical和distinct pre-stop，修前2red2fail0error保failure；collector Request deepcopy身份误断言原件单列非源码。newmanifest/exec/full版本/安全MD明确有限目标/全文未语义核/模型资格false，normal4facts ready、escaped21facts ready，其余7partial；旧MD3111B保持。纯candidate、持久ref空无发布/通知；原tool/owned/event真实链后续b新pubstore→c恢复→d owned/HTTP，再a4.2，2.2/2.3未完，无真实访问/新Run/部署/合main。

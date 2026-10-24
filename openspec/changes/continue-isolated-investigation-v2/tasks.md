@@ -1,3 +1,5 @@
+**2026-10-25 b2.4b限定通过：** 129直接/独立同129、7hash/7原账本完整cold/repeat/工具原件重建，[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。仅SQL替身，c恢复合同已审，d owned/HTTP及a4.2仍待，2.2/2.3不勾。
+
 **2026-10-25 b2.4a限定通过：** 111直接/独立同111、7hash/9纯包完整重建/8额外反例拒，[回执](../../../docs/operations/investigation-program-publication-preparation-20261025.json)。仍candidate未发布，b/c/d兼容及a4.2未完，2.2/2.3不勾。
 
 **2026-10-25 b2.3d2限定通过：** 82直接/独立同82、6hash/6完整投影+SQLMock cold重建，[回执](../../../docs/operations/investigation-program-alert-projection-20261025.json)。仅新来源/离线运行，oldrestore尚拒，b2.4兼容及a4.2未完，2.2/2.3不勾。
