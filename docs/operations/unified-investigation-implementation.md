@@ -1,3 +1,13 @@
+## 2026-10-25 b2.4d1实际双版本owned读取
+
+ce4c14a后先d1细卡/strict/合同独审；初仅已知begin过滤会漏unknown begin/control历史，补同锁全部unified_ kind属于所选集合且agent一致（含NULL拒），修后合同ACCEPT0才新program_result_reader/CompatibleOwnedReconResultReader和运输替身。19新＋oldreader13/newrestore16/newpubstore29/oldpub21共98直接/独立同98、7hash/7完整ledger hydrate双次读/UTF8-size-hash-event-payload-persistence/全DTO canonical SHA及Run6列不变，限定ACCEPT0，[回执](investigation-compatible-owned-reader-20261025.json)。同ownedRun锁唯一generic/fixed/program marker只允许fixed/program exactkind-agent-runtime，原两工件强核后serverstate owner→各原restore/store同conn；unknown前中后/混版/错误或NULLagent、typedfloat、owner/原件/late全部拒，不回落旧版本/自动publish。
+
+七冻件旧published6/14/MD3087B、unpublished5/10、cancelled6/14/MD1847B原3SQL账本/原DTO和旧reader逐字节同；newpub6/14/3381B、progress1/2、observer5/13/2297B、合法rev2pub6/14/3381B全部fullDTO/refs/MD/usage同且两读无新行/HTTPsend（patch0）。真实旧attempt01 DTO rawfile fd43c596…/canonical2885ca19…的MD3111B/e5f4c3fe…只作缓存原文件字节比对，非真实PGledger在newreader重建；无新实际PG访问或改旧Run。旧sources/路由/MD保持。d2独立COMPAT token/PG/CA GET app合同已fresh_design限定ACCEPT0，保存后实施；d3gateway/d4组合和a4.2仍另门，2.2/2.3未勾。
+
+## 2026-10-25 b2.4d1双版本owned读取实施前预期
+
+c已ce4c14a推送，d1合同初仅known begin过滤会漏unknownkind的缺口已补全Run所有unified_ kind/agent同锁检查，fresh_design修后限定ACCEPT0/strict先行。仅新CompatibleOwnedReconResultReader/SQLtransport，currenttenant→ownedRun/唯一begin/原两工件full typedcanonical→explicit fixed/program restore/store，同conn读，owner只owned原state，unknown任何位置/混版不fallback。fixed完整DTO/MD保持，programnewowned schema相同公共结构，no新行/预算/查询/发布。先SQLdouble直接/独审保存，d2内部GET/d3gateway/d4组合再a4.2，0真实PG/HTTP/新Run/部署。
+
 ## 2026-10-25 b2.4c实际冻结只读恢复限定结果
 
 8724920后已审合同/strict再新program_profile_restore，16新＋oldrestore11/newpubstore29/M1scope8/profile11共75直接/独立同75、6hash/原3pure+3SQL冻件及新增rev2完整输出重建，限定ACCEPT0，[回执](investigation-program-profile-restore-20261025.json)。初74之外合法M1 previous→revision2，newplan/newstore接受1event2artifact，旧式initial initialize_scope(revision2)误拒的P2保[失败回执](investigation-program-profile-restore-failure-20261025.json)/5原件SHA/1red0fail1应用error（不同于双方scope模块名误写的Loader error）。修先按固定M1结构base初始化，再replace为caller已核positive原revision，完整canonical重建；独审另实际合法rev2/3都全asdict同，4typed revision/critical反例仍拒，不伪造或证明previous历史链。

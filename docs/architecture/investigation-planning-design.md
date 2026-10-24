@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d1 owned双版本：** 98直接/独立同98、7hash/7完整cold重建限定通过，[回执](../operations/investigation-compatible-owned-reader-20261025.json)。同锁唯一begin/所有unified_类型agent/强原件核后选显式fixed或program，旧合法完整DTO/MD保持；无callerowner/version、无fallback。仅SQL替身，下一d2内部GET（合同已审）/d3gateway/d4组合后a4.2，0真实I/O/Run。
+
 **2026-10-25 b2.4c纯新恢复：** 75直接/独立同75、6hash/原6+rev2及3SQL读完整重建限定通过，[回执](../operations/investigation-program-profile-restore-20261025.json)。合法rev2拒绝P2修后rev2/3精确恢复、typed漂移仍拒，旧restore/MD保持；caller owned真实性/权限及修订来源仍前提。下一d1 ownedreader/d2内部GET/d3gateway/d4组合后a4.2，0真实访问/Run。
 
 **2026-10-25 b2.4b新发布store：** 129直接/独立同129、7hash/7完整cold/重复及实际原tool重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)。newpub专用event强校验/唯一marker/4工件1TX/ACK未知不成功，late留账但正式读拒stale，plainstore不回落；类型回执反例已修。仅SQL替身，下一c恢复（合同已审）/d ownedHTTP兼容→a4.2，无真实Run/访问/发布。

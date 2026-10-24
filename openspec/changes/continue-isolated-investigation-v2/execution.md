@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d1实际owned兼容入口
+
+ce4c14a后合同全history guard补清/ACCEPT0再实施。98直接/独立同98、7hash/7ledger/全DTO双读及所有pin核，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。known原begin显式分派/owner来自原件、旧valid DTO保持，unknown无fallback。0真实I/O/写/Run/发布，d2合同已审，d3/d4/a4.2未完，2.2/2.3未勾。
+
 ## 2026-10-25 b2.4c实际纯新恢复
 
 8724920后已审合同再newrestore。75直接/独立同75、6hash/原6+rev2完整request重建及3SQL同结果，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。合法rev2误拒原件/应用error保，base结构+原revision恢复不伪造历史；current许可与历史principal分开、不授运行权。0实际I/O/Run，d owned/HTTP与a4.2后续，2.2/2.3未勾。

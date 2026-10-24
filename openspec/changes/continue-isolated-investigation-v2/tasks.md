@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d1限定通过：** 98直接/独立同98、7hash/7full ledger/DTO重建，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。仅owned SQL兼容，d2内部GET合同已审，d3/d4与a4.2待续，2.2/2.3不勾。
+
 **2026-10-25 b2.4c限定通过：** 75直接/独立同75、6hash/6+1原context及3SQL全DTO重建，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。合法rev2/3支持、typed拒、不证明来源历史；d owned/HTTP和a4.2待续，2.2/2.3不勾。
 
 **2026-10-25 b2.4b限定通过：** 129直接/独立同129、7hash/7原账本完整cold/repeat/工具原件重建，[回执](../../../docs/operations/investigation-program-publication-store-20261025.json)。仅SQL替身，c恢复合同已审，d owned/HTTP及a4.2仍待，2.2/2.3不勾。

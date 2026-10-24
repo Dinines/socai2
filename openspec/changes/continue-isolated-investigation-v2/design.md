@@ -1,3 +1,13 @@
+## 2026-10-25 b2.4d2独立内部兼容GET app细卡（d1结束保存后实施）
+
+只新增program_result_api.py/create_app及ASGI合同测试，复制必要原内部GET app骨架，使用CompatibleOwnedReconResultReader；旧result_api/app/路由注册/worker不改，新app须显式加载独立进程，不自动挂旧app。GET路径仍/internal/investigation-v2/runs/{run_id}但仅新process提供fixed/program兼容，不新增POST/查询/模型/Case/写Run/发布；OpenAPI/docs关闭，旧app仍单fixed语义。
+
+新独立配置TOKEN_ENV=AISOC_INVESTIGATION_COMPAT_READ_TOKEN、DSN_ENV=AISOC_INVESTIGATION_COMPAT_PG_DSN、CA_ENV=AISOC_INVESTIGATION_COMPAT_CA_FILE；无旧env fallback/生产默认。factory必须显式有效32..256 ASCII无空白强token（显式read_token或newenv），可只读复用原checked token/HMAC/UUID纯helper；token只认证可信API网关，不是实际用户JWT/RBAC。current tenant/actor由网关已核后X-AiSOC-Tenant-ID/X-AiSOC-Actor-ID断言，body/query无法补scope/owner/version/权限。没有注入reader时仅lifespan读取explicit新PGconfig，TLS默认验证及可选CA、owned asyncpg pool min1/max2/timeouts10；启动失败脱敏不含DSN。owned pool结束close限5秒/timeout terminate且清reader；injected reader不代关。无旧pool/service配置或新常驻启动。
+
+每GET先当前app.state token HMAC认证，再nonnil tenant/actor/Run UUID，拒任何query参数及非空GETbody；无reader503/backend0。构造TenantPrincipal仅当前tenant/verified-api-reader:actor/delegatedtrue给owned兼容reader，不接受owner/profile/scope等客户端额外输入。missing/wrongtoken401、badheader/nilRun或override400、invalidpath UUID422、method405、ownedRun不存在404、其余integrity/version409、脱敏persistence503；无凭据默认demo/bypass，不落旧reader重试。只接受reader dict的known owned_fixed/owned_program schema、exacttenant/run及publication_state published/not_published对应身份；缺/unknown/identity冲突502。该内部最小envelope不是d3完整DTO/manifest/hash证明，d3须另全验；结果实际来源校验由d1owned服务完成。
+
+预期ASGI替身：actual兼容reader+SQLtransport fixed/program published/progress/observer/rev2 GET全DTO保持及new/oldschema、MD/usage一致/no行或新Mock工具调用；fake reader只用于auth/identity/error反例，不把它当owned证明。缺错token/header、nilRun、queryowner/version、GETbody、POST、foreigntenant、不匹配backendreply/unknownschema/缺publication_state、persistence/owned/integrity错全准确状态及backend调用计数；token与DSN不出response或ledger。仅oldenv存在时newapp配置不能成功，valid newconfig/fakepool参数/清理/close timeout terminate核，注入reader不关闭/不连库。current token被可信配置轮换后旧token下一请求拒。旧internal API原测试及new7frozen owned DTO保持，无真实网络/PG/Run/部署。先strict/合同独审再d2实现/直接/结束审阅，d3gateway/d4组合及a4.2仍另门。
+
 ## 2026-10-25 b2.4d兼容分块及d1 owned双版本只读入口细卡（c修后结束/保存后实施）
 
 d拆d1新owned双版本reader→d2独立内部GET app→d3独立API gateway/DTO强核→d4离线组合兼容（各另卡/独审）；不改旧result_reader/result_api/gateway/已冻结函数、路由注册或部署。未知/混合begin/runtime/schema拒，不能按客户端mode/owner/scope决定版本或失败后换旧路径。所有b2.4d门过后才a4.2，真实GET/启动仍由后续实际受控新Run验。

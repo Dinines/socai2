@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d1结束独审
+
+fresh_design初known-kind-only漏unknown历史合同缺口补all managed kind+agent检查后ACCEPT0；fresh_code独立98/7hash/7ledger双读、全DTO canonical/MD/全部row pin与Run6列不变，HTTPsend0，限定ACCEPT/0必须修，[回执](../../../docs/operations/investigation-compatible-owned-reader-20261025.json)。旧3原SQLfixtures逐件同旧reader，新pub/progress/observer/rev2符合；unknown各位置及wrong/NULLagent拒，sameconn无fallback。真实旧cache只核3111B/e5f4原MD，不称PG重建。d2合同另ACCEPT0，保存后才能实现；d3/d4/a4.2待续。
+
 ## 2026-10-25 b2.4c修后结束独审
 
 fresh_design合同限定ACCEPT0后实施；fresh_code初74发现合法rev2已M1/newstore保存却restore误拒，保[合法原件/应用error](../../../docs/operations/investigation-program-profile-restore-failure-20261025.json)。修复恢复而非新transition后独立75、6hash/原6+rev2全输出/3SQL全部DTO/MD/usage/refs同，额外合法rev3与4typed反例过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-profile-restore-20261025.json)。新增rev2 SHA d4e513eb2bf308ff5d7bc3c523106a6fa3d9a50f2f000679bf2642cf84e27456及5失败原件/1red0fail1应用error核同；双方首scope模块误名Loader错误单列非源码。未证明previous历史/actualauth/owned来源，d owned/HTTP及a4.2仍待。

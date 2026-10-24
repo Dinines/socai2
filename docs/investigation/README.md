@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d1双版本owned读取：** 98直接/独立同98、7hash/7完整账本/全DTO双读限定通过，[回执](../operations/investigation-compatible-owned-reader-20261025.json)。按已核原begin分派、全历史unknown/agent拒、owner不可调用者指定；合法旧DTO/MD同，新schema明确。真实3111B旧文件只核cache字节，未重连PG。下一已审d2独立内部GET，再网关/组合兼容，尚无原子启动。
+
 **2026-10-25 b2.4c新冻结恢复：** 75直接/独立同75、6hash/6+1完整上下文/3SQL同DTO重建限定通过，[回执](../operations/investigation-program-profile-restore-20261025.json)和[合法rev2误拒原件](../operations/investigation-program-profile-restore-failure-20261025.json)。恢复原全文/版本不读liveAlert，current许可与历史principal分开，合法rev2/3可还原但不证明修订历史。下一owned双版本入口和HTTP兼容，尚无实际启动。
 
 **2026-10-25 b2.4b新持久发布：** 129直接/独立同129、7hash/7完整账本cold/repeat重建限定通过，[回执](../operations/investigation-program-publication-store-20261025.json)及[修前回执类型反例](../operations/investigation-program-publication-store-failure-20261025.json)。唯一newmanifest/4工件同事务，原tool全链核/late拒陈旧结果，旧MD保持；仅SQL替身。下一已审c新恢复，d owned/HTTP及原子启动仍后续。

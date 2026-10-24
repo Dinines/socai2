@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Expose compatible owned results only in a separately configured internal GET app
+
+b2.4d2 SHALL 新增显式独立process内部GET app及COMPAT独立token/PG/CA配置，无旧env默认回落；可信网关Bearer认证后核当前tenant/actor/Run，调用兼容ownedreader，拒body/query/owner/version覆盖。旧app/注册不改，token不等于用户RBAC，完整DTO证明留d3。
+
+#### Scenario: A trusted gateway reads a fixed or program result
+- **WHEN** new explicit token和当前tenant/actor/Run有效，ownedreader返回known schema/exactidentity/publication state
+- **THEN** 原完整DTO透传/只GET，无新行/调用/发布；ownedpool生命周期独立并有界清理，injectedreader不误关闭
+
+#### Scenario: Credentials configuration input or backend envelope is invalid
+- **WHEN** 旧env只有、缺错token、bad/nilidentity、body/query覆盖、reader异常/unknown或identity混包出现
+- **THEN** 准确401/400/404/409/503/502且不fallback/泄露配置或重试；旧token轮换后拒，旧app行为保持，后续API gateway/组合及a4.2仍待
+
 ### Requirement: Select only a verified owned fixed or program result without caller version control
 
 b2.4d1 SHALL 新增owned兼容reader，在同tenant/Run锁内强核唯一managed begin/full原件/strictseq/canonical身份，再按explicit已核fixed或program版本走各自restore/store同conn；unknown/generic/mixed/双begin拒不fallback；同锁进入branch store前须核该Run所有unified_事件均在所选允许kind集合且agent符合该writer，未知begin/control不论位置都拒。owner来自原件而非caller，旧reader/DTO/MD不改。

@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4d1双版本owned读取限定通过
+
+ce4c14a后先合同/strict/独审；仅known begin查询会漏unknown历史事件的合同缺口补为同锁全Run unified_ kind+agent检查后ACCEPT0，再新CompatibleOwnedReconResultReader。19新＋oldreader13/newrestore16/newpubstore29/oldpub21共98直接/独立同98、7hash/7完整账本双次cold/所有原件pin/DTO canonical/Run6列核，receipt docs/operations/investigation-compatible-owned-reader-20261025.json限定ACCEPT0。显式known ownedbegin分旧/newrestore-store，owner仅原serverstate、不caller选版；unknown前中后/混版/wrong或NULLagent拒无fallback，同conn不嵌套lock。旧3 SQLfrozen全部raw/DTO/MD同旧（3087/1847B），新pub/progress/observer/rev2同；真实旧3111B仅cache/原文件SHA核不称PG账本重建。0真实访问/Run/新调用/写/发布，旧源码/入口/MD保持。下一d2独立COMPAT内部GET合同已ACCEPT0，d3gateway/d4组合后a4.2；2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.4c新版冻结恢复限定通过
 
 8724920后合同/spec/strict/独审先行，仅新program_profile_restore。16新＋oldrestore11/newpubstore29/M1scope8/profile11共75直接/独立同75、6hash/原6冻结+新增rev2全request重建、3SQL全读同DTO/MD/usage，receipt docs/operations/investigation-program-profile-restore-20261025.json限定ACCEPT0。初74外合法M1 previous→rev2/plan/newstore1/2可保存却restore拒P2已修，原合法begin/源码/1red0fail1应用error保failure；先重建固定M1base再带回caller已核positive原revision+canonical全比，不伪造previous或证明历史链，额外合法rev3也通过。当前tenant许可与frozen principal分开，无liveAlert/clock/查询/重启权；oldrestore不改。下一d1 owned双版本入口（合同待审）→d2内部GET/d3gateway/d4组合，再a4.2；2.2/2.3未完，无真实访问/新Run/部署/合main。
