@@ -1,3 +1,7 @@
+## 2026-10-25 b2.2新程序事实实际结果
+
+984646f先规格/strict/合同独审，再program_recon及16新；64直接及独立同64/5hash/11完整重建与额外30源/停止对照过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-recon-20261025.json)。新fact/完成/result/prep/ref明确，normal1299B source可4程序事实有限ready，十转义同short可21事实ready；目标外自由文/模型缺口明示，原必要源错误拒/5停止partial，missing保unknown三态。旧函数/调用选择不改、0真实I/O/Run/调用/发布，继续b2.3分块与b2.4兼容，2.2/2.3未勾。
+
 ## 2026-10-25 b2.1程序材料实际结果
 
 c253f15先细卡/strict/合同独审，再新ProgramMaterial独立类型/必要验证/全文refs，12新＋47相关共59直接及独立同59、5hash/6冻件和2同输入对照通过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-material-20261025.json)。Alert1299B/十转义模型组合16842B仍旧门阻断，而新程序材料可保1/10records，非模型资格；来源错误仍拒/缺口保留，旧源码不改。测试公平性末次补同scope后受影响12重跑，不累加为新增能力。0业务I/O/Run/模型/工具，facts/ready及b2.2—4未实现，不勾整体任务。

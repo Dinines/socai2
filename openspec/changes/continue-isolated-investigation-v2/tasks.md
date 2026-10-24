@@ -1,3 +1,5 @@
+**2026-10-25 b2.2限定通过：** 新纯有限事实/prep64直接/独立同64、5hash/11冻件及30额外对照，[回执](../../../docs/operations/investigation-program-recon-20261025.json)。有限ready不等于全文/业务完整；b2.3/4仍a4.2前置，2.2/2.3不勾。
+
 **2026-10-25 b2.1限定通过：** 59直接/独立同59、5hash/6M1冻件/2同输入对照，[回执](../../../docs/operations/investigation-program-material-20261025.json)。纯独立程序材料，无facts/ready；b2.2—4仍是a4.2前置，2.2/2.3未勾。
 
 **2026-10-25 M8a4.1b1限定通过：** 47直接/独立同47、5hash/6冻结重建/字段路径保全，[回执](../../../docs/operations/investigation-alert-projection-20261025.json)。1299B完整文档仍受512门而partial，非ready；b2分离和正常ready为a4.2前置，2.2/2.3未完。

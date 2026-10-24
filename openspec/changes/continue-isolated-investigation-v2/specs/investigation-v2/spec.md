@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Evaluate program material under an explicitly new finite completion policy
+
+b2.2 SHALL 仅用已核当前scope/snapshot的独立ProgramMaterial生成有限字段事实及新版本program_alert_recon结果/preparation，不构造EvidenceView或模型候选；新finite_network_program_fields.v1事实政策及bounded_full_window_program_fields.v1完成政策显式入hash/refs。正常完整结构来源查询可有限ready；模型未请求/Alert全文未语义研判明确为非阻断目标外缺口，绝不表示整份Alert或恶意/授权/影响已判。旧fixed/evidence/A3路径保持。
+
+#### Scenario: Normal full Alert text or full model framing blocks the old view
+- **WHEN** caller已核owned/committed的来源与整窗查询支持当前有限谓词，无原有blocking gap，即使原Alert512或组合model12KiB门使旧路径受阻
+- **THEN** 新纯prep给真实typed有限事实/Q1-Q2-Q5及限定ready，Q3a/Q3b/Q4、性质和授权继续未评估/未知；模型not_requested eligiblefalse，全文可追溯而非已理解，persistence not_attempted，无Run/调用/发布
+
+#### Scenario: Missing uncertain incomplete conflicted or stopped material limits the result
+- **WHEN** 空/失败/unknown、无材料、子窗、冲突/缺版本/截断/源正文提取缺口或owner已观察停止
+- **THEN** 保真实事实/refs/gaps及停止原因、partial，不增加总结模型；必要来源/材料/hash/scope/版本/当前snapshot或类型错误直接拒，不能降为成功。新runtime和M7/读取的版本选择须后续独立冻结/兼容验证，旧记录不重解释
+
 ### Requirement: Separate verified program material from gated model views
 
 b2.1 SHALL 新增独立ProgramMaterial类型/schema/hash/scope/revision，以现必要材料/参数/来源版本合同验证完整结构材料，并只引用原begin的完整Alert正文；程序材料构造不受Alert512B和完整模型视图12KiB门耦合，不复制或截断原Alert，不冒充EvidenceView/模型已消费。所有必要验证仍拒，空/失败/unknown/子窗/截断/冲突/遗漏版本及源正文提取缺口仍保留，后续新事实政策另验。不修改旧model builder和其512/I2门。

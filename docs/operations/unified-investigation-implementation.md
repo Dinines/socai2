@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 b2.2新有限事实实施前预期
+
+**实际限定通过：** 新program_recon/16直接＋ProgramMat12/旧fixed13/A3material10/adoption13共64及独立同64、5hash/11完整请求与输出重建通过；额外5类来源×6停止共30旧/新事实正文/状态/coverage/stop/handoff对照一致、fact ID不重复，限定ACCEPT0。[回执](investigation-program-recon-20261025.json)。正常全文1299B旧partial→新4程序事实有限ready，十转义同short scope新21事实有限ready但model not_requested/eligiblefalse；其余9冻结例partial，missing三态not_confirmed/null/unknown。旧fixed/A3保持、新版本/refs明确；0真实I/O/Run/运行选择/发布，下一b2.3冻结新runtime组合，b2.4兼容仍a4.2前置。
+
+984646f后，仅新纯evaluator/prep，显式事实/完成/result/prep版本，消费ProgramMaterial而非伪model view。正常同输入1299B可有限ready且4程序事实，保六问题/性质授权未知/全文未语义核/模型not_requested；原源gap/停止/unknown/冲突/子窗等继续partial，必要错误直接拒。先spec/design/strict及独立合同，再本块直接/独审，0真实I/O/Run/发布；b2.3/4运行冻结和新旧同版读取仍为a4.2前置，细卡见活动design。
+
 ## 2026-10-25 b2.1程序材料实施前预期
 
 **实际限定通过：** 新program_material＋12直接，projection13/旧EvidenceView11/A3material10/adoption13共59及独立同59通过，5hash/6完整M1冻件重建及2同输入旧/新对照一致，限定ACCEPT0；[回执](investigation-program-material-20261025.json)。normal1299B旧Alert512门仍阻断/new材料1record；短Alert十条转义组合16842B旧view12288门阻断/new材料10records，均model eligible=false。旧builder/A3/adoption未改，来源必要拒绝/缺口保留、全文只ref不复制；本块没有facts/ready/新runtime/真实I/O，下一b2.2另卡/独审新事实和完成政策。

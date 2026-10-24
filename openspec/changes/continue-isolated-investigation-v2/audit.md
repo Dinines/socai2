@@ -1,3 +1,7 @@
+## 2026-10-25 b2.2新有限程序政策结束审阅
+
+fresh_design明确新facts/完成/result/prep版本、ready只整窗Q1/Q5/无blocker、Q2非critical保持和missing三态后合同ACCEPT0。fresh_code独立64、5hash/11完整BusinessProfile/M1与output/ref/hash重建一致，额外5类来源×6停止30对照保原事实正文/问题/coverage/ready/stop/handoff（仅新增目标外gap），fact IDs不重复，限定ACCEPT0；[公共回执](../../../docs/operations/investigation-program-recon-20261025.json)计数/哈希/观察另窄核匹配。正常全文4、十转义21事实仅有限ready，其他9冻件partial，freeText未语义核/模型未请求；旧M7/runtime未接，不能按纯政策验收实际执行或鉴权。
+
 ## 2026-10-25 b2.1独立程序材料结束审阅
 
 fresh_design合同ACCEPT0后仅新增program_material及12直接；fresh_code独立59、5hash/6组M1输入/完整doc和snapshot/ref重建一致、7组旧/新source query对照及4必要错误反例、双成员source refs/gap核过。复制必要校验段仅改program_record_hash命名、query状态段逐字同原，旧EvidenceView/adoption/A3源码不改。额外2同scope/payload/material对照完整重放：1299B旧Alert512 block/new1record；十转义16842B旧12288 block/new10records，model eligible始终false；[公共回执](../../../docs/operations/investigation-program-material-20261025.json)窄核后限定ACCEPT0。审阅路径/终端Unicode输出两工具失误已修，与源码/实际测试分开。仅纯材料，不认定facts/ready/运行或存储归属，b2.2—4后续。

@@ -1,3 +1,5 @@
+**2026-10-25 b2.2新程序事实：** 64直接/独立同64、5hash/11完整输入输出及额外30源/停止对照通过，[回执](../operations/investigation-program-recon-20261025.json)。新的有限字段完成政策解除模型投影耦合但保源阻断，normal1299B给4事实有限ready，不代表全文/恶意/授权理解；旧路径保持。b2.3新runtime版本冻结、b2.4发布恢复读取兼容及旧MD字节不变仍未交付，a4.2未开始。
+
 **2026-10-25 b2.1材料分离：** 独立ProgramMaterial已过59直接/独立同59、5hash/6完整冻件和2同输入旧/新对照，[回执](../operations/investigation-program-material-20261025.json)。完整留存不等于语义理解，材料非model view，旧门和源缺口保持；无facts/ready/运行接线。后续b2.2—4全部同版兼容及正常有限ready通过才a4.2。
 
 **2026-10-25 M8a4.1b1完整冻结：** 已过47直接/独立同47、5hash/6观察，普通来源真实四列/路径/全文冻结及M6内存begin-a1兼容见[回执](../operations/investigation-alert-projection-20261025.json)。完整doc1299B使现Alert512消费门明确partial，未正常ready；b2分离完整留存和消费并通过正常有限事实后才a4.2，保持原件和门限。

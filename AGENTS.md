@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.2新有限事实限定通过
+
+984646f后spec/design/strict/合同ACCEPT0，仅新program_recon及16直接＋ProgramMat12/旧fixed13/A3material10/adoption13共64和独立同64、5hash/11完整请求输出重建、额外5源×6停止30对照一致，receipt docs/operations/investigation-program-recon-20261025.json限定ACCEPT0。新事实/完成/result/prep版本，ProgramMaterial仅读结构字段不伪model view；1299B normal新4事实有限ready/十转义同short新21事实ready，旧路径仍partial，模型未请求/无资格、全文未语义核、Q3a/b/Q4与性质授权未知。空/失败/unknown/冲突/截断/子窗/5停止partial，missing not_confirmed/null/unknown。0真实I/O/Run/runtime/发布选择，下一b2.3a状态版本→b store→c controller→d新intent投影，b2.4同版兼容后才a4.2；旧源码不改，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.1独立程序材料限定通过
 
 c253f15后按A窄路线先spec/design/strict/合同独审，新增program_material12新＋projection13/EvidenceView11/A3material10/adoption13共59和独立同59通过，5hash/6完整M1冻件/2同输入对照重建一致，receipt docs/operations/investigation-program-material-20261025.json限定ACCEPT0。ProgramMaterial独立schema/policy/ref，非EvidenceView/无model_view/not_requested eligiblefalse；完整Alert仍scope_sources只ref/hash/size，必要来源校验与旧缺口不变。1299B旧Alert512门仍阻断新材料1record，十转义同短scope旧16842B模型view超12288阻断新材料10records。旧EvidenceView/A3/adoption源码保持，无facts/ready/真实I/O/运行接线。下一b2.2新事实/prep/完成政策→b2.3冻结新runtime组合→b2.4M7/a1/owned/API新旧兼容及旧MD字节不变，全部通过才a4.2；2.2/2.3未完，无部署/合main。

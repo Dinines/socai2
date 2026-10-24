@@ -1,3 +1,5 @@
+**2026-10-25 b2.2有限字段事实：** 新纯政策/prepare已过64直接/独立同64、5hash/11完整重建及30额外源/停止对照，[回执](../operations/investigation-program-recon-20261025.json)。正常全文可给4程序事实并有限ready，性质/授权/全文语义仍未知、模型未请求；坏源和停止仍partial或拒。未接runtime/M7/HTTP，下一冻结新版本与同版兼容后才启动准入。
+
 **2026-10-25 b2.1程序材料：** 已过59直接/独立同59、5hash/6组完整重建及2同输入对照，[回执](../operations/investigation-program-material-20261025.json)。新类型保结构记录/缺口和原全文refs，不具有模型资格；旧512/12KiB门及旧builder保持。本步尚无facts/ready，下一新事实政策、runtime冻结和发布读取兼容逐步验证后才启动准入。
 
 **2026-10-25 M8a4.1b1：** 正式来源纯冻结经47直接/独立同47、5hash/6组完整观察和字段路径保全限定通过；[回执](../operations/investigation-alert-projection-20261025.json)。实际字段/原文不依赖synthetic/评分卡，M6内存begin-a1恢复保持；normal全文1299B仍触发旧512消费门而partial/事实空。下一b2分离完整留存/消费并验正常ready后才原子启动，不把本块当可用入口。

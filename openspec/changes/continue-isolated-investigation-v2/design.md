@@ -1,5 +1,21 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 b2.2程序有限事实与preparation细卡（984646f）
+
+b2.1已59/独审限定通过并推送。只新增program_recon.py新evaluator/prepare函数，保fixed_recon/recon_material/EvidenceView原函数和原版本不变，不接runtime/发布/HTTP。新ProgramMaterial仅经checked_program_material校当前scope/当前snapshot/ref后消费；不能接EvidenceView或把ProgramMaterial包装成model_view。复用纯有限谓词的字段/引用规则（内部typed records/query/alert索引），不产生模型候选/自由文判决。
+
+版本明确：fact_policy_ref=finite_network_program_fields.v1，completion_policy_ref=bounded_full_window_program_fields.v1；result schema=program_alert_recon.v1、result_ref prefix=program-recon:，preparation schema=program_alert_recon_preparation.v1、prefix=program-recon-preparation:。每个fact的ID prefix=program-field-finding:且hash含事实政策、当前material snapshot、binding、question/typed predicate/refs；origin=program/assurance=rule_checked，revision依当前材料，源/查询/Alert refs及scope-source refs可追踪，不伪作模型采用或源正文语义判断。
+
+新结果完整保六问题、原criticality/依赖、coverage/held refs、性质unresolved/授权unknown、全Run未发布。仅现有七种有限谓词network_observed/outcome_unknown/alert_linked/source_versions_conflict/bounded_query/query_empty/source_unavailable；来源记录字段动作不支持、冲突/缺版本/截断/正文提取缺口、空/失败/未知或子窗口继续原拒绝/partial约束，不放宽。Q2未精确匹配仍列gap但保原非决策语义；Q1/Q5是有限目标决策项。正常完整查询有typed observation及Q5支持、无blocking gap才ready；不是恶意/授权/影响或全Alert已分析。
+
+program_result明确material_schema/policy/fact/completion refs、program_material_state及snapshot_ref（program-material:）、model_projection={not_requested,eligible_for_model:false}、free_text_semantics=not_assessed_by_program_material；coverage_gaps另外明列alert_free_text_not_semantically_assessed和model_projection_not_requested，这两项在“有限结构字段目标”下为非阻断，不得静默解释为自由文字已读。full source refs只表示已由caller核留存，可追溯全文；不构造模型视图也不声称其门已通过。
+
+evaluate_program_alert_recon(request, material或None, current_snapshot_ref, execution_stop)始终返回stopped和交接，ready停止因limited_objective_answered/否则material_gap，owner已观察budget/deadline/unknown/retention/cancelled优先保原停止原因且partial/保合法事实。execution_stop仍是可信owner输入，不是本纯层证明实际M3预算/时钟。materialNone必须snapshotRefNone，partial/无事实/明确committed_source_material_missing，source_state=not_confirmed/source_available=null/execution_state=unknown，不把unknown当空或不可用已证。材料错误/陈旧snapshot/跨scope/type/hash/不支持profile或stop值直接拒，不降格造成功。
+
+prepare_program_alert_recon只对caller已核owned/committed的tool材料build_program_material→evaluator，不重查/模型/留存。新prep字段material_state=program_material_validated、program_material_document/snapshot_ref和真实新schema、result、version refs、model_projection状态、persistence_status=not_attempted；validated只指结构材料，不等于来源可用或调查ready。必要builder错误传播，不能catch成projection_blocked或回旧report。b2.3未来外呼前冻结这组政策，b2.4再按真实program material section发布/恢复/读取；本块不能交旧M7假装view_ready。
+
+预期：同b1正常1299B/同window/source原A3partial，新纯prepare4条合法有限事实+Q1/Q2/Q5支持/有限ready；原短scope十512B转义消息旧model complete_view受阻，新程序路径可保真实有限事实/ready，模型仍not_requested/不具资格。普通raw Alert指令不选政策/扩大目标。空/failed/unknown/无材料、冲突全部/缺版本、截断、源excerpt缺口、子窗、5类停止逐一保原事实/gap/partial；wrong tenant/hash/scope/源version/当前snapshot/type拒。当前Alert/输入及预算不改，旧同输入输出/schema/MD样例无新写入；这只是纯政策，不代表新runtime/start/发布已接。先strict/合同独审，再仅b2.2实现/直接/结束审阅。
+
 ## 2026-10-25 b2分离路线与b2.1已核程序材料细卡（c253f15）
 
 b1完整来源冻结已47/独审限定通过并推送，normal1299B仍受现Alert512消费门。fresh_design技术复核采用A窄路线：保b1全文及scope_sources留存方式，新增独立程序材料类型，不用短摘要替代原件、不catch EvidenceProjectionBlocked后伪造EvidenceView。b2.1纯材料→b2.2新有限事实/preparation→b2.3新版本runtime冻结/接线→b2.4发布/恢复/owned/API同版兼容，四步逐次规格/实现/测试/独审。全部集成和正常有限ready通过后才a4.2，不因本步材料可建称新路径可执行。
