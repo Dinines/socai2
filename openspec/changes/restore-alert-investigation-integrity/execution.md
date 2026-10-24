@@ -1,3 +1,9 @@
+## 2026-10-24实际远程同步与临时工作树移除
+
+普通推送前两次GitHub直连443超时；只读发现本机已启用127.0.0.1:7897代理，随后仅对Git命令临时使用，正常push成功3fa4be3→32d00ca，已再ls-remote核与本地一致。没有改全局代理、强推、推Windows分支或合并main。
+
+确认远程后，先核旧工作树detached@74d4d90/干净/无非忽略未跟踪资料及最终路径均在项目内，再将382验证原件、171冻结原件迁到根.local，逐文件hash相同；只删5个已核pyc缓存。git worktree remove成功，旧目录不存在。私密转移清单留.local/verification/investigation-workspace-transfer-20261024.json，不入Git；共享摘要/失败/限制仍在提交文档。当前只从普通根目录开发，Windows适配仅本机.local/windows-local且被忽略，原分支94bb52f保留。清理与本机整理未启动/停止业务服务，也未发模型或入湖请求。
+
 ## 2026-10-24普通目录开发与可共享交接（最新授权）
 
 按用户明确要求，主项目根目录切到codex/investigation-working，不再从.local中的工作树开发。原根目录Windows分支94bb52f保留；Windows适配复制到根.local/windows-local，仍被忽略。调查新增统一文档入口，完整链接设计、进度、已知问题、规范审阅及公开回执，其他机器只拉Git分支即可阅读。私密原始捕获保留本机，不能作为阅读设计/问题的前置。

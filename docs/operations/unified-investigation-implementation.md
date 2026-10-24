@@ -1,5 +1,7 @@
 # 统一调查逐模块实施记录
 
+**工作位置与共享（2026-10-24最新）：** 普通项目根目录的codex/investigation-working为唯一开发位置，已推送Git服务端；从[跨机器入口](../investigation/README.md)读取全部共享设计/进度/问题。原.local工作树已移除，其私密验证/冻结原件迁到根.local/verification和.local/versions并逐文件hash核对；它们只作历史保留，不直接运行旧驱动或重放旧Run。其他机器不需要复制这些材料即可阅读当前工作。Windows适配仅本机.local，不混入该分支。
+
 ## 当前代码位置与严格版本隔离结果（2026-10-24）
 
 本次未参与修改的audit_contracts限定ACCEPT、0剩余必须修订；完整隔离回执见[investigation-v2-isolation-20261024.json](investigation-v2-isolation-20261024.json)。

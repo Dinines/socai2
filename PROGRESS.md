@@ -1,3 +1,5 @@
+**2026-10-24远程同步与旧工作树清理完成：** 正常项目根目录E:/aisoc/socai2当前为codex/investigation-working；共享代码/文档已推送，远端曾核到32d00ca与本地一致。旧.local/worktrees/investigation-working已用Git安全移除；382份验证原件和171份冻结原件迁至根.local/verification与.local/versions，逐文件hash保持，5个可再生缓存删除。Windows本机适配只在被忽略.local/windows-local，原Windows分支94bb52f保留且未推送。其他机器从[调查协作入口](docs/investigation/README.md)读取设计/进展/问题，后续正常合并main/其他分支；本轮无功能、模型/业务测试或部署。此记录随后随正常提交同步，最新提交以分支log为准。
+
 **2026-10-24正常目录与跨机器协作（最新）：** 调查分支已回到普通项目根目录E:/aisoc/socai2；Windows适配复制到被忽略的.local/windows-local，Windows分支原提交保留。代码/设计/进度/已知问题/公开回执纳入Git并按用户要求推送调查分支供团队拉取评审，从[统一入口](docs/investigation/README.md)阅读；后续正常合并main/其他目标分支，不在.local下开发活动分支。旧工作树在确认远程后清理，私密原始材料保留本机且不作为阅读前提。当前仅整理交接，无功能实施/业务模型测试/部署。
 
 **2026-10-24调查严格版本隔离：** 用户明确两个互不影响的版本线；新实现移至Agents/API各自app/investigation_v2包，撤出旧API注册并恢复旧测试，已跟踪旧services文件无差异。先API新8/旧51通过，再迁Agents并85项直接合同通过；新v2 HTTP入口仍未接入，不冒称历史真实回执验证新路径。旧版/Windows/生产不改，调查本地提交已授权，暂不push/部署。见主设计1.10与实施记录顶部。
