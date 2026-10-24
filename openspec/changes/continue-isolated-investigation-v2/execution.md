@@ -1,3 +1,7 @@
+## 2026-10-25 b2.1程序材料实际结果
+
+c253f15先细卡/strict/合同独审，再新ProgramMaterial独立类型/必要验证/全文refs，12新＋47相关共59直接及独立同59、5hash/6冻件和2同输入对照通过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-material-20261025.json)。Alert1299B/十转义模型组合16842B仍旧门阻断，而新程序材料可保1/10records，非模型资格；来源错误仍拒/缺口保留，旧源码不改。测试公平性末次补同scope后受影响12重跑，不累加为新增能力。0业务I/O/Run/模型/工具，facts/ready及b2.2—4未实现，不勾整体任务。
+
 ## 2026-10-25 M8a4.1b1实际完整冻结
 
 基线9bc7498；规格/strict与512门结构性问题修订后合同独审通过，再alert_projection/13新；47直接/独立同47及5hash/6完整观察/所有字段路径原文核过，限定ACCEPT0。[回执](../../../docs/operations/investigation-alert-projection-20261025.json)。新普通来源无synthetic/评分卡依赖，完整source及显式projection保来源sha/实际路径，M6 begin SQL双1/2→a1同版恢复；normal1299B明确现A3partial/无事实/六问未评估，b2正常消费ready是a4.2前置。实际PG/HTTP/Run/工具/模型0，不改旧源码或归档change，2.2/2.3未勾。

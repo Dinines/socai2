@@ -1,3 +1,5 @@
+**2026-10-25 b2.1材料分离：** 独立ProgramMaterial已过59直接/独立同59、5hash/6完整冻件和2同输入旧/新对照，[回执](../operations/investigation-program-material-20261025.json)。完整留存不等于语义理解，材料非model view，旧门和源缺口保持；无facts/ready/运行接线。后续b2.2—4全部同版兼容及正常有限ready通过才a4.2。
+
 **2026-10-25 M8a4.1b1完整冻结：** 已过47直接/独立同47、5hash/6观察，普通来源真实四列/路径/全文冻结及M6内存begin-a1兼容见[回执](../operations/investigation-alert-projection-20261025.json)。完整doc1299B使现Alert512消费门明确partial，未正常ready；b2分离完整留存和消费并通过正常有限事实后才a4.2，保持原件和门限。
 
 **2026-10-25 M8a4.1纯操作合同：** 稳定tenant/key身份、完整请求哈希/同键冲突、仅读重试判定经44直接/独立同44、5hash/4完整观察限定通过，[回执](../operations/investigation-start-contract-20261025.json)。纯层不证auth/owned/持久唯一，不创建deadline/Run/调用；a4.1b来源投影、a4.2原子准入、a4.3显式写入口、a4.4受控新Run依次推进。

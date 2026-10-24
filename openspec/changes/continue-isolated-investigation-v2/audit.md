@@ -1,3 +1,7 @@
+## 2026-10-25 b2.1独立程序材料结束审阅
+
+fresh_design合同ACCEPT0后仅新增program_material及12直接；fresh_code独立59、5hash/6组M1输入/完整doc和snapshot/ref重建一致、7组旧/新source query对照及4必要错误反例、双成员source refs/gap核过。复制必要校验段仅改program_record_hash命名、query状态段逐字同原，旧EvidenceView/adoption/A3源码不改。额外2同scope/payload/material对照完整重放：1299B旧Alert512 block/new1record；十转义16842B旧12288 block/new10records，model eligible始终false；[公共回执](../../../docs/operations/investigation-program-material-20261025.json)窄核后限定ACCEPT0。审阅路径/终端Unicode输出两工具失误已修，与源码/实际测试分开。仅纯材料，不认定facts/ready/运行或存储归属，b2.2—4后续。
+
 ## 2026-10-25 M8a4.1b1完整来源冻结结束审阅
 
 fresh_design先阻断合同：完整source/projection文档最小结构已超Alert512B门，不能以偶发gate概括正常可用性。选定b1完整冻结+M6 begin/a1兼容及明确partial，b2分离正常ready是a4.2前置后合同ACCEPT0。fresh_code独立47、5hash/6完整冻件descriptor/controls/sources/plan/A3或拒绝重建一致；逐SourceField真实projection路径及嵌套Unicode/null/bool/数字/指令原文保全、输入不变核过，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-alert-projection-20261025.json)另窄核计数/哈希/边界一致；一次字段结构探看假设误写已纠正，非源码失败。normal1299B实测alert_excerpt512/partial/facts0/六问unassessed，不追认ready/持久启动/auth已验。

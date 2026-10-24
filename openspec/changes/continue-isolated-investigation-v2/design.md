@@ -1,5 +1,21 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 b2分离路线与b2.1已核程序材料细卡（c253f15）
+
+b1完整来源冻结已47/独审限定通过并推送，normal1299B仍受现Alert512消费门。fresh_design技术复核采用A窄路线：保b1全文及scope_sources留存方式，新增独立程序材料类型，不用短摘要替代原件、不catch EvidenceProjectionBlocked后伪造EvidenceView。b2.1纯材料→b2.2新有限事实/preparation→b2.3新版本runtime冻结/接线→b2.4发布/恢复/owned/API同版兼容，四步逐次规格/实现/测试/独审。全部集成和正常有限ready通过后才a4.2，不因本步材料可建称新路径可执行。
+
+b2.1只新增program_material.py：不可变ProgramMaterial/canonical document，schema=network_program_material.v1、正整数revision/scope hash及独立program-material:内容ref。入口build_program_material(context, query_result, CommittedMaterial, revision)；当前context/frozen begin全文及tool工件已owned/committed由可信caller核，纯层沿原材料/hash/参数/来源版本校验不证明实际存储。新类型不继承EvidenceView、没有model_view，不可直接传现模型/采用接口。
+
+校验代码仅在新函数复制所需构建段并只读复用现稳定helper：query payload canonical hash/tenant/source Run/member绑定、参数/范围和receipt/count/执行、M2完整响应/body/hash/UTF8、各source content/version/冲突全版本/重复prefix一致/截断均沿原判据，任何必要错误仍拒而非降为模型不可用。原_message提取及source_excerpt缺口判据保持；本版只解除Alert全文512门及完整模型视图12KiB对程序材料构造的耦合，不顺带放松空/失败/unknown、子窗、截断、冲突、遗漏版本和源正文提取缺口的后续ready约束。现evidence_view及A3/model路径源码/行为不改。
+
+材料文档含完整结构events（所有交付版本/短excerpt或明确提取缺口）、query及coverage/gaps、全index/来源回执/版本/hash；alert只含identity/source IDs、完整data_only_source的scope-source ref/hash/UTF8字节、原record/ownership refs，不复制正文、不把ref当已语义消费。scope_sources只列实际冻结上下文的全部ref/hash/字节，全文仍由原begin保存。program record index字段命名program_record_sha256，不能标为model_visible。model_projection明确not_requested、eligible_for_model=false；free_text_semantics明确not_assessed，不能说整个Alert已理解。材料整体沿现1MiB JSON上限，未造新生产默认。
+
+输出自hash/scope/revision检查函数仅核当前材料结构和当前snapshot引用，不授予auth/owned或执行；模型必仍走原512及完整I2门，程序材料不能用EvidenceView名义绕过。相同输入deterministic且返回嵌套副本，source/index缺口可审查。b2.1没有facts/ready/preparation/Run写入/模型，b2.2才按新政策评价。
+
+预期：b1正常1299B原视图blocked而新材料可建、完整Alert只保原begin refs/sha/size（正文不复制），实际events/query/来源版本及gaps完整，normal/JSONB等价/映射IP/Unicode/指令source均不改scope或政策；旧短Alert可用视图/长Alert阻断保持。十条合法512B转义message导致旧完整视图≥12KiB时，新程序材料仍按自身1MiB合同构造，不称模型可消费。坏tenant/hash/sourceRun/query/scope/源version/body/关联必须拒；多版本冲突/缺版本/截断/空/失败/unknown和子窗口仍原样入材料及gaps，不变成完整。新schema/hash/revision/scope/ref或嵌套bool/int篡改需拒，类型不可交旧checked_view；无I/O/Run/调用、输入不变。先strict/合同独审后仅b2.1实现/直接测试/结束审阅。
+
+b2.2须新material/result/preparation/完成政策ref，固定谓词仅读真实程序材料，正常full-window有限事实ready，保Q3a/b/Q4未评估/性质授权未知/未做自由文语义；b2.3新start intent与begin在外呼前显式冻结新runtime/material/facts/完成组合，源正文不能选策略，unknown/停止/唯一writer不变；b2.4新material section不假装model_view，M7/a1/owned/gateway显式支持新旧组合，旧正常/partial的manifest/MD字节保持、当前Alert编辑不影响历史读、缺原件不补造。只有这些门闭合才进入a4.2，其他Case/Deep/自动政策不在本b2。
+
 ## 2026-10-25 M8a4.1b正式Alert纯投影细卡（9bc7498）
 
 a4.1已44直接/独立限定通过并保存。合同独审先发现必须修：完整文档结构性超过现EvidenceView Alert 512B门，极简示例未含field_sources已691B；不只是偶发大小问题。选定拆步：本b1只验完整冻结和与M6 begin/a1恢复，当前正常短来源也会触发消费阻断、本块只能验证明确partial交接；随后b2独立合同/实现分离完整留存与有界消费视图，正常有限事实/ready通过后才进入a4.2，不能据b1放行可用启动。512/I2门不扩大、原件不截断。b1只新增纯alert_projection/project_alert_start，输入为本次规范intent、当前TenantPrincipal、可信caller已owned SELECT所得canonical Alert的四个字段id/tenant_id/source_event_ids/raw_event，以及非空ownership_check_ref。不得把HTTP正文或仅有ref字符串当归属证据；实际认证/permission/同事务SQL在a4.2/3。复用a4.1严格intent重建，current tenant许可独立核；调用方还须将当前actor与intent绑定。本块不读DB/创建Run/派发。

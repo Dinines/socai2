@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Separate verified program material from gated model views
+
+b2.1 SHALL 新增独立ProgramMaterial类型/schema/hash/scope/revision，以现必要材料/参数/来源版本合同验证完整结构材料，并只引用原begin的完整Alert正文；程序材料构造不受Alert512B和完整模型视图12KiB门耦合，不复制或截断原Alert，不冒充EvidenceView/模型已消费。所有必要验证仍拒，空/失败/unknown/子窗/截断/冲突/遗漏版本及源正文提取缺口仍保留，后续新事实政策另验。不修改旧model builder和其512/I2门。
+
+#### Scenario: Large retained Alert text or complete model framing prevents a model view
+- **WHEN** 原context/工件经caller核owned/committed，来源/查询/hash有效但原Alert全文或组合模型视图超过其门限
+- **THEN** 可构造独立程序材料，保完整结构事件/版本/覆盖/缺口/index及原Alert全文ref/hash/字节，模型状态not_requested且不可交旧模型接口；原模型路径仍阻断。本步不产生facts/ready/Run或外呼
+
+#### Scenario: A required source or material integrity check fails
+- **WHEN** tenant/scope/source Run/参数/receipt/来源版本/hash/body/关联有错，或程序材料自身schema/ref/hash/revision/scope被改
+- **THEN** 明确拒绝，不捕获模型投影异常伪造材料，不把错误改成模型不可用；完整原文/预算不改，无I/O。新runtime/preparation/完成及发布读取组合须后续逐步冻结验证，旧Run仍按旧版本解释
+
 ### Requirement: Project an owned canonical Alert into a frozen manual start profile
 
 M8a4.1b SHALL 纯读取caller已核owned的canonical Alert四字段投影及当前intent/tenant，按当前network_observation.v1仅接唯一telemetry和唯一一致source UUID，核tenant/target/类型与TCP443后构造M1/业务profile。来源真实四字段、完整raw_event嵌套正文、原表示及逐字段路径以版本化data-only文档/hash冻结；显式normalized projection解释M1参数路径，不冒称PG有相应实体列。普通非synthetic告警可用，不依赖评测卡/固定测试描述；本块不证明实际认证、owned SQL或持久启动。完整文档会结构性超过现512B Alert消费门；b1仅验冻结/M6 begin/a1及正确partial，b2须另验完整留存与有界消费分离并使正常有限事实/ready通过后才能a4.2。不得用截断原件或提高现门限掩盖此接缝。

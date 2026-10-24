@@ -1,3 +1,5 @@
+**2026-10-25 b2.1程序材料：** 已过59直接/独立同59、5hash/6组完整重建及2同输入对照，[回执](../operations/investigation-program-material-20261025.json)。新类型保结构记录/缺口和原全文refs，不具有模型资格；旧512/12KiB门及旧builder保持。本步尚无facts/ready，下一新事实政策、runtime冻结和发布读取兼容逐步验证后才启动准入。
+
 **2026-10-25 M8a4.1b1：** 正式来源纯冻结经47直接/独立同47、5hash/6组完整观察和字段路径保全限定通过；[回执](../operations/investigation-alert-projection-20261025.json)。实际字段/原文不依赖synthetic/评分卡，M6内存begin-a1恢复保持；normal全文1299B仍触发旧512消费门而partial/事实空。下一b2分离完整留存/消费并验正常ready后才原子启动，不把本块当可用入口。
 
 **2026-10-25 M8a4.1：** 纯操作身份/请求绑定与重试判定已过44直接/独立同44、5hash/4观察及6额外类型反例，限定ACCEPT0；[回执](../operations/investigation-start-contract-20261025.json)。同key异文冲突不会换Run刷新额度，匹配仅读、不授权begin/外呼；尚未持久去重或真实启动。下一先正式Alert来源投影，再原子准入/写权限/真实新Run。

@@ -1,0 +1,314 @@
+"""Verified structured program material, distinct from a gated model view.
+
+Caller checks owned frozen begin/tool artifacts before invoking this pure
+builder. Hashes and this type prove neither authentication nor retention.
+Complete Alert prose remains in begin scope_sources; no prose interpretation,
+facts, completion, model eligibility, storage or dispatch occurs here.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+import json
+from uuid import UUID
+
+from .activity_records import _time, _validate_response
+from .evidence_view import (CommittedMaterial, _material_dict, _source_version, _parameters, _message, _digest,
+    _VISIBLE, NAMESPACE, _require)
+from .execution_store import canonical_json, content_hash, scope_fingerprint, scope_snapshot, MAX_BODY_BYTES
+from .network_identity import same_network_filter
+from .scope import CAPABILITY, POLICY_REF, ScopeContext
+
+MATERIAL_SCHEMA = "network_program_material.v1"
+MATERIAL_POLICY_REF = "network_program_material_policy.v1"
+MODEL_PROJECTION = {"status": "not_requested", "eligible_for_model": False}
+FREE_TEXT_SEMANTICS = "not_assessed_by_program_material"
+_KEYS = {"schema", "material_policy_ref", "scope_hash", "revision", "material", "scope_sources", "records",
+         "alert", "query", "index", "model_projection", "free_text_semantics", "snapshot_ref"}
+
+
+def _validate_document(body: str) -> dict:
+    _require(isinstance(body, str) and len(body.encode("utf-8")) <= MAX_BODY_BYTES, "invalid_program_material_body")
+    doc = json.loads(body)
+    _require(isinstance(doc, dict) and set(doc) == _KEYS, "invalid_program_material_shape")
+    _require(doc["schema"] == MATERIAL_SCHEMA and doc["material_policy_ref"] == MATERIAL_POLICY_REF,
+             "unsupported_program_material_version")
+    _require(type(doc["revision"]) is int and doc["revision"] > 0, "positive_program_material_revision_required")
+    _digest(doc["scope_hash"])
+    _require(canonical_json(doc["model_projection"]) == canonical_json(MODEL_PROJECTION)
+             and doc["free_text_semantics"] == FREE_TEXT_SEMANTICS, "program_material_does_not_grant_model_eligibility")
+    _require(isinstance(doc["records"], list) and isinstance(doc["index"], dict)
+             and isinstance(doc["scope_sources"], list), "invalid_program_material_sections")
+    _require(isinstance(doc["alert"], dict) and set(doc["alert"]) == {
+        "ref", "identity", "source_event_ids", "data_only_source", "free_text_semantics"}, "invalid_program_alert_shape")
+    claim = doc["material"]
+    _require(isinstance(claim, dict), "invalid_program_material_retention_claim")
+    rebuilt = CommittedMaterial(**{key: value for key, value in claim.items() if key != "artifact_ref"})
+    _require(canonical_json(_material_dict(rebuilt)) == canonical_json(claim), "invalid_program_material_retention_claim")
+    _require(doc["query"]["ref"] == "query:" + str(rebuilt.artifact_id)
+             and doc["index"][doc["query"]["ref"]]["provenance"] == claim, "program_query_material_ref_mismatch")
+    for record in doc["records"]:
+        _require(doc["index"][record["ref"]]["program_record_sha256"] == content_hash(canonical_json(record)),
+                 "program_record_index_mismatch")
+    for ref in doc["scope_sources"]:
+        _require(isinstance(ref, dict) and set(ref) == {"ref", "sha256", "size_bytes"}, "invalid_program_scope_source_ref")
+        _digest(ref["sha256"])
+        _require(ref["ref"] == "scope-source:" + ref["sha256"] and type(ref["size_bytes"]) is int
+                 and ref["size_bytes"] >= 0, "invalid_program_scope_source_ref")
+    unsigned = {key: value for key, value in doc.items() if key != "snapshot_ref"}
+    _require(doc["snapshot_ref"] == "program-material:" + content_hash(canonical_json(unsigned)), "program_material_integrity_mismatch")
+    _require(canonical_json(doc) == body, "program_material_must_be_canonical")
+    return doc
+
+
+def _document(body: str) -> dict:
+    try:
+        return _validate_document(body)
+    except (KeyError, TypeError, AttributeError, IndexError, UnicodeError, RecursionError):
+        raise ValueError("invalid_program_material_structure") from None
+
+
+def _scope_sources(context: ScopeContext) -> list[dict]:
+    _, sources = scope_snapshot(context)
+    return [{"ref": ref, "sha256": content_hash(text), "size_bytes": len(text.encode("utf-8"))}
+            for ref, text in sorted(sources.items())]
+
+
+@dataclass(frozen=True)
+class ProgramMaterial:
+    canonical_doc: str
+
+    def __post_init__(self) -> None:
+        _document(self.canonical_doc)
+
+    @property
+    def snapshot_ref(self) -> str: return _document(self.canonical_doc)["snapshot_ref"]
+    @property
+    def scope_hash(self) -> str: return _document(self.canonical_doc)["scope_hash"]
+    @property
+    def revision(self) -> int: return _document(self.canonical_doc)["revision"]
+    @property
+    def records(self) -> list[dict]: return _document(self.canonical_doc)["records"]
+    @property
+    def index(self) -> dict: return _document(self.canonical_doc)["index"]
+    @property
+    def query(self) -> dict: return _document(self.canonical_doc)["query"]
+    @property
+    def alert(self) -> dict: return _document(self.canonical_doc)["alert"]
+
+
+def checked_program_material(context: ScopeContext, material: ProgramMaterial, *, current_snapshot_ref: str) -> dict:
+    """Current structural snapshot, never proof of caller/PG ownership."""
+    _require(isinstance(context, ScopeContext) and isinstance(material, ProgramMaterial), "program_scope_and_material_required")
+    doc = _document(material.canonical_doc)
+    _require(doc["scope_hash"] == scope_fingerprint(context) and material.snapshot_ref == current_snapshot_ref,
+             "program_material_scope_or_snapshot_mismatch")
+    _require(canonical_json(doc["scope_sources"]) == canonical_json(_scope_sources(context)), "program_scope_source_refs_differ")
+    alert = doc["alert"]
+    member = next((m for m in context.query_scope.members if str(m.alert_id) == alert["identity"]), None)
+    _require(member is not None, "program_alert_outside_scope")
+    digest = content_hash(member.data_only_text)
+    ref = {"ref": "scope-source:" + digest, "sha256": digest, "size_bytes": len(member.data_only_text.encode("utf-8"))}
+    identity = {"identity": str(member.alert_id), "source_event_ids": [str(v) for v in member.source_event_ids],
+                "data_only_sha256": digest, "data_only_bytes": ref["size_bytes"]}
+    expected = {"ref": "alert:" + content_hash(canonical_json(identity)), "identity": identity["identity"],
+                "source_event_ids": identity["source_event_ids"], "data_only_source": ref, "free_text_semantics": FREE_TEXT_SEMANTICS}
+    _require(canonical_json(alert) == canonical_json(expected) and doc["material"]["tenant_id"] == str(context.tenant_id),
+             "program_alert_source_binding_mismatch")
+    return doc
+
+
+def build_program_material(context: ScopeContext, query_result: dict,
+                           artifact_ref: CommittedMaterial, revision: int) -> ProgramMaterial:
+    """Copy necessary source validation; bypass no model gates or source gaps.
+
+    This is a new material path, not a modified EvidenceView. Stable helpers
+    keep the required M2 integrity/extraction contracts; this function does not
+    invoke the model view builder or interpret its projection-block receipt.
+    """
+    _require(isinstance(context, ScopeContext) and context.policy_ref == POLICY_REF, "trusted_scope_required")
+    _require(isinstance(artifact_ref, CommittedMaterial), "committed_material_required")
+    _require(type(revision) is int and revision > 0, "positive_view_revision_required")
+    _require(artifact_ref.tenant_id == context.tenant_id, "material_tenant_mismatch")
+    body = canonical_json(query_result)
+    _require(content_hash(body) == artifact_ref.sha256, "material_payload_hash_mismatch")
+    payload = json.loads(body)  # Detach every caller-owned nested value.
+    _require(isinstance(payload, dict) and payload.get("tool") == CAPABILITY, "unexpected_tool_material")
+    status = payload.get("status")
+    _require(status in {"ok", "empty", "unavailable", "error", "rejected"}, "invalid_query_status")
+    caller = payload.get("caller_receipt")
+    _require(isinstance(caller, dict), "caller_receipt_required")
+    for key, expected in (("tenant_id", str(context.tenant_id)), ("policy_ref", context.policy_ref)):
+        _require(key not in caller or caller[key] == expected, "caller_identity_mismatch")
+    if "run_id" in caller:
+        _require(caller["run_id"] == str(artifact_ref.source_run_id), "source_run_mismatch")
+    member_id = caller.get("member_id")
+    members = context.query_scope.members
+    member = next((m for m in members if str(m.alert_id) == member_id), None)
+    if member_id is None and len(members) == 1 and status not in {"ok", "empty"}:
+        member = members[0]
+    _require(member is not None, "query_member_outside_scope")
+    receipt = payload.get("query_receipt")
+    params = None
+    if receipt is not None:
+        _require(isinstance(receipt, dict), "invalid_query_receipt")
+        params = _parameters(context, member, receipt.get("parameters", {}))
+        _validate_response(payload, params)
+        _require(receipt.get("namespace") == NAMESPACE and type(receipt.get("executed")) is bool,
+                 "query_execution_receipt_missing")
+        if receipt["executed"]:
+            _require(UUID(str(receipt.get("query_id"))).int != 0, "query_identity_missing")
+        else:
+            _require(receipt.get("query_id") is None, "unexecuted_query_has_identity")
+        if "request_parameters" in caller:
+            claimed = {"tenant_id": str(context.tenant_id), **caller["request_parameters"]}
+            _parameters(context, member, claimed)
+            for key in params:
+                _require((_time(params[key]) == _time(claimed[key])) if key in {"start", "end"}
+                         else same_network_filter(key, params[key], claimed[key]), "caller_query_parameter_mismatch")
+    else:
+        _require(status in {"unavailable", "error", "rejected"} and not payload.get("rows")
+                 and payload.get("row_count", 0) == 0 and not payload.get("truncated", False)
+                 and payload.get("available", False) is False, "missing_query_receipt_cannot_supply_evidence")
+    if status in {"ok", "empty"}:
+        _require(receipt["executed"] is True and caller.get("http_attempted") is True,
+                 "successful_query_not_executed")
+        _require(type(receipt.get("returned_count")) is int and receipt["returned_count"] == len(payload["rows"]),
+                 "query_receipt_count_mismatch")
+    material = _material_dict(artifact_ref)
+    index: dict[str, dict] = {}
+    events: dict[str, dict] = {}
+    versions: dict[str, set[str]] = {}
+    claims: dict[str, set[str]] = {}
+    retained_prefixes: dict[str, dict[str, str]] = {}
+    gaps = {"bounded_query_only", "no_global_identity_completeness", "no_authorization_source", "no_behavior_corroboration"}
+    rows = payload.get("rows", [])
+    for position, row in enumerate(rows):
+        version = _source_version(row)
+        identity = f"{NAMESPACE}:{context.tenant_id}:{UUID(row['event_id'])}"
+        claimed = row.get("conflict_version_hashes")
+        _require(isinstance(claimed, list) and len(claimed) == len(set(claimed)), "invalid_conflict_versions")
+        for item in claimed:
+            _digest(item)
+        state = row.get("identity_state")
+        _require(state in {"conflict", "single_version_observed"}, "invalid_source_identity_state")
+        _require((state == "conflict" and len(claimed) >= 2 and version in claimed)
+                 or (state == "single_version_observed" and not claimed), "inconsistent_conflict_versions")
+        versions.setdefault(identity, set()).add(version)
+        if identity in claims:
+            _require(claims[identity] == set(claimed), "inconsistent_conflict_version_sets")
+        claims[identity] = set(claimed)
+        ref = "source:" + content_hash(canonical_json([identity, version]))
+        fields = {name: row[source] for name, source in _VISIBLE.items()}
+        event = {"ref": ref, "identity": identity, "version": version, "fields": fields,
+                 "conflict": state == "conflict", "missing_version_hashes": []}
+        excerpt, message_state = _message(row["raw_payload"])
+        if excerpt is not None:
+            event["data_only_excerpt"] = excerpt
+        provenance = {"source_path": f"$.rows[{position}]", "duplicate_count": row["duplicate_count"],
+                      "bodies": {name: {"full_sha256": row[name]["sha256"], "original_bytes": row[name]["original_bytes"],
+                                        "retained_sha256": content_hash(row[name]["text"]),
+                                        "retained_bytes": row[name]["retained_bytes"], "truncated": row[name]["truncated"]}
+                                 for name in ("raw_payload", "ocsf_json")},
+                      "message_extraction": message_state}
+        if any(row[name]["truncated"] for name in ("raw_payload", "ocsf_json")):
+            gaps.add("source_body_truncated")
+        if ref in events:
+            prior = events[ref]
+            _require({k: v for k, v in prior.items() if k != "data_only_excerpt"}
+                     == {k: v for k, v in event.items() if k != "data_only_excerpt"},
+                     "same_source_version_has_inconsistent_visible_material")
+            for name in ("raw_payload", "ocsf_json"):
+                old, new = retained_prefixes[ref][name], row[name]["text"]
+                _require(old.startswith(new) or new.startswith(old), "same_version_retained_prefix_mismatch")
+                if len(new) > len(old):
+                    retained_prefixes[ref][name] = new
+            if excerpt is not None:
+                _require("data_only_excerpt" not in prior or prior["data_only_excerpt"] == excerpt,
+                         "same_version_message_mismatch")
+                prior["data_only_excerpt"] = excerpt
+                index[ref]["excerpt_path"] = "raw_payload.text:$.message"
+            index[ref]["retrievals"].append(provenance)
+            continue
+        events[ref] = event
+        retained_prefixes[ref] = {name: row[name]["text"] for name in ("raw_payload", "ocsf_json")}
+        full_projection = {"identity": identity, "version": version, "fields": fields,
+                           "body_hashes": {name: row[name]["sha256"] for name in ("raw_payload", "ocsf_json")}}
+        index[ref] = {"kind": "source_event", "identity": identity, "version": version,
+                      "projection_hash": content_hash(canonical_json(full_projection)), "provenance": material,
+                      "field_paths": {name: source for name, source in _VISIBLE.items()},
+                      "excerpt_path": "raw_payload.text:$.message" if excerpt is not None else None,
+                      "retrievals": [provenance]}
+    for event in events.values():
+        states = {item["message_extraction"] for item in index[event["ref"]]["retrievals"]}
+        if not states & {"present", "absent"}:
+            event["excerpt_gaps"] = sorted(states)
+            gaps.update("source_excerpt_" + state for state in states)
+        identity = event["identity"]
+        observed, declared = versions[identity], claims[identity]
+        _require(not declared or observed.issubset(declared), "conflict_omits_delivered_version")
+        # M2 must label every delivered version of an identity consistently.
+        _require(len(observed) == 1 or event["conflict"], "unmarked_source_identity_conflict")
+        _require(not declared or event["conflict"], "inconsistent_source_identity_conflict")
+        missing = sorted(declared - observed)
+        event["missing_version_hashes"] = missing
+        index[event["ref"]]["conflict_version_hashes"] = sorted(declared)
+        if event["conflict"]:
+            gaps.add("source_identity_conflict")
+        if missing:
+            _require(payload["truncated"] is True, "undelivered_version_without_query_truncation")
+            gaps.add("undelivered_conflict_versions")
+        index[event["ref"]]["program_record_sha256"] = content_hash(canonical_json(event))
+    alert_bytes = len(member.data_only_text.encode("utf-8"))
+    alert_digest = content_hash(member.data_only_text)
+    source_ref = {"ref": "scope-source:" + alert_digest, "sha256": alert_digest, "size_bytes": alert_bytes}
+    alert_identity = {"identity": str(member.alert_id), "source_event_ids": [str(v) for v in member.source_event_ids],
+                      "data_only_sha256": alert_digest, "data_only_bytes": alert_bytes}
+    alert_ref = "alert:" + content_hash(canonical_json(alert_identity))
+    alert = {"ref": alert_ref, "identity": str(member.alert_id), "source_event_ids": alert_identity["source_event_ids"],
+             "data_only_source": source_ref, "free_text_semantics": FREE_TEXT_SEMANTICS}
+    index[alert_ref] = {"kind": "alert_claim", "identity": str(member.alert_id), "record_ref": member.record_ref,
+        "ownership_check_ref": member.ownership_check_ref,
+        "field_paths": {f.parameter: {"record_ref": f.record_ref, "path": f.path} for f in member.fields},
+        "data_only_source": source_ref, "free_text_semantics": FREE_TEXT_SEMANTICS}
+    # M2 sets executed before its backend call: a failed/unconfigured source
+    # cannot confirm SQL execution merely because that declaration is true.
+    declared_executed = receipt["executed"] if receipt is not None else None
+    if status in {"ok", "empty"}:
+        executed, execution = True, "query_executed"
+    elif receipt is not None and declared_executed:
+        executed, execution = None, "query_attempted"
+    else:
+        executed = False if declared_executed is False or caller.get("http_attempted") is False else None
+        execution = "not_attempted" if executed is False else "unknown"
+    if status not in {"ok", "empty"}:
+        gaps.update({"source_" + status, "query_execution_" + execution})
+    if status == "empty":
+        gaps.add("empty_within_query_only")
+    if payload.get("truncated", False):
+        gaps.add("query_rows_truncated")
+    snapshot = context.member_snapshot
+    if snapshot.total_members != 1 or len(snapshot.selected) != 1 or snapshot.view_limitations:
+        gaps.add("member_coverage_incomplete")
+    coverage = {"window": {key: params[key] for key in ("start", "end")} if params else None,
+                "limit": params["limit"] if params else None, "gaps": sorted(gaps),
+                "selected_members": len(snapshot.selected), "queried_members": 1 if params else 0,
+                "total_members": snapshot.total_members}
+    query_ref = "query:" + str(artifact_ref.artifact_id)
+    query = {"ref": query_ref, "status": status, "executed": executed, "execution_state": execution,
+             "returned_count": len(rows) if status in {"ok", "empty"} else None,
+             "truncated": payload.get("truncated", False), "coverage": coverage,
+             "source_run_id": material["source_run_id"], "provenance_kind": material["provenance_kind"]}
+    index[query_ref] = {"kind": "query_receipt", "provenance": material, "source_path": "$.query_receipt",
+                        "declared_executed": declared_executed,
+                        "query_id": receipt.get("query_id") if receipt else None,
+                        "receipt_sha256": content_hash(canonical_json(receipt)) if receipt else None,
+                        "parameters": params, "source_coverage": receipt.get("coverage") if receipt else None,
+                        "caller_receipt_sha256": content_hash(canonical_json(caller))}
+
+    document = {"schema": MATERIAL_SCHEMA, "material_policy_ref": MATERIAL_POLICY_REF,
+        "scope_hash": scope_fingerprint(context), "revision": revision, "material": material,
+        "scope_sources": _scope_sources(context), "records": sorted(events.values(), key=lambda item: item["ref"]),
+        "alert": alert, "query": query, "index": index, "model_projection": dict(MODEL_PROJECTION),
+        "free_text_semantics": FREE_TEXT_SEMANTICS}
+    document["snapshot_ref"] = "program-material:" + content_hash(canonical_json(document))
+    return ProgramMaterial(canonical_json(document))

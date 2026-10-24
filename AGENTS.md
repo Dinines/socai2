@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.1独立程序材料限定通过
+
+c253f15后按A窄路线先spec/design/strict/合同独审，新增program_material12新＋projection13/EvidenceView11/A3material10/adoption13共59和独立同59通过，5hash/6完整M1冻件/2同输入对照重建一致，receipt docs/operations/investigation-program-material-20261025.json限定ACCEPT0。ProgramMaterial独立schema/policy/ref，非EvidenceView/无model_view/not_requested eligiblefalse；完整Alert仍scope_sources只ref/hash/size，必要来源校验与旧缺口不变。1299B旧Alert512门仍阻断新材料1record，十转义同短scope旧16842B模型view超12288阻断新材料10records。旧EvidenceView/A3/adoption源码保持，无facts/ready/真实I/O/运行接线。下一b2.2新事实/prep/完成政策→b2.3冻结新runtime组合→b2.4M7/a1/owned/API新旧兼容及旧MD字节不变，全部通过才a4.2；2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查M8a4.1b1完整来源冻结限定通过
 
 9bc7498后合同独审先发现完整文档结构性超过Alert512B消费门，已拆b1完整冻结/兼容/当前partial及b2正常消费门；b1修后合同ACCEPT0再实现。alert_projection13新＋start13/restore11/A3material10共47、独立同47/5hash/6完整观察/SourceField路径及原文保全通过，receipt docs/operations/investigation-alert-projection-20261025.json限定ACCEPT0。普通无synthetic来源可完整冻结，M6 begin SQL双1event2artifacts→a1精确恢复；normal1299B仍经现A3 alert_excerpt512阻断、facts0/六问unassessed/partial，绝不计ready/可用启动。下一b2另卡留存/消费分离，正常有限事实ready后才能a4.2原子准入；不截原件/提门，不改旧代码，0真实PG/HTTP/模型/Run，2.2/2.3未完，无部署/合main。
