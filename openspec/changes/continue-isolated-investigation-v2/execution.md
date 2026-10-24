@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d4实际离线双进程组合
+
+dc50569后合同ACCEPT0再新probe/9直接，API74＋Agents40共114直接/独立同114、8hash，fresh_code用原14ledger/原UUID跨两进程全39观察逐字节复放同，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-offline-20261025.json)。12合法双读/2unknown拒/nil另拒、40API请求/32Mock/34stdio，无真实HTTP/PG；原/独审Popen exit0。管道write/read共同限30秒、故障不重放/留失败/仅清owned通过；权限为原依赖＋注入撤回，不称真实RBAC。下一a4.2原子准入细卡已修隔离/锁后重查P2并限定ACCEPT0，保存后实施，a4.3/4另门，2.2/2.3未勾，无部署/合main。
+
 ## 2026-10-25 b2.4d3实际兼容API网关
 
 2e95081后先五组合合同/strict/独审，再仅新API两模块及25实际producer协议fixture。45新＋old13/query7和独立Agents40总105直接/独立同105，8hash/34完整回放/32Mock调用同，最终限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-gateway-20261025.json)。初3P2七反例及后4合法error误拒修后全保原件和红测，[失败回执](../../../docs/operations/investigation-compatible-gateway-failure-20261025.json)；原7拒/actual8收，nullable未知和原声明与确认差异不改。旧源码/MD保持、0真实PG/network/Run/发布。下一已审d4双app独立进程离线组合，再a4.2原子准入；2.2/2.3未勾，无部署/合main。

@@ -737,3 +737,22 @@ The investigation v2 verification probe SHALL load the API and Agents `app` pack
 #### Scenario: Owned verification process or frame fails
 - **WHEN** a probe-owned subprocess has an EOF, oversized frame, timeout or other failure
 - **THEN** the probe records an incomplete or failed result without overwriting prior evidence, does not replay the request, and cleans up only its own Popen handle using bounded waits
+
+### Requirement: Program manual start admission atomically binds one owned Run and original begin
+The new program manual admission store SHALL persist a stable tenant-operation-key Run, its unchanged program runtime begin and a separately pinned business admission intent in one transaction. It SHALL NOT change legacy source or runtime schema, automatically replay an unknown commit, upgrade an existing Run, or grant external call authority. Authentication and production target-writer policy remain separate entry requirements.
+
+#### Scenario: Fresh program admission commits all identity and budget anchors
+- **WHEN** a trusted current tenant and actor request a new supported manual operation for an owned canonical Alert with explicit server budget
+- **THEN** one transaction saves the Run and two events with three artifacts, including the complete original source, immutable event-pinned intent, fixed owner, closed program versions, zero confirmed manual opening usage and a DB-time bounded deadline
+
+#### Scenario: Repeated or conflicting operation does not reset execution
+- **WHEN** an operation already has an owned Run, or two requests concurrently use the same operation key
+- **THEN** only a fully confirmed first admission may enter the runtime once, an identical repeat only reads verified original anchors, and any old, mixed, partial or conflicting operation refuses without rewriting budget or deadline
+
+#### Scenario: Other operation for the same program admission target is still active
+- **WHEN** another operation within the new manual admission namespace has a ready, claimed, blocked, unknown or unsettled execution for that Alert
+- **THEN** an explicitly READ COMMITTED admission transaction re-queries the operation and all target Runs after obtaining the Alert row lock, refuses missing or invalid anchors instead of filtering them out, and uses publication-aware verified current state to prevent admitting another key; legacy writers outside this namespace require separate policy before a write entry opens
+
+#### Scenario: Admission transaction fails or commit acknowledgement is unknown
+- **WHEN** Run, begin or pinned intent persistence fails, or the commit acknowledgement is lost
+- **THEN** uncommitted rows roll back, an unknown outcome grants no dispatch, and an explicit cold read may only recover the original committed operation without automatic replay or owner takeover

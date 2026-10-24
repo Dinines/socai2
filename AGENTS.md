@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4d4双进程离线组合限定通过
+
+dc50569后先合同/strict/独审再仅新增offline probe/9直接，API74＋独立Agents40总114直接/独立同114、8hash限定ACCEPT0，见docs/operations/investigation-compatible-offline-20261025.json。12合法完整账本双读24次、2unknown账本拒，39完整观察＋nil单列=40API请求/32Mock backend/34stdio。独审hydrate原14账本/原UUID跨两进程完整复放39row/主体/全body同，不用随机新fixture冒充；原PID10960/独审4264 exit0回收，真实HTTP和DurableTool guard0。整次write/read≤30秒、EOF/JSON/帧限/读写timeout无重放/failed receipt保存及owned Popen清理通过；测试会话tenant adapter不称RLS。0实际PG/network/业务Run/模型/部署，旧源码/MD保持。下一a4.2 Run+unchanged begin+独立event-pin意图原子准入合同修READ COMMITTED/锁后重查P2后已独审ACCEPT0，保存后实施，再a4.3权限/启动政策与a4.4受控真实新Run；2.2/2.3/Case/Deep未完，无合main。
+
 # 2026-10-25 调查b2.4d3独立API兼容网关限定通过
 
 2e95081后先合同再仅新API program_result_gateway/program_result_api，原Bearer/CurrentUser双read权限及独立COMPAT配置，无旧app注册/fallback。45新＋oldAPI13/query7及独立Agents40共105直接/独立同105、8hash/34完整HTTP重放（25producer DTO/9边界、32Mock调用）限定ACCEPT0，见docs/operations/investigation-compatible-gateway-20261025.json。旧3111B为缓存协议参考非PG账本重建。初3P2/7自洽反例修ready必要门/已知问题事实/typed材料；后4合法error误拒修nullable未知count/limit/window及声明与确认分离，4red4fail＋3red3fail＋4red4应用error及完整源码/原件保failure。所有25合法输出保持，未知不改0/false；原7全拒。0真实PG/network/UserRBAC/Run/发布/部署，旧源码/MD保持。下一已审d4两独立app包有界stdio离线组合，之后a4.2原子准入，2.2/2.3/Case/Deep未完，无合main。

@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d4离线组合：** 114直接/独立同114、8hash，独审用原14账本/原UUID在两进程完整重放39观察，限定通过，[回执](../operations/investigation-compatible-offline-20261025.json)。12合法双读同、2未知拒、nil另拒；40API请求/32Mock后台，进程已回收。无真实PG/network/Run；下一a4.2原子准入合同已修后审过，保存后实施。
+
 **2026-10-25 b2.4d3兼容API网关：** 105直接/独立同105、8hash/34HTTP重放限定通过，[回执](../operations/investigation-compatible-gateway-20261025.json)和[修前原件](../operations/investigation-compatible-gateway-failure-20261025.json)。25合法producer DTO保持，原7异常全拒；未知count/limit/window保null，原声明与程序确认分开。仅离线，下一已审d4双进程组合后才a4.2原子启动。
 
 **2026-10-25 b2.4d2独立内部GET：** 82直接/独立同82、6hash/24ASGI全重放限定通过，[回执](../operations/investigation-compatible-internal-api-20261025.json)。新COMPAT独立配置/当前gatewaytoken与tenant-actor校验，真实owned服务7组SQL输出保持，17fake只边界；无实际网络/PG或用户RBAC验证。下一已审d3全DTO双版本网关，后d4组合和原子启动。

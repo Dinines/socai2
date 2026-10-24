@@ -1,3 +1,19 @@
+## 2026-10-25 M8a4.2原子手动准入细卡（d4结束保存/本卡独审后实施）
+
+只新增Agents program_start_store/ProgramAlertStartStore及SQL事务替身测试，复用已冻结new intent/full canonical Alert projection/new runtime/publication store；不改旧表/DDL、旧代码或已验runtime函数。输入是可信调用方已认证的current principal/actor＋新完整intent；store另外接收可信server配置的StartBudgetPolicy，并与intent预算完整canonical比较，每请求重核tenant/actor/closed版本，不从Alert正文、caller owner/Run/deadline或retained字符串取得权限。真正HTTP authentication/调查run＋alerts read权限及当前业务启动政策留a4.3，本块只证owned持久原子性，不把纯principal当认证证明。
+
+以既有Run PK承载tenant+operation_key派生的稳定Run，跨族同key仍同身份/异文冲突。首查同tenant目标Run并FOR UPDATE：已有时仅强核唯一新admission event/intent工件及原begin两工件、固定owner/版本/scope/预算/原deadline和原Run字段，完全匹配仅返回只读回执；旧Run/缺marker/半成品/异文/unknown/mixed拒，不补写或重零。不存在时锁canonical Alert行FOR UPDATE（exact四列/显式tenant-id谓词），再重查/INSERT ON CONFLICT DO NOTHING RETURNING并处理并发；不同tenant碰同PK不泄内容、不换ID。原Run case_id必填但不是Case FK，采用明确server命名`v2-alert:<canonicalUUID>`外部引用，不建Case；仅insert实际已核三表合计41列（Run18列）范围内的必需字段，首次status=running/无completed/tokens-cost0，其后不改legacy计费或生命周期。
+
+同一事务内由实际owned Alert全文生成原BusinessProfileRequest，用DB clock建立duration1..180秒内绝对deadline（可被显式server父deadline缩短，不可由caller延长），新manual无triage/history故OpeningUsage固定确认为零；若已有任何Run/ledger不能按新manual零期初重开。复制必要new begin逻辑在同conn执行，调用新store原_append而不嵌套_locked/事务，原begin schema/body/state/receipt保持，输入/owner/全部12版本精确绑定intent。Run INSERT、begin 1event/2artifacts以及独立启动意图1event/1artifact任一失败全部rollback。
+
+启动意图是业务准入标记，kind=`program_alert_start_admitted`、agent=`program_alert_recon_start.v1`、artifact kind=`program_alert_start_intent`；不属于unified_运行状态事件，不伪造新state snapshot。其唯一owned不可变event payload钉住intent正文SHA/工件ID、原begin event/body/state refs、scope hash及新Run/executor，工件schema=`program_alert_start_admission.v1`含完整纯intent和同refs。读取必须从event pin重验实际RETURNING/tenant/Run/event/UTF8-size-hash和唯一性，不能只信工件自hash。现runtime/owned reader继续按原unified_状态读取且后续seq按全Run MAX+1，必须直接测试新2events/3artifacts可以经原ProgramRuntime执行、M7发布及compatible read而无unknown fallback；不为省事放宽unknown managed guard。
+
+同Alert的新手动准入由Alert行锁串行。新准入事务必须显式`conn.transaction(isolation="read_committed")`，不能继承pool/session的repeatable-read默认；取得Alert锁后重新查询operation和同server外部引用下全部目标Run，绝不复用锁前不存在/候选查询结果。按稳定Run ID顺序锁定/强读每个候选，不能先以known marker过滤而漏掉缺marker/坏账本的保留命名空间Run；published使用支持publication的原ProgramReconPublicationStore同conn强读，不用plain writer误判。ready/claimed/blocked、未知或unsettled/无确认handoff都拒另key；只有已确认stopped且未结算0可申请显式新操作，旧费用/unknown不消失。SQLdouble核isolation参数及等待锁后可见新Run的查询顺序，真实隔离行为仍a4.4实证。历史不属于该新准入命名空间的writer未因此取得互斥保证；a4.3开放写入口前须另核目标独立性和旧writer冲突政策，a4.4仅独立受控新Alert。这不是Case自动政策或全系统调度锁。
+
+只有首次全部commit确认回执可标fresh/may_enter_runtime=true，外部调用权仍false，后续controller还需原claim＋M3 reserve确认才可发一次。重复/跨进程只读及ACK未知恢复永不授权重新进入runtime；提交失败/结果未知均外呼0，不自动重试begin/新key或延长deadline。显式read_operation只能核原intent/owned原件与现状态，不接管未发出但owner失联的Run。并发同key仅一个fresh，其余匹配仅读；同key异actor/目标/窗口/budget/版本拒，旧新同key拒升级。
+
+预期SQLdouble：全新准入2/3、正常fullsource有限ready后可发布/双版读取；逐项Run/begin/intent写失败rollback为无Run/无ledger，实际commit后ACK丢失不成功/0派发，cold只读恢复同原件/零副作用；并发同key/不同key同Alert、合法已停后显式新key、unknown未结算阻断、cross tenant/actor/old marker/missing/duplicate/hash/typed字段漂移、原deadline/预算/期初/hash不变均验。先strict/本卡独立审阅，再只本块实现/直接/独立复核/回执保存；无真实PG/HTTP/模型/业务Run/部署，a4.3显式写权限/派发和a4.4实际接缝另门，2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 b2.4d4离线双进程组合细卡（d3结束保存后实施）
 
 只新增受控probe与其合同测试，不改已经冻结的API/Agents源码、注册或服务配置。两个`app`包在不同Python进程加载：API进程使用新program_result_api/CompatibleResultReadGateway及既有service认证/双read权限，Agents子进程使用新program_result_api/CompatibleOwnedReconResultReader和完整SQL账本替身；通过有界stdio请求/响应传递HTTP method/path/headers/body，httpx MockTransport与ASGI执行真正两个独立app。无HTTP socket、PG、CH、模型或后台worker；不得把该组合称真实网络/数据库联测。stdio不是新产品入口，case选择仅测试控制面，不能进入业务request/query或返回DTO。

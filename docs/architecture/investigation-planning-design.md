@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d4离线组合：** 114直接/独立同114、8hash/原14账本双进程全39row复放限定通过，[回执](../operations/investigation-compatible-offline-20261025.json)。新旧完整DTO/来源账本保持，unknown/权限/轮换/篡改拒、管道有界/owned进程回收；无真实PG/network/新Run。下一a4.2原子Run+begin+event-pin意图，a4.3权限及legacy writer目标政策另门，Case/Deep仍待。
+
 **2026-10-25 b2.4d3网关：** 105直接/独立同105、8hash/34HTTP完整重放限定通过，[回执](../operations/investigation-compatible-gateway-20261025.json)。双版本exact协议/12版本/nullable evidence、同版hash、当前双read权限和有界单GET已核；3P2及合法error误拒均修并保失败，unknown不变0/false。无真实PG/network/Run；下一d4离线组合合同已审，再a4.2原子准入，Case/Deep仍待。
 
 **2026-10-25 b2.4d2内部GET：** 82直接/独立同82、6hash/24ASGI重放限定通过，[回执](../operations/investigation-compatible-internal-api-20261025.json)。新独立COMPAT config、gateway身份断言/只读覆盖拒、pool有界清理；仅最小envelope，oldAPI不变，0真实网络/PG/用户RBAC。d3完整DTO/evidence封闭组合合同已修后审过，再d4/a4.2。

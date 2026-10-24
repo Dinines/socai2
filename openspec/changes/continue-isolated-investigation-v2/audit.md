@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d4结束独审
+
+fresh_design合同限定ACCEPT0，d3 dc50569保存后才仅新增probe/tests。fresh_code独立114唯一项/最新9复跑不重复计数、8hash及原attempt01完整14ledger/39HTTP/body/principal/计数全核；将原UUID完整hydrate并经两进程重放全部39row，12direct同/2unknown拒，nil另400/backend0，32backend/34stdio；真实HTTP和DurableTool guard0。原/独审Popen均exit0回收，额外7非法timeout拒，[回执](../../../docs/operations/investigation-compatible-offline-20261025.json)限定ACCEPT/0必须修。仅离线，不放行actual PG/network/auth/a4.2；下一a4.2合同初1P2（repeatable-read旧快照）补READ COMMITTED/锁后重查所有目标/缺marker拒/publication-aware强读后fresh_design限定ACCEPT0，本块保存后实施。
+
 ## 2026-10-25 b2.4d3修后结束独审
 
 fresh_design先补五类nullable evidence合同后ACCEPT0；fresh_code初92外3P2/7自洽反例、修后99外4合法error误拒均修，原件/源码/4red4fail＋3red3fail＋4red4应用error全核同。[失败回执](../../../docs/operations/investigation-compatible-gateway-failure-20261025.json)。最终独立105、8hash/34HTTP全字节/canonical/状态/次数重放通过，原7全拒、actual8全收，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-gateway-20261025.json)。未知与原声明保全，不归零/false；不外推真实auth/PG/network。d4合同另由fresh_design限定ACCEPT0，本块保存后才实施，a4.2仍另门。

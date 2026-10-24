@@ -1,3 +1,11 @@
+## 2026-10-25 b2.4d4实际双进程离线组合
+
+dc50569后先合同/strict/fresh_design限定ACCEPT0，再仅新offline probe及9直接；API新probe9＋既有65=74，独立Agents40，总114直接/独立同114、8SHA限定ACCEPT0，[回执](investigation-compatible-offline-20261025.json)。两个Python进程各加载自己的app，API实际认证依赖/双read权限→有界stdio HTTP→Agents实际ASGI/CompatibleOwnedReader→完整SQLdouble。12合法fixture（两族published/candidate/progress/observer/cancelled＋旧blocked两例）各双读24次同完整DTO/MD/原账本/Mock工具数；另2未知历史Run拒。39观察＋nil单列共40API请求，32Mock后台/34stdio，0真实网络。
+
+attempt01保存完整14账本/原UUID、directDTO及39完整body/principal/ledgerhash，SHA af936fa57ce6f1c7f4dd004dfdd79a44f5a5b8aa0e03dd2a72e909e9260d0850。fresh_code独立hydrate这些原件而非新造随机artifact，在两个进程全39row重放逐字段同，12直接DTO同/2未知拒；真实HTTP transport/DurableTool被guard且未调用。原PID10960与独审4264均exit0并回收，完整重放JSON SHA5131dc59…/helper6820d599…已登记。当前权限撤回/伪造header为注入CurrentUser，session-tenant adapter仅SQL替身不称RLS或实际RBAC；旧真实3111B仍仅d3协议参考。
+
+单交换包含完整write/read≤30秒，故障EOF/坏JSON/帧大小/读写超时/不重放、失败回执保存/禁止覆盖旧输出和workspace边界/owned Popen清理均验；额外7非法timeout拒，不累计114。业务源码/旧注册/模型/PG/真实Run/发布/通知/部署均无变化。下一a4.2细卡已修后fresh_design限定ACCEPT0：初发现repeatable-read下仅行锁可能保旧快照，补显式READ COMMITTED/锁后重查全部目标Run/缺marker拒/publication-aware同conn强读与独立server预算；目标同TX稳定Run＋原begin＋独立业务intent marker，a4.3真实写权限及其他writer目标政策、a4.4隔离真实新Run依次另门；2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 b2.4d3实际独立兼容API网关
 
 2e95081后五类result/preparation/evidence合同先审，再新program_result_gateway/program_result_api及可移植25份完整producer DTO。API45新＋old13/query7=65，独立Agents进程21内部API/19owned=40，总105直接/独立同105；8文件SHA/34完整ASGI回放（25合法、9边界、32Mock后台调用）逐字节/canonical/状态/次数全核，fresh_code最终限定ACCEPT0，[回执](investigation-compatible-gateway-20261025.json)。旧actual3111B缓存仅协议参考，未重新访问PG。
