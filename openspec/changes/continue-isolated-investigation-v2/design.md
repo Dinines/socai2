@@ -1,3 +1,17 @@
+## 2026-10-25 b2.4兼容分块及a纯新发布细卡（d2结束保存后实现）
+
+d2完成后按a纯program publication/renderer→b新ProgramReconPublicationStore→c新pure restore→d owned reader/HTTP显式版本分派逐门，不改已有fixed publication/store/restore/reader/app/gateway函数、旧源schema/策略或旧MD3111B。未知owned begin/runtime/intent不回落，真实启动a4.2要待b2.4全部通过。b/c/d各自后续细卡/独审，本卡只a。
+
+a仅新program_recon_publication.py/prepare_program_recon_publication及测试，复制必要旧M7a发布校验/状态映射/escape/render骨架，可只读复用checked_artifact、_fact_text等稳定纯helpers；不把ProgramMaterial伪装成EvidenceView。新manifest=program_recon_result_manifest.v1、execution=program_recon_publication_execution.v1、sections=program_recon_handoff_sections.v1、mapping=program_recon_publication_state.v1、renderer=program_recon_markdown.v1、package=program_recon_publication_candidate.v1/ref=program-recon-publication-candidate:。新manifest及execution明确完整closed policy_versions，版本不由caller选；old prefix/schema混入拒，old函数/oldMD保持。
+
+输入为caller已核owned request、handoff/source-state/current-stopped-state三工件；纯checked只字节/hash/格式，不证明实际event/租户归属，后续b新store再核全原件链。new handoff schema/ref/closed versions/plan/profile/scope/目标及result新schema/ref严格，sixQ/性质unresolved/授权unknown/stopped、有限完成政策匹配。source/current经new _runtime_copy，new finish从source按原stopped_at重建current（除persistence），全部账/输入/limits/owner及handoff/event/link一致；有late结算或当前pub/更新就拒stale，不能旧candidate配新usage。candidate.execution须同原current usage/cancel；observer引用保留不作为source。
+
+validated preparation只能program_alert_recon_preparation.v1/program_material_validated；program_material_document和snapshot_ref及all policy refs一致，构造独立ProgramMaterial并checked/evaluate新有限政策重建result、exact canonical比较，杜绝自洽rehash伪facts或model eligibility；材料工件归属仍caller/后续b核。无preparation只能program_runtime_unadopted_result.v1，prefix正确、facts=[]/partial/validated_source_refs=[]/program_material_state=missing/source_state=not_confirmed/available=null/execution_state=unknown，原实际refs/停止/缺口保持，不伪来源可用性。section evidence指向/preparation/program_material_document（有则typed ProgramMaterial），无材料为空；非旧model_view。
+
+有限ready才finished/complete_for_scope/none；否则stopped或cancelled/partial/awaiting_human，human_acknowledged=false。manifest保profile/target/objective/scope/revision/coverage/new result/runtime/version/原工件sections/hash/held/observer/unknown-unsettled-unpriced；candidate only、report与execution持久refs为空、publication not_attempted。新MD确定性展示实际typed事实值/六问/窗口/有限目标及程序材料状态、全文未语义核/模型未请求与无资格/性质授权未知、缺口/所有refs/实际用量/续接，不回显原自由文或执行源指令，escape所有不可信字符串，不触发Case/关闭/通知/查询或模型。
+
+预期a直接：d2普通source/new handoff产新明确manifest/MD四事实有限ready，反例空/失败/unknown/无确认observer/取消/期限/被拒source均partial且所有refs/未知真实保持；同输入逐字节稳定并输出脱离。old/new schema混搭/缺多版本/错snapshot/ref/hash/文档model标记/伪facts/错ready/陈旧usage/cancel/跨scope/owner与状态不一致拒。old fixed preparation/MD原字节保持，a无PG/HTTP/Run/发布提交。先strict/独立合同再本a实现/直接/结束独审；b之后仍须单独验收，不以candidate声称已发布或通知。
+
 ## 2026-10-25 b2.3d2新版正式来源投影实施前细卡（d1结束保存后实现）
 
 只新增program_alert_projection.py/project_program_alert_start及新直接合同。复制必要旧full projection校验/组装，不改旧alert_projection/start函数或用旧intent版本转换；先program_replay_decision完整校new intent/closed版本，之后caller已核current tenant/actor/双权限及owned四列Alert前提同b1。严格单source UUID/单telemetry、source tenant/event一致、TCP443/已核字段和显式路径；普通来源不依赖synthetic/evaluation答案/固定文本，多/重复/缺失/不支持一律拒，原JSONB完整保留无截断/提限。

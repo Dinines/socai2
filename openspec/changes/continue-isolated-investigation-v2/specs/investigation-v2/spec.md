@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Prepare a separately versioned program publication without changing fixed results
+
+b2.4a SHALL 仅新增pure program publication/renderer，固定new manifest/execution/sections/mapping/renderer/package版本及完整closed组合，核new handoff/source/current全量转换/用量一致，重建ProgramMaterial有限result；不伪EvidenceView/模型资格，不改旧发布/MD。候选不等于持久交付或通知。
+
+#### Scenario: A current owned program handoff has valid material or explicit unadopted state
+- **WHEN** caller已核owned三工件、pure版本/引用/hash/当前finish转换相符且新材料有限result重建一致
+- **THEN** 生成有限三维状态/完整sections/refs/实际未知用量和确定性安全MD，性质授权全文语义边界明示，report/execution持久ref空；无材料只unadopted partial，不把observer当source
+
+#### Scenario: A result is mixed stale or rehashed beyond its finite policy
+- **WHEN** 新旧或未知版本、错误material/model标记/伪facts、late结算或scope/owner/账/状态转换不符
+- **THEN** 拒candidate，不用旧runtime或旧MD解释；b持久、c恢复、d owned/HTTP另验，a不连接PG/HTTP或提交发布
+
 ### Requirement: Project canonical Alert data only for the explicit new program intent
 
 b2.3d2 SHALL 新增独立完整source投影，先校new program intent版本，保canonical_program_alert_recon_projection.v1完整原文/hash与真实字段路径、M1限制，不调用旧projection/转换旧intent。仅caller已核tenant/actor/权限及四列owned Alert前提，函数不授予其真实性或I/O权限。

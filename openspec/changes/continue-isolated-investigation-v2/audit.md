@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3d2结束独审
+
+fresh_design合同限定ACCEPT0后实施；fresh_code独立82/6hash/两冻件SHA/6完整投影+新旧prep+观察重建、SQLseam完整cold重复/Run6列同，另6路径/映射IP/大写UUID/长正文隔离核过，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-program-alert-projection-20261025.json)。新normal1307B/最大17759B保全、新4facts有限ready且model false、旧partial；oldrestore明确拒newbegin；不证明真实auth/owned或原子启动，无网络/PG。b2.4a细卡另待合同，b/c/d和a4.2后续。
+
 ## 2026-10-25 b2.3d1结束独审
 
 fresh_design合同限定ACCEPT0后新18＋42相关共60直接；fresh_code独立同60/6hash/6完整意图决定及observations SHA、UUID公式和输入不变核，另27类型/旧原件/混版反例拒，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-program-start-contract-20261025.json)。new closed12/旧新同身份异文冲突/无版本转换、pure双授权false边界准确；无网络/真实PG。d2合同待独审、b2.4/a4.2另门。

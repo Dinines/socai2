@@ -1,3 +1,5 @@
+**2026-10-25 b2.3d2新来源投影：** 82直接/独立同82、6hash/6完整投影及SQLMock接缝cold重建限定通过，[回执](../operations/investigation-program-alert-projection-20261025.json)。正常全文1307B和最长17759B不截，新有限4facts ready/model false、旧仍partial；新旧意图互拒、旧restore明确拒新begin。下一b2.4新发布/恢复/owned/HTTP兼容，实际启动仍后续。
+
 **2026-10-25 b2.3d1新启动意图：** 60直接/独立同60、6hash/6完整意图重建和27额外反例拒，限定ACCEPT0；[回执](../operations/investigation-program-start-contract-20261025.json)。new closed版本显式，旧新同key同Run/executor而异文冲突，不能换版本刷新预算；纯双授权false。下一d2新来源投影和b2.4兼容，尚无持久启动。
 
 **2026-10-25 b2.3c单次执行：** 新manual控制器已过82直接/独立同82、7hash/8账本及完整冷读输出重建，限定ACCEPT0；[回执](../operations/investigation-program-runtime-20261025.json)。确认claim及真实M3 reserve后才一次Mock查询，ACK未知/取消/重复不重派，观察保留不冒充来源。仅SQL/MockTransport；下一已审d1新意图，再d2投影和b2.4兼容。

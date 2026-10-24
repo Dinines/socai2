@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3d2实际投影
+
+fbd1b1d后先已审合同再新投影，82直接/独立同82、6hash/6完整重建及SQLMock冷读限定ACCEPT0，[回执](../../../docs/operations/investigation-program-alert-projection-20261025.json)。原全文/paths/hash不截，正常4facts有限ready/model false、旧partial，旧restore拒newbegin；0实际Run/PG/HTTP/发布。下一b2.4兼容分块，a4.2实际准入仍后续，2.2/2.3未勾。
+
 ## 2026-10-25 b2.3d1新意图实际结果
 
 b90cb80后已审合同再只新增纯new intent，60直接/独立同60、6hash/6完整重建及27额外反例通过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-contract-20261025.json)。同key Run身份不变/跨版冲突，旧不升级、pure不执行；d2/b2.4/a4.2后续，2.2/2.3未勾。

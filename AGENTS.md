@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.3d2新版来源投影限定通过
+
+fbd1b1d后合同/spec/strict/独审先行，仅新program_alert_projection及15新＋旧projection13/newstart18/newruntime25/oldrestore11共82直接/独立同82、6hash/6完整投影/两冻件及预建Run SQLMock接缝cold完整重建，receipt docs/operations/investigation-program-alert-projection-20261025.json限定ACCEPT0。新意图先完整核/新doc schema，无旧转换；原source/hash/路径及IP/UUID原拼写保全，normal1307B/最大17759B不截，新4facts有限ready/model false、旧仍partial。预建Run1/2→5/10/Mock1，重复不增，oldrestore明确拒新begin。BusinessProfileRequest不证明真实auth/owned或intent-budget-owner-Run原子绑定；0真实访问/新Run/发布。下一b2.4 a纯newpub→b持久→c恢复→d owned/HTTP显式版本，各另门后a4.2；2.2/2.3未完，旧源码/MD保持，无部署/合main。
+
 # 2026-10-25 调查b2.3d1新版启动意图限定通过
 
 b90cb80后spec/design/strict/合同ACCEPT0先行，仅新program_start_contract及18直接；＋oldstart13/newstate18/profile11共60直接/独立同60、6hash/6完整意图决定重建/UUID公式核验及27额外类型/旧原件/混版反例拒，receipt docs/operations/investigation-program-start-contract-20261025.json限定ACCEPT0。newrequest/intent/ref/decision含closed12版本，tenant/key Run/executor同旧；旧新同key异文冲突不升级/转换，StartBudgetPolicy语义/schema不改。pure双授权false，不造deadline/Run/持久性；下一d2显式新投影（合同待审）→b2.4兼容→a4.2，2.2/2.3未完，旧源码不改、无真实I/O/部署/合main。
