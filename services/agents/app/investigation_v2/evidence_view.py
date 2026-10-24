@@ -14,7 +14,7 @@ import re
 from typing import Any
 from uuid import UUID
 
-from app.llm.contract_rules import LLMInputContract
+from app.llm.contract_rules import LLMContractViolation, LLMInputContract
 from app.investigation_v2.activity_records import _time, _validate_response
 from .execution_store import canonical_json, content_hash, scope_fingerprint
 from .scope import CAPABILITY, POLICY_REF, QueryRequest, ScopeContext, UTCWindow, admit_query
@@ -138,14 +138,32 @@ def _message(body: dict) -> tuple[str | None, str]:
             result[key] = value
         return result
 
+    if body["truncated"]:
+        return None, "not_extractable"
     try:
         parsed = json.loads(body["text"], object_pairs_hook=unique_object)
     except json.JSONDecodeError:
-        return None, "not_extractable" if body["truncated"] else "not_json"
-    if not isinstance(parsed, dict) or "message" not in parsed:
+        return None, "not_json"
+    except RecursionError:
+        return None, "json_nesting_limit"
+    except ValueError:
+        return None, "ambiguous_json"
+    if not isinstance(parsed, dict):
+        return None, "unsupported_body_shape"
+    if "message" not in parsed:
         return None, "absent"
-    _require(isinstance(parsed["message"], str), "source_message_must_be_text")
-    return _excerpt(parsed["message"]), "present"
+    if not isinstance(parsed["message"], str):
+        return None, "unsupported_type"
+    try:
+        message_bytes = len(parsed["message"].encode("utf-8"))
+    except UnicodeEncodeError:
+        return None, "invalid_unicode"
+    if message_bytes > MAX_EXCERPT_BYTES:
+        return None, "over_limit"
+    try:
+        return _excerpt(parsed["message"]), "present"
+    except LLMContractViolation:
+        return None, "input_contract_rejected"
 
 
 def _parameters(context: ScopeContext, member: Any, values: dict) -> dict:
@@ -284,6 +302,10 @@ def build_evidence_view(context: ScopeContext, query_result: dict,
                       "excerpt_path": "raw_payload.text:$.message" if excerpt is not None else None,
                       "retrievals": [provenance]}
     for event in events.values():
+        states = {item["message_extraction"] for item in index[event["ref"]]["retrievals"]}
+        if not states & {"present", "absent"}:
+            event["excerpt_gaps"] = sorted(states)
+            gaps.update("source_excerpt_" + state for state in states)
         identity = event["identity"]
         observed, declared = versions[identity], claims[identity]
         _require(not declared or observed.issubset(declared), "conflict_omits_delivered_version")

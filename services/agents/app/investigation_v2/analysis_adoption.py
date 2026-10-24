@@ -59,8 +59,11 @@ def _predicate(finding: dict, model_view: dict, index: dict) -> dict:
         _require(len(refs) == len(cited) == 1, "one_source_version_required")
         field, expected = ("action", "network_connection_observed") if claim == "network_observed" else ("outcome", "unknown")
         _require(cited[0]["fields"][field] == expected, "source_does_not_support_predicate")
-        return {"predicate": claim, "source_identity": cited[0]["identity"], "source_version": cited[0]["version"],
+        fact = {"predicate": claim, "source_identity": cited[0]["identity"], "source_version": cited[0]["version"],
                 "fields": cited[0]["fields"], "conflict": cited[0]["conflict"]}
+        if cited[0].get("excerpt_gaps"):
+            fact["excerpt_gaps"] = cited[0]["excerpt_gaps"]
+        return fact
     if claim == "alert_linked":
         _require(len(refs) == 2 and len(cited) == 1 and alert["ref"] in refs, "alert_and_one_source_required")
         event_id = cited[0]["identity"].rsplit(":", 1)[1]

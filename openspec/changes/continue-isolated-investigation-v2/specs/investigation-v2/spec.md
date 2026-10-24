@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Degrade optional source excerpts locally while preserving checked observations
+
+EvidenceView SHALL 区分来源身份/必要字段不可核与可选`raw_payload.message`摘录不可用。仅当必要来源合同及hash通过时，超512 UTF-8字节、结构化message、非JSON/重复键正文、截断正文或LLM输入合同不允许的摘录 SHALL 局部省略并留确定原因；其他已核结构字段、原文hash/引用和有效记录 MUST 保留。MUST NOT 裁掉正文后声称完整、将对象直接转成prompt、绕过LLMInputContract或放松身份/hash/窗口校验。依赖未读正文的更强判断 SHALL 保持待核，有限字段谓词不因此扩大。当前alert任务文本的原有界限保持。
+
+#### Scenario: One optional message cannot be consumed but checked records remain valid
+- **WHEN** 同批包含短文、超长或对象型message，来源身份、时间、端点及内容hash均合法
+- **THEN** builder保留各记录的结构观察和来源引用，仅向模型提供合规短文；其他记录附excerpt_gaps，查询coverage列对应缺口，采用后的相关有限观察也保缺口，性质unresolved/授权unknown不改变
+
+#### Scenario: The unread body could contain a counterexample or has forbidden raw material
+- **WHEN** 正文包含关键语义但无法完整安全摘录，或截断/重复键/输入合同拒绝使正文含义不确定
+- **THEN** 不把省略当无反证，不向模型泄漏被拒正文；保原件可回查及未读原因，禁止通过当前有限谓词采用恶意/授权/连接成功等更强结论。身份、hash或必需字段损坏仍拒绝整个不可信材料
+
+#### Scenario: A later complete retrieval restores the same optional excerpt
+- **WHEN** 同身份同版本同时有截断及完整取回，且保留前缀彼此兼容
+- **THEN** 保两次取回出处，并优先使用完整且合规的message；不能因不完整取回覆盖已可用摘录，亦不能因改为局部降级接受不一致前缀
+
 ### Requirement: Bind business profiles to checked targets without invoking business operations
 
 M1业务profile合同 SHALL 以可信调用方已核的ScopeContext及目标/成员快照，显式绑定`profile/profile_version/target/objective/policy/trigger`及交付归属。当前 SHALL 仅支持`alert_recon + alert`或`case_investigation + case`，保留`network_observation.v1`及`verify_source_network_observation`有限目标；MUST NOT 因trigger、来源正文或profile切换扩大问题、查询范围、权限、额度或已验分析能力。绑定 SHALL 纯计算、不可变并保scope/目标/成员版本，不发模型/HTTP/DB、不创建Case/Run、不注册旧入口；原explicit_set合同 SHALL 保持可独立使用。

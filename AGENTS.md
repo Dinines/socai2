@@ -1,3 +1,7 @@
+# 2026-10-24 调查I1限定放行，下一步I2
+
+M1经独审提交7e84fe7后，按规格/预期/strict→实现→直接验证推进I1。6新＋11视图＋13采用＋15模型合同通过；独审发现可选message转义Unicode编码整体失败，已局部修复并独立复验，限定ACCEPT、0剩余必须修。必要身份/hash/范围及输入隔离保持，未知正文缺口进入readable。下一块I2完整messages预算未实施，须继续同样步骤。无真实模型/业务HTTP/DB/写入/部署或合main；阶段提交/推送。原541511c评审probe保历史用途，不在已修HEAD当回归套件。
+
 # 2026-10-24 调查按步续接授权与M1纯合同放行
 
 用户在流程及新旧对照后明确要求按以往步骤推进。当前普通目录分支codex/investigation-review-20261024；已先合同/strict，再M1业务profile纯绑定，11新＋原scope8项通过，未参与实现者复跑限定ACCEPT、0必须修。仅结构绑定已核目标/成员，不是Case认证/继承/启动或执行器接线。下一步依次I1正文局部降级、I2完整messages预算，各块先预期/规格再实现测试/回执/独审，达标才下一块。调查分支按阶段提交/推送；旧源码/入口、历史失败/unknown、迁移归档保持，无部署或自动合main。当前记录见docs/operations/unified-investigation-implementation.md。

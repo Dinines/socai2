@@ -1,3 +1,9 @@
+## 2026-10-24 I1可选正文局部降级结束窄审
+
+M1以7e84fe7保存放行后才做本块，先精确规格/设计/预期及strict，再改新版可选摘录和相关事实缺口投影。6新＋11视图＋13采用＋15模型合同均正常exit0，公开[回执](../../../docs/operations/investigation-optional-excerpt-20261024.json)含源码hash、样例和失败历史。未参与实现者`review_response_audit`最初发现转义Unicode编码异常仍整体失败，暂不放行；仅在message编码处捕获invalid_unicode并补正常同批对照后，独立原反例及6项通过，更新为限定ACCEPT、0剩余必须修。正文不替换/透传，必要身份/hash/窗口/版本/前缀校验不放松，有限事实/readable保缺口且无强结论增强。
+
+解析递归测试助手的一次错误假设及修正也原样记入回执。旧源码/API/归档保持，无真实模型/业务HTTP/DB/写入/部署；12KiB及I2此时未改。只放行I1，可进入I2；旧评审probe保原基线用途，历史8模型试验不改写为新语义已验。
+
 ## 2026-10-24 M1业务profile纯合同结束窄审
 
 用户授权按既定步骤推进；以`a3a0108`为基线，先spec/design/实施预期与strict，再新增`business_profile.py`和独立测试。未参与实现的`review_response_audit`只读窄审限定ACCEPT、0必须修：独立11新＋原scope8项exit0；3份源码hash及无Case告警/部分选材Case两份descriptor与[公开回执](../../../docs/operations/investigation-profile-contract-20261024.json)一致。profile/target/objective/policy显式，manual/automatic不改变归属；4成员全选/只选3条保最早遗漏，原scope不扩大。目标认证/归属/一致分页均明确为调用方前提，纯结构校核不冒充认证。

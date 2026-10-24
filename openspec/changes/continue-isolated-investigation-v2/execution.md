@@ -1,5 +1,9 @@
 # Execution: 调查分支逐步实施原记录
 
+## 2026-10-24 I1来源可选正文局部降级
+
+按M1放行后再I1的顺序，先精确spec/design/实施卡并strict，再只改新v2解析和有限观察缺口投影。45项直接合同通过，独审发现Unicode编码必须修后已局部修复并独立复验，限定ACCEPT、0剩余必须修，见[实施结果](../../../docs/operations/unified-investigation-implementation.md)与[回执](../../../docs/operations/investigation-optional-excerpt-20261024.json)。原始失败/修订、源码hash及旧probe的基线用途均保留。没有真实模型或业务访问，下一块I2尚未实施。
+
 ## 2026-10-24 M1业务profile纯合同续接
 
 用户明确要求按以往步骤推进。以普通目录新调查分支`a3a0108`为基线，先写本批proposal/design/spec及[实施预期卡](../../../docs/operations/unified-investigation-implementation.md)，strict通过后仅新增Agents v2 `business_profile.py`和独立测试。11新合同＋原scope8项直接通过，命令/样例/源码hash见[回执](../../../docs/operations/investigation-profile-contract-20261024.json)。仅证明已核目标与既有scope的纯绑定；不证明实际认证/Case分页/继承/启动，未接预算执行器或HTTP，真实模型/业务调用/写入0。结束窄审另记audit，通过前不进入正文降级块。原文后续“仅合并/未实施”为历史阶段，不撤销本次用户授权。

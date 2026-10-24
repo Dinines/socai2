@@ -283,13 +283,15 @@ class EvidenceViewTests(unittest.TestCase):
         self.assertEqual(event["fields"], clean.model_view["events"][0]["fields"])
         self.assertEqual(context.questions[3].answer_status, "unassessed")
 
-    def test_utf8_excerpt_bound_and_full_view_limit_reject_without_clipping(self):
+    def test_utf8_excerpt_bound_degrades_optional_message_without_clipping(self):
         boundary = "界" * 170 + "ab"  # Exactly 512 UTF-8 bytes.
         result = view(query([record(boundary)]))
         self.assertEqual(result.model_view["events"][0]["data_only_excerpt"], boundary)
         for text in (boundary + "c", "界" * 171):
-            with self.subTest(text_bytes=len(text.encode("utf-8"))), self.assertRaisesRegex(ValueError, "excerpt_exceeds"):
-                view(query([record(text)]))
+            with self.subTest(text_bytes=len(text.encode("utf-8"))):
+                limited = view(query([record(text)]))
+                self.assertNotIn("data_only_excerpt", limited.model_view["events"][0])
+                self.assertEqual(limited.model_view["events"][0]["excerpt_gaps"], ["over_limit"])
         with self.assertRaisesRegex(ValueError, "excerpt_exceeds"):
             view(context=scope(boundary + "c"))
         rows = [record(boundary, event_id=uuid5(NAMESPACE_URL, f"bounded-event-{i}"),
@@ -302,8 +304,10 @@ class EvidenceViewTests(unittest.TestCase):
 
     def test_existing_llm_input_contract_is_not_bypassed_by_excerpt_wrapping(self):
         for text in ('{"class_uid":4001}', '<Event xmlns="http://schemas.microsoft.com/win/events/event">'):
-            with self.subTest(text=text), self.assertRaises(LLMContractViolation):
-                view(query([record(text)]))
+            with self.subTest(text=text):
+                limited = view(query([record(text)]))
+                self.assertNotIn("data_only_excerpt", limited.model_view["events"][0])
+                self.assertEqual(limited.model_view["events"][0]["excerpt_gaps"], ["input_contract_rejected"])
 
 
 if __name__ == "__main__":

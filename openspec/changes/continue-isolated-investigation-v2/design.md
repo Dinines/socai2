@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 I1正文局部降级最小合同（M1放行后）
+
+基线`7e84fe7`，M1纯绑定经独审放行后才进入本块。只改新版EvidenceView可选raw.message处理及相关有限事实缺口投影，不动M2来源校验、scope/预算、旧源码或入口；模型调用0，I2预算尚不在本块。
+
+message短且合规为present，无message为absent；截断正文不推断可解析完整含义，记not_extractable；非JSON/重复键/不支持的顶层结构/解析嵌套超限/对象值/超512字节/LLM合同拒绝分别记not_json/ambiguous_json/unsupported_body_shape/json_nesting_limit/unsupported_type/over_limit/input_contract_rejected。异常摘录不直接入模型，也不截前512字节冒充完整。每次retrieval保message_extraction；同源同版先验证保留前缀一致，汇总后若有完整合规present/absent可使用该状态，否则在event.excerpt_gaps及query.coverage.gaps披露实际原因，其他结构字段保持。有限network_observed/outcome_unknown事实若有摘录缺口，向readable投影保该缺口，不能增加任何更强谓词。截断取回的历史限制继续保留。
+
+合法UTF-8原文中的JSON转义也可能解码成不可编码的Unicode；只在可选message编码处捕获并记invalid_unicode，不替换字符、不透传正文，其他结构字段和同批正常记录保留。此项由结束窄审反例发现后补入本块，不涉及放宽身份或输入规则。
+
+直接先测短文/512字节边界、513/中文超界、对象、非JSON/重复键、转义Unicode编码失败、原始OCSF/XML签名、截断中可能关键正文、完整/部分同版合并及必要字段/hash失败。再核采用/可读结果仍有限、缺口不丢，以及现有视图/采用/模型合同受影响兼容；不以旧8模型样例当新语义已验。直接通过和独审后才进入I2。
+
 ## 2026-10-24 M1业务profile最小实现合同
 
 在新Agents包新增`business_profile.py`，以不可变`CheckedBusinessTarget`表达可信调用方已核的alert/case目标、租户、目标记录/归属检查引用、完整成员身份及成员来源/版本；纯函数绑定原`ScopeContext`，输出profile/版本、目标、objective、policy、trigger、交付归属和成员选材覆盖描述。不改变scope.py的explicit_set初始化、问题、准入、预算或任何旧版文件；新绑定不会将内部scope.target_type改成已解析的Case入口。

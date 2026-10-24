@@ -4,6 +4,8 @@
 
 # 调查新版：开发、进度与评审入口
 
+**I1最新结果：** M1按块提交后，I1可选来源正文局部降级的6新＋11视图＋13采用＋15模型合同通过；独审发现Unicode编码异常后已修并独立复验，最终限定ACCEPT、0剩余必须修。来源结构事实/其他记录及readable缺口保留，必要身份/hash不放松；[I1回执](../operations/investigation-optional-excerpt-20261024.json)。下一块I2完整messages预算尚未实施，真实新版入口/Case衔接仍未完成。历史评审probe只对原基线断言缺陷，最新验证用本批合同文件。
+
 **最新实施续接：** 用户已授权按步骤推进。M1业务profile纯绑定11新合同＋原scope8项直接通过，未参与实现者独立复跑并限定ACCEPT、0必须修；[预期与结果](../operations/unified-investigation-implementation.md)、[机器回执](../operations/investigation-profile-contract-20261024.json)。它只绑定已核目标/完整成员及选材覆盖，尚未接执行器、真实Case解析/继承/启动或HTTP；下一步I1正文降级，I1/I2修复此时尚未实施。当前活动分支为`codex/investigation-review-20261024`，下文历史来源与阶段快照按日期理解。
 
 更新：2026-10-24。分支：`codex/investigation-working`。已推送Git服务端，当前开发位置是普通项目目录，旧.local开发工作树已移除。在普通项目目录开发、提交并推送该分支；其他机器拉取即可阅读本页及其全部相对链接，无需取得原机器的`.local`目录。
