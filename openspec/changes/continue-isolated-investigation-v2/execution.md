@@ -1,5 +1,9 @@
 # Execution: 调查分支逐步实施原记录
 
+## 2026-10-24 M1业务profile纯合同续接
+
+用户明确要求按以往步骤推进。以普通目录新调查分支`a3a0108`为基线，先写本批proposal/design/spec及[实施预期卡](../../../docs/operations/unified-investigation-implementation.md)，strict通过后仅新增Agents v2 `business_profile.py`和独立测试。11新合同＋原scope8项直接通过，命令/样例/源码hash见[回执](../../../docs/operations/investigation-profile-contract-20261024.json)。仅证明已核目标与既有scope的纯绑定；不证明实际认证/Case分页/继承/启动，未接预算执行器或HTTP，真实模型/业务调用/写入0。结束窄审另记audit，通过前不进入正文降级块。原文后续“仅合并/未实施”为历史阶段，不撤销本次用户授权。
+
 2026-10-24 main集成说明：本change接收远端调查`469e9467`的独立v2开发基线及原记录，保留双方已有设计和实现。旧restore迁移已在main限定核销归档，不恢复其活动目录；下述历史原文中的“沿原restore/5/15/不提交”等按原日期解释。D1—M4限定成果、M5.1与未完成M5.2分列，新HTTP未注册，M6—M9和v4分层未交付。当前只合并和审计，不启动后续业务实施、真实测试或部署。
 
 ## 2026-10-24实际远程同步与临时工作树移除

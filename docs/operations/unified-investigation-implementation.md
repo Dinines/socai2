@@ -2,6 +2,24 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 续接第一步：M1业务profile纯合同（限定通过）
+
+用户要求按以往步骤继续；基线`a3a0108`，普通目录`E:/aisoc/socai2`、分支`codex/investigation-review-20261024`，起始clean。先本步规格/预期→strict→仅本块实现→直接测试→回执/未参与实现者窄审；不一次性实现后续循环。旧归档及失败/unknown保持，调查阶段提交/推送，不合main或部署。
+
+| 项目 | 本步固定内容 |
+| --- | --- |
+| 输入 | 原M1可信ScopeContext；调用方已认证/核归属的alert或case目标、目标记录/检查引用、完整成员来源/版本/身份；显式profile/trigger/objective/policy |
+| 处理 | 仅绑定并结构校核业务归属与有限政策；重核原scope未被替换放宽。原explicit_set初始化和工具准入保持，不声称新增Case认证/DB解析 |
+| 输出 | 不可变profile/版本/目标/有限目标/政策/trigger及交付归属、scope hash、完整/所选/遗漏成员和初始not_started覆盖；不创建/启动/发布 |
+| 正例 | 单Alert无Case合法；manual/automatic同归属；4成员Case全选/只选3条，最早遗漏ID/原因可核，原scope不扩大 |
+| 拒绝例 | 跨租户、目标ID/类型不匹配、Case成员版本或来源缺失、未知/未列成员、非法profile/trigger、目标/政策增强及scope问题/范围被篡改 |
+| 验证 | 新纯合同文件及原M1八项；网络guard、不可变/副本和来源正文指令对照。模型/HTTP/DB/业务写入0 |
+| 放行 | 当前精确合同及原范围兼容直接通过、有公开回执、结束窄审0必须修。仅放行纯绑定模块，profile尚未接执行器/入口；随后才做I1正文降级 |
+
+实际先写spec/design/本卡并strict通过，再只新增`business_profile.py`及独立测试。11新合同（0.028s）和原M1范围8项（0.005s）均exit0，公开[机器回执](investigation-profile-contract-20261024.json)含完整样例、命令、源码hash及限制。覆盖单Alert无Case、两触发同归属、4成员Case全选/局部选材及最早遗漏、未知总数/缺成员、来源/版本、租户/目标/政策/问题篡改和不可变性。模型/业务HTTP/DB/写入0；只有新增纯绑定对象，未接ExecutionStore或业务入口。
+
+未参与实现的`review_response_audit`独立重跑11＋8项、核3个源码hash和2份descriptor，与回执一致；限定ACCEPT、0必须修项，strict/diff通过。只放行本纯合同模块，允许下一步I1正文降级；不表示profile入口、Case认证/分页/继承/启动已验。2.1整项还包含I1/I2，保持未勾。
+
 **工作位置与共享（2026-10-24最新）：** 普通项目根目录的codex/investigation-working为唯一开发位置，已推送Git服务端；从[跨机器入口](../investigation/README.md)读取全部共享设计/进度/问题。原.local工作树已移除，其私密验证/冻结原件迁到根.local/verification和.local/versions并逐文件hash核对；它们只作历史保留，不直接运行旧驱动或重放旧Run。其他机器不需要复制这些材料即可阅读当前工作。Windows适配仅本机.local，不混入该分支。
 
 ## 当前代码位置与严格版本隔离结果（2026-10-24）

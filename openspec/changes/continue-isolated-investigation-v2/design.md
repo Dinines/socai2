@@ -1,5 +1,16 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M1业务profile最小实现合同
+
+在新Agents包新增`business_profile.py`，以不可变`CheckedBusinessTarget`表达可信调用方已核的alert/case目标、租户、目标记录/归属检查引用、完整成员身份及成员来源/版本；纯函数绑定原`ScopeContext`，输出profile/版本、目标、objective、policy、trigger、交付归属和成员选材覆盖描述。不改变scope.py的explicit_set初始化、问题、准入、预算或任何旧版文件；新绑定不会将内部scope.target_type改成已解析的Case入口。
+
+- 当前只接受`alert_recon + alert`或`case_investigation + case`；trigger显式为manual/automatic，两种触发不能决定profile或授权Case写入。objective必须显式等于既有有限目标`verify_source_network_observation`，policy必须匹配原网络政策；未知profile/版本、目标类型和更强目标拒绝。
+- 绑定时重新核ScopeContext与原M1规范初始化结果一致（允许已有正整数revision），防止直接替换问题/查询范围绕过原合同；这仍是结构校核，不是认证/数据库归属证明。主体认证及目标/成员归属必须在调用前完成。
+- 告警目标ID必须等于唯一所选canonical Alert，完整成员必须正好该Alert；交付归属为该Alert，无Case前提。Case需非空已核目标/归属引用、稳定成员版本及与ScopeContext相同的成员来源引用；完整成员ID必须唯一且非nil，scope中的selected/omitted必须完整分割该清单，total不能未知、不能有未列身份。只选子集合法，但交付必须保全部/选中/遗漏ID及原因，初始调查覆盖仍not_started，不能扩大原conclusion_scope。
+- 输出钉住scope hash和目标/成员版本，提供分离副本；原始告警正文不能指定profile、删除问题或改变交付归属。不生成complete、已启动、已创建或已授权的业务结果；调用与预算均0。Case成员解析/分页一致性核验、继承、同请求唯一Run和实际发布留M8/M6/M7。
+
+直接预期：同一告警manual/automatic归属相同；无Case告警合法；4成员Case全选与仅选3条均有明确覆盖，缺最早成员仍可见；租户、目标ID/类型、成员来源/版本/分割、目标升级、scope篡改及未知值均拒绝；原explicit_set八项保持。直接测试通过并留回执/结束窄审后才放行此合同块，不能计作Case入口或profile已接执行器。
+
 2026-10-24 main集成说明：本change接收远端调查`469e9467`的独立v2开发基线及原记录，保留双方已有设计和实现。旧restore迁移已在main限定核销归档，不恢复其活动目录；下述历史原文中的“沿原restore/5/15/不提交”等按原日期解释。D1—M4限定成果、M5.1与未完成M5.2分列，新HTTP未注册，M6—M9和v4分层未交付。当前只合并和审计，不启动后续业务实施、真实测试或部署。
 
 ## 2026-10-24严格双版本隔离（最新，覆盖共享接线方案）

@@ -1,3 +1,7 @@
+# 2026-10-24 调查按步续接授权与M1纯合同放行
+
+用户在流程及新旧对照后明确要求按以往步骤推进。当前普通目录分支codex/investigation-review-20261024；已先合同/strict，再M1业务profile纯绑定，11新＋原scope8项通过，未参与实现者复跑限定ACCEPT、0必须修。仅结构绑定已核目标/成员，不是Case认证/继承/启动或执行器接线。下一步依次I1正文局部降级、I2完整messages预算，各块先预期/规格再实现测试/回执/独审，达标才下一块。调查分支按阶段提交/推送；旧源码/入口、历史失败/unknown、迁移归档保持，无部署或自动合main。当前记录见docs/operations/unified-investigation-implementation.md。
+
 # 2026-10-24 两分支main统一续接入口
 
 用户要求先合并且保留双方原设计，再统一审计数据准备/评估与调查的数据湖协作。已合并数据cec5ea98、调查469e9467至main5c1202b5；续接统一读[总审计及双方建议](docs/operations/data-investigation-integration-audit-20261024.md)。现有网络fixture/lake_probe共享，数据线主责准备/投放/expected/评分，调查线主责scope/查询/证据采用/共享额度；不另造写湖器或统一两种评分。源码/测试原样，A1/A2/A3、Python3.11夹具兼容及IPv6测试问题未修，M5.2/分层/正式新入口未交付。各分支同步main后按各自主设计与适用change推进；本轮仅审计/同步，无新模型/业务数据写入/部署，其他未提交工作保持。

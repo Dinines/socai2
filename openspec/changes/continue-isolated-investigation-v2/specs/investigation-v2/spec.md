@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Bind business profiles to checked targets without invoking business operations
+
+M1业务profile合同 SHALL 以可信调用方已核的ScopeContext及目标/成员快照，显式绑定`profile/profile_version/target/objective/policy/trigger`及交付归属。当前 SHALL 仅支持`alert_recon + alert`或`case_investigation + case`，保留`network_observation.v1`及`verify_source_network_observation`有限目标；MUST NOT 因trigger、来源正文或profile切换扩大问题、查询范围、权限、额度或已验分析能力。绑定 SHALL 纯计算、不可变并保scope/目标/成员版本，不发模型/HTTP/DB、不创建Case/Run、不注册旧入口；原explicit_set合同 SHALL 保持可独立使用。
+
+#### Scenario: The same checked alert is triggered manually or automatically without a Case
+- **WHEN** 可信调用方提供同租户唯一canonical Alert目标、匹配的scope和显式alert_recon，分别以manual或automatic触发
+- **THEN** 两次输出均归属同一Alert、同一有限目标和问题范围，不要求Case，不补造侦察完成/Case关系或调用预算；trigger仅记录请求来源
+
+#### Scenario: A Case selects only part of its frozen complete member identities
+- **WHEN** 已核Case目标提供稳定成员来源/版本和4个完整成员，scope选入3个并明确遗漏最早成员及原因
+- **THEN** 输出保全部4个、选入3个及遗漏身份/原因，仍要求针对冻结Case成员评价覆盖，初始调查状态为not_started；原scope仍只允许选中成员，不将选材完整误作调查完整，不执行继承/启动
+
+#### Scenario: A target or scope cannot support the requested business binding
+- **WHEN** 目标或成员跨租户、alert ID不匹配、Case成员清单不完整/无版本或来源不符、profile/目标配对错误、政策/目标被增强、scope问题/边界被篡改，或使用未知版本/触发方式
+- **THEN** 绑定在纯合同层拒绝，原scope及问题不变，模型/HTTP/DB/Case/Run写入均0；保留已有explicit_set初始化及查询准入语义
+
 2026-10-24 main集成说明：本change接收远端调查`469e9467`的独立v2开发基线及原记录，保留双方已有设计和实现。旧restore迁移已在main限定核销归档，不恢复其活动目录；下述历史原文中的“沿原restore/5/15/不提交”等按原日期解释。D1—M4限定成果、M5.1与未完成M5.2分列，新HTTP未注册，M6—M9和v4分层未交付。当前只合并和审计，不启动后续业务实施、真实测试或部署。
 
 2026-10-24 v4说明：新增分层需求为待讨论实施的目标合同，不是现有字段/接口或验收事实。M4限定通过、M5.1通过、M5.2增量未测；当前只设计，后续按主方案12.7逐步改测。

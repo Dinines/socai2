@@ -1,3 +1,9 @@
+## 2026-10-24 M1业务profile纯合同结束窄审
+
+用户授权按既定步骤推进；以`a3a0108`为基线，先spec/design/实施预期与strict，再新增`business_profile.py`和独立测试。未参与实现的`review_response_audit`只读窄审限定ACCEPT、0必须修：独立11新＋原scope8项exit0；3份源码hash及无Case告警/部分选材Case两份descriptor与[公开回执](../../../docs/operations/investigation-profile-contract-20261024.json)一致。profile/target/objective/policy显式，manual/automatic不改变归属；4成员全选/只选3条保最早遗漏，原scope不扩大。目标认证/归属/一致分页均明确为调用方前提，纯结构校核不冒充认证。
+
+新增模块无IO、预算创建/Run写入、执行器接线或旧入口修改；strict及diff检查通过。只放行M1纯绑定，允许进入I1正文降级；profile实际入口、Case继承/启动、新HTTP和M5整环仍未完成，tasks2.1保持未勾。旧源码、历史失败/unknown及迁移归档保持；阶段保存/推送不代表部署。
+
 ## 2026-10-24 调查分支对main评审的响应（仅评估/计划）
 
 用户要求拉取最新main、判断调查意见是否合理/采用并制定后续计划，允许新建调查分支。已fetch至`541511ce`，本地main快进后从其建立`codex/investigation-review-20261024`；普通根目录原先clean，原调查469e9467已在main中，未复制旧树、修改Windows分支或合回main。
