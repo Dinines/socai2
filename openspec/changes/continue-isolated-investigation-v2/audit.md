@@ -1,3 +1,11 @@
+## 2026-10-24 合并后的双方总审计与协作交接独立复核
+
+用户要求先合并、不影响原开发设计，再统一最新进度与数据湖协作。root在main5c1202b5后编写[统一审计](../../../docs/operations/data-investigation-integration-audit-20261024.md)；未参与编写的merge_audit只读核对后限定ACCEPT、0必须改文档项。确认A1/A2/A3、Python3.11 is_junction兼容、IPv6文本测试失败、新v2未注册及M5.2/v4分层未交付均准确；共享fixture/写湖与scope/query/采用/评分分工保留原设计，不改写原贡献或验收。
+
+额外确认X2：原fixture的告警telemetry已含匹配事件正文，只适合作来源关联与范围验证，不能单凭该夹具声称E3必须补查或工具增益；新盲测预期后续另定，保原判据。root实际合并工具测试112 passed/58 subtests passed/3 failed（同一测试的3个IPv6子项）、exit1，文档未称全绿；85新Agents/8新API独审断网通过，未新跑PG/湖/模型。原源码与测试仍逐字保持，修复留各分支后续。
+
+六份审计入口静态499本地链接/围栏无缺失，OpenSpec strict及diff通过；本条加入后的最终窄校验另按Git检查记录。用户要求main同步给各开发分支续接，本批允许普通提交/推送main，不部署；主工作区其他34份未提交材料继续保持，不混入总审计提交。
+
 ## 2026-10-24 main合并候选独立窄审
 
 未参与本轮冲突解决的merge_audit只读核对候选，限定ACCEPT、0本次合并必须修项。调查469e9467的27份Python源码/测试与2份包README字节保持；旧services无改，新API未注册。调查分支原restore六文件的新增非空行完整保留到本独立change，22条Requirement齐全；旧archive与数据合并父提交c41db518保持，无未解决Git冲突。当前导航、历史5/15和main限定核销区分，不改变原设计或追认完整调查。

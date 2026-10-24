@@ -1,3 +1,5 @@
+**2026-10-24 main统一审计：** 数据评估与调查469e9467已整合；[双方意见与数据湖协作](../../docs/operations/data-investigation-integration-audit-20261024.md)统一现有fixture/单批写湖复用、scope/query/采用和评分分工。原工具代码/测试保持，兼容及评分问题待各分支续接。
+
 # 有界合成告警工具
 
 2026-10-24代码审查与待处理项见[分支审计](../../docs/operations/data-evaluation-audit-20261024.md)：MCC非法分类边界、批次冻结/一对执行及证据截断尚未修复；现状合入不代表完整评测通过。
