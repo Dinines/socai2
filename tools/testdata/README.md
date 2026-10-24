@@ -1,5 +1,9 @@
 # 有界合成告警工具
 
+2026-10-24代码审查与待处理项见[分支审计](../../docs/operations/data-evaluation-audit-20261024.md)：MCC非法分类边界、批次冻结/一对执行及证据截断尚未修复；现状合入不代表完整评测通过。
+
+后续数据/评估设计与E0离线入口见[评估设计](../../docs/operations/data-evaluation-design-20261023.md)。本轮工具位于隔离工作区/分支`codex/data-evaluation`；不改变调查实现。原迁移回执继续适用于原范围。
+
 2026-10-23已按[迁移修订计划](../../docs/operations/testdata-migration-plan-20261023.md)补场景选择、正式Kafka wire/发送与结果观察，保留原HTTP工具。逐步实际验证及限制见[本批回执](../../docs/operations/testdata-migration-execution-20261023.md)。
 
 `alert_scenarios.py` 将固定上游的场景生成器输出转换成当前 `POST /api/v1/alert-ingress` 的**已有告警**合同。默认只生成本地文件，不发送网络请求。稳定 `run-id + tenant + scenario-id` 产生稳定 UUID；相同输入生成相同字节。`event-time` 必须显式含时区，数量为 1–20（默认 3），输出目录拒绝覆盖。
@@ -111,3 +115,52 @@ DSN由指定环境变量提供；单个只读事务限定tenant和canonical ID�
 ```
 
 保角色/模型/提示和业务限制；仅测试包装器设SDK retry0/45秒、出站请求最多14次，逐次保存请求正文、可见回复及真实工具结果（不含认证header）。网关内部provider尝试仍须另核。写入输出目录的`stop-request.json`可协作停止；不把断点续跑或调查质量当作本探针保证。
+
+## 72条四分类语料与离线评分
+
+`verdict_eval.py`只读取固定原语料和已有观察，不调用ReplayRunner、模型或网络，不修改模型环境配置。55模板生成的200条合成攻击材料继续用于原MITRE/模板测试；72条/36对的四分类语料单独用于分诊判断。`catalog`报告二者数量。
+
+```sh
+python tools/testdata/verdict_eval.py catalog
+python tools/testdata/verdict_eval.py prepare --out .local/testdata/verdict-e0
+python tools/testdata/verdict_eval.py score \
+  --prepared .local/testdata/verdict-e0 \
+  --observations .local/testdata/verdict-observations.json \
+  --auto-close-threshold 0.85 --out .local/testdata/verdict-score.json
+```
+
+prepare生成`inputs.json`（仅opaque ID和五个可见字段）、`answer-key.json`（答案/配对）及hash manifest；排序不沿原B/M交替顺序。只有inputs交给后续运行器。新运行器仍需复用原信封组装并在**实际请求**核防泄漏；本入口导出并不证明已有真实模型盲测。
+
+observations为JSON数组，每项含`finding_id`、`verdict`（可为null）、显式`confidence`。可附原`verdict_raw`、`error`、`findings/confidence_basis/resolved_models`字符串数组、`tier`、`tokens/llm_calls/unpriced_calls/tool_calls`非负整数和`latency_ms/measured_usd/estimated_usd`非负数；未知可省略或null。输入必须使用本批opaque ID，不能带expected/配对/替换证据；拒绝重复、陌生ID及篡改准备文件。
+
+score复用原分类映射（未知非空原值保留）和现有API vendored Replay评分函数。缺失观察单列missing，不补成弃答；部分批次不报headline，缺少至少两类/5%少数类时不生成分类指标，原不足30恶意样本门槛仍保留。上游默认0.9不自动代替实际策略，因此阈值必须显式传入。
+
+输出固定标为`offline_import`、`model_execution_verified=false`、`can_publish_model_performance=false`。分类指标仅重算所提供结果；模型实际输入未验证时不报幻觉率；未知调用/用量/耗时/费用不填0，部分费用缺失时不把已知小计当总费用。关闭精度是候选的四分类精确命中，不等于实际关闭是否安全。E1实际模型运行、E2真实查询和E3采用验证仍按设计逐步推进。
+
+## 已有工具轨迹的离线核对
+
+```sh
+python tools/testdata/verify_tool_handoff.py \
+  --trace /absolute/existing/agents-probe-output \
+  --out .local/verification/tool-handoff.json
+```
+
+核对原probe的model-request/response与tool-request/result文件；同tenant/Run/Alert内，用原响应call_id、名称/参数及串行顺序匹配，再检查后续实际请求内对应ToolMessage和原渲染内容。原执行回执没有call_id，所以只标`ordered_signature`关联；重复次数不齐、顺序冲突或材料歧义均未核。没有后续请求不能记作模型已经看到。报告哈希仅证明所供文件内部一致，不独立证明原文件真实性。
+
+分别报告模型提议数、执行回执数、返回可用/不可用/error及进入后续请求数；调用过不等于数据源成功查询，available也不等于返回证据相关。model-request由发送前hook记录，核对通过只证明已记录的后续请求正文包含该结果，不证明提供方成功接收或模型语义采用。实际本批结果见[执行回执](../../docs/operations/data-evaluation-execution-20261023.md)。
+
+## 小批量给定证据评测与发送前预检
+
+`verdict_live.py`准备两个完整对照对，在独立Agents进程复用原Replay/worker/Shadow writer。运行器只加载固定hash的可见语料及选定输入，不读selection答案；业务存储不接，三个外部上下文来源明确excluded/not queried，保原模型角色/0温度/512输出/JSON参数。该模式测给定材料下的分诊，不代表生产上下文、真实关闭或调查工具查询。
+
+```sh
+python tools/testdata/verdict_live.py prepare \
+  --pair-id VRD-AWS-01 --pair-id VRD-AWS-03 --out .local/testdata/verdict-e1
+python tools/testdata/verdict_live.py run \
+  --prepared .local/testdata/verdict-e1 --out .local/verification/verdict-e1-preflight \
+  --model-env /absolute/private/model.env --gateway-base http://127.0.0.1:24951 --preflight
+```
+
+`--preflight`禁止全部网络连接，使用显式HTTP替身并保存原程序组装的请求正文。结果标`offline_http_stub/new_model_requests=0`，不得用于模型成绩。真实模式省略该开关，但先满足输入检查并接原网关SSH隧道；本批因AWS-01缺证据而停留预检，先讨论设计第9节。上限4请求、每例1次、retry0/45秒；无回复、usage未知、原分类/置信度无效或程序fallback时保留并停止，不重试。
+
+`input_visibility`核原叶字段在实际请求中的可见性；缺失或改变时真实发送被拦，blocked-request含正文及缺失路径。此检查保守地依赖当前行式格式，不证明语义正确；格式改变须重审测试。原响应分类与`program_verdict`分别保存，`observations.json`仅代表程序采用分类，不能把默认TP修复算成模型正确输出。预检观察另存`preflight-observations.json`。

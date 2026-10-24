@@ -1,4 +1,10 @@
+# 2026-10-24 数据评估审计与合并授权
+
+用户明确要求保存[审计结果](docs/operations/data-evaluation-audit-20261024.md)并将数据评估阶段成果合入main。96测试/39子项通过；非法分类MCC虚高、完整配对/批次冻结及raw_event截断保持未解决，E1真实模型和本分支E2—E4未完成。本次只保存和本地合并，不修业务/评分、不发模型/写数据/部署/push；旧“不提交”是此前阶段记录。main已归档的迁移保持关闭，后续独立change承接。
+
 # socai2 / stingAISOC 工作约定
+
+- **2026-10-23数据与评估E0本地完成：** 在隔离分支`codex/data-evaluation`完成72条/36对四分类输入与答案分离、原评分器离线复用及工具轨迹核对，见[设计](docs/operations/data-evaluation-design-20261023.md)和[回执](docs/operations/data-evaluation-execution-20261023.md)。79直接测试/39子项通过；独审费用unknown问题已修，限定ACCEPT、0剩余必须修项。旧记录10个模型提议/8个执行，6不可用2错误，8份返回均见已记录后续请求；不证明成功查询或语义采用。E1—E4未执行，登录合同改动先讨论；0新模型/业务查询/业务源码/部署/提交/push，主工作区未覆盖，原5/15与旧失败保持。
 
 - **2026-10-23测试数据迁移已实测：** 用户授权后完成场景选择/Kafka wire有界发送/只读观察和隔离联测，见[回执](docs/operations/testdata-migration-execution-20261023.md)。44直接测试/39子项通过；3条新输入Fusion3Alert/6消息/0模型；另2例自动BTP关闭、NR调查partial，6回复26492tokens/29工件。仅工具侧改动，188个Agents源码与6上游原件hash保持；测试标记干扰理由、21796/20000软预算停止、报告running与Run completed差异登记待讨论，不重调或顺带改调查设计。临时进程/隧道停，2新key停用，预算2 responded。新增Git忽略可选输出目录，实际运行材料均留.local；无部署/提交/push，原5/15保持。
 
