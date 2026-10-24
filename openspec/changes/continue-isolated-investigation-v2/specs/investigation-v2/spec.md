@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Preserve source provenance while normalizing network address identity
+
+新版网络政策 SHALL 将合法IPv4与其IPv4-mapped IPv6表示归一为IPv4，原生IPv6归一为压缩表示；仅mapped形式可与IPv4等价，其他地址不因相近文本而等价。M1已核实体、受限caller参数/回执、EvidenceView参数采用及Deep查询指纹 SHALL 使用一致的地址身份规则，同时保持租户、绝对窗口、主机、端口、协议和来源校验。SourceField原始值/路径及已留存响应/hash SHALL 保持原文，不将归一化后的值伪装成原始字段。旧版源码、工具及入口 MUST NOT 改动。
+
+#### Scenario: Equivalent network addresses cross the actual v2 query contracts
+- **WHEN** 已核来源分别为IPv4、mapped IPv6十六进制或点分形式、以及原生IPv6展开形式，API逻辑经替身CH返回同一地址的规范记录
+- **THEN** 当前新版scope→caller→API结果→EvidenceView→有限程序事实均通过，wire参数规范化且原始字段出处保留；性质/授权仍未知，不新增模型、真实业务调用或Run完成
+
+#### Scenario: Address aliases do not weaken scope or duplicate protection
+- **WHEN** 参数、来源字段或回执为不同IP，IPv4-compatible但非mapped IPv6，错误租户或被篡改hash；或Deep提议同一查询的地址别名
+- **THEN** 不同身份/无出处或hash错误仍拒绝，caller越界不发HTTP；等价地址的Deep参数规范化后具有同一指纹，不能绕过去重。其他既有预算/范围合同不改变
+
 ### Requirement: Derive fixed alert observations and stop handoff without a model
 
 M6.1 SHALL 仅接受已核alert_recon业务绑定、可选的已提交EvidenceView及调用方当前snapshot引用，以纯程序产出network_observation.v1有限事实、六问题状态、范围就绪度与停止交接。来源字段谓词 SHALL 复用M4有限检查，发现明确标记program/rule_checked并保来源版本及依赖；MUST NOT 伪造模型候选/理由、将来源正文指令作为控制、把性质或授权升级，或将scope_readiness写成Run完成。该层 SHALL 无模型/HTTP/DB/预算变更/Case动作/manifest发布，所有输出均不授权追加查询；实际M3 gate/截止/去重及运行调度接线在后续M6.2验证。

@@ -17,6 +17,7 @@ from uuid import UUID
 from app.llm.contract_rules import LLMContractViolation, LLMInputContract
 from app.investigation_v2.activity_records import _time, _validate_response
 from .execution_store import canonical_json, content_hash, scope_fingerprint
+from .network_identity import same_network_filter
 from .scope import CAPABILITY, POLICY_REF, QueryRequest, ScopeContext, UTCWindow, admit_query
 
 MAX_MODEL_BYTES = 12 * 1024
@@ -171,7 +172,7 @@ def _parameters(context: ScopeContext, member: Any, values: dict) -> dict:
     _require(set(values) == {*_FILTERS, "start", "end", "limit", "tenant_id"}, "query_parameters_incomplete")
     _require(values["tenant_id"] == str(context.tenant_id), "query_tenant_mismatch")
     for key in _FILTERS:
-        _require(type(values[key]) is type(getattr(member, key)) and values[key] == getattr(member, key),
+        _require(same_network_filter(key, values[key], getattr(member, key)),
                  "query_field_outside_scope")
     request = QueryRequest(context.tenant_id, context.run_id, context.revision, member.alert_id,
                            UTCWindow(_time(values["start"]), _time(values["end"])), member.fields,
@@ -227,7 +228,7 @@ def build_evidence_view(context: ScopeContext, query_result: dict,
             _parameters(context, member, claimed)
             for key in params:
                 _require((_time(params[key]) == _time(claimed[key])) if key in {"start", "end"}
-                         else params[key] == claimed[key], "caller_query_parameter_mismatch")
+                         else same_network_filter(key, params[key], claimed[key]), "caller_query_parameter_mismatch")
     else:
         _require(status in {"unavailable", "error", "rejected"} and not payload.get("rows")
                  and payload.get("row_count", 0) == 0 and not payload.get("truncated", False)

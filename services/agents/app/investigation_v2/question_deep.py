@@ -14,6 +14,7 @@ from uuid import UUID, uuid5, NAMESPACE_URL
 
 from app.investigation_v2.activity_records import _ALLOWED, _FILTERS, _REQUIRED, _time
 from .execution_store import canonical_json, content_hash, scope_fingerprint
+from .network_identity import same_network_filter
 from .scope import CAPABILITY, POLICY_REF, QueryRequest, ScopeContext, UTCWindow, admit_query
 
 MAX_QUERIES = 1
@@ -125,8 +126,8 @@ def admit_deep_query(task: QuestionTask, proposal: Any, *, seen_queries: frozens
     args = proposal["parameters"]
     _require(isinstance(args, dict) and _REQUIRED <= args.keys() and args.keys() <= _ALLOWED,
              "missing_or_forbidden_query_arguments")
-    _require(all(type(args[key]) is type(getattr(task.member, key))
-                 and args[key] == getattr(task.member, key) for key in _FILTERS), "query_filter_has_no_provenance")
+    _require(all(same_network_filter(key, args[key], getattr(task.member, key))
+                 for key in _FILTERS), "query_filter_has_no_provenance")
     try:
         window = UTCWindow(_time(args["start"]), _time(args["end"]))
     except (ValueError, TypeError):
@@ -136,7 +137,7 @@ def admit_deep_query(task: QuestionTask, proposal: Any, *, seen_queries: frozens
                            limit=args.get("limit", task.context.query_scope.max_limit), origin="model_query_proposal")
     admission = admit_query(task.context, request)
     _require(admission.allowed, admission.reason)
-    parameters = {**{key: args[key] for key in _FILTERS}, "start": window.start.isoformat(),
+    parameters = {**{key: getattr(task.member, key) for key in _FILTERS}, "start": window.start.isoformat(),
                   "end": window.end.isoformat(), "limit": request.limit}
     signature = content_hash(canonical_json([scope_fingerprint(task.context), task.question_id,
                                            str(task.member_id), CAPABILITY, parameters]))

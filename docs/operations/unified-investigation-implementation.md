@@ -2,6 +2,22 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 A1地址归一化接缝修复
+
+用户继续推进，基线891d07e、起始clean。先写活动spec/design与本卡并strict，再仅修新版地址身份；直接预期及结果如下。
+
+| 输入→输出 | 本块直接预期 |
+| --- | --- |
+| IPv4/mapped十六进制及点分/原生IPv6展开→scope、wire、API回执、证据及程序事实 | 等价地址规范化后通过，SourceField原值/出处及已留存响应/hash保持，有限事实不升级性质/授权 |
+| 不同IP/compatible非mapped/不同tenant/错误来源值/hash | 仍拒绝；caller越界HTTP0，不能借归一化放宽scope |
+| Deep纯查询提议的地址别名 | 参数规范化到已核member值，指纹相同且已有查询拒绝，不实现或调用模型循环 |
+
+先新增跨实际新版API records（替身CH）、caller（MockTransport）、EvidenceView/M6.1的定向合同，再受影响scope/caller/evidence/Deep/绑定/采用/固定政策及API原合同；旧services相对基线不改。本块不访问真实PG/CH/HTTP/模型，不部署/合main；A2/A3合同与M6.2接线留后续，tasks2.2/2.3保持未完。历史审计反例/失败回执不改写成成功。
+
+**实际结果：** 新增8项＋Agents相关88项＋API15项共111项通过。五种地址形式经实际API逻辑/替身CH→caller/MockTransport→EvidenceView→M6.1均有限ready，原始SourceField值、响应、source content_hash保留；不同IP、compatible非mapped、错误tenant/来源/hash仍拒绝，地址别名的Deep指纹一致且重复拒绝。API源码无须修改；变更只在Agents v2新增共享纯函数、四个使用点及定向测试。首次新测试误用历史source_run_id，先修夹具到CURRENT_RUN；修正夹具后的原实现8项为failures3/errors3，功能修复后8项全过，过程失败见[公开回执](investigation-network-identity-20261024.json)。
+
+**结束独审：** 未参与实现的fresh_code_audit独立复跑9文件83项（是111的子集）通过，另核8组地址等价反例、7hash及五种稳定观察一致，原生IPv6与IPv4组不误合并，来源版本保持，限定ACCEPT/0必须修。真实业务调用/模型/写入0，A1仅离线合同修复放行；不据此追认真实接缝或完整调查。下一先明确A2完成/窗口、A3材料投影阻断及保refs合同，再逐块接M6.2。
+
 ## 2026-10-24 独立总审计与规划
 
 基线7b7bb6b，三位新审阅者分别核架构/代码/证据；140项合同通过、39哈希条目一致，但新增离线反例确认A1 mapped IPv6误拒（P2待修）。A2子窗口ready、A3程序路径投影限制作为M6.2前合同门，详见[报告及后续流程](../investigation/independent-audit-20261024.md)、[公开观察回执](investigation-independent-audit-20261024.json)。本轮只审计规划，未修功能或运行真实业务/模型；旧回执和失败保留，2.2/2.3未勾。先修接缝/合同，再M6.2、M7、M8a；Case整体/自动政策前须验证语义及Deep价值。

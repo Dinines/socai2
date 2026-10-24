@@ -1,3 +1,7 @@
+## 2026-10-24 A1地址身份修复结束窄审
+
+未参与实现的fresh_code_audit核891d07e后的新版地址差异及[公开回执](../../../docs/operations/investigation-network-identity-20261024.json)，独立复跑新8/scope8/caller8/evidence11/Deep9/profile11/fixed13/API records8/query7共9文件83项通过；实施方完整111项包含该子集，不累加。另核8组地址反例，mapped等价而compatible/NAT64/不同zone不误合并；7hash匹配，五种稳定观察一致（新query_id/时间导致新snapshot属预期）。原始来源值/路径、payload及source版本不改，Deep同任务别名指纹一致并拒重复，API/旧源码及历史审计JSON/probe未改。限定ACCEPT、0必须修；仅A1离线功能修复，无真实业务访问/持久提交证明/模型/部署。A2/A3与M6.2—M9仍待，2.2/2.3未勾。初始夹具source_run误用及修前red已登记，不改历史失败。
+
 ## 2026-10-24 新一轮独立总体审计
 
 基线7b7bb6b，fresh_design_audit/fresh_code_audit/fresh_evidence_audit三位新审阅者分别核原设计演进、实现和证据，不承接原review_response_audit结论。140项合同通过，另25项为重叠复核；39个回执hash条目一致。新增离线反例确认A1 mapped IPv6归一化导致合法结果误拒，P2未修；A2子窗口ready与A3无模型路径的模型投影限制交叉裁定为后续合同边界，不报告为越权或既有I1/I2回归。总体架构可保留，完整调查质量不予追认，详见[审计与逐步计划](../../../docs/investigation/independent-audit-20261024.md)及[观察回执](../../../docs/operations/investigation-independent-audit-20261024.json)。本轮只改报告/索引和公开离线probe，无功能修改、真实业务访问、模型、部署或合main；历史ACCEPT按原范围保留，新发现进入续接门。

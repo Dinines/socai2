@@ -1,3 +1,7 @@
+# 2026-10-24 调查A1地址接缝已限定修复
+
+用户继续推进后，891d07e先spec/design/预期与strict，再仅Agents v2共享地址身份及scope/caller/evidence/Deep使用点；8新增＋相关103共111合同通过。原始SourceField值/路径、响应/hash保留，mapped与IPv4等价、原生IPv6独立、不同地址/tenant/hash仍拒，别名不绕过去重。未参与实现的fresh_code_audit独立83项/8组反例/7hash与稳定观察复核后限定ACCEPT/0必须修。见docs/operations/investigation-network-identity-20261024.json与统一实施记录；夹具source_run误用及修前red保留。仅离线合同，无真实业务HTTP/PG/CH/模型/部署或合main，API/旧源码/历史审计不改。下一A2有限完成/窗口与A3投影阻断保refs合同，再M6.2；2.2/2.3不勾。阶段提交/推送调查分支。
+
 # 2026-10-24 调查独立总审计与后续流程
 
 用户要求客观独立审计及后续规划；基线7b7bb6b，由三位新审阅者分核架构/代码/证据。见docs/investigation/independent-audit-20261024.md及统一README。保留总体架构，140项合同/39哈希通过；新增反例确认A1 mapped IPv6归一化误拒P2未修，A2子窗口ready及A3模型投影约束程序路径为M6.2前合同门。下一先修A1并明确边界，再M6.2→M7→M8a，Case整体与自动政策前验语义/Deep实际价值。本轮只报告、索引及公开离线probe，不修功能/真实业务访问/模型/部署/合main；原限域ACCEPT保历史，新发现不被旧验收覆盖。调查分支阶段提交/推送授权保持，2.2/2.3不勾。

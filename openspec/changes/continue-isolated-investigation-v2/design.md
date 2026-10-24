@@ -1,5 +1,11 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 A1地址身份接缝修复合同
+
+基线891d07e，承接独立审计A1，只修新版网络地址身份。Agents v2新增共享纯函数：输入必须为地址字符串，IPv4与IPv4-mapped IPv6输出IPv4，原生IPv6输出压缩形式；受限过滤比较保原类型检查。M1的实体使用规范值，但SourceField保原始值/路径并按地址身份核对应关系；caller入参/回执及EvidenceView查询参数同规比较，不重写已留存响应或source content hash。API records原有规范化已符合此规则，先以真实函数/替身CH跨进程结果验证，无需修改API业务代码。
+
+Deep既有纯准入也使用同规匹配，输出参数取已核member规范值后再计算指纹，防地址别名绕过重复查询；不实现模型循环。直接测试覆盖IPv4、mapped十六进制/点分、原生IPv6压缩/展开，及不同IP/compatible非mapped/错误tenant/来源值/hash反例；跨实际API records、caller、证据与M6.1有限事实，业务HTTP/PG/CH/模型0。先规格/实施预期/strict，再代码、直接测试、独立复核与公开回执；A2/A3及M6.2—M9不据本块核销。
+
 ## 2026-10-24 M6.1固定有限事实与停止交接（实施前合同）
 
 基线ad08579，新建Agents v2 `fixed_recon.py`，不改M4旧采用代码或任何旧服务。输入为BusinessProfileRequest(alert_recon)、EvidenceView或None、当前snapshot引用，以及可选可信调用方已观察的停止枚举；重新校核业务绑定、视图hash/scope和版本，非alert profile/旧snapshot拒绝。M6.1是查询之后的纯政策层，无调度/IO；M6.2后续才接实际M3 gate、固定查询/重复与无进展停止、持久交接，不能据本层通过勾完整2.3。

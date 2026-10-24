@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import hashlib
-import ipaddress
 import re
 from typing import Any
 from urllib.parse import urlsplit
@@ -17,6 +16,7 @@ from uuid import UUID
 import httpx
 
 from app.investigation_v2.scope import CAPABILITY, QueryRequest, ScopeContext, UTCWindow, admit_query
+from app.investigation_v2.network_identity import canonical_ip as _ip, same_network_filter
 from app.tools.registry import Tool
 
 _FILTERS = ("hostname", "source_ip", "dest_ip", "dst_port", "protocol")
@@ -33,11 +33,6 @@ def _time(value: Any) -> datetime:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("time_requires_timezone")
     return parsed.astimezone(timezone.utc)
-
-
-def _ip(value: Any) -> str:
-    address = ipaddress.ip_address(value)
-    return str(address.ipv4_mapped or address) if isinstance(address, ipaddress.IPv6Address) else str(address)
 
 
 def _validate_response(payload: Any, parameters: dict[str, Any]) -> None:
@@ -60,7 +55,7 @@ def _validate_response(payload: Any, parameters: dict[str, Any]) -> None:
         if key in ("start", "end"):
             if _time(actual.get(key)) != _time(value):
                 raise ValueError("query_window_mismatch")
-        elif actual.get(key) != value:
+        elif not same_network_filter(key, actual.get(key), value):
             raise ValueError("query_parameter_mismatch")
     if payload.get("row_count") != len(rows) or len(rows) > parameters["limit"]:
         raise ValueError("query_row_count_mismatch")
@@ -148,7 +143,7 @@ def bind_activity_records(context: ScopeContext, question_id: str, member_id: UU
 
         if not _REQUIRED.issubset(args) or not set(args).issubset(_ALLOWED):
             return failed("rejected", "missing_or_forbidden_arguments")
-        if any(args[key] != fixed[key] or type(args[key]) is not type(fixed[key]) for key in _FILTERS):
+        if any(not same_network_filter(key, args[key], fixed[key]) for key in _FILTERS):
             return failed("rejected", "filter_value_has_no_approved_provenance")
         try:
             window = UTCWindow(_time(args["start"]), _time(args["end"]))

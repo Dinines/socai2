@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-import ipaddress
 from typing import Any
 from uuid import UUID
 
 from app.security.tenant_scope import TenantPrincipal
+from app.investigation_v2.network_identity import canonical_ip, same_network_filter
 
 POLICY_REF = "network_observation.v1"
 SOURCE = "clickhouse.raw_events"
@@ -95,7 +95,7 @@ class CheckedAlert:
         _text(self.ownership_check_ref, "ownership_check_ref")
         _text(self.hostname, "hostname")
         for name in ("source_ip", "dest_ip"):
-            object.__setattr__(self, name, str(ipaddress.ip_address(getattr(self, name))))
+            object.__setattr__(self, name, canonical_ip(getattr(self, name)))
         _require(type(self.dst_port) is int and self.dst_port == 443 and self.protocol == "TCP",
                  "network_observation.v1 supports only TCP port 443")
         object.__setattr__(self, "source_event_ids", tuple(_uuid(item) for item in self.source_event_ids))
@@ -109,7 +109,8 @@ class CheckedAlert:
         expected["source_event_ids"] = tuple(str(item) for item in self.source_event_ids)
         for field in self.fields:
             _require(field.record_ref == self.record_ref and field.path == _PATHS[field.parameter]
-                     and field.value == expected[field.parameter], "source field does not match checked alert value/path")
+                     and same_network_filter(field.parameter, field.value, expected[field.parameter]),
+                     "source field does not match checked alert value/path")
         _require(isinstance(self.data_only_text, str), "data_only_text must be text")
 
 

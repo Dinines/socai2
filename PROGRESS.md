@@ -1,3 +1,5 @@
+**2026-10-24 调查A1地址接缝限定修复：** 先合同/strict，再统一Agents v2地址身份、caller/证据/Deep匹配与指纹；原字段值/路径、响应及source hash保持。8新增＋103相关共111项通过，未参与实现者独立83项/反例/7hash复核限定ACCEPT、0必须修。见[回执](docs/operations/investigation-network-identity-20261024.json)与[实施记录](docs/operations/unified-investigation-implementation.md)。仅离线合同，无真实业务/模型或部署/合main，旧版/API/历史失败不改。下一A2/A3精确合同，再M6.2；2.2/2.3保持未完，阶段提交/推送。
+
 **2026-10-24 调查独立总审计与规划：** 三位新审阅者核7b7bb6b，140项合同通过/39哈希条目一致；新增反例确认A1 mapped IPv6接缝误拒P2未修，A2子窗口ready和A3程序路径模型投影限制须在M6.2前定合同。保留架构但不认定完整调查有效，见[审计与后续流程](docs/investigation/independent-audit-20261024.md)。先修接缝/合同，再M6.2→M7→M8a，Case整体/自动政策前验主分析及Deep收益。本轮仅文档/离线探针，无功能修改、业务访问、模型、部署或合main；历史失败/unknown与2.2/2.3未完保持。
 
 **2026-10-24 调查M6.1纯固定政策限定通过：** 先精确合同/预期/strict再实现，13新＋M4采用13＋视图11＋M1绑定11共48项直接通过，未参与实现者独立复跑与回执重建一致，限定ACCEPT、0必须修。正常来源产4条program事实及六问题状态；空/失败/未知/冲突/截断/不可读正文保合法事实和全部refs并partial，性质/授权仍未知。所有结果均停止，不自动补查/模型，不发布Run完成；ready只对应有限来源核对。见[回执](docs/operations/investigation-fixed-recon-20261024.json)及[实施记录](docs/operations/unified-investigation-implementation.md)。下一M6.2实际M3/query/去重与持久交接另验，完整2.2/2.3未勾；本批真实HTTP/PG/CH/模型/业务写入0，旧版/历史unknown/归档保持，阶段提交/推送，无部署或合main。
