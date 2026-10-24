@@ -1,3 +1,7 @@
+## 2026-10-24 M6.2c探针与真实证据窄审
+
+fresh_design_audit合同先限定ACCEPT/0；fresh_code_audit发现P2探针只核snapshot边遗漏event正文/receipt，4个实际替身反例原核验均接受。实现前后检查缺口如实保留：修纯verify_ledger及11新合同，独立11＋4共享15项反例准确拒绝，限定ACCEPT/0才发真实c。实施112项通过；实际新Run一次业务HTTP/CH、5事件10工件全关联/哈希读回、重复/冷读同候选，model0，临时进程/角色已清理。[回执](../../../docs/operations/investigation-fixed-runtime-seam-20261024.json)。fresh_evidence_audit独立15项/41hash、READ ONLY PG及进程/权限核验后限定ACCEPT/0必须修；未扩大成M7/语义或正式入口验收。独立自跑15项，25源码/10测试/6观察哈希一致；自写READ ONLY PG核全边/冻结版本/用量/三表权限false及活动0，PID不存在；首SSH配置沙箱错误无连接，提权只读后成功。无独立raw审计文件/SHA声明。
+
 ## 2026-10-24 M6.2b2控制器结束窄审
 
 初始87项及6hash/7观察通过，但fresh_code_audit另复现取消窗口重复blocked抢先finalize的P2，b2不放行。补合同/红测后修：非本次owner blocked仅pending，读回先核观察真实留存再清，冻交接仍不可覆盖。最终独立89项、当前6hash/7观察及竞争结果一致（HTTP1、观察工件1/ref存在、facts0/unsettled1、Cancel传播），原冻结源码hash匹配，限定ACCEPT/0剩余必须修。[当前回执](../../../docs/operations/investigation-fixed-runtime-controller-20261024.json)、[失败/源码](../../../docs/operations/investigation-fixed-runtime-controller-race-20261024.json)。实施97项与独审89子集不相加；仅离线，c真实服务未验，无旧源码/部署或整体核销。

@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Verify the fixed runtime through one independent real v2 query
+
+M6.2c SHALL 使用全新受控batch/Run与临时最小writer/独立reader、loopback独立v2 API进程，复用当前共享网络场景及既有CH reader，只读canonical Alert/已入湖数据，不新增写湖/模型/Case/旧入口。实际FixedReconRuntime.begin/execute SHALL 经ReconExecutionStore事务/M3 reserve、新HTTP/CH、工具完成/A3、handoff保存；重复新runtime读取不得再查。测试配置 SHALL 显式model0/tool1/tokens0/cost0/unsettled1、DB期限120秒。
+
+#### Scenario: One controlled runtime produces a durable limited handoff
+- **WHEN** 当前PG/CH预检与离线合同通过，且新Run尚不存在
+- **THEN** 实际只1次认证activity query，匹配1行/排除两对照，结果有限ready并保nature unresolved/authorization unknown；独立PG读回5事件/10工件的UTF-8/hash/Run/tenant/event关联、冻结版本/计划、工具body/来源hash、M3 model0/tool1/unknown0/unsettled0、handoff与冷读一致，重复不增事件/查询。旧Run列及新Run生命周期/计费列保持到M7，不将候选当发布完成
+
+#### Scenario: The controlled process fails or stops
+- **WHEN** 校验/查询/保存/提交出现失败或unknown
+- **THEN** 留进度/原失败，不自动重放或换Run刷新额度；只核本次PID与创建时间停止API、关闭新PG角色并撤权，原reader/数据和旧Run不变。配置/密码留忽略.local，公开回执不含凭据；真实结果与清理独立核验通过后才放行M6.2有限路径
+
 ### Requirement: Persist fixed-recon control and handoff atomically under the owned Run
 
 ReconExecutionStore SHALL 复用原三张ledger表、同Run行锁/tenant/owner及M3预算函数，固定受支持runtime版本和event kinds。begin SHALL 在唯一事务冻结profile/完成政策/运行计划和来源；已有unified阶段、非running/已结束Run或不匹配执行器 SHALL 拒绝。claim仅在事务确认后允许控制器进入既有DurableActivityRecords，工具外呼仍以实际M3 reserve提交为前提；托管reserve只接受冻结请求。通用store SHALL 拒绝托管版本，托管store不能接管旧阶段。

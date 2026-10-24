@@ -4,6 +4,10 @@
 
 ## 2026-10-24 M6.2运行计划至真实接缝
 
+**c实际结果：** 新Run4dfd374a-17a6-5fec-833b-803bfbcb85c6实际runtime→独立v2→CH→PG，1业务查询、5事件10工件全hash/UTF-8/全部event-body-state边及身份/版本/用量读回；重复及新store冷读同handoff且无新增事件/查询。model0/tool1/unknown0/unsettled0、有限ready及Q3a/Q3b/Q4未评估。辅助CH预检另1次；API PID23872/创建ticks134373245090743751核后停，新两角色NOLOGIN/有效三表权限false/活动0。11新＋101相关112项通过；首次fixture时间文本误比较和launcher模块名误写保留，probe审阅P2四反例修纯verify_ledger后独立15通过才真实运行。[公开回执](investigation-fixed-runtime-seam-20261024.json)；真实结束独审限定ACCEPT/0必须修，M7未开始/候选未发布，旧Run列保持。
+
+**c实施前预期（基线d06bf3a）：** b2 P2关闭/独审后才新独立真实接缝。先可共享probe及离线身份/expected隔离合同；再新精确PG角色/Run、独立loopback v2 API，显式model0/tool1/tokens0/cost0/unsettled1/DB120秒，仅一次业务HTTP→CH。实际runtime事务/A3/handoff与新对象重复读，再独立PG只读核5事件10工件/hash/UTF-8/关联/冻结计划/真实用量与有限ready，通用store拒托管、Run列不改。无写湖/模型/Case/部署；辅助CH预检单列，旧失败/数据/reader保留。本机配置不进Git，角色NOLOGIN撤权/活动0，进程核PID＋创建时间后停；任何unknown不自动重放。
+
 **b2实施前预期（基线b61214a）：** 单次控制器用实际ReconExecutionStore/M3 gate+SQL替身/MockTransport；正常只1次HTTP且交接可冷读，重复/并发不再查；claim不确定无派发；M3预留基础设施失败保真实停止/retention_gap，控制不变量错误仍抛；complete失败或取消之前已有工具输出可按attempt另存未确认观察，不采用/不释放unknown。只取消本次已确认claim，重复请求/未确认claim取消不接管他人，CancelledError继续传播，无后台任务；凭据/URL不入ledger。直接合同和独审通过才进入c真实独立服务。
 
 **b2实际放行：** 初始测试导入TestCase触发15旧项重复发现，已改module import；最终18新＋79相关97项通过。fresh_code_audit独立89项子集/6hash/7观察及取消并发回归一致，P2闭合后限定ACCEPT/0必须修；[回执](investigation-fixed-runtime-controller-20261024.json)。修前源码重建SHA匹配原回执、red17项1失败与原观察保[失败回执](investigation-fixed-runtime-controller-race-20261024.json)。本批只SQL/HTTP替身，c真实新Run/一次查询/PG冷读待执行。

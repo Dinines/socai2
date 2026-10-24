@@ -1,6 +1,6 @@
 # Investigation v2 — 独立开发线
 
-`FixedReconRuntime`/`ReconExecutionStore`为M6.2固定路径：可信caller先创建新Run，begin冻结计划/版本，execute只在本次确认claim后通过M3 gate查一次并保存候选交接；重复不重查，取消/unknown不释放或接管。当前a/b仅纯合同及SQL/HTTP替身放行，真实PG/HTTP/CH在c另验；候选不是M7发布或人工已接手。当前回执：docs/operations/investigation-fixed-runtime-controller-20261024.json。
+`FixedReconRuntime`/`ReconExecutionStore`为M6.2固定路径：可信caller先创建新Run，begin冻结计划/版本，execute只在本次确认claim后通过M3 gate查一次并保存候选交接；重复不重查，取消/unknown不释放或接管。当前c已在新Run实际独立PG/HTTP/CH完成一次查询与5事件10工件读回，repeat/cold同交接不重查；112合同及probe独审15通过，真实结束独审限定ACCEPT/0必须修；候选不是M7发布或人工已接手。当前回执：docs/operations/investigation-fixed-runtime-seam-20261024.json。
 
 `recon_material.prepare_alert_recon`为A3纯材料准备：正常返回实际EvidenceView文档及M6.1有限结果；仅在必要校验已通过的投影阻断时返回保全部refs/真实source状态的partial，无虚构视图/新事实。持久保存未尝试，view_ready也不替代I2完整messages门。A2结果携bounded_full_window_source_check.v1及目标/请求/确认/遗漏窗口。回执：docs/operations/investigation-material-projection-20261024.json。
 

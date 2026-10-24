@@ -1,0 +1,418 @@
+{
+  "schema": "investigation_fixed_runtime_seam_receipt.v1",
+  "date": "2026-10-24",
+  "baseline": "d06bf3ab270c2397c6ed0e54ec49073c38015664",
+  "status": "ACCEPT_limited_runtime_seam",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix": 0
+  },
+  "probe_review": {
+    "reviewer": "fresh_code_audit",
+    "status": "limited_ACCEPT_after_P2_fix",
+    "must_fix_remaining": 0,
+    "independent_tests": 15,
+    "scope": "11 new +4 shared scene; permits live trial, not evidence acceptance"
+  },
+  "direct_tests": {
+    "files": [
+      {
+        "file": "services/agents/tests/test_fixed_recon_seam_contract.py",
+        "passed": 11
+      },
+      {
+        "file": "services/agents/tests/test_fixed_recon_runtime_contract.py",
+        "passed": 18
+      },
+      {
+        "file": "services/agents/tests/test_recon_runtime_store_contract.py",
+        "passed": 15
+      },
+      {
+        "file": "services/agents/tests/test_recon_runtime_state_contract.py",
+        "passed": 12
+      },
+      {
+        "file": "services/agents/tests/test_execution_tools_contract.py",
+        "passed": 9
+      },
+      {
+        "file": "services/agents/tests/test_execution_state_contract.py",
+        "passed": 12
+      },
+      {
+        "file": "services/agents/tests/test_recon_material_contract.py",
+        "passed": 10
+      },
+      {
+        "file": "services/agents/tests/test_fixed_recon_contract.py",
+        "passed": 13
+      },
+      {
+        "file": "services/agents/tests/test_network_identity_contract.py",
+        "passed": 8
+      },
+      {
+        "file": "services/agents/tests/test_v2_seam_scenario_contract.py",
+        "passed": 4
+      }
+    ],
+    "total": 112,
+    "new": 11,
+    "related": 101,
+    "exit": 0
+  },
+  "pre_live_discoveries": [
+    {
+      "issue": "first offline fixture compared equal UTC timestamps by ISO string, seconds versus microseconds",
+      "initial_tests": 7,
+      "initial_failures": 1,
+      "fix": "compare boundary datetime equality; runtime serialization unchanged"
+    },
+    {
+      "issue": "P2 probe verification omitted event body reference/kind/hash and receipt correspondence",
+      "independent_counterexamples": 4,
+      "old_verifier_accepted": [
+        "reserved payload body_hash all zero",
+        "reserved body_id points to begin event body",
+        "reserved body artifact wrong kind",
+        "reserved payload tenant differs"
+      ],
+      "fix": "pure verify_ledger verifies all ten body/state edges, owned tenant/run/event/version, payload and snapshot persistence, stage/attempt identities and frozen plan/scope; negative tests added",
+      "before_live": true
+    },
+    {
+      "issue": "aggregate test launcher named two modules with nonexistent unified prefix; stopped before suite execution",
+      "fix": "use actual test_execution_tools_contract/test_execution_state_contract; corrected suite112 passed"
+    }
+  ],
+  "real_seam": {
+    "schema": "fixed_recon_runtime_seam.v1",
+    "status": "passed_limited_runtime_seam",
+    "batch": "investigation-fixed-runtime-20261024-01",
+    "tenant_id": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+    "run_id": "4dfd374a-17a6-5fec-833b-803bfbcb85c6",
+    "canonical_alert_id": "121d8fa6-d431-5428-b4f4-6b928b40e91b",
+    "runtime_version": "fixed_alert_recon_runtime.v1",
+    "completion_policy_ref": "bounded_full_window_source_check.v1",
+    "runtime_plan_ref": "fixed-recon-plan:eb251d93615bb1300e15e9f9ff48a202aa64d2f6dcfaabb9378c8ed5cad92de8",
+    "handoff_ref": "fixed-runtime-handoff:b180794638a55b9987866600e7f512eb9b10afe0f091f2c078b0092388df1da9",
+    "result_ref": "fixed-recon:19c4f59ae4d1b4e9a1924f1a578257a34164dd51242532af57abfc530282cb29",
+    "model_calls": 0,
+    "authenticated_activity_queries": 1,
+    "events": 5,
+    "artifacts": 10,
+    "query_receipt": {
+      "body_truncated": false,
+      "class_uid": 4001,
+      "coverage": "bounded query only; absence is not proof of no activity; no global identity completeness",
+      "database_physical_rows_represented": 1,
+      "database_version_rows_returned": 1,
+      "distinct_matching_versions": 1,
+      "elapsed_ms": 171,
+      "executed": true,
+      "finished_at": "2026-10-24T14:08:37.132325+00:00",
+      "limit_basis": "distinct_projected_content_versions",
+      "namespace": "clickhouse.aisoc.raw_events",
+      "parameters": {
+        "dest_ip": "198.51.100.70",
+        "dst_port": 443,
+        "end": "2026-10-23T10:05:00.000000+00:00",
+        "hostname": "investigation-ch-20261023-01-host",
+        "limit": 10,
+        "protocol": "TCP",
+        "source_ip": "192.0.2.70",
+        "start": "2026-10-23T10:00:00.000000+00:00",
+        "tenant_id": "53824f24-d1d4-5820-8147-f6cfda8a1247"
+      },
+      "per_record_body_bytes": 16384,
+      "physical_rows_represented": 1,
+      "query_id": "ae371d3b-45d2-4cf9-a79d-72829a911c18",
+      "retained_body_bytes": 1825,
+      "returned_count": 1,
+      "rows_truncated": false,
+      "scope_authority": "authenticated_tenant_and_api_bounds; Run/question admission is caller-owned",
+      "started_at": "2026-10-24T14:08:36.813188+00:00",
+      "status": "ok",
+      "total_body_bytes_limit": 262144,
+      "window_bounds": "start_inclusive_end_exclusive"
+    },
+    "stage_usage": {
+      "cost_complete": true,
+      "known_cost_microusd": 0,
+      "known_tokens": 0,
+      "model_calls": 0,
+      "reserved_cost_microusd": 0,
+      "reserved_tokens": 0,
+      "tokens_complete": true,
+      "tool_calls": 1,
+      "total_cost_microusd": 0,
+      "total_tokens": 0,
+      "unknown_attempts": 0,
+      "unpriced_attempts": 0,
+      "unsettled_attempts": 0
+    },
+    "matching_event_ids": [
+      "951c5352-2df4-53d8-a431-b2763fea5e6e"
+    ],
+    "excluded_event_ids": [
+      "a2a124b2-69aa-50ab-a88f-0e1486958f72",
+      "c9ee6c8a-d44d-5ffe-a456-594b5555a87c"
+    ],
+    "scope_readiness": "ready",
+    "nature": "unresolved",
+    "authorization": "unknown",
+    "question_statuses": {
+      "Q1": "supported",
+      "Q2": "supported",
+      "Q3a": "unassessed",
+      "Q3b": "unassessed",
+      "Q4": "unassessed",
+      "Q5": "supported"
+    },
+    "independent_hash_bytes_links_verified": true,
+    "frozen_profile_plan_verified": true,
+    "repeat_and_cold_read_same_handoff": true,
+    "generic_store_rejected": true,
+    "legacy_run_columns_unchanged": true,
+    "not_m7_publication_or_quality_acceptance": true,
+    "synthetic_ledger_label_is_not_a_Case": true
+  },
+  "runtime_cleanup": {
+    "status": "passed_limited_runtime_seam",
+    "model_calls": 0,
+    "new_api_key_row": false,
+    "production_changed": false,
+    "lake_preflight": {
+      "status": "passed",
+      "read_only_exact_id_queries": 1,
+      "row_count": 3,
+      "identity_and_control_semantics_verified": true,
+      "lake_writes": 0,
+      "event_ids": [
+        "951c5352-2df4-53d8-a431-b2763fea5e6e",
+        "a2a124b2-69aa-50ab-a88f-0e1486958f72",
+        "c9ee6c8a-d44d-5ffe-a456-594b5555a87c"
+      ]
+    },
+    "temporary_api_pid": 23872,
+    "temporary_api_creation_ticks": 134373245090743751,
+    "probe_exit_code": 0,
+    "actual_api_sql_queries": 1,
+    "actual_sql_parameters_verified": true,
+    "sql_template_sha256": "a829032a01b8e2071d91ba4cb327a24defcd8f59365efb4d5046d2ea7904f695",
+    "total_ch_queries_including_preflight": 2,
+    "process_identity_verified_before_stop": true,
+    "temporary_api_stopped": true,
+    "temporary_pg_roles_closed": true
+  },
+  "closed_pg_identities": {
+    "roles": [
+      {
+        "role": "socai2_inv_m6_20261024_01_w",
+        "login": false,
+        "superuser": false,
+        "bypassrls": false,
+        "settings": [
+          "statement_timeout=10s",
+          "lock_timeout=5s",
+          "idle_in_transaction_session_timeout=15s"
+        ]
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_r",
+        "login": false,
+        "superuser": false,
+        "bypassrls": false,
+        "settings": [
+          "statement_timeout=10s",
+          "lock_timeout=5s",
+          "idle_in_transaction_session_timeout=15s",
+          "default_transaction_read_only=on"
+        ]
+      }
+    ],
+    "active_connections": 0,
+    "mode": "close",
+    "effective_ledger_privileges": [
+      {
+        "role": "socai2_inv_m6_20261024_01_w",
+        "table": "public.investigation_runs",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_r",
+        "table": "public.investigation_runs",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_w",
+        "table": "public.investigation_events",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_r",
+        "table": "public.investigation_events",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_w",
+        "table": "public.investigation_artifacts",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      },
+      {
+        "role": "socai2_inv_m6_20261024_01_r",
+        "table": "public.investigation_artifacts",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "update_id": false,
+        "delete": false
+      }
+    ]
+  },
+  "totals": {
+    "new_runs": 1,
+    "new_events": 5,
+    "new_artifacts": 10,
+    "runtime_activity_queries": 1,
+    "ch_preflight_queries": 1,
+    "total_ch_queries": 2,
+    "models": 0,
+    "tokens": 0,
+    "lake_writes": 0,
+    "kafka_messages": 0,
+    "case_rows": 0,
+    "new_api_key_rows": 0
+  },
+  "version_inventory_sha256": {
+    "services/agents/app/investigation_v2/__init__.py": "92052be3b0aa6e3535bbc1ebe4213028a79be7d7dbe6a3fc795b13a73ddeb3fa",
+    "services/agents/app/investigation_v2/activity_records.py": "445045d6a56e5a006dcf3623dc85804e2c7e9f263c481dc71d52e535a27c2527",
+    "services/agents/app/investigation_v2/analysis_adoption.py": "07d53ccd352928221dd4f05a0fe71a0be48405bb8349d0724976c5db82f8462b",
+    "services/agents/app/investigation_v2/business_profile.py": "428cb6779a6ba8d89d963d0d18aae72202f51ba6ef4d57dcafeb1462e6004009",
+    "services/agents/app/investigation_v2/evidence_view.py": "383cd1de09236589d9dddc0c680ed923ccc7334307f616d9a39ecf08276c02bd",
+    "services/agents/app/investigation_v2/execution_models.py": "e5c4821e05c947a73d1055b72eaef2ad158b633ee9d4abbf3d95c664ffbd84f2",
+    "services/agents/app/investigation_v2/execution_state.py": "36bebd1b5017f6d2e101592424007027212e899d1c211112695ef819e59d512c",
+    "services/agents/app/investigation_v2/execution_store.py": "818183f5c4214716893de0b84536718f3d75034d593ab105c1d282ee4519e833",
+    "services/agents/app/investigation_v2/execution_tools.py": "aa7443e2208af167ce53e43c9e5b78dbf862bd87e626bf1694cc8df22ac568c6",
+    "services/agents/app/investigation_v2/fixed_recon.py": "ab9e713a6524c9e22505108d876866100e409c55c200d8c1cb5593ad8a6d0934",
+    "services/agents/app/investigation_v2/fixed_recon_runtime.py": "a382c53d7082afcb64a722a26a669af7eea5d1131982af1fdee684657bd6a219",
+    "services/agents/app/investigation_v2/network_identity.py": "9b5d4b495240eda222f23e0b94fe6cbee87e8a4fbc840ad59bf7c1e01c89ec00",
+    "services/agents/app/investigation_v2/question_deep.py": "01421c095305da1ee3ef4fc6fed9d9587140a0b1c2064d8549bcd268c2f5b4c9",
+    "services/agents/app/investigation_v2/recon_material.py": "2853a48eb4be008e2cf7cfdbce6151c40e66313e4e8435dcea8982de30a87ffb",
+    "services/agents/app/investigation_v2/recon_runtime_state.py": "f567bcf6c270642124323c1f666df1ba29614ad234f40bf5a5c305f4265db5ab",
+    "services/agents/app/investigation_v2/recon_runtime_store.py": "527eafc19b3af9ee13595438789e54def2aa6bf7365b7d3daad903da0c4a6dd1",
+    "services/agents/app/investigation_v2/request_budget.py": "62078c421f2f2d6cf2157ec987a5e97917bc61671505bfff1aec5827ab877740",
+    "services/agents/app/investigation_v2/scope.py": "202bea2f61465d0294aab00d612587d3987f9da5b8af9609bcd11cd2b3368b9c",
+    "services/api/app/investigation_v2/__init__.py": "6a34afa8929a5c2cb88cc536fa7cb35dc5742cfc18a784034f2c2d40afd09843",
+    "services/api/app/investigation_v2/dispatch.py": "25c065191e8a673c01a38c00afde0176408d19cb72961a3831ae7fbd287079c2",
+    "services/api/app/investigation_v2/query_api.py": "c304267a33a314b6e4293a09da40e4e678ff0e600d8d6fd1a88f5eeda2f6dcb1",
+    "services/api/app/investigation_v2/records.py": "94618931a8f67960c508f60e18359c362c8f60392de7b4e6f7b3cd5be00ddfcb",
+    "openspec/changes/continue-isolated-investigation-v2/probes/fixed_recon_runtime_seam.py": "2c03acd678642f02f78ef6ab42c2129627b98ec10b2870aebfc92f2f2cc5033f",
+    "openspec/changes/continue-isolated-investigation-v2/probes/v2_query_seam.py": "f7a802ed6222a67f1def79ed300cf0ce36d6e588400b8d21dc40d4ae6816cc0c",
+    "docs/investigation/scenarios/network-observation.v1.json": "f61644102fd15b7f13aea7d0423ef1b86c2ca8fc13cc8a34e7187226d6783e5f"
+  },
+  "test_sha256": {
+    "services/agents/tests/test_fixed_recon_seam_contract.py": "b035b653732215034f9a31e78f12b674ebf07981b18384bae46480ab13485ddf",
+    "services/agents/tests/test_fixed_recon_runtime_contract.py": "19e2bc49b43e75172bc89fae3939101405c65796a7475b564693ae06bf8d8265",
+    "services/agents/tests/test_recon_runtime_store_contract.py": "7cd040bba49c0cdb0004726dfe5132b497d6844cca595dede4b40881a7f34ee5",
+    "services/agents/tests/test_recon_runtime_state_contract.py": "8a66b7e173eb4b0283a68ddd909ec5601c3ba8999f93265143b3c57cb195f49c",
+    "services/agents/tests/test_execution_tools_contract.py": "c5bd49eb3144c318e8425a42eef6a1c3883c1c09d39f025603b1c5dd07bbb52c",
+    "services/agents/tests/test_execution_state_contract.py": "c6b37f5165b883c6bf3341c94c43112f71a43018ca1799c14aeb5006e0095695",
+    "services/agents/tests/test_recon_material_contract.py": "ec4b033dbd0a29848abc4db28799e6069d9c0578f805760a1557dda6e1810fe2",
+    "services/agents/tests/test_fixed_recon_contract.py": "1267f38b7ab532f923e3568244de3aac1e889c7a2d09c1831499efd76d8d75d5",
+    "services/agents/tests/test_network_identity_contract.py": "21d871faa7ff5ea2389f85618f720628705b83197cadf61238b578655984e871",
+    "services/agents/tests/test_v2_seam_scenario_contract.py": "1555dfb04af5b4e7b4822a697e6a423a43800fdfc9acbee36de3f5168aa51a35"
+  },
+  "local_observation_sha256": {
+    "attempt01/receipt.json": "ea96d6b96fc3c050fbe0e6ff1360e428d13da01f9d545ac5e698ea63eee450b5",
+    "runtime-result.json": "ef92bccdf3b10dac8a4c6e81be74119e54bb556eeea851fbb8feacc2521bc082",
+    "identity-close.json": "01964aa17eccc412ccc575dc1fbea71e3a6348c9499f115cb68cd02d6d5f9b6a",
+    "lake-preflight.json": "e94e2ac52e5ee4cf4cdada426db6e3d93c7b0562126299342425c9753f4dd673",
+    "sql.jsonl": "6bab0e6028f6e02144323d56a4f000152f737d9772ce7607caf7fa1816f2656b",
+    "process-identity.json": "6fe116803e3f6e873a878bd50a2d34d1c0333ac603a94e564e4968212ea069a7"
+  },
+  "independent_evidence_audit": {
+    "reviewer": "fresh_evidence_audit",
+    "status": "ACCEPT_limited",
+    "must_fix": 0,
+    "independent_tests": {
+      "new": 11,
+      "shared_scene": 4,
+      "total": 15,
+      "exit": 0
+    },
+    "version_hashes": 25,
+    "test_hashes": 10,
+    "observation_hashes": 6,
+    "hash_mismatches": 0,
+    "independent_pg_readback": {
+      "method": "auditor own Python validation and SELECTs over existing SSH/docker psql; BEGIN READ ONLY; transaction_read_only=on",
+      "events_at_m6_2c": 5,
+      "artifacts_at_m6_2c": 10,
+      "all_utf8_hash_edges_receipts_identities_versions_verified": true,
+      "handoff_result_and_plan_refs_recomputed": true,
+      "model_calls": 0,
+      "tool_calls": 1,
+      "tokens": 0,
+      "unknown_attempts": 0,
+      "unsettled_attempts": 0,
+      "legacy_columns": [
+        "running",
+        null,
+        0,
+        0
+      ],
+      "temporary_roles_checked": 2,
+      "all_nologin_nonsuperuser_nobypassrls": true,
+      "effective_ledger_privilege_rows_checked": 6,
+      "all_select_insert_update_update_id_delete_false": true,
+      "active_role_connections": 0
+    },
+    "process_check": {
+      "pid": 23872,
+      "present": false
+    },
+    "observed_runtime_sql_records": 1,
+    "preflight_ch_reads": 1,
+    "public_local_receipts_equal": true,
+    "independent_actions": {
+      "business_writes": 0,
+      "runtime_replays": 0,
+      "http_ch_model_calls": 0,
+      "new_identities_or_permissions": 0
+    },
+    "initial_readonly_audit_setup_failure": "sandbox could not read existing SSH config before connecting; authorized escalated read-only audit then succeeded",
+    "evidence_storage": "auditor tool observations summarized here; no separate raw audit file or SHA claimed",
+    "scope": "normal runtime seam and retained handoff only; counts are this phase snapshot, not M7 publication or quality acceptance"
+  },
+  "limits": [
+    "Finite fixed source-observation objective only; Q3a/Q3b/Q4 unassessed, nature unresolved, authorization unknown. Existing Alert already contains match; no blind semantic/Deep value claim.",
+    "Run lifecycle/accounting columns remain running/null/0/0. Handoff is an owned committed candidate, not M7 manifest/publication or delivered human acceptance.",
+    "Only the new normal path has real PG/HTTP/CH evidence; cancellation/unknown/rollback races remain SQL/HTTP-double contracts, not real failure injection.",
+    "Temporary table-scoped roles do not create database-enforced per-tenant isolation; caller/SQL explicitly scope the controlled synthetic tenant and Run.",
+    "Standalone loopback v2 process only; production_changed false means no deployed service/configuration changed. One controlled synthetic ledger Run plus five events/ten artifacts were written.",
+    "No old Run replay or budget clearing, no Case/M8 entry, models, deployment or automatic merge; historical failure/unknown/unpriced remain. Tasks2.2/2.3 open."
+  ]
+}

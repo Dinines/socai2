@@ -1,3 +1,5 @@
+**2026-10-24 调查M6.2c真实接缝：** 11新＋101相关112项通过，probe独审P2全关联验收缺口修后15项通过；新Run实际runtime一次独立v2业务HTTP/CH、5事件10工件全部引用/hash/UTF-8读回、重复/冷读同交接不重查，模型0。CH预检另1次；新临时PG角色禁登录撤权/活动0，API核身份后停。[公开回执](docs/operations/investigation-fixed-runtime-seam-20261024.json)真实结束独审限定ACCEPT/0必须修。有限ready仅来源核对，性质/授权未知，候选未M7发布；不改旧Run/旧源码，无部署/合main，下一M7同版交付，2.2/2.3未完。
+
 **2026-10-24 调查M6.2b2控制器限定通过：** 18新＋79相关97项、独立89项子集/6hash/7观察及并发回归通过。独审P2取消窗口抢先finalize已修：重复blocked只报交接待完成，观察核已留存后才清；失败原源码/hash与反例保留。见[回执](docs/operations/investigation-fixed-runtime-controller-20261024.json)。一次实际gate＋SQL/HTTP替身，不证明真实服务；持续进入c新Run/临时身份/独立v2真实PG/HTTP/CH，模型0，原入口/预算/历史失败保持，无部署/合main。
 
 **2026-10-24 调查M6.2b1事务代码限定通过：** 实际ReconExecutionStore和M3函数在SQL事务替身下105项及独审通过，5hash/6观察一致；并发claim唯一、候选/state/未确认观察同事务，重复不覆盖，unknown不释放，通用/托管版本互拒。见[回执](docs/operations/investigation-fixed-runtime-store-20261024.json)。仅代码/替身，非真实PG原子性；持续接b2控制器、c真实PG/HTTP/CH，无模型/部署/合main，2.2/2.3不勾。

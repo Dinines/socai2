@@ -1,3 +1,7 @@
+# 2026-10-24 调查M6.2c真实接缝已执行，结束独审限定通过
+
+新Run4dfd374a-17a6-5fec-833b-803bfbcb85c6走独立v2实际runtime：一次业务HTTP/CH、5事件10工件全边/hash/UTF-8读回，repeat/cold同交接且无新增事件/查询，model0/tool1/unknown0/unsettled0，有限ready/Q3a-b-Q4未评估/性质授权未知；CH预检另1次。新角色NOLOGIN/有效三表权撤回/活动0，临时API核PID创建时间后停。11新＋101相关112项，probe独审P2关联缺口修后11＋4独立通过；真实证据独审限定ACCEPT/0必须修。见docs/operations/investigation-fixed-runtime-seam-20261024.json。候选未M7发布/人工接手，Run列running/null/0/0保持；无Case/模型/部署/合main，旧失败保持，2.2/2.3不勾。下一持续M7精确合同→纯同版包→原子发布/同版读取逐块推进。
+
 # 2026-10-24 调查M6.2b2控制器限定通过
 
 从b61214a按细卡/strict及合同审阅写单次FixedReconRuntime、M3 gate按attempt内存观察与dispatch_block记录；18新＋79相关97项，未参与实现者独立89子集、6hash/7观察与竞争回归一致，限定ACCEPT/0剩余必须修。审阅P2（cancel标记与观察保存窗口被重复blocked抢先封存）修后非owner blocked只pending，读回先核观察已留存再清；修前源码全文SHA/反例及red保docs/operations/investigation-fixed-runtime-controller-race-20261024.json。正常仅一次MockHTTP，unknown/取消/提交失败不重查；取消重复不接管，观察不当原completion。回执docs/operations/investigation-fixed-runtime-controller-20261024.json；旧入口与历史失败不改。b1独审清单归类已透明补正115独立项，不与实施105相加。下一持续c真实独立PG/HTTP/CH，新临时角色/Run、模型0、只一次查询，实际未验前不称M6.2完成；2.2/2.3不勾，无部署/合main。

@@ -1,5 +1,13 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M6.2c真实独立接缝细卡
+
+b2保存d06bf3a并独审P2闭合后才c。公开探针fixed_recon_runtime_seam.py复用旧共享场景卡和build_context显式telemetry映射，强制传新batch Run，不调用旧探针run方法/旧Run。私密进程助手在.local/verification/investigation-fixed-runtime-20261024-01，复用已验最小角色/SSH/独立API启动方式但新精确角色名与新随机密码，角色创建一事务、关闭NOLOGIN/撤权；无新api_key行/DDL/写湖/模型。先public probe离线结构/身份合同，再本机prepare与新独立进程。
+
+新Run id由batch确定、已存在即拒绝；PG读取当前canonical Alert/实际source projection及matching raw/ocsf hash后，创建running合成ledger Run（case_id仅标签非Case），用实际runtime.begin/execute。source/业务输入不含evaluation_only预期；评分在执行后独立比较。预算显式0模型/1工具/0tokens/0费用/1未结算，DB now+120秒及父deadline，查询窗口仍场景冻结5分钟。成功候选后用新runtime对象重读，须HTTP本次false、候选逐字段同版、服务端仅1条业务SQL；startup GET405不计业务查询，另一次CH预检单列。
+
+独立reader READ ONLY核5事件10工件，所有bytes/hash/event/run/tenant关联及state payload引用完整，begin profile/运行和完成版本/整窗计划已冻结；M3实际工具1/模型0/unknown0/unsettled0，源原文hash/精确关联、有限ready、Q3a/Q3b/Q4未评估。用新store冷读及通用store拒托管验证不写新事件；新Run状态仍running/计费列原样，M7未发布。失败原批保留，不盲重试；进程按本次Popen handle创建时间核身份后停止，新角色关闭且活动连接0/有效三表权限撤回。全部达标和未参与实现者复核后限定M6.2，不外推智能分析价值或正式M8入口。
+
 ## 2026-10-24 M6.2b原子store与调度细卡
 
 b1已保存b61214a并限定独审通过，现做b2。控制器先claim，只有本次确认首次claim（needs_commit=true）才持有本次执行权；重复claimed返回进行中/中断不派发，stopped读原交接，blocked仅finalize。未确认claim或重复请求的取消不调用Run取消，避免接管另一个执行者；已确认自己claim的取消尽力mark_cancelled/finalize后继续传播CancelledError，无后台shield任务。claim提交不确定不给HTTP授权，也不自动重新claim。
