@@ -1,3 +1,7 @@
+## 2026-10-24 A3投影阻断交接结束窄审
+
+fresh_code_audit未参与实现，独立10文件100项通过，4hash/10观察与引用一致；补核末条来源hash/版本及query count错误优先拒绝，自由body/coverage/reason标记未回显，无query回执时unknown/not_attempted保区别。专用内部阻断回执保已核material/query/source版本，facts空、六问题未评估，不伪造EvidenceView/来源不可用；正常路径7种材料与c94eb97 canonical_doc逐字节相同，view_ready不替代I2门。限定ACCEPT/0必须修，详见[A3回执](../../../docs/operations/investigation-material-projection-20261024.json)。仅纯准备/结构化交接，M6.2实际保存/人工投递/运行器未验，无真实业务/模型、旧代码/历史回执改动，不勾2.2/2.3。
+
 ## 2026-10-24 A2窗口完成政策结束窄审
 
 fresh_design_audit指出完成政策变更需独立版本，实施前补completion_policy_ref后限定合同ACCEPT/0；fresh_code_audit未参与实现，独立复跑7文件71项、3hash/12观察含result_ref完全一致，另核unknown/not_attempted不计覆盖。子窗保4事实及引用、列遗漏区间，整窗空/截断和停止原阻断保持；限定ACCEPT/0必须修。仅A2纯政策，A3尚待实施、M6.2运行/持久交接未验，旧回执不重算。[回执](../../../docs/operations/investigation-window-policy-20261024.json)。

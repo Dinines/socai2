@@ -8,6 +8,8 @@
 
 A3采用最小可交接方案，暂不分离完整证据内核：EvidenceView必要校验全部完成后，才检查Alert摘录/完整模型视图；投影阻断用专用异常携带canonical结构化回执，含scope/revision/material、全部index引用、真实query及限制原因，不带自由正文/输入合同命中的原文。原builder继续拒绝不可消费的视图；新增纯准备函数只在内部捕获此类已核投影阻断，返回可供M6.2保存的partial交接，source_state保持真实状态且evidence_snapshot_ref null，不伪造缺失视图或来源不可用；不从未形成的视图采用新事实，六问题保未评估及材料阻断。正常视图走已验M6.1。错误hash/tenant/Run/scope/必要来源不能转投影缺口。已观察execution_stop只收紧且不外呼；持久性/人工投递尚无回执，不称已提交本交接或已接手。
 
+A3具体纯接口为prepare_alert_recon(request, query_result, material, revision, execution_stop可选)，返回alert_recon_preparation.v1封装：material_state、原material引用、正常时实际evidence_document/evidence_snapshot_ref、阻断时projection_block回执，以及对应有限result。阻断result用独立blocked_alert_recon.v1，携完成政策版本/业务绑定/窗口与全部held_refs，facts为空、六问题unassessed，保真实source_state/source_available与execution_state；交接为required而非delivered，持久保存为not_attempted。长Alert使用身份/原文hash/字节元数据形成引用，不复制超长或不可消费原文进交接；正常视图的文档与引用格式保持。该接口不收外部构造的投影阻断证明，只捕获自身builder抛出的专用异常。
+
 直接预期分两块：A2整窗、内含/边界子窗、UTC等价、空/截断/失败/unknown/缺视图及事实不丢；A3正常、10条引号/反斜杠/中文、长Alert/输入合同阻断，保全部refs/版本/原响应hash，不泄漏自由正文；长材料叠加各类必要校验失败拒绝，停止枚举只收紧。每块直接测试和独审通过才进入下一块；A3结构化交接可序列化不等于实际M3持久保存。M6.2再接真实准入、固定查询/规范化去重、停止及交接留存，M7再映射Run状态/同版发布。本批不改旧源码/注册/预算/历史失败，无真实HTTP/PG/CH/模型。
 
 ## 2026-10-24 A1地址身份接缝修复合同

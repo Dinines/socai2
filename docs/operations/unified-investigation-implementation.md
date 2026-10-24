@@ -16,6 +16,8 @@
 
 **A2实际放行：** 7新＋64相关共71项通过；未参与实现者独立同71项、3hash/12观察含result_ref一致，另核unknown/not_attempted，限定ACCEPT/0必须修，见[回执](investigation-window-policy-20261024.json)。修前7项red（子测试合计failures3/errors8）保留。A3尚待实现，未实现能力不据规格追认；111项A1仍是原阶段结果。本轮无真实业务HTTP/PG/CH/模型或持久交接证明，M6.2实际gate/查询/保存与M7—M9另验，tasks2.2/2.3不勾。
 
+**A3起步：** A2已保存c94eb97后才开始。新增纯prepare_alert_recon封装正常视图结果或专用已核投影阻断；阻断保scope/material/index/query/版本refs与真实来源状态，无新事实、六问题未评估、引用可回查，持久/人工投递未尝试。长Alert只出hash/字节，不复制自由正文。先具体接口/strict，再实现、定向测试/受影响合同与独审。实际10新＋90相关共100项通过；fresh_code_audit未参与实现，独立同100项、4hash/10观察、必要校验反例及7种正常canonical_doc逐字节复核，限定ACCEPT/0必须修，见[A3回执](investigation-material-projection-20261024.json)。只放行纯准备/结构化交接，未实际落库或投递；旧回执/失败保持，下一M6.2实际gate/固定查询/去重/保存，I2完整messages门不变。
+
 ## 2026-10-24 A1地址归一化接缝修复
 
 用户继续推进，基线891d07e、起始clean。先写活动spec/design与本卡并strict，再仅修新版地址身份；直接预期及结果如下。

@@ -4,6 +4,8 @@
 
 # 调查新版：开发、进度与评审入口
 
+**本轮A2/A3纯层已放行：** A2完成政策版本及整窗要求已过71项/独审；A3现已过10新＋90相关共100项及独立同100项、4hash/10观察复核，限定ACCEPT/0必须修。材料投影超限时保全部引用与真实source状态、明确partial，正常视图文档保持；[A3回执](../operations/investigation-material-projection-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)。这仅是可供运行层保存的结构化结果，未实际持久/人工投递；下一M6.2 gate/固定查询/去重/保存，tasks2.2/2.3仍未完。下方各批次待办按其历史基线解释。
+
 **本轮A2完成：** 整窗有限完成政策已实现并显式版本化，子窗口保事实/refs但partial；71项直接与独立复跑、3hash/12观察一致，限定ACCEPT/0必须修，见[回执](../operations/investigation-window-policy-20261024.json)。A3合同已核，下一实现投影阻断保材料；实际M6.2运行器尚待，旧回执不重算。
 
 **本轮A1修复完成：** 已统一新版scope/caller/证据/Deep的地址身份规则，IPv4及其mapped表示等价，原生IPv6保独立；原始SourceField值/路径、响应和来源hash不改。8新增＋103相关合同共111项通过，未参与实现者独立83项及地址反例/7hash复核后限定ACCEPT、0必须修，见[实施记录](../operations/unified-investigation-implementation.md)与[回执](../operations/investigation-network-identity-20261024.json)。仅离线替身接缝，无真实业务/模型；下段审计基线的A1已由本块修复，历史报告保留。下一A2/A3精确合同，再M6.2；tasks2.2/2.3仍未完。
@@ -21,6 +23,7 @@
 | 要看什么 | 仓库中的位置 |
 | --- | --- |
 | 最新独立审计与后续流程 | [发现、设计裁定与逐步验收](independent-audit-20261024.md)、[离线观察回执](../operations/investigation-independent-audit-20261024.json) |
+| A2/A3完成与材料交接 | [A2窗口政策](../operations/investigation-window-policy-20261024.json)、[A3材料准备](../operations/investigation-material-projection-20261024.json) |
 | 审计A1修复 | [预期、结果及独审](../operations/unified-investigation-implementation.md)、[地址接缝回执](../operations/investigation-network-identity-20261024.json) |
 | 完整业务设计 | [主设计](../architecture/investigation-planning-design.md)：第1节业务分层，第1.10节旧版/新版隔离，第12.7节下一步顺序 |
 | 相对开源改了什么 | 主设计第16节：开源、当前实际、目标三方对照，原因、具体细节及两个例子 |
@@ -45,6 +48,7 @@
 | I1/I2材料消费接缝 | 可选正文局部缺口保留；三处共用完整消息12KiB计量并明确超限结果，直接合同和独审通过 | 未重验真实模型质量；没有自动分组或让10条超限材料被消费 |
 | M5 | M5.1问题/查询纯合同通过；M5.2仅部分准备，完整模型步骤/循环未完成 | 新版Deep整环未完成，不能称调查v2已运行 |
 | 隔离迁移 | 新包隔离合同保留；本块只新增独立v2应用，旧应用未注册新路径 | 新路径证据取本块02批，不沿用历史HTTP冒充 |
+| A2/A3纯交接增量 | 完成政策显式版本，子窗partial保事实；投影阻断保引用/来源状态，A2 71项、A3 100项及各自独审通过 | 未实际持久保存或投递，不是M6.2运行器；I2模型消息门保持 |
 | M6.1固定有限事实政策 | 13新＋35相关合同通过；程序事实/六问题/有限就绪度与停止交接，结束独审限定ACCEPT/0必须修 | 不是M6完整调度，可信调用方停止枚举不证明实际M3预算/时钟；没有追加模型 |
 | v2 HTTP、M6.2—M9 | 独立loopback查询应用已实测并停止；实际调度/M7同版结果/正式M8入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
 

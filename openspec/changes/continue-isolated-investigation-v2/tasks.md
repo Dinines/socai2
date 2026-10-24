@@ -1,5 +1,7 @@
 # Tasks: 原阶段成果接收与后续逐模块续接
 
+**A3限定完成：** 已审材料准备合同→实现→10新＋90相关/独立同100项→4hash/10观察及7正常视图复核通过，见[回执](../../../docs/operations/investigation-material-projection-20261024.json)。A2/A3纯层已放行，实际M6.2准入/固定查询/去重/持久交接仍待，2.2/2.3不勾；不把structured handoff写成已落库/已投递。
+
 **A2限定完成：** 新完成政策版本、整窗/子窗及真实查询覆盖纯政策经71项直接和独立同71项放行，见[回执](../../../docs/operations/investigation-window-policy-20261024.json)。A3仅合同已核待实现，2.2/2.3保持未完，未实际接M6.2。
 
 **2026-10-24 A1修复续接：** 已按规格/strict→实现→测试→独审完成新版地址身份接缝，111项直接通过、独立83项/7hash/反例限定ACCEPT，见[回执](../../../docs/operations/investigation-network-identity-20261024.json)。本块只修A1；A2/A3合同和M6.2—M9待推进，不新增勾选或核销2.2/2.3。下段A1未修是前一审计基线事实。

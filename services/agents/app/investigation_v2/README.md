@@ -1,5 +1,7 @@
 # Investigation v2 — 独立开发线
 
+`recon_material.prepare_alert_recon`为A3纯材料准备：正常返回实际EvidenceView文档及M6.1有限结果；仅在必要校验已通过的投影阻断时返回保全部refs/真实source状态的partial，无虚构视图/新事实。持久保存未尝试，view_ready也不替代I2完整messages门。A2结果携bounded_full_window_source_check.v1及目标/请求/确认/遗漏窗口。回执：docs/operations/investigation-material-projection-20261024.json。
+
 地址身份使用`network_identity`：IPv4与mapped IPv6同一身份，原生IPv6压缩；scope/caller/证据参数/Deep指纹同规，SourceField仍保原值和出处。A1新增8＋相关103合同及独审限定通过，回执`docs/operations/investigation-network-identity-20261024.json`；不修改留存响应/hash，不证明真实服务或完整M6运行器。
 
 旧版源码、入口、工具注册及配置保持原样。新功能在本包新增/修改，需要改旧函数时复制所需实现后在新版调整；只读复用稳定库能力。

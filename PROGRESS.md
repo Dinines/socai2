@@ -1,3 +1,5 @@
+**2026-10-24 调查A3限定通过：** 投影阻断保已核材料/查询/全部来源版本refs及真实source状态，投影阻断交接保持真实来源状态，不改写为来源不可用；正常视图走原有限政策。10新＋90相关及独立同100项/4hash/10观察通过，7种正常视图前后完全相同，见[回执](docs/operations/investigation-material-projection-20261024.json)。仅纯准备/结构化交接，实际持久/人工投递和M6.2运行器未验，2.2/2.3未完；无真实业务/模型/部署/合main。下一接M3 gate、固定查询/去重及保存。
+
 **2026-10-24 调查A2限定通过：** 完成政策显式版本化，子窗口保事实但partial，完整窗口仅确认有界查询而非整体调查完成。7新＋64相关、独立同71项/3hash/12观察通过，见[回执](docs/operations/investigation-window-policy-20261024.json)。A3合同已核待实现，M6.2实际执行/持久交接未验，旧回执/失败保持；无真实业务访问/模型/部署或合main。
 
 **2026-10-24 调查A1地址接缝限定修复：** 先合同/strict，再统一Agents v2地址身份、caller/证据/Deep匹配与指纹；原字段值/路径、响应及source hash保持。8新增＋103相关共111项通过，未参与实现者独立83项/反例/7hash复核限定ACCEPT、0必须修。见[回执](docs/operations/investigation-network-identity-20261024.json)与[实施记录](docs/operations/unified-investigation-implementation.md)。仅离线合同，无真实业务/模型或部署/合main，旧版/API/历史失败不改。下一A2/A3精确合同，再M6.2；2.2/2.3保持未完，阶段提交/推送。

@@ -788,6 +788,8 @@ M0已为network_observation.v1选定有限网络观察场景，M4仅Q1/Q2/Q5限�
 
 ### 12.7 v4从当前停点继续的单步验收顺序
 
+**A2/A3当前结果：** A2整窗完成政策已显式版本化，A3最低投影阻断交接已按合同实现，100项/独立同100项与4hash/10观察限定通过，7种正常视图与c94eb97逐字节相同；[回执](../operations/investigation-material-projection-20261024.json)。A3仍依赖有界EvidenceView，装不下则保refs/真实状态而partial，不强行分组或升上限。下一M6.2先接实际M3准入与固定查询，再去重/停止及持久交接；通过后才M7同版发布。纯层已可序列化不等于已持久/投递，I2完整messages gate保持。下段A3待实施属前一阶段。
+
 **A2当前结果：** bounded_full_window_source_check.v1整窗有限完成政策已限定通过，71项/独立同71及3hash/12观察一致；[回执](../operations/investigation-window-policy-20261024.json)。A3实施前合同已独立接受，下一纯材料准备，再实际M6.2；旧结果按原政策解释，不因代码升级重算。
 
 **2026-10-24 A1续接结果：** 地址身份接缝已修，111项直接合同及独立83项/反例/7hash复核限定通过，见[实施记录](../operations/unified-investigation-implementation.md)与[回执](../operations/investigation-network-identity-20261024.json)。仅Agents v2离线合同，旧版/API及历史审计不改；下段A1待修为审计基线状态。本块后先明确A2窗口/有限完成与A3投影阻断保材料合同，再M6.2，不跳到Case或自动政策。

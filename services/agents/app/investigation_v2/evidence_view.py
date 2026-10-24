@@ -97,6 +97,18 @@ class EvidenceView:
         return json.loads(self.canonical_doc)["index"]
 
 
+class EvidenceProjectionBlocked(ValueError):
+    """Required material checks passed; no consumable EvidenceView was made."""
+
+    def __init__(self, reason: str, receipt: dict) -> None:
+        super().__init__(reason)
+        self._canonical_receipt = canonical_json(receipt)
+
+    @property
+    def receipt(self) -> dict:
+        return json.loads(self._canonical_receipt)
+
+
 def _material_dict(material: CommittedMaterial) -> dict:
     result = json.loads(canonical_json(asdict(material)))
     result["artifact_ref"] = "urn:uuid:" + str(material.artifact_id)
@@ -322,16 +334,22 @@ def build_evidence_view(context: ScopeContext, query_result: dict,
             _require(payload["truncated"] is True, "undelivered_version_without_query_truncation")
             gaps.add("undelivered_conflict_versions")
         index[event["ref"]]["model_visible_sha256"] = content_hash(canonical_json(event))
+    alert_bytes = len(member.data_only_text.encode("utf-8"))
+    alert_digest = content_hash(member.data_only_text)
     alert_content = {"identity": str(member.alert_id), "source_event_ids": [str(v) for v in member.source_event_ids],
-                     "data_only_text": _excerpt(member.data_only_text)}
-    alert_ref = "alert:" + content_hash(canonical_json(alert_content))
+                     "data_only_text": member.data_only_text}
+    # No oversized text needs to be copied into a projection or its receipt.
+    # Valid existing views retain the same alert identity and document format.
+    alert_identity = (alert_content if alert_bytes <= MAX_EXCERPT_BYTES else
+                      {"identity": str(member.alert_id), "source_event_ids": alert_content["source_event_ids"],
+                       "data_only_sha256": alert_digest, "data_only_bytes": alert_bytes})
+    alert_ref = "alert:" + content_hash(canonical_json(alert_identity))
     alert = {"ref": alert_ref, "source_event_ids": alert_content["source_event_ids"],
              "data_only_text": alert_content["data_only_text"]}
     index[alert_ref] = {"kind": "alert_claim", "identity": str(member.alert_id), "record_ref": member.record_ref,
                         "ownership_check_ref": member.ownership_check_ref,
                         "field_paths": {f.parameter: {"record_ref": f.record_ref, "path": f.path} for f in member.fields},
-                        "data_only_sha256": content_hash(member.data_only_text),
-                        "data_only_bytes": len(member.data_only_text.encode("utf-8"))}
+                        "data_only_sha256": alert_digest, "data_only_bytes": alert_bytes}
     # M2 sets executed before its backend call: a failed/unconfigured source
     # cannot confirm SQL execution merely because that declaration is true.
     declared_executed = receipt["executed"] if receipt is not None else None
@@ -366,12 +384,39 @@ def build_evidence_view(context: ScopeContext, query_result: dict,
                         "receipt_sha256": content_hash(canonical_json(receipt)) if receipt else None,
                         "parameters": params, "source_coverage": receipt.get("coverage") if receipt else None,
                         "caller_receipt_sha256": content_hash(canonical_json(caller))}
+
+    def block(reason: str, stage: str, *, observed_bytes: int | None = None, limit: int | None = None) -> None:
+        # Called only after required material/provenance/version checks above.
+        # Never echo a free-text input-contract diagnostic into this handoff.
+        checked_index = json.loads(canonical_json(index))
+        # The original query receipt remains hash-addressed in retained material;
+        # its free-text coverage description is unnecessary in the block record.
+        checked_index[query_ref].pop("source_coverage", None)
+        raise EvidenceProjectionBlocked(reason, {
+            "schema": "evidence_projection_block.v1", "scope_hash": scope_fingerprint(context),
+            "revision": revision, "material": material, "held_refs": sorted(index), "index": checked_index,
+            "query": query, "affected_questions": ["Q1", "Q2", "Q5"],
+            "failure": {"code": reason, "stage": stage, "observed_bytes": observed_bytes, "limit": limit}})
+
+    if alert_bytes > MAX_EXCERPT_BYTES:
+        block("data_only_excerpt_exceeds_byte_limit", "alert_excerpt", observed_bytes=alert_bytes,
+              limit=MAX_EXCERPT_BYTES)
+    try:
+        _excerpt(member.data_only_text)
+    except LLMContractViolation:
+        block("alert_input_contract_rejected", "alert_excerpt")
     model_view = {"questions": ["Q1", "Q2", "Q5"], "events": sorted(events.values(), key=lambda item: item["ref"]),
                   "alert": alert, "query": query}
     document = {"schema": "network_evidence_view.v1", "scope_hash": scope_fingerprint(context),
                 "revision": revision, "material": material, "model_view": model_view, "index": index}
     model_view["snapshot_ref"] = "ev:" + content_hash(canonical_json(document))
     model_body = canonical_json(model_view)
-    _require(len(model_body.encode("utf-8")) < MAX_MODEL_BYTES, "complete_model_view_exceeds_byte_limit")
-    LLMInputContract.validate([{"role": "user", "content": model_body}])
+    model_bytes = len(model_body.encode("utf-8"))
+    if model_bytes >= MAX_MODEL_BYTES:
+        block("complete_model_view_exceeds_byte_limit", "complete_model_view", observed_bytes=model_bytes,
+              limit=MAX_MODEL_BYTES)
+    try:
+        LLMInputContract.validate([{"role": "user", "content": model_body}])
+    except LLMContractViolation:
+        block("model_view_input_contract_rejected", "complete_model_view")
     return EvidenceView(canonical_json(document))

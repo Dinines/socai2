@@ -1,3 +1,7 @@
+# 2026-10-24 调查A3投影阻断交接限定通过
+
+A2保存c94eb97后按已审合同/strict推进A3：EvidenceView先核material/tenant/Run/scope/来源版本/hash，再以专用异常保投影阻断；新增纯prepare_alert_recon返回正常实际视图/有限结果或blocked_alert_recon.v1 partial，保material/query/全部source版本refs和真实来源状态，不回显自由正文，不伪造视图或新事实，六问题未评估、持久未尝试/人工仅required。10新＋90相关共100项及未参与实现者独立同100项/4hash/10观察通过，7种正常视图与前版canonical_doc逐字节相同，限定ACCEPT/0必须修。见docs/operations/investigation-material-projection-20261024.json。A2政策版本保留，I2完整messages门不变；A3仅最小可交接方案，未分离证据内核。下一M6.2实际M3准入/固定查询/去重/持久交接，2.2/2.3未勾；无真实业务HTTP/PG/CH/模型/部署/合main，旧源码/历史失败不改。阶段提交/推送调查分支。
+
 # 2026-10-24 调查A2整窗完成政策限定通过
 
 基线070e990，先A2/A3合同/strict及独立设计审阅，完成政策缺版本问题已在实施前补清并留记录。A2新增bounded_full_window_source_check.v1，只完整冻结窗口的已确认有界查询才可能有限ready；子窗保事实/refs、列未覆盖区间且partial；空/截断/失败/unknown原阻断不变。7新增＋64相关共71项及未参与实现者独立71项/3hash/12观察均通过，限定ACCEPT/0必须修。见docs/operations/investigation-window-policy-20261024.json。旧回执不回填/重算，A3仅合同已核仍待实现，M6.2实际gate/查询/保存未验，2.2/2.3不勾；无真实业务访问/模型/部署/合main，阶段提交/推送。
