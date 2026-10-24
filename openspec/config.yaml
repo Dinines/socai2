@@ -1,7 +1,23 @@
 schema: spec-driven
 
 context: |
+  2026-10-24严格隔离优先：旧调查版本源码/入口/配置不改，新版只在独立investigation_v2包和独立入口开发；旧实现需变更时复制到新版函数，不修改原函数。旧API新增注册已撤出，旧文件/测试恢复基线；新v2 HTTP仍未注册/发布，85新Agents+8新API+51旧工具仅直接合同通过。后续独立进程/输入输出，不把兼容开关当两条完全隔离线。
+  2026-10-24最新Git授权：调查模块的设计、功能代码、测试和非私密回执在codex/investigation-working逐阶段本地提交；Windows Local Fix的本机不提交要求不适用于调查。以下无提交为历史批次事实，不阻止当前已授权保存；不自动push/部署，不改原5/15或旧失败/unknown，提交不表示M5.2及v4分层已完成。
   Language: zh-CN. 正文使用中文，保留OpenSpec结构标题及SHALL/MUST、WHEN/THEN。
+  2026-10-23最新授权继续M3：先固定目标/输入输出/预期，依次M3.1纯身份/预算reducer、M3.2既有PG三表原子账本、M3.3持久gate包装与受控新Run/一次真实M2工具验证；每小步直接测试和回执通过才下一步。当前为实现前合同，不把文档或strict通过记为M3业务通过。
+  M3使用同Run FOR UPDATE锁及MAX(seq)+1，显式核tenant/run归属，不改DDL/旧seq/旧Run.status/triage表，也不更新investigation_runs的total_tokens/total_cost等计费列；stage_id由tenant/run固定派生、executor owner固定，第二次begin拒绝且无旧阶段标记才可zero-start。开始/预留/完成各自与snapshot及相关input/output工件同事务；Run总量只在M3 state snapshot内由显式opening triage加stage已知用量汇总，unknown/unpriced分列，同完成事务保存，读取projection留M8。先commit预留才外呼；写失败call0，完成失败保留未结算预留与留存缺口，不重跑查询。
+  investigation_stage与Run期初triage用量分开；model/tool尝试、token/cost预留、max_unsettled及DB绝对deadline显式配置，旧max_tool_calls只映射model_calls并留来源，tool cap另给且不新增生产默认。子任务/retry共用；no_request可释放资源但仍计尝试，unknown不释放/重放，真实超预留照实结算并停后续。原文单工件、snapshot仅状态/小refs；无M7 manifest或完成通知、自动恢复、多旧writer并行。仅合成新Run受控验证，模型0，M4/M8及OS后置，无部署/提交/推送，原5/15保持。
+  2026-10-23前批收口：D1/D2/M1/M2调用方/API各8项共40直接测试、旧工具51兼容通过；D2真实3行、D3一告警/2消息精确关联、M2真实5次HTTP查询（2匹配3空，含子毫秒边界）及4认证拒绝通过。M1/M2独审分别限定ACCEPT/0必须修，当批到M2首工具停止；当时M3/M4/统一调度/实际Run入口未进，后续授权以本段顶部为准，不宣称成功连接、恶意或授权判定。
+  临时最小API已停止、临时token随进程失效，writer INSERT已撤回，reader及新测试tenant/3事件/1告警按回执保留；原5/15、旧失败/unknown不变。没有模型、部署、Git提交或推送，Windows原工作保持。
+  M1只接受explicit_set中的已核canonical Alert成员快照，认证/归属由可信调用方提供，本模块不查DB。M2调用方捕获tenant/Run/问题/scope/政策，越界在HTTP前拒绝；泛API仅认证tenant及lake:query权限并施加全局bound，不宣称它已做Run持久scope校验，M8接线后置。
+  M2仅网络记录，API最多50条/24小时，调用方受更小冻结范围约束；保UTC微秒边界而非把输入限制为整秒。raw_payload+ocsf_json返回原文每条合计最多16KiB、每次合计256KiB，在数据库算完整原文hash/字节数并先限制正文返回，不向API拉完整大正文后才裁剪；同身份重复去重，异文保冲突，来源/参数/绝对窗口/状态回执分别表达。M3持久化、模型和OS仍未接入。
+  2026-10-23最新工具数据授权：先完成M0场景前提实值化，按D1离线生成1告警及3条规范化网络事件（匹配/不同目标/窗口外）、D2原LakeWriter有界写入新测试tenant并按ID真实读回、D3原Fusion探针告警链及PG source_event_ids与湖记录精确关联顺序推进。
+  D1固定跨产物共用的事件UUID、绝对时间和独立expected，答案不进业务输入；D2/D3逐步测试达标并留回执后才做下一步。保原生产/常驻及旧资料，本批不实现业务查询工具、模型或OpenSearch，不把未写M1或M0前提准备记作调查通过；原5/15保持。
+  2026-10-23最新授权：用户确认调查统一设计v3后要求开始按M0—M9逐模块推进，每步先明确目标/输入输出/预期、只实现该块、直接测试达标并留回执后才进入下一依赖模块。
+  最新设计入口为docs/architecture/investigation-planning-design.md，执行回执为docs/operations/unified-investigation-implementation.md；沿restore原2.1/3.1/3.4/4.1记录部分成果，不复制任务树、不提前勾原15项。
+  在codex/investigation-working独立工作树继续，Windows原目录/分支工作保留。先M0核场景来源与字段，再M1实现显式成员、认证绑定、冻结的结论/查询范围和版本政策问题；M1扩展仅作准入判定，不发查询或模型，不接运行入口。
+  首场景先核对来源记录实际陈述，不能据此宣称恶意性、授权或实际成功已经完整裁决；实际来源/字段与放行由本批回执确认。后续块仍各自先写预期，不先实现完整流程。
+  下文2026-10-21迁移保拓扑、仅分析及统一架构暂缓是历史阶段限制，不阻止本次已授权v3逐模块实施；既有生产和未改旧路径的合同、旧失败/unknown保持，不自动提交、推送或部署。
   项目stingAISOC：已有告警及后续数据处理服务端，交付API、消息、持久结果。
   范围不含前端、采集、原始事件检测或独立展示推送。
   固定上游beenuar/AiSOC revision 34ca18c57dd4175539e5c6dd3d04a72dc057306b；

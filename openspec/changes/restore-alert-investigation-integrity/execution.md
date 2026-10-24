@@ -1,3 +1,103 @@
+## 2026-10-24严格隔离实际完成（提交前最新）
+
+按用户最后明确的两个独立版本线，先写V2-I1/I2预期，再迁新API records/独立dispatch并恢复旧分派/旧测试，运行8新版+51旧合同通过；再迁9个Agents新模块至investigation_v2，85直接合同通过。没有已跟踪旧services业务源码或旧测试差异，新包__init__仅docstring；新分派不回落、新URL不走旧v1，且未注册到旧应用。独立测试/未来入口合同见主稿1.10。此为源码/命名空间隔离与本地保存，不是新版全链/真实HTTP或部署验收。
+
+## 2026-10-24 调查工作本地Git保存（最新授权）
+
+用户澄清不提交针对Windows Local Fix，调查设计/功能修改须在专用调查分支提交。按当前46文件清单保存源码、测试、工具、设计/比较和非私密回执，不加入.local私密配置/实际运行原件，不push/部署，不合并Windows分支。补查execution_models原合同15项/0.383s及question_deep纯合同9项/0.022s，均exit0，模型/业务HTTP/PG调用0；只证明原路径兼容/M5.1，不追认M5.2或完整调查通过。正式提交身份以该分支Git log为准；原5/15、旧失败与unknown不变。
+
+## 2026-10-24 调查演进对照说明（文档完成）
+
+按用户要求给出开源/当前/v4三方流程及13个环节的具体改动、原因、状态和证据，维护于唯一主稿第16节，并提供可选环节/版本的说明图。固定上游能力不计新增，生产回执、本地小修、M1—M4有限验证、M5未完成及v4目标分别表达。事实独审限定ACCEPT、0必须修，静态/解释图交互检查通过，见audit。本轮不改业务合同或实现，不发模型/业务请求、不访问服务器/部署/提交/push；原5/15保持。
+
+## 2026-10-24 v4告警侦察与Case调查分层（当前设计，未实施）
+
+本轮设计收口：独立审阅限定ACCEPT、0剩余必须修订；必要补查/人工启动去重/启动成员快照已修，静态与strict通过，详见[audit](audit.md)。无本轮业务实现或测试。
+
+用户要求结合实施进度和新建议重新设计，以[主设计v4](../../../docs/architecture/investigation-planning-design.md)第1节为准。告警profile负责分诊后的有界侦察、缺口与升级建议，保留20自动处理过程及无Case详情；Case profile固定完整成员快照，在新Run引用多个告警的不可变材料并整体调查。Case创建/关联与启动是独立政策，Router四领域按需参与，不串跑两套完整编排。
+
+D1—M4限定回执及M5.1九项纯合同通过保留；M5.2仅observer问题组参数增量未测，完整Deep/循环/发布/分层入口尚未交付。当前仅文档，不继续实现/业务或模型测试。累计开发tokens不限、单调查有界，OS后置；无部署/提交/push，原5/15和旧失败保持。
+
+本轮核本地设计、M4冻结回执、M5.1纯合同与未测observer增量、Case最近3条投影/Router切换源码，沿用上轮20前端构建证据，没有新远程请求。修订两层IO/停止点、Case政策/继承/成本/去重/成员覆盖、页面归属及逐步路线。旧页面字段编号和历史回执保持。静态/独审结果另记audit，不把文档或strict通过当新业务能力通过。
+
+## 2026-10-24 M5.1纯合同直接通过
+
+已按预期实现任务/查询选择纯合同，9项/0.022s/exit0，模型/HTTP/PG均0；版本及边界见主实施记录。只放行进入M5.2，不代表M5循环或真实接缝通过。任务保持5/15。
+
+## 2026-10-24 M4限定结束与后续M5
+
+2026-10-24 M4限定通过：选定8例原文/采用/可读均通过，23484tokens；其中两例冲突按完整消息/9源码/调用AST等价复用。02开发18回复52185tokens，5个失败原件保持、无unknown/unsettled、费用unpriced。15项直接测试通过，未参与实现者audit_contracts限定ACCEPT/0必须修。仅network_observation.v1/Q1,Q2,Q5，非完整恶意/授权卡或全调查通过。PG临时角色NOLOGIN并撤权；M5待按小步实施，OS后置、无部署/提交/push，原5/15保持。 版本、8例清单、失败及复用证据见[主回执](../../../docs/operations/unified-investigation-implementation.md)与[机器回执](../../../docs/operations/unified-investigation-m4-20261024.json)。
+
+## 2026-10-23 M4.5逐例复测：v2 focused语义失败后修订，待v3重测
+
+用户最新明确开发/调试/测试累计tokens不设上限，持续修复复测不再逐批确认；实际一次调查仍有上限。该授权覆盖前批pending的8次/30000tokens预算选择，不重置旧批，也不改变生产额度。已先固定[主回执预期卡](../../../docs/operations/unified-investigation-implementation.md)，再开始逐例实测，尚未完成M4验收。
+
+M4.5依次复测修订候选的8个原语义组合，每项独立test Run；每Run沿M3 20000tokens/DB begin后180秒，每请求45秒/completion2048/retry0。驱动无累计token硬上限，但仍预留commit先于调用，不自动重放未知请求。原文、程序采用、可读结果分别满足8例预期，失败先定位/局部修复/直接测试，再固定新版本并用新trial留存；不清旧Run或失败/unknown，不放宽合同、不喂expected。M4未过不进M5，OS后置，不部署/提交/push，5/15保持。
+
+02批原件在`.local/verification/investigation-m4-20261023-02/trials/<name>/`。`v2-positive-combined`新Run `ed606d91-f79a-54a4-a4aa-ab5f6b019a39`：2427tokens、4事件/7工件独立核对通过，机械全pass/admitted、独审语义PASS。`v2-positive-focused`新Run `a25a8bcc-3f2d-554a-8525-35b03586500e`：2574tokens、4事件/7工件通过，机械pass/admitted，但独审语义FAIL：Q1未明确unknown outcome，程序复制字段不能替模型表达；Q2把event UUID称alert UUID，实际引用/关联正确，不夸大为关联错误。原机械回执中的semantic pending保留为历史状态，采用通过不等于语义通过。
+
+root随后只补Q1明确unknown/冲突及事件ID与opaque alert.ref不能推Alert UUID两条提示，13项直接测试/0.322s/exit0；源码SHA256 `6ef7d59d6ba6a6f6e988669c3f35e3b3a96f22d8793e33bdaef2659ee01e86c2`。下一以v3新trial重测正例两模式，再继续其他样例，不改v2原件，不进入M5；最终aggregate待完成，当前只记录逐例进展。
+
+## 2026-10-23 M4前批事实：真实矩阵功能门失败及局部修订
+
+用户已授权持续逐步推进；前批M3停止是历史边界。先在本change补M4规格/设计及[主回执预期卡](../../../docs/operations/unified-investigation-implementation.md)，按M4.1a证据视图→M4.1b固定候选采用→M4.2持久模型gate逐小步实现并测试：分别11项/0.087s、13项/0.063s、12项/0.277s，均exit0；另原LLM no-bypass测试7项直接调用全部通过，未改原测试或输入合同。其后M4.3真实矩阵完成7次回复但全部候选拒绝，功能门失败，不进入M5；详见主回执及[公共JSON](../../../docs/operations/unified-investigation-m4-20261023.json)。
+
+M4.1a首轮上限用例样本不足导致1失败，修足量合法样本后通过；root审读修正失败查询executed仅保曾尝试/实际执行未知，以及同版完整/截断单ref、全部retention和矛盾prefix拒绝。M4.1b独审发现assurance/validity混用，改为finding rule_checked/current、assessment model_assessed/current后复测；M4.1b及M4.2独审均限定ACCEPT、0剩余必须修。M4.2完成事务中第二次取消可能留下reserved或_active，按保守交接处理，无恢复保证。各步真实HTTP/DB/模型均0，版本hash、命令和范围见主回执。
+
+只验network_observation.v1的Q1/Q2/Q5，Q3a/Q3b/Q4保缺口、性质unresolved/授权unknown。来源异文及limit+1未交付冲突hash须保缺口，不编造正文；模型gate复用safe_ainvoke observer，在egress后实际输入上完成M3预留，原reply/恢复候选/采用原子留存。每次问题3/发现6/建议2，完整消息12KiB、输出2048tokens及正文32KiB；token预留为实际outbound UTF-8字节数+256+2048，不称tokenizer实测。
+
+同一正例/冲突例各combined和focused一次，另过度成功声明/空/缺源/指令对照各一次，最多8尝试，同阶段总20000tokens；衍生材料新hash/provenance，expected不入模型。M4.3显式0tools/max_unsettled1/cost cap None，DB begin后180秒绝对期限；无估价仍保unpriced，到限不扩额度。root已用私有现服务凭据GET /models得200及别名存在，仅是只读可达准备，不证明inference或resolved model；网关无per-tenant key隔离，不为本批部署新平台。质量/预算门未过则定位留存，不进入M5；不把本有限场景说成主设计12.6完整恶意/授权验收。旧Run状态/计费列不改，无OS、部署、Git提交/push，原5/15不动。文档strict只证明结构，不代替后续业务结果。
+
+M4.3实际准备：6份衍生样例已落PG新Run `eb431eb2-6c62-5b61-8178-ae1b14580b0f`，6events/6artifacts经独立连接核hash、bytes、event refs全部通过，原Run状态/计费列不变；19文件冻结清单位于`.local/versions/investigation-m4-20261023-01/manifest.json`。这只证明准备留存，尚无模型结果。
+
+首次run命令因“内部衍生材料向模型网关出站授权尚未确认”被自动审批拒绝，CreateProcess未发生，当时模型0且无`model-attempt-started.json`；随后只读补充合成来源与SDK localhost24000经SSH转21:14000的既配目的地证据，同一原命令重审获自动批准后执行，未绕过审批。保留首次拒绝，不把它当模型质量结论。
+
+实际7responded/committed，15042tokens、7unpriced、0unknown/0unsettled。七份answers均object而合同要求list，均被answer_limit拒绝，功能门失败；原文另有模式、绝对窗口、冲突predicate、空refs肯定finding及execution未知写failed问题。第8 s06原reason仅analysis_ExecutionRejected；按最终状态/冻结输入/预留规则离线推导为剩4958<需6790，实际reserve前阻止、无请求，未扩20000限额，budget_breached=false。21events/36artifacts独立读回hash/bytes/eventrefs全部通过，原Run状态/计费列不改，测试Run仍running；专用PG角色identity-close确认NOLOGIN，关闭事务撤权。
+
+M4.4先固定scope/view+mode输入及不变输出合同，再只澄清prompt的三answers数组、模式专属assessment、ref数量/冲突predicate、无证据Q5缺口、未知execution和绝对窗。13项/0.316s直接测试exit0，新增真实object及单元素包装回归，不自动补造Q2/Q5；8份新prompt离线合同尺寸5487/5360/6130/6003/5553/4903/4944/5617，7旧reply重新采用与保存结果完全相同，仍全部失败。新源码/测试hash见主回执；本步真实模型0，audit_contracts对修订候选限定ACCEPT/0必须修，M4不追认通过、不进入M5，原19文件冻结不覆盖。
+
+当时提出额外有界复测预算选择（新Run最多8次/30000tokens/180秒），pending期间未新增调用或身份。后续用户明确测试迭代累计tokens不限、持续修复复测无需逐批确认，已覆盖该待选事项；当前按顶部M4.5每Run 20000tokens/180秒执行，不采用原30000提案、不重置旧批。本段原实测事实保持。
+
+## 2026-10-23 M3限定实现与测试收口（前批）
+
+按[主回执](../../../docs/operations/unified-investigation-implementation.md)先固定IO/预期，再逐步实现测试：M3.1纯状态12项/0.014s，M3.2真实PG4项/13.342s，M3.3 gate先8项，独审发现未知参数先落库后补白名单及第9项，修后9项/0.112s，均正常exit0；前8不重复累加，共25项。M3.2审读的scope重复正文已改为单工件/refs再通过真实PG。PG故障注入是预期用例，没有失败测试或模型重试。
+
+随后一次真实M2 HTTP→CH命中固定UUID，begin/reserve/complete原子保存3事件/6工件，独立PG连接核hash、UTF-8及event refs全部通过。新Run `de642e8b-d4ac-5a39-9e4a-3553d795ab6d`，返回来源1825字节、原文hash与前批相同、unknown原样保留。`m3-tool-runtime.json`为passed/probe exit0、API stopped；`m3-tool-receipt.json`和单条`m2-sql.jsonl`在`.local/verification/investigation-m3-20261023-01/`。真实模型0，state测试中的2000+70及费用均为合成fixture，不计实际花费。
+
+`identity-close.json`确认专用PG角色login/superuser/bypassrls均false，关闭事务撤回三表授权及Run UPDATE(id)，旧CH reader保留，未改旧账号/row policy或业务表DDL。M3总量仅存state snapshot，Run状态/计费列不变；工具Run仍running为预期，非最终调查完成。机器摘要由[本批JSON](../../../docs/operations/unified-investigation-m3-20261023.json)承接，版本保留位置`.local/versions/investigation-m3-20261023-01/`。
+
+M3限定实现与测试完成，未参与实现的audit_contracts已核最终版本/真实回执/清理，限定ACCEPT、0剩余必须修项；只覆盖M3有限模块及一次M2接缝。停止后续：M4、统一调度、M7 manifest/通知、M8入口/读取projection及OS未进。无部署、提交或推送，原5/15与旧失败/unknown保持；下文M2未进入M3是前批事实。
+
+## 2026-10-23 统一调查D1—D3/M1/M2首工具逐步交付（前批）
+
+用户确认工具数据方案后，按每步预期→实现→直接测试→实际回执顺序推进，完整事实见[统一调查实施记录](../../../docs/operations/unified-investigation-implementation.md)。D1离线1告警/3事件与8项直接测试；D2工具8项通过后原LakeWriter单次flush写3行并核47列/完整原文hash；D3复用原Fusion探针投1告警/2消息，PG与湖事件精确关联，Run0/模型0。M0只对有限来源观察场景放行，随后M1范围/版本政策8项通过，再实现M2 API及受限caller各8项；本批共40直接测试及旧调查工具51兼容，重复复测不累加。
+
+M2经临时localhost最小FastAPI挂原graph router，保真实认证/权限/dispatch、只读PG tenant检查及CH reader；Agents独立进程发5次真实HTTP查询。主窗口和end=10:01:00.000001共2次匹配正确UUID；空子窗口、end=10:01:00与start=10:01:00.000001共3次成功空。缺凭据/缺tenant/坏UUID/不存在tenant分别401/403/400/403；caller换目标在HTTP前拒绝。5条SQL实参均固定tenant及网络条件、fetch_limit11、readonly1/5秒；完整raw/OCSF hash与D2一致，action/outcome仍为来源观察/unknown。
+
+使用原目录`.venv` Python3.12解释器。API直接测试命令为`python -m unittest discover -s services/api/tests -p test_investigation_records.py -v`，8项exit0。旧兼容命令为`python -m pytest -p no:cacheprovider -p asyncio --asyncio-mode=auto services/api/tests/test_investigation_tools.py -q`，环境`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`、`PYTHONPATH=services/api`，51 passed/exit0。此前D1及旧兼容pytest显示绿但挂起、中断exit1，原失败保留不计通过；后者仅收窄为缓存收尾路径相关，不追认D1根因。OTEL gRPC exporter提示及py_compile缓存权限失败同样保留，不扩称全量环境通过。
+
+真实回执位于`.local/verification/investigation-ch-20261023-01/`：`association.json`、`fusion-attempt01/receipt.json`、`m2-attempt01/receipt.json`、`m2-sql.jsonl`和`m2-runtime.json`。最后一份确认临时API stopped、token只在已停止进程生效；writer INSERT已撤回，reader及新tenant/3事件/1告警留作后续受控复用，旧账号/row policy未改。受限caller做问题scope校验，泛API只做认证tenant/权限及全局bound，未宣称Run持久scope或数据库行级沙箱。
+
+独立audit_contracts对M1/M2分别限定ACCEPT、0本批必须修，源码hash与实测一致，见audit对应段。当批只交付M2首个查询与材料结果，不继续M3持久/额度、M4模型、统一调度或M8实际Run入口，OS后置；无模型、部署、Git提交推送，原5/15与旧失败/unknown保持。当批收口只更新记录，未重跑业务测试；调查worktree内OpenSpec1.13.0 `validate restore-alert-investigation-integrity --strict`及`git diff --check`通过，list保持restore 5/15、R02 0/17。
+
+## 2026-10-23 M0来源盘点与工具数据规划（历史阶段）
+
+用户已授权逐块推进，并明确工具设计缺口先讨论。调查工作树/分支及3fa4be3基线不变；fetch最新origin/main到7ea813a，只读核21份文档更新，tools/testdata及服务无代码差异，未合并覆盖未提交v3稿。
+
+执行前固定[验收卡](../../../docs/operations/unified-investigation-implementation.md)。M0仅核测试tenant的一条已知合成事件和15个指定字段；初次被沙箱socket/文件权限阻止，获准相同只读操作后元数据通过，事件查询因探针SELECT别名覆盖UUID类型失败。取回code386后保原失败、修正探针，09:54:48 UTC回查1行，主机/进程吻合，目标IP为::，不能支持外联。见[净化JSON](../../../docs/operations/unified-investigation-m0-source.json)。无业务数据写入、模型调用或运行变更。
+
+两路只读源码审计核测试数据/存储和工具边界后形成[待讨论建议](../../../docs/architecture/investigation-tool-data-plan.md)。M0来源盘点已完成，但场景/工具/数据计划未确认，M0未放行，M1源码与后续模块均未实现。OpenSpec1.13.0在当前工作树可直接运行（原Windows wrapper会切回原目录，未采用）；此前v3批未发现CLI为历史事实。原tasks 5/15不变，strict/静态/结束审计见audit最新段，不把规格结构通过当业务通过。
+
+## 2026-10-23 调查统一设计v3文档修订
+
+用户确认根据重新审计意见修订[调查模块规划设计文档](../../../docs/architecture/investigation-planning-design.md)，当前授权仍为文档，不启动实施。基线`3fa4be3`，专用分支`codex/investigation-working`，工作树`E:\aisoc\socai2\.local\worktrees\investigation-working`；Windows环境及其他未提交工作留在原目录`E:\aisoc\socai2`。
+
+本批记录七项修订范围：行为性质与授权分别判断；可信指令与来源证据隔离；结论范围与查询范围分离；小模型按相关问题分组调用；明确预算作用域；选定全部读取与通知路径遵守manifest同版发布；模型质量、程序安全及成本分别验收。首版预算建议为后续调查阶段共享额度，Run成本汇总首次分诊和调查，不改变当前配置数值。
+
+首场景策略卡待M0核实际来源和字段后确定，本轮未启动M0实施、真实查询、业务测试或模型调用。不新增业务规格、不勾任务，不改业务源码/配置/数据库/生产运行，不部署或Git提交推送；原5/15、旧失败与unknown保持。
+
+完成回执：audit_contracts与audit_practicality两路独立文档复核均限定ACCEPT、0项本轮必须修；主文SHA256 `1deac54a5cfc3d764b2ec601c7993949d006060166f6e36a50365446e059e194`。26本地链接/1JSON/24表格、围栏和新增链接静态通过，git diff --check通过，tasks与HEAD保持5/15。当前Windows无可用OpenSpec CLI，未执行strict、未安装工具；后续实施前仍须校验。详情见[audit](audit.md)本次记录，以上不代表业务验收。
+
 ## 2026-10-23 测试数据工具迁移及逐步实测
 
 按用户新授权执行：先保工具基线/源码hash，模板选择+wire12检查→sender16检查→真实3条Kafka/Fusion/PG→observer真实只读→2条新tenant自动分诊/调查。44直接测试/39子项，真实两例6回复26492tokens、29工件hash/关联全过，例A自动关闭，例B原graph/Deep4轮8工具后token停止partial/MD可读；内容标记泄漏、软预算和状态展示限制如实保留。未修改188个Agents源码或6上游原件，0新部署/生产group变更/真实动作。详细docs/operations/testdata-migration-execution-20261023.md，原5/15不改。

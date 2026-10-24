@@ -1,5 +1,27 @@
 # socai2 / stingAISOC 工作约定
 
+- **2026-10-24旧版保留/新版严格隔离（最新）：** 用户再次明确两个完全独立的版本线，旧源码/入口/开关/注册不改；需变化的函数复制所需部分到新版新增函数。已将新Agents/API代码迁入各自app/investigation_v2，撤出旧API新增注册、恢复旧工具测试，旧已跟踪services文件相对3fa4be3无差异。先新API8项/旧工具51项通过，再Agents85项直接合同通过；新v2 HTTP路径尚未注册/发布，历史真实回执不算新路径已验。后续独立进程/配置/输入输出，同Run单writer、unknown不回落重跑；不部署、调查本地Git保存已授权。M5定向真实接缝也用独立v2测试进程，不回挂旧API。
+
+- **2026-10-24调查Git保存授权（最新）：** 用户明确此前“不需要提交”针对Windows Local Fix等本机工作，不适用于调查模块。调查设计、功能代码、测试及非私密回执统一在`codex/investigation-working`保存并按阶段本地提交；不混入Windows分支，不自动推送/部署。本条覆盖下文调查各历史批次“无提交/不自动提交”的后续工作限制，不改写其当时事实。当前提交保存D1—M4限定成果、M5.1及M5.2未完成增量、v4设计/对照；不据Git提交追认完整M5或Case分层已交付。
+
+- **2026-10-24调查v4分层重新设计（最新，仅文档）：** 用户要求结合进展与新建议重新设计，主入口仍为[调查规划](docs/architecture/investigation-planning-design.md)。两业务profile共享内核：告警分诊/侦察及20“自动处理过程”保留无Case详情；Case新Run继承已核材料，完整成员快照/局部选材，创建/关联与启动独立政策、四领域按需。当前D1—M4限定通过、M5.1九项纯合同通过，M5.2仅observer问题组增量未测；先讨论v4，未继续实现/业务测试。恢复顺序见12.7：先profile合同，再续M5及告警交付，手动Case衔接后分别接自动政策。开发累计tokens不限、单调查有界；OS后置，无部署/提交/push，原5/15及旧失败保持。20仅核前端构建，不代表其API/21已验。
+
+- **调查M4限定完成与M5续接（最新）：** 2026-10-24 M4限定通过：选定8例原文/采用/可读均通过，23484tokens；其中两例冲突按完整消息/9源码/调用AST等价复用。02开发18回复52185tokens，5个失败原件保持、无unknown/unsettled、费用unpriced。15项直接测试通过，未参与实现者audit_contracts限定ACCEPT/0必须修。仅network_observation.v1/Q1,Q2,Q5，非完整恶意/授权卡或全调查通过。PG临时角色NOLOGIN并撤权；M5待按小步实施，OS后置、无部署/提交/push，原5/15保持。 测试累计tokens不限，实际单调查各子任务仍共享运行期额度；本任务24000转发保留供下一本地阶段，结束按PID/创建时间核身份后清理。见[实施记录](docs/operations/unified-investigation-implementation.md)及[M4回执](docs/operations/unified-investigation-m4-20261024.json)。
+
+- **2026-10-23调查开发测试持续授权与M4.5预期（最新）：** 用户明确开发/调试/测试累计tokens不限，可持续修复复测，不再逐批请求预算；实际一次调查仍有上限。这已覆盖前批pending的8/30000提案，无需再确认。M4.5逐个复测原8个语义组合，每项独立test Run，M3额度仍20000tokens/180秒，请求45秒/completion2048/retry0；测试驱动无累计token硬上限，不绕过单Run gate或自动重放未知请求。失败定位修复并直接测试后，以新版本、新trial留证，不清旧Run/失败/unknown。原文/采用/可读三层均满足8例后才放行M4，未过不进M5。当前仅预期、尚未实测；见[实施卡](docs/operations/unified-investigation-implementation.md)。生产额度不改，OS后置，无部署/提交/push，5/15保持。
+
+- **2026-10-23调查M4前批失败及修订候选：** 7真实回复15042tokens均留存但候选全拒绝，第8未发，21事件/36工件独立读回通过，旧Run列不改、临时PGrole已NOLOGIN撤权。M4.4的13项/离线回放及候选独审通过不追认原M4通过；19文件原冻结与旧失败保持。见[主回执](docs/operations/unified-investigation-implementation.md)与[M4历史摘要](docs/operations/unified-investigation-m4-20261023.json)。当时待预算选择已由顶部新授权覆盖，不重置旧批或采用旧30000提案。
+
+- **2026-10-23调查M3限定完成（前批停止位置）：** 按M3.1→M3.2→M3.3逐步通过12项状态、4项真实PG、9项gate测试及1次真实HTTP；匹配1条，3事件/6工件独立读回hash/UTF-8/关联通过，真实模型0。scope重复正文及未知参数先落库两项审阅问题已修后验证，最终独审限定ACCEPT、0剩余必须修项。共享预算与Run总量只写原子state snapshot，不改Run状态/计费列；测试工具Run保持running为预期，非最终调查完成。API已停，PG临时角色禁登录并撤回权限，CH reader保留。见[主回执](docs/operations/unified-investigation-implementation.md)及[M3摘要](docs/operations/unified-investigation-m3-20261023.json)。当批停止于M3；当时M4、统一调度、M7发布、M8入口/读取projection及OS后置，无部署/提交/push，原5/15与旧失败保持，后续以最新授权为准。
+
+- **2026-10-23调查M1与首个M2查询已通过（前批停止位置）：** D1—D3数据前提通过后再实现M1冻结范围/六问题、M2受限activity_records调用方/API。五块各8项直接测试共40、旧工具51项兼容通过；真实HTTP→原认证→CH五查询/四认证反例通过，原文hash和微秒半开窗口一致，未发模型/持久Run。临时API已停、writer权限已撤回，reader与合成数据保留；未部署/提交推送。M1/M2未参与实现者独审限定ACCEPT、0必须修，主记录见[本批回执](docs/operations/unified-investigation-implementation.md)。当批M3持久/额度、模型及Run入口未实施，后续以顶部M3回执为准；原5/15与旧失败保持。
+
+- **2026-10-23调查ClickHouse场景数据已验证（本批最新）：** 用户确认先补场景数据再接查询，OpenSearch IOC后置。D1离线8项、D2工具8项直接测试通过后，原LakeWriter单次写3合成事件，独立reader核47列/原文hash、匹配1/对照排除；D3原Kafka/Fusion投1告警/2消息，PG canonical Alert与湖UUID/租户/时间/实体精确关联，Run0/模型0。专用writer INSERT已撤回，reader保留查询验证；新账号只有表级权限，tenant条件由程序强制，未改共享row policy。M0有限来源记录核对场景放行，随后先M1范围/问题合同测试再M2工具；不据合成观察判恶意/授权。见[逐步回执](docs/operations/unified-investigation-implementation.md)。原5/15、旧失败保持，无部署/提交推送；下条待讨论为前一阶段。
+
+- **2026-10-23统一调查开始逐模块推进（当前M0）：** 用户已授权按“预期→实现→测试→放行”推进，后追加要求工具影响设计先规划讨论，并核查main测试数据模块。独立调查树/分支不变；已fetch查main到`7ea813a`，仅文档更新、工具/服务未变，未合并覆盖v3未提交稿。M0只读核15字段及既有合成事件1行，外联字段缺失；已形成[工具与场景数据建议](docs/architecture/investigation-tool-data-plan.md)和[逐步记录](docs/operations/unified-investigation-implementation.md)。CH已有入湖/查询、现测试工具未写场景历史事件；OS为共享TI索引，非事件/审批库且未被现enrich工具自动消费。首场景及工具数据计划待讨论，M0尚未放行、M1未编码；原5/15/旧失败保持，无新数据写入/模型/部署/提交推送。下文“等待实施确认”为此前文档阶段，不撤销当前逐模块授权。
+
+- **2026-10-23调查方案v3修订（仅文档，最新）：** 用户确认重新审计后修订方案，主入口仍为[调查模块规划设计文档](docs/architecture/investigation-planning-design.md)。本批在独立工作树`E:\aisoc\socai2\.local\worktrees\investigation-working`、`codex/investigation-working`、基线`3fa4be3`；Windows环境任务留原目录/分支，不提交推送。v3拆分行为性质/授权、结论/查询范围，补材料指令隔离、按问题组调用、调查阶段共享额度与Run总成本、热读/冷读/通知同版和有用判断/安全交付验收。首场景卡为待M0实值化的候选，未核新来源或启动实现、业务/模型测试、生产访问、部署；继续等待实施确认。原5/15、旧失败及unknown保持，具体复核见原change audit/execution，历史ACCEPT不自动覆盖新稿。
+
 - **2026-10-23测试数据迁移已实测：** 用户授权后完成场景选择/Kafka wire有界发送/只读观察和隔离联测，见[回执](docs/operations/testdata-migration-execution-20261023.md)。44直接测试/39子项通过；3条新输入Fusion3Alert/6消息/0模型；另2例自动BTP关闭、NR调查partial，6回复26492tokens/29工件。仅工具侧改动，188个Agents源码与6上游原件hash保持；测试标记干扰理由、21796/20000软预算停止、报告running与Run completed差异登记待讨论，不重调或顺带改调查设计。临时进程/隧道停，2新key停用，预算2 responded。新增Git忽略可选输出目录，实际运行材料均留.local；无部署/提交/push，原5/15保持。
 
 - **2026-10-23调查规划与换账号交接（最新，仅文档）：** 后续调查统一读[调查模块规划设计文档](docs/architecture/investigation-planning-design.md)，已汇总完整四块合同、程序/模型/Deep分工、旧模块复用融合、完整案例及产品参考。未来开发或测试前自行使用`codex/investigation-working`或合适的隔离分支，先核未提交小修和其他任务，禁止漏带或覆盖。严格按M0—M9：每块先明确概念/功能、输入输出与预期样例，再只实现这一块并直接测试，符合预期、留回执后才进入下一依赖模块，不能整流程写完再测；失败先定位，模型原文/程序采用/最终交付分别评价。新账号续接入口与开场指令见主文档第14节。本轮仍在main，只整理文档，不启动统一设计实施、业务/模型测试、生产访问、部署、提交推送；原5/15、旧失败及未提交其他工作保持。
@@ -153,7 +175,7 @@
 - 按最新范围，只补本批直接功能/结果及必要身份检查；冗余设计和服务可用性相关测试、修复均后置登记，不将旧R02或旧全链清单重新变为功能前置。正常业务结果错误仍按最小改法修复；只在特殊故障/恢复场景出现的接续问题可后置，不为此先建通用恢复框架。既有已验修复不回退。
 - 实施前运行 `openspec validate <change> --strict --no-interactive`；任务仅在实际完成并有证据时勾选。失败、unknown、未执行样例和未验能力原样保留，不以文档齐全替代实施完成。
 - 结束独审通过、直接验收和交接更新完成后，才执行 `openspec archive <change> --yes`，将已交付的规格增量同步至 `openspec/specs/`。工具/文档change使用 `--skip-specs`；归档后复核规格和任务。已封存的R01及更早批次只作前置引用，不倒填新change或改写冻结回执。
-- 不自动提交或推送Git。OpenSpec不替代明确目标、凭据及高风险响应审批，亦不授权重放旧unknown、清空积压或启用常驻worker。
+- 调查模块按顶部最新授权在专用分支逐阶段本地提交；其他任务遵循各自授权，不自动推送Git。OpenSpec不替代明确目标、凭据及高风险响应审批，亦不授权重放旧unknown、清空积压或启用常驻worker。
 
 ## 来源与开发边界
 

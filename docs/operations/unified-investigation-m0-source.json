@@ -1,0 +1,95 @@
+{
+  "module": "M0",
+  "recorded_at": "2026-10-23T09:52:17.465661+00:00",
+  "readonly": true,
+  "synthetic": true,
+  "tenant_id": "b282f186-3e35-5cbd-93e9-14100108da5d",
+  "event_id": "14c3af97-db31-4218-a885-b03c6d5dd20f",
+  "window_start": "2026-10-21T04:10:00Z",
+  "window_end": "2026-10-21T04:15:00Z",
+  "limit": 2,
+  "prior_attempt": {
+    "status": "sandbox_blocked",
+    "socket_error": "WinError10013",
+    "receipt_write": "PermissionError",
+    "business_query_executed": false
+  },
+  "schema": {
+    "event_id": "UUID",
+    "tenant_id": "UUID",
+    "event_time": "DateTime64(3, 'UTC')",
+    "class_uid": "UInt32",
+    "category_uid": "UInt32",
+    "activity_id": "UInt32",
+    "source_ip": "IPv6",
+    "dest_ip": "IPv6",
+    "dst_port": "UInt16",
+    "protocol": "String",
+    "src_hostname": "String",
+    "process_name": "String",
+    "connector_type": "String",
+    "raw_payload": "String",
+    "ocsf_json": "String"
+  },
+  "missing_columns": [],
+  "status": "source_verified",
+  "query_diagnostic": {
+    "at": "2026-10-23T09:53:04.403591+00:00",
+    "type": "ServerException",
+    "code": 386,
+    "message": "DB::Exception: There is no supertype for types String, UUID because some of them are String/FixedString and some of them are not: while executing 'FUNCTION equals(toString(event_id) : 11, toUUID('14c3af97-db31-4218-a885-b03c6d5dd20f') : 4) -> equals(toString(event_id), toUUID('14c3af97-db31-4218-a885-b03c6d5dd20f')) UInt8 : 15'."
+  },
+  "query": "SELECT toString(event_id) AS event_id,event_time,class_uid,category_uid,activity_id,src_hostname,process_name,toString(source_ip) AS source_ip,toString(dest_ip) AS dest_ip,dst_port,protocol,connector_type,raw_payload,ocsf_json FROM aisoc.raw_events WHERE tenant_id=toUUID(%(tenant)s) AND event_id=toUUID(%(event)s) AND event_time>=parseDateTime64BestEffort(%(start)s) AND event_time<parseDateTime64BestEffort(%(end)s) LIMIT 2",
+  "corrected_query": "SELECT event_id,event_time,class_uid,category_uid,activity_id,src_hostname,process_name,source_ip,dest_ip,dst_port,protocol,connector_type,raw_payload,ocsf_json FROM aisoc.raw_events WHERE tenant_id=toUUID(%(tenant)s) AND event_id=toUUID(%(event)s) AND event_time>=parseDateTime64BestEffort(%(start)s) AND event_time<parseDateTime64BestEffort(%(end)s) LIMIT 2",
+  "correction": "Probe SELECT alias event_id shadowed UUID column in WHERE; retain original column types. This is probe error, not a diagnosed legacy tool bug.",
+  "rows": [
+    {
+      "event_id": "14c3af97-db31-4218-a885-b03c6d5dd20f",
+      "event_time": "2026-10-21 04:12:29.733000+00:00",
+      "class_uid": 1007,
+      "category_uid": 1,
+      "activity_id": 0,
+      "src_hostname": "SOC-FULL-MIG-01",
+      "process_name": "migration-check.exe",
+      "source_ip": "::ffff:c000:24d",
+      "dest_ip": "::",
+      "dst_port": 0,
+      "protocol": "",
+      "connector_type": "migration-fixture",
+      "raw_payload_sha256": "a7155cdcc603397c901fb1b3107db9c678568fa736dcf1808456c8dc141a1a2e",
+      "raw_payload_top_level_keys": [
+        "bytes_sent",
+        "hostname",
+        "outcome",
+        "process_name",
+        "time",
+        "username"
+      ],
+      "ocsf_json_sha256": "5c14a9bd52d8a4c07bad7bd42809e193a995e2a931ff307d8726065653031d89",
+      "ocsf_json_top_level_keys": [
+        "actor",
+        "category_uid",
+        "class_uid",
+        "device",
+        "message",
+        "metadata",
+        "process",
+        "raw_data",
+        "severity",
+        "severity_id",
+        "src_endpoint",
+        "time"
+      ]
+    }
+  ],
+  "row_count": 1,
+  "expected_row_matches": true,
+  "verified_at": "2026-10-23T09:54:48.345254+00:00",
+  "verification_scope": "Only the named pre-existing synthetic event and selected schema fields; no new scenario or API adapter acceptance.",
+  "m0_gate": "pending_tool_and_data_plan_discussion",
+  "first_query_attempt": {
+    "status": "failed",
+    "error_type": "ServerException",
+    "code": 386
+  }
+}

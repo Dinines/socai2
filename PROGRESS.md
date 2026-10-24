@@ -1,3 +1,23 @@
+**2026-10-24调查严格版本隔离：** 用户明确两个互不影响的版本线；新实现移至Agents/API各自app/investigation_v2包，撤出旧API注册并恢复旧测试，已跟踪旧services文件无差异。先API新8/旧51通过，再迁Agents并85项直接合同通过；新v2 HTTP入口仍未接入，不冒称历史真实回执验证新路径。旧版/Windows/生产不改，调查本地提交已授权，暂不push/部署。见主设计1.10与实施记录顶部。
+
+**2026-10-24调查Git保存授权与核对：** 用户明确调查设计、功能、测试及非私密回执须统一在`codex/investigation-working`本地提交；此前不提交要求针对Windows本机工作，不覆盖调查。当前保存D1—M4限定成果、M5.1及M5.2未完成增量、v4/13项对照。提交前只补查模型合同15项与问题Deep纯合同9项，均exit0；M5.2专用步骤/循环仍未完成，历史冻结回执不改。不推送/部署，不修改Windows分支，原5/15保持。
+
+**2026-10-24开源到当前的调查改动对照（仅说明）：** 主设计新增第16节，按固定上游34ca18→当前实际→v4目标列13环节，补流程、具体行为/原因/状态证据和两实例；不把原有Deep/Router/CH/账本算新增。独立事实审阅限定ACCEPT/0必须修，静态校核通过；13主题交互对照已核，完整业务分层仍未实施。见[主稿第16节](docs/architecture/investigation-planning-design.md)。本轮无业务代码/模型测试/部署/提交/push，进度停点及5/15保持。
+
+**2026-10-24调查v4分层设计（当前，仅文档）：** 告警分诊/侦察与Case整体调查共用内核，保留20自动处理过程和无Case Run详情；Case新Run继承已核材料，创建/关联与启动独立，领域按需，成员覆盖不再默认最近3条。见[主设计v4](docs/architecture/investigation-planning-design.md)第1及12.7节。实际D1—M4限定通过、M5.1纯合同9项通过；M5.2仅observer增量未测，后续实施先等待本轮方案讨论。未改业务代码/测试、调用模型、访问服务器、部署/提交/push。累计开发tokens不限、单调查有限，OS后置，原5/15及旧失败保持。
+
+**调查M4当前结果：** 2026-10-24 M4限定通过：选定8例原文/采用/可读均通过，23484tokens；其中两例冲突按完整消息/9源码/调用AST等价复用。02开发18回复52185tokens，5个失败原件保持、无unknown/unsettled、费用unpriced。15项直接测试通过，未参与实现者audit_contracts限定ACCEPT/0必须修。仅network_observation.v1/Q1,Q2,Q5，非完整恶意/授权卡或全调查通过。PG临时角色NOLOGIN并撤权；M5待按小步实施，OS后置、无部署/提交/push，原5/15保持。 见[实施记录](docs/operations/unified-investigation-implementation.md)和[机器回执](docs/operations/unified-investigation-m4-20261024.json)。
+
+**2026-10-23调查M4.5预期已固定（历史）：** 用户明确开发调试测试累计tokens不限，持续修复复测无需逐批预算确认；单次调查仍有限额，前批pending8/30000已被新授权覆盖。拟逐个复测原8个语义组合，每个独立test Run沿M3 20000tokens/180秒，请求45秒/2048/retry0，驱动无累计token硬上限；未知不自动重放，失败先定位修复/直接测试，再新版本新trial留证，不清旧Run。原文/采用/可读三层分别达标才过M4，未过不进M5。当前仅文档预期，尚无M4.5实测；见[实施卡](docs/operations/unified-investigation-implementation.md)。原7回复/15042tokens失败、第8未测、19文件冻结及旧unknown保持；生产额度不改，OS后置、无部署/提交/push，5/15保持。
+
+**2026-10-23调查M3限定完成（前批停止位置）：** 先12项纯状态通过，再4项真实PG通过，最后9项gate及1次真实HTTP通过；1匹配、3事件/6工件独立读回hash/UTF-8/关联正确，实际模型0。两处审阅问题先修后测，最终独审限定ACCEPT、0剩余必须修项，见[主回执](docs/operations/unified-investigation-implementation.md)及[M3摘要](docs/operations/unified-investigation-m3-20261023.json)。Run总量在原子snapshot分列opening triage/stage/unknown/unpriced，不回写旧计费/状态；测试Run running不代表最终调查完成。临时API已停，PG测试角色NOLOGIN并撤权，CH reader保留。当批M4、调度、M7 manifest、M8入口/读取projection与OS后置，无部署/提交/push，原5/15与旧失败保持。
+
+**2026-10-23调查数据、M1与首M2工具已通过（前批停止位置）：** 用户确认CH先、OS IOC后，先D1/D2/D3通过，再M1范围、M2查询，五块各8直接共40项＋旧51兼容通过；真实3湖事件/1告警/2消息精确关联，再5次HTTP查询/4认证反例通过。M2逐条身份/原文hash/微秒半开窗口与真实来源一致，M1/M2独审限定ACCEPT0。临时API已停，writer INSERT撤回、reader保留；新账号仅表级权限，未改共享row policy。当批未发模型或持久Run、未部署/提交推送，M3以后及OS未启动；后续以顶部M3记录为准。见[逐步记录](docs/operations/unified-investigation-implementation.md)。独立调查树、原5/15与旧失败保持。
+
+**2026-10-23统一调查M0来源盘点与工具数据规划（前一阶段）：** 用户已授权逐块实施、逐块测试，又要求工具影响设计先讨论。[逐步记录](docs/operations/unified-investigation-implementation.md)已固定M0/M1预期；真实只读核15字段和旧合成事件1行，缺外联目标，不能代替新场景。main已fetch到`7ea813a`，仅文档更新；现测试工具仍只有告警/结果链，没有CH历史记录或OS夹具写入。建议复用CH事件链补同批告警/来源UUID/绝对窗口，首工具逐条可追溯查询，OS IOC另步按需，详见[规划](docs/architecture/investigation-tool-data-plan.md)。当时M0未放行，M1及后续代码未写；探针权限/别名错误已记录并修正，旧工具失败未追认修复。原5/15、旧质量/unknown保持，当时无业务写入/模型/部署/提交推送。
+
+**2026-10-23调查方案重新审计及v3修订（仅文档）：** 在独立`codex/investigation-working`工作树、main基线`3fa4be3`修订[唯一设计主文档](docs/architecture/investigation-planning-design.md)：行为性质与授权分开、控制指令与来源正文分开、结论覆盖与关联补查分开，允许小模型按问题组分析及必要综合；明确调查阶段共享额度/Run总成本、热读冷读与通知同版，以及有用判断/安全交付两门和成本记录。第12.6节首场景策略卡仍为候选、来源未核，未启动M0实施、业务/模型测试、生产或部署；Windows工作保留原目录，无提交推送，原5/15及旧失败保持。文档复核与静态结果见原change audit/execution，不代表业务验收。
+
 **2026-10-23告警/调查功能与数据完整审计：** 已形成[审计附件](docs/integration/v1/ui-functional-data-audit.md)与[90项机器矩阵](docs/integration/v1/ui-functional-data-audit.json)，逐项对照原页面依据/必要新增、数据库与JSON路径、实际子项和开放条件。数据46实值/8派生/10空态/21混合/3缺合同/2仅本地；产品O36/N45/H7/X2。16:42 PG只读核六表167列、两例21事件/21工件/3成本行，10GET200但search缺陷仍在；21正文hash/字节与事件关联通过。主文档、图05/07及索引已修组合空值/采用数/工具耗时/报告空态；七图仅功能对照、截图取消。两路结束独审限定ACCEPT、0本批必须修，164链接/51源行/90字段名静态一致；未新发告警/模型、改业务码/表结构、部署或Git提交推送，原5/15及旧质量/预算/unknown保持。
 
 **2026-10-23功能示意使用口径（最新）：** 用户取消网页截图及截图对照；此前未生成网页截图或对照附件，不继续Playwright采集。七份[功能要素示意](docs/integration/v1/ui-wireframes/README.md)均在文首和Mermaid图内标注：只用于说明展示要素及字段对照，不是UI/交互设计稿，后续模块不得按图确定布局、组件、样式或交互。90字段及主文档保持，文字/编号/链接核对通过，本次未重新截图或渲染。
