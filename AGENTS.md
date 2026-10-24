@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.3b持久层限定通过
+
+f4429e0后先spec/design/strict/合同独审，新增ProgramReconExecutionStore/新30＋相关61共91和独立同91、7hash/8完整SQL账本冷读重建，receipt docs/operations/investigation-program-runtime-store-20261025.json限定ACCEPT0。初审85之外4个P2及作者unknown-kind回退缺口已修，修前3red3fail与另1red1fail/源码保failure receipt；当前/原begin/原tool/真正前一source/closing state链完整核，late actual只账变不改候选。normal1299B有限4facts ready，observer不采用/未知保持，失败和ACK未知不重派，旧Run六列不变。仅SQLdouble，0实际PG/HTTP/新Run/发布；c合同已ACCEPT0后薄controller/MockTransport→d新intent投影→b2.4兼容，再a4.2实际准入。2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查b2.3a新运行状态限定通过
 
 e2b0291后先spec/design/strict/独审，trigger权威缺口已以新runtime固定manual关闭；新增program_runtime_state/18新＋旧state12/M3state12/program_recon16/profile11共69及独立同69、5hash/7完整状态重放/7额外重hash反例拒，receipt docs/operations/investigation-program-runtime-state-20261025.json限定ACCEPT0。闭合12组件/scope+manual重建profile/plan/new step-attempt，旧state不升级；M3单账、预检不授权I/O，重复不接管、unknown/late实际结算保原handoff。0真实PG/HTTP/Run/claim提交，下一b持久store/c单次controller/d新intent投影、b2.4兼容后才a4.2，旧automatic路径保持，2.2/2.3未完，无部署/合main。

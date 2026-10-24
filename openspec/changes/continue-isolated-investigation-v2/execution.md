@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3b实际持久层
+
+新store/transport及30新＋相关61共91直接/独立同91、7hash/8完整冻结账本冷读/重复重建，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-store-20261025.json)。独审4P2和作者追加未知kind回退均修，修前失败/源码保留，原begin/current/tool/true preceding source/closing state一致；0实际PG/HTTP/Run/发布。c合同已限定ACCEPT0，本b保存后继续；d/b2.4/a4.2仍后续门，2.2/2.3未勾。
+
 ## 2026-10-25 b2.3a实际新运行状态
 
 e2b0291先细卡/strict/trigger权威修订后合同独审，再program_runtime_state及18新；69直接/独立同69、5hash/7完整状态重放及7额外自洽篡改拒，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)。12固定版本组件和manual权威、new plan/step/attempt闭合，M3账/unknown/迟到实际回执/原handoff保持，旧state拒升级。0实际PG/HTTP/Run/claim预算提交/调用/发布；b持久/c单次controller/d新意图及b2.4须后续逐门，2.2/2.3未勾。

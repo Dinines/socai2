@@ -1,6 +1,18 @@
+## 2026-10-25 b2.3b实际持久层限定结果
+
+f4429e0后按预期/规格/strict/合同独审推进，新增program_runtime_store和新SQL transport；30新＋旧store15/newstate18/M3state12/newrecon16共91直接，未参与实现者独立同91/7hash/8完整原账本重建限定ACCEPT、0剩余必须修。[回执](investigation-program-runtime-store-20261025.json)。原4个P2及作者追加未知kind跳过回退均已修，[修前失败](investigation-program-runtime-store-failure-20261025.json)保源码/3red3fail0error和1red1fail0error；不是普通HTTP调用者可改DB的证明。当前event/body/state与原begin基线、tool completion、真正前一managed source和finish重建的closing全核，未知不回退；late实际账可结清但candidate不变。
+
+8冻件：normal5/10四事实有限ready；被拒正文5/10无事实/未确认三态；合法unknown5/10一条范围内Alert字段事实/partial/unsettled1；observer4/9无事实/未知；0tool3/6；cancel4/8；deadline5/10四事实partial；late5/11账unsettled0但原候选未知/无事实/partial。全部冷读和重复同candidate/不增行，Run六选中列不改。0真实PG/HTTP/模型/Run/发布。c合同fresh_design已限定ACCEPT0；待本块提交后继续薄controller/MockTransport，d新intent投影及b2.4兼容后才a4.2，2.2/2.3不勾。
+
+**b2.3b审阅修订：** 独立85普通测试之外发现4个P2原件完整性反例：最新claim agent、当前stopped区与候选不一致、late后缺handoff state、候选挪用更早begin。修前源码/作者3红测3fail0error与独立第4复现保留[失败回执](investigation-program-runtime-store-failure-20261025.json)。补最新event/payload/body/state完整pin、交接真正前一managed事件、由原source和event时间执行finish重建handoff全state、当前recon停止区与原handoff一致；合法late实际仅账本变化，既有candidate不改。本b结束独审尚待，不作为可用入口。
+
 > 2026-10-24 main集成：下列为调查分支已保存的原实施记录，业务设计和源码保持；当前续接见[独立v2 change](../../openspec/changes/continue-isolated-investigation-v2/proposal.md)。原restore及5/15是当时记录，main迁移已归档。新HTTP未注册，M5.2及后续未完成；历史真实回执不算新路径验证。
 
 # 统一调查逐模块实施记录
+
+## 2026-10-25 b2.3b新程序运行store实施前预期
+
+f4429e0后，单独ProgramReconExecutionStore继承M3：唯一owned原begin/input/state对照当前scope/limits/opening、固定manual组合、原子claim/真实reserve/停止交接及ACK未知；normal5events10artifacts，unknown观察独立留存/无facts，正文不合格明确unadopted但控制hash错直接拒。新kind列界限、原始tool completion pinned event-kind-hash和重复同版均直接测，Run列/旧源码保持，0新Run/真实PG/HTTP/模型/发布。先活动spec/design/strict及独立合同，再仅b实现/直接/独审；c/d/b2.4及a4.2仍待。
 
 ## 2026-10-25 b2.3a新runtime状态实施前预期
 

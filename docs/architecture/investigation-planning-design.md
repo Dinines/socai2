@@ -1,3 +1,5 @@
+**2026-10-25 b2.3b持久控制：** 新store91直接/独立同91、7hash/8完整SQL账本重建限定通过，[回执](../operations/investigation-program-runtime-store-20261025.json)。初审4P2及追加unknown-kind回退已修，原件链/真正前一状态/closing重建/late账与候选分开核；旧源码/Run列保持。仅SQL替身，下一已审c单次controller→d新intent/投影→b2.4兼容，a4.2仍后续，无真实新Run或发布。
+
 **2026-10-25 b2.3a运行版本：** 69直接/独立同69、5hash/7状态完整重放限定通过，[回执](../operations/investigation-program-runtime-state-20261025.json)。新runtime固定manual（scope不含trigger，不能借plan自证），闭合12版本/严格plan重建、M3单账和未知保留；0实际claim/reserve或外呼，旧自动路径保持。继续b store/c controller/d新intent及b2.4，a4.2尚未实施。
 
 **2026-10-25 b2.2新程序事实：** 64直接/独立同64、5hash/11完整输入输出及额外30源/停止对照通过，[回执](../operations/investigation-program-recon-20261025.json)。新的有限字段完成政策解除模型投影耦合但保源阻断，normal1299B给4事实有限ready，不代表全文/恶意/授权理解；旧路径保持。b2.3新runtime版本冻结、b2.4发布恢复读取兼容及旧MD字节不变仍未交付，a4.2未开始。

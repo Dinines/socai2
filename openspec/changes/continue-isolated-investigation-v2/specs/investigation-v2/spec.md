@@ -1,5 +1,29 @@
 ## ADDED Requirements
 
+### Requirement: Dispatch one manual program query only after durable claim and reservation
+
+b2.3c SHALL 新增独立ProgramReconRuntime，constructor钉新ProgramReconExecutionStore/manual plan；仅首次已确认claim再经原DurableActivityRecords的M3 reserve后单次派发，重复/unknown不接管或重跑，不改旧controller/gate/预算内核。交接核实际原件，新模型/Run/Case/发布/真实业务I/O不在本块。
+
+#### Scenario: Confirmed new owner executes or another invocation repeats
+- **WHEN** 新运行已有owned begin，首次claim及M3 reserve均确认；或并发/后续重复看到claimed/blocked/stopped
+- **THEN** 只有首次可一次MockTransport查询并按真实completion或独立observer交接；重复返回active/pending或只读原交接，无新HTTP/attempt。普通完整Alert有限4facts/ready，模型资格仍false
+
+#### Scenario: Persistence is ambiguous or execution is cancelled
+- **WHEN** claim/reserve/complete/handoff回执不确定、保存失败或owner/duplicate取消发生
+- **THEN** 不重放/接管，不把控制不变量错伪预算停止；仅owner最佳努力交接已有观察后重抛，重复不抢封cancelled handoff。buffer只在原件确认保全后清，否则保持；未知及迟到结算仍遵原M3，旧行为及报告字节保持
+
+### Requirement: Persist the closed program runtime on the shared M3 ledger without dispatch
+
+b2.3b SHALL 以独立ProgramReconExecutionStore复用M3同Run锁/预算/append/complete，冻结新manual组合并原子保存begin/claim/限定reserve/停止交接；旧store/base/Run列不改。当前scope/limits/opening/input须同唯一owned原始begin核，控制归属/hash错误拒；commit未知不能给外呼许可。没有新Run/HTTP/模型/发布。
+
+#### Scenario: A claimed and settled program query yields a frozen handoff
+- **WHEN** 当前actor由caller已核，owned fresh Run和原begin/工具completion全部完整且符合冻结组合
+- **THEN** 原子新handoff/state以真实程序prep或明确unadopted保存，normal有限事实可ready、原停止和M3账保持；重复只读原件无新行/预算。raw正文不合格不伪validated，unknown观察另存而不当completion
+
+#### Scenario: Origin integrity reservation retention or commit is uncertain
+- **WHEN** tenant/owner/原始begin/plan/预算基线/tool event-kind-hash不符、半写失败、ACK未知、未确认输出或重复观察异文
+- **THEN** 拒绝或保明确未采用/不确定，不回落旧runtime、不重置/重放；实际未采用结果无事实/partial、source未确认而非false可用性，held refs保所有已核材料。只有实际owner后续controller在确认claim及真实M3 reserve后可外呼，b本身不执行
+
 ### Requirement: Freeze a closed program runtime policy before any reserved work
 
 b2.3a SHALL 新增独立program runtime纯plan/state合同，固定runtime/state/plan/material/facts/completion/preparation/result/handoff/未采用结果的完整版本组合，纳入plan hash及step/attempt派生；仅已核manual alert profile/fullwindow Q1/activity_records；manual为该新runtime固定控制政策，make/install拒automatic，descriptor由scope＋固定manual重建，不从待核plan读取trigger作为权威。旧state/plan不升级，caller不得混配版本或靠源正文选择策略。复用M3预算/预检/停止语义，不产生实际提交/外呼或新Run。

@@ -1,0 +1,42 @@
+{
+  "schema": "investigation_program_runtime_store_failure.v1",
+  "date": "2026-10-25",
+  "baseline": "f4429e0",
+  "status": "retained_pre_fix_counterexamples",
+  "reviewer": "fresh_code_audit",
+  "original_direct_tests_passed": 85,
+  "red_tests": 3,
+  "failures": 3,
+  "errors": 0,
+  "findings": [
+    "Latest claim event.agent mismatch still allows reserve",
+    "Self-rehashed latest stopped recon.stop_reason may contradict saved ready handoff",
+    "After late actual completion, original handoff state artifact may be missing while cold read still says committed"
+  ],
+  "private_preserved_files": {
+    "program_runtime_store.py": "b72a501da1c293ffa237cf737e5b5dc35574008be3034aa0e08d4e5aaa2daee2",
+    "receipt.json": "84d139e1cd4e31424f3c6f739e6821bce1e4b043f6448036e86e7d84af4ab99f",
+    "red-output.txt": "f5edd27d92e3ab489194b8a6e830662ba7be4e0fb298c09e7fb1cae279bc43b6",
+    "red_counterexamples.py": "df510602fab5e6319c8aba6580d91745353cf05b009455e10a290eb462ee1fe9",
+    "test_program_runtime_store_contract.py": "bf886fe76bb3c8b87fa35051578e0c1bab4ab0cb7a75c64fbff21d663913d83c"
+  },
+  "actual_PG": 0,
+  "actual_HTTP": 0,
+  "actual_models": 0,
+  "production_effects": 0,
+  "selected_fix": "Validate latest event/body/state linkage; require real previous managed source and reconstruct original handoff snapshot; match current stopped recon to original handoff while allowing late actual accounting only",
+  "independent_additional_counterexample": "Self-rehashed candidate can select seq1 begin rather than true prior managed state and replace actual queried result with query_not_started; independently reproduced on the same pre-fix source",
+  "independent_counterexamples_total": 4,
+  "author_additional_failure": {
+    "case": "Unknown newest managed kind was skipped by known-kinds query, exposing an earlier dispatchable begin",
+    "red_tests": 1,
+    "failures": 1,
+    "errors": 0,
+    "private_preserved_files": {
+      "program_runtime_store.py": "7e45a63dc68cbf185ba5dea5a6fb631ac8a9af22e65b3ba77851d84c0d457e65",
+      "red-output.txt": "afd61c9de430330af4a09b42aaa07b458ec813fb7dd47af668abaad1ddd69ece",
+      "test_program_runtime_store_contract.py": "56745e96cdeaf08bc0a5b42f29ecd89a7587a444cb6bd994757736b03cff0c63"
+    },
+    "fix": "Current latest and handoff predecessor include every unified_% event; unknown cannot fall back"
+  }
+}

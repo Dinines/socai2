@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3b修后结束独审
+
+fresh_design合同限定ACCEPT0；fresh_code独立85之外发现4P2（最新agent/current stopped区/handoff state缺失/挪用早source），作者另red unknown newest kind回落；修前原件和3red3fail0error/另1red1fail0error保[failure](../../../docs/operations/investigation-program-runtime-store-failure-20261025.json)。修后新30＋不变相关61独立91唯一项过、7source hash/8原冻结ledger完整hydrate与candidate/state/摘要/计数/Run六列重建一致，原4＋追加unknown拒；late5/11结账不改候选，限定ACCEPT/0剩余必须修。[正式回执](../../../docs/operations/investigation-program-runtime-store-20261025.json)。PG opt-in4仅skip不计通过，0真实访问；c合同另经fresh_design限定ACCEPT0，b保存后才实施c。
+
 ## 2026-10-25 b2.3a新runtime纯状态结束审阅
 
 fresh_design先发现scope不含trigger、不得从待核plan自证；新runtime固定manual并从scope重建完整descriptor后合同ACCEPT0。fresh_code独立69/5hash/7state-decision及canonicalSHA重放，scope/limits/opening/usage/attempts保持，另7类自洽hash反例拒；真实M3纯reserve→unknown停止→deadline后late responded结算保实际账与旧handoff、后续claim仅读。claim/validate/stop/cancel/finish AST除名字同原，旧源文件不改；[回执](../../../docs/operations/investigation-program-runtime-state-20261025.json)最终窄核12组合/计数/边界一致，限定ACCEPT0。pure不证明owned scope/真实clock/auth/提交，b-d/b2.4后续。

@@ -1,4 +1,34 @@
+## 2026-10-25 b2.3c薄单次控制器实施前细卡（b结束放行前不实现）
+
+在b修后结束独审/提交后，仅新增program_recon_runtime.py/ProgramReconRuntime及直接测试；复制所需既有FixedReconRuntime控制骨架，新constructor只接ProgramReconExecutionStore及new make_program_recon_plan/manual request，不改旧controller/store/gate/API。复用DurableActivityRecords唯一M3 reserve/settle和activity_records限定查询，不复制预算内核/HTTP业务，不接模型、自动策略、Case、发布或真实PG/HTTP。begin仍只owned既有Run中明确begin_recon；本块不插入Run，不接启动intent。
+
+execute先实际store.claim：首次已确认提交才拥有该调用认领；预检非授权，gate必须原子M3 reserve确认后才单次HTTP。claimed重复in_progress_or_interrupted；stopped只读完整原handoff并核未清进程observation，无HTTP/新行。blocked且非本调用首次认领返回blocked_handoff_pending，不能替owner抢finalize；控制/来源不变量拒不降为预算停止，只有已观察deadline/budget/unknown/retention才明确交接。claim或reserve ACK未知不重派，保原M3 attempt/unsettled；M3 reserve失败类型按原gate报明确控制，不能暴露driver敏感文本。
+
+实际响应有M3确认原completion就用新程序prep；complete无确认而本进程有输出只留独立observer，不采用为source或清unknown。finalize提交/冷读确认全部原件相符后才清process buffer；handoff失败/ACK未知保buffer，不用新请求重试。当owner在HTTP或complete期间取消，最佳努力保存cancel/unknown及已有进程输出后重抛；重复调用被取消不能取消原owner。取消标记与owner observer交接之间，另一重复只能pending，不能抢封无observer结果；如果外部已封不含本观察的记录，read拒且buffer保持。所有这些控制语义保既有已修竞态，新增当前控制/原handoff断链即拒且无HTTP。
+
+预期：完整1299B Alert、一次MockTransport响应经真实newstore/M3/gate得到4有限程序facts/ready且model not_requested/eligiblefalse；冷读samecandidate且calls=1。0额度/到期无HTTP，deadline在claim/reserve间变化能停止；并发重复、claim/reserve ACK丢失/rollback无第二请求；未知/complete失败observer partial；完成ACK丢失读实际原completion不重查；取消HTTP/complete与重复竞态、handoff失败buffer/不重跑均直接核。旧FixedReconRuntime与旧MD字节保持；旧store/genericstore/automatic/Case拒。仅SQLdouble+MockTransport，不算真实I/O、正常启动或b2.4同版发布已验。先strict/合同独审，再本c实现/测试/结束独审；b2.3d及b2.4依次后续。
+
+**b2.3b审阅修订：** 独立85普通测试之外发现4个P2原件完整性反例：最新claim agent、当前stopped区与候选不一致、late后缺handoff state、候选挪用更早begin。修前源码/作者3红测3fail0error与独立第4复现保留[失败回执](../../../docs/operations/investigation-program-runtime-store-failure-20261025.json)。补最新event/payload/body/state完整pin、交接真正前一managed事件、由原source和event时间执行finish重建handoff全state、当前recon停止区与原handoff一致；合法late实际仅账本变化，既有candidate不改。本b结束独审尚待，不作为可用入口。
+
 # Design: 独立调查v2的原设计与集成边界
+
+## 2026-10-25 b2.3b程序运行持久store细卡（f4429e0）
+
+a纯状态已69/独审通过并推送。本b只新增program_runtime_store.py/ProgramReconExecutionStore直接继承ExecutionStore；不改旧store、base M3、controller、HTTP或真实库。新event_kinds=原M3三kind＋五新control kinds，runtime_version/event_agent钉program_alert_recon_runtime.v1；新control为unified_program_recon_started/claimed/cancelled/handoff_saved/dispatch_blocked，artifact kind为program_recon_control/program_recon_handoff/program_recon_unconfirmed_observation，均按40/80列上界核。通用settled和step_input/output/state_snapshot名称保持，不破M3回执。
+
+begin_recon只已存在owned running且completed_at null Run，无任何unified_阶段标记；actual caller负责Run来源，a4.2以后再原子新建Run/操作。原M3 authoritative clock/parent deadline min、BudgetLimits/OpeningUsage及新install冻结manual profile/完整policy_versions/plan，begin仍input={business_profile,runtime_plan}+scope_sources+scope_hash严格shape、1event/2artifact原子，不触Run状态/计费列。通用begin禁用，旧/generic stage存在即拒，不重置。返回只在commit确认后；ACK未知报持久不确定而非授权派发。
+
+新增原始begin归属基线核验（origin）：同Run锁内唯一begin（generic/旧fixed/新program begin集合取最多2且必须唯一新program kind/agent），owned begin input/state两工件kind/event/hash/UTF8及payload/inputHash/receipt/identity/current input_snapshot_ref全部相同；原初state必须ready/无attempt/closed新plan。current scope/scope_hash、limits/deadline、opening_usage不能偏离此原基线，拒同时替换当前scope/request/limits来冒用旧输入。begin输入与请求重建的profile/plan/source全部canonical精确比较，不用bool/int宽松dict等号。读取/claim/reserve/取消/finalize/handoff均核相应基线；只给current_state selfhash不能证明原件归属。M3 complete仍复用原最小owner/attempt/hash路径以留真实迟到结算，之后decision/发布须再核原件和当前性。
+
+claim只首次原子写控制事件才有needs_commit=true，重复claimed/blocked不接管，所有decision仍external_call_authorized=false；reserve先核原基线/scope与纯限定plan，再真实M3 reserve和工件同TX提交，只有其确认回执可给后续gate外呼。取消/dispatch_block保当前实际停止/固定owner、不抢先覆写。所有budget/now来自原M3，M3 complete和unknown/late-settle保持，不新增Run列计费写。
+
+finalize先核control和原工件，原tool需由M3 completion_receipt指向同event/unified_step_output/pinned hash；这些控制或归属不变量错直接拒。仅已核owned工具正文不合格（含不能解析为对象/必要来源字段错误）可以保留原件后明确未采用，不降为模型不可用。合法tool只用新prepare_program_alert_recon，validated prep/version/材料文档与result真实相符；无合法tool或未确认请求用新unadopted分支。未确认进程输出只单独observation，marker=process_observation_not_original_completion，attempt/hash/正文及同handoff event核验，不喂prepare、不当原completion或释放unknown。
+
+未采用结果schema=program_runtime_unadopted_result.v1，ref prefix=program-runtime-unadopted:，从新None evaluator生成；无事实/partial、validated_source_refs=[]、source_state=not_confirmed/source_available=null/execution_state=unknown，reason仅source_material_rejected/tool_output_not_confirmed/query_not_started；held_refs为scope-source refs与所有实际owned begin/current state/tool/observer refs并集，原停止优先。source是否可用/是否SQL执行不能从不合格正文猜成false。handoff schema=program_recon_runtime_handoff.v1/ref=program-runtime-handoff:，封闭policy_versions与plan/profile/scope/版本、prep/result、retained_artifact_refs、原state/M3usage/Run总量及观察引用同事务保存state/handoff（可选observer增加1artifact），未提交不声称committed。
+
+重复finalize/read_handoff只核原artifact hash/event/schema/ref和版本/plan/profile/result，当前状态引用/pinned tool/required held artifacts和observer必要关联逐项核；新观察正文须与原tool或原observer一致，不能覆盖旧handoff或清未留存buffer。late实际结算保新账，不改已保存candidate；陈旧正式发布仍b2.4拒。新store不调用QueryAPI、模型或M7，只有内存SQL transport direct tests。
+
+预期：begin1/2→claim2/4→reserve3/6→settle4/8→handoff5/10，normal全文1299B新有限ready/4事实；两claim只一次first，重复/cold精确同handoff/无新行；0tools/到期/取消/unknown/被拒正文/未确认输出/5类停止保partial和原M3额度。错tenant/owner/初始marker/全部原input/state/plan/limits/opening变更或tool pinned hash/kind/event破坏都拒，不写半段。各artifact写失败rollback；claim/reserve/交接ACK未知不返回外呼许可、显式cold read原件不重开预算；observed未确认单独存且不能伪facts，冲突观察拒。legacy Run六选中列不变/无新Run/真实PG/HTTP/模型/发布。先strict/合同独审，再本b实现/直接/结束审阅；c、d及b2.4仍后续。
 
 ## 2026-10-25 b2.3拆分及a纯状态/闭合版本细卡（e2b0291）
 
