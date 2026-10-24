@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Derive fixed alert observations and stop handoff without a model
+
+M6.1 SHALL 仅接受已核alert_recon业务绑定、可选的已提交EvidenceView及调用方当前snapshot引用，以纯程序产出network_observation.v1有限事实、六问题状态、范围就绪度与停止交接。来源字段谓词 SHALL 复用M4有限检查，发现明确标记program/rule_checked并保来源版本及依赖；MUST NOT 伪造模型候选/理由、将来源正文指令作为控制、把性质或授权升级，或将scope_readiness写成Run完成。该层 SHALL 无模型/HTTP/DB/预算变更/Case动作/manifest发布，所有输出均不授权追加查询；实际M3 gate/截止/去重及运行调度接线在后续M6.2验证。
+
+#### Scenario: Checked source observations support the limited objective
+- **WHEN** 当前视图包含无冲突、未截断且可读的来源网络观察，覆盖回执可核
+- **THEN** 程序输出有限来源观察、可核的unknown outcome、精确UUID关联和有界查询事实；Q1/Q5可supported，Q2按实际精确关联，Q3a/Q3b/Q4保持unassessed和原缺口。ready只表示来源陈述核对目标满足，性质unresolved、授权unknown，停止且不补查、不生成最终报告或完成Run
+
+#### Scenario: Missing or incomplete material must be handed off explicitly
+- **WHEN** 无视图、空结果、来源失败/未执行/未知、来源版本冲突、缺失反版本、查询/正文截断或可选正文不可读
+- **THEN** 保仍合法的有限事实、全部材料/版本引用和覆盖缺口，明确阻断原因与partial；空结果不证明无活动，unknown不变failed，冲突不选赢家，缺正文不使结构事实消失，不自动重复相同查询。非决策Q2无精确关联时独立保缺口，不伪造来源关联
+
+#### Scenario: Stop conditions or new versions retain useful facts without further work
+- **WHEN** 可信调用方交入已观察的budget_limit/deadline/unknown_attempt/retention_gap/cancelled停止原因，或材料与当前snapshot不一致
+- **THEN** 已观察停止原因只收紧为partial交接并保现有事实/引用，不追加总结模型或重试；未知原因拒绝。旧snapshot拒绝；新版本事实ID/依赖按新snapshot重建且不改旧结果。该纯层不证明停止原因的持久来源，也不替代M3实际准入或多轮依赖失效传播
+
 ### Requirement: Verify a scoped source query through an independent v2 HTTP application
 
 新v2查询路由 SHALL 仅存在于独立显式启动的investigation_v2应用，固定POST `/api/v2/investigation/query`并只分派新版activity_records；MUST NOT 注册到旧app/router或回落旧工具。认证和`lake:query`授权 SHALL 复用既有依赖，tenant仅来自已认证主体；请求顶层字段须受限，args不得覆盖tenant/SQL/URL/凭据。API仍只核认证tenant及原全局界限，Run/问题范围与预算由可信caller/M3执行门负责，不宣称已实现正式M8持久启动授权。

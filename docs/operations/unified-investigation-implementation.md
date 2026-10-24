@@ -2,6 +2,24 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 M6.1固定有限事实与停止交接（限定通过）
+
+用户继续授权，基线ad08579、普通目录当前调查分支，起始clean。本块只做查询之后的纯政策层，先活动spec/design/本卡与strict，再实现、直接测试、公开回执和未参与实现者窄审；实际M3/查询调度另在M6.2接，不一次性写完整循环。
+
+| 输入→输出 | 直接预期 |
+| --- | --- |
+| 已核alert profile＋当前已提交视图→程序有限事实 | 正常来源、unknown outcome、精确UUID关联及有界查询均保typed事实/引用/版本，origin program而非模型候选；性质unresolved、授权unknown |
+| 六问题→scope_readiness和停止 | Q1/Q5按原有限目标；Q2按真实关联，Q3a/Q3b/Q4保unassessed/缺口。无阻断时仅有限目标ready且停止，不完成Run或发布报告 |
+| 缺视图/空/失败/未知/冲突/截断/正文缺口→partial | 保合法结构事实及全部held refs、覆盖/未读原因；空不判无活动，冲突不选赢家，unknown不伪装failed；不重复查询 |
+| 已观察停止/输入变版→交接或拒绝 | 五类可信调用方停止原因只收紧partial且保事实；非法原因/旧snapshot/跨scope/Case profile拒绝，新版本fact依赖重建不改旧结果 |
+| 直接验证/边界 | 新纯合同＋M4采用/视图及M1绑定；网络guard、注入及返回值隔离。真实模型/HTTP/PG/CH、写入、预算变更0；M3实际gate/去重/持久交接尚待M6.2 |
+
+实施结果：新增`fixed_recon.py`及专用13项，正常4个程序事实（network_observed/outcome_unknown/alert_linked/bounded_query）和六问题保留；空/失败/未执行/未知、完整及hash-only冲突、混合可读/不可读正文、正文/查询截断、Q2非关键关联缺口、未知action、五停止枚举、跨scope/旧snapshot/Case/未提交、指令注入、不可变与新版本依赖均直接覆盖。13项/0.089s、原采用13/0.066s、视图11/0.057s、业务绑定11/0.028s均正常exit0，共48项，见[机器回执](investigation-fixed-recon-20261024.json)。本批无已观察失败；未改M4采用/视图或旧源码。
+
+程序直接复用M4有限谓词，不合成模型候选/自由理由。正常有限目标ready只回答来源陈述；Q2仍按原非决策政策单列真实关联，Q3a/Q3b/Q4缺口和性质/授权未知保持。可选摘录缺口保结构事实并阻断ready；执行停止只收紧partial，不提供准入。结果均stopped、无自动查询/模型/Case/Run发布；当前snapshot引用由可信owner提供，不证明M8认证或持久新鲜度。
+
+未参与实现者review_response_audit独立复跑48项正常exit0，5源码/测试hash一致，6材料状态和5停止原因的result_ref/snapshot/事实/六问题/held计数与纯函数重建完全一致；strict/diff通过，最终限定ACCEPT、0必须修。只放行查询后的纯政策层，无真实HTTP/PG/CH/模型访问。M6.2实际M3/固定查询/去重与持久交接待独立合同和测试，M5 Deep按需另验；tasks2.2/2.3未勾，不归档、部署或合main。
+
 ## 2026-10-24 共同场景与独立v2查询接缝（限定通过）
 
 本块严格沿下节预期：先规格/设计/场景输入和输出预期、strict，再独立query_api/可共享探针及直接测试，通过后才建新受控身份做真实接缝。公开[机器回执](investigation-v2-query-seam-20261024.json)含完整来源/测试hash、01失败、02实际refs与清理；运行私密配置仍只在被忽略.local。

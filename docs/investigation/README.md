@@ -4,7 +4,9 @@
 
 # 调查新版：开发、进度与评审入口
 
-**本轮最新结果：** 前置M1纯绑定、I1正文局部降级、I2完整messages预算分别通过后，本块先补规格/预期/strict，再完成[共享网络场景卡](scenarios/network-observation.v1.json)、独立v2查询应用及36项直接合同。02批新Run的真实HTTP→CH→PG接缝通过：1条命中、两对照排除、3事件/6工件独立读回，模型0；临时进程已停、新身份NOLOGIN并撤权。01批PG字段假设失败原样保留，映射修正后采用新批次，未重放。见[接缝回执](../operations/investigation-v2-query-seam-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)；未参与实现者复跑36项并只读核PG/清理后限定ACCEPT、0必须修。下一单项为M6固定查询/有限事实路径，先合同/预期；M5按需能力另验。正式M8入口、Deep整环、同版交付和Case继承仍待做，tasks2.2/2.3未勾，change不归档。
+**本轮最新结果：** 在独立v2查询接缝放行后，本块先规格/预期/strict，再新增M6.1固定有限事实与停止交接的纯政策层。13新＋M4采用13＋视图11＋业务绑定11，共48项直接通过，见[M6.1回执](../operations/investigation-fixed-recon-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)。正常来源得到4条program事实及六问题状态；空/失败/冲突/截断/正文不可读时保合法事实和全部引用、明确partial；性质unresolved、授权unknown。ready只指有限来源观察目标，所有结果均停止且不自动补查/调模型，不发布Run完成。未参与实现者独立复跑48项并重建回执，限定ACCEPT、0必须修；下一M6.2才接实际M3 gate、固定查询/去重及持久交接。本块真实模型/HTTP/PG/CH及业务写入0。正式M8入口、Deep整环、同版交付和Case继承仍待做，tasks2.2/2.3未勾，change不归档。
+
+**前批真实接缝：** 02批新v2 HTTP→CH→PG限定通过，1命中/两对照排除、3事件/6工件独立读回，模型0，临时API/PG身份已清理；独审限定ACCEPT/0必须修。01字段假设失败保留，未重放，详见[接缝回执](../operations/investigation-v2-query-seam-20261024.json)。
 
 更新：2026-10-24。活动分支：`codex/investigation-review-20261024`，基于main `541511c`；原调查`codex/investigation-working`已合main作为来源。普通项目目录逐阶段开发、提交并推送；旧.local工作树已移除。其他机器拉取当前分支即可阅读本页及全部相对链接，无需原机器`.local`。
 
@@ -20,6 +22,7 @@
 | 数据/执行/模型的可共享回执 | [ClickHouse](../operations/unified-investigation-clickhouse-20261023.json)、[M3](../operations/unified-investigation-m3-20261023.json)、[M4最终](../operations/unified-investigation-m4-20261024.json)、[版本隔离](../operations/investigation-v2-isolation-20261024.json) |
 | 本轮前置三块回执 | [M1纯绑定](../operations/investigation-profile-contract-20261024.json)、[I1正文降级](../operations/investigation-optional-excerpt-20261024.json)、[I2完整请求预算](../operations/investigation-request-budget-20261024.json) |
 | 新版真实查询接缝 | [共同场景卡](scenarios/network-observation.v1.json)、[公开回执与失败/清理](../operations/investigation-v2-query-seam-20261024.json)、[可共享受控探针](../../openspec/changes/continue-isolated-investigation-v2/probes/v2_query_seam.py) |
+| M6.1纯固定政策 | [预期/实际结果](../operations/unified-investigation-implementation.md)、[有限事实/六问题/停止回执](../operations/investigation-fixed-recon-20261024.json) |
 | 首批模型失败及历史问题 | [M4首批失败回执](../operations/unified-investigation-m4-20261023.json)、实施记录的M4调试表、[历史问题总登记](../operations/upstream-issues.md) |
 
 ## 当前做到哪里
@@ -34,7 +37,8 @@
 | I1/I2材料消费接缝 | 可选正文局部缺口保留；三处共用完整消息12KiB计量并明确超限结果，直接合同和独审通过 | 未重验真实模型质量；没有自动分组或让10条超限材料被消费 |
 | M5 | M5.1问题/查询纯合同通过；M5.2仅部分准备，完整模型步骤/循环未完成 | 新版Deep整环未完成，不能称调查v2已运行 |
 | 隔离迁移 | 新包隔离合同保留；本块只新增独立v2应用，旧应用未注册新路径 | 新路径证据取本块02批，不沿用历史HTTP冒充 |
-| v2 HTTP、M6—M9 | 独立loopback查询应用已实测并停止；M6策略/M7同版结果/正式M8入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
+| M6.1固定有限事实政策 | 13新＋35相关合同通过；程序事实/六问题/有限就绪度与停止交接，结束独审限定ACCEPT/0必须修 | 不是M6完整调度，可信调用方停止枚举不证明实际M3预算/时钟；没有追加模型 |
+| v2 HTTP、M6.2—M9 | 独立loopback查询应用已实测并停止；实际调度/M7同版结果/正式M8入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
 
 代码隔离的保存提交为`74d4d90`；后续文档/入口整理有独立提交，以分支`git log`为准。`v4`是设计修订号，`v2`是新执行器代际。旧调查版本继续保留，需变化的旧函数复制所需部分到新版修改，不能直接改旧函数/注册。
 

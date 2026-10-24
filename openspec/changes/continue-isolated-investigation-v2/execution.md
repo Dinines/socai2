@@ -1,5 +1,9 @@
 # Execution: 调查分支逐步实施原记录
 
+## 2026-10-24 M6.1纯固定政策实际结果
+
+基线ad08579，先spec/design/实施预期卡和strict，再新增fixed_recon及13项直接合同，随后原M4采用13/视图11/M1绑定11通过，共48项exit0；[回执](../../../docs/operations/investigation-fixed-recon-20261024.json)保版本/样例/范围。有限typed事实明确program来源、六问题和原criticality保留；空/失败/未知/冲突/截断/正文缺口保合法事实和引用并partial，可信调用方停止枚举只收紧，不代替M3真实gate。所有结果stopped，无自动查询/模型，无最终Run/manifest/Case动作；实际运行调度M6.2及多轮失效传播未实现，整体2.3仍未勾。本批真实HTTP/DB/模型与业务写入0，旧源码/入口不改；结束独审另记audit，调查分支阶段提交/推送，无部署或合main。
+
 ## 2026-10-24 共享场景卡与独立v2查询实际接缝
 
 前置03cb3c3后先spec/design/实施卡与strict，再新query_api、共享场景卡、可共享opt-in探针及36直接合同，通过后才建受控新身份。01在PG字段取材前提失败，原源码/hash/日志/清理保留，Run及业务查询0；实际字段修为raw_event.telemetry[0]，先映射合同验证，再新02批，未重放01。02经真实独立v2新HTTP→CH→M3，1query/1match/3events/6artifacts和4认证反例通过；独立只读PG核hash/UTF-8/关联、已核profile输入和source_projection留存。准备7366B消息但模型0；无写湖/Kafka/Case/新API key。两批API按PID/创建时间核身份后停，新PG身份NOLOGIN撤权、连接0，旧服务不改。具体refs/hash/计数及失败见[公开回执](../../../docs/operations/investigation-v2-query-seam-20261024.json)。结束独审另记audit；tasks2.2/2.3不勾，正式入口/Deep/同版交付/Case未完成，不归档、部署或合main，按阶段提交/推送调查分支。

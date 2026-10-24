@@ -1,3 +1,7 @@
+# 2026-10-24 M6.1固定有限事实与停止交接限定放行
+
+用户继续授权后，基线ad08579先活动spec/design/实施预期和strict，再仅新增Agents v2 fixed_recon及13项直接合同；13新＋采用13＋视图11＋绑定11共48项通过，未参与实现者独立复跑及5hash/6材料状态/5停止原因重建一致，限定ACCEPT、0必须修。程序事实不伪造模型候选，六问题/原criticality保留；正常有限来源目标ready，空/失败/未知/冲突/截断/正文不可读及已观察停止原因保合法事实refs且partial。所有结果stopped，不自动查询/模型/Case或发布Run完成，性质unresolved、授权unknown。当前仅M6.1纯层，停止原因是可信owner已观察输入，不证明实际M3预算/时钟；M6.2再接运行准入/固定查询/重复无进展及持久交接，整体2.2/2.3不勾。回执docs/operations/investigation-fixed-recon-20261024.json；本批真实HTTP/PG/CH/模型/业务写入0，旧源码/入口、历史失败/unknown、归档保持；阶段提交/推送调查分支，无部署或合main。
+
 # 2026-10-24 独立v2查询接缝限定放行
 
 前置三块限定放行后，本块先规格/预期/strict，再共享网络场景卡、独立query_api及36项直接合同。02批新Run627b8f1d-c9c2-5c9d-a07d-e918ae6b0001经真实新HTTP→CH→M3落库，1命中/两对照排除、3事件/6工件独立hash/UTF-8/关联读回通过，模型0。01批PG字段假设失败、无Run/业务查询，保原件并以真实raw_event.telemetry[0]显式映射修复，新批次不重放01。临时进程按PID/创建时间核身份后停止，01/02新PG角色NOLOGIN撤权。公开回执docs/operations/investigation-v2-query-seam-20261024.json；未参与实现者独立36项及只读PG复核后限定ACCEPT、0必须修。仅受控查询接缝，API非M8持久Run授权，profile仅留存已核输入，完整Deep/M6—M9/Case未交付；tasks2.2/2.3不勾。下一单项为M6固定查询/有限事实路径，先合同/预期；M5按需另验。旧源码/入口不改，正常目录调查分支逐阶段提交/推送，无部署或合main。

@@ -1,3 +1,11 @@
+## 2026-10-24 M6.1纯固定政策结束窄审
+
+未参与实现的review_response_audit只读核新fixed_recon、专用测试、活动规格/预期及[回执](../../../docs/operations/investigation-fixed-recon-20261024.json)，独立13新/0.096s＋采用13/0.066s＋视图11/0.055s＋业务绑定11/0.027s共48项正常exit0；5份源码/测试hash匹配，6类材料状态和5类execution_stop的公共观察（result_ref/snapshot/事实/六问题/held计数）与实际纯函数重建一致。strict及diff通过，既有services源码/API/data工具和迁移archive未改，本块仅新增两个代码/测试文件。
+
+结论**限定ACCEPT、0必须修**。正常ready仅为Q1/Q5的有限目标，Q2无exactlink保原非critical缺口，Q3a/Q3b/Q4及性质/授权仍未知；冲突、截断、未读正文保合法事实/refs且partial，五停止原因只收紧且不假作M3实际门。旧snapshot/跨scope/Case/未提交视图拒绝，事实和依赖随新snapshot重建；没有伪造模型候选/程序理由、追加查询或总结模型。仅放行查询后纯政策层，不代表完整M6/M6.2、真实M3运行准入/时钟、查询去重、多轮失效传播、持久交接或发布。审阅及本批真实HTTP/PG/CH/模型访问均0，不归档整体change或勾2.2/2.3。
+
+最终文档/回执窄复核仍0必须修，独立核12份Markdown、463个本地链接及围栏通过，纯政策/M6.2运行接线/完整调查边界与实际审计观察一致；该最终窄复核未重跑测试或真实工具/数据库/模型。
+
 ## 2026-10-24 共享场景卡与独立v2真实查询结束窄审
 
 未参与实现的review_response_audit只读审阅本批新factory/原认证与权限、新dispatch、共享场景卡、显式telemetry→M1投影和可共享probe，独立复跑API7/records8/caller8/gate9/场景4共36项exit0；18源码hash、5测试hash、5本机观察hash匹配，02公开与本机回执一致。expected未进入scope/args/模型，独立应用不挂旧main，实际SQL观察仅1条且参数/query_id一致。01字段假设失败原件/源码/清理保留，新02批无重放。

@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M6.1固定有限事实与停止交接（实施前合同）
+
+基线ad08579，新建Agents v2 `fixed_recon.py`，不改M4旧采用代码或任何旧服务。输入为BusinessProfileRequest(alert_recon)、EvidenceView或None、当前snapshot引用，以及可选可信调用方已观察的停止枚举；重新校核业务绑定、视图hash/scope和版本，非alert profile/旧snapshot拒绝。M6.1是查询之后的纯政策层，无调度/IO；M6.2后续才接实际M3 gate、固定查询/重复与无进展停止、持久交接，不能据本层通过勾完整2.3。
+
+复用M4 checked_view与有限_predicate检查，但不构造模型候选；每个fact保origin=program、assurance=rule_checked、当前revision/snapshot、evidence_refs及snapshot依赖，ID受业务binding和当前snapshot约束。按可见来源逐版本保network_observed、outcome_unknown、alert_linked；冲突按身份合并列全可见/缺失版本；查询按成功bounded_query/empty或source_unavailable保真实执行状态。保持全部held refs与coverage gaps，来源自由文本不成为程序理由或下一步控制。
+
+输出始终stopped且automatic_query/model=false，scope_readiness仅ready/partial，nature unresolved/authorization unknown。六问题完整保留：Q1依据观察/冲突/缺证，Q2仅精确UUID关联，Q3a/Q3b/Q4 unassessed及原政策缺口，Q5报告可核覆盖。Q1/Q5为原有限目标的决策问题；Q2缺失独立保gap且不擅改其criticality。查询/正文截断、不可读摘录、冲突/缺反版本、不可分类action、无观察或视图缺失均阻断ready，保合法结构事实。已观察的budget_limit/deadline/unknown_attempt/retention_gap/cancelled只收紧partial；原因真实性与时钟由后续可信运行层保证，本层不开放任何新调用。
+
+先本合同/实施预期/strict，再实现和直接测试：正常/unknown outcome/空/各类来源失败及未执行、两版本冲突和hash-only反版本、截断及混合摘录、无精确关联、注入对照、停止枚举、跨scope/旧snapshot/不支持profile、不可变与新版本依赖。再跑受影响M4采用/视图、M1业务绑定合同，结束未参与实现者窄审与公开回执后放行。无模型/真实HTTP/PG/CH访问、写湖、预算或旧Run变更；阶段提交/推送调查分支，不合main或部署。
+
 ## 2026-10-24 独立v2 HTTP与持久查询接缝实施合同
 
 承接03cb3c3三个前置块。共享场景卡在`docs/investigation/scenarios/network-observation.v1.json`，明确业务输入/评估预期/实际观察合同分离，复用现有三湖事件和canonical Alert，不再造数/写湖。原telemetry已含匹配事件，只验证范围/关联/留存，不评价补查增益。
