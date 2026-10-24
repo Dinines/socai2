@@ -1,0 +1,100 @@
+{
+  "schema": "investigation_profile_restore.v1",
+  "date": "2026-10-24",
+  "baseline": "2b87675",
+  "status": "ACCEPT_limited_pure_restore",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix": 0
+  },
+  "direct_tests": {
+    "new": 11,
+    "scope": 8,
+    "profile": 11,
+    "publication_store": 21,
+    "related": 40,
+    "total": 51,
+    "exit": 0
+  },
+  "source_sha256": {
+    "services/agents/app/investigation_v2/profile_restore.py": "1a90ee2568ca77e414a98f7f0aab387305bea45ce935c11048641be617a7544d",
+    "services/agents/tests/test_profile_restore_contract.py": "f586b6ef75171ae6526a8cbe9478469f7cb4287205e9d07d3df8e7817fca3430",
+    "services/agents/app/investigation_v2/scope.py": "202bea2f61465d0294aab00d612587d3987f9da5b8af9609bcd11cd2b3368b9c",
+    "services/agents/app/investigation_v2/business_profile.py": "428cb6779a6ba8d89d963d0d18aae72202f51ba6ef4d57dcafeb1462e6004009",
+    "services/agents/app/investigation_v2/recon_runtime_state.py": "f567bcf6c270642124323c1f666df1ba29614ad234f40bf5a5c305f4265db5ab",
+    "services/agents/app/investigation_v2/execution_store.py": "818183f5c4214716893de0b84536718f3d75034d593ab105c1d282ee4519e833"
+  },
+  "observations": [
+    {
+      "case": "normal",
+      "scope_hash": "e42d721b2c5c5f6704c79f3fda673545f4673d8040c0186c1c0ca5faba7cf343",
+      "profile_binding_ref": "profile:55a59d7ed1e1f01d300475ed8b7b12f45e5ac528d2458f0862acd09192de7902",
+      "runtime_plan_ref": "fixed-recon-plan:ef1d4e69e563297f8cdf87be4c34724b9c732410539dd8a3a0f88c3552650ded",
+      "source_text_utf8_bytes": [
+        51
+      ],
+      "exact_original_request": true,
+      "frozen_principal_preserved": true,
+      "current_subject_is_distinct": true,
+      "inputs_and_budgets_unchanged": true,
+      "io": 0
+    },
+    {
+      "case": "unicode_instructions",
+      "scope_hash": "4fc1d18db25b2688f7655290b8de26802164a31fdae90e08edc0ad125f51cadd",
+      "profile_binding_ref": "profile:1b31a343f4e9ae1c347a8536ef9caff79bd2d0cfb258e0892c3ee69461a66e99",
+      "runtime_plan_ref": "fixed-recon-plan:0e053b391e58282d1b5afdc412f98401dde4db4160c8d6fef940810a2b61e41a",
+      "source_text_utf8_bytes": [
+        43
+      ],
+      "exact_original_request": true,
+      "frozen_principal_preserved": true,
+      "current_subject_is_distinct": true,
+      "inputs_and_budgets_unchanged": true,
+      "io": 0
+    },
+    {
+      "case": "long_text",
+      "scope_hash": "54d96728a22739e852a4bf262c5b297da108c4209c75439f0e3b9fdcddcce6e9",
+      "profile_binding_ref": "profile:c7da791b5e4a24aab682a3202df04294a8be9aa229107ecb091bec8c817e017b",
+      "runtime_plan_ref": "fixed-recon-plan:0b213a87b1de18e979d00878e8a6cca98071ce3ea7408287a0d9bee3e7dd5401",
+      "source_text_utf8_bytes": [
+        6000
+      ],
+      "exact_original_request": true,
+      "frozen_principal_preserved": true,
+      "current_subject_is_distinct": true,
+      "inputs_and_budgets_unchanged": true,
+      "io": 0
+    }
+  ],
+  "local_frozen_inputs_sha256": "1e29923bd1d499f4a703546afe4d50e4e2ea1457c64aa85e19362d1aa6d548d1",
+  "independent_audit": {
+    "reviewer": "fresh_code_audit",
+    "status": "ACCEPT_limited",
+    "must_fix": 0,
+    "actual_tests": {
+      "restore": 11,
+      "scope": 8,
+      "profile": 11,
+      "publication_store": 21,
+      "total": 51,
+      "exit": 0
+    },
+    "source_test_hashes_matched": 6,
+    "frozen_inputs_rebuilt": 3,
+    "all_controls_sources_descriptor_plan_summaries_equal": true,
+    "inputs_and_budgets_unchanged": true,
+    "additional_SQL_double_read": "different current reader restores original request and reads same published manifest/MD/execution without new ledger or mock calls",
+    "initial_command_error": "wrong scope module name produced one loader ImportError; actual43 passed then correct scope8 passed; not counted as source failure",
+    "scope": "pure restoration only; actual auth/permission/storage ownership remain downstream",
+    "evidence_storage": "auditor tool observations; no separate raw audit file/SHA claimed"
+  },
+  "limits": [
+    "Pure restoration only; caller must verify artifact storage ownership and authenticate/check current read permission before supplying TenantPrincipal. This is not evidence of actual HTTP auth or permission revocation.",
+    "Frozen principal belongs to historical binding. Current tenant check remains separate; restoring a request grants no start, dispatch, budget reset or unknown takeover.",
+    "Current Alert is not loaded; only a faithful supported-version frozen M1 request is rebuilt. No old source or configuration changes.",
+    "No real PG/HTTP/CH/models, Run/Case writes, publication or deployment in this block. M8a2 persistent read and later explicit startup/HTTP remain pending."
+  ]
+}

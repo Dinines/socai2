@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Restore a fixed result read context from its owned frozen input
+
+M8a1 SHALL 先以纯函数从已核归属的M6 begin输入/状态工件恢复alert_recon读上下文，再接正式HTTP与启动。当前读取权限必须来自当前认证主体；旧scope内principal只是冻结来源，不给当前caller授权。恢复 SHALL 验原input_hash、scope_hash、scope_sources各text/hash/UTF-8字节及完整引用、profile/运行和完成政策版本；用现有M1合同重建后，controls/sources/descriptor/plan须与冻结原件精确相等。当前可变Alert正文不参与既有结果读上下文，不因Alert后来编辑改变历史manifest。
+
+#### Scenario: Another currently authorized analyst reads the frozen result
+- **WHEN** 当前主体已获同tenant读取许可、原owned begin工件完整，Alert当前正文与当时不同或无需再次加载
+- **THEN** 恢复原profile/冻结scope及版本用于同manifest读取，保原principal/字段出处/原文引用；当前主体不同不会重写原调查身份。纯恢复不创建Run/执行查询/模型/重设预算或接管unknown
+
+#### Scenario: Frozen provenance or current tenant permission is invalid
+- **WHEN** 当前主体无tenant权限，或原input/scope/source正文hash/字节/引用、问题/能力/窗口/profile/plan/版本不符或缺件
+- **THEN** 明确拒绝，不从调用方或当前Alert猜测修补，不放宽M1、不回落旧报告或以冻结principal代替当前认证；来源存储归属/当前读permission由后续持久读取/HTTP接缝另核，纯函数不冒充其已完成
+
 ### Requirement: Verify fixed result publication on the existing stopped test Run
 
 M7c SHALL 仅对M6.2c已独审且无unknown/未结算的固定Run4dfd374a-17a6-5fec-833b-803bfbcb85c6追加发布，不创建新调查、重跑查询/模型或开启HTTP服务。使用全新精确PG角色/私密配置，公开opt-in probe先离线guard合同，真实执行前确认原5事件10工件及冻结handoff；原M6.2回执保阶段快照，不反写。

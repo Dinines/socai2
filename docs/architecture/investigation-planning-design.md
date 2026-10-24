@@ -1,3 +1,5 @@
+**2026-10-24 M8a1纯读上下文：** 已从owned begin冻结输入重建原M1 scope/profile/plan，不加载当前Alert；51直接及独立同51/6hash/3组原件限定通过，[回执](../operations/investigation-profile-restore-20261024.json)。当前主体tenant许可与原principal历史身份分离；实际auth/permission/存储归属和HTTP/启动接缝仍待后续。
+
 **2026-10-24 M7c实际结果：** 原M6稳定Run只追加publication，当前6事件14工件；新进程冷读与热读同manifest/报告/execution，原M6已核列/正文校验和不变，额外查询/模型0，旧Run列不变。[回执](../operations/investigation-publication-pg-seam-20261024.json)结束独审限定ACCEPT/0必须修（独立11项/14hash及只读PG核验），[合成报告](../investigation/examples/fixed-recon-published-20261024.md)等于PG字节。仅有限source目标，新三维与旧生命周期分开；M8真实业务/stream、Case及语义Deep仍待，旧M6回执保阶段快照。
 
 **2026-10-24 M7b代码：** 同Run锁内原子manifest/MD/execution/state及精确同版读，21新＋128相关149通过；来源工件原event/kind/pinned hash含未采用分支已修、旧失败保留，[回执](../operations/investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修。重复不新建版本，未知commit只读核原指针，late settle后拒陈旧正式结果；目前仅SQL替身，c真实PG仍待，M8后续。

@@ -1,3 +1,7 @@
+## 2026-10-24 M8a1纯恢复结束窄审
+
+fresh_design合同ACCEPT0；fresh_code独立实际51项（restore11/scope8/profile11/pubstore21）、6hash/3组冻件重建一致，补同tenant另一读者恢复后读同manifest/MD/execution不增账本/调用，限定ACCEPT/0必须修。审阅首scope模块名误写Loader ImportError与源码分开，43实际后补正确8，不重复累加。[回执](../../../docs/operations/investigation-profile-restore-20261024.json)。仅pure，TenantPrincipal是当前认证许可前提载体，a2/HTTP真实permission与owned归属仍待；无业务网络。
+
 ## 2026-10-24 M7c探针放行与实际PG
 
 fresh_design合同ACCEPT0；fresh_code独立原19项发现P2原始行校验漏agent/in-out及发布state冻结基线，10项红测六失败/0error及完整源码保[失败回执](../../../docs/operations/investigation-publication-seam-probe-failure-20261024.json)。修后独立43/六反例拒、baseline比较及原件核验限定通过；最后MD write_bytes输出边界另窄核通过。实施160/最终probe11通过后，真实原Run仅增1event/4artifacts，当前6/14，两独立进程同版/原基线checksum不变/PG14工件全核，角色与进程清理。[实际回执](../../../docs/operations/investigation-publication-pg-seam-20261024.json)真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验），新增查询/模型/HTTP0，通知未投递，不外推M8或质量。

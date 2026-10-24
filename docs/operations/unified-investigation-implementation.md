@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 M8a1冻结读上下文实施前预期
+
+**a1实际放行：** 新profile_restore及11合同，相关M1scope8/profile11/pubstore21共51，独立同51/6hash/3冻件重建及恢复request同manifest读取不增数据/调用，限定ACCEPT/0必须修；[回执](investigation-profile-restore-20261024.json)。当前tenant与原principal分别校，原M1完整重建核版本，无I/O/当前Alert加载/启动权限。纯层不追认实际auth/permission/storage owned；a2与HTTP后续。审阅模块名一次误写已补scope8，非源码失败。
+
+基线2b87675，M7c真实同版核心已限定通过。a1先从已核owned begin/state恢复历史profile，用当前认证tenant校准授权边界；校原hash/文本refs/字节及policy/plan版本，重用M1重建后精确比较。当前Alert变化不参与历史读取，原principal不授权当前人，输入/预算不变，纯层0I/O。正常/换同tenant读者/Unicode精确恢复；跨tenant/缺改source/控制与问题/能力漂移拒绝。先strict/独立合同，再实现/直接测试/独审；a2持久读取、显式HTTP及启动后续逐块，无部署/旧入口变化。
+
 ## 2026-10-24 M7同版交付实施前预期
 
 **c实际结果：** 原Run只加1event/4artifacts，现6/14；publish PID16228/create134373281189146135、全新read PID20200/create134373281256642423均exit0，manifest/MD/execution与原选中5/10checksum同版，两个MD文件字节都匹配PG SHA。新增工具/模型/Run/HTTP0，新m7角色NOLOGIN/有效三表权false/活动0，通知描述未投递。[公开回执](investigation-publication-pg-seam-20261024.json)、[PG原字节合成样例](../investigation/examples/fixed-recon-published-20261024.md)；真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。11新＋149相关160/probe独审43，原raw校验P2六反例/源码保failure回执，修后再放行真实；另有ACK注入位置/一次括号import失误已在pre-live纠正。旧M6.2c5/10回执保当时快照，M8与质量另验。

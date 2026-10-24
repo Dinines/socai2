@@ -1,3 +1,7 @@
+# 2026-10-24 调查M8a1冻结读上下文限定通过
+
+从2b87675先合同/strict及独立设计审阅，再profile_restore纯层；11新＋40相关51与独立同51/6hash/3组原件重建通过，限定ACCEPT/0必须修。由owned begin恢复原M1 controls/sources/profile/plan并精确核hash/字节/引用，当前读者tenant与frozenprincipal身份分开；改当前Alert不影响历史scope，纯恢复不授予启动/接管权限。docs/operations/investigation-profile-restore-20261024.json；无真实PG/auth/HTTP，后续a2持久归属读取及显式HTTP/启动仍待。旧代码/Run/unknown/费用保持，阶段提交推送，无部署/合main，2.2/2.3未完。
+
 # 2026-10-24 调查M7c真实发布/冷读限定通过
 
 原M6.2c Run4dfd374a-17a6-5fec-833b-803bfbcb85c6仅追加1event/4artifacts，当前6/14；新publish及read两进程同manifest/MD/execution，原选中5/10列与正文校验和前后/跨进程相同，新增查询/模型/Run/HTTP0，通知未投递。新m7角色NOLOGIN/有效三表权限false/活动0，两个子进程exit0。公开回执docs/operations/investigation-publication-pg-seam-20261024.json、exact PG UTF8合成MD例docs/investigation/examples/fixed-recon-published-20261024.md。11新＋149相关160及probe独审43/P2六反例修后通过；真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。旧M6.2c5/10保阶段快照，不反写；当前新三维finished/complete_for_scope/none只有限来源目标，旧Run列running/null/0/0，M8/真实stream/Case/Deep价值尚未交付。无部署/合main，继续M8精确合同，2.2/2.3未勾。

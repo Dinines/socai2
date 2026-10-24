@@ -1,5 +1,7 @@
 # Tasks: 原阶段成果接收与后续逐模块续接
 
+**M8a1限定通过：** 51直接/独立同51及6hash/3组重建通过，[回执](../../../docs/operations/investigation-profile-restore-20261024.json)。纯冻结上下文，实际owned/认证/HTTP/启动及2.2/2.3未完。
+
 **M7c真实执行：** 当前6/14，两个新进程同版、原M6已核基线不变；160合同/probe独审43通过，[回执](../../../docs/operations/investigation-publication-pg-seam-20261024.json)真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。无新查询/模型/通知投递，M8/Case/Deep及2.2/2.3仍待。
 
 **M7b代码测试通过：** 149直接，P2原工具pin修后6反例拒；[当前回执](../../../docs/operations/investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修。只SQL替身，c真PG待；2.2/2.3未勾。

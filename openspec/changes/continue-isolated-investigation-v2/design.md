@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M8a1冻结读上下文实施前细卡（2b87675）
+
+M7c已独审限定通过并保存推送。显式业务入口先补一个必要纯接缝：M7 read_result接checked request，不能每次从“当前Alert”重建历史scope，否则告警后来改动会让已发布结果不可读或混版。a1仅restore frozen alert profile，后续a2持久读取/当前认证、a3持久启动与显式独立HTTP逐块细化；无前端/旧路由/生产配置修改。
+
+输入为当前已认证TenantPrincipal与caller已核owned begin输入/初始state；存储归属/读权限必须先由可信持久caller核，纯层不能把来自客户端的JSON当已核工件。原state/input中保存的principal只用于忠实重建原scope及hash，当前主体的tenant许可独立验证，恢复结果不授予新运行或未知Run接管权。当前Alert不加载也可还原，预算/旧成本均不变。
+
+新profile_restore纯层核begin input_hash、scope_hash、scope_sources中每个scope-source引用的正文SHA/字节数且集合精确；只接受当前固定alert profile/版本。重建SourceField/CheckedAlert/CheckedMemberSnapshot/UTCWindow和TenantPrincipal后走原initialize_scope及BusinessProfileRequest/CheckedBusinessTarget，再要求scope_snapshot控制/来源、descriptor及make_recon_plan与冻结原件完全相等，不另写放宽版M1。初始state须为该Run begin/ready、空attempt且owner/原input引用有效；输入源metadata不能被data_only_text指令改变。
+
+预期正常及当前另一个同tenant读者都精确恢复原request；Unicode/data-only文本保持原字节；当前无tenant、错run/profile/version、正文hash/大小/缺ref/多source、字段/窗口/能力/问题漂移皆拒；输入/预算不变，0I/O/Run/查询/模型。先合同strict/独立复核，再仅a1实现/直接测试/独审，a2以后另卡/真实接缝，不因纯函数通过称正式读取已认证。
+
 ## 2026-10-24 M7c真实PG实施前细卡（f6ac2a2）
 
 b已修P2/独立52项及7账本复核后保存推送。c只对M6.2c稳定Run4dfd374a-17a6-5fec-833b-803bfbcb85c6、原owner/profile/batch引用追加发布，无新查询/模型/Run/Case/HTTP应用。source batch固定investigation-fixed-runtime-20261024-01，scope构造仍用当时live-pg-alert-read引用并重新核当前canonical Alert/合成标记/来源绑定；若已变更/已发布即拒，不借新ID刷新。

@@ -1,5 +1,7 @@
 # Investigation v2 — 独立开发线
 
+`profile_restore.restore_alert_read_request`仅从已核owned begin/state与当前认证TenantPrincipal恢复原scope/profile/plan，不加载当前Alert或授予dispatch。51直接及独审通过；实际存储归属/permission在后续读取与HTTP核验。回执：docs/operations/investigation-profile-restore-20261024.json。
+
 M7c已在原固定Run实际追加发布（现6/14）并通过新独立进程同版读取、PG字节/所有边/原基线校验；无新查询/模型，临时身份清理，真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。回执：docs/operations/investigation-publication-pg-seam-20261024.json。M8业务HTTP/真实stream仍未接，通知只是未投递描述。
 
 `ReconPublicationStore.publish/read_result`是M7b选定正式发布/读取合同：同Run锁内4工件/1event，只在确认commit后返回published和未投递通知描述；cold/hot按精确manifest重建。原completion pin覆盖拒绝来源，late settle/丢指针/缺件显式拒绝，无旧report回落。149项SQL替身测试通过/未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修，c真实PG未执行。回执：docs/operations/investigation-publication-store-20261024.json。
