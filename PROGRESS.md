@@ -1,3 +1,5 @@
+**2026-10-24数据与调查重新独立设计评审：** 用户要求不受先前结论影响、不改代码。基于main a82346dd重新核需求、设计和源码，见[详细评审及双方意见](docs/operations/independent-design-review-20261024.md)。总体方向合理；数据线应先审定可见证据与标签的关系、补配对评价，非法输出MCC虚高经纯内存反例重现；调查线发现可选正文异常阻断整视图、完整messages预算与视图预算不一致，版本分歧粒度及模型增量价值另列建议。未将待实现入口/Case等判成设计缺陷，未改代码/测试/配置/原设计，评审未调用模型、访问业务服务、写湖或部署；用户随后要求提交并推送本次评审与两处引用，其他未提交材料保持。
+
 **2026-10-24数据/调查已合并并统一审计：** main5c1202b5包含数据评估cec5ea98和调查469e9467，双方源码/测试保持、旧入口不变；见[总审计与数据湖协作](docs/operations/data-investigation-integration-audit-20261024.md)。数据96/39通过；新调查Agents85/API8通过；合并工具112通过但同一IPv6文本测试3子项失败，不能报全绿。另有Python3.11 Path.is_junction兼容、原MCC/批次冻结及分诊截断待处理。现有网络fixture与单批写湖工具共享，调查继续scope/查询/证据采用/额度，数据线承接准备/期望/评分；M5.2及v4分层/新入口未完成。仅合并与审计，无新模型/业务写湖/生产或部署，20/暂停规划未提交内容保持。
 
 **2026-10-24远程同步与旧工作树清理完成：** 正常项目根目录E:/aisoc/socai2当前为codex/investigation-working；共享代码/文档已推送，远端曾核到32d00ca与本地一致。旧.local/worktrees/investigation-working已用Git安全移除；382份验证原件和171份冻结原件迁至根.local/verification与.local/versions，逐文件hash保持，5个可再生缓存删除。Windows本机适配只在被忽略.local/windows-local，原Windows分支94bb52f保留且未推送。其他机器从[调查协作入口](docs/investigation/README.md)读取设计/进展/问题，后续正常合并main/其他分支；本轮无功能、模型/业务测试或部署。此记录随后随正常提交同步，最新提交以分支log为准。
