@@ -1,5 +1,9 @@
 # Execution: 调查分支逐步实施原记录
 
+## 2026-10-24 共享场景卡与独立v2查询实际接缝
+
+前置03cb3c3后先spec/design/实施卡与strict，再新query_api、共享场景卡、可共享opt-in探针及36直接合同，通过后才建受控新身份。01在PG字段取材前提失败，原源码/hash/日志/清理保留，Run及业务查询0；实际字段修为raw_event.telemetry[0]，先映射合同验证，再新02批，未重放01。02经真实独立v2新HTTP→CH→M3，1query/1match/3events/6artifacts和4认证反例通过；独立只读PG核hash/UTF-8/关联、已核profile输入和source_projection留存。准备7366B消息但模型0；无写湖/Kafka/Case/新API key。两批API按PID/创建时间核身份后停，新PG身份NOLOGIN撤权、连接0，旧服务不改。具体refs/hash/计数及失败见[公开回执](../../../docs/operations/investigation-v2-query-seam-20261024.json)。结束独审另记audit；tasks2.2/2.3不勾，正式入口/Deep/同版交付/Case未完成，不归档、部署或合main，按阶段提交/推送调查分支。
+
 ## 2026-10-24 I2完整messages预算及前置三块收口
 
 I1限定放行后依同样顺序实施I2，共用消息组装/执行前/egress后的12KiB实际字节合同。新6＋原模型15项直接通过，独审另复跑I1六项，0剩余必须修，见[回执](../../../docs/operations/investigation-request-budget-20261024.json)。超限在准备/最终gate显式阻断，保材料引用和受影响问题，不自动分组/裁掉反证；模型/业务调用/写入0。tasks2.1仅按M1纯绑定、I1、I2三个实际回执核销；完整M5/真实新版接缝/同版结果与Case等仍未完成，不归档。

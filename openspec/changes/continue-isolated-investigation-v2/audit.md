@@ -1,3 +1,11 @@
+## 2026-10-24 共享场景卡与独立v2真实查询结束窄审
+
+未参与实现的review_response_audit只读审阅本批新factory/原认证与权限、新dispatch、共享场景卡、显式telemetry→M1投影和可共享probe，独立复跑API7/records8/caller8/gate9/场景4共36项exit0；18源码hash、5测试hash、5本机观察hash匹配，02公开与本机回执一致。expected未进入scope/args/模型，独立应用不挂旧main，实际SQL观察仅1条且参数/query_id一致。01字段假设失败原件/源码/清理保留，新02批无重放。
+
+另一次经已有SSH配置进行BEGIN READ ONLY的独立PG复核：新Run627b8f1d-c9c2-5c9d-a07d-e918ae6b0001有3事件6工件，全部UTF-8字节/hash/event/run/tenant关联通过；stage tool1/model0/unknown0/unsettled0，query_id21862954-abff-42a8-8734-bc79bcd84e9e对应单匹配事件。Run仍running、completed_at null、旧计费0，01 Run行0。四临时角色NOLOGIN/非super/非bypass，investigation_runs表SELECT/INSERT及id列UPDATE有效权限均false、活动连接0；三表撤权另有runtime清理源码/回执支持。PID9452不存在；PID5708已被backgroundTaskHost复用，创建时间134373101640825200不同于本次API134373098144449413，未碰当前进程。没有业务写入、授权、模型、重放或部署。
+
+最终**限定ACCEPT、0必须修项**，只接受受控新路径scope/query/持久接缝及已核profile输入留存，不认定正式M8启动授权、profile驱动整环、Case继承、模型质量或发布。公开refs/失败/清理/版本详见[机器回执](../../../docs/operations/investigation-v2-query-seam-20261024.json)。活动change strict/diff通过；tasks2.2/2.3未勾，不归档，下一M6固定路径仍先精确合同和预期。旧服务、数据工具与迁移归档保持。
+
 ## 2026-10-24 I2完整messages预算结束窄审与2.1核销
 
 I1保存f6a3fa8后，先I2精确合同/strict，再新增共享计量与三处接缝、新6项及原模型15项通过。未参与实现的`review_response_audit`独立新6、原模型15和I1六项exit0，核[回执](../../../docs/operations/investigation-request-budget-20261024.json)的4份hash、1/7/8/10准备观察和实际fake执行结果一致，限定ACCEPT、0必须修。完整messages包含system/任务封装/UTF-8转义，12KiB常量及token公式不改；恰好边界通过/超1字节拒绝，准备与egress超限均预留/外呼0，全部事件/Alert/query引用保留。

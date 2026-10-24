@@ -1,0 +1,70 @@
+{
+  "schema": "investigation_shared_scenario.v1",
+  "scenario_id": "existing-network-source-observation-20261023",
+  "purpose": "验证独立v2路径的范围、来源关联、持久留存；不测工具增益或恶意/授权判断",
+  "source_fixture": {
+    "generator": "tools/testdata/investigation_fixture.py",
+    "version": "v1",
+    "fixture_batch": "investigation-ch-20261023-01",
+    "prior_receipt": "docs/operations/unified-investigation-clickhouse-20261023.json",
+    "reuse": "existing controlled synthetic records; no new lake or Kafka writes"
+  },
+  "business_input": {
+    "tenant_id": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+    "canonical_alert_id": "121d8fa6-d431-5428-b4f4-6b928b40e91b",
+    "profile": "alert_recon",
+    "objective": "verify_source_network_observation",
+    "policy_ref": "network_observation.v1",
+    "query_parameters": {
+      "hostname": "investigation-ch-20261023-01-host",
+      "source_ip": "192.0.2.70",
+      "dest_ip": "198.51.100.70",
+      "dst_port": 443,
+      "protocol": "TCP",
+      "start": "2026-10-23T10:00:00+00:00",
+      "end": "2026-10-23T10:05:00+00:00",
+      "limit": 10
+    },
+    "argument_paths": {
+      "hostname": "hostname", "source_ip": "src_ip", "dest_ip": "dst_ip",
+      "dst_port": "raw_event.telemetry[0].dst_port", "protocol": "raw_event.telemetry[0].protocol"
+    },
+    "source_projection": {
+      "source_record": "PG alerts.raw_event.telemetry[0]",
+      "pg_paths": {"hostname": "raw_event.telemetry[0].hostname", "source_ip": "raw_event.telemetry[0].source_ip", "dest_ip": "raw_event.telemetry[0].dest_ip", "dst_port": "raw_event.telemetry[0].dst_port", "protocol": "raw_event.telemetry[0].protocol"},
+      "checked_projection": "Map checked source_ip/dest_ip to M1 normalized src_ip/dst_ip names; argument_paths refer to this explicit projection, not PG columns.",
+      "identity_check": "telemetry tenant must equal canonical Alert tenant and telemetry event_id must occur in source_event_ids"
+    },
+    "window_bounds": "start_inclusive_end_exclusive",
+    "target_check": "read the current canonical Alert by explicit tenant and ID; reject if its fields or source IDs do not bind"
+  },
+  "evaluation_only": {
+    "must_not_enter_model_or_query_arguments": true,
+    "expected_event_ids": ["951c5352-2df4-53d8-a431-b2763fea5e6e"],
+    "excluded_events": [
+      {"event_id": "a2a124b2-69aa-50ab-a88f-0e1486958f72", "reason": "different_destination"},
+      {"event_id": "c9ee6c8a-d44d-5ffe-a456-594b5555a87c", "reason": "outside_window"}
+    ],
+    "matching_raw_sha256": "7de0c111773413d265a0f5ab5159f2b9f20c7ecd9f8dad84a56d0400f0a3e2fb",
+    "matching_ocsf_sha256": "4e2c056601a8cc4fe318092dc08c06396f1e04610c53b82767910fedc858935d",
+    "action": "network_connection_observed",
+    "outcome": "unknown", "nature": "unresolved", "authorization": "unknown",
+    "question_scope": ["Q1 source observation", "Q2 exact declared UUID association only", "Q5 bounded coverage"],
+    "forbidden_claims": ["connection succeeded", "malicious or benign verdict", "authorized or unauthorized", "causal attack chain"]
+  },
+  "observation_contract": {
+    "new_test_run_required": true,
+    "model_calls": 0, "successful_activity_queries": 1,
+    "expected_ledger_events": 3, "expected_ledger_artifacts": 6,
+    "actual_query_path": "/api/v2/investigation/query",
+    "preserve_run_columns": ["status", "completed_at", "total_tokens", "total_cost_usd"],
+    "independent_readback": ["UTF-8 bytes/hash", "tenant/run/event links", "state usage", "profile binding", "raw tool response"],
+    "authentication_negatives": ["missing bearer", "missing tenant", "invalid tenant", "unknown tenant"],
+    "cleanup": "stop only the newly launched process, NOLOGIN/revoke only new temporary PG roles; preserve data/Run/failed attempts"
+  },
+  "limitations": [
+    "The old alert telemetry already contains the matching event: this is not a blind tool-value evaluation.",
+    "No Case creation/inheritance, Deep loop, final manifest/report or production registration.",
+    "Scenario expected values are for the test evaluator; runtime scope comes from the checked Alert and approved window."
+  ]
+}

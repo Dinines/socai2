@@ -2,6 +2,41 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 共同场景与独立v2查询接缝（限定通过）
+
+本块严格沿下节预期：先规格/设计/场景输入和输出预期、strict，再独立query_api/可共享探针及直接测试，通过后才建新受控身份做真实接缝。公开[机器回执](investigation-v2-query-seam-20261024.json)含完整来源/测试hash、01失败、02实际refs与清理；运行私密配置仍只在被忽略.local。
+
+| 已核项目 | 实际结果与范围 |
+| --- | --- |
+| 离线合同 | API新7、原records8、caller8、gate9、场景映射4，共36项exit0；本块helpers初2项错误及修复保留 |
+| 业务输入/来源 | 复用既有tenant/canonical Alert/3湖事件；expected不进scope/查询/模型。当前PG raw_event.telemetry[0]的真实字段先核tenant/source UUID，再显式投影到M1，真实PG路径及raw_event hash随begin留存 |
+| 新v2 HTTP | 02批独立进程，4认证反例401/403/400/403；受限caller经POST新路径只执行1次activity_records，参数/SQL模板指纹与query_id本地独立观察一致 |
+| CH | 活动查询返回唯一匹配951c5352…，不同目的地址和窗外两对照排除，原文hash/UTF-8及outcome unknown保持。01/02各1次资料预核＋02活动1次，合计3个CH只读查询；未写湖/发Kafka |
+| PG/M3 | 新Run627b8f1d-c9c2-5c9d-a07d-e918ae6b0001，begin/reserve/complete共3事件/6工件；独立默认只读reader核hash、字节、event/tenant/run关联及原文一致。stage tool1/model0/unknown0/unsettled0，Run初始running/计费列未改，synthetic case_id仅ledger标签，不是Case创建 |
+| 模型准备 | 从已提交输出构建EvidenceView及7366B完整messages并通过同门；未发模型，不表示模型质量/采用已验 |
+| 清理 | 01 PID9452及02 PID5708均先核创建时间再停止；两批四新PG角色NOLOGIN、撤表/列/schema/CONNECT授权，清理记录各活动连接0。旧角色、旧失败、unknown/预算不改；临时token随进程失效，无新API key行 |
+| 边界 | 新应用仅tenant/权限及全局查询bounds，Run/问题scope/M3由可信caller负责；不当正式M8持久启动授权。不注册旧应用，不部署、合main或完成Deep/Case/同版交付 |
+
+未参与实现的review_response_audit独立36项exit0，核18源码/5测试/5观察hash及公开与本机回执一致；另经BEGIN READ ONLY独立核PG三事件六工件全部hash/字节/关联、stage用量、Run列及01 Run不存在，四角色NOLOGIN、investigation_runs表SELECT/INSERT及id列UPDATE有效权限false、连接0；三表撤权另据runtime清理源码/回执。最终限定ACCEPT、0必须修。独立进程核对时9452不存在；5708已被不同创建时间的backgroundTaskHost复用，审阅未操作它，不能据旧PID再次停止。tasks2.2/2.3仍未勾；下一单项为固定查询/有限事实路径M6的合同/预期，M5按需能力另逐步验证，不必为选工具增加必跑模型。
+
+## 2026-10-24 共同场景卡与独立v2真实查询（实施前预期及01失败保留）
+
+用户继续授权推进，基线03cb3c3。已找到原网络fixture、现有reader及私密配置；旧测试脚本仅只读参考，不运行/重放。当前沙箱账号默认SSH别名不可见，显式用用户已有SSH配置的受控执行已只读连接21成功，不改配置/密钥/远端服务。
+
+| 小步 | 输入→输出与预期 |
+| --- | --- |
+| 场景卡/合同 | 复用已有tenant、canonical Alert、3事件、绝对窗口；业务输入与expected分离。卡在`docs/investigation/scenarios/network-observation.v1.json`，不冒称工具增益盲测 |
+| 离线新版路由 | 新独立query_api，只POST新路径，复用原认证/权限，新分派不回落；缺身份/权限、非法顶层/args和旧路径/工具CH0。先本块/records/caller/gate直接通过 |
+| 身份/资料只读前提 | 新临时PG reader/writer及本进程token；reader默认只读、writer仅新测试ledger，原CH只读。核当前Alert归属/实际字段及3湖资料，未知/变化即停，不重新写入 |
+| 新Run真实接缝 | 新固定批次/Run，先确认不存在；begin/预留提交后只发1次新HTTP/CH查询，匹配UUID唯一、两对照排除、outcome unknown；3事件/6工件独立hash/UTF-8/关联读回，profile仅作为已核输入保存 |
+| 清理/交接 | 只停止本次API进程并核身份；本次新PG角色NOLOGIN并撤权；Run/status/预算及旧unknown保留，模型0、无写湖/消息/部署/正式发布。失败不自动重放 |
+
+离线新版路由7＋原records8＋caller8＋gate9＋场景映射4共36项通过。初次路由测试有2项助手错误（AsyncEngine只读方法mock、FastAPI路由内部对象路径假设），已改为模块级engine替身及实际HTTP验证后7项通过，业务判据未改。
+
+真实attempt01：CH exact-ID只读核3行/控制关系成功，API独立进程启动；探针在PG取材因不存在的hostname/IP独立列报UndefinedColumnError，此时progress=preflight、Run/业务查询0。PID9452/创建时间已核后停止，01两角色NOLOGIN/撤权且活动连接0。失败日志/驱动源码hash`5444075a8e1faccaf37e2d9826a48698d6fa332f38227621df08537c050e20d8`保留。
+
+只读实际schema确认参数在raw_event.telemetry[0]。已补显式checked_projection适配与真实PG路径/hash留存，先核telemetry租户/来源UUID属于当前canonical Alert，再投影到M1固定字段；映射4项复测通过。新attempt02将使用新角色/Run，不重新开01或重放任何未知调用。CH资料核对与API业务查询分别计数，不把总数写成1。
+
 ## 2026-10-24 第三步：I2完整messages预算（限定通过）
 
 I1以`f6a3fa8`保存放行后才进入本块；先spec/design/预期及strict，再实现/直接测试/回执/独审。本步共用完整messages计量，选择明确阻断/材料缺口，不自动分组或修改12KiB。

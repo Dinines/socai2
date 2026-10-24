@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Verify a scoped source query through an independent v2 HTTP application
+
+新v2查询路由 SHALL 仅存在于独立显式启动的investigation_v2应用，固定POST `/api/v2/investigation/query`并只分派新版activity_records；MUST NOT 注册到旧app/router或回落旧工具。认证和`lake:query`授权 SHALL 复用既有依赖，tenant仅来自已认证主体；请求顶层字段须受限，args不得覆盖tenant/SQL/URL/凭据。API仍只核认证tenant及原全局界限，Run/问题范围与预算由可信caller/M3执行门负责，不宣称已实现正式M8持久启动授权。
+
+#### Scenario: One new controlled Run consumes the shared network scenario
+- **WHEN** 离线新路由/原records/受限caller合同通过，且当前PG canonical Alert和已有CH测试资料读回符合共同场景卡
+- **THEN** 新独立进程以临时服务身份接收一次经scope/M3预留的查询，返回唯一匹配UUID并排除两对照，保存原文hash及unknown；新Run只追加3事件/6工件，独立读回校核hash/UTF-8/归属及预算，旧Run计费/状态和历史unknown不改，模型0
+
+#### Scenario: Authentication or routing cannot admit a request
+- **WHEN** 缺凭据/tenant、tenant非法或不存在、缺lake:query权限、请求含额外身份或旧工具名，或访问旧v1路径
+- **THEN** 原认证/授权及新版请求合同拒绝，不执行CH；旧v1路径在独立应用不可用，不因新版失败自动改走旧入口。正式旧服务及入口保持原样
+
+#### Scenario: A temporary real seam stops or becomes uncertain
+- **WHEN** 读回、预留、HTTP或留存出现失败/unknown
+- **THEN** 保失败/未结算及实际进度，不自动重放或换Run刷新额度；仅按已记录PID/进程身份停止本次API，关闭/撤回本次新PG角色权限，原数据/历史角色和失败材料保留，不部署常驻服务
+
 ### Requirement: Prepare complete model messages with the same budget used at dispatch
 
 新版分析任务的消息组装、执行前检查及egress后observer SHALL 复用同一完整messages规范化/序列化与12KiB UTF-8计量合同，包含system、任务封装和转义；MUST NOT 将EvidenceView自身大小作为完整请求可消费的证明或增大全局上限。任务准备只能交付已通过该合同的消息；超限 SHALL 在外呼/预留前明确返回实际字节、上限、超额、受影响问题、保留的快照/全部来源引用及后续材料处理要求，不静默删减支持、反证或冲突版本。当前本块选择显式阻断并交付材料缺口，不自动分组；后续任务拆分须另保引用/覆盖合同。

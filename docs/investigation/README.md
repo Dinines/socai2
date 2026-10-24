@@ -4,11 +4,7 @@
 
 # 调查新版：开发、进度与评审入口
 
-**本轮最新结果：** 按用户要求依次完成M1业务profile纯绑定、I1可选正文局部降级、I2完整messages预算，均先规格/预期/strict再实现/直接测试/回执/未参与实现者窄审，0剩余必须修。tasks2.1据三个限定成果勾选，后续change未完不归档。I2采用超限明确阻断/材料缺口，未自动分组；真实新版HTTP/PG/CH、完整Deep/Case继承/同版发布仍未完成。下一单项为共同网络场景卡与独立v2受控查询接缝，详见[实施记录](../operations/unified-investigation-implementation.md)。
-
-**I1最新结果：** M1按块提交后，I1可选来源正文局部降级的6新＋11视图＋13采用＋15模型合同通过；独审发现Unicode编码异常后已修并独立复验，最终限定ACCEPT、0剩余必须修。来源结构事实/其他记录及readable缺口保留，必要身份/hash不放松；[I1回执](../operations/investigation-optional-excerpt-20261024.json)。下一块I2完整messages预算尚未实施，真实新版入口/Case衔接仍未完成。历史评审probe只对原基线断言缺陷，最新验证用本批合同文件。
-
-**最新实施续接：** 用户已授权按步骤推进。M1业务profile纯绑定11新合同＋原scope8项直接通过，未参与实现者独立复跑并限定ACCEPT、0必须修；[预期与结果](../operations/unified-investigation-implementation.md)、[机器回执](../operations/investigation-profile-contract-20261024.json)。它只绑定已核目标/完整成员及选材覆盖，尚未接执行器、真实Case解析/继承/启动或HTTP；下一步I1正文降级，I1/I2修复此时尚未实施。当前活动分支为`codex/investigation-review-20261024`，下文历史来源与阶段快照按日期理解。
+**本轮最新结果：** 前置M1纯绑定、I1正文局部降级、I2完整messages预算分别通过后，本块先补规格/预期/strict，再完成[共享网络场景卡](scenarios/network-observation.v1.json)、独立v2查询应用及36项直接合同。02批新Run的真实HTTP→CH→PG接缝通过：1条命中、两对照排除、3事件/6工件独立读回，模型0；临时进程已停、新身份NOLOGIN并撤权。01批PG字段假设失败原样保留，映射修正后采用新批次，未重放。见[接缝回执](../operations/investigation-v2-query-seam-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)；未参与实现者复跑36项并只读核PG/清理后限定ACCEPT、0必须修。下一单项为M6固定查询/有限事实路径，先合同/预期；M5按需能力另验。正式M8入口、Deep整环、同版交付和Case继承仍待做，tasks2.2/2.3未勾，change不归档。
 
 更新：2026-10-24。活动分支：`codex/investigation-review-20261024`，基于main `541511c`；原调查`codex/investigation-working`已合main作为来源。普通项目目录逐阶段开发、提交并推送；旧.local工作树已移除。其他机器拉取当前分支即可阅读本页及全部相对链接，无需原机器`.local`。
 
@@ -23,6 +19,7 @@
 | 新版代码 | [Agents v2](../../services/agents/app/investigation_v2/README.md)、[API v2](../../services/api/app/investigation_v2/README.md) |
 | 数据/执行/模型的可共享回执 | [ClickHouse](../operations/unified-investigation-clickhouse-20261023.json)、[M3](../operations/unified-investigation-m3-20261023.json)、[M4最终](../operations/unified-investigation-m4-20261024.json)、[版本隔离](../operations/investigation-v2-isolation-20261024.json) |
 | 本轮前置三块回执 | [M1纯绑定](../operations/investigation-profile-contract-20261024.json)、[I1正文降级](../operations/investigation-optional-excerpt-20261024.json)、[I2完整请求预算](../operations/investigation-request-budget-20261024.json) |
+| 新版真实查询接缝 | [共同场景卡](scenarios/network-observation.v1.json)、[公开回执与失败/清理](../operations/investigation-v2-query-seam-20261024.json)、[可共享受控探针](../../openspec/changes/continue-isolated-investigation-v2/probes/v2_query_seam.py) |
 | 首批模型失败及历史问题 | [M4首批失败回执](../operations/unified-investigation-m4-20261023.json)、实施记录的M4调试表、[历史问题总登记](../operations/upstream-issues.md) |
 
 ## 当前做到哪里
@@ -30,14 +27,14 @@
 | 模块 | 实际状态 | 不能扩大成的结论 |
 | --- | --- | --- |
 | D1—D3数据前提 | 3条合成历史事件入CH，1条告警落PG，来源UUID/租户/实体/窗口关联已验 | 不是全量采集或告警自动入湖；不证明恶意/授权 |
-| M1/M2 | 冻结范围/问题合同及网络逐条查询已验，有原版本真实HTTP接缝回执 | 当前仅有限explicit_set/网络观察，不是Case入口已接 |
+| M1/M2 | 冻结范围/问题合同及网络逐条查询已验；本块新v2独立HTTP/CH接缝1次通过 | 当前仅有限explicit_set/网络观察，不是Case入口已接 |
 | M1业务profile增量 | 纯绑定11新＋原scope8项及独审通过，保完整/所选/遗漏成员与交付归属 | 不等于已认证Case、实际解析/继承/启动或接执行器 |
-| M3 | 原子留存、预留与共享预算已验，有原版本PG/工具接缝 | 未开放多writer/通用恢复，不改旧预算/unknown |
+| M3 | 新v2一次工具调用的预留/完成已提交；新Run3事件/6工件独立读回，profile作为已核输入留存 | 未开放多writer/通用恢复，不改旧预算/unknown，不等于完整业务profile执行器 |
 | M4 | Q1/Q2/Q5限定8例原文/采用/交付通过；选定23484tokens | 不是完整恶意/授权或全调查质量通过 |
 | I1/I2材料消费接缝 | 可选正文局部缺口保留；三处共用完整消息12KiB计量并明确超限结果，直接合同和独审通过 | 未重验真实模型质量；没有自动分组或让10条超限材料被消费 |
 | M5 | M5.1问题/查询纯合同通过；M5.2仅部分准备，完整模型步骤/循环未完成 | 新版Deep整环未完成，不能称调查v2已运行 |
-| 隔离迁移 | 新Agents85、新API8、旧工具51项直接合同通过；旧已跟踪服务文件与基线一致 | 不把历史真实回执算新v2 HTTP路径已验 |
-| v2 HTTP、M6—M9 | HTTP入口未注册/发布；统一循环、同版结果、Case衔接及领域接入仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
+| 隔离迁移 | 新包隔离合同保留；本块只新增独立v2应用，旧应用未注册新路径 | 新路径证据取本块02批，不沿用历史HTTP冒充 |
+| v2 HTTP、M6—M9 | 独立loopback查询应用已实测并停止；M6策略/M7同版结果/正式M8入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
 
 代码隔离的保存提交为`74d4d90`；后续文档/入口整理有独立提交，以分支`git log`为准。`v4`是设计修订号，`v2`是新执行器代际。旧调查版本继续保留，需变化的旧函数复制所需部分到新版修改，不能直接改旧函数/注册。
 
@@ -45,7 +42,7 @@
 
 | 问题 | 原因与已有处理 | 后续处理 |
 | --- | --- | --- |
-| v2真实HTTP入口尚不可用 | 新查询独立分派，新caller预留`/api/v2/investigation/query`，旧应用未注册它 | M5真实接缝用独立受控v2测试进程；M8再接正式新入口，不能回挂旧v1 |
+| 正式v2业务入口尚未交付 | 新路径已在独立受控应用实测；API负责tenant及全局bounds，Run/问题scope仍由可信caller与M3负责 | M8另验持久启动授权/显式新入口；不回挂旧v1，不把本次查询测试当正式发布 |
 | M5.2/循环未完成 | 已有基础模块不代表模型选择→工具→下一轮回答已走通 | 按主设计12.7先profile合同，再逐小步补齐并测试 |
 | 数据只能支持有限网络事实 | 当前来源outcome为unknown，缺认证/进程/业务批准资料 | 保性质unresolved、授权unknown；需要其他判断时先补实际来源/字段 |
 | 模型结构/语义会失败 | 首批7回复候选全拒绝；后续02批18回复中5个失败保留，含枚举、依赖遗漏、对象称谓、query冒充source等 | 提示/引用限制已在选定样例修订通过；保持严格采用，不做全模型可靠性承诺 |
@@ -63,7 +60,7 @@ M4的完整计数、失败trial/原因、修订和采用边界在已提交的回
 
 ```sh
 git fetch origin
-git switch codex/investigation-working
+git switch codex/investigation-review-20261024
 git pull --ff-only
 ```
 

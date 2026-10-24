@@ -1,5 +1,19 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 独立v2 HTTP与持久查询接缝实施合同
+
+承接03cb3c3三个前置块。共享场景卡在`docs/investigation/scenarios/network-observation.v1.json`，明确业务输入/评估预期/实际观察合同分离，复用现有三湖事件和canonical Alert，不再造数/写湖。原telemetry已含匹配事件，只验证范围/关联/留存，不评价补查增益。
+
+顺序：先卡与规格/预期、strict；再新增独立`query_api.py`、离线路由直接测试及原records/caller/gate相关验证；通过后才创建新临时PG最小writer/reader与随机本进程服务token，读回实际Alert/CH资料；最后新Run→原M3.begin→受限caller→新v2 HTTP→原records/CH→原子完成→独立PG读回。M1 profile descriptor只作为测试Run开始输入留存，不声称接了正式业务启动入口。
+
+独立应用复用原`get_current_user/require_permission('lake:query')`，不覆盖认证依赖、不启旧app.main/startup/worker，仅新路径。API读身份使用SELECT权限且默认只读的新reader；writer只对既有三张ledger表SELECT/INSERT及Run的UPDATE(id)行锁所需权限，新角色无super/bypassrls，不改共享policy或DDL。原CH reader只读保留；角色创建/关闭通过已有21SSH管理路径，密码不入Git/日志。
+
+测试控制器/探针作为可共享源码放活动change的probes；本机配置、临时进程/角色准备材料放忽略.local。真实Run/步骤/attempt以全新批次固定ID，新Run已存在即拒绝，不重放旧测试驱动。显式model cap0/tool cap1、tokens/cost0、unsettled1、DB绝对期限120秒；仅一次成功CH业务查询。认证反例及旧路径/工具拒绝不得触发CH；其他拒绝/越界在离线合同验证，不扩实测矩阵。
+
+真实读回核3事件/6工件、两类scope/初始profile输入、完整tool output等于工件正文、原始hash/字节及事件关联、stage模型0/工具1/无unknown、Run四列不变。Run保持running为测试资料预期，不发布manifest或宣布调查完成。结束按本次Popen身份停止API，新角色NOLOGIN并撤权，保Run与湖资料。先离线放行、再真实放行、最后未参与实现者窄审；旧版源码/注册/生产不动，不合main/部署。
+
+首批01在PG读取阶段因探针假定hostname/src_ip/dst_ip独立列而UndefinedColumnError，未创建Run或发业务HTTP；进程已核PID/创建时间停止，新角色NOLOGIN/撤权。只读核真实列及JSON键后，改从`alerts.raw_event.telemetry[0]`取材，先核telemetry tenant/event_id与canonical Alert归属/source_event_ids一致，再显式映射成M1既有规范化投影（hostname/src_ip/dst_ip）。SourceField.record_ref标checked_projection，PG真实路径、原raw_event hash及映射一起留存，不冒称这些是PG独立列。旧失败驱动快照保本机，新02用新角色/Run；不是重放unknown。CH资料只读核对1次与正式API activity查询1次分别计数，成功批合计2次CH SELECT，不写湖。
+
 ## 2026-10-24 I2完整messages预算最小合同（I1放行后）
 
 基线`f6a3fa8`，I1经修复/独审/保存后进入本块。新增纯`request_budget.py`作为完整消息规范化、canonical序列化与12KiB常量的唯一来源；M4消息组装、执行前检查、egress后的预留前检查共用。可消费对象是通过完整任务检查的messages，EvidenceView仍是可用于不同任务的有界材料视图，不承诺单独满足某任务开销。
