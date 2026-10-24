@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Project canonical Alert data only for the explicit new program intent
+
+b2.3d2 SHALL 新增独立完整source投影，先校new program intent版本，保canonical_program_alert_recon_projection.v1完整原文/hash与真实字段路径、M1限制，不调用旧projection/转换旧intent。仅caller已核tenant/actor/权限及四列owned Alert前提，函数不授予其真实性或I/O权限。
+
+#### Scenario: An unambiguous owned ordinary source is projected and exercised offline
+- **WHEN** new intent完整有效且单一telemetry/source UUID和受限字段可核
+- **THEN** 保完整source与规范化查询/精确refs；预建Run的newruntime SQL/Mock可一次查询得到有限4facts ready/model资格false，冷读不重派；旧restore对new begin尚拒，未伪称兼容完成
+
+#### Scenario: Old mixed ambiguous or unowned input is supplied
+- **WHEN** 旧/未知/混版意图、越权归属、source身份/数量/字段不符或正文混指令/答案
+- **THEN** 控制或来源错误直接拒、正文仅原样材料，未按正文改变策略；不回落旧runtime或截原文。无新Run/真实访问/发布，b2.4兼容仍前置
+
 ### Requirement: Bind a new explicit program start intent without upgrading old operations
 
 b2.3d1 SHALL 以新request/intent/ref/decision固定manual program路径及完整closed policy_versions，复用语义不变的显式StartBudgetPolicy；同tenant/key保持与旧完全同Run/executor命名空间。旧意图不升级，新旧同key异文必须冲突，未知schema/自洽混版拒绝。纯合同不授予权限、持久性或外呼。

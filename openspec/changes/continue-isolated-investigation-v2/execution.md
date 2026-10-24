@@ -1,3 +1,7 @@
+## 2026-10-25 b2.3d1新意图实际结果
+
+b90cb80后已审合同再只新增纯new intent，60直接/独立同60、6hash/6完整重建及27额外反例通过，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-contract-20261025.json)。同key Run身份不变/跨版冲突，旧不升级、pure不执行；d2/b2.4/a4.2后续，2.2/2.3未勾。
+
 ## 2026-10-25 b2.3c实际单次控制器
 
 503f75e后已审c合同再ProgramReconRuntime/25新＋57相关共82直接/独立同82、7hash/8完整账本cold重建限定ACCEPT0，[回执](../../../docs/operations/investigation-program-runtime-20261025.json)。pre/post commit失败分验、并发取消/owner buffer保持，normal4facts有限ready、模型未请求；旧代码/MD不变。0真实I/O/Run/发布，d1合同已审、d2/b2.4/a4.2待续，2.2/2.3未勾。

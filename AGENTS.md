@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.3d1新版启动意图限定通过
+
+b90cb80后spec/design/strict/合同ACCEPT0先行，仅新program_start_contract及18直接；＋oldstart13/newstate18/profile11共60直接/独立同60、6hash/6完整意图决定重建/UUID公式核验及27额外类型/旧原件/混版反例拒，receipt docs/operations/investigation-program-start-contract-20261025.json限定ACCEPT0。newrequest/intent/ref/decision含closed12版本，tenant/key Run/executor同旧；旧新同key异文冲突不升级/转换，StartBudgetPolicy语义/schema不改。pure双授权false，不造deadline/Run/持久性；下一d2显式新投影（合同待审）→b2.4兼容→a4.2，2.2/2.3未完，旧源码不改、无真实I/O/部署/合main。
+
 # 2026-10-25 调查b2.3c单次控制器限定通过
 
 503f75e后c合同/strict/独审先通过再新增ProgramReconRuntime，仅接newstore/manual/closedplan并复用原M3 gate。25新＋旧Fixed18/newstore30/M3gate9共82直接/独立同82、7hash/8完整账本与cold全输出重建，限定ACCEPT0，receipt docs/operations/investigation-program-runtime-20261025.json。预留实际回滚与已提交ACK未知分开验均0HTTP，重复/owner取消/duplicate竞态/observer buffer不误采用；独审另验reserve已commit未返回取消保unsettled/partial。normal全文1299B/一次Mock可4facts有限ready，旧报告3111B不改。初扩测试1fail1error为Case profile与M2 checked-error误断言，原件已留；审计助手包装比较失误单列，不归源码。0真实PG/HTTP/Run/发布，d1合同已ACCEPT0后新意图→d2投影→b2.4兼容→a4.2逐门；2.2/2.3未完，无部署/合main。

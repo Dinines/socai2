@@ -1,3 +1,5 @@
+**2026-10-25 b2.3d1新版启动合同：** 60直接/独立同60、6hash/6完整意图决定和27额外反例限定通过，[回执](../operations/investigation-program-start-contract-20261025.json)。new intent含closed12版本，同tenant/key身份与旧相同且跨版冲突，旧不升级；纯无权限/持久或执行证明。下一d2新投影→b2.4兼容后才a4.2，0实际Run/业务访问。
+
 **2026-10-25 b2.3c薄控制器：** 82直接/独立同82、7hash/8完整重建限定通过，[回执](../operations/investigation-program-runtime-20261025.json)。复用原M3 gate，确认提交后一次Mock；并发重复/取消和ACK未知不重派，正常4程序facts有限ready、模型资格false。旧controller/MD保持，0实际PG/HTTP/Run/发布；下一d1意图（合同已审）→d2投影→b2.4兼容→a4.2。
 
 **2026-10-25 b2.3b持久控制：** 新store91直接/独立同91、7hash/8完整SQL账本重建限定通过，[回执](../operations/investigation-program-runtime-store-20261025.json)。初审4P2及追加unknown-kind回退已修，原件链/真正前一状态/closing重建/late账与候选分开核；旧源码/Run列保持。仅SQL替身，下一已审c单次controller→d新intent/投影→b2.4兼容，a4.2仍后续，无真实新Run或发布。

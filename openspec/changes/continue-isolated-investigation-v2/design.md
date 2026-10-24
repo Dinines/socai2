@@ -1,3 +1,11 @@
+## 2026-10-25 b2.3d2新版正式来源投影实施前细卡（d1结束保存后实现）
+
+只新增program_alert_projection.py/project_program_alert_start及新直接合同。复制必要旧full projection校验/组装，不改旧alert_projection/start函数或用旧intent版本转换；先program_replay_decision完整校new intent/closed版本，之后caller已核current tenant/actor/双权限及owned四列Alert前提同b1。严格单source UUID/单telemetry、source tenant/event一致、TCP443/已核字段和显式路径；普通来源不依赖synthetic/evaluation答案/固定文本，多/重复/缺失/不支持一律拒，原JSONB完整保留无截断/提限。
+
+新完整document schema=canonical_program_alert_recon_projection.v1，其source/source_sha256/normalized projection/field_sources/normalization语义同b1。完整来源字节哈希进入CheckedAlert.data_only_text及checked_projection record_ref#projection/M1 scope sources，原UUID/IP拼写保全，实际查询M1规范化；正文的instruction/profile/budget不作控制。该文档新版本不重写旧已冻结原件，new intent唯一决定manual/new runtime，newcontext目标/Run/window/refs完整对应request；只生成BusinessProfileRequest，无claim/QueryAPI/模型/Run持久操作。
+
+预期纯：普通fullsource/等价JSONB/原路径/原文/大小上限/所有缺失歧义/跨tenant/event/源正文指令等b1反例保留；新projection拒旧/未知/混版intent，旧projection明确拒新intent，新函数不调用旧projection或旧normalize。额外SQLdouble+MockTransport集成以预建owned Run执行newProgramRuntime：begin先1event2artifact、scope_source完整，旧restore明确拒新begin（未兼容不能伪读通过）；随后一次Mock固定查询新有限4facts ready且model eligiblefalse，重复不新调用/行，原Run6列不变。不接真实PG/HTTP/模型，不声称a4.2启动或b2.4恢复发布兼容已验。先strict/合同独审再只d2实现/直接/独审保存；下一b2.4纯发布/持久发布/新restore/owned/API显式版本组合及旧MD字节保持。
+
 ## 2026-10-25 b2.3d1新启动意图实施前细卡（c结束放行后实现）
 
 仅新增program_start_contract.py的normalize_program_alert_start/program_replay_decision及新直接测试；旧start_contract原函数/旧request/intent固定版本保持，不重解释既存原意图。只读复用原StartBudgetPolicy及其fixed_alert_start_budget.v1描述（0model/0token/0cost、0或1工具、unsettled1、duration1..180、配置来源全部显式）；这些额度语义未变，不改服务器预算或引入默认。复制必要normalize/checked/replay结构，不用把新请求改写成旧版本后调用旧normalize/旧projection的方式转换。

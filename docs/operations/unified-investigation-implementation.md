@@ -1,3 +1,11 @@
+## 2026-10-25 b2.3d1实际新版启动意图
+
+c已b90cb80保存，d1细卡/spec/strict/合同ACCEPT0先行，仅新program_start_contract/18新＋oldstart13/newstate18/profile11共60直接；fresh_code独立同60、6hash/6完整意图/absent/matching/对初始和旧意图决定/SHA重建、UUID公式/输入保持以及额外27类型/坏旧原件/混版反例拒，限定ACCEPT0，[回执](investigation-program-start-contract-20261025.json)。newrequest/intent/ref/decision与closed12版本明确，same tenant/key与旧同Run/executor，新旧同key异文冲突不升级或转换。共享StartBudgetPolicy同caps/schema不改；pure flags都false，没有真实deadline/Run/数据库或查询/模型。d2新投影合同独审待续，b2.4恢复/发布/owned/API兼容通过后才a4.2；2.2/2.3未勾，旧源码不改。
+
+## 2026-10-25 b2.3d1新意图实施前预期
+
+c已b90cb80提交推送/独审限定ACCEPT0，d1细卡/spec/strict与fresh_design合同先限定ACCEPT0。只新program_start_contract，显式new request/intent/ref/decision/12版本组合，复用同语义StartBudgetPolicy，tenant/key Run/executor同旧以跨版本同key冲突；旧意图仅checked格式后拒，不转换/升级/回落。纯may_begin和external都false；先本块直接/独审保存，d2新projection和b2.4兼容后才a4.2。无deadline/Run/实际I/O/权限验证。
+
 ## 2026-10-25 b2.3c实际单次执行限定结果
 
 b已503f75e推送/c合同fresh_design限定ACCEPT0后，仅新增ProgramReconRuntime和25测试；＋旧Fixed18/newstore30/M3gate9共82直接与独立同82、7选中文件hash/8完整账本hydrate及cold全输出/SHA重建，限定ACCEPT0。[回执](investigation-program-runtime-20261025.json)。独审补reserve实际commit未返回取消：HTTP0、tool1/unsettled1/partial、取消重抛/重复不增行。首次与冷读包装本有receipt/artifact/repeated差异，审计辅助首全等误断言纠正后核全cold及candidate/state，不归源码。
