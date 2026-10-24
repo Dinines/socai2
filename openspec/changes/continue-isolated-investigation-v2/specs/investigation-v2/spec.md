@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Project an owned canonical Alert into a frozen manual start profile
+
+M8a4.1b SHALL 纯读取caller已核owned的canonical Alert四字段投影及当前intent/tenant，按当前network_observation.v1仅接唯一telemetry和唯一一致source UUID，核tenant/target/类型与TCP443后构造M1/业务profile。来源真实四字段、完整raw_event嵌套正文、原表示及逐字段路径以版本化data-only文档/hash冻结；显式normalized projection解释M1参数路径，不冒称PG有相应实体列。普通非synthetic告警可用，不依赖评测卡/固定测试描述；本块不证明实际认证、owned SQL或持久启动。完整文档会结构性超过现512B Alert消费门；b1仅验冻结/M6 begin/a1及正确partial，b2须另验完整留存与有界消费分离并使正常有限事实/ready通过后才能a4.2。不得用截断原件或提高现门限掩盖此接缝。
+
+#### Scenario: A supported owned source is frozen without executing its text
+- **WHEN** 当前允许的tenant与intent/Alert一致，唯一telemetry与唯一source ID精确绑定且字段满足当前政策
+- **THEN** 返回同intent Run/窗口/profile的单成员BusinessProfileRequest，实际来源/路径/hash原件可在scope_sources读回；正文中的指令只是材料，不能改profile/范围/预算/结论，无I/O/Run/外呼。与M6 begin/a1恢复保持严格shape兼容；在现A3消费门下明确projection_blocked/partial，不声称本b1已可正常ready
+
+#### Scenario: A source is missing ambiguous inconsistent unsupported or too large
+- **WHEN** 多/缺telemetry或source ID、tenant/target/来源绑定不符、非法字段/JSON/协议或超过材料界限
+- **THEN** 明确拒绝，不默认取首项、补假值/合并/裁剪或截断；原材料不改。后续匹配重试读已冻结原件，不投影当前Alert覆盖原Run；后续M3/I2大小gate仍独立有效
+
 ### Requirement: Normalize stable manual alert start operations without granting execution
 
 M8a4.1 SHALL 在当前已核认证/启动permission及tenant/actor的调用方前提下，纯规范化当前alert_recon操作：稳定tenant内operation UUID、目标Alert、≤5分钟UTC半开窗口、版本和可信服务端有界预算政策。Run身份只能由固定namespace/tenant/key派生，不能将参数、actor或时间变化变成另一Run；完整请求含actor/目标/窗口/所有版本及预算政策，按规范JSON产生hash/ref。owner为内部派生值，不是caller授权。当前仅manual，无Case/自动/Deep或实际持久/外呼。

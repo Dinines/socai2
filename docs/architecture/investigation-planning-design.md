@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.1b1完整冻结：** 已过47直接/独立同47、5hash/6观察，普通来源真实四列/路径/全文冻结及M6内存begin-a1兼容见[回执](../operations/investigation-alert-projection-20261025.json)。完整doc1299B使现Alert512消费门明确partial，未正常ready；b2分离完整留存和消费并通过正常有限事实后才a4.2，保持原件和门限。
+
 **2026-10-25 M8a4.1纯操作合同：** 稳定tenant/key身份、完整请求哈希/同键冲突、仅读重试判定经44直接/独立同44、5hash/4完整观察限定通过，[回执](../operations/investigation-start-contract-20261025.json)。纯层不证auth/owned/持久唯一，不创建deadline/Run/调用；a4.1b来源投影、a4.2原子准入、a4.3显式写入口、a4.4受控新Run依次推进。
 
 **2026-10-25 M8a3.3真实GET：** 两个独立服务的真实共享service认证/GET已过2成功及14拒绝，原Run6/14/MD3111字节/manifest/execution及原M6已核baseline不变，临时进程和角色已清理；[实际回执](../operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）。仅显式读取，启动入口/真实用户RBAC撤销、Case/Deep和部署另步。

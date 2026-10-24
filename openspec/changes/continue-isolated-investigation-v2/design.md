@@ -1,5 +1,17 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-25 M8a4.1b正式Alert纯投影细卡（9bc7498）
+
+a4.1已44直接/独立限定通过并保存。合同独审先发现必须修：完整文档结构性超过现EvidenceView Alert 512B门，极简示例未含field_sources已691B；不只是偶发大小问题。选定拆步：本b1只验完整冻结和与M6 begin/a1恢复，当前正常短来源也会触发消费阻断、本块只能验证明确partial交接；随后b2独立合同/实现分离完整留存与有界消费视图，正常有限事实/ready通过后才进入a4.2，不能据b1放行可用启动。512/I2门不扩大、原件不截断。b1只新增纯alert_projection/project_alert_start，输入为本次规范intent、当前TenantPrincipal、可信caller已owned SELECT所得canonical Alert的四个字段id/tenant_id/source_event_ids/raw_event，以及非空ownership_check_ref。不得把HTTP正文或仅有ref字符串当归属证据；实际认证/permission/同事务SQL在a4.2/3。复用a4.1严格intent重建，current tenant许可独立核；调用方还须将当前actor与intent绑定。本块不读DB/创建Run/派发。
+
+当前network_observation.v1仅支持raw_event为JSON object，telemetry为恰好一个object，root source_event_ids恰好一个非nil唯一UUID且等于该telemetry.event_id，telemetry.tenant_id等于canonical/current tenant。多telemetry/多个source ID先明确unsupported，不能默认第一条/静默裁剪成已覆盖。host/source_ip/dest_ip/dst_port/protocol从该真实telemetry取、类型严格，沿M1已支持TCP/443；无synthetic必需/评分卡参数/固定测试正文。异租户/目标、缺字段/非法JSON/空缺或重复来源/歧义/不支持协议均在首次准入前拒，原Alert不变，不补假字段。此窄支持面不是全量告警解析器。
+
+冻结文档canonical_alert_recon_projection.v1包含source（四字段完整PG选中值，JSONB可由字符串解析，原始嵌套文本值不改）、source_sha256、projection（显式hostname/src_ip/dst_ip、规范source_event_ids，以及原dst_port/protocol的最小raw_event.telemetry[0]映射）、field_sources（逐参数到source中的真实路径）。正文只作data_only，来源中的instruction/profile/预算/结论文字不成为控制；IP原表示留source/SourceField、CheckedAlert沿A1等价归一化。record_ref绑定整个文档hash及/projection，M1参数路径相对该显式projection而非声称PG有hostname/src_ip/dst_ip列；source_event_ids规范UUID另保原JSON数组于source。PG JSONB的canonical快照不能声称原Kafka wire字节已恢复。
+
+输出仅BusinessProfileRequest：原intent tenant/Run/窗口/profile/有限objective，单成员CheckedAlert和target/ownership ref均服务端构造，data_only_text保上述完整文档；make_recon_plan/scope_snapshot沿原M1/M6，不改旧函数或M1路径。canonical_json沿现1MiB材料上界，超限拒且不截断；这不保证后续M3序列化或I2消息门一定通过，各自原gate仍执行。匹配重复应在a4.2读原意图和冻结begin，不再投影当前Alert，故当前Alert后来编辑不改变原Run。
+
+预期直接测试：普通非synthetic/有指令文本完整冻结且控制不变；JSONB字符串与parsed形式同投影；每字段真实路径/原raw hash/Unicode/SourceField原IP与canonical过滤、所有ID/ref/窗口/计划精确。缺/多telemetry、缺/多/重复/错/nil source ID、wrong tenant/alert、非法JSON/端口bool或str/协议/超限均拒且源对象不改；来源后来变化产生不同doc/source hash而非覆盖。与真实M6 begin内存SQL输送及a1恢复至少一例，验证严格begin shape未变，不误写持久或auth已验；另以正常小来源实测文档>512B导致现A3 material_projection_blocked/alert_excerpt、facts空/六问题unassessed/partial，不能写成ready。先strict/合同独审，再只纯b1/直接测试/结束独审；b2分离消费与完整留存是a4.2前必须门，细卡另写。
+
 ## 2026-10-25 M8a4启动分块与a4.1纯操作合同（77e9f4d）
 
 a3.3已真实/独审限定通过并保存推送，只读不代表已启动。fresh_design只读预审后采用a4.1纯操作→a4.1b正式Alert投影→a4.2同库原子准入→a4.3显式写权限/派发→a4.4受控新Run顺序；新业务只手动alert_recon/现网络有限目标，不接Case/自动策略/Deep。实际PG三表41列/10约束已定向核：Run PK可竞争，case_id必填文本非Case FK，events(run_id,seq)唯一/append-only；优先评估确定性Run PK+独立不可变操作工件方案，但a4.1不证明持久唯一、不执行DDL。

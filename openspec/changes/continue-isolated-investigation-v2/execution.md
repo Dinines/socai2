@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.1b1实际完整冻结
+
+基线9bc7498；规格/strict与512门结构性问题修订后合同独审通过，再alert_projection/13新；47直接/独立同47及5hash/6完整观察/所有字段路径原文核过，限定ACCEPT0。[回执](../../../docs/operations/investigation-alert-projection-20261025.json)。新普通来源无synthetic/评分卡依赖，完整source及显式projection保来源sha/实际路径，M6 begin SQL双1/2→a1同版恢复；normal1299B明确现A3partial/无事实/六问未评估，b2正常消费ready是a4.2前置。实际PG/HTTP/Run/工具/模型0，不改旧源码或归档change，2.2/2.3未勾。
+
 ## 2026-10-25 M8a4.1纯操作实际结果
 
 77e9f4d先规格/strict/合同独审ACCEPT0，再start_contract与13新测试；44直接和独立同44通过，5hash/4冻结intent完整重建一致、额外6类型反例拒，[回执](../../../docs/operations/investigation-start-contract-20261025.json)最终限定ACCEPT0。稳定ID只tenant/key，完整request hash含actor/目标/窗口/版本/显式服务端预算，匹配仅读/异文冲突、无执行授权；0业务I/O/Run/deadline/模型，下一正式Alert投影及原子准入，原2.2/2.3未勾。

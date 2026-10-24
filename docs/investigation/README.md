@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.1b1：** 正式来源纯冻结经47直接/独立同47、5hash/6组完整观察和字段路径保全限定通过；[回执](../operations/investigation-alert-projection-20261025.json)。实际字段/原文不依赖synthetic/评分卡，M6内存begin-a1恢复保持；normal全文1299B仍触发旧512消费门而partial/事实空。下一b2分离完整留存/消费并验正常ready后才原子启动，不把本块当可用入口。
+
 **2026-10-25 M8a4.1：** 纯操作身份/请求绑定与重试判定已过44直接/独立同44、5hash/4观察及6额外类型反例，限定ACCEPT0；[回执](../operations/investigation-start-contract-20261025.json)。同key异文冲突不会换Run刷新额度，匹配仅读、不授权begin/外呼；尚未持久去重或真实启动。下一先正式Alert来源投影，再原子准入/写权限/真实新Run。
 
 **2026-10-25 M8a3.3真实GET：** 两个独立loopback进程已完成16项GET（2成功/14拒绝），实际service认证及当前actor/tenant转发、原6/14全选中列/正文checksum、M7 manifest/MD3111字节/execution均核同；新身份NOLOGIN/撤权/活动0，owned进程已停。[真实回执](../operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）。probe完整DTO/JSON类型P2修前原件/red保留，12新＋24相关36直接通过；无新Run/查询/模型/通知，不代表持久启动/Case/Deep或生产用户RBAC撤销已验。

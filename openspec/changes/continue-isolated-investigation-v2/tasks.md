@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.1b1限定通过：** 47直接/独立同47、5hash/6冻结重建/字段路径保全，[回执](../../../docs/operations/investigation-alert-projection-20261025.json)。1299B完整文档仍受512门而partial，非ready；b2分离和正常ready为a4.2前置，2.2/2.3未完。
+
 **2026-10-25 M8a4.1限定通过：** 44直接及独立同44、5hash/4intent和额外6类型反例，[回执](../../../docs/operations/investigation-start-contract-20261025.json)。仅纯操作/重试判定，无持久启动；a4.1b来源投影、a4.2原子准入/后续入口及2.2/2.3仍待。
 
 **2026-10-25 M8a3.3真实读取已执行：** probe12新＋24相关36通过、P2完整DTO及JSON类型漏验修后代码独审ACCEPT0；两个新服务16GET、原6/14和原M7结果不变，进程/身份清理。[真实回执](../../../docs/operations/investigation-result-http-read-20261025.json)结束独审限定ACCEPT/0必须修（独立36项、10源码/2helper hash、READ ONLY PG全14及完整DTO/进程/权限核验）；持久启动/Case/Deep及2.2/2.3未完。

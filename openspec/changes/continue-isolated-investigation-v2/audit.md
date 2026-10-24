@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.1b1完整来源冻结结束审阅
+
+fresh_design先阻断合同：完整source/projection文档最小结构已超Alert512B门，不能以偶发gate概括正常可用性。选定b1完整冻结+M6 begin/a1兼容及明确partial，b2分离正常ready是a4.2前置后合同ACCEPT0。fresh_code独立47、5hash/6完整冻件descriptor/controls/sources/plan/A3或拒绝重建一致；逐SourceField真实projection路径及嵌套Unicode/null/bool/数字/指令原文保全、输入不变核过，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-alert-projection-20261025.json)另窄核计数/哈希/边界一致；一次字段结构探看假设误写已纠正，非源码失败。normal1299B实测alert_excerpt512/partial/facts0/六问unassessed，不追认ready/持久启动/auth已验。
+
 ## 2026-10-25 M8a4.1纯操作结束审阅
 
 fresh_design合同限定ACCEPT0后仅新增start_contract及13直接；fresh_code独立44（13+M3state12/M1scope8/profile11）、5hash/4组完整intent/决定重建及独立UUID5身份核、输入不变通过，另6个自洽rehash布尔/浮点预算拒，限定ACCEPT/0必须修。公共[回执](../../../docs/operations/investigation-start-contract-20261025.json)计数/hash/观察/局限另窄核一致；没重跑累加44。纯结构/selfhash与samekey比较不代替当前auth/owned/持久唯一/执行，both may_begin/external false；后续a4.1b/a4.2—4另验。

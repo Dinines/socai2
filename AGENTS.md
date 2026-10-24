@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a4.1b1完整来源冻结限定通过
+
+9bc7498后合同独审先发现完整文档结构性超过Alert512B消费门，已拆b1完整冻结/兼容/当前partial及b2正常消费门；b1修后合同ACCEPT0再实现。alert_projection13新＋start13/restore11/A3material10共47、独立同47/5hash/6完整观察/SourceField路径及原文保全通过，receipt docs/operations/investigation-alert-projection-20261025.json限定ACCEPT0。普通无synthetic来源可完整冻结，M6 begin SQL双1event2artifacts→a1精确恢复；normal1299B仍经现A3 alert_excerpt512阻断、facts0/六问unassessed/partial，绝不计ready/可用启动。下一b2另卡留存/消费分离，正常有限事实ready后才能a4.2原子准入；不截原件/提门，不改旧代码，0真实PG/HTTP/模型/Run，2.2/2.3未完，无部署/合main。
+
 # 2026-10-25 调查M8a4.1纯启动操作限定通过
 
 77e9f4d后先spec/design/strict及fresh_design合同ACCEPT0，新增start_contract/13新＋M3state12/M1scope8/profile11共44与独立同44通过，5hash/4 intent观察重建、6额外类型反例拒，fresh_code代码及公开receipt限定ACCEPT0。回执docs/operations/investigation-start-contract-20261025.json。tenant/key派生唯一操作身份，actor/目标/窗口/版本/服务端预算入独立request hash，同键异文冲突、匹配仅读；both may_begin/external false。duration1..180无生产默认/无真实deadline，0I/O/Run/模型。下一a4.1b正式canonical Alert投影，a4.2同事务Run+M6 begin+独立marker、a4.3写权限/首次commit后派发、a4.4新受控Run；当前不证实际auth/owned/持久唯一/Case/Deep，2.2/2.3未完，无部署/合main。

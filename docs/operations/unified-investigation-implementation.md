@@ -2,6 +2,14 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-25 M8a4.1b正式来源纯投影实施前预期
+
+**b1实际限定通过：** 新alert_projection/13直接＋start13/restore11/A3material10共47与独立同47通过，5hash/6完整冻结观察及所有SourceField路径/嵌套Unicode等原文保全核过，fresh_code限定ACCEPT0；[回执](investigation-alert-projection-20261025.json)。普通无synthetic标记来源可完整冻结，M6 begin内存1event/2artifacts→a1恢复精确；0真实I/O。正常doc1299B经原A3明确alert_excerpt512阻断、facts0/六问unassessed/partial；b1不计正常ready或可用启动。下一b2消费/留存分离通过正常有限事实ready后才能a4.2。
+
+合同独审发现完整文档最小结构超过现Alert 512B消费硬门（独立示例未含field_sources已691B），属于必补可用性边界。采用b1完整冻结/原M6 begin-a1兼容＋实测现A3明确partial，再b2另立完整留存/消费视图分离；正常有限事实ready通过后才能a4.2。保原件/512门/I2不变，不借大小gate兜底宣称当前可正常启动。
+
+9bc7498后，先合同/strict/独审：将已核owned canonical Alert四字段的真实单telemetry/单sourceUUID及全文/路径/hash冻结成M1/profile，不依赖synthetic或评测答案；多来源歧义/缺错字段/不支持/超限明确拒，不静默取首条或截断。纯函数0I/O/Run/权限证明，M6内存begin/a1恢复兼容另直接验；真实归属SQL/原子准入/入口写权限在下一块。详细预期见活动design顶卡。
+
 ## 2026-10-25 M8a4.1纯启动操作实施前预期
 
 **实际放行：** 新start_contract/13直接＋M3state12/M1scope8/profile11共44及独立同44通过；5hash/4组完整intent与重试决定重建一致，另6个自洽rehash布尔/浮点预算反例均拒，限定ACCEPT/0必须修。[回执](investigation-start-contract-20261025.json)。身份tenant/key稳定，actor/目标/窗口/预算变更同key冲突；matching仅read_existing_only、fresh仅requires_atomic_admission，均不授予begin/外呼。纯层无now/deadline/I/O/Run，实际鉴权、owned来源、持久唯一、原子准入和派发仍待下一块。
