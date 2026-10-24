@@ -1,3 +1,5 @@
+**2026-10-24 调查M8a2限定通过：** 新owned reader按当前tenant/Run同锁核唯一begin及所有原工件归属/hash，自动恢复上下文并读同M7结果；13新＋43相关及独立同56、6hash/3组完整读回通过。[回执](docs/operations/investigation-owned-reader-20261024.json)。只SQL替身，无当前Alert/新账本或调用；实际auth/permission/PG/显式HTTP下一步，不改旧入口或部署。
+
 **2026-10-24 调查M8a1限定通过：** 历史读上下文从原owned begin重建，当前读者与原principal分开，正文/控制/profile/plan字节hash精确校验；11新＋40相关及独立同51、6hash/3组重建通过。[回执](docs/operations/investigation-profile-restore-20261024.json)。仅纯恢复，实际认证/存储归属/正式HTTP与启动后续逐块；无新业务/模型/部署或合main。
 
 **2026-10-24 调查M7c实际发布：** 原稳定Run只增1事件4工件，现6/14；全新进程读到同manifest/report/execution，原M6已核列与正文校验和不变，额外查询/模型0。临时身份已清理/子进程exit0，通知未投递。[回执](docs/operations/investigation-publication-pg-seam-20261024.json)、[受控合成报告原字节示例](docs/investigation/examples/fixed-recon-published-20261024.md)；160合同及probe独审43通过，真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。仅有限目标complete_for_scope；M8业务入口/stream、Case与Deep价值仍待，无部署/合main。

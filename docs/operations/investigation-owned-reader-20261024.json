@@ -1,0 +1,118 @@
+{
+  "schema": "investigation_owned_reader.v1",
+  "date": "2026-10-24",
+  "baseline": "9f75772",
+  "status": "ACCEPT_limited_owned_SQL_read",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix": 0
+  },
+  "direct_tests": {
+    "new": 13,
+    "restore": 11,
+    "publication_store": 21,
+    "publication_probe": 11,
+    "related": 43,
+    "total": 56,
+    "exit": 0
+  },
+  "source_sha256": {
+    "services/agents/app/investigation_v2/result_reader.py": "f1634fd22b43566cd0085cad4b7f26a75f197dc8ae6197fe861d07b7dd5cc4c6",
+    "services/agents/tests/test_owned_result_reader_contract.py": "4fd71f168205cfbf183a13269287636e5b59afd58d0034cde1d88dd0f4a96454",
+    "services/agents/app/investigation_v2/recon_publication_store.py": "96e1196d26904864a871a8841d749962b8f9045f73c6725b565e91a1d4944610",
+    "services/agents/app/investigation_v2/profile_restore.py": "1a90ee2568ca77e414a98f7f0aab387305bea45ce935c11048641be617a7544d",
+    "services/agents/tests/_recon_memory_ledger.py": "188a8631b7e9d5edcba4fb7eb1117a8bdda7a7642cf5da709006e657bd87df0a",
+    "services/agents/app/investigation_v2/execution_store.py": "818183f5c4214716893de0b84536718f3d75034d593ab105c1d282ee4519e833"
+  },
+  "observations": [
+    {
+      "case": "published",
+      "publication_state": "published",
+      "schema": "owned_fixed_recon_result.v1",
+      "profile": "alert_recon",
+      "target": {
+        "id": "121d8fa6-d431-5428-b4f4-6b928b40e91b",
+        "type": "alert"
+      },
+      "legacy_run_status": "running",
+      "new_run_state": "finished",
+      "manifest_ref": "recon-manifest:164bec03908981b5e67bfa2bbac59dcac8ef99c244f318fb5c8c78ce5a85881e",
+      "markdown_sha256": "19db6a3ba15f5669a1d980f408e6fa103a8a5aff68a8977e4747dfc7e791c904",
+      "events": 6,
+      "artifacts": 14,
+      "read_added_rows": 0,
+      "read_dispatched_calls": 0,
+      "output_sha256": "0482cd6652ce1875103ee414c097bc12292ea020b3fee32bb4c617f53fb1cdd3"
+    },
+    {
+      "case": "unpublished",
+      "publication_state": "not_published",
+      "schema": "owned_fixed_recon_result.v1",
+      "profile": "alert_recon",
+      "target": {
+        "id": "121d8fa6-d431-5428-b4f4-6b928b40e91b",
+        "type": "alert"
+      },
+      "legacy_run_status": "running",
+      "new_run_state": null,
+      "manifest_ref": null,
+      "markdown_sha256": null,
+      "events": 5,
+      "artifacts": 10,
+      "read_added_rows": 0,
+      "read_dispatched_calls": 0,
+      "output_sha256": "76d3fe254499dc391eb89ff9d81c22cabfadb42fcc1b8dc5f170e6b73534b990"
+    },
+    {
+      "case": "cancelled_published",
+      "publication_state": "published",
+      "schema": "owned_fixed_recon_result.v1",
+      "profile": "alert_recon",
+      "target": {
+        "id": "121d8fa6-d431-5428-b4f4-6b928b40e91b",
+        "type": "alert"
+      },
+      "legacy_run_status": "running",
+      "new_run_state": "cancelled",
+      "manifest_ref": "recon-manifest:29bfca1894832823fd1ee5be0c551275098d798f8c4200c82b6b8ffca84378be",
+      "markdown_sha256": "9461233d95e9513e7f4b52ac5238b984731912c5cc9e4ecbc11039137ca75901",
+      "events": 6,
+      "artifacts": 14,
+      "read_added_rows": 0,
+      "read_dispatched_calls": 0,
+      "output_sha256": "74ff2a9f58d8c1e618baaf6043737204a23d3ad3ecdda0e7f51146e676151893"
+    }
+  ],
+  "local_frozen_reads_sha256": "3898b4cc7447565a977b61b024d22217c96284843282a8cc0d8dd03911587666",
+  "independent_audit": {
+    "reviewer": "fresh_code_audit",
+    "status": "ACCEPT_limited",
+    "must_fix": 0,
+    "actual_tests": {
+      "owned_reader": 13,
+      "restore": 11,
+      "publication_store": 21,
+      "publication_probe": 11,
+      "total": 56,
+      "exit": 0
+    },
+    "source_test_hashes_matched": 6,
+    "frozen_reads_rebuilt": 3,
+    "all_returns_output_hashes_and_ledgers_equal": true,
+    "additional_begin_only": "ready/not_published; candidate/report absent, no row/time/dispatch changes",
+    "M7_internal_helper_extraction_equivalent": true,
+    "scope": "SQL double only, current authentication/permission and real PG remain downstream",
+    "tooling_notes": [
+      "initial file-view command used wrong test filename; no test executed by that view",
+      "first independent reconstruction script omitted agents sys.path; corrected and full reconstruction succeeded"
+    ],
+    "evidence_storage": "auditor tool observations; no separate raw audit file/SHA claimed"
+  },
+  "limits": [
+    "Actual reader/store code with SQL transport double only; no real PG or HTTP/credential validation. Current TenantPrincipal/read permission is a trusted caller precondition.",
+    "Original owner/scope loaded from owned unique begin; current Alert is not loaded. Read uses M3 Run row lock/UPDATE(id) privilege but issues no business DML.",
+    "M7 public read path remains same locked algorithm after internal helper extraction; current projection separates legacy status and publication dimensions.",
+    "No new Run/events/artifacts, queries/models, Case, notification, deployment or main merge. Real PG and explicit authenticated HTTP remain later steps."
+  ]
+}

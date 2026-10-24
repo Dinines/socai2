@@ -1,5 +1,7 @@
 # Investigation v2 — 独立开发线
 
+`OwnedReconResultReader.read`按当前可信principal与tenant/Run加载唯一owned begin、校所有引用后恢复原上下文/owner并同锁调用M7。56直接/独立同56通过，不加载当前Alert或写账本；实际认证/PG/HTTP后续。回执：docs/operations/investigation-owned-reader-20261024.json。
+
 `profile_restore.restore_alert_read_request`仅从已核owned begin/state与当前认证TenantPrincipal恢复原scope/profile/plan，不加载当前Alert或授予dispatch。51直接及独审通过；实际存储归属/permission在后续读取与HTTP核验。回执：docs/operations/investigation-profile-restore-20261024.json。
 
 M7c已在原固定Run实际追加发布（现6/14）并通过新独立进程同版读取、PG字节/所有边/原基线校验；无新查询/模型，临时身份清理，真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。回执：docs/operations/investigation-publication-pg-seam-20261024.json。M8业务HTTP/真实stream仍未接，通知只是未投递描述。

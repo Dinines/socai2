@@ -40,6 +40,12 @@ class MemoryLedger:
         assert "set_config('app.current_tenant_id'" in sql
         assert args == (str(self.run["tenant_id"]),)
 
+    async def fetch(self, sql, *args):
+        assert "FROM investigation_events" in sql and "ORDER BY seq ASC LIMIT 2" in sql
+        run, tenant, kinds = args
+        matches = [e for e in self.events if (e["run_id"], e["tenant_id"]) == (run, tenant) and e["kind"] in kinds]
+        return deepcopy(sorted(matches, key=lambda e: e["seq"])[:2])
+
     async def fetchrow(self, sql, *args):
         if "FROM investigation_runs" in sql:
             return deepcopy(self.run) if args == (self.run["id"], self.run["tenant_id"]) else None

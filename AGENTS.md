@@ -1,3 +1,7 @@
+# 2026-10-24 调查M8a2 owned读取限定通过
+
+从9f75772先卡/strict/独立合同，再result_reader及M7内部同锁读helper提取；13新＋43相关56与独立同56/6hash/3完整读重建通过，限定ACCEPT/0必须修。当前tenant许可先验，同Run锁/唯一begin全owned event-body-state核验、a1恢复、owner服务端取、同M7读；无需当前Alert/客户端scope或owner，不改账本/预算。回执docs/operations/investigation-owned-reader-20261024.json。仅SQL替身，actual credential/permission/真实PG/HTTP仍待；下一显式新只读HTTP沿原权限，不改旧路由/权限默认，无部署/合main，2.2/2.3未完。
+
 # 2026-10-24 调查M8a1冻结读上下文限定通过
 
 从2b87675先合同/strict及独立设计审阅，再profile_restore纯层；11新＋40相关51与独立同51/6hash/3组原件重建通过，限定ACCEPT/0必须修。由owned begin恢复原M1 controls/sources/profile/plan并精确核hash/字节/引用，当前读者tenant与frozenprincipal身份分开；改当前Alert不影响历史scope，纯恢复不授予启动/接管权限。docs/operations/investigation-profile-restore-20261024.json；无真实PG/auth/HTTP，后续a2持久归属读取及显式HTTP/启动仍待。旧代码/Run/unknown/费用保持，阶段提交推送，无部署/合main，2.2/2.3未完。

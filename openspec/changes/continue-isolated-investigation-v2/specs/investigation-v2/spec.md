@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Read owned fixed results without caller-supplied owner or scope
+
+M8a2 SHALL 在当前已认证读取许可的TenantPrincipal与显式tenant/Run下，由服务端加载owned Run和唯一unified_recon_started事件及原begin输入/state工件，核tenant/run/event、kind/agent、payload/body/state hash/receipt及初始owner，再用a1恢复原读上下文、复用M7精确manifest读取。调用方不得指定owner/scope/source正文或以旧Run.status猜测新完成。该层 SHALL 与M3协调同Run行锁，在同一事务内核上下文/当前版本并返回，不新建Run/事件/工件或派发；当前HTTP认证/permission撤销接线在后续独立入口验证。
+
+#### Scenario: A currently permitted reader obtains a frozen result by Run ID
+- **WHEN** 当前principal允许该tenant，Run及唯一begin marker、所有owned工件完整，可能已发布也可能仅有进度
+- **THEN** 服务端自行确定历史owner/profile/scope并得到同M7 manifest/MD/execution；返回显式profile/target/objective/Run和publication状态，未发布无正式MD；不加载当前Alert或改账本/预算，另一个同tenant主体也只使用当前读取许可
+
+#### Scenario: Ownership or frozen begin is missing ambiguous or corrupt
+- **WHEN** 无当前tenant许可、该tenant无Run、无/重复begin marker，或事件/工件/owner/引用/版本不匹配
+- **THEN** 明确拒绝，不接收caller修补上下文、不搜索其他tenant/旧报告、不创建新Run或接管unknown；驱动错误只返回明确持久读取错误，不回显DSN/原文。实际PG/HTTP效果在直接替身与后续受控接缝分别记录
+
 ### Requirement: Restore a fixed result read context from its owned frozen input
 
 M8a1 SHALL 先以纯函数从已核归属的M6 begin输入/状态工件恢复alert_recon读上下文，再接正式HTTP与启动。当前读取权限必须来自当前认证主体；旧scope内principal只是冻结来源，不给当前caller授权。恢复 SHALL 验原input_hash、scope_hash、scope_sources各text/hash/UTF-8字节及完整引用、profile/运行和完成政策版本；用现有M1合同重建后，controls/sources/descriptor/plan须与冻结原件精确相等。当前可变Alert正文不参与既有结果读上下文，不因Alert后来编辑改变历史manifest。

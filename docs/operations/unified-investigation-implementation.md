@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 M8a2 owned持久读取实施前预期
+
+**a2实际放行：** result_reader＋M7同锁helper提取、13新及43相关56，独立同56/6hash/3完整读重建通过，限定ACCEPT/0必须修；[回执](investigation-owned-reader-20261024.json)。published/unpublished/cancelled及begin-only保持旧/新状态分开，无current Alert加载/新账本/派发，原M7公共读行为保持。仅SQL替身，当前认证/permission是caller前提，实际PG/HTTP下一步。审阅工具路径/导入失误已修复重跑，非源码失败。
+
+9f75772后只接服务端owned reader：当前principal tenant允许集合→同Run锁/唯一begin marker→原工件完整归属/引用/字节/hash→a1还原→同事务复用M7精确manifest读取。caller只给tenant/Run，不接scope/owner或当前Alert；无legacyfallback/新Run/账本/模型/工具。M7公共read内部抽locked helper，行为保持；返回显式profile/target/objective/旧状态与publication分开。先strict/独立合同、SQL替身直接/独审；实际认证/permission/HTTP及PG后续，不把TenantPrincipal结构检查说成真实认证已过。
+
 ## 2026-10-24 M8a1冻结读上下文实施前预期
 
 **a1实际放行：** 新profile_restore及11合同，相关M1scope8/profile11/pubstore21共51，独立同51/6hash/3冻件重建及恢复request同manifest读取不增数据/调用，限定ACCEPT/0必须修；[回执](investigation-profile-restore-20261024.json)。当前tenant与原principal分别校，原M1完整重建核版本，无I/O/当前Alert加载/启动权限。纯层不追认实际auth/permission/storage owned；a2与HTTP后续。审阅模块名一次误写已补scope8，非源码失败。

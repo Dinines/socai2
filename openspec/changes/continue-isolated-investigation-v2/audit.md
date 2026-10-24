@@ -1,3 +1,7 @@
+## 2026-10-24 M8a2 owned reader结束窄审
+
+fresh_design合同ACCEPT0；fresh_code独立56、6hash/3 frozen read重建/完整输出与账本一致，补begin-only进度读无新行/时钟或调用，限定ACCEPT/0必须修。M7 helper抽取原逻辑等价，单锁校currenttenant→唯一begin→owned工件→原scope/owner→当前manifest。审阅文件名及reconstruction sys.path两工具失误纠正后重跑，非源码失败。[回执](../../../docs/operations/investigation-owned-reader-20261024.json)。仅SQL替身，实际认证/permission/PG/HTTP后续。
+
 ## 2026-10-24 M8a1纯恢复结束窄审
 
 fresh_design合同ACCEPT0；fresh_code独立实际51项（restore11/scope8/profile11/pubstore21）、6hash/3组冻件重建一致，补同tenant另一读者恢复后读同manifest/MD/execution不增账本/调用，限定ACCEPT/0必须修。审阅首scope模块名误写Loader ImportError与源码分开，43实际后补正确8，不重复累加。[回执](../../../docs/operations/investigation-profile-restore-20261024.json)。仅pure，TenantPrincipal是当前认证许可前提载体，a2/HTTP真实permission与owned归属仍待；无业务网络。

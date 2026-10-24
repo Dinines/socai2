@@ -1,3 +1,5 @@
+**M8a2最新：** owned reader的同锁tenant/Run→唯一begin工件→冻结恢复→服务端owner→M7读已过56直接与独立同56/6hash/3组重建，[回执](../operations/investigation-owned-reader-20261024.json)。新增显式profile/target/objective和legacy状态，账本不变；仅SQL替身，实际认证/PG/HTTP接缝仍待。
+
 **M8a1最新：** 冻结读上下文纯恢复已过11新＋40相关及独立同51/6hash/3组重建；当前主体tenant与冻结历史principal分别核验，源正文/控制/profile/plan精确还原，[回执](../operations/investigation-profile-restore-20261024.json)。原报告读不依赖当前可变Alert，恢复不授予运行权；a2持久归属/当前认证及HTTP入口仍待。
 
 **M7c实际结果：** 受控稳定Run仅追加发布1事件/4工件，当前6/14；独立新进程manifest/MD/execution同版，原M6已核列/正文校验和不变，额外查询/模型0。[真实回执](../operations/investigation-publication-pg-seam-20261024.json)结束独审限定ACCEPT/0必须修（独立11项/14hash及只读PG核验）；[受控合成报告（PG原UTF8字节）](examples/fixed-recon-published-20261024.md)可直接评审。临时角色/进程已清理，通知未投递。160合同与probe独审43/P2修后通过，下一M8显式业务入口；Case/语义Deep尚未交付。

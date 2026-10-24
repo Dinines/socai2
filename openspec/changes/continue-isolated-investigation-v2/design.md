@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M8a2 owned持久读取实施前细卡（9f75772）
+
+a1已独审保存。新增OwnedReconResultReader，仅接受当前可信认证许可载体、tenant_id/run_id；当前tenant必须在principal允许集合且Run按id+tenant命中。同M3锁定该Run并设置事务tenant；查唯一unified_recon_started（取最多2条并要求恰1），验证event agent/kind/input-output hash及begin正文/state工件的owned join、kind、字节/hash、payload和state.persistence全部对应，owner只取已核初始snapshot。缺标记/legacy/重复拒绝，不fallback。
+
+调用a1恢复原request；实例化该已核owner的ReconPublicationStore，复用其M7只读逻辑。为避免嵌套事务/第二次行锁，将M7现read_result内部原逻辑抽成同包_locked读helper，旧public read_result仍经原锁/同helper返回原格式；owned reader在已有同Run锁内调用该helper，当前版本/late settle和manifest全核规则不变。新增返回仅加read_model schema、tenant/Run/profile/target/objective及明确legacy状态字段，原M7 publication/manifest/MD/execution完整保留；旧status不推导新完成。
+
+当前a2只是持久服务函数，current TenantPrincipal及读取permission已由可信调用方核验为前提；正式认证、token撤销和HTTP状态映射在后续独立v2入口验，不伪称本层已验实际auth。DB连接沿原M3最小Run UPDATE(id)锁权限，逻辑操作只有SELECT/set_config/行锁，不改任何账本或预算；不读取当前Alert，不允许caller owner/scope或接管运行。驱动错误包装为无DSN/正文的持久错误，必要拒绝仍明确。
+
+先SQL替身测试已发布/未发布、另读者/权限空与foreign Run、无/重复begin、event/工件hash/kind/关联/owner错、自洽重新hash的控制漂移、下游缺件/late settle/旧writer丢指针、driver失败保密；核所有GET前后rows/usage/工具次数不变，M7公共read原行为不变。先strict/合同独审，再仅a2实现/直接测试/结束审阅；真实PG与HTTP另卡，无部署/旧路由变化。
+
 ## 2026-10-24 M8a1冻结读上下文实施前细卡（2b87675）
 
 M7c已独审限定通过并保存推送。显式业务入口先补一个必要纯接缝：M7 read_result接checked request，不能每次从“当前Alert”重建历史scope，否则告警后来改动会让已发布结果不可读或混版。a1仅restore frozen alert profile，后续a2持久读取/当前认证、a3持久启动与显式独立HTTP逐块细化；无前端/旧路由/生产配置修改。

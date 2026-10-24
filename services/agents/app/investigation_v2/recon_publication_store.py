@@ -174,18 +174,23 @@ class ReconPublicationStore(ReconExecutionStore):
             "manifest_artifact": result["manifest_artifact"], "delivery_status": "not_attempted"} if fresh else None
         return {**result, "repeated": not fresh, "notification": notification}
 
+    async def _read_result_locked(self, conn, request) -> dict:
+        """Internal read under an already-held owned Run lock/transaction."""
+        state = await self._load(conn)
+        await self._bound(conn, state, request)
+        event = await self._publication_event(conn)
+        if event is not None:
+            result = await self._read_published(conn, request, state, event)
+        else:
+            _require("publication" not in state, "publication pointer has no event")
+            handoff = await self._read_handoff(conn, state) if state["recon"]["phase"] == "stopped" else None
+            result = {"publication_state": "not_published", "manifest_artifact": None, "manifest": None, "markdown": None,
+                "candidate": handoff["candidate"] if handoff else None, "progress": {"phase": state["recon"]["phase"],
+                    "stage_usage": state["stage_usage"], "run_total": state["run_total"]},
+                "delivery_gap": "result_not_published", "retention": "progress_only"}
+        return {**result, "notification": None}
+
     async def read_result(self, request) -> dict:
         async with self._locked() as (conn, _):
-            state = await self._load(conn)
-            await self._bound(conn, state, request)
-            event = await self._publication_event(conn)
-            if event is not None:
-                result = await self._read_published(conn, request, state, event)
-            else:
-                _require("publication" not in state, "publication pointer has no event")
-                handoff = await self._read_handoff(conn, state) if state["recon"]["phase"] == "stopped" else None
-                result = {"publication_state": "not_published", "manifest_artifact": None, "manifest": None, "markdown": None,
-                    "candidate": handoff["candidate"] if handoff else None, "progress": {"phase": state["recon"]["phase"],
-                        "stage_usage": state["stage_usage"], "run_total": state["run_total"]},
-                    "delivery_gap": "result_not_published", "retention": "progress_only"}
-        return {**result, "notification": None}
+            result = await self._read_result_locked(conn, request)
+        return result
