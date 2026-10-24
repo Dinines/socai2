@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3c用户写网关：** 165直接/独立同165、9hash/38完整API响应重放限定通过，[回执](../operations/investigation-program-start-gateway-20261025.json)及[失败原件](../operations/investigation-program-start-gateway-failure-20261025.json)。启动须原run＋alertsread，共享read服务403；固定单POST/完整回包校验/整次200秒和关闭各5秒，隐式EOF关闭P2已修。仅离线，15实际producer回执保持；下一已审d双进程启动组合核实际actor意图绑定，再真实PG/鉴权/运营隔离。
+
 **2026-10-25 M8a4.3b内部写HTTP：** 186直接/独立同186、7hash/22冻结case限定通过，[回执](../operations/investigation-program-start-api-20261025.json)及[修前原件](../operations/investigation-program-start-api-failure-20261025.json)。独立双POST/具体受控guard/当前凭据分离、4KiB body/servernormalize，ACK未知503后只读恢复；原28 ASGI响应重放同。仅离线，下一已审c现用户run＋alerts read写gateway，真实鉴权/PG/运营隔离后续。
 
 **2026-10-25 M8a4.3a启动协调器：** 125直接/独立同125、7hash/14原件限定通过，[回执](../operations/investigation-program-coordinator-20261025.json)。首次确认准入才执行并发布，重复/读取/未知恢复不补跑或补发布；normal7/15/Mock1、错误/unknown保partial。12原账本冷读及重复输出同，2guard拒0SQL；仅替身，下一独立写HTTP/实际用户权限与真实接缝。

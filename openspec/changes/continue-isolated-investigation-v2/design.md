@@ -1,3 +1,17 @@
+## 2026-10-25 M8a4.3d离线启动组合细卡（c修后结束保存/本卡独审后实施）
+
+仅新增probes/program_start_offline_seam.py及API直接测试，沿既有owned Popen/有界stdio模式，但不改已冻结read probe或业务源。API与Agents各自独立Python进程/模块路径，父API真实新factory/原auth依赖＋可控CurrentUser/FakeDB，子Agents实际新内部write app/coordinator/atomic admission/Program runtime/newpub/compatible reader和SQLdouble。两边HTTP仅ASGI/MockTransport，工具固定Mock/queryunknown或0budget；禁止socket/PG/CH/model/旧入口，不能把离线会话tenant适配器称RLS或真实JWT/RBAC。父gateway固定POST转子app、compatible GET另固定read app，两内部凭据区分，不把子进程调试控制暴露成用户路由。
+
+每个scenario一份明确完整canonical Alert、server budget和controlled target政策，固定clock/test credential，由可信测试驱动在子进程启动前选择；子进程不依据HTTP正文调试字段切换故障。父发送actual用户请求，实际CurrentUser actor/tenant→专用gateway headers→server normalized fullintent→真实admission event-pin request_hash/actor/预算→原owner/Run/begin/actualtool/handoff/pub/owned→API完整checker，保全每跳实际请求/回包raw UTF8/hash及完整最终ledger。不能用c十五份缓存回执替代这个实际首次写组合，也不复用b冻结账本冒新增路径执行。cold read用相同实际原ledger重新hydrate/建reader校验，API可核的selfhash与backend实际来源归属仍分层。
+
+预期逐scenario：normal首次200/7event15artifact/Mocktool1、repeat start和operation-read及compatible GET完整owned/manifest/MD同，read重复无新增行/用量/工具或publish；zero预算首次partial200/5event11artifact/Mock0；真实queryunknown首次partial保原未知且后续不重发。admission commit ACK未知首次503但原2/3保、显式read/repeat只ready/progress/0工具；publication ACK未知首次503但原7/15保，显式read/repeat和GET只读同published/无通知重发。父已收到子响应但模拟一次网络接收丢失时API503/unknown；须由驱动明确选择下一次read，不能probe自动重放或把first当未执行。
+
+权限拒绝须发生在父转发前：缺run/缺alertsread/原共享read service/失效凭据/权限下一请求撤回都backend0；有权同用户客户伪Xactor/tenant无效，真实ledger完整intent.actor等实际CurrentUser；同key改窗口/换currentactor经backend原intent冲突409、不得只拿DTO通过当actor绑定。foreign currenttenant由现tenant/guard/owned拒，不能先lookup别租户。新key同Alert active/unknown仍409/0新tool；不在本d发额外完整业务运行来代a4.4实际PG并发。错token/版本/hash/error不fallback；若为故障注入必须另列，不当actualowned正例。
+
+stdio每个JSON line帧≤12MiB，拒重复key/非finite/坏UTF8/半帧/EOF；父一个完整write+read共同≤30秒（finite positive可测配置、startup/shutdown也有界），不能仅给每次read续时。状态不确定不重启子进程重试同request；所有成功/失败原件保留不同trial。只清理实际创建的Popen，正常shutdown有界，不响应则terminate/kill后wait、核PID/创建身份/exit状态，不按名称清他进程；新子无其它后台进程。日志与帧分离stderr/stdout，输出不得含机器秘密，dummy token明示只测试。
+
+直接测试须覆盖上述正常/部分/ACK/丢回包/actor绑定和边界，以及fake child仅EOF/oversize/timeout/清理故障；每份actual完整ledger先保原件再独立hydrate，核所有artifact UTF8/bytes/hash/event pins和Run legacy列不变、全响应/manifest/MD的canonical/raw hash，不仅对齐计数或随机换新UUID重建。另测stdio假子缓慢分块不能无限续期/失败无重发/清理只owned；失败来源与真实SQL/ASGI positive严格分列。先strict/独立合同、c保存后只本d实现/直接/结束独审保存；a4.4真实PG锁/并发/leastprivilege/JWT-RBAC/受控新Alert运营隔离另卡，2.2/2.3/Case/Deep/生产自动政策仍未完，无部署/合main。
+
 ## 2026-10-25 M8a4.3c用户写网关细卡（b修后结束保存/本卡独审后实施）
 
 仅新增API program_start_gateway.py/program_start_api.py及测试，不import Agents app包，不改旧认证/catalog/service权限/旧factory或主注册。新显式factory可复用program_result_api/query独立基础设施，保原typed query与compatible结果GET；增加POST `/api/v2/investigation/alerts/{alert_id}/start` 和 `/operation-read`，分别只转b对应POST。两POST显式Bearer前置，再原CurrentUser.require investigation:run＋alerts:read；不得把共享read service token、dev无凭据demo或客户X-actor/tenant当启动权限。current tenant/user_id每请求从原认证取得、原条件/禁用/权限撤回继续生效，token/scopes不得因新路由扩大；现GET双read权限保持。

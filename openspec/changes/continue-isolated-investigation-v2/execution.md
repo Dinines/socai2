@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3c实际用户写入口
+
+086e0bb后已审卡/strict再新增gateway/factory；41新＋65 API相关及59隔离Agents共165直接/独立同165、9hash/38全响应/31Mock请求复放，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)。run＋alertsread当前用户/共享readservice拒、1次POST/4KiB/1MiB/fullprogram DTO；总200秒和各5秒含HTTPX隐式EOF关闭，P2原件留存后stream代理修复/原例200，gzip保持。15producer回执只是协议来源，d actual actor→完整intent链仍待；仅ASGI/FakeDB/Mock无真实PG/network/Run/部署，下一已审d离线组合保存后实施，a4.4及2.2/2.3保持未完。
+
 ## 2026-10-25 M8a4.3b实际独立写HTTP
 
 5b7c0db后已审合同先config10再HTTP30＋相关146=186直接/独立同186，7hash/8actual＋14fake冻结原件/原28ASGI响应重放同，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-api-20261025.json)。专用token/当前动态read-tool分离/4KiB/strict/servernormalize、受控guard及ownedTLS生命周期；operator误轮换P2原件2red保failure，修后4010SQL。normal7/15/Mock1、ACK503后read-only、cancel/unknown保持，配置ref不是运营证明。无真实PG/network/auth/业务Run/部署，下一已审c用户权限/write gateway，再d/a4.4，2.2/2.3未勾。

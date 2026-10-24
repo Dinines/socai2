@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3c修后结束独审
+
+fresh_design c合同先行，086e0bb保存后仅新API源/fixture/tests；fresh_code独立165唯一项及代码门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)。初38/2fail1测试error与两Loader命令错名均保原件；独审1P2隐式EOF close可等总200秒而非5秒界，完整原脚本/12867B/修前源和1s观测保[11原件](../../../docs/operations/investigation-program-start-gateway-failure-20261025.json)，修后同例200/HTTP1/fullcanonical保持，gzip兼容额外核不加165。证据门9SHA/15producer来源/38原API raw响应及31Mock请求完整重放同，失败原件编码bytes/hash全可重建，限定ACCEPT0。仅离线，不以source自hash当DB真或JWT/RBAC验收；下一d合同另fresh_design限定ACCEPT0，c保存后实施，a4.4真实门后续。
+
 ## 2026-10-25 M8a4.3b修后结束独审
 
 fresh_design初404合同缺口改POST统一409后ACCEPT0，5b7c0db保存后实施。fresh_code独立186、7hash/22case，原6账本12＋空2＋fake14共28ASGI fullbody/hash/canonical同，33原响应hash/取消无响应核，禁调用执行/发布/真实HTTP，限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-api-20261025.json)。初config10/1fail、SyntaxError0tests与轮换P2/2red2fail分列，[原件](../../../docs/operations/investigation-program-start-api-failure-20261025.json)8文本SHA全同；P2前提可信运营误轮换非远程改state，当前逐请求分离后两例401/SQL0。真实asyncpg Pool.close取消窄核无连接/清coordinator，不误报模拟泄漏。c合同另ACCEPT0，补200s总POST-stream期限/收尾边界后保存再实施；不覆盖实际auth/PG/运营隔离。

@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3c现用户写入口：** 165直接/独立同165、9hash/38原响应全重放限定通过，[回执](../operations/investigation-program-start-gateway-20261025.json)。原run＋alertsread/当前身份、共享readservice拒，单POST/完整program owned DTO/原MD保持、整次200秒与响应/client各5秒；独审隐式EOF close P2修后通过。只FakeDB/Mock/producer回执，不证明完整backend intent actor/budget来源或真实JWT/RBAC；下一d离线两进程actual首次写及actor pin合同已审，再a4.4真实PG并发/权限/运营隔离，Case/Deep及2.2/2.3保持未完。
+
 **2026-10-25 M8a4.3b内部写HTTP：** 186直接/独立同186、7hash/原28ASGI响应重放限定通过，[回执](../operations/investigation-program-start-api-20261025.json)。两POST专用当前token/动态read-tool分离、controlled guard、4KiB严格请求/servernormalize，原GET与service scopes保持；仅SQL/Mock/ASGI，不据配置ref认定运营隔离。c用户权限/完整网关合同已审（总200秒而非分阶段续期），d/a4.4/Case/Deep仍待。
 
 **2026-10-25 M8a4.3a协调器：** 125直接/独立同125、7hash/14原件重放限定通过，[回执](../operations/investigation-program-coordinator-20261025.json)。三门currentguard/freshcommit/原claim-reserve，confirmedstop才pub；repeat/read禁止execute/publish，未知/取消不重派，旧service权限保持。仅SQL/HTTP替身，下一b独立写app/c用户权限/d组合/a4.4实际隔离，Case/Deep仍待。

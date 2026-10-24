@@ -801,3 +801,22 @@ The new API start factory SHALL require an explicit bearer followed by existing 
 #### Scenario: Backend outcome or transport cannot be confirmed
 - **WHEN** the reply mixes versions or identities, contains invalid flags or refs or a failing nested DTO/hash, is oversized, redirects or times out
 - **THEN** the gateway rejects without fallback or retry, treats a timeout as a potentially executed operation, and leaves recovery to the existing operation-read or owned GET rather than restarting
+
+#### Scenario: Response streaming or implicit close continues slowly
+- **WHEN** chunks keep arriving or HTTPX closes the response automatically at the end of a complete body
+- **THEN** one whole POST-and-body deadline bounds waiting, every response and client close is independently bounded including implicit close, and a cleanup timeout never causes a second dispatch
+
+### Requirement: Offline manual start composition proves current actor binding across independent app processes
+The offline probe SHALL use separate API and Agents Python processes with actual new factories, coordinator and SQL doubles, preserve full requests, original ledgers and results, and bound each complete stdio exchange. It SHALL NOT call real services, replay unknown requests, modify legacy code or represent injected current users as real JWT/RBAC verification.
+
+#### Scenario: A first request traverses the complete manual start and read path
+- **WHEN** the test current user passes the original permissions and one controlled scenario enters the real new internal app and coordinator
+- **THEN** its actual normalized actor and server budget are pinned in the original admission intent, the program runtime executes only once, and subsequent repeat, operation read and compatible GET return verified original results without extra calls or publication
+
+#### Scenario: Commit acknowledgement or parent response reception is unknown
+- **WHEN** a controlled admission/publication acknowledgement is lost, or the parent loses one actual completed child response
+- **THEN** the original ledger and unknown outcome remain, no automatic replay occurs, and only a separately explicit read may recover the original operation
+
+#### Scenario: A pipe or owned process fails
+- **WHEN** a frame is oversized, malformed, incomplete, slowly streamed beyond the total deadline or reaches EOF
+- **THEN** the probe preserves a failed receipt, never retries the request, and performs bounded shutdown only on its own Popen handle

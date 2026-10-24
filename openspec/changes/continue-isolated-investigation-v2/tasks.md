@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3c限定通过：** 165直接/独立同165、9SHA/38原响应重放，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)及[失败原件](../../../docs/operations/investigation-program-start-gateway-failure-20261025.json)。仅用户权限依赖/离线单POST网关；隐式close P2已修，d组合合同已审、a4.4实际门与2.2/2.3/Case/Deep未完。
+
 **2026-10-25 M8a4.3b限定通过：** 186直接/独立同186、7SHA/22case及28原ASGI响应重放，[回执](../../../docs/operations/investigation-program-start-api-20261025.json)与[修前原件](../../../docs/operations/investigation-program-start-api-failure-20261025.json)。仅离线内部写HTTP；c合同已审、d/a4.4及2.2/2.3/Case/Deep仍未完。
 
 **2026-10-25 M8a4.3a限定通过：** 125直接/独立同125、7SHA/14原件完整重放，[回执](../../../docs/operations/investigation-program-coordinator-20261025.json)。首次确认才执行，重复/read/ACK恢复不补跑/发布；仅SQL/Mock，b/c/d/a4.4及2.2/2.3/Case/Deep未完。

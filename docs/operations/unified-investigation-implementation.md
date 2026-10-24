@@ -1,3 +1,13 @@
+## 2026-10-25 M8a4.3c实际用户写网关
+
+086e0bb后沿已审c卡新增API program_start_gateway/program_start_api，仅显式新factory保原query/compatible GET；没有旧main注册或认证/catalog/service scopes改动。原Bearer前置及CurrentUser investigation:run＋alerts:read，缺任一/实际共享readservice拒403/backend0，dev缺错凭据401；伪Xactor/tenant不覆盖当前用户，下一请求权限/凭据重核。HTTP strict4096B请求只转operation/window/version，server写凭据单POST、无重试/redirect/fallback；1MiB严格响应JSON，known outer/receipt/runtime闭合类型、tenant/key稳定Run/executor和target/有限目标、原compatible完整DTO/manifest/MD/exec/candidate核后原样交付。API无原backend预算/完整intent，request_hash格式不证明原actor/预算/source，真实绑定仍后续d/backend链核。
+
+41新＋compatible45/oldresult13/query7=API106，另独立Agents config10/startHTTP30/compatibleowned19=59，总165直接/独立同165通过，fresh_code代码和证据两门限定ACCEPT0，[回执](investigation-program-start-gateway-20261025.json)。15可移植full outcome逐件与b原producer request/outcome/responseSHA同；冻结38 API响应/31Mock后台请求rawUTF8/SHA/canonical全重放同，9选定源码/fixture/旧认证/main/MD SHA核。旧Markdown3111B保持，无新增SQL账本写或实际PG/network/CH/model/业务Run/通知/部署。
+
+原38首测2fail1测试执行error来自demo bypass环境遗漏、FastAPI IncludedRouter.path假设和Windows分块调度阈值；业务源码未因这批修改。扩相关测试曾两模块拼错，两个Loader placeholder分列非应用失败，完整原日志保。独审额外1P2：HTTPX aiter_bytes正常EOF隐式response.close在200秒请求界内，却未受5秒close界；完整合法12867B例按total1s/close.05s仍等1s/503/HTTP1。保存修前源/tests/独立反例及观察后，加stream代理统一约束真实aclose，不绕解压；同原例修后200/完整响应同/HTTP1、独立29B分块gzip及close私密异常兼容通过（额外观察不加165）。[11份完整失败原件](investigation-program-start-gateway-failure-20261025.json)逐编码bytes/hash可重建。
+
+整次POST/stream显式200秒、响应及client关闭各5秒，包含正常EOF和超时/取消；慢分块/挂起send/挂起response-close/client-close均实际异步超时核，不续期/重发。未知503只按原operation-read/GET恢复，不能断言未执行。下一d两进程actual new API→内部app/coordinator→admission intent pin→runtime/pub→owned/GET细卡已fresh_design独审ACCEPT0，本块保存后才实施；再a4.4真实JWT-RBAC/PG锁并发/受控新Alert运营隔离各门。2.2/2.3/Case/Deep及自动政策未完，无合main。
+
 ## 2026-10-25 M8a4.3b实际独立内部写HTTP
 
 5b7c0db后细卡/spec/strict/独审先行；初operation不存在404与冻结协调器脱敏合同不符，改两个POST协调器拒统一409/不猜字符串/不旁路查库，原GET404保持，修后ACCEPT0再实现。只newprogram_start_api factory，无旧app注册；先纯policy/config10直接，再HTTP28→修轮换增2为30，＋相关146共186直接/独立同186、7hash，fresh_code代码及证据两门限定ACCEPT0，[回执](investigation-program-start-api-20261025.json)。

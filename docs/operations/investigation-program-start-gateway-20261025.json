@@ -1,0 +1,91 @@
+{
+  "schema": "investigation_program_start_gateway_verification.v1",
+  "date": "2026-10-25",
+  "baseline": "086e0bb",
+  "status": "ACCEPT_limited_API_current_user_start_gateway",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix_remaining": 0,
+    "scope": "c before implementation; total200s POST+stream and each cleanup<=5s explicit"
+  },
+  "direct_tests": {
+    "new_start_API": 41,
+    "compatible_result_API": 45,
+    "old_result_API": 13,
+    "query_API": 7,
+    "API_total": 106,
+    "Agents_start_config": 10,
+    "Agents_start_HTTP": 30,
+    "Agents_compatible_owned_reader": 19,
+    "Agents_total": 59,
+    "total_unique": 165,
+    "all_passed": true
+  },
+  "selected_file_sha256": {
+    "services/api/app/investigation_v2/program_start_gateway.py": "319caf583fc639f54c8809a3b803d4a1d4efa150b2b6d56faef0ee58962871db",
+    "services/api/app/investigation_v2/program_start_api.py": "0c770a45e94f400369234b718736212dda0cfb4ff1967a3a5fade674b89373b6",
+    "services/api/tests/test_investigation_program_start_api.py": "fbd782103fe10fdfea3e91b616f74cfb66f3a0f72639e322618a4f9e0c0a596d",
+    "services/api/tests/fixtures/investigation_program_start_outcomes.json": "95dd4a98e341132029b2f7d6b40f847f3c73a90b74175d94e265914cdd4b3718",
+    "services/agents/app/investigation_v2/program_start_api.py": "8c1d15bc6306326318b4d09622d1bae221691b431780d5a9bb32d3f1235fb6a0",
+    "services/api/app/investigation_v2/program_result_gateway.py": "8d2ba4392a3ecb88c9032076c66f0bf127db11918a22b63e0c94c57b1202c5d8",
+    "services/api/app/api/v1/deps.py": "84e9721b390e7baca25b27b70480aeaef2b560e90557a2e513d8757cafc6b25e",
+    "services/api/app/main.py": "23bce1ff0e0338f0370946cec1b4d2e3bff71283aeab08d15d057b7c998627d9",
+    "docs/investigation/examples/fixed-recon-published-20261024.md": "e5f4c3fe2d4f4130eb4ad4964260f87f4a63aea9bb31426566dedafdd8ad68ac"
+  },
+  "portable_producer_fixtures": {
+    "count": 15,
+    "source_sha256": "b1c887ec31763090faf1afe8306f0bdd4673af8186b87c536a08752d77700b82",
+    "fixture_sha256": "95dd4a98e341132029b2f7d6b40f847f3c73a90b74175d94e265914cdd4b3718",
+    "scope": "b actual coordinator/SQLdouble/ASGI outcomes, exact request/outcome/original response SHA; not new first writes or real PG"
+  },
+  "frozen_HTTP": {
+    "cases": 38,
+    "backend_Mock_requests": 31,
+    "bytes": 255414,
+    "sha256": "4c3556d16ffd1af35c382f8d4b7021de96079b29686d78f77c63b2b9f7874d4d",
+    "full_response_UTF8_SHA_and_canonical": true,
+    "no_new_SQL_ledger_writes": true
+  },
+  "behavior": [
+    "Existing explicit bearer and CurrentUser investigation:run+alerts:read; original shared read service token403/backend0; compatible GET cases+alerts read unchanged",
+    "Current tenant/actor only; forged identity headers ignored; next-request scope and invalid credential refusals tested with original dependencies/injected current user",
+    "Exactly one normalized dedicated-token POST; no redirect/retry/fallback; streaming body4096B, response1MiB/strict duplicate-free JSON",
+    "200s whole POST/stream deadline and each close5s including implicit HTTPX EOF; timeout503 means potentially executed, only explicit read recovery",
+    "Stable Run/executor and closed outcome/receipt/runtime; complete existing program owned DTO/manifest/MD/execution/candidate validated unchanged; no old-family conversion"
+  ],
+  "failure_originals": "docs/operations/investigation-program-start-gateway-failure-20261025.json",
+  "independent_review": {
+    "reviewer": "fresh_code_audit",
+    "code_status": "limited_ACCEPT",
+    "must_fix_remaining": 0,
+    "independent_unique_tests": 165,
+    "evidence_status": "limited_ACCEPT",
+    "additional_observations_not_added_to_test_count": [
+      "Same original complete-body implicit-close repro now200/oneHTTP/complete unchanged",
+      "All15 portable fixtures equal original b producer outcome/request/responseSHA",
+      "Legal29B-chunk gzip decoding and private stream close exception still200/full canonical unchanged/no private echo"
+    ],
+    "selected_hashes_checked": 9,
+    "portable_original_producer_outcomes_checked": 15,
+    "original_API_responses_replayed": 38,
+    "original_backend_requests_replayed": 31,
+    "full_response_UTF8_SHA_canonical_and_request_fields_equal": true,
+    "failure_original_texts_reconstructed": 11,
+    "independent_helper_sha256": "b4d65beb1eeef3b92598ce16ef475d114fc9122a3a519b9d29d0500e2e77baaf"
+  },
+  "limits": [
+    "Original backend intent budget/actor ownership and source truth are trusted backend responsibilities; API request_hash form alone proves none of those",
+    "Only ASGI/Mock transports/FakeDB and portable producer outputs; no actual JWT/RBAC,PG/network/CH/model/business Run/notification/deployment/main merge",
+    "d full two-process start/actual actor intent binding and a4.4 real PG concurrency/auth/operational isolation pending",
+    "Legacy source/settings/registration and old3111B Markdown unchanged; Case/Deep/automatic policies/tasks2.2/2.3 incomplete"
+  ],
+  "next_contract_review": {
+    "stage": "M8a4.3d",
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT",
+    "must_fix_remaining": 0,
+    "condition": "c final evidence acceptance and save before implementation",
+    "scope": "Offline two-process actual new start composition/current actor pinned fullintent; real JWT/RBAC/PG/operational isolation still a4.4"
+  }
+}
