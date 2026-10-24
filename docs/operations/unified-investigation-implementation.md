@@ -4,6 +4,10 @@
 
 ## 2026-10-24 M7同版交付实施前预期
 
+**c实际结果：** 原Run只加1event/4artifacts，现6/14；publish PID16228/create134373281189146135、全新read PID20200/create134373281256642423均exit0，manifest/MD/execution与原选中5/10checksum同版，两个MD文件字节都匹配PG SHA。新增工具/模型/Run/HTTP0，新m7角色NOLOGIN/有效三表权false/活动0，通知描述未投递。[公开回执](investigation-publication-pg-seam-20261024.json)、[PG原字节合成样例](../investigation/examples/fixed-recon-published-20261024.md)；真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。11新＋149相关160/probe独审43，原raw校验P2六反例/源码保failure回执，修后再放行真实；另有ACK注入位置/一次括号import失误已在pre-live纠正。旧M6.2c5/10回执保当时快照，M8与质量另验。
+
+**c实施前预期（f6ac2a2）：** 不重查，使用M6.2c稳定Run/owner/profile追加一次publication，前5/10→后6/14；原M6.2回执仍是历史快照。先public probe/离线guards，后新PG角色/独立publish进程与只read新进程，PG READ ONLY核全部14工件/所有边/版本/三维/用量和旧列。模型/新增工具0、通知未投递、无新API进程/Run/写湖；若已发布/状态变更或提交未知即保留停止，不自动换ID重发。新角色关闭/撤权/活动0与子进程身份核清后独审，M8后续。
+
 **b实际测试：** 21新＋128相关149通过，publication store锁内4工件/1event，同manifest读/重复通知null、rollback与ACK未知、全引用/MD重建、late settlement/丢指针拒陈旧；[回执](investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修。fresh_code独立49后P2原tool关联缺口已补统一M3 completion event/kind/pinned hash，无prep亦核；根保[源码与6反例](investigation-publication-store-sourcecheck-failure-20261024.json)，21红测6fail→当前21通过。SQL替身非真实PG；尚未执行c或发查询/模型。
 
 **b实施前预期（9bf333f）：** publication store同Run锁内核当前state/已有发布event与全required材料，再a构包，1event/4artifacts原子保存，不改旧列。重复返回原版无新通知，cold/hot同法；未发布只有进度/候选而无正式MD。manifest按refs全核并从原stopped基线重建执行/MD/manifest；late settle账本保留但当前读取拒陈旧结果，丢publication指针/坏件不重发或回旧report。首次commit确认后才notification descriptor、delivery仍not_attempted；提交不确定显式读回，无查询/模型。先SQL替身合同及独审，c真实PG后续。

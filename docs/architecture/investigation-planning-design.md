@@ -1,3 +1,5 @@
+**2026-10-24 M7c实际结果：** 原M6稳定Run只追加publication，当前6事件14工件；新进程冷读与热读同manifest/报告/execution，原M6已核列/正文校验和不变，额外查询/模型0，旧Run列不变。[回执](../operations/investigation-publication-pg-seam-20261024.json)结束独审限定ACCEPT/0必须修（独立11项/14hash及只读PG核验），[合成报告](../investigation/examples/fixed-recon-published-20261024.md)等于PG字节。仅有限source目标，新三维与旧生命周期分开；M8真实业务/stream、Case及语义Deep仍待，旧M6回执保阶段快照。
+
 **2026-10-24 M7b代码：** 同Run锁内原子manifest/MD/execution/state及精确同版读，21新＋128相关149通过；来源工件原event/kind/pinned hash含未采用分支已修、旧失败保留，[回执](../operations/investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修。重复不新建版本，未知commit只读核原指针，late settle后拒陈旧正式结果；目前仅SQL替身，c真实PG仍待，M8后续。
 
 **2026-10-24 M7a纯准备：** 已实现固定section引用/独立execution发布快照和确定性安全typed事实报告；16新＋112相关128、独立当前16/5hash/5包重建限定通过，[回执](../operations/investigation-publication-preparation-20261024.json)。基线/晚到结算不混版，正常停止后墙钟不回算；仅candidate，M7b原子发布/选定读取及c真实PG仍待，旧Run列保持。
@@ -974,7 +976,7 @@ M5能力在独立v2查询接缝后可单独逐步推进，固定程序路径继�
 | C08 判断怎样进入下游 | 已有结构化输出和标识存在性检查；标识出现不证明时间线/根因/授权正确 | 本地小修让Forensic检查先于Responder/Report并约束交付；新M4拒绝缺引用、错版本、缺finding依赖，允许部分采用并保留原文 | 所有下游只消费采用版；性质与授权分开，复杂解释仍保model_assessed，不冒充程序验真 |
 | C09 预算和调用身份 | 原有graph/Deep预算、CostTracker和账本；历史max_tool_calls实际统计模型调用，持久/额度并非本次单owner统一合同 | M3固定stage/owner/step/attempt，共享模型/工具额度和期限，原子预留后外呼，unknown占位，实际用量记账；本地PG/HTTP接缝已验 | 接真实入口并让Case本Run全部子任务共用额度；历史来源成本只引用，人工/自动启动重试不另建Run |
 | C10 工具留存与停止 | 原有tool_trace、预览/hash及报告/partial能力；有这些字段不保证逐次原子留存或每种停止均可交接 | 本地小修逐工具原子事件/工件、success/empty/unavailable/error/unknown分开；时限/异常保材料，交接停止原因且不追加总结模型 | 统一循环判断重复/无进展/关键缺口；决定性结果先留存再继续。已有4000字符工具通道仍有界，不是全量备份 |
-| C11 报告和结果读取 | 原有MD/HTML及Run账本，多个报告出口；Run completed不等于业务完整 | candidate05已发布事实/假设/观察范围/处理时间语义修正；后续本地小修补待核交付。质量旧失败保留 | M7以同版manifest绑定判断/证据/执行/MD，热读、冷读、通知一致。此统一发布尚未实现 |
+| C11 报告和结果读取 | 原有MD/HTML及Run账本，多个报告出口；Run completed不等于业务完整 | candidate05已发布事实/假设/观察范围/处理时间语义修正；后续本地小修补待核交付。质量旧失败保留 | M7以同版manifest绑定判断/证据/执行/MD，热读、冷读、通知一致。固定有限路径M7同版核心已实测；通用/Case及M8正式业务/stream仍待，真实结束独审见顶部 |
 | C12 Case衔接与领域 | 已有Case调查及可选Router；不能据此声称有新设计的自动建Case/继承/启动合同 | 当前仍主要沿既有入口，没有把告警Run改挂成Case，也未实现v4自动衔接 | 创建/关联与启动独立；启动时冻结成员，人工/自动同请求去重，领域按需。M8/M9待实施 |
 | C13 页面与展示 | 最初开源已有调查/Case展示；不同版本页面不能混成同一基线 | 20新构建已有告警“自动处理过程”展示graph/Deep；这是参考环境现状，只核前端构建，不计作我们新内核已交付 | 保留无Case Run详情，明确告警侦察/Case调查归属、完整度与实际Case关系；新投影未接 |
 

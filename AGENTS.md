@@ -1,3 +1,7 @@
+# 2026-10-24 调查M7c真实发布/冷读限定通过
+
+原M6.2c Run4dfd374a-17a6-5fec-833b-803bfbcb85c6仅追加1event/4artifacts，当前6/14；新publish及read两进程同manifest/MD/execution，原选中5/10列与正文校验和前后/跨进程相同，新增查询/模型/Run/HTTP0，通知未投递。新m7角色NOLOGIN/有效三表权限false/活动0，两个子进程exit0。公开回执docs/operations/investigation-publication-pg-seam-20261024.json、exact PG UTF8合成MD例docs/investigation/examples/fixed-recon-published-20261024.md。11新＋149相关160及probe独审43/P2六反例修后通过；真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。旧M6.2c5/10保阶段快照，不反写；当前新三维finished/complete_for_scope/none只有限来源目标，旧Run列running/null/0/0，M8/真实stream/Case/Deep价值尚未交付。无部署/合main，继续M8精确合同，2.2/2.3未勾。
+
 # 2026-10-24 调查M7b发布/读取限定通过
 
 基线9bf333f按b细卡/strict及独立合同审阅，新增publication store，21新＋128相关149通过；原子1event/4artifacts、重复/cold同manifest/通知描述仅首次确认commit后生成。来源核验P2已按M3 completion event/kind/pinned hash统一修复（含未采用来源），6红反例/源码全文保公开failure JSON，21红测6失败→当前全过。新state→stopped基线不改M3，late settle保真实账本但拒陈旧正式结果，丢指针不重发。docs/operations/investigation-publication-store-20261024.json未参与实现者独立52项/6hash/7组完整只读重建限定ACCEPT、0剩余必须修，未真实PG发布；c在原稳定Run仅追加发布、不重查。旧源码/Run列保持，无模型/部署/合main，2.2/2.3未完。

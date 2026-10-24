@@ -1,3 +1,5 @@
+**2026-10-24 调查M7c实际发布：** 原稳定Run只增1事件4工件，现6/14；全新进程读到同manifest/report/execution，原M6已核列与正文校验和不变，额外查询/模型0。临时身份已清理/子进程exit0，通知未投递。[回执](docs/operations/investigation-publication-pg-seam-20261024.json)、[受控合成报告原字节示例](docs/investigation/examples/fixed-recon-published-20261024.md)；160合同及probe独审43通过，真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验）。仅有限目标complete_for_scope；M8业务入口/stream、Case与Deep价值仍待，无部署/合main。
+
 **2026-10-24 调查M7b代码通过测试：** 21新＋128相关149项，锁内一次发布/精确manifest读，SQL双正常增加1事件4工件，重复/冷读一致；P2原source核验缺口修复，含未采用source的原M3 event/kind/hash均钉住，6红反例/源码保留。[回执](docs/operations/investigation-publication-store-20261024.json)未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修。仅SQL替身，未真实PG/通知投递；c下一仅追加发布/前后冷读，无新查询或模型，旧列/历史失败保持。
 
 **2026-10-24 调查M7a限定通过：** 16新＋112相关128项，独立当前16/5hash/5组同版包和MD重建一致，0必须修；固定section、缺evidence null、execution发布快照、基线/late settle拒绝及安全typed事实报告已实现。[回执](docs/operations/investigation-publication-preparation-20261024.json)。仍仅candidate，持久/通知未尝试；下一b原子发布/读取→c真实PG，无新业务网络/模型/部署或合main，旧列/unknown/失败保持，2.2/2.3未完。

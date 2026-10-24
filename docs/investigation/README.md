@@ -1,3 +1,5 @@
+**M7c实际结果：** 受控稳定Run仅追加发布1事件/4工件，当前6/14；独立新进程manifest/MD/execution同版，原M6已核列/正文校验和不变，额外查询/模型0。[真实回执](../operations/investigation-publication-pg-seam-20261024.json)结束独审限定ACCEPT/0必须修（独立11项/14hash及只读PG核验）；[受控合成报告（PG原UTF8字节）](examples/fixed-recon-published-20261024.md)可直接评审。临时角色/进程已清理，通知未投递。160合同与probe独审43/P2修后通过，下一M8显式业务入口；Case/语义Deep尚未交付。
+
 **M7b最新：** 原子publication store/同manifest读已过21新＋128相关149项；P2工具原件核验缺口修后六反例均拒（含未采用来源），[当前回执](../operations/investigation-publication-store-20261024.json)与[修前源码/反例](../operations/investigation-publication-store-sourcecheck-failure-20261024.json)。未参与实现者独立52项/6hash/7组重建限定ACCEPT、0剩余必须修；目前仅SQL替身，真实PG由c再验，无M8/stream/Case/模型接入。
 
 **M7a最新：** 纯同版包/确定性MD已过16新＋112相关128项与独立当前16/5hash/5组重建，限定ACCEPT/0必须修。保有限目标/三维状态、实际typed事实值和缺口，late settle拒陈旧候选；[回执](../operations/investigation-publication-preparation-20261024.json)。包仍candidate、留存not_attempted，正式report/execution refs为空；下一M7b实际原子发布/按manifest读，再c PG，M8尚未接。
@@ -55,14 +57,16 @@
 | D1—D3数据前提 | 3条合成历史事件入CH，1条告警落PG，来源UUID/租户/实体/窗口关联已验 | 不是全量采集或告警自动入湖；不证明恶意/授权 |
 | M1/M2 | 冻结范围/问题合同及网络逐条查询已验；本块新v2独立HTTP/CH接缝1次通过 | 当前仅有限explicit_set/网络观察，不是Case入口已接 |
 | M1业务profile增量 | 纯绑定11新＋原scope8项及独审通过，保完整/所选/遗漏成员与交付归属 | 不等于已认证Case、实际解析/继承/启动或接执行器 |
-| M3 | 新v2一次工具调用的预留/完成已提交；新Run3事件/6工件独立读回，profile作为已核输入留存 | 未开放多writer/通用恢复，不改旧预算/unknown，不等于完整业务profile执行器 |
+| M3 | 前批独立query Run3/6与M6固定路径的单次工具留存均已验；当前固定Run经M7追加发布为6/14，实际仍工具1/模型0 | 未开放多writer/通用恢复，不改旧预算/unknown，不等于完整业务profile执行器 |
 | M4 | Q1/Q2/Q5限定8例原文/采用/交付通过；选定23484tokens | 不是完整恶意/授权或全调查质量通过 |
 | I1/I2材料消费接缝 | 可选正文局部缺口保留；三处共用完整消息12KiB计量并明确超限结果，直接合同和独审通过 | 未重验真实模型质量；没有自动分组或让10条超限材料被消费 |
 | M5 | M5.1问题/查询纯合同通过；M5.2仅部分准备，完整模型步骤/循环未完成 | 新版Deep整环未完成，不能称调查v2已运行 |
 | 隔离迁移 | 新包隔离合同保留；本块只新增独立v2应用，旧应用未注册新路径 | 新路径证据取本块02批，不沿用历史HTTP冒充 |
 | A2/A3纯交接增量 | 完成政策显式版本，子窗partial保事实；投影阻断保引用/来源状态，A2 71项、A3 100项及各自独审通过 | 未实际持久保存或投递，不是M6.2运行器；I2模型消息门保持 |
 | M6.1固定有限事实政策 | 13新＋35相关合同通过；程序事实/六问题/有限就绪度与停止交接，结束独审限定ACCEPT/0必须修 | 不是M6完整调度，可信调用方停止枚举不证明实际M3预算/时钟；没有追加模型 |
-| v2 HTTP、M6.2—M9 | 独立loopback查询应用已实测并停止；实际调度/M7同版结果/正式M8入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
+| M6.2固定运行 | 原子claim/M3 gate/单次固定查询/持久交接及正常真实PG/HTTP/CH限定通过 | 不是模型主分析/Deep循环或通用恢复 |
+| M7同版核心 | 固定路径manifest/MD/execution及新进程冷读已实测，当前6/14；真实结束独审限定ACCEPT/0必须修（独立11项/14hash、PG全14及样本/进程/权限核验） | 没有M8业务HTTP/真实stream或人工已接手，非Case/全调查质量通过 |
+| v2 HTTP与M8—M9 | 独立loopback查询应用已实测并停止；正式启动认证/显式业务入口/Case衔接仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |
 
 代码隔离的保存提交为`74d4d90`；后续文档/入口整理有独立提交，以分支`git log`为准。`v4`是设计修订号，`v2`是新执行器代际。旧调查版本继续保留，需变化的旧函数复制所需部分到新版修改，不能直接改旧函数/注册。
 
@@ -76,7 +80,7 @@
 | 模型结构/语义会失败 | 首批7回复候选全拒绝；后续02批18回复中5个失败保留，含枚举、依赖遗漏、对象称谓、query冒充source等 | 提示/引用限制已在选定样例修订通过；保持严格采用，不做全模型可靠性承诺 |
 | 安全降级不等于答对 | 拒绝错误候选能保护交付，但未必产生有用判断 | 原文、程序采用、最终交付分开评价；不能全partial就放行 |
 | Case整体/继承尚未实施 | 旧Case投影最近3条，不足以代表全成员 | 新版启动时冻结全成员，至少4成员/早期反证/同源去重场景先验 |
-| 统一结果版本未交付 | 旧Run状态与调查完整度不同，多个最新字段可能不同版 | M7同版manifest/MD/读通知；旧结果保持原格式 |
+| 业务入口的同版读取尚未接 | M7选定store的manifest/MD/新进程读取已实测；旧API/stream仍原样 | M8接显式业务入口与新投影，不分别拼latest；旧结果保原格式 |
 | 旧失败、unknown和unpriced保留 | 当前新包不能追认旧质量、释放未知预留或推断费用为0 | 不重放旧Run、不清账，后续按独立授权处理 |
 | IOC OpenSearch尚未推进 | 当前首场景先验证ClickHouse事实来源 | 继续后置，未来只作有来源的IOC佐证 |
 
@@ -97,3 +101,5 @@ git pull --ff-only
 后续评审通过后，按普通Git流程合并到`main`或其他目标分支；不依赖worktree专用路径，不需要复制本机目录，也不夹带Windows适配分支。本轮用户已要求将`469e9467`合入`main`供各开发分支同步；合并不代表部署或完整新版验收。
 
 跨机器测试使用对应平台的[Agents依赖](../../services/agents/pyproject.toml)/[API依赖](../../services/api/pyproject.toml)与自己的虚拟环境；本机`.venv`不入Git。纯合同测试可按实施记录的明确文件执行；真实PG/CH/模型步骤另需该机器的私密配置与隔离身份，不自动重放历史试验。
+
+M7组件语义：source handoff中的`run_completion=not_published`及纯准备`persistence_status=not_attempted`记录的是其生成阶段；正式当前发布由manifest/publication投影表达，不据组件旧字段倒推结果未发布。原Run旧status和新三维分别读取。

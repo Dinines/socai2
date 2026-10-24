@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Verify fixed result publication on the existing stopped test Run
+
+M7c SHALL 仅对M6.2c已独审且无unknown/未结算的固定Run4dfd374a-17a6-5fec-833b-803bfbcb85c6追加发布，不创建新调查、重跑查询/模型或开启HTTP服务。使用全新精确PG角色/私密配置，公开opt-in probe先离线guard合同，真实执行前确认原5事件10工件及冻结handoff；原M6.2回执保阶段快照，不反写。
+
+#### Scenario: One PG publication survives a fresh process read
+- **WHEN** 同Run/owner/profile原5事件10工件完整且尚无publication，publish前读取无正式报告，再只执行本次发布
+- **THEN** 新增1事件4工件后为6事件14工件；同manifest热读、重复publish只读且通知null，新独立进程仅read冷读一致。另以PG READ ONLY核全部14工件字节/hash/event/run/tenant归属、原5事件边不变及新manifest/state/execution/report引用/版本，用量model0/tool1/unknown0/unsettled0与旧Run列不变；没有新增工具或模型调用，通知仅描述未投递
+
+#### Scenario: Publication trial is uncertain or no longer matches its baseline
+- **WHEN** 原Run已发布、出现不同状态/缺件/新unknown，或本次提交/子进程结果未知
+- **THEN** 原试验留存并停止，不自动换Run/清预算/重发；可用独立只读核实际状态。仅关闭本次新角色并核NOLOGIN/撤权/活动0，子进程按持有handle及创建时间核身份后清理；真实结束独审前不宣称c通过或M8已接
+
 ### Requirement: Publish one immutable fixed recon result version
 
 M7 SHALL 按a纯同版包→b同Run事务发布/读取→c真实PG前后冷读推进，仅fixed_alert_recon_runtime.v1。发布前 MUST 核owned handoff指针、scope/profile/plan及相关attempt/M3状态仍与构包基线一致；late settle或新相关状态不许混版，拒绝后保材料。已正常停止后的单纯墙钟跨deadline不重算ready。旧Run status/completed_at/tokens/cost保持，新三维仅发布投影。

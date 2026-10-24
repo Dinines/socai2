@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M7c真实PG实施前细卡（f6ac2a2）
+
+b已修P2/独立52项及7账本复核后保存推送。c只对M6.2c稳定Run4dfd374a-17a6-5fec-833b-803bfbcb85c6、原owner/profile/batch引用追加发布，无新查询/模型/Run/Case/HTTP应用。source batch固定investigation-fixed-runtime-20261024-01，scope构造仍用当时live-pg-alert-read引用并重新核当前canonical Alert/合成标记/来源绑定；若已变更/已发布即拒，不借新ID刷新。
+
+公开fixed_recon_publication_seam.py仅PG，phase=publish先独立reader READ ONLY核5/10、原M6.2全部边/hash/handoff及unknown0/unsettled0，再publication store pre-read not_published/report null→publish→hot read及repeat（notification null）→独立reader核6/14。phase=read在全新Python进程只执行read_result与原始PG只读验证，不调用publish；预期同manifest/report/execution字节及旧Run列/实际用量不变。首次publication notification只是delivery not_attempted的内部描述，无stream投递。两进程都不得调用runtime.execute/模型/HTTP/CH，原M6.2五事件和十工件版本仍原样。
+
+本机新batch investigation-publication-seam-20261024-01，精确角色socai2_inv_m7_20261024_01_w/r，全新密码/TLS；writer仅原三表SELECT/INSERT和Run UPDATE(id)行锁权限，reader tenants/alerts/三账本SELECT及默认READ ONLY。私密helper.local新目录只创建本次身份并运行公开probe两阶段，记录子进程PID/创建时间、完成后关闭所有连接，再本次新角色NOLOGIN/撤权/活动0。无旧角色重开/旧失败重放/DDL/共享配置或常驻进程变化。
+
+先probe guard与只读phase合同/strict/未参与实现者核，再真实执行。任何异常保留progress/失败原批，不自动重新publish；提交未知只读诊断，身份/进程清理不能扩大目标。结束独审核真实6/14、全部引用/MD值/预算及phase冷读和清理后才限定c；不据此宣称M8入口、Case、模型/Deep质量或真实通知已交付。
+
 ## 2026-10-24 M7同版交付分块细卡（基线3114609）
 
 ### b实施前细化（基线9bf333f）
