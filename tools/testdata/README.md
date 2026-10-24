@@ -89,7 +89,15 @@ Kafka配置从显式`--kafka-env`文件读取，至少包含`KAFKA_BOOTSTRAP_SER
 
 环境文件必需`DATABASE_URL`、`REDIS_URL`、Kafka bootstrap/protocol、`KAFKA_TOPIC_ALERTS_RAW/FUSED`及`SOCAI_TESTDATA_REDIS_PREFIX`；topic必须匹配本批`.raw/.fused`，Redis前缀为`socai2:testdata:<run-id>:`。允许原Kafka证书/SASL及`PGSSLMODE/PGSSLROOTCERT`，拒绝其他字段和变量插值。文件使用0600；探针不读取旧actor草稿或隐式私有目录。
 
-## 持久结果读取
+## 调查来源记录场景（ClickHouse）
+
+`investigation_fixture.py generate`离线生成一条告警和三条固定网络观察事件：匹配目标、另一目标、窗口外。要求显式`--run-id`、`--tenant`、带时区`--window-start`和新的`--out`目录；不联网、不读取答案参与投放。事件UUID、主机/IP、绝对时间和来源原文与告警一致，action仅为观察、outcome为unknown。
+
+`lake_fixture_probe.py --input-dir <fixture> --tenant <uuid> --config <private.json> --out <new-attempt>`用原LakeWriter写入准确三条，再用独立reader读回47列、原文hash和匹配/反例。配置仅接受writer、reader两对象，各含host/port/database/user/password；两者必须同后端但不同账号。执行前须准备独立测试tenant和表级INSERT-only/SELECT-only身份；本工具不建立数据库行级隔离。一次flush、先落attempt，失败或结果未知不自动重试。完成后撤回writer权限；私有配置及原文留.local。
+
+入湖验证通过后，才对同fixture运行原`prepare-kafka`与`fusion_probe`；后者仍关闭LakeWriter，避免重复入湖。PG source_event_ids中Fusion追加的输入Alert UUID与湖事件UUID分别核对，控制事件不得列为来源。本批实际回执见[逐模块实施记录](../../docs/operations/unified-investigation-implementation.md)。这不证明常驻事件Kafka消费、调查模型或恶意判定已验。
+
+## 持久结果读取（原工具）
 
 ```sh
 .local/conda-envs/socai2/bin/python tools/testdata/observe_results.py \

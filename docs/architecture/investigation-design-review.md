@@ -1,5 +1,7 @@
 # 调查设计评价：默认Case四节点与graph/deep
 
+2026-10-24最新设计为[调查模块规划v4](investigation-planning-design.md)：告警分诊/侦察与Case整体调查保留业务层次，共享问题/证据/分析/执行内核；Case新Run继承材料，创建/关联、启动、领域启用各有政策。20已有自动处理过程和无Case详情，不能用本篇旧建议覆盖它。本文保留旧实现评价与历史证据；实际M4仅有限网络观察通过、M5.1纯合同通过、M5.2增量未测，完整调度及分层入口未交付。当前仅修订方案，见主文档15.4及[实施记录](../operations/unified-investigation-implementation.md)。
+
 2026-10-23本地小修已将Forensic标识检查统一放在Responder/Report之前，两入口一致；降级采用与工具停止交接见[回执](../operations/investigation-result-handoff-20261023.md)。它不构成语义验真或模型拓扑重构，下文旧校验位置为修正前事实；后续设计等待讨论。
 
 后续产品与工程建议见[智能调查优化与扩展方案](investigation-product-engineering-roadmap-20261022.md)：明确急需问题、范围/证据/结论/结果合同和场景演进；仅设计建议，不将下文三编排现状改写为已重构。
