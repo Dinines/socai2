@@ -2,6 +2,8 @@
 
 # 调查模块规划设计文档
 
+**2026-10-24前置三块实际收口：** 用户授权后按M1纯profile绑定→I1正文局部降级→I2完整messages预算逐块实现、直接验证并独审，三个限定块均0剩余必须修；tasks2.1可核销，后续change不归档。I2三处共用12KiB，超限明确阻断并交材料缺口，不自动删反证或分组，不表示10条已被模型消费。真实profile执行接线、独立v2 HTTP/PG/CH接缝、M5整环、M6—M9及Case继承仍待做。下一单项为12.7的独立v2受控查询接缝及共同场景卡；下列M1/I1和仅设计段落保各阶段快照，实际以[实施记录](../operations/unified-investigation-implementation.md)为准。
+
 **2026-10-24 I1实施结果：** 在M1纯绑定放行后，先合同/strict再实现来源可选正文局部降级，45项直接合同及结束独审限定通过；独审发现的转义Unicode异常已修复并留原发现。结构事实、未读正文缺口和输入隔离保留，未增强有限结论。下一步I2完整messages预算；此时真实模型0，完整流程/入口/Case继承仍待做。实际状态统一见[实施记录](../operations/unified-investigation-implementation.md)。
 
 **2026-10-24实施续接：** 用户要求按既定步骤推进，已先写M1业务profile的精确合同并strict验证，再实现纯绑定及直接测试，11新＋原scope8项通过；结束窄审限定ACCEPT、0必须修。当前只把已核Alert/Case目标、成员来源/版本、有限目标和交付归属绑定到原scope；真实profile执行接线、Case成员解析/继承/启动与新HTTP仍未完成。下一步I1正文降级。证据见[实施记录](../operations/unified-investigation-implementation.md)。本次授权覆盖下文旧批“仅设计/等待实施”的停止位置，具体后续仍逐块放行。

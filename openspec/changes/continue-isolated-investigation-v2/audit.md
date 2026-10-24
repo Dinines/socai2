@@ -1,3 +1,11 @@
+## 2026-10-24 I2完整messages预算结束窄审与2.1核销
+
+I1保存f6a3fa8后，先I2精确合同/strict，再新增共享计量与三处接缝、新6项及原模型15项通过。未参与实现的`review_response_audit`独立新6、原模型15和I1六项exit0，核[回执](../../../docs/operations/investigation-request-budget-20261024.json)的4份hash、1/7/8/10准备观察和实际fake执行结果一致，限定ACCEPT、0必须修。完整messages包含system/任务封装/UTF-8转义，12KiB常量及token公式不改；恰好边界通过/超1字节拒绝，准备与egress超限均预留/外呼0，全部事件/Alert/query引用保留。
+
+本步选择明确阻断和材料缺口，不宣称自动分组、大材料已消费或真实模型质量通过；固定模板开销仅准备阶段可核，egress只报实际完整字节/上限/超额。M1纯绑定、I1、I2各自限定放行后仅勾tasks2.1；后续2.2/2.3未完，change不归档。旧版、API入口、tools/testdata、归档及主规格未改，无真实业务调用或部署。下一块是共同场景卡和独立v2受控查询接缝，不能把本轮离线成果追认为真实新路径通过。
+
+最终交接静态核：本轮11份变动MD的443个本地链接无缺失、围栏平衡；三份新回执共11项源码/测试hash均匹配当前相应文件。相对3fa4be3不存在已在该基线中的services文件修改；相对a3a0108的API、tools/testdata、迁移archive及主specs均无差异。活动change strict与diff检查通过；阶段提交/推送仅调查分支，不归档或合main。
+
 ## 2026-10-24 I1可选正文局部降级结束窄审
 
 M1以7e84fe7保存放行后才做本块，先精确规格/设计/预期及strict，再改新版可选摘录和相关事实缺口投影。6新＋11视图＋13采用＋15模型合同均正常exit0，公开[回执](../../../docs/operations/investigation-optional-excerpt-20261024.json)含源码hash、样例和失败历史。未参与实现者`review_response_audit`最初发现转义Unicode编码异常仍整体失败，暂不放行；仅在message编码处捕获invalid_unicode并补正常同批对照后，独立原反例及6项通过，更新为限定ACCEPT、0剩余必须修。正文不替换/透传，必要身份/hash/窗口/版本/前缀校验不放松，有限事实/readable保缺口且无强结论增强。

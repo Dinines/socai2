@@ -1,5 +1,9 @@
 # Execution: 调查分支逐步实施原记录
 
+## 2026-10-24 I2完整messages预算及前置三块收口
+
+I1限定放行后依同样顺序实施I2，共用消息组装/执行前/egress后的12KiB实际字节合同。新6＋原模型15项直接通过，独审另复跑I1六项，0剩余必须修，见[回执](../../../docs/operations/investigation-request-budget-20261024.json)。超限在准备/最终gate显式阻断，保材料引用和受影响问题，不自动分组/裁掉反证；模型/业务调用/写入0。tasks2.1仅按M1纯绑定、I1、I2三个实际回执核销；完整M5/真实新版接缝/同版结果与Case等仍未完成，不归档。
+
 ## 2026-10-24 I1来源可选正文局部降级
 
 按M1放行后再I1的顺序，先精确spec/design/实施卡并strict，再只改新v2解析和有限观察缺口投影。45项直接合同通过，独审发现Unicode编码必须修后已局部修复并独立复验，限定ACCEPT、0剩余必须修，见[实施结果](../../../docs/operations/unified-investigation-implementation.md)与[回执](../../../docs/operations/investigation-optional-excerpt-20261024.json)。原始失败/修订、源码hash及旧probe的基线用途均保留。没有真实模型或业务访问，下一块I2尚未实施。

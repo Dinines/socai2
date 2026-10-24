@@ -27,8 +27,8 @@ from .evidence_view import EvidenceView
 from .execution_state import ExecutionRejected
 from .execution_store import ExecutionStore, ExecutionPersistenceError, canonical_json, content_hash, scope_fingerprint
 from .scope import ScopeContext
+from .request_budget import MAX_INPUT_BYTES, RequestBudgetExceeded, checked_model_input, serialized_message_bytes
 
-MAX_INPUT_BYTES = 12 * 1024
 MAX_OUTPUT_BYTES = 32 * 1024
 MAX_COMPLETION_TOKENS = 2048
 REQUEST_TIMEOUT_SECONDS = 45.0
@@ -63,8 +63,16 @@ def make_analysis_messages(view: EvidenceView, mode: str) -> list:
                          "Answer Q1 and Q2 with insufficient_evidence and finding_keys=[]. "
                          "Any combined assessment may reference only the supported Q5 finding. "
                          "An unavailable query leaves execution unconfirmed; an empty query covers only its stated bounds.")
-    return [SystemMessage(content=instructions),
-            HumanMessage(content=canonical_json({"mode": mode, "evidence": view.model_view}))]
+    messages = [SystemMessage(content=instructions),
+                HumanMessage(content=canonical_json({"mode": mode, "evidence": view.model_view}))]
+    try:
+        checked_model_input(messages)
+    except RequestBudgetExceeded as exc:
+        fixed = serialized_message_bytes([messages[0], HumanMessage(content=canonical_json({"mode": mode, "evidence": {}}))])
+        exc.details.update(fixed_message_bytes=fixed, available_serialized_evidence_bytes=max(0, MAX_INPUT_BYTES - fixed),
+                           serialized_evidence_bytes=exc.details["input_bytes"] - fixed)
+        raise
+    return messages
 
 
 def _bounded_text(value: Any) -> dict:
@@ -132,8 +140,8 @@ class _Observer:
         if self.reservation is not None or kwargs:
             raise ExecutionRejected("one plain model request only")
         _model_contract(llm)
-        actual = LLMInputContract.validate(outbound)
-        body = canonical_json(actual, max_bytes=MAX_INPUT_BYTES)
+        measured = checked_model_input(outbound)
+        actual, body = measured.messages, measured.canonical_messages
         reserve_tokens = len(body.encode("utf-8")) + 256 + MAX_COMPLETION_TOKENS
         began = time.monotonic()
         self.reservation = await self.owner.store.reserve(
@@ -190,7 +198,7 @@ class DurableAnalysis:
         result = {"execution_status": "blocked", "observed_outcome": "no_request", "retention": "not_confirmed",
                   "dispatch_started": False, "attempt_id": str(attempt_id), "raw_reply": None,
                   "restored_content": None, "adoption": None, "readable": None,
-                  "reservation": None, "completion": None}
+                  "reservation": None, "completion": None, "input_budget_gap": None}
         observer = None
         cancelled = False
         if self._active or current_invocation() is not None or current_cost_tracker() is not None:
@@ -203,7 +211,7 @@ class DurableAnalysis:
                 raise ExecutionRejected("stale_input_snapshot")
             _model_contract(self.llm)
             messages = make_analysis_messages(view, mode)
-            canonical_json(LLMInputContract.validate(messages), max_bytes=MAX_INPUT_BYTES)
+            checked_model_input(messages)
             self.mode = mode
             request = dict(step_id=step_id, attempt_id=attempt_id, subtask_id=subtask_id, retry_of=None)
             # Preparation is complete before this local timeout starts. The DB
@@ -230,6 +238,16 @@ class DurableAnalysis:
         except Exception as exc:
             # Provider/driver exceptions may contain URLs or credentials.
             result["reason"] = "analysis_" + type(exc).__name__
+            if isinstance(exc, RequestBudgetExceeded):
+                result["reason"] = "analysis_input_exceeds_request_budget"
+                visible = view.model_view
+                result["input_budget_gap"] = {
+                    **exc.details, "stage": "egress" if observer is not None else "task_preparation",
+                    "snapshot_ref": view.snapshot_ref, "affected_questions": list(visible["questions"]),
+                    "held_evidence_refs": [event["ref"] for event in visible["events"]],
+                    "held_alert_ref": visible["alert"]["ref"], "held_query_ref": visible["query"]["ref"],
+                    "omitted_evidence_refs": [], "automatic_grouping": False,
+                    "required_next_step": "split_task_or_deliver_explicit_material_gap"}
             if observer is not None and observer.reason:
                 result["reason"] = observer.reason
 

@@ -1,14 +1,16 @@
-**2026-10-24 main评审意见续接：** 已同步main `541511c`并从该点新建`codex/investigation-review-20261024`；先读[意见复核、采用决定及后续计划](review-response-20261024.md)。I1/I2断网复现成立、采纳修复；I3限定采纳，I4落实程序固定查询基线及按需Deep验证。当前仅评估/计划，运行行为未修，未新发模型或注册入口。原调查成果已合main，下文`codex/investigation-working`与其提交为历史来源；当前评估分支在普通项目目录提交/推送。
+**main评审来源（实施前快照）：** 本分支从main `541511c`建立，采纳依据见[意见复核与计划](review-response-20261024.md)。该报告是当时评估阶段，最新实施状态以下方本轮结果及实施记录为准；旧调查469e9467已合main，仍作历史来源。
 
 **2026-10-24 main统一审计：** 已整合调查469e9467与数据评估；[双方建议、数据湖协作及续接顺序](../operations/data-investigation-integration-audit-20261024.md)继续作为分工依据。保原设计/源码，v2未启用；共享工具兼容、评测口径与接缝问题未修。
 
 # 调查新版：开发、进度与评审入口
 
+**本轮最新结果：** 按用户要求依次完成M1业务profile纯绑定、I1可选正文局部降级、I2完整messages预算，均先规格/预期/strict再实现/直接测试/回执/未参与实现者窄审，0剩余必须修。tasks2.1据三个限定成果勾选，后续change未完不归档。I2采用超限明确阻断/材料缺口，未自动分组；真实新版HTTP/PG/CH、完整Deep/Case继承/同版发布仍未完成。下一单项为共同网络场景卡与独立v2受控查询接缝，详见[实施记录](../operations/unified-investigation-implementation.md)。
+
 **I1最新结果：** M1按块提交后，I1可选来源正文局部降级的6新＋11视图＋13采用＋15模型合同通过；独审发现Unicode编码异常后已修并独立复验，最终限定ACCEPT、0剩余必须修。来源结构事实/其他记录及readable缺口保留，必要身份/hash不放松；[I1回执](../operations/investigation-optional-excerpt-20261024.json)。下一块I2完整messages预算尚未实施，真实新版入口/Case衔接仍未完成。历史评审probe只对原基线断言缺陷，最新验证用本批合同文件。
 
 **最新实施续接：** 用户已授权按步骤推进。M1业务profile纯绑定11新合同＋原scope8项直接通过，未参与实现者独立复跑并限定ACCEPT、0必须修；[预期与结果](../operations/unified-investigation-implementation.md)、[机器回执](../operations/investigation-profile-contract-20261024.json)。它只绑定已核目标/完整成员及选材覆盖，尚未接执行器、真实Case解析/继承/启动或HTTP；下一步I1正文降级，I1/I2修复此时尚未实施。当前活动分支为`codex/investigation-review-20261024`，下文历史来源与阶段快照按日期理解。
 
-更新：2026-10-24。分支：`codex/investigation-working`。已推送Git服务端，当前开发位置是普通项目目录，旧.local开发工作树已移除。在普通项目目录开发、提交并推送该分支；其他机器拉取即可阅读本页及其全部相对链接，无需取得原机器的`.local`目录。
+更新：2026-10-24。活动分支：`codex/investigation-review-20261024`，基于main `541511c`；原调查`codex/investigation-working`已合main作为来源。普通项目目录逐阶段开发、提交并推送；旧.local工作树已移除。其他机器拉取当前分支即可阅读本页及全部相对链接，无需原机器`.local`。
 
 ## 从哪里开始看
 
@@ -20,6 +22,7 @@
 | 规范、任务、独立审阅 | [设计](../../openspec/changes/continue-isolated-investigation-v2/design.md)、[规格](../../openspec/changes/continue-isolated-investigation-v2/specs/investigation-v2/spec.md)、[任务](../../openspec/changes/continue-isolated-investigation-v2/tasks.md)、[审计](../../openspec/changes/continue-isolated-investigation-v2/audit.md) |
 | 新版代码 | [Agents v2](../../services/agents/app/investigation_v2/README.md)、[API v2](../../services/api/app/investigation_v2/README.md) |
 | 数据/执行/模型的可共享回执 | [ClickHouse](../operations/unified-investigation-clickhouse-20261023.json)、[M3](../operations/unified-investigation-m3-20261023.json)、[M4最终](../operations/unified-investigation-m4-20261024.json)、[版本隔离](../operations/investigation-v2-isolation-20261024.json) |
+| 本轮前置三块回执 | [M1纯绑定](../operations/investigation-profile-contract-20261024.json)、[I1正文降级](../operations/investigation-optional-excerpt-20261024.json)、[I2完整请求预算](../operations/investigation-request-budget-20261024.json) |
 | 首批模型失败及历史问题 | [M4首批失败回执](../operations/unified-investigation-m4-20261023.json)、实施记录的M4调试表、[历史问题总登记](../operations/upstream-issues.md) |
 
 ## 当前做到哪里
@@ -28,8 +31,10 @@
 | --- | --- | --- |
 | D1—D3数据前提 | 3条合成历史事件入CH，1条告警落PG，来源UUID/租户/实体/窗口关联已验 | 不是全量采集或告警自动入湖；不证明恶意/授权 |
 | M1/M2 | 冻结范围/问题合同及网络逐条查询已验，有原版本真实HTTP接缝回执 | 当前仅有限explicit_set/网络观察，不是Case入口已接 |
+| M1业务profile增量 | 纯绑定11新＋原scope8项及独审通过，保完整/所选/遗漏成员与交付归属 | 不等于已认证Case、实际解析/继承/启动或接执行器 |
 | M3 | 原子留存、预留与共享预算已验，有原版本PG/工具接缝 | 未开放多writer/通用恢复，不改旧预算/unknown |
 | M4 | Q1/Q2/Q5限定8例原文/采用/交付通过；选定23484tokens | 不是完整恶意/授权或全调查质量通过 |
+| I1/I2材料消费接缝 | 可选正文局部缺口保留；三处共用完整消息12KiB计量并明确超限结果，直接合同和独审通过 | 未重验真实模型质量；没有自动分组或让10条超限材料被消费 |
 | M5 | M5.1问题/查询纯合同通过；M5.2仅部分准备，完整模型步骤/循环未完成 | 新版Deep整环未完成，不能称调查v2已运行 |
 | 隔离迁移 | 新Agents85、新API8、旧工具51项直接合同通过；旧已跟踪服务文件与基线一致 | 不把历史真实回执算新v2 HTTP路径已验 |
 | v2 HTTP、M6—M9 | HTTP入口未注册/发布；统一循环、同版结果、Case衔接及领域接入仍待做 | 没有切换旧服务、部署新版、自动建Case或启动Case调查 |

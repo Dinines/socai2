@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Prepare complete model messages with the same budget used at dispatch
+
+新版分析任务的消息组装、执行前检查及egress后observer SHALL 复用同一完整messages规范化/序列化与12KiB UTF-8计量合同，包含system、任务封装和转义；MUST NOT 将EvidenceView自身大小作为完整请求可消费的证明或增大全局上限。任务准备只能交付已通过该合同的消息；超限 SHALL 在外呼/预留前明确返回实际字节、上限、超额、受影响问题、保留的快照/全部来源引用及后续材料处理要求，不静默删减支持、反证或冲突版本。当前本块选择显式阻断并交付材料缺口，不自动分组；后续任务拆分须另保引用/覆盖合同。
+
+#### Scenario: A bounded evidence view exceeds the complete task request budget
+- **WHEN** 合法10条来源的视图小于12KiB，但加现有system及任务封装后完整messages超12KiB
+- **THEN** 消息准备明确拒绝，报告固定开销与可用的序列化证据空间，保全部材料引用和受影响问题；执行器返回no_request/未派发，预留/模型调用0，不将此视图标为任务已准备完成
+
+#### Scenario: Privacy egress expands a request that passed preparation
+- **WHEN** 已通过准备的消息在egress后增大至超过相同完整请求上限
+- **THEN** observer使用同一计量函数拒绝且预留/外呼0，保明确egress阶段的字节缺口；不能关闭safe输入合同、按原大小预留或重放请求
+
+#### Scenario: A request is exactly on its UTF-8 byte boundary
+- **WHEN** 包含多字节文本的完整规范消息恰好12KiB或超1字节
+- **THEN** 前者通过当前字节合同，后者拒绝；token预留仍按实际完整消息字节+256+2048原政策，真实usage另结算，不把字节当tokenizer实值
+
 ### Requirement: Degrade optional source excerpts locally while preserving checked observations
 
 EvidenceView SHALL 区分来源身份/必要字段不可核与可选`raw_payload.message`摘录不可用。仅当必要来源合同及hash通过时，超512 UTF-8字节、结构化message、非JSON/重复键正文、截断正文或LLM输入合同不允许的摘录 SHALL 局部省略并留确定原因；其他已核结构字段、原文hash/引用和有效记录 MUST 保留。MUST NOT 裁掉正文后声称完整、将对象直接转成prompt、绕过LLMInputContract或放松身份/hash/窗口校验。依赖未读正文的更强判断 SHALL 保持待核，有限字段谓词不因此扩大。当前alert任务文本的原有界限保持。
