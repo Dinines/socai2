@@ -1,3 +1,9 @@
+# 2026-10-24 当前交接入口
+
+迁移基线按用户最新安排收尾，先读[收尾、版本、原任务核销及后续规划](operations/migration-closeout-20261024.md)。测试背景事件入湖和调查验证由独立开发的调查模块承接，本会话不重复，也不将用户承接说明当作该模块测试或上线证明。已发布v1及数据库说明从[后端对接](integration/v1/README.md)读取；独立调查按自己的change和版本记录实施。
+
+下文保留10月21—23日逐步导航与历史说明；其中“最新”“当前”“5/15”“未部署”“worker OFF”等均按各自日期解释。当前任务结算以10月24日收尾为准，线上/本地及所有失败边界不合并改写。
+
 后续调查设计与换账号续接统一读[调查模块规划设计文档](architecture/investigation-planning-design.md)：问题/证据/分析判断/执行状态、程序与模型分工、旧模块融合、完整案例和官方参考。未来在专用分支逐模块明确预期、开发测试，通过后再推进；统一设计尚未实施。旧产品研究及工程建议保留为依据，不作为第二份实施主方案。
 
 后端表/数据交接新增[25表428字段与实际落库盘点](integration/v1/page-data-mapping.md)，附真实两例ID、完整性/截断边界及已执行的只读SQL。
@@ -34,7 +40,7 @@
 
 当前原则：功能完整、结果正确优先；一体模块可整体原样迁入，不额外改测；冗余设计和服务可用性专项测试/修复登记后置。验证仅围绕本次功能变化，权威规则见[范围](operations/alert-processing-scope.md)和[AGENTS](../AGENTS.md)。
 
-2026-10-21最新：完整迁移告警/调查及自治能力，playbook/反馈一体保留且专项暂缓，可用性专项后置。[完整性评估](../openspec/changes/restore-alert-investigation-integrity/assessment.md)已完成，现按[实施记录](../openspec/changes/restore-alert-investigation-integrity/execution.md)逐批修复和验证；restore当前5/15，旧R02暂缓、不作功能前置。下文R01及旧“下一R02”为历史交接，不覆盖当前状态。
+2026-10-21最新：完整迁移告警/调查及自治能力，playbook/反馈一体保留且专项暂缓，可用性专项后置。[完整性评估](../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/assessment.md)已完成，现按[实施记录](../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/execution.md)逐批修复和验证；restore当前5/15，旧R02暂缓、不作功能前置。下文R01及旧“下一R02”为历史交接，不覆盖当前状态。
 
 工作同时交付功能迁移、固定官方文档与源码对照、架构及二开入口梳理。见[官方功能对照](operations/alert-function-alignment.md)与[服务端架构](architecture/alert-processing.md)；文档和源码存在不等于运行或质量已通过。
 
@@ -42,7 +48,7 @@
 
 历史[C03-R01](operations/c03-triage-review-only.md)代码隔离与定向部署已限定验收：191项断网测试通过（22项新增、169项既有直接测试），0真实模型/新业务写；仅Agents一次构建、一次替换为19f8f1a5，review_only_v1已配置、worker OFF，七只读挂载/60秒宽限保持。旧14材料表、全部告警字段、12预约/240000预留单位/3unknown、十reader、其他35容器/18卷/134迁移及消息水位保持。首次观察脚本RLS错误与189通过/2夹具失败及恢复均保留。该批为28层运行定义、185 Agents/770运行Py，prompt/lock v5不变。当时下一项为[人审准入卡](operations/c03-review-only-profile-plan.md)R02；现已按[status](../openspec/changes/admit-review-only-triage-worker/status.md)暂缓，不据此启动旧计划，后续调查/知识及full配套结果以新回执为准。
 
-UEBA用法、Fusion阶段、[分诊机制](architecture/triage.md)、[调查每次智能体/模型/工具调用](architecture/investigation.md)及[两套流程评价](architecture/investigation-design-review.md)均已有交接，链图也已本地实施，当前按页首B5→B6汇总已有证据与版本。[逐模块路线](operations/module-review-plan.md)及[完整性修复设计](../openspec/changes/restore-alert-investigation-integrity/design.md)保留原任务与历史成果。源码完整不等于完整功能、自治质量或真实响应通过。
+UEBA用法、Fusion阶段、[分诊机制](architecture/triage.md)、[调查每次智能体/模型/工具调用](architecture/investigation.md)及[两套流程评价](architecture/investigation-design-review.md)均已有交接，链图也已本地实施，当前按页首B5→B6汇总已有证据与版本。[逐模块路线](operations/module-review-plan.md)及[完整性修复设计](../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/design.md)保留原任务与历史成果。源码完整不等于完整功能、自治质量或真实响应通过。
 
 | 问题 | 当前维护入口 |
 | --- | --- |
@@ -61,7 +67,7 @@ UEBA用法、Fusion阶段、[分诊机制](architecture/triage.md)、[调查每�
 | 厂商只有HTTP数据接口，自己设计的Tool怎样接入并证明执行 | [外部HTTP接口与Tool执行验证设计](architecture/third-party-search-contract.md)（仅设计，未实施） |
 | UEBA发送什么格式会纳入计算、配置与输出 | [UEBA模块说明与JSON实例](architecture/ueba.md) |
 | UEBA、IOC和知识库有哪些功能、怎样调用 | [依赖项简明使用](operations/dependency-usage.md) |
-| 变更怎样提案、实施、验证与独审 | [OpenSpec实施规范](../openspec/README.md)、[完整性评估/修复change](../openspec/changes/restore-alert-investigation-integrity/proposal.md) |
+| 变更怎样提案、实施、验证与独审 | [OpenSpec实施规范](../openspec/README.md)、[完整性评估/修复change](../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/proposal.md) |
 | 怎样协作、如何保留原件和数据 | [AGENTS](../AGENTS.md) |
 
 ## 需求、分析与证据

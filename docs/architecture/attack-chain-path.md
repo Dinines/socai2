@@ -393,7 +393,7 @@ flowchart LR
 | 3. 按阶段交付 | 选定差异审查完成后，再按阶段发布安排接入独立writer/reader、flag及原tenant/shadow保护 | 这是后续建议，本次不部署、不启worker；不用重复模型矩阵、全量冻结或复杂可用性专项充当前置 |
 | 4. 选下一项业务二开 | 依据下表业务目标挑一项形成独立、可验证的最小需求 | 不同时展开聚类、图算法、自动建Case和Playbook全量改造 |
 
-该顺序沿[现有总计划](../operations/completion-plan.md)B5→B6，保留[原任务](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)的未完责任；不是重新接一遍已验证主链，也不要求为本模块追加新模型样例。
+该顺序沿[现有总计划](../operations/completion-plan.md)B5→B6，保留[原任务](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)的未完责任；不是重新接一遍已验证主链，也不要求为本模块追加新模型样例。
 
 ### 11.4 下一轮真正需要选择的业务方向
 

@@ -21,7 +21,7 @@
 | 4.2 结束独审 | 各局部批次均有相应限定独审 | 真正选定组合还需相应整包审查；本次审查副本及结束复核不自动批准构建/发布 |
 | 4.3 归档 | 完整change尚未结束 | 实际责任完成后再核归档/规格同步；本轮不勾选、不归档 |
 
-本地两处合同、链图和Kafka准备已有直接/真实接缝证据，不要求为上表再跑一轮全模型矩阵。旧质量、unknown、积压和未发输入原样保留。任务定义见[原tasks](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)。
+本地两处合同、链图和Kafka准备已有直接/真实接缝证据，不要求为上表再跑一轮全模型矩阵。旧质量、unknown、积压和未发输入原样保留。任务定义见[原tasks](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)。
 
 ## 2. 比较基线与本地能够证明的范围
 

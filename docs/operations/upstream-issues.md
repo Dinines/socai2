@@ -1,3 +1,5 @@
+**2026-10-24收尾后的维护口径：** 迁移基线按[收尾回执](migration-closeout-20261024.md)交付；以下全部旧失败和未解决项保持，不因归档改成通过。测试背景事件入湖及调查查询/设计由独立调查开发承接，本会话不再重复或代验；LakeQueryError、IPv6比较、promotion执行门、字段缺失/占位及预算/报告问题仍为原证据，独立方自行核对应版本。其他后续工作只在收尾第5节按本问题表归类规划，待讨论后另立对应增量，不自动开工。
+
 **2026-10-23测试工具两例新增观察（后续讨论，不在迁移中改设计）：** 新隔离两例已实际自动关闭/调查，6回复26492tokens；B分诊理由利用synthetic和CONTROL-B场景标记推断可能演练，说明合成样本不适合作盲测质量结论。B调查4轮21796/20000按原轮后软预算停止，报告Summary running与持久Run completed/调查partial仍不同；原heuristic隔离建议未执行。最新本地小修已把8项unavailable/error工具逐次持久留存并在MD交接，但没有真实补查命中。见[回执](testdata-migration-execution-20261023.md)。用户要求需要改后续调查设计时先讨论；本批不改角色/prompt/IO/编排/预算，不重投这两条。
 
 **2026-10-22 两例实测新增明确留存/读取边界（后置完善）：** 两条新raw Kafka已自动关闭/调查，数据及现有工件正文可持久读取；不是所有步骤原文完整归档。3个graph_step仅node且input/output_hash为null，graph_result.messages为空、工具仅200字符preview；首次和Deep后4轮prompt副本截断。当前工具seq10000+先写、graph_result低seq后写，而API since按seq筛选，单追max(seq)可能漏后写结果；后端交付后从无since首页分页补齐。例2network_connections是LakeQueryError，process_tree缺父进程字段，不能统称未接入。depth tokens=0/over_budget=false与graph27697/20000软预算停止不一致，narrative仍为末工具JSON。见[本批回执](service-v1-functional-20261022.md)及[对接指引](../integration/v1/page-data-mapping.md)。只记真实边界，不补造旧材料/重发模型/新建任务树，原质量失败保持。
@@ -87,7 +89,7 @@
 
 I2历史拆分曾将正常graph完成覆盖usage列为本轮修复，将warm/cold、故障重投后接续调查后置。已完成修复保留，尚未解决的问题按最新规则迁移后评估；不再以正常结果正确性或恢复完整性扩展迁移前置，也不建通用阶段账本/恢复框架。
 
-历史发现详见[完整性评估](../../openspec/changes/restore-alert-investigation-integrity/assessment.md)。I1：本地临时入口/profile限制与Case归属检查耦合；I2：新分诊首次结果保护与原graph共Run/usage冲突已由生产函数内存替身复现；I3：HTTP/Kafka融合共享dedup却不同首次结果合同；I4：上游调查图不可用被当零邻居及通用工具/知识未接。逐项归属，不笼统记为上游问题，也不全面回退已有修复；评估中的“只规划”是当时状态，后续实际修复/部署见各新回执，剩余排期按本页最新规则。
+历史发现详见[完整性评估](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/assessment.md)。I1：本地临时入口/profile限制与Case归属检查耦合；I2：新分诊首次结果保护与原graph共Run/usage冲突已由生产函数内存替身复现；I3：HTTP/Kafka融合共享dedup却不同首次结果合同；I4：上游调查图不可用被当零邻居及通用工具/知识未接。逐项归属，不笼统记为上游问题，也不全面回退已有修复；评估中的“只规划”是当时状态，后续实际修复/部署见各新回执，剩余排期按本页最新规则。
 
 按用户要求新增后置登记：启动顺序、正常/异常退出、重启/故障恢复矩阵、ack丢失注入、长稳/压力及全量计数审计；R02暂缓且不作为功能接入前置。playbook/反馈额外修改和专项测试后置，一体实现原样保留、标未专项验证。原有安全/预算保护与旧unknown不移除。下文旧“禁用条件延期”的编排入口现改为完整功能恢复规划项，不据此宣称已经开放或通过。
 

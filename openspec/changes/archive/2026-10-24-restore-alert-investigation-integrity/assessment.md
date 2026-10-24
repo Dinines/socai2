@@ -22,17 +22,17 @@
 
 ### I1 临时入口裁剪与人审profile限制完整功能
 
-本地新增 [scoped_baseline.py](../../../services/agents/app/core/scoped_baseline.py) 只放默认人工调查、查询及MD/HTML；router triage、agent-runs、PDF、WS等源码存在但被阻止。API仍有PDF代理，转发会到被挡入口。这是1G有意缩小开放面，不是文件删除。
+本地新增 [scoped_baseline.py](../../../../services/agents/app/core/scoped_baseline.py) 只放默认人工调查、查询及MD/HTML；router triage、agent-runs、PDF、WS等源码存在但被阻止。API仍有PDF代理，转发会到被挡入口。这是1G有意缩小开放面，不是文件删除。
 
-当前review_only配置使 [auto_triage_agent.py](../../../services/agents/app/agents/auto_triage_agent.py) 在566行附近、closure/QA之前返回；worker1248行附近禁止graph，ledger575/600行附近不写canonical Alert。它们符合旧R01限定合同，但不满足用户最新完整自动关闭/调查目标。
+当前review_only配置使 [auto_triage_agent.py](../../../../services/agents/app/agents/auto_triage_agent.py) 在566行附近、closure/QA之前返回；worker1248行附近禁止graph，ledger575/600行附近不写canonical Alert。它们符合旧R01限定合同，但不满足用户最新完整自动关闭/调查目标。
 
-**恢复不能只关总开关**：[investigate.py](../../../services/agents/app/api/investigate.py) 378—390行新增Case所属tenant检查与baseline开关耦合；直接关闭会同时撤掉必要归属校验。WS原尾读Run也未绑定Run tenant。规划先解耦身份检查，再恢复完整告警/调查入口和效果边界；playbook/反馈/厂商动作不随解除限制自动打开。
+**恢复不能只关总开关**：[investigate.py](../../../../services/agents/app/api/investigate.py) 378—390行新增Case所属tenant检查与baseline开关耦合；直接关闭会同时撤掉必要归属校验。WS原尾读Run也未绑定Run tenant。规划先解耦身份检查，再恢复完整告警/调查入口和效果边界；playbook/反馈/厂商动作不随解除限制自动打开。
 
 ### I2 分诊首次结果保护与自动调查共享Run不兼容
 
-[worker](../../../services/agents/app/workers/fused_alert_consumer.py) 894/902行在warm pending保存或cold结果复用后直接return，绕过1248行自动升级。首次保存失败后仅恢复保存成功，可能不再推进本应执行的调查。
+[worker](../../../../services/agents/app/workers/fused_alert_consumer.py) 894/902行在warm pending保存或cold结果复用后直接return，绕过1248行自动升级。首次保存失败后仅恢复保存成功，可能不再推进本应执行的调查。
 
-原 [graph runner](../../../services/agents/app/graph/runner.py) 176—183行调用complete_run时不传usage；[ledger](../../../services/agents/app/investigator/ledger.py) 347—352/379—384行默认0并覆盖Run总tokens/counts。这个总量覆盖行为继承上游；新增 [triage_delivery](../../../services/agents/app/workers/triage_delivery.py) 151—154行又要求triage首次快照usage等于Run总量，于是完成graph后可能拒绝读取原分诊结果。
+原 [graph runner](../../../../services/agents/app/graph/runner.py) 176—183行调用complete_run时不传usage；[ledger](../../../../services/agents/app/investigator/ledger.py) 347—352/379—384行默认0并覆盖Run总tokens/counts。这个总量覆盖行为继承上游；新增 [triage_delivery](../../../../services/agents/app/workers/triage_delivery.py) 151—154行又要求triage首次快照usage等于Run总量，于是完成graph后可能拒绝读取原分诊结果。
 
 未改写的生产函数AST加内存替身已复现：warm和cold复用均未进入escalate；graph完成使旧tokens18→0、unpriced_calls1→0，随后首次结果投影报 `recovery usage differs from completed run`。这是本地恢复保护与原graph的组合缺陷，不是21现场故障；当前graph关闭。探针首次缺注入time的NameError为探针错误，修正后才取得上述结果，见probes。
 
@@ -40,13 +40,13 @@
 
 ### I3 HTTP与Kafka融合入口的完整处理合同分叉
 
-原 [/process](../../../services/fusion/app/api/router.py) 118行直接engine.process，仍被 [tools/fusion.py](../../../services/agents/app/tools/fusion.py) 76行调用；它写共享dedup却绕过live canonical ID、首次快照、PG和消息交付。C01保护遇到同输入已有dedup却无快照时会hold，故不能声称两入口业务等价。
+原 [/process](../../../../services/fusion/app/api/router.py) 118行直接engine.process，仍被 [tools/fusion.py](../../../../services/agents/app/tools/fusion.py) 76行调用；它写共享dedup却绕过live canonical ID、首次快照、PG和消息交付。C01保护遇到同输入已有dedup却无快照时会hold，故不能声称两入口业务等价。
 
 路由本身继承上游，分叉影响与本地持久合同组合；principal未绑定body tenant也是上游缺口。现有Fusion认证503限制不能当已发生越权或已完整开放。规划保持FusedAlert响应，统一两入口关键处理与身份合同，核同输入跨入口结果一致；不以回退C01解决。
 
 ### I4 默认调查缺源与真实空结果混淆
 
-原 [bundle_prompt.py](../../../services/agents/app/investigator/bundle_prompt.py) 51行构造builder未传api_token；通用图工具在关闭/缺身份时返回error/available=false，但 [bundle.py](../../../services/agents/app/context/bundle.py) 617—629行仍生成“0 neighbors”。该摘要会进入实际模型prompt。生产方法加不可用工具替身已复现。
+原 [bundle_prompt.py](../../../../services/agents/app/investigator/bundle_prompt.py) 51行构造builder未传api_token；通用图工具在关闭/缺身份时返回error/available=false，但 [bundle.py](../../../../services/agents/app/context/bundle.py) 617—629行仍生成“0 neighbors”。该摘要会进入实际模型prompt。生产方法加不可用工具替身已复现。
 
 此问题继承上游，不是本地删代码。完整调查须补所需工具身份，并将不可用、失败、无匹配、成功分开。五类分诊reader不替代通用调查工具。向量空间/embedding/集合尚未对齐及知识实际消费仍是未完成接入，不属于原件丢失。
 

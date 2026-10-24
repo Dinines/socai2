@@ -1,3 +1,5 @@
+**2026-10-24收尾状态：** 用户将背景事件入湖/相关调查验证交独立调查开发，本会话停止重复测试。迁移change按[收尾回执](../docs/operations/migration-closeout-20261024.md)结算实际交付及转出责任，已通过静态结束独审及归档前检查，归档并同步17条有证据的主规格合同。新调查不再沿该归档change实施。原5/15/B5→B6为10月21—23日过程状态，历史R02仍暂缓0/17；不等于新调查实现或质量已通过。
+
 # OpenSpec实施说明
 
 2026-10-21起，OpenSpec是本项目的变更实施规范。使用本机OpenSpec 1.13.0的 `spec-driven` schema，由CLI与根AGENTS接入；本次 `init --tools none` 未安装 `/opsx:*` 快捷指令或改写个人工具配置。
@@ -28,10 +30,10 @@
 
 可用 `openspec status --change <name>` 检查产物、`openspec instructions apply --change <name>`取得CLI上下文。产物齐全不是任务完成；checkbox、证据和独审共同约束归档。按根AGENTS执行，不自动Git提交/推送。
 
-## 当前change
+## 已归档迁移与后续变更
 
-后续业务顺序以[总执行计划](../docs/operations/completion-plan.md)B1—B6为准，映射原六阶段，不另立目标；自动调查包含自动触发、分诊、关闭或升级、实际取证/分析及结果交付。总规划属于纯文档change，不重复建立产品任务树，也不以规划完成代替功能通过。
+[restore-alert-investigation-integrity](changes/archive/2026-10-24-restore-alert-investigation-integrity/proposal.md)于2026-10-24按用户明确范围归档，原15编号已完成实际交付及转出责任结算；原5/15是历史状态，非当前业务完成比例。[主规格](specs/alert-investigation-integrity/spec.md)同步17条合同并保留版本/证据边界，线上v1与本地小修分开，不代表全部质量或独立调查通过。实际证据、范围和后续规划见[收尾回执](../docs/operations/migration-closeout-20261024.md)。
 
-[restore-alert-investigation-integrity](changes/restore-alert-investigation-integrity/proposal.md)：作为B1—B6的产品实施任务入口，现5/15（4项评估及B1完成、10项仍未勾选）。已有主链接通及多批局部成果按原回执保留，当前沿B5→B6做[阶段交接](../docs/operations/investigation-stage-handoff-20261022.md)，不把局部验收或CLI产物齐全当作整体任务完成。playbook/反馈一体保留不额外改测，可用性专项后置，已有保护不回退。
+后续调查、背景数据和其他业务改动使用各自独立change/分支，不在归档迁移中继续实施。原B1—B6只作历史路线与证据导航，后续规划尚未因此启动。
 
-[admit-review-only-triage-worker](changes/admit-review-only-triage-worker/status.md)对应旧R02，**暂缓、不作为功能迁移前置，0/17未执行或验收**。只新增status侧附，原五文件及hash保留，不归档成完成；CLI仍可能显示in-progress/ready，实施者必须先读status和项目上下文，不据此执行。旧模型失败、unknown和运行OFF保持。
+[admit-review-only-triage-worker](changes/admit-review-only-triage-worker/status.md)为旧R02，仍暂缓0/17、未执行未验收，不归档为通过。原五文件保持，本次仅维护status侧附的归档引用/日期说明；CLI显示不授权恢复。旧模型失败、unknown和原批运行事实保持。

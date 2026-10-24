@@ -167,7 +167,7 @@ P202 要求支持高风险自动触发，但并未规定只能调查高风险；
 
 ## 6 后续推进顺序
 
-以下是建议路线，沿用 [B1—B6 总计划](completion-plan.md)和 [restore 原任务](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)，不新增并行产品任务树。迁移后的需求补齐应在选定后形成相应 OpenSpec 增量；此次评估不执行代码、模型、消息、部署或开关变更。
+以下是建议路线，沿用 [B1—B6 总计划](completion-plan.md)和 [restore 原任务](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)，不新增并行产品任务树。迁移后的需求补齐应在选定后形成相应 OpenSpec 增量；此次评估不执行代码、模型、消息、部署或开关变更。
 
 ### 6.1 先收口当前迁移版本
 
@@ -225,4 +225,4 @@ P202 要求支持高风险自动触发，但并未规定只能调查高风险；
 
 最近可执行的迁移工作是：使用已经构建并完成离线核验的候选镜像，完成阶段发布准备与实际交付。迁移后的首项业务补齐建议是：选定试点的数据源和调查范围，接着解决证据与完成语义；这两项比继续增加 Agent 数量或扩大图节点数量更直接影响标书能否满足。
 
-本次文档核验与独立审阅结果记录在 [现有 change 审计](../../openspec/changes/restore-alert-investigation-integrity/audit.md)。该审阅只确认本次评估的证据与表述，不代替产品验收；原产品任务 5/15、R02 0/17、worker OFF 与旧质量失败保持。
+本次文档核验与独立审阅结果记录在 [现有 change 审计](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/audit.md)。该审阅只确认本次评估的证据与表述，不代替产品验收；原产品任务 5/15、R02 0/17、worker OFF 与旧质量失败保持。

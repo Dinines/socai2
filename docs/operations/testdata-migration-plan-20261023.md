@@ -6,7 +6,7 @@
 
 ## 1. 找回的原设计与实际完成点
 
-已回查原会话「继续推进迁移」（`01a160e5-adfa-7273-8be8-684b2cf2d670`）中关于数据质量、Purple Team及两三个测试数据模块的讨论；与[原OpenSpec设计](../../openspec/changes/restore-alert-investigation-integrity/design.md)、[原工具回执](testdata-tools-20261022.md)、[恢复记录](two-projects-resume-20261022.md)交叉核对。原设计选定：固定上游原件→项目已有告警适配→输入与答案分离→少量入口/Fusion验证；没有把全部评测、仿真和诱饵能力列为首批运行任务。
+已回查原会话「继续推进迁移」（`01a160e5-adfa-7273-8be8-684b2cf2d670`）中关于数据质量、Purple Team及两三个测试数据模块的讨论；与[原OpenSpec设计](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/design.md)、[原工具回执](testdata-tools-20261022.md)、[恢复记录](two-projects-resume-20261022.md)交叉核对。原设计选定：固定上游原件→项目已有告警适配→输入与答案分离→少量入口/Fusion验证；没有把全部评测、仿真和诱饵能力列为首批运行任务。
 
 | 能力 | 当时选择及现在事实 | 修订规划中的位置 |
 | --- | --- | --- |

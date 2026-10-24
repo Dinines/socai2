@@ -300,4 +300,4 @@ Router未知结论及汇合修正是扩大该路径使用前的独立必要项�
 
 2026-10-23修订只保存审核后的方案：已完成建议/源码/旧回执对照，将五类重点意见融入对应章节，拆细批次及有限验收材料。未修改业务源码、API/数据库合同或运行配置，未运行新业务测试/模型、发消息、访问生产或部署，未改变原5/15及旧质量结论，未提交/推送Git。修订前文档副本保留在`.local/versions/investigation-plan-review-20261023/before/`；后续实施须另依据用户选择的范围推进，本次保存不构成执行指令。
 
-本次修订结束文档独审：`resumed_projects_end_audit`限定ACCEPT、0项本轮必须修项；仅覆盖本次建议与事实边界，未执行方案验收。记录见[原change审计](../../openspec/changes/restore-alert-investigation-integrity/audit.md)。
+本次修订结束文档独审：`resumed_projects_end_audit`限定ACCEPT、0项本轮必须修项；仅覆盖本次建议与事实边界，未执行方案验收。记录见[原change审计](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/audit.md)。

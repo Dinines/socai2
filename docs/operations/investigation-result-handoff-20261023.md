@@ -17,7 +17,7 @@
 
 ## 逐步校验
 
-设计：[本批OpenSpec](../../openspec/changes/restore-alert-investigation-integrity/design.md)。证据目录：`.local/verification/investigation-result-handoff-20261023/`。表内是各步结果，部分复用测试重叠，不能相加当唯一用例数。
+设计：[本批OpenSpec](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/design.md)。证据目录：`.local/verification/investigation-result-handoff-20261023/`。表内是各步结果，部分复用测试重叠，不能相加当唯一用例数。
 
 | 步骤 | 校验与日志 | 结果 |
 | --- | --- | --- |

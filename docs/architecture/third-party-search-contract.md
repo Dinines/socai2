@@ -2,7 +2,7 @@
 
 2026-10-21。**仅设计，未实现、未连接厂商、未发HTTP或模型、未运行功能测试。** 用户重点是接入厂商已经开放的HTTP数据接口，并验证自己设计的Tool实际执行正确。我们在内部保留统一查询，由adapter转换厂商请求；不要求厂商新增接口、改字段或接收UnifiedQuery，也不预先要求厂商支持全部算子。
 
-现有实现见[SIEM接入说明](../operations/siem-tool-integration.md)、[工具目录](investigation-tool-catalog.md)及[执行/配置/测试指南](../operations/investigation-tools.md)。本设计沿[当前OpenSpec change](../../openspec/changes/restore-alert-investigation-integrity/design.md)2.1/4.1记录，不改变当前业务/模型schema/配置；未来实施前补必要规格和任务，原5/15保持。
+现有实现见[SIEM接入说明](../operations/siem-tool-integration.md)、[工具目录](investigation-tool-catalog.md)及[执行/配置/测试指南](../operations/investigation-tools.md)。本设计沿[当前OpenSpec change](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/design.md)2.1/4.1记录，不改变当前业务/模型schema/配置；未来实施前补必要规格和任务，原5/15保持。
 
 ## 1. 接什么：外部HTTP接口保持原样
 

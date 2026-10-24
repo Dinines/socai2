@@ -1,3 +1,11 @@
+# 2026-10-24 后续授权：本地Git提交，之后继续规划
+
+用户在迁移收尾后明确要求做一轮commit，再继续规划后续开发。本次允许将已审的迁移收尾/归档及本条授权记录做一次本地提交，不包含push、业务开发、测试或部署。实际提交结果以Git历史与当轮回执为准。下文“未提交/不提交”是先前收尾阶段边界，不限制此次新授权；独立调查/入湖仍由另一工作承接；用户随后明确呈现相关工作归对应后端模块，本会话不展开列表/筛选/统计/取数对接，后续仅讨论本服务自身功能范围。
+
+# 2026-10-24 最新：迁移收尾，独立调查另行承接
+
+用户明确本会话不再测试背景事件入湖/调查闭环，相关工作已由单独开发的调查模块处理；不复验或代其宣称通过。先结束已选范围的告警与调查服务端迁移基线，后续工作只规划、待讨论。当前收尾与原15项责任核销见[收尾及后续规划](docs/operations/migration-closeout-20261024.md)。原迁移change已完成限定结束独审并归档为`2026-10-24-restore-alert-investigation-integrity`，同步17条合同，封后独立窄复核限定ACCEPT/0必须修；本轮仅文档/OpenSpec静态校核、结束独审及归档，不改业务代码/运行配置，不访问生产、写数据、发模型或消息、部署、Git提交/推送，不创建定时安排。旧partial/质量失败/unknown/积压保持；线上v1与本地小修分开。独立调查后续使用自己的change/分支，本迁移归档后不复用它实施新设计。下文10月23日及更早“当前/5/15/未完成”均为当日历史状态，由本条和收尾回执覆盖当前任务状态。
+
 # socai2 / stingAISOC 工作约定
 
 - **2026-10-23测试数据迁移已实测：** 用户授权后完成场景选择/Kafka wire有界发送/只读观察和隔离联测，见[回执](docs/operations/testdata-migration-execution-20261023.md)。44直接测试/39子项通过；3条新输入Fusion3Alert/6消息/0模型；另2例自动BTP关闭、NR调查partial，6回复26492tokens/29工件。仅工具侧改动，188个Agents源码与6上游原件hash保持；测试标记干扰理由、21796/20000软预算停止、报告running与Run completed差异登记待讨论，不重调或顺带改调查设计。临时进程/隧道停，2新key停用，预算2 responded。新增Git忽略可选输出目录，实际运行材料均留.local；无部署/提交/push，原5/15保持。
@@ -98,7 +106,7 @@
 
 - **2026-10-21工作目的与执行授权：** 用户明确开始执行，允许多个worker并行。当前工作有三个共同目的：①迁移告警及后续处理流程，保证实际功能和结果符合预期；②在迁移中理解源码，对照固定版本官方文档核功能点，标清已实现、未接通和声明未实现，不把文档声明当交付事实；③整理当前架构、模块职责、数据/调用关系与扩展点，供后续二次开发。执行与功能对照、架构梳理同步推进；不另开全平台重构或无限上游审计。见[总计划](docs/operations/completion-plan.md)、[官方功能对照](docs/operations/alert-function-alignment.md)、[当前架构](docs/architecture/alert-processing.md)。下列旧“先讨论/仅规划”是历史阶段，当前已进入实施，完成仍以实际证据为准。
 
-- **2026-10-21最新范围/优先级（优先于下列旧批次“下一项”）：** 用户确认完整迁移告警与调查，包括自动分诊、自动关闭告警、自动升级调查及人工调查/报告；playbook和反馈可暂缓，一体源码/依赖原样保留，不额外修改或专项测试。启动顺序、退出、重启/故障恢复等可用性专项登记后置，不作为功能迁移前置；现有保护代码、旧unknown和历史证据保留。[完整性评估](openspec/changes/restore-alert-investigation-integrity/assessment.md)已完成，现按批实施修复和必要定向部署，实际运行与质量以回执为准；R02[侧附暂缓](openspec/changes/admit-review-only-triage-worker/status.md)，原0/17及五文件不改。完整目标不等于自治质量或真实响应已验收，亦不扩大前端/采集/检测职责。
+- **2026-10-21最新范围/优先级（优先于下列旧批次“下一项”）：** 用户确认完整迁移告警与调查，包括自动分诊、自动关闭告警、自动升级调查及人工调查/报告；playbook和反馈可暂缓，一体源码/依赖原样保留，不额外修改或专项测试。启动顺序、退出、重启/故障恢复等可用性专项登记后置，不作为功能迁移前置；现有保护代码、旧unknown和历史证据保留。[完整性评估](openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/assessment.md)已完成，现按批实施修复和必要定向部署，实际运行与质量以回执为准；R02[侧附暂缓](openspec/changes/admit-review-only-triage-worker/status.md)，原0/17及五文件不改。完整目标不等于自治质量或真实响应已验收，亦不扩大前端/采集/检测职责。
 - **实施总原则：功能完整、结果正确优先，最小必要适配。** 所有一体模块/依赖都可整体原样迁入，不因本轮暂不使用就拆分、删改、重构或额外测试，playbook/反馈只是例子。仅改直接缺失的功能、正常业务结果错误及实际接入必需项；复用现有测试，只做本次改动所需的最少代表验证。冗余抽象/多层包装、提前统一架构，以及启动顺序、退出、重启/恢复、故障注入、长稳/压力等服务可用性测试和修复登记暂缓，不再设成功能迁移前置。整体原样迁入可标“未专项验证”，不得改写成已测通过；现有保护与旧证据保留。
 - **当前总计划：** [completion-plan](docs/operations/completion-plan.md)按B1告警链、B2默认人工调查、B3知识实际消费、B4自动分诊/关闭/自动调查、B5其他调查及交付、B6整体功能验收推进，沿用现有六阶段及restore产品任务。自动升级后须实际自动取证/分析/结果交付，无需人工再次点击；不是仅创建Run或给建议。当前B1已限定完成，B2/B3已接入并有实际消费/报告证据但质量未全过，B4自动调查的正常结果阻塞正最小修复，R02仍后置。
 
@@ -143,7 +151,7 @@
 3. [模块总览](docs/reference/aisoc/01-system-map.md)，再读对应 M 编号的专题。
 4. 涉及环境或模型时读 [环境](docs/operations/environment.md)、[配置与凭据索引](docs/operations/configuration.md)及[已有证据](docs/operations/verified-evidence.md)。需求日常阅读见 [需求 Markdown](docs/requirements/README.md)。
 5. 用户指出 [docs/anal](docs/anal/README.md) 保存此前分析：复用模块、源码、测试和风险结论，对照固定源码核实。`docs/reference/aisoc`为交接链接版，两份分析保留；其中全量上游结构不扩大当前职责，历史规划不作为当前任务。文档入口见[导航](docs/README.md)。
-6. 读[OpenSpec实施说明](openspec/README.md)与[项目配置](openspec/config.yaml)，通过 `openspec list` / `openspec list --specs` 查当前 change 和规格，再读本批相关的完整 spec、proposal、design、tasks及status。当前为 `restore-alert-investigation-integrity` 实施中；旧R02目录虽仍可能被CLI列为ready，但按status暂缓，不执行。
+6. 读[OpenSpec实施说明](openspec/README.md)与[项目配置](openspec/config.yaml)，通过 `openspec list` / `openspec list --specs` 查当前 change 和规格，再读本批相关的完整 spec、proposal、design、tasks及status。迁移change `restore-alert-investigation-integrity` 按10月24日收尾回执归档；后续独立调查应使用自己的change。旧R02目录虽仍可能被CLI列为ready，但按status暂缓，不执行。
 
 ## OpenSpec 实施规范
 

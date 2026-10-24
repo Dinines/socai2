@@ -1,10 +1,10 @@
 ## Purpose
 
-定义完整告警和调查迁移的目标行为，使原有分诊、自动关闭、自动升级、人工调查及结果交付能够保持业务联系，必要租户和证据边界不因解除临时限制而丢失。本规格是待实施的修复目标，不能作为当前功能、模型质量或运行已通过的证明。
+记录截至2026-10-23已有证据支持、并按2026-10-24用户安排收尾的告警与调查服务端迁移基线合同。正式已有告警经Kafka/Fusion进入自动分诊、关闭或实际调查，人工调查、所选工具/PG知识、链图及结果/Markdown读取已有各自证据。合同不等于所有场景、来源、分支或模型语义质量通过；partial、错误及unknown保持原判定。
 
-迁移同时承担固定官方文档与源码功能对照、当前架构与二开扩展点梳理，随实际批次记录，不扩为全平台重构或无限上游审计。
+适用版本须分开：`Validate manual findings before downstream adoption`和`Preserve completed tool material through investigation stop`为10月23日已验本地交付，当时未部署；其余接线按v1、full及各原回执的条件适用，UEBA联动本地联合通过不代表常驻开启。线上v1与本地小修不得合并成一个已发布版本，收尾未重新验证生产运行态。
 
-当前阶段按2026-10-21最新指示仅先接通正式告警输入到实际自动调查、已配置工具/知识调用及基本结果/报告/关联记录读取。已有B4 case02证据可复用；partial、缺源、模型/报告及计量质量问题保留，迁移后评估，不要求全部入口/分支或这些后续完整目标先完成。已修代码不回退，不追加复杂可用/冗余测试、重复组合/全量校验/冻结、多轮审计或新控制框架；既有保护保持。
+背景事件入湖及相关调查验证由独立调查开发承接，本change不重复或代其验收；完整向量/全部来源、上游占位、独立调查新设计、报告/预算等质量完善及运行专项不作为本次收尾前置。将来行为变化使用独立change。详见docs/operations/migration-closeout-20261024.md；原失败/权限/预算/unknown/积压及真实响应审批约束保持。
 
 ## ADDED Requirements
 
@@ -103,7 +103,7 @@ Agents SHALL 在合法fused Kafka告警的公共消费入口、原恢复/抑制/
 
 ### Requirement: Investigations consume existing chain and path context
 
-调查 SHALL 复用原Case攻击链算法、Case路径查询及图投影函数，按真实Case/tenant/关联告警准备可追溯的链/图上下文。MUST 区分已有函数、已开启配置、已投影数据、模型实际消费及Run持久结果；不得仅开启full或graph开关便宣称端到端完成。本增量为待实施规划，不是当前运行完成证明。
+调查 SHALL 复用原Case攻击链算法、Case路径查询及图投影函数，按真实Case/tenant/关联告警准备可追溯的链/图上下文。MUST 区分已有函数、已开启配置、已投影数据、模型实际消费及Run持久结果；不得仅开启full或graph开关便宣称端到端完成。具体实现/验证/发布范围以链图及v1回执为准，不将PG回退、候选关系或未验分支写成完整因果路径。
 
 #### Scenario: An investigation prepares a real case graph
 - **WHEN** 已授权Case调查读取同tenant真实PG Case及关联告警
@@ -175,7 +175,7 @@ Agents SHALL 在合法fused Kafka告警的公共消费入口、原恢复/抑制/
 
 ### Requirement: Restore investigation entry points without losing ownership checks
 
-告警和调查入口 SHALL 按功能矩阵恢复；Case/Run的tenant归属校验 MUST 独立于临时入口限制，解除限制不得允许跨tenant发起或读取调查。playbook/反馈及真实厂商动作不得因开放调查被连带开启。
+告警和调查入口 SHALL 按本次选定功能矩阵恢复实际所需入口，其他入口保留未验；Case/Run的tenant归属校验 MUST 独立于临时入口限制，解除限制不得允许跨tenant发起或读取调查。playbook/反馈及真实厂商动作不得因开放调查被连带开启。
 
 #### Scenario: A required investigation endpoint is restored
 - **WHEN** 启用原人工/自动调查或报告交付入口
@@ -199,7 +199,7 @@ Agents SHALL 在合法fused Kafka告警的公共消费入口、原恢复/抑制/
 
 ### Requirement: Investigation distinguishes unavailable sources from empty evidence
 
-实际工具/知识查询 SHALL 使用所需租户身份，成功、无匹配、不可用及失败 MUST 分开呈现。模型可见材料、来源引用、结论及报告可回查，不以缺源推断不存在关联或安全。 当前第一步验收复用实际执行和基本结果可读取的证据；已发现的内容/引用/深度质量缺陷保留失败并登记迁移后评估，不作为接通前置。
+实际工具/知识查询 SHALL 使用所需租户身份，成功、无匹配、不可用及失败 MUST 分开呈现。实际已留存的模型可见材料、来源标记、结果及报告可按Run回查；须保留正文、preview、裁剪及未留存差异，不保证全步骤原文完整或引用语义正确，不以缺源推断不存在关联或安全。 当前第一步验收复用实际执行和基本结果可读取的证据；已发现的内容/引用/深度质量缺陷保留失败并登记迁移后评估，不作为接通前置。
 
 #### Scenario: A graph source is disabled or lacks credentials
 - **WHEN** 工具返回error或available=false

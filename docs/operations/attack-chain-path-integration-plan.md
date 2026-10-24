@@ -2,7 +2,7 @@
 
 # 攻击链与Attack Path接入调查计划
 
-2026-10-21。用户要求规划把已有攻击链/图谱能力接入调查，并核清是否只是尚未开启。本轮仅源码核对与规划，未改业务代码、配置或运行，未测试/调用模型/发布。沿[现有change](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)2.1/3.1/3.4/4.1及B5实施，不另建产品任务树；实际完成仍5/15。
+2026-10-21。用户要求规划把已有攻击链/图谱能力接入调查，并核清是否只是尚未开启。本轮仅源码核对与规划，未改业务代码、配置或运行，未测试/调用模型/发布。沿[现有change](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)2.1/3.1/3.4/4.1及B5实施，不另建产品任务树；实际完成仍5/15。
 
 ## 1. 结论与当前状态
 

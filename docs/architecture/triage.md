@@ -1,6 +1,6 @@
 # 告警分诊：功能、默认规则与下一步实施
 
-2026-10-21。接续[Fusion阶段小结](fusion.md#六当前阶段小结可以转入下游分诊)，按“支持什么、默认怎么做、输入输出、具体例子、再讨论取舍”梳理当前工作区源码。本次是只读分析和实施规划，没有新增模型调用、业务测试、运行启用或发布。实施仍归[当前OpenSpec change](../../openspec/changes/restore-alert-investigation-integrity/proposal.md)的2.1/3.3/3.4/4.1，不另造产品任务树。
+2026-10-21。接续[Fusion阶段小结](fusion.md#六当前阶段小结可以转入下游分诊)，按“支持什么、默认怎么做、输入输出、具体例子、再讨论取舍”梳理当前工作区源码。本次是只读分析和实施规划，没有新增模型调用、业务测试、运行启用或发布。实施仍归[当前OpenSpec change](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/proposal.md)的2.1/3.3/3.4/4.1，不另造产品任务树。
 
 ## 1. 它解决什么问题
 

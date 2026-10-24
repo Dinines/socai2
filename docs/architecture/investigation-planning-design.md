@@ -1,3 +1,5 @@
+**2026-10-24分工更新：** 用户说明背景事件入湖及相关调查工作已由单独开发的调查模块处理，本迁移会话不重复、不复验。迁移按[收尾回执](../operations/migration-closeout-20261024.md)结束；本规划继续作为独立调查的设计参考，实施状态以该模块自己的分支/change/回执为准。本说明不证明M0—M9已经实现或通过，正文原“本轮/仅规划/未提交基线”等均为10月23日交接快照。
+
 # 调查模块规划设计文档
 
 2026-10-23 · v2（统一设计及换账号续接）· 方案已保存，统一调查尚未实施
@@ -6,7 +8,7 @@
 
 用户本轮明确：现有四角色、graph/Deep、Router不必固定保留，可从Agent工程和安全调查角度融合；先形成设计，不改代码。本稿因此不再以“三套拓扑和四个必跑模型不变”为目标约束。此前小修批次保拓扑的承诺仍适用于其已完成范围，不被本稿改写。
 
-本稿只定义拟议合同、职责和迁移方式，所有新字段、状态及工件种类均为建议，并非当前API已经支持。业务源码、模型配置、预算数值、数据库、运行开关和生产服务本轮不变；不执行模型/业务测试，不提交或推送，不改变原5/15和旧失败。后续实施须把选定批次纳入原OpenSpec变更并逐步验证。
+本稿只定义拟议合同、职责和迁移方式，所有新字段、状态及工件种类均为建议，并非当前API已经支持。业务源码、模型配置、预算数值、数据库、运行开关和生产服务本轮不变；不执行模型/业务测试，不提交或推送，不改变原5/15和旧失败。后续实施须把选定批次纳入独立调查OpenSpec变更并逐步验证；迁移归档仅作历史依据。
 
 依据：[当前调查入口](../integration/v1/investigation.md)、[本地结果一致与交接小修](../operations/investigation-result-handoff-20261023.md)、[产品研究](investigation-product-research-20261023.md)、[既有工程方案](investigation-product-engineering-roadmap-20261022.md)。源码映射按本地最新文件核查，不代表生产v1已包含本地改动。
 
@@ -447,7 +449,7 @@ manifest固定：schema、tenant/investigation/run、scope/evidence版本、问�
 
 **先写清模块预期，再只实现该模块，立刻运行相应验证并核对实际输出。达到已写明的预期才继续依赖它的下一块。** 不先搭完整流程再补测试，不以“能运行、返回200、有Markdown”代替业务预期。
 
-每块开始前，在原OpenSpec变更及该批执行记录中写一张简短验收卡，至少包含：
+每块开始前，在独立调查的OpenSpec变更及该批执行记录中写一张简短验收卡，至少包含：
 
 | 项目 | 必须写清楚的内容 |
 | --- | --- |
@@ -465,7 +467,7 @@ manifest固定：schema、tenant/investigation/run、scope/evidence版本、问�
 
 ### 12.3 第一次实施的模块顺序与直接预期
 
-以下M编号是本设计的实现顺序，不是新增服务、必跑模型或另一套任务树。沿用`restore-alert-investigation-integrity`记录选定批次和实际进度。先选择一个来源可用的场景；异常登录与可疑进程/外联只是候选，不能在认证结果/进程遥测缺失时预定它们已具备条件。
+以下M编号是本设计的实现顺序，不是新增服务、必跑模型或另一套任务树。迁移change按10月24日安排归档；后续使用独立调查change记录选定批次和实际进度，不在归档迁移中实施新设计。先选择一个来源可用的场景；异常登录与可疑进程/外联只是候选，不能在认证结果/进程遥测缺失时预定它们已具备条件。
 
 | 模块与主责 | 本块输入→输出 | 开发前确定的直接预期与最小验证 | 通过后再做什么 |
 | --- | --- | --- | --- |
@@ -505,7 +507,7 @@ M1—M7每块各自通过后才组装下一块；其中M4、M5分别验证模型
 
 C、D也必须先拆出有输入输出和预期的模块，逐块验证，不能用上表一句话直接开工整个扩展。自动合并Incident/Campaign、跨Run自主持续调查和真实响应执行后置；不作为首批统一内核的前置。此次新设计允许融合职责，不因此变更既有Fusion分组算法或强制自动建Case。
 
-这些是待实施规划，不是本轮已启动的任务或新的迁移完成口径。本次不勾原OpenSpec任务、不归档change；后续用户在新账号开始推进时，按选定批次纳入原change，保留原5/15和历史失败的真实状态。
+这些是待实施规划，不是本轮已启动的任务或新的迁移完成口径。本次不勾原OpenSpec任务、不归档change；后续用户在新账号开始推进时，按选定批次使用独立调查change；原5/15为收尾前历史，不能以新设计倒填旧失败或迁移验收。
 
 ## 13. 产品参考、采用理由与边界
 
@@ -545,7 +547,7 @@ C、D也必须先拆出有输入输出和预期的模块，逐块验证，不能
 | 线上v1与本地未部署小修 | [生产接入](../integration/v1/production.md)、[小修回执](../operations/investigation-result-handoff-20261023.md)；不能用一份版本替代另一份 |
 | 现有账本、字段与读结果接口 | [页面与数据库交接](../integration/v1/page-elements.md)、[调查入口](../integration/v1/investigation.md) |
 | 已有验证材料和生成工具 | [测试数据迁移计划](../operations/testdata-migration-plan-20261023.md)、[执行记录](../operations/testdata-migration-execution-20261023.md)；工具迁移是另一个批次，本规划不代写其结果或改变其范围 |
-| 实施与旧问题记在哪里 | [原change设计](../../openspec/changes/restore-alert-investigation-integrity/design.md)、[任务](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)、[执行](../../openspec/changes/restore-alert-investigation-integrity/execution.md)、[问题表](../operations/upstream-issues.md) |
+| 旧迁移实施证据与问题在哪里（新实施另记独立change） | [原change设计](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/design.md)、[任务](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)、[执行](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/execution.md)、[问题表](../operations/upstream-issues.md) |
 
 **文件可见性是续接前提。** 同一台机器换账号时，打开本项目目录读取这些文件，不需要找回原账号聊天。若换新目录/机器或重新clone，当前HEAD并不包含所有最新文档和本地小修；先迁移并核对所需的未提交/未跟踪文件及其回执。只创建分支、只复制本文或只拉远端都不能保证实施基线完整。秘密配置留在原受控位置，不打进方案或普通文档包。
 
@@ -561,7 +563,7 @@ C、D也必须先拆出有输入输出和预期的模块，逐块验证，不能
 
 以下是供用户在新账号准备开始实施时发送的续接文本；它不表示本次文档整理已经启动实施。
 
-> 请以`docs/architecture/investigation-planning-design.md`为调查模块的最新设计主文档，结合根目录AGENTS.md、PROGRESS.md和原restore change开始推进选定的A批。先只读核对当前版本、未提交改动和已有小修，再自行准备`codex/investigation-working`或适合的隔离分支。四角色及graph/Deep/Router允许按方案融合，但程序负责范围、权限、状态、预算和留存，模型每次只做有界任务。先完成M0场景与数据前提，再为M1写清概念、功能、输入输出、预期样例和放行条件；只实现这一块，立即测试并保留实际回执，通过后才推进下一依赖模块。后续也照此逐块改测，不要先写完整流程再测。区分程序测试、真实来源查询和真实模型效果，保留旧失败与unknown，不改生产或真实厂商动作、不自动提交推送。若必须改变本设计的业务目标或关键判断标准，先说明具体差异再讨论；常规已授权步骤直接推进。
+> 请以`docs/architecture/investigation-planning-design.md`为调查模块的最新设计主文档，结合根目录AGENTS.md、PROGRESS.md及已归档restore证据，在独立调查change开始推进选定的A批。先只读核对当前版本、未提交改动和已有小修，再自行准备`codex/investigation-working`或适合的隔离分支。四角色及graph/Deep/Router允许按方案融合，但程序负责范围、权限、状态、预算和留存，模型每次只做有界任务。先完成M0场景与数据前提，再为M1写清概念、功能、输入输出、预期样例和放行条件；只实现这一块，立即测试并保留实际回执，通过后才推进下一依赖模块。后续也照此逐块改测，不要先写完整流程再测。区分程序测试、真实来源查询和真实模型效果，保留旧失败与unknown，不改生产或真实厂商动作、不自动提交推送。若必须改变本设计的业务目标或关键判断标准，先说明具体差异再讨论；常规已授权步骤直接推进。
 
 ## 15. 文档校核与审阅范围
 

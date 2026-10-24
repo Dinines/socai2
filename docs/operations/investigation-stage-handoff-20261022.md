@@ -2,7 +2,7 @@
 
 2026-10-22后续收口：已形成[逐项责任与候选发布差异](investigation-stage-closeout-20261022.md)及[机器清单](../handoff/investigation-stage-closeout-20261022.json)。19个拟选运行文件的审查副本与7个后置C2/文案差异分开，Deep只提取链图摘要；不是直接拿本页原36份整文件保版部署。下文原批次证据与局部ACCEPT保持原范围，未发布/5/15不变。
 
-2026-10-22。沿[总计划](completion-plan.md)B5→B6与[restore任务](../../openspec/changes/restore-alert-investigation-integrity/tasks.md)2.1/4.1收敛已有证据，补链图本地保版。**第一步告警→自动实际调查→基本结果与Markdown读取已接通；本地链图增量也已限定验证，但未发布21。** 当前没有新证据表明基本交付存在必须追加的接线阻断；整体迁移、全部质量和常驻准入仍未完成。
+2026-10-22。沿[总计划](completion-plan.md)B5→B6与[restore任务](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/tasks.md)2.1/4.1收敛已有证据，补链图本地保版。**第一步告警→自动实际调查→基本结果与Markdown读取已接通；本地链图增量也已限定验证，但未发布21。** 当前没有新证据表明基本交付存在必须追加的接线阻断；整体迁移、全部质量和常驻准入仍未完成。
 
 本轮只整理交接和保存版本，无业务代码变更、新模型/HTTP/消息/业务测试或部署。下表复用原批次结果，既有失败、unknown和未发输入保持；不汇总重叠测试为新的通过总数，也不将不同Run拼成一个新的端到端实测。
 

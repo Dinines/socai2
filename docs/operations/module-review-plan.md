@@ -209,6 +209,6 @@ P为阅读版原文段落号，不是页码。需求见[正文](../requirements/
 
 本次分析不把所有差距提升为迁移阻塞，不改变旧质量/unknown结论，不启常驻worker，不调整模型预算，也不先建全平台统一编排、事件图平台或人工运营工作台。
 
-文档校验：未参与文档实现者api_auth_review独审ACCEPT；本change strict及本次本地引用检查通过。只确认设计与源码/证据边界相符，不是功能实施通过，记录见[execution](../../openspec/changes/restore-alert-investigation-integrity/execution.md)。
+文档校验：未参与文档实现者api_auth_review独审ACCEPT；本change strict及本次本地引用检查通过。只确认设计与源码/证据边界相符，不是功能实施通过，记录见[execution](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/execution.md)。
 
 当前调查批次已完成[本地模型/工具实测](investigation-functional-20261021.md)，原四节点、Router、Deep按成功/兜底/部分结果分别交接；两处接口合同最小本地修正未发布，其余质量/可用性问题沿原登记后置，不预定合并编排。
