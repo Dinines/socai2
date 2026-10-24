@@ -1,3 +1,7 @@
+## 2026-10-24 M6.2b1事务store结束窄审
+
+fresh_design_audit先限定合同ACCEPT，fresh_code_audit未参与实现独立复跑本批105项及重叠材料10项（不累加独立能力），5hash/6观察一致；补核丢ACK、并发finalize、通用store交接后拒绝及unknown不改写。限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-fixed-runtime-store-20261024.json)。两补充探针失误（提前load消耗注入、Windows event loop socket替换）修后观察通过，未改源码。仅真实store代码/SQL替身，无真实PG/HTTP/CH/模型；b2控制器及c仍待，旧Run/旧源码及2.2/2.3未完保持。
+
 ## 2026-10-24 M6.2a纯运行控制结束窄审
 
 fresh_design_audit先限定合同ACCEPT/0，fresh_code_audit未参与实现，独立12新＋68相关共80项、6hash/完整计划/4组claim观察/已知与unknown用量及结束引用一致。补核M3超额、取消并unknown及晚到重复结束：账本保留、不重发、不覆盖。限定ACCEPT/0必须修，见[回执](../../../docs/operations/investigation-fixed-runtime-state-20261024.json)。首次相对解释器路径错误未启动，改绝对路径80通过。仅a纯层，b原子claim/版本隔离/实际reserve与工件保存、c真实接缝仍待；无真实业务/模型，旧services及历史回执未改，不勾2.2/2.3。

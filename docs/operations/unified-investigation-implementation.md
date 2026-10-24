@@ -4,6 +4,10 @@
 
 ## 2026-10-24 M6.2运行计划至真实接缝
 
+**b1实际放行：** 15新＋90相关105项实际store/SQL替身通过，fresh_code_audit独立复跑及额外材料重叠10项、5hash/6观察一致，限定ACCEPT/0必须修；[回执](investigation-fixed-runtime-store-20261024.json)。正常5事件10工件，未确认4/9且无采用/资源保留，提交ACK丢失读原候选无重发。b2取消/唯一派发控制器与c实际PG/HTTP/CH尚待，旧Run列不变。
+
+**b实施前细卡（基线5f388ae）：** b1先ReconExecutionStore与基类最小版本/kind挂点，b2再单次控制器，c才实际服务。预期新鲜running Run begin原子冻结、并发claim只有一人获首次决策、冻结reserve仍走M3、通用/托管版本互拒；finalize只从已核当前attempt工件走A3，unknown不释放，不确认输出仅单独观察工件；语义拒绝保原artifact但不冒充已核材料；handoff/body/state原子写，重复仅读不覆盖，取消传播。先spec/design/strict与独立合同复核，再每小块实现/直接测试/独审；真实PG未验前不称原子性已被真实环境证明。
+
 用户授权持续推进，起始239d518/clean，按a→b→c逐块测试/独审而不每块请求继续。a纯计划与停止规则，b原子store/实际调度，c新Run真实独立v2查询/留存；未通过前一块不写后一依赖。
 
 | M6.2a输入→输出 | 直接预期 |

@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Persist fixed-recon control and handoff atomically under the owned Run
+
+ReconExecutionStore SHALL 复用原三张ledger表、同Run行锁/tenant/owner及M3预算函数，固定受支持runtime版本和event kinds。begin SHALL 在唯一事务冻结profile/完成政策/运行计划和来源；已有unified阶段、非running/已结束Run或不匹配执行器 SHALL 拒绝。claim仅在事务确认后允许控制器进入既有DurableActivityRecords，工具外呼仍以实际M3 reserve提交为前提；托管reserve只接受冻结请求。通用store SHALL 拒绝托管版本，托管store不能接管旧阶段。
+
+#### Scenario: Two callers claim or finalize one runtime
+- **WHEN** 同Run重复或并发claim/finalize
+- **THEN** 仅一份claim能进入首次派发，其他只读进行中/原交接；交接正文与指向它的state snapshot同事务保存，只有提交确认后返回committed。已存交接hash/归属核对后重读，不插重复事件或覆盖异文，旧Run状态/计费列保持到M7另验
+
+#### Scenario: A tool response is complete, unknown or not durably confirmed
+- **WHEN** 工具已有真实completion工件，或预留仍未结算/完成提交不确定
+- **THEN** 仅从当前Run已核工具工件构造CommittedMaterial并走A3；unknown资源保留且不重跑。未确认输出不作来源采用，可单独以unconfirmed观察工件随交接同事务保存；字节/hash/归属明确，不冒充原completion。source语义校验失败单列rejected材料/引用，事实不采用，不降成已核projection block
+
+#### Scenario: Persistence or cancellation interrupts the runtime
+- **WHEN** begin/claim/预留/工件读取/交接写入出现异常或明确取消
+- **THEN** 未确认提交不给派发权限；取消记录程序观察并传播，保已提交资料和未知预留，不自动重放。最后一份交接需独立读回验证，纯准备中的not_attempted状态不作为实际留存回执，人工仍仅required。M6.2b离线事务替身不等于PG已验，c真实新Run另验
+
 ### Requirement: Freeze and claim one bounded fixed-recon runtime plan
 
 M6.2固定告警运行 SHALL 在任何外呼前冻结已核alert_recon业务描述、scope hash、fixed_alert_recon_runtime.v1执行器与bounded_full_window_source_check.v1完成政策、完整冻结窗口的唯一activity_records/Q1参数及确定step/attempt身份。M6.2a纯控制只构造计划/状态转换，MUST NOT 自称已提交预留或获得外呼授权；M6.2b须以同Run单writer事务提交claim，再使用既有M3真实预留门，不能省略或重开stage。

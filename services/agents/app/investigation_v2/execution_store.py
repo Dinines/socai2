@@ -102,6 +102,10 @@ def _object(value: Any) -> dict:
 
 
 class ExecutionStore:
+    event_kinds = KINDS
+    runtime_version = None
+    event_agent = "unified_executor.v1"
+
     def __init__(self, pool: Any, *, tenant_id: UUID, run_id: UUID, executor_id: UUID):
         if pool is None:
             raise ExecutionRejected("durable pool required")
@@ -148,7 +152,7 @@ class ExecutionStore:
         event = await conn.fetchrow(
             "SELECT id,seq,kind,payload FROM investigation_events "
             "WHERE run_id=$1 AND tenant_id=$2 AND kind=ANY($3::text[]) ORDER BY seq DESC LIMIT 1",
-            self.run_id, self.tenant_id, list(KINDS))
+            self.run_id, self.tenant_id, list(self.event_kinds))
         if event is None:
             raise ExecutionRejected("durable begin required")
         payload = _object(event["payload"])
@@ -161,6 +165,8 @@ class ExecutionStore:
                     "stage_id": stage_id_for(self.tenant_id, self.run_id)}
         if any(state.get(k) != v for k, v in expected.items()):
             raise ExecutionRejected("stored execution identity/owner mismatch")
+        if state.get("runtime_version") != self.runtime_version:
+            raise ExecutionRejected("stored runtime version is not supported by this store")
         if state.get("persistence", {}).get("event_id") != str(event["id"]) or state["persistence"]["seq"] != event["seq"]:
             raise ExecutionRejected("state event mismatch")
         if content_hash(canonical_json(state["scope"])) != state["scope_hash"]:
@@ -192,7 +198,7 @@ class ExecutionStore:
             "INSERT INTO investigation_events "
             "(id,run_id,tenant_id,seq,ts,kind,agent,summary,payload,input_hash,output_hash) "
             "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11) RETURNING id",
-            event_id, self.run_id, self.tenant_id, seq, now, kind, "unified_executor.v1", kind,
+            event_id, self.run_id, self.tenant_id, seq, now, kind, self.event_agent, kind,
             canonical_json(payload), content_hash(body) if body_kind == "unified_step_input" else None,
             content_hash(body) if body_kind == "unified_step_output" else None)
         if saved != event_id:
@@ -204,6 +210,8 @@ class ExecutionStore:
 
     async def begin(self, *, scope: ScopeContext, limits: BudgetLimits, opening: OpeningUsage,
                     input_data: Any, parent_deadline: datetime | None = None) -> dict:
+        if self.runtime_version is not None:
+            raise ExecutionRejected("managed runtime requires versioned begin")
         if not isinstance(scope, ScopeContext) or (scope.tenant_id, scope.run_id) != (self.tenant_id, self.run_id):
             raise ExecutionRejected("matching trusted M1 scope required")
         if parent_deadline is not None:

@@ -1,3 +1,5 @@
+**2026-10-24 调查M6.2b1事务代码限定通过：** 实际ReconExecutionStore和M3函数在SQL事务替身下105项及独审通过，5hash/6观察一致；并发claim唯一、候选/state/未确认观察同事务，重复不覆盖，unknown不释放，通用/托管版本互拒。见[回执](docs/operations/investigation-fixed-runtime-store-20261024.json)。仅代码/替身，非真实PG原子性；持续接b2控制器、c真实PG/HTTP/CH，无模型/部署/合main，2.2/2.3不勾。
+
 **2026-10-24 调查M6.2a限定通过：** 已冻结版本化单次整窗query计划/step/attempt，claim预检不预留或授权HTTP，重复执行不接管；实际M3 unknown/超额/时限和取消保持，结束引用不覆盖。12新＋68相关及独立同80项、6hash/计划与观察一致，见[回执](docs/operations/investigation-fixed-runtime-state-20261024.json)。仅纯控制；下一b原子store/真实M3门与交接保存，再c独立真实接缝，持续授权无需逐块确认；无真实业务/模型/部署/合main。
 
 **2026-10-24 调查A3限定通过：** 投影阻断保已核材料/查询/全部来源版本refs及真实source状态，投影阻断交接保持真实来源状态，不改写为来源不可用；正常视图走原有限政策。10新＋90相关及独立同100项/4hash/10观察通过，7种正常视图前后完全相同，见[回执](docs/operations/investigation-material-projection-20261024.json)。仅纯准备/结构化交接，实际持久/人工投递和M6.2运行器未验，2.2/2.3未完；无真实业务/模型/部署/合main。下一接M3 gate、固定查询/去重及保存。

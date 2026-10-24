@@ -1,5 +1,15 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M6.2b原子store与调度细卡
+
+a保存5f388ae后实施b。原ExecutionStore仅增加可覆写event_kinds/runtime_version/event_agent，_load按实例支持的kind读取并核runtime版本，通用begin拒绝托管store调用；无runtime标记的M3原行为保持。新增ReconExecutionStore使用同Run行锁、原tenant/owner/hash校验，事件为unified_recon_started/claimed/cancelled/handoff_saved加原M3三类预算事件，不改DDL/旧服务。begin_recon仅新鲜running且completed_at为空Run、无已有unified阶段，在同事务冻结scope来源、profile、运行计划及版本；claim用a纯转换，只有新claim/block需要新事件，两并发者仅一个得到首次派发决策。reserve在锁内先a冻结请求校验，再实际M3 reserve；complete继续原M3幂等/unknown合同。
+
+finalize在锁内核当前profile/scope、源于当前attempt的completion引用和工具工件kind/event/hash/UTF-8，才构CommittedMaterial调用A3。若没有已确认工具工件，停止原因据实际M3状态；不采用未确认输出，可用单独fixed_recon_unconfirmed_observation工件保存本进程观察及hash/attempt关联，明确不是原completion。若已留存来源的必要语义校验失败，生成source_material_rejected部分交接，保owned artifact引用但validated_source_refs为空，不称source unavailable或已核projection block。stage已用满唯一调用不自动算budget_limit；deadline后仍可保存已得结果/交接，但不得新增外呼。
+
+handoff为fixed_recon_runtime_handoff.v1封装，含固定plan/profile/scope、正常A3准备或明确拒绝/未确认状态、有限result及M3用量/来源state引用；candidate/handoff/state引用同事务写入，存在未确认观察时同事件增加单独工件。内部纯准备not_attempted字段保持其组件含义，actual retention以提交后方法回执及独立读回为准。重复finalize只读原artifact并核hash/归属，不重新准备或覆盖；finish先检查权威停止原因。Run旧状态/计费列不在b修改，M7再做完成与同版发布。
+
+新增FixedReconRuntime控制器只接已开始的托管store：claim首次成功→原DurableActivityRecords一次→finalize；重复claimed仅读in_progress_or_interrupted，已停止读原交接。取消先尽力记录cancelled/部分交接后仍传播CancelledError，写入不确定保留状态且不重试；API地址/凭据只在运行对象，不入artifact。先b1存储合同/直接事务替身，过后b2控制器合同/真实M3与MockTransport，再c临时身份/独立v2真实HTTP/CH/PG。b1/b2不外推真实事务已验，c须核原始行数/关联/状态/用量且只运行新批次。
+
 ## 2026-10-24 M6.2固定运行接缝逐块合同
 
 持续推进授权后，先M6.2a纯运行计划/状态，直接测试/独审通过才M6.2b原子持久/调度，最后M6.2c独立v2真实PG/HTTP/CH。先只接alert_recon有限网络路径，Run由可信调用方预先创建，正式启动认证/业务去重仍属M8。模型0、无Case动作；固定查询仅一次，M5不是前提。初始冻结runtime版本、完成政策、profile描述与scope hash；计划参数来自已核member和完整冻结窗口，确定step/attempt不能换ID重跑。

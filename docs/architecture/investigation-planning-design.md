@@ -788,6 +788,8 @@ M0已为network_observation.v1选定有限网络观察场景，M4仅Q1/Q2/Q5限�
 
 ### 12.7 v4从当前停点继续的单步验收顺序
 
+**M6.2b1当前结果：** ReconExecutionStore/版本隔离及原M3复用在SQL替身下105项/独审限定通过，[回执](../operations/investigation-fixed-runtime-store-20261024.json)。原子语义仍待c实际PG证明；先继续b2唯一派发/取消/观察保留控制器，再独立真实接缝，不拿替身或a纯决策当真实运行。
+
 **M6.2a当前结果：** 纯运行计划/claim/预留限制/停止和结束引用经80项及独立同80项、6hash/观察限定通过，[回执](../operations/investigation-fixed-runtime-state-20261024.json)。实际准入继续b事务store/调度、c独立真实查询，不以纯决策代替原子提交或真实M3门。用户持续授权下按此依赖自动续接，其他边界不变。
 
 **A2/A3当前结果：** A2整窗完成政策已显式版本化，A3最低投影阻断交接已按合同实现，100项/独立同100项与4hash/10观察限定通过，7种正常视图与c94eb97逐字节相同；[回执](../operations/investigation-material-projection-20261024.json)。A3仍依赖有界EvidenceView，装不下则保refs/真实状态而partial，不强行分组或升上限。下一M6.2先接实际M3准入与固定查询，再去重/停止及持久交接；通过后才M7同版发布。纯层已可序列化不等于已持久/投递，I2完整messages gate保持。下段A3待实施属前一阶段。

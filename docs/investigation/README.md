@@ -4,6 +4,8 @@
 
 # 调查新版：开发、进度与评审入口
 
+**M6.2b1最新：** 事务store实际代码＋SQL替身105项及独审限定通过，5hash/6观察一致；唯一claim、受限M3预留、已核工件采用/未确认观察分开、交接原子保存与重复只读见[回执](../operations/investigation-fixed-runtime-store-20261024.json)。下一b2单次控制器，c真实PG/HTTP/CH；本批不证明真实PG/投递/完整调查。
+
 **持续推进最新：** M6.2a纯运行控制已过12新＋68相关及独立同80项/6hash复核，固定版本/整窗单次计划，重复不接管，未知预算保持；[回执](../operations/investigation-fixed-runtime-state-20261024.json)。claim决策不是外呼权限，实际原子claim/M3预留/交接保存尚待b，随后c真实接缝。用户已授权持续推进，不再每块停等确认，仍逐步测试/独审；无部署或自动合main。
 
 **本轮A2/A3纯层已放行：** A2完成政策版本及整窗要求已过71项/独审；A3现已过10新＋90相关共100项及独立同100项、4hash/10观察复核，限定ACCEPT/0必须修。材料投影超限时保全部引用与真实source状态、明确partial，正常视图文档保持；[A3回执](../operations/investigation-material-projection-20261024.json)及[实施记录](../operations/unified-investigation-implementation.md)。这仅是可供运行层保存的结构化结果，未实际持久/人工投递；下一M6.2 gate/固定查询/去重/保存，tasks2.2/2.3仍未完。下方各批次待办按其历史基线解释。

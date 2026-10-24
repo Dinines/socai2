@@ -1,3 +1,7 @@
+# 2026-10-24 调查M6.2b1事务代码限定通过
+
+从5f388ae按合同strict/fresh_design_audit限定审阅后，新增ReconExecutionStore及SQL transport double测试，原M3 store仅可覆写kind/runtime/agent挂点及版本隔离。15新＋90相关105项和fresh_code_audit独审通过，5hash/6观察一致，限定ACCEPT/0必须修；另10项材料复核与105重叠不累加。原子begin/claim/冻结reserve/工件核验与交接、重复读取、未知预留和未确认观察均在替身验证，真实PG仍待c。回执docs/operations/investigation-fixed-runtime-store-20261024.json；补充审阅探针失误已登记，非源码缺陷。下一持续b2单次控制器/取消传播，再c真实独立v2，不等用户逐块确认，不部署/合main；旧源码/Run计费状态及历史失败不改，2.2/2.3不勾。
+
 # 2026-10-24 调查M6.2a纯运行控制限定通过
 
 持续授权下从239d518先合同/strict与fresh_design_audit限定合同审阅，再仅新增recon_runtime_state及12项测试；12新＋68相关、未参与实现者fresh_code_audit独立同80项/6hash/计划与观察均通过，限定ACCEPT/0必须修。冻结runtime/完成政策/profile/scope/整窗唯一query和step/attempt，纯claim预检不增加预算或授权外呼，仍须原子提交和M3真实预留；重复claimed不接管，unknown/超额/时限/取消及账本保持，已有交接不覆盖。见docs/operations/investigation-fixed-runtime-state-20261024.json。当前仅a纯层，无真实业务/模型/部署/合main；直接继续b事务/调度、c真实接缝，不逐块等待用户。2.2/2.3不勾，旧代码/失败保持；阶段提交/推送。

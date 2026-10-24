@@ -1,5 +1,7 @@
 # Tasks: 原阶段成果接收与后续逐模块续接
 
+**M6.2b1限定通过：** 105项实际store＋SQL替身及独审放行，见[回执](../../../docs/operations/investigation-fixed-runtime-store-20261024.json)；b2控制器及c真实服务仍待，2.2/2.3保持未完。
+
 **持续推进M6.2a限定通过：** 80项直接及独立同80项/6hash/计划观察一致，[回执](../../../docs/operations/investigation-fixed-runtime-state-20261024.json)。仅纯控制，b原子事务/调度和c真实接缝待验，2.2/2.3不勾；用户已授权连续逐块推进。
 
 **A3限定完成：** 已审材料准备合同→实现→10新＋90相关/独立同100项→4hash/10观察及7正常视图复核通过，见[回执](../../../docs/operations/investigation-material-projection-20261024.json)。A2/A3纯层已放行，实际M6.2准入/固定查询/去重/持久交接仍待，2.2/2.3不勾；不把structured handoff写成已落库/已投递。
