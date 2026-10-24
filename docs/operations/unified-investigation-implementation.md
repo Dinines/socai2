@@ -1,3 +1,11 @@
+## 2026-10-25 b2.4d3实际独立兼容API网关
+
+2e95081后五类result/preparation/evidence合同先审，再新program_result_gateway/program_result_api及可移植25份完整producer DTO。API45新＋old13/query7=65，独立Agents进程21内部API/19owned=40，总105直接/独立同105；8文件SHA/34完整ASGI回放（25合法、9边界、32Mock后台调用）逐字节/canonical/状态/次数全核，fresh_code最终限定ACCEPT0，[回执](investigation-compatible-gateway-20261025.json)。旧actual3111B缓存仅协议参考，未重新访问PG。
+
+初草稿17中1合法旧observer误拒版本名已修；独审初92外3P2七自洽反例保4red4fail0error＋3red3fail0error，补ready必要条件、有限事实问题全链接及typed材料/query/record/index/claim/ref。修后99外新增8actual producer候选发现4合法error误拒，保4red0fail4应用error；修nullable unknown count/limit/window与declared_executed和checked executed区别，不能改0/false；原7全拒/actual8全收。[全部修前源码/原件/日志](investigation-compatible-gateway-failure-20261025.json)。协议检查不重做raw源真伪或MD语义，owned来源仍d1。
+
+新COMPAT URL/token无旧fallback；原认证前置Bearer＋cases:read/alerts:read，forward仅当前tenant/user_id。1MiB有界读取后解析、无redirect/retry，404/409/503/502准确脱敏。无真实PG/network/UserRBAC/Run/发布/通知/部署，旧源码/注册/MD保持。下一d4合同fresh_design限定ACCEPT0（stdio整次写读≤30秒/owned Popen清理/12组全账本），本块保存后实施；通过后再a4.2，2.2/2.3/Case/Deep未完。
+
 ## 2026-10-25 b2.4d2实际独立兼容内部GET
 
 673f225后细卡/spec/strict/fresh_design合同ACCEPT0，再仅新program_result_api及21直接；＋oldAPI13/compatibleReader19/newpubstore29共82直接/独立同82、6hash/24ASGI完整重放限定ACCEPT0，[回执](investigation-compatible-internal-api-20261025.json)。7actual CompatibleOwnedReader＋SQL账本/DTO全保持，17fake只验证边界状态和backend次数（401/400/404/409/503/502/405及valid2schema），不把fake当owned证明；全ledger/Run列无变、response无token/driver秘密。独审另实际asyncio关闭超时核close协程取消/terminate恰1/reader清空，无PG，不加第83项。

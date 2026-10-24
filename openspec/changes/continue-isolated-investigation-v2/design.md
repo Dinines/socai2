@@ -1,3 +1,15 @@
+## 2026-10-25 b2.4d4离线双进程组合细卡（d3结束保存后实施）
+
+只新增受控probe与其合同测试，不改已经冻结的API/Agents源码、注册或服务配置。两个`app`包在不同Python进程加载：API进程使用新program_result_api/CompatibleResultReadGateway及既有service认证/双read权限，Agents子进程使用新program_result_api/CompatibleOwnedReconResultReader和完整SQL账本替身；通过有界stdio请求/响应传递HTTP method/path/headers/body，httpx MockTransport与ASGI执行真正两个独立app。无HTTP socket、PG、CH、模型或后台worker；不得把该组合称真实网络/数据库联测。stdio不是新产品入口，case选择仅测试控制面，不能进入业务request/query或返回DTO。
+
+可移植fixture在运行时由既有tests构造，不依赖`.local`旧回执或任何私密配置。至少fixed/program各published、candidate、progress、observer、cancelled十组，加旧A3 blocked candidate/published两组。每组先冻结全部Run/event/artifact选中列/正文及现有Mock工具调用次数，再API实际GET→一次gateway→Agents内部ASGI→owned读取，并重读；两次完整DTO canonical/manifest/MD/execution/候选与直接owned原输出一致，所有账本/legacyRun列/工具调用数不变。旧actual3111B缓存可作独立API协议参考，但不得充作上述owned账本证明。
+
+拒绝组合至少核：API缺错凭据、缺任一read权限及query/body/nilRun不进入gateway；当前已核外tenant在owned层404，错误内部token的401对API成为502；两族unknown历史managed事件均409无fallback；在transport篡改双族版本/section即使局部重hash也502；内部token轮换后旧token下一请求拒，当前权限撤回后下一请求403且backend0。当前tenant/actor只能取认证主体，确认转发值与Agents构造的principal一致；客户端伪造actor/tenant不能覆盖。所有错误脱敏，无header secret/正文记录在公开回执。
+
+控制器只启动自己Popen句柄，子进程输出每帧上限与读取等待显式有界（单帧含完整DTO但不超3MiB，单交换≤30秒），出错/EOF/超长/超时必须停止，不重发同请求；清理只针对该句柄并wait/terminate/kill逐级有界，不按进程名批量清理。输出仅允许工作区内显式新路径，已有输出拒覆盖；私密过程材料`.local/verification`，公开summary/非私密hash/状态/失败另存docs。原子创建输出文件，任意失败照留结果/未完成状态，不删旧失败。测试故障路径验证无未回收owned进程和无自动重放。
+
+先strict/独立合同审阅，再只实现此probe/直接/独立完整重放/公开回执/保存。d4仅证明这套离线传输和版本组合，不能授权actual Run、调用预算或自动发布；通过后才另立a4.2 Run+begin+启动意图同事务准入卡，随后a4.3显式写权限/确认commit后派发与a4.4受控新Run。2.2/2.3、Case/Deep/真实语义/自动政策仍未完，不部署或合main。
+
 ## 2026-10-25 b2.4d3独立API兼容网关/双DTO细卡（d2结束保存后实施）
 
 只新增API app/investigation_v2/program_result_gateway.py和program_result_api.py及tests，不改旧gateway/checked_result/router/认证函数或主app注册。新factory可复用原独立typed query app/common auth基础设施（per-process配置/原生命周期关闭，不建schema/worker/新身份）；同GET /api/v2/investigation/runs/{run_id}只在新显式app中注册。保原_currentUser require cases:read＋alerts:read及显式Bearer前置（禁止demo无凭据shortcut），forward仅current user tenant_id/user_id，客户端tenant/actor/owner/version/scope不能覆盖；query/body全拒、nilRun400/invalidpath422，无身份权限不发backend。

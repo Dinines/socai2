@@ -1,3 +1,5 @@
+**2026-10-25 b2.4d3兼容API网关：** 105直接/独立同105、8hash/34HTTP重放限定通过，[回执](../operations/investigation-compatible-gateway-20261025.json)和[修前原件](../operations/investigation-compatible-gateway-failure-20261025.json)。25合法producer DTO保持，原7异常全拒；未知count/limit/window保null，原声明与程序确认分开。仅离线，下一已审d4双进程组合后才a4.2原子启动。
+
 **2026-10-25 b2.4d2独立内部GET：** 82直接/独立同82、6hash/24ASGI全重放限定通过，[回执](../operations/investigation-compatible-internal-api-20261025.json)。新COMPAT独立配置/当前gatewaytoken与tenant-actor校验，真实owned服务7组SQL输出保持，17fake只边界；无实际网络/PG或用户RBAC验证。下一已审d3全DTO双版本网关，后d4组合和原子启动。
 
 **2026-10-25 b2.4d1双版本owned读取：** 98直接/独立同98、7hash/7完整账本/全DTO双读限定通过，[回执](../operations/investigation-compatible-owned-reader-20261025.json)。按已核原begin分派、全历史unknown/agent拒、owner不可调用者指定；合法旧DTO/MD同，新schema明确。真实3111B旧文件只核cache字节，未重连PG。下一已审d2独立内部GET，再网关/组合兼容，尚无原子启动。

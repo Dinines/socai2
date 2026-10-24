@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d3修后结束独审
+
+fresh_design先补五类nullable evidence合同后ACCEPT0；fresh_code初92外3P2/7自洽反例、修后99外4合法error误拒均修，原件/源码/4red4fail＋3red3fail＋4red4应用error全核同。[失败回执](../../../docs/operations/investigation-compatible-gateway-failure-20261025.json)。最终独立105、8hash/34HTTP全字节/canonical/状态/次数重放通过，原7全拒、actual8全收，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-gateway-20261025.json)。未知与原声明保全，不归零/false；不外推真实auth/PG/network。d4合同另由fresh_design限定ACCEPT0，本块保存后才实施，a4.2仍另门。
+
 ## 2026-10-25 b2.4d2结束独审
 
 fresh_design合同限定ACCEPT0后实施；fresh_code独立82/6hash/24ASGI（7actual owned SQL DTO＋17fake边界status/calls）全重放、原账本/Run列保持、无token/诊断泄露，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-internal-api-20261025.json)。额外真实asyncio close超时取消协程/terminate1/reader清空观察单列不累计82，PG0。内部仅最小envelope/可信gatewaytoken，d3完整DTO/真实用户auth不由此验。d3合同nullable evidence五组合缺口补后另限定ACCEPT0，保存后才实施。

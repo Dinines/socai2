@@ -721,3 +721,19 @@ M2新`activity_records` SHALL 复用原API认证及湖读取连接，以固定�
 #### Scenario: The source repeats or conflicts on one event identity
 - **WHEN** 已取结果中同namespace+tenant+event_id重复出现且正文相同或不同
 - **THEN** 相同内容仅算一份来源并保重复信息，异文标冲突并保可区分指纹和有界内容，不静默采用最后一条；原始行数和截断边界仍可见
+## ADDED Requirements
+
+### Requirement: Compatible offline result composition preserves both version families
+The investigation v2 verification probe SHALL load the API and Agents `app` packages in separate owned Python processes, compose their explicit compatible read apps through bounded stdio HTTP transports and SQL doubles, and SHALL preserve complete DTOs, retained ledger rows and legacy Run fields without new external calls or publication. This offline composition SHALL NOT be reported as actual network or PG verification.
+
+#### Scenario: Published and unpublished fixed and program results cross both apps unchanged
+- **WHEN** the offline probe reads fixed and program published, candidate, progress, observer and cancelled cases, plus legacy material-projection-blocked candidate and published cases twice
+- **THEN** each result matches its direct owned result in canonical bytes and Markdown UTF-8, and all selected ledger rows and Mock tool-call counts remain unchanged
+
+#### Scenario: Auth, tenant ownership and unknown version failures stay closed
+- **WHEN** current API credentials or either read permission fail, request overrides occur, the internal token changes, a foreign tenant reaches owned lookup, or either family's historical managed event or result version is unknown
+- **THEN** the proper layer refuses without fallback, automatic replay, leaked diagnostics or ledger mutation, and forwards only the current authenticated tenant and actor for authorized requests
+
+#### Scenario: Owned verification process or frame fails
+- **WHEN** a probe-owned subprocess has an EOF, oversized frame, timeout or other failure
+- **THEN** the probe records an incomplete or failed result without overwriting prior evidence, does not replay the request, and cleans up only its own Popen handle using bounded waits

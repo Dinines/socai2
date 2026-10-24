@@ -1,3 +1,5 @@
+`program_result_api.create_app`是新的显式兼容读factory，独立COMPAT_READ_URL/TOKEN，只读known fixed/program DTO，旧factory保持。原Bearer前置及cases/alerts双read权限、当前tenant/user_id转发；完整manifest/execution/candidate/材料版本与hash校验，1MiB有界后解析/单GET无fallback。105直接/独立、8hash/34离线回放限定通过；未知数量/范围保null，不混原声明与确认状态。回执docs/operations/investigation-compatible-gateway-20261025.json；仍无实际部署或启动入口，双进程离线组合d4与a4.2准入后续。
+
 # Investigation v2 — 独立开发线
 
 `result_api.create_app`是显式独立v2 query＋结果GET factory，复用原认证/双read权限且新GET强制Bearer无dev旁路；`ResultReadGateway`只向显式backend单次GET，核身份/manifest/MD/exec同版hash，不转外部凭据或写入口。33直接/独审和12 ASGI重放通过，真实两进程/PG后续；旧main/router未注册。回执：docs/operations/investigation-result-gateway-20261025.json。

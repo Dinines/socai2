@@ -1,3 +1,7 @@
+## 2026-10-25 b2.4d3实际兼容API网关
+
+2e95081后先五组合合同/strict/独审，再仅新API两模块及25实际producer协议fixture。45新＋old13/query7和独立Agents40总105直接/独立同105，8hash/34完整回放/32Mock调用同，最终限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-gateway-20261025.json)。初3P2七反例及后4合法error误拒修后全保原件和红测，[失败回执](../../../docs/operations/investigation-compatible-gateway-failure-20261025.json)；原7拒/actual8收，nullable未知和原声明与确认差异不改。旧源码/MD保持、0真实PG/network/Run/发布。下一已审d4双app独立进程离线组合，再a4.2原子准入；2.2/2.3未勾，无部署/合main。
+
 ## 2026-10-25 b2.4d2实际内部兼容GET
 
 673f225后先合同再newfactory。82直接/独立同82、6hash/24ASGI完整回执核同，限定ACCEPT0，[回执](../../../docs/operations/investigation-compatible-internal-api-20261025.json)。独立COMPAT配置/只GET/当前网关身份断言，pool生命周期边界明，旧app保持。0真实PG/network/Run/部署，d3合同已修后审，d4/a4.2后续，2.2/2.3未勾。

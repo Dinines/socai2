@@ -1,3 +1,7 @@
+# 2026-10-25 调查b2.4d3独立API兼容网关限定通过
+
+2e95081后先合同再仅新API program_result_gateway/program_result_api，原Bearer/CurrentUser双read权限及独立COMPAT配置，无旧app注册/fallback。45新＋oldAPI13/query7及独立Agents40共105直接/独立同105、8hash/34完整HTTP重放（25producer DTO/9边界、32Mock调用）限定ACCEPT0，见docs/operations/investigation-compatible-gateway-20261025.json。旧3111B为缓存协议参考非PG账本重建。初3P2/7自洽反例修ready必要门/已知问题事实/typed材料；后4合法error误拒修nullable未知count/limit/window及声明与确认分离，4red4fail＋3red3fail＋4red4应用error及完整源码/原件保failure。所有25合法输出保持，未知不改0/false；原7全拒。0真实PG/network/UserRBAC/Run/发布/部署，旧源码/MD保持。下一已审d4两独立app包有界stdio离线组合，之后a4.2原子准入，2.2/2.3/Case/Deep未完，无合main。
+
 # 2026-10-25 调查b2.4d2独立兼容内部GET限定通过
 
 673f225后合同/spec/strict/独审ACCEPT0先行，仅新program_result_api factory/独立COMPAT token/PG/CA配置，无oldenv fallback/旧app注册。21新＋oldAPI13/compatibleReader19/newpubstore29共82直接/独立同82、6hash/24ASGI完整重放（actual reader SQL7/fake边界17），receipt docs/operations/investigation-compatible-internal-api-20261025.json限定ACCEPT0。Bearer/currenttenantactor/nilRun/bodyquery拒、known双schema/exactidentity/pubstate最小envelope；fake只边界不代owned，实际来源d1、完整DTO/hash仍d3。pool TLS/optionalnewCA/启动脱敏/close timeout terminate/injected不关闭，独审真实asyncio超时额外核不加第83项。0真实PG/network/UserRBAC/Run/写/部署；oldAPI/MD保持。下一d3 API网关五类result/evidence组合合同修后已ACCEPT0，后d4组合再a4.2；2.2/2.3未完，无合main。
