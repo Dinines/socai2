@@ -1,3 +1,5 @@
+**2026-10-25 M8a3.1：** 内部只读HTTP app已过58直接/独立同58，6hash/11完整ASGI回执一致，[回执](../operations/investigation-internal-read-api-20261025.json)。仅专用token认证可信API网关，tenant/actor向owned reader传递；外部用户permission及真实双进程PG后续，不将其当正式HTTP已全部交付。
+
 **M8a2最新：** owned reader的同锁tenant/Run→唯一begin工件→冻结恢复→服务端owner→M7读已过56直接与独立同56/6hash/3组重建，[回执](../operations/investigation-owned-reader-20261024.json)。新增显式profile/target/objective和legacy状态，账本不变；仅SQL替身，实际认证/PG/HTTP接缝仍待。
 
 **M8a1最新：** 冻结读上下文纯恢复已过11新＋40相关及独立同51/6hash/3组重建；当前主体tenant与冻结历史principal分别核验，源正文/控制/profile/plan精确还原，[回执](../operations/investigation-profile-restore-20261024.json)。原报告读不依赖当前可变Alert，恢复不授予运行权；a2持久归属/当前认证及HTTP入口仍待。

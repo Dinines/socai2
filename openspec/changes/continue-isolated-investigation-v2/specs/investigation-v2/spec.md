@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Expose fixed results through explicitly isolated authenticated read applications
+
+M8a3 SHALL 按a3.1 Agents内部只读HTTP→a3.2 API认证网关→a3.3受控真实PG/双进程GET逐块推进。旧应用/路由/认证权限默认不改。Agents独立app只接受新的专用read token和显式tenant/actor、Run UUID，调用a2；无共享旧token/dev回落、启动/写入/通知路径。API独立v2 app仅复用既有认证，并要求cases:read及alerts:read；tenant和actor只从CurrentUser得出，向内部read app转发，不采用客户端scope/owner/tenant覆盖。credential/permission在本HTTP接缝验证，纯TenantPrincipal不代替认证。
+
+#### Scenario: An authorized reader gets the same manifest over the explicit read surface
+- **WHEN** API用户已满足两项既有read权限，目标Run属于其当前tenant，内部专用read token及owned材料有效
+- **THEN** 仅GET读取同manifest/MD/execution，显式profile/target/旧状态和新publication分开；网关复核返回tenant/Run/schema及已发布MD的manifest hash，未发布无正式MD。无新Run/账本、查询、模型或通知；原旧路径不注册到新版独立应用
+
+#### Scenario: Credentials identity permission or backend result is invalid
+- **WHEN** 缺/错read token、缺/非法tenant/actor、当前read权限不足、客户端给scope/owner/body/query覆盖、跨tenant Run或下游响应身份/hash不符
+- **THEN** 在相应边界拒绝，读权限不足不转发，客户端字段不改变认证tenant/actor；超时/下游坏件只明确不可用，不回落旧报告、重发查询或暴露token/DSN。token在每次请求核验，实际permission/撤销覆盖按各直接测试和受控回执如实列出
+
 ### Requirement: Read owned fixed results without caller-supplied owner or scope
 
 M8a2 SHALL 在当前已认证读取许可的TenantPrincipal与显式tenant/Run下，由服务端加载owned Run和唯一unified_recon_started事件及原begin输入/state工件，核tenant/run/event、kind/agent、payload/body/state hash/receipt及初始owner，再用a1恢复原读上下文、复用M7精确manifest读取。调用方不得指定owner/scope/source正文或以旧Run.status猜测新完成。该层 SHALL 与M3协调同Run行锁，在同一事务内核上下文/当前版本并返回，不新建Run/事件/工件或派发；当前HTTP认证/permission撤销接线在后续独立入口验证。

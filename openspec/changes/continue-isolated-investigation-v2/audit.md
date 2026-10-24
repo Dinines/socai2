@@ -1,3 +1,7 @@
+## 2026-10-25 M8a3.1内部GET结束窄审
+
+fresh_design先限定合同ACCEPT0，fresh_code独立58、6hash/11 ASGI完整JSON/状态/调用计数/hash/current principal重放一致，补owned池TimeoutError→terminate一次/reader清及五种非法token拒，限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-internal-read-api-20261025.json)。仅可信网关专用token边界/SQL双集成，外部用户credential/permission及真实双进程PG仍待a3.2/a3.3；无新身份或实际业务访问。
+
 ## 2026-10-24 M8a2 owned reader结束窄审
 
 fresh_design合同ACCEPT0；fresh_code独立56、6hash/3 frozen read重建/完整输出与账本一致，补begin-only进度读无新行/时钟或调用，限定ACCEPT/0必须修。M7 helper抽取原逻辑等价，单锁校currenttenant→唯一begin→owned工件→原scope/owner→当前manifest。审阅文件名及reconstruction sys.path两工具失误纠正后重跑，非源码失败。[回执](../../../docs/operations/investigation-owned-reader-20261024.json)。仅SQL替身，实际认证/permission/PG/HTTP后续。

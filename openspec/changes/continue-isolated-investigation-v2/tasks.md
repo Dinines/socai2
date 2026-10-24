@@ -1,5 +1,7 @@
 # Tasks: 原阶段成果接收与后续逐模块续接
 
+**2026-10-25 M8a3.1限定通过：** 58直接及独立同58/6hash/11 ASGI重放，[回执](../../../docs/operations/investigation-internal-read-api-20261025.json)。仅内部token读边界，API用户permission/真实PG/启动及2.2/2.3仍待。
+
 **M8a2限定通过：** 56直接/独立同56、6hash/3组读回通过，[回执](../../../docs/operations/investigation-owned-reader-20261024.json)。owned SQL reader不改账本，实际认证/PG/显式HTTP/启动及2.2/2.3仍待。
 
 **M8a1限定通过：** 51直接/独立同51及6hash/3组重建通过，[回执](../../../docs/operations/investigation-profile-restore-20261024.json)。纯冻结上下文，实际owned/认证/HTTP/启动及2.2/2.3未完。

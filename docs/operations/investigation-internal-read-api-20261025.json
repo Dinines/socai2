@@ -1,0 +1,131 @@
+{
+  "schema": "investigation_internal_read_api.v1",
+  "date": "2026-10-25",
+  "baseline": "2d92063",
+  "status": "ACCEPT_limited_internal_ASGI_read_api",
+  "contract_review": {
+    "reviewer": "fresh_design_audit",
+    "status": "limited_ACCEPT_a3_1",
+    "must_fix": 0
+  },
+  "direct_tests": {
+    "new": 13,
+    "owned_reader": 13,
+    "restore": 11,
+    "publication_store": 21,
+    "related": 45,
+    "total": 58,
+    "exit": 0
+  },
+  "source_sha256": {
+    "services/agents/app/investigation_v2/result_api.py": "b1e0d3c1806951b0f4954b4d486b8ea9fc239db94f37655a420af0dea18e3d90",
+    "services/agents/tests/test_result_api_contract.py": "e55506831589abff024d9079b2921910e5b112bfb758ee61b9efa5a6dce655f3",
+    "services/agents/app/investigation_v2/result_reader.py": "f1634fd22b43566cd0085cad4b7f26a75f197dc8ae6197fe861d07b7dd5cc4c6",
+    "services/agents/app/investigation_v2/profile_restore.py": "1a90ee2568ca77e414a98f7f0aab387305bea45ce935c11048641be617a7544d",
+    "services/agents/app/investigation_v2/recon_publication_store.py": "96e1196d26904864a871a8841d749962b8f9045f73c6725b565e91a1d4944610",
+    "services/agents/tests/_recon_memory_ledger.py": "188a8631b7e9d5edcba4fb7eb1117a8bdda7a7642cf5da709006e657bd87df0a"
+  },
+  "http_observations": [
+    {
+      "case": "normal",
+      "status": 200,
+      "reader_calls": 1,
+      "output_sha256": "2f0539f24ce5a1928efdb1346f99b613ee986a5011ed88f6d7a4f3b4ccf77730",
+      "tenant_ids": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "subject": "verified-api-reader:00000000-0000-0000-0000-000000000002",
+      "delegated": true
+    },
+    {
+      "case": "missing_token",
+      "status": 401,
+      "reader_calls": 0,
+      "output_sha256": "3c5e949f5d6eddd0eb2072a70a2e2463a48f4b976e592e763abe7acf4197b8b5"
+    },
+    {
+      "case": "wrong_token",
+      "status": 401,
+      "reader_calls": 0,
+      "output_sha256": "3c5e949f5d6eddd0eb2072a70a2e2463a48f4b976e592e763abe7acf4197b8b5"
+    },
+    {
+      "case": "missing_tenant",
+      "status": 400,
+      "reader_calls": 0,
+      "output_sha256": "172c97623ea722db5b3481165df0b26096a153723e1c2dcc52f74ff946d3a7a9"
+    },
+    {
+      "case": "missing_actor",
+      "status": 400,
+      "reader_calls": 0,
+      "output_sha256": "0bd05496500bca1010736ef29c7afb312858a5bef85247524f93c7b96b5633f6"
+    },
+    {
+      "case": "query_owner",
+      "status": 400,
+      "reader_calls": 0,
+      "output_sha256": "c8374aebaf3780c87e4d7f71a1ac359b5786e77ff7d532d2bc7eb2e135f62fd3"
+    },
+    {
+      "case": "body_scope",
+      "status": 400,
+      "reader_calls": 0,
+      "output_sha256": "8339d5bb8675398f15e78aa519d757e8d104d9a4a7c94f7e17057060f5007295"
+    },
+    {
+      "case": "driver_failure",
+      "status": 503,
+      "reader_calls": 1,
+      "output_sha256": "b112be8af3de2b2492f1d86c76f044a829ed2df84646e0e21945f4f97fcf4f0c"
+    },
+    {
+      "case": "wrong_response_identity",
+      "status": 502,
+      "reader_calls": 1,
+      "output_sha256": "d8a375c4e2698ae505883d09f42565df92a19de6e49d9c5f9b8ed86472bd5a56"
+    },
+    {
+      "case": "old_path",
+      "status": 404,
+      "reader_calls": 0,
+      "output_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d"
+    },
+    {
+      "case": "post",
+      "status": 405,
+      "reader_calls": 0,
+      "output_sha256": "83c09ba9a8daedb136f90b17a294caa90ad471a016e430df6e229acb5a81e100"
+    }
+  ],
+  "local_http_observations_sha256": "dc94d9ec2f794250a130ebf870b04dad66f6b5ebb5ad009024e7773dd092c623",
+  "integration": "test_http_to_actual_owned_reader_returns_frozen_manifest_without_new_rows uses actual a2/M7 code and SQL transport double; no new ledger, one missing Run HTTP404",
+  "independent_audit": {
+    "reviewer": "fresh_code_audit",
+    "status": "ACCEPT_limited",
+    "must_fix": 0,
+    "actual_tests": {
+      "result_api": 13,
+      "owned_reader": 13,
+      "restore": 11,
+      "publication_store": 21,
+      "total": 58,
+      "exit": 0
+    },
+    "source_test_hashes_matched": 6,
+    "ASGI_cases_replayed": 11,
+    "complete_JSON_status_calls_output_hashes_and_principal_summary_equal": true,
+    "additional_checks": [
+      "owned pool timeout terminates once and clears reader",
+      "Unicode/too-long/31-byte/trailing-space/embedded-tab token configurations rejected"
+    ],
+    "scope": "trusted gateway dedicated read token boundary only; no external user permission or real PG/network validation",
+    "evidence_storage": "auditor tool observations, no separate raw audit file/SHA claimed"
+  },
+  "limits": [
+    "ASGI HTTP execution with dedicated token authentication; mocked reader for boundary cases and actual SQL-double owned reader integration. No real sockets/PG/credentials or service deployment.",
+    "Dedicated token authenticates a trusted API gateway; external user credential/permission/revocation must be checked in later API gateway (a3.2). This block does not claim those passed.",
+    "Runtime factory requires explicit new read token/PG DSN and verified TLS; injected reader remains externally owned. No old service token/dev/database fallback.",
+    "No start/write routes, Run/Case/event/artifact/queries/models/notification sends, changes to old app/permission defaults, deployment or main merge. Real dual-process PG HTTP remains a3.3."
+  ]
+}

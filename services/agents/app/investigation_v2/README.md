@@ -1,5 +1,7 @@
 # Investigation v2 — 独立开发线
 
+`result_api.create_app`是显式独立内部GET app，专用新read token认证可信API网关，再以tenant/actor调用owned reader；无旧token/dev/DB默认回落。58直接及独审/11 ASGI重放通过，外部用户permission/真实PG/双进程另验。回执：docs/operations/investigation-internal-read-api-20261025.json。
+
 `OwnedReconResultReader.read`按当前可信principal与tenant/Run加载唯一owned begin、校所有引用后恢复原上下文/owner并同锁调用M7。56直接/独立同56通过，不加载当前Alert或写账本；实际认证/PG/HTTP后续。回执：docs/operations/investigation-owned-reader-20261024.json。
 
 `profile_restore.restore_alert_read_request`仅从已核owned begin/state与当前认证TenantPrincipal恢复原scope/profile/plan，不加载当前Alert或授予dispatch。51直接及独审通过；实际存储归属/permission在后续读取与HTTP核验。回执：docs/operations/investigation-profile-restore-20261024.json。

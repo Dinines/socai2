@@ -1,3 +1,7 @@
+# 2026-10-25 调查M8a3.1内部只读HTTP限定通过
+
+2d92063后新增独立Agents result_api/create_app，仅内部GET+专用新read token/tenant/actor→a2，body/query覆盖拒绝、结果身份核、错误脱敏；显式新PG/TLS池只关闭自建资源。13新＋45相关58及独立同58/6hash/11完整ASGI回执重放、池超时/非法token补查通过，限定ACCEPT/0必须修。docs/operations/investigation-internal-read-api-20261025.json；无旧token/dev/DB回落、旧app/权限默认不改。仅可信网关认证/SQL双集成，外部用户permission在a3.2、真实双进程PG在a3.3待验；无启动/新账本/模型/通知/部署/合main，2.2/2.3未完。
+
 # 2026-10-24 调查M8a2 owned读取限定通过
 
 从9f75772先卡/strict/独立合同，再result_reader及M7内部同锁读helper提取；13新＋43相关56与独立同56/6hash/3完整读重建通过，限定ACCEPT/0必须修。当前tenant许可先验，同Run锁/唯一begin全owned event-body-state核验、a1恢复、owner服务端取、同M7读；无需当前Alert/客户端scope或owner，不改账本/预算。回执docs/operations/investigation-owned-reader-20261024.json。仅SQL替身，actual credential/permission/真实PG/HTTP仍待；下一显式新只读HTTP沿原权限，不改旧路由/权限默认，无部署/合main，2.2/2.3未完。

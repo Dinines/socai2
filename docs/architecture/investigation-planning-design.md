@@ -1,3 +1,5 @@
+**2026-10-25 M8a3.1内部读HTTP：** 独立Agents app专用token/tenant/actor→owned读已过58直接及独立同58/6hash/11 ASGI重放，[回执](../operations/investigation-internal-read-api-20261025.json)。旧路由/权限默认不改，仅内部可信网关边界；API外部认证/permission与真实PG/双进程另步，启动未接。
+
 **2026-10-24 M8a2持久读代码：** 56直接及独立同56/6hash/3组重建限定通过，[回执](../operations/investigation-owned-reader-20261024.json)。按当前tenant/Run核唯一begin及owned工件，再恢复/服务端owner/同锁M7精确读，不依赖当前Alert；只SQL替身，credential/permission及真实PG/HTTP另验，旧入口不改。
 
 **2026-10-24 M8a1纯读上下文：** 已从owned begin冻结输入重建原M1 scope/profile/plan，不加载当前Alert；51直接及独立同51/6hash/3组原件限定通过，[回执](../operations/investigation-profile-restore-20261024.json)。当前主体tenant许可与原principal历史身份分离；实际auth/permission/存储归属和HTTP/启动接缝仍待后续。

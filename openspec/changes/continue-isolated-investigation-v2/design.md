@@ -1,5 +1,17 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M8a3显式只读HTTP分块细卡（2d92063）
+
+a2同锁owned读取已独审保存。保持API/Agents两个app包与进程独立，a3.1先Agents内部只读app/认证并直接测、独审；a3.2再API v2认证网关及直接/独审；a3.3用原M7稳定Run做真实GET/PG读回，不重查/新Run。没有正式启动、Case、自动策略、真实通知或生产部署；旧main/router/权限矩阵不改。
+
+a3.1新增Agents investigation_v2/result_api.py独立create_app，仅GET /internal/investigation-v2/runs/{run_id}。专用AISOC_INVESTIGATION_V2_READ_TOKEN显式强值（至少32字节、无缺省），hmac比较且每请求校验；不使用旧AISOC_SERVICE_TOKEN/开发回落。认证后要求X-AiSOC-Tenant-ID与X-AiSOC-Actor-ID均非零UUID，可信网关主体构造当前TenantPrincipal再调用a2。tenant/actor由内部read token的可信网关声明，真正外部用户permission由a3.2 API验证；actor只是当前读者标识，不改原冻结principal。GET不收body/query/scope/owner，POST/旧路径无新写动作。owned Run缺失404、其他完整性/陈旧拒绝409、持久不可用503，错误不带DSN/原文；返回身份/schema需吻合当前请求。
+
+app可在测试显式注入reader/token；实际独立进程lifespan从新AISOC_INVESTIGATION_V2_PG_DSN/CA_FILE创建有界asyncpg池（TLS校验、command timeout，沿M3最小UPDATE(id)锁权限）并只关闭本进程所建池，无旧全局worker/模型/schema初始化。提供reader时不隐式建池或关闭外部资源。读token配置缺失则app启动拒绝，不默默接旧服务。
+
+a3.2另新增API v2 read gateway/factory，保原query app可复用的认证与受限query路由，新GET /api/v2/investigation/runs/{run_id}要求cases:read和alerts:read，不新增旧服务token权限。backend read URL/token显式配置；仅可信配置地址、不跟重定向、有限timeout，发送认证后的tenant/actor及Run，拒body/query覆盖。返回校schema/tenant/Run及pub状态，published时MD SHA须匹配manifest.report.sha，manifest tenant/Run一致；不把下游错误正文原样给外部。未发布只返回进度/候选。现共享service token本来已有两read权限，可用于受控真实GET；写/启动permission另步，不扩本token。
+
+直接测试a3.1先缺/错token、缺/非法tenant/actor、GET覆盖、错误映射、同owned输出/通知null/无写/旧路径404及显式配置/资源所有权；当前仅先这一块实现。a3.2后再测API当前permission/伪造header不覆盖、下游身份/MD/hash/timeout；真实a3.3另卡用两个新loopback进程与临时PG角色、原6/14和MD不变，真实credential与mock permission范围分别留证。
+
 ## 2026-10-24 M8a2 owned持久读取实施前细卡（9f75772）
 
 a1已独审保存。新增OwnedReconResultReader，仅接受当前可信认证许可载体、tenant_id/run_id；当前tenant必须在principal允许集合且Run按id+tenant命中。同M3锁定该Run并设置事务tenant；查唯一unified_recon_started（取最多2条并要求恰1），验证event agent/kind/input-output hash及begin正文/state工件的owned join、kind、字节/hash、payload和state.persistence全部对应，owner只取已核初始snapshot。缺标记/legacy/重复拒绝，不fallback。

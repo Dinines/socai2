@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 M8a3显式只读HTTP实施前预期
+
+**2026-10-25 a3.1实际放行：** 新result_api内部GET app＋13合同，相关owned13/restore11/pubstore21共58，独立同58/6hash/11完整ASGI重放及池超时/非法token补核通过，限定ACCEPT/0必须修；[回执](investigation-internal-read-api-20261025.json)。实际专用token比较，但认证对象是可信网关，外部用户permission和真实PG/network未验；自建池关闭/注入不关，旧app不注册。a3.2网关及a3.3真实GET下一步。
+
+2d92063后先a3.1 Agents独立内部GET app（专用新read token/tenant/actor→a2 owned reader），直接测试/独审后a3.2 API独立v2网关复用原认证及cases:read+alerts:read，最后a3.3原6/14 Run双进程真实GET及PG无变校核。旧app/权限默认不改，无启动/新Run/查询/模型/通知/部署。当前只a3.1，body/query覆盖拒绝，身份/schema复核、无原文/DSN错误，显式新配置/TLS池仅本进程所有权；先strict/合同审阅再实现/测试。
+
 ## 2026-10-24 M8a2 owned持久读取实施前预期
 
 **a2实际放行：** result_reader＋M7同锁helper提取、13新及43相关56，独立同56/6hash/3完整读重建通过，限定ACCEPT/0必须修；[回执](investigation-owned-reader-20261024.json)。published/unpublished/cancelled及begin-only保持旧/新状态分开，无current Alert加载/新账本/派发，原M7公共读行为保持。仅SQL替身，当前认证/permission是caller前提，实际PG/HTTP下一步。审阅工具路径/导入失误已修复重跑，非源码失败。
