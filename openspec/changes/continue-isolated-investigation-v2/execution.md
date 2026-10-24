@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3d实际两进程离线首次启动
+
+0041f3c后已审卡/strict，新14＋API106/独立Agents59=179直接/独立同179，10hash/6新隔离ledger/原80API44Mockbackend62stdio，两门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)。实际注入CurrentUser→专用header→event-pin fullintent→原runtime/pub/owned/GET全链，ACK及父丢完整回包unknown保、repeat仅读无新调用；原UUID cold读同。清理异常P2修后一次finish/主错与清理分列/无条件留证；2未进probe的Windows tempfile子目录权限轮保未完成，root同179通过。0真实PG/network/业务Run/模型/部署；下一已审a4.4a实际PG零外呼锁竞争，然后b真实auth/cHTTP-CH，2.2/2.3未勾。
+
 ## 2026-10-25 M8a4.3c实际用户写入口
 
 086e0bb后已审卡/strict再新增gateway/factory；41新＋65 API相关及59隔离Agents共165直接/独立同165、9hash/38全响应/31Mock请求复放，修后限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)。run＋alertsread当前用户/共享readservice拒、1次POST/4KiB/1MiB/fullprogram DTO；总200秒和各5秒含HTTPX隐式EOF关闭，P2原件留存后stream代理修复/原例200，gzip保持。15producer回执只是协议来源，d actual actor→完整intent链仍待；仅ASGI/FakeDB/Mock无真实PG/network/Run/部署，下一已审d离线组合保存后实施，a4.4及2.2/2.3保持未完。

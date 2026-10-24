@@ -1,3 +1,19 @@
+## 2026-10-25 M8a4.4真实接缝分门与a PG零外呼细卡（d结束保存/本卡独审后实施）
+
+a4.4依次a真实PG原子准入/并发/零外呼协调器→b原真实JWT/RBAC及撤销→c独立loopback HTTP一次受控固定查询和完整读回。a只新增program_admission_pg_seam.py/直接测试及非私密回执，不改已冻结业务store/coordinator/runtime、旧入口/开关/注册、数据库schema或生产角色；b/c各另卡。当前卡不授权部署/主应用接线或放宽原service scope。
+
+先只读核实际PG版本/三ledger表41列10约束/Alert必要字段、NOTNULL/default/append-only触发器及当前RLS和角色继承，不能据ORM/迁移猜实际库。如果新store INSERT所需当前结构不兼容，保失败并另卡新函数/适配，不随手改旧表/default/源码。用已有私密管理连接创建本批短期独立role及最小表SELECT/INSERT和锁所需单列UPDATE，reader独立只读连接；配置与CA/新凭据仅.local/private，不输出DSN/token。PostgreSQL行锁即便SELECT也需至少一列UPDATE权限，见[官方SELECT权限](https://www.postgresql.org/docs/current/sql-select.html)，不能把锁reader称纯SELECT账户；先实际权限探针/rollback证明再业务准入。确切授权列按实库选定、记录为锁能力、源码路径不执行任何UPDATE；不授events/artifacts UPDATE/DELETE、tableowner/super/BYPASSRLS/role继承或CREATE。若已有RLS无法用程序tenant+最小角色核，停该实际步骤另议，不改共享row policy或用superuser冒角色验证。
+
+受控目标至多3个全新确定性UUID的canonical Alert（本批新batch和独立操作key），先核不存在、只定向INSERT，不发Kafka/Fusion/旧worker/Case/通知，选用已核测试tenant，不借source synthetic标签授权。具象controlled policy只列本批Alert及已核过程引用；在发准入前核旧自动入口实际仅其消息触发/没有这些新UUID输入，记录旧目标未知查询边界，不声称全系统分布式锁。准入前实际GUC/tenant-qualified SQL、默认PG isolation和现有数据摘要留证；保旧Run4dfd374a及其6/14、3111B Markdown的选定列/全文checksum不变，不能据此扩称整个PG未变。
+
+正常一例server budget明确model0/tool0、duration≤180；工具用dummy凭据及fail-closed transport计数并断言尝试0。须设置两个probe-only barrier，不改生产函数：先连接adapter在首次实际admission事务已持Alert锁且2事件3工件已写但COMMIT前暂停，再启动两个独立连接分别同key/另一key请求。实际取得各connection backend PID，观察pg_stat_activity/pg_blocking_pids等证明两请求已到PG锁等待且被首事务阻塞，不能把pool队列等待或任务已创建当锁竞争；pool至少能同时取得3个业务连接，observer另连接。随后释放precommit，首admit已commit/fresh receipt后在返回coordinator前继续postcommit暂停，使同key第二请求必须read_only/无进入、另一key在ready时必须拒且0新增Run；核两者在本机真实连接完成后才释放原owner。每barrier/锁观察≤10秒，整个竞争场景≤60秒、PG命令≤10秒及连接清理各≤5秒；超时保失败/unknown并退出，不重发。释放初次owner后沿原claim/M3gate在0tool额度停止并发布partial，预期1新Run/5事件11工件、外呼0/模型0；所有repeat/operation-read/ownedGET语义直读完全相同且0新行。若真实字段/状态与预期不符立即留原件定位，不追认通过或以SQLdouble替代。
+
+锁等待证据允许直接或传递阻塞链最终指向首次事务；等待者可能先被另一排队者阻塞，不强求两个pg_blocking_pids都直接列首PID。
+
+另两Alert分别做a）准入事务中指定artifact写入抛错，实际PG全rollback/Run0/无外呼；b）实际COMMIT成功后测试连接adapter丢ACK，调用者必须unknown/不入runtime，独立连接见原1Run/2事件3工件，显式read/repeat only ready/progress且不补执行。adapter仅新probe选择故障，不通过HTTP字段或全局driver monkeypatch，明确模拟“确认丢失”非真实断网。ACK未知Run维持历史ready/legacy running为预期测试事实，绝不标业务已完成或暗中取消/清账；不用同Alert新key绕unknown。实际PG并发为独立连接，不将本机SQLdouble全局锁称PG验证。
+
+每例独立observer用真实READ ONLY事务取完整Run选定列/events/artifacts/原文bytes/hash及event pins，完整actual admission intent/actor/budget/owner/DB deadline、M1源到newhandoff/pub/owned DTO/MD重建，核同key两请求结果/拒绝及原legacy Run列不动；保存输入源码hash/完整请求/响应/失败/未知。原owned reader需要FOR UPDATE，必须在另一个有锁权限的正常事务调用，不能塞进READ ONLY observer事务或把该锁账户称纯读。无模型/CH/query HTTP/通知/新真实厂商动作/旧Run重开。结束先关自己实际连接/临时进程，再NOLOGIN撤回全部表/列/成员权限；核has_table_privilege＋has_any_column_privilege/显式ACL/连接数全0，不能只看tableUPDATE=false漏列grant。保新增合成Alert/账本和失败，不DELETE append-only证据；reader如后阶段需用也先撤，本阶段实际结束独审后才另阶段新凭据。0剩余必须修才能保存放行b，d未结束不连PG/授任何role。
+
 ## 2026-10-25 M8a4.3d离线启动组合细卡（c修后结束保存/本卡独审后实施）
 
 仅新增probes/program_start_offline_seam.py及API直接测试，沿既有owned Popen/有界stdio模式，但不改已冻结read probe或业务源。API与Agents各自独立Python进程/模块路径，父API真实新factory/原auth依赖＋可控CurrentUser/FakeDB，子Agents实际新内部write app/coordinator/atomic admission/Program runtime/newpub/compatible reader和SQLdouble。两边HTTP仅ASGI/MockTransport，工具固定Mock/queryunknown或0budget；禁止socket/PG/CH/model/旧入口，不能把离线会话tenant适配器称RLS或真实JWT/RBAC。父gateway固定POST转子app、compatible GET另固定read app，两内部凭据区分，不把子进程调试控制暴露成用户路由。

@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.3d修后结束独审
+
+fresh_design d合同先行，0041f3c后仅新probe/tests；fresh_code独立179唯一通过，修cleanup遮primary/0B证据P2后代码及原03证据门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)。API原请求/headers/body/当前注入上下文、child全回包和原ledger/fresh coldread完整比，10SHA/6原ledger/所有74工件及80原响应核；38backend实际跨进程冷读/拒绝、6first内部只保留协议回放，不重做首次写或将新随机重跑代原UUID。作者red1/0fail1error及原cleanup script/2未完成cwd-tempfile诊断全保[8原件](../../../docs/operations/investigation-program-start-offline-failure-20261025.json)，两未完成不计通过。仅SQL/ASGI/MockTool，无实际JWT/RBAC/PG/运营隔离。下一a4.4a合同初只有postcommit假并发，补precommit实际锁阻塞链+postcommit双barrier/限时后fresh_design限定ACCEPT0，d保存后才实测。
+
 ## 2026-10-25 M8a4.3c修后结束独审
 
 fresh_design c合同先行，086e0bb保存后仅新API源/fixture/tests；fresh_code独立165唯一项及代码门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)。初38/2fail1测试error与两Loader命令错名均保原件；独审1P2隐式EOF close可等总200秒而非5秒界，完整原脚本/12867B/修前源和1s观测保[11原件](../../../docs/operations/investigation-program-start-gateway-failure-20261025.json)，修后同例200/HTTP1/fullcanonical保持，gzip兼容额外核不加165。证据门9SHA/15producer来源/38原API raw响应及31Mock请求完整重放同，失败原件编码bytes/hash全可重建，限定ACCEPT0。仅离线，不以source自hash当DB真或JWT/RBAC验收；下一d合同另fresh_design限定ACCEPT0，c保存后实施，a4.4真实门后续。

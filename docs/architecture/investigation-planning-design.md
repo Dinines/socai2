@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.3d离线启动组合：** 179直接/独立同179、10hash/6新隔离账本80API44Mockbackend限定通过，[回执](../operations/investigation-program-start-offline-20261025.json)。独立app包进程贯通真实新代码、当前注入用户→event-pin完整actor/budget→runtime/pub/owned全DTO；ACK/父丢回包保未知、重复只读，全部原件冷读同。仅SQLdouble，无真实PG/JWT/RBAC/生产writer互斥证明。下一a4.4a PG零外呼/真实precommit锁等待＋postcommit owner双barrier卡已审，再b真实鉴权/c实际HTTP-CH；Case/Deep及2.2/2.3仍未完。
+
 **2026-10-25 M8a4.3c现用户写入口：** 165直接/独立同165、9hash/38原响应全重放限定通过，[回执](../operations/investigation-program-start-gateway-20261025.json)。原run＋alertsread/当前身份、共享readservice拒，单POST/完整program owned DTO/原MD保持、整次200秒与响应/client各5秒；独审隐式EOF close P2修后通过。只FakeDB/Mock/producer回执，不证明完整backend intent actor/budget来源或真实JWT/RBAC；下一d离线两进程actual首次写及actor pin合同已审，再a4.4真实PG并发/权限/运营隔离，Case/Deep及2.2/2.3保持未完。
 
 **2026-10-25 M8a4.3b内部写HTTP：** 186直接/独立同186、7hash/原28ASGI响应重放限定通过，[回执](../operations/investigation-program-start-api-20261025.json)。两POST专用当前token/动态read-tool分离、controlled guard、4KiB严格请求/servernormalize，原GET与service scopes保持；仅SQL/Mock/ASGI，不据配置ref认定运营隔离。c用户权限/完整网关合同已审（总200秒而非分阶段续期），d/a4.4/Case/Deep仍待。

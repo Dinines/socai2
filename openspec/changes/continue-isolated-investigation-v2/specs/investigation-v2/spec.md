@@ -820,3 +820,18 @@ The offline probe SHALL use separate API and Agents Python processes with actual
 #### Scenario: A pipe or owned process fails
 - **WHEN** a frame is oversized, malformed, incomplete, slowly streamed beyond the total deadline or reaches EOF
 - **THEN** the probe preserves a failed receipt, never retries the request, and performs bounded shutdown only on its own Popen handle
+
+### Requirement: Real PG manual-start verification precedes authenticated HTTP and external query gates
+The real PG probe SHALL use new controlled test Alerts and short-lived minimal roles, exercise actual independent connections and original store/coordinator with zero model/tool budgets, retain all original rows and revoke its table and column privileges at closeout. It SHALL NOT change schema, legacy sources or shared policies, send Kafka, infer writer exclusion from source tags, or claim authentication and HTTP query acceptance.
+
+#### Scenario: Admission transactions actually contend before the zero-call runtime
+- **WHEN** the first transaction is held before commit with its Alert lock and complete uncommitted admission rows, and independent connections for the same and another key are observed waiting on its actual PG locks rather than a pool queue
+- **THEN** after releasing commit while retaining a post-commit owner barrier only the original owner may later enter the runtime, the repeat is read-only, the other key refuses without a Run, and the original owner stops and publishes a partial zero-call result without changing legacy Run state columns
+
+#### Scenario: PG write rolls back or its completed commit loses acknowledgement
+- **WHEN** a controlled transaction artifact write fails or a probe adapter loses acknowledgement after an actual successful commit
+- **THEN** rollback leaves no partial ledger, while the unknown committed operation retains its original rows and permits only explicit reads without execution replay
+
+#### Scenario: Temporary PG verification closes
+- **WHEN** original rows, artifacts and owned DTO have been independently read and verified
+- **THEN** all probe connections close, its roles become NOLOGIN and lose effective table and column permissions, retained test evidence remains, and later real JWT/RBAC and HTTP gates stay incomplete

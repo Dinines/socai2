@@ -1,3 +1,15 @@
+## 2026-10-25 M8a4.3d实际离线双进程启动组合
+
+0041f3c后沿已审d卡，仅新probe和API测试，不改冻结业务源/旧read probe。父API新factory/原权限依赖＋注入CurrentUser/FakeDB，以单独专用write/read gateway和有界stdio转子Agents实际新内部app/coordinator/admission/runtime/pub/owned代码；SQLdouble/ASGI/Mocktool，不接实际PG/network/CH/model。6场景分别normal/zero/queryunknown/admissionACK/publicationACK/父收到完整child回包后模拟丢失一次；每child新空ledger，稳定tenant/key/Run公式可相同，不能说6个共享数据库不同Run或真实PG并发。14新＋API相关106=120，另Agents59共179直接/独立同179、10SHA，两门限定ACCEPT0，[回执](investigation-program-start-offline-20261025.json)。
+
+normal7event15artifact/Mocktool1，zero5/11/0，queryunknown7/15/1保partial，admissionACK首5032/3/0只读ready恢复，pubACK5037/15/1只读published恢复；父丢实际完整回包亦503/unknown而非未执行，驱动明确下一次read，无自动重发。repeat/operation-read/compatible GET完整owned/manifest/MD一致且0新行/用量/工具/pub。原shared readservice/缺scope/缺错凭据及撤权403/401发生在backend前；客户Xactor/tenant伪头无效，实际注入CurrentUser→backendheader→fulladmission intent.actor和serverbudget pin一致，换currentactor或窗口同key冲突409，foreign/active-or-unknown新key拒。实际JWT/RBAC仍未验。
+
+最终[公开attempt03完整原件](evidence/investigation-program-start-offline-20261025.json)1532585B/SHA a5324974e7303f010ba822bb43078d4ce5a8993b51fd2afb6a0807b83de17098，80API原request/response＋实际注入用户快照、44Mock后端request/response、62stdio、6新ledger共35事件74工件。父child全rawUTF8/hash、actualtools/intent/begin/source/handoff/pub原件，原UUID/时间hydrate后fresh owned reader与API GET全DTO/MD同，旧legacy Run字段保持；不是用c缓存回执冒本次首次写。原attempt01及cleanup修后02均留，不覆盖。独审80请求实际API路由全raw/SHA/canonical同，其中38后端实际跨进程原账本冷读/拒绝，6首次内部回包仅保留协议回放，不重做首次写/ACK/drop；另六原账本actual admission强读和owned冷读核完整pins/DTO/74工件/行不变，审计子进程全exit0，不将新随机重跑当原件复放。
+
+独审1P2：start ValueError再finish RuntimeError可覆盖主异常/finish两次并留0B文件。保修前probe/tests/独立原脚本和观察，作者red1/0fail1应用error；修每case先记primary、finish一次、cleanup/receipt错分列、最内finally无条件落回执，原例修后289B JSON/原ValueError且cleanup保，见[8份完整原件](investigation-program-start-offline-failure-20261025.json)。独审另2轮从子目录运行时，Windows tempfile因mkdir WinError5但W_OK=True高CPU重试，发生在run_probe前无child；按原command/创建时间/OS句柄核自有进程定向结束，未完成不记应用失败或通过，从repo root同179全过。12MiB严格帧/整write+read30秒/慢分块不能续期、EOF/半帧/超限/双key/nonfinite/坏UTF8终止且不重放，owned Popen正常全exit0回收。
+
+下一a4.4分a真实PG零外呼→b真实JWT/RBAC→c实际独立HTTP/CH。a合同初提交后barrier不证明锁竞争，独审P2补首次事务已写2/3但commit前持Alert锁、独立同key/不同key连接PID和直接/传递blocking链，再postcommit拦owner确保ready冲突先完成，修后ACCEPT0；schema/角色/列权限/READ ONLY observer与owned锁读取分开、0工具dummy failclosed、至多3新Alert/2持久Run、所有权限撤销另按卡实测。d保存前未连接PG/授role；旧MD3111B/源码保持、无部署/合main，2.2/2.3/Case/Deep/自动政策未完成。
+
 ## 2026-10-25 M8a4.3c实际用户写网关
 
 086e0bb后沿已审c卡新增API program_start_gateway/program_start_api，仅显式新factory保原query/compatible GET；没有旧main注册或认证/catalog/service scopes改动。原Bearer前置及CurrentUser investigation:run＋alerts:read，缺任一/实际共享readservice拒403/backend0，dev缺错凭据401；伪Xactor/tenant不覆盖当前用户，下一请求权限/凭据重核。HTTP strict4096B请求只转operation/window/version，server写凭据单POST、无重试/redirect/fallback；1MiB严格响应JSON，known outer/receipt/runtime闭合类型、tenant/key稳定Run/executor和target/有限目标、原compatible完整DTO/manifest/MD/exec/candidate核后原样交付。API无原backend预算/完整intent，request_hash格式不证明原actor/预算/source，真实绑定仍后续d/backend链核。
