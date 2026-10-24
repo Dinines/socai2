@@ -1,5 +1,19 @@
 # Design: 独立调查v2的原设计与集成边界
 
+## 2026-10-24 M7同版交付分块细卡（基线3114609）
+
+M6.2c已限定ACCEPT/0并保存推送。M7a纯包→b原子发布/选定读取→c真实PG前后冷读，不先接M8认证/HTTP/stream。fresh_design_audit草案复核要求钉住section、当前性、逻辑身份/版本及来源留存，以下落实，代码尚未写。
+
+a输入为checked profile、已核owned handoff及source/current M3快照与不可变artifact引用。纯层校hash/ref/schema/tenant/run/profile/plan和snapshot identity；当前attempt/limits/opening/用量/实际停止相关状态必须与handoff源快照一致，phase→stopped与handoff指针为允许结束增量。单纯墙钟流逝不使旧ready失效；late settle等改变相关状态则拒绝，不覆盖冻handoff、不自动恢复重分析。
+
+固定section版本fixed_recon_handoff_sections.v1：questions=/result/questions，analysis=/result；只有preparation.material_state=view_ready且evidence_document真实存在才有evidence=/preparation/evidence_document。projection_blocked/未采用各有明确availability且evidence=null，保原held refs。引用含artifact_id/sha256、artifact_schema、section及section_sha256；三块共用handoff，不复制正文。execution发布快照另存fixed_recon_publication_execution.v1，含三维状态、原stage/run用量与source/current M3 state refs；manifest引用它，避免与指向manifest的新runtime state互相算hash。
+
+映射fixed_recon_publication_state.v1、renderer=fixed_recon_markdown.v1，manifest首版investigation_id=run_id/previous_manifest_ref=null。有限ready无block/execstop→finished/complete_for_scope/none；其余合法partial→stopped/partial/awaiting_human；cancellation_observed_at或execution_stop=cancelled→cancelled/partial/awaiting_human。报告明确有限目标/窗口/事实、六问题/缺口、性质未定/授权未知、实际用量/unknown/unpriced及未确认材料，人工仅required；动态字段作为安全文本，不执行正文指令。纯包始终candidate，不声称持久成功。
+
+b新publication store同Run锁内重读全部owned材料、确认当前基线并构包，原子增加1个unified_result_published事件与4工件（execution发布快照、MD、manifest正文、M3 state snapshot）。只增加新版state publication指针，不改旧Run列/M3账本。一个不可变manifest；重复按同Run/handoff/发布版本返回原版，不因新ID另起版。retention分别表达publication artifacts committed与source availability/gaps/unknown，不统一写全来源ok。提交不确定无成功/通知，后续显式读回原manifest、不重查；缺件/hash/身份失败不当partial成功。
+
+正式读取按manifest读全部必需工件/section及版本；发布前not_published/进度候选，旧报告不参与；发布后和清内存后同版。仅提交确认后生成同manifest内部通知描述，M8前无真实stream/外部投递。c拟仅在M6.2c稳定Run追加发布、不重查：5/10为M6.2历史快照，发布后预期6事件14工件；新临时角色单独关闭，独审后放行。先仅a实现/直接测试/独审，a过才b、b过才c。
+
 ## 2026-10-24 M6.2c真实独立接缝细卡
 
 b2保存d06bf3a并独审P2闭合后才c。公开探针fixed_recon_runtime_seam.py复用旧共享场景卡和build_context显式telemetry映射，强制传新batch Run，不调用旧探针run方法/旧Run。私密进程助手在.local/verification/investigation-fixed-runtime-20261024-01，复用已验最小角色/SSH/独立API启动方式但新精确角色名与新随机密码，角色创建一事务、关闭NOLOGIN/撤权；无新api_key行/DDL/写湖/模型。先public probe离线结构/身份合同，再本机prepare与新独立进程。

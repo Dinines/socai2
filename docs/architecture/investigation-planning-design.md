@@ -1,3 +1,5 @@
+**2026-10-24 M7a纯准备：** 已实现固定section引用/独立execution发布快照和确定性安全typed事实报告；16新＋112相关128、独立当前16/5hash/5包重建限定通过，[回执](../operations/investigation-publication-preparation-20261024.json)。基线/晚到结算不混版，正常停止后墙钟不回算；仅candidate，M7b原子发布/选定读取及c真实PG仍待，旧Run列保持。
+
 **2026-10-24 M6.2c实际接缝：** 固定runtime已在新Run走一次独立v2 HTTP/CH/M3/PG，5事件10工件完整读回，重复及冷读同交接不重查，模型0；辅助CH预检另1次。112合同/probe独审15通过及新角色/临时API清理见[回执](../operations/investigation-fixed-runtime-seam-20261024.json)，真实结束独审限定ACCEPT/0必须修。仅有限来源观察ready，性质/授权未知，Run列保持，未M7发布。下一沿12.7做同版交付/显式入口，再验语义及Deep收益，Case/自动政策后置。
 
 **2026-10-24分工更新：** 用户说明背景事件入湖及相关调查工作已由单独开发的调查模块处理，本迁移会话不重复、不复验。迁移按[收尾回执](../operations/migration-closeout-20261024.md)结束；本规划继续作为独立调查的设计参考，实施状态以该模块自己的分支/change/回执为准。本说明不证明M0—M9已经实现或通过，正文原“本轮/仅规划/未提交基线”等均为10月23日交接快照。

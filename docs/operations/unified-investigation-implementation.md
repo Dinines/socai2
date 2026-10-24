@@ -2,6 +2,12 @@
 
 # 统一调查逐模块实施记录
 
+## 2026-10-24 M7同版交付实施前预期
+
+**a实际放行：** recon_publication纯层16新＋112相关128项，fresh_code独立当前16及5hash/5组完整包/MD重建一致，限定ACCEPT/0必须修；[回执](investigation-publication-preparation-20261024.json)。固定section/evidence缺失、三维执行快照、finish_recon重建基线拒late settle、停止后不回算及typed事实安全呈现已核。前版51独审不累计，01原冻件/回执/可读性前源码留存，02相同输入新包；源码更新期hash不符说明后重核。纯candidate/留存未尝试，未新增真实业务/模型/PG/发布，b/c继续。
+
+基线3114609，M6.2c已独审限定ACCEPT。a纯包（固定section/发布execution snapshot/确定性MD/三维映射）→直接测试/独审→b同Run事务一次发布/按manifest读取（1event/4artifacts，不改旧Run列）→直接测试/独审→c真实PG发布前/后/清内存同版。来源缺口/unknown保留；缺件/变更基线/late settle拒绝，已停止后墙钟跨限不回算；未提交不报published/通知。前三快照共享owned handoff固定section，缺evidence显式null；execution另存避免循环。细卡见活动design/spec，M8/真实stream/Case/模型后置，先仅a。
+
 ## 2026-10-24 M6.2运行计划至真实接缝
 
 **c实际结果：** 新Run4dfd374a-17a6-5fec-833b-803bfbcb85c6实际runtime→独立v2→CH→PG，1业务查询、5事件10工件全hash/UTF-8/全部event-body-state边及身份/版本/用量读回；重复及新store冷读同handoff且无新增事件/查询。model0/tool1/unknown0/unsettled0、有限ready及Q3a/Q3b/Q4未评估。辅助CH预检另1次；API PID23872/创建ticks134373245090743751核后停，新两角色NOLOGIN/有效三表权限false/活动0。11新＋101相关112项通过；首次fixture时间文本误比较和launcher模块名误写保留，probe审阅P2四反例修纯verify_ledger后独立15通过才真实运行。[公开回执](investigation-fixed-runtime-seam-20261024.json)；真实结束独审限定ACCEPT/0必须修，M7未开始/候选未发布，旧Run列保持。

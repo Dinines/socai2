@@ -1,3 +1,7 @@
+## 2026-10-24 M7a纯包结束窄审
+
+fresh_design_audit正式合同ACCEPT/0后实施；fresh_code_audit当前16项、5hash/02五包/MD/摘要及01冻件一致，限定ACCEPT/0必须修。前版独立51项不累计，MD谓词可读性建议采纳补typed值/转义/失败报告，当前→handoff正文关联反例追加；作者更新中hash不符先保留并待新版复核，非功能失败。当前16测试OK后多余读取错cwd令合并shell exit1，如实与测试结果分开。[回执](../../../docs/operations/investigation-publication-preparation-20261024.json)。仅candidate准备，未真实访问/发布；b/c另验。
+
 ## 2026-10-24 M6.2c探针与真实证据窄审
 
 fresh_design_audit合同先限定ACCEPT/0；fresh_code_audit发现P2探针只核snapshot边遗漏event正文/receipt，4个实际替身反例原核验均接受。实现前后检查缺口如实保留：修纯verify_ledger及11新合同，独立11＋4共享15项反例准确拒绝，限定ACCEPT/0才发真实c。实施112项通过；实际新Run一次业务HTTP/CH、5事件10工件全关联/哈希读回、重复/冷读同候选，model0，临时进程/角色已清理。[回执](../../../docs/operations/investigation-fixed-runtime-seam-20261024.json)。fresh_evidence_audit独立15项/41hash、READ ONLY PG及进程/权限核验后限定ACCEPT/0必须修；未扩大成M7/语义或正式入口验收。独立自跑15项，25源码/10测试/6观察哈希一致；自写READ ONLY PG核全边/冻结版本/用量/三表权限false及活动0，PID不存在；首SSH配置沙箱错误无连接，提权只读后成功。无独立raw审计文件/SHA声明。

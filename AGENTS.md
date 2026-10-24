@@ -1,3 +1,7 @@
+# 2026-10-24 调查M7a纯同版包限定通过
+
+基线3114609按M7细卡/strict及fresh_design合同审阅，新增recon_publication与16新合同；16新＋112相关128通过，未参与实现者fresh_code当前16/5hash/5组完整包与MD重建一致，限定ACCEPT/0必须修。固定section/缺evidence null，execution独立发布快照，重用finish_recon核当前基线拒late settle，停止后墙钟不回算；typed事实安全显示，来源缺口/unknown保留。纯包publication=candidate/留存not_attempted/正式execution-report refs null，未发布/通知。回执docs/operations/investigation-publication-preparation-20261024.json。前版51不累计，原冻件保留；下一持续b同Run原子发布与按manifest读，再c仅PG，不重查模型。旧源码/Run列不改，无部署/合main，2.2/2.3未完。
+
 # 2026-10-24 调查M6.2c真实接缝已执行，结束独审限定通过
 
 新Run4dfd374a-17a6-5fec-833b-803bfbcb85c6走独立v2实际runtime：一次业务HTTP/CH、5事件10工件全边/hash/UTF-8读回，repeat/cold同交接且无新增事件/查询，model0/tool1/unknown0/unsettled0，有限ready/Q3a-b-Q4未评估/性质授权未知；CH预检另1次。新角色NOLOGIN/有效三表权撤回/活动0，临时API核PID创建时间后停。11新＋101相关112项，probe独审P2关联缺口修后11＋4独立通过；真实证据独审限定ACCEPT/0必须修。见docs/operations/investigation-fixed-runtime-seam-20261024.json。候选未M7发布/人工接手，Run列running/null/0/0保持；无Case/模型/部署/合main，旧失败保持，2.2/2.3不勾。下一持续M7精确合同→纯同版包→原子发布/同版读取逐块推进。

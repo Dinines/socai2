@@ -1,3 +1,5 @@
+**2026-10-24 调查M7a限定通过：** 16新＋112相关128项，独立当前16/5hash/5组同版包和MD重建一致，0必须修；固定section、缺evidence null、execution发布快照、基线/late settle拒绝及安全typed事实报告已实现。[回执](docs/operations/investigation-publication-preparation-20261024.json)。仍仅candidate，持久/通知未尝试；下一b原子发布/读取→c真实PG，无新业务网络/模型/部署或合main，旧列/unknown/失败保持，2.2/2.3未完。
+
 **2026-10-24 调查M6.2c真实接缝：** 11新＋101相关112项通过，probe独审P2全关联验收缺口修后15项通过；新Run实际runtime一次独立v2业务HTTP/CH、5事件10工件全部引用/hash/UTF-8读回、重复/冷读同交接不重查，模型0。CH预检另1次；新临时PG角色禁登录撤权/活动0，API核身份后停。[公开回执](docs/operations/investigation-fixed-runtime-seam-20261024.json)真实结束独审限定ACCEPT/0必须修。有限ready仅来源核对，性质/授权未知，候选未M7发布；不改旧Run/旧源码，无部署/合main，下一M7同版交付，2.2/2.3未完。
 
 **2026-10-24 调查M6.2b2控制器限定通过：** 18新＋79相关97项、独立89项子集/6hash/7观察及并发回归通过。独审P2取消窗口抢先finalize已修：重复blocked只报交接待完成，观察核已留存后才清；失败原源码/hash与反例保留。见[回执](docs/operations/investigation-fixed-runtime-controller-20261024.json)。一次实际gate＋SQL/HTTP替身，不证明真实服务；持续进入c新Run/临时身份/独立v2真实PG/HTTP/CH，模型0，原入口/预算/历史失败保持，无部署/合main。

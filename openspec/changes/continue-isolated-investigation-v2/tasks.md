@@ -1,5 +1,7 @@
 # Tasks: 原阶段成果接收与后续逐模块续接
 
+**M7a限定通过：** 128直接/当前独审16、5hash/5包重建通过；[回执](../../../docs/operations/investigation-publication-preparation-20261024.json)。仅纯candidate；b原子发布/读取、c真实PG和M8仍待，2.2/2.3未勾。
+
 **M6.2c实际接缝：** 112直接/probe独审15通过；新Run一次业务查询、5事件10工件读回、重复冷读一致与临时身份/进程清理，真实结束独审限定ACCEPT/0必须修。[回执](../../../docs/operations/investigation-fixed-runtime-seam-20261024.json)。仅固定有限目标，M7同版发布及2.2/2.3仍待。
 **M6.2b2限定通过：** 97项直接/独立89及取消竞争修复复核通过，[回执](../../../docs/operations/investigation-fixed-runtime-controller-20261024.json)；c真实PG/HTTP/CH仍待，不核销2.2/2.3。
 

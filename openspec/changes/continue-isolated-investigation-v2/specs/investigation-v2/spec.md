@@ -1,5 +1,23 @@
 ## ADDED Requirements
 
+### Requirement: Publish one immutable fixed recon result version
+
+M7 SHALL 按a纯同版包→b同Run事务发布/读取→c真实PG前后冷读推进，仅fixed_alert_recon_runtime.v1。发布前 MUST 核owned handoff指针、scope/profile/plan及相关attempt/M3状态仍与构包基线一致；late settle或新相关状态不许混版，拒绝后保材料。已正常停止后的单纯墙钟跨deadline不重算ready。旧Run status/completed_at/tokens/cost保持，新三维仅发布投影。
+
+manifest SHALL 固定schema、investigation_id（本批首Run=run_id）、tenant/run/profile/target/objective、scope/完成政策/renderer/映射版本、questions/analysis/evidence与execution快照、MD、前manifest=null及留存缺口。前三块 MAY 共用owned handoff的固定versioned section，引用钉住artifact ID/hash/schema/section及section hash；缺preparation、projection blocked或未采用来源时evidence明确null/availability，保held refs。本次execution发布快照独立有界保存，原M3/source state作来源ref，避免manifest与新state哈希循环。
+
+#### Scenario: A finite ready handoff is prepared and published once
+- **WHEN** 当前有限来源目标ready且无阻断/执行停止，所需材料有效，按原范围/版本正常停止后发布
+- **THEN** 纯准备仅candidate；同事件原子保存execution发布快照、确定性MD、manifest及指向它们的state，提交后才返回published/通知描述。版本fixed_recon_publication_state.v1映射finished/complete_for_scope/none，显式有限objective，性质/授权不升级，Alert/Case不关闭；重复返回原manifest，不新增查询/模型/发布版本
+
+#### Scenario: Partial and cancelled results keep their source gaps
+- **WHEN** 合法但缺证/投影阻断/未确认来源/unknown或已观察取消的handoff仍可可靠交付
+- **THEN** 映射stopped/partial/awaiting_human，已观察取消为cancelled/partial/awaiting_human；发布工件committed不等于来源完整，原gaps/held/unconfirmed refs/unknown/unpriced及预留保持，不称人工已接管。身份错误/缺必需工件/坏hash及发布失败不能伪装普通partial成功
+
+#### Scenario: All official reads and notification descriptions use one committed manifest
+- **WHEN** 发布前、发布后、清内存后或提交不确定后显式读取新版结果
+- **THEN** 未发布只显示进度/候选及交付缺口，不用旧report/triage status冒充；已发布按manifest精确引用校验读取，缺件/坏件显式拒绝，无legacy fallback。重复不重渲染覆盖，unknown提交只读原指针、不重查；提交后通知描述携同manifest引用，M8接真实HTTP/stream前不声称已投递
+
 ### Requirement: Verify the fixed runtime through one independent real v2 query
 
 M6.2c SHALL 使用全新受控batch/Run与临时最小writer/独立reader、loopback独立v2 API进程，复用当前共享网络场景及既有CH reader，只读canonical Alert/已入湖数据，不新增写湖/模型/Case/旧入口。实际FixedReconRuntime.begin/execute SHALL 经ReconExecutionStore事务/M3 reserve、新HTTP/CH、工具完成/A3、handoff保存；重复新runtime读取不得再查。测试配置 SHALL 显式model0/tool1/tokens0/cost0/unsettled1、DB期限120秒。
