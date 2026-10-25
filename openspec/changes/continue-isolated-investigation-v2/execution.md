@@ -1,3 +1,7 @@
+## 2026-10-25 当前范围收尾
+
+用户要求以功能完成为准、减少可用性和冗余测试，权限相关继续暂停。保存[设计—实现—证据对照及收尾决定](../../../docs/investigation/design-implementation-review-20261025.md)，复用上一轮124项合同和独立审阅，不增加代码、业务测试或真实调用；仅做文档差异检查及阶段提交推送。现有手动有限来源核对/持久发布读取按已实现范围结束本阶段，Case/Deep/自动政策和新启动真实整链等未完成项保持原状，2.2/2.3不勾、不归档、不部署或合main。
+
 ## 2026-10-25 M8a4.4a实际PG原子准入/锁竞争
 
 abf3d58后已审卡→新probe13/147合同→代码P2修/独审→helper窄审→3新合成Alert实际一轮。normal真实三连接锁等待链/不可见未commit2/3，同key只读/另一key无Run，原owner0model/tool发布partial5/11；rollback0、ACK真实commit2/3仅读不补跑。新独立READ ONLY和原UUID owned/M1/独立APIchecker全同，新旧28artifact/旧6/14和3111B保持；13sourceSHA、role NOLOGIN/表列权限/成员活动0最终限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)。只PG可信probe，无真实JWT/HTTP/CH，下一已审b保存后实施，c及2.2/2.3未勾，无部署/合main。

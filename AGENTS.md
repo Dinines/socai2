@@ -1,3 +1,7 @@
+# 2026-10-25 用户要求按功能收尾，停止扩展冗余测试
+
+用户再次明确以功能完成为准，不做过多可用性、恢复、故障注入或冗余测试，本轮进行阶段收尾。必要的直接功能验证及具体缺陷修复仍保留，已通过且未变化的合同不反复重跑；审查建议不自动变成新的功能前置门。M8a4.4b真实JWT/RBAC继续暂停，不因下方历史“下一b”自动恢复。审查基线7908f73，结果见docs/investigation/design-implementation-review-20261025.md；上一轮124项离线合同和独立审阅已完成，本轮直接复用，不增加业务测试或真实访问。当前手动单Alert/TCP443固定来源核对、持久发布读取按已实现范围收尾；Case/Deep/自动政策、完整业务判断及新启动真实整链仍如实保留未完成，不核销整个change的2.2/2.3。保存审查/证据与阶段提交推送，无业务源码修改、部署或合main。
+
 # 2026-10-25 调查M8a4.4a真实PG零外呼限定通过
 
 abf3d58后已审a卡，新program_admission_pg_seam/13新＋相关134=147直接/独立同147，13源码SHA/2本机helper/实际PG原件结束独审限定ACCEPT0，见docs/operations/investigation-program-admission-pg-20261025.json及evidence同名完整原件。PG16.15/41ledger列10约束实际兼容、Alert无自定义trigger；实际旧reaper/Hunt均原有关闭、Kafka0保持，0部署/旧改/schema改。新3合成Alert：normal721b6c99-26f4-55d5-b773-21ca9c618400实际precommit2/3不可见、三独立PID有传递锁等待、同key只读/不同key无Run，释放后0tool/0model发布partial5/11/MD2113B；rollback b6e4…0；ACK b7f95ff4-0be1-5465-89f3-9f4cfb204b85保真实commit2/3/ready，显式read/repeat不入runtime，严禁补跑/重置。两Run legacy running/null/0/0是原合同，不计业务完成。新普通TLS角色锁前拒/仅Run.iterations与Alert.updated_at单列grant后成功且rollback，结束两role NOLOGIN/所有表列effective及explicit ACL0/memberships active0，无遗留连接。独审真实只读核3目标恰2Run、28新旧工件/所有选中列/fullintent/actualAlert→M1-plan/owned+独立API三DTO同，旧6/14/3111B不变。代码P2提前owner错被timeout/cleanup遮盖已修并保原件，3Loader错名和审计JSONB表现/SSH沙箱差异分列非业务fail。下一b真实JWT/RBAC卡顺序P2修后ACCEPT0，a保存后实施；新tenant/viewer精确权限、原Redis独立helper bump且排除TTL自然到期，不用stub409宣称business200。b/cHTTP-CH/Case/Deep/自动政策及2.2/2.3未完，无合main。
