@@ -8,6 +8,7 @@ from app.api.v1.deps import CurrentUser, require_permission
 from .query_api import create_app as create_query_app
 from .result_api import _explicit_bearer
 from .program_result_gateway import CompatibleResultReadGateway
+from .incident_api import router as incident_router
 
 
 async def _permitted_reader(_credential: Annotated[None, Depends(_explicit_bearer)],
@@ -38,4 +39,5 @@ def create_app(*, gateway=None):
     app.title = "Investigation compatible result read"
     app.state.result_gateway = configured
     app.include_router(router)
+    app.include_router(incident_router)
     return app

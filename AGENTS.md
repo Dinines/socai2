@@ -1,3 +1,9 @@
+# 2026-10-25 调查模块功能实施原则与继续开发
+
+用户已要求继续之前的调查功能计划，并明确把以下要求写入模块原则：以实现功能为目标；逐个功能实现、逐个必要直接验证、通过后推进；不开展冗余、可用性/恢复/压力/复杂并发或故障注入扩展测试，不为验证写过多辅助代码/框架；已通过且未变部分不重复测试，评审不再新增逐层前置门。主原则见docs/architecture/investigation-planning-design.md的implementation-principles，README和五批计划已链接。从F1事件/分诊汇总开始实施，历史“本轮只文档”不再阻止开发。权限专项仍暂停，无自动部署/合main或真实厂商动作授权；本地阶段保存，远端推送不自动恢复。
+
+F1现已完成：新增API v2 incident_reader/incident_api，兼容结果/启动factory挂GET /api/v2/investigation/incidents/{incident_id}；PG告警归属取canonical成员，raw_alert.id明确对应的最新triage_verdict与当前Alert处置分开显示，不猜Run.case_id、不自动关事件。4个直接ASGI/SQL替身用例通过，0业务外呼/模型/新表/部署；未称真实PG或权限验收。见docs/investigation/incident-investigation-implementation-plan-20261025.md。下一F2首次/手动AI概况，F3实际分析/Run结果关联等未完，不回到旧权限专项。
+
 # 2026-10-25 事件概况与调查流程落文档，先评审规划
 
 用户要求先保存当前业务流程，再做一轮评审与实现规划，本轮不开始功能编码。见docs/architecture/incident-investigation-flow-20261025.md及docs/investigation/incident-investigation-implementation-plan-20261025.md：Fusion Incident汇总展示所有成员分诊及调查进展/结果，动态事件数据与AI概况分开，真正分析/补查放调查；Incident不等同Case。功能顺序F1事件当前数据/分诊汇总、F2首次及手动AI概况、F3单Alert主分析补查报告、F4事件成员调查、F5原自动入口接线。权限专项仍暂停，不以历史下一b恢复；不加可用性/恢复/冗余测试或逐层独审门。后续实现以直接功能验证为准，本轮只文档链接/差异检查；历史2.2/2.3仍未完成，无业务调用、配置变更、部署或合main。

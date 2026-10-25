@@ -1,3 +1,7 @@
+**当前实施原则：** 以实现功能为目标，逐个功能实现、直接验证、通过后推进；不做冗余及可用性/恢复类扩展测试，不为验证增加过多辅助代码或框架。详见[调查模块实施原则](../architecture/investigation-planning-design.md#implementation-principles)。用户已要求继续开发，按F1起逐项推进，权限专项仍暂停。
+
+**2026-10-25 F1读取功能完成：** 新增`GET /api/v2/investigation/incidents/{incident_id}`，汇读PG成员及最新已保存分诊，展示不同成员状态/理由和当前数据；无AI生成、写操作或新表。4个直接ASGI/替身数据库用例通过，未部署或做真实环境专项。入口/调用方式及完成范围见[实现规划F1](incident-investigation-implementation-plan-20261025.md)。下一项F2事件AI概况。
+
 **2026-10-25 Tool 接入方法：** [新增调查 Tool 的接入与流程验证指南](tool-onboarding-and-flow-verification.md)给出产品 HTTP→参数/返回映射→模型发现/选择/调用→结果采用/保存的具体例子，及正常/空结果/查询失败三个基本场景。本轮只保存方法，不编写模拟服务或测试程序，不宣称模型或 v2 接线已经通过验证。
 
 **2026-10-25 当前业务流程与实现规划：** 已将讨论保存为[告警—事件概况—调查流程](../architecture/incident-investigation-flow-20261025.md)，含三张流程图、自动/手动触发、输入输出、跳转及完整例子；[一轮评审与五批实现计划](incident-investigation-implementation-plan-20261025.md)列出源码对应和可交付功能。本轮只文档与评审，权限继续暂停，无业务代码/测试；当前开发顺序以该计划为准，下方历史下一步仅作记录。
