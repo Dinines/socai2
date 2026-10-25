@@ -104,6 +104,8 @@
 
 ## 0. 实施前约定与阅读顺序
 
+**2026-10-25最新业务边界：事件只保留现有汇总与AI概况，真正的调查分析统一在Case中。告警/Incident可提供创建或关联Case的入口，但不再新增Incident调查profile/分析循环；F3改为Case调查内核，F4改为事件成员转Case。** 此决定覆盖此前“事件可直接作为调查目标”“Case关系待定”等建议，历史实现证据保持原样。
+
 2026-10-25用户已要求继续功能开发，按[五批实现计划](../investigation/incident-investigation-implementation-plan-20261025.md)从F1推进。此前“仅设计/暂不实施”描述保留为阶段历史，不作为本轮停工条件。
 
 <a id="implementation-principles"></a>
