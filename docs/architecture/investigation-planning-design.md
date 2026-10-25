@@ -1,3 +1,5 @@
+**2026-10-25 当前业务流程与功能开发顺序：** 新增[告警—事件概况—调查流程](incident-investigation-flow-20261025.md)及[评审与实现规划](../investigation/incident-investigation-implementation-plan-20261025.md)，作为本主设计的事件层补充：所有分诊结果、调查进展/结果汇入事件数据；当前字段与 AI 概况分开；事件汇总展示与调查深入分析分工；Incident 不等同 Case。当前目标流程以该补充为准，历史实现证据保持原样。后续按事件汇总、概况、分析闭环、事件范围、自动入口推进；本轮只文档/一轮评审，无代码或业务测试，权限专项继续暂停，下方历史“下一步”不覆盖本次安排。
+
 **2026-10-25 M8a4.4a真实PG准入：** 147直接/独立同147、13sourcehash及实际PG原件结束独审限定通过，[回执](../operations/investigation-program-admission-pg-20261025.json)。提交前真实三连接锁等待链及提交后owner屏障证明同key只读/另一key拒；正常0tool/model为partial5/11，rollback0，ACK保2/3 ready不补跑。实际来源/意图/期限/owned DTO全核，旧6/14/MD保持、角色表列ACL撤回。未真实用户JWT/RBAC或HTTP/CH；下一b合同顺序/独立Redis失效证据修后已审，后c及Case/Deep/2.2/2.3仍待。
 
 **2026-10-25 M8a4.3d离线启动组合：** 179直接/独立同179、10hash/6新隔离账本80API44Mockbackend限定通过，[回执](../operations/investigation-program-start-offline-20261025.json)。独立app包进程贯通真实新代码、当前注入用户→event-pin完整actor/budget→runtime/pub/owned全DTO；ACK/父丢回包保未知、重复只读，全部原件冷读同。仅SQLdouble，无真实PG/JWT/RBAC/生产writer互斥证明。下一a4.4a PG零外呼/真实precommit锁等待＋postcommit owner双barrier卡已审，再b真实鉴权/c实际HTTP-CH；Case/Deep及2.2/2.3仍未完。

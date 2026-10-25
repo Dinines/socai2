@@ -1,3 +1,7 @@
+## 2026-10-25 事件概况与调查业务流程一轮评审
+
+独立评审`flow_plan_review`核对[业务流程](../../../docs/architecture/incident-investigation-flow-20261025.md)及[实现计划](../../../docs/investigation/incident-investigation-implementation-plan-20261025.md)，发现1处例子自动触发语义偏差：原worker对所有未自动关闭的告警进入升级判断，不能改述为只有“建议升级”才调查。已同步修正文档例子及F5条件，其余未发现必须修改项；记录见计划第5节。只静态查文档/必要源码，未跑测试或访问真实环境；不新增评审回合，不将设计评审当成功能交付，权限专项仍暂停，2.2/2.3不勾。
+
 ## 2026-10-25 设计与实现对照后的阶段收尾
 
 基线7908f73的[对照报告](../../../docs/investigation/design-implementation-review-20261025.md)已经独立设计/代码审阅及报告窄复核，未确认新增必修业务代码缺陷；主审124项离线合同通过、公开证据核对见报告。本次按用户要求直接复用这些结果，不再追加审计轮或可用性/恢复/故障注入/冗余测试。只保存文档及[证据](../../../docs/operations/evidence/investigation-design-implementation-review-20261025.json)，已实现范围阶段收尾；权限实施暂停，未实现能力及2.2/2.3保持未完成，不归档整个change，不部署/合main。

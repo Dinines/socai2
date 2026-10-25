@@ -1,3 +1,5 @@
+**2026-10-25 当前业务流程与实现规划：** 已将讨论保存为[告警—事件概况—调查流程](../architecture/incident-investigation-flow-20261025.md)，含三张流程图、自动/手动触发、输入输出、跳转及完整例子；[一轮评审与五批实现计划](incident-investigation-implementation-plan-20261025.md)列出源码对应和可交付功能。本轮只文档与评审，权限继续暂停，无业务代码/测试；当前开发顺序以该计划为准，下方历史下一步仅作记录。
+
 **2026-10-25 当前阶段收尾：** 按用户要求以功能为准，停止扩展可用性/恢复及冗余测试，权限相关实施继续暂停。[设计—实现—证据对照及收尾决定](design-implementation-review-20261025.md)说明已做功能和未交付部分；复用上一轮124项合同及独立审阅，本轮不新增业务测试。当前范围保存收尾，Case/Deep等未完成项保留；下方“下一b真实JWT/RBAC”及历史下一步不覆盖本次决定。
 
 **2026-10-25 M8a4.4a真实PG：** 147合同/独立同147及真实PG结束独审限定通过，[回执](../operations/investigation-program-admission-pg-20261025.json)和[完整原件](../operations/evidence/investigation-program-admission-pg-20261025.json)。实际锁竞争/原子准入正常5/11、回滚0、commit ACK未知2/3只读恢复；0工具/模型，正常仍partial。新角色已NOLOGIN撤表列权、连接0；旧6/14/3111B保持。下一已审b真实JWT/RBAC，再实际HTTP/CH、Case/Deep。

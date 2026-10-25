@@ -1,5 +1,7 @@
 # Fusion到底做了什么
 
+2026-10-25补充：[告警—事件概况—调查流程](incident-investigation-flow-20261025.md)明确事件层汇总展示、分诊/调查信息汇入及 AI 概况更新；[实现规划](../investigation/incident-investigation-implementation-plan-20261025.md)区分现有能力与待开发功能。本页原归组机制不变，新增事件 AI 概况尚未实现。
+
 2026-10-22概念澄清：本页“候选链”是上游原有的Fusion实体链分组，和Incident归组、调查PG Attack Chain是独立机制。Chain ID当前用于Fusion内部续组、随消息交付及快照留存，尚未接下游业务消费；战术只计算链阶段/位置，不决定同链。两告警同/不同Incident与同/不同链的四种组合都可能，详见[对象与ID](attack-chain-path.md#concepts)、[四种归组例子与实际用途](attack-chain-path.md#membership-examples)、[讨论结论](attack-chain-path.md#discussion-conclusions)。本次只保存讨论，不决定删除/合并规则或变更运行。
 
 2026-10-21。供功能理解和后续共同取舍使用，依据固定上游及当前迁入源码；**本轮不决定删除、改造或启用哪些功能，不修改业务代码/配置，不运行测试或部署。** 下面描述代码包含的功能，不代表21全部已启用或验证。已有迁移实证仍见[B1](../operations/integrity-b1.md)及[full配套](../operations/full-support-migration.md)。
