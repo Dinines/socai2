@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.4a实际结束独审
+
+fresh_design补真实precommit锁等待+postcommit owner双barrier后合同ACCEPT0；代码独审初owner失败/cleanup覆盖同一P2修后147唯一过，管理helper五分支窄审后才真实写。fresh_code新READ ONLY实际PG/原UUID完整重建/独立API三DTO checker核normal5/11/ACK2/3/rollback0及旧6/14/28工件、actualAlert→M1/plan/source/完整intent和DBdeadline，3target全Run恰两条；0重跑/0role复活/0新tool。实际再核NOLOGIN、所有表列effective/explicit ACL空、成员和活动0，13source/2helper/11独审材料/5原文最终窄核同，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)限定ACCEPT0。只直接可信probe actor/零额度，无真实用户JWT/HTTP-CH；下一b合同ABAC恢复顺序P2和Redis独立失效证据限定修后已审，a保存后才实施。
+
 ## 2026-10-25 M8a4.3d修后结束独审
 
 fresh_design d合同先行，0041f3c后仅新probe/tests；fresh_code独立179唯一通过，修cleanup遮primary/0B证据P2后代码及原03证据门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)。API原请求/headers/body/当前注入上下文、child全回包和原ledger/fresh coldread完整比，10SHA/6原ledger/所有74工件及80原响应核；38backend实际跨进程冷读/拒绝、6first内部只保留协议回放，不重做首次写或将新随机重跑代原UUID。作者red1/0fail1error及原cleanup script/2未完成cwd-tempfile诊断全保[8原件](../../../docs/operations/investigation-program-start-offline-failure-20261025.json)，两未完成不计通过。仅SQL/ASGI/MockTool，无实际JWT/RBAC/PG/运营隔离。下一a4.4a合同初只有postcommit假并发，补precommit实际锁阻塞链+postcommit双barrier/限时后fresh_design限定ACCEPT0，d保存后才实测。

@@ -1,3 +1,19 @@
+## 2026-10-25 M8a4.4a实际PG零工具/模型接缝
+
+abf3d58后已审卡/strict，仅新增PG probe/13新测试，＋coordinator23/admission29/runtime25/pub29/owned19/M3gate9共147直接/独立同147。独审初1代码P2含两反例：owner提前ExecutionPersistenceError被barrier TimeoutError掩盖、observer ValueError被cleanup AssertionError替换；修pre/post同时看owner终态、primary/task类型链与cleanup pending分列、进度pids/计数/锁和失败raw独立读留证。修前2source/独立script+观测及一次85=82实际+3Loader错名完整输出共5文本保[失败原件](investigation-program-admission-pg-failure-20261025.json)。真实执行前helper最小权限/nonce/失败后清理五替身分支另审，不叠加147。
+
+只读实核21 PG16.15/ledger18+13+10列10约束、Alert63列与必要默认兼容、FORCE RLS保原tenant-or-null政策（不能称全能力SQL隔离），Alert无自定义trigger。旧部署reaper-disable=1/Huntdisable=1为原有状态，旧Kafka0/服务未变；本批新UUID不存在，不发Kafka/Fusion/Case/通知。新普通NOINHERIT/NOSUPER/NOBYPASS writer/reader经TLS；writer原SELECT锁两表均权限拒，随后只grant Run.iterations和Alert.updated_at列即成功，全部锁探针rollback；新role默认当前tenant，真实foreign GUC看不到新Alert，不改共享policy。
+
+新三个合成Alert和独立keys。normal Run721b6c99-26f4-55d5-b773-21ca9c618400在实际admission TX写完1Run/2event3artifact、持Alert锁而未commit时，独立observer不可见；另两个实际连接同key/另一key进入真实Lock（transactionid→首PID、tuple→前等待者→首PID），不是pool排队假并发。释放commit但仍拦原owner时，同key返回只读ready、另一key409语义拒且无任何Run；之后仅原owner沿原M3gate零额度停止/发布，5event11artifact/Markdown2113B（2785acf0dc401d8d5a4d08c32a02304cf866572ca08c9d903000c8c563307ddd），partial，无事实或业务完成追认。
+
+rollback候选Run b6e4e6e5-8579-5a01-9420-d9d3d8dd49fc的指定admission工件在事务内注入失败，实际0Run/0event/0artifact；Alert fixture留。ACK Run b7f95ff4-0be1-5465-89f3-9f4cfb204b85在真实COMMIT后由测试adapter丢确认，调用者unknown/未入runtime，独立读到1Run/2event3artifact；repeat/operation-read/owned只读同ready/progress，不补执行，不改key绕过，不宣称真实网络中断。正常和ACK旧Run列均running/null/0/0保持，未知ACK记录继续存在，不能标完成或清账。本批总模型/工具尝试0、通知0、实际PG查询不冒CH/HTTP工具验证。
+
+[完整公开原件](evidence/investigation-program-admission-pg-20261025.json)224005B/SHA f0b952bca50239bab47e1d19ff4c34d29849193fc313580ca2d08cfa507fd320，含原请求、实际锁、三case所有选中列/正文和完整first/read/repeat/owned；精确Git属性保CRLF原字节。fresh_code独立新READ ONLY PG查询核正常5/11/ACK2/3/回滚0，并按三个target marker查全Run恰两条、无竞争key残留；全部新旧28artifact字节/hash/event归属、实际PG canonical Alert四列重建原M1 scope_sources/scope_hash/business_profile/plan、完整intent/actor/serverbudget/owner/DB admitted_at+180s期限均同。实际原UUID冷重建normal/ACK/old三个owned DTO，又经单独API解释器完整checker逐canonical同；不重做运行/查询/发布，不用fixture冒PG来源。首审JSONB对象/asyncPG文本表现差异按显式::text和时间/Decimal规范化重读后全列同，原只读件保，非业务失败；一次SSH沙箱读配置失败由授权只读escalation恢复。
+
+13sourceSHA/2helper/11独审材料及5failure文本最终窄核同，代码/真实/公开回执三门限定ACCEPT0，[验收摘要](investigation-program-admission-pg-20261025.json)。临时连接全关，两新角色NOLOGIN、所有8个role-table组合的effective SELECT/INSERT/UPDATE/DELETE及列权限false、显式表列ACL空、成员0/活动0/无遗留backend需杀；未复活角色。旧Run4dfd374a的完整选中18/13/10列及6/14全正文checksum前后同，原Markdown3111B/SHA e5f4c3fe2d4f4130eb4ad4964260f87f4a63aea9bb31426566dedafdd8ad68ac保持，非全库不变声明。
+
+下一b原真实JWT/RBAC细卡初ABAC拒条件未停用会破坏后续新JWT恢复，补只停本批条件并原version bump后先恢复409授权正例；另要求独立helper原bump保API预热cache且下一请求TTL未到期，排除同进程clear/自然过期误证，修后fresh_design ACCEPT0。a保存后才实施b；授权正例backend409/1只证明真实权限链，业务200/实际HTTP-CH另c。Case/Deep/自动政策与2.2/2.3保持未完成，无schema/旧源码/配置/部署/合main。
+
 ## 2026-10-25 M8a4.3d实际离线双进程启动组合
 
 0041f3c后沿已审d卡，仅新probe和API测试，不改冻结业务源/旧read probe。父API新factory/原权限依赖＋注入CurrentUser/FakeDB，以单独专用write/read gateway和有界stdio转子Agents实际新内部app/coordinator/admission/runtime/pub/owned代码；SQLdouble/ASGI/Mocktool，不接实际PG/network/CH/model。6场景分别normal/zero/queryunknown/admissionACK/publicationACK/父收到完整child回包后模拟丢失一次；每child新空ledger，稳定tenant/key/Run公式可相同，不能说6个共享数据库不同Run或真实PG并发。14新＋API相关106=120，另Agents59共179直接/独立同179、10SHA，两门限定ACCEPT0，[回执](investigation-program-start-offline-20261025.json)。

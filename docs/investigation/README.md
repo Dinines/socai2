@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.4a真实PG：** 147合同/独立同147及真实PG结束独审限定通过，[回执](../operations/investigation-program-admission-pg-20261025.json)和[完整原件](../operations/evidence/investigation-program-admission-pg-20261025.json)。实际锁竞争/原子准入正常5/11、回滚0、commit ACK未知2/3只读恢复；0工具/模型，正常仍partial。新角色已NOLOGIN撤表列权、连接0；旧6/14/3111B保持。下一已审b真实JWT/RBAC，再实际HTTP/CH、Case/Deep。
+
 **2026-10-25 M8a4.3d双进程离线启动：** 179直接/独立同179、10hash/6新SQLdouble账本、80API/44Mock后端限定通过，[回执](../operations/investigation-program-start-offline-20261025.json)和[失败原件](../operations/investigation-program-start-offline-failure-20261025.json)。当前注入用户到原启动意图、一次执行/发布及重复只读链已核；ACK/丢回包不重派，原UUID全账本冷读保持。仍非真实PG/鉴权，下一已审a4.4a真实PG零外呼及锁竞争，再真实用户权限和HTTP/CH。
 
 **2026-10-25 M8a4.3c用户写网关：** 165直接/独立同165、9hash/38完整API响应重放限定通过，[回执](../operations/investigation-program-start-gateway-20261025.json)及[失败原件](../operations/investigation-program-start-gateway-failure-20261025.json)。启动须原run＋alertsread，共享read服务403；固定单POST/完整回包校验/整次200秒和关闭各5秒，隐式EOF关闭P2已修。仅离线，15实际producer回执保持；下一已审d双进程启动组合核实际actor意图绑定，再真实PG/鉴权/运营隔离。

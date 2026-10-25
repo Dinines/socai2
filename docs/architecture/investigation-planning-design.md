@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.4a真实PG准入：** 147直接/独立同147、13sourcehash及实际PG原件结束独审限定通过，[回执](../operations/investigation-program-admission-pg-20261025.json)。提交前真实三连接锁等待链及提交后owner屏障证明同key只读/另一key拒；正常0tool/model为partial5/11，rollback0，ACK保2/3 ready不补跑。实际来源/意图/期限/owned DTO全核，旧6/14/MD保持、角色表列ACL撤回。未真实用户JWT/RBAC或HTTP/CH；下一b合同顺序/独立Redis失效证据修后已审，后c及Case/Deep/2.2/2.3仍待。
+
 **2026-10-25 M8a4.3d离线启动组合：** 179直接/独立同179、10hash/6新隔离账本80API44Mockbackend限定通过，[回执](../operations/investigation-program-start-offline-20261025.json)。独立app包进程贯通真实新代码、当前注入用户→event-pin完整actor/budget→runtime/pub/owned全DTO；ACK/父丢回包保未知、重复只读，全部原件冷读同。仅SQLdouble，无真实PG/JWT/RBAC/生产writer互斥证明。下一a4.4a PG零外呼/真实precommit锁等待＋postcommit owner双barrier卡已审，再b真实鉴权/c实际HTTP-CH；Case/Deep及2.2/2.3仍未完。
 
 **2026-10-25 M8a4.3c现用户写入口：** 165直接/独立同165、9hash/38原响应全重放限定通过，[回执](../operations/investigation-program-start-gateway-20261025.json)。原run＋alertsread/当前身份、共享readservice拒，单POST/完整program owned DTO/原MD保持、整次200秒与响应/client各5秒；独审隐式EOF close P2修后通过。只FakeDB/Mock/producer回执，不证明完整backend intent actor/budget来源或真实JWT/RBAC；下一d离线两进程actual首次写及actor pin合同已审，再a4.4真实PG并发/权限/运营隔离，Case/Deep及2.2/2.3保持未完。

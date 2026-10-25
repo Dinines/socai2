@@ -1,3 +1,5 @@
+**2026-10-25 M8a4.4a限定通过：** 147直接/独立同147和实际PG锁竞争/回滚/ACK，13source/28新旧工件核同，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)及[失败原件](../../../docs/operations/investigation-program-admission-pg-failure-20261025.json)。normal0tool partial5/11、ACK2/3 ready只读、roles清；下一已审b真实JWT/RBAC保存后实施，c/Case/Deep/2.2/2.3不勾。
+
 **2026-10-25 M8a4.3d限定通过：** 179直接/独立同179、10SHA/6新ledger/80API44Mockbackend，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)和[失败原件](../../../docs/operations/investigation-program-start-offline-failure-20261025.json)。仅两进程离线actual启动链，未真实PG/auth；下一a4.4a卡锁竞争P2修后已审，d保存后实施，2.2/2.3/Case/Deep不勾。
 
 **2026-10-25 M8a4.3c限定通过：** 165直接/独立同165、9SHA/38原响应重放，[回执](../../../docs/operations/investigation-program-start-gateway-20261025.json)及[失败原件](../../../docs/operations/investigation-program-start-gateway-failure-20261025.json)。仅用户权限依赖/离线单POST网关；隐式close P2已修，d组合合同已审、a4.4实际门与2.2/2.3/Case/Deep未完。

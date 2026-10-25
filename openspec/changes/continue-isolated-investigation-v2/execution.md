@@ -1,3 +1,7 @@
+## 2026-10-25 M8a4.4a实际PG原子准入/锁竞争
+
+abf3d58后已审卡→新probe13/147合同→代码P2修/独审→helper窄审→3新合成Alert实际一轮。normal真实三连接锁等待链/不可见未commit2/3，同key只读/另一key无Run，原owner0model/tool发布partial5/11；rollback0、ACK真实commit2/3仅读不补跑。新独立READ ONLY和原UUID owned/M1/独立APIchecker全同，新旧28artifact/旧6/14和3111B保持；13sourceSHA、role NOLOGIN/表列权限/成员活动0最终限定ACCEPT0，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)。只PG可信probe，无真实JWT/HTTP/CH，下一已审b保存后实施，c及2.2/2.3未勾，无部署/合main。
+
 ## 2026-10-25 M8a4.3d实际两进程离线首次启动
 
 0041f3c后已审卡/strict，新14＋API106/独立Agents59=179直接/独立同179，10hash/6新隔离ledger/原80API44Mockbackend62stdio，两门限定ACCEPT0，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)。实际注入CurrentUser→专用header→event-pin fullintent→原runtime/pub/owned/GET全链，ACK及父丢完整回包unknown保、repeat仅读无新调用；原UUID cold读同。清理异常P2修后一次finish/主错与清理分列/无条件留证；2未进probe的Windows tempfile子目录权限轮保未完成，root同179通过。0真实PG/network/业务Run/模型/部署；下一已审a4.4a实际PG零外呼锁竞争，然后b真实auth/cHTTP-CH，2.2/2.3未勾。

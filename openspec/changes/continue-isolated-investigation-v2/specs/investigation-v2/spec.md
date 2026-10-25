@@ -835,3 +835,18 @@ The real PG probe SHALL use new controlled test Alerts and short-lived minimal r
 #### Scenario: Temporary PG verification closes
 - **WHEN** original rows, artifacts and owned DTO have been independently read and verified
 - **THEN** all probe connections close, its roles become NOLOGIN and lose effective table and column permissions, retained test evidence remains, and later real JWT/RBAC and HTTP gates stay incomplete
+
+### Requirement: Existing JWT and real authorization data gate the explicit start route before business execution
+The auth probe SHALL exercise original JWT verification and current PG-backed users, roles and conditions in a separate API process using newly scoped identity fixtures and its own signing key. It SHALL NOT override the current user or database dependency, alter existing defaults, or substitute a downstream stub for actual business-run acceptance.
+
+#### Scenario: A real test principal has exactly the required standing permissions
+- **WHEN** the original dependencies authenticate its valid JWT and resolve the three selected permissions from actual PG rows
+- **THEN** one normalized request reaches the dedicated gateway with the actual database actor and tenant, a controlled backend refusal proves authorization only, and spoofed headers or JWT authority claims cannot widen it
+
+#### Scenario: Permission, condition or session is revoked
+- **WHEN** scoped PG fixtures change and the original Redis version invalidation runs, or the user is disabled or its sessions are revoked
+- **THEN** the next corresponding request refuses before the backend, stale JWTs remain revoked after reactivation, and no static-map fallback or cache reset is counted as proof of current authority
+
+#### Scenario: The authentication verification closes
+- **WHEN** the finite identity tests finish or fail
+- **THEN** only their new users, grants, tenant, credential role and single cache key are disabled or revoked, private tokens are withheld from public evidence, investigation ledgers remain unchanged, and real HTTP/query delivery remains a later gate

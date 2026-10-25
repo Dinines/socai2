@@ -1,3 +1,19 @@
+## 2026-10-25 M8a4.4b真实JWT/RBAC独立门细卡（a实际结束保存/本卡独审后实施）
+
+只新API侧program_start_auth_pg_seam.py及直接测试、必要本机私密准备/清理helper；不改原认证/permission_cache/catalog/default scopes/旧入口/已冻factory。b只验原JWT＋真实PG用户/RBAC/条件/撤销，不启动真实调查/工具/模型，c独立HTTP/CH业务执行另门。一个独立API解释器/显式新factory，原get_db接新最小只读auth role/TLS，原get_current_user/require_permission完整执行，禁止dependency override CurrentUser/get_db、mock User/permission SQL、手工clear CACHE/reset_for_tests或补静态scope凑通过。
+
+先只读核实际users/roles/permissions/user_roles/role_permissions/privilege_grants/permission_conditions/tenants结构、RLS/触发器和三条原permission目录，缺sessions_revoked_at等必要结构就留前提缺口、另议适配，不改共享schema/原源码。新唯一测试tenant、两个viewer静态角色用户、两个自定义RBAC role，仅引用已存在investigation:run/alerts:read/cases:read三条permission（不新建全局permission、不授wildcard、不动已有tenant/users/roles）。一个用户执行权限组合，另一个保留受控user-role关联，使租户RBAC已配置的事实不因主用户撤回全部role而消失；两个role/用户均是全新fixture。私密helper只对本批UUID做有限seed/grant/revoke/停用，用nonce核新PG auth role所有权；auth reader只SELECT必要八表/非owner/无BYPASS/默认tenant和readonly，结束NOLOGIN撤表列权限/成员和连接全0。
+
+仅本测试API解释器配置独立高熵SECRET_KEY并沿原create_access_token/decode_token；不用生产签名key/用户cookie/现有key，不声称密码登录/SSO/OIDC流程通过。真实签名有效用户的tenant/actor/standing permissions必须由实际PG行和原resolver决定，JWT多给role/scopes/tenant claims或客户Xactor/tenant不得覆盖。ASGI真实新路由→真实ProgramStartGateway单POST，唯一HTTP MockTransport固定返回409受控拒绝（compatible GET可固定404），因此“授权正例”预期409且backend1/实际actor正确，不把它写成已启动成功或业务200；权限/认证反例必须401/403且backend0。完整DTO/首次业务PG链由此前a/c/d各合同及后续c实测证明，b不以stub代业务验收。
+
+权限缓存用原机制：显式现有Redis配置，仅新测试tenant的`aisoc:rbac:version:<tenant>`唯一新key；原current_version/resolve/bump_version实际GET/INCR，数据变化后由独立helper解释器调用原bump_version（只清helper本地缓存，API已预热缓存保留到下一请求，由真实Redis version变化使其miss），不伪造version或清API cache，不碰其它key/DB/FLUSH。先确认该key不存在，Redis不可用时原15秒TTL降级只能如实记录，不能等待TTL再宣称下一请求撤权；本门要求原版本机制可用再证明单进程下一请求生效，不外推多副本或RBAC管理UI链。只允许测试驱动在阶段间更新本批DB行/由独立helper调用原失效函数；保API调用前缓存version/命中/原expires_at及下一请求monotonic时间（必须仍小于原expires_at，排除自然TTL过期），和新Redis version/下次miss证据，不把同进程失效整体效果当Redis机制证明，不加客户端调试/管理路由。
+
+至少依次核：真实JWT＋精确三权限→409/backend1；删run→403/backend0、恢复后删alertsread→403/0；撤主用户所有role且控制用户仍有关联→原resolved_permissions为空/拒；恢复精确权限后新增本批permission_condition：permission=investigation:run、role=NULL、enabled=true、condition={"operator":"ip_in_cidr","value":["192.0.2.0/24"]}；ASGI固定peer127.0.0.1且本例无forwarded头，原request属性绑定和ABAC实际判outside→403/0（不是实际网络来源证明），不靠条件授权。ABAC反例后只将本批该condition.enabled置false并提交，独立helper原bump_version，先核精确三权限正例恢复409/backend1，再进入账号禁用/session撤销组，不能带着拒绝条件要求JWT恢复正例。原共享read service token（测试进程独立凭据）→真实tenant查验后403/0，不扩原SERVICE_PRINCIPAL_PERMISSIONS；缺/错签/过期/refresh型JWT401/0。权限和条件每次变化均实际持久后由原version bump失效；必须记录cache命中/版本和实际resolved set，不能把DB异常回静态viewer或bootstrap路径当成功。
+
+主用户is_active=false即时401；写实际sessions_revoked_at后再启用，旧JWT仍401（含无iat旧token），等待实际时钟跨过截止后用原issuer发新JWT恢复409/1，不改时间函数/原token校验。旧token/测试key和完整Bearer只留.local/private，公开回执仅credential SHA/脱敏请求及原CurrentUser白名单、状态/后端计数/真实取数来源；不把脱敏内容的hash当原wire SHA。原normalized body和backend actor/tenant可完整留证，无真实处置、Run或工具。每阶段留完整本批授权状态before/after和实际HTTP证据，失败保留、无自动补发。
+
+结束仅停用两个测试用户/新tenant，撤销其本批关联/权限与测试PG role，保用户/role fixture及脱敏审计材料；只删自己已确认新建的单个Redis version key，不清任何其它缓存。关自己的API/DB/Redis连接、所有私密凭据不入Git；独立只读再核本批用户已停用/权限撤回/role NOLOGIN有效表列ACL0及连接0、a正常/ACK/旧Run全原账本不变。先直接/独立代码及最小权限helper审，再这一有限真实auth轮和结束独审保存；a未保存不seed本批身份，c/M8 Case/Deep/自动政策/2.2/2.3仍另门，无部署/合main。
+
 ## 2026-10-25 M8a4.4真实接缝分门与a PG零外呼细卡（d结束保存/本卡独审后实施）
 
 a4.4依次a真实PG原子准入/并发/零外呼协调器→b原真实JWT/RBAC及撤销→c独立loopback HTTP一次受控固定查询和完整读回。a只新增program_admission_pg_seam.py/直接测试及非私密回执，不改已冻结业务store/coordinator/runtime、旧入口/开关/注册、数据库schema或生产角色；b/c各另卡。当前卡不授权部署/主应用接线或放宽原service scope。
