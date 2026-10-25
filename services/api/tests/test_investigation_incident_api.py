@@ -59,7 +59,9 @@ class IncidentAPIExamples(IsolatedAsyncioTestCase):
         alerts_result, triage_result = MagicMock(), MagicMock()
         alerts_result.scalars.return_value.all.return_value = members
         triage_result.all.return_value = verdicts
-        self.db.execute.side_effect = [alerts_result, triage_result]
+        summary_result = MagicMock()
+        summary_result.scalar_one_or_none.return_value = None
+        self.db.execute.side_effect = [alerts_result, triage_result, summary_result]
 
     async def get(self):
         return await self.client.get(f"/api/v2/investigation/incidents/{INCIDENT}",

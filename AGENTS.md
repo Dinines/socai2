@@ -1,5 +1,7 @@
 # 2026-10-25 调查模块功能实施原则与继续开发
 
+当前进度F2：事件AI概况功能代码及直接验证已完成，见docs/investigation/incident-ai-overview.md。新增incident_summary/独立incident_summary_worker、GET附概况元数据和POST手动refresh；新表迁移120尚未执行，后台任务/部署尚未启用。8项相关ASGI/DB与模型HTTP替身用例通过，实际模型/PG调用0；首次仅尝试一次，后续手动刷新，变化只标旧，失败保旧文本。深入调查结果尚未接入，source_refs明确not_linked；下一F3单Alert主分析/必要查询/报告及事件Run结果关联，不返回权限或冗余测试专项。
+
 用户已要求继续之前的调查功能计划，并明确把以下要求写入模块原则：以实现功能为目标；逐个功能实现、逐个必要直接验证、通过后推进；不开展冗余、可用性/恢复/压力/复杂并发或故障注入扩展测试，不为验证写过多辅助代码/框架；已通过且未变部分不重复测试，评审不再新增逐层前置门。主原则见docs/architecture/investigation-planning-design.md的implementation-principles，README和五批计划已链接。从F1事件/分诊汇总开始实施，历史“本轮只文档”不再阻止开发。权限专项仍暂停，无自动部署/合main或真实厂商动作授权；本地阶段保存，远端推送不自动恢复。
 
 F1现已完成：新增API v2 incident_reader/incident_api，兼容结果/启动factory挂GET /api/v2/investigation/incidents/{incident_id}；PG告警归属取canonical成员，raw_alert.id明确对应的最新triage_verdict与当前Alert处置分开显示，不猜Run.case_id、不自动关事件。4个直接ASGI/SQL替身用例通过，0业务外呼/模型/新表/部署；未称真实PG或权限验收。见docs/investigation/incident-investigation-implementation-plan-20261025.md。下一F2首次/手动AI概况，F3实际分析/Run结果关联等未完，不回到旧权限专项。

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.v1.deps import CurrentUser, require_permission
 from app.db.rls import TenantDBSession
 from .incident_reader import IncidentOverview, read_incident
+from .incident_summary import attach_summary, generate_summary, load_summary
 from .query_api import create_app as create_query_app
 from .result_api import _explicit_bearer
 
@@ -23,6 +24,22 @@ async def get_incident(
     result = await read_incident(db, tenant_id=user.tenant_id, incident_id=incident_id)
     if result is None:
         raise HTTPException(404, "incident_not_found")
+    return attach_summary(result, await load_summary(db, user.tenant_id, incident_id))
+
+
+@router.post("/{incident_id}/overview/refresh", response_model=IncidentOverview)
+async def refresh_overview(
+    incident_id: UUID,
+    db: TenantDBSession,
+    _credential: Annotated[None, Depends(_explicit_bearer)],
+    user: Annotated[CurrentUser, Depends(require_permission("alerts:write"))],
+):
+    user.require_permission("alerts:read")
+    overview = await read_incident(db, tenant_id=user.tenant_id, incident_id=incident_id)
+    if overview is None:
+        raise HTTPException(404, "incident_not_found")
+    result = await generate_summary(db, overview)
+    await db.commit()
     return result
 
 

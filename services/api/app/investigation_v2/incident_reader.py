@@ -58,10 +58,10 @@ class IncidentOverview(BaseModel):
     mitre_tactics: list[str]
     mitre_techniques: list[str]
     members: list[IncidentMember]
-    # No incident workflow state or AI summary has been persisted by F1.
-    # Member closures and triage Run statuses cannot supply either one.
+    # Incident handling state is not inferred from member or Run statuses.
     handling_status: str | None = None
     ai_overview: str | None = None
+    ai_overview_metadata: dict[str, Any] | None = None
 
 
 def _strings(values: Any) -> list[str]:
