@@ -1,0 +1,1892 @@
+{
+  "alerts": [
+    {
+      "id": "4c71eec2-77da-5b81-b68a-72801d55ea24",
+      "persistedRecord": true,
+      "title": "Office启动隐藏PowerShell [DEMO-FIN-11]",
+      "description": "WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.",
+      "severity": "高",
+      "status": "In progress",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-FIN-11",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.finance",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.10.11",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.41"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:30:16.539577+00:00",
+      "first": "2026-10-25T03:30:16.539577+00:00",
+      "last": "2026-10-25T03:40:56.150352+00:00",
+      "incidentId": "7bde0c0b-0d18-4abc-9382-9752f2ae5e98",
+      "caseId": null,
+      "comments": [],
+      "disposition": "true_positive",
+      "hostNames": [
+        "DEMO-FIN-11"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.10.11",
+        "ip:198.51.100.41"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:30:16.539577+00:00",
+            "title": "告警发生",
+            "description": "Office启动隐藏PowerShell [DEMO-FIN-11]"
+          },
+          {
+            "time": "2026-10-25T03:40:56.150352+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:40:57.026709+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:41:00.763784+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=true_positive confidence=0.85"
+          },
+          {
+            "time": "2026-10-25T03:41:16.142595+00:00",
+            "title": "调查结果交付",
+            "description": "graph partial"
+          },
+          {
+            "time": "2026-10-25T03:41:01.547337+00:00",
+            "title": "调查步骤已记录",
+            "description": "graph node 'triage' completed"
+          }
+        ],
+        "runs": [
+          {
+            "id": "d141b0e3-16cc-5a0b-8d7f-35159342efe6",
+            "time": "2026-10-25T03:40:57.026709+00:00",
+            "status": "Completed",
+            "completion": "partial",
+            "stop": "token budget exhausted (26922 of 20000)",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "4c71eec2-77da-5b81-b68a-72801d55ea24"
+                },
+                "output": {
+                  "verdict": "true_positive",
+                  "confidence": 0.85,
+                  "rationale": "LLM auto-triage verdict: true_positive · LLM confidence: 0.85 · Rationale: The alert indicates WINWORD.EXE spawned a hidden PowerShell process, a classic indicator of fileless malware or living-off-the-land attacks (MITRE T1059.001). The high vendor risk score (0.92) and the specific behavior of hiding a shell from a document application strongly suggest malicious activity. There is no evidence of authorized scanning or approved penetration testing, and the lack of approval records supports the conclusion that this is an unauthorized threat requiring investigation.",
+                  "auto_closed": false
+                }
+              },
+              {
+                "name": "triage",
+                "agent": "triage",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "triage"
+                }
+              },
+              {
+                "name": "enrichment",
+                "agent": "enrichment",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "enrichment"
+                }
+              },
+              {
+                "name": "investigation",
+                "agent": "investigation",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "investigation"
+                }
+              }
+            ],
+            "tools": [
+              {
+                "name": "process_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on DEMO-FIN-11 in the last 24h'}"
+              },
+              {
+                "name": "process_tree",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'process_tree', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. "
+              },
+              {
+                "name": "historical_execution",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 7,
+                  "process_name": "powershell"
+                },
+                "result": "{'tool': 'historical_execution', 'available': True, 'row_count': 0, 'rows': [], 'query': 'executions of powershell across the fleet, last 7d'}"
+              },
+              {
+                "name": "historical_execution",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 7,
+                  "process_name": "powershell.exe"
+                },
+                "result": "{'tool': 'historical_execution', 'available': True, 'row_count': 0, 'rows': [], 'query': 'executions of powershell.exe across the fleet, last 7d'}"
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 2, 'rows': [{'event_time': '2026-10-25T03:30:16.539000Z', 'connector_type': 'Okta System Log', 'user_name': '', 'src_hostname': 'DEMO-FIN-11"
+              },
+              {
+                "name": "network_connections",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+              }
+            ],
+            "findings": [
+              "Auto-triage: verdict=true_positive, confidence=0.85, latency=2850ms",
+              "Auto-triage rationale: The alert indicates WINWORD.EXE spawned a hidden PowerShell process, a classic indicator of fileless malware or living-off-the-land attacks (MITRE T1059.001). The high vendor risk score (0.92) and the specific behavior of hiding a shell from a document application strongly suggest malicious activity. There is no evidence of authorized scanning or approved penetration testing, and the lack of approval records supports the conclusion that this is an unauthorized threat requiring investigation.",
+              "Escalating to full pipeline — TP verdict",
+              "Triage severity: critical (heuristic risk_score=0.92; not a vendor measurement)",
+              "Extracted 2 IOCs for enrichment: ['10.78.10.11', '198.51.100.41']",
+              "MITRE kill chain: {'Unknown': ['T1059.001: Unknown']}",
+              "Triage verdict: true_positive (confidence=0.95)",
+              "Triage phase complete — proceeding to enrichment",
+              "Enrichment complete: 2 IOCs enriched, none flagged as malicious",
+              "Threat actor attribution failed: Client error '401 Unauthorized' for url 'http://threatintel:8005/api/v1/actors/attribute'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
+              "Blast radius of the affected entities scores 3.10.",
+              "Graph context: host:DEMO-FIN-11: 1 nodes (depth=2), blast_radius=3.10",
+              "Graph context: user:demo.finance: 1 nodes (depth=2), blast_radius=3.10",
+              "{\"tool\": \"network_connections\", \"available\": false, \"row_count\": 0, \"rows\": [], \"reason\": \"Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.\", \"query\": \"connections from DEMO-FIN-11 in the last 24h\"}",
+              "Investigation depth: 3 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — entity_timeline, historical_execution, process_activity.",
+              "Coverage gap: the following data classes are not ingested, so this investigation could not check them — network_connections, process_tree. Treat them as unknown rather than clear.",
+              "Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM's contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.",
+              "Investigation hit its 6-step cap; the line of enquiry was not exhausted.",
+              "Attack stages observed: Unknown. This indicates a single-stage attack.",
+              "Investigation verdict: probable_incident (confidence=0.75)",
+              "Investigation complete. Total proposed actions: 1",
+              "Investigation stopped: token budget exhausted (26922 of 20000). Partial results, escalating to an analyst."
+            ],
+            "actions": [
+              "Isolate host 'DEMO-FIN-11' from network"
+            ],
+            "calls": 7,
+            "tokens": 29025,
+            "report": "# Incident Report — 7bde0c0b-0d18-4abc-9382-9752f2ae5e98\n\n## Summary\n\n| Field | Value |\n|-------|-------|\n| Verdict | needs_review |\n| Confidence | 0.75 |\n| Status | running |\n| Topology | investigation_graph |\n\n## Triage Rationale\n\n- triage prior=0.95\n- 1 proposed action(s)\n- enrichment ran but classified all IOCs benign — FP prior\n- (triage) provided alert risk_score=0.92 (source unverified)\n- (triage) critical-severity keyword match in alert text\n- (triage) 2 IOC field(s) present\n\n## Findings\n\n- Auto-triage: verdict=true_positive, confidence=0.85, latency=2850ms\n- Auto-triage rationale: The alert indicates WINWORD.EXE spawned a hidden PowerShell process, a classic indicator of fileless malware or living-off-the-land attacks (MITRE T1059.001). The high vendor risk score (0.92) and the specific behavior of hiding a shell from a document application strongly suggest malicious activity. There is no evidence of authorized scanning or approved penetration testing, and the lack of approval records supports the conclusion that this is an unauthorized threat requiring investigation.\n- Escalating to full pipeline — TP verdict\n- Triage severity: critical (heuristic risk_score=0.92; not a vendor measurement)\n- Extracted 2 IOCs for enrichment: [&#x27;10.78.10.11&#x27;, &#x27;198.51.100.41&#x27;]\n- MITRE kill chain: {&#x27;Unknown&#x27;: [&#x27;T1059.001: Unknown&#x27;]}\n- Triage verdict: true_positive (confidence=0.95)\n- Triage phase complete — proceeding to enrichment\n- Enrichment complete: 2 IOCs enriched, none flagged as malicious\n- Threat actor attribution failed: Client error &#x27;401 Unauthorized&#x27; for url &#x27;http://threatintel:8005/api/v1/actors/attribute&#x27; For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\n- Blast radius of the affected entities scores 3.10.\n- Graph context: host:DEMO-FIN-11: 1 nodes (depth=2), blast_radius=3.10\n- Graph context: user:demo.finance: 1 nodes (depth=2), blast_radius=3.10\n- {&quot;tool&quot;: &quot;network_connections&quot;, &quot;available&quot;: false, &quot;row_count&quot;: 0, &quot;rows&quot;: [], &quot;reason&quot;: &quot;Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.&quot;, &quot;query&quot;: &quot;connections from DEMO-FIN-11 in the last 24h&quot;}\n- Investigation depth: 3 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — entity_timeline, historical_execution, process_activity.\n- Coverage gap: the following data classes are not ingested, so this investigation could not check them — network_connections, process_tree. Treat them as unknown rather than clear.\n- Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM&#x27;s contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.\n- Investigation hit its 6-step cap; the line of enquiry was not exhausted.\n- Attack stages observed: Unknown. This indicates a single-stage attack.\n- Investigation verdict: probable_incident (confidence=0.75)\n- Investigation complete. Total proposed actions: 1\n- Investigation stopped: token budget exhausted (26922 of 20000). Partial results, escalating to an analyst.\n\n## Attack-chain and graph context\n\n- Pre-fetched investigation context (ContextBundle):\n- &lt;UNTRUSTED_DATA source=&quot;attack_correlation_context&quot;&gt; Attack correlation context: candidate relationships and graph reachability are not confirmed attack causality or chronology. Scope=alert; case_id=None; alert_id=4c71eec2-77da-5b81-b68a-72801d55ea24; queried_at=2026-10-25T03:41:00.984949+00:00. Empty results apply only to the stated source/query scope. Missing, unavailable or unprojected data remains unknown, not proof of safety. This is a bounded summary; full results stay on this Run. Query scope and coverage: {&quot;projection_alert_limit&quot;: 50, &quot;truncated&quot;: false, &quot;case_ambiguous&quot;: false, &quot;seed_alert_id&quot;: &quot;4c71eec2-77da-5b81-b68a-72801d55ea24&quot;, &quot;semantics&quot;: &quot;candidate association, not verified causal attack chain&quot;} Projection preparation for this Run: success; owner=kafka_consumer; source=postgres_alert_projection; error=None; reason=source_alerts_projected. A missing preparation does not prove no graph exists. attack_chain: status=empty; source=postgres; error=None. attack_path: status=not_linked; source=None; error=no_linked_case. alert_graph: status=success; source=neo4j; error=None. Chain seed=4c71eec2-77da-5b81-b68a-72801d55ea24; window=24h; anchor=seed_event_time_plus_minus_window; generated_at=2026-10-25T03:41:00.996452+00:00; candidates=0. Ranking scores express correlation, not maliciousness probability. Case path: nodes=0; edges=0. Case membership and technique associations alone do not establish an observed attack progression. Alert neighborhood: returned_nodes=5. Alert blast radius: reachable=6; score=3.1. This is alert-associated graph scope, not a Case attack path. &lt;/UNTRUSTED_DATA&gt;\n- - Context lookups were partial or unavailable: incident_context:alert:4c71eec2-77da-5b81-b68a-72801d55ea24:assets (BufferError), incident_context:alert:4c71eec2-77da-5b81-b68a-72801d55ea24:cloud (BufferError), incident_context:alert:4c71eec2-77da-5b81-b68a-72801d55ea24:business (BufferError), incident_context:alert:4c71eec2-77da-5b81-b68a-72801d55ea24:threat (BufferError). Missing evidence is unknown, not proof of no relationships, activity or risk.\n- - Entities resolved: 7 (domain, host, ip, user)\n- - Graph neighbourhood:\n- * host:DEMO-FIN-11: 1 nodes (depth=2), blast_radius=3.10\n- * user:demo.finance: 1 nodes (depth=2), blast_radius=3.10\n- - Max blast-radius score: 3.10\n- - UEBA: 1 entities with baseline, max deviation=unknown (not supplied by source)\n- - Threat-intel matches: 5 (high-risk IOCs: none)\n- - Entity context:\n- Source alert 4c71eec2-77da-5b81-b68a-72801d55ea24:\n- - NOTE: context is partial; these dimensions could not be read: assets (BufferError), cloud (BufferError), business (BufferError), threat (BufferError)\n\n## MITRE ATT&CK Mappings\n\n- `T1059.001`\n\n## Proposed Actions\n\n| # | Action | Target | Risk | Approval | Rationale |\n|---|--------|--------|------|----------|-----------|\n| 1 | isolate_host | DEMO-FIN-11 | high | yes | Critical severity alert with host identifier present |\n\n_Generated by AiSOC router on 2026-10-25 03:41 UTC_\n"
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1059.001"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T03:51:33.026914+00:00",
+          "summary": "Office启动隐藏PowerShell [DEMO-FIN-11] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1059.001. WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 85,
+        "raw": {
+          "id": "4c71eec2-77da-5b81-b68a-72801d55ea24",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "Office启动隐藏PowerShell [DEMO-FIN-11]",
+          "description": "WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.",
+          "severity": "high",
+          "status": "triaged",
+          "event_time": "2026-10-25 03:30:16.539577+00:00",
+          "created_at": "2026-10-25 03:40:56.150352+00:00",
+          "updated_at": "2026-10-25 03:41:00.763784+00:00",
+          "resolved_at": null,
+          "source_event_ids": [
+            "bdb56855-5018-567e-b10d-68e7e7bb7073"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1059.001"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-FIN-11"
+            },
+            {
+              "type": "user",
+              "value": "demo.finance"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.10.11"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.41"
+            }
+          ],
+          "raw_event": {
+            "full_log": "WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.85,
+          "disposition": "true_positive",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "bdb56855-5018-567e-b10d-68e7e7bb7073",
+          "incident_id": "7bde0c0b-0d18-4abc-9382-9752f2ae5e98"
+        },
+        "responseRecommendations": [
+          {
+            "action": "Isolate host 'DEMO-FIN-11' from network",
+            "target": "DEMO-FIN-11",
+            "reason": "Critical severity alert with host identifier present",
+            "approval": "需要审批",
+            "execution": "未执行"
+          }
+        ]
+      }
+    },
+    {
+      "id": "c929a0c7-69b5-5617-b830-a701e8bae72f",
+      "persistedRecord": true,
+      "title": "进程读取LSASS内存 [DEMO-APP-12]",
+      "description": "process diagtool.exe PID 5300 opened lsass.exe on DEMO-APP-12 with memory-read access under demo.ops. The sensor reported handle access only; no credential output file was collected.",
+      "severity": "高",
+      "status": "In progress",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-APP-12",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.ops",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.20.12",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.42"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:31:35.661133+00:00",
+      "first": "2026-10-25T03:31:35.661133+00:00",
+      "last": "2026-10-25T03:45:26.010920+00:00",
+      "incidentId": "ddd24cf9-f413-4de5-bea5-333f8c080187",
+      "caseId": null,
+      "comments": [],
+      "disposition": "true_positive",
+      "hostNames": [
+        "DEMO-APP-12"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.20.12",
+        "ip:198.51.100.42"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:31:35.661133+00:00",
+            "title": "告警发生",
+            "description": "进程读取LSASS内存 [DEMO-APP-12]"
+          },
+          {
+            "time": "2026-10-25T03:45:26.010920+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:45:26.136524+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:45:29.231192+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=true_positive confidence=0.95"
+          },
+          {
+            "time": "2026-10-25T03:45:51.840700+00:00",
+            "title": "调查结果交付",
+            "description": "graph partial"
+          },
+          {
+            "time": "2026-10-25T03:45:29.538379+00:00",
+            "title": "调查步骤已记录",
+            "description": "graph node 'triage' completed"
+          }
+        ],
+        "runs": [
+          {
+            "id": "6f79e33b-7a6d-5e48-a254-9c0c9925604c",
+            "time": "2026-10-25T03:45:26.136524+00:00",
+            "status": "Completed",
+            "completion": "partial",
+            "stop": "token budget exhausted (29164 of 20000)",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "c929a0c7-69b5-5617-b830-a701e8bae72f"
+                },
+                "output": {
+                  "verdict": "true_positive",
+                  "confidence": 0.95,
+                  "rationale": "LLM auto-triage verdict: true_positive · LLM confidence: 0.95 · Rationale: The alert indicates a process named 'diagtool.exe' reading LSASS memory, which is a definitive indicator of credential dumping (MITRE T1003.001). The high vendor risk score (0.92) and the specific technique match strongly suggest malicious activity. There is no evidence of authorization, such as a scheduled scan or approved penetration test, and the account 'demo.ops' lacks verified business history for this specific action. The absence of collected credentials does not negate the malicious nature of the memory access attempt.",
+                  "auto_closed": false
+                }
+              },
+              {
+                "name": "triage",
+                "agent": "triage",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "triage"
+                }
+              },
+              {
+                "name": "enrichment",
+                "agent": "enrichment",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "enrichment"
+                }
+              },
+              {
+                "name": "investigation",
+                "agent": "investigation",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "investigation"
+                }
+              }
+            ],
+            "tools": [
+              {
+                "name": "process_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on DEMO-APP-12 in the last 24h'}"
+              },
+              {
+                "name": "process_tree",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'process_tree', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. "
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 2, 'rows': [{'event_time': '2026-10-25T03:31:35.661000Z', 'connector_type': 'Okta System Log', 'user_name': '', 'src_hostname': 'DEMO-APP-12"
+              },
+              {
+                "name": "network_connections",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+              },
+              {
+                "name": "authentication_events",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "user_name": "demo.ops"
+                },
+                "result": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for demo.ops in the last 24h'}"
+              },
+              {
+                "name": "persistence_mechanisms",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'persistence_mechanisms', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Persistence mechanisms (run keys, scheduled tasks, launch agents, cron) are not stored as a distinct data "
+              },
+              {
+                "name": "technique_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 7,
+                  "technique_id": "T1003.001"
+                },
+                "result": "{'tool': 'technique_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'activity mapped to T1003.001 in the last 7d'}"
+              },
+              {
+                "name": "lookup_technique",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "technique_id": "T1003.001"
+                },
+                "result": "{'id': 'T1003.001', 'name': 'Unknown', 'tactic': 'Unknown'}"
+              },
+              {
+                "name": "extract_iocs",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "text": "进程读取LSASS内存 [DEMO-APP-12] — High alert: 进程读取LSASS内存 [DEMO-APP-12] on 10.78.20.12 from showcase-security-sensor"
+                },
+                "result": "[{'type': 'ip', 'value': '10.78.20.12'}]"
+              },
+              {
+                "name": "lookup_technique",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "technique_id": "T1003"
+                },
+                "result": "{'id': 'T1003', 'name': 'OS Credential Dumping', 'tactic_id': 'TA0006', 'tactic_name': 'Credential Access', 'mitigations': []}"
+              },
+              {
+                "name": "enrich_ioc",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "ioc_type": "ip",
+                  "ioc_value": "10.78.20.12"
+                },
+                "result": "{'ioc_type': 'ip', 'value': '10.78.20.12', 'risk_score': 0, 'confidence': 0, 'malicious_votes': 0, 'harmless_votes': 0, 'total_engines': 0, 'reputation': 0, 'classification': {}, 'is_bot': False, 'is_"
+              },
+              {
+                "name": "fleet_ioc_hunt",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 7,
+                  "indicator": "10.78.20.12"
+                },
+                "result": "{'tool': 'fleet_ioc_hunt', 'available': True, 'row_count': 1, 'rows': [{'src_hostname': 'DEMO-APP-12', 'user_name': '', 'connector_type': 'Okta System Log', 'first_seen': '2026-10-25T03:31:35.661000Z'"
+              }
+            ],
+            "findings": [
+              "Auto-triage: verdict=true_positive, confidence=0.95, latency=2958ms",
+              "Auto-triage rationale: The alert indicates a process named 'diagtool.exe' reading LSASS memory, which is a definitive indicator of credential dumping (MITRE T1003.001). The high vendor risk score (0.92) and the specific technique match strongly suggest malicious activity. There is no evidence of authorization, such as a scheduled scan or approved penetration test, and the account 'demo.ops' lacks verified business history for this specific action. The absence of collected credentials does not negate the malicious nature of the memory access attempt.",
+              "Escalating to full pipeline — TP verdict",
+              "Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)",
+              "Extracted 2 IOCs for enrichment: ['10.78.20.12', '198.51.100.42']",
+              "MITRE kill chain: {'Unknown': ['T1003.001: Unknown']}",
+              "Triage verdict: true_positive (confidence=0.94)",
+              "Triage phase complete — proceeding to enrichment",
+              "Enrichment complete: 2 IOCs enriched, none flagged as malicious",
+              "Threat actor attribution failed: Client error '401 Unauthorized' for url 'http://threatintel:8005/api/v1/actors/attribute'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
+              "Blast radius of the affected entities scores 3.10.",
+              "Graph context: host:DEMO-APP-12: 1 nodes (depth=2), blast_radius=3.10",
+              "Graph context: user:demo.ops: 1 nodes (depth=2), blast_radius=3.10",
+              "{\"tool\": \"fleet_ioc_hunt\", \"available\": true, \"row_count\": 1, \"rows\": [{\"src_hostname\": \"DEMO-APP-12\", \"user_name\": \"\", \"connector_type\": \"Okta System Log\", \"first_seen\": \"2026-10-25T03:31:35.661000Z\", \"last_seen\": \"2026-10-25T03:33:35.661000Z\", \"hits\": 2}], \"query\": \"hosts that observed 10.78.20.12 in the last 7d\"}",
+              "Investigation depth: 8 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — authentication_events, enrich_ioc, entity_timeline, extract_iocs, fleet_ioc_hunt, lookup_technique, process_activity, technique_activity.",
+              "Coverage gap: the following data classes are not ingested, so this investigation could not check them — network_connections, persistence_mechanisms, process_tree. Treat them as unknown rather than clear.",
+              "Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM's contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.",
+              "Investigation hit its 6-step cap; the line of enquiry was not exhausted.",
+              "Attack stages observed: Unknown. This indicates a single-stage attack.",
+              "Investigation verdict: probable_incident (confidence=0.74)",
+              "Investigation complete. Total proposed actions: 0",
+              "Investigation stopped: token budget exhausted (29164 of 20000). Partial results, escalating to an analyst."
+            ],
+            "actions": [],
+            "calls": 7,
+            "tokens": 31271,
+            "report": "# Incident Report — ddd24cf9-f413-4de5-bea5-333f8c080187\n\n## Summary\n\n| Field | Value |\n|-------|-------|\n| Verdict | needs_review |\n| Confidence | 0.74 |\n| Status | running |\n| Topology | investigation_graph |\n\n## Triage Rationale\n\n- triage prior=0.94\n- enrichment ran but classified all IOCs benign — FP prior\n- (triage) provided alert risk_score=0.92 (source unverified)\n- (triage) high-severity keyword match in alert text\n- (triage) 2 IOC field(s) present\n\n## Findings\n\n- Auto-triage: verdict=true_positive, confidence=0.95, latency=2958ms\n- Auto-triage rationale: The alert indicates a process named &#x27;diagtool.exe&#x27; reading LSASS memory, which is a definitive indicator of credential dumping (MITRE T1003.001). The high vendor risk score (0.92) and the specific technique match strongly suggest malicious activity. There is no evidence of authorization, such as a scheduled scan or approved penetration test, and the account &#x27;demo.ops&#x27; lacks verified business history for this specific action. The absence of collected credentials does not negate the malicious nature of the memory access attempt.\n- Escalating to full pipeline — TP verdict\n- Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)\n- Extracted 2 IOCs for enrichment: [&#x27;10.78.20.12&#x27;, &#x27;198.51.100.42&#x27;]\n- MITRE kill chain: {&#x27;Unknown&#x27;: [&#x27;T1003.001: Unknown&#x27;]}\n- Triage verdict: true_positive (confidence=0.94)\n- Triage phase complete — proceeding to enrichment\n- Enrichment complete: 2 IOCs enriched, none flagged as malicious\n- Threat actor attribution failed: Client error &#x27;401 Unauthorized&#x27; for url &#x27;http://threatintel:8005/api/v1/actors/attribute&#x27; For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\n- Blast radius of the affected entities scores 3.10.\n- Graph context: host:DEMO-APP-12: 1 nodes (depth=2), blast_radius=3.10\n- Graph context: user:demo.ops: 1 nodes (depth=2), blast_radius=3.10\n- {&quot;tool&quot;: &quot;fleet_ioc_hunt&quot;, &quot;available&quot;: true, &quot;row_count&quot;: 1, &quot;rows&quot;: [{&quot;src_hostname&quot;: &quot;DEMO-APP-12&quot;, &quot;user_name&quot;: &quot;&quot;, &quot;connector_type&quot;: &quot;Okta System Log&quot;, &quot;first_seen&quot;: &quot;2026-10-25T03:31:35.661000Z&quot;, &quot;last_seen&quot;: &quot;2026-10-25T03:33:35.661000Z&quot;, &quot;hits&quot;: 2}], &quot;query&quot;: &quot;hosts that observed 10.78.20.12 in the last 7d&quot;}\n- Investigation depth: 8 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — authentication_events, enrich_ioc, entity_timeline, extract_iocs, fleet_ioc_hunt, lookup_technique, process_activity, technique_activity.\n- Coverage gap: the following data classes are not ingested, so this investigation could not check them — network_connections, persistence_mechanisms, process_tree. Treat them as unknown rather than clear.\n- Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM&#x27;s contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.\n- Investigation hit its 6-step cap; the line of enquiry was not exhausted.\n- Attack stages observed: Unknown. This indicates a single-stage attack.\n- Investigation verdict: probable_incident (confidence=0.74)\n- Investigation complete. Total proposed actions: 0\n- Investigation stopped: token budget exhausted (29164 of 20000). Partial results, escalating to an analyst.\n\n## Attack-chain and graph context\n\n- Pre-fetched investigation context (ContextBundle):\n- &lt;UNTRUSTED_DATA source=&quot;attack_correlation_context&quot;&gt; Attack correlation context: candidate relationships and graph reachability are not confirmed attack causality or chronology. Scope=alert; case_id=None; alert_id=c929a0c7-69b5-5617-b830-a701e8bae72f; queried_at=2026-10-25T03:45:29.336372+00:00. Empty results apply only to the stated source/query scope. Missing, unavailable or unprojected data remains unknown, not proof of safety. This is a bounded summary; full results stay on this Run. Query scope and coverage: {&quot;projection_alert_limit&quot;: 50, &quot;truncated&quot;: false, &quot;case_ambiguous&quot;: false, &quot;seed_alert_id&quot;: &quot;c929a0c7-69b5-5617-b830-a701e8bae72f&quot;, &quot;semantics&quot;: &quot;candidate association, not verified causal attack chain&quot;} Projection preparation for this Run: success; owner=kafka_consumer; source=postgres_alert_projection; error=None; reason=source_alerts_projected. A missing preparation does not prove no graph exists. attack_chain: status=empty; source=postgres; error=None. attack_path: status=not_linked; source=None; error=no_linked_case. alert_graph: status=success; source=neo4j; error=None. Chain seed=c929a0c7-69b5-5617-b830-a701e8bae72f; window=24h; anchor=seed_event_time_plus_minus_window; generated_at=2026-10-25T03:45:29.341017+00:00; candidates=0. Ranking scores express correlation, not maliciousness probability. Case path: nodes=0; edges=0. Case membership and technique associations alone do not establish an observed attack progression. Alert neighborhood: returned_nodes=5. Alert blast radius: reachable=6; score=3.1. This is alert-associated graph scope, not a Case attack path. &lt;/UNTRUSTED_DATA&gt;\n- - Context lookups were partial or unavailable: incident_context:alert:c929a0c7-69b5-5617-b830-a701e8bae72f:assets (BufferError), incident_context:alert:c929a0c7-69b5-5617-b830-a701e8bae72f:cloud (BufferError), incident_context:alert:c929a0c7-69b5-5617-b830-a701e8bae72f:business (BufferError), incident_context:alert:c929a0c7-69b5-5617-b830-a701e8bae72f:threat (BufferError). Missing evidence is unknown, not proof of no relationships, activity or risk.\n- - Entities resolved: 7 (domain, host, ip, user)\n- - Graph neighbourhood:\n- * host:DEMO-APP-12: 1 nodes (depth=2), blast_radius=3.10\n- * user:demo.ops: 1 nodes (depth=2), blast_radius=3.10\n- - Max blast-radius score: 3.10\n- - UEBA: 1 entities with baseline, max deviation=unknown (not supplied by source)\n- - Threat-intel matches: 5 (high-risk IOCs: none)\n- - Entity context:\n- Source alert c929a0c7-69b5-5617-b830-a701e8bae72f:\n- - NOTE: context is partial; these dimensions could not be read: assets (BufferError), cloud (BufferError), business (BufferError), threat (BufferError)\n\n## MITRE ATT&CK Mappings\n\n- `T1003.001`\n\n_Generated by AiSOC router on 2026-10-25 03:45 UTC_\n"
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1003.001"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T04:01:40.571383+00:00",
+          "summary": "进程读取LSASS内存 [DEMO-APP-12] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1003.001. process diagtool.exe PID 5300 opened lsass.exe on DEMO-APP-12 with memory-read access under demo.ops. The sensor reported handle access only; no credential output file was collected.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 95,
+        "raw": {
+          "id": "c929a0c7-69b5-5617-b830-a701e8bae72f",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "进程读取LSASS内存 [DEMO-APP-12]",
+          "description": "process diagtool.exe PID 5300 opened lsass.exe on DEMO-APP-12 with memory-read access under demo.ops. The sensor reported handle access only; no credential output file was collected.",
+          "severity": "high",
+          "status": "triaged",
+          "event_time": "2026-10-25 03:31:35.661133+00:00",
+          "created_at": "2026-10-25 03:45:26.010920+00:00",
+          "updated_at": "2026-10-25 03:45:29.231192+00:00",
+          "resolved_at": null,
+          "source_event_ids": [
+            "91105054-7152-5c4f-937b-d05f2f1d0fc7"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1003.001"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-APP-12"
+            },
+            {
+              "type": "user",
+              "value": "demo.ops"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.20.12"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.42"
+            }
+          ],
+          "raw_event": {
+            "full_log": "process diagtool.exe PID 5300 opened lsass.exe on DEMO-APP-12 with memory-read access under demo.ops. The sensor reported handle access only; no credential output file was collected.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.95,
+          "disposition": "true_positive",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "91105054-7152-5c4f-937b-d05f2f1d0fc7",
+          "incident_id": "ddd24cf9-f413-4de5-bea5-333f8c080187"
+        },
+        "responseRecommendations": []
+      }
+    },
+    {
+      "id": "f7af404b-26a6-5d15-bd6c-3a872bdaf451",
+      "persistedRecord": true,
+      "title": "脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11]",
+      "description": "process PID 4200 on DEMO-FIN-11 opened TCP/443 to 198.51.100.41, 8192 outbound bytes. Destination is a documentation-only synthetic address; no threat-intel verdict or exfiltration confirmation supplied.",
+      "severity": "高",
+      "status": "In progress",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-FIN-11",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.finance",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.10.11",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.41"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:32:16.539577+00:00",
+      "first": "2026-10-25T03:32:16.539577+00:00",
+      "last": "2026-10-25T03:42:01.179853+00:00",
+      "incidentId": "7bde0c0b-0d18-4abc-9382-9752f2ae5e98",
+      "caseId": null,
+      "comments": [],
+      "disposition": "needs_review",
+      "hostNames": [
+        "DEMO-FIN-11"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.10.11",
+        "ip:198.51.100.41"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:32:16.539577+00:00",
+            "title": "告警发生",
+            "description": "脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11]"
+          },
+          {
+            "time": "2026-10-25T03:42:01.179853+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:42:01.473969+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:42:05.037105+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=needs_review confidence=0.65"
+          },
+          {
+            "time": "2026-10-25T03:42:17.137014+00:00",
+            "title": "调查结果交付",
+            "description": "graph partial"
+          },
+          {
+            "time": "2026-10-25T03:42:05.633548+00:00",
+            "title": "调查步骤已记录",
+            "description": "graph node 'triage' completed"
+          }
+        ],
+        "runs": [
+          {
+            "id": "18545427-6de6-548c-9077-0a292d8b0a14",
+            "time": "2026-10-25T03:42:01.473969+00:00",
+            "status": "Completed",
+            "completion": "partial",
+            "stop": "token budget exhausted (26652 of 20000)",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "f7af404b-26a6-5d15-bd6c-3a872bdaf451"
+                },
+                "output": {
+                  "verdict": "needs_review",
+                  "confidence": 0.65,
+                  "rationale": "LLM auto-triage verdict: needs_review · LLM confidence: 0.65 · Rationale: The alert indicates a script process connecting to a 'documentation-only synthetic address' (198.51.100.41), which is a reserved IP range often used for testing and not a real threat intelligence target. However, the high vendor risk score (0.92) and ML priority suggest potential malicious behavior like C2 or exfiltration that cannot be dismissed solely based on the IP description without verifying the process identity and intent. Since there is no evidence of authorization, and the 'synthetic' nature of the destination does not definitively prove benign activity in a production environment, human review is required to validate the process tree and context.",
+                  "auto_closed": false
+                }
+              },
+              {
+                "name": "triage",
+                "agent": "triage",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "triage"
+                }
+              },
+              {
+                "name": "enrichment",
+                "agent": "enrichment",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "enrichment"
+                }
+              },
+              {
+                "name": "investigation",
+                "agent": "investigation",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "investigation"
+                }
+              }
+            ],
+            "tools": [
+              {
+                "name": "process_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on DEMO-FIN-11 in the last 24h'}"
+              },
+              {
+                "name": "network_connections",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-FIN-11"
+                },
+                "result": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+              },
+              {
+                "name": "lookup_file_hash",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "sha256": "198.51.100.41"
+                },
+                "result": "{'available': False, 'outcome': 'invalid_input', 'reason': 'Not a SHA-256 digest. Provide 64 hexadecimal characters.'}"
+              },
+              {
+                "name": "enrich_ioc",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "ioc_type": "ip",
+                  "ioc_value": "198.51.100.41"
+                },
+                "result": "{'ioc_type': 'ip', 'value': '198.51.100.41', 'risk_score': 0, 'confidence': 0, 'malicious_votes': 0, 'harmless_votes': 0, 'total_engines': 0, 'reputation': 0, 'classification': {}, 'is_bot': False, 'i"
+              },
+              {
+                "name": "authentication_events",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "user_name": "demo.finance"
+                },
+                "result": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for demo.finance in the last 24h'}"
+              },
+              {
+                "name": "mailbox_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "user_name": "demo.finance"
+                },
+                "result": "{'tool': 'mailbox_activity', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.'}"
+              }
+            ],
+            "findings": [
+              "Auto-triage: verdict=needs_review, confidence=0.65, latency=3494ms",
+              "Auto-triage rationale: The alert indicates a script process connecting to a 'documentation-only synthetic address' (198.51.100.41), which is a reserved IP range often used for testing and not a real threat intelligence target. However, the high vendor risk score (0.92) and ML priority suggest potential malicious behavior like C2 or exfiltration that cannot be dismissed solely based on the IP description without verifying the process identity and intent. Since there is no evidence of authorization, and the 'synthetic' nature of the destination does not definitively prove benign activity in a production environment, human review is required to validate the process tree and context.",
+              "Escalating to full pipeline — confidence 0.65 < threshold 0.85",
+              "Triage severity: critical (heuristic risk_score=0.92; not a vendor measurement)",
+              "Extracted 2 IOCs for enrichment: ['10.78.10.11', '198.51.100.41']",
+              "MITRE kill chain: {'Unknown': ['T1071.001: Unknown']}",
+              "Triage verdict: true_positive (confidence=0.95)",
+              "Triage phase complete — proceeding to enrichment",
+              "Enrichment complete: 2 IOCs enriched, none flagged as malicious",
+              "Threat actor attribution failed: Client error '401 Unauthorized' for url 'http://threatintel:8005/api/v1/actors/attribute'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
+              "Blast radius of the affected entities scores 4.30.",
+              "Graph context: host:DEMO-FIN-11: 2 nodes (depth=2), blast_radius=4.30",
+              "Graph context: user:demo.finance: 2 nodes (depth=2), blast_radius=4.30",
+              "{\"tool\": \"mailbox_activity\", \"available\": false, \"row_count\": 0, \"rows\": [], \"reason\": \"Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.\"}",
+              "Investigation depth: 3 distinct pivots across 6 reasoning steps (strategy: c2-beaconing) — authentication_events, enrich_ioc, process_activity.",
+              "Coverage gap: the following data classes are not ingested, so this investigation could not check them — lookup_file_hash, mailbox_activity, network_connections. Treat them as unknown rather than clear.",
+              "Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM's contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.",
+              "Investigation hit its 6-step cap; the line of enquiry was not exhausted.",
+              "Attack stages observed: Unknown. This indicates a single-stage attack.",
+              "Investigation verdict: probable_incident (confidence=0.75)",
+              "Investigation complete. Total proposed actions: 1",
+              "Investigation stopped: token budget exhausted (26652 of 20000). Partial results, escalating to an analyst."
+            ],
+            "actions": [
+              "Isolate host 'DEMO-FIN-11' from network"
+            ],
+            "calls": 7,
+            "tokens": 28833,
+            "report": "# Incident Report — 7bde0c0b-0d18-4abc-9382-9752f2ae5e98\n\n## Summary\n\n| Field | Value |\n|-------|-------|\n| Verdict | needs_review |\n| Confidence | 0.75 |\n| Status | running |\n| Topology | investigation_graph |\n\n## Triage Rationale\n\n- triage prior=0.95\n- 1 proposed action(s)\n- enrichment ran but classified all IOCs benign — FP prior\n- (triage) provided alert risk_score=0.92 (source unverified)\n- (triage) critical-severity keyword match in alert text\n- (triage) 2 IOC field(s) present\n\n## Findings\n\n- Auto-triage: verdict=needs_review, confidence=0.65, latency=3494ms\n- Auto-triage rationale: The alert indicates a script process connecting to a &#x27;documentation-only synthetic address&#x27; (198.51.100.41), which is a reserved IP range often used for testing and not a real threat intelligence target. However, the high vendor risk score (0.92) and ML priority suggest potential malicious behavior like C2 or exfiltration that cannot be dismissed solely based on the IP description without verifying the process identity and intent. Since there is no evidence of authorization, and the &#x27;synthetic&#x27; nature of the destination does not definitively prove benign activity in a production environment, human review is required to validate the process tree and context.\n- Escalating to full pipeline — confidence 0.65 &lt; threshold 0.85\n- Triage severity: critical (heuristic risk_score=0.92; not a vendor measurement)\n- Extracted 2 IOCs for enrichment: [&#x27;10.78.10.11&#x27;, &#x27;198.51.100.41&#x27;]\n- MITRE kill chain: {&#x27;Unknown&#x27;: [&#x27;T1071.001: Unknown&#x27;]}\n- Triage verdict: true_positive (confidence=0.95)\n- Triage phase complete — proceeding to enrichment\n- Enrichment complete: 2 IOCs enriched, none flagged as malicious\n- Threat actor attribution failed: Client error &#x27;401 Unauthorized&#x27; for url &#x27;http://threatintel:8005/api/v1/actors/attribute&#x27; For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\n- Blast radius of the affected entities scores 4.30.\n- Graph context: host:DEMO-FIN-11: 2 nodes (depth=2), blast_radius=4.30\n- Graph context: user:demo.finance: 2 nodes (depth=2), blast_radius=4.30\n- {&quot;tool&quot;: &quot;mailbox_activity&quot;, &quot;available&quot;: false, &quot;row_count&quot;: 0, &quot;rows&quot;: [], &quot;reason&quot;: &quot;Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.&quot;}\n- Investigation depth: 3 distinct pivots across 6 reasoning steps (strategy: c2-beaconing) — authentication_events, enrich_ioc, process_activity.\n- Coverage gap: the following data classes are not ingested, so this investigation could not check them — lookup_file_hash, mailbox_activity, network_connections. Treat them as unknown rather than clear.\n- Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM&#x27;s contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.\n- Investigation hit its 6-step cap; the line of enquiry was not exhausted.\n- Attack stages observed: Unknown. This indicates a single-stage attack.\n- Investigation verdict: probable_incident (confidence=0.75)\n- Investigation complete. Total proposed actions: 1\n- Investigation stopped: token budget exhausted (26652 of 20000). Partial results, escalating to an analyst.\n\n## Attack-chain and graph context\n\n- Pre-fetched investigation context (ContextBundle):\n- &lt;UNTRUSTED_DATA source=&quot;attack_correlation_context&quot;&gt; Attack correlation context: candidate relationships and graph reachability are not confirmed attack causality or chronology. Scope=alert; case_id=None; alert_id=f7af404b-26a6-5d15-bd6c-3a872bdaf451; queried_at=2026-10-25T03:42:05.260753+00:00. Empty results apply only to the stated source/query scope. Missing, unavailable or unprojected data remains unknown, not proof of safety. This is a bounded summary; full results stay on this Run. Query scope and coverage: {&quot;projection_alert_limit&quot;: 50, &quot;truncated&quot;: false, &quot;case_ambiguous&quot;: false, &quot;seed_alert_id&quot;: &quot;f7af404b-26a6-5d15-bd6c-3a872bdaf451&quot;, &quot;semantics&quot;: &quot;candidate association, not verified causal attack chain&quot;} Projection preparation for this Run: success; owner=kafka_consumer; source=postgres_alert_projection; error=None; reason=source_alerts_projected. A missing preparation does not prove no graph exists. attack_chain: status=success; source=postgres; error=None. attack_path: status=not_linked; source=None; error=no_linked_case. alert_graph: status=success; source=neo4j; error=None. Chain seed=f7af404b-26a6-5d15-bd6c-3a872bdaf451; window=24h; anchor=seed_event_time_plus_minus_window; generated_at=2026-10-25T03:42:05.264547+00:00; candidates=1. Ranking scores express correlation, not maliciousness probability. Candidate alert_id=4c71eec2-77da-5b81-b68a-72801d55ea24; event_time=2026-10-25T03:30:16.539577+00:00; score=0.9096; shared_entities=[{&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;10.78.10.11&quot;}, {&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;198.51.100.41&quot;}, {&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;DEMO-FIN-11&quot;}, {&quot;kind&quot;: &quot;Identity&quot;, &quot;value&quot;: &quot;demo.finance&quot;}]. Case path: nodes=0; edges=0. Case membership and technique associations alone do not establish an observed attack progression. Alert neighborhood: returned_nodes=5. Alert blast radius: reachable=8; score=4.3. This is alert-associated graph scope, not a Case attack path. &lt;/UNTRUSTED_DATA&gt;\n- - Context lookups were partial or unavailable: incident_context:alert:f7af404b-26a6-5d15-bd6c-3a872bdaf451:assets (BufferError), incident_context:alert:f7af404b-26a6-5d15-bd6c-3a872bdaf451:cloud (BufferError), incident_context:alert:f7af404b-26a6-5d15-bd6c-3a872bdaf451:business (BufferError), incident_context:alert:f7af404b-26a6-5d15-bd6c-3a872bdaf451:threat (BufferError). Missing evidence is unknown, not proof of no relationships, activity or risk.\n- - Entities resolved: 4 (host, ip, user)\n- - Graph neighbourhood:\n- * host:DEMO-FIN-11: 2 nodes (depth=2), blast_radius=4.30\n- * user:demo.finance: 2 nodes (depth=2), blast_radius=4.30\n- - Max blast-radius score: 4.30\n- - UEBA: 1 entities with baseline, max deviation=unknown (not supplied by source)\n- - Threat-intel matches: 2 (high-risk IOCs: none)\n- - Entity context:\n- Source alert f7af404b-26a6-5d15-bd6c-3a872bdaf451:\n- - NOTE: context is partial; these dimensions could not be read: assets (BufferError), cloud (BufferError), business (BufferError), threat (BufferError)\n\n## MITRE ATT&CK Mappings\n\n- `T1071.001`\n\n## Proposed Actions\n\n| # | Action | Target | Risk | Approval | Rationale |\n|---|--------|--------|------|----------|-----------|\n| 1 | isolate_host | DEMO-FIN-11 | high | yes | Critical severity alert with host identifier present |\n\n_Generated by AiSOC router on 2026-10-25 03:42 UTC_\n"
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1071.001"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T04:00:58.516179+00:00",
+          "summary": "脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1071.001. process PID 4200 on DEMO-FIN-11 opened TCP/443 to 198.51.100.41, 8192 outbound bytes. Destination is a documentation-only synthetic address; no threat-intel verdict or exfiltration confirmation supplied.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 65,
+        "raw": {
+          "id": "f7af404b-26a6-5d15-bd6c-3a872bdaf451",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11]",
+          "description": "process PID 4200 on DEMO-FIN-11 opened TCP/443 to 198.51.100.41, 8192 outbound bytes. Destination is a documentation-only synthetic address; no threat-intel verdict or exfiltration confirmation supplied.",
+          "severity": "high",
+          "status": "triaged",
+          "event_time": "2026-10-25 03:32:16.539577+00:00",
+          "created_at": "2026-10-25 03:42:01.179853+00:00",
+          "updated_at": "2026-10-25 03:42:05.037105+00:00",
+          "resolved_at": null,
+          "source_event_ids": [
+            "2d58f3fd-0e29-5e9b-bf0e-8fabe878cd72"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1071.001"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-FIN-11"
+            },
+            {
+              "type": "user",
+              "value": "demo.finance"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.10.11"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.41"
+            }
+          ],
+          "raw_event": {
+            "full_log": "process PID 4200 on DEMO-FIN-11 opened TCP/443 to 198.51.100.41, 8192 outbound bytes. Destination is a documentation-only synthetic address; no threat-intel verdict or exfiltration confirmation supplied.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.65,
+          "disposition": "needs_review",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "2d58f3fd-0e29-5e9b-bf0e-8fabe878cd72",
+          "incident_id": "7bde0c0b-0d18-4abc-9382-9752f2ae5e98"
+        },
+        "responseRecommendations": [
+          {
+            "action": "Isolate host 'DEMO-FIN-11' from network",
+            "target": "DEMO-FIN-11",
+            "reason": "Critical severity alert with host identifier present",
+            "approval": "需要审批",
+            "execution": "未执行"
+          }
+        ]
+      }
+    },
+    {
+      "id": "6373220a-2f25-541e-ab89-9c3a2e611140",
+      "persistedRecord": true,
+      "title": "服务账号批量读取并生成归档 [DEMO-DATA-13]",
+      "description": "demo.export read 120 files under /srv/finance-demo on DEMO-DATA-13 and archive-demo created /tmp/finance-demo.tar (12 MiB). File names and contents are synthetic. No approved export job record supplied.",
+      "severity": "高",
+      "status": "In progress",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-DATA-13",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.export",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.30.13",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.43"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:32:20.781813+00:00",
+      "first": "2026-10-25T03:32:20.781813+00:00",
+      "last": "2026-10-25T03:51:07.093089+00:00",
+      "incidentId": "8db5aafa-011a-47db-9beb-9b16a6f97a1d",
+      "caseId": null,
+      "comments": [],
+      "disposition": "true_positive",
+      "hostNames": [
+        "DEMO-DATA-13"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.30.13",
+        "ip:198.51.100.43"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:32:20.781813+00:00",
+            "title": "告警发生",
+            "description": "服务账号批量读取并生成归档 [DEMO-DATA-13]"
+          },
+          {
+            "time": "2026-10-25T03:51:07.093089+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:51:07.356198+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:51:10.462676+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=true_positive confidence=0.85"
+          },
+          {
+            "time": "2026-10-25T03:51:27.838704+00:00",
+            "title": "调查结果交付",
+            "description": "graph partial"
+          },
+          {
+            "time": "2026-10-25T03:51:10.606204+00:00",
+            "title": "调查步骤已记录",
+            "description": "graph node 'triage' completed"
+          }
+        ],
+        "runs": [
+          {
+            "id": "53499528-1f7b-5c58-82a0-e613ee2fcb78",
+            "time": "2026-10-25T03:51:07.356198+00:00",
+            "status": "Completed",
+            "completion": "partial",
+            "stop": "token budget exhausted (28764 of 20000)",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "6373220a-2f25-541e-ab89-9c3a2e611140"
+                },
+                "output": {
+                  "verdict": "true_positive",
+                  "confidence": 0.85,
+                  "rationale": "LLM auto-triage verdict: true_positive · LLM confidence: 0.85 · Rationale: The alert describes a service account performing a bulk read of 120 files from a sensitive directory (/srv/finance-demo) and creating an archive, which aligns with the MITRE technique T1560.001 (Archive Collected Data). The explicit statement that 'No approved export job record supplied' indicates a lack of authorization for this specific action. Given the high risk score (0.92), the sensitive target, and the absence of an approved job, this constitutes malicious or unauthorized activity requiring investigation.",
+                  "auto_closed": false
+                }
+              },
+              {
+                "name": "triage",
+                "agent": "triage",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "triage"
+                }
+              },
+              {
+                "name": "enrichment",
+                "agent": "enrichment",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "enrichment"
+                }
+              },
+              {
+                "name": "investigation",
+                "agent": "investigation",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "investigation"
+                }
+              }
+            ],
+            "tools": [
+              {
+                "name": "process_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-DATA-13"
+                },
+                "result": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on DEMO-DATA-13 in the last 24h'}"
+              },
+              {
+                "name": "process_tree",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-DATA-13"
+                },
+                "result": "{'tool': 'process_tree', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. "
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-DATA-13"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 2, 'rows': [{'event_time': '2026-10-25T03:32:20.781000Z', 'connector_type': 'Okta System Log', 'user_name': '', 'src_hostname': 'DEMO-DATA-1"
+              },
+              {
+                "name": "network_connections",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-DATA-13"
+                },
+                "result": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+              },
+              {
+                "name": "authentication_events",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "user_name": "demo.export"
+                },
+                "result": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for demo.export in the last 24h'}"
+              },
+              {
+                "name": "lookup_technique",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "technique_id": "T1560.001"
+                },
+                "result": "{'id': 'T1560.001', 'name': 'Unknown', 'tactic': 'Unknown'}"
+              },
+              {
+                "name": "oauth_grants",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "user_name": "demo.export"
+                },
+                "result": "{'tool': 'oauth_grants', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'OAuth consent grants are not ingested. Connect an Entra ID or Okta system-log connector.'}"
+              },
+              {
+                "name": "technique_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 7,
+                  "technique_id": "T1560.001"
+                },
+                "result": "{'tool': 'technique_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'activity mapped to T1560.001 in the last 7d'}"
+              },
+              {
+                "name": "mailbox_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "user_name": "demo.export"
+                },
+                "result": "{'tool': 'mailbox_activity', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.'}"
+              }
+            ],
+            "findings": [
+              "Auto-triage: verdict=true_positive, confidence=0.85, latency=2972ms",
+              "Auto-triage rationale: The alert describes a service account performing a bulk read of 120 files from a sensitive directory (/srv/finance-demo) and creating an archive, which aligns with the MITRE technique T1560.001 (Archive Collected Data). The explicit statement that 'No approved export job record supplied' indicates a lack of authorization for this specific action. Given the high risk score (0.92), the sensitive target, and the absence of an approved job, this constitutes malicious or unauthorized activity requiring investigation.",
+              "Escalating to full pipeline — TP verdict",
+              "Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)",
+              "Extracted 2 IOCs for enrichment: ['10.78.30.13', '198.51.100.43']",
+              "MITRE kill chain: {'Unknown': ['T1560.001: Unknown']}",
+              "Triage verdict: true_positive (confidence=0.94)",
+              "Triage phase complete — proceeding to enrichment",
+              "Enrichment complete: 2 IOCs enriched, none flagged as malicious",
+              "Threat actor attribution failed: Client error '401 Unauthorized' for url 'http://threatintel:8005/api/v1/actors/attribute'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
+              "Blast radius of the affected entities scores 3.10.",
+              "Graph context: host:DEMO-DATA-13: 1 nodes (depth=2), blast_radius=3.10",
+              "Graph context: user:demo.export: 1 nodes (depth=2), blast_radius=3.10",
+              "{\"tool\": \"mailbox_activity\", \"available\": false, \"row_count\": 0, \"rows\": [], \"reason\": \"Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.\"}",
+              "Investigation depth: 5 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — authentication_events, entity_timeline, lookup_technique, process_activity, technique_activity.",
+              "Coverage gap: the following data classes are not ingested, so this investigation could not check them — mailbox_activity, network_connections, oauth_grants, process_tree. Treat them as unknown rather than clear.",
+              "Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM's contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.",
+              "Investigation hit its 6-step cap; the line of enquiry was not exhausted.",
+              "Attack stages observed: Unknown. This indicates a single-stage attack.",
+              "Investigation verdict: probable_incident (confidence=0.74)",
+              "Investigation complete. Total proposed actions: 0",
+              "Investigation stopped: token budget exhausted (28764 of 20000). Partial results, escalating to an analyst."
+            ],
+            "actions": [],
+            "calls": 7,
+            "tokens": 30901,
+            "report": "# Incident Report — 8db5aafa-011a-47db-9beb-9b16a6f97a1d\n\n## Summary\n\n| Field | Value |\n|-------|-------|\n| Verdict | needs_review |\n| Confidence | 0.74 |\n| Status | running |\n| Topology | investigation_graph |\n\n## Triage Rationale\n\n- triage prior=0.94\n- enrichment ran but classified all IOCs benign — FP prior\n- (triage) provided alert risk_score=0.92 (source unverified)\n- (triage) high-severity keyword match in alert text\n- (triage) 2 IOC field(s) present\n\n## Findings\n\n- Auto-triage: verdict=true_positive, confidence=0.85, latency=2972ms\n- Auto-triage rationale: The alert describes a service account performing a bulk read of 120 files from a sensitive directory (/srv/finance-demo) and creating an archive, which aligns with the MITRE technique T1560.001 (Archive Collected Data). The explicit statement that &#x27;No approved export job record supplied&#x27; indicates a lack of authorization for this specific action. Given the high risk score (0.92), the sensitive target, and the absence of an approved job, this constitutes malicious or unauthorized activity requiring investigation.\n- Escalating to full pipeline — TP verdict\n- Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)\n- Extracted 2 IOCs for enrichment: [&#x27;10.78.30.13&#x27;, &#x27;198.51.100.43&#x27;]\n- MITRE kill chain: {&#x27;Unknown&#x27;: [&#x27;T1560.001: Unknown&#x27;]}\n- Triage verdict: true_positive (confidence=0.94)\n- Triage phase complete — proceeding to enrichment\n- Enrichment complete: 2 IOCs enriched, none flagged as malicious\n- Threat actor attribution failed: Client error &#x27;401 Unauthorized&#x27; for url &#x27;http://threatintel:8005/api/v1/actors/attribute&#x27; For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\n- Blast radius of the affected entities scores 3.10.\n- Graph context: host:DEMO-DATA-13: 1 nodes (depth=2), blast_radius=3.10\n- Graph context: user:demo.export: 1 nodes (depth=2), blast_radius=3.10\n- {&quot;tool&quot;: &quot;mailbox_activity&quot;, &quot;available&quot;: false, &quot;row_count&quot;: 0, &quot;rows&quot;: [], &quot;reason&quot;: &quot;Mailbox events are not ingested. Connect a Microsoft 365 or Google Workspace audit connector.&quot;}\n- Investigation depth: 5 distinct pivots across 6 reasoning steps (strategy: endpoint-suspicious-process) — authentication_events, entity_timeline, lookup_technique, process_activity, technique_activity.\n- Coverage gap: the following data classes are not ingested, so this investigation could not check them — mailbox_activity, network_connections, oauth_grants, process_tree. Treat them as unknown rather than clear.\n- Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM&#x27;s contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.\n- Investigation hit its 6-step cap; the line of enquiry was not exhausted.\n- Attack stages observed: Unknown. This indicates a single-stage attack.\n- Investigation verdict: probable_incident (confidence=0.74)\n- Investigation complete. Total proposed actions: 0\n- Investigation stopped: token budget exhausted (28764 of 20000). Partial results, escalating to an analyst.\n\n## Attack-chain and graph context\n\n- Pre-fetched investigation context (ContextBundle):\n- &lt;UNTRUSTED_DATA source=&quot;attack_correlation_context&quot;&gt; Attack correlation context: candidate relationships and graph reachability are not confirmed attack causality or chronology. Scope=alert; case_id=None; alert_id=6373220a-2f25-541e-ab89-9c3a2e611140; queried_at=2026-10-25T03:51:10.566343+00:00. Empty results apply only to the stated source/query scope. Missing, unavailable or unprojected data remains unknown, not proof of safety. This is a bounded summary; full results stay on this Run. Query scope and coverage: {&quot;projection_alert_limit&quot;: 50, &quot;truncated&quot;: false, &quot;case_ambiguous&quot;: false, &quot;seed_alert_id&quot;: &quot;6373220a-2f25-541e-ab89-9c3a2e611140&quot;, &quot;semantics&quot;: &quot;candidate association, not verified causal attack chain&quot;} Projection preparation for this Run: success; owner=kafka_consumer; source=postgres_alert_projection; error=None; reason=source_alerts_projected. A missing preparation does not prove no graph exists. attack_chain: status=empty; source=postgres; error=None. attack_path: status=not_linked; source=None; error=no_linked_case. alert_graph: status=success; source=neo4j; error=None. Chain seed=6373220a-2f25-541e-ab89-9c3a2e611140; window=24h; anchor=seed_event_time_plus_minus_window; generated_at=2026-10-25T03:51:10.569427+00:00; candidates=0. Ranking scores express correlation, not maliciousness probability. Case path: nodes=0; edges=0. Case membership and technique associations alone do not establish an observed attack progression. Alert neighborhood: returned_nodes=5. Alert blast radius: reachable=6; score=3.1. This is alert-associated graph scope, not a Case attack path. &lt;/UNTRUSTED_DATA&gt;\n- - Context lookups were partial or unavailable: incident_context:alert:6373220a-2f25-541e-ab89-9c3a2e611140:assets (BufferError), incident_context:alert:6373220a-2f25-541e-ab89-9c3a2e611140:cloud (BufferError), incident_context:alert:6373220a-2f25-541e-ab89-9c3a2e611140:business (BufferError), incident_context:alert:6373220a-2f25-541e-ab89-9c3a2e611140:threat (BufferError). Missing evidence is unknown, not proof of no relationships, activity or risk.\n- - Entities resolved: 6 (domain, host, ip, user)\n- - Graph neighbourhood:\n- * host:DEMO-DATA-13: 1 nodes (depth=2), blast_radius=3.10\n- * user:demo.export: 1 nodes (depth=2), blast_radius=3.10\n- - Max blast-radius score: 3.10\n- - UEBA: 1 entities with baseline, max deviation=unknown (not supplied by source)\n- - Threat-intel matches: 4 (high-risk IOCs: none)\n- - Entity context:\n- Source alert 6373220a-2f25-541e-ab89-9c3a2e611140:\n- - NOTE: context is partial; these dimensions could not be read: assets (BufferError), cloud (BufferError), business (BufferError), threat (BufferError)\n\n## MITRE ATT&CK Mappings\n\n- `T1560.001`\n\n_Generated by AiSOC router on 2026-10-25 03:51 UTC_\n"
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1560.001"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T04:01:40.974319+00:00",
+          "summary": "服务账号批量读取并生成归档 [DEMO-DATA-13] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1560.001. demo.export read 120 files under /srv/finance-demo on DEMO-DATA-13 and archive-demo created /tmp/finance-demo.tar (12 MiB). File names and contents are synthetic. No approved export job record supplied.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 85,
+        "raw": {
+          "id": "6373220a-2f25-541e-ab89-9c3a2e611140",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "服务账号批量读取并生成归档 [DEMO-DATA-13]",
+          "description": "demo.export read 120 files under /srv/finance-demo on DEMO-DATA-13 and archive-demo created /tmp/finance-demo.tar (12 MiB). File names and contents are synthetic. No approved export job record supplied.",
+          "severity": "high",
+          "status": "triaged",
+          "event_time": "2026-10-25 03:32:20.781813+00:00",
+          "created_at": "2026-10-25 03:51:07.093089+00:00",
+          "updated_at": "2026-10-25 03:51:10.462676+00:00",
+          "resolved_at": null,
+          "source_event_ids": [
+            "aa28cadb-7857-5886-8ad8-9dceb311f0f5"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1560.001"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-DATA-13"
+            },
+            {
+              "type": "user",
+              "value": "demo.export"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.30.13"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.43"
+            }
+          ],
+          "raw_event": {
+            "full_log": "demo.export read 120 files under /srv/finance-demo on DEMO-DATA-13 and archive-demo created /tmp/finance-demo.tar (12 MiB). File names and contents are synthetic. No approved export job record supplied.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.85,
+          "disposition": "true_positive",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "aa28cadb-7857-5886-8ad8-9dceb311f0f5",
+          "incident_id": "8db5aafa-011a-47db-9beb-9b16a6f97a1d"
+        },
+        "responseRecommendations": []
+      }
+    },
+    {
+      "id": "6b9b6217-fdd6-59a0-b02f-93267050cd5f",
+      "persistedRecord": true,
+      "title": "同账号发起SMB远程服务访问 [DEMO-APP-12]",
+      "description": "demo.ops on DEMO-APP-12 accessed ADMIN$ over SMB on DEMO-FILE-02 (10.77.20.22) three minutes after the memory-read event. Successful authentication is observed; remote code execution and account authorization remain unverified.",
+      "severity": "高",
+      "status": "In progress",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-APP-12",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.ops",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.20.12",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.42"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:33:35.661133+00:00",
+      "first": "2026-10-25T03:33:35.661133+00:00",
+      "last": "2026-10-25T03:47:53.842658+00:00",
+      "incidentId": "ddd24cf9-f413-4de5-bea5-333f8c080187",
+      "caseId": null,
+      "comments": [],
+      "disposition": "needs_review",
+      "hostNames": [
+        "DEMO-APP-12"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.20.12",
+        "ip:198.51.100.42"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:33:35.661133+00:00",
+            "title": "告警发生",
+            "description": "同账号发起SMB远程服务访问 [DEMO-APP-12]"
+          },
+          {
+            "time": "2026-10-25T03:47:53.842658+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:47:54.054187+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:47:57.225366+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=needs_review confidence=0.85"
+          },
+          {
+            "time": "2026-10-25T03:48:26.670629+00:00",
+            "title": "调查结果交付",
+            "description": "graph partial"
+          },
+          {
+            "time": "2026-10-25T03:47:57.399741+00:00",
+            "title": "调查步骤已记录",
+            "description": "graph node 'triage' completed"
+          }
+        ],
+        "runs": [
+          {
+            "id": "480ff580-7b4f-531f-be17-af4be6ac1faa",
+            "time": "2026-10-25T03:47:54.054187+00:00",
+            "status": "Completed",
+            "completion": "partial",
+            "stop": "token budget exhausted (33025 of 20000)",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "6b9b6217-fdd6-59a0-b02f-93267050cd5f"
+                },
+                "output": {
+                  "verdict": "needs_review",
+                  "confidence": 0.85,
+                  "rationale": "LLM auto-triage verdict: needs_review · LLM confidence: 0.85 · Rationale: The alert indicates a high-risk SMB access to the ADMIN$ share by user 'demo.ops' following a memory-read event, which is suspicious. However, the user account name 'demo.ops' and the hostname 'DEMO-APP-12' strongly suggest this is a demonstration or test environment, and the provided context explicitly states that account authorization and remote code execution remain unverified. Without explicit evidence of malicious intent or a confirmed breach in a production environment, the alert cannot be definitively classified as malicious or benign.",
+                  "auto_closed": false
+                }
+              },
+              {
+                "name": "triage",
+                "agent": "triage",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "triage"
+                }
+              },
+              {
+                "name": "enrichment",
+                "agent": "enrichment",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "enrichment"
+                }
+              },
+              {
+                "name": "investigation",
+                "agent": "investigation",
+                "status": "Completed",
+                "input": null,
+                "output": {
+                  "node": "investigation"
+                }
+              }
+            ],
+            "tools": [
+              {
+                "name": "process_activity",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'process_activity', 'available': True, 'row_count': 0, 'rows': [], 'query': 'processes on DEMO-APP-12 in the last 24h'}"
+              },
+              {
+                "name": "authentication_events",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "user_name": "demo.ops"
+                },
+                "result": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for demo.ops in the last 24h'}"
+              },
+              {
+                "name": "fleet_ioc_hunt",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 24,
+                  "indicator": "10.78.20.12"
+                },
+                "result": "{'tool': 'fleet_ioc_hunt', 'available': True, 'row_count': 1, 'rows': [{'src_hostname': 'DEMO-APP-12', 'user_name': '', 'connector_type': 'Okta System Log', 'first_seen': '2026-10-25T03:31:35.661000Z'"
+              },
+              {
+                "name": "network_connections",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'network_connections', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Lake query failed (LakeQueryError). This is a lookup failure, not an absence of evidence.', 'query': 'connect"
+              },
+              {
+                "name": "fleet_ioc_hunt",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 24,
+                  "indicator": "198.51.100.42"
+                },
+                "result": "{'tool': 'fleet_ioc_hunt', 'available': True, 'row_count': 0, 'rows': [], 'query': 'hosts that observed 198.51.100.42 in the last 24d'}"
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 24,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 2, 'rows': [{'event_time': '2026-10-25T03:31:35.661000Z', 'connector_type': 'Okta System Log', 'user_name': '', 'src_hostname': 'DEMO-APP-12"
+              },
+              {
+                "name": "historical_execution",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 24
+                },
+                "result": "{'tool': 'historical_execution', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Supply either process_name or sha256.'}"
+              },
+              {
+                "name": "process_tree",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'process_tree', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Parent-process lineage is not stored: aisoc.raw_events has process_name but no parent_process_name or process_guid. "
+              },
+              {
+                "name": "persistence_mechanisms",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'persistence_mechanisms', 'available': False, 'row_count': 0, 'rows': [], 'reason': 'Persistence mechanisms (run keys, scheduled tasks, launch agents, cron) are not stored as a distinct data "
+              },
+              {
+                "name": "enrich_ioc",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "ioc_type": "ip",
+                  "ioc_value": "10.78.20.12"
+                },
+                "result": "{'ioc_type': 'ip', 'value': '10.78.20.12', 'risk_score': 0, 'confidence': 0, 'malicious_votes': 0, 'harmless_votes': 0, 'total_engines': 0, 'reputation': 0, 'classification': {}, 'is_bot': False, 'is_"
+              },
+              {
+                "name": "authentication_events",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 90,
+                  "user_name": "demo.ops"
+                },
+                "result": "{'tool': 'authentication_events', 'available': True, 'row_count': 0, 'rows': [], 'query': 'authentication events for demo.ops in the last 90h'}"
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 90,
+                  "user_name": "demo.ops"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 0, 'rows': [], 'query': 'timeline for demo.ops over the last 90h'}"
+              },
+              {
+                "name": "fleet_ioc_hunt",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "days": 90,
+                  "indicator": "198.51.100.42"
+                },
+                "result": "{'tool': 'fleet_ioc_hunt', 'available': True, 'row_count': 0, 'rows': [], 'query': 'hosts that observed 198.51.100.42 in the last 90d'}"
+              },
+              {
+                "name": "entity_timeline",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "hours": 90,
+                  "hostname": "DEMO-APP-12"
+                },
+                "result": "{'tool': 'entity_timeline', 'available': True, 'row_count': 2, 'rows': [{'event_time': '2026-10-25T03:31:35.661000Z', 'connector_type': 'Okta System Log', 'user_name': '', 'src_hostname': 'DEMO-APP-12"
+              },
+              {
+                "name": "map_to_mitre",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "text": "SMB remote service access from 10.78.20.12 to DEMO-APP-12 by user demo.ops"
+                },
+                "result": []
+              },
+              {
+                "name": "lookup_technique",
+                "status": "已记录返回摘要（最多 200 字符）",
+                "args": {
+                  "technique_id": "T1021.002"
+                },
+                "result": "{'id': 'T1021.002', 'name': 'Unknown', 'tactic': 'Unknown'}"
+              }
+            ],
+            "findings": [
+              "Auto-triage: verdict=needs_review, confidence=0.85, latency=2900ms",
+              "Auto-triage rationale: The alert indicates a high-risk SMB access to the ADMIN$ share by user 'demo.ops' following a memory-read event, which is suspicious. However, the user account name 'demo.ops' and the hostname 'DEMO-APP-12' strongly suggest this is a demonstration or test environment, and the provided context explicitly states that account authorization and remote code execution remain unverified. Without explicit evidence of malicious intent or a confirmed breach in a production environment, the alert cannot be definitively classified as malicious or benign.",
+              "Escalating to full pipeline — confidence 0.85 < threshold 0.85",
+              "Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)",
+              "Extracted 2 IOCs for enrichment: ['10.78.20.12', '198.51.100.42']",
+              "MITRE kill chain: {'Unknown': ['T1021.002: Unknown']}",
+              "Triage verdict: true_positive (confidence=0.94)",
+              "Triage phase complete — proceeding to enrichment",
+              "Enrichment complete: 2 IOCs enriched, none flagged as malicious",
+              "Threat actor attribution failed: Client error '401 Unauthorized' for url 'http://threatintel:8005/api/v1/actors/attribute'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401",
+              "Blast radius of the affected entities scores 4.30.",
+              "Graph context: host:DEMO-APP-12: 2 nodes (depth=2), blast_radius=4.30",
+              "Graph context: user:demo.ops: 2 nodes (depth=2), blast_radius=4.30",
+              "{\"id\": \"T1021.002\", \"name\": \"Unknown\", \"tactic\": \"Unknown\"}",
+              "Investigation depth: 7 distinct pivots across 6 reasoning steps (strategy: lateral-movement) — authentication_events, enrich_ioc, entity_timeline, fleet_ioc_hunt, lookup_technique, map_to_mitre, process_activity.",
+              "Coverage gap: the following data classes are not ingested, so this investigation could not check them — historical_execution, network_connections, persistence_mechanisms, process_tree. Treat them as unknown rather than clear.",
+              "Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM's contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.",
+              "Investigation hit its 6-step cap; the line of enquiry was not exhausted.",
+              "Attack stages observed: Unknown. This indicates a single-stage attack.",
+              "Investigation verdict: probable_incident (confidence=0.74)",
+              "Investigation complete. Total proposed actions: 0",
+              "Investigation stopped: token budget exhausted (33025 of 20000). Partial results, escalating to an analyst."
+            ],
+            "actions": [],
+            "calls": 7,
+            "tokens": 35168,
+            "report": "# Incident Report — ddd24cf9-f413-4de5-bea5-333f8c080187\n\n## Summary\n\n| Field | Value |\n|-------|-------|\n| Verdict | needs_review |\n| Confidence | 0.74 |\n| Status | running |\n| Topology | investigation_graph |\n\n## Triage Rationale\n\n- triage prior=0.94\n- enrichment ran but classified all IOCs benign — FP prior\n- (triage) provided alert risk_score=0.92 (source unverified)\n- (triage) high-severity keyword match in alert text\n- (triage) 2 IOC field(s) present\n\n## Findings\n\n- Auto-triage: verdict=needs_review, confidence=0.85, latency=2900ms\n- Auto-triage rationale: The alert indicates a high-risk SMB access to the ADMIN$ share by user &#x27;demo.ops&#x27; following a memory-read event, which is suspicious. However, the user account name &#x27;demo.ops&#x27; and the hostname &#x27;DEMO-APP-12&#x27; strongly suggest this is a demonstration or test environment, and the provided context explicitly states that account authorization and remote code execution remain unverified. Without explicit evidence of malicious intent or a confirmed breach in a production environment, the alert cannot be definitively classified as malicious or benign.\n- Escalating to full pipeline — confidence 0.85 &lt; threshold 0.85\n- Triage severity: high (heuristic risk_score=0.92; not a vendor measurement)\n- Extracted 2 IOCs for enrichment: [&#x27;10.78.20.12&#x27;, &#x27;198.51.100.42&#x27;]\n- MITRE kill chain: {&#x27;Unknown&#x27;: [&#x27;T1021.002: Unknown&#x27;]}\n- Triage verdict: true_positive (confidence=0.94)\n- Triage phase complete — proceeding to enrichment\n- Enrichment complete: 2 IOCs enriched, none flagged as malicious\n- Threat actor attribution failed: Client error &#x27;401 Unauthorized&#x27; for url &#x27;http://threatintel:8005/api/v1/actors/attribute&#x27; For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401\n- Blast radius of the affected entities scores 4.30.\n- Graph context: host:DEMO-APP-12: 2 nodes (depth=2), blast_radius=4.30\n- Graph context: user:demo.ops: 2 nodes (depth=2), blast_radius=4.30\n- {&quot;id&quot;: &quot;T1021.002&quot;, &quot;name&quot;: &quot;Unknown&quot;, &quot;tactic&quot;: &quot;Unknown&quot;}\n- Investigation depth: 7 distinct pivots across 6 reasoning steps (strategy: lateral-movement) — authentication_events, enrich_ioc, entity_timeline, fleet_ioc_hunt, lookup_technique, map_to_mitre, process_activity.\n- Coverage gap: the following data classes are not ingested, so this investigation could not check them — historical_execution, network_connections, persistence_mechanisms, process_tree. Treat them as unknown rather than clear.\n- Sources consulted beyond the AiSOC event lake: The customer has no SIEM connected to AiSOC, so nothing in this investigation searched their SIEM. Treat their SIEM&#x27;s contents as unknown. The customer has no EDR, identity provider or cloud audit connector that AiSOC can read, so this investigation could not consult any vendor directly.\n- Investigation hit its 6-step cap; the line of enquiry was not exhausted.\n- Attack stages observed: Unknown. This indicates a single-stage attack.\n- Investigation verdict: probable_incident (confidence=0.74)\n- Investigation complete. Total proposed actions: 0\n- Investigation stopped: token budget exhausted (33025 of 20000). Partial results, escalating to an analyst.\n\n## Attack-chain and graph context\n\n- Pre-fetched investigation context (ContextBundle):\n- &lt;UNTRUSTED_DATA source=&quot;attack_correlation_context&quot;&gt; Attack correlation context: candidate relationships and graph reachability are not confirmed attack causality or chronology. Scope=alert; case_id=None; alert_id=6b9b6217-fdd6-59a0-b02f-93267050cd5f; queried_at=2026-10-25T03:47:57.374835+00:00. Empty results apply only to the stated source/query scope. Missing, unavailable or unprojected data remains unknown, not proof of safety. This is a bounded summary; full results stay on this Run. Query scope and coverage: {&quot;projection_alert_limit&quot;: 50, &quot;truncated&quot;: false, &quot;case_ambiguous&quot;: false, &quot;seed_alert_id&quot;: &quot;6b9b6217-fdd6-59a0-b02f-93267050cd5f&quot;, &quot;semantics&quot;: &quot;candidate association, not verified causal attack chain&quot;} Projection preparation for this Run: success; owner=kafka_consumer; source=postgres_alert_projection; error=None; reason=source_alerts_projected. A missing preparation does not prove no graph exists. attack_chain: status=success; source=postgres; error=None. attack_path: status=not_linked; source=None; error=no_linked_case. alert_graph: status=success; source=neo4j; error=None. Chain seed=6b9b6217-fdd6-59a0-b02f-93267050cd5f; window=24h; anchor=seed_event_time_plus_minus_window; generated_at=2026-10-25T03:47:57.379769+00:00; candidates=1. Ranking scores express correlation, not maliciousness probability. Candidate alert_id=c929a0c7-69b5-5617-b830-a701e8bae72f; event_time=2026-10-25T03:31:35.661133+00:00; score=0.9096; shared_entities=[{&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;10.78.20.12&quot;}, {&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;198.51.100.42&quot;}, {&quot;kind&quot;: &quot;Endpoint&quot;, &quot;value&quot;: &quot;DEMO-APP-12&quot;}, {&quot;kind&quot;: &quot;Identity&quot;, &quot;value&quot;: &quot;demo.ops&quot;}]. Case path: nodes=0; edges=0. Case membership and technique associations alone do not establish an observed attack progression. Alert neighborhood: returned_nodes=5. Alert blast radius: reachable=8; score=4.3. This is alert-associated graph scope, not a Case attack path. &lt;/UNTRUSTED_DATA&gt;\n- - Context lookups were partial or unavailable: incident_context:alert:6b9b6217-fdd6-59a0-b02f-93267050cd5f:assets (BufferError), incident_context:alert:6b9b6217-fdd6-59a0-b02f-93267050cd5f:cloud (BufferError), incident_context:alert:6b9b6217-fdd6-59a0-b02f-93267050cd5f:business (BufferError), incident_context:alert:6b9b6217-fdd6-59a0-b02f-93267050cd5f:threat (BufferError). Missing evidence is unknown, not proof of no relationships, activity or risk.\n- - Entities resolved: 6 (domain, host, ip, user)\n- - Graph neighbourhood:\n- * host:DEMO-APP-12: 2 nodes (depth=2), blast_radius=4.30\n- * user:demo.ops: 2 nodes (depth=2), blast_radius=4.30\n- - Max blast-radius score: 4.30\n- - UEBA: 1 entities with baseline, max deviation=unknown (not supplied by source)\n- - Threat-intel matches: 4 (high-risk IOCs: none)\n- - Entity context:\n- Source alert 6b9b6217-fdd6-59a0-b02f-93267050cd5f:\n- - NOTE: context is partial; these dimensions could not be read: assets (BufferError), cloud (BufferError), business (BufferError), threat (BufferError)\n\n## MITRE ATT&CK Mappings\n\n- `T1021.002`\n\n_Generated by AiSOC router on 2026-10-25 03:48 UTC_\n"
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1021.002"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T04:01:40.938446+00:00",
+          "summary": "同账号发起SMB远程服务访问 [DEMO-APP-12] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1021.002. demo.ops on DEMO-APP-12 accessed ADMIN$ over SMB on DEMO-FILE-02 (10.77.20.22) three minutes after the memory-read event. Successful authentication is observed; remote code execution and account authorization remain unverified.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 85,
+        "raw": {
+          "id": "6b9b6217-fdd6-59a0-b02f-93267050cd5f",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "同账号发起SMB远程服务访问 [DEMO-APP-12]",
+          "description": "demo.ops on DEMO-APP-12 accessed ADMIN$ over SMB on DEMO-FILE-02 (10.77.20.22) three minutes after the memory-read event. Successful authentication is observed; remote code execution and account authorization remain unverified.",
+          "severity": "high",
+          "status": "triaged",
+          "event_time": "2026-10-25 03:33:35.661133+00:00",
+          "created_at": "2026-10-25 03:47:53.842658+00:00",
+          "updated_at": "2026-10-25 03:47:57.225366+00:00",
+          "resolved_at": null,
+          "source_event_ids": [
+            "f84881fd-a481-57ac-8e56-10e817b36148"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1021.002"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-APP-12"
+            },
+            {
+              "type": "user",
+              "value": "demo.ops"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.20.12"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.42"
+            }
+          ],
+          "raw_event": {
+            "full_log": "demo.ops on DEMO-APP-12 accessed ADMIN$ over SMB on DEMO-FILE-02 (10.77.20.22) three minutes after the memory-read event. Successful authentication is observed; remote code execution and account authorization remain unverified.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.85,
+          "disposition": "needs_review",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "f84881fd-a481-57ac-8e56-10e817b36148",
+          "incident_id": "ddd24cf9-f413-4de5-bea5-333f8c080187"
+        },
+        "responseRecommendations": []
+      }
+    },
+    {
+      "id": "4eb06dee-c5a0-5f08-ace7-08caa2952db5",
+      "persistedRecord": true,
+      "title": "归档进程向文档地址上传字节 [DEMO-DATA-13]",
+      "description": "archive-demo PID 6400 sent 12582912 bytes to 198.51.100.43:443 after creating finance-demo.tar. Transfer metadata is present; destination ownership and remote receipt are not verified. This is a synthetic demonstration, not a real breach.",
+      "severity": "高",
+      "status": "Resolved",
+      "investigation": "Completed",
+      "owner": "未分配",
+      "category": "执行",
+      "source": "showcase-security-sensor",
+      "entityIds": [
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-DATA-13",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.export",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.30.13",
+        "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.43"
+      ],
+      "tags": [],
+      "classification": "Not set",
+      "event_time": "2026-10-25T03:34:20.781813+00:00",
+      "first": "2026-10-25T03:34:20.781813+00:00",
+      "last": "2026-10-25T03:55:36.197672+00:00",
+      "incidentId": "8db5aafa-011a-47db-9beb-9b16a6f97a1d",
+      "caseId": null,
+      "comments": [],
+      "disposition": "false_positive",
+      "hostNames": [
+        "DEMO-DATA-13"
+      ],
+      "tactics": [
+        "Execution"
+      ],
+      "iocKeys": [
+        "ip:10.78.30.13",
+        "ip:198.51.100.43"
+      ],
+      "detailMaterial": {
+        "timelineVersion": 2,
+        "history": [
+          {
+            "time": "2026-10-25T03:34:20.781813+00:00",
+            "title": "告警发生",
+            "description": "归档进程向文档地址上传字节 [DEMO-DATA-13]"
+          },
+          {
+            "time": "2026-10-25T03:55:36.197672+00:00",
+            "title": "告警入库",
+            "description": "接收来自 showcase-security-sensor 的告警"
+          },
+          {
+            "time": "2026-10-25T03:55:36.477125+00:00",
+            "title": "自动分诊开始",
+            "description": "Processing claimed; model invocation is not established"
+          },
+          {
+            "time": "2026-10-25T03:55:39.097068+00:00",
+            "title": "自动分诊完成",
+            "description": "verdict=false_positive confidence=0.95"
+          },
+          {
+            "time": "2026-10-25T03:55:39.097068+00:00",
+            "title": "告警关闭",
+            "description": "false_positive"
+          }
+        ],
+        "runs": [
+          {
+            "id": "c216d2f9-093e-51f6-b8ce-363ef307b9d1",
+            "time": "2026-10-25T03:55:36.477125+00:00",
+            "status": "Completed",
+            "completion": "not_escalated",
+            "stop": "自动分诊已关闭告警，未升级调查。",
+            "steps": [
+              {
+                "name": "告警分诊",
+                "agent": "auto_triage:llm",
+                "status": "Completed",
+                "input": {
+                  "alert_id": "4eb06dee-c5a0-5f08-ace7-08caa2952db5"
+                },
+                "output": {
+                  "verdict": "false_positive",
+                  "confidence": 0.95,
+                  "rationale": "LLM auto-triage verdict: false_positive · LLM confidence: 0.95 · Rationale: The alert explicitly states in its description that it is a 'synthetic demonstration, not a real breach.' The activity involves a demo process ('archive-demo') transferring data to a demo IP address, which does not constitute malicious or unauthorized activity. Since the detection describes a benign, simulated event rather than a genuine threat, the rule has misfired on non-malicious data.",
+                  "auto_closed": true
+                }
+              }
+            ],
+            "tools": [],
+            "findings": [
+              "Auto-triage: verdict=false_positive, confidence=0.95, latency=2342ms",
+              "Auto-triage rationale: The alert explicitly states in its description that it is a 'synthetic demonstration, not a real breach.' The activity involves a demo process ('archive-demo') transferring data to a demo IP address, which does not constitute malicious or unauthorized activity. Since the detection describes a benign, simulated event rather than a genuine threat, the rule has misfired on non-malicious data.",
+              "Auto-closed as false_positive (confidence 0.95 >= threshold 0.85, env)"
+            ],
+            "actions": [],
+            "calls": 1,
+            "tokens": 2112,
+            "report": null
+          }
+        ],
+        "tenantName": "stingAISOC Production",
+        "techniques": [
+          "T1041"
+        ],
+        "explanation": {
+          "generatedAt": "2026-10-25T04:01:41.010042+00:00",
+          "summary": "归档进程向文档地址上传字节 [DEMO-DATA-13] fired at high severity from an upstream connector. MITRE ATT&CK coverage: T1041. archive-demo PID 6400 sent 12582912 bytes to 198.51.100.43:443 after creating finance-demo.tar. Transfer metadata is present; destination ownership and remote receipt are not verified. This is a synthetic demonstration, not a real breach.",
+          "suggestedActions": [
+            {
+              "title": "Correlate with the last 24 h of alerts",
+              "rationale": "Look for the same user, host, or IOC in adjacent detections to spot a multi-stage attack.",
+              "playbook_id": null,
+              "priority": "fyi"
+            },
+            {
+              "title": "Open a case and notify on-call",
+              "rationale": "Severity is high; promote to a tracked incident before further investigation.",
+              "playbook_id": null,
+              "priority": "soon"
+            }
+          ],
+          "llmUsed": false
+        },
+        "confidence": {
+          "score": 80
+        },
+        "risk": 95,
+        "raw": {
+          "id": "4eb06dee-c5a0-5f08-ace7-08caa2952db5",
+          "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+          "title": "归档进程向文档地址上传字节 [DEMO-DATA-13]",
+          "description": "archive-demo PID 6400 sent 12582912 bytes to 198.51.100.43:443 after creating finance-demo.tar. Transfer metadata is present; destination ownership and remote receipt are not verified. This is a synthetic demonstration, not a real breach.",
+          "severity": "high",
+          "status": "resolved",
+          "event_time": "2026-10-25 03:34:20.781813+00:00",
+          "created_at": "2026-10-25 03:55:36.197672+00:00",
+          "updated_at": "2026-10-25 03:55:39.097068+00:00",
+          "resolved_at": "2026-10-25 03:55:39.097068+00:00",
+          "source_event_ids": [
+            "990457e1-b97e-5a6b-9b01-e2eb6747ade4"
+          ],
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1041"
+          ],
+          "entities": [
+            {
+              "type": "host",
+              "value": "DEMO-DATA-13"
+            },
+            {
+              "type": "user",
+              "value": "demo.export"
+            }
+          ],
+          "iocs": [
+            {
+              "type": "ip",
+              "value": "10.78.30.13"
+            },
+            {
+              "type": "ip",
+              "value": "198.51.100.43"
+            }
+          ],
+          "raw_event": {
+            "full_log": "archive-demo PID 6400 sent 12582912 bytes to 198.51.100.43:443 after creating finance-demo.tar. Transfer metadata is present; destination ownership and remote receipt are not verified. This is a synthetic demonstration, not a real breach.",
+            "approval_status": "not_supplied"
+          },
+          "confidence": 80,
+          "ai_score": 0.95,
+          "disposition": "false_positive",
+          "case_id": null,
+          "assigned_to_id": null,
+          "source": "showcase-security-sensor",
+          "source_ref": "990457e1-b97e-5a6b-9b01-e2eb6747ade4",
+          "incident_id": "8db5aafa-011a-47db-9beb-9b16a6f97a1d"
+        },
+        "responseRecommendations": []
+      }
+    }
+  ],
+  "assets": [
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-FIN-11",
+      "type": "device",
+      "name": "DEMO-FIN-11",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.finance",
+      "type": "user",
+      "name": "demo.finance",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.10.11",
+      "type": "ip",
+      "name": "10.78.10.11",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.41",
+      "type": "ip",
+      "name": "198.51.100.41",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-APP-12",
+      "type": "device",
+      "name": "DEMO-APP-12",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.ops",
+      "type": "user",
+      "name": "demo.ops",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.20.12",
+      "type": "ip",
+      "name": "10.78.20.12",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.42",
+      "type": "ip",
+      "name": "198.51.100.42",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:device:DEMO-DATA-13",
+      "type": "device",
+      "name": "DEMO-DATA-13",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:user:demo.export",
+      "type": "user",
+      "name": "demo.export",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:10.78.30.13",
+      "type": "ip",
+      "name": "10.78.30.13",
+      "tags": [],
+      "inventory": false
+    },
+    {
+      "id": "raw:f6a5c700-69b8-44fc-8238-609362fb1a9f:ip:198.51.100.43",
+      "type": "ip",
+      "name": "198.51.100.43",
+      "tags": [],
+      "inventory": false
+    }
+  ]
+}

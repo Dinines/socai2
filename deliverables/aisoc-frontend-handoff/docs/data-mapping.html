@@ -1,0 +1,189 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>告警页面与数据库字段</title><style>body{font:16px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif;color:#242424;max-width:1120px;margin:40px auto;padding:0 24px 64px;background:#fff}h1{font-size:30px}h2{margin-top:38px;border-bottom:1px solid #e1e5eb;padding-bottom:8px}a{color:#0078d4;text-decoration:none}a:hover{text-decoration:underline}table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow:auto}th,td{padding:12px;border:1px solid #e1e5eb;text-align:left;vertical-align:top}th{background:#f3f6fa}pre{background:#f3f6fa;padding:16px;overflow:auto}code{font-size:.9em;overflow-wrap:anywhere}blockquote{border-left:4px solid #0078d4;margin:20px 0;padding:4px 18px;background:#eff6fc}@media(max-width:700px){body{margin-top:20px;padding:0 16px 32px}h1{font-size:25px}}</style></head><body><main><h1 id="_1">告警页面与数据库字段</h1>
+<p><a href="../guide.html">返回导航</a> · <a href="alert-ui-data-contract.html">完整讨论参考</a> · <a href="../data/README.html">数据文件说明</a></p>
+<p>本页整理截至 2026-10-25 已确认的对接口径。数据库为 21 的 PostgreSQL <code>aisoc</code>，schema <code>public</code>，以 socai2 当前已落地流程为准。下面的字段是后台取数依据；本交接包运行时只读本地 JS 数据。事件与 Case 页的后台字段不在本次对接范围。</p>
+<p><a id="list"></a></p>
+<h2 id="_2">告警列表九列</h2>
+<table>
+<thead>
+<tr>
+<th>顺序 / 页面元素</th>
+<th>数据库表与字段</th>
+<th>展示含义 / 转换</th>
+<th>当前待补</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 告警名称</td>
+<td><code>public.alerts.title</code></td>
+<td>原告警标题</td>
+<td>已有</td>
+</tr>
+<tr>
+<td>2 严重程度</td>
+<td><code>public.alerts.severity</code></td>
+<td>Critical / High → 高；Medium → 中；Low / Inform（含 info、informational）→ 低</td>
+<td>已有；仅此列与告警时间可排序</td>
+</tr>
+<tr>
+<td>3 告警时间</td>
+<td><code>public.alerts.event_time</code></td>
+<td>发生时间；北京时间展示、原始精度排序；不能拿 created_at 代替</td>
+<td>已有</td>
+</tr>
+<tr>
+<td>4 资产标签</td>
+<td><code>public.alert_asset_correlations</code> 关联 <code>public.assets.tags</code></td>
+<td>关联资产的标签，不能使用 alerts.tags；具体资产关联由后端处理</td>
+<td>本批 6 条均无资产关联，留空</td>
+</tr>
+<tr>
+<td>5 处理状态</td>
+<td><code>public.alerts.status</code> + 已实际启动调查的记录</td>
+<td>见下方状态映射；负责人和调查执行状态是不同维度</td>
+<td>后端需统一映射与调查启动依据</td>
+</tr>
+<tr>
+<td>6 类别</td>
+<td><code>public.alerts.mitre_tactics</code></td>
+<td>展示战术标签；不取 alerts.category 或技术编号冒充战术</td>
+<td>已有；本批落库全部为 Execution，照实展示</td>
+</tr>
+<tr>
+<td>7 检测源</td>
+<td><code>public.alerts.enrichment_data.socai2_fusion.identity.source</code></td>
+<td>采集送入告警的来源 / 厂商标识；alerts 没有独立 source 列</td>
+<td>本批是 showcase-security-sensor；厂商友好名称映射后续补</td>
+</tr>
+<tr>
+<td>8 受影响资产</td>
+<td><code>public.alert_asset_correlations.asset_id → public.assets.id/name</code>；告警 <code>entities / affected_hosts / affected_users</code></td>
+<td>有库存关系显示资产名字；也可以显示告警中的主机 / 账户</td>
+<td>本批只有原始实体，没有库存 ID；不得伪造资产详情链接</td>
+</tr>
+<tr>
+<td>9 负责人</td>
+<td><code>public.alerts.assigned_to_id → public.users.id</code></td>
+<td>分配给哪个用户；同租户读取用户名 / 显示名</td>
+<td>本批全空；后台后续管理分配，留“未分配”</td>
+</tr>
+</tbody>
+</table>
+<p>所有关联均需约束同一 tenant_id。页面数字和 JSON 投影不是新增数据库列。</p>
+<h3 id="_3">处理状态的确认口径</h3>
+<table>
+<thead>
+<tr>
+<th>原始状态 / 事实</th>
+<th>页面分组</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>new / triaging / triaged，尚未启动调查</td>
+<td>新建 / 待处理（当前 UI“新建”）</td>
+<td>自动分诊不代表人工开始处理</td>
+</tr>
+<tr>
+<td>in_progress / investigating，或已实际启动调查</td>
+<td>进行中</td>
+<td>启动调查也计入进行中；仅点击按钮但启动失败不能计入</td>
+</tr>
+<tr>
+<td>resolved / closed</td>
+<td>完成（当前 UI“已解决”）</td>
+<td>告警已关闭；优先于历史调查记录</td>
+</tr>
+<tr>
+<td>仅认领 / 分配负责人</td>
+<td>原处理状态不变</td>
+<td>分配不自动进入进行中</td>
+</tr>
+<tr>
+<td>Run completed，或 Graph partial</td>
+<td>不据此关闭告警</td>
+<td>本次执行结束不等于告警处置完成</td>
+</tr>
+</tbody>
+</table>
+<p>本批导出以同告警 Run 的 <code>investigation_events.kind=graph_step</code> 证明已进入调查；5 条原始 status=triaged 因此显示进行中，1 条 resolved 显示已解决。这是本批已存在的证据，不要求后台永久仅使用 graph_step；人工和其他调查入口也应按实际启动记录统一处理。</p>
+<h2 id="_4">列表右侧抽屉</h2>
+<p>抽屉只保留概览。标题、等级、状态、战术、负责人、来源、告警时间沿用上表。“发生了什么”使用 <code>alerts.description</code>；受影响实体沿用实体与库存关联。所属事件取 <code>alerts.enrichment_data.socai2_fusion.incident_id</code>；业务 Case 取 <code>alerts.case_id</code>，再读取对应 Case 名称。分类已取消。</p>
+<p><a id="detail"></a></p>
+<h2 id="_5">告警完整详情</h2>
+<table>
+<thead>
+<tr>
+<th>页面区域</th>
+<th>数据来源</th>
+<th>使用方式与限制</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>名称、等级、状态、属性</td>
+<td><code>public.alerts</code> 对应上表字段</td>
+<td>与列表共用语义</td>
+</tr>
+<tr>
+<td>检测置信度</td>
+<td><code>public.alerts.confidence</code></td>
+<td>Fusion 的 0–100 分，不是 AI 分诊评分</td>
+</tr>
+<tr>
+<td>风险评分</td>
+<td><code>public.alerts.ai_score × 100</code></td>
+<td>当前按 AiSOC 分诊评分展示；不能改取上游 risk_score 或 Graph confidence</td>
+</tr>
+<tr>
+<td>发生了什么</td>
+<td><code>POST /api/v1/alerts/{alert_id}/explain</code> 返回</td>
+<td>选用 summary、suggested_actions（title / rationale）、generated_at，按返回结构选用 contributing_events。建议动作放在同一区域；没有建议则留空。无固定“待核实事项”字段，不从自然语言强行拆字段</td>
+</tr>
+<tr>
+<td>实体、IOC、MITRE</td>
+<td><code>alerts.entities / iocs / affected_hosts / affected_users / mitre_tactics / mitre_techniques</code> 与资产关联</td>
+<td>原始实体不等于资产台账，不制造库存标签</td>
+</tr>
+<tr>
+<td>所属事件</td>
+<td><code>alerts.enrichment_data.socai2_fusion.incident_id</code></td>
+<td>每条告警应属于事件，不与 Case / Run ID 混用</td>
+</tr>
+<tr>
+<td>Case 与调查</td>
+<td>业务 <code>alerts.case_id</code> 及 Case 成员关系</td>
+<td>描述创建 / 关联 / 发起调查功能；后台具体写回和调查范围后续细化。<code>investigation_runs.case_id</code> 在本批为告警拥有者 ID，不能拿它当业务 Case</td>
+</tr>
+<tr>
+<td>判定与反馈</td>
+<td>现有 <code>alerts.disposition / ai_score</code> 可供初始读取</td>
+<td>保留四类交互；误报或符合预期的正常 / 授权行为应关闭，其他不变。反馈写回与状态同步尚待实现，人工直接关闭另有流程待定</td>
+</tr>
+<tr>
+<td>相关告警</td>
+<td>后端按同主机取发生时间最近 7 条</td>
+<td>需要等级、时间和标题；当前仅查询已加载数据</td>
+</tr>
+<tr>
+<td>相似历史复核</td>
+<td>同主机同战术最近 5 条；同一 IP / 文件哈希 IOC 最近 5 条</td>
+<td>只规定功能，具体检索规则由后端实现</td>
+</tr>
+<tr>
+<td>原始数据</td>
+<td><code>alerts</code> 白名单字段、raw_event</td>
+<td>当前包可查保存的原始载荷；不是完整库备份</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6">时间线与响应</h3>
+<p>时间线依据 <code>alerts.event_time / created_at / assigned_at / resolved_at</code> 和 <code>public.investigation_events.ts / kind / summary / payload</code>，最新在顶部。没有检测、取证或人工操作记录时，不按固定偏移时间造事件。</p>
+<p>自动 Run 关联：同租户 <code>public.investigation_runs.raw_alert-&gt;&gt;'id' = alerts.id::text</code>。读取 <code>investigation_runs.status / started_at / completed_at / error / total_tokens</code>，再按 run_id 关联 events、artifacts、aisoc_run_costs。</p>
+<p>响应建议读取 <code>public.investigation_artifacts.kind=graph_result</code> 的 content JSON 中 proposed_actions；审批要求、目标、建议和实际执行分别表达，不能把建议写成已隔离。自动处理过程读取 events、graph_result、report_md 工件。<code>graph_result</code> 事件 payload.completion 表示完整性；工具只有 result_preview 时按摘要展示，不能宣称完整返回；本批 graph_step 只有 node。成本 unpriced 是未定价，不是费用 0。</p>
+<h3 id="_7">一条当前实值</h3>
+<p><a href="../index.html#/alerts/4c71eec2-77da-5b81-b68a-72801d55ea24/overview">Office 告警</a>：title 为 Office启动隐藏PowerShell [DEMO-FIN-11]，severity=high，event_time=<code>2026-10-25T03:30:16.539577+00:00</code>（北京时间 11:30:16）。原 status=triaged，已有调查步骤，显示进行中。Fusion confidence=80；ai_score=0.85，风险评分85。主机 DEMO-FIN-11、账户 demo.finance；无库存关联、负责人、业务 Case。</p>
+<h2 id="_8">有数据与待补齐的边界</h2>
+<p>6 条告警均有真实处理数据及 Incident ID，无业务 Case / 资产关联 / 负责人。5 条 Graph partial；第6条分诊关闭、未升级。Explain 本批均为 HTTP200 的模板兜底（llm_used=false），不是模型生成结论。接口调用属于之前测试记录，本交接包不会再请求。</p>
+<p>前端写回、登录身份、分配、资产关联 / 标签、厂商名称映射、Case 操作、反馈关闭、完整人工时间线及响应审批仍需后台补齐。页面占位或演示操作不构成已完成接口的证明。具体已有 JSON 与查询见 <a href="../data/README.html">数据说明</a>；完整历史讨论见 <a href="alert-ui-data-contract.html">参考文档</a>。</p></main></body></html>

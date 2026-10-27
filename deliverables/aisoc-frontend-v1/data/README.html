@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>展示数据与取数参考</title><style>body{font:16px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif;color:#242424;max-width:1120px;margin:40px auto;padding:0 24px 64px;background:#fff}h1{font-size:30px}h2{margin-top:38px;border-bottom:1px solid #e1e5eb;padding-bottom:8px}a{color:#0078d4;text-decoration:none}a:hover{text-decoration:underline}table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow:auto}th,td{padding:12px;border:1px solid #e1e5eb;text-align:left;vertical-align:top}th{background:#f3f6fa}pre{background:#f3f6fa;padding:16px;overflow:auto}code{font-size:.9em;overflow-wrap:anywhere}blockquote{border-left:4px solid #0078d4;margin:20px 0;padding:4px 18px;background:#eff6fc}@media(max-width:700px){body{margin-top:20px;padding:0 16px 32px}h1{font-size:25px}}</style></head><body><main><h1 id="_1">展示数据与取数参考</h1>
+<p><a href="../guide.html">返回导航</a> · <a href="../docs/data-mapping.html">字段对照</a></p>
+<p>页面运行只加载根目录 data.js 和 replayed-alerts.js。这里的 JSON 是方便前后端阅读、查字段的副本，修改 JSON 不会改变页面。</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>内容 / 用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="reference-data.json">reference-data.json</a></td>
+<td>原设计数据：52 条告警、12 个事件、12 个 Case 及实体等</td>
+</tr>
+<tr>
+<td><a href="replayed-alerts.json">replayed-alerts.json</a></td>
+<td>6 条实际测试处理结果的完整前端投影及其实体，和 replayed-alerts.js 中数据一致</td>
+</tr>
+<tr>
+<td><a href="alert-database-sample.json">alert-database-sample.json</a></td>
+<td>这6条 public.alerts 的原始字段白名单及提取的 Fusion 来源 / 事件关系；保留字段名与空值，不是整库备份</td>
+</tr>
+<tr>
+<td><a href="explain-responses.json">explain-responses.json</a></td>
+<td>当时6次 Explain 请求的返回，含 HTTP 状态与告警 ID；本批 llm_used=false</td>
+</tr>
+<tr>
+<td><a href="replay-comparison.json">replay-comparison.json</a></td>
+<td>20 / 21 的分诊、评分、状态、调查完整性、最终结论对照</td>
+</tr>
+<tr>
+<td><a href="alert-read-queries.sql">alert-read-queries.sql</a></td>
+<td>使用本批6个告警 ID 的只读查询示例，需要后台已有授权的数据库连接；浏览页面无需执行</td>
+</tr>
+</tbody>
+</table>
+<p>数据日期为 2026-10-25。6条输入来自20测试场景，在21从Kafka实际处理，不是真实攻击；原52条是设计样例，二者不合并当作线上业务数据。原库 is_synthetic 标识存在历史缺口，不能据此把测试输入认定为真实攻击。</p>
+<p>6条实际处理记录：</p>
+<table>
+<thead>
+<tr>
+<th>告警</th>
+<th>ID</th>
+<th>前端状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Office启动隐藏PowerShell</td>
+<td>4c71eec2-77da-5b81-b68a-72801d55ea24</td>
+<td>进行中</td>
+</tr>
+<tr>
+<td>脚本进程建立HTTPS连接</td>
+<td>f7af404b-26a6-5d15-bd6c-3a872bdaf451</td>
+<td>进行中</td>
+</tr>
+<tr>
+<td>进程读取LSASS内存</td>
+<td>c929a0c7-69b5-5617-b830-a701e8bae72f</td>
+<td>进行中</td>
+</tr>
+<tr>
+<td>同账号SMB远程服务访问</td>
+<td>6b9b6217-fdd6-59a0-b02f-93267050cd5f</td>
+<td>进行中</td>
+</tr>
+<tr>
+<td>服务账号读取并生成归档</td>
+<td>6373220a-2f25-541e-ab89-9c3a2e611140</td>
+<td>进行中</td>
+</tr>
+<tr>
+<td>归档进程上传字节</td>
+<td>4eb06dee-c5a0-5f08-ace7-08caa2952db5</td>
+<td>已解决</td>
+</tr>
+</tbody>
+</table>
+<p>20/21分诊分类4/6相同；5条进入Graph的记录均为partial，最终结论20为confirmed_incident、21为needs_review，不能宣称结论完全一致或调查质量通过。</p>
+<p>本批实际数据缺少资产库存关联和负责人，所以资产标签为空、负责人未分配；原始实体用于展示但不伪造资产台账。事件、Case 页面仍沿用设计样例，实际告警的事件 UUID 不自动打开样例详情。</p>
+<p>包内不包含账号口令、API key、完整模型提示词、私有数据库备份或清理命令。只读SQL不是接收方必须运行的步骤。本轮仅整理已有本地文件，没有重新访问或清理20/21。</p></main></body></html>

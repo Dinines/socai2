@@ -1,0 +1,74 @@
+'use strict';
+window.createReferenceWorkspace = function(ctx){
+  const {store,ui,esc,I,btn,badge,date,severity,state,empty,getAlert,getAsset,scopeAlerts,currentRoute,currentCase,render,save,toast,logActivity}=ctx;
+  const W=window.referenceWorkspaces;
+  const names={device:'设备',user:'用户',mailbox:'邮箱',app:'应用',cloud:'云资源',ip:'IP 地址',file:'文件',robot:'AI 代理'};
+  function resetScope(){
+    const r=currentRoute();if(!['incidents','cases'].includes(r.page)||!r.id)return;
+    const key=r.page+':'+r.id;if(ui.graph.scope===key)return;
+    if(ui.playing){clearInterval(ui.playing);ui.playing=null;}
+    Object.assign(ui.graph,{scope:key,selected:null,alert:null,edge:null,index:99,zoom:1,blast:false,path:null,associated:false,grouped:true,severity:'',status:'',source:'',hidden:new Set()});
+  }
+  function attack(){
+    const g=ui.graph,members=scopeAlerts();let model=W.graph(store,members,g);
+    if(g.alert&&!model.visible.some(a=>a.id===g.alert))g.alert=null;
+    if(!model.nodes.some(n=>n.id===g.selected||n.members.includes(g.selected))){g.selected=model.nodes[0]?.id||null;g.blast=false;g.path=null;model=W.graph(store,members,g);}
+    if(g.edge&&!model.edges.some(e=>e.id===g.edge))g.edge=null;
+    const focused=model.visible.find(a=>a.id===g.alert),selected=model.nodes.find(n=>n.id===g.selected||n.members.includes(g.selected));
+    const edge=model.edges.find(e=>e.id===g.edge),specific=getAsset(g.selected);
+    const coords=[[320,205],[130,90],[500,90],[120,310],[510,310],[320,65],[320,350],[70,200],[570,200],[480,385]];
+    const grid=g.layout==='grid'||model.nodes.length>10;
+    const nodes=model.nodes.map((n,i)=>({...n,x:grid?100+i%3*220:coords[i][0],y:grid?65+Math.floor(i/3)*110:coords[i][1]}));
+    const nodeMap=new Map(nodes.map(n=>[n.id,n]));
+    const nodeLink=id=>`<button class="context-item" data-action="ws-node" data-id="${esc(id)}">${esc(getAsset(id)?.name||id)}<small>${esc(names[getAsset(id)?.type]||'实体')}</small></button>`;
+    let context='';
+    if(edge){context=`<h3>关系详情</h3>${badge(edge.kind==='potential'?'潜在路径':'关联关系',edge.kind==='potential'?'amber':'blue')}<h4>起点</h4>${nodeLink(edge.from)}<h4>关系</h4><p>${esc(edge.label)}</p><h4>终点</h4>${nodeLink(edge.to)}${edge.kind==='potential'?`<div class="notice warning">${esc(edge.description)}</div>`:`<h4>关联依据</h4>${edge.alertIds.map(id=>`<button class="context-item" data-action="ws-alert" data-id="${id}">${esc(getAlert(id)?.title)}</button>`).join('')}`}`;}
+    else if(focused){context=`<h3>${esc(focused.title)}</h3><div class="row wrap">${severity(focused.severity)}${state(focused.status)}</div><h4>告警时间</h4>${date(focused.first)}<h4>检测来源</h4>${esc(focused.source)}<h4>发生了什么</h4><p>${esc(focused.description)}</p><h4>相关实体</h4>${focused.entityIds.map(nodeLink).join('')}${btn('查看告警详情','alert',focused.id,'small','external')}`;}
+    else if(selected){
+      const group=selected.members.length>1&&!specific;
+      const title=group?`${selected.members.length} 个${names[selected.type]}`:(specific?.name||selected.name);
+      const ids=group?selected.members:[specific?.id||selected.id];
+      const related=model.visible.filter(a=>a.entityIds.some(id=>ids.includes(id)));
+      context=`<h3>${esc(title)}</h3>${badge(names[selected.type],'blue')}${selected.critical?badge('关键资产','purple'):''}${group?`<h4>分组成员</h4>${selected.members.map(nodeLink).join('')}`:`<h4>风险等级</h4>${severity(specific?.risk||selected.risk)}<h4>对象资料</h4><p>${esc(specific?.domain||specific?.department||specific?.provider||specific?.location||'—')}</p>`}`;
+      if(!group){context+=`<h4>潜在影响</h4>${model.paths.length?btn(g.blast?'返回事件图':'查看影响范围','ws-blast','','small','graph'):'<p class="muted">未找到潜在路径</p>'}`;}
+      if(g.blast){context+=`<div class="notice warning">潜在路径不代表已发生的攻击或已确认影响。</div>${model.paths.map(p=>`<button class="context-item" data-action="ws-path" data-id="${p.id}">目标：${esc(getAsset(p.target)?.name)}<small>${p.nodes.length-1} 段关系</small></button>`).join('')}${model.selectedPath?`<h4>当前路径</h4><p>${model.selectedPath.nodes.map(id=>esc(getAsset(id)?.name)).join(' → ')}</p>`:''}`;}
+      context+=`<h4>当前视图中的相关告警 (${related.length})</h4>${related.map(a=>`<button class="context-item" data-action="ws-alert" data-id="${a.id}">${esc(a.title)}<small>${a.severity} · ${date(a.first,true)}</small></button>`).join('')||'<p class="muted">当前视图无关联告警。</p>'}${!group?btn('查看实体详情','entity',ids[0],'small','external'):''}`;
+    }else context=empty('没有可显示的实体','调整告警筛选或实体类型');
+    const edges=model.edges.filter(e=>e.source!==e.target).map(e=>{
+      const a=nodeMap.get(e.source),b=nodeMap.get(e.target);if(!a||!b)return '';
+      const offset=e.kind==='potential'?25:-18,d=`M${a.x},${a.y} Q${(a.x+b.x)/2},${(a.y+b.y)/2+offset} ${b.x},${b.y}`;
+      return `<g data-action="ws-edge" data-id="${e.id}" role="button" tabindex="0" aria-label="关系：${esc(e.label)}"><title>${esc(e.label)}</title><path d="${d}" class="workspace-graph-hit"/><path d="${d}" class="workspace-graph-edge ${e.kind==='potential'?'potential':''} ${g.edge===e.id?'selected':''}"/></g>`;
+    }).join('');
+    const filteredTypes=[...new Set(model.alerts.flatMap(a=>a.entityIds).map(id=>getAsset(id)?.type).filter(Boolean))];
+    return `<div class="workspace-scope"><span>关联范围</span><select aria-label="图谱关联范围" data-ws-scope><option value="this" ${!g.associated?'selected':''}>仅此${currentRoute().page==='cases'?'Case':'事件'}</option><option value="associated" ${g.associated?'selected':''}>所有关联事件</option></select><span>${g.associated?`包含 ${model.associated.length} 个关联事件`:`${members.length} 条成员告警`}</span><span class="spacer"></span><span>显示 ${model.alerts.length} 条告警 · ${model.nodes.reduce((n,a)=>n+a.members.length,0)} 个实体</span></div>
+      <div class="graph-filter-row"><span class="muted">筛选：</span>${[['severity','严重程度',['高','中','低']],['status','状态',['New','In progress','Resolved']],['source','服务来源',[...new Set(model.alerts.concat(members).map(a=>a.source))]]].map(([key,label,values])=>`<label class="filter-chip">${label}<select data-graph-filter="${key}" aria-label="图谱${label}"><option value="">全部</option>${values.map(v=>`<option value="${esc(v)}" ${g[key]===v?'selected':''}>${esc(({New:'新建','In progress':'进行中',Resolved:'已解决'})[v]||v)}</option>`).join('')}</select></label>`).join('')}${btn('重置','ws-reset','','quiet small')}</div>
+      <div class="attack-workspace workspace-attack"><aside class="attack-left"><div class="attack-left-heading">告警与检测 (${model.alerts.length})</div><div class="attack-alerts">${model.alerts.map((a,i)=>`<button class="attack-alert ${g.alert===a.id?'selected':''}" data-action="ws-alert" data-id="${a.id}"><span class="time">${date(a.first,true)}${i>(g.index??99)?' · 待回放':''}</span><span class="name">${esc(a.title)}</span><span class="row asset">${severity(a.severity)}<span class="spacer"></span>${esc(({New:'新建','In progress':'进行中',Resolved:'已解决'})[a.status]||a.status)}</span>${g.associated?`<small>事件 ${esc(a.incidentId)}</small>`:''}</button>`).join('')||empty('没有告警','调整上方筛选')}</div></aside>
+      <div class="graph-main"><div class="graph-toolbar"><strong>${g.blast?'潜在影响路径':'事件关系图'}</strong><span class="spacer"></span><select data-graph-layout aria-label="图谱布局"><option value="spread" ${g.layout==='spread'?'selected':''}>自动布局</option><option value="grid" ${g.layout==='grid'?'selected':''}>网格布局</option></select><label class="row"><input type="checkbox" data-graph-grouped ${g.grouped?'checked':''} ${g.blast?'disabled':''}>相似节点分组</label></div><div class="row wrap" style="padding:8px">${filteredTypes.map(t=>`<button class="type-toggle ${!g.hidden.has(t)?'active':''}" data-action="graph-type" data-id="${t}">${I(t,12)}${names[t]}</button>`).join('')}</div>
+      <div class="graph-canvas">${nodes.length?`<svg class="graph-svg" viewBox="0 0 650 ${Math.max(430,Math.ceil(nodes.length/3)*110+50)}" aria-label="事件实体关系图"><g transform="translate(${325*(1-g.zoom)},${215*(1-g.zoom)}) scale(${g.zoom})">${edges}${nodes.map(n=>`<g class="graph-node ${n.id===selected?.id?'selected':''} ${focused&&!n.members.some(id=>focused.entityIds.includes(id))?'workspace-node-muted':''}" transform="translate(${n.x} ${n.y})" data-action="ws-node" data-id="${n.id}" role="button" tabindex="0" aria-label="查看 ${esc(n.members.length>1?names[n.type]+'分组':n.name)}"><title>${esc(n.members.length>1?n.members.map(id=>getAsset(id)?.name).join('、'):n.name)}</title><circle class="halo" r="27"/><circle class="base" r="23"/><g transform="translate(-11 -11)">${I(n.type,22)}</g>${n.critical?'<circle cx="18" cy="-18" r="6" fill="#bd942b"/>':''}<text y="43">${esc(n.members.length>1?n.members.length+' 个'+names[n.type]:n.name.length>23?n.name.slice(0,21)+'…':n.name)}</text></g>`).join('')}</g></svg>`:empty('没有可显示的实体','调整筛选或实体类型')}<div class="graph-controls">${btn('+','zoom-in','','small')}${btn('−','zoom-out','','small')}${btn('重置视角','zoom-reset','','small')}</div></div>
+      <div class="graph-legend"><span><i></i>关联关系</span><span style="color:#a97916">┄ 潜在路径</span><span>● 关键资产</span></div><div class="workspace-relations" aria-label="关系列表">${model.edges.map(e=>`<button data-action="ws-edge" data-id="${e.id}" class="${g.edge===e.id?'selected':''}">${esc(e.label)}</button>`).join('')||'<span class="muted">当前范围没有已记录的连接关系</span>'}</div><div class="graph-playback">${btn(ui.playing?'暂停':'播放','play','','small')}<input id="playback" type="range" min="0" max="${Math.max(0,model.alerts.length-1)}" value="${Math.min(g.index,Math.max(0,model.alerts.length-1))}" data-playback aria-label="攻击故事时间进度"><span>${model.visible.length} / ${model.alerts.length}</span></div></div><aside class="attack-right"><div class="workspace-context">${context}</div></aside></div>`;
+  }
+  function investigations(){
+    const records=W.investigationRecords(scopeAlerts());
+    return `<div class="section-title"><div><h2>调查</h2><p class="section-subtitle">查看关联告警的调查结果与处置进度</p></div></div>${records.length?`<div class="workspace-investigations">${records.map(r=>`<article class="card workspace-investigation"><div class="row between">${badge(r.completion,r.completion==='部分完成'?'amber':'green')}<small>${r.id}</small></div><h3>${esc(r.title)}</h3><p class="muted">${esc(r.findings)}</p><div class="row wrap" style="margin-top:12px">${badge('执行已结束')}${badge('处置：'+r.remediation,'blue')}</div><div class="workspace-material">关联告警${r.alertIds.filter(id=>scopeAlerts().some(a=>a.id===id)).map(id=>`<button data-action="alert" data-id="${id}">${esc(getAlert(id)?.title)}</button>`).join('')}</div>${btn('查看调查','investigation',r.id,'small','chevron')}</article>`).join('')}</div>`:`<div class="card">${empty('没有关联调查记录','已有告警和证据可在对应页签中查看。')}</div>`}`;
+  }
+  function investigationDetail(id){const record=W.investigationRecords(scopeAlerts()).find(r=>r.id===id);if(!record)return {title:'调查',body:empty('记录不在当前范围','请返回调查列表')};return {title:record.title,body:`<div class="row wrap">${badge(record.completion,record.completion==='部分完成'?'amber':'green')}${badge('处置：'+record.remediation,'blue')}</div><div class="detail-summary"><h3>调查发现</h3><p>${esc(record.findings)}</p></div>${record.steps.map(([title,description])=>`<div class="detail-summary"><h3>${esc(title)}</h3><p>${esc(description)}</p></div>`).join('')}`};}
+  function tasks(){
+    const c=currentCase(),rows=c.tasks||[];
+    return `<div class="section-title"><div><h2>任务</h2><p class="section-subtitle">明确要做的工作、负责人、期限与处理进度</p></div>${badge(`${rows.filter(t=>t.status==='Completed').length} / ${rows.length} 已完成`,'blue')}</div><div class="workspace-tasks">${rows.map(t=>`<article class="workspace-task"><div><strong>${esc(t.title)}</strong><small>${esc(t.owner)} · ${t.due?'截止 '+esc(t.due.replace('T',' ')):'未设置期限'}</small></div><select aria-label="任务状态：${esc(t.title)}" data-ws-task="${t.id}">${[['New','未开始'],['In progress','进行中'],['Completed','已完成']].map(([v,n])=>`<option value="${v}" ${t.status===v?'selected':''}>${n}</option>`).join('')}</select><span>${t.completedAt?date(t.completedAt,true):'—'}</span></article>`).join('')||`<div class="card">${empty('暂无任务','添加需要跟进的工作')}</div>`}</div><form id="workspace-task-form" class="card workspace-task-form"><label>任务名称<input name="title" maxlength="180" required placeholder="输入需要跟进的事项"></label><label>负责人<select name="owner">${store.people.map(p=>`<option>${esc(p)}</option>`).join('')}</select></label><label>截止时间<input type="datetime-local" name="due"></label><button type="submit" class="button primary">添加任务</button></form>`;
+  }
+  function manageBody(c,selectField){return `<form id="manage-form"><div class="form-field"><label for="ws-title">名称</label><input id="ws-title" name="title" maxlength="180" value="${esc(c.title)}" required></div>${selectField('严重程度','severity',['高','中','低'],c.severity)}${selectField('状态','status',[['New','新建'],['In progress','进行中'],['Resolved','已解决']],c.status)}${selectField('负责人','owner',store.people,c.owner)}${selectField('分类','classification',[['Not set','未设置'],['True positive','真实威胁'],['Informational','信息性 / 预期活动'],['False positive','误报']],c.classification||'Not set')}<div class="form-field"><label for="ws-tags">标签</label><input id="ws-tags" name="tags" maxlength="200" value="${esc((c.tags||[]).join(', '))}"></div><div class="form-field"><label for="ws-due">截止时间</label><input id="ws-due" type="datetime-local" name="due" value="${esc(c.due||'')}"></div><div class="form-field"><label for="ws-resolution">结案说明 / 处理备注</label><textarea id="ws-resolution" name="resolutionNote" maxlength="4000">${esc(c.resolutionNote||'')}</textarea></div><div id="modal-error" class="form-error"></div></form><p>Case与告警分别保留处理状态。</p>`;}
+  function handle(action,id){
+    const g=ui.graph;
+    if(action==='ws-node'){g.selected=id;g.alert=null;g.edge=null;g.blast=false;g.path=null;}
+    else if(action==='ws-alert'){g.alert=id;g.edge=null;g.blast=false;g.selected=getAlert(id)?.entityIds[0];g.index=99;}
+    else if(action==='ws-edge'){g.edge=id;g.alert=null;}
+    else if(action==='ws-blast'){g.blast=!g.blast;g.alert=null;g.edge=null;}
+    else if(action==='ws-path'){g.path=id;g.blast=true;g.edge=null;}
+    else if(action==='ws-reset'){g.scope=null;resetScope();}
+    else return false;
+    render();return true;
+  }
+  function submitTask(form){const data=Object.fromEntries(new FormData(form));if(!data.title.trim())return;const c=currentCase();(c.tasks||=[]).push({id:'task-'+Date.now(),title:data.title.trim(),owner:data.owner,due:data.due,status:'New'});logActivity('添加任务：'+data.title.trim(),'任务',c.title,c.incidentId,[c.id]);save();render();toast('任务已添加');}
+  function changeTask(id,value){const c=currentCase(),task=c.tasks?.find(t=>t.id===id);if(!task)return;task.status=value;task.completedAt=value==='Completed'?new Date().toISOString():null;logActivity('更新任务：'+task.title,'任务',c.title,c.incidentId,[c.id]);save();render();}
+  return {resetScope,attack,investigations,investigationDetail,tasks,manageBody,handle,submitTask,changeTask};
+};
