@@ -1,3 +1,7 @@
+## 2026-10-27 审计文档补全
+
+源码基线6044615，新增[审计导航](../../../docs/investigation/audit-guide-20261027.md)、[当前实现详解](../../../docs/investigation/current-implementation-reference-20261027.md)、[历史证据全目录](../../../docs/investigation/evidence-catalog-20261027.md)，补正现有说明的路径/验证范围。F1/F2与F3第一版分别有代码及替身直接验证；Incident只汇总/概况，Case承担深入分析；F4/F5未交付。本次无业务源码变化、业务测试、数据库/模型调用、任务启用或部署，不改任务勾选。
+
 ## 2026-10-25 业务流程落文档与功能规划
 
 按用户最新要求保存[告警—事件概况—调查流程](../../../docs/architecture/incident-investigation-flow-20261025.md)和[评审与实现规划](../../../docs/investigation/incident-investigation-implementation-plan-20261025.md)。本轮不编码，围绕事件汇总/AI概况与调查深入分析的分工做一轮评审；后续按五个可交付功能批次推进。权限专项及冗余测试继续暂停，历史未完成项不核销，2.2/2.3不勾；无业务调用、配置改变、部署或合main。

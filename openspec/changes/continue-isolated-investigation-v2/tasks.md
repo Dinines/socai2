@@ -1,3 +1,5 @@
+**2026-10-27状态澄清：** 新F1/F2及API v2 F3 Case首版代码/替身直接验证见[当前实现详解](../../../docs/investigation/current-implementation-reference-20261027.md)；F4成员转Case和F5自动接线未实现。F3并未逐项证明满足本文既有M3/manifest/owned合同，真实模型与PG/CH整链未验。本次只补审计文档，2.2/2.3保持未勾，旧“下一b权限”不覆盖用户暂停决定。完整链接见[审计导航](../../../docs/investigation/audit-guide-20261027.md)。
+
 **2026-10-25 M8a4.4a限定通过：** 147直接/独立同147和实际PG锁竞争/回滚/ACK，13source/28新旧工件核同，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)及[失败原件](../../../docs/operations/investigation-program-admission-pg-failure-20261025.json)。normal0tool partial5/11、ACK2/3 ready只读、roles清；下一已审b真实JWT/RBAC保存后实施，c/Case/Deep/2.2/2.3不勾。
 
 **2026-10-25 M8a4.3d限定通过：** 179直接/独立同179、10SHA/6新ledger/80API44Mockbackend，[回执](../../../docs/operations/investigation-program-start-offline-20261025.json)和[失败原件](../../../docs/operations/investigation-program-start-offline-failure-20261025.json)。仅两进程离线actual启动链，未真实PG/auth；下一a4.4a卡锁竞争P2修后已审，d保存后实施，2.2/2.3/Case/Deep不勾。

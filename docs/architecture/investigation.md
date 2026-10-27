@@ -1,5 +1,7 @@
 # 调查逐步调用：自动链、人工链、模型、工具和审计
 
+**2026-10-27适用范围说明：** 本页描述原有Agents graph/Router/Deep/四角色路径。新增F3 Case实际在API v2执行，不串行调用本文所有角色；其当前实现及验证边界见[实现详解](../investigation/current-implementation-reference-20261027.md)，完整文档/证据入口见[审计导航](../investigation/audit-guide-20261027.md)。
+
 后续设计与换账号续接统一读[调查模块规划设计文档](investigation-planning-design.md)：四块合同、程序/模型分工、旧模块融合、专用分支和逐模块测试。本文继续描述已有流程及历史实证，不把拟议统一设计当成已运行行为。
 
 2026-10-23本地小修：人工Forensic校验已前移到响应/报告之前；Deep逐次保留工具材料并以结构状态判断，异常/时限可交接已有成果。四阶段与模型参数保持，未部署；本地行为以[小修回执](../operations/investigation-result-handoff-20261023.md)为准，下文10月21日静态/旧运行记录保留。

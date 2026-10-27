@@ -1,3 +1,5 @@
+> 2026-10-27审计说明：本规格保留原fixed/program等路径的要求。新增API v2 Case首版的实际实现、差异及未验证项见[当前实现详解](../../../../../docs/investigation/current-implementation-reference-20261027.md)。它尚未逐项证明满足本规格所有要求；本说明不豁免或改写任何Requirement，也不核销2.2/2.3。
+
 ## ADDED Requirements
 
 ### Requirement: Validate explicit fixed or program full DTOs in a separate authenticated API gateway

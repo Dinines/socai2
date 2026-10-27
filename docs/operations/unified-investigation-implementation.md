@@ -1,3 +1,7 @@
+## 2026-10-27 当前实现与历史证据的审计入口
+
+[审计导航](../investigation/audit-guide-20261027.md)、[当前实现详解](../investigation/current-implementation-reference-20261027.md)及[证据全目录](../investigation/evidence-catalog-20261027.md)补齐当前F1/F2/F3。代码基线6044615：F1提交8b242b9、F2提交686a39d、F3提交6044615；均为代码及替身直接验证，未部署/做真实模型或PG/CH整链验证。本文件下方为原阶段记录，真实回执只证明各自限定路径；不得据此核销F3或OpenSpec 2.2/2.3。本次只补文档/链接，不跑业务验证。
+
 ## 2026-10-25 M8a4.4a实际PG零工具/模型接缝
 
 abf3d58后已审卡/strict，仅新增PG probe/13新测试，＋coordinator23/admission29/runtime25/pub29/owned19/M3gate9共147直接/独立同147。独审初1代码P2含两反例：owner提前ExecutionPersistenceError被barrier TimeoutError掩盖、observer ValueError被cleanup AssertionError替换；修pre/post同时看owner终态、primary/task类型链与cleanup pending分列、进度pids/计数/锁和失败raw独立读留证。修前2source/独立script+观测及一次85=82实际+3Loader错名完整输出共5文本保[失败原件](investigation-program-admission-pg-failure-20261025.json)。真实执行前helper最小权限/nonce/失败后清理五替身分支另审，不叠加147。

@@ -1,5 +1,7 @@
 # 调查工具目录与当前实现边界
 
+**2026-10-27适用范围说明：** 本目录的基础/typed/customer/MCP工具主要是原Agents集合。F3 Case当前在API v2仅组装进程/网络两个工具，并未自动取得本目录全部能力。新增F3路径说明见[当前实现详解](../investigation/current-implementation-reference-20261027.md)，新增Tool接入方法见[指南](../investigation/tool-onboarding-and-flow-verification.md)。
+
 本文按 **2026-10-21 当前工作树**核对 Deep 实际注册表，供二次开发选择和调用工具。运行入口、配置步骤、调用过程及分层测试办法见[调查工具使用指南](../operations/investigation-tools.md)；逐模型输入输出见[预处理、模型与工具说明](investigation-preprocessing-tools.md)。本次仅补文档，没有修改业务源码、启用配置、运行测试、调用模型或访问基础设施；当前工作树实现不等于21已部署版本。
 
 ## 1. 先区分四类能力

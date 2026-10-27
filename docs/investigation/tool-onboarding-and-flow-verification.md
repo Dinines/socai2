@@ -31,6 +31,8 @@ sequenceDiagram
 
 ## 2. 当前仓库怎么接
 
+**2026-10-27路径说明：** 下表的ToolRegistry、scoped_customer_tools和run_with_tools属于原Agents实现。当前F3 Case在API v2中直接用[CaseTools.schemas/execute](../../services/api/app/investigation_v2/case_analysis_tools.py)、[模型协议包装](../../services/api/app/investigation_v2/case_analysis_models.py)和[Case循环](../../services/api/app/investigation_v2/case_analysis.py)组装/执行工具，目前只有进程和网络查询。新增能力必须进入目标路径实际提供的schema及执行分派；只在旧registry登记不会自动出现在F3。详细调用关系见[当前实现详解](current-implementation-reference-20261027.md)。
+
 | 环节 | 当前代码 | 后续新增时检查什么 |
 | --- | --- | --- |
 | Tool 定义与执行 | [Tool / ToolRegistry](../../services/agents/app/tools/registry.py) | `name`、`description`、`parameters`、`fn`；`openai_schemas()`暴露定义，`execute()`执行函数 |

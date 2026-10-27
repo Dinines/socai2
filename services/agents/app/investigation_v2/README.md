@@ -1,3 +1,5 @@
+**2026-10-27当前路径说明：** 新F3 Case分析位于API服务的`app.investigation_v2.case_analysis`，不在本Agents包。本包fixed/program/M1–M8的版本化执行和历史回执不自动覆盖F3；旧Case/Deep待办与当前API首版需分别审计。见[当前实现详解](../../../../docs/investigation/current-implementation-reference-20261027.md)及[审计导航](../../../../docs/investigation/audit-guide-20261027.md)。
+
 `program_start_api.create_app`为独立write-only两POST，专用START配置/当前token逐请求拒配置read/tool角色复用；严格4KiB/servernormalize、controlled test target guard及新TLS pool有界生命周期。186直接/独审、原28ASGI响应复放限定通过；配置ref不证明真实writer隔离，无实际用户认证或PG验收。旧read/main不注册，c用户写网关和d/a4.4后续。回执docs/operations/investigation-program-start-api-20261025.json。
 
 `program_start_coordinator.ProgramManualStartCoordinator`只接受显式current guard、同pool admission/owned reader和tool配置。仅fresh confirmed admission进入原runtime（不begin），确认stopped后pub并返回原owned result；重复和operation read不执行/补发布，取消及未知提交不重派。125直接/独审、14原件重放限定通过，当前guard仅测试替身，未提供真实HTTP鉴权或legacy隔离。回执docs/operations/investigation-program-coordinator-20261025.json。

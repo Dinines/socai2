@@ -1,3 +1,11 @@
+# 2026-10-27 调查详细审计文档补全
+
+用户最新要求“细化设计的细节到接口，具体实现暂时不用”。新增docs/investigation/interface-contracts-20261027.md，逐项定义已有F1/F2/F3及拟新增F4、Case历史列表、F5内部HTTP、模型/Tool和产品HTTP映射，含字段/错误/状态/示例/调用顺序；拟新增均未实现。仅文档静态检查，不运行代码或测试，不恢复权限/部署/推送。
+
+用户后续要求先对齐当前设计；设计入口docs/investigation/current-design-alignment-20261027.md，整理Alert/Incident/Case/Run职责、自动/手动、流程及例子，标明F4/F5和事件Case结果回显尚未接通。旧主设计保留历史语义；F3直接验证终点修为Case/Run读回，F4输出限定成员转Case，报告归F3。本轮仍仅文档/静态核对，不扩展设计或功能编码。
+
+用户本轮要求提供完整审计文档链接并补不足。入口docs/investigation/audit-guide-20261027.md，当前实现详解current-implementation-reference-20261027.md，完整相关文件目录evidence-catalog-20261027.md。源码基线6044615；仅静态核对/文档/链接检查，无业务源码改动、业务测试或真实调用。已明确F1/F2/F3代码与旧fixed/program/Agents Deep的区别、现有替身证据及真实未验范围，修正旧下一步/路径易混处。F4/F5和OpenSpec 2.2/2.3保持未完成，权限/部署/远端推送不恢复。
+
 # 2026-10-25 调查模块功能实施原则与继续开发
 
 用户最新确定业务边界：事件只需保留现有汇总与AI概况，真正调查分析统一放Case（案件）。F3改为Case内实际分析/补查/报告（首个场景可为单Alert Case），F4改为告警/事件选择成员创建或关联Case；不新增Incident调查profile/另一套事件分析循环。此条覆盖下方历史“单Alert独立深入调查/事件直接Run/Case关系待定”建议。功能逐个直接验证原则继续适用。

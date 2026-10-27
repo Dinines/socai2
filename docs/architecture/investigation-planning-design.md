@@ -1,3 +1,5 @@
+**2026-10-27 当前设计先读：** [当前设计对齐](../investigation/current-design-alignment-20261027.md)汇总用户最后确认的边界：事件保留汇总和AI概况，深入调查统一在Case，Run记录一次明确范围的执行。下方v4告警侦察及各历史“下一步”保留原阶段含义，不自动恢复为当前前置任务；F4成员转Case、F5自动接线与事件结果回显仍未接通。当前代码/证据从[审计导航](../investigation/audit-guide-20261027.md)核对。
+
 **2026-10-25 当前业务流程与功能开发顺序：** 新增[告警—事件概况—调查流程](incident-investigation-flow-20261025.md)及[评审与实现规划](../investigation/incident-investigation-implementation-plan-20261025.md)，作为本主设计的事件层补充：所有分诊结果、调查进展/结果汇入事件数据；当前字段与 AI 概况分开；事件汇总展示与调查深入分析分工；Incident 不等同 Case。当前目标流程以该补充为准，历史实现证据保持原样。后续按事件汇总、概况、分析闭环、事件范围、自动入口推进；本轮只文档/一轮评审，无代码或业务测试，权限专项继续暂停，下方历史“下一步”不覆盖本次安排。
 
 **2026-10-25 M8a4.4a真实PG准入：** 147直接/独立同147、13sourcehash及实际PG原件结束独审限定通过，[回执](../operations/investigation-program-admission-pg-20261025.json)。提交前真实三连接锁等待链及提交后owner屏障证明同key只读/另一key拒；正常0tool/model为partial5/11，rollback0，ACK保2/3 ready不补跑。实际来源/意图/期限/owned DTO全核，旧6/14/MD保持、角色表列ACL撤回。未真实用户JWT/RBAC或HTTP/CH；下一b合同顺序/独立Redis失效证据修后已审，后c及Case/Deep/2.2/2.3仍待。
@@ -103,6 +105,8 @@
 修订在独立工作树`E:\aisoc\socai2\.local\worktrees\investigation-working`、分支`codex/investigation-working`完成，Git基线`3fa4be3`之外已有未提交设计及M1—M5.1实现；不能只拉main就视为取得当前版本。Windows环境任务保留在原目录/分支。v3历史审阅见第15.3节，v4本轮审阅见第15.4节。
 
 ## 0. 实施前约定与阅读顺序
+
+**2026-10-27详细审计入口：** [审计导航](../investigation/audit-guide-20261027.md)、[当前实现详解](../investigation/current-implementation-reference-20261027.md)、[证据全目录](../investigation/evidence-catalog-20261027.md)。F3 Case第一版现位于API v2，未复用旧Agents M3/manifest/owned执行合同；本主设计的历史规划和验收不自动成为它的已实现/已验证事实。
 
 **2026-10-25最新业务边界：事件只保留现有汇总与AI概况，真正的调查分析统一在Case中。告警/Incident可提供创建或关联Case的入口，但不再新增Incident调查profile/分析循环；F3改为Case调查内核，F4改为事件成员转Case。** 此决定覆盖此前“事件可直接作为调查目标”“Case关系待定”等建议，历史实现证据保持原样。
 
