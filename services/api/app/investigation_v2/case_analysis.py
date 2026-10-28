@@ -18,7 +18,7 @@ from app.models.investigation import InvestigationArtifact, InvestigationEvent, 
 from app.services.alert_explain import _UPSERT_RUN_COST
 from app.services.cost_dashboard import _impute_public_cost
 from app.services.llm_resolver import resolve_llm_config
-from .case_analysis_models import MAX_OUTPUT_TOKENS, call_model
+from .case_analysis_models import MAX_OUTPUT_TOKENS, call_model, conclusion_format
 from .case_analysis_tools import CaseTools, model_result
 from .case_navigation import analysis_urls, citation_links, report_navigation
 from .incident_reader import _entities
@@ -271,15 +271,21 @@ class CaseAnalysis:
             try:
                 async with asyncio.timeout(LIMITS["duration_seconds"]):
                     for turn in range(1, LIMITS["model_calls"] + 1):
+                        # This provider suppresses native Tool calls when given a response schema.
+                        offered_tools = [] if conclusion_corrections else tools.schemas()
+                        output_format = None if offered_tools else conclusion_format(AnalysisConclusion.model_json_schema(),
+                            [item["evidence_id"] for item in self.evidence], self.context["selected_member_ids"])
                         # UTF-8 bytes conservatively bound text tokens before dispatch.
-                        if len(encoded(messages).encode()) + len(encoded(tools.schemas()).encode()) + MAX_OUTPUT_TOKENS + 256 > LIMITS["tokens"] - self.tokens:
+                        input_bytes = sum(len(encoded(value).encode()) for value in (messages, offered_tools, output_format))
+                        if input_bytes + MAX_OUTPUT_TOKENS + 256 > LIMITS["tokens"] - self.tokens:
                             stop_reason = "input_or_token_limit"
                             break
                         self.run.iterations = turn
-                        await self.record("case_analysis_model", f"分析第{turn}轮：准备调用模型", {"messages": messages, "tools": tools.schemas()})
+                        await self.record("case_analysis_model", f"分析第{turn}轮：准备调用模型", {
+                            "messages": messages, "tools": offered_tools, "response_format": output_format})
                         self.unknown_usage = True
                         started = time.monotonic()
-                        payload = await call_model(config, messages, tools.schemas())
+                        payload = await call_model(config, messages, offered_tools, response_format=output_format)
                         self.unknown_usage = False
                         await self.model_usage(config, payload, (time.monotonic() - started) * 1000)
                         choices = payload.get("choices") or []
@@ -300,6 +306,9 @@ class CaseAnalysis:
                         if calls:
                             visible["tool_calls"] = calls
                         await self.record("case_analysis_model", f"分析第{turn}轮：模型已返回", {"response": visible, "usage": payload.get("usage")})
+                        if calls and not offered_tools:
+                            stop_reason = "invalid_tool_call_protocol"
+                            break
                         if self.unknown_usage or self.tokens >= LIMITS["tokens"]:
                             stop_reason = "usage_unknown_or_budget_exhausted"
                             break
@@ -333,7 +342,7 @@ class CaseAnalysis:
                                     messages.append({"role": "user", "content":
                                         "上一轮结论未通过校验，尚未成为调查结果。请按以下诊断纠正一次。"
                                         "alert_id/alert_ids必须使用选定成员UUID，A1等仅用于evidence_ids。"
-                                        "不存在的E编号表示尚未取得该证据，不表示查询为空；需要补查时先发起原生tool_calls。"
+                                        "本轮只纠正最终结论，不再调用工具。不存在的E编号表示尚未取得证据，不表示查询为空；将缺少的材料列为缺口。"
                                         "每条finding的evidence_ids至少包含一个已知编号；无依据的内容放入gaps或open_questions。"
                                         "仅引用已收到的证据，最终按已定义字段输出纯JSON，不添加其他字段。\n" + encoded(feedback)})
                                     stop_reason = "model_call_limit"

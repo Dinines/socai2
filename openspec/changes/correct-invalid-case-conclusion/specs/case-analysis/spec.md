@@ -3,9 +3,9 @@
 ### Requirement: One bounded conclusion correction
 Case analysis SHALL permit at most one correction of an invalid conclusion within the existing model, tool, token and duration limits, without relaxing schema, member scope or evidence checks.
 
-#### Scenario: Invalid reference before the source is queried
+#### Scenario: Invalid reference in a proposed final answer
 - **WHEN** the model references evidence that has not been provided and a correction fits the existing limits
-- **THEN** the ledger retains the rejected response and validation feedback, and the next model turn may invoke the offered Tool and return a valid conclusion.
+- **THEN** the ledger retains the rejected response and validation feedback, and one schema-constrained correction uses only received evidence, reporting absent evidence as a gap without additional Tool dispatch.
 
 #### Scenario: The correction is still invalid
 - **WHEN** the model produces a second invalid conclusion
@@ -24,3 +24,14 @@ The follow-up model view SHALL omit the prior report's generated timeline and me
 #### Scenario: A follow-up refers to a saved multi-alert report
 - **WHEN** the model receives H1 historical context
 - **THEN** it receives the report's analysis fields and omission metadata, and evidence/report GETs still return the complete saved contents.
+
+### Requirement: Model requests declare the conclusion output contract
+Final-conclusion correction requests, and analysis requests with no offered Tools, SHALL include a strict JSON Schema response format derived from the conclusion model and current evidence/member scope. Ordinary Tool-capable turns SHALL omit this response format. Application-side validation remains mandatory in both phases.
+
+#### Scenario: Tool results add evidence
+- **WHEN** final-conclusion correction is prepared after a Tool result
+- **THEN** its evidence enums include the newly received evidence, its schema is saved in the preparation step, schema bytes count toward the existing input allowance, and no Tools are offered or dispatched.
+
+#### Scenario: The question requires a source query
+- **WHEN** normal analysis is prepared with available Tools
+- **THEN** the native Tool definitions are offered without a JSON Schema response format, so this provider can choose a Tool before producing a final answer.

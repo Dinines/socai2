@@ -60,7 +60,7 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
     def provider(self, request):
         body = json.loads(request.content)
         self.messages.append(body)
-        if body["messages"][-1]["role"] != "tool":
+        if body.get("tools") and body["messages"][-1]["role"] != "tool":
             message = {"tool_calls": [{"id": "call-process", "type": "function", "function": {
                 "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]}
             finish = "tool_calls"

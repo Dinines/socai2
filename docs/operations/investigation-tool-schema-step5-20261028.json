@@ -1,0 +1,488 @@
+{
+  "date": "2026-10-28",
+  "input_source": "fully fictional inline data; no database/history/source-code payload",
+  "request_with_schema": {
+    "model": "aisoc-investigation",
+    "max_tokens": 3000,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are checking a tool protocol using fictional data only. When asked to query, first issue a native tool_call. Only produce the final JSON conclusion after receiving tool results. Never invent results."
+      },
+      {
+        "role": "user",
+        "content": "Fictional alert A1 concerns schema-tool-example-host, member UUID 00000000-0000-0000-0000-000000000001. Query its process activity in the server-fixed test window before drawing conclusions. No process evidence has been provided yet."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "process_activity",
+          "description": "查询Case成员主机在本次固定时间窗口内的进程执行记录，核对进程、路径、账号及文件hash。不包含父进程链，不能据此确认完整进程树。",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {
+              "hostname": {
+                "title": "Hostname",
+                "type": "string",
+                "enum": [
+                  "schema-tool-example-host"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "maximum": 50,
+                "minimum": 1,
+                "title": "Limit",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "hostname"
+            ],
+            "title": "QueryArguments",
+            "type": "object"
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "network_connections",
+          "description": "查询Case成员主机在本次固定时间窗口内的网络连接，核对目标IP、端口、协议及相关进程。空结果只表示本来源未返回匹配记录。",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {
+              "hostname": {
+                "title": "Hostname",
+                "type": "string",
+                "enum": [
+                  "schema-tool-example-host"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "maximum": 50,
+                "minimum": 1,
+                "title": "Limit",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "hostname"
+            ],
+            "title": "QueryArguments",
+            "type": "object"
+          }
+        }
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "case_analysis_conclusion",
+        "strict": true,
+        "schema": {
+          "$defs": {
+            "AlertRelationship": {
+              "additionalProperties": false,
+              "properties": {
+                "alert_ids": {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string",
+                    "enum": [
+                      "00000000-0000-0000-0000-000000000001"
+                    ]
+                  },
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "kind": {
+                  "enum": [
+                    "shared_context",
+                    "behavioral_link",
+                    "contradiction"
+                  ],
+                  "type": "string"
+                },
+                "assessment": {
+                  "enum": [
+                    "supported",
+                    "hypothesis",
+                    "not_supported"
+                  ],
+                  "type": "string"
+                },
+                "basis": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "A1"
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "alert_ids",
+                "kind",
+                "assessment",
+                "basis",
+                "evidence_ids"
+              ],
+              "type": "object"
+            },
+            "Finding": {
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "maxLength": 3000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "A1"
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "text",
+                "evidence_ids"
+              ],
+              "type": "object"
+            },
+            "MemberAssessment": {
+              "additionalProperties": false,
+              "properties": {
+                "alert_id": {
+                  "format": "uuid",
+                  "type": "string",
+                  "enum": [
+                    "00000000-0000-0000-0000-000000000001"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "addressed",
+                    "unresolved"
+                  ],
+                  "type": "string"
+                },
+                "role": {
+                  "enum": [
+                    "supporting",
+                    "background",
+                    "undetermined"
+                  ],
+                  "type": "string"
+                },
+                "summary": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "evidence_ids": {
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "A1"
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "alert_id",
+                "status",
+                "role",
+                "summary",
+                "evidence_ids"
+              ],
+              "type": "object"
+            },
+            "OpenQuestion": {
+              "additionalProperties": false,
+              "properties": {
+                "question": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "alert_ids": {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string",
+                    "enum": [
+                      "00000000-0000-0000-0000-000000000001"
+                    ]
+                  },
+                  "type": "array"
+                },
+                "evidence_ids": {
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "A1"
+                    ]
+                  },
+                  "type": "array"
+                },
+                "missing_evidence": {
+                  "maxLength": 2000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "suggested_action": {
+                  "maxLength": 2000,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "question",
+                "alert_ids",
+                "evidence_ids",
+                "missing_evidence",
+                "suggested_action"
+              ],
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "properties": {
+            "summary": {
+              "maxLength": 5000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "findings": {
+              "items": {
+                "$ref": "#/$defs/Finding"
+              },
+              "type": "array"
+            },
+            "counterevidence": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "gaps": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "recommendations": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "member_assessments": {
+              "items": {
+                "$ref": "#/$defs/MemberAssessment"
+              },
+              "type": "array"
+            },
+            "relationships": {
+              "items": {
+                "$ref": "#/$defs/AlertRelationship"
+              },
+              "type": "array"
+            },
+            "open_questions": {
+              "items": {
+                "$ref": "#/$defs/OpenQuestion"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "summary",
+            "findings",
+            "counterevidence",
+            "gaps",
+            "recommendations",
+            "member_assessments",
+            "relationships",
+            "open_questions"
+          ],
+          "type": "object"
+        }
+      }
+    }
+  },
+  "response_with_schema": {
+    "status": 200,
+    "finish_reason": "stop",
+    "message": {
+      "content": "{\n  \"summary\": \"Querying process activity for schema-tool-example-host as requested for alert A1 investigation.\",\n  \"findings\": []\n, \"counterevidence\": []\n, \"gaps\": [\n    \"Data not yet established. Awaiting process activity evidence.\",\n    \"Inability to assess the activity gap.\",\n    \"No blame-shifting assessment possible.\"\n  ],\n  \"recommendations\": []\n, \"member_assessments\": [\n    {\n      \"alert_id\": \"00000000-0000-0000-0000-000000000001\",\n      \"status\": \"unresolved\",\n      \"role\": \"undetermined\",\n      \"summary\": \"Context not yet established. Awaiting process activity results.\",\n      \"evidence_ids\": [\n        \"A1\"\n      ]\n    }\n  ],\n  \"relationships\": []\n, \"open_questions\": []\n}",
+      "role": "assistant"
+    },
+    "usage": {
+      "completion_tokens": 235,
+      "prompt_tokens": 623,
+      "total_tokens": 858,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "request_without_schema": {
+    "model": "aisoc-investigation",
+    "max_tokens": 3000,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are checking a tool protocol using fictional data only. When asked to query, first issue a native tool_call. Only produce the final JSON conclusion after receiving tool results. Never invent results."
+      },
+      {
+        "role": "user",
+        "content": "Fictional alert A1 concerns schema-tool-example-host, member UUID 00000000-0000-0000-0000-000000000001. Query its process activity in the server-fixed test window before drawing conclusions. No process evidence has been provided yet."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "process_activity",
+          "description": "查询Case成员主机在本次固定时间窗口内的进程执行记录，核对进程、路径、账号及文件hash。不包含父进程链，不能据此确认完整进程树。",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {
+              "hostname": {
+                "title": "Hostname",
+                "type": "string",
+                "enum": [
+                  "schema-tool-example-host"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "maximum": 50,
+                "minimum": 1,
+                "title": "Limit",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "hostname"
+            ],
+            "title": "QueryArguments",
+            "type": "object"
+          }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "network_connections",
+          "description": "查询Case成员主机在本次固定时间窗口内的网络连接，核对目标IP、端口、协议及相关进程。空结果只表示本来源未返回匹配记录。",
+          "parameters": {
+            "additionalProperties": false,
+            "properties": {
+              "hostname": {
+                "title": "Hostname",
+                "type": "string",
+                "enum": [
+                  "schema-tool-example-host"
+                ]
+              },
+              "limit": {
+                "default": 20,
+                "maximum": 50,
+                "minimum": 1,
+                "title": "Limit",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "hostname"
+            ],
+            "title": "QueryArguments",
+            "type": "object"
+          }
+        }
+      }
+    ]
+  },
+  "response_without_schema": {
+    "status": 200,
+    "finish_reason": "tool_calls",
+    "message": {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "function": {
+            "arguments": "{\"hostname\": \"schema-tool-example-host\", \"limit\": 20}",
+            "name": "process_activity"
+          },
+          "id": "chatcmpl-tool-9905513c8466a26f",
+          "type": "function"
+        }
+      ],
+      "content": null
+    },
+    "usage": {
+      "completion_tokens": 43,
+      "prompt_tokens": 623,
+      "total_tokens": 666,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "assertions": {
+    "with_schema_requested_tool_call": false,
+    "without_schema_native_tool_and_arguments_correct": true
+  },
+  "tools_executed": 0,
+  "runs_created": 0,
+  "final_fix": "Normal Tool-capable turns omit response_format. One final-conclusion correction (or a context without offered Tools) sends schema and no Tools. Local validation remains mandatory.",
+  "direct_examples_passed": [
+    "test_case_model_query_analysis_report_and_readback",
+    "test_followup_question_preserves_previous_report_and_can_refresh_queries",
+    "test_invalid_conclusion_gets_one_schema_correction_after_tool_feedback",
+    "test_outside_members_and_unknown_references_do_not_become_conclusions"
+  ],
+  "direct_example_observation": "Three passed initially; invalid-reference test double still offered a Tool during final correction, so two subcases stopped invalid_tool_call_protocol. Updated the double to honor absence of offered Tools, then that example passed with two rejected conclusions. No application validation relaxed.",
+  "final_source_sha256": {
+    "services/api/app/investigation_v2/case_analysis.py": "7da5816b979c3af33933458183b9865e7dd9ad0f150ff9afc8e9f888130f3a8f",
+    "services/api/app/investigation_v2/case_analysis_models.py": "7e5c124e65d6a9156898c574e7e72784b3c6398f42369c65f517ee4b64e58fe9",
+    "services/api/tests/test_case_analysis_api.py": "56d03a14907933dcdf1fc0f07911e33c59d0cf6f4069b06125b8e6d743c99dae",
+    "services/api/tests/test_case_synthesis.py": "15d180850999d199a02f6df10755e8feea7b36918f9476097493b6e1e6e702b4"
+  },
+  "final_code_live_pg_retest": false,
+  "approval_rejections": [
+    {
+      "executed": false,
+      "reason": "Proposed historical-context model request rejected for data transfer scope."
+    },
+    {
+      "executed": false,
+      "reason": "Fictional-input wrapper rejected because it would upload the API source tree."
+    }
+  ],
+  "safer_alternative": "Only fictional JSON and interface definitions sent to the existing model; approved and executed. No source/history uploaded for the comparison.",
+  "subsequent_final_code_live_pg_receipt": {
+    "path": "investigation-followup-step7-20261028.json",
+    "after_explicit_user_authorization": true,
+    "status": "failed",
+    "stop_reason": "input_or_token_limit"
+  }
+}

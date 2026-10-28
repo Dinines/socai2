@@ -163,6 +163,8 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertIn("process_activity", [item["function"]["name"] for item in self.messages[0]["tools"]])
         self.assertEqual(self.messages[1]["messages"][-1]["tool_call_id"], "call-process-01")
         self.assertEqual(self.messages[1]["messages"][-2]["tool_calls"][0]["id"], "call-process-01")
+        self.assertNotIn("response_format", self.messages[0])
+        self.assertNotIn("response_format", self.messages[1])
         params = self.lake.call_args.kwargs["params"]
         self.assertEqual(params["tenant_id"], str(TENANT))
         self.assertEqual(params["hostname"], "host-01")
@@ -178,14 +180,14 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(len(self.messages), 2)
         self.assertEqual(self.lake.await_count, 1)
 
-    async def test_invalid_conclusion_gets_one_correction_before_real_tool_feedback(self):
+    async def test_invalid_conclusion_gets_one_schema_correction_after_tool_feedback(self):
         conclusion = {"summary": "窗口内有脚本记录，攻击性质待核。",
                       "findings": [{"text": "读取到进程记录", "evidence_ids": ["E1"]}],
                       "counterevidence": [], "gaps": [], "recommendations": []}
         invalid = {**conclusion, "findings": [{"text": "尚未查询的记录", "evidence_ids": ["E404"]}]}
-        replies = [{"content": json.dumps(invalid)},
-                   {"tool_calls": [{"id": "corrected-query", "type": "function", "function": {
+        replies = [{"tool_calls": [{"id": "source-query", "type": "function", "function": {
                        "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]},
+                   {"content": json.dumps(invalid)},
                    {"content": json.dumps(conclusion)}]
 
         def provider(request):
@@ -204,11 +206,23 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(result["status"], "completed")
         self.assertEqual(result["result"]["usage"]["model_calls"], 3)
         self.assertEqual(self.lake.await_count, 1)
-        feedback = json.loads(self.messages[1]["messages"][-1]["content"].split("\n", 1)[1])
-        self.assertEqual(feedback["available_evidence_ids"], ["A1", "T1"])
+        correction = self.messages[2]
+        self.assertNotIn("response_format", self.messages[0])
+        self.assertNotIn("response_format", self.messages[1])
+        self.assertNotIn("tools", correction)
+        output_format = correction["response_format"]
+        self.assertEqual(output_format["type"], "json_schema")
+        self.assertTrue(output_format["json_schema"]["strict"])
+        schema = output_format["json_schema"]["schema"]
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(set(schema["required"]), set(schema["properties"]))
+        self.assertEqual(schema["$defs"]["Finding"]["properties"]["evidence_ids"]["items"]["enum"], ["A1", "T1", "E1"])
+        self.assertEqual(schema["$defs"]["MemberAssessment"]["properties"]["alert_id"]["enum"], [str(UUID(int=1))])
+        feedback = json.loads(correction["messages"][-1]["content"].split("\n", 1)[1])
+        self.assertEqual(feedback["available_evidence_ids"], ["A1", "T1", "E1"])
         self.assertEqual(feedback["errors"], [{"type": "unknown_evidence_reference"}])
         self.assertNotIn("schema", feedback)
-        self.assertFalse(any("E404" in message.get("content", "") for message in self.messages[1]["messages"]))
+        self.assertFalse(any("E404" in message.get("content", "") for message in correction["messages"]))
         self.assertEqual(sum(event.kind == "case_analysis_validation" for event in self.events), 1)
         self.assertEqual(result["result"]["report"]["findings"][0]["evidence_ids"], ["E1"])
 
