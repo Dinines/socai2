@@ -1,6 +1,8 @@
 # 调查模块接口设计：请求、返回与流程衔接
 
-**2026-10-28当前初版范围：** 只完成Case创建后的调查功能；Case触发/自动目标政策和F5依用户最新要求移出本次目标。新增材料预览、步骤详情、报告下载及追加问题已实现，完整调用见[Case调查初版](case-first-version-20261028.md)。
+**2026-10-28最新实现：** 已补齐告警/事件对Case Run的关联读取，以及手动概况引用报告；新增字段、范围及分页见[关联接口说明](alert-event-investigation-links-20261028.md)。当前规划覆盖整个调查模块，Case触发/自动目标政策和F5仍不作前置任务。
+
+**2026-10-28 Case初版：** 材料预览、步骤详情、报告下载及追加问题已实现，完整调用见[Case调查初版](case-first-version-20261028.md)。
 
 **2026-10-28实现更新：** 第4节F4成员转Case及5.4节Case历史列表已实现代码并通过5个ASGI/数据库替身直接用例，迁移121未执行、未部署，见[F4调用及验证记录](case-linking-20261028.md)。本文对应状态已更新；F5及产品HTTP Tool仍为设计稿。
 
@@ -16,6 +18,8 @@
 | --- | --- | --- | --- |
 | 已有F1 | `GET /incidents/{incident_id}` | 当前成员/分诊汇总与已存AI概况 | 否 |
 | 已有F2 | `POST /incidents/{incident_id}/overview/refresh` | 手动生成并保存概况 | 一次概况模型；无Tool、无Run |
+| 已有关联读取 | `GET /alerts/{alert_id}/investigation-context` | 来源、分诊、所属事件及实际覆盖该告警的Case Run | 否 |
+| 已有关联读取 | `GET /incidents/{incident_id}/investigations` | 当前成员对应Case、Run及摘要/覆盖/跳转 | 否 |
 | 已有F4 | `POST /case-links` | 所选告警创建或关联Case | 否 |
 | 已有F4 | `GET /case-links?incident_id=…`或`?alert_id=…` | 返回已保存的转Case关联，供跳转 | 否 |
 | 已有F3 | `POST /cases/{case_id}/investigate` | 对Case所选成员执行一次调查 | 是；同步执行 |
@@ -71,6 +75,8 @@
 | `handling_status` | string或null | 当前固定null；不由成员关闭数推导事件关闭 |
 | `ai_overview` | string或null | 最近成功保存的概况 |
 | `ai_overview_metadata` | object或null | 见3.2；没有记录时为null |
+| `investigations_url` | string | 当前事件调查列表地址 |
+| `investigations` | object或null | 读取已引用Case报告的概况时附当前关联数据；普通基础概况为null |
 
 `IncidentMember`：`alert_id:UUID`、`title:string`、`severity:string`、`status:string|null`、`disposition:string|null`、`event_time:datetime`、`updated_at:datetime|null`、`case_id:UUID|null`、`connector_id:UUID|null`、`source_alert_id:string|null`、`saved_analysis:string|null`、`recommendations:array`、`triage:SavedTriage|null`、`alert_url:string`。其中`case_id`只是现有Alert字段，不是所有Case关联的完整列表。
 
@@ -81,6 +87,8 @@
 ### 3.2 手动刷新概况
 
 `POST /api/v2/investigation/incidents/{incident_id}/overview/refresh`无业务请求体，返回完整`IncidentOverview`，HTTP 200。它读取最新成员/分诊、尝试一次概况模型并保存；不调用Tool，不创建Run。
+
+可选查询参数`include_investigations=true`将最近一页已有Case报告摘要加入材料；默认false保留原基础模式。新增来源字段include_investigations、investigation_run_ids/scopes/results_truncated及included/omitted/no_saved_results_in_page状态，详见[引用规则](alert-event-investigation-links-20261028.md#事件概况引用规则)。含Case材料的读写继续使用已有cases:read依赖。
 
 `ai_overview_metadata`的合同：
 
@@ -96,7 +104,7 @@
 | `last_error` | string或null | `llm_unavailable / model_call_failed / invalid_summary_response` |
 | `last_usage` | object或null | 最近尝试的`model`、`prompt_tokens`、`completion_tokens`及可选`cost_recorded`；未知用量为null |
 
-`source_refs`字段：`member_ids:UUID[]`、`triage_run_ids:UUID[]`、`source_member_count:integer`、`omitted_member_count:integer`、`fields_truncated:boolean`、`investigation_results_status:"not_linked"`。尚未成功生成的空记录不保证这些来源字段齐全；只对已有正文解释其来源。当前`not_linked`表示未接入Case结果，不能理解为“没有调查”。
+基础模式`source_refs`字段：`member_ids:UUID[]`、`triage_run_ids:UUID[]`、`source_member_count:integer`、`omitted_member_count:integer`、`fields_truncated:boolean`、`investigation_results_status:"not_linked"`。尚未成功生成的空记录不保证这些来源字段齐全；只对已有正文解释其来源。`not_linked`表示这份概况未引用Case结果，不能理解为“没有调查”；显式引用模式使用上方新增字段。
 
 刷新失败仍可能返回HTTP 200且`status=ready`：旧正文、旧生成时间及旧来源继续保留，`last_attempt_status=failed`说明本次失败。普通GET或成员变化不重写AI文本。正文和元数据均为null则尚无概况记录。
 

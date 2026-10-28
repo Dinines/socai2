@@ -1,4 +1,6 @@
-**2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。用户当前范围从已有Case开始，F5不属本次目标；[接口与调用例子](../../../../docs/investigation/case-first-version-20261028.md)。
+**2026-10-28告警/事件关联：** application:create_app组合当前告警、事件、Case、成员关联和query路由，不依赖旧program网关配置。新增alert_context_api、事件investigations GET及include_investigations手动概况参数；[接口与范围](../../../../docs/investigation/alert-event-investigation-links-20261028.md)。
+
+**2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。当批范围从已有Case开始，F5不属该批目标；[接口与调用例子](../../../../docs/investigation/case-first-version-20261028.md)。
 
 **2026-10-28：** 新增case_links_api的成员转Case及关联读取、case_history的新版Case历史列表，均注册到Case独立factory及program_result/start组合。需要迁移121（尚未执行），[实现与5项直接验证](../../../../docs/investigation/case-linking-20261028.md)。
 

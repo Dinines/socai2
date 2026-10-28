@@ -62,6 +62,8 @@ class IncidentOverview(BaseModel):
     handling_status: str | None = None
     ai_overview: str | None = None
     ai_overview_metadata: dict[str, Any] | None = None
+    investigations_url: str | None = None
+    investigations: dict[str, Any] | None = None
 
 
 def _strings(values: Any) -> list[str]:
@@ -91,6 +93,20 @@ def _triage(event: InvestigationEvent) -> SavedTriage:
     )
 
 
+async def latest_triage(db, tenant_id, member_ids):
+    query = select(InvestigationRun.raw_alert["id"].astext.label("alert_id"), InvestigationEvent).join(
+        InvestigationRun, InvestigationRun.id == InvestigationEvent.run_id).where(
+        InvestigationRun.tenant_id == tenant_id, InvestigationEvent.tenant_id == tenant_id,
+        InvestigationRun.raw_alert["id"].astext.in_([str(value) for value in member_ids]),
+        InvestigationEvent.kind == "triage_verdict",
+    ).order_by(InvestigationEvent.ts.desc(), InvestigationEvent.id.desc())
+    latest = {}
+    for alert_id, event in (await db.execute(query)).all():
+        if alert_id not in latest:
+            latest[alert_id] = _triage(event)
+    return latest
+
+
 async def read_incident(db: AsyncSession, *, tenant_id: UUID, incident_id: UUID) -> IncidentOverview | None:
     """Read PG membership and the latest explicit per-member triage verdict.
 
@@ -110,22 +126,7 @@ async def read_incident(db: AsyncSession, *, tenant_id: UUID, incident_id: UUID)
     if not alerts:
         return None
 
-    member_ids = [str(alert.id) for alert in alerts]
-    triage_query = (
-        select(InvestigationRun.raw_alert["id"].astext.label("alert_id"), InvestigationEvent)
-        .join(InvestigationRun, InvestigationRun.id == InvestigationEvent.run_id)
-        .where(
-            InvestigationRun.tenant_id == tenant_id,
-            InvestigationEvent.tenant_id == tenant_id,
-            InvestigationRun.raw_alert["id"].astext.in_(member_ids),
-            InvestigationEvent.kind == "triage_verdict",
-        )
-        .order_by(InvestigationEvent.ts.desc(), InvestigationEvent.id.desc())
-    )
-    latest: dict[str, SavedTriage] = {}
-    for alert_id, event in (await db.execute(triage_query)).all():
-        if alert_id not in latest:
-            latest[alert_id] = _triage(event)
+    latest = await latest_triage(db, tenant_id, [alert.id for alert in alerts])
 
     members = [IncidentMember(
         alert_id=alert.id, title=alert.title, severity=alert.severity,
@@ -151,5 +152,5 @@ async def read_incident(db: AsyncSession, *, tenant_id: UUID, incident_id: UUID)
         entities=_entities(alerts),
         mitre_tactics=sorted({value for alert in alerts for value in _strings(alert.mitre_tactics)}),
         mitre_techniques=sorted({value for alert in alerts for value in _strings(alert.mitre_techniques)}),
-        members=members,
+        members=members, investigations_url=f"/api/v2/investigation/incidents/{incident_id}/investigations",
     )
