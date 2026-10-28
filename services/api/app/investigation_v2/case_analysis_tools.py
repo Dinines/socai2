@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.config import settings
 from app.db.clickhouse import execute_lake_query
+from .case_product_tools import ProductHostTool, TOOL_NAME
 
 
 class QueryArguments(BaseModel):
@@ -22,18 +23,27 @@ DESCRIPTIONS = {
 
 
 class CaseTools:
-    def __init__(self, tenant_id, hosts: list[str], start: datetime, end: datetime):
+    def __init__(self, tenant_id, hosts: list[str], start: datetime, end: datetime, product=None):
         self.tenant_id, self.hosts, self.start, self.end = tenant_id, hosts, start, end
+        self.product = product
+
+    @classmethod
+    async def for_context(cls, db, tenant_id, context, start, end):
+        product = await ProductHostTool.from_context(db, tenant_id, context)
+        return cls(tenant_id, context["hosts"], start, end, product)
 
     def schemas(self):
+        product = self.product.schemas() if self.product else []
         if not self.hosts or settings.AISOC_DISABLE_CLICKHOUSE or not settings.CLICKHOUSE_HOST:
-            return []
+            return product
         parameters = QueryArguments.model_json_schema()
         parameters["properties"]["hostname"]["enum"] = self.hosts
-        return [{"type": "function", "function": {"name": name, "description": description,
+        return product + [{"type": "function", "function": {"name": name, "description": description,
                  "parameters": parameters}} for name, description in DESCRIPTIONS.items()]
 
     async def execute(self, name: str, arguments: dict):
+        if name == TOOL_NAME and self.product:
+            return await self.product.execute(arguments)
         if name not in DESCRIPTIONS:
             return {"available": False, "reason": "unknown_tool", "rows": []}
         try:
@@ -43,7 +53,7 @@ class CaseTools:
         except ValueError:
             return {"available": False, "reason": "invalid_or_out_of_scope_arguments", "rows": []}
         scope = {"hostname": args.hostname, "start": self.start.isoformat(), "end": self.end.isoformat()}
-        if not self.schemas():
+        if settings.AISOC_DISABLE_CLICKHOUSE or not settings.CLICKHOUSE_HOST:
             return {"available": False, "reason": "lake_not_configured", "query_scope": scope, "rows": []}
         fields = ("event_id", "event_time", "src_hostname", "process_name", "file_path", "hash_sha256", "user_name")
         condition = "process_name != ''"
@@ -69,6 +79,10 @@ ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
                 "rows": json.loads(json.dumps(rows[:args.limit], default=str)),
                 "returned_count": min(len(rows), args.limit), "truncated": len(rows) > args.limit,
                 "limitation": "本工具只查已接入事件湖；无记录不证明安全，进程记录不含父进程链。"}
+
+    def can_reuse(self, name):
+        # Product reads describe now, unlike the lake's fixed historical window.
+        return name in DESCRIPTIONS and name in {item["function"]["name"] for item in self.schemas()}
 
 
 def model_result(result: dict) -> str:

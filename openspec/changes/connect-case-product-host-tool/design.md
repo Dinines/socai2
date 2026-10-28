@@ -1,0 +1,5 @@
+# 实现范围
+
+Case材料记录每个告警的主机和source_connector_id。预览及运行使用同一工具构造函数，仅为已启用且允许get_host的CrowdStrike来源连接器提供product_host_details。模型提交source_alert_id和hostname，程序核对告警、主机及精确连接器的关系；服务端解密该连接器凭据，通过现有Actions HTTP客户端调用crowdstrike/get_host。
+
+结果只保留主机字段、来源身份、查询时间及Actions request_id。成功有记录、成功未找到、调用失败分开；当前主机快照不能证明调查历史窗口的状态。沿现有E证据、Tool消息、步骤和报告保存，不复用旧Run的当前快照。直接验证正常、空结果和失败，不建通用模拟服务。

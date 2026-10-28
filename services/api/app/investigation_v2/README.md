@@ -1,3 +1,5 @@
+**2026-10-28产品Tool：** case_product_tools绑定选定告警的精确CrowdStrike连接器，以现有Actions HTTP读取当前主机详情；Case预览、模型循环、证据及报告已接通。[合同和验证](../../../../docs/investigation/product-host-tool-20261028.md)。
+
 **2026-10-28告警/事件关联：** application:create_app组合当前告警、事件、Case、成员关联和query路由，不依赖旧program网关配置。新增alert_context_api、事件investigations GET及include_investigations手动概况参数；[接口与范围](../../../../docs/investigation/alert-event-investigation-links-20261028.md)。
 
 **2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。当批范围从已有Case开始，F5不属该批目标；[接口与调用例子](../../../../docs/investigation/case-first-version-20261028.md)。

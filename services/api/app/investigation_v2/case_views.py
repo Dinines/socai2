@@ -11,7 +11,7 @@ from .case_analysis_tools import CaseTools
 
 async def preview_analysis(db, tenant_id, case_id, request):
     context = await case_context(db, tenant_id, case_id, request)
-    tools = CaseTools(tenant_id, context["hosts"], request.start, request.end)
+    tools = await CaseTools.for_context(db, tenant_id, context, request.start, request.end)
     return {"context": context, "tools": tools.schemas(), "limits": LIMITS,
             "missing_member_ids": sorted(set(context["selected_member_ids"]) - set(context["read_member_ids"])),
             "notice": "本次为当前材料预览；启动调查时重新读取并固定范围，不执行模型或查询。"}
