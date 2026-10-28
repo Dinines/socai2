@@ -109,6 +109,10 @@ class ProductToolExamples(IsolatedAsyncioTestCase):
         self.assertNotIn("unused_vendor_field", evidence["rows"][0])
         self.assertEqual(evidence["query_scope"]["time_semantics"], "current_snapshot")
         self.assertEqual(evidence["upstream_request_id"], str(UUID(int=80)))
+        snapshot = next(item for item in data["result"]["report"]["timeline"] if item["time_kind"] == "snapshot")
+        self.assertEqual(snapshot["timestamp"], evidence["observed_at"])
+        self.assertIsNone(snapshot["in_window"])
+        self.assertEqual(snapshot["source_record_id"], "device-01")
         self.assertEqual(self.messages[0]["tools"], preview.json()["tools"])
         steps = (await self.client.get(data["steps_url"])).json()["items"]
         details = [(await self.client.get(item["detail_url"])).json()["data"] for item in steps]

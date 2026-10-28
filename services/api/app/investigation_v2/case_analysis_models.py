@@ -6,6 +6,7 @@ from app.services import llm_health
 from app.services.llm_safety import validate_messages
 from app.services.model_aliases import completions_url_for_base
 
+MAX_OUTPUT_TOKENS = 3000
 
 async def call_model(config, messages: list[dict], tools: list[dict]):
     # The shared validator checks content, but its returned normalization
@@ -15,7 +16,7 @@ async def call_model(config, messages: list[dict], tools: list[dict]):
                 if key in {"role", "content", "tool_calls", "tool_call_id"}} for message in messages]
     url = completions_url_for_base(config.base_url)
     enforce_airgap_for_url(url)
-    body = {"model": config.model, "messages": visible, "max_tokens": 1200}
+    body = {"model": config.model, "messages": visible, "max_tokens": MAX_OUTPUT_TOKENS}
     if tools:
         body["tools"] = tools
     try:

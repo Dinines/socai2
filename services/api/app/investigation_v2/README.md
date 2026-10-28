@@ -1,3 +1,5 @@
+**2026-10-28多告警分析：** case_synthesis提供逐成员判断、关联引用校验、来源时间线和未决问题，接入case_analysis的现有输出及报告。[字段和验证](../../../../docs/investigation/multi-alert-synthesis-20261028.md)。
+
 **2026-10-28产品Tool：** case_product_tools绑定选定告警的精确CrowdStrike连接器，以现有Actions HTTP读取当前主机详情；Case预览、模型循环、证据及报告已接通。[合同和验证](../../../../docs/investigation/product-host-tool-20261028.md)。
 
 **2026-10-28告警/事件关联：** application:create_app组合当前告警、事件、Case、成员关联和query路由，不依赖旧program网关配置。新增alert_context_api、事件investigations GET及include_investigations手动概况参数；[接口与范围](../../../../docs/investigation/alert-event-investigation-links-20261028.md)。

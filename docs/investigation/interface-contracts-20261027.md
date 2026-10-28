@@ -1,5 +1,7 @@
 # 调查模块接口设计：请求、返回与流程衔接
 
+**2026-10-28多告警结果实现：** 既有Case结果report新增member_assessments、member_coverage、relationships、timeline、open_questions；[字段、范围和示例](multi-alert-synthesis-20261028.md)。没有新增端点或表。
+
 **2026-10-28产品Tool实现：** 当前Case已接通`product_host_details`（CrowdStrike）。具体参数、来源连接器绑定、HTTP请求返回、证据与报告见[实际合同](product-host-tool-20261028.md)。下文进程HTTP示例仍是接入设计，不是该产品的实际接口。
 
 **2026-10-28最新实现：** 已补齐告警/事件对Case Run的关联读取，以及手动概况引用报告；新增字段、范围及分页见[关联接口说明](alert-event-investigation-links-20261028.md)。当前规划覆盖整个调查模块，Case触发/自动目标政策和F5仍不作前置任务。

@@ -18,8 +18,11 @@ from app.models.investigation import InvestigationArtifact, InvestigationEvent, 
 from app.services.alert_explain import _UPSERT_RUN_COST
 from app.services.cost_dashboard import _impute_public_cost
 from app.services.llm_resolver import resolve_llm_config
-from .case_analysis_models import call_model
+from .case_analysis_models import MAX_OUTPUT_TOKENS, call_model
 from .case_analysis_tools import CaseTools, model_result
+from .incident_reader import _entities
+from .case_synthesis import (AlertRelationship, MemberAssessment, OpenQuestion, OUTPUT_INSTRUCTIONS,
+                             complete_synthesis, synthesis_markdown, validate_synthesis)
 
 PROFILE = "case_analysis.v1"
 LIMITS = {"model_calls": 4, "tool_calls": 4, "tokens": 24000, "duration_seconds": 120}
@@ -80,6 +83,9 @@ class AnalysisConclusion(BaseModel):
     counterevidence: list[str]
     gaps: list[str]
     recommendations: list[str]
+    member_assessments: list[MemberAssessment] = Field(default_factory=list)
+    relationships: list[AlertRelationship] = Field(default_factory=list)
+    open_questions: list[OpenQuestion] = Field(default_factory=list)
 
 
 SYSTEM = """你在Case内调查告警。告警和分诊是待核材料，不是已经证实的攻击事实。
@@ -92,7 +98,7 @@ SYSTEM = """你在Case内调查告警。告警和分诊是待核材料，不是�
 H证据是前次调查的历史判断，不是本次新查询事实；旧报告中的编号属于旧Run，不能作为本次证据编号使用。
 无需继续查询或达到限制时，以JSON正文给出：summary，findings（每项text、evidence_ids），
 counterevidence（字符串数组），gaps（字符串数组），recommendations（字符串数组）。
-findings引用真实提供的证据编号；不得伪造来源。结论表述支持范围，不宣称未经核实的攻击成功或完整安全。"""
+findings引用真实提供的证据编号；不得伪造来源。结论表述支持范围，不宣称未经核实的攻击成功或完整安全。""" + OUTPUT_INSTRUCTIONS
 
 
 async def case_context(db, tenant_id, case_id, request):
@@ -125,6 +131,7 @@ async def case_context(db, tenant_id, case_id, request):
                 "severity": alert.severity, "status": alert.status, "disposition": alert.disposition,
                 "source_connector_id": str(alert.connector_id) if alert.connector_id else None,
                 "hosts": sorted(alert_hosts),
+                "entities": _entities([alert]),
                 "source_event_ids": alert.source_event_ids or [], "saved_analysis": (alert.ai_summary or "")[:600],
                 "saved_analysis_truncated": len(alert.ai_summary or "") > 600}
         evidence.append({"evidence_id": alert_ref, "kind": "alert", "data": data})
@@ -137,7 +144,8 @@ async def case_context(db, tenant_id, case_id, request):
             event = latest[str(alert.id)]
             payload = event.payload or {}
             evidence.append({"evidence_id": f"T{index}", "kind": "triage", "event_id": str(event.id),
-                             "data": {key: payload.get(key) for key in ("verdict", "rationale", "auto_closed")}})
+                             "data": {"alert_id": str(alert.id), **{key: payload.get(key)
+                                      for key in ("verdict", "rationale", "auto_closed")}}})
     return {"case_id": str(case_id), "case_title": case.title,
             "all_member_ids": [str(value) for value in all_ids], "selected_member_ids": [str(value) for value in selected],
             "read_member_ids": [member["alert_id"] for member in members], "source_incident_ids": sorted(incident_ids),
@@ -248,7 +256,7 @@ class CaseAnalysis:
                 async with asyncio.timeout(LIMITS["duration_seconds"]):
                     for turn in range(1, LIMITS["model_calls"] + 1):
                         # UTF-8 bytes conservatively bound text tokens before dispatch.
-                        if len(encoded(messages).encode()) + len(encoded(tools.schemas()).encode()) + 1456 > LIMITS["tokens"] - self.tokens:
+                        if len(encoded(messages).encode()) + len(encoded(tools.schemas()).encode()) + MAX_OUTPUT_TOKENS + 256 > LIMITS["tokens"] - self.tokens:
                             stop_reason = "input_or_token_limit"
                             break
                         self.run.iterations = turn
@@ -289,6 +297,7 @@ class CaseAnalysis:
                                 known = {item["evidence_id"] for item in self.evidence}
                                 if any(not set(item.evidence_ids).issubset(known) for item in conclusion.findings):
                                     raise ValueError("unknown_evidence_reference")
+                                validate_synthesis(conclusion.model_dump(mode="json"), self.context, self.evidence)
                             except (ValidationError, ValueError):
                                 conclusion = None
                                 stop_reason = "invalid_or_unreferenced_conclusion"
@@ -341,9 +350,11 @@ class CaseAnalysis:
             conclusion = AnalysisConclusion(summary="本次Case调查未形成完整结论，请结合已保存材料和缺口继续处理。",
                                             findings=[], counterevidence=[], gaps=[], recommendations=[])
         conclusion.gaps = list(dict.fromkeys(conclusion.gaps + self.gaps))
-        report = conclusion.model_dump()
+        report = conclusion.model_dump(mode="json")
+        complete_synthesis(report, self.context, self.evidence)
         lines = [f"# Case调查报告 {self.context['case_id']}", "", report["summary"], "", "## 发现与依据"]
         lines.extend(f"- {finding['text']}（依据：{', '.join(finding['evidence_ids'])}）" for finding in report["findings"])
+        lines.extend(synthesis_markdown(report))
         for title, key in (("反证", "counterevidence"), ("未解问题与限制", "gaps"), ("建议", "recommendations")):
             lines.extend(["", f"## {title}"])
             lines.extend(f"- {value}" for value in report[key])
