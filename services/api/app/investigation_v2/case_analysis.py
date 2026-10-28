@@ -38,6 +38,20 @@ def digest(value):
     return hashlib.sha256(encoded(value).encode("utf-8")).hexdigest()
 
 
+def model_context(context):
+    """Keep full history in evidence; omit derived history tables from model input."""
+    view = {**context, "evidence": []}
+    for item in context["evidence"]:
+        if item.get("kind") == "prior_analysis":
+            data = item["data"]
+            omitted = [key for key in ("timeline", "member_coverage") if key in data["report"]]
+            item = {**item, "data": {**data,
+                "report": {key: value for key, value in data["report"].items() if key not in omitted},
+                "omitted_report_fields": omitted}}
+        view["evidence"].append(item)
+    return view
+
+
 class CaseAnalysisScope(BaseModel):
     model_config = ConfigDict(extra="forbid")
     start: datetime
@@ -247,8 +261,9 @@ class CaseAnalysis:
             self.gaps.append("部分历史告警摘要仅提供前600字符，未核对完整摘要。")
         if not tools.schemas():
             self.gaps.append("当前Case无可调用的查询工具，请结合现有材料并保留来源覆盖限制。")
-        messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": encoded(self.context)}]
+        messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": encoded(model_context(self.context))}]
         conclusion, stop_reason = None, "model_call_limit"
+        conclusion_corrections = 0
         config = await resolve_llm_config(self.db, self.run.tenant_id)
         if not config.allowed or not config.api_key:
             stop_reason = "model_unavailable"
@@ -299,9 +314,30 @@ class CaseAnalysis:
                                 if any(not set(item.evidence_ids).issubset(known) for item in conclusion.findings):
                                     raise ValueError("unknown_evidence_reference")
                                 validate_synthesis(conclusion.model_dump(mode="json"), self.context, self.evidence)
-                            except (ValidationError, ValueError):
+                            except (ValidationError, ValueError) as exc:
                                 conclusion = None
                                 stop_reason = "invalid_or_unreferenced_conclusion"
+                                feedback = {
+                                    "errors": ([{"location": list(error["loc"]), "type": error["type"]}
+                                                for error in exc.errors(include_input=False, include_context=False, include_url=False)]
+                                               if isinstance(exc, ValidationError) else [{"type": str(exc)}]),
+                                    "available_evidence_ids": [item["evidence_id"] for item in self.evidence],
+                                    "selected_member_ids": self.context["selected_member_ids"],
+                                }
+                                await self.record("case_analysis_validation", "模型结论未通过格式或引用校验", feedback)
+                                if conclusion_corrections == 0 and turn < LIMITS["model_calls"]:
+                                    conclusion_corrections += 1
+                                    # The rejected answer is already in the ledger. Do not carry
+                                    # its invented claims or full text into the correction input.
+                                    messages.pop()
+                                    messages.append({"role": "user", "content":
+                                        "上一轮结论未通过校验，尚未成为调查结果。请按以下诊断纠正一次。"
+                                        "alert_id/alert_ids必须使用选定成员UUID，A1等仅用于evidence_ids。"
+                                        "不存在的E编号表示尚未取得该证据，不表示查询为空；需要补查时先发起原生tool_calls。"
+                                        "每条finding的evidence_ids至少包含一个已知编号；无依据的内容放入gaps或open_questions。"
+                                        "仅引用已收到的证据，最终按已定义字段输出纯JSON，不添加其他字段。\n" + encoded(feedback)})
+                                    stop_reason = "model_call_limit"
+                                    continue
                             else:
                                 stop_reason = "analysis_complete"
                             break

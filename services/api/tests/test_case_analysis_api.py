@@ -178,6 +178,40 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(len(self.messages), 2)
         self.assertEqual(self.lake.await_count, 1)
 
+    async def test_invalid_conclusion_gets_one_correction_before_real_tool_feedback(self):
+        conclusion = {"summary": "窗口内有脚本记录，攻击性质待核。",
+                      "findings": [{"text": "读取到进程记录", "evidence_ids": ["E1"]}],
+                      "counterevidence": [], "gaps": [], "recommendations": []}
+        invalid = {**conclusion, "findings": [{"text": "尚未查询的记录", "evidence_ids": ["E404"]}]}
+        replies = [{"content": json.dumps(invalid)},
+                   {"tool_calls": [{"id": "corrected-query", "type": "function", "function": {
+                       "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]},
+                   {"content": json.dumps(conclusion)}]
+
+        def provider(request):
+            self.messages.append(json.loads(request.content))
+            message = replies[len(self.messages) - 1]
+            return httpx.Response(200, json={"choices": [{"message": message,
+                "finish_reason": "tool_calls" if "tool_calls" in message else "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 50}})
+
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            response = await self.start()
+        self.assertEqual(response.status_code, 200, response.text)
+        result = response.json()
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["result"]["usage"]["model_calls"], 3)
+        self.assertEqual(self.lake.await_count, 1)
+        feedback = json.loads(self.messages[1]["messages"][-1]["content"].split("\n", 1)[1])
+        self.assertEqual(feedback["available_evidence_ids"], ["A1", "T1"])
+        self.assertEqual(feedback["errors"], [{"type": "unknown_evidence_reference"}])
+        self.assertNotIn("schema", feedback)
+        self.assertFalse(any("E404" in message.get("content", "") for message in self.messages[1]["messages"]))
+        self.assertEqual(sum(event.kind == "case_analysis_validation" for event in self.events), 1)
+        self.assertEqual(result["result"]["report"]["findings"][0]["evidence_ids"], ["E1"])
+
     async def test_empty_result_and_query_failure_remain_distinct(self):
         self.scenario = "empty"
         empty = (await self.start()).json()["result"]
@@ -256,7 +290,11 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(followup["previous_run_id"], first["run_id"])
         historical = next(item for item in followup["result"]["evidence"] if item["kind"] == "prior_analysis")
         self.assertEqual(historical["data"]["report"], original["report"])
-        self.assertIn("H1", self.messages[2]["messages"][1]["content"])
+        model_view = json.loads(self.messages[2]["messages"][1]["content"])
+        model_history = next(item for item in model_view["evidence"] if item["kind"] == "prior_analysis")
+        self.assertEqual(model_history["data"]["omitted_report_fields"], ["timeline", "member_coverage"])
+        self.assertNotIn("timeline", model_history["data"]["report"])
+        self.assertEqual(model_history["data"]["report"]["summary"], original["report"]["summary"])
         self.assertEqual(self.lake.await_count, 1)
         self.assertEqual(followup["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
         self.assertEqual((await self.client.get(first["result_url"])).json()["result"], original)

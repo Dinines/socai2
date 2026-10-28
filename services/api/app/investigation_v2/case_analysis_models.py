@@ -20,7 +20,7 @@ async def call_model(config, messages: list[dict], tools: list[dict]):
     if tools:
         body["tools"] = tools
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=10)) as client:
             response = await client.post(url, headers={"Authorization": f"Bearer {config.api_key}"}, json=body)
             response.raise_for_status()
             payload = response.json()

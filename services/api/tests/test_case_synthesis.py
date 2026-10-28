@@ -130,6 +130,10 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
                 data = response.json()
                 self.assertEqual(data["status"], "failed")
                 self.assertEqual(data["result"]["stop_reason"], "invalid_or_unreferenced_conclusion")
+                rejected = [event for event in self.events if event.run_id == UUID(data["run_id"])
+                            and event.kind == "case_analysis_validation"]
+                self.assertEqual(len(rejected), 2)
+                self.assertLessEqual(data["result"]["usage"]["model_calls"], 4)
                 self.assertEqual(data["result"]["report"]["relationships"], [])
                 self.assertEqual(data["result"]["report"]["member_coverage"]["not_assessed_count"], 3)
 
