@@ -1,6 +1,6 @@
 """Typed, read-only lake queries confined to a Case's hosts and absolute window."""
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -67,7 +67,10 @@ AND event_time >= toDateTime64(%(start)s, 6, 'UTC')
 AND event_time < toDateTime64(%(end)s, 6, 'UTC') AND {condition}
 ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
         params = {"tenant_id": str(self.tenant_id), "hostname": args.hostname,
-                  "start": self.start.isoformat(), "end": self.end.isoformat(), "fetch_limit": args.limit + 1}
+                  # toDateTime64 does not accept ISO offsets on the deployed lake.
+                  "start": self.start.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S.%f"),
+                  "end": self.end.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S.%f"),
+                  "fetch_limit": args.limit + 1}
         try:
             result = await execute_lake_query(sql, params=params, timeout_seconds=20, query_id=query_id)
             rows = [dict(zip(result.columns, row, strict=True)) for row in result.rows]

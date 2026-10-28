@@ -166,8 +166,10 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         params = self.lake.call_args.kwargs["params"]
         self.assertEqual(params["tenant_id"], str(TENANT))
         self.assertEqual(params["hostname"], "host-01")
-        self.assertEqual(params["start"], NOW.isoformat())
-        self.assertEqual(params["end"], (NOW + timedelta(minutes=5)).isoformat())
+        self.assertEqual(params["start"], "2026-10-25 10:00:00.000000")
+        self.assertEqual(params["end"], "2026-10-25 10:05:00.000000")
+        self.assertEqual(data["result"]["evidence"][-1]["query_scope"]["start"], NOW.isoformat())
+        self.assertEqual(data["result"]["evidence"][-1]["query_scope"]["end"], (NOW + timedelta(minutes=5)).isoformat())
         read = await self.client.get(self.path + f"/investigations/{data['run_id']}")
         self.assertEqual(read.status_code, 200, read.text)
         self.assertEqual(read.json()["result"], data["result"])
