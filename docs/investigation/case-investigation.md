@@ -61,4 +61,4 @@ python -B -m unittest discover -s services/api/tests -p test_case_analysis_api.p
 
 验证使用实际ASGI入口、模型HTTP协议包装、SQL参数组装及保存/读取代码，ledger、模型和事件湖由替身提供。模型替身按脚本返回tool_calls，因此证明的是调用与回传链路接通；尚未证明真实模型会自主选择正确工具或给出合格业务判断。真实模型行为需按[Tool接入指南](tool-onboarding-and-flow-verification.md)在选定配置/场景中另做直接验证。
 
-下一功能为F4：从告警/事件选择成员创建或关联Case，复用本调查入口。事件层继续保持已有汇总和AI概况。
+2026-10-28：F4成员创建/关联Case入口及新版Case历史列表已有代码和直接替身验证，见[F4说明](case-linking-20261028.md)。转入后明确携带selected_member_ids调用本调查入口。事件层继续保持已有汇总和AI概况，F5及事件报告回显仍未接通。

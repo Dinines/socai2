@@ -1,5 +1,7 @@
 # 调查模块证据与历史文档全目录
 
+2026-10-28增补：[F4实现与直接验证](case-linking-20261028.md)、[F4用例源码](../../services/api/tests/test_case_links_api.py)。下方137项为2026-10-27基线目录，不把新验证回填为历史通过项。
+
 2026-10-27，仓库基线`6044615`。从[审计导航](audit-guide-20261027.md)和[当前实现详解](current-implementation-reference-20261027.md)进入。此目录按当前仓库实际存在的相关文件生成，提供完整链接；分类不是通过/失败结论，本轮未执行任何probe或业务验证。
 
 范围：`docs/investigation`的Markdown/场景JSON、相关架构、原需求Markdown及Word原件、`docs/operations`路径名包含investigation的文档/回执/原件、当前OpenSpec及调查归档、活动probe和当前直接用例源码。外部未提供文件、Git历史中已删除文件及原件JSON内部编码条目不逐项展开；完整原件应打开对应JSON。

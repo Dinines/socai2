@@ -1,3 +1,5 @@
+**2026-10-28：** 新增case_links_api的成员转Case及关联读取、case_history的新版Case历史列表，均注册到Case独立factory及program_result/start组合。需要迁移121（尚未执行），[实现与5项直接验证](../../../../docs/investigation/case-linking-20261028.md)。
+
 **2026-10-27当前路径说明：** F1/F2 Incident及F3 Case已在本包实现。F3由本API进程直接执行模型/查询循环，使用自己的Case路由和原ledger，不走旧fixed/program结果网关或Agents M3。完整接口/数据/验证边界见[当前实现详解](../../../../docs/investigation/current-implementation-reference-20261027.md)，文档与证据见[审计导航](../../../../docs/investigation/audit-guide-20261027.md)。下方旧阶段“下一步/仅query”等按原记录解释。
 
 `program_result_api.create_app`是新的显式兼容读factory，独立COMPAT_READ_URL/TOKEN，只读known fixed/program DTO，旧factory保持。原Bearer前置及cases/alerts双read权限、当前tenant/user_id转发；完整manifest/execution/candidate/材料版本与hash校验，1MiB有界后解析/单GET无fallback。105直接/独立、8hash/34离线回放限定通过；未知数量/范围保null，不混原声明与确认状态。回执docs/operations/investigation-compatible-gateway-20261025.json；仍无实际部署或启动入口，双进程离线组合d4与a4.2准入后续。

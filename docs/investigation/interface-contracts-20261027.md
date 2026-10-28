@@ -1,6 +1,8 @@
 # 调查模块接口设计：请求、返回与流程衔接
 
-2026-10-27，依据[当前设计对齐](current-design-alignment-20261027.md)细化到接口，源码核对基线`6044615`。本文只定义接口及业务语义，不编写路由、模型、迁移、模拟HTTP服务或测试程序。
+**2026-10-28实现更新：** 第4节F4成员转Case及5.4节Case历史列表已实现代码并通过5个ASGI/数据库替身直接用例，迁移121未执行、未部署，见[F4调用及验证记录](case-linking-20261028.md)。本文对应状态已更新；F5及产品HTTP Tool仍为设计稿。
+
+本文于2026-10-27依据[当前设计对齐](current-design-alignment-20261027.md)细化到接口，当时源码核对基线为`6044615`、仅完成设计。2026-10-28新增实现范围以上方更新及F4说明为准。
 
 **状态标识：已有＝当前代码行为；拟新增＝本次设计稿、尚不可调用；后置＝不作为当前功能前置条件。** 现有接口保持实际字段，不把拟新增字段写成已实现。实现与历史证据分别见[实现详解](current-implementation-reference-20261027.md)、[审计导航](audit-guide-20261027.md)。
 
@@ -12,11 +14,11 @@
 | --- | --- | --- | --- |
 | 已有F1 | `GET /incidents/{incident_id}` | 当前成员/分诊汇总与已存AI概况 | 否 |
 | 已有F2 | `POST /incidents/{incident_id}/overview/refresh` | 手动生成并保存概况 | 一次概况模型；无Tool、无Run |
-| 拟新增F4 | `POST /case-links` | 所选告警创建或关联Case | 否 |
-| 拟新增F4 | `GET /case-links?incident_id=…`或`?alert_id=…` | 返回已保存的转Case关联，供跳转 | 否 |
+| 已有F4 | `POST /case-links` | 所选告警创建或关联Case | 否 |
+| 已有F4 | `GET /case-links?incident_id=…`或`?alert_id=…` | 返回已保存的转Case关联，供跳转 | 否 |
 | 已有F3 | `POST /cases/{case_id}/investigate` | 对Case所选成员执行一次调查 | 是；同步执行 |
 | 已有F3 | `GET /cases/{case_id}/investigations/{run_id}` | 读取已存范围、进展和结果 | 否 |
-| 拟新增读取补充 | `GET /cases/{case_id}/investigations` | 列出该Case的新版调查历史 | 否 |
+| 已有读取补充 | `GET /cases/{case_id}/investigations` | 列出该Case的新版调查历史 | 否 |
 | 拟新增F5，内部接口 | `POST /internal/investigation/triage-escalations` | 原分诊worker按已有政策进入同一个Case内核 | 仅允许分支执行；同步衔接F4/F3 |
 | 拟新增F5，内部接口 | `GET /internal/investigation/triage-escalations/{operation_key}` | 读取自动入口已保存的处理回执 | 否 |
 
@@ -33,12 +35,12 @@
 | 时间 | ISO 8601带时区，调查窗口归一UTC，左闭右开`[start,end)`；当前F3要求正窗口且不超过7天 |
 | 空值 | `null`表示没有对应值/尚未生成；`[]`表示本字段没有条目；查询成功为空与查询失败必须另外区分 |
 | 请求重用 | `operation_key`为非零UUID。F3同租户同key且同Case/主体/请求只读原Run，改参数必须新key；F4/F5分别按自己的操作类型保存一次结果 |
-| 请求字段 | 当前F3及拟新增写接口禁止未声明字段；不把此规则宣称为所有已有GET都已严格拒绝未知参数 |
+| 请求字段 | 当前F3/F4及拟新增写接口禁止未声明字段；不把此规则宣称为所有已有GET都已严格拒绝未知参数 |
 | HTTP与业务状态 | HTTP 200表示成功返回接口结果，不保证模型生成成功、调查无缺口或Case已解决 |
 | 错误体 | 已有业务错误采用`{"detail":"code"}`；参数校验422沿用框架`detail`数组。拟新增业务错误继续同样格式，不另建错误协议 |
 | 跳转 | 文档返回的是API资源地址；界面如何路由不在本轮实现。原`alert_url`也为API地址 |
 
-拟新增列表接口均用`limit`（默认20，1–50）及可选`cursor`（不透明字符串），返回`items`和`next_cursor`（无后续为null），按记录时间与ID倒序。游标只翻阅记录，不触发执行；不加入分页快照系统。
+关联记录及Case历史列表均用`limit`（默认20，1–50）及可选`cursor`（不透明字符串），返回`items`和`next_cursor`（无后续为null），按记录时间与ID倒序。游标只翻阅记录，不触发执行；不加入分页快照系统。
 
 ## 3. F1/F2：事件汇总与AI概况（已有）
 
@@ -98,7 +100,7 @@
 
 现有独立任务参数：`--tenant-id`必填，`--since`可选带时区时间、默认进程启动时刻，`--interval`默认30秒，`--once`只处理一批最多20个。任务尚未启用；首次失败也留下尝试记录，后续由手动刷新处理。本轮不新增事件实时推送、复杂刷新政策或任务管理API。
 
-## 4. F4：告警/事件转Case（拟新增）
+## 4. F4：告警/事件转Case（已有代码，迁移待执行）
 
 ### 4.1 POST /case-links
 
@@ -140,9 +142,9 @@ attach示例为`"target":{"mode":"attach","case_id":"33333333-3333-4333-8333-333
 1. 服务端校验所选Alert存在于当前租户；Incident来源还须全部属于请求中的事件。成员不匹配整体返回错误，不悄悄丢掉部分成员。
 2. “选择全部”由调用方提交当前看到的完整ID集合。服务端只处理显式集合：新增告警不偷偷加入；与当前事件成员相等时返回`selection_kind=all_current`，否则为`subset`。来源为alerts时为`explicit_alerts`。
 3. create创建状态为`new`的Case，严重度取所选成员最高已知等级；只设置请求中的标题/描述及成员，不自动推送ITSM。attach去重追加成员；已在Case内的成员计入`already_linked_member_ids`。
-4. 本设计拟定attach不接受`resolved/closed` Case，返回409 `case_not_open`，由调用方走已有案件管理流程后重新决定；这是F4新增约束，不宣称旧v1接口已有相同检查。
+4. attach不接受`resolved/closed` Case，返回409 `case_not_open`，由调用方走已有案件管理流程后重新决定；这是F4新增约束，不宣称旧v1接口已有相同检查。
 5. Case成员以`Case.alert_ids`为准，不重写Alert的旧`case_id`来冒充完整关系。一个来源告警可能已存在于其他Case，本接口只处理明确指定的目标，不移动或删除其他Case成员。
-6. 同一操作的Case变更和成功关联回执一并保存。相同key及同主体/规范化请求返回原回执、不新建Case；同key换目标、来源或正文返回409。UUID归一、成员按集合比较；正文保留原值。具体表与SQL在实施时确定。
+6. 同一操作的Case变更和成功关联回执一并保存。相同key及同主体/规范化请求返回原回执、不新建Case；同key换目标、来源或正文返回409。UUID归一、成员按集合比较；正文保留原值。回执保存于`investigation_case_links`，由迁移121创建。
 
 首次成功201；相同操作重读200，返回同一业务结果：
 
@@ -199,7 +201,7 @@ attach示例为`"target":{"mode":"attach","case_id":"33333333-3333-4333-8333-333
 
 未声明的存储故障沿用应用错误处理；不能编造成功关联。读取关联不会补建Case或启动调查。
 
-## 5. F3：Case调查与报告（已有接口＋一项读取设计）
+## 5. F3：Case调查与报告（已有接口）
 
 ### 5.1 启动请求
 
@@ -283,7 +285,7 @@ A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/seve
 
 当前上限：模型4次、工具4次、已知tokens 24000、主循环120秒；120秒不覆盖所有前置读库及最终保存。已有Run.status并非完整恢复状态机，部分中断可保留running且result=null；本文不新增取消、接管、恢复或异步执行接口。
 
-### 5.4 Case历史列表（拟新增读取补充）
+### 5.4 Case历史列表（已有读取补充）
 
 `GET /api/v2/investigation/cases/{case_id}/investigations?limit=20&cursor=…`只列当前租户、真实Case及`case_analysis.v1`的Run，返回`items/next_cursor`。每项字段：`run_id/case_id:UUID`、`started_at:datetime`、`completed_at:datetime|null`、`status:string`、`scope:object`、`stop_reason:string|null`、`completion:string|null`、`result_url:string`。没有最终工件时后两字段为null，不从Run.error猜业务结论。
 
@@ -443,7 +445,7 @@ HTTP成功且code=OK、events为空：available=true、rows=[]。HTTP/业务错�
 sequenceDiagram
     participant U as 调用方
     participant I as 事件接口
-    participant C as Case关联接口（拟新增）
+    participant C as Case关联接口
     participant R as Case调查接口
     participant M as 模型
     participant T as Tool与来源
@@ -469,6 +471,6 @@ sequenceDiagram
 
 ## 9. 交接给后续实现的范围
 
-本稿已明确现有四个公开接口、拟新增Case关联与历史列表、内部自动入口、模型/Tool消息和一个产品HTTP适配合同。F4/F5及拟新增字段都保持未实现；Case自动目标政策仍必须来自已确定的业务规则，本文没有代用户选定自动匹配算法。
+本文明确事件汇总/概况、Case关联与历史列表、Case调查、拟新增内部自动入口、模型/Tool消息和一个产品HTTP适配合同。F4及Case历史已有代码；F5、产品HTTP Tool及其新增字段尚未实现。Case自动目标政策仍必须来自已确定的业务规则，本文没有代用户选定自动匹配算法。
 
 实施时按功能逐项推进：先F4成员转Case及跳转，再按实际需要补新版Run列表和Tool，F5在Case目标政策明确后接线。只做相应功能的直接验证；既有且未变部分不重跑。权限专项、部署、远端推送与OpenSpec未完成项不因文档完成而恢复或核销。

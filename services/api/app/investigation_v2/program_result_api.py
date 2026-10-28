@@ -10,6 +10,7 @@ from .result_api import _explicit_bearer
 from .program_result_gateway import CompatibleResultReadGateway
 from .incident_api import router as incident_router
 from .case_analysis_api import router as case_analysis_router
+from .case_links_api import router as case_links_router
 
 
 async def _permitted_reader(_credential: Annotated[None, Depends(_explicit_bearer)],
@@ -42,4 +43,5 @@ def create_app(*, gateway=None):
     app.include_router(router)
     app.include_router(incident_router)
     app.include_router(case_analysis_router)
+    app.include_router(case_links_router)
     return app
