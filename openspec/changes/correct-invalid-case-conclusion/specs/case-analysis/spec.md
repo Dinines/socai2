@@ -11,6 +11,10 @@ Case analysis SHALL permit at most one correction of an invalid conclusion withi
 - **WHEN** the model produces a second invalid conclusion
 - **THEN** analysis ends with the existing invalid-conclusion failure and partial report.
 
+#### Scenario: Correction avoids redundant instructions
+- **WHEN** a final-conclusion correction request is prepared
+- **THEN** its system message describes the correction phase concisely, error feedback omits scope lists already enforced by response_format, source/Tool messages remain unchanged, and the ledger retains full feedback and the original rejected response under the unchanged budget.
+
 ### Requirement: Report response waits fit the overall analysis deadline
 The model HTTP request SHALL allow up to 60 seconds of response waiting with a 10-second connect timeout, while remaining subject to the existing 120-second enclosing analysis deadline and without automatic HTTP retries.
 

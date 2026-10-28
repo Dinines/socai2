@@ -4,6 +4,8 @@ After a final-answer schema/reference failure, record error types/locations, cur
 
 The full rejected response stays in its original ledger step but is removed from the next model input. The correction uses diagnostics and original source material, avoiding repeated invented claims and unnecessary input growth within the unchanged budget.
 
+The final-code live follow-up exceeded its remaining preflight allowance by 553. Use a concise correction-specific system instruction instead of repeating the Tool-selection instructions and field descriptions already declared by response_format. Keep source messages and Tool results unchanged. Keep complete validation feedback in the ledger, but send only error locations/types in the correction message: allowed evidence/member IDs are already declared in the schema. Preserve source-trust, history, absence/failure, member-source, correlation/causality and unresolved-question rules. This changes neither token accounting nor limits.
+
 Do not include Pydantic raw input/context in diagnostic feedback. Do not expand budgets, retry HTTP failures, replay a saved Run, silently rewrite member IDs, or turn invalid evidence into accepted conclusions. A second invalid conclusion retains the current terminal failure. Valid responses incur no extra model call.
 
 Use a 60-second HTTP response timeout (10-second connect) for the existing 3000-output-token model call. The outer 120-second analysis deadline still cancels work, so this does not extend total Run duration.
