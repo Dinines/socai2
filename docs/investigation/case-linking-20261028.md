@@ -1,5 +1,7 @@
 # F4：告警和事件成员转入Case
 
+**2026-10-28真实联调：** 120/121现已在21安装。事件子集创建Case、告警成员追加、同key回执读取、按来源查询及选定范围预览已用真实PG通过；新增1个测试Case/2条关联/0个Run。[实际输入输出和对象](incident-case-basic-flow-20261028.md)。未常驻部署；下文测试描述保留原实现当批范围。
+
 2026-10-28。已实现接口代码及5个直接用例，未执行数据库迁移或部署。此前[接口设计](interface-contracts-20261027.md)第4节和5.4节现有对应实现；F5自动入口、产品HTTP Tool和事件Case报告回显仍未接通。
 
 ## 已有入口
@@ -41,7 +43,7 @@ POST复用已有`cases:write`、`cases:read`、`alerts:read`依赖；列表复�
 - 同key重读先返回原回执，不重新解析变化后的事件，也不再次写Case。关联GET返回转入时的历史，不冒充Case当前成员或报告。
 - Case历史列表只从对应结果工件投影停止原因和completion；running无结果保持null，不读取完整Markdown，也不推断Case已解决。
 
-迁移文件：[121_investigation_case_links.sql](../../services/api/migrations/121_investigation_case_links.sql)。需要在启用这些入口的数据库中执行；本次仅新增文件，未执行迁移120/121或启动服务。
+迁移文件：[121_investigation_case_links.sql](../../services/api/migrations/121_investigation_case_links.sql)。原实现批次只新增文件；后续基本运行联调已安装120/121，迁移登记从134变为136，未启动常驻服务。
 
 ## 直接验证与边界
 

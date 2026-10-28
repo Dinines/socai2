@@ -1,5 +1,7 @@
 # F2 事件 AI 概况
 
+**2026-10-28真实联调：** 120迁移现已在21安装。手动刷新采用同一合成事件和已有Case报告，真实模型调用1次、5837已知tokens；概况/引用保存和普通GET读回通过，旧报告保持。[实际结果](incident-case-basic-flow-20261028.md)。首次自动worker仍未启用，未常驻部署。
+
 **2026-10-28增量：** 手动刷新可传include_investigations=true引用已有Case报告摘要，并保存Run/范围；后续GET只刷新结构化关联和过期标记。默认基础模式及首次任务保持原行为，见[新接口与引用规则](alert-event-investigation-links-20261028.md)。下文“未接入调查结果”对应原基础版本。
 
 2026-10-27审计补充：[当前实现详解](current-implementation-reference-20261027.md)补齐完整返回字段、数据表、首次任务触发和证据范围；本版事件职责继续保持汇总与概况。
@@ -11,7 +13,7 @@
 - `GET /api/v2/investigation/incidents/{incident_id}`：原F1当前数据，附加`ai_overview`和`ai_overview_metadata`。读取不会调用模型。
 - `POST /api/v2/investigation/incidents/{incident_id}/overview/refresh`：无请求体，用当前事件材料生成并保存概况，然后返回同样的事件结构。复用已有`alerts:write`和`alerts:read`权限。
 
-接口已在独立的`incident_api`及兼容结果/启动app中注册。运行新版前须按现有迁移方式应用[120迁移](../../services/api/migrations/120_fusion_incident_summaries.sql)，增加`fusion_incident_summaries`表。此迁移未在本轮执行；F2代码的事件读取会使用这张新表。
+接口已在独立的`incident_api`及兼容结果/启动app中注册。运行新版需要[120迁移](../../services/api/migrations/120_fusion_incident_summaries.sql)的`fusion_incident_summaries`表；该表已在2026-10-28基本运行联调中安装，F2代码的事件读取会使用它。
 
 返回示意（省略其他当前字段）：
 
