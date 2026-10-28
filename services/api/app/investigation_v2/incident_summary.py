@@ -42,9 +42,13 @@ class IncidentSummaryRecord(Base):
 
 
 def source_fingerprint(overview: IncidentOverview) -> str:
-    data = overview.model_dump(mode="json", exclude={"ai_overview", "ai_overview_metadata", "investigations_url"})
+    data = overview.model_dump(mode="json", exclude={"ai_overview", "ai_overview_metadata", "investigations_url", "executions_url"})
     if data.get("investigations") is None:
         data.pop("investigations", None)  # Preserve the fingerprint of existing basic overviews.
+    else:
+        for item in data["investigations"].get("items", []):
+            item.pop("evidence_url", None)
+            item.pop("execution_url", None)
     return hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 

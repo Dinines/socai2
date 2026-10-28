@@ -29,5 +29,6 @@ async def list_analyses(db, tenant_id, case_id, *, limit=20, cursor=None):
     rows = (await db.execute(query.order_by(run.started_at.desc(), run.id.desc()).limit(limit + 1))).mappings().all()
     return {"items": [{**row, "case_id": str(case_id), **analysis_urls(case_id, row["run_id"])}
              for row in rows[:limit]],
+            "executions_url": f"/api/v2/investigation/executions?case_id={case_id}",
             "next_cursor": encode_cursor(rows[limit - 1]["started_at"], rows[limit - 1]["run_id"], scope)
             if len(rows) > limit else None}

@@ -36,5 +36,6 @@ async def context(alert_id: UUID, db: TenantDBSession,
             "triage": triage, "triage_url": f"/api/v1/investigations/{triage.run_id}" if triage else None,
             "processing_context_url": f"/api/v1/alerts/{alert_id}/processing-context",
             "case_links_url": f"/api/v2/investigation/case-links?alert_id={alert_id}",
+            "executions_url": f"/api/v2/investigation/executions?alert_id={alert_id}",
             "investigations": await read_related(db, user.tenant_id, [alert_id], subject=f"alert:{alert_id}",
                                                  limit=limit, cursor=cursor)}

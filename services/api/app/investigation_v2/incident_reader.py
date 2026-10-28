@@ -63,6 +63,7 @@ class IncidentOverview(BaseModel):
     ai_overview: str | None = None
     ai_overview_metadata: dict[str, Any] | None = None
     investigations_url: str | None = None
+    executions_url: str | None = None
     investigations: dict[str, Any] | None = None
 
 
@@ -153,4 +154,5 @@ async def read_incident(db: AsyncSession, *, tenant_id: UUID, incident_id: UUID)
         mitre_tactics=sorted({value for alert in alerts for value in _strings(alert.mitre_tactics)}),
         mitre_techniques=sorted({value for alert in alerts for value in _strings(alert.mitre_techniques)}),
         members=members, investigations_url=f"/api/v2/investigation/incidents/{incident_id}/investigations",
+        executions_url=f"/api/v2/investigation/executions?incident_id={incident_id}",
     )

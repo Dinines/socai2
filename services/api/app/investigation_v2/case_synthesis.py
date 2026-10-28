@@ -5,6 +5,7 @@ from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+from .case_navigation import citation_links, evidence_url
 
 
 class MemberAssessment(BaseModel):
@@ -161,29 +162,30 @@ def complete_synthesis(report, context, evidence):
     report["gaps"] = list(dict.fromkeys(report["gaps"]))
 
 
-def synthesis_markdown(report):
+def synthesis_markdown(report, case_id, run_id):
     coverage = report["member_coverage"]
     lines = ["", "## 成员覆盖与判断",
         f"选定{coverage['selected_count']}条，读取{coverage['read_count']}条；给出判断{coverage['addressed_count']}条，"
         f"尚未明确{coverage['unresolved_count']}条，未逐项分析{coverage['not_assessed_count']}条，材料不可读{coverage['source_unavailable_count']}条。",
         "给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。"]
     for item in report["member_assessments"]:
-        lines.append(f"- {item['alert_id']} [{item['status']}/{item['role']}]：{item['summary']}（依据：{', '.join(item['evidence_ids']) or '无'}）")
+        lines.append(f"- {item['alert_id']} [{item['status']}/{item['role']}]：{item['summary']}（依据：{citation_links(case_id, run_id, item['evidence_ids'])}）")
     lines.extend(["", "## 跨告警关联依据", "共同实体或时间接近不等于因果关系。"])
     for item in report["relationships"]:
-        lines.append(f"- {', '.join(item['alert_ids'])} [{item['kind']}/{item['assessment']}]：{item['basis']}（依据：{', '.join(item['evidence_ids'])}）")
+        lines.append(f"- {', '.join(item['alert_ids'])} [{item['kind']}/{item['assessment']}]：{item['basis']}（依据：{citation_links(case_id, run_id, item['evidence_ids'])}）")
     if not report["relationships"]:
         lines.append("未给出明确关联条目，不代表已证明全部成员互不相关。")
     lines.extend(["", "## 来源时间线", "按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。"])
     labels = {"alert": "告警时间", "event": "来源事件时间", "snapshot": "当前快照读取时间"}
     for item in report["timeline"]:
         location = f"{item['evidence_id']}" + (f"/rows/{item['row_index']}" if item["row_index"] is not None else "")
+        location = f"[{location}]({evidence_url(case_id, run_id, item['evidence_id'], item['row_index'])})"
         outside = "，窗口外" if item["in_window"] is False else ""
         lines.append(f"- {item['timestamp'] or '时间未知'} [{labels[item['time_kind']]}{outside}]：{item['description']}"
                      f"（依据：{location}；来源记录：{item['source_record_id'] or '见原告警'}；候选成员：{', '.join(item['candidate_member_ids']) or '未匹配'}）")
     lines.extend(["", "## 未决问题"])
     for item in report["open_questions"]:
-        lines.append(f"- {item['question']}（成员：{', '.join(item['alert_ids']) or '本次全案'}；依据：{', '.join(item['evidence_ids']) or '无'}）"
+        lines.append(f"- {item['question']}（成员：{', '.join(item['alert_ids']) or '本次全案'}；依据：{citation_links(case_id, run_id, item['evidence_ids'])}）"
                      f" 缺少：{item['missing_evidence']}；建议：{item['suggested_action'] or '未提供'}")
     if not report["open_questions"]:
         lines.append("本次未列出结构化未决问题；其余限制见报告缺口。")

@@ -20,6 +20,7 @@ from app.services.cost_dashboard import _impute_public_cost
 from app.services.llm_resolver import resolve_llm_config
 from .case_analysis_models import MAX_OUTPUT_TOKENS, call_model
 from .case_analysis_tools import CaseTools, model_result
+from .case_navigation import analysis_urls, citation_links, report_navigation
 from .incident_reader import _entities
 from .case_synthesis import (AlertRelationship, MemberAssessment, OpenQuestion, OUTPUT_INSTRUCTIONS,
                              complete_synthesis, synthesis_markdown, validate_synthesis)
@@ -163,11 +164,6 @@ async def get_case_run(db, tenant_id, case_id, run_id):
     return run
 
 
-def analysis_urls(case_id, run_id):
-    base = f"/api/v2/investigation/cases/{case_id}/investigations/{run_id}"
-    return {"result_url": base, "steps_url": f"{base}/steps", "report_url": f"{base}/report"}
-
-
 async def read_analysis(db, tenant_id, case_id, run_id):
     run = await get_case_run(db, tenant_id, case_id, run_id)
     artifact = (await db.execute(select(InvestigationArtifact).where(
@@ -177,11 +173,14 @@ async def read_analysis(db, tenant_id, case_id, run_id):
     events = list((await db.execute(select(InvestigationEvent).where(
         InvestigationEvent.tenant_id == tenant_id, InvestigationEvent.run_id == run_id,
     ).order_by(InvestigationEvent.seq))).scalars().all())
+    result = json.loads(artifact.content) if artifact else None
+    previous_id = (run.raw_alert or {}).get("previous_run_id")
     return {"run_id": str(run_id), "case_id": str(case_id), "status": run.status,
             **analysis_urls(case_id, run_id), "previous_run_id": (run.raw_alert or {}).get("previous_run_id"),
+            "previous_result_url": analysis_urls(case_id, previous_id)["result_url"] if previous_id else None,
             "scope": (run.raw_alert or {}).get("scope"),
             "progress": [{"seq": event.seq, "kind": event.kind, "summary": event.summary} for event in events],
-            "result": json.loads(artifact.content) if artifact else None}
+            "result": result, "navigation": report_navigation(case_id, run_id, result)}
 
 
 class CaseAnalysis:
@@ -353,8 +352,9 @@ class CaseAnalysis:
         report = conclusion.model_dump(mode="json")
         complete_synthesis(report, self.context, self.evidence)
         lines = [f"# Case调查报告 {self.context['case_id']}", "", report["summary"], "", "## 发现与依据"]
-        lines.extend(f"- {finding['text']}（依据：{', '.join(finding['evidence_ids'])}）" for finding in report["findings"])
-        lines.extend(synthesis_markdown(report))
+        lines.extend(f"- {finding['text']}（依据：{citation_links(self.context['case_id'], self.run.id, finding['evidence_ids'])}）"
+                     for finding in report["findings"])
+        lines.extend(synthesis_markdown(report, self.context["case_id"], self.run.id))
         for title, key in (("反证", "counterevidence"), ("未解问题与限制", "gaps"), ("建议", "recommendations")):
             lines.extend(["", f"## {title}"])
             lines.extend(f"- {value}" for value in report[key])
@@ -377,7 +377,7 @@ class CaseAnalysis:
                 detail = f"前次调查{item['data']['run_id']}（历史判断，范围见原报告）"
             else:
                 detail = f"分诊记录{item.get('event_id')}（分诊判断）"
-            lines.append(f"- {item['evidence_id']}：{detail}")
+            lines.append(f"- {citation_links(self.context['case_id'], self.run.id, [item['evidence_id']])}：{detail}")
         result = {"profile": PROFILE, "run_id": str(self.run.id), "case_id": self.context["case_id"],
             "stop_reason": stop_reason, "completion": "partial" if report["gaps"] else "conclusion_available",
             "scope": {key: self.context[key] for key in ("all_member_ids", "selected_member_ids", "read_member_ids", "start", "end")},
@@ -393,7 +393,10 @@ class CaseAnalysis:
         return {"run_id": str(self.run.id), "case_id": self.context["case_id"], "status": self.run.status,
                 **analysis_urls(self.context["case_id"], self.run.id),
                 "previous_run_id": (self.run.raw_alert or {}).get("previous_run_id"),
-                "scope": result["scope"], "result": result}
+                "previous_result_url": analysis_urls(self.context["case_id"], self.request.previous_run_id)["result_url"]
+                                       if self.request.previous_run_id else None,
+                "scope": result["scope"], "result": result,
+                "navigation": report_navigation(self.context["case_id"], self.run.id, result)}
 
 
 async def start_analysis(db, tenant_id, actor_id, case_id, request):

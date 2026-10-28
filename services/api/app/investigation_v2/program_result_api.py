@@ -12,6 +12,7 @@ from .incident_api import router as incident_router
 from .case_analysis_api import router as case_analysis_router
 from .case_links_api import router as case_links_router
 from .alert_context_api import router as alert_context_router
+from .execution_index import router as execution_router
 
 
 async def _permitted_reader(_credential: Annotated[None, Depends(_explicit_bearer)],
@@ -46,4 +47,5 @@ def create_app(*, gateway=None):
     app.include_router(case_analysis_router)
     app.include_router(case_links_router)
     app.include_router(alert_context_router)
+    app.include_router(execution_router)
     return app

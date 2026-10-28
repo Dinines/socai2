@@ -1,3 +1,5 @@
+**2026-10-28公共查询：** execution_index提供统一业务筛选和原生结果地址；case_navigation/case_evidence提供报告引用、证据、调用步骤和来源行跳转，仅读已存材料。[接口和验证](../../../../docs/investigation/execution-index-and-evidence-20261028.md)。
+
 **2026-10-28多告警分析：** case_synthesis提供逐成员判断、关联引用校验、来源时间线和未决问题，接入case_analysis的现有输出及报告。[字段和验证](../../../../docs/investigation/multi-alert-synthesis-20261028.md)。
 
 **2026-10-28产品Tool：** case_product_tools绑定选定告警的精确CrowdStrike连接器，以现有Actions HTTP读取当前主机详情；Case预览、模型循环、证据及报告已接通。[合同和验证](../../../../docs/investigation/product-host-tool-20261028.md)。

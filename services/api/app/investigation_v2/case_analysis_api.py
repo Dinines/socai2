@@ -9,6 +9,8 @@ from app.db.rls import TenantDBSession
 from .case_analysis import CaseAnalysisRequest, CaseAnalysisScope, read_analysis, start_analysis
 from .case_history import list_analyses
 from .case_views import list_steps, preview_analysis, read_step, saved_report
+from .case_evidence import list_evidence, read_evidence, read_evidence_row
+from .execution_index import router as execution_router
 from .case_links_api import router as links_router
 from .query_api import create_app as create_query_app
 from .result_api import _explicit_bearer
@@ -81,9 +83,34 @@ async def report(case_id: UUID, run_id: UUID, db: TenantDBSession,
                     headers={"Content-Disposition": f'attachment; filename="case-{case_id}-run-{run_id}.md"'})
 
 
+@router.get("/{case_id}/investigations/{run_id}/evidence")
+async def evidence_list(case_id: UUID, run_id: UUID, db: TenantDBSession,
+                        _credential: Annotated[None, Depends(_explicit_bearer)],
+                        user: Annotated[CurrentUser, Depends(require_permission("cases:read"))]):
+    user.require_permission("alerts:read")
+    return await list_evidence(db, user.tenant_id, case_id, run_id)
+
+
+@router.get("/{case_id}/investigations/{run_id}/evidence/{evidence_id}")
+async def evidence_detail(case_id: UUID, run_id: UUID, evidence_id: str, db: TenantDBSession,
+                          _credential: Annotated[None, Depends(_explicit_bearer)],
+                          user: Annotated[CurrentUser, Depends(require_permission("cases:read"))]):
+    user.require_permission("alerts:read")
+    return await read_evidence(db, user.tenant_id, case_id, run_id, evidence_id)
+
+
+@router.get("/{case_id}/investigations/{run_id}/evidence/{evidence_id}/rows/{row_index}")
+async def evidence_row(case_id: UUID, run_id: UUID, evidence_id: str, row_index: Annotated[int, Path(ge=0)],
+                       db: TenantDBSession, _credential: Annotated[None, Depends(_explicit_bearer)],
+                       user: Annotated[CurrentUser, Depends(require_permission("cases:read"))]):
+    user.require_permission("alerts:read")
+    return await read_evidence_row(db, user.tenant_id, case_id, run_id, evidence_id, row_index)
+
+
 def create_app():
     app = create_query_app()
     app.include_router(router)
     app.include_router(links_router)
+    app.include_router(execution_router)
     app.title = "Case investigation analysis"
     return app

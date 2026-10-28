@@ -1,5 +1,7 @@
 # 调查模块接口设计：请求、返回与流程衔接
 
+**2026-10-28公共读取实现：** 新增executions按来源筛选及单Run元数据、Case evidence及rows读取、结果navigation和报告引用链接；[字段与跳转合同](execution-index-and-evidence-20261028.md)。旧记录沿原生账本读取，不猜Case归属和正式结果完整度。
+
 **2026-10-28多告警结果实现：** 既有Case结果report新增member_assessments、member_coverage、relationships、timeline、open_questions；[字段、范围和示例](multi-alert-synthesis-20261028.md)。没有新增端点或表。
 
 **2026-10-28产品Tool实现：** 当前Case已接通`product_host_details`（CrowdStrike）。具体参数、来源连接器绑定、HTTP请求返回、证据与报告见[实际合同](product-host-tool-20261028.md)。下文进程HTTP示例仍是接入设计，不是该产品的实际接口。
