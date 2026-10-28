@@ -12,4 +12,13 @@ def create_app():
     app.title = "Alert, incident and Case investigation"
     for router in (alert_router, incident_router, case_router, links_router, execution_router):
         app.include_router(router)
+
+    @app.get("/livez", include_in_schema=False)
+    async def live():
+        return {"status": "alive", "service": "investigation-v2"}
+
+    @app.get("/api/v2/investigation/openapi.json", include_in_schema=False)
+    async def contract():
+        return app.openapi()
+
     return app

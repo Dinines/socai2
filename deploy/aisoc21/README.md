@@ -1,5 +1,11 @@
 # 21告警处理服务端部署输入
 
+## 2026-10-28 独立调查API
+
+新服务`socai2-investigation-api`已按用户授权运行在21本机`127.0.0.1:18010`，与原18000 API并存。使用独立[Compose](compose.investigation-v2-api.yml)，不并入下方历史叠加命令；原服务未替换或重启。代码在`/opt/sting-aisoc-socai2/investigation-v2/20261028-r1`，私有环境文件`private/investigation-v2.env`为0600。
+
+[访问地址、调用脚本及验证范围](../../docs/investigation/resident-api-20261028.md)。新服务使用当前调查factory，不启动旧main后台任务或首次概况worker。120/121已安装，现有数据库迁移登记为136；下方134计数属于历史批次。
+
 ## 2026-10-21原版full配套
 
 本批在既有运行命令的`compose.integrity.yml`之后加入`compose.full-support.yml`、`compose.ueba.yml`、`compose.enrichment.yml`、`compose.threatintel.yml`。它们分别接API/Fusion的ClickHouse与Neo4j、UEBA及Agents上下文、IOC增强、TI/OpenSearch；保留全部原叠加层，不单独用这些增量文件重建API/Fusion/Agents。只对需要的服务执行`up -d --no-deps --pull never`。原全局Agents worker仍OFF。
