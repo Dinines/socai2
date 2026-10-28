@@ -1,5 +1,7 @@
 # 调查模块接口设计：请求、返回与流程衔接
 
+**2026-10-28当前初版范围：** 只完成Case创建后的调查功能；Case触发/自动目标政策和F5依用户最新要求移出本次目标。新增材料预览、步骤详情、报告下载及追加问题已实现，完整调用见[Case调查初版](case-first-version-20261028.md)。
+
 **2026-10-28实现更新：** 第4节F4成员转Case及5.4节Case历史列表已实现代码并通过5个ASGI/数据库替身直接用例，迁移121未执行、未部署，见[F4调用及验证记录](case-linking-20261028.md)。本文对应状态已更新；F5及产品HTTP Tool仍为设计稿。
 
 本文于2026-10-27依据[当前设计对齐](current-design-alignment-20261027.md)细化到接口，当时源码核对基线为`6044615`、仅完成设计。2026-10-28新增实现范围以上方更新及F4说明为准。
@@ -18,6 +20,10 @@
 | 已有F4 | `GET /case-links?incident_id=…`或`?alert_id=…` | 返回已保存的转Case关联，供跳转 | 否 |
 | 已有F3 | `POST /cases/{case_id}/investigate` | 对Case所选成员执行一次调查 | 是；同步执行 |
 | 已有F3 | `GET /cases/{case_id}/investigations/{run_id}` | 读取已存范围、进展和结果 | 否 |
+| 已有Case补充 | `POST /cases/{case_id}/investigation-context` | 预览当前材料、选定范围与Tool定义 | 否 |
+| 已有Case补充 | `GET /cases/{case_id}/investigations/{run_id}/steps` | 分页读取步骤及详情链接 | 否 |
+| 已有Case补充 | `GET /cases/{case_id}/investigations/{run_id}/steps/{seq}` | 读取本步实际模型/Tool输入或输出 | 否 |
+| 已有Case补充 | `GET /cases/{case_id}/investigations/{run_id}/report` | 下载已保存Markdown | 否 |
 | 已有读取补充 | `GET /cases/{case_id}/investigations` | 列出该Case的新版调查历史 | 否 |
 | 拟新增F5，内部接口 | `POST /internal/investigation/triage-escalations` | 原分诊worker按已有政策进入同一个Case内核 | 仅允许分支执行；同步衔接F4/F3 |
 | 拟新增F5，内部接口 | `GET /internal/investigation/triage-escalations/{operation_key}` | 读取自动入口已保存的处理回执 | 否 |
@@ -222,7 +228,9 @@ Content-Type: application/json
 
 `operation_key/start/end`必填；`question`可省略，默认核对行为证据、关联、影响、反证及缺口，长度1–2000；`selected_member_ids`省略或null时使用启动时全部Case成员，指定时须非空、不重复且是Case成员子集。**接F4时必须传F4返回的selected_member_ids，不能省略后把已有Case的其他成员也纳入。** F4/F3各有自己的操作key。
 
-该POST当前在请求内执行，不返回202后台任务。当前首次成功返回字段为`run_id/case_id/status/scope/result`；重复相同请求进入只读路径，还会带`progress`。调用方不要假定首次POST必有progress，也不要把超时或断开理解为没有创建Run；相同key重读不重跑，当前没有续跑接口。
+可选`previous_run_id:UUID|null`引用同Case已结束且有报告的Run，用于追加问题；成员集合和窗口必须相同，否则409 `followup_scope_changed`。前次尚未结束为409 `previous_analysis_not_finished`。可选`refresh_queries:boolean=false`；true跳过历史查询结果复用，仍由模型决定是否调用工具。前次报告作为H1历史判断提供，旧报告不被改写。新问题使用新的operation_key，详见[追加问题](case-first-version-20261028.md#追加问题与重新查询)。
+
+该POST当前在请求内执行，不返回202后台任务。当前首次成功返回`run_id/case_id/status/scope/result`、`previous_run_id`及三个读取链接；重复相同请求进入只读路径，还会带`progress`。调用方不要假定首次POST必有progress，也不要把超时或断开理解为没有创建Run；相同key重读不重跑，当前没有恢复中断Run的接口。
 
 ### 5.2 读取与输出DTO
 
@@ -231,6 +239,8 @@ Content-Type: application/json
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
 | `run_id / case_id` | UUID | 实际执行与案件身份 |
+| `previous_run_id` | UUID或null | 本次显式引用的前次调查 |
+| `result_url / steps_url / report_url` | string | 结果、步骤和Markdown下载API地址 |
 | `status` | `running / completed / failed` | 当前F3执行状态，不能代替Case状态 |
 | `scope` | object | 本次固定成员和窗口，见下文 |
 | `progress` | `[{seq:integer,kind:string,summary:string}]` | 已保存步骤，按seq顺序；没有实时流 |
@@ -250,8 +260,8 @@ Content-Type: application/json
 | `completion` | `partial / conclusion_available` | 有缺口为partial；不是恶意判决或业务关闭 |
 | `scope` | 同上 | 固定范围 |
 | `report` | AnalysisConclusion | 模型结论合并程序发现的缺口 |
-| `evidence` | A/T/E证据数组 | 来源告警、分诊判断、工具结果（也包括空结果/失败） |
-| `markdown` | string | 可保存展示的完整报告正文；当前不另设下载接口 |
+| `evidence` | A/T/E/H证据数组 | 来源告警、分诊判断、工具结果（也包括空结果/失败）及可选前次历史判断 |
+| `markdown` | string | 可保存展示的完整报告正文；report_url返回已保存的同内容Markdown附件 |
 | `usage` | object | `model_calls/tool_calls/known_tokens:integer`、`unknown_usage:boolean` |
 
 `AnalysisConclusion`的正常示例：
@@ -268,7 +278,7 @@ Content-Type: application/json
 
 summary非空且≤5000字符；每个finding.text非空且≤3000字符、evidence_ids至少一个；其余为字符串数组。空counterevidence仅表示本次未列出反证，不代表已经排除反证。引用检查只验证编号存在，不验证结论语义。
 
-A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/severity/status/disposition/source_event_ids/saved_analysis/saved_analysis_truncated`。T证据：`evidence_id/kind=triage/event_id/data`，data含`verdict/rationale/auto_closed`。E证据：`evidence_id/kind=tool/tool/arguments`加第7节结果；复用时另带`reused_from:{run_id,evidence_id}`。A/T不能当作相互独立的事实印证。
+A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/severity/status/disposition/source_event_ids/saved_analysis/saved_analysis_truncated`。T证据：`evidence_id/kind=triage/event_id/data`，data含`verdict/rationale/auto_closed`。E证据：`evidence_id/kind=tool/tool/arguments`加第7节结果；复用时另带`reused_from:{run_id,evidence_id}`。H1证据：`kind=prior_analysis/data`，data含原run_id/scope/report/completion/notice，是前次历史判断。A/T/H不能当作相互独立的事实印证。
 
 ### 5.3 状态、停止与错误
 
@@ -280,18 +290,20 @@ A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/seve
 | 执行异常 | `analysis_failed:<异常类型>`；上述非正常停止保存失败/partial结果（若收尾保存成功） |
 | HTTP 404 | `case_not_found / case_analysis_not_found` |
 | HTTP 400 | `case_requires_valid_selected_members`：Case没有可选成员或选择不属于Case |
-| HTTP 409 | `operation_key_conflicts_with_existing_case_analysis` |
+| HTTP 409 | `operation_key_conflicts_with_existing_case_analysis / previous_analysis_not_finished / followup_scope_changed / case_report_not_ready` |
 | HTTP 422 | 非法UUID、无时区/非法窗口、超长问题、空/重复成员或额外字段 |
 
 当前上限：模型4次、工具4次、已知tokens 24000、主循环120秒；120秒不覆盖所有前置读库及最终保存。已有Run.status并非完整恢复状态机，部分中断可保留running且result=null；本文不新增取消、接管、恢复或异步执行接口。
 
 ### 5.4 Case历史列表（已有读取补充）
 
-`GET /api/v2/investigation/cases/{case_id}/investigations?limit=20&cursor=…`只列当前租户、真实Case及`case_analysis.v1`的Run，返回`items/next_cursor`。每项字段：`run_id/case_id:UUID`、`started_at:datetime`、`completed_at:datetime|null`、`status:string`、`scope:object`、`stop_reason:string|null`、`completion:string|null`、`result_url:string`。没有最终工件时后两字段为null，不从Run.error猜业务结论。
+`GET /api/v2/investigation/cases/{case_id}/investigations?limit=20&cursor=…`只列当前租户、真实Case及`case_analysis.v1`的Run，返回`items/next_cursor`。每项字段：`run_id/case_id:UUID`、`previous_run_id:UUID|null`、`started_at:datetime`、`completed_at:datetime|null`、`status:string`、`scope:object`、`stop_reason:string|null`、`completion:string|null`、`result_url/steps_url/report_url:string`。没有最终工件时stop_reason和completion为null，不从Run.error猜业务结论。
 
 不存在Case返回404 `case_not_found`；存在但没有新版Run返回空列表。旧fixed/program及v1 Run走各自旧入口，不混入本列表后用F3格式解释。列表不装载完整报告，需要时再调用已有详情GET。
 
 ## 6. F5：原分诊自动升级衔接（拟新增内部接口）
+
+**本节保留此前设计，未实现；依2026-10-28最新用户范围，不属于Case创建后初版目标。**
 
 ### 6.1 调用前提与请求
 

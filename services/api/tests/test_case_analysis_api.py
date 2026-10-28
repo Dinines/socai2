@@ -132,9 +132,16 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         if InvestigationRun in entities:
             return result(self.runs.get(run_id))
         if InvestigationArtifact in entities:
-            return result(next((item for item in self.artifacts if item.run_id == run_id and item.kind == "case_analysis_result"), None))
+            kind = statement.compile().params.get("kind_1", "case_analysis_result")
+            event_id = statement.compile().params.get("event_id_1")
+            return result(next((item for item in self.artifacts if item.run_id == run_id and item.kind == kind
+                                and (event_id is None or item.event_id == event_id)), None))
         if InvestigationEvent in entities:
-            return result(rows=[item for item in self.events if item.run_id == run_id])
+            rows = [item for item in self.events if item.run_id == run_id]
+            seq = statement.compile().params.get("seq_1")
+            if statement._limit_clause is not None:
+                rows = [item for item in rows if item.seq > seq][:statement._limit_clause.value]
+            return result(one=next((item for item in rows if item.seq == seq), None), rows=rows)
         return result()
 
     async def start(self, key=100, end_minutes=5):
@@ -196,3 +203,80 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(data["completion"], "partial")
         self.assertTrue(data["usage"]["unknown_usage"])
         self.lake.assert_not_awaited()
+
+    async def test_preview_steps_and_download_deliver_the_saved_case_workflow(self):
+        preview = await self.client.post(self.path + "/investigation-context", json={
+            "start": NOW.isoformat(), "end": (NOW + timedelta(minutes=5)).isoformat(),
+            "selected_member_ids": [str(self.alert.id)],
+        })
+        self.assertEqual(preview.status_code, 200, preview.text)
+        self.assertEqual(preview.json()["context"]["read_member_ids"], [str(self.alert.id)])
+        self.assertEqual(len(preview.json()["tools"]), 2)
+        self.assertEqual(self.runs, {})
+        self.config.assert_not_awaited()
+        self.lake.assert_not_awaited()
+        self.db.commit.assert_not_awaited()
+
+        started = (await self.start()).json()
+        page = await self.client.get(started["steps_url"], params={"limit": 2})
+        self.assertEqual([item["seq"] for item in page.json()["items"]], [1, 2])
+        next_page = await self.client.get(started["steps_url"], params={"after_seq": page.json()["next_after_seq"]})
+        self.assertEqual(next_page.json()["items"][0]["seq"], 3)
+        self.assertIsNone(next_page.json()["next_after_seq"])
+        details = []
+        for item in page.json()["items"] + next_page.json()["items"]:
+            detail = await self.client.get(item["detail_url"])
+            self.assertEqual(detail.status_code, 200, detail.text)
+            details.append(detail.json()["data"])
+        request = next(item for item in details if "call_id" in item)
+        returned = next(item for item in details if "model_message" in item)
+        self.assertEqual(returned["call_id"], request["call_id"])
+        self.assertEqual(request["tool"], "process_activity")
+        self.assertEqual(request["arguments"], {"hostname": "host-01", "limit": 20})
+        self.assertEqual(returned["evidence"]["rows"][0]["event_id"], "event-7001")
+        self.assertEqual(json.loads(returned["model_message"])["evidence_id"], "E1")
+        download = await self.client.get(started["report_url"])
+        self.assertEqual(download.text, started["result"]["markdown"])
+        self.assertIn("attachment;", download.headers["content-disposition"])
+        self.assertEqual((await self.client.get(started["steps_url"] + "/999")).status_code, 404)
+        self.assertEqual(len(self.messages), 2)  # Every subsequent request was read-only.
+
+    async def test_followup_question_preserves_previous_report_and_can_refresh_queries(self):
+        first = (await self.start()).json()
+        original = first["result"]
+        body = {"operation_key": str(UUID(int=101)), "previous_run_id": first["run_id"],
+                "start": NOW.isoformat(), "end": (NOW + timedelta(minutes=5)).isoformat(),
+                "question": "继续核对脚本启动来源，已有证据是否足够？"}
+        response = await self.client.post(self.path + "/investigate", json=body)
+        self.assertEqual(response.status_code, 200, response.text)
+        followup = response.json()
+        self.assertNotEqual(followup["run_id"], first["run_id"])
+        self.assertEqual(followup["previous_run_id"], first["run_id"])
+        historical = next(item for item in followup["result"]["evidence"] if item["kind"] == "prior_analysis")
+        self.assertEqual(historical["data"]["report"], original["report"])
+        self.assertIn("H1", self.messages[2]["messages"][1]["content"])
+        self.assertEqual(self.lake.await_count, 1)
+        self.assertEqual(followup["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
+        self.assertEqual((await self.client.get(first["result_url"])).json()["result"], original)
+        repeated = await self.client.post(self.path + "/investigate", json=body)
+        self.assertEqual(repeated.json()["run_id"], followup["run_id"])
+        self.assertEqual(len(self.messages), 4)
+        body.update(operation_key=str(UUID(int=102)), refresh_queries=True)
+        refreshed = await self.client.post(self.path + "/investigate", json=body)
+        self.assertEqual(refreshed.status_code, 200, refreshed.text)
+        self.assertEqual(self.lake.await_count, 2)
+        self.assertNotIn("reused_from", refreshed.json()["result"]["evidence"][-1])
+
+    async def test_followup_requires_finished_run_and_same_member_window(self):
+        first = (await self.start()).json()
+        body = {"operation_key": str(UUID(int=101)), "previous_run_id": first["run_id"],
+                "start": NOW.isoformat(), "end": (NOW + timedelta(minutes=6)).isoformat()}
+        rejected = await self.client.post(self.path + "/investigate", json=body)
+        self.assertEqual(rejected.status_code, 409, rejected.text)
+        self.assertEqual(rejected.json()["detail"], "followup_scope_changed")
+        self.runs[UUID(first["run_id"])].status = "running"
+        body["end"] = (NOW + timedelta(minutes=5)).isoformat()
+        rejected = await self.client.post(self.path + "/investigate", json=body)
+        self.assertEqual(rejected.json()["detail"], "previous_analysis_not_finished")
+        self.assertEqual(len(self.runs), 1)
+        self.assertEqual(len(self.messages), 2)

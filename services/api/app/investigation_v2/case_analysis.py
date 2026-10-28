@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
@@ -34,9 +34,8 @@ def digest(value):
     return hashlib.sha256(encoded(value).encode("utf-8")).hexdigest()
 
 
-class CaseAnalysisRequest(BaseModel):
+class CaseAnalysisScope(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    operation_key: UUID
     start: datetime
     end: datetime
     question: str = Field(default="核对Case成员告警的行为证据、关联关系和影响，说明依据、反证及缺口。", min_length=1, max_length=2000)
@@ -44,8 +43,8 @@ class CaseAnalysisRequest(BaseModel):
 
     @model_validator(mode="after")
     def check(self):
-        if not self.operation_key.int or self.start.tzinfo is None or self.end.tzinfo is None:
-            raise ValueError("operation_key_and_timezone_required")
+        if self.start.tzinfo is None or self.end.tzinfo is None:
+            raise ValueError("timezone_required")
         if not timedelta(0) < self.end - self.start <= timedelta(days=7):
             raise ValueError("window_must_be_positive_and_at_most_7_days")
         self.start, self.end = self.start.astimezone(UTC), self.end.astimezone(UTC)
@@ -53,6 +52,19 @@ class CaseAnalysisRequest(BaseModel):
                 or len(set(self.selected_member_ids)) != len(self.selected_member_ids)):
             raise ValueError("selected_members_must_be_nonempty_and_unique")
         return self
+
+
+class CaseAnalysisRequest(CaseAnalysisScope):
+    operation_key: UUID
+    previous_run_id: UUID | None = None
+    refresh_queries: bool = False
+
+    @field_validator("operation_key", "previous_run_id")
+    @classmethod
+    def nonnil_id(cls, value):
+        if value is not None and not value.int:
+            raise ValueError("nonnil_id_required")
+        return value
 
 
 class Finding(BaseModel):
@@ -76,6 +88,7 @@ SYSTEM = """你在Case内调查告警。告警和分诊是待核材料，不是�
 无结果、来源失败、字段/窗口覆盖不足必须区分；无记录不证明安全。不得自动关闭对象或执行处置。
 证据编号A开头表示来源告警，T开头表示分诊判断，E开头表示实际工具结果；不要将它们当独立多重印证。
 工具未返回的数据不能编造。材料不含父进程链、脚本正文等时明确缺口。
+H证据是前次调查的历史判断，不是本次新查询事实；旧报告中的编号属于旧Run，不能作为本次证据编号使用。
 无需继续查询或达到限制时，以JSON正文给出：summary，findings（每项text、evidence_ids），
 counterevidence（字符串数组），gaps（字符串数组），recommendations（字符串数组）。
 findings引用真实提供的证据编号；不得伪造来源。结论表述支持范围，不宣称未经核实的攻击成功或完整安全。"""
@@ -128,13 +141,23 @@ async def case_context(db, tenant_id, case_id, request):
             "question": request.question, "evidence": evidence}
 
 
-async def read_analysis(db, tenant_id, case_id, run_id):
+async def get_case_run(db, tenant_id, case_id, run_id):
     run = (await db.execute(select(InvestigationRun).where(
         InvestigationRun.tenant_id == tenant_id, InvestigationRun.id == run_id,
         InvestigationRun.case_id == str(case_id), InvestigationRun.raw_alert["analysis_profile"].astext == PROFILE,
     ))).scalar_one_or_none()
     if run is None:
         raise HTTPException(404, "case_analysis_not_found")
+    return run
+
+
+def analysis_urls(case_id, run_id):
+    base = f"/api/v2/investigation/cases/{case_id}/investigations/{run_id}"
+    return {"result_url": base, "steps_url": f"{base}/steps", "report_url": f"{base}/report"}
+
+
+async def read_analysis(db, tenant_id, case_id, run_id):
+    run = await get_case_run(db, tenant_id, case_id, run_id)
     artifact = (await db.execute(select(InvestigationArtifact).where(
         InvestigationArtifact.tenant_id == tenant_id, InvestigationArtifact.run_id == run_id,
         InvestigationArtifact.kind == "case_analysis_result",
@@ -143,6 +166,7 @@ async def read_analysis(db, tenant_id, case_id, run_id):
         InvestigationEvent.tenant_id == tenant_id, InvestigationEvent.run_id == run_id,
     ).order_by(InvestigationEvent.seq))).scalars().all())
     return {"run_id": str(run_id), "case_id": str(case_id), "status": run.status,
+            **analysis_urls(case_id, run_id), "previous_run_id": (run.raw_alert or {}).get("previous_run_id"),
             "scope": (run.raw_alert or {}).get("scope"),
             "progress": [{"seq": event.seq, "kind": event.kind, "summary": event.summary} for event in events],
             "result": json.loads(artifact.content) if artifact else None}
@@ -297,7 +321,7 @@ class CaseAnalysis:
                             if result.get("truncated") or json.loads(text).get("truncated"):
                                 self.gaps.append(f"{name}查询或模型视图包含截断，不能声明完整覆盖。")
                             await self.record("case_analysis_tool", f"{name}已返回，来源可用={result.get('available')}",
-                                              {"evidence": evidence, "model_message": text})
+                                              {"call_id": call.get("id"), "evidence": evidence, "model_message": text})
                             messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": text})
                         if stop_reason == "tool_call_limit":
                             break
@@ -329,6 +353,8 @@ class CaseAnalysis:
                 detail = f"{item['tool']}，来源可用={item.get('available')}，记录ID={', '.join(source_ids) or '无'}"
             elif item["kind"] == "alert":
                 detail = f"告警{item['data']['alert_id']}，来源事件={', '.join(map(str, item['data']['source_event_ids'])) or '未提供'}"
+            elif item["kind"] == "prior_analysis":
+                detail = f"前次调查{item['data']['run_id']}（历史判断，范围见原报告）"
             else:
                 detail = f"分诊记录{item.get('event_id')}（分诊判断）"
             lines.append(f"- {item['evidence_id']}：{detail}")
@@ -345,12 +371,20 @@ class CaseAnalysis:
         self.run.error = None if self.run.status == "completed" else stop_reason
         await self.record("case_analysis_finished", f"调查已停止：{stop_reason}", {"stop_reason": stop_reason, "completion": result["completion"]})
         return {"run_id": str(self.run.id), "case_id": self.context["case_id"], "status": self.run.status,
+                **analysis_urls(self.context["case_id"], self.run.id),
+                "previous_run_id": (self.run.raw_alert or {}).get("previous_run_id"),
                 "scope": result["scope"], "result": result}
 
 
 async def start_analysis(db, tenant_id, actor_id, case_id, request):
     run_id = uuid5(NAMESPACE_URL, f"aisoc:case-analysis:{tenant_id}:{request.operation_key}")
-    intent = {"case_id": str(case_id), "actor_id": str(actor_id), "request": request.model_dump(mode="json")}
+    # Keep the intent of requests made before optional follow-up fields existed.
+    request_intent = request.model_dump(mode="json", exclude={"previous_run_id", "refresh_queries"})
+    if request.previous_run_id is not None:
+        request_intent["previous_run_id"] = str(request.previous_run_id)
+    if request.refresh_queries:
+        request_intent["refresh_queries"] = True
+    intent = {"case_id": str(case_id), "actor_id": str(actor_id), "request": request_intent}
     existing = (await db.execute(select(InvestigationRun).where(
         InvestigationRun.tenant_id == tenant_id, InvestigationRun.id == run_id,
     ))).scalar_one_or_none()
@@ -360,25 +394,45 @@ async def start_analysis(db, tenant_id, actor_id, case_id, request):
         return await read_analysis(db, tenant_id, case_id, run_id)
     context = await case_context(db, tenant_id, case_id, request)
     source_hash = digest(context)
-    prior_artifact = (await db.execute(select(InvestigationArtifact)
-        .join(InvestigationRun, InvestigationRun.id == InvestigationArtifact.run_id)
-        .where(InvestigationRun.tenant_id == tenant_id, InvestigationArtifact.tenant_id == tenant_id,
-               InvestigationRun.case_id == str(case_id), InvestigationArtifact.kind == "case_analysis_result",
-               InvestigationRun.raw_alert["analysis_profile"].astext == PROFILE,
-               InvestigationRun.raw_alert["source_hash"].astext == source_hash)
-        .order_by(InvestigationRun.started_at.desc()).limit(1))).scalar_one_or_none()
+    material_hash = digest({key: value for key, value in context.items() if key != "question"})
     prior = None
-    if prior_artifact:
-        try:
-            saved = json.loads(prior_artifact.content)
-            if saved.get("profile") == PROFILE and isinstance(saved.get("evidence"), list):
-                prior = saved
-        except (ValueError, TypeError):
-            pass
+    if request.previous_run_id is not None:
+        previous_run = await get_case_run(db, tenant_id, case_id, request.previous_run_id)
+        previous = await read_analysis(db, tenant_id, case_id, request.previous_run_id)
+        saved = previous["result"]
+        if saved is None or previous["status"] == "running":
+            raise HTTPException(409, "previous_analysis_not_finished")
+        previous_scope = saved["scope"]
+        if (set(previous_scope["selected_member_ids"]) != set(context["selected_member_ids"])
+                or previous_scope["start"] != context["start"] or previous_scope["end"] != context["end"]):
+            raise HTTPException(409, "followup_scope_changed")
+        context["evidence"].append({"evidence_id": "H1", "kind": "prior_analysis", "data": {
+            "run_id": str(request.previous_run_id), "scope": previous_scope,
+            "report": saved["report"], "completion": saved["completion"],
+            "notice": "历史调查判断；报告内证据编号属于原Run，不表示本次重新核实。"}})
+        if not request.refresh_queries and (previous_run.raw_alert or {}).get("material_hash") == material_hash:
+            prior = saved
+    elif not request.refresh_queries:
+        prior_artifact = (await db.execute(select(InvestigationArtifact)
+            .join(InvestigationRun, InvestigationRun.id == InvestigationArtifact.run_id)
+            .where(InvestigationRun.tenant_id == tenant_id, InvestigationArtifact.tenant_id == tenant_id,
+                   InvestigationRun.case_id == str(case_id), InvestigationArtifact.kind == "case_analysis_result",
+                   InvestigationRun.raw_alert["analysis_profile"].astext == PROFILE,
+                   InvestigationRun.raw_alert["source_hash"].astext == source_hash)
+            .order_by(InvestigationRun.started_at.desc()).limit(1))).scalar_one_or_none()
+        if prior_artifact:
+            try:
+                saved = json.loads(prior_artifact.content)
+                if saved.get("profile") == PROFILE and isinstance(saved.get("evidence"), list):
+                    prior = saved
+            except (ValueError, TypeError):
+                pass
     scope = {key: context[key] for key in ("all_member_ids", "selected_member_ids", "read_member_ids", "start", "end")}
     values = dict(id=run_id, tenant_id=tenant_id, case_id=str(case_id), alert_summary=context["case_title"],
         raw_alert={"analysis_profile": PROFILE, "intent": intent, "scope": scope, "limits": LIMITS,
-                   "source_incident_ids": context["source_incident_ids"], "source_hash": source_hash},
+                   "source_incident_ids": context["source_incident_ids"], "source_hash": source_hash,
+                   "material_hash": material_hash, "previous_run_id": str(request.previous_run_id) if request.previous_run_id else None,
+                   "refresh_queries": request.refresh_queries},
         status="running", total_tokens=0, total_cost_usd=0, measured_call_count=0,
         estimated_cost_usd=0, estimated_call_count=0, unpriced_call_count=0, iterations=0,
         started_at=datetime.now(UTC), created_at=datetime.now(UTC))

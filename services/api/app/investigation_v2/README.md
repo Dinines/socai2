@@ -1,3 +1,5 @@
+**2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。用户当前范围从已有Case开始，F5不属本次目标；[接口与调用例子](../../../../docs/investigation/case-first-version-20261028.md)。
+
 **2026-10-28：** 新增case_links_api的成员转Case及关联读取、case_history的新版Case历史列表，均注册到Case独立factory及program_result/start组合。需要迁移121（尚未执行），[实现与5项直接验证](../../../../docs/investigation/case-linking-20261028.md)。
 
 **2026-10-27当前路径说明：** F1/F2 Incident及F3 Case已在本包实现。F3由本API进程直接执行模型/查询循环，使用自己的Case路由和原ledger，不走旧fixed/program结果网关或Agents M3。完整接口/数据/验证边界见[当前实现详解](../../../../docs/investigation/current-implementation-reference-20261027.md)，文档与证据见[审计导航](../../../../docs/investigation/audit-guide-20261027.md)。下方旧阶段“下一步/仅query”等按原记录解释。
