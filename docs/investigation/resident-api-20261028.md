@@ -2,6 +2,8 @@
 
 **状态：已按用户明确授权在21常驻启动。** 进程存活、实际接口描述、端口绑定和配置复用检查通过。既有调查与事件概况功能已通过的结果继续复用；本轮没有业务写入或模型调用。
 
+**后续多案例更新：** [四案例逐步测试](multi-case-http-20261028.md)已通过真实API Key执行207个业务HTTP请求，未覆盖CurrentUser依赖；写入、调查、模型、报告与证据入口均实际调用。4次主调查完成，2/4例自动流程检查通过，具体失败和内容偏差保留在总报告。该批临时Key已停用，用户JWT登录仍未验证。下方“本轮未取得普通用户token”保留启动当时边界，不作为后续未测试的结论。
+
 ## 服务入口
 
 新增容器`socai2-investigation-api`已运行，镜像`socai2-investigation-api:20261028-r1`，镜像ID为`sha256:2fde05d545c3ce9f042f180e91cc38dec30bf85e939f686b7a13dc6d04d27b98`。实际只映射21的`127.0.0.1:18010`，连接`socai2_default`，restart=unless-stopped。复用原API镜像的已验证依赖，当前源码放在独立工作目录，入口为`app.investigation_v2.application:create_app`。
