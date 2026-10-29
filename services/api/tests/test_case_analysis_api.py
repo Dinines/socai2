@@ -236,10 +236,13 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertTrue(empty["evidence"][-1]["available"])
         self.assertEqual(empty["evidence"][-1]["rows"], [])
         self.assertEqual(empty["completion"], "partial")
+        self.assertEqual(json.loads(self.messages[-1]["messages"][-1]["content"])["query_status"], "success_empty")
+        self.assertNotIn("query_status", empty["evidence"][-1])
         self.scenario = "failed"
         # A new window requires a new source query rather than reusing the empty result.
         failed = (await self.start(101, end_minutes=6)).json()["result"]
         self.assertFalse(failed["evidence"][-1]["available"])
+        self.assertEqual(json.loads(self.messages[-1]["messages"][-1]["content"])["query_status"], "unavailable")
         self.assertTrue(any("未能检查" in value for value in failed["report"]["gaps"]))
 
     async def test_applicable_prior_query_is_reused_in_a_new_case_run(self):
@@ -313,6 +316,11 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(model_history["data"]["omitted_report_fields"], ["timeline", "member_coverage"])
         self.assertNotIn("timeline", model_history["data"]["report"])
         self.assertEqual(model_history["data"]["report"]["summary"], original["report"]["summary"])
+        self.assertEqual(model_history["data"]["scope"], {"same_as_current": True})
+        model_alert = next(item for item in model_view["evidence"] if item["kind"] == "alert")
+        self.assertIn("saved_analysis", model_alert["data"]["omitted_fields"])
+        self.assertNotIn("saved_analysis", model_alert["data"])
+        self.assertIn("saved_analysis", followup["result"]["evidence"][0]["data"])
         self.assertEqual(self.lake.await_count, 1)
         self.assertEqual(followup["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
         self.assertEqual((await self.client.get(first["result_url"])).json()["result"], original)
@@ -324,6 +332,38 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(refreshed.status_code, 200, refreshed.text)
         self.assertEqual(self.lake.await_count, 2)
         self.assertNotIn("reused_from", refreshed.json()["result"]["evidence"][-1])
+
+    async def test_required_tool_choice_uses_scoped_dispatch_and_prior_query(self):
+        first = (await self.start()).json()
+        self.assertNotIn("required_tools", self.runs[UUID(first["run_id"])].raw_alert["intent"]["request"])
+        body = {"operation_key": str(UUID(int=103)), "previous_run_id": first["run_id"],
+                "start": NOW.isoformat(), "end": (NOW + timedelta(minutes=5)).isoformat(),
+                "question": "请再次核对进程记录", "required_tools": ["process_activity"]}
+        follow = (await self.client.post(self.path + "/investigate", json=body)).json()
+        self.assertEqual(follow["status"], "completed")
+        self.assertEqual(self.messages[2]["tool_choice"], {"type": "function", "function": {"name": "process_activity"}})
+        self.assertNotIn("response_format", self.messages[2])
+        self.assertNotIn("tool_choice", self.messages[3])
+        self.assertEqual(self.lake.await_count, 1)
+        self.assertEqual(follow["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
+
+    async def test_required_tool_cannot_be_silently_skipped_or_unavailable(self):
+        def provider(request):
+            return httpx.Response(200, json={"choices": [{"message": {"content": "{}"}, "finish_reason": "stop"}],
+                                           "usage": {"prompt_tokens": 100, "completion_tokens": 10}})
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            body = {"operation_key": str(UUID(int=104)), "start": NOW.isoformat(),
+                    "end": (NOW + timedelta(minutes=5)).isoformat(), "required_tools": ["process_activity"]}
+            skipped = (await self.client.post(self.path + "/investigate", json=body)).json()
+            self.assertEqual(skipped["status"], "failed")
+            self.assertEqual(skipped["result"]["stop_reason"], "required_tool_not_called")
+            body.update(operation_key=str(UUID(int=105)), required_tools=["not_offered"])
+            unavailable = (await self.client.post(self.path + "/investigate", json=body)).json()
+            self.assertEqual(unavailable["result"]["stop_reason"], "required_tool_unavailable")
+            self.assertEqual(unavailable["result"]["usage"]["model_calls"], 0)
+        self.lake.assert_not_awaited()
 
     async def test_followup_requires_finished_run_and_same_member_window(self):
         first = (await self.start()).json()

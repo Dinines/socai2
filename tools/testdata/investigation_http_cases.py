@@ -153,7 +153,10 @@ class CaseRun:
             question = "沿用H1历史材料说明目前仍缺哪些来源证据，不重复查询，也不引用旧Run的E编号作为本次引用。"
             if case["followup"] == "reuse_network":
                 question = "请先再次调用network_connections，使用前次相同参数" + json.dumps(network["arguments"]) + "，然后说明历史材料的限制；沿用原窗口，不要扩展范围。"
-            follow = self.request("POST", "followup", prefix + "/investigate", {**scope, "question": question, "operation_key": self.key("followup"), "previous_run_id": run["run_id"]})
+            follow_body = {**scope, "question": question, "operation_key": self.key("followup"), "previous_run_id": run["run_id"]}
+            if case.get("followup_required_tools"):
+                follow_body["required_tools"] = case["followup_required_tools"]
+            follow = self.request("POST", "followup", prefix + "/investigate", follow_body)
             self.inspect_run(follow, "followup")
             self.check(follow["previous_run_id"] == run["run_id"] and follow["previous_result_url"] == run["result_url"], "followup: previous Run link")
             h1 = self.request("GET", "history-evidence", follow["evidence_url"] + "/H1")

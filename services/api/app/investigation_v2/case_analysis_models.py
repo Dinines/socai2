@@ -33,7 +33,7 @@ def conclusion_format(schema: dict, evidence_ids: list[str], member_ids: list[st
         "name": "case_analysis_conclusion", "strict": True, "schema": output}}
 
 
-async def call_model(config, messages: list[dict], tools: list[dict], *, response_format=None):
+async def call_model(config, messages: list[dict], tools: list[dict], *, response_format=None, tool_choice=None):
     # The shared validator checks content, but its returned normalization
     # omits tool_calls/tool_call_id. Keep those protocol fields explicitly.
     validate_messages(messages)
@@ -46,6 +46,8 @@ async def call_model(config, messages: list[dict], tools: list[dict], *, respons
         body["tools"] = tools
     if response_format is not None:
         body["response_format"] = response_format
+    if tool_choice is not None:
+        body["tool_choice"] = tool_choice
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=10)) as client:
             response = await client.post(url, headers={"Authorization": f"Bearer {config.api_key}"}, json=body)

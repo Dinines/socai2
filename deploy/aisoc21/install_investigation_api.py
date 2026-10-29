@@ -12,7 +12,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE_IMAGE = "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9"
-IMAGE = "socai2-investigation-api:20261028-r1"
+IMAGE = "socai2-investigation-api:20261028-r2"
 CONTAINER = "socai2-investigation-api"
 PROFILE = Path("/opt/sting-aisoc-socai2/private/investigation-v2.env")
 COMPOSE = ROOT / "deploy/aisoc21/compose.investigation-v2-api.yml"
@@ -29,6 +29,7 @@ def environment(container):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--upgrade-from", help="Expected current investigation image ID; preserves its existing environment file")
     args = parser.parse_args()
     files = sorted((ROOT / "services/api/app").rglob("*.py"))
     out = {"image": IMAGE, "base_image": BASE_IMAGE, "container": CONTAINER,
@@ -50,23 +51,31 @@ def main():
         assert inspect(base_reference)["Id"] == BASE_IMAGE, "base_image_tag_changed"
         assert core["State"]["Running"] and agents["State"]["Running"]
         exists = subprocess.run(["docker", "inspect", CONTAINER], capture_output=True).returncode == 0
-        assert not exists and not PROFILE.exists(), "service_or_environment_already_exists"
-        with socket.socket() as listener:
-            listener.bind(("127.0.0.1", 18010))
-        source_env, agent_env = environment(core), environment(agents)
-        for key in ("OPENAI_BASE_URL", "OPENAI_API_KEY", "LLM_GATEWAY_URL", "LLM_GATEWAY_API_KEY"):
-            if key in agent_env:
-                source_env[key] = agent_env[key]
-        source_env["OPENAI_MODEL"] = "aisoc-investigation"
+        if args.upgrade_from:
+            assert exists and PROFILE.exists(), "missing_upgrade_target"
+            previous = inspect(CONTAINER)
+            assert previous["Image"] == args.upgrade_from, "investigation_image_changed"
+            out["previous_image_id"] = previous["Image"]
+            source_env = environment(previous)
+        else:
+            assert not exists and not PROFILE.exists(), "service_or_environment_already_exists"
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", 18010))
+            source_env, agent_env = environment(core), environment(agents)
+            for key in ("OPENAI_BASE_URL", "OPENAI_API_KEY", "LLM_GATEWAY_URL", "LLM_GATEWAY_API_KEY"):
+                if key in agent_env:
+                    source_env[key] = agent_env[key]
+            source_env["OPENAI_MODEL"] = "aisoc-investigation"
         assert source_env.get("DATABASE_URL") and source_env.get("SECRET_KEY")
         assert source_env.get("OPENAI_BASE_URL") or source_env.get("LLM_GATEWAY_URL")
         assert source_env.get("OPENAI_API_KEY") or source_env.get("LLM_GATEWAY_API_KEY")
         assert all("\n" not in value and "\r" not in value for value in source_env.values()), "multiline_environment_value"
         run(["docker", "build", "--pull=false", "--network=none", "--build-arg", f"BASE_API_IMAGE={base_reference}",
              "-f", str(ROOT / "deploy/aisoc21/Dockerfile.investigation-v2-api"), "-t", IMAGE, "."])
-        with PROFILE.open("x", encoding="utf-8") as stream:
-            stream.write("".join(f"{key}={value}\n" for key, value in sorted(source_env.items())))
-        PROFILE.chmod(0o600)
+        if not args.upgrade_from:
+            with PROFILE.open("x", encoding="utf-8") as stream:
+                stream.write("".join(f"{key}={value}\n" for key, value in sorted(source_env.items())))
+            PROFILE.chmod(0o600)
         compose = ["docker", "compose", "-f", str(COMPOSE)]
         run(compose + ["config", "--quiet"])
         run(compose + ["up", "-d", "--no-deps", "--pull", "never", "investigation-api"])
@@ -93,6 +102,8 @@ def main():
         else:
             raise AssertionError("missing_existing_auth_rejection")
         current_core, current_agents, deployed = inspect("socai2-api-1"), inspect("socai2-agents-1"), inspect(CONTAINER)
+        if args.upgrade_from:
+            assert environment(deployed) == source_env, "investigation_environment_changed"
         assert all(before["Id"] == after["Id"] and before["State"]["StartedAt"] == after["State"]["StartedAt"]
                    for before, after in [(core, current_core), (agents, current_agents)])
         out.update(passed=True, image_id=deployed["Image"], core_and_agents_unchanged=True,
