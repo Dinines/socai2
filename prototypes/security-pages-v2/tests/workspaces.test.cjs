@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 function setup(){
  const sandbox={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases/17420/overview'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};
  vm.createContext(sandbox);
- for(const name of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-workspace'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
+ for(const name of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-graph','investigation-workspace'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
  const app=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.testAPI={store,ui,casePage,scopeAlerts,workspaceView};\n})();');
  assert.ok(app.includes('window.testAPI='));vm.runInContext(app,sandbox);
  return {...sandbox.window.testAPI,W:sandbox.window.referenceWorkspaces,sandbox};
@@ -29,7 +29,7 @@ test('associated view, grouping and potential paths do not change members or ale
 test('Case directory exposes tasks and follows current investigation membership',()=>{
  const {store,casePage,W}=setup(),c=store.cases[0];
  assert.match(casePage(),/#\/cases\/17420\/tasks/);assert.equal(W.investigationRecords(store.alerts.filter(a=>c.alertIds.includes(a.id))).length,2);
- c.alertIds=[store.alerts[9].id];const html=casePage();assert.match(html,/investigations[^>]*>调查历史<span class="count">0<\/span>/);
+ c.alertIds=[store.alerts[9].id];const html=casePage();assert.match(html,/investigations[^>]*>(?:<svg[^>]*>[\s\S]*?<\/svg>)?调查历史<span class="count">0<\/span>/);
  assert.equal(W.investigationRecords(store.alerts.filter(a=>c.alertIds.includes(a.id))).length,0);
 });
 test('Case closure and assignment keep every alert and other Case unchanged',()=>{

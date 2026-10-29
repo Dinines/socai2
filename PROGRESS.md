@@ -1,3 +1,27 @@
+**2026-10-29 云端保存授权：** 用户要求完成审计后推送云端，提交当前V2前端成果及功能审计到 `origin/codex/functional-analysis`。9项问题仍未修；独立报告复核限定ACCEPT、OpenSpec归档及strict all9/archived36通过。另一图谱change随当前前端版本保存，但保持未归档状态；后端/部署/模型测试工作不混入。此前“无提交/push”均指各批当时阶段，实际同步以Git和远端核对为准。
+
+## 2026-10-29 V2功能审计（未修改页面）
+
+[逐区域盘点及9项问题](docs/design/frontend-functional-audit-20261029.md)：主阅读跳转已接通，操作闭环仍有4项P1、4项P2、1项P3。浏览器验证代表链路、Unknown弹窗、筛选重置/刷新、时间控件和历史图谱；VM运行实际源码858视图/1095链接无缺目标，但操作反例暴露启动Run不互通、跨来源成员与Run不一致、活动错误归属等。65已有测试通过；36个V2文件hash未变，无浏览器业务编辑、远端/模型/部署/提交。本轮只保存审计结论，问题未修，另一图谱change保持。
+
+## 2026-10-29 V2 Case 数据整合
+
+全部19 Case同入口保留，7个AiSOC Case靠前、12原设计可筛选；已保存13Run的192过程/90工具/108工件目录/11报告统一案件材料入口。20原告警事件关系新增3组（2/2/1），无关系不补造；Case/事件双向来源校核、错误ID空态、历史Run引用保留。65直接测试/原告警291HTML对照通过，入口与边界见[交付回执](docs/design/frontend-v2-verification.md)。无新后端/模型/部署/提交；原始数据和V1保持。结束独审及归档见consolidate-v2-case-data。
+
+**2026-10-29 Case已有材料补齐：** 用户明确无自动建Case但有材料则补齐。新增3个明确本地集合，原16保留；六源告警/Run归属与单告警输入保持。案件首页逐Run汇总，补资料/工件/当前关系/来源活动，合计92过程/49工具/77工件/5报告；空任务评论附件不造。59测试、浏览器与独审通过，限定ACCEPT/0必须修，63保护文件hash保持。详见[功能分析第19节](docs/design/incident-investigation-page-analysis.md#19-2026-10-29将已有材料补入本地-case-工作区)与[V2回执](docs/design/frontend-v2-verification.md)。本机离线同步，无新远端请求/模型/后端改动/部署/提交push，另一统一图change独立保持。本批OpenSpec已归档并同步1条规格，strict all9/archived34通过。
+
+**2026-10-28 V2业务数据同步：** 用户在字段盘点后授权修改。沿原设计追加21保存结果的3个事件×2成员，六Run补齐92过程（原81）、77工件可读入口（31完整/40节选/6仅目录），保49工具和真实Chain/Path/partial状态。事件管理未知值与重置遗漏经独审发现后已修，52测试及浏览器验证通过，独审限定ACCEPT/0必须修；V1、原告警数据/291呈现及另一统一图change保持。详见[功能分析第18节](docs/design/incident-investigation-page-analysis.md#18-2026-10-28告警流程数据同步到-v2)及[V2回执](docs/design/frontend-v2-verification.md)。仅本机离线数据同步，无新业务查询/模型/重放/后端改动/部署/提交push。本批OpenSpec已归档并同步2条规格，strict all9/archived33通过。
+
+**2026-10-28 V2字段对照续接：** 复用旧九列/90项映射，新增[第17节逐区域对照](docs/design/incident-investigation-page-analysis.md#17-2026-10-28-v2-与告警流程数据的字段对照)。按21六条保存结果核6Alert/6Run/92过程/77工件及49工具；6告警已有3个Fusion组但未进入当前12个样例事件，步骤视图81条与原件差11条是未投影。Chain 2success/3empty、Path 5not_linked；资产/负责人/Case关系与事件管理合同、部分留存分别列出。20及10月21日Case历史单列，不当当前库存。31个V2文件hash保持，独审限定ACCEPT/0必须修；文档change已归档，strict all9/archived32通过。[本批回执](openspec/changes/archive/2026-10-28-reconcile-v2-alert-flow-field-mapping/verification.md)。仅本机原件/源码核对和文档，无页面或后端修改、新业务查询/模型/部署/提交push。
+
+**2026-10-28 统一调查关系图设计：** 已保存[功能分析第16节](docs/design/incident-investigation-page-analysis.md#16-2026-10-28-调查关系图统一设计待接入页面)与会话内可点击样稿，保留左告警/右实体图，增加候选和技术图层、稳定布局聚焦与来源依据。核PG/Neo4j实际数据边界，不补缺失中间路径，不把Case级降级技术当精确告警映射。浏览器关键交互、布局及独立13项窄回归通过，独审限定ACCEPT/0剩余必须修；本轮仅设计，4174未接入新图，无业务/模型/后端/部署/提交push。
+
+**2026-10-28 V2实际Case历史样例：** 新增已创建Case及三告警联合Run，来自本机2026-10-21真实执行回执（测试输入）。5链候选（3外部）、11节点15边路径、16图可达、4阶段、29事件/7工具/4工件/报告、4调用18388tokens。保留源Case与Run归属，当前成员全移走仍可回查；完整性未知、建议与执行分开。36前端测试及浏览器核验通过，独审限定ACCEPT/0剩余必须修；OpenSpec已归档，strict all8/archived30；见[功能分析第15节](docs/design/incident-investigation-page-analysis.md#15-2026-10-28-已持久化-case-的联合调查样例)和[验证回执](docs/design/frontend-v2-verification.md)。本地静态展示，无新业务/模型/后端修改/部署/提交push。
+
+**2026-10-28 V2历史数据填充：** 按用户要求追加20上2026-10-24六条演示告警的真实处理结果，按原三场景整理为明确标识的本地Case，源Case全null、各Run仍为单告警输入。6Run/71过程/34查询/27工件目录/5原文报告，36调用117286tokens，5partial、1分诊关闭。原52样例和6条21记录保留；补来源环境/租户隔离、skipped阶段、无库存实体与元数据空态。32项前端直接测试（含原291告警HTML比较）通过；来源映射见[功能分析第14节](docs/design/incident-investigation-page-analysis.md#14-2026-10-28-aisoc20-历史结果填充)。仅本地静态展示，无新模型/业务请求/后端修改/部署/提交push；结束独审限定ACCEPT/0必须修，OpenSpec已归档（strict all8/archived29）；浏览器回执见[验证记录](docs/design/frontend-v2-verification.md)。
+
+**2026-10-27 V2融合修改：** 用户授权重审并修改，追加要求保留微软式事件/调查基础能力并突出迁移来源AiSOC功能。4174事件现汇总告警判定、解释与关联调查；Case保留案件材料/关系图/协作，突出发现、实际阶段与Deep、查询证据、攻击链/路径、可筛选调查记录及报告响应。原事件战术/时间线/证据统计经独审发现入口遗漏后已接回。25项前端测试与291告警HTML对比通过，8Run×6视图及1280/700px浏览器检查通过；见[功能分析第13节](docs/design/incident-investigation-page-analysis.md#13-2026-10-27-v2-融合修改)和[回执](docs/design/frontend-v2-verification.md)。仅本地V2，原数据/告警模块/V1/冻结交接保留，无后端/模型/生产/部署或新增提交/push；独审限定ACCEPT/0剩余必须修，本批OpenSpec已归档并同步3条规格。
+
 **2026-10-27 前端功能分析续接：** 用户要求将当前进度保存到英文名功能分析分支，明确正文不用英文；本轮建立 `codex/functional-analysis`，保存已有前端 V1/V2、交接与相关设计。已查看4174事件上下文/概览/关联调查及Case AI调查/过程，重申事件汇总告警和基础调查、Case集中呈现AI过程与结果；页面现状、重复区域及首页组织建议见[功能分析第12节](docs/design/incident-investigation-page-analysis.md#12-2026-10-27-v2-页面核对与功能分析续接)。建议仍待讨论，未改页面功能或后端、未调用模型或生产、未部署或推送；本次本地提交结果以Git历史和保存回执为准。
 
 **2026-10-26 V1 冻结与 V2 前端优化：** [版本入口](prototypes/FRONTEND-VERSIONS.md)和[交付回执](docs/design/frontend-v2-verification.md)。原前端/交接包 52 文件及 ZIP 已冻结，4173 保留 V1，4174 运行 V2、状态隔离。事件保留输入与关系汇聚；整个 Case 工作区突出 Run 输入/范围、过程、工具、链图及报告，6 条既有实际 Run 可无 Case 独立打开。原告警 291 次 HTML 比较一致，语法与 18 项定向测试通过，浏览器交互通过；独审限定 ACCEPT/0 必须修。未改后端、调用模型、重放、部署或 Git 提交推送；完整规划与服务端实现不在本批验收内。

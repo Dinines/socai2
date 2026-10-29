@@ -1,3 +1,19 @@
+**2026-10-29 V2功能审计（只检查，不改页面）：** [告警→事件→Case逐区域盘点、9项问题与复现](design/frontend-functional-audit-20261029.md)。主阅读链路接通；调查启动、跨来源移动、活动归属、未知状态保护及筛选/时间仍有缺口。已验证浏览器代表路径、隔离内存探针和65项已有测试，不代表问题已修复或后端已接通。
+
+**2026-10-29 Case已有材料补齐：** [功能分析第19节](design/incident-investigation-page-analysis.md#19-2026-10-29将已有材料补入本地-case-工作区)。追加3个本地Case，汇总6Run的92过程/49工具/77工件/5报告；源Case仍为空，当前成员和Run历史输入分开，原16Case保留。
+
+**V1 / V2 前端入口（2026-10-26）：** [版本与启动地址](../prototypes/FRONTEND-VERSIONS.md)、[V2 功能与数据边界](../prototypes/security-pages-v2/README.md)、[验证回执](design/frontend-v2-verification.md)。V1 已冻结，V2 在 4174 优化事件及整个 Case 调查工作区，告警保持。
+
+**事件与AI调查页面数据同步（2026-10-28，最新）：** [第18节：V2实际同步范围](design/incident-investigation-page-analysis.md#18-2026-10-28告警流程数据同步到-v2)。用户已授权修改：追加3事件、补齐6Run的92过程与77工件可读入口，52项测试及独审通过；使用保存结果，无新模型或后端改动。
+
+**事件与AI调查页面分析（2026-10-28，修改前盘点）：** [第17节：V2与告警流程字段对照](design/incident-investigation-page-analysis.md#17-2026-10-28-v2-与告警流程数据的字段对照)。复用既有九列/90项映射，以21六条保存结果核事件归组、调查过程/工具/工件及Case管理差距，分清空值、缺关系、未展示与待实现；本轮仅文档，不改前端。原功能划分、链图及20参考仍在同一文档。
+
+**微软事件与Case分析（2026-10-25，前一批）：** [产品、页面功能及图谱交互逻辑](design/microsoft-incident-case-analysis.md)。覆盖事件与整个Case工作区，原告警不变，当批20排除；后续范围见上方分析。前端演示与后台能力分开。
+
+**后续页面讨论原则（2026-10-25）：** [关键决定、用户纠正与逐元素讨论方式](design/ui-discussion-principles.md)。继续调查、事件、Case页面前先读；通用原则与告警具体规则分开，文档盘点不改已确认设计。
+
+**前端页面交接包（2026-10-25）：** [README与打开方式](../deliverables/aisoc-frontend-handoff/README.md)、[页面导航](../deliverables/aisoc-frontend-handoff/guide.html)、[当前告警字段对照](../deliverables/aisoc-frontend-handoff/docs/data-mapping.html)。整个目录可交给前后端同事；浏览不依赖后端，原页面设计与展示数据保持。
+
 **2026-10-24数据/调查统一续接：** [main总审计与数据湖协作](operations/data-investigation-integration-audit-20261024.md)汇总两分支最新进度、未修问题、共享夹具/写湖/查询/评估分工及各自下一步；不改变双方原设计，不代表新版启用。
 
 **调查新版开发与评审入口：** [docs/investigation/README.md](investigation/README.md) 汇总设计、开源/当前/目标对照、实际进度、全部已知问题入口、测试与公开回执。其他机器正常拉取调查分支即可阅读；开发在普通项目目录，不在.local工作树。

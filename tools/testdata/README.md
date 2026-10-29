@@ -174,3 +174,12 @@ python tools/testdata/verdict_live.py run \
 `--preflight`禁止全部网络连接，使用显式HTTP替身并保存原程序组装的请求正文。结果标`offline_http_stub/new_model_requests=0`，不得用于模型成绩。真实模式省略该开关，但先满足输入检查并接原网关SSH隧道；本批因AWS-01缺证据而停留预检，先讨论设计第9节。上限4请求、每例1次、retry0/45秒；无回复、usage未知、原分类/置信度无效或程序fallback时保留并停止，不重试。
 
 `input_visibility`核原叶字段在实际请求中的可见性；缺失或改变时真实发送被拦，blocked-request含正文及缺失路径。此检查保守地依赖当前行式格式，不证明语义正确；格式改变须重审测试。原响应分类与`program_verdict`分别保存，`observations.json`仅代表程序采用分类，不能把默认TP修复算成模型正确输出。预检观察另存`preflight-observations.json`。
+
+
+## V2历史页面投影
+
+`export_aisoc20_ui.py`保留20的单告警真实处理结果；`export_persisted_case_ui.py`读取本机已有Case联合调查回执，核Case/Run归属、输入范围、工件hash与报告一致，再白名单导出静态页面数据。两者只读文件，不发业务或模型请求。命令和边界见[V2说明](../../prototypes/security-pages-v2/README.md)。
+
+`export_alert_flow_ui.py`读取10月25日六条告警的既有结果，追加3个Fusion事件、92条过程及77份工件的可公开投影；核同租户、Run锚点、工件hash/字节和事件关系，不查询/写入服务。重建命令及完整/节选/仅目录边界同见[V2说明](../../prototypes/security-pages-v2/README.md)。
+
+2026-10-29：`export_alert_flow_ui.py`同时输出3个明确的本地Case集合，需传 `--organized-at`（带时区的本地整理时间）；源Case为空、源Run单告警输入保持。仅页面引用已有材料，不能据此宣称已创建后台Case。
