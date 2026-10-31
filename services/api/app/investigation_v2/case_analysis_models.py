@@ -4,7 +4,7 @@ import httpx
 from app.core.airgap import enforce_airgap_for_url
 from app.services import llm_health
 from app.services.llm_safety import validate_messages
-from app.services.model_aliases import completions_url_for_base
+from app.services.model_aliases import at_bundled_gateway, completions_url_for_base
 
 MAX_OUTPUT_TOKENS = 3000
 
@@ -35,7 +35,8 @@ def conclusion_format(schema: dict, evidence_ids: list[str], member_ids: list[st
         "name": "case_analysis_conclusion", "strict": True, "schema": output}}
 
 
-async def call_model(config, messages: list[dict], tools: list[dict], *, response_format=None, tool_choice=None):
+async def call_model(config, messages: list[dict], tools: list[dict], *, timeout_seconds: float,
+                     response_format=None, tool_choice=None):
     # The shared validator checks content, but its returned normalization
     # omits tool_calls/tool_call_id. Keep those protocol fields explicitly.
     validate_messages(messages)
@@ -50,8 +51,14 @@ async def call_model(config, messages: list[dict], tools: list[dict], *, respons
         body["response_format"] = response_format
     if tool_choice is not None:
         body["tool_choice"] = tool_choice
+    if timeout_seconds <= 0:
+        raise TimeoutError("case_analysis_deadline_elapsed")
+    # LiteLLM consumes this routing option; direct/BYOK providers may reject it.
+    # The caller's existing total deadline still bounds the entire loop.
+    if at_bundled_gateway(config.base_url):
+        body["timeout"] = timeout_seconds
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60, connect=10)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(timeout_seconds, connect=min(10, timeout_seconds))) as client:
             response = await client.post(url, headers={"Authorization": f"Bearer {config.api_key}"}, json=body)
             response.raise_for_status()
             payload = response.json()

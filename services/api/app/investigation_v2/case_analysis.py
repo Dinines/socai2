@@ -369,7 +369,7 @@ class CaseAnalysis:
             stop_reason = "model_unavailable"
         else:
             try:
-                async with asyncio.timeout(LIMITS["duration_seconds"]):
+                async with asyncio.timeout(LIMITS["duration_seconds"]) as deadline:
                     for turn in range(1, LIMITS["model_calls"] + 1):
                         # This provider suppresses native Tool calls when given a response schema.
                         offered_tools = [] if conclusion_corrections else tools.schemas()
@@ -396,7 +396,9 @@ class CaseAnalysis:
                             "tool_choice": tool_choice})
                         self.unknown_usage = True
                         started = time.monotonic()
-                        payload = await call_model(config, messages, offered_tools, response_format=output_format, tool_choice=tool_choice)
+                        payload = await call_model(config, messages, offered_tools,
+                            timeout_seconds=deadline.when() - asyncio.get_running_loop().time(),
+                            response_format=output_format, tool_choice=tool_choice)
                         self.unknown_usage = False
                         await self.model_usage(config, payload, (time.monotonic() - started) * 1000)
                         choices = payload.get("choices") or []

@@ -1,7 +1,9 @@
 """Direct Case workflow examples using model HTTP, lake and ledger substitutes."""
 from datetime import timedelta
+import asyncio
 import json
 import hashlib
+import os
 import re
 import sqlite3
 from pathlib import Path
@@ -242,6 +244,64 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertFalse(any("E404" in message.get("content", "") for message in correction["messages"]))
         self.assertEqual(sum(event.kind == "case_analysis_validation" for event in self.events), 1)
         self.assertEqual(result["result"]["report"]["findings"][0]["evidence_ids"], ["E1"])
+
+    async def test_gateway_model_wait_uses_remaining_case_deadline(self):
+        actual_call = models.call_model
+
+        async def elapsed_call(*args, **kwargs):
+            payload = await actual_call(*args, **kwargs)
+            if len(self.messages) == 1:
+                await asyncio.sleep(0.02)
+            return payload
+
+        with patch.dict(os.environ, {"LLM_GATEWAY_URL": "http://model.invalid/v1/"}), \
+                patch.object(analysis, "call_model", side_effect=elapsed_call):
+            response = await self.start()
+        self.assertEqual(response.json()["status"], "completed")
+        first, second = [body["timeout"] for body in self.messages]
+        self.assertGreater(first, 60)
+        self.assertLessEqual(first, 120)
+        self.assertLess(second, first - 0.01)
+        self.assertEqual(self.lake.await_count, 1)
+
+    async def test_model_transport_wait_and_gateway_only_parameter(self):
+        observed = []
+
+        def provider(request):
+            observed.append((json.loads(request.content), request.extensions["timeout"]))
+            return httpx.Response(200, json={"choices": []})
+
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                client_type(transport=httpx.MockTransport(provider), **kwargs)), \
+                patch.dict(os.environ, {"LLM_GATEWAY_URL": "http://model.invalid/v1"}):
+            for base, seconds in [("http://model.invalid/v1", 97.25), ("http://byok.invalid/v1", 7.5)]:
+                config = LlmConfig(True, base, "example-model", "example-only", "environment", "")
+                await models.call_model(config, [{"role": "user", "content": "核对材料"}], [], timeout_seconds=seconds)
+            with self.assertRaises(TimeoutError):
+                await models.call_model(config, [{"role": "user", "content": "核对材料"}], [], timeout_seconds=0)
+        self.assertEqual(len(observed), 2)
+        self.assertEqual(observed[0][0]["timeout"], 97.25)
+        self.assertEqual(observed[0][1]["read"], 97.25)
+        self.assertEqual(observed[0][1]["connect"], 10)
+        self.assertNotIn("timeout", observed[1][0])
+        self.assertEqual(observed[1][1]["read"], 7.5)
+        self.assertEqual(observed[1][1]["connect"], 7.5)
+
+    async def test_total_case_deadline_still_stops_pending_model_without_retry(self):
+        async def pending(*args, **kwargs):
+            await asyncio.sleep(1)
+            raise AssertionError("total deadline must cancel the pending model")
+
+        with patch.dict(analysis.LIMITS, {"duration_seconds": 0.02}), \
+                patch.object(analysis, "call_model", side_effect=pending) as model:
+            response = await self.start()
+        data = response.json()
+        self.assertEqual(data["status"], "failed")
+        self.assertEqual(data["result"]["stop_reason"], "duration_limit")
+        self.assertTrue(data["result"]["usage"]["unknown_usage"])
+        self.assertEqual(model.await_count, 1)
+        self.assertEqual(self.lake.await_count, 0)
 
     async def test_empty_result_and_query_failure_remain_distinct(self):
         self.scenario = "empty"
