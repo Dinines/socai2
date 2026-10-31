@@ -425,8 +425,9 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                     # native JSON string. Compare its full parsed value, not key order.
                     normalize = lambda message: {**message, "content": json.loads(message["content"])} \
                         if message["role"] == "tool" else message
-                    self.assertEqual(list(map(normalize, current["messages"])),
-                                     list(map(normalize, original["messages"])))
+                    self.assertEqual(current["messages"][0]["content"], analysis.SYSTEM)
+                    self.assertEqual(list(map(normalize, current["messages"][1:])),
+                                     list(map(normalize, original["messages"][1:])))
                 self.assertEqual(len(dispatched), 2)
                 self.lake.assert_not_awaited()
                 known = sum(reply["usage"]["prompt_tokens"] + reply["usage"]["completion_tokens"] for reply in replies)
