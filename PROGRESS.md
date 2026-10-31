@@ -1,4 +1,4 @@
-**2026-10-31 r9本地修复：** 源码`bf2bd9c`将调查模型等待绑定原120秒剩余时间；6项必要直接用例通过。包已上传，实际部署因自动审批要求明确授权被拒，等待确认；线上仍r8，0新Run。见[回执](docs/operations/investigation-model-wait-20261031.json)。
+**2026-10-31 r9已交付：** 用户明确确认后部署`bf2bd9c`，472源码一致。唯一追加failed/partial：JSON纠错后关系成员重复被拒；3模型回复/11740 tokens、1复用/0新湖查询，父报告保持。模型等待修复已上线，但本批最长26.50秒，未实际覆盖超过45秒。详见[回执](docs/operations/investigation-model-wait-20261031.json)，OpenSpec16/17、完整报告未验收。
 
 **2026-10-31 r8协议边界交付：** 源码`a41ae07`已上线；允许明确协议不确定表述，仍拒无据肯定/否定，10项必要直接用例通过。唯一真实追加failed/partial，首次结论UUID错误后已派发纠错，但约45秒时网关Timeout/HTTPStatusError，未得到最终回复。7540已知tokens，第三次用量未知；历史复用及旧报告保持。见[最新回执](docs/operations/investigation-protocol-uncertainty-20261031.json)。16/17、不归档，当前真实阻塞为模型纠错回复未完成；共享网关配置保持。
 

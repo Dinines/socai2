@@ -1,0 +1,91 @@
+{
+  "model_responses": [
+    {
+      "request_seq": 2,
+      "response_seq": 3,
+      "elapsed_seconds": 1.360741,
+      "schema_correction": false,
+      "usage": {
+        "completion_tokens": 55,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 2888,
+        "total_tokens": 2943
+      }
+    },
+    {
+      "request_seq": 6,
+      "response_seq": 7,
+      "elapsed_seconds": 23.806596,
+      "schema_correction": false,
+      "usage": {
+        "completion_tokens": 1210,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 3699,
+        "total_tokens": 4909
+      }
+    },
+    {
+      "request_seq": 9,
+      "response_seq": 10,
+      "elapsed_seconds": 26.503372,
+      "schema_correction": true,
+      "usage": {
+        "completion_tokens": 1347,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 2541,
+        "total_tokens": 3888
+      }
+    }
+  ],
+  "first_reply_json_error": {
+    "message": "Expecting ',' delimiter",
+    "line": 1,
+    "column": 2312,
+    "position": 2311,
+    "context": "5885a558a0\"],\"evidence_ids\":[\"E1\"],\"missing_evidence\":[],\"suggested_action\":\"检查告警A3的原始时间戳和主机接入日志。\"}]"
+  },
+  "actual_validation": [
+    {
+      "seq": 8,
+      "errors": [
+        {
+          "location": [],
+          "type": "json_invalid"
+        }
+      ]
+    },
+    {
+      "seq": 11,
+      "errors": [
+        {
+          "type": "invalid_member_reference"
+        }
+      ]
+    }
+  ],
+  "corrected_relationship": {
+    "alert_ids": [
+      "3fcd245d-0496-54f3-875e-f9a7eb90ae2d",
+      "5272ae80-b48e-5ef3-8cdd-805885a558a0",
+      "5272ae80-b48e-5ef3-8cdd-805885a558a0"
+    ],
+    "kind": "shared_context",
+    "assessment": "not_supported",
+    "basis": "来自不同时间点的连接记录（E1 包含一个新的未决事件 ID），仅共用了源主机和端口目标。",
+    "evidence_ids": [
+      "E1"
+    ]
+  },
+  "semantic_review": {
+    "initial_response": "Not adopted: invented A3 and E3, inferred non-attack from closed/test/missing payload; invalid JSON.",
+    "correction": "Not adopted: duplicate A2 UUID in relationship; its evidence_ids only E1 also omits own alert references. Two member entries are present/unresolved and IDs correct. Still calls the unmatched historical row a new unresolved event and does not explicitly state historical reuse in model text.",
+    "saved_report": "Failure report, two members not_assessed. Deterministic source section correctly says H1 reuse, no new query, rows 0/1 map A1/A2, row 2 unmatched.",
+    "timeout_limit": "All real responses took less than 45 seconds. This batch does not prove a live response beyond 45 seconds; local HTTP and installed Router selection checks verify remaining-time configuration."
+  }
+}

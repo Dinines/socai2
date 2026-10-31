@@ -1,6 +1,6 @@
 # 实施任务
 
-状态：当前r8源码a41ae07已部署，有限中文不确定协议表述及纠错提示修复，10项必要直接用例通过。唯一真实追加failed/partial；首次结论UUID错误触发纠错，约45秒后发生HTTP错误，同期网关Timeout与45秒配置相符，未取得最终回复且用量未知。见[最新回执](../../../docs/operations/investigation-protocol-uncertainty-20261031.json)。完成16/17，5.3仍未满足；不重试本批或归档。
+状态：用户明确确认后r9源码bf2bd9c已部署，模型等待使用原120秒剩余时间，6项直接验证复用。唯一追加3次模型回复均取得/11740 tokens；首答json_invalid，一次纠错后关系成员重复导致invalid_member_reference，failed/partial。见[最新回执](../../../docs/operations/investigation-model-wait-20261031.json)。完成16/17，5.3未满足，不重试本批或归档。
 
 ## 1. B1 — 修正进程证据类型（A01）
 
@@ -36,4 +36,4 @@
 
 原规划校验见[validation](validation.md)，原r3本地校验见[execution-validation](execution-validation.md)。4.3在r4/r5完成实际追加与模型/Tool/报告对照，失败和质量问题仍留原件；4.4共享回执完成；r6已补协议与成员校验并真实复验，但5.3仍不满足完整报告验收及归档条件。新纠错修复只做必要直接验证，不扩独审门或冗余测试。
 
-2026-10-31 r9补充：模型等待修复已本地提交`bf2bd9c`，6项直接验证通过；部署被自动审批拒绝，等待用户确认，真实追加尚未执行。任务仍16/17，5.3保持未完成，见[回执](../../../docs/operations/investigation-model-wait-20261031.json)。
+2026-10-31 r9补充：此前自动审批拒绝已在用户明确确认后解除，更新和唯一追加均已执行；原拒绝与新授权分别保存。报告引用和语义仍未通过，任务16/17，5.3保持未完成，见[回执](../../../docs/operations/investigation-model-wait-20261031.json)。

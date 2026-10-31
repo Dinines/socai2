@@ -1,27 +1,27 @@
 # 调查模块最新指南与审计入口
 
-更新日期：2026-10-31。最新本地修复`bf2bd9c`；当前线上r8，业务源码`a41ae07`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
+更新日期：2026-10-31。当前线上r9，业务源码`bf2bd9c`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
 
-[r9本地修复回执](../operations/investigation-model-wait-20261031.json)：模型等待已改为本次调查剩余时间，总计仍限120秒；6项直接验证通过。版本包已上传，但自动审批拒绝实际部署，正等待用户确认独立调查API更新和1次追加调查。线上尚未运行r9，真实报告质量仍待。
+[r9实际回执](../operations/investigation-model-wait-20261031.json)：用户明确确认后已部署，6项直接验证复用。唯一网络追加3次模型回复均取得，11740 tokens、1历史复用、0新湖查询；首份结论JSON无效，一次纠错后关系条目重复成员UUID，被校验拒绝，最终failed/partial。全部回复在26.51秒内，本批未实际覆盖超过45秒的等待；不能宣称完整报告通过。
 
-[最新r8功能回执](../operations/investigation-protocol-uncertainty-20261031.json)：明确协议不确定表述已可通过，仍拒绝无依据的肯定/否定；纠错改为完整中文要求，10项必要直接用例通过。唯一真实追加failed/partial：首份结论把A1/A2用作UUID，纠错请求约45秒后发生HTTP错误；同期网关Timeout与原45秒配置相符，未取得最终回复。因此真实语义和不确定句式验收仍待，第三次模型用量未知。[r7原失败](../operations/investigation-source-alignment-20261031.json)保留。
+[历史r8功能回执](../operations/investigation-protocol-uncertainty-20261031.json)：明确协议不确定表述已可通过，仍拒绝无依据的肯定/否定；纠错改为完整中文要求，10项必要直接用例通过。唯一真实追加failed/partial：首份结论把A1/A2用作UUID，纠错请求约45秒后发生HTTP错误；同期网关Timeout与原45秒配置相符，未取得最终回复。因此真实语义和不确定句式验收仍待，第三次模型用量未知。[r7原失败](../operations/investigation-source-alignment-20261031.json)保留。
 
 **详细审计已完成：** [设计—实现—测试证据完整报告](design-implementation-audit-20261031.md)。静态核对确认两项功能缺陷：进程Tool未按事件类别筛选、失败保旧Case概况时来源模式与权限/提交顺序不一致；另有告警正文未进入Case材料的设计缺口。文档输出上限及主设计现行提示已校正；后续用户要求推进执行，三项业务问题已[实现并验证](audit-fixes-implementation-20261031.md)，之后的r3失败、r4流程通过与r5质量局限分别保留。范围、文件哈希、路由和既有证据核对见[机器清单](../operations/investigation-static-audit-20261031.json)。
 
 ## 1 基线与验证状态
 
-审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。r3原实现及一次[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)之后，r4/r5完成受影响功能验证；r6修复并复验协议与成员覆盖；r7交付来源标注；r8修复不确定协议边界，真实纠错遇上游超时；当前审计change16/17、旧追加change5/5，完整报告质量与归档条件仍待。未新增逐层审计门或测试框架。
+审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。r3原实现及一次[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)之后，r4/r5完成受影响功能验证；r6修复并复验协议与成员覆盖；r7交付来源标注；r8修复不确定协议边界，真实纠错遇上游超时；r9按原剩余时限等待，真实回复全部取得但成员引用校验失败；当前审计change16/17、旧追加change5/5，完整报告质量与归档条件仍待。未新增逐层审计门或测试框架。
 
 | 对象 | 最新可确认状态 | 依据 |
 | --- | --- | --- |
-| 当前代码与测试源码 | `bf2bd9c`，新增剩余时限模型等待；线上仍为`a41ae07`/r8 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
+| 当前代码与测试源码 | `bf2bd9c`，新增剩余时限模型等待；线上r9已核对 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
 | 最新本地直接验证 | r9必要直接6项首次全通过，含3新增；替身验证不证明真实模型质量 | [最新日志](../operations/evidence/investigation-audit-fixes-20261031/live-r9/targeted-tests.txt) |
 | 最近真实四案例测试 | 源码`512c004`，批次`INVHTTP-20261028-01`；207次HTTP、111项检查、3项失败，2/4案例自动流程通过 | [总报告](multi-case-http-20261028.md)、[机器汇总](../operations/investigation-multi-case-summary-20261028.json) |
-| 最新常驻版本与真实验证 | 20261031-r8；唯一网络追加failed/partial，3模型尝试/2回复/1复用/0新湖查询；第三次超时，用量未知 | [实际回执](../operations/investigation-protocol-uncertainty-20261031.json) |
+| 最新常驻版本与真实验证 | 20261031-r9；唯一网络追加failed/partial，3模型回复/11740已知tokens/1复用/0新湖查询；最终重复成员引用被拒 | [r9实际回执](../operations/investigation-model-wait-20261031.json) |
 | 数据库功能表 | 迁移120/121已在10月28日记录安装，登记134→136 | [事件转Case联调](incident-case-basic-flow-20261028.md) |
 | 文档更新 | 10月29日补充四案例业务解释；10月31日对齐当前入口和接口合同 | [文档目录](evidence-catalog-20261027.md) |
 
-文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前r9的6项直接验证与r8真实失败分列。r8已保存批次结束账本，本轮通过SSH再次核实其在线状态；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
+文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前r9复用6项直接验证；本轮通过SSH核实r9在线源码和批次结束账本，原r8失败继续保留；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
 
 ## 2 当前功能范围
 
@@ -30,7 +30,7 @@
 | F1 事件成员与分诊汇总 | 读取canonical成员、已存分诊和当前处置；真实HTTP覆盖 | 成员状态不自动决定事件关闭 |
 | F2 AI概况 | 首次任务代码、手动刷新、失败保旧文、变化标旧；手动引用Case报告已真实联调 | 首次worker未启用；普通GET不生成概况，新Run不自动改写旧文 |
 | F4 成员转Case | 从告警或事件创建/关联Case、读取关联和历史；真实PG及HTTP覆盖 | 建案成功不代表调查已执行；自动建案政策/F5不在当前目标 |
-| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 旧r1四案例主调查completed/partial；r3曾2 failed/partial；后续r4/r5六Run和r6一次追加completed/partial；r7/r8唯一追加均failed/partial，r8最终模型回复未取得 |
+| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 旧r1四案例主调查completed/partial；r3曾2 failed/partial；后续r4/r5六Run和r6一次追加completed/partial；r7/r8/r9唯一追加均failed/partial，r9最终回复已取得但引用校验失败 |
 | 多成员与公共读取 | 成员覆盖、关系、时间线、未决问题、executions及证据/来源行导航已有代码及真实案例读取 | r6要求可读成员逐项判断；编号合法不等于结论语义正确，未选成员不能计入Run覆盖 |
 | 产品主机Tool | `product_host_details`已接通来源连接器和CrowdStrike主机快照，替身验证通过 | 真实厂商账号/HTTP与模型使用该Tool未验证；当前快照不证明历史状态 |
 | 最新追加修复 | `required_tools`、精简模型材料和`query_status`已在本地实现并做受影响直接验证 | r4/r5已真实覆盖追加、指定Tool及复用；语义质量仍未完整通过 |
@@ -49,7 +49,7 @@ F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动�
 6. **按需追加问题。** 新key和`previous_run_id`创建新Run；成员集合与窗口须和前次相同，旧报告保留。`refresh_queries=true`禁止历史查询复用；它本身不要求模型一定调用Tool。
 7. **按需刷新事件概况。** 手动`overview/refresh?include_investigations=true`引用已有Case报告摘要；这是单独的摘要调用，不重新深入调查。
 
-最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口；当前r8已支持，旧r1不支持。
+最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口；当前r9已支持，旧r1不支持。
 
 ## 4 推荐阅读顺序
 
@@ -84,11 +84,11 @@ F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动�
 | 网络未调用指定Tool | r4/r5/r6均实际调用并进入历史复用，原生tool_choice和读回已验 | 复用不是新的独立观察 |
 | TCP/443误写HTTPS及遗漏成员 | r6窄协议名校验与完整性校验，29项直接通过；真实追加两个成员均unresolved、遗漏0 | 不是通用语义真值校验；未知协议名称在缺口/未决问题中表述 |
 | 历史解释与证据行归属 | r7 source_alignment/query_sources明确复用和逐行匹配，原件/读回/旧报告保持已验 | 纠错回复已识别无新查询及前两行，但把未匹配写成无告警、倾向维持非攻击判断；完整语义仍未过 |
-| 模型结论格式及协议字段 | r8允许明确不确定句式，仍拒无据肯定/否定；完整中文纠错要求和10项直接验证通过 | 真实首答UUID错误，最终纠错回复未取得，不能称模型质量通过 |
-| 调查纠错的上游等待 | r8实际约45.25秒HTTP失败，同期网关Timeout且既有配置45秒；API读超时60秒/总预算120秒未变 | 精确上游HTTP状态和第三次用量未知；需处理调查调用的等待边界后再验证，未修改共享网关或自动重试 |
+| 模型结论格式及协议字段 | r8边界修复保持；r9首答json_invalid，一次纠错后invalid_member_reference | 关系条目重复A2 UUID；还缺成员来源引用、来源叙述仍不准确，完整报告验收未过 |
+| 调查纠错的上游等待 | r9 HTTP等待及网关单请求timeout使用原120秒剩余时间；共享45秒默认保持，直连/BYOK不携带扩展字段；6项直接用例通过 | 本批3回复耗时1.36/23.81/26.50秒，无超时，但未实际覆盖单次超过45秒的场景；未增加重试 |
 | 规范化进程来源及产品Tool | 已有代码及替身验证，来源覆盖限制保留 | 真实厂商Tool和完整进程行为关联仍未验 |
 
-本次r8限定批次已结束，21次HTTP、44原件均保存并核hash；不通过重复同版调用挑选好结果。协议与成员覆盖的实际合同见[多成员说明](multi-alert-synthesis-20261028.md)。当前16/17，完整报告验收和归档保持待办；首次worker、F5与自动政策保持原范围。
+本次r9限定批次已结束，23次HTTP、48原件均保存并核hash；不通过重复同版调用挑选好结果。协议与成员覆盖的实际合同见[多成员说明](multi-alert-synthesis-20261028.md)。当前16/17，完整报告验收和归档保持待办；首次worker、F5与自动政策保持原范围。
 
 ## 7 文件与证据核对（指南对齐阶段记录）
 

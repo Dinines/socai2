@@ -1,4 +1,4 @@
-**r9准备状态（2026-10-31）：** 本地`bf2bd9c`及镜像标签`20261031-r9`已准备，6项直接验证通过；包已上传，构建/替换被自动审批拒绝，待用户明确确认。线上仍为下述r8，r9尚无真实Run。见[回执](../operations/investigation-model-wait-20261031.json)。
+**最新r9状态（2026-10-31）：** 用户明确确认后已部署`bf2bd9c`，镜像`sha256:d2e509370680cd2f647561ac37e1da4916758af7743324b0761f51b7f8090418`，21本机18010，472源码一致。唯一追加3回复/11740 tokens，因纠错后重复成员引用failed/partial；共享服务/配置/Key保持。见[r9实际回执](../operations/investigation-model-wait-20261031.json)，下方r8等均为历史记录。
 
 **最新状态（2026-10-31）：** 常驻`20261031-r8`，源码`a41ae07`，21本机18010；镜像`sha256:1f0bfe52f92b402fe2c92ed5b66c1c7250e21c27a900a2299020355b21eb337b`，472应用源码已核。开发Key与服务配置保持。协议边界修复已直接验证；唯一真实调查的纠错调用约45秒后遇网关Timeout，failed/partial，最终内容未验，见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。下方版本为历史记录。
 

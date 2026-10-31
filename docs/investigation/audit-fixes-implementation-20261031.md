@@ -1,4 +1,4 @@
-**2026-10-31 r9：** Case调用以总120秒剩余时间设置HTTP等待，向已有LiteLLM网关发送同值timeout覆盖共享45秒默认；不改变网关配置，直连/BYOK不加扩展字段。6项必要直接用例通过，源码`bf2bd9c`。部署被自动审批拒绝，已请求本次明确确认，线上仍r8、未执行追加。见[回执](../operations/investigation-model-wait-20261031.json)。
+**2026-10-31 r9：** 用户明确确认后已部署`bf2bd9c`，模型等待采用原120秒剩余时间，6项直接验证复用。唯一真实追加3回复均取得，最长26.50秒；首答JSON无效，纠错后重复成员引用被拒，failed/partial。11740 tokens、1复用/0新湖查询、父报告保持，完整报告语义仍待。见[r9实际回执](../operations/investigation-model-wait-20261031.json)。
 
 **当前交付（r8）：** 源码`a41ae07`上线，明确不确定协议表述可通过；无据肯定/否定仍拒。纠错提示要求完整中文和未证实/非攻击区分，10项必要直接测试通过。唯一真实Run failed/partial，首次结论UUID错误触发一次纠错，随后45.25秒HTTP错误，同期网关Timeout与45秒配置相符；未取得最终模型回复，第三次用量未知。见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。当前16/17，不归档，下文为先前阶段。
 

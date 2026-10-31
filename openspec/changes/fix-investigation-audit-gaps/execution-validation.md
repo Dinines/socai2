@@ -1,4 +1,4 @@
-**2026-10-31 r9补充：** 源码`bf2bd9c`完成调查剩余时限传递，6项必要直接用例首次通过；已安装网关选择函数验证请求timeout优先于45秒默认。仅本地/替身通过，r9构建部署被自动审批拒绝并请求确认，0真实Run；线上仍r8，5.3未完成。见[回执](../../../docs/operations/investigation-model-wait-20261031.json)。
+**2026-10-31 r9实际补充：** 用户明确确认后部署源码`bf2bd9c`，472应用源码一致；复用6项必要直接验证。唯一Run failed/partial，首次json_invalid、纠错后invalid_member_reference（关系条目重复A2）；3回复/11740 tokens、1复用/0新湖查询，23HTTP/48原件hash核，父报告保持。最长回复26.50秒，未实际覆盖大于45秒等待；完整语义仍未通过。见[实际回执](../../../docs/operations/investigation-model-wait-20261031.json)，16/17、不归档。
 
 **r8当前验证：** 10项必要直接用例首次全通过，含2新增；r7原始回复进入一次替身纠错，明确不确定协议句式可保存，无据肯定/否定仍拒；原预算保持。源码a41ae07已上线且472文件hash核。唯一真实Run因纠错HTTP错误failed/partial，3模型尝试、2回复、7540已知tokens，第三次usage未知；约45.25秒与同期网关Timeout/45秒配置相符。21HTTP/44原件hash核、父报告保持；新内容未取得真实完整验收。见[回执](../../../docs/operations/investigation-protocol-uncertainty-20261031.json)，16/17、不归档。OpenSpec严格校验已通过。
 
