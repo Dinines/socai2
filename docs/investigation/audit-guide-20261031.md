@@ -1,6 +1,8 @@
 # 调查模块最新指南与审计入口
 
-更新日期：2026-10-31。当前线上r8，业务源码`a41ae07`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
+更新日期：2026-10-31。最新本地修复`bf2bd9c`；当前线上r8，业务源码`a41ae07`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
+
+[r9本地修复回执](../operations/investigation-model-wait-20261031.json)：模型等待已改为本次调查剩余时间，总计仍限120秒；6项直接验证通过。版本包已上传，但自动审批拒绝实际部署，正等待用户确认独立调查API更新和1次追加调查。线上尚未运行r9，真实报告质量仍待。
 
 [最新r8功能回执](../operations/investigation-protocol-uncertainty-20261031.json)：明确协议不确定表述已可通过，仍拒绝无依据的肯定/否定；纠错改为完整中文要求，10项必要直接用例通过。唯一真实追加failed/partial：首份结论把A1/A2用作UUID，纠错请求约45秒后发生HTTP错误；同期网关Timeout与原45秒配置相符，未取得最终回复。因此真实语义和不确定句式验收仍待，第三次模型用量未知。[r7原失败](../operations/investigation-source-alignment-20261031.json)保留。
 
@@ -12,14 +14,14 @@
 
 | 对象 | 最新可确认状态 | 依据 |
 | --- | --- | --- |
-| 当前代码与测试源码 | `a41ae07`，含前述修复、协议不确定句式和中文纠错要求；实际线上r8 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
-| 最新本地直接验证 | r8必要直接10项首次全通过，含2新增及旧预算/成员相关验证；替身重放不证明真实模型质量 | [最新日志](../operations/evidence/investigation-audit-fixes-20261031/live-r8/targeted-tests.txt) |
+| 当前代码与测试源码 | `bf2bd9c`，新增剩余时限模型等待；线上仍为`a41ae07`/r8 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
+| 最新本地直接验证 | r9必要直接6项首次全通过，含3新增；替身验证不证明真实模型质量 | [最新日志](../operations/evidence/investigation-audit-fixes-20261031/live-r9/targeted-tests.txt) |
 | 最近真实四案例测试 | 源码`512c004`，批次`INVHTTP-20261028-01`；207次HTTP、111项检查、3项失败，2/4案例自动流程通过 | [总报告](multi-case-http-20261028.md)、[机器汇总](../operations/investigation-multi-case-summary-20261028.json) |
 | 最新常驻版本与真实验证 | 20261031-r8；唯一网络追加failed/partial，3模型尝试/2回复/1复用/0新湖查询；第三次超时，用量未知 | [实际回执](../operations/investigation-protocol-uncertainty-20261031.json) |
 | 数据库功能表 | 迁移120/121已在10月28日记录安装，登记134→136 | [事件转Case联调](incident-case-basic-flow-20261028.md) |
 | 文档更新 | 10月29日补充四案例业务解释；10月31日对齐当前入口和接口合同 | [文档目录](evidence-catalog-20261027.md) |
 
-文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前10项直接验证与本次真实失败分列。本轮已通过SSH核实r8在线状态及批次结束后账本；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
+文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前r9的6项直接验证与r8真实失败分列。r8已保存批次结束账本，本轮通过SSH再次核实其在线状态；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
 
 ## 2 当前功能范围
 
