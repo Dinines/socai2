@@ -16,6 +16,7 @@ ORIGINAL_CLIENT = httpx.AsyncClient
 
 
 class MultiAlertExamples(IsolatedAsyncioTestCase):
+    report_provider = examples.CaseAnalysisExamples.report_provider
     add = examples.CaseAnalysisExamples.add
     start = examples.CaseAnalysisExamples.start
 
@@ -48,7 +49,7 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
                                 "suggested_action": "补查网络连接及进程关联字段"}],
         }
         patcher = patch.object(examples.models.httpx, "AsyncClient", side_effect=lambda **kwargs: ORIGINAL_CLIENT(
-            transport=httpx.MockTransport(self.provider), **kwargs))
+            transport=httpx.MockTransport(lambda request: self.report_provider(self.provider)(request)), **kwargs))
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -90,7 +91,7 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
         context = json.loads(self.messages[0]["messages"][1]["content"])
         third = next(item for item in context["evidence"] if item["evidence_id"] == "A3")
         self.assertIn({"type": "user", "value": "bob"}, third["data"]["entities"])
-        self.assertIn("member_assessments", self.messages[0]["messages"][0]["content"])
+        self.assertIn("member_assessments", self.messages[-1]["messages"][0]["content"])
         self.assertEqual(self.messages[0]["max_tokens"], 3000)
         downloaded = (await self.client.get(data["report_url"])).text
         for label in ("成员覆盖与判断", "跨告警关联依据", "来源时间线", "未决问题", "event-7001"):
@@ -110,7 +111,7 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
                 schema = body["response_format"]["json_schema"]["schema"]
                 self.assertEqual(schema["properties"]["member_assessments"]["minItems"], 3)
                 self.assertEqual(schema["properties"]["member_assessments"]["maxItems"], 3)
-                self.assertNotIn(str(UUID(int=4)), schema["$defs"]["MemberAssessment"]["properties"]["alert_id"]["enum"])
+                self.assertNotIn(str(UUID(int=4)), schema["$defs"]["MemberAssessment"]["properties"]["alert_ref"]["enum"])
                 self.conclusion["member_assessments"].append(missing)
             return original_provider(request)
         with patch.object(self, "provider", provider):
@@ -127,7 +128,7 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
         self.assertEqual(len(result["report"]["open_questions"]), 3)
         self.assertTrue(any(item["question"].startswith("该关联是否成立") for item in result["report"]["open_questions"]))
         self.assertEqual(result["completion"], "partial")
-        self.assertEqual(len(self.messages), 3)
+        self.assertEqual(len(self.messages), 2)
 
     async def test_uncorrected_member_omission_stops_without_a_completed_report(self):
         self.conclusion["member_assessments"].pop()

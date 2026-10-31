@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 from .case_navigation import citation_links, evidence_url
+from .case_analysis_models import ReportContractError
 
 
 class MemberAssessment(BaseModel):
@@ -59,7 +60,8 @@ _PROTOCOL_LIST = _PROTOCOL_NAME + rf"(?:\s*(?:/|、|或)\s*{_PROTOCOL_NAME})*"
 _UNCERTAIN_PROTOCOL = re.compile(
     # Recognize explicit uncertainty only, not a negation of the protocol.
     rf"(?<![不非])(?<!不是)(?:(?:无法|不能|不足以|尚未|未能|未|不)(?:直接)?(?:确认|证实|证明|确定|验证)"
-    rf"(?:是否(?:为|是|使用|采用)?|为|是|使用|采用)?\s*{_PROTOCOL_LIST}(?:协议|连接|流量)?"
+    rf"(?:流量)?(?:是否(?:为|是|使用|采用)?|为|是|使用|采用)?\s*{_PROTOCOL_LIST}(?:协议|连接|流量|状态)?"
+    rf"(?:或具体内容)?"
     rf"|{_PROTOCOL_LIST}(?:协议)?(?:尚未确认|未确认|尚未证实|未证实|待核实|未核实|尚不明确))"
     r"(?=$|[\s，。,；;!?！？)\]）])", re.I)
 
@@ -97,15 +99,19 @@ def validate_synthesis(report, context, evidence):
         protocol = re.compile(r"(?<![A-Za-z0-9_])(HTTPS|TLS|SSL)(?:v?\d+(?:\.\d+)*)?(?![A-Za-z0-9_])", re.I)
         observed = {match.group(1).upper() for row in network_rows
                     if (match := protocol.fullmatch(str(row.get("protocol", "")).strip()))}
-        conclusions = [report["summary"], *(item["text"] for item in report["findings"]),
-                       *(item["summary"] for item in report["member_assessments"]),
-                       *(item["basis"] for item in report["relationships"])]
-        for text in conclusions:
+        conclusions = [(["summary"], report["summary"])] + [([section, index, field], item[field])
+            for section, field in (("findings", "text"), ("member_assessments", "summary"), ("relationships", "basis"))
+            for index, item in enumerate(report[section])]
+        errors = []
+        for location, text in conclusions:
             uncertainty = [match.span() for match in _UNCERTAIN_PROTOCOL.finditer(text)]
             if any(match.group(1).upper() not in observed and not any(
                     start <= match.start() and match.end() <= end for start, end in uncertainty)
                    for match in protocol.finditer(text)):
-                raise ValueError("unobserved_application_protocol_use_gaps")
+                errors.append({"location": location, "type": "unobserved_application_protocol_use_gaps",
+                               "instruction": "仅有TCP/端口不能确认HTTPS/TLS；若未确认，请明确写HTTPS尚未确认或移到gaps。"})
+        if errors:
+            raise ReportContractError(errors)
     if set(assessed) != set(context["read_member_ids"]):
         raise ValueError("missing_readable_member_assessment")
 

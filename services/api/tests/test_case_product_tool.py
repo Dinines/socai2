@@ -17,6 +17,7 @@ CONNECTOR = UUID(int=70)
 
 class ProductToolExamples(IsolatedAsyncioTestCase):
     # Reuse the existing ledger/API fixture without inheriting its unchanged test suite.
+    report_provider = examples.CaseAnalysisExamples.report_provider
     add = examples.CaseAnalysisExamples.add
     start = examples.CaseAnalysisExamples.start
 
@@ -32,7 +33,7 @@ class ProductToolExamples(IsolatedAsyncioTestCase):
         for patcher in (
             patch.object(product, "get_vault", return_value=vault),
             patch.object(examples.models.httpx, "AsyncClient", side_effect=lambda **kwargs: ORIGINAL_CLIENT(
-                transport=httpx.MockTransport(self.provider), **kwargs)),
+                transport=httpx.MockTransport(self.report_provider(self.provider)), **kwargs)),
             patch.object(examples.tools.settings, "AISOC_DISABLE_CLICKHOUSE", True),
         ):
             patcher.start()
@@ -78,8 +79,8 @@ class ProductToolExamples(IsolatedAsyncioTestCase):
                                                                     "hostname": "host-01"})}}]}
             finish = "tool_calls"
         else:
-            returned = json.loads(body["messages"][-1]["content"])
-            self.assertEqual(body["messages"][-1]["tool_call_id"], "call-host-01")
+            returned = next(json.loads(m["content"]) for m in body["messages"] if m["role"] == "tool" and "evidence_id" in json.loads(m["content"]))
+            self.assertTrue(any(m.get("tool_call_id") == "call-host-01" for m in body["messages"]))
             self.assertEqual(returned["source"]["connector_id"], str(CONNECTOR))
             message = {"content": json.dumps({"summary": "当前快照查询完成，历史行为仍需核对。",
                 "findings": [{"text": "产品查询返回主机资料" if returned["rows"] else "未获得主机资料",
@@ -114,7 +115,10 @@ class ProductToolExamples(IsolatedAsyncioTestCase):
         self.assertEqual(snapshot["timestamp"], evidence["observed_at"])
         self.assertIsNone(snapshot["in_window"])
         self.assertEqual(snapshot["source_record_id"], "device-01")
-        self.assertEqual(self.messages[0]["tools"], preview.json()["tools"])
+        self.assertEqual(
+            [tool for tool in self.messages[0]["tools"] if tool["function"]["name"] != "finish_analysis"],
+            preview.json()["tools"],
+        )
         steps = (await self.client.get(data["steps_url"])).json()["items"]
         details = [(await self.client.get(item["detail_url"])).json()["data"] for item in steps]
         returned = next(item for item in details if "model_message" in item)

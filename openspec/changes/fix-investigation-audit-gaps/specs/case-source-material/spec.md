@@ -70,3 +70,19 @@
 #### Scenario: An existing operation is read again
 - **WHEN** 调用者使用同 key 同 intent 重复请求旧 Run
 - **THEN** 只返回原结果，不升级材料、不查询来源、不重写旧 Markdown 或结果工件
+
+
+### Requirement: Formal reports use structured output and current member references
+Case analysis SHALL separate native Tool queries from the formal report. The first formal report MUST use the strict JSON schema; the model MUST refer to members by current A references and the application SHALL map them to the existing public UUID fields. The original four model calls allow at most two query turns, one report and one correction; finish_analysis is a local phase signal, not a data query.
+
+#### Scenario: Model repeats a member in a relationship
+- **WHEN** a relationship or question repeats the same valid A reference
+- **THEN** the application deterministically removes duplicate references and still requires two distinct members for a relationship; duplicate member assessments, unknown references and missing citations are rejected with field locations and allowed/required references, without inventing citations
+
+#### Scenario: The first formal report is invalid
+- **WHEN** the schema-bound report violates JSON, member coverage, citation or protocol checks
+- **THEN** at most one correction receives specific validation feedback within the existing limits, while original model replies remain in the ledger and public report UUID fields remain compatible
+
+#### Scenario: A full-source run explicitly requests fresh queries
+- **WHEN** a new operation specifies refresh_queries=true and both process_activity and network_connections as required tools
+- **THEN** both tools must be attempted against the current fixed host/window, historical results are not reused, and persisted query IDs/results and model-visible source material allow verification of actual queries and untruncated retained raw data

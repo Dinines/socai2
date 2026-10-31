@@ -20,6 +20,7 @@ def mapped(rows):
 
 
 class NavigationExamples(IsolatedAsyncioTestCase):
+    report_provider = examples.CaseAnalysisExamples.report_provider
     add = examples.CaseAnalysisExamples.add
     start = examples.CaseAnalysisExamples.start
     provider = synthesis.MultiAlertExamples.provider
