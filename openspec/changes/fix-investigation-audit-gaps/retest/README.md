@@ -1,3 +1,5 @@
+**后续修复批次已结束：** [r4方案](r4/plan.json)的4 Run、[r5方案](r5/plan.json)的2追加均完成partial；[功能/质量结果](../../../../docs/operations/investigation-functional-followup-20261031.json)分开记录。全部operation_key保持原件，不自动重发。下面为已结束r3记录。
+
 # r3定向真实复验：已结束
 
 固定最多5请求的批次已执行，3主Run中LSASS完成/partial，Office和网络因纠错预算失败；两追加按前提规则未发送。原临时Key已禁用并验证401、明文删除。完整[共享回执](../../../../docs/operations/investigation-audit-live-r3-20261031.json)和原请求/响应保持；禁止重复本批POST或换key补跑。

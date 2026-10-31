@@ -1,0 +1,57 @@
+# Case调查报告 a280c884-0abd-458d-bb66-13c06fe9ca5b
+
+当前主机 investigation-ch-20261023-01-host 在事件窗口内产生 3 条网络记录（E1），分别对应告警 A1（c9ee6c8a...）、A2（951c5352...）及另一条未关联告警（a2a124b2...），均属 HTTPS 出站连接；原始事件载荷为空，原始告警处置状态为 closed 且标题明确标识“合成测试待核网络活动”（source_material.text），工具限制导致无进程关联证据（process_name 为空），故 closures 倾向非攻击，但无法排除合成流量被伪装或工具漏报的可能（历史推断）；未决问题：合成测试环境流量是否包含混淆特征可规避未来检测，以及为何第三条连接未触发告警。参考来源：告警材料中‘closed’及‘合成测试’标注，限制：raw_event 缺失、进程信息空缺、closed 状态非绝对安全判定。
+
+## 发现与依据
+
+## 成员覆盖与判断
+选定2条，读取2条；给出判断0条，尚未明确0条，未逐项分析2条，材料不可读0条。
+给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。
+- 3fcd245d-0496-54f3-875e-f9a7eb90ae2d [not_assessed/undetermined]：模型未提供该成员的逐项判断（依据：无）
+- 5272ae80-b48e-5ef3-8cdd-805885a558a0 [not_assessed/undetermined]：模型未提供该成员的逐项判断（依据：无）
+
+## 跨告警关联依据
+共同实体或时间接近不等于因果关系。
+未给出明确关联条目，不代表已证明全部成员互不相关。
+
+## 来源时间线
+按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。
+- 2026-10-23T09:59:00+00:00 [告警时间]：合成测试待核网络活动 c9ee6c8a-d44d-5ffe-a456-594b5555a87c（依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/A1)；来源记录：见原告警；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d）
+- 2026-10-23T09:59:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.70:443（依据：[E1/rows/0](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1/rows/0)；来源记录：c9ee6c8a-d44d-5ffe-a456-594b5555a87c；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:01:00+00:00 [告警时间]：合成测试待核网络活动 951c5352-2df4-53d8-a431-b2763fea5e6e（依据：[A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/A2)；来源记录：见原告警；候选成员：5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:01:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.70:443（依据：[E1/rows/1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1/rows/1)；来源记录：951c5352-2df4-53d8-a431-b2763fea5e6e；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:02:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.71:443（依据：[E1/rows/2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1/rows/2)；来源记录：a2a124b2-69aa-50ab-a88f-0e1486958f72；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+
+## 未决问题
+- 第三条网络记录为何未在告警系统中产生对应告警，是否因规则阈值或来源配置差异导致漏报？（成员：本次全案；依据：[E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1)） 缺少：缺少对未触发告警告警生成逻辑的规则详情及配置快照，无法判断是测试环境特性还是检测盲区。；建议：检索告警生成规则配置或对比已触发与未触发记录的指标差异，确认是否存在流量特征混淆或规则覆盖缺口。
+- 在 raw_event 完全缺失且进程信息为空的情况下，如何综合现有字段验证该‘合成测试’流量是否为真正模拟的攻击行为，而非误报？（成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0；依据：[E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1)） 缺少：缺乏原始报文载荷（payload）、进程身份及上下文关联，无法确认‘合成测试’的逼真度或是否包含隐蔽攻击特征。；建议：请求重构原始事件日志入口，或在工具支持范围内补充底层流量采样数据（如 PCAP 片段）以支撑攻击性研判。
+
+## 反证
+
+## 未解问题与限制
+- 现有材料缺乏原始事件载荷以核验报文内容，仅能确认 TCP/HTTPS 连接存在，“closed”处置可能仅基于标记而非实质安全评估（历史推断）
+- processor活动缺失导致无法确认发起方进程，难以区分合法测试代理与异常进程行为
+- 第三条网络记录（a2a124b2...）未在告警列表中出现，需确认是否为漏报、阈值未触发或测试环境配置差异
+- 合成测试流量特征未知，是否需要特定混淆规则才能绕过检测尚无法通过现有证据推断
+- 成员3fcd245d-0496-54f3-875e-f9a7eb90ae2d：模型未提供该成员的逐项判断
+- 成员5272ae80-b48e-5ef3-8cdd-805885a558a0：模型未提供该成员的逐项判断
+- 未决问题：第三条网络记录为何未在告警系统中产生对应告警，是否因规则阈值或来源配置差异导致漏报？
+- 未决问题：在 raw_event 完全缺失且进程信息为空的情况下，如何综合现有字段验证该‘合成测试’流量是否为真正模拟的攻击行为，而非误报？
+
+## 建议
+- 获取完整原始事件载荷（raw_event）以进行报文内容分析
+- 补充进程级证据（如 parent chain/命令行参数）以精确关联连接发起者
+- 复核告警匹配逻辑，排查第三条未触发告警的原因是否与指标阈值或规则差异有关
+- 若确认为合成测试数据，建议记录测试流量特征文档以便后续验证检测覆盖度
+
+## 本次范围
+Case：a280c884-0abd-458d-bb66-13c06fe9ca5b
+时间：2026-10-23T09:58:00+00:00 至 2026-10-23T10:03:00+00:00（不含结束时刻）
+选定成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0
+停止原因：analysis_complete
+
+## 证据索引
+- [A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/A1)：告警3fcd245d-0496-54f3-875e-f9a7eb90ae2d，来源事件=c9ee6c8a-d44d-5ffe-a456-594b5555a87c
+- [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/A2)：告警5272ae80-b48e-5ef3-8cdd-805885a558a0，来源事件=951c5352-2df4-53d8-a431-b2763fea5e6e
+- [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/H1)：前次调查c2fb940f-f0b6-5580-8071-1fecabeae7c4（历史判断，范围见原报告）
+- [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/de149256-739c-5fa3-b9da-8cd041a66207/evidence/E1)：network_connections，来源可用=True，记录ID=c9ee6c8a-d44d-5ffe-a456-594b5555a87c, 951c5352-2df4-53d8-a431-b2763fea5e6e, a2a124b2-69aa-50ab-a88f-0e1486958f72

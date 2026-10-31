@@ -1,3 +1,9 @@
+# 2026-10-31 继续推进：r4/r5功能复验完成，报告质量仍部分未过
+
+用户继续推进且要求功能优先。本轮r4更新后Office/网络主调查及追加4 Run全部completed/partial，两个主Run真实进入紧凑纠错并在原预算内完成。报告暴露无源名称/标签后，仅修正来源陈述、处置状态和复用说明，6项受影响直接验证通过，源码本地commit3324fea629d7b1bf9dab46dd9f9cd93ba8f36dd2；r5已部署，镜像sha256:f2555eb2a218e7d115bf98f0a3d212e0088f5e99a472be9e61bac99b1f0c57c3，472应用源码一致。r5只对已有r4主结果追加2 Run，均completed/partial；原报告字节保持。6 Run共16模型/6工具尝试/2实际湖查询/4复用/65209已知tokens，111HTTP、230原件hash核。长期全API开发Key保持有效，无新Key/Case/Alert/概况刷新/worker或其他服务变更。
+
+共享回执docs/operations/investigation-functional-followup-20261031.json。预算、原生Tool、复用和读回功能目标已验证；Office新报告不再有PWS/NavVisor无源标签，网络报告仍把TCP/443称HTTPS、缺两成员判断且对closed状态解释偏强，不能称完整语义验收。旧追加change已5/5；当前审计change16/17，归档完成条件仍未满足，不归档或推送/合并。后续聚焦这类明确功能/报告问题，不扩额外设计或测试框架；不自动重复已结束批次。
+
 # 2026-10-31 长期开发凭据与功能优先
 
 用户最新要求“不要过多的做一些除了功能外的开发设计工作”：只做功能所需实现、必要直接验证和简短进展保存，不扩额外设计、测试框架或逐层审计门。用户在一年/两个原租户含生产的具体询问后明确授权“给你完整的全部的”，21已创建两枚一年有效scopes=["*"]的开发Key，至2027-10-31；私有映射文件/opt/sting-aisoc-socai2/private/investigation-dev-keys.json，root:0600，目录0700。键为原tenant UUID、值为Bearer，后续通过既有SSH在21读取并放入AISOC_API_TOKEN环境，绝不输出明文/复制进仓库；正常开发不再要求临时Key授权。只验证4次GET/200，未新增Run；原短期Key仍禁用。初次长期创建被自动审批拒绝，用户补充明确全权限授权后重试获准并成功。

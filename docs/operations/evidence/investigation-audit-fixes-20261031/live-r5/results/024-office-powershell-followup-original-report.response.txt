@@ -1,0 +1,58 @@
+# Case调查报告 be4aeda2-a89b-47e6-a6f9-285b1a7e8723
+
+本案基于NavVisor告警流程，发现DEMO-FIN-11主机存在高风险异常：user demo.finance 的 Word 进程（PID 4100）启动了隐藏窗口 PowerShell 子进程（PID 4200），随后该子进程向文档说明中的合成地址 198.51.100.41 建立了 8192 字节的 HTTPS 连接。尽管告警聚合器判定为'真实阳性'且查询工具确认无额外进程/网络日志补充，但核心证据链缺失：无 payload 内容、无审批记录、无威胁情报对合地址的研判结论。现有材料仅包含告警元数据，无法确证攻击事实或排除误报（如文档演示数据或合地址扫描测试）。工具查询返回空结果不代表安全。
+
+## 发现与依据
+- WINWORD.EXE 由用户 demo.finance 在 DEMO-FIN-11 主机上启动了一个隐藏窗口的 PowerShell 子进程。该行为符合文件型恶意软件或战术 T1059.001（办公自动化脚本）的常见特征，且时间点与后续网络活动一致。无日志显示有正式发布或审批记录支持此操作。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A1), [T1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/T1)）
+- 上述 PowerShell 子进程（PID 4200）随后向 IP 地址 198.51.100.41（文档描述为合成地址）发起了 8192 字节的 TCP/443 出站连接。虽然该 IP 属于文档测试范围且未标示为已知威胁情报项，但在生产环境中未经授权的主动出站连接仍高度可疑，可能涉及命令与控制或数据泄露。（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A2), [T2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/T2)）
+
+## 成员覆盖与判断
+选定2条，读取2条；给出判断0条，尚未明确2条，未逐项分析0条，材料不可读0条。
+给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。
+- 4c71eec2-77da-5b81-b68a-72801d55ea24 [unresolved/undetermined]：PWS泄露（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A1)）
+- f7af404b-26a6-5d15-bd6c-3a872bdaf451 [unresolved/undetermined]：PWS泄露（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A2)）
+
+## 跨告警关联依据
+共同实体或时间接近不等于因果关系。
+未给出明确关联条目，不代表已证明全部成员互不相关。
+
+## 来源时间线
+按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。
+- 2026-10-25T03:30:16.539577+00:00 [告警时间]：Office启动隐藏PowerShell [DEMO-FIN-11]（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A1)；来源记录：见原告警；候选成员：4c71eec2-77da-5b81-b68a-72801d55ea24）
+- 2026-10-25T03:32:16.539577+00:00 [告警时间]：脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11]（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A2)；来源记录：见原告警；候选成员：f7af404b-26a6-5d15-bd6c-3a872bdaf451）
+
+## 未决问题
+- PWS泄露（成员：4c71eec2-77da-5b81-b68a-72801d55ea24；依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A1)） 缺少：可支持该成员判断的材料或明确分析；建议：补充材料或明确问题后发起后续调查。
+- PWS泄露（成员：f7af404b-26a6-5d15-bd6c-3a872bdaf451；依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A2)） 缺少：可支持该成员判断的材料或明确分析；建议：补充材料或明确问题后发起后续调查。
+
+## 反证
+- Process 和 network 查询工具返回空结果，但这仅表示现有事件湖未收录更多细节，不能用于否定告警中提及的进程启动或连接行为本身。
+- Alert A2 的来源材料明确指出 198.51.100.41 为'文档专用合成地址'，且无威胁情报结论。这可能意味着该 IP 仅用于模拟测试场景，而非真实攻击目的地。
+
+## 未解问题与限制
+- 缺少 PowerShell 运行的实际命令参数及执行的代码 Payload 内容，无法判断具体战术或意图。
+- 缺少用户操作审批记录或安全团队授权凭证，无法排除内部测试或误操作可能性。
+- 缺少对 IP 198.51.100.41 的确切归属确认，尽管被标记为合成地址，仍需核实其在当前网络环境下的实际用途及通信上下文。
+- 部分历史告警摘要仅提供前600字符，未核对完整摘要。
+- 成员4c71eec2-77da-5b81-b68a-72801d55ea24：PWS泄露
+- 成员f7af404b-26a6-5d15-bd6c-3a872bdaf451：PWS泄露
+- 未决问题：PWS泄露
+
+## 建议
+- 开展人工取证审查，检索主机历史记录以确认是否有合法测试任务或批量文档处理需求解释此行为。
+- 调查用户 demo.finance 的近期活动模式，确认是否存在异常操作权限提升或账号接管迹象。
+- 追加威胁情报查询，验证 IP 198.51.100.41 是否存在于任何恶意活动列表中，并确认其当前所在区域。
+
+## 本次范围
+Case：be4aeda2-a89b-47e6-a6f9-285b1a7e8723
+时间：2026-10-25T03:28:00+00:00 至 2026-10-25T03:37:00+00:00（不含结束时刻）
+选定成员：4c71eec2-77da-5b81-b68a-72801d55ea24, f7af404b-26a6-5d15-bd6c-3a872bdaf451
+停止原因：analysis_complete
+
+## 证据索引
+- [A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A1)：告警4c71eec2-77da-5b81-b68a-72801d55ea24，来源事件=bdb56855-5018-567e-b10d-68e7e7bb7073
+- [T1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/T1)：分诊记录1c92c9d5-e2e8-453e-ac8d-1bf074629692（分诊判断）
+- [A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/A2)：告警f7af404b-26a6-5d15-bd6c-3a872bdaf451，来源事件=2d58f3fd-0e29-5e9b-bf0e-8fabe878cd72
+- [T2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/T2)：分诊记录066e345c-6212-41fa-8425-efd9c24fe757（分诊判断）
+- [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/E1)：process_activity，来源可用=True，记录ID=无
+- [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/adcd207e-15c0-537d-966d-797dfe10a4c1/evidence/E2)：network_connections，来源可用=True，记录ID=无

@@ -1,4 +1,4 @@
-**当前实际结果：** [r3共享回执](../../../docs/operations/investigation-audit-live-r3-20261031.json)记录部署完成，但Office和网络主Run预算失败导致两追加未发，因此最后真实追加任务继续待办。随后纠错修复6项本地直接验证通过，尚未部署，不据此归档。下方为原阶段记录。
+**当前实际结果：** [r4/r5共享回执](../../../docs/operations/investigation-functional-followup-20261031.json)已完成常驻更新及定向追加验证：原预算内纠错、原生指定Tool、历史复用、原报告保持和结果读回已验，本change任务5/5。报告语义质量局限仍在当前审计change中保留；不据此宣称完整调查判断正确或自动归档。
 
 2026-10-31执行补充：[审计修复实施](../../../docs/investigation/audit-fixes-implementation-20261031.md)已完成包含新材料的组合验证，Office纠错16929/17018，原报告保持；required/reuse/correction组合通过。当前候选tag为20261031-r3，未部署；下列最后任务继续待办，不以新本地数字替代真实模型复验。
 
@@ -6,7 +6,7 @@
 - [x] Add explicit required_tools/native tool_choice with compatible empty intent.
 - [x] Clarify identifier, empty-result and saved-analysis semantics.
 - [x] Run only affected direct examples; preserve all previous failures.
-- [ ] Prepare a reviewable resident update and targeted live retest, then record actual outcome.
+- [x] Prepare a reviewable resident update and targeted live retest, then record actual outcome.
 
 2026-10-31 规划衔接：新增 [fix-investigation-audit-gaps](../fix-investigation-audit-gaps/proposal.md)
 处理进程类型、概况失败模式和原始取材。上述未完成任务由新 change 的 B4 汇总实际组合版本，
