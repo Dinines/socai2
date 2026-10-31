@@ -1,3 +1,5 @@
+**当前交付（r8）：** 源码`a41ae07`上线，明确不确定协议表述可通过；无据肯定/否定仍拒。纠错提示要求完整中文和未证实/非攻击区分，10项必要直接测试通过。唯一真实Run failed/partial，首次结论UUID错误触发一次纠错，随后45.25秒HTTP错误，同期网关Timeout与45秒配置相符；未取得最终模型回复，第三次用量未知。见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。当前16/17，不归档，下文为先前阶段。
+
 **当前交付（r7）：** 源码`f19cc70`已上线，模型source_alignment及程序生成的query_sources把复用、历史Run和精确行—告警对应显式化，旧来源/报告保持。30项直接用例首轮29过1额度失败，精简重复指令后3项定向复核通过，其余27项复用。唯一真实网络追加failed/partial，未取得合格结论；原回答与两次校验失败保留。见[最新回执](../operations/investigation-source-alignment-20261031.json)，当前16/17，不归档。下文r6及以前均为阶段记录。
 
 **当前交付（r6）：** 源码`7330a7c`已上线；窄协议名校验、可读成员完整性和HTTPX紧凑JSON额度核算完成，29项受影响直接验证通过。一次网络追加真实完成partial，两个成员均有判断，无HTTPS/TLS/SSL结论；一次历史复用、父报告字节保持，见[最新回执](../operations/investigation-network-report-fix-20261031.json)。新报告仍误述复用、历史与行归属；当前16/17、不归档。以下各阶段数字只适用于当时版本。

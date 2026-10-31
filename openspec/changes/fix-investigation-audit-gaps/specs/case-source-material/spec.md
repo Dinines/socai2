@@ -12,15 +12,19 @@
 - **THEN** 对应列表为A1、A2和空项；空项只表示未匹配，不证明无关。模型裁剪行时同步裁剪对应列表，完整报告仍按已保存行生成
 
 ### Requirement: Network conclusion fields and readable member coverage are checked
-新的Case结论 SHALL 对每个可读选定成员提供且只提供一条引用自身A材料的判断。当存在network_connections证据时，摘要、发现、成员说明及关系依据中的HTTPS/TLS/SSL名称 MUST 来自可用网络行的protocol字段；未核实协议名称放在gaps或open_questions。本规则不证明其他语义正确，不改写旧Run。
+新的Case结论 SHALL 对每个可读选定成员提供且只提供一条引用自身A材料的判断。当存在network_connections证据时，摘要、发现、成员说明及关系依据中未出现在可用网络行protocol字段的HTTPS/TLS/SSL名称 SHALL 仅用于明确的不确定表述，例如“HTTPS尚未确认”或“TCP/443不直接证明HTTPS”；无依据的肯定或否定断言仍拒绝。实现只识别有限中文句式，不是通用语义判定；gaps/open_questions可保留待核问题。本规则不证明其他语义正确，不改写旧Run。
 
 #### Scenario: The model omits a readable selected member
 - **WHEN** 结论缺少可读成员判断或引用不合法
 - **THEN** 沿原一次纠错与预算限制处理；纠错未成功则failed/partial，不能以completed接受遗漏；不可读成员仍为source_unavailable
 
 #### Scenario: TCP port 443 is described as HTTPS
-- **WHEN** 网络行仅提供TCP/443，但结论字段出现未观察到的HTTPS、TLS或SSL名称
+- **WHEN** 网络行仅提供TCP/443，但结论字段肯定或否定未观察到的HTTPS、TLS或SSL
 - **THEN** 拒绝该结论并使用原纠错路径，不把端口当作应用协议证据，也不自动重写为已核实事实
+
+#### Scenario: Explicit uncertainty is followed by an unsupported assertion
+- **WHEN** 结论写“HTTPS尚未确认”或“无法确认是否使用HTTPS/TLS”，并可能另有“已证实SSL”等断言
+- **THEN** 只允许明确不确定部分；若仍有无依据的断言则整份结论继续被拒，不能因一句不确定表述而放行其他协议声明
 
 ### Requirement: New Case runs retain bounded original source material
 新 Case Run SHALL 按 case.source-material.v1 固定本次 Case.description 及选定 Alert.description/raw_event 的来源路径、状态、截断前指纹/长度、保留文本/字节和省略原因。MUST 使用 design 中单字段/单 Run 上限，明确 JSON 指纹为 canonical JSON 数据指纹；不编造未读来源，不用旧 AI 摘要替代正文。

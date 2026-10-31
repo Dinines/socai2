@@ -6,7 +6,7 @@
 
 **2026-10-28公共读取实现：** 新增executions按来源筛选及单Run元数据、Case evidence及rows读取、结果navigation和报告引用链接；[字段与跳转合同](execution-index-and-evidence-20261028.md)。旧记录沿原生账本读取，不猜Case归属和正式结果完整度。
 
-**2026-10-28多告警结果实现：** 既有Case结果report新增member_assessments、member_coverage、relationships、timeline、open_questions；[字段、范围和示例](multi-alert-synthesis-20261028.md)。没有新增端点或表。2026-10-31 r6要求每个可读选定成员都有自身A引用的判断，遗漏或无依据的HTTPS/TLS/SSL结论进入原有一次纠错；仍无效则failed/partial。r7另由程序生成query_sources，显示历史复用及按来源事件ID匹配的行—告警对应；模型视图对应字段为source_alignment。旧Run读取不重新校验或改写，具体限制见上述字段说明。
+**2026-10-28多告警结果实现：** 既有Case结果report新增member_assessments、member_coverage、relationships、timeline、open_questions；[字段、范围和示例](multi-alert-synthesis-20261028.md)。没有新增端点或表。2026-10-31 r6要求每个可读选定成员都有自身A引用的判断，遗漏或无依据的HTTPS/TLS/SSL结论进入原有一次纠错；仍无效则failed/partial。r8允许“HTTPS尚未确认”等有限中文不确定句式，未放开无依据的肯定/否定断言。r7另由程序生成query_sources，显示历史复用及按来源事件ID匹配的行—告警对应；模型视图对应字段为source_alignment。旧Run读取不重新校验或改写，具体限制见上述字段说明。
 
 **2026-10-28产品Tool实现：** 当前Case已接通`product_host_details`（CrowdStrike）。具体参数、来源连接器绑定、HTTP请求返回、证据与报告见[实际合同](product-host-tool-20261028.md)。下文进程HTTP示例仍是接入设计，不是该产品的实际接口。
 

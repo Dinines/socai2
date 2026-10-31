@@ -1,4 +1,4 @@
-**最新状态（2026-10-31）：** 当前常驻`20261031-r7`，源码`f19cc70`，21本机18010；镜像`sha256:c32e7b6c3979c8750bcb0342fecb14727cd199453c4362244e437c3ed5fb85f5`，472应用源码已核。开发Key位置与用法保持。新增查询来源与成员对应展示；唯一真实复验failed/partial，结论校验未过，见[最新回执](../operations/investigation-source-alignment-20261031.json)。下方版本为历史记录。
+**最新状态（2026-10-31）：** 常驻`20261031-r8`，源码`a41ae07`，21本机18010；镜像`sha256:1f0bfe52f92b402fe2c92ed5b66c1c7250e21c27a900a2299020355b21eb337b`，472应用源码已核。开发Key与服务配置保持。协议边界修复已直接验证；唯一真实调查的纠错调用约45秒后遇网关Timeout，failed/partial，最终内容未验，见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。下方版本为历史记录。
 
 **2026-10-31 当前入口：** 21调查API已更新20261031-r3，监听127.0.0.1:18010；[实际批次回执](../operations/investigation-audit-live-r3-20261031.json)。后续本地纠错修复尚未部署。
 
