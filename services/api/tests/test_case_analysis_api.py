@@ -629,6 +629,73 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.get(outcome["report_url"])).text, outcome["result"]["markdown"])
         self.lake.assert_not_awaited()
 
+    async def test_protocol_uncertainty_does_not_allow_unsupported_assertions(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031/live-r7/results"
+        result = json.loads(next(root.glob("*-followup-result.response.txt")).read_text(encoding="utf-8"))["result"]
+        context = json.loads(next(root.glob("*-step-1.response.txt")).read_text(encoding="utf-8"))["data"]
+        response = json.loads(next(root.glob("*-step-10.response.txt")).read_text(encoding="utf-8"))["data"]["response"]["content"]
+        original = analysis.AnalysisConclusion.model_validate_json(response).model_dump(mode="json")
+        # The actual r7 reply contains both valid uncertainty and unsupported
+        # negative claims. Allowing one phrase must not accept the whole reply.
+        with self.assertRaisesRegex(ValueError, "unobserved_application_protocol_use_gaps"):
+            analysis.validate_synthesis(original, context, result["evidence"])
+        report = {**original, "summary": "应用协议待核。", "findings": [], "relationships": [],
+                  "member_assessments": [{**item, "summary": "材料不足，性质待核。"} for item in original["member_assessments"]]}
+        for text in ("TCP/443不直接证明HTTPS。", "HTTPS尚未确认。", "无法确认是否使用HTTPS/TLS。",
+                     "HTTPS/TLS协议尚未证实。", "SSL协议待核实。", "尚未验证TLS1.3。"):
+            with self.subTest(allowed=text):
+                analysis.validate_synthesis({**report, "summary": text}, context, result["evidence"])
+        for text in ("使用HTTPS连接。", "协议标注TCP/443，非TLS/HTTPS。", "TCP/443≠HTTPS。",
+                     "不是HTTPS。", "并非无法确认HTTPS。", "无法确认HTTPS连接已证实存在。",
+                     "HTTPS尚未确认，但已证实TLS。", "无法确认HTTPS；实际使用SSL。"):
+            with self.subTest(rejected=text), self.assertRaisesRegex(ValueError, "unobserved_application_protocol_use_gaps"):
+                analysis.validate_synthesis({**report, "summary": text}, context, result["evidence"])
+
+    async def test_r7_fenced_response_gets_one_chinese_correction_with_uncertainty(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031/live-r7/results"
+        steps = sorted([json.loads(path.read_text(encoding="utf-8")) for path in
+                        root.glob("*-followup-step-*.response.txt")], key=lambda step: step["seq"])
+        context = steps[0]["data"]
+        parent = json.loads(next(root.glob("*-parent-result.response.txt")).read_text(encoding="utf-8"))["result"]
+        original_parent = analysis.encoded(parent)
+        request = analysis.CaseAnalysisRequest.model_validate_json(next(root.glob("*-followup.body.json")).read_text(encoding="utf-8"))
+        replies = [step["data"] for step in steps if "response" in step["data"]]
+        good = {"summary": "本次复用历史网络记录，无新查询。TCP/443不直接证明HTTPS。未证实攻击也不等于证实非攻击。",
+                "findings": [{"text": "前两行分别匹配A1和A2的来源事件ID，第三行未匹配所选告警，关联仍待核。",
+                              "evidence_ids": ["A1", "A2", "E1"]}],
+                "counterevidence": [], "gaps": ["缺少进程关联和协议层证据"], "recommendations": [],
+                "member_assessments": [{"alert_id": item["data"]["alert_id"], "status": "unresolved",
+                    "role": "undetermined", "summary": "告警来源对应历史连接记录，HTTPS尚未确认，行为性质待核。",
+                    "evidence_ids": [item["evidence_id"], "E1"]} for item in context["evidence"] if item["kind"] == "alert"]}
+        run = InvestigationRun(id=UUID(int=840), tenant_id=TENANT, case_id=context["case_id"],
+                               raw_alert={"scope": {}}, total_tokens=0, iterations=0)
+        self.runs[run.id] = run
+        exchanges = [*replies[:2], {"response": {"content": json.dumps(good)},
+                                   "usage": {"prompt_tokens": 100, "completion_tokens": 50}}]
+        def provider(http_request):
+            self.messages.append(json.loads(http_request.content))
+            reply = exchanges[len(self.messages) - 1]
+            return httpx.Response(200, json={"choices": [{"message": reply["response"],
+                "finish_reason": "tool_calls" if reply["response"].get("tool_calls") else "stop"}], "usage": reply["usage"]})
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            outcome = await analysis.CaseAnalysis(self.db, run, context, request, parent).execute()
+        self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
+        self.assertEqual(len(self.messages), 3)
+        self.assertIn("完整中文句子", self.messages[-1]["messages"][0]["content"])
+        self.assertIn("未证实攻击≠证实非攻击", self.messages[-1]["messages"][0]["content"])
+        self.assertNotIn("tools", self.messages[-1])
+        validation = [json.loads(item.content) for item in self.artifacts if item.kind == "case_analysis_step"
+                      and "errors" in json.loads(item.content)]
+        self.assertEqual(validation[0]["errors"], [{"location": [], "type": "json_invalid"}])
+        self.assertEqual(len(validation), 1)
+        self.assertEqual(outcome["result"]["report"]["summary"], good["summary"])
+        self.assertEqual(outcome["result"]["report"]["member_coverage"]["not_assessed_count"], 0)
+        self.assertEqual((await self.client.get(outcome["result_url"])).json()["result"], outcome["result"])
+        self.assertEqual(analysis.encoded(parent), original_parent)
+        self.lake.assert_not_awaited()
+
     async def test_original_sources_are_frozen_model_visible_and_bounded(self):
         source_path = Path(__file__).resolve().parents[3] / "docs/operations/evidence/INVHTTP-20261028-01/results/office-powershell/001-source-0.response.txt"
         source = json.loads(source_path.read_text(encoding="utf-8"))

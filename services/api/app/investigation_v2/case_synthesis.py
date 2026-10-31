@@ -54,6 +54,16 @@ unresolved成员、hypothesis关联需有对应未决问题。不得引用范围
 """
 
 
+_PROTOCOL_NAME = r"(?:HTTPS|TLS|SSL)(?:v?\d+(?:\.\d+)*)?"
+_PROTOCOL_LIST = _PROTOCOL_NAME + rf"(?:\s*(?:/|、|或)\s*{_PROTOCOL_NAME})*"
+_UNCERTAIN_PROTOCOL = re.compile(
+    # Recognize explicit uncertainty only, not a negation of the protocol.
+    rf"(?<![不非])(?<!不是)(?:(?:无法|不能|不足以|尚未|未能|未|不)(?:直接)?(?:确认|证实|证明|确定|验证)"
+    rf"(?:是否(?:为|是|使用|采用)?|为|是|使用|采用)?\s*{_PROTOCOL_LIST}(?:协议|连接|流量)?"
+    rf"|{_PROTOCOL_LIST}(?:协议)?(?:尚未确认|未确认|尚未证实|未证实|待核实|未核实|尚不明确))"
+    r"(?=$|[\s，。,；;!?！？)\]）])", re.I)
+
+
 def validate_synthesis(report, context, evidence):
     """Validate scope and references; this does not prove the model's interpretation."""
     selected = set(context["selected_member_ids"])
@@ -79,8 +89,8 @@ def validate_synthesis(report, context, evidence):
     for item in report["open_questions"]:
         references(item, item["alert_ids"])
 
-    # A port is not application-protocol evidence. Keep unverified protocol
-    # names in gaps/questions, rather than accepting them in conclusion fields.
+    # A port is not application-protocol evidence. Explicit uncertainty is
+    # allowed; unsupported positive and negative protocol assertions are not.
     network = [item for item in evidence if item.get("kind") == "tool" and item.get("tool") == "network_connections"]
     if network:
         network_rows = [row for item in network if item.get("available") is True for row in item.get("rows", [])]
@@ -90,8 +100,12 @@ def validate_synthesis(report, context, evidence):
         conclusions = [report["summary"], *(item["text"] for item in report["findings"]),
                        *(item["summary"] for item in report["member_assessments"]),
                        *(item["basis"] for item in report["relationships"])]
-        if any(match.group(1).upper() not in observed for text in conclusions for match in protocol.finditer(text)):
-            raise ValueError("unobserved_application_protocol_use_gaps")
+        for text in conclusions:
+            uncertainty = [match.span() for match in _UNCERTAIN_PROTOCOL.finditer(text)]
+            if any(match.group(1).upper() not in observed and not any(
+                    start <= match.start() and match.end() <= end for start, end in uncertainty)
+                   for match in protocol.finditer(text)):
+                raise ValueError("unobserved_application_protocol_use_gaps")
     if set(assessed) != set(context["read_member_ids"]):
         raise ValueError("missing_readable_member_assessment")
 
