@@ -1,3 +1,5 @@
+**2026-10-31 r6功能交付：** 网络协议推断及成员遗漏已修复并上线，源码`7330a7c`；29项受影响直接验证通过。仅一次真实网络追加completed/partial，两个成员均有判断，报告保留TCP/443；3模型、1历史复用、0新湖查询、12780已知tokens，父报告保持。报告仍有历史复用误称新查、误述H1及行归属错误，不能称完整语义通过。见[最新回执](docs/operations/investigation-network-report-fix-20261031.json)，OpenSpec仍16/17、不归档；开发Key保持有效。
+
 **2026-10-31 功能继续交付：** r5已上线，源码`3324fea`。本轮6个真实Run均完成并保留partial，预算纠错、原生Tool、历史复用及原报告保持已验证；16模型、2新湖查询、4复用、65209已知tokens。Office无源标签改善，网络报告仍存在TCP/443写成HTTPS、漏成员判断等质量问题；完整业务验收保持未完成。见[共享回执](docs/operations/investigation-functional-followup-20261031.json)。旧追加change5/5，当前审计change16/17，不归档；开发Key持续可用。
 
 **2026-10-31 最新功能进展：** [r3实际回执](docs/operations/investigation-audit-live-r3-20261031.json)：部署完成，固定批次3主Run中1完成/partial、2因纠错预算失败，2追加未发；8模型、6湖查询、29824已知tokens。已本地修复超预算纠错输入，6项直接验证通过，未追加真实调用或部署该新修复。两个change共享此回执，当前15/17，不归档。

@@ -1,3 +1,9 @@
+# 2026-10-31 r6协议结论和成员覆盖修复交付
+
+继续按功能优先推进；源码7330a7c66c924addca0d11c59095df8edd972689，r6已部署至21独立调查API，镜像sha256:6b7483b300c09490b6fd311847eaff79ef5d98c02509b7fdf01ebf8327b3941a，472应用源码一致。新增窄协议名称校验及可读成员完整性校验，原一次纠错和预算保持；按HTTPX紧凑JSON核输入字节，29项受影响直接用例通过。仅新增网络追加Run62bb8d8b-c10a-5324-ba1c-1736a92ce20d，completed/partial，3模型/1工具复用/0新湖查询/12780已知tokens；两个成员均unresolved、遗漏0，无HTTPS/TLS/SSL结论；11事件13工件、22HTTP/46原件hash核，父报告字节保持。
+
+回执docs/operations/investigation-network-report-fix-20261031.json。两项具体缺陷已修并实际复验；报告仍误称历史复用为新查、误述H1没有非空网络记录、把3行都说成匹配2成员，并编造英文nuclear引文，完整语义验收仍未过。当前change16/17、5.3保持未完成，不归档/推送/合并，不重跑本批；后续只聚焦这些具体来源叙述问题，不扩额外设计或测试框架。core/agents/配置/长期开发Key保持，无新Key/Case/Alert/概况刷新/worker。
+
 # 2026-10-31 继续推进：r4/r5功能复验完成，报告质量仍部分未过
 
 用户继续推进且要求功能优先。本轮r4更新后Office/网络主调查及追加4 Run全部completed/partial，两个主Run真实进入紧凑纠错并在原预算内完成。报告暴露无源名称/标签后，仅修正来源陈述、处置状态和复用说明，6项受影响直接验证通过，源码本地commit3324fea629d7b1bf9dab46dd9f9cd93ba8f36dd2；r5已部署，镜像sha256:f2555eb2a218e7d115bf98f0a3d212e0088f5e99a472be9e61bac99b1f0c57c3，472应用源码一致。r5只对已有r4主结果追加2 Run，均completed/partial；原报告字节保持。6 Run共16模型/6工具尝试/2实际湖查询/4复用/65209已知tokens，111HTTP、230原件hash核。长期全API开发Key保持有效，无新Key/Case/Alert/概况刷新/worker或其他服务变更。

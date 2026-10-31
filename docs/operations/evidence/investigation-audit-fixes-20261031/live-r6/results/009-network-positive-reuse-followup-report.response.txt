@@ -1,0 +1,66 @@
+# Case调查报告 a280c884-0abd-458d-bb66-13c06fe9ca5b
+
+历史分析（H1）基于上一次相同的工具调用（network_connections, limit=20）得出结论，称无法证实攻击并标记为测试事件。然而，本次重新调用同一工具（E1）返回了3条具体的网络流记录：这些记录明确关联了原始告警ID（3fcd245d-0496-54f3-875e-f9a7eb90ae2d 和 5272ae80-b48e-5ef3-8cdd-805885a558a0）。历史分析未识别本次查询返回的数据与其之前可能引用的空状态或未正确解释的状态之间存在矛盾。测试环境的描述（'synthetic test pending nuclear activity'）与现有网络流记录可以共存，不能仅凭告警状态和最少的原始事件载荷就完全否定数据来源的真实性。需要进一步检查这些特定事件（c9ee... 和 951c...）关联的进程活动或其他上下文证据，特别是原始事件载荷是否为空、是否存在混淆特征或伪造痕迹。
+
+## 发现与依据
+- 历史分析（H1）指出原始事件数据为空且告警已关闭，倾向于非真实攻击，但这忽略了网络工具（E1）检索到的明确数据。（依据：[H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1), [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1)）
+- 网络工具（E1）返回了3条TCP/443连接记录，其event_id分别与两个历史告警（A1, A2）完全匹配。（依据：[E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1), [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2)）
+- 历史分析中存在明显的评估盲点：未能注意到重新运行工具（E1）能检索到具体的网络流记录，这与其关于‘无记录’或‘无法证实’的论断相冲突。（依据：[H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1), [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1)）
+- 无法排除这是测试环境生成的具有特定特征（如重复目标IP/端口）的网络活动，原始事件载荷仍为空不代表活动不存在。（依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1), [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)）
+
+## 成员覆盖与判断
+选定2条，读取2条；给出判断0条，尚未明确2条，未逐项分析0条，材料不可读0条。
+给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。
+- 3fcd245d-0496-54f3-875e-f9a7eb90ae2d [unresolved/supporting]：原始告警 A1 指向一条于 09:59:00 +00:00 生成的 TCP/443 连接（E1），该记录与空原始事件（raw_event: {}）及已关闭状态相关联。尽管原始载荷缺失限制了直接证据链的构建，但网络流的物理存在（E1）证实了活动的发生，不能简单排除其为带有混淆特征的测试流量。（依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1), [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)）
+- 5272ae80-b48e-5ef3-8cdd-805885a558a0 [unresolved/supporting]：原始告警 A2 指向一条于 10:01:00 +00:00 生成的 TCP/443 连接（E1），同样关联空原始事件及关闭状态。历史分析（H1）对其的否定性结论未考虑 E1 中检索到的非空连接记录，因此其关于‘无法证实攻击’的部分推理在当前证据集中显得顾此失彼，需结合更多上下文（如进程信息）进行综合判断。（依据：[A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2), [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)）
+
+## 跨告警关联依据
+共同实体或时间接近不等于因果关系。
+未给出明确关联条目，不代表已证明全部成员互不相关。
+
+## 来源时间线
+按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。
+- 2026-10-23T09:59:00+00:00 [告警时间]：合成测试待核网络活动 c9ee6c8a-d44d-5ffe-a456-594b5555a87c（依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1)；来源记录：见原告警；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d）
+- 2026-10-23T09:59:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.70:443（依据：[E1/rows/0](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1/rows/0)；来源记录：c9ee6c8a-d44d-5ffe-a456-594b5555a87c；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:01:00+00:00 [告警时间]：合成测试待核网络活动 951c5352-2df4-53d8-a431-b2763fea5e6e（依据：[A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2)；来源记录：见原告警；候选成员：5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:01:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.70:443（依据：[E1/rows/1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1/rows/1)；来源记录：951c5352-2df4-53d8-a431-b2763fea5e6e；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+- 2026-10-23T10:02:00+00:00 [来源事件时间]：未知进程：::ffff:192.0.2.70 → ::ffff:198.51.100.71:443（依据：[E1/rows/2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1/rows/2)；来源记录：a2a124b2-69aa-50ab-a88f-0e1486958f72；候选成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0）
+
+## 未决问题
+- 原始事件（raw_event）为何空缺或其数据结构异常？这是否反映了数据管道处理错误还是事件本身即为构造/截断？（成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0；依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1), [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2), [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)） 缺少：完整的 raw_event 内容。；建议：查询与这两个 event_id 相关的完整日志文件或调用底层数据源接口获取原始记录。
+- 发起这些 TCP/443 连接的具体进程名称是什么？是否存在可疑或已知的测试进程？（成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0；依据：[E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)） 缺少：具有 process_name 字段且非空的连接记录证据，或关联的 process_activity 证据。；建议：执行 process_activity 查询，并匹配 E1 中返回的 event_id 或时间/源IP。
+- 告警被标记为'closed'的具体原因和依据是什么？系统日志或人工处置记录中是否有明确标注该活动为'测试流量'或'误报'的证据？（成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0；依据：[A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1), [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)） 缺少：处置记录、备注或审计日志。；建议：查询工单系统或处置引擎的秘密/公开字段。
+- 目标 IPs (198.51.100.70/71) 在网络拓扑中是否为预期的测试靶标，或者是否有证据表明它们被用于混淆（例如 IP 掩膜）？（成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0；依据：[E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1), [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)） 缺少：资产列表、已知测试环境配置或关于这些 IP 的使用说明。；建议：比对 IP 列表与已知的测试环境资产。
+
+## 反证
+- 工具查询E1明确显示了与告警A1/A2关联的3条网络流记录，推翻了可能认为‘无有效数据’的假设。
+- 历史分析H1在结论中未提及此次重新查询所获得的非空结果。
+
+## 未解问题与限制
+- 1. 无法确认这些网络流背后的原始事件载荷（raw_event）是否包含有效数据，当前仅为空结构。
+- 2. 缺乏进程链（process chain）或父进程信息来区分这是被入侵进程发起的还是受控系统发出的正常流量。
+- 3. 未能获取关于告警为何被关闭（closed）及关闭理由的具体上下文，缺乏对‘合成测试’主张的独立验证。
+- 4. 无法确定目标IP（198.51.100.70/71）是否为已知的测试靶标或选定的混淆对象。
+- 成员3fcd245d-0496-54f3-875e-f9a7eb90ae2d：原始告警 A1 指向一条于 09:59:00 +00:00 生成的 TCP/443 连接（E1），该记录与空原始事件（raw_event: {}）及已关闭状态相关联。尽管原始载荷缺失限制了直接证据链的构建，但网络流的物理存在（E1）证实了活动的发生，不能简单排除其为带有混淆特征的测试流量。
+- 成员5272ae80-b48e-5ef3-8cdd-805885a558a0：原始告警 A2 指向一条于 10:01:00 +00:00 生成的 TCP/443 连接（E1），同样关联空原始事件及关闭状态。历史分析（H1）对其的否定性结论未考虑 E1 中检索到的非空连接记录，因此其关于‘无法证实攻击’的部分推理在当前证据集中显得顾此失彼，需结合更多上下文（如进程信息）进行综合判断。
+- 未决问题：原始事件（raw_event）为何空缺或其数据结构异常？这是否反映了数据管道处理错误还是事件本身即为构造/截断？
+- 未决问题：发起这些 TCP/443 连接的具体进程名称是什么？是否存在可疑或已知的测试进程？
+- 未决问题：告警被标记为'closed'的具体原因和依据是什么？系统日志或人工处置记录中是否有明确标注该活动为'测试流量'或'误报'的证据？
+- 未决问题：目标 IPs (198.51.100.70/71) 在网络拓扑中是否为预期的测试靶标，或者是否有证据表明它们被用于混淆（例如 IP 掩膜）？
+
+## 建议
+- 针对事件 c9ee6c8a-d44d-5ffe-a456-594b5555a87c 和 951c5352-2df4-53d8-a431-b2763fea5e6e 获取完整的原始事件详情（raw_event），查看其中是否包含应用层载荷或有效元数据。
+- 查询同一主机在事件发生时刻的进程活动（process_activity），尝试匹配发起连接的进程名称或PID，以验证是否存在可疑进程。
+- 检索告警处置记录或系统日志，查明告警状态从‘open’变为‘closed’的具体原因及操作者备注，以确认是否为测试流量清理或误报排除。
+
+## 本次范围
+Case：a280c884-0abd-458d-bb66-13c06fe9ca5b
+时间：2026-10-23T09:58:00+00:00 至 2026-10-23T10:03:00+00:00（不含结束时刻）
+选定成员：3fcd245d-0496-54f3-875e-f9a7eb90ae2d, 5272ae80-b48e-5ef3-8cdd-805885a558a0
+停止原因：analysis_complete
+
+## 证据索引
+- [A1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A1)：告警3fcd245d-0496-54f3-875e-f9a7eb90ae2d，来源事件=c9ee6c8a-d44d-5ffe-a456-594b5555a87c
+- [A2](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/A2)：告警5272ae80-b48e-5ef3-8cdd-805885a558a0，来源事件=951c5352-2df4-53d8-a431-b2763fea5e6e
+- [H1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/H1)：前次调查c2fb940f-f0b6-5580-8071-1fecabeae7c4（历史判断，范围见原报告）
+- [E1](/api/v2/investigation/cases/a280c884-0abd-458d-bb66-13c06fe9ca5b/investigations/62bb8d8b-c10a-5324-ba1c-1736a92ce20d/evidence/E1)：network_connections，来源可用=True，记录ID=c9ee6c8a-d44d-5ffe-a456-594b5555a87c, 951c5352-2df4-53d8-a431-b2763fea5e6e, a2a124b2-69aa-50ab-a88f-0e1486958f72
