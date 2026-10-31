@@ -9,7 +9,7 @@ from app.services.model_aliases import completions_url_for_base
 MAX_OUTPUT_TOKENS = 3000
 
 
-def conclusion_format(schema: dict, evidence_ids: list[str], member_ids: list[str]):
+def conclusion_format(schema: dict, evidence_ids: list[str], member_ids: list[str], read_member_ids=None):
     def strict(value):
         if isinstance(value, list):
             return [strict(item) for item in value]
@@ -21,12 +21,14 @@ def conclusion_format(schema: dict, evidence_ids: list[str], member_ids: list[st
         return result
 
     output = strict(schema)
+    readable = member_ids if read_member_ids is None else read_member_ids
+    output["properties"]["member_assessments"].update(minItems=len(readable), maxItems=len(readable))
     for definition in output.get("$defs", {}).values():
         properties = definition.get("properties", {})
         if "evidence_ids" in properties and evidence_ids:
             properties["evidence_ids"]["items"]["enum"] = evidence_ids
         if "alert_id" in properties:
-            properties["alert_id"]["enum"] = member_ids
+            properties["alert_id"]["enum"] = readable or member_ids
         if "alert_ids" in properties:
             properties["alert_ids"]["items"]["enum"] = member_ids
     return {"type": "json_schema", "json_schema": {

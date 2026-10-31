@@ -1,6 +1,7 @@
 """Scoped multi-alert judgments and a timeline derived from saved evidence."""
 from collections import Counter
 from datetime import UTC, datetime
+import re
 from typing import Literal
 from uuid import UUID
 
@@ -77,6 +78,22 @@ def validate_synthesis(report, context, evidence):
         references(item, item["alert_ids"], own_alerts=True)
     for item in report["open_questions"]:
         references(item, item["alert_ids"])
+
+    # A port is not application-protocol evidence. Keep unverified protocol
+    # names in gaps/questions, rather than accepting them in conclusion fields.
+    network = [item for item in evidence if item.get("kind") == "tool" and item.get("tool") == "network_connections"]
+    if network:
+        network_rows = [row for item in network if item.get("available") is True for row in item.get("rows", [])]
+        protocol = re.compile(r"(?<![A-Za-z0-9_])(HTTPS|TLS|SSL)(?:v?\d+(?:\.\d+)*)?(?![A-Za-z0-9_])", re.I)
+        observed = {match.group(1).upper() for row in network_rows
+                    if (match := protocol.fullmatch(str(row.get("protocol", "")).strip()))}
+        conclusions = [report["summary"], *(item["text"] for item in report["findings"]),
+                       *(item["summary"] for item in report["member_assessments"]),
+                       *(item["basis"] for item in report["relationships"])]
+        if any(match.group(1).upper() not in observed for text in conclusions for match in protocol.finditer(text)):
+            raise ValueError("unobserved_application_protocol_use_gaps")
+    if set(assessed) != set(context["read_member_ids"]):
+        raise ValueError("missing_readable_member_assessment")
 
 
 def _timestamp(value):

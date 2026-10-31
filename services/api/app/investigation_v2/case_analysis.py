@@ -176,6 +176,7 @@ class AnalysisConclusion(BaseModel):
 
 SOURCE_RULES = """A/T/H are claims/judgments: use 告警称/分诊认为/历史推断, not verified facts.
 No approval data!=unauthorized; closed/true_positive!=safe/malicious; empty raw_event does not negate E.
+TCP/443!=HTTPS/TLS; unobserved protocol names belong only in gaps/questions.
 reused_from=historical reuse, not new query/independent support. Unmatched!=unrelated.
 No invented vendor/acronym/attack labels or expanded ungrounded H claims. Member summaries: full sentences with source+limits."""
 
@@ -375,14 +376,16 @@ class CaseAnalysis:
                         required = next((name for name in self.request.required_tools if name not in attempted), None)
                         tool_choice = {"type": "function", "function": {"name": required}} if required else None
                         output_format = None if offered_tools else conclusion_format(AnalysisConclusion.model_json_schema(),
-                            [item["evidence_id"] for item in self.evidence], self.context["selected_member_ids"])
-                        # UTF-8 bytes conservatively bound text tokens before dispatch.
-                        input_bytes = sum(len(encoded(value).encode()) for value in (messages, offered_tools, output_format))
+                            [item["evidence_id"] for item in self.evidence], self.context["selected_member_ids"],
+                            self.context["read_member_ids"])
+                        # Match HTTPX's compact UTF-8 JSON serialization; bytes
+                        # still conservatively bound tokens, with envelope headroom.
+                        input_bytes = sum(len(encoded(value, compact=True).encode()) for value in (messages, offered_tools, output_format))
                         if tool_choice:
-                            input_bytes += len(encoded(tool_choice).encode())
+                            input_bytes += len(encoded(tool_choice, compact=True).encode())
                         if conclusion_corrections and input_bytes + MAX_OUTPUT_TOKENS + 256 > LIMITS["tokens"] - self.tokens:
                             messages = compact_correction(messages)
-                            input_bytes = sum(len(encoded(value).encode()) for value in (messages, offered_tools, output_format))
+                            input_bytes = sum(len(encoded(value, compact=True).encode()) for value in (messages, offered_tools, output_format))
                         if input_bytes + MAX_OUTPUT_TOKENS + 256 > LIMITS["tokens"] - self.tokens:
                             stop_reason = "input_or_token_limit"
                             break

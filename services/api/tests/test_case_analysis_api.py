@@ -30,6 +30,11 @@ from app.services.llm_resolver import LlmConfig
 TENANT, NOW, CASE = fixtures.TENANT, fixtures.NOW, UUID(int=30)
 
 
+def single_member_assessment():
+    return [{"alert_id": str(UUID(int=1)), "status": "addressed", "role": "undetermined",
+             "summary": "告警材料已核对，行为性质尚未证实。", "evidence_ids": ["A1"]}]
+
+
 def result(one=None, rows=None):
     response = MagicMock()
     response.scalar_one_or_none.return_value = one
@@ -86,6 +91,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                                   "evidence_ids": ["E1"]}],
                     "counterevidence": [], "gaps": [] if self.scenario == "normal" else ["仍需其他来源核对"],
                     "recommendations": ["核对脚本来源和父进程材料"],
+                    "member_assessments": single_member_assessment(),
                 }, ensure_ascii=False)}
                 finish = "stop"
             payload = {"choices": [{"message": message, "finish_reason": finish}],
@@ -189,7 +195,8 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
     async def test_invalid_conclusion_gets_one_schema_correction_after_tool_feedback(self):
         conclusion = {"summary": "窗口内有脚本记录，攻击性质待核。",
                       "findings": [{"text": "读取到进程记录", "evidence_ids": ["E1"]}],
-                      "counterevidence": [], "gaps": [], "recommendations": []}
+                      "counterevidence": [], "gaps": [], "recommendations": [],
+                      "member_assessments": single_member_assessment()}
         invalid = {**conclusion, "findings": [{"text": "尚未查询的记录", "evidence_ids": ["E404"]}]}
         replies = [{"tool_calls": [{"id": "source-query", "type": "function", "function": {
                        "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]},
@@ -355,7 +362,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
         self.assertEqual(len(self.messages), 2)
         correction = self.messages[-1]
-        required = sum(len(analysis.encoded(value).encode()) for value in
+        required = sum(len(analysis.encoded(value, compact=True).encode()) for value in
                        (correction["messages"], [], correction["response_format"])) + models.MAX_OUTPUT_TOKENS + 256
         self.assertLessEqual(required, 17018)  # 24000 - frozen first-response usage 6982; unchanged budget.
         print(f"Office current correction required={required}, recorded remaining=17018, headroom={17018-required}")
@@ -423,8 +430,12 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                 for current, original in zip(self.messages, original_requests):
                     # Frozen ledger JSON sorts object keys; Tool content keeps its
                     # native JSON string. Compare its full parsed value, not key order.
-                    normalize = lambda message: {**message, "content": json.loads(message["content"])} \
-                        if message["role"] == "tool" else message
+                    def normalize(message):
+                        if message["role"] != "tool":
+                            return message
+                        value = json.loads(message["content"])
+                        value.pop("protocol_note", None)  # Newly supplied model guidance; raw rows stay identical.
+                        return {**message, "content": value}
                     self.assertEqual(current["messages"][0]["content"], analysis.SYSTEM)
                     self.assertEqual(list(map(normalize, current["messages"][1:])),
                                      list(map(normalize, original["messages"][1:])))
@@ -434,7 +445,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                 self.assertEqual(outcome["result"]["usage"]["known_tokens"], known + 150)
                 correction = self.messages[-1]
                 self.assertNotIn("tools", correction)
-                required = sum(len(analysis.encoded(value).encode()) for value in
+                required = sum(len(analysis.encoded(value, compact=True).encode()) for value in
                     (correction["messages"], [], correction["response_format"])) + models.MAX_OUTPUT_TOKENS + 256
                 self.assertLessEqual(required, analysis.LIMITS["tokens"] - known)
                 print(f"r3 frozen {name}: correction required={required}, remaining={24000-known}")
@@ -463,7 +474,8 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         original = first["result"]
         self.messages.clear()
         good = {"summary": "有进程活动记录，性质待核。", "findings": [{"text": "记录包含活动字段", "evidence_ids": ["E1"]}],
-                "counterevidence": [], "gaps": [], "recommendations": []}
+                "counterevidence": [], "gaps": [], "recommendations": [],
+                      "member_assessments": single_member_assessment()}
         replies = [{"tool_calls": [{"id": "required-process", "type": "function", "function": {
             "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]},
             {"content": json.dumps({**good, "findings": [{"text": "invalid", "evidence_ids": ["E404"]}]})},
@@ -490,6 +502,65 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(follow["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
         self.assertEqual((await self.client.get(first["result_url"])).json()["result"], original)
         self.assertEqual((await self.client.get(follow["result_url"])).json()["result"], follow["result"])
+
+    async def test_frozen_network_protocol_and_missing_members_are_corrected_once(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031"
+        files = root / "live-r5/results"
+        steps = sorted([json.loads(path.read_text(encoding="utf-8")) for path in
+                        files.glob("*-network-positive-reuse-followup-step-*.response.txt")], key=lambda step: step["seq"])
+        context = steps[0]["data"]
+        original_context = analysis.encoded(context)
+        parent = json.loads(next((root / "live-r4/results").glob("*-network-positive-reuse-main-result.response.txt"))
+                            .read_text(encoding="utf-8"))["result"]
+        request = analysis.CaseAnalysisRequest.model_validate_json(next(files.glob("*-network-positive-reuse-followup.body.json"))
+                                                                 .read_text(encoding="utf-8"))
+        replies = [step["data"] for step in steps if "response" in step["data"]]
+        bad = analysis.AnalysisConclusion.model_validate_json(replies[-1]["response"]["content"]).model_dump(mode="json")
+        network = next(item for item in parent["evidence"] if item.get("tool") == "network_connections")
+        evidence = [*context["evidence"], network]
+        with self.assertRaisesRegex(ValueError, "unobserved_application_protocol_use_gaps"):
+            analysis.validate_synthesis(bad, context, evidence)
+        good = {**bad, "summary": "历史网络查询返回TCP/443记录，应用协议未核实。", "findings": [],
+                "member_assessments": [{"alert_id": item["data"]["alert_id"], "status": "unresolved",
+                    "role": "undetermined", "summary": "告警来源与历史连接记录已核对，行为性质待证。",
+                    "evidence_ids": [item["evidence_id"], "E1"]} for item in context["evidence"] if item["kind"] == "alert"],
+                "gaps": ["缺少HTTPS/TLS应用层证据，不能由端口推断。"], "open_questions": []}
+        with self.assertRaisesRegex(ValueError, "missing_readable_member_assessment"):
+            analysis.validate_synthesis({**good, "member_assessments": []}, context, evidence)
+        # An actual protocol value in the query record is not a port inference.
+        marked = json.loads(json.dumps(network))
+        marked["rows"][0]["protocol"] = "HTTPS"
+        analysis.validate_synthesis({**good, "summary": "来源记录标注HTTPS。"}, context, [*context["evidence"], marked])
+        run = InvestigationRun(id=UUID(int=820), tenant_id=TENANT, case_id=context["case_id"],
+                               raw_alert={"scope": {}}, total_tokens=0, iterations=0)
+        self.runs[run.id] = run
+        exchanges = [replies[0], replies[-1], {"response": {"content": json.dumps(good)},
+                                              "usage": {"prompt_tokens": 100, "completion_tokens": 50}}]
+        def provider(http_request):
+            body = json.loads(http_request.content)
+            self.messages.append(body)
+            # This is the actual HTTPX wire encoding, covered by the unchanged
+            # 256-byte envelope allowance rather than an expanded token budget.
+            accounted = sum(len(analysis.encoded(body.get(key), compact=True).encode())
+                            for key in ("messages", "tools", "response_format")) + 256
+            if body.get("tool_choice"):
+                accounted += len(analysis.encoded(body["tool_choice"], compact=True).encode())
+            self.assertLessEqual(len(http_request.content), accounted)
+            reply = exchanges[len(self.messages) - 1]
+            return httpx.Response(200, json={"choices": [{"message": reply["response"],
+                "finish_reason": "tool_calls" if reply["response"].get("tool_calls") else "stop"}], "usage": reply["usage"]})
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            outcome = await analysis.CaseAnalysis(self.db, run, context, request, parent).execute()
+        self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
+        self.assertEqual(len(self.messages), 3)
+        self.assertEqual(outcome["result"]["report"]["member_coverage"]["not_assessed_count"], 0)
+        self.assertEqual(outcome["result"]["evidence"][-1]["reused_from"]["run_id"], parent["run_id"])
+        self.assertEqual(outcome["result"]["evidence"][-1]["rows"], network["rows"])
+        self.assertEqual(analysis.encoded(context), original_context)
+        self.assertEqual((await self.client.get(outcome["result_url"])).json()["result"], outcome["result"])
+        self.lake.assert_not_awaited()
 
     async def test_original_sources_are_frozen_model_visible_and_bounded(self):
         source_path = Path(__file__).resolve().parents[3] / "docs/operations/evidence/INVHTTP-20261028-01/results/office-powershell/001-source-0.response.txt"

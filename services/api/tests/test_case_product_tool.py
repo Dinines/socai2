@@ -84,7 +84,8 @@ class ProductToolExamples(IsolatedAsyncioTestCase):
             message = {"content": json.dumps({"summary": "当前快照查询完成，历史行为仍需核对。",
                 "findings": [{"text": "产品查询返回主机资料" if returned["rows"] else "未获得主机资料",
                               "evidence_ids": ["E1"]}], "counterevidence": [],
-                "gaps": ["当前快照不能证明历史窗口状态"], "recommendations": []})}
+                "gaps": ["当前快照不能证明历史窗口状态"], "recommendations": [],
+                "member_assessments": examples.single_member_assessment()})}
             finish = "stop"
         return httpx.Response(200, json={"choices": [{"message": message, "finish_reason": finish}],
                                         "usage": {"prompt_tokens": 100, "completion_tokens": 50}})

@@ -100,21 +100,43 @@ class MultiAlertExamples(IsolatedAsyncioTestCase):
 
     async def test_omitted_and_unreadable_members_remain_open(self):
         self.case.alert_ids.append(UUID(int=4))
-        self.conclusion["member_assessments"].pop()
+        missing = self.conclusion["member_assessments"].pop()
         self.conclusion["relationships"][0]["assessment"] = "hypothesis"
         self.conclusion["open_questions"] = []
-        response = await self.start()
+        original_provider = self.provider
+        def provider(request):
+            body = json.loads(request.content)
+            if body.get("response_format"):
+                schema = body["response_format"]["json_schema"]["schema"]
+                self.assertEqual(schema["properties"]["member_assessments"]["minItems"], 3)
+                self.assertEqual(schema["properties"]["member_assessments"]["maxItems"], 3)
+                self.assertNotIn(str(UUID(int=4)), schema["$defs"]["MemberAssessment"]["properties"]["alert_id"]["enum"])
+                self.conclusion["member_assessments"].append(missing)
+            return original_provider(request)
+        with patch.object(self, "provider", provider):
+            response = await self.start()
         self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["status"], "completed")
         result = response.json()["result"]
         coverage = result["report"]["member_coverage"]
         self.assertEqual((coverage["selected_count"], coverage["read_count"]), (4, 3))
-        self.assertEqual(coverage["not_assessed_count"], 1)
+        self.assertEqual(coverage["not_assessed_count"], 0)
         self.assertEqual(coverage["source_unavailable_count"], 1)
-        self.assertEqual(result["report"]["member_assessments"][-2]["status"], "not_assessed")
+        self.assertEqual(result["report"]["member_assessments"][-2], missing)
         self.assertEqual(result["report"]["member_assessments"][-1]["status"], "source_unavailable")
-        self.assertEqual(len(result["report"]["open_questions"]), 4)
+        self.assertEqual(len(result["report"]["open_questions"]), 3)
         self.assertTrue(any(item["question"].startswith("该关联是否成立") for item in result["report"]["open_questions"]))
         self.assertEqual(result["completion"], "partial")
+        self.assertEqual(len(self.messages), 3)
+
+    async def test_uncorrected_member_omission_stops_without_a_completed_report(self):
+        self.conclusion["member_assessments"].pop()
+        result = (await self.start()).json()
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["result"]["stop_reason"], "invalid_or_unreferenced_conclusion")
+        self.assertEqual(result["result"]["report"]["member_coverage"]["not_assessed_count"], 3)
+        self.assertEqual(len(self.messages), 3)
+        self.assertEqual(self.lake.await_count, 1)
 
     async def test_outside_members_and_unknown_references_do_not_become_conclusions(self):
         original = deepcopy(self.conclusion)
