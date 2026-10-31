@@ -183,3 +183,7 @@ python tools/testdata/verdict_live.py run \
 `export_alert_flow_ui.py`读取10月25日六条告警的既有结果，追加3个Fusion事件、92条过程及77份工件的可公开投影；核同租户、Run锚点、工件hash/字节和事件关系，不查询/写入服务。重建命令及完整/节选/仅目录边界同见[V2说明](../../prototypes/security-pages-v2/README.md)。
 
 2026-10-29：`export_alert_flow_ui.py`同时输出3个明确的本地Case集合，需传 `--organized-at`（带时区的本地整理时间）；源Case为空、源Run单告警输入保持。仅页面引用已有材料，不能据此宣称已创建后台Case。
+
+## 事件与告警完整页面演示（2026-10-31）
+
+`node tools/testdata/build_incident_alert_showcases.cjs` 离线生成3事件/11告警/18对象/2Case/3Run/11证据/14活动，输出V2的page-showcase-data.js，固定时间和ID、按ID幂等追加。无网络/模型/业务写入，不覆盖真实数据或旧样例。入口、实际字段缺口和功能覆盖见[页面对照](../../docs/design/incident-alert-data-showcase.md)。

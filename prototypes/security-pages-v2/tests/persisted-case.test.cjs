@@ -27,7 +27,7 @@ test('saved graph scope, stage adoption and report preserve the historical recei
 test('all Case and alert detail views render with truthful missing values and no mutation',()=>{
  const x=load(),r=x.data.runs[0],c=x.data.cases[0],before=JSON.stringify(x.store);
  for(const view of ['overview','process','tools','graphs','ledger','report']){
-  x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=${view}`;const html=x.casePage();assert.ok(!/Invalid Date|undefined|>null</.test(html),view);assert.ok(html.includes('已创建的历史 Case'));assert.ok(html.includes('完整性未记录'));
+  x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=${view}`;const html=x.casePage();assert.ok(!/Invalid Date|undefined|>null</.test(html),view);assert.ok(!html.includes('iv-source-notice'));assert.ok(!html.includes('本地整理'));assert.ok(html.includes('完整性未记录'));
   if(view==='overview'){assert.ok(html.includes('取证分析置信度 10%'));assert.ok(html.includes('8 小时差异'));assert.ok(html.includes('判定未记录'));}
   if(view==='process')for(const text of ['侦察分析','取证分析','响应分析','报告整理','查看阶段采用结果','dry_run'])assert.ok(html.includes(text));
   if(view==='tools'){assert.ok(html.includes('查询失败'));assert.ok(!html.includes('最多200字符'));}

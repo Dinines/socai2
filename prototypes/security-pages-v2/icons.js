@@ -10,6 +10,7 @@ window.icon = function icon(name, size = 18, extra = '') {
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
     filter: '<path d="M3 4h18l-7 8v7l-4 2v-9Z"/>',
     chevron: '<path d="m8 4 8 8-8 8"/>',
+    panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16m3-11h1m-1 3h1m-1 3h1"/>',
     down: '<path d="m5 9 7 7 7-7"/>',
     close: '<path d="m5 5 14 14M19 5 5 19"/>',
     arrow: '<path d="M20 12H4m7-7-7 7 7 7"/>',

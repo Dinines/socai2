@@ -8,8 +8,8 @@ function load(version='v2'){
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();',`window.api={store,ui,alertsPage,drawerMarkup,fullAlert${extras}};\n})();`);
  assert.ok(code.includes('window.api='));vm.runInContext(code,s);return {...s.window.api,s,M:s.window.investigationWorkspaceModel};
 }
-test('V1 and V2 retain all 291 alert renders for the same input',()=>{
- const a=load('v1'),b=load();assert.equal(a.alertsPage(),b.alertsPage());let n=1;
+test('V1 and V2 retain all 291 alert renders except the approved neutral asset header',()=>{
+ const a=load('v1'),b=load();assert.equal(a.alertsPage().replace('<th scope="col">受影响资产</th>','<th scope="col">涉及资产</th>'),b.alertsPage());let n=1;
  for(const row of a.store.alerts){a.ui.drawer=b.ui.drawer={type:'alert',id:row.id};assert.equal(a.drawerMarkup(),b.drawerMarkup());n++;
   for(const tab of ['overview','timeline','raw','response']){a.s.location.hash=b.s.location.hash=`#/alerts/${row.id}/${tab}`;assert.equal(a.fullAlert(row),b.fullAlert(b.store.alerts.find(x=>x.id===row.id)));n++;}}
  assert.equal(n,291);
@@ -59,7 +59,7 @@ test('saved Run input is retained independently of the current Alert',()=>{
 });
 test('incident summaries keep saved sources and do not lazily generate missing material',()=>{
  const x=load(),before=JSON.stringify(x.store);x.s.location.hash='#/incidents/262144/summary';
- const html=x.incidentPage();assert.ok(html.includes('基础研判'));assert.ok(html.includes('INV-20261024-001'));
+ const html=x.incidentPage();assert.ok(html.includes('#/cases/17420/overview'));assert.ok(!html.includes('调查判定：'));assert.ok(!html.includes('INV-20261024-001'));
  x.s.location.hash='#/incidents/262144/triage?filter=unknown';assert.ok(x.incidentPage().includes('尚无判定'));
  assert.equal(JSON.stringify(x.store),before);
  const a=x.store.alerts.find(a=>a.persistedRecord),rows=x.M.assessments(x.store,[a]),r=rows[0];
@@ -108,7 +108,11 @@ test('switching Run keeps the detail section and graph filters keep distinct sav
  assert.equal(x.s.location.hash,`#/investigations/${r.id}/ledger?kind=tool_call`);
 });
 
-test('event overview retains the original tactic, timeline and evidence summaries',()=>{
- const x=load();x.s.location.hash='#/incidents/262144/summary';assert.ok(x.incidentPage().includes('#/incidents/262144/context'));
- x.s.location.hash='#/incidents/262144/context';const html=x.incidentPage();for(const label of ['告警与攻击阶段','MITRE ATT&CK 阶段','告警时间线','事件信息','相关威胁与标签','查看证据'])assert.ok(html.includes(label));
+test('incident overview combines information, stages and timeline without duplicating the relationship graph',()=>{
+ const x=load();x.s.location.hash='#/incidents/262144/summary';const before=JSON.stringify(x.store),html=x.incidentPage();
+ for(const label of ['ATT&CK 阶段覆盖','告警时间线','事件是什么','为什么关联在一起','事件标记','进一步研判'])assert.ok(html.includes(label));
+ assert.ok(html.indexOf('ATT&CK 阶段覆盖')<html.indexOf('为什么关联在一起'));assert.ok(!html.includes('有哪些关系'));assert.ok(html.includes('iv-correlation-layout'));assert.ok(html.includes('iv-timeline-common'));
+ assert.ok(!html.includes('aria-label="事件实体关系图"'));assert.ok(!html.includes('choose-incident'));assert.ok(!html.includes('告警阶段与时间线'));assert.ok(!html.includes('>事件说明<'));
+ assert.equal(html.split(x.store.incidents.find(i=>i.id==='262144').description).length-1,1);
+ x.s.location.hash='#/incidents/262144/context';assert.equal(x.incidentPage(),html);assert.equal(JSON.stringify(x.store),before);
 });

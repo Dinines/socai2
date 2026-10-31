@@ -9,15 +9,15 @@ function load(saved=null){
 }
 
 test('all data stays accessible, with saved Cases first and coherent filter metrics',()=>{
- const x=load(),rows=x.caseQueueRows();assert.equal(rows.length,19);assert.ok(rows.slice(0,7).every(c=>c.localCollection||c.recordedCase));assert.ok(rows.slice(7).every(c=>!c.localCollection&&!c.recordedCase));
- x.s.location.hash='#/cases?data=aisoc';x.readQueueLink();let html=x.casePage();assert.equal(x.filteredRows('cases',rows).length,7);assert.ok(html.includes('AiSOC 调查'));assert.ok(html.includes('10</b>'));assert.ok(html.includes('7</b>'));
+ const x=load(),rows=x.caseQueueRows();assert.equal(rows.length,21);assert.ok(rows.slice(0,7).every(c=>c.localCollection||c.recordedCase));assert.ok(rows.slice(7).every(c=>!c.localCollection&&!c.recordedCase));
+ x.s.location.hash='#/cases?data=aisoc';x.readQueueLink();let html=x.casePage();assert.equal(x.filteredRows('cases',rows).length,21);assert.ok(!html.includes('案件数据来源'));assert.ok(!html.includes('AiSOC ·'));assert.ok(html.includes('11</b>'));
  x.tableState('cases').query='local-socai2';html=x.casePage();assert.equal(x.filteredRows('cases',rows).length,3);assert.ok(html.includes('5</b>'));assert.ok(!html.includes('11</b>'));
- x.s.location.hash='#/cases?data=all';x.readQueueLink();assert.equal(x.filteredRows('cases',rows).length,19);
- x.s.location.hash='#/cases?data=design';x.readQueueLink();assert.equal(x.filteredRows('cases',rows).length,12);
+ x.s.location.hash='#/cases?data=all';x.readQueueLink();assert.equal(x.filteredRows('cases',rows).length,21);
+ x.s.location.hash='#/cases?data=design';x.readQueueLink();assert.equal(x.filteredRows('cases',rows).length,21);
 });
 test('twenty-source incident groups use exact identities without assigning the unlinked sixth alert',()=>{
  const x=load(),d=x.s.window.aisoc20RecordedData,inc=x.store.incidents.filter(i=>i.sourceEnvironment==='aisoc20');assert.equal(inc.length,3);assert.deepEqual([...inc.map(i=>i.sourceAlertIds.length)].sort(),[1,2,2]);
- for(const i of inc){const members=x.store.alerts.filter(a=>a.incidentId===i.id);assert.ok(members.every(a=>a.sourceEnvironment===i.sourceEnvironment&&a.sourceTenantId===i.sourceTenantId));assert.equal(i.priority,null);assert.equal(i.status,'Not set');x.s.location.hash=`#/incidents/${i.id}/summary`;const html=x.incidentPage();assert.ok(html.includes('Case ·'));assert.ok(!html.includes('INV-20261024'));
+ for(const i of inc){const members=x.store.alerts.filter(a=>a.incidentId===i.id);assert.ok(members.every(a=>a.sourceEnvironment===i.sourceEnvironment&&a.sourceTenantId===i.sourceTenantId));assert.equal(i.priority,null);assert.equal(i.status,'New');assert.equal(i.sourceHandlingStatus,'Not set');x.s.location.hash=`#/incidents/${i.id}/summary`;const html=x.incidentPage();assert.ok(html.includes('进入 Case'));assert.ok(x.caseIncidents(x.store.cases.find(c=>html.includes('#/cases/'+c.id+'/overview'))).some(row=>row.id===i.id));assert.ok(!html.includes('INV-20261024'));
  }
  assert.equal(d.alerts.filter(a=>!a.incidentId).length,1);assert.equal(x.caseIncidents(x.store.cases.find(c=>c.recordedCase)).length,0);
 });

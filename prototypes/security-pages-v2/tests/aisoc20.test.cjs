@@ -25,7 +25,7 @@ test('all actual views render without mutation, fabricated attachments, inventor
   if(view==='tools')assert.ok(html.includes('未记录'));
  }
  for(const c of x.data.cases)for(const tab of ['overview','case-info','alerts','assets','attack','evidence','tasks','activities','comments','similar','investigations']){
-  x.s.location.hash=`#/cases/${c.id}/${tab}`;const html=x.casePage();assert.ok(html.includes('源系统未建 Case'));assert.ok(!/Invalid Date|undefined|>null</.test(html));
+  x.s.location.hash=`#/cases/${c.id}/${tab}`;const html=x.casePage();assert.ok(!html.includes('iv-source-notice'));assert.ok(!html.includes('本地整理'));assert.ok(!/Invalid Date|undefined|>null</.test(html));
   if(tab==='comments'){assert.ok(html.includes('附件 (0)'));assert.ok(!html.includes('investigation-notes.txt'));}
   if(tab==='assets'){assert.ok(html.includes('未关联库存'));assert.ok(!html.includes('Contoso'));}
  }

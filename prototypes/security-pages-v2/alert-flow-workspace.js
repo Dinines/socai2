@@ -53,7 +53,7 @@ window.alertFlowWorkspace = (() => {
     return {nodes,edges};
   }
   function caseActivities(store,c,runs){
-    if(!c.localCollection&&!c.recordedCase)return [];
+    if(!c.localCollection&&!c.recordedCase&&!c.incidentCreated)return [];
     const current=new Set(c.alertIds),ids=new Set([...current,...runs.flatMap(r=>r.alertIds)]);
     const rows=activities({id:c.incidentId,recordedIncident:true},store.alerts.filter(a=>ids.has(a.id)),runs);
     return rows.filter(a=>a.runId||current.has(a.alertId)).map(a=>{

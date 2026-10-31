@@ -43,7 +43,7 @@ window.referenceWorkspaces = (() => {
     const paths=potentialPaths.filter(p=>p.source===options.selected&&p.alertIds.some(id=>ids.has(id))&&p.nodes.every(id=>!hidden.has(store.assets.find(a=>a.id===id)?.type)));
     const selectedPath=options.blast?(paths.find(p=>p.id===options.path)||paths[0]):null;
     if(selectedPath)for(const id of selectedPath.nodes){if(!nodes.some(a=>a.id===id)){const a=store.assets.find(a=>a.id===id);if(a)nodes.push({...a,members:[id],potential:true});}}
-    let edges=relations.filter(e=>e.alertIds.some(id=>ids.has(id))&&nodes.some(n=>n.id===e.from)&&nodes.some(n=>n.id===e.to)).map(e=>({...e,alertIds:e.alertIds.filter(id=>ids.has(id))}));
+    let edges=[...relations,...(store.designRelations||[])].filter(e=>e.alertIds.some(id=>ids.has(id))&&nodes.some(n=>n.id===e.from)&&nodes.some(n=>n.id===e.to)).map(e=>({...e,alertIds:e.alertIds.filter(id=>ids.has(id))}));
     if(selectedPath)edges=edges.concat(selectedPath.nodes.slice(1).map((id,i)=>({id:`${selectedPath.id}-${i}`,from:selectedPath.nodes[i],to:id,label:selectedPath.steps[i],kind:'potential',alertIds:[],description:selectedPath.description})));
     if(options.grouped&&!options.blast){
       const grouped=new Map();for(const a of nodes){const existing=grouped.get(a.type);if(existing)existing.members.push(a.id);else grouped.set(a.type,{...a,members:[a.id]});}nodes=[...grouped.values()];
@@ -53,10 +53,40 @@ window.referenceWorkspaces = (() => {
     edges=edges.map(e=>({...e,source:represented.get(e.from),target:represented.get(e.to)}));
     return {alerts,visible,nodes,edges,associated,paths,selectedPath};
   }
+  // Saved incident context uses only recorded alert-to-object membership.
+  // It deliberately does not consume the illustrative entity relations or paths above.
+  function sourceGraph(store,members,options={},incident={}){
+    const sameSource=i=>i.recordedIncident&&incident.sourceEnvironment&&incident.sourceTenantId&&i.sourceEnvironment===incident.sourceEnvironment&&i.sourceTenantId===incident.sourceTenantId;
+    const sourceMember=(a,i)=>a.incidentId===i.id&&(
+      a.sourceEnvironment&&a.sourceTenantId
+        ? a.sourceEnvironment===i.sourceEnvironment&&a.sourceTenantId===i.sourceTenantId
+        : !a.sourceEnvironment&&!a.sourceTenantId&&(i.sourceAlertIds||[]).includes(a.id));
+    const memberIds=new Set(members.map(a=>a.id)),objects=new Set(members.flatMap(a=>a.entityIds||[]));
+    const associated=store.incidents.filter(i=>i.id!==incident.id&&sameSource(i)).map(i=>{
+      const alerts=store.alerts.filter(a=>sourceMember(a,i));
+      return {...i,shared:[...new Set(alerts.flatMap(a=>a.entityIds||[]))].filter(id=>objects.has(id))};
+    }).filter(i=>i.shared.length);
+    const all=options.associated?[...members,...store.alerts.filter(a=>!memberIds.has(a.id)&&associated.some(i=>sourceMember(a,i)))]:members.slice();
+    const time=a=>Number.isFinite(Date.parse(a.event_time))?Date.parse(a.event_time):Infinity;
+    const alerts=all.filter(a=>(!options.severity||a.severity===options.severity)&&(!options.status||a.status===options.status)&&(!options.source||a.source===options.source)).sort((a,b)=>time(a)-time(b));
+    const visible=alerts.slice(0,(options.index??99)+1),hidden=options.hidden||new Set(),entityIds=new Set(visible.flatMap(a=>a.entityIds||[]));
+    let entities=store.assets.filter(a=>entityIds.has(a.id)&&!hidden.has(a.type)).map(a=>({...a,members:[a.id]}));
+    if(options.grouped){
+      const groups=new Map();for(const a of entities){if(groups.has(a.type))groups.get(a.type).members.push(a.id);else groups.set(a.type,a);}
+      entities=[...groups.values()].map(n=>({...n,id:n.members.length>1?'group-'+n.type:n.id}));
+    }
+    const represented=new Map(entities.flatMap(n=>n.members.map(id=>[id,n.id])));
+    const alertNodes=visible.map(a=>({id:'alert:'+a.id,type:'alert',name:a.title,alertId:a.id,members:['alert:'+a.id]}));
+    const nodes=[...entities,...alertNodes],edges=visible.flatMap(a=>[...new Set(a.entityIds||[])].filter(id=>represented.has(id)).map(id=>({
+      id:JSON.stringify(['source',a.id,id]),from:'alert:'+a.id,to:id,source:'alert:'+a.id,target:represented.get(id),
+      label:'源告警记录的对象关联',kind:'association',alertIds:[a.id]
+    })));
+    return {alerts,visible,nodes,edges,associated,paths:[],selectedPath:null,sourceMode:true};
+  }
   function updateCase(store,c,fields){
     for(const k of ['title','severity','status','owner','classification','due','resolutionNote'])if(fields[k]!==undefined)c[k]=fields[k];
     if(fields.tags!==undefined)c.tags=fields.tags.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
     c.updated=new Date().toISOString();
   }
-  return {graph,relatedIncidents,investigationRecords,updateCase};
+  return {graph,sourceGraph,relatedIncidents,investigationRecords,updateCase};
 })();
