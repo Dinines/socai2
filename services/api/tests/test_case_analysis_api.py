@@ -1,6 +1,9 @@
 """Direct Case workflow examples using model HTTP, lake and ledger substitutes."""
 from datetime import timedelta
 import json
+import hashlib
+import re
+import sqlite3
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -17,6 +20,7 @@ import test_investigation_incident_api as fixtures
 from app.api.v1.deps import CurrentUser, get_current_user
 from app.db.rls import get_tenant_db
 from app.investigation_v2 import case_analysis as analysis, case_analysis_models as models, case_analysis_tools as tools
+from app.investigation_v2 import case_source_material as sources
 from app.investigation_v2.program_start_api import create_app
 from app.models.alert import Alert
 from app.models.case import Case
@@ -50,8 +54,10 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         async def lake(sql, **kwargs):
             if self.scenario == "failed":
                 raise RuntimeError("example source unavailable")
-            rows = [] if self.scenario == "empty" else [("event-7001", NOW, "host-01", "powershell.exe", "script.ps1", "a" * 64, "alice")]
-            return SimpleNamespace(columns=["event_id", "event_time", "src_hostname", "process_name", "file_path", "hash_sha256", "user_name"], rows=rows)
+            rows = [] if self.scenario == "empty" else [("event-7001", NOW, "host-01", "powershell.exe", "script.ps1", "a" * 64, "alice",
+                                                        1007, 2, "terminate", "")]
+            return SimpleNamespace(columns=["event_id", "event_time", "src_hostname", "process_name", "file_path", "hash_sha256", "user_name",
+                                            "class_uid", "activity_id", "action", "outcome"], rows=rows)
         self.lake = AsyncMock(side_effect=lake)
         self.config = AsyncMock(return_value=LlmConfig(True, "http://model.invalid/v1", "example-model", "example-only", "environment", ""))
         app = create_app(start_gateway=object(), result_gateway=object())
@@ -252,6 +258,59 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(self.lake.await_count, 1)
         self.assertEqual(second["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
 
+    async def test_process_query_excludes_other_event_classes_and_keeps_activity(self):
+        # Execute the real predicate/projection on mixed rows. SQLite only substitutes
+        # driver binding and the CH time conversion; this is not a live lake test.
+        connection = sqlite3.connect(":memory:")
+        self.addCleanup(connection.close)
+        connection.create_function("toDateTime64", 3, lambda value, precision, zone: value)
+        connection.execute("""ATTACH DATABASE ':memory:' AS aisoc""")
+        connection.execute("""CREATE TABLE aisoc.raw_events (
+            event_id TEXT, tenant_id TEXT, event_time TEXT, src_hostname TEXT,
+            process_name TEXT, file_path TEXT, hash_sha256 TEXT, user_name TEXT,
+            class_uid INTEGER, activity_id INTEGER, action TEXT, outcome TEXT,
+            source_ip TEXT, dest_ip TEXT, dst_port INTEGER, protocol TEXT)""")
+        when = NOW.strftime("%Y-%m-%d %H:%M:%S.%f")
+        for event_id, event_class in (("process-1", 1007), ("network-1", 4001), ("file-1", 1001)):
+            connection.execute("INSERT INTO aisoc.raw_events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+                event_id, str(TENANT), when, "host-01", "powershell.exe", "script.ps1", "a" * 64,
+                "alice", event_class, 2, "terminate", "", "10.0.0.1", "192.0.2.1", 443, "tcp"))
+
+        async def lake(sql, *, params, **kwargs):
+            cursor = connection.execute(re.sub(r"%\((\w+)\)s", r":\1", sql), params)
+            return SimpleNamespace(columns=[column[0] for column in cursor.description], rows=cursor.fetchall())
+        self.lake.side_effect = lake
+        response = await self.start()
+        self.assertEqual(response.status_code, 200, response.text)
+        evidence = response.json()["result"]["evidence"][-1]
+        self.assertEqual(response.json()["status"], "completed", response.text)
+        self.assertEqual([row["event_id"] for row in evidence["rows"]], ["process-1"])
+        self.assertEqual(evidence["query_contract"], "case.process_activity.v2")
+        model_evidence = json.loads(self.messages[-1]["messages"][-1]["content"])
+        self.assertEqual(model_evidence["rows"], [{**{key: value for key, value in evidence["rows"][0].items()
+                                                      if key not in {"class_uid", "activity_id"}}, "event_kind": "process_activity"}])
+        self.assertEqual(model_evidence["model_omitted_fields"], ["rows.class_uid", "rows.activity_id"])
+        self.assertEqual({key: evidence["rows"][0][key] for key in ("class_uid", "activity_id", "action", "outcome")},
+                         {"class_uid": 1007, "activity_id": 2, "action": "terminate", "outcome": ""})
+        network = await tools.CaseTools(TENANT, ["host-01"], NOW, NOW + timedelta(minutes=5)).execute(
+            "network_connections", {"hostname": "host-01"})
+        self.assertEqual([row["event_id"] for row in network["rows"]], ["network-1"])
+
+    async def test_legacy_process_result_is_not_reused_as_current_contract(self):
+        first = (await self.start()).json()
+        artifact = next(item for item in self.artifacts if item.kind == "case_analysis_result")
+        legacy = json.loads(artifact.content)
+        legacy["evidence"][-1].pop("query_contract")
+        artifact.content = analysis.encoded(legacy)
+        second = (await self.start(101)).json()
+        self.assertEqual(self.lake.await_count, 2)
+        self.assertNotIn("reused_from", second["result"]["evidence"][-1])
+        third = (await self.start(102)).json()
+        self.assertEqual(self.lake.await_count, 2)
+        self.assertEqual(third["result"]["evidence"][-1]["reused_from"]["run_id"], second["run_id"])
+        self.assertEqual((await self.start()).json()["result"], legacy)
+        self.assertEqual(first["run_id"], str(artifact.run_id))
+
     async def test_unknown_model_usage_stops_before_query(self):
         self.scenario = "unknown_usage"
         response = await self.start()
@@ -260,6 +319,175 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(data["completion"], "partial")
         self.assertTrue(data["usage"]["unknown_usage"])
         self.lake.assert_not_awaited()
+
+    async def test_office_frozen_followup_reaches_correction_with_new_sources(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/INVHTTP-20261028-01/results/office-powershell"
+        def frozen(name):
+            return json.loads((root / name).read_text(encoding="utf-8-sig"))
+        context = frozen("043-followup-step-1.response.txt")["data"]
+        original_history = json.loads(json.dumps(context["evidence"][-1]))
+        alerts = [SimpleNamespace(**frozen(name)) for name in ("001-source-0.response.txt", "002-source-1.response.txt")]
+        case_material, alert_material = sources.freeze_sources(SimpleNamespace(description=None), alerts)
+        context.update(source_material_schema=sources.SOURCE_SCHEMA, case_material=case_material)
+        for item in context["evidence"]:
+            if item["kind"] == "alert":
+                item["data"]["source_material"] = alert_material[item["data"]["alert_id"]]
+        request = analysis.CaseAnalysisRequest.model_validate(frozen("039-followup.body.json"))
+        run = InvestigationRun(id=UUID(int=800), tenant_id=TENANT, case_id=context["case_id"],
+                               raw_alert={"scope": {}}, total_tokens=0, iterations=0)
+        self.runs[run.id] = run
+        rejected = frozen("045-followup-step-3.response.txt")["data"]
+        conclusion = {"summary": "来源描述已保存，缺少独立行为印证。", "findings": [{"text": "两条来源描述涉及同一主机",
+                      "evidence_ids": ["A1", "A2"]}], "counterevidence": [], "gaps": ["仍需独立行为印证"],
+                      "recommendations": [], "member_assessments": [
+                          {"alert_id": member, "status": "addressed", "role": "background", "summary": "仅核对来源描述",
+                           "evidence_ids": [f"A{index}"]} for index, member in enumerate(context["read_member_ids"], 1)]}
+        def provider(http_request):
+            self.messages.append(json.loads(http_request.content))
+            first = len(self.messages) == 1
+            return httpx.Response(200, json={"choices": [{"message": rejected["response"] if first else
+                {"content": json.dumps(conclusion)}, "finish_reason": "stop"}],
+                "usage": rejected["usage"] if first else {"prompt_tokens": 100, "completion_tokens": 50}})
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            outcome = await analysis.CaseAnalysis(self.db, run, context, request).execute()
+        self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
+        self.assertEqual(len(self.messages), 2)
+        correction = self.messages[-1]
+        required = sum(len(analysis.encoded(value).encode()) for value in
+                       (correction["messages"], [], correction["response_format"])) + models.MAX_OUTPUT_TOKENS + 256
+        self.assertLessEqual(required, 17018)  # 24000 - frozen first-response usage 6982; unchanged budget.
+        print(f"Office current correction required={required}, recorded remaining=17018, headroom={17018-required}")
+        self.assertEqual(outcome["result"]["usage"]["known_tokens"], 7132)
+        self.assertEqual(outcome["result"]["evidence"][-1], original_history)
+        view = json.loads(correction["messages"][1]["content"])
+        raw = view["evidence"][0]["data"]["source_material"]["raw_event"]
+        self.assertIn("approval_status", raw["text"])
+        self.assertFalse(raw["model_truncated"])
+        self.assertEqual(context["evidence"][-1], original_history)
+        self.lake.assert_not_awaited()
+        self.assertTrue(any(item.kind == "case_analysis_result" for item in self.artifacts))
+
+    async def test_followup_new_sources_required_reuse_and_correction_together(self):
+        self.alert.description = "来源描述：脚本活动，尚无独立印证"
+        self.alert.raw_event = {"full_log": "PowerShell command line", "approval_status": "unknown"}
+        first = (await self.start()).json()
+        original = first["result"]
+        self.messages.clear()
+        good = {"summary": "有进程活动记录，性质待核。", "findings": [{"text": "记录包含活动字段", "evidence_ids": ["E1"]}],
+                "counterevidence": [], "gaps": [], "recommendations": []}
+        replies = [{"tool_calls": [{"id": "required-process", "type": "function", "function": {
+            "name": "process_activity", "arguments": json.dumps({"hostname": "host-01", "limit": 20})}}]},
+            {"content": json.dumps({**good, "findings": [{"text": "invalid", "evidence_ids": ["E404"]}]})},
+            {"content": json.dumps(good)}]
+        def provider(request):
+            self.messages.append(json.loads(request.content))
+            message = replies[len(self.messages)-1]
+            return httpx.Response(200, json={"choices": [{"message": message,
+                "finish_reason": "tool_calls" if "tool_calls" in message else "stop"}],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 50}})
+        client_type = type(self.client)
+        body = {"operation_key": str(UUID(int=801)), "previous_run_id": first["run_id"],
+                "start": NOW.isoformat(), "end": (NOW+timedelta(minutes=5)).isoformat(),
+                "required_tools": ["process_activity"]}
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            response = await self.client.post(self.path + "/investigate", json=body)
+        follow = response.json()
+        self.assertEqual(follow["status"], "completed", follow)
+        self.assertEqual(len(self.messages), 3)
+        self.assertEqual(self.messages[0]["tool_choice"]["function"]["name"], "process_activity")
+        self.assertIn("response_format", self.messages[-1])
+        self.assertEqual(self.lake.await_count, 1)
+        self.assertEqual(follow["result"]["evidence"][-1]["reused_from"]["run_id"], first["run_id"])
+        self.assertEqual((await self.client.get(first["result_url"])).json()["result"], original)
+        self.assertEqual((await self.client.get(follow["result_url"])).json()["result"], follow["result"])
+
+    async def test_original_sources_are_frozen_model_visible_and_bounded(self):
+        source_path = Path(__file__).resolve().parents[3] / "docs/operations/evidence/INVHTTP-20261028-01/results/office-powershell/001-source-0.response.txt"
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        self.case.description = "Case background; not an independent observation."
+        self.alert.description, self.alert.raw_event = source["description"], source["raw_event"]
+        response = await self.start()
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["status"], "completed", response.text)
+        material = data["result"]["evidence"][0]["data"]["source_material"]
+        self.assertEqual(material["description"]["text"], source["description"])
+        self.assertIn("4100", material["description"]["text"])
+        self.assertEqual(json.loads(material["raw_event"]["text"]), source["raw_event"])
+        self.assertEqual(material["raw_event"]["sha256"], hashlib.sha256(material["raw_event"]["text"].encode()).hexdigest())
+        model_view = json.loads(self.messages[0]["messages"][1]["content"])
+        model_material = model_view["evidence"][0]["data"]["source_material"]
+        self.assertEqual(model_material["description"]["text"], source["description"])
+        self.assertEqual(json.loads(model_material["raw_event"]["text"]), source["raw_event"])
+        self.assertFalse(model_material["raw_event"]["model_truncated"])
+        self.assertEqual(data["result"]["case_material"]["description"]["text"], self.case.description)
+        read = await self.client.get(data["evidence_url"] + "/A1")
+        self.assertEqual(read.json()["evidence"]["data"]["source_material"], material)
+
+        # A multi-member oversized source exercises both byte limits without any I/O.
+        members = [SimpleNamespace(id=UUID(int=i), description="证" * 2000,
+                                   raw_event={"full_log": "据" * 10000}) for i in range(1, 10)]
+        case_material, alert_material = sources.freeze_sources(SimpleNamespace(description="案" * 2000), members)
+        context = {"source_material_schema": sources.SOURCE_SCHEMA, "case_material": case_material,
+                   "evidence": [{"kind": "alert", "data": {"source_material": value}} for value in alert_material.values()]}
+        original = json.dumps(context, ensure_ascii=False)
+        fields = list(sources.source_fields(context))
+        self.assertLessEqual(sum(field["retained_bytes"] for field in fields), sources.RUN_BYTES)
+        self.assertTrue(any(field["omission_reason"] == "run_limit" for field in fields))
+        self.assertTrue(any(field["omission_reason"] == "field_limit" for field in fields))
+        for field in fields:
+            self.assertEqual(len(field["text"].encode()), field["retained_bytes"])
+            self.assertNotIn("\ufffd", field["text"])
+        limited = sources.model_source_view(context)
+        self.assertLessEqual(sum(field["model_retained_bytes"] for field in sources.source_fields(limited)), sources.MODEL_BYTES)
+        self.assertEqual(json.dumps(context, ensure_ascii=False), original)
+
+    async def test_original_sources_do_not_bypass_model_input_contract(self):
+        self.alert.raw_event = {"class_uid": 1007, "activity_id": 1, "process": {"name": "example.exe"}}
+        response = await self.start()
+        self.assertEqual(response.json()["status"], "completed", response.text)
+        saved = response.json()["result"]["evidence"][0]["data"]["source_material"]["raw_event"]
+        self.assertEqual(json.loads(saved["text"]), self.alert.raw_event)
+        view = json.loads(self.messages[0]["messages"][1]["content"])
+        field = view["evidence"][0]["data"]["source_material"]["raw_event"]
+        self.assertEqual(field["text"], "")
+        self.assertEqual(field["model_omission_reason"], "llm_input_contract")
+        self.assertTrue(any("输入合同" in gap for gap in response.json()["result"]["report"]["gaps"]))
+
+    async def test_source_changes_and_legacy_material_invalidate_reuse_without_rewriting_history(self):
+        self.alert.raw_event = {"full_log": "x" * 20000, "tail": "before"}
+        first = (await self.start()).json()
+        first_report = first["result"]["markdown"]
+        artifact = next(item for item in self.artifacts if item.kind == "case_analysis_result")
+        legacy = json.loads(artifact.content)
+        legacy.pop("source_material_schema")
+        legacy.pop("case_material")
+        legacy["evidence"][0]["data"].pop("source_material")
+        artifact.content = analysis.encoded(legacy)
+        artifact.sha256 = hashlib.sha256(artifact.content.encode()).hexdigest()
+        self.runs[UUID(first["run_id"])].raw_alert.pop("source_material_schema")
+        follow = await self.client.post(self.path + "/investigate", json={
+            "operation_key": str(UUID(int=101)), "previous_run_id": first["run_id"],
+            "start": NOW.isoformat(), "end": (NOW + timedelta(minutes=5)).isoformat()})
+        self.assertEqual(follow.json()["status"], "completed", follow.text)
+        self.assertEqual(self.lake.await_count, 2)
+        self.assertEqual(next(item for item in follow.json()["result"]["evidence"] if item["kind"] == "prior_analysis")["data"]["report"], legacy["report"])
+        prior_field = follow.json()["result"]["evidence"][0]["data"]["source_material"]["raw_event"]
+        self.alert.raw_event = {**self.alert.raw_event, "tail": "after"}
+        changed = (await self.start(102)).json()
+        current_field = changed["result"]["evidence"][0]["data"]["source_material"]["raw_event"]
+        self.assertEqual(current_field["text"], prior_field["text"])
+        self.assertNotEqual(current_field["sha256"], prior_field["sha256"])
+        self.assertEqual(self.lake.await_count, 3)
+        self.alert.description = "Only description changed."
+        self.assertEqual((await self.start(103)).json()["status"], "completed")
+        self.assertEqual(self.lake.await_count, 4)
+        self.assertEqual((await self.start()).json()["result"], legacy)
+        self.assertEqual((await self.client.get(first["report_url"])).text, first_report)
+        self.assertEqual(self.lake.await_count, 4)
 
     async def test_preview_steps_and_download_deliver_the_saved_case_workflow(self):
         preview = await self.client.post(self.path + "/investigation-context", json={
@@ -313,9 +541,12 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(historical["data"]["report"], original["report"])
         model_view = json.loads(self.messages[2]["messages"][1]["content"])
         model_history = next(item for item in model_view["evidence"] if item["kind"] == "prior_analysis")
-        self.assertEqual(model_history["data"]["omitted_report_fields"], ["timeline", "member_coverage"])
+        self.assertEqual(model_history["data"]["omitted_report_fields"],
+                         ["timeline", "member_coverage", "member_assessments", "relationships", "open_questions", "recommendations"])
         self.assertNotIn("timeline", model_history["data"]["report"])
         self.assertEqual(model_history["data"]["report"]["summary"], original["report"]["summary"])
+        self.assertEqual(model_history["data"]["report"]["gaps"], original["report"]["gaps"])
+        self.assertTrue(model_view["member_sets_equal"])
         self.assertEqual(model_history["data"]["scope"], {"same_as_current": True})
         model_alert = next(item for item in model_view["evidence"] if item["kind"] == "alert")
         self.assertIn("saved_analysis", model_alert["data"]["omitted_fields"])

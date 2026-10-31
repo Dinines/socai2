@@ -17,9 +17,10 @@ class QueryArguments(BaseModel):
 
 
 DESCRIPTIONS = {
-    "process_activity": "查询Case成员主机在本次固定时间窗口内的进程执行记录，核对进程、路径、账号及文件hash。不包含父进程链，不能据此确认完整进程树。",
+    "process_activity": "查询Case成员主机在本次固定时间窗口内的进程活动记录，核对事件类别、活动、动作、结果、进程、路径、账号及文件hash。活动或结果未知不证明启动成功；不包含父进程链。",
     "network_connections": "查询Case成员主机在本次固定时间窗口内的网络连接，核对目标IP、端口、协议及相关进程。空结果只表示本来源未返回匹配记录。",
 }
+PROCESS_QUERY_CONTRACT = "case.process_activity.v2"
 
 
 class CaseTools:
@@ -55,8 +56,9 @@ class CaseTools:
         scope = {"hostname": args.hostname, "start": self.start.isoformat(), "end": self.end.isoformat()}
         if settings.AISOC_DISABLE_CLICKHOUSE or not settings.CLICKHOUSE_HOST:
             return {"available": False, "reason": "lake_not_configured", "query_scope": scope, "rows": []}
-        fields = ("event_id", "event_time", "src_hostname", "process_name", "file_path", "hash_sha256", "user_name")
-        condition = "process_name != ''"
+        fields = ("event_id", "event_time", "src_hostname", "process_name", "file_path", "hash_sha256", "user_name",
+                  "class_uid", "activity_id", "action", "outcome")
+        condition = "class_uid = 1007 AND process_name != ''"
         if name == "network_connections":
             fields = ("event_id", "event_time", "src_hostname", "process_name", "source_ip", "dest_ip", "dst_port", "protocol")
             condition = "class_uid = 4001"
@@ -79,13 +81,15 @@ ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
                     "query_id": query_id, "query_scope": scope, "rows": []}
         # JSON-normalize driver values before they enter saved artifacts/messages.
         return {"available": True, "query_id": query_id, "query_scope": scope,
+                **({"query_contract": PROCESS_QUERY_CONTRACT} if name == "process_activity" else {}),
                 "rows": json.loads(json.dumps(rows[:args.limit], default=str)),
                 "returned_count": min(len(rows), args.limit), "truncated": len(rows) > args.limit,
-                "limitation": "本工具只查已接入事件湖；无记录不证明安全，进程记录不含父进程链。"}
+                "limitation": "本工具只查已接入事件湖；无记录不证明安全，进程活动不等于启动成功，也不包含父进程链。"}
 
-    def can_reuse(self, name):
+    def can_reuse(self, name, result):
         # Product reads describe now, unlike the lake's fixed historical window.
-        return name in DESCRIPTIONS and name in {item["function"]["name"] for item in self.schemas()}
+        return (name in DESCRIPTIONS and name in {item["function"]["name"] for item in self.schemas()}
+                and (name != "process_activity" or result.get("query_contract") == PROCESS_QUERY_CONTRACT))
 
 
 def model_result(result: dict) -> str:
@@ -94,10 +98,18 @@ def model_result(result: dict) -> str:
     view["query_status"] = ("success_with_rows" if result.get("rows") else "success_empty") if result.get("available") else "unavailable"
     view["rows"] = []
     for row in result.get("rows", []):
+        if result.get("query_contract") == PROCESS_QUERY_CONTRACT:
+            # Raw OCSF envelopes/codes stay in evidence, under the existing LLM
+            # input contract. Give the model the scoped semantic class instead.
+            row = {**{key: value for key, value in row.items() if key not in {"class_uid", "activity_id"}},
+                   "event_kind": "process_activity" if row.get("class_uid") == 1007 else "unknown"}
         view["rows"].append(row)
         if len(json.dumps(view, ensure_ascii=False, default=str).encode("utf-8")) > 8000:
             view["rows"].pop()
             view["truncated"] = True
             break
     view["model_view_row_count"] = len(view["rows"])
+    if result.get("query_contract") == PROCESS_QUERY_CONTRACT:
+        view["model_omitted_fields"] = ["rows.class_uid", "rows.activity_id"]
+        view["model_omission_reason"] = "raw_ocsf_codes_retained_in_evidence"
     return json.dumps(view, ensure_ascii=False, default=str)

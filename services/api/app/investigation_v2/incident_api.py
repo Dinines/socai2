@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.v1.deps import CurrentUser, require_permission
 from app.db.rls import TenantDBSession
 from .incident_reader import IncidentOverview, read_incident
-from .incident_summary import attach_summary, generate_summary, load_summary
+from .incident_summary import attach_summary, generate_summary, load_summary, lock_summary
 from .query_api import create_app as create_query_app
 from .result_api import _explicit_bearer
 from .related_investigations import attach_related, read_related
@@ -61,12 +61,17 @@ async def refresh_overview(
     overview = await read_incident(db, tenant_id=user.tenant_id, incident_id=incident_id)
     if overview is None:
         raise HTTPException(404, "incident_not_found")
-    if include_investigations:
-        overview = await attach_related(db, overview)
-    result = await generate_summary(db, overview)
-    # A failed basic refresh can still return an earlier Case-derived overview.
-    if ((result.ai_overview_metadata or {}).get("source_refs") or {}).get("include_investigations"):
+    record = await lock_summary(db, overview)
+    retained_case = bool(record.summary_text and (record.source_refs or {}).get("include_investigations"))
+    if retained_case:
         user.require_permission("cases:read")
+    related = await attach_related(db, overview) if include_investigations or retained_case else None
+    requested = related if include_investigations else overview
+    await generate_summary(db, requested, record=record)
+    # A failed mode switch returns the saved text's source view, including its
+    # own source_updated_at. Authorization was completed before any model work.
+    saved_case = bool((record.source_refs or {}).get("include_investigations")) if record.summary_text else include_investigations
+    result = attach_summary(related if saved_case else overview, record)
     await db.commit()
     return result
 

@@ -134,8 +134,8 @@ class RelatedInvestigationExamples(IsolatedAsyncioTestCase):
             with patch.object(summaries, "resolve_llm_config", AsyncMock(return_value=LlmConfig(
                 True, "http://model.invalid/v1", "example-summary", "example-only", "environment", ""))), \
                  patch.object(summaries, "safe_chat_completions_request", side_effect=complete):
-                self.db.execute.side_effect = [*self.incident_rows(), *self.relation_rows(),
-                                               result(), result(record), result()]
+                self.db.execute.side_effect = [*self.incident_rows(), result(), result(record),
+                                               *self.relation_rows(), result()]
                 response = await self.client.post(self.incident_path + "/overview/refresh", params={"include_investigations": "true"})
                 self.assertEqual(response.status_code, 200, response.text)
                 data = response.json()

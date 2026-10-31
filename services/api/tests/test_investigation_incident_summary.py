@@ -1,5 +1,5 @@
 """Direct F2 examples: saved overview, manual refresh, failure and first generation."""
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
 import sys
@@ -53,11 +53,13 @@ class IncidentSummaryExamples(IsolatedAsyncioTestCase):
         self.record = summaries.IncidentSummaryRecord(tenant_id=TENANT, incident_id=INCIDENT)
         self.requests = []
         self.model_status = 200
+        self.model_content = None
+        self.scopes = ["alerts:read", "alerts:write"]
 
         def provider(request):
             self.requests.append(json.loads(request.content))
             return httpx.Response(self.model_status, json={
-                "choices": [{"message": {"content": f"Overview revision {len(self.requests)}"}, "finish_reason": "stop"}],
+                "choices": [{"message": {"content": self.model_content if self.model_content is not None else f"Overview revision {len(self.requests)}"}, "finish_reason": "stop"}],
                 "usage": {"prompt_tokens": 120, "completion_tokens": 20},
             })
         self.model_client = httpx.AsyncClient(transport=httpx.MockTransport(provider))
@@ -76,7 +78,7 @@ class IncidentSummaryExamples(IsolatedAsyncioTestCase):
         self.app = create_app(start_gateway=object(), result_gateway=object())
         async def user():
             return CurrentUser(UUID(int=1), TENANT, "analyst", "example@invalid.test",
-                               scopes=["alerts:read", "alerts:write"])
+                               scopes=self.scopes)
         async def session():
             yield self.db
         self.app.dependency_overrides[get_current_user] = user
@@ -156,6 +158,65 @@ class IncidentSummaryExamples(IsolatedAsyncioTestCase):
         self.db.execute.side_effect = [MagicMock(), record_result(self.record)]
         await summaries.generate_summary(self.db, self.view, initial=True)
         self.assertEqual(len(self.requests), 1)
+
+    async def test_failed_mode_switch_uses_saved_source_and_commits_known_usage(self):
+        self.scopes.append("cases:read")
+        self.model_content = ""  # Valid usage, invalid summary; preserve this attempt.
+        related = self.view.model_copy(update={"source_updated_at": NOW + timedelta(minutes=1),
+            "investigations": {"items": [{"result_available": False, "status": "running"}],
+                "next_cursor": None, "member_ids_with_runs": [str(UUID(int=1))],
+                "member_ids_without_runs": [], "coverage_notice": "Selected, not completed"}})
+        with patch.object(incident_api, "attach_related", AsyncMock(return_value=related)):
+            for old_case in (True, False):
+                with self.subTest(old_case=old_case):
+                    saved_view = related if old_case else self.view
+                    self.record.summary_text = "Saved source-specific text"
+                    self.record.generated_at = NOW
+                    self.record.source_updated_at = saved_view.source_updated_at
+                    self.record.source_fingerprint = summaries.source_fingerprint(saved_view)
+                    self.record.source_refs = summaries.summary_material(saved_view)[1]
+                    old_refs = dict(self.record.source_refs)
+                    self.db.commit.reset_mock()
+                    self.generation_rows()
+                    response = await self.client.post(self.path + "/overview/refresh",
+                                                      params={"include_investigations": str(not old_case).lower()})
+                    self.assertEqual(response.status_code, 200, response.text)
+                    data = response.json()
+                    self.assertEqual(data["ai_overview"], "Saved source-specific text")
+                    self.assertEqual(data["investigations"], saved_view.investigations)
+                    self.assertEqual(datetime.fromisoformat(data["source_updated_at"]), saved_view.source_updated_at)
+                    metadata = data["ai_overview_metadata"]
+                    self.assertFalse(metadata["is_stale"])
+                    self.assertEqual(metadata["source_refs"], old_refs)
+                    self.assertEqual(metadata["last_error"], "invalid_summary_response")
+                    self.assertEqual(metadata["last_usage"]["prompt_tokens"], 120)
+                    self.assertTrue(metadata["last_usage"]["cost_recorded"])
+                    self.assertEqual(self.record.generated_at, NOW)
+                    self.db.commit.assert_awaited_once()
+                    self.db.execute.side_effect = [record_result(self.record)]
+                    reread = await self.client.get(self.path)
+                    self.assertEqual(reread.json()["ai_overview_metadata"], metadata)
+
+    async def test_case_fallback_permission_precedes_model_and_basic_still_allowed(self):
+        self.record.summary_text = "Saved Case text"
+        self.record.source_refs = {"include_investigations": True}
+        self.generation_rows()
+        response = await self.client.post(self.path + "/overview/refresh")
+        self.assertEqual(response.status_code, 403, response.text)
+        self.assertEqual(self.requests, [])
+        self.assertIsNone(self.record.last_attempt_at)
+        self.assertIsNone(self.record.last_usage)
+        self.db.commit.assert_not_awaited()
+        self.db.flush.assert_not_awaited()
+        self.assertEqual(self.db.execute.await_count, 2)  # Insert-if-missing and locked read only.
+        locked_query = self.db.execute.await_args_list[-1].args[0].compile(dialect=postgresql.dialect())
+        self.assertIn("FOR UPDATE", str(locked_query))
+        self.record.source_refs = {"investigation_results_status": "not_linked"}
+        self.generation_rows()
+        response = await self.client.post(self.path + "/overview/refresh")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(len(self.requests), 1)
+        self.db.commit.assert_awaited_once()
 
     async def test_material_exposes_partial_coverage(self):
         self.view.members = [self.view.members[0].model_copy(update={

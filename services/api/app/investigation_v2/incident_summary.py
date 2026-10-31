@@ -172,13 +172,19 @@ def _tokens(value):
     return value if type(value) is int and value >= 0 else None
 
 
-async def generate_summary(db: AsyncSession, overview: IncidentOverview, *, initial=False) -> IncidentOverview:
-    # One existing row also coordinates the initial worker and manual refresh.
-    # The caller commits the result; an initial failure is saved, not auto-retried.
+async def lock_summary(db: AsyncSession, overview: IncidentOverview) -> IncidentSummaryRecord:
+    # Admission and generation must see the same saved text/source mode.
     await db.execute(insert(IncidentSummaryRecord).values(
         tenant_id=overview.tenant_id, incident_id=overview.incident_id,
     ).on_conflict_do_nothing(index_elements=["tenant_id", "incident_id"]))
-    record = await load_summary(db, overview.tenant_id, overview.incident_id, lock=True)
+    return await load_summary(db, overview.tenant_id, overview.incident_id, lock=True)
+
+
+async def generate_summary(db: AsyncSession, overview: IncidentOverview, *, initial=False,
+                           record: IncidentSummaryRecord | None = None) -> IncidentOverview:
+    # The caller commits the result; an initial failure is saved, not auto-retried.
+    if record is None:
+        record = await lock_summary(db, overview)
     if initial and record.last_attempt_at is not None:
         return attach_summary(overview, record)
 

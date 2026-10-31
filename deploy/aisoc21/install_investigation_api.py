@@ -12,7 +12,7 @@ from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE_IMAGE = "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9"
-IMAGE = "socai2-investigation-api:20261028-r2"
+IMAGE = "socai2-investigation-api:20261031-r3"
 CONTAINER = "socai2-investigation-api"
 PROFILE = Path("/opt/sting-aisoc-socai2/private/investigation-v2.env")
 COMPOSE = ROOT / "deploy/aisoc21/compose.investigation-v2-api.yml"
