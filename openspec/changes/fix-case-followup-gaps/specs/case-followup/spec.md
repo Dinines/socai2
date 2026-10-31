@@ -20,3 +20,7 @@ Case analysis SHALL accept optional required_tools and use native tool_choice fo
 
 ### Requirement: Tool messages distinguish empty success from unavailability
 Tool model messages SHALL label successful rows, successful-empty results and unavailable sources distinctly, while preserving their existing saved evidence.
+
+#### Scenario: A query succeeds without matching rows
+- **WHEN** 工具返回 available=true 且 rows 为空，另一次来源返回 available=false
+- **THEN** 模型视图分别标记 success_empty 与 unavailable，原证据字段保持，不把空结果描述为查询失败或安全结论

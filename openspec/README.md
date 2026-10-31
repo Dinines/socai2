@@ -1,3 +1,5 @@
+**2026-10-31当前调查实施：** [fix-investigation-audit-gaps](changes/fix-investigation-audit-gaps/proposal.md)已本地实现A01/A02/D01并保存源码commit `bb8dbc3`，31项直接结果及[结束独审0必须修](changes/fix-investigation-audit-gaps/audit.md)有据。[任务](changes/fix-investigation-audit-gaps/tasks.md)完成14/17，r3候选和5份定向请求已固定；真实更新/复验及归档条件仍待，21只读连接超时。与[已有追加修复](changes/fix-case-followup-gaps/tasks.md)共用后续实际回执；不提前归档或同步主规格。[实施校验](changes/fix-investigation-audit-gaps/execution-validation.md)与原规划校验分开。
+
 **2026-10-24收尾状态：** 用户将背景事件入湖/相关调查验证交独立调查开发，本会话停止重复测试。迁移change按[收尾回执](../docs/operations/migration-closeout-20261024.md)结算实际交付及转出责任，已通过静态结束独审及归档前检查，归档并同步17条有证据的主规格合同。新调查不再沿该归档change实施。原5/15/B5→B6为10月21—23日过程状态，历史R02仍暂缓0/17；不等于新调查实现或质量已通过。
 
 # OpenSpec实施说明

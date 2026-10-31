@@ -1,4 +1,8 @@
+**2026-10-31实施补充：** 最新工作区增加case.source-material.v1及case_material/A.source_material，完整字段hash、冻结/模型裁剪分别说明；进程查询仅1007，query_contract=case.process_activity.v2，模型原编号省略有标记；旧Case概况的基础刷新也前置cases:read。字段/限额/H1省略/失败模式见[当前实施合同](audit-fixes-implementation-20261031.md)。这些修改已本地验证，最近实际服务仍只确认r1。
+
 # 调查模块接口设计：请求、返回与流程衔接
+
+**2026-10-31当前合同：** 已有字段按本地源码5b95138解释；新增required_tools、必需Tool停止原因及模型视图query_status见5.1、5.3、7.1。最近真实四案例与常驻回执仍为修复前r1，r2待更新/复验；调用前区分服务版本。完整状态及阅读顺序见[最新指南](audit-guide-20261031.md)。
 
 **2026-10-28公共读取实现：** 新增executions按来源筛选及单Run元数据、Case evidence及rows读取、结果navigation和报告引用链接；[字段与跳转合同](execution-index-and-evidence-20261028.md)。旧记录沿原生账本读取，不猜Case归属和正式结果完整度。
 
@@ -10,11 +14,11 @@
 
 **2026-10-28 Case初版：** 材料预览、步骤详情、报告下载及追加问题已实现，完整调用见[Case调查初版](case-first-version-20261028.md)。
 
-**2026-10-28实现更新：** 第4节F4成员转Case及5.4节Case历史列表已实现代码并通过5个ASGI/数据库替身直接用例，迁移121未执行、未部署，见[F4调用及验证记录](case-linking-20261028.md)。F5仍为设计稿；产品主机HTTP Tool已按顶部增量实现。
+**2026-10-28实现更新：** 第4节F4成员转Case及5.4节Case历史列表已实现代码并通过5个ASGI/数据库替身直接用例；后续120/121已安装，F4真实PG及常驻HTTP已有记录，见[F4调用及验证记录](case-linking-20261028.md)。F5仍为设计稿；产品主机HTTP Tool已按顶部增量实现。
 
 本文于2026-10-27依据[当前设计对齐](current-design-alignment-20261027.md)细化到接口，当时源码核对基线为`6044615`、仅完成设计。2026-10-28新增实现范围以上方更新及F4说明为准。
 
-**状态标识：已有＝当前代码行为；拟新增＝本次设计稿、尚不可调用；后置＝不作为当前功能前置条件。** 现有接口保持实际字段，不把拟新增字段写成已实现。实现与历史证据分别见[实现详解](current-implementation-reference-20261027.md)、[审计导航](audit-guide-20261027.md)。
+**状态标识：已有＝5b95138本地代码行为；拟新增＝设计稿、尚不可调用；后置＝不作为当前功能前置条件。部署版本按页首和最新指南核对。** 现有接口保持实际字段，不把拟新增字段写成已实现。早期实现与历史证据分别见[历史实现详解](current-implementation-reference-20261027.md)、[历史审计导航](audit-guide-20261027.md)。
 
 ## 1. 接口总表
 
@@ -120,7 +124,7 @@
 
 现有独立任务参数：`--tenant-id`必填，`--since`可选带时区时间、默认进程启动时刻，`--interval`默认30秒，`--once`只处理一批最多20个。任务尚未启用；首次失败也留下尝试记录，后续由手动刷新处理。本轮不新增事件实时推送、复杂刷新政策或任务管理API。
 
-## 4. F4：告警/事件转Case（已有代码，迁移待执行）
+## 4. F4：告警/事件转Case（已有代码与真实联调记录）
 
 ### 4.1 POST /case-links
 
@@ -244,6 +248,12 @@ Content-Type: application/json
 
 可选`previous_run_id:UUID|null`引用同Case已结束且有报告的Run，用于追加问题；成员集合和窗口必须相同，否则409 `followup_scope_changed`。前次尚未结束为409 `previous_analysis_not_finished`。可选`refresh_queries:boolean=false`；true跳过历史查询结果复用，仍由模型决定是否调用工具。前次报告作为H1历史判断提供，旧报告不被改写。新问题使用新的operation_key，详见[追加问题](case-first-version-20261028.md#追加问题与重新查询)。
 
+`required_tools`是5b95138新增的可选string数组，默认[]、最多4个名称；名称须非空、无首尾空白、不重复。它仅适用于investigate请求，不属于材料预览。非法形状返回422。非空数组保存到操作意图，修改列表或顺序须使用新operation_key；默认空列表不改变旧请求意图格式。
+
+程序要求每个指定名称都在当前Case实际提供的Tool中，否则保存failed Run、stop_reason=required_tool_unavailable，模型调用0。对尚未尝试的名称，程序按列表顺序发送原生function tool_choice；若模型返回未包含该名称的调用，则停止required_tool_not_called，不接受其直接结论，也不派发该轮其他调用。已有实际Tool结果（包括适用的查询复用）可满足“已尝试”；这不保证来源成功或证据充分，available=false仍保留缺口。预算及参数校验照常生效。
+
+例如`required_tools:["network_connections"]`要求尝试网络Tool，具体参数仍来自模型。若需要跳过历史复用，还需`refresh_queries:true`；未指定required_tools时，refresh_queries本身不要求模型调用工具。最近留存r1不支持required_tools；最新本地直接验证与待真实复验见[修复记录](../../openspec/changes/fix-case-followup-gaps/tasks.md)。
+
 该POST当前在请求内执行，不返回202后台任务。当前首次成功返回`run_id/case_id/status/scope/result`、`previous_run_id`及三个读取链接；重复相同请求进入只读路径，还会带`progress`。调用方不要假定首次POST必有progress，也不要把超时或断开理解为没有创建Run；相同key重读不重跑，当前没有恢复中断Run的接口。
 
 ### 5.2 读取与输出DTO
@@ -301,11 +311,12 @@ A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/seve
 | 正常停止 | `analysis_complete`：结论可解析且引用编号存在；Run为completed，仍可能completion=partial |
 | 不能继续调用 | `model_unavailable / model_call_limit / tool_call_limit / input_or_token_limit / usage_unknown_or_budget_exhausted / duration_limit` |
 | 内容或协议问题 | `invalid_model_content / invalid_tool_call_protocol / model_response_truncated / invalid_or_unreferenced_conclusion` |
+| 必需Tool条件 | `required_tool_unavailable`：当前范围未提供指定工具，模型调用0；`required_tool_not_called`：模型未返回指定调用；均停止并保存failed/partial结果（若收尾保存成功） |
 | 执行异常 | `analysis_failed:<异常类型>`；上述非正常停止保存失败/partial结果（若收尾保存成功） |
 | HTTP 404 | `case_not_found / case_analysis_not_found` |
 | HTTP 400 | `case_requires_valid_selected_members`：Case没有可选成员或选择不属于Case |
 | HTTP 409 | `operation_key_conflicts_with_existing_case_analysis / previous_analysis_not_finished / followup_scope_changed / case_report_not_ready` |
-| HTTP 422 | 非法UUID、无时区/非法窗口、超长问题、空/重复成员或额外字段 |
+| HTTP 422 | 非法UUID、无时区/非法窗口、超长问题、空/重复成员、非法required_tools（非数组、超过4项、空/首尾空白/重复名称）或额外字段 |
 
 当前上限：模型4次、工具4次、已知tokens 24000、主循环120秒；120秒不覆盖所有前置读库及最终保存。已有Run.status并非完整恢复状态机，部分中断可保留running且result=null；本文不新增取消、接管、恢复或异步执行接口。
 
@@ -383,9 +394,11 @@ F5以租户和triage_event_id确定稳定操作身份；调用方重复发送同
 
 ## 7. 模型、Tool及产品HTTP之间的接口
 
-### 7.1 当前模型协议与两个Tool
+### 7.1 当前模型协议与可用Tool
 
-程序向配置的模型服务发送`model/messages/max_tokens`以及可用时的`tools`。messages包含system、当前Case材料和后续assistant/tool消息；每次最多输出1200 tokens。模型看见Tool名称、用途说明、参数schema；它不会自行发现产品URL。
+程序向配置的模型服务发送`model/messages/max_tokens`以及可用时的`tools`。messages包含system、当前Case材料和后续assistant/tool消息；每次最多输出3000 tokens（`case_analysis_models.MAX_OUTPUT_TOKENS`）。模型看见Tool名称、用途说明、参数schema；它不会自行发现产品URL。
+
+正常提供Tool的轮次不同时发送结论response_format；无可用Tool或唯一一次结论纠错阶段使用JSON Schema且不提供Tool。存在尚未尝试的required_tools时另发function tool_choice。当前Case工具包括下方两个事件湖工具，以及满足来源连接器/主机绑定条件时的product_host_details；后者参数、HTTP映射及证据合同见[产品主机Tool](product-host-tool-20261028.md)。实际列表由CaseTools按本次范围组装，不能因为已注册就认为每个Case都可调用。
 
 现有两个工具均为`hostname:string`必填（当前Case主机枚举）、`limit:integer`可选（默认20，1–50），禁止额外参数。租户和绝对窗口由程序固定，不由模型覆盖。
 
@@ -410,7 +423,7 @@ F5以租户和triage_event_id确定稳定操作身份；调用方重复发送同
 
 成功结果字段：`available:true`、`query_id:string`、`query_scope:{hostname,start,end}`、`rows:object[]`、`returned_count:integer`、`truncated:boolean`、`limitation:string`。失败结果至少`available:false/reason:string/rows:[]`，query_id/query_scope可能缺省。reason包括`unknown_tool/invalid_or_out_of_scope_arguments/lake_not_configured/query_failed:<异常类型>`。
 
-成功空结果必须仍为available=true、returned_count=0；不可伪造为失败，也不可写成“主机安全”。模型视图另有`model_view_row_count`、`untrusted_data_notice`；缩减行时标truncated，原结果另存。复用只检查同来源指纹、工具与参数，当前不主动探测事件湖补录或工具版本变化。
+成功空结果必须仍为available=true、returned_count=0；不可伪造为失败，也不可写成“主机安全”。模型视图另有`model_view_row_count`、`untrusted_data_notice`和派生的`query_status`：available=true且有记录行时为success_with_rows，成功无记录时为success_empty，不可用为unavailable。query_status只加入发给模型的视图，完整保存的原证据结构保持；缩减行时标truncated，原结果另存。复用只检查同来源指纹、工具与参数，当前不主动探测事件湖补录或工具版本变化。
 
 ### 7.2 产品HTTP Tool的具体拟定合同
 

@@ -1,3 +1,15 @@
+**2026-10-31 调查本地交付继续完成：** 源码commit `bb8dbc3`；[结束独审](openspec/changes/fix-investigation-audit-gaps/audit.md)0必须修，复用31项直接结果且未重跑。[提交/候选绑定](docs/operations/evidence/investigation-audit-fixes-20261031/source-commit-attestation.json)核476文件内容一致（440仅换行差异）；[5份限定复验请求](openspec/changes/fix-investigation-audit-gaps/retest/plan.json)已固定但未发送。任务14/17，21只读SSH连接超时；真实更新/复验、共享回执与归档完成条件待办。无部署或远端推送。
+
+**2026-10-31 调查审计问题本地实施：** [执行记录](docs/investigation/audit-fixes-implementation-20261031.md)及[回执](docs/operations/investigation-audit-fixes-20261031.json)记录A01/A02/D01修复、9个新增必要直接用例及最终31个不同用例通过。Office新材料与纠错组合16929/17018、余89，保旧报告；r3候选仅本地准备，独立复审/新commit/实际更新与复验待做。OpenSpec按实绩勾选12/17，不提前归档或核销旧任务。
+
+**2026-10-31 调查审计后OpenSpec规划：** [提案](openspec/changes/fix-investigation-audit-gaps/proposal.md)、[设计](openspec/changes/fix-investigation-audit-gaps/design.md)、[17项任务](openspec/changes/fix-investigation-audit-gaps/tasks.md)已形成；顺序为进程证据→概况失败模式→原始取材→组合验证/交付。3项规格描述待实施合同，任务均未执行。与已有追加修复共用后续一次真实批次，各自按证据关闭；[规划校验](openspec/changes/fix-investigation-audit-gaps/validation.md)使用仓库本地OpenSpec1.13.0，旧规格仅补缺失Scenario。无业务源码、测试、部署或Git提交/推送。
+
+**2026-10-31 调查模块详细审计：** [完整报告](docs/investigation/design-implementation-audit-20261031.md)覆盖需求、设计、接口、Case执行、模型/Tool、持久化与证据。确认2项功能缺陷（进程事件类别、失败概况模式切换）和1项取材设计缺口，未改业务代码；两处文档现行说明已修。静态固定47实现/依赖文件及11测试文件51定义，207原响应和3冻结文件hash一致。当前仍不能宣称最新版本完整验收；本轮无新测试、远端调用、部署或推送。
+
+**2026-10-31 调查文档与测试基线对齐：** [最新指南](docs/investigation/audit-guide-20261031.md)统一当前设计、接口、证据目录与阅读顺序。本地源码5b95138及6项受影响直接用例通过记录，与512c004/r1四案例真实HTTP分开；原111项检查3项失败保留，r2常驻替换/真实复验待做。补齐required_tools及停止原因，历史报告改指当批冻结脚本和输入。仅文档/静态核对，无新业务测试、远端调用、部署或推送。
+
+**2026-10-28 模型预检x86_64额外交付：** 在原ARM64 r5包之外新增[Linux x86_64/amd64离线包](model-preflight-x86_64-20261028T020724Z.tar.gz)、[使用说明](START_HERE.x86_64.md)及[SHA256](model-preflight-x86_64-20261028T020724Z.tar.gz.sha256)。使用官方Python 3.12.14 amd64基础镜像按digest重建；测试逻辑、提示词、案例、判据和自测源码保持，probe.py仅改架构帮助文字，移除旧字节码缓存。最终镜像28项禁网客户端自测通过，导出镜像全部层hash/应用文件hash、ELF x86_64、外层及包内SHA256、实际解压/docker load/案例列表及Bash启动已核；包内BUILD-INFO.json、SELFTEST.log留存来源及验证。完整包43,238,827字节，SHA256 `f4034a98ad4eae74c3237b22ed7004e162e0c808bf5104a1c1085ad2e9b28bc4`。原ARM64包和原START_HERE.md保留；未调用真实模型、修改业务源码或部署/推送，目标现场模型能力仍待实测。
+
 **2026-10-25 调查M8a3.2限定通过：** API显式结果GET强制Bearer、复用原双read权限及可信身份转发，同版三重hash校验；33直接与独立同33、6hash/12完整HTTP重放一致。[回执](docs/operations/investigation-result-gateway-20261025.json)。dev旁路只对新GET关闭，旧认证/query默认不改；仅ASGI/替身，真实PG/双进程网络下一步，无启动/账本/模型或部署。
 
 **2026-10-25 调查M8a3.1限定通过：** 独立内部只读GET app的专用token/tenant/actor、请求覆盖拒绝/脱敏/资源所有权已过13新＋45相关及独立同58，6hash/11 ASGI重放一致。[回执](docs/operations/investigation-internal-read-api-20261025.json)。外部用户read权限与真实PG仍分别待API网关/a3.3，不改旧路由/权限，无新查询模型/账本/部署。

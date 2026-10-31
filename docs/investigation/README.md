@@ -1,3 +1,9 @@
+**当前入口 2026-10-31：** [最新指南](audit-guide-20261031.md)、[实施记录](audit-fixes-implementation-20261031.md)、[独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)。审计A01/A02/D01已本地修复，源码commit `bb8dbc3`；31项直接结果、独审0必须修，任务14/17。r3候选和5份请求已准备，未部署/真实复验；21只读SSH连接超时。最近真实证据仍为512c004/r1，2/4案例流程通过，旧失败保留。
+
+**当前OpenSpec：** [设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)及[剩余任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)按实际交付更新；不把独审或本地提交当作真实模型质量验收。
+
+**2026-10-29多案例阅读说明：** [先看业务流程与跳转目的](multi-case-http-20261028.md#先按业务理解再查看请求原件)，或直接看[Office案例为什么这样走](cases-20261028/office-powershell.md#本例为什么这样走)。四个案例均补充触发者、输入输出、进入下一步的原因，以及每条HTTP请求用途；区分实际调查、已保存步骤的读回和测试核对。本次只补文档，未重新测试。
+
 **2026-10-28多案例真实HTTP测试完成：** [四例总报告](multi-case-http-20261028.md)，内含每步请求/返回、报告、证据和检查结果。数据采用用户选定的既有模拟案例；执行使用正常API Key、常驻HTTP、PG/事件湖和原模型。4次主调查完成；2/4例自动流程检查通过，Office追加输入额度不足、网络追加未触发所需Tool；另发现LSASS摘要混淆空结果/失败及分诊编号。临时Key均已停用。未宣称全部通过。
 
 **2026-10-28独立调查API已常驻启动：** [地址、SSH访问和调用脚本](resident-api-20261028.md)。21本机`127.0.0.1:18010`，18条路径的OpenAPI描述可读；原API和Agents保持运行。后续多案例已补充正常API Key下的业务HTTP，用户JWT登录不在本轮范围。

@@ -1,8 +1,12 @@
+**最新执行覆盖下方同日规划状态：** B1–B3/T6及文档同步已完成，31项本地直接验证通过；[剩余任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)为提交/候选交付补全、独立复审、获准后的实际更新与一次定向复验，未归档。见[实施记录](audit-fixes-implementation-20261031.md)。
+
+**2026-10-31后续状态：** [四案例真实HTTP](multi-case-http-20261028.md)原111项检查中3项失败；[追加修复](../../openspec/changes/fix-case-followup-gaps/tasks.md)已有本地6项直接用例通过。详细审计后，下一实施顺序按[新OpenSpec计划](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：修进程类型/概况失败模式、补有界原始取材，再形成实际组合版本并在获准后定向真实复验。当前只有规划，17项任务未执行。下文保留早期分批规划和当时进度，当前指南见[此处](audit-guide-20261031.md)。
+
 # 调查模块后续功能规划
 
 2026-10-28，初始规划代码基线`707e49c`。用户要求规划范围覆盖告警、事件、Case及其他调查功能，不限于Case创建后初版。下文保留批次目标，实际进展以最新实施记录为准。
 
-**实施更新：第1、2批见[告警/事件结果关联](alert-event-investigation-links-20261028.md)，第3批见[产品主机Tool](product-host-tool-20261028.md)，第4批见[多告警综合分析](multi-alert-synthesis-20261028.md)，第5批见[公共索引与证据跳转](execution-index-and-evidence-20261028.md)，上述代码和基本替身流程已完成。第6批后端API基本运行已分段完成真实验证：[Case调查与追加](step-by-step-test-20261028.md)、[事件成员转Case及AI概况](incident-case-basic-flow-20261028.md)。[独立常驻API与调用脚本](resident-api-20261028.md)已部署到21本机18010；普通身份下的业务HTTP尚未验证。**
+**实施更新：第1、2批见[告警/事件结果关联](alert-event-investigation-links-20261028.md)，第3批见[产品主机Tool](product-host-tool-20261028.md)，第4批见[多告警综合分析](multi-alert-synthesis-20261028.md)，第5批见[公共索引与证据跳转](execution-index-and-evidence-20261028.md)，上述代码和基本替身流程已完成。第6批后端API基本运行已分段完成真实验证：[Case调查与追加](step-by-step-test-20261028.md)、[事件成员转Case及AI概况](incident-case-basic-flow-20261028.md)。[独立常驻API与调用脚本](resident-api-20261028.md)已部署到21本机18010；后续正常API Key业务HTTP已验证，用户JWT专项仍未验证，见页首记录。**
 
 ## 业务范围与已有基础
 

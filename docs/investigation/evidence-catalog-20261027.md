@@ -1,4 +1,94 @@
-# 调查模块证据与历史文档全目录
+**2026-10-31实施证据：** [修复记录](audit-fixes-implementation-20261031.md)、[源码/测试/候选包回执](../operations/investigation-audit-fixes-20261031.json)、[阶段及最终原日志目录](../operations/evidence/investigation-audit-fixes-20261031/)；31个不同直接用例最终通过，保持此前静态审计和r1真实证据。
+
+# 调查模块证据与文档目录
+
+2026-10-31更新。先看[最新指南](audit-guide-20261031.md)与[当前设计](current-design-alignment-20261027.md)，再按以下当前材料进入。文件名保留原入口；底部137项为原6044615历史目录，范围不回填为新验证。
+
+本地源码为5b95138；最新6项受影响直接用例通过记录属于本地修复。真实四案例为512c004/r1，原失败保留，r2常驻与真实复验待做。以下分类用于查找材料，不代表全部功能通过。
+
+## 当前实施与验证说明
+
+| 文档 | 入口 |
+| --- | --- |
+| 最新指南与审计步骤 | [2026-10-31指南](audit-guide-20261031.md) |
+| 设计—实现详细审计 | [发现、功能对照与验证边界](design-implementation-audit-20261031.md) |
+| 本次静态审计清单 | [源码/测试索引、路由及原件hash](../operations/investigation-static-audit-20261031.json) |
+| 审计后OpenSpec规划 | [提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)、[任务/验证](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)（尚未实施） |
+| 当前设计 | [职责与流程](current-design-alignment-20261027.md) |
+| 当前接口合同 | [字段与错误](interface-contracts-20261027.md) |
+| 告警、事件与Case调查结果的关联 | [alert-event-investigation-links-20261028.md](alert-event-investigation-links-20261028.md) |
+| 调查功能基本运行测试（2026-10-28） | [basic-runtime-test-20261028.md](basic-runtime-test-20261028.md) |
+| Case创建后的调查初版 | [case-first-version-20261028.md](case-first-version-20261028.md) |
+| F4：告警和事件成员转入Case | [case-linking-20261028.md](case-linking-20261028.md) |
+| 公共调查索引与证据跳转 | [execution-index-and-evidence-20261028.md](execution-index-and-evidence-20261028.md) |
+| 事件→Case→AI概况基本运行验证（2026-10-28） | [incident-case-basic-flow-20261028.md](incident-case-basic-flow-20261028.md) |
+| Case多告警综合分析：成员、关联、时间线与未决问题 | [multi-alert-synthesis-20261028.md](multi-alert-synthesis-20261028.md) |
+| 多案例逐步HTTP测试（2026-10-28） | [multi-case-http-20261028.md](multi-case-http-20261028.md) |
+| 调查模块后续功能规划 | [next-phase-plan-20261028.md](next-phase-plan-20261028.md) |
+| Case产品HTTP Tool：主机详情 | [product-host-tool-20261028.md](product-host-tool-20261028.md) |
+| 调查真实PG联调结果（2026-10-28） | [real-pg-test-20261028.md](real-pg-test-20261028.md) |
+| 独立调查API与调用方接入（2026-10-28） | [resident-api-20261028.md](resident-api-20261028.md) |
+| 调查功能逐步测试（2026-10-28） | [step-by-step-test-20261028.md](step-by-step-test-20261028.md) |
+
+## 四案例逐步记录与报告
+
+以下报告是当批保存内容，保留语义偏差与失败，不用最新修复改写。
+
+| 文件 | 入口 |
+| --- | --- |
+| archive-upload-main-report.md | [查看](cases-20261028/archive-upload-main-report.md) |
+| archive-upload.md | [查看](cases-20261028/archive-upload.md) |
+| lsass-smb-subset-main-report.md | [查看](cases-20261028/lsass-smb-subset-main-report.md) |
+| lsass-smb-subset.md | [查看](cases-20261028/lsass-smb-subset.md) |
+| network-positive-reuse-followup-report.md | [查看](cases-20261028/network-positive-reuse-followup-report.md) |
+| network-positive-reuse-main-report.md | [查看](cases-20261028/network-positive-reuse-main-report.md) |
+| network-positive-reuse.md | [查看](cases-20261028/network-positive-reuse.md) |
+| office-powershell-followup-report.md | [查看](cases-20261028/office-powershell-followup-report.md) |
+| office-powershell-main-report.md | [查看](cases-20261028/office-powershell-main-report.md) |
+| office-powershell.md | [查看](cases-20261028/office-powershell.md) |
+
+## 后续机器回执
+
+下表包括16份10月28日命名的回执；followup-fix-local随10月29日提交保存。各自基线、实际观察和限制在原文件内，测试数不累计为当前全量通过。
+
+| 回执 | 入口 |
+| --- | --- |
+| investigation-api-entry-local-20261028.json | [查看](../operations/investigation-api-entry-local-20261028.json) |
+| investigation-api-resident-20261028.json | [查看](../operations/investigation-api-resident-20261028.json) |
+| investigation-basic-runtime-20261028.json | [查看](../operations/investigation-basic-runtime-20261028.json) |
+| investigation-followup-fix-local-20261028.json | [查看](../operations/investigation-followup-fix-local-20261028.json) |
+| investigation-followup-step1-20261028.json | [查看](../operations/investigation-followup-step1-20261028.json) |
+| investigation-followup-step2-20261028.json | [查看](../operations/investigation-followup-step2-20261028.json) |
+| investigation-followup-step4-20261028.json | [查看](../operations/investigation-followup-step4-20261028.json) |
+| investigation-followup-step7-20261028.json | [查看](../operations/investigation-followup-step7-20261028.json) |
+| investigation-followup-step8-input-20261028.json | [查看](../operations/investigation-followup-step8-input-20261028.json) |
+| investigation-followup-step9-20261028.json | [查看](../operations/investigation-followup-step9-20261028.json) |
+| investigation-incident-case-flow-20261028.json | [查看](../operations/investigation-incident-case-flow-20261028.json) |
+| investigation-multi-case-budget-diagnosis-20261028.json | [查看](../operations/investigation-multi-case-budget-diagnosis-20261028.json) |
+| investigation-multi-case-inputs-20261028.json | [查看](../operations/investigation-multi-case-inputs-20261028.json) |
+| investigation-multi-case-summary-20261028.json | [查看](../operations/investigation-multi-case-summary-20261028.json) |
+| investigation-real-pg-20261028.json | [查看](../operations/investigation-real-pg-20261028.json) |
+| investigation-tool-schema-step5-20261028.json | [查看](../operations/investigation-tool-schema-step5-20261028.json) |
+
+## 原件与当前工作文件
+
+| 用途 | 文件 |
+| --- | --- |
+| 四案例实际脚本 | [冻结执行脚本](../operations/evidence/INVHTTP-20261028-01/investigation_http_cases.py) |
+| 四案例实际输入 | [冻结cases.json](../operations/evidence/INVHTTP-20261028-01/cases.json) |
+| 当批启动及哈希观察 | [启动脚本](../operations/evidence/INVHTTP-20261028-01/run_multi_case_http.py)、[execution-observation](../operations/evidence/INVHTTP-20261028-01/execution-observation.json) |
+| 原批汇总与凭据收尾 | [batch.json](../operations/evidence/INVHTTP-20261028-01/results/batch.json)、[credential-receipt](../operations/evidence/INVHTTP-20261028-01/credential-receipt.json) |
+| 后续复验工作文件 | [当前脚本](../../tools/testdata/investigation_http_cases.py)、[当前清单](../../tools/testdata/investigation-http-cases-20261028.json)，已增加必需Tool，与原批不同 |
+| 最新Case测试源码 | [test_case_analysis_api.py](../../services/api/tests/test_case_analysis_api.py)，含必需Tool、复用及不可用/跳过场景 |
+| 最新修复规格与状态 | [proposal](../../openspec/changes/fix-case-followup-gaps/proposal.md)、[design](../../openspec/changes/fix-case-followup-gaps/design.md)、[spec](../../openspec/changes/fix-case-followup-gaps/specs/case-followup/spec.md)、[tasks](../../openspec/changes/fix-case-followup-gaps/tasks.md) |
+| 四案例测试任务状态 | [tasks](../../openspec/changes/exercise-investigation-http-cases/tasks.md)，记录测试工作完成，不表示全功能验收 |
+| 常驻部署任务状态 | [tasks](../../openspec/changes/serve-investigation-api/tasks.md)，实际版本仍按部署回执解释 |
+
+每个案例页面分别链接该案例全部请求/响应、步骤、证据及报告；完整原件位于docs/operations/evidence/INVHTTP-20261028-01，历史运行的哈希应与该目录冻结文件核对。
+
+## 2026-10-27历史目录
+
+以下保留原目录及早期F4补记；其中“当前”一词均指当时基线，不覆盖上述更新。
 
 2026-10-28增补：[F4实现与直接验证](case-linking-20261028.md)、[F4用例源码](../../services/api/tests/test_case_links_api.py)。下方137项为2026-10-27基线目录，不把新验证回填为历史通过项。
 

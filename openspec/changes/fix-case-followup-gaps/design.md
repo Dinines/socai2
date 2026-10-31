@@ -7,3 +7,5 @@ Add optional unique required_tools (at most4) to CaseAnalysisRequest, default em
 Clarify that T references triage rather than a member, member UUIDs are not hostnames, successful zero-row queries are not failures, and saved_analysis_truncated refers only to saved analysis. Tool messages add a derived query_status enum; full evidence fields remain unchanged. This improves model grounding without claiming general natural-language semantic validation.
 
 Prepare local fixes and direct evidence first. Any resident image replacement and new live test credentials are a separate concrete approval step; do not overwrite prior test output or replay failed Runs.
+
+Documentation clarification (2026-10-29): the [four-case report](../../../docs/investigation/multi-case-http-20261028.md) and its four case pages now explain business intent, manual/automatic triggers, recorded internal steps and HTTP readback separately, including why each evidence link is followed. This uses the original batch only; no test replay, frozen evidence rewrite or runtime behavior change.
