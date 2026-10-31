@@ -1,3 +1,5 @@
+**当前r10（2026-10-31）：** 源码`51086a4`已部署r10；首份正式报告使用JSON Schema，模型A引用映射公共UUID，具体校验反馈和原一次纠错/预算保持。唯一完整raw演示告警主Run `4f094ed4-b4f9-5db9-8cc2-b5f8c781858e` 为completed/partial：3模型、2真实湖查询、0复用、10292 tokens；首次报告格式/成员通过、纠错0。两次成功空查询经ClickHouse QueryFinish核实，报告却把空结果当矛盾并猜测采样/丢日志等原因，语义仍未过。 镜像`sha256:7506c7f4687e949dc42d8fc6fa54b3d5ba2df67676e8a2e8e0d1f6e8e0ed8e62`，472源码一致。首次打包权限失败及修后安装均保留，共享服务/配置/Key保持。[r10回执](../operations/investigation-structured-report-20261031.json)。下方为历史记录。
+
 **最新r9状态（2026-10-31）：** 用户明确确认后已部署`bf2bd9c`，镜像`sha256:d2e509370680cd2f647561ac37e1da4916758af7743324b0761f51b7f8090418`，21本机18010，472源码一致。唯一追加3回复/11740 tokens，因纠错后重复成员引用failed/partial；共享服务/配置/Key保持。见[r9实际回执](../operations/investigation-model-wait-20261031.json)，下方r8等均为历史记录。
 
 **最新状态（2026-10-31）：** 常驻`20261031-r8`，源码`a41ae07`，21本机18010；镜像`sha256:1f0bfe52f92b402fe2c92ed5b66c1c7250e21c27a900a2299020355b21eb337b`，472应用源码已核。开发Key与服务配置保持。协议边界修复已直接验证；唯一真实调查的纠错调用约45秒后遇网关Timeout，failed/partial，最终内容未验，见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。下方版本为历史记录。

@@ -1,3 +1,5 @@
+**2026-10-31 r10当前交付：** 源码`51086a4`已部署r10；首份正式报告使用JSON Schema，模型A引用映射公共UUID，具体校验反馈和原一次纠错/预算保持。唯一完整raw演示告警主Run `4f094ed4-b4f9-5db9-8cc2-b5f8c781858e` 为completed/partial：3模型、2真实湖查询、0复用、10292 tokens；首次报告格式/成员通过、纠错0。两次成功空查询经ClickHouse QueryFinish核实，报告却把空结果当矛盾并猜测采样/丢日志等原因，语义仍未过。 42个受影响方法的最新结果通过；完整输入、查询日志和具体语义问题见[r10回执](../operations/investigation-structured-report-20261031.json)。下方均为历史阶段。
+
 **2026-10-31 r9：** 用户明确确认后已部署`bf2bd9c`，模型等待采用原120秒剩余时间，6项直接验证复用。唯一真实追加3回复均取得，最长26.50秒；首答JSON无效，纠错后重复成员引用被拒，failed/partial。11740 tokens、1复用/0新湖查询、父报告保持，完整报告语义仍待。见[r9实际回执](../operations/investigation-model-wait-20261031.json)。
 
 **当前交付（r8）：** 源码`a41ae07`上线，明确不确定协议表述可通过；无据肯定/否定仍拒。纠错提示要求完整中文和未证实/非攻击区分，10项必要直接测试通过。唯一真实Run failed/partial，首次结论UUID错误触发一次纠错，随后45.25秒HTTP错误，同期网关Timeout与45秒配置相符；未取得最终模型回复，第三次用量未知。见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。当前16/17，不归档，下文为先前阶段。

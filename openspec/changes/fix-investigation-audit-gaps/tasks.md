@@ -37,3 +37,5 @@
 原规划校验见[validation](validation.md)，原r3本地校验见[execution-validation](execution-validation.md)。4.3在r4/r5完成实际追加与模型/Tool/报告对照，失败和质量问题仍留原件；4.4共享回执完成；r6已补协议与成员校验并真实复验，但5.3仍不满足完整报告验收及归档条件。新纠错修复只做必要直接验证，不扩独审门或冗余测试。
 
 2026-10-31 r9补充：此前自动审批拒绝已在用户明确确认后解除，更新和唯一追加均已执行；原拒绝与新授权分别保存。报告引用和语义仍未通过，任务16/17，5.3保持未完成，见[回执](../../../docs/operations/investigation-model-wait-20261031.json)。
+
+2026-10-31 r10补充：结构化报告及A引用映射已交付，唯一完整raw主调查 completed/partial，两个Tool实际CH查询/零复用，首份格式通过、纠错0；成功空结果被报告过度解释，语义验收未通过，5.3继续待办。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)。
