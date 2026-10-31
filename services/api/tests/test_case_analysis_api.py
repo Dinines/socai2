@@ -435,6 +435,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                             return message
                         value = json.loads(message["content"])
                         value.pop("protocol_note", None)  # Newly supplied model guidance; raw rows stay identical.
+                        value.pop("source_alignment", None)
                         return {**message, "content": value}
                     self.assertEqual(current["messages"][0]["content"], analysis.SYSTEM)
                     self.assertEqual(list(map(normalize, current["messages"][1:])),
@@ -560,6 +561,72 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(outcome["result"]["evidence"][-1]["rows"], network["rows"])
         self.assertEqual(analysis.encoded(context), original_context)
         self.assertEqual((await self.client.get(outcome["result_url"])).json()["result"], outcome["result"])
+        self.lake.assert_not_awaited()
+
+    async def test_r6_network_sources_survive_model_correction_and_report_readback(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031/live-r6/results"
+        steps = sorted([json.loads(path.read_text(encoding="utf-8")) for path in
+                        root.glob("*-network-positive-reuse-followup-step-*.response.txt")], key=lambda step: step["seq"])
+        context = steps[0]["data"]
+        original_context = analysis.encoded(context)
+        parent = json.loads((root / "005-network-positive-reuse-parent-result.response.txt").read_text(encoding="utf-8"))["result"]
+        original_parent = analysis.encoded(parent)
+        request = analysis.CaseAnalysisRequest.model_validate_json(
+            (root / "007-network-positive-reuse-followup.body.json").read_text(encoding="utf-8"))
+        replies = [step["data"] for step in steps if "response" in step["data"]]
+        # r6's final prose was semantically wrong despite valid schema/references.
+        # This test checks the actual material/report plumbing, not model truth.
+        bad = json.loads(replies[-1]["response"]["content"])
+        self.assertIn("nuclear", bad["summary"])
+        history_summary = next(item["data"]["report"]["summary"] for item in context["evidence"] if item["kind"] == "prior_analysis")
+        self.assertIn("有网络流量记录", history_summary)
+        good = {"summary": "本次工具调用复用H1原有的三条TCP记录，未重新查询。H1已说明存在网络记录，但未证实攻击。",
+                "findings": [{"text": "前两行分别对应A1和A2；第三行未匹配选定告警的来源事件ID，不能据此判无关。",
+                              "evidence_ids": ["A1", "A2", "E1", "H1"]}],
+                "counterevidence": [], "gaps": ["缺少进程关联证据"], "recommendations": [],
+                "member_assessments": [{"alert_id": item["data"]["alert_id"], "status": "unresolved",
+                    "role": "undetermined", "summary": "告警称合成测试待核网络活动，来源ID对应历史网络记录，性质待证。",
+                    "evidence_ids": [item["evidence_id"], "E1"]} for item in context["evidence"] if item["kind"] == "alert"]}
+        run = InvestigationRun(id=UUID(int=830), tenant_id=TENANT, case_id=context["case_id"],
+                               raw_alert={"scope": {}}, total_tokens=0, iterations=0)
+        self.runs[run.id] = run
+        exchanges = [*replies[:2], {"response": {"content": json.dumps(good)},
+                                   "usage": {"prompt_tokens": 100, "completion_tokens": 50}}]
+        def provider(http_request):
+            self.messages.append(json.loads(http_request.content))
+            reply = exchanges[len(self.messages) - 1]
+            return httpx.Response(200, json={"choices": [{"message": reply["response"],
+                "finish_reason": "tool_calls" if reply["response"].get("tool_calls") else "stop"}], "usage": reply["usage"]})
+        client_type = type(self.client)
+        with patch.object(models.httpx, "AsyncClient", side_effect=lambda **kwargs:
+                          client_type(transport=httpx.MockTransport(provider), **kwargs)):
+            outcome = await analysis.CaseAnalysis(self.db, run, context, request, parent).execute()
+        self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
+        self.assertEqual(len(self.messages), 3)
+        expected = {"origin": "historical_reuse", "already_in_history": "H1", "row_alert_refs": [["A1"], ["A2"], []]}
+        for body in self.messages[1:]:
+            visible = json.loads(next(message["content"] for message in body["messages"] if message["role"] == "tool"))
+            self.assertEqual(visible["source_alignment"], expected)
+            model_context = json.loads(body["messages"][1]["content"])
+            self.assertEqual(next(item["data"]["report"]["summary"] for item in model_context["evidence"]
+                                  if item["kind"] == "prior_analysis"), history_summary)
+        saved_tool = outcome["result"]["evidence"][-1]
+        self.assertNotIn("source_alignment", saved_tool)
+        self.assertEqual(saved_tool["rows"], parent["evidence"][-2]["rows"])
+        self.assertEqual(outcome["result"]["report"]["query_sources"],
+                         [{"evidence_id": "E1", **expected, "reused_from": saved_tool["reused_from"]}])
+        self.assertIn("本次未重新查询该来源", outcome["result"]["markdown"])
+        self.assertIn("E1/rows/2：未匹配选定告警的来源事件ID", outcome["result"]["markdown"])
+        clipped = json.loads(tools.model_result({**saved_tool, "rows": [{**saved_tool["rows"][0], "process_name": "x" * 9000}]}, context))
+        self.assertEqual(clipped["rows"], [])
+        self.assertEqual(clipped["source_alignment"]["row_alert_refs"], [])
+        fresh = {key: value for key, value in saved_tool.items() if key != "reused_from"}
+        self.assertEqual(tools.source_alignment(fresh, context)["origin"], "current_tool_result")
+        self.assertNotIn("already_in_history", tools.source_alignment(fresh, context))
+        self.assertEqual(analysis.encoded(context), original_context)
+        self.assertEqual(analysis.encoded(parent), original_parent)
+        self.assertEqual((await self.client.get(outcome["result_url"])).json()["result"], outcome["result"])
+        self.assertEqual((await self.client.get(outcome["report_url"])).text, outcome["result"]["markdown"])
         self.lake.assert_not_awaited()
 
     async def test_original_sources_are_frozen_model_visible_and_bounded(self):
@@ -700,7 +767,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         model_view = json.loads(self.messages[2]["messages"][1]["content"])
         model_history = next(item for item in model_view["evidence"] if item["kind"] == "prior_analysis")
         self.assertEqual(model_history["data"]["omitted_report_fields"],
-                         ["timeline", "member_coverage", "member_assessments", "relationships", "open_questions", "recommendations"])
+                         ["timeline", "member_coverage", "member_assessments", "relationships", "open_questions", "recommendations", "query_sources"])
         self.assertNotIn("timeline", model_history["data"]["report"])
         self.assertEqual(model_history["data"]["report"]["summary"], original["report"]["summary"])
         self.assertEqual(model_history["data"]["report"]["gaps"], original["report"]["gaps"])

@@ -19,7 +19,7 @@ from app.services.alert_explain import _UPSERT_RUN_COST
 from app.services.cost_dashboard import _impute_public_cost
 from app.services.llm_resolver import resolve_llm_config
 from .case_analysis_models import MAX_OUTPUT_TOKENS, call_model, conclusion_format
-from .case_analysis_tools import CaseTools, model_result
+from .case_analysis_tools import CaseTools, model_result, source_alignment
 from .case_source_material import SOURCE_SCHEMA, freeze_sources, model_source_view, source_fields
 from .case_navigation import analysis_urls, citation_links, report_navigation
 from .incident_reader import _entities
@@ -57,7 +57,7 @@ def model_context(context):
             data = item["data"]
             report = data["report"]
             omitted = [key for key in ("timeline", "member_coverage", "member_assessments", "relationships",
-                                       "open_questions", "recommendations") if key in data["report"]]
+                                       "open_questions", "recommendations", "query_sources") if key in data["report"]]
             item = {**item, "data": {**data,
                 "report": {key: value for key, value in report.items() if key not in omitted},
                 "omitted_report_fields": omitted}}
@@ -174,11 +174,11 @@ class AnalysisConclusion(BaseModel):
     open_questions: list[OpenQuestion] = Field(default_factory=list)
 
 
-SOURCE_RULES = """A/T/H are claims/judgments: use 告警称/分诊认为/历史推断, not verified facts.
-No approval data!=unauthorized; closed/true_positive!=safe/malicious; empty raw_event does not negate E.
-TCP/443!=HTTPS/TLS; unobserved protocol names belong only in gaps/questions.
-reused_from=historical reuse, not new query/independent support. Unmatched!=unrelated.
-No invented vendor/acronym/attack labels or expanded ungrounded H claims. Member summaries: full sentences with source+limits."""
+SOURCE_RULES = """A/T/H=claims. closed/true_positive!=safe/malicious; no approval!=unauthorized.
+empty raw_event!=no E; TCP443!=HTTPS/TLS; unknown protocol only in gaps/questions.
+already_in_history: H held SAME result, NOT new evidence/proof H missed it. No attack conclusion!=no records.
+row_alert_refs=exact event_id matches; []!=unrelated, not all rows match all members.
+Quote verbatim; no invented translations/names/labels. Members: source+limits."""
 
 SYSTEM = """你在Case内调查告警。告警和分诊是待核材料，不是已经证实的攻击事实。
 根据问题分析已有材料；确有证据缺口时选择合适工具，返回后再更新判断。无需为了流程而重复查询。
@@ -485,7 +485,7 @@ class CaseAnalysis:
                                 result = await tools.execute(name, args)
                             evidence = {"evidence_id": f"E{self.tool_calls}", "kind": "tool", "tool": name, "arguments": args, **result}
                             self.evidence.append(evidence)
-                            text = model_result(evidence)
+                            text = model_result(evidence, self.context)
                             if not result.get("available"):
                                 self.gaps.append(f"{name}未能检查：{result.get('reason', 'unknown')}")
                             if result.get("truncated") or json.loads(text).get("truncated"):
@@ -509,7 +509,26 @@ class CaseAnalysis:
         conclusion.gaps = list(dict.fromkeys(conclusion.gaps + self.gaps))
         report = conclusion.model_dump(mode="json")
         complete_synthesis(report, self.context, self.evidence)
-        lines = [f"# Case调查报告 {self.context['case_id']}", "", report["summary"], "", "## 发现与依据"]
+        report["query_sources"] = [{"evidence_id": item["evidence_id"], **source_alignment(item, self.context),
+                                   "reused_from": item.get("reused_from")}
+                                  for item in self.evidence if item.get("kind") == "tool"]
+        lines = [f"# Case调查报告 {self.context['case_id']}", "", report["summary"]]
+        if report["query_sources"]:
+            lines.extend(["", "## 查询来源与成员对应", "以下由保存的来源生成；事件ID对应不证明因果，未匹配不等于无关。"])
+        for source in report["query_sources"]:
+            ref = source["evidence_id"]
+            label = citation_links(self.context["case_id"], self.run.id, [ref])
+            if source["reused_from"]:
+                prior = source["reused_from"]
+                lines.append(f"- {label}：复用历史Run {prior['run_id']} 的 {prior['evidence_id']}，本次未重新查询该来源。")
+                if source.get("already_in_history"):
+                    lines.append(f"  {source['already_in_history']} 对应Run已保存同一结果，本次复用不构成独立新证据。")
+            else:
+                lines.append(f"- {label}：本次工具返回；成功、空结果或不可用状态见原证据。")
+            for index, refs in enumerate(source.get("row_alert_refs", [])):
+                matches = citation_links(self.context["case_id"], self.run.id, refs) if refs else "未匹配选定告警的来源事件ID"
+                lines.append(f"  - {ref}/rows/{index}：{matches}")
+        lines.extend(["", "## 发现与依据"])
         lines.extend(f"- {finding['text']}（依据：{citation_links(self.context['case_id'], self.run.id, finding['evidence_ids'])}）"
                      for finding in report["findings"])
         lines.extend(synthesis_markdown(report, self.context["case_id"], self.run.id))
