@@ -1,6 +1,6 @@
 # 实施任务
 
-状态：用户已要求推进执行，B1–B3及T6本地实现/验证完成；31个不同用例最终通过。证据见[实施记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)及[回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。源码已保存为本地commit `bb8dbc3`；[独立结束审阅](audit.md)必须修项0，未重跑业务测试。完成14/17；实际更新/调用未执行，21只读SSH预检连接超时。
+状态：r3源码bb8dbc3已部署，固定批次3主Run中1完成/partial、2纠错预算失败，2追加未发；[同一真实回执](../../../docs/operations/investigation-audit-live-r3-20261031.json)已链接两个change并保留失败。随后仅本地修复超预算纠错输入，6项受影响直接验证通过，新修复未部署。完成15/17；4.3业务目标和5.3归档条件仍未满足。
 
 ## 1. B1 — 修正进程证据类型（A01）
 
@@ -26,7 +26,7 @@
 - [x] 4.1 对当前组合代码完成 T6，并复用未变功能证据；证据：包含新增材料的追加/required_tools/纠错实际请求、预算及持久结果。
 - [x] 4.2 准备可审阅的实际更新材料；证据：commit、精确源码/测试清单、独立镜像标识、迁移需求、服务差异和定向调用范围；本项不等于已部署。
 - [ ] 4.3 在服务更新及调用获准后执行一次定向真实复验；证据：Office、网络、LSASS的新 Run/模型/Tool/报告及语义对照，保留旧 207 响应和失败；未获授权保持待办。
-- [ ] 4.4 把同一实际回执链接到本 change 和 fix-case-followup-gaps，分别判断完成；证据：旧追加任务只在其真实目标满足时关闭，不重复运行或提前核销旧 2.2/2.3。
+- [x] 4.4 把同一实际回执链接到本 change 和 fix-case-followup-gaps，分别判断完成；证据：旧追加任务只在其真实目标满足时关闭，不重复运行或提前核销旧 2.2/2.3。
 
 ## 5. B5 — 收尾
 
@@ -34,4 +34,4 @@
 - [x] 5.2 完成一次未参与实现者的结束审阅；证据：实际 audit.md 或专用回执，功能缺陷修后核对，不新增逐批独审前置门。
 - [ ] 5.3 完成归档前检查及本 change 的严格校验；证据：任务均有实际依据、规格与交付一致、剩余问题如实处理；归档操作/封后结果另记，不提前归档或写主规格。
 
-原规划校验见[validation](validation.md)，实施校验见[execution-validation](execution-validation.md)。4.2已具备commit、r3候选、[提交对应清单](../../../docs/operations/evidence/investigation-audit-fixes-20261031/source-commit-attestation.json)与[5份固定复验请求](retest/plan.json)；5.2已独审。4.3/4.4待连接与实际更新/调用条件满足；5.3严格校验通过，但完整归档前条件仍待实际交付。未部署、不归档、不推送或合并。
+原规划校验见[validation](validation.md)，原r3本地校验见[execution-validation](execution-validation.md)。4.3已有实际批次，但两追加前提失败，保持未完成；4.4共享回执完成；5.3仍不满足归档完成条件。新纠错修复只做必要直接验证，不扩独审门或冗余测试。

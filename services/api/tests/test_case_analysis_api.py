@@ -369,6 +369,92 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.lake.assert_not_awaited()
         self.assertTrue(any(item.kind == "case_analysis_result" for item in self.artifacts))
 
+    async def test_live_main_failures_reach_correction_with_original_usage_and_rows(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031/live-r3/results"
+        for index, name in enumerate(("office-powershell", "network-positive-reuse")):
+            with self.subTest(case=name):
+                steps = sorted([json.loads(path.read_text(encoding="utf-8"))
+                                for path in root.glob(f"*-{name}-main-step-*.response.txt")], key=lambda step: step["seq"])
+                context = steps[0]["data"]
+                original_context = analysis.encoded(context)
+                replies = [step["data"] for step in steps if "response" in step["data"]]
+                original_requests = [step["data"] for step in steps if "messages" in step["data"]]
+                tool_results = [step["data"]["evidence"] for step in steps if "model_message" in step["data"]]
+                request = analysis.CaseAnalysisRequest.model_validate_json(
+                    next(root.glob(f"*-{name}-main.body.json")).read_text(encoding="utf-8"))
+                run = InvestigationRun(id=UUID(int=810 + index), tenant_id=TENANT, case_id=context["case_id"],
+                                       raw_alert={"scope": {}}, total_tokens=0, iterations=0)
+                self.runs[run.id] = run
+                self.messages.clear()
+                conclusion = {"summary": "已核对来源与查询，攻击性质仍待证实。",
+                    "findings": [{"text": "已提供告警陈述与窗口内查询结果", "evidence_ids": ["A1", "E1", "E2"]}],
+                    "counterevidence": [], "gaps": ["材料不能证明攻击性质"], "recommendations": [],
+                    "member_assessments": [{"alert_id": item["data"]["alert_id"], "status": "addressed",
+                        "role": "background", "summary": "来源陈述已核对，不能独立证明攻击",
+                        "evidence_ids": [item["evidence_id"]]} for item in context["evidence"] if item["kind"] == "alert"]}
+
+                def provider(http_request):
+                    body = json.loads(http_request.content)
+                    self.messages.append(body)
+                    turn = len(self.messages) - 1
+                    if turn < len(replies):
+                        reply = replies[turn]
+                    else:
+                        reply = {"response": {"content": json.dumps(conclusion)},
+                                 "usage": {"prompt_tokens": 100, "completion_tokens": 50}}
+                    return httpx.Response(200, json={"choices": [{"message": reply["response"],
+                        "finish_reason": "tool_calls" if reply["response"].get("tool_calls") else "stop"}],
+                        "usage": reply["usage"]})
+
+                dispatched = []
+                async def tool(name, arguments):
+                    recorded = tool_results[len(dispatched)]
+                    self.assertEqual((name, arguments), (recorded["tool"], recorded["arguments"]))
+                    dispatched.append(name)
+                    return {key: value for key, value in recorded.items()
+                            if key not in {"evidence_id", "kind", "tool", "arguments"}}
+
+                client_type = type(self.client)
+                with patch.object(tools.CaseTools, "execute", side_effect=tool), patch.object(models.httpx, "AsyncClient",
+                        side_effect=lambda **kwargs: client_type(transport=httpx.MockTransport(provider), **kwargs)):
+                    outcome = await analysis.CaseAnalysis(self.db, run, context, request).execute()
+                self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
+                self.assertEqual(len(self.messages), len(replies) + 1)
+                for current, original in zip(self.messages, original_requests):
+                    # Frozen ledger JSON sorts object keys; Tool content keeps its
+                    # native JSON string. Compare its full parsed value, not key order.
+                    normalize = lambda message: {**message, "content": json.loads(message["content"])} \
+                        if message["role"] == "tool" else message
+                    self.assertEqual(list(map(normalize, current["messages"])),
+                                     list(map(normalize, original["messages"])))
+                self.assertEqual(len(dispatched), 2)
+                self.lake.assert_not_awaited()
+                known = sum(reply["usage"]["prompt_tokens"] + reply["usage"]["completion_tokens"] for reply in replies)
+                self.assertEqual(outcome["result"]["usage"]["known_tokens"], known + 150)
+                correction = self.messages[-1]
+                self.assertNotIn("tools", correction)
+                required = sum(len(analysis.encoded(value).encode()) for value in
+                    (correction["messages"], [], correction["response_format"])) + models.MAX_OUTPUT_TOKENS + 256
+                self.assertLessEqual(required, analysis.LIMITS["tokens"] - known)
+                print(f"r3 frozen {name}: correction required={required}, remaining={24000-known}")
+                view = json.loads(correction["messages"][1]["content"])
+                for original in tool_results:
+                    visible = next(item for item in view["evidence"] if item["evidence_id"] == original["evidence_id"])
+                    filtered = json.loads(tools.model_result(original))
+                    for key in ("rows", "available", "query_status", "returned_count", "truncated", "arguments", "limitation"):
+                        self.assertEqual(visible[key], filtered[key])
+                    self.assertEqual(visible["query_scope"], {"same_as_case": True})
+                    saved = next(item for item in outcome["result"]["evidence"] if item["evidence_id"] == original["evidence_id"])
+                    self.assertEqual(saved, original)
+                expected_view = analysis.model_context(context)
+                for visible, expected in zip(sources.source_fields(view), sources.source_fields(expected_view)):
+                    self.assertEqual(visible["text"], expected["text"])
+                    self.assertEqual(visible["status"], expected["status"])
+                    for key, default in view["source_field_defaults"].items():
+                        self.assertEqual(visible.get(key, default), expected[key])
+                self.assertEqual(analysis.encoded(context), original_context)
+                self.assertEqual((await self.client.get(outcome["result_url"])).json()["result"], outcome["result"])
+
     async def test_followup_new_sources_required_reuse_and_correction_together(self):
         self.alert.description = "来源描述：脚本活动，尚无独立印证"
         self.alert.raw_event = {"full_log": "PowerShell command line", "approval_status": "unknown"}

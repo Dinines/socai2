@@ -1,3 +1,5 @@
+**实际执行补充：** [r3共享回执](../../../docs/operations/investigation-audit-live-r3-20261031.json)记录部署、3主Run/2未发追加、原失败及临时Key清理。随后纠错材料修复6项直接验证通过，真实模型调用0；不将以下原本地通过或独审解释为最新真实完整验收。任务15/17，不归档。
+
 # 实施阶段校验（2026-10-31）
 
 用户“推进执行”后，本地实现与必要直接验证已执行，不能再沿规划阶段validation.md的“未测试/未实现”解释当前工作区。完整范围、失败、当前版本和未完成事项见[实施记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)及[机器回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。

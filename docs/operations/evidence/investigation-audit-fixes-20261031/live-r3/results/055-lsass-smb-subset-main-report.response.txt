@@ -1,0 +1,50 @@
+# Case调查报告 623b13e4-7b9e-4de2-8148-c91ff73299a3
+
+经检索，告警事件时间窗口内 DEMO-APP-12 无 network_connections 或 process_activity 记录。告警依据存疑，HS 判断缺失必要过程证据，需进一步排查主机本地日志或代理数据。暂无成员间关联依据。
+
+## 发现与依据
+- 过程提示行诊断 (diagtool.exe) 读取 LSASS 内存的告警 (证据A1) 未得到网络或进程列表数据的验证 (E1,E2)。告警主张为真实阳性，但缺乏授权、业务历史及检出凭据的佐证。（依据：[A1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/A1), [E1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E1), [E2](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E2)）
+
+## 成员覆盖与判断
+选定1条，读取1条；给出判断0条，尚未明确1条，未逐项分析0条，材料不可读0条。
+给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。
+- c929a0c7-69b5-5617-b830-a701e8bae72f [unresolved/undetermined]：告警未获实据支持，转折未证实，依赖验证。（依据：[A1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/A1), [E1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E1), [E2](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E2)）
+
+## 跨告警关联依据
+共同实体或时间接近不等于因果关系。
+未给出明确关联条目，不代表已证明全部成员互不相关。
+
+## 来源时间线
+按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。
+- 2026-10-25T03:31:35.661133+00:00 [告警时间]：进程读取LSASS内存 [DEMO-APP-12]（依据：[A1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/A1)；来源记录：见原告警；候选成员：c929a0c7-69b5-5617-b830-a701e8bae72f）
+
+## 未决问题
+- diagtool.exe 是恶意工具还是内部诊断工具？（成员：c929a0c7-69b5-5617-b830-a701e8bae72f；依据：[A1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/A1), [E1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E1), [E2](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E2)） 缺少：文件哈希、所属者、业务用途、父进程链、主机日志。；建议：调取主机本地日志或关联 EDR 行为数据验证进程身份。
+
+## 反证
+
+## 未解问题与限制
+- 无法确认 diagtool.exe 是否由所有者或授权人员运行。缺失父进程链和进程列表证据。需要调取主机本地日志、审计记录、代理数据或主机管理系统中的进程列表和健康信息以确认文件哈希、启动参数及执行者身份。
+- 无法排除合法安全扫描或合规扫描的可能性。缺失扫描审批记录、扫描作业配置、预期文件签名验证信息。
+- 无法确认内存读取是否伴随凭据偷取。缺失文件操作日志、网络上传流量、内存转储文件等证据。
+- 部分历史告警摘要仅提供前600字符，未核对完整摘要。
+- 成员c929a0c7-69b5-5617-b830-a701e8bae72f：告警未获实据支持，转折未证实，依赖验证。
+- 未决问题：diagtool.exe 是恶意工具还是内部诊断工具？
+
+## 建议
+- 对诊断工具 diagtool.exe 进行文件完整性验证及哈希指纹比对。
+- 审查 demo.ops 账户的业务权限和近期活动记录。
+- 检索基础架构邮件、工单系统、IT 运营记录，核查是否有授权扫描安排。
+- 检查主机代理日志或 EDR 也有详细 logs 是否记录了该进程的完整生命周期。
+
+## 本次范围
+Case：623b13e4-7b9e-4de2-8148-c91ff73299a3
+时间：2026-10-25T03:28:00+00:00 至 2026-10-25T03:37:00+00:00（不含结束时刻）
+选定成员：c929a0c7-69b5-5617-b830-a701e8bae72f
+停止原因：analysis_complete
+
+## 证据索引
+- [A1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/A1)：告警c929a0c7-69b5-5617-b830-a701e8bae72f，来源事件=91105054-7152-5c4f-937b-d05f2f1d0fc7
+- [T1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/T1)：分诊记录9184c1b9-e816-48a2-8ed1-708c439e980c（分诊判断）
+- [E1](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E1)：process_activity，来源可用=True，记录ID=无
+- [E2](/api/v2/investigation/cases/623b13e4-7b9e-4de2-8148-c91ff73299a3/investigations/0a47b8af-81e0-516d-84f5-9fb0ac21a084/evidence/E2)：network_connections，来源可用=True，记录ID=无

@@ -1,3 +1,9 @@
+**2026-10-31 最新功能进展：** [r3实际回执](docs/operations/investigation-audit-live-r3-20261031.json)：部署完成，固定批次3主Run中1完成/partial、2因纠错预算失败，2追加未发；8模型、6湖查询、29824已知tokens。已本地修复超预算纠错输入，6项直接验证通过，未追加真实调用或部署该新修复。两个change共享此回执，当前15/17，不归档。
+
+用户要求后续聚焦功能、减少额外设计。两个原租户的一年全API权限开发Key已按新授权创建，远端私有保存并验证4次GET/200；见[无明文凭据回执](docs/operations/evidence/investigation-audit-fixes-20261031/live-r3/dev-credentials/receipt.json)。下方记录均为此前阶段。
+
+**2026-10-31 r3实际执行授权已确认：** 用户对限定更新及固定5个Run复验确认后再次要求继续；[执行前提回执](docs/operations/evidence/investigation-audit-fixes-20261031/authorized-preflight-20261031.json)记录新SSH连接超时和本机默认路由。授权已落实，剩余条件是目标连通性及既有身份核实，不再重复请求部署许可。本轮0远端命令/部署/业务调用，任务仍14/17，复用31项和结束独审。
+
 **2026-10-31 调查本地交付继续完成：** 源码commit `bb8dbc3`；[结束独审](openspec/changes/fix-investigation-audit-gaps/audit.md)0必须修，复用31项直接结果且未重跑。[提交/候选绑定](docs/operations/evidence/investigation-audit-fixes-20261031/source-commit-attestation.json)核476文件内容一致（440仅换行差异）；[5份限定复验请求](openspec/changes/fix-investigation-audit-gaps/retest/plan.json)已固定但未发送。任务14/17，21只读SSH连接超时；真实更新/复验、共享回执与归档完成条件待办。无部署或远端推送。
 
 **2026-10-31 调查审计问题本地实施：** [执行记录](docs/investigation/audit-fixes-implementation-20261031.md)及[回执](docs/operations/investigation-audit-fixes-20261031.json)记录A01/A02/D01修复、9个新增必要直接用例及最终31个不同用例通过。Office新材料与纠错组合16929/17018、余89，保旧报告；r3候选仅本地准备，独立复审/新commit/实际更新与复验待做。OpenSpec按实绩勾选12/17，不提前归档或核销旧任务。

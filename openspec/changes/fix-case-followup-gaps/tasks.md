@@ -1,3 +1,5 @@
+**当前实际结果：** [r3共享回执](../../../docs/operations/investigation-audit-live-r3-20261031.json)记录部署完成，但Office和网络主Run预算失败导致两追加未发，因此最后真实追加任务继续待办。随后纠错修复6项本地直接验证通过，尚未部署，不据此归档。下方为原阶段记录。
+
 2026-10-31执行补充：[审计修复实施](../../../docs/investigation/audit-fixes-implementation-20261031.md)已完成包含新材料的组合验证，Office纠错16929/17018，原报告保持；required/reuse/correction组合通过。当前候选tag为20261031-r3，未部署；下列最后任务继续待办，不以新本地数字替代真实模型复验。
 
 - [x] Implement compact follow-up model view and recorded-budget reconstruction.

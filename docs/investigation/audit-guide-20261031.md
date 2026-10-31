@@ -1,25 +1,27 @@
+**当前结论：** r3已部署但真实复验部分失败；新纠错修复仅本地6项通过。长期开发Key已配置，访问位置见[常驻入口](resident-api-20261028.md)。
+
 # 调查模块最新指南与审计入口
 
-更新日期：2026-10-31。当前业务源码已保存为本地commit `bb8dbc3`（起始基线`5b95138`）；具体版本以[实施回执](../operations/investigation-audit-fixes-20261031.json)的源码SHA256为准。深入调查统一在Case内执行，事件负责汇总、AI概况及已有调查结果展示。
+更新日期：2026-10-31。r3业务源码已保存为本地commit `bb8dbc3`（起始基线`5b95138`），工作区另含本轮纠错视图修复；具体版本以[实施回执](../operations/investigation-audit-fixes-20261031.json)的源码SHA256为准。深入调查统一在Case内执行，事件负责汇总、AI概况及已有调查结果展示。
 
-当前功能已具备成员转Case、范围预览、主调查、追加问题、报告和证据读取。最近一批真实HTTP测试仍有追加调查及报告语义缺口；后续修复已在本地完成必要直接验证，尚无修复版本常驻替换和真实复验完成记录。
+当前功能已具备成员转Case、范围预览、主调查、追加问题、报告和证据读取。r3已常驻部署，最新3主Run中1完成/partial、2因纠错预算失败，2追加未发。随后本地纠错修复通过6项直接验证，尚未更新到线上。
 
-**详细审计已完成：** [设计—实现—测试证据完整报告](design-implementation-audit-20261031.md)。静态核对确认两项功能缺陷：进程Tool未按事件类别筛选、失败保旧Case概况时来源模式与权限/提交顺序不一致；另有告警正文未进入Case材料的设计缺口。文档输出上限及主设计现行提示已校正；后续用户要求推进执行，三项业务问题已[本地修复并验证](audit-fixes-implementation-20261031.md)，真实版本复验仍待。范围、文件哈希、路由和既有证据核对见[机器清单](../operations/investigation-static-audit-20261031.json)。
+**详细审计已完成：** [设计—实现—测试证据完整报告](design-implementation-audit-20261031.md)。静态核对确认两项功能缺陷：进程Tool未按事件类别筛选、失败保旧Case概况时来源模式与权限/提交顺序不一致；另有告警正文未进入Case材料的设计缺口。文档输出上限及主设计现行提示已校正；后续用户要求推进执行，三项业务问题已[本地修复并验证](audit-fixes-implementation-20261031.md)，r3真实结果及新本地修复见下方回执。范围、文件哈希、路由和既有证据核对见[机器清单](../operations/investigation-static-audit-20261031.json)。
 
 ## 1 基线与验证状态
 
-审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。本地实现/验证、提交交付与[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)已完成14/17；真实复验与归档完成条件仍待，21只读连接超时；不把本地完成当作部署完成。
+审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。本地r3实现/验证与[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)完成后已部署。任务15/17；[真实批次及本地纠错修复回执](../operations/investigation-audit-live-r3-20261031.json)与旧追加change共享，业务目标尚未全部满足，不归档。
 
 | 对象 | 最新可确认状态 | 依据 |
 | --- | --- | --- |
 | 本地代码与测试源码 | `bb8dbc3`，含A01/A02/D01及组合预算修复；源码hash见实施回执 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
 | 最新本地直接验证 | 31个不同用例最终通过；Office当前执行器纠错16929≤17018，余89；模型HTTP替身 | [实施记录](audit-fixes-implementation-20261031.md)、[原日志](../operations/evidence/investigation-audit-fixes-20261031/case-final.txt) |
 | 最近真实四案例测试 | 源码`512c004`，批次`INVHTTP-20261028-01`；207次HTTP、111项检查、3项失败，2/4案例自动流程通过 | [总报告](multi-case-http-20261028.md)、[机器汇总](../operations/investigation-multi-case-summary-20261028.json) |
-| 最近留存的常驻版本 | `socai2-investigation-api:20261028-r1`，21本机18010；r3候选包/Compose/安装脚本仅本地准备，镜像未构建 | [常驻入口](resident-api-20261028.md)、[部署清单](../operations/investigation-api-resident-20261028.json) |
+| 最新常驻版本 | 21本机18010，20261031-r3，472份应用源码hash已核；随后本地纠错修复尚未部署 | [实际回执](../operations/investigation-audit-live-r3-20261031.json) |
 | 数据库功能表 | 迁移120/121已在10月28日记录安装，登记134→136 | [事件转Case联调](incident-case-basic-flow-20261028.md) |
 | 文档更新 | 10月29日补充四案例业务解释；10月31日对齐当前入口和接口合同 | [文档目录](evidence-catalog-20261027.md) |
 
-文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。6项通过是已有验证记录，额度重建没有新模型调用。常驻状态依据留存回执，本次未重新连接远端确认。工作区原有未提交文档修改继续保留。
+文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。6项通过是已有验证记录，额度重建没有新模型调用。本轮已通过SSH核实r3在线状态及批次结束后账本；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
 
 ## 2 当前功能范围
 
@@ -28,10 +30,10 @@
 | F1 事件成员与分诊汇总 | 读取canonical成员、已存分诊和当前处置；真实HTTP覆盖 | 成员状态不自动决定事件关闭 |
 | F2 AI概况 | 首次任务代码、手动刷新、失败保旧文、变化标旧；手动引用Case报告已真实联调 | 首次worker未启用；普通GET不生成概况，新Run不自动改写旧文 |
 | F4 成员转Case | 从告警或事件创建/关联Case、读取关联和历史；真实PG及HTTP覆盖 | 建案成功不代表调查已执行；自动建案政策/F5不在当前目标 |
-| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 四案例主调查均completed/partial；追加与报告质量未全部通过 |
+| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 旧r1四案例主调查completed/partial；最新r3为1 completed/partial、2 failed/partial，追加未覆盖 |
 | 多成员与公共读取 | 成员覆盖、关系、时间线、未决问题、executions及证据/来源行导航已有代码及真实案例读取 | 编号合法不等于结论语义正确，未选成员不能计入Run覆盖 |
 | 产品主机Tool | `product_host_details`已接通来源连接器和CrowdStrike主机快照，替身验证通过 | 真实厂商账号/HTTP与模型使用该Tool未验证；当前快照不证明历史状态 |
-| 最新追加修复 | `required_tools`、精简模型材料和`query_status`已在本地实现并做受影响直接验证 | 最近真实r1批次不包含这些修复；提示词改进不证明语义问题已消失 |
+| 最新追加修复 | `required_tools`、精简模型材料和`query_status`已在本地实现并做受影响直接验证 | r3已包含这些修复，但本轮主Run预算失败阻断两追加；语义质量仍按实际结果判断 |
 
 F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动作及用户JWT/RBAC专项均不由上述结果证明。旧fixed/program的真实回执只解释各自路径，不能替代Case证据；旧OpenSpec 2.2/2.3仍按其原范围保留未完成。
 
@@ -47,7 +49,7 @@ F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动�
 6. **按需追加问题。** 新key和`previous_run_id`创建新Run；成员集合与窗口须和前次相同，旧报告保留。`refresh_queries=true`禁止历史查询复用；它本身不要求模型一定调用Tool。
 7. **按需刷新事件概况。** 手动`overview/refresh?include_investigations=true`引用已有Case报告摘要；这是单独的摘要调用，不重新深入调查。
 
-最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口，最近留存的r1版本也不支持；后续调用须先核实服务版本。
+最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口；当前r3已支持，旧r1不支持。
 
 ## 4 推荐阅读顺序
 

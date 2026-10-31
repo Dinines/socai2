@@ -1,3 +1,7 @@
+**2026-10-31 当前入口：** 21调查API已更新20261031-r3，监听127.0.0.1:18010；[实际批次回执](../operations/investigation-audit-live-r3-20261031.json)。后续本地纠错修复尚未部署。
+
+开发凭据已按用户明确全权限授权保存于21的`/opt/sting-aisoc-socai2/private/investigation-dev-keys.json`，root拥有、0600，目录0700；JSON按tenant UUID映射Bearer。两个原租户分别为53824f24-d1d4-5820-8147-f6cfda8a1247（专用fixture）和f6a5c700-69b8-44fc-8238-609362fb1a9f（stingAISOC Production，含演示Case），scopes为`["*"]`，2027-10-31T05:43:45Z到期。经既有SSH在远端读取所需租户的值到AISOC_API_TOKEN，仅调用既有scripts/investigation_client.py；不打印Key，不将明文复制到本地/仓库。已验证两租户各Case读取及调查历史GET均200；未用新Key发起调查。原批次临时Key已停用，长期Key独立保留。
+
 **2026-10-31版本说明：** 以下描述最近留存的r1部署回执，本次未重新连接21确认。当前仓库Compose/安装脚本已准备20261031-r3，包含追加修复及审计问题修复，见[实施记录](audit-fixes-implementation-20261031.md)；[任务记录](../../openspec/changes/fix-case-followup-gaps/tasks.md)仍将常驻替换和真实复验列为待做。因此下文源码链接是当前文件，不代表已运行r3。业务和审计入口见[最新指南](audit-guide-20261031.md)。
 
 # 独立调查API与调用方接入（2026-10-28）

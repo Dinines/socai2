@@ -1,8 +1,10 @@
-# r3定向真实复验：执行前材料
+# r3定向真实复验：已结束
 
-本目录只固定请求，**未执行**。[plan.json](plan.json)记录最多5个新Run、两租户、固定operation_key、已有Case及范围。预计Run ID由现有服务端公式计算，仅供失联后定位；不代表Run已创建。请求均通过当前CaseAnalysisRequest静态校验，来源是原r1批次请求；网络主Run和追加显式要求network_connections，追加指向本批主Run。
+固定最多5请求的批次已执行，3主Run中LSASS完成/partial，Office和网络因纠错预算失败；两追加按前提规则未发送。原临时Key已禁用并验证401、明文删除。完整[共享回执](../../../../docs/operations/investigation-audit-live-r3-20261031.json)和原请求/响应保持；禁止重复本批POST或换key补跑。
 
-当前测试身份条件：原批临时Key已停用；需要两租户各自现有、仍有效且权限足够的Bearer。检查只记录身份/租户/权限结果，不把token写进命令或公开回执。本计划不授权创建新Key、角色、用户或恢复权限专项。
+随后用户明确要求长期全权限开发Key，已独立创建并保存在21私有文件；见[开发凭据回执](../../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r3/dev-credentials/receipt.json)。这不改变本批固定请求、原失败或次数。新纠错修复仅本地验证，后续功能复验须使用新的具体范围。
+
+以下为当时执行方案，身份限制已由[临时Key授权](credential-authorization.json)覆盖；历史“待执行”不代表当前状态。
 
 ## 更新前与执行顺序
 
