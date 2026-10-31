@@ -1,3 +1,5 @@
+**当前交付（r7）：** 源码`f19cc70`已上线，模型source_alignment及程序生成的query_sources把复用、历史Run和精确行—告警对应显式化，旧来源/报告保持。30项直接用例首轮29过1额度失败，精简重复指令后3项定向复核通过，其余27项复用。唯一真实网络追加failed/partial，未取得合格结论；原回答与两次校验失败保留。见[最新回执](../operations/investigation-source-alignment-20261031.json)，当前16/17，不归档。下文r6及以前均为阶段记录。
+
 **当前交付（r6）：** 源码`7330a7c`已上线；窄协议名校验、可读成员完整性和HTTPX紧凑JSON额度核算完成，29项受影响直接验证通过。一次网络追加真实完成partial，两个成员均有判断，无HTTPS/TLS/SSL结论；一次历史复用、父报告字节保持，见[最新回执](../operations/investigation-network-report-fix-20261031.json)。新报告仍误述复用、历史与行归属；当前16/17、不归档。以下各阶段数字只适用于当时版本。
 
 **r5阶段交付：** r5已部署，源码`3324fea`；[后续功能回执](../operations/investigation-functional-followup-20261031.json)记录r4四Run及r5两追加均完成partial。原预算内真实纠错、指定Tool和复用、父报告字节保持已验；新来源提示词6项直接测试通过。网络报告仍有HTTPS推断和遗漏成员判断，保留为报告质量未过，不能把完成状态当作语义正确。下方为原阶段记录。

@@ -1,3 +1,5 @@
+**r7当前验证：** source_alignment/query_sources和来源段已实现并上线；30项受影响直接用例首轮29过1额度失败，压缩重复提示后只复核3项全过，其他27项通过复用。唯一真实Run failed/partial，3模型/1复用/0新湖查询/11341 tokens；两次校验错误为json_invalid及unobserved_application_protocol_use_gaps。23HTTP/48原件hash核，原报告不变，失败原答未被采纳。见[回执](../../../docs/operations/investigation-source-alignment-20261031.json)；16/17，不归档。
+
 **r6当前验证：** 29项受影响直接用例通过，包含r5实际错误内容与r4缓存行的选定重放、一次纠错及不可修正遗漏停止；不是完整r5调用重演。源码7330a7c，21部署及472源码核对完成。真实网络追加1 Run完成partial，3模型、1复用、0新湖查询、12780 tokens，22HTTP/46原件hash核，原报告字节保持。两项修复已验证，完整语义仍有历史复用、H1和行归属错误；见[回执](../../../docs/operations/investigation-network-report-fix-20261031.json)。当前16/17，不归档。r6更新后OpenSpec严格校验exit0；新增/修改Markdown行的链接与候选479文件hash均核对，见[静态记录](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r6/static-checks.json)。
 
 **后续实际功能验证：** r4/r5的[同一汇总回执](../../../docs/operations/investigation-functional-followup-20261031.json)覆盖6 Run、16模型、2新湖查询和4复用；均completed/partial，历史原件不改。r5源码3324fea，提示词修正后6项受影响直接测试通过。语义质量仍部分失败，当前16/17，不归档。

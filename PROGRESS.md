@@ -1,3 +1,5 @@
+**2026-10-31 r7来源交付：** 源码`f19cc70`已上线，程序明确展示复用来源和逐条告警匹配；30项受影响用例经一次额度修正及3项定向复核最终有通过证据。唯一真实网络追加为failed/partial：模型已识别复用及前两行对应，但纠错仍触发协议字段规则，历史判断/未匹配语义仍有偏差。3模型、1复用、0新湖查询、11341 tokens；旧报告不变。见[最新回执](docs/operations/investigation-source-alignment-20261031.json)；16/17、不归档、不重复本批。
+
 **2026-10-31 r6功能交付：** 网络协议推断及成员遗漏已修复并上线，源码`7330a7c`；29项受影响直接验证通过。仅一次真实网络追加completed/partial，两个成员均有判断，报告保留TCP/443；3模型、1历史复用、0新湖查询、12780已知tokens，父报告保持。报告仍有历史复用误称新查、误述H1及行归属错误，不能称完整语义通过。见[最新回执](docs/operations/investigation-network-report-fix-20261031.json)，OpenSpec仍16/17、不归档；开发Key保持有效。
 
 **2026-10-31 功能继续交付：** r5已上线，源码`3324fea`。本轮6个真实Run均完成并保留partial，预算纠错、原生Tool、历史复用及原报告保持已验证；16模型、2新湖查询、4复用、65209已知tokens。Office无源标签改善，网络报告仍存在TCP/443写成HTTPS、漏成员判断等质量问题；完整业务验收保持未完成。见[共享回执](docs/operations/investigation-functional-followup-20261031.json)。旧追加change5/5，当前审计change16/17，不归档；开发Key持续可用。

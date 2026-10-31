@@ -1,5 +1,7 @@
 # Case多告警综合分析：成员、关联、时间线与未决问题
 
+**2026-10-31 r7来源说明：** 新报告由程序追加`query_sources`数组，每项含evidence_id、origin（historical_reuse/current_tool_result）、reused_from；匹配历史Run时另含already_in_history。可用事件湖结果另有与rows逐项对应的row_alert_refs，只按event_id和Alert.source_event_ids精确匹配，空数组不证明无关；同主机候选时间线不能替代这种对应。Markdown的“查询来源与成员对应”由同一数据生成。模型收到source_alignment，裁剪行时同步裁剪对应数组；H1原摘要、原始Tool行和旧报告不改。新H1模型视图省略query_sources派生表，完整历史仍保存。这些字段不替代模型文字的实际内容审阅。
+
 **2026-10-31 r6更新：** 可读选定成员必须逐项判断并引用自身A材料；遗漏会进入原有一次纠错，未修正则failed/partial，不再以completed接受遗漏。模型最终schema限定可读成员及数组数量，重复/缺失仍由程序校验。不可读成员继续source_unavailable，失败报告可保留not_assessed；旧报告不重写。29项受影响直接验证通过，真实网络追加两成员均unresolved、遗漏0，见[回执](../operations/investigation-network-report-fix-20261031.json)。下文10月28日允许遗漏后完成的行为已被本条覆盖。
 
 存在network_connections证据时，摘要、发现、成员说明、关系依据中的HTTPS/TLS/SSL名称必须在可用网络行的protocol字段中出现；端口443不能提供此依据。该保守规则把未核实协议名称放在gaps/open_questions中，不自动改写模型结论。它只检查上述协议名和字段，不能证明全部文字、关联或历史解释正确。

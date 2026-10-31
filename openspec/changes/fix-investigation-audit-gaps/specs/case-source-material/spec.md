@@ -1,5 +1,16 @@
 ## ADDED Requirements
 
+### Requirement: Tool provenance and exact member source matches remain explicit
+程序 SHALL 为Tool模型视图及新报告生成来源说明：区分historical_reuse与current_tool_result，并仅在reused_from.run_id与历史材料Run一致时标明already_in_history。事件湖行 SHALL 按event_id与可读选定告警source_event_ids的精确相等生成row_alert_refs，不以同主机或标题猜测对应。报告query_sources及Markdown显示这些确定信息，不将它们当作模型语义正确的证明。
+
+#### Scenario: A followup reuses a previous result
+- **WHEN** Tool返回来自H1对应Run的缓存结果
+- **THEN** 模型与报告显示历史复用、原Run及该历史已持有同一结果；原始行、H1摘要和旧报告保持，不描述为独立的新查询证据
+
+#### Scenario: Only two of three rows match selected alert source IDs
+- **WHEN** 前两行event_id分别对应A1/A2，第三行不在所选告警source_event_ids中
+- **THEN** 对应列表为A1、A2和空项；空项只表示未匹配，不证明无关。模型裁剪行时同步裁剪对应列表，完整报告仍按已保存行生成
+
 ### Requirement: Network conclusion fields and readable member coverage are checked
 新的Case结论 SHALL 对每个可读选定成员提供且只提供一条引用自身A材料的判断。当存在network_connections证据时，摘要、发现、成员说明及关系依据中的HTTPS/TLS/SSL名称 MUST 来自可用网络行的protocol字段；未核实协议名称放在gaps或open_questions。本规则不证明其他语义正确，不改写旧Run。
 

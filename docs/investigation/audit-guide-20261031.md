@@ -1,25 +1,25 @@
 # 调查模块最新指南与审计入口
 
-更新日期：2026-10-31。当前线上r6，业务源码`7330a7c`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
+更新日期：2026-10-31。当前线上r7，业务源码`f19cc70`，21本机18010；472应用源码hash已核。调查统一在Case，事件负责汇总和概况。
 
-[最新r6功能回执](../operations/investigation-network-report-fix-20261031.json)：协议推断及成员遗漏已修复，29项受影响直接验证通过；一次真实网络追加completed/partial，TCP/443未被写成HTTPS，两个成员均有引用判断。3模型、1历史复用、0新湖查询，父报告不变。报告仍把历史复用说成新查、误述H1已知网络记录及行归属，完整语义验收未过。[r4/r5六Run原回执](../operations/investigation-functional-followup-20261031.json)保留。
+[最新r7功能回执](../operations/investigation-source-alignment-20261031.json)：查询来源与逐条告警对应已由程序明确展示，并传入模型。唯一真实追加为failed/partial：首答JSON围栏无效，一次纠错后正确识别历史复用，但仍把未核实协议写进结论而被拒；历史判断、未匹配含义及混杂语言仍有问题。3模型、1复用、0新湖查询；父报告保持，未采纳不合格模型结论。[r6回执](../operations/investigation-network-report-fix-20261031.json)保留。
 
 **详细审计已完成：** [设计—实现—测试证据完整报告](design-implementation-audit-20261031.md)。静态核对确认两项功能缺陷：进程Tool未按事件类别筛选、失败保旧Case概况时来源模式与权限/提交顺序不一致；另有告警正文未进入Case材料的设计缺口。文档输出上限及主设计现行提示已校正；后续用户要求推进执行，三项业务问题已[实现并验证](audit-fixes-implementation-20261031.md)，之后的r3失败、r4流程通过与r5质量局限分别保留。范围、文件哈希、路由和既有证据核对见[机器清单](../operations/investigation-static-audit-20261031.json)。
 
 ## 1 基线与验证状态
 
-审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。r3原实现及一次[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)之后，r4/r5完成受影响功能验证；r6又修复并复验协议与成员覆盖；当前审计change16/17、旧追加change5/5，完整报告质量与归档条件仍待。未新增逐层审计门或测试框架。
+审计后实施顺序已落入 [OpenSpec提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[详细设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)和[任务表](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)：先修进程类型及概况失败路径，再补原始材料，最后组合验证已有追加修复。r3原实现及一次[独立复审](../../openspec/changes/fix-investigation-audit-gaps/audit.md)之后，r4/r5完成受影响功能验证；r6修复并复验协议与成员覆盖；r7交付来源标注但真实结论未通过；当前审计change16/17、旧追加change5/5，完整报告质量与归档条件仍待。未新增逐层审计门或测试框架。
 
 | 对象 | 最新可确认状态 | 依据 |
 | --- | --- | --- |
-| 当前代码与测试源码 | `7330a7c`，含A01/A02/D01、紧凑纠错、协议与成员覆盖校验；实际线上r6 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
-| 最新本地直接验证 | r6受影响Case/synthesis/product/navigation共29项通过；冻结r5内容重放不是新真实模型 | [最新日志](../operations/evidence/investigation-audit-fixes-20261031/live-r6/direct-tests.txt) |
+| 当前代码与测试源码 | `f19cc70`，含前述修复及来源标注/程序报告展示；实际线上r7 | [修复设计](../../openspec/changes/fix-case-followup-gaps/design.md)、[测试源码](../../services/api/tests/test_case_analysis_api.py) |
+| 最新本地直接验证 | r7受影响30项首轮29过1额度失败；缩短重复提示后3项定向通过，复用其他27项；替身重放不证明模型质量 | [最新日志](../operations/evidence/investigation-audit-fixes-20261031/live-r7/final-targeted-tests.txt) |
 | 最近真实四案例测试 | 源码`512c004`，批次`INVHTTP-20261028-01`；207次HTTP、111项检查、3项失败，2/4案例自动流程通过 | [总报告](multi-case-http-20261028.md)、[机器汇总](../operations/investigation-multi-case-summary-20261028.json) |
-| 最新常驻版本与真实验证 | 20261031-r6；新网络追加1 Run完成partial，3模型/0新湖查询/1复用；两成员有判断，剩余质量局限如上 | [实际回执](../operations/investigation-network-report-fix-20261031.json) |
+| 最新常驻版本与真实验证 | 20261031-r7；唯一网络追加failed/partial，3模型/0新湖查询/1复用；不合格原答未成为最终结论 | [实际回执](../operations/investigation-source-alignment-20261031.json) |
 | 数据库功能表 | 迁移120/121已在10月28日记录安装，登记134→136 | [事件转Case联调](incident-case-basic-flow-20261028.md) |
 | 文档更新 | 10月29日补充四案例业务解释；10月31日对齐当前入口和接口合同 | [文档目录](evidence-catalog-20261027.md) |
 
-文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前29项测试与这一次真实模型结果分列。本轮已通过SSH核实r6在线状态及批次结束后账本；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
+文件名含20261028的本地修复回执随10月29日提交保存，不能仅凭文件名判断先后。原6项为旧验证记录；当前30项直接用例最终证据与这一次真实失败分列。本轮已通过SSH核实r7在线状态及批次结束后账本；旧四案例行仍保留历史结果。工作区原有未提交文档修改继续保留。
 
 ## 2 当前功能范围
 
@@ -28,7 +28,7 @@
 | F1 事件成员与分诊汇总 | 读取canonical成员、已存分诊和当前处置；真实HTTP覆盖 | 成员状态不自动决定事件关闭 |
 | F2 AI概况 | 首次任务代码、手动刷新、失败保旧文、变化标旧；手动引用Case报告已真实联调 | 首次worker未启用；普通GET不生成概况，新Run不自动改写旧文 |
 | F4 成员转Case | 从告警或事件创建/关联Case、读取关联和历史；真实PG及HTTP覆盖 | 建案成功不代表调查已执行；自动建案政策/F5不在当前目标 |
-| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 旧r1四案例主调查completed/partial；r3曾2 failed/partial；后续r4/r5六Run和r6一次追加completed/partial，报告质量仍有限 |
+| F3 Case调查 | 预览、主分析、按需Tool查询、步骤与证据、报告下载、历史及追加问题已有代码；主流程有真实PG/模型/事件湖/HTTP证据 | 旧r1四案例主调查completed/partial；r3曾2 failed/partial；后续r4/r5六Run和r6一次追加completed/partial；r7唯一追加failed/partial，报告质量仍有限 |
 | 多成员与公共读取 | 成员覆盖、关系、时间线、未决问题、executions及证据/来源行导航已有代码及真实案例读取 | r6要求可读成员逐项判断；编号合法不等于结论语义正确，未选成员不能计入Run覆盖 |
 | 产品主机Tool | `product_host_details`已接通来源连接器和CrowdStrike主机快照，替身验证通过 | 真实厂商账号/HTTP与模型使用该Tool未验证；当前快照不证明历史状态 |
 | 最新追加修复 | `required_tools`、精简模型材料和`query_status`已在本地实现并做受影响直接验证 | r4/r5已真实覆盖追加、指定Tool及复用；语义质量仍未完整通过 |
@@ -47,7 +47,7 @@ F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动�
 6. **按需追加问题。** 新key和`previous_run_id`创建新Run；成员集合与窗口须和前次相同，旧报告保留。`refresh_queries=true`禁止历史查询复用；它本身不要求模型一定调用Tool。
 7. **按需刷新事件概况。** 手动`overview/refresh?include_investigations=true`引用已有Case报告摘要；这是单独的摘要调用，不重新深入调查。
 
-最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口；当前r6已支持，旧r1不支持。
+最新本地合同允许在第4或第6步传`required_tools:["network_connections"]`，要求结论形成前尝试该工具；参数仍由模型在当前Tool schema内生成。允许复用时，命中已有查询也算一次工具尝试；失败/不可用结果不因此变成成功证据。若同时需要实际重新查询，使用`refresh_queries=true`。该字段不属于材料预览接口；当前r7已支持，旧r1不支持。
 
 ## 4 推荐阅读顺序
 
@@ -81,10 +81,11 @@ F5、自动目标政策、专项Deep/动态MCP的完整接入、真实厂商动�
 | Office追加纠错输入超额度 | r4真实主/追加已完成，保原来源和24000总预算；r6按实际紧凑JSON核字节 | 通过不证明任意大材料均能完成 |
 | 网络未调用指定Tool | r4/r5/r6均实际调用并进入历史复用，原生tool_choice和读回已验 | 复用不是新的独立观察 |
 | TCP/443误写HTTPS及遗漏成员 | r6窄协议名校验与完整性校验，29项直接通过；真实追加两个成员均unresolved、遗漏0 | 不是通用语义真值校验；未知协议名称在缺口/未决问题中表述 |
-| 历史解释与证据行归属 | r6原件保留并对照H1/E1审阅 | 报告误称新查、误述H1没见网络记录、把3行都归到2成员，另有无源英文引文；这些仍待修正 |
+| 历史解释与证据行归属 | r7 source_alignment/query_sources明确复用和逐行匹配，原件/读回/旧报告保持已验 | 纠错回复已识别无新查询及前两行，但把未匹配写成无告警、倾向维持非攻击判断；完整语义仍未过 |
+| 模型结论格式及协议字段 | 原一次纠错、协议规则保持；r7不合格结论未被采纳 | 当前保守规则连“TCP/443不直接证明HTTPS”也拒绝，另有无依据的“非TLS/HTTPS”；需区分规范约束和真正的正反断言，不能把所有协议词都说成正向臆测 |
 | 规范化进程来源及产品Tool | 已有代码及替身验证，来源覆盖限制保留 | 真实厂商Tool和完整进程行为关联仍未验 |
 
-本次限定批次已结束，22次HTTP、46原件均保存并核hash；不通过重复同版调用挑选好结果。协议与成员覆盖的实际合同见[多成员说明](multi-alert-synthesis-20261028.md)。当前16/17，完整报告验收和归档保持待办；首次worker、F5与自动政策保持原范围。
+本次r7限定批次已结束，23次HTTP、48原件均保存并核hash；不通过重复同版调用挑选好结果。协议与成员覆盖的实际合同见[多成员说明](multi-alert-synthesis-20261028.md)。当前16/17，完整报告验收和归档保持待办；首次worker、F5与自动政策保持原范围。
 
 ## 7 文件与证据核对（指南对齐阶段记录）
 

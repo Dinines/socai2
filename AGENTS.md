@@ -1,3 +1,9 @@
+# 2026-10-31 r7来源标注交付，唯一真实Run结论被拒
+
+用户确认后按计划修复来源叙述并只复验一次。源码f19cc70fcc3ebf68e44118acce302caa9f561108，21独立调查API已为r7，镜像sha256:c32e7b6c3979c8750bcb0342fecb14727cd199453c4362244e437c3ed5fb85f5；472源码hash一致。模型Tool增加source_alignment，报告程序生成query_sources和来源/逐行对应段；精确event_id对Alert.source_event_ids，不按同主机猜测，H1摘要/原始行/旧报告保持。30项受影响直接用例首轮29过1额度失败，精简重复提示后只复核3项全过，复用其他27项；旧网络纠错12292≤12296，未提高预算。
+
+Run bbedc422-f659-5e21-8759-5511f0d510a4实际failed/partial，3模型/1历史复用/0新湖查询/11341已知tokens，12事件14工件、23HTTP/48原件hash核。首答Markdown围栏导致json_invalid；一次纠错正确说明复用H1无新查询，但在结论提未核实HTTPS/TLS（含否定/不确定表述），被原保守协议规则拒。还有未证实攻击→非真实攻击/维持closed的倾向和把未匹配称无告警，不能称语义通过；失败报告两成员not_assessed，未采纳模型原答。回执docs/operations/investigation-source-alignment-20261031.json。固定批次已结束，不重试挑结果；当前change16/17，5.3未完，不归档/推送/合并；core/agents/配置/开发Key均保持。
+
 # 2026-10-31 r6协议结论和成员覆盖修复交付
 
 继续按功能优先推进；源码7330a7c66c924addca0d11c59095df8edd972689，r6已部署至21独立调查API，镜像sha256:6b7483b300c09490b6fd311847eaff79ef5d98c02509b7fdf01ebf8327b3941a，472应用源码一致。新增窄协议名称校验及可读成员完整性校验，原一次纠错和预算保持；按HTTPX紧凑JSON核输入字节，29项受影响直接用例通过。仅新增网络追加Run62bb8d8b-c10a-5324-ba1c-1736a92ce20d，completed/partial，3模型/1工具复用/0新湖查询/12780已知tokens；两个成员均unresolved、遗漏0，无HTTPS/TLS/SSL结论；11事件13工件、22HTTP/46原件hash核，父报告字节保持。
