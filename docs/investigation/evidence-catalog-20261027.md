@@ -1,19 +1,19 @@
-**2026-10-31实施证据：** [修复记录](audit-fixes-implementation-20261031.md)、[源码/测试/候选包回执](../operations/investigation-audit-fixes-20261031.json)、[阶段及最终原日志目录](../operations/evidence/investigation-audit-fixes-20261031/)；31个不同直接用例最终通过，保持此前静态审计和r1真实证据。
-
 # 调查模块证据与文档目录
 
-2026-10-31更新。先看[最新指南](audit-guide-20261031.md)与[当前设计](current-design-alignment-20261027.md)，再按以下当前材料进入。文件名保留原入口；底部137项为原6044615历史目录，范围不回填为新验证。
+2026-11-01更新。先看[最新指南](audit-guide-20261031.md)及[当前审阅指南](review-guide-20261101.md)，再查下面的实现和证据。最近部署r11/a543ad6（功能49a04eb），完整raw/两次非空真实查询通过，最终报告failed/partial；问题保留，OpenSpec16/17。本文只索引已有资料，不新增测试结论。
 
-本地源码为5b95138；最新6项受影响直接用例通过记录属于本地修复。真实四案例为512c004/r1，原失败保留，r2常驻与真实复验待做。以下分类用于查找材料，不代表全部功能通过。
+底部137项为6044615历史目录；其“当前”“尚未实现”等状态均限于原基线，不能覆盖r11。原始请求、响应、失败和机器回执保持。
 
 ## 当前实施与验证说明
 
 | 文档 | 入口 |
 | --- | --- |
-| 最新指南与审计步骤 | [2026-10-31指南](audit-guide-20261031.md) |
+| 最新指南与审计步骤 | [现行指南](audit-guide-20261031.md)、[当前问题及审阅顺序](review-guide-20261101.md) |
+| r11完整raw与非空查询复验 | [回执](../operations/investigation-r11-positive-fixture-20261101.json)、[原因分析](../operations/evidence/investigation-r11-20261101/review.md)、[原件目录](../operations/evidence/investigation-r11-20261101/live/) |
+| r10空查询及后续边界修复 | [r10回执](../operations/investigation-structured-report-20261031.json)、[来源核对/本地修复](source-boundaries-20261101.md) |
 | 设计—实现详细审计 | [发现、功能对照与验证边界](design-implementation-audit-20261031.md) |
 | 本次静态审计清单 | [源码/测试索引、路由及原件hash](../operations/investigation-static-audit-20261031.json) |
-| 审计后OpenSpec规划 | [提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)、[任务/验证](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)（尚未实施） |
+| 审计后OpenSpec规划 | [提案](../../openspec/changes/fix-investigation-audit-gaps/proposal.md)、[设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)、[任务/验证](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)（16/17，5.3未完成） |
 | 当前设计 | [职责与流程](current-design-alignment-20261027.md) |
 | 当前接口合同 | [字段与错误](interface-contracts-20261027.md) |
 | 告警、事件与Case调查结果的关联 | [alert-event-investigation-links-20261028.md](alert-event-investigation-links-20261028.md) |

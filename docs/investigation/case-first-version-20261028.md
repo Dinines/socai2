@@ -1,6 +1,6 @@
 # Case创建后的调查初版
 
-**2026-10-31当前用法：** 本地源码5b95138已增加required_tools，调用规则见本文追加说明和[接口合同](interface-contracts-20261027.md)。已有真实主调查/追加、事件关联及常驻HTTP记录见[最新指南](audit-guide-20261031.md)。本页原7项用例是初版批次；最新6项受影响直接验证与真实r2待复验分别见[任务状态](../../openspec/changes/fix-case-followup-gaps/tasks.md)。
+**2026-11-01当前用法：** r11 已支持 required_tools、refresh_queries、完整来源材料及首份 Schema 报告。最新真实样本的输入/查询通过，报告仍 failed/partial；问题按[当前审阅指南](review-guide-20261101.md)保留。完整现行合同见[接口合同](interface-contracts-20261027.md)，本页原7项用例与早期示例保持历史范围。
 
 **查询增量：** 已增加[公共执行索引、证据/来源行读取和报告导航](execution-index-and-evidence-20261028.md)。旧Run正文及Markdown保持已保存版本，新结果GET可派生导航字段。
 
@@ -8,7 +8,7 @@
 
 2026-10-28。以用户最新范围为准：从**已有Case及其成员**开始，完成调查功能；Case如何触发、自动目标选择和F5接线不属于本次目标。事件层继续保留汇总与AI概况，不增加另一套调查循环。
 
-初版代码提供：选定范围和材料预览→发起调查→模型按需查询进程/网络→保存步骤和证据→结构化报告与Markdown→历史读取→追加问题形成新Run。初版交付为独立API v2代码；后续已有r1常驻HTTP和真实联调，前端页面不在该交付中。
+初版代码提供：选定范围和材料预览→发起调查→模型按需查询进程/网络→保存步骤和证据→结构化报告与Markdown→历史读取→追加问题形成新Run。初版交付为独立API v2代码；后续已有常驻HTTP和真实联调，最近核验为r11，前端页面不在该交付中。
 
 ## 入口与输入输出
 
@@ -17,7 +17,7 @@
 | 方法和后缀 | 输入 | 输出与作用 |
 | --- | --- | --- |
 | `POST /investigation-context` | start、end；可选question、selected_member_ids | 当前Case材料、实际可读成员、缺失成员、Tool定义、执行限制；不创建Run、不调用模型或查询工具 |
-| `POST /investigate` | 上述范围＋operation_key；可选previous_run_id、refresh_queries、required_tools（最新本地版本） | 同步执行一次调查，返回Run、固定范围、报告及读取链接 |
+| `POST /investigate` | 上述范围＋operation_key；可选previous_run_id、refresh_queries、required_tools（r11已支持） | 同步执行一次调查，返回Run、固定范围、报告及读取链接 |
 | `GET /investigations` | limit、cursor | Case调查历史；含previous_run_id、结果/步骤/下载链接 |
 | `GET /investigations/{run_id}` | Case与Run ID | 当前状态、固定范围、步骤摘要、已存结果或null |
 | `GET /investigations/{run_id}/steps` | after_seq默认0；limit默认20，1–50 | 已保存步骤按seq升序，items及next_after_seq；无下一页为null |
@@ -78,9 +78,9 @@
 
 - 前次Run必须属于当前租户及同一Case，且已有终止报告；running或无报告为409 previous_analysis_not_finished。成员集合或窗口不同为409 followup_scope_changed；要换范围时不指定previous_run_id，作为独立新调查。
 - 前次报告作为H1历史判断提供给模型，标明原Run与范围；原报告中的编号仍属于原Run，不能当成本次新查询证据。旧报告不会被新问题覆盖。
-- refresh_queries默认false。追加问题时，仅在当前材料指纹与原Run一致、Tool及参数一致且历史结果可用时复用，并保留reused_from。原Run无material_hash时不复用。普通新Run继续按原相同来源指纹规则复用。
+- refresh_queries默认false。追加问题时，仅在当前材料指纹与原Run一致、Tool及参数一致且历史结果可用时复用，并保留reused_from。原Run无material_hash时不复用；进程结果还须带case.process_activity.v2，产品当前快照不复用。普通新Run继续按原相同来源指纹规则复用。
 - refresh_queries=true表示本次跳过历史查询缓存；未指定required_tools时，模型仍决定是否需要调用Tool。新调用结果、用量和缺口属于新Run。
-- required_tools默认[]，最多4个不重复、非空且无首尾空白的工具名称。例如在上述请求加入`"required_tools":["process_activity"]`，要求结论前尝试进程Tool；参数仍由模型生成并校验。允许复用时命中历史结果也算尝试，需要跳过复用时同时传refresh_queries=true。工具未提供或模型未发出所要求调用分别停止required_tool_unavailable、required_tool_not_called；工具返回失败仍是证据缺口。这是最新本地合同，最近留存r1不支持该字段。
+- required_tools默认[]，最多4个不重复、非空且无首尾空白的工具名称。例如在上述请求加入`"required_tools":["process_activity"]`，要求结论前尝试进程Tool；参数仍由模型生成并校验。允许复用时命中历史结果也算尝试，需要跳过复用时同时传refresh_queries=true。工具未提供或模型未发出所要求调用分别停止required_tool_unavailable、required_tool_not_called；工具返回失败仍是证据缺口。该合同已随r11交付，旧r1不支持该字段。
 - 同一operation_key及同意图只读原Run；更换问题、前次Run、refresh_queries或非空required_tools列表须使用新key。省略新增字段的旧请求保持原意图格式，不因升级变成冲突。
 
 历史列表和结果详情都返回previous_run_id，可沿此字段查看前后两次调查。初版不提供恢复中断Run、撤销、自动续跑或自动处置。

@@ -1,24 +1,18 @@
-**当前r10（2026-10-31）：** 源码`51086a4`已部署r10；首份正式报告使用JSON Schema，模型A引用映射公共UUID，具体校验反馈和原一次纠错/预算保持。唯一完整raw演示告警主Run `4f094ed4-b4f9-5db9-8cc2-b5f8c781858e` 为completed/partial：3模型、2真实湖查询、0复用、10292 tokens；首次报告格式/成员通过、纠错0。两次成功空查询经ClickHouse QueryFinish核实，报告却把空结果当矛盾并猜测采样/丢日志等原因，语义仍未过。 镜像`sha256:7506c7f4687e949dc42d8fc6fa54b3d5ba2df67676e8a2e8e0d1f6e8e0ed8e62`，472源码一致。首次打包权限失败及修后安装均保留，共享服务/配置/Key保持。[r10回执](../operations/investigation-structured-report-20261031.json)。下方为历史记录。
+**最近核验（2026-11-01）：** r11 已部署，发布源码 a543ad6、功能修复49a04eb；实际工作目录 `/opt/investigation/app` 的472源码hash一致。[安装回执](../operations/evidence/investigation-r11-20261101/post-install.json) / [唯一真实批次](../operations/investigation-r11-positive-fixture-20261101.json)。完整raw及两次非空实际查询通过，报告仍 failed/partial。core、agents、网关及原配置保持；本轮文档更新未再次连接服务。
 
-**最新r9状态（2026-10-31）：** 用户明确确认后已部署`bf2bd9c`，镜像`sha256:d2e509370680cd2f647561ac37e1da4916758af7743324b0761f51b7f8090418`，21本机18010，472源码一致。唯一追加3回复/11740 tokens，因纠错后重复成员引用failed/partial；共享服务/配置/Key保持。见[r9实际回执](../operations/investigation-model-wait-20261031.json)，下方r8等均为历史记录。
+问题现保留，见[审阅指南](review-guide-20261101.md)。本文件是接入说明，不构成再次运行批次、更新服务或启用worker的指令。r1首次启动及四案例为下方历史记录；r9/r10等版本由[最新指南](audit-guide-20261031.md#6-历史验证索引)定位。
 
-**最新状态（2026-10-31）：** 常驻`20261031-r8`，源码`a41ae07`，21本机18010；镜像`sha256:1f0bfe52f92b402fe2c92ed5b66c1c7250e21c27a900a2299020355b21eb337b`，472应用源码已核。开发Key与服务配置保持。协议边界修复已直接验证；唯一真实调查的纠错调用约45秒后遇网关Timeout，failed/partial，最终内容未验，见[最新回执](../operations/investigation-protocol-uncertainty-20261031.json)。下方版本为历史记录。
+开发凭据已按用户明确全权限授权保存于21的`/opt/sting-aisoc-socai2/private/investigation-dev-keys.json`，root拥有、0600，目录0700；JSON按tenant UUID映射Bearer。两个原租户分别为53824f24-d1d4-5820-8147-f6cfda8a1247（专用fixture）和f6a5c700-69b8-44fc-8238-609362fb1a9f（stingAISOC Production，含演示Case），scopes为`["*"]`，2027-10-31T05:43:45Z到期。经既有SSH在远端读取所需租户的值到AISOC_API_TOKEN，仅调用既有scripts/investigation_client.py；不打印Key，不将明文复制到本地/仓库。最初验证两租户各Case读取及调查历史GET均200；随后已使用该Key执行包括r11在内的限定功能调查。原批次临时Key已停用，长期Key独立保留。
 
-**2026-10-31 当前入口：** 21调查API已更新20261031-r3，监听127.0.0.1:18010；[实际批次回执](../operations/investigation-audit-live-r3-20261031.json)。后续本地纠错修复尚未部署。
+# 独立调查API与调用方接入
 
-开发凭据已按用户明确全权限授权保存于21的`/opt/sting-aisoc-socai2/private/investigation-dev-keys.json`，root拥有、0600，目录0700；JSON按tenant UUID映射Bearer。两个原租户分别为53824f24-d1d4-5820-8147-f6cfda8a1247（专用fixture）和f6a5c700-69b8-44fc-8238-609362fb1a9f（stingAISOC Production，含演示Case），scopes为`["*"]`，2027-10-31T05:43:45Z到期。经既有SSH在远端读取所需租户的值到AISOC_API_TOKEN，仅调用既有scripts/investigation_client.py；不打印Key，不将明文复制到本地/仓库。最初验证两租户各Case读取及调查历史GET均200；随后r4/r5/r6已使用该Key执行限定功能调查。原批次临时Key已停用，长期Key独立保留。
-
-**2026-10-31版本说明：** 以下描述最近留存的r1部署回执，本次未重新连接21确认。当前仓库Compose/安装脚本已准备20261031-r3，包含追加修复及审计问题修复，见[实施记录](audit-fixes-implementation-20261031.md)；[任务记录](../../openspec/changes/fix-case-followup-gaps/tasks.md)仍将常驻替换和真实复验列为待做。因此下文源码链接是当前文件，不代表已运行r3。业务和审计入口见[最新指南](audit-guide-20261031.md)。
-
-# 独立调查API与调用方接入（2026-10-28）
-
-**状态：已按用户明确授权在21常驻启动。** 进程存活、实际接口描述、端口绑定和配置复用检查通过。既有调查与事件概况功能已通过的结果继续复用；本轮没有业务写入或模型调用。
+**首次启动记录（2026-10-28）：** 进程存活、实际接口描述、端口绑定和配置复用检查通过。既有调查与事件概况功能已通过的结果继续复用；本轮没有业务写入或模型调用。
 
 **后续多案例更新：** [四案例逐步测试](multi-case-http-20261028.md)已通过真实API Key执行207个业务HTTP请求，未覆盖CurrentUser依赖；写入、调查、模型、报告与证据入口均实际调用。4次主调查完成，2/4例自动流程检查通过，具体失败和内容偏差保留在总报告。该批临时Key已停用，用户JWT登录仍未验证。下方“本轮未取得普通用户token”保留启动当时边界，不作为后续未测试的结论。
 
 ## 服务入口
 
-新增容器`socai2-investigation-api`已运行，镜像`socai2-investigation-api:20261028-r1`，镜像ID为`sha256:2fde05d545c3ce9f042f180e91cc38dec30bf85e939f686b7a13dc6d04d27b98`。实际只映射21的`127.0.0.1:18010`，连接`socai2_default`，restart=unless-stopped。复用原API镜像的已验证依赖，当前源码放在独立工作目录，入口为`app.investigation_v2.application:create_app`。
+最近保存的核验为容器`socai2-investigation-api`运行r11，镜像`socai2-investigation-api:20261101-r11`，镜像ID为`sha256:59d9fe097588dad6c019797a9ba635f5f2126ae66ffddbdc3e466447ebc3ffcb`。实际只映射21的`127.0.0.1:18010`，连接`socai2_default`，restart=unless-stopped。复用原API镜像的已验证依赖，当前源码放在独立工作目录，入口为`app.investigation_v2.application:create_app`。
 
 - 调查入口：`http://127.0.0.1:18010/api/v2/investigation/…`
 - 接口描述：`http://127.0.0.1:18010/api/v2/investigation/openapi.json`，目前18条路径。
@@ -49,7 +43,7 @@ POST请求体沿用[成员转Case](case-linking-20261028.md)和[Case调查](case
 
 把响应中的`result_url`、`steps_url`、`evidence_url`等相对路径作为下一次path参数即可。`/api/v2/investigation`发往`--base-url`，`/api/v1/cases`等核心路径发往`--core-base-url`；默认分别为本机18010、18000。HTTP正文输出到stdout，HTTP状态输出到stderr；2xx退出0、HTTP失败退出1、通信/文件失败退出2。脚本拒绝重定向，避免把认证头转交其他地址。
 
-## 启动与验证范围
+## 首次启动与验证范围（2026-10-28历史记录）
 
 [Dockerfile](../../deploy/aisoc21/Dockerfile.investigation-v2-api)、[Compose](../../deploy/aisoc21/compose.investigation-v2-api.yml)、[安装脚本](../../deploy/aisoc21/install_investigation_api.py)已用于部署。安装脚本默认只输出计划；本次明确授权后使用`--execute`。依赖基镜像核对为当前API的`sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9`，构建未下载依赖。原API/Agents容器ID和启动时间保持一致，未替换或重启。
 

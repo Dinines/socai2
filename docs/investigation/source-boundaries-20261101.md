@@ -1,6 +1,8 @@
 # 空查询原因与报告边界修复（2026-11-01）
 
-本地源码 `49a04eb` 已完成必要直接验证，尚未部署；线上最近核验版本仍为 r10 / `51086a4`。本轮只有只读数据核对，没有新 Run、模型调用、数据写入或服务更新。
+**后续状态：** 49a04eb 已随 r11/a543ad6 部署。用户选择新建 synthetic 样本后，两次正式查询各返回 1 行，报告仍未通过；见[r11回执](../operations/investigation-r11-positive-fixture-20261101.json)和[当前审阅指南](review-guide-20261101.md)。
+
+下文保留部署前的只读来源核对与本地直接验证记录。当时线上为 r10/51086a4，没有新 Run、模型调用、数据写入或更新；当时的数据数量不能用来描述新增 r11 样本后的全库状态。
 
 ## 查明的数据情况
 
@@ -20,6 +22,6 @@ Office主机的两条湖记录与告警时刻相近，但 raw_payload 明确是 
 
 **尚未证明新真实报告语义通过。** 这次修正输入规则和程序事实展示，没有新增通用自由文本语义校验器；旧r10错误文字不会因为此次修复自动被校验拒绝。其原报告仍保留，OpenSpec仍16/17、5.3未完。
 
-下一步先明确一组同时具有完整原始告警及对应真实1007/4001湖事件的样本，再开展正向实际验证。现有两租户的数据组合不满足；不将登录记录改作进程/网络记录，不补造旧证据。
+当时所缺正向样本已在后续 r11 批次由用户选择新建，旧登录记录和旧报告保持，未回填旧证据。r11 非空结果没有验证空查询推理和 T 摘要去重的真实模型效果；这两项边界仍保留。当前用户要求只整理文档，后续不自动派发新调查。
 
 [完整回执](../operations/investigation-source-boundaries-20261101.json) · [来源清单](../operations/evidence/investigation-source-boundaries-20261101/source-alignment.json) · [Office湖内原文](../operations/evidence/investigation-source-boundaries-20261101/office-lake-payloads.json) · [最后定向验证](../operations/evidence/investigation-source-boundaries-20261101/direct-final.txt)

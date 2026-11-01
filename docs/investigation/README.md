@@ -1,6 +1,15 @@
-**当前入口 2026-10-31：** [最新指南](audit-guide-20261031.md)、[实施记录](audit-fixes-implementation-20261031.md)、[独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)。审计A01/A02/D01已本地修复，源码commit `bb8dbc3`；31项直接结果、独审0必须修，任务14/17。r3候选和5份请求已准备，未部署/真实复验；21只读SSH连接超时。最近真实证据仍为512c004/r1，2/4案例流程通过，旧失败保留。
+# 调查模块文档入口
 
-**当前OpenSpec：** [设计](../../openspec/changes/fix-investigation-audit-gaps/design.md)及[剩余任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)按实际交付更新；不把独审或本地提交当作真实模型质量验收。
+**当前状态（2026-11-01）：** r11 已部署（发布 a543ad6，功能 49a04eb）。唯一新 synthetic 样本调查的完整 raw、两次非空真实查询、JSON 和成员引用已核；最终报告仍为 failed/partial，协议误拒与纠错内容问题保留。OpenSpec 16/17，5.3 未完成。
+
+- [最新指南](audit-guide-20261031.md)：部署、功能与证据边界。
+- [当前审阅指南](review-guide-20261101.md)：未解决问题、原答/反馈阅读顺序与代码定位。
+- [设计对齐](current-design-alignment-20261027.md) / [接口合同](interface-contracts-20261027.md) / [证据目录](evidence-catalog-20261027.md)。
+- [r11 原因与结果](../operations/evidence/investigation-r11-20261101/review.md) / [OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)。
+
+用户当前要求先保留问题，只更新相关文档；不开始下一轮修复、部署或调查。下方按日期保留历史进展，其中“未部署”“下一步”“当前”均指当时批次，不覆盖以上现状。原 [r3 独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)仅说明其本地交付范围。
+
+## 历史进展
 
 **2026-10-29多案例阅读说明：** [先看业务流程与跳转目的](multi-case-http-20261028.md#先按业务理解再查看请求原件)，或直接看[Office案例为什么这样走](cases-20261028/office-powershell.md#本例为什么这样走)。四个案例均补充触发者、输入输出、进入下一步的原因，以及每条HTTP请求用途；区分实际调查、已保存步骤的读回和测试核对。本次只补文档，未重新测试。
 

@@ -1,12 +1,17 @@
 # Case多告警综合分析：成员、关联、时间线与未决问题
 
+**2026-11-01现行状态：** r11 两份正式输出均通过JSON Schema和成员引用，最终仍failed/partial；协议不确定句式误拒、纠错指令进入正文及无源推测保留，见[审阅指南](review-guide-20261101.md)。下方r6–r8为变更来源和历史证据，不代表完整语义验收。
+
+**r10/r11合同补充：** 首份正式报告与一次纠错都使用严格Schema，模型成员用alert_ref/alert_refs（A编号），服务端映射公开UUID。query_sources另含tool、query_scope、query_status、returned_count；成功空为0、不可用为null，程序来源段明确未知覆盖/无记录原因。同源摘要只在模型视图按明确条件去重，原材料保持。有限协议匹配并未覆盖所有正确不确定表述，不能把通过或拒绝一概当语义判断。
+
+
 **2026-10-31 r8协议边界：** 结论字段允许明确不确定表述，如“TCP/443不直接证明HTTPS”“HTTPS尚未确认”“无法确认是否使用HTTPS/TLS”；仍拒绝没有协议行依据的“使用HTTPS”“非TLS/HTTPS”或“TCP/443≠HTTPS”等断言。识别只覆盖有限中文句式及该短语中的协议名，不因一句不确定表述放行同句其他断言，也不构成通用语义校验。纠错继续仅一次，要求无围栏JSON、完整中文和“未证实攻击不等于证实非攻击”。下文r6把所有未观察协议名限制在gaps/questions的规则由本条替代；旧Run保持不变。
 
 **2026-10-31 r7来源说明：** 新报告由程序追加`query_sources`数组，每项含evidence_id、origin（historical_reuse/current_tool_result）、reused_from；匹配历史Run时另含already_in_history。可用事件湖结果另有与rows逐项对应的row_alert_refs，只按event_id和Alert.source_event_ids精确匹配，空数组不证明无关；同主机候选时间线不能替代这种对应。Markdown的“查询来源与成员对应”由同一数据生成。模型收到source_alignment，裁剪行时同步裁剪对应数组；H1原摘要、原始Tool行和旧报告不改。新H1模型视图省略query_sources派生表，完整历史仍保存。这些字段不替代模型文字的实际内容审阅。
 
 **2026-10-31 r6更新：** 可读选定成员必须逐项判断并引用自身A材料；遗漏会进入原有一次纠错，未修正则failed/partial，不再以completed接受遗漏。模型最终schema限定可读成员及数组数量，重复/缺失仍由程序校验。不可读成员继续source_unavailable，失败报告可保留not_assessed；旧报告不重写。29项受影响直接验证通过，真实网络追加两成员均unresolved、遗漏0，见[回执](../operations/investigation-network-report-fix-20261031.json)。下文10月28日允许遗漏后完成的行为已被本条覆盖。
 
-存在network_connections证据时，摘要、发现、成员说明、关系依据中的HTTPS/TLS/SSL名称必须在可用网络行的protocol字段中出现；端口443不能提供此依据。该保守规则把未核实协议名称放在gaps/open_questions中，不自动改写模型结论。它只检查上述协议名和字段，不能证明全部文字、关联或历史解释正确。
+现行协议检查针对摘要、发现、成员说明和关系依据：网络行protocol提供直接依据，或协议名位于有限规则识别的明确不确定短语中，才通过该项检查；端口443不提供应用协议依据。gaps/open_questions不受这项名称检查，但仍须人工核对内容。该规则未自动改写文字，r11已有空格、状态词和引号造成误拒的记录。
 
 2026-10-28，[后续计划](next-phase-plan-20261028.md)第4批。沿用已有Case调查入口、模型/Tool循环、Run和报告存储；本批没有新增端点、表、迁移或调查执行器。当前交付为代码及替身直接验证，未部署或验证真实模型判断质量。
 
@@ -27,10 +32,11 @@
 | relationships | 模型 | alert_ids、kind、assessment、basis、evidence_ids |
 | timeline | 程序从来源记录生成 | timestamp、source_time、time_kind、in_window、description、candidate_member_ids、evidence_id、row_index、source_record_id |
 | open_questions | 模型，程序补齐遗漏 | question、alert_ids、evidence_ids、missing_evidence、suggested_action |
+| query_sources | 程序从Tool证据生成 | evidence_id、origin、reused_from、可选already_in_history/row_alert_refs、tool、query_scope、query_status、returned_count |
 
 ### 成员覆盖
 
-模型输出的status为`addressed`或`unresolved`；程序为遗漏成员补`not_assessed`，为未读取到材料的成员补`source_unavailable`。role为`supporting`（支持本次发现）、`background`（当前作为背景）或`undetermined`。
+模型输出的status为`addressed`或`unresolved`；可读成员遗漏先进入校验和一次纠错，仍无效则生成失败报告并补`not_assessed`；未读取到材料的成员补`source_unavailable`。role为`supporting`（支持本次发现）、`background`（当前作为背景）或`undetermined`。
 
 `addressed`只说明模型给出了有引用的成员判断，不表示攻击已证实、事实已全部核实或告警已解决。`background`不表示安全或已经证明无关。读取数量与成员判断数量分开统计。每项模型判断必须引用该成员自身A类材料，此外可以引用T/E/H。
 
@@ -55,9 +61,9 @@ open_questions的alert_ids为空表示本次全案，非空必须是所选成员
 
 如果模型遗漏未决项，程序为未完成成员、hypothesis关联和时间未知记录补保守问题，或复用覆盖相同成员/全案的已有问题；不编造已取得的新证据。未决问题进入gaps，报告completion保持partial。模型完全没有返回新数组时仍可保存原结论，但全部未提供逐项判断的成员标not_assessed，不凭原findings自动推成逐成员完成。
 
-范围外成员、重复成员判断、未知证据或缺少参与成员自身A引用均不被接受。2026-10-28真实PG联调后，首次不合法结论在剩余预算内允许一次校验反馈：步骤保存`case_analysis_validation`、合法证据编号和成员UUID。逐步测试发现当前旧模型在同时提供Tools与严格schema时不发起所需查询，因此正常分析仅提供原生Tools；最终结论纠错仅提供schema及已有材料，不再补查，缺少材料列为缺口。无可用Tools时也可直接使用schema。原回复保存在账本，但从下一轮输入移除，避免重复臆造内容；不放宽校验或增加4次模型/24000 tokens/120秒限制。再次不合法或没有剩余调用轮次时停止为`invalid_or_unreferenced_conclusion`，保存partial报告。模型HTTP读取超时60秒、连接超时10秒，仍受整次120秒限制，不自动重发超时请求。
+范围外成员、重复成员判断、未知证据或缺少参与成员自身A引用均不被接受。当前执行最多两轮查询决策，接着生成首份Schema报告，必要时在原预算内纠错一次；阶段协议和等待规则见[现行接口合同](interface-contracts-20261027.md#71-当前模型协议与可用tool)。原答、校验反馈和模型实际输入分别留存，被拒原答不进入下一轮输入；再次不合法则保存failed/partial。没有提高4次模型/24000 tokens/120秒限制，也不自动重发超时请求。
 
-追加问题的模型输入省略前次报告派生的timeline/member_coverage，并提供omitted_report_fields；H1证据和原报告完整保存。纠错阶段使用简短专用指令，反馈正文仅发送字段错误；合法证据/成员范围由response_format提供，完整诊断仍在账本中。源材料和Tool消息不变，schema仍计入原输入额度。精简后2项受影响直接用例通过，最新真实PG追加也经历一次实际纠错后完成；见[逐步测试记录](step-by-step-test-20261028.md)步骤8–9。
+追加问题的模型输入省略前次报告派生的timeline/member_coverage，并提供omitted_report_fields；H1证据和原报告完整保存。纠错阶段使用简短专用指令，反馈正文仅发送字段错误；合法证据/成员范围由response_format提供，完整诊断仍在账本中。源材料和Tool消息不变，schema仍计入原输入额度。历史精简阶段2项受影响直接用例通过，当时真实PG追加经历一次纠错后完成；见[逐步测试记录](step-by-step-test-20261028.md)步骤8–9。
 
 ## 三告警直接例子
 
@@ -82,4 +88,4 @@ open_questions的alert_ids为空表示本次全案，非空必须是所选成员
 
 4个新增用例覆盖三成员完整输出/保存/读回、遗漏与不可读成员及待核关联、范围外成员/未知引用、缺少时间与窗口外记录。受影响的7个Case流程用例、2个产品Tool用例通过；产品用例额外核对快照时间线类型和历史窗口不适用。未重复Actions厂商HTTP映射、告警/事件模块或恢复/可用性专项。
 
-上述使用真实ASGI路由、模型HTTP协议、结果生成和保存代码，数据库、模型与查询来源为替身；不代表真实模型关联质量已验。OpenSpec CLI在当前Shell不可用，未执行其严格校验或归档。不新增迁移、部署或远端推送。
+上述使用真实ASGI路由、模型HTTP协议、结果生成和保存代码，数据库、模型与查询来源为替身；不代表真实模型关联质量已验。该早期批次未使用OpenSpec CLI；后续已确认仓库本地CLI并通过严格校验，当前状态按任务表核对，不以当时PATH缺失判断工具不可用。不新增迁移、部署或远端推送。

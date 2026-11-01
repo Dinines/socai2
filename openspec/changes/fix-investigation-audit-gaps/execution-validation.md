@@ -1,14 +1,18 @@
-**2026-11-01最新本地验证：** 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 OpenSpec严格校验通过，任务仍16/17、5.3未完。见[回执](../../../docs/operations/investigation-source-boundaries-20261101.json)。
+**2026-11-01当前状态：** r11/a543ad6（功能49a04eb）已部署并核对472源码。用户授权的新synthetic正向样本唯一Run为failed/partial，4模型/2真实非空查询/0复用/12728tokens；完整raw、JSON Schema、成员引用已验，报告仍有协议误拒和语义问题。见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)及[当前审阅指南](../../../docs/investigation/review-guide-20261101.md)。用户现要求保留问题，只更新文档；复用7项直接结果，无业务测试/新调用，5.3继续未完成。
 
-**r10最新验证：** 42个受影响方法的最新实际结果通过（含7新增，未变通过项复用，非单次全量重跑）；源码51086a4已部署。唯一实际主Run completed/partial，3模型/2CH查询/0复用；全部原文完整入模，首份Schema报告合法。ClickHouse两QueryFinish均0异常/0结果，真实空结果推理仍不合格。首次打包权限失败与修正保留。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)及[核验](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r10/review.md)。任务仍16/17，5.3未完，无归档。
+以下按批次保留当时验证状态；“未部署/下一步”不覆盖上方现状。文档严格校验不等同完整报告验收。
+
+**2026-11-01部署前本地验证（历史）：** 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 OpenSpec严格校验通过，任务仍16/17、5.3未完。见[回执](../../../docs/operations/investigation-source-boundaries-20261101.json)。
+
+**r10历史验证：** 42个受影响方法的最新实际结果通过（含7新增，未变通过项复用，非单次全量重跑）；源码51086a4已部署。唯一实际主Run completed/partial，3模型/2CH查询/0复用；全部原文完整入模，首份Schema报告合法。ClickHouse两QueryFinish均0异常/0结果，真实空结果推理仍不合格。首次打包权限失败与修正保留。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)及[核验](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r10/review.md)。任务仍16/17，5.3未完，无归档。
 
 **2026-10-31 r9实际补充：** 用户明确确认后部署源码`bf2bd9c`，472应用源码一致；复用6项必要直接验证。唯一Run failed/partial，首次json_invalid、纠错后invalid_member_reference（关系条目重复A2）；3回复/11740 tokens、1复用/0新湖查询，23HTTP/48原件hash核，父报告保持。最长回复26.50秒，未实际覆盖大于45秒等待；完整语义仍未通过。见[实际回执](../../../docs/operations/investigation-model-wait-20261031.json)，16/17、不归档。
 
-**r8当前验证：** 10项必要直接用例首次全通过，含2新增；r7原始回复进入一次替身纠错，明确不确定协议句式可保存，无据肯定/否定仍拒；原预算保持。源码a41ae07已上线且472文件hash核。唯一真实Run因纠错HTTP错误failed/partial，3模型尝试、2回复、7540已知tokens，第三次usage未知；约45.25秒与同期网关Timeout/45秒配置相符。21HTTP/44原件hash核、父报告保持；新内容未取得真实完整验收。见[回执](../../../docs/operations/investigation-protocol-uncertainty-20261031.json)，16/17、不归档。OpenSpec严格校验已通过。
+**r8历史验证：** 10项必要直接用例首次全通过，含2新增；r7原始回复进入一次替身纠错，明确不确定协议句式可保存，无据肯定/否定仍拒；原预算保持。源码a41ae07已上线且472文件hash核。唯一真实Run因纠错HTTP错误failed/partial，3模型尝试、2回复、7540已知tokens，第三次usage未知；约45.25秒与同期网关Timeout/45秒配置相符。21HTTP/44原件hash核、父报告保持；新内容未取得真实完整验收。见[回执](../../../docs/operations/investigation-protocol-uncertainty-20261031.json)，16/17、不归档。OpenSpec严格校验已通过。
 
-**r7当前验证：** source_alignment/query_sources和来源段已实现并上线；30项受影响直接用例首轮29过1额度失败，压缩重复提示后只复核3项全过，其他27项通过复用。唯一真实Run failed/partial，3模型/1复用/0新湖查询/11341 tokens；两次校验错误为json_invalid及unobserved_application_protocol_use_gaps。23HTTP/48原件hash核，原报告不变，失败原答未被采纳。见[回执](../../../docs/operations/investigation-source-alignment-20261031.json)；16/17，不归档。
+**r7历史验证：** source_alignment/query_sources和来源段已实现并上线；30项受影响直接用例首轮29过1额度失败，压缩重复提示后只复核3项全过，其他27项通过复用。唯一真实Run failed/partial，3模型/1复用/0新湖查询/11341 tokens；两次校验错误为json_invalid及unobserved_application_protocol_use_gaps。23HTTP/48原件hash核，原报告不变，失败原答未被采纳。见[回执](../../../docs/operations/investigation-source-alignment-20261031.json)；16/17，不归档。
 
-**r6当前验证：** 29项受影响直接用例通过，包含r5实际错误内容与r4缓存行的选定重放、一次纠错及不可修正遗漏停止；不是完整r5调用重演。源码7330a7c，21部署及472源码核对完成。真实网络追加1 Run完成partial，3模型、1复用、0新湖查询、12780 tokens，22HTTP/46原件hash核，原报告字节保持。两项修复已验证，完整语义仍有历史复用、H1和行归属错误；见[回执](../../../docs/operations/investigation-network-report-fix-20261031.json)。当前16/17，不归档。r6更新后OpenSpec严格校验exit0；新增/修改Markdown行的链接与候选479文件hash均核对，见[静态记录](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r6/static-checks.json)。
+**r6历史验证：** 29项受影响直接用例通过，包含r5实际错误内容与r4缓存行的选定重放、一次纠错及不可修正遗漏停止；不是完整r5调用重演。源码7330a7c，21部署及472源码核对完成。真实网络追加1 Run完成partial，3模型、1复用、0新湖查询、12780 tokens，22HTTP/46原件hash核，原报告字节保持。两项修复已验证，完整语义仍有历史复用、H1和行归属错误；见[回执](../../../docs/operations/investigation-network-report-fix-20261031.json)。当前16/17，不归档。r6更新后OpenSpec严格校验exit0；新增/修改Markdown行的链接与候选479文件hash均核对，见[静态记录](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r6/static-checks.json)。
 
 **后续实际功能验证：** r4/r5的[同一汇总回执](../../../docs/operations/investigation-functional-followup-20261031.json)覆盖6 Run、16模型、2新湖查询和4复用；均completed/partial，历史原件不改。r5源码3324fea，提示词修正后6项受影响直接测试通过。语义质量仍部分失败，当前16/17，不归档。
 

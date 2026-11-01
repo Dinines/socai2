@@ -1,8 +1,8 @@
-**2026-10-31实施补充：** 最新工作区增加case.source-material.v1及case_material/A.source_material，完整字段hash、冻结/模型裁剪分别说明；进程查询仅1007，query_contract=case.process_activity.v2，模型原编号省略有标记；旧Case概况的基础刷新也前置cases:read。字段/限额/H1省略/失败模式见[当前实施合同](audit-fixes-implementation-20261031.md)。这些修改已本地验证，最近实际服务仍只确认r1。
+**2026-11-01现行合同：** r11（发布a543ad6、功能49a04eb）包含case.source-material.v1及case_material/A.source_material，完整字段hash、冻结/模型裁剪分别说明；进程查询仅1007，query_contract=case.process_activity.v2，模型原编号省略有标记；旧Case概况的基础刷新也前置cases:read。字段/限额/H1省略/失败模式见[当前实施合同](audit-fixes-implementation-20261031.md)。这些修改已随独立 API 交付；最近 r11 数据与真实查询通过、报告未通过，见[审阅指南](review-guide-20261101.md)。
 
 # 调查模块接口设计：请求、返回与流程衔接
 
-**2026-10-31当前合同：** 已有字段按本地源码5b95138解释；新增required_tools、必需Tool停止原因及模型视图query_status见5.1、5.3、7.1。最近真实四案例与常驻回执仍为修复前r1，r2待更新/复验；调用前区分服务版本。完整状态及阅读顺序见[最新指南](audit-guide-20261031.md)。
+**阅读范围：** 已有字段按 r11 源码对齐，5.1/5.3/7.1 说明指定 Tool、停止原因、首份结构化报告和模型视图。下方带日期增量及示例保留其原作用；拟新增 F5 不能作为可用接口。状态与证据见[最新指南](audit-guide-20261031.md)。
 
 **2026-10-28公共读取实现：** 新增executions按来源筛选及单Run元数据、Case evidence及rows读取、结果navigation和报告引用链接；[字段与跳转合同](execution-index-and-evidence-20261028.md)。旧记录沿原生账本读取，不猜Case归属和正式结果完整度。
 
@@ -18,7 +18,7 @@
 
 本文于2026-10-27依据[当前设计对齐](current-design-alignment-20261027.md)细化到接口，当时源码核对基线为`6044615`、仅完成设计。2026-10-28新增实现范围以上方更新及F4说明为准。
 
-**状态标识：已有＝5b95138本地代码行为；拟新增＝设计稿、尚不可调用；后置＝不作为当前功能前置条件。部署版本按页首和最新指南核对。** 现有接口保持实际字段，不把拟新增字段写成已实现。早期实现与历史证据分别见[历史实现详解](current-implementation-reference-20261027.md)、[历史审计导航](audit-guide-20261027.md)。
+**状态标识：已有＝r11对应代码行为；拟新增＝设计稿、尚不可调用；后置＝不作为当前功能前置条件。部署版本按页首和最新指南核对。** 现有接口保持实际字段，不把拟新增字段写成已实现。早期实现与历史证据分别见[历史实现详解](current-implementation-reference-20261027.md)、[历史审计导航](audit-guide-20261027.md)。
 
 ## 1. 接口总表
 
@@ -252,7 +252,7 @@ Content-Type: application/json
 
 程序要求每个指定名称都在当前Case实际提供的Tool中，否则保存failed Run、stop_reason=required_tool_unavailable，模型调用0。对尚未尝试的名称，程序按列表顺序发送原生function tool_choice；若模型返回未包含该名称的调用，则停止required_tool_not_called，不接受其直接结论，也不派发该轮其他调用。已有实际Tool结果（包括适用的查询复用）可满足“已尝试”；这不保证来源成功或证据充分，available=false仍保留缺口。预算及参数校验照常生效。
 
-例如`required_tools:["network_connections"]`要求尝试网络Tool，具体参数仍来自模型。若需要跳过历史复用，还需`refresh_queries:true`；未指定required_tools时，refresh_queries本身不要求模型调用工具。最近留存r1不支持required_tools；最新本地直接验证与待真实复验见[修复记录](../../openspec/changes/fix-case-followup-gaps/tasks.md)。
+例如`required_tools:["network_connections"]`要求尝试网络Tool，具体参数仍来自模型。若需要跳过历史复用，还需`refresh_queries:true`；未指定required_tools时，refresh_queries本身不要求模型调用工具。r11 已支持且在两个真实 Tool 调用中执行；旧r1不支持。相关历史复用及追加验证见[修复记录](../../openspec/changes/fix-case-followup-gaps/tasks.md)。
 
 该POST当前在请求内执行，不返回202后台任务。当前首次成功返回`run_id/case_id/status/scope/result`、`previous_run_id`及三个读取链接；重复相同请求进入只读路径，还会带`progress`。调用方不要假定首次POST必有progress，也不要把超时或断开理解为没有创建Run；相同key重读不重跑，当前没有恢复中断Run的接口。
 
@@ -272,7 +272,7 @@ Content-Type: application/json
 
 `scope`固定含`all_member_ids / selected_member_ids / read_member_ids:UUID[]`及`start/end:datetime`。`all_member_ids`是启动时Case全成员，`selected_member_ids`是请求范围，`read_member_ids`是实际读取到的成员，**不是逐成员分析完成证明**。
 
-`progress.kind`当前使用`case_analysis_started`、`case_analysis_model`、`case_analysis_tool`、`case_analysis_finished`。准备和返回可能是同kind的两个不同seq。公开GET返回简短步骤；完整可见模型消息和Tool结果保存在ledger，不提供模型内部推理。
+`progress.kind`当前使用`case_analysis_started`、`case_analysis_model`、`case_analysis_tool`、`case_analysis_validation`、`case_analysis_finished`。准备和返回可能是同kind的两个不同seq。公开GET返回简短步骤；完整可见模型消息和Tool结果保存在ledger，不提供模型内部推理。
 
 `result`完整字段：
 
@@ -288,7 +288,7 @@ Content-Type: application/json
 | `markdown` | string | 可保存展示的完整报告正文；report_url返回已保存的同内容Markdown附件 |
 | `usage` | object | `model_calls/tool_calls/known_tokens:integer`、`unknown_usage:boolean` |
 
-`AnalysisConclusion`的正常示例：
+`AnalysisConclusion`基础字段节选（不是可直接提交的完整模型报告；完整报告还要求逐成员判断、关联与未决问题字段，程序另生成覆盖/时间线/query_sources）：
 
 ```json
 {
@@ -300,15 +300,15 @@ Content-Type: application/json
 }
 ```
 
-summary非空且≤5000字符；每个finding.text非空且≤3000字符、evidence_ids至少一个；其余为字符串数组。空counterevidence仅表示本次未列出反证，不代表已经排除反证。引用检查只验证编号存在，不验证结论语义。
+summary非空且≤5000字符；每个finding.text非空且≤3000字符、evidence_ids至少一个；其余为字符串数组。空counterevidence仅表示本次未列出反证，不代表已经排除反证。现有校验还检查成员范围/覆盖及有限协议措辞，但不证明通用结论语义。r11 中结构/引用有效而内容仍被拒且有无源推测，见[问题登记](review-guide-20261101.md#当前问题登记)。
 
-A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/severity/status/disposition/source_event_ids/saved_analysis/saved_analysis_truncated`。T证据：`evidence_id/kind=triage/event_id/data`，data含`verdict/rationale/auto_closed`。E证据：`evidence_id/kind=tool/tool/arguments`加第7节结果；复用时另带`reused_from:{run_id,evidence_id}`。H1证据：`kind=prior_analysis/data`，data含原run_id/scope/report/completion/notice，是前次历史判断。A/T/H不能当作相互独立的事实印证。
+A证据：`evidence_id/kind=alert/data`，data含`alert_id/title/event_time/severity/status/disposition/source_event_ids/saved_analysis/saved_analysis_truncated`。T证据：`evidence_id/kind=triage/event_id/data`，data含`verdict/rationale/auto_closed`。E证据：`evidence_id/kind=tool/tool/arguments`加第7节结果；复用时另带`reused_from:{run_id,evidence_id}`。H1证据：`kind=prior_analysis/data`，data含原run_id/scope/report/completion/notice，是前次历史判断。A/T/H不能当作相互独立的事实印证。A 另含 `source_material`，Case 上下文含 `case_material`；冻结字段与模型省略见[来源合同](audit-fixes-implementation-20261031.md)。模型视图同一告警的 saved_analysis 与 T.rationale 完全相同，或显式截断且为其前缀时去重并给出 saved_analysis_refs；原账本保持。
 
 ### 5.3 状态、停止与错误
 
 | 层次 | 取值与解释 |
 | --- | --- |
-| 正常停止 | `analysis_complete`：结论可解析且引用编号存在；Run为completed，仍可能completion=partial |
+| 正常停止 | `analysis_complete`：通过当前结构、引用、成员与有限协议检查；Run为completed，仍可能completion=partial，不代表内容已独立核实 |
 | 不能继续调用 | `model_unavailable / model_call_limit / tool_call_limit / input_or_token_limit / usage_unknown_or_budget_exhausted / duration_limit` |
 | 内容或协议问题 | `invalid_model_content / invalid_tool_call_protocol / model_response_truncated / invalid_or_unreferenced_conclusion` |
 | 必需Tool条件 | `required_tool_unavailable`：当前范围未提供指定工具，模型调用0；`required_tool_not_called`：模型未返回指定调用；均停止并保存failed/partial结果（若收尾保存成功） |
@@ -398,13 +398,13 @@ F5以租户和triage_event_id确定稳定操作身份；调用方重复发送同
 
 程序向配置的模型服务发送`model/messages/max_tokens`以及可用时的`tools`。messages包含system、当前Case材料和后续assistant/tool消息；每次最多输出3000 tokens（`case_analysis_models.MAX_OUTPUT_TOKENS`）。模型看见Tool名称、用途说明、参数schema；它不会自行发现产品URL。
 
-正常提供Tool的轮次不同时发送结论response_format；无可用Tool或唯一一次结论纠错阶段使用JSON Schema且不提供Tool。存在尚未尝试的required_tools时另发function tool_choice。当前Case工具包括下方两个事件湖工具，以及满足来源连接器/主机绑定条件时的product_host_details；后者参数、HTTP映射及证据合同见[产品主机Tool](product-host-tool-20261028.md)。实际列表由CaseTools按本次范围组装，不能因为已注册就认为每个Case都可调用。
+查询轮次提供原生 Tool，不发送结论 response_format；最多两轮查询决策，或 finish_analysis/无可用 Tool 后进入报告阶段。首份正式报告及必要时一次纠错均使用 JSON Schema，不再提供数据 Tool。finish_analysis 仅为本地阶段切换信号。模型报告使用 alert_ref/alert_refs 的当前 A 编号，服务映射为公开 UUID；不自动补写证据。存在尚未尝试的required_tools时另发function tool_choice。当前Case工具包括下方两个事件湖工具，以及满足来源连接器/主机绑定条件时的product_host_details；后者参数、HTTP映射及证据合同见[产品主机Tool](product-host-tool-20261028.md)。实际列表由CaseTools按本次范围组装，不能因为已注册就认为每个Case都可调用。
 
 现有两个工具均为`hostname:string`必填（当前Case主机枚举）、`limit:integer`可选（默认20，1–50），禁止额外参数。租户和绝对窗口由程序固定，不由模型覆盖。
 
 | 工具名 | 返回记录字段 | 限制 |
 | --- | --- | --- |
-| `process_activity` | event_id、event_time、src_hostname、process_name、file_path、hash_sha256、user_name | 进程名非空的已入湖记录；无父进程链 |
+| `process_activity` | event_id、event_time、src_hostname、process_name、file_path、hash_sha256、user_name、class_uid、activity_id、action、outcome | 仅 class_uid=1007 且进程名非空；无父进程链；活动未知不证明启动成功 |
 | `network_connections` | event_id、event_time、src_hostname、process_name、source_ip、dest_ip、dst_port、protocol | 已入湖网络类记录；不是固定443查询 |
 
 工具调用消息示例（arguments是JSON字符串）：
@@ -423,7 +423,11 @@ F5以租户和triage_event_id确定稳定操作身份；调用方重复发送同
 
 成功结果字段：`available:true`、`query_id:string`、`query_scope:{hostname,start,end}`、`rows:object[]`、`returned_count:integer`、`truncated:boolean`、`limitation:string`。失败结果至少`available:false/reason:string/rows:[]`，query_id/query_scope可能缺省。reason包括`unknown_tool/invalid_or_out_of_scope_arguments/lake_not_configured/query_failed:<异常类型>`。
 
-成功空结果必须仍为available=true、returned_count=0；不可伪造为失败，也不可写成“主机安全”。模型视图另有`model_view_row_count`、`untrusted_data_notice`和派生的`query_status`：available=true且有记录行时为success_with_rows，成功无记录时为success_empty，不可用为unavailable。query_status只加入发给模型的视图，完整保存的原证据结构保持；缩减行时标truncated，原结果另存。复用只检查同来源指纹、工具与参数，当前不主动探测事件湖补录或工具版本变化。
+成功空结果必须仍为available=true、returned_count=0；不可伪造为失败，也不可写成“主机安全”。模型视图另有`model_view_row_count`、`untrusted_data_notice`和派生的`query_status`：available=true且有记录行时为success_with_rows，成功无记录时为success_empty，不可用为unavailable。query_status只加入发给模型的视图，完整保存的原证据结构保持；缩减行时标truncated，原结果另存。进程结果另要求 query_contract=case.process_activity.v2，防止旧进程语义跨版本复用；产品当前快照不复用。来源/材料指纹、工具和参数条件仍适用，不主动探测事件湖补录或通用模型/工具版本变化。
+
+r11 的成功空模型视图另含 empty_result_boundary={coverage:unknown,absence_reason:unknown}；程序报告 query_sources 含 tool/query_scope/query_status/returned_count，不可用时数量为 null。source_alignment 的行对应按 event_id 精确匹配 Alert.source_event_ids，匹配不证明因果、未匹配不等于无告警。进程模型行用 event_kind=process_activity 并声明省略 class_uid/activity_id，原字段保留在证据。
+
+HTTP 及已配置 bundled gateway 的单请求等待采用原 120 秒循环剩余时间，连接上限为 min(10秒,剩余时间)；仅 bundled gateway 携带 timeout 字段，直连/BYOK不添加。共享网关默认配置未变，超时不自动重发。
 
 ### 7.2 产品HTTP Tool的具体拟定合同
 

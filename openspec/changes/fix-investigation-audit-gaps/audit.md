@@ -1,3 +1,5 @@
+> 阅读说明（2026-11-01）：以下为原r3本地交付的独立结束审阅，审阅结论和范围保持；不是r11复审或报告语义验收。最新问题见[当前审阅指南](../../../docs/investigation/review-guide-20261101.md)，真实批次见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)。本轮仅维护文档，没有再次独立审阅或业务测试。
+
 # 结束审阅：fix-investigation-audit-gaps
 
 日期：2026-10-31。审阅者：`investigation_end_review` 独立子代理，未参与本 change 的实现、测试编写或交付打包。审阅对象是基于 `5b9513860c566ea9c7f17917ddb71cc199a1988e` 的审阅开始时尚未提交的工作区及 r3 候选包；后续提交绑定见第 6 节。本文件是任务 5.2 的结束审阅记录，不是部署或真实业务验收。

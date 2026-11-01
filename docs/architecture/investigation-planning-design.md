@@ -1,4 +1,4 @@
-**2026-10-31 当前设计先读：** [当前设计对齐](../investigation/current-design-alignment-20261027.md)汇总用户最后确认的边界：事件保留汇总和AI概况，深入调查统一在Case，Run记录一次明确范围的执行。F4成员转Case和事件Case结果回显已有实现，F5自动接线仍未接通。下方v4告警侦察及各历史“下一步”保留原阶段含义，不自动恢复为当前前置任务。当前代码/证据从[最新指南](../investigation/audit-guide-20261031.md)核对；本次发现及验证边界见[设计—实现详细审计](../investigation/design-implementation-audit-20261031.md)。
+**2026-11-01 当前设计先读：** [当前设计对齐](../investigation/current-design-alignment-20261027.md)汇总用户最后确认的边界：事件保留汇总和AI概况，深入调查统一在Case，Run记录一次明确范围的执行。F4成员转Case和事件Case结果回显已有实现，F5自动接线仍未接通。下方v4告警侦察及各历史“下一步”保留原阶段含义，不自动恢复为当前前置任务。当前代码/证据从[最新指南](../investigation/audit-guide-20261031.md)核对；最近交付为r11，数据/真实查询通过但完整报告仍失败；用户现要求保留问题并更新文档，具体见[当前审阅指南](../investigation/review-guide-20261101.md)。本次发现及验证边界见[设计—实现详细审计](../investigation/design-implementation-audit-20261031.md)。
 
 **2026-10-25 当前业务流程与功能开发顺序：** 新增[告警—事件概况—调查流程](incident-investigation-flow-20261025.md)及[评审与实现规划](../investigation/incident-investigation-implementation-plan-20261025.md)，作为本主设计的事件层补充：所有分诊结果、调查进展/结果汇入事件数据；当前字段与 AI 概况分开；事件汇总展示与调查深入分析分工；Incident 不等同 Case。当前目标流程以该补充为准，历史实现证据保持原样。后续按事件汇总、概况、分析闭环、事件范围、自动入口推进；本轮只文档/一轮评审，无代码或业务测试，权限专项继续暂停，下方历史“下一步”不覆盖本次安排。
 
