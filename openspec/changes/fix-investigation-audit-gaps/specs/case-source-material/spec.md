@@ -86,3 +86,22 @@ Case analysis SHALL separate native Tool queries from the formal report. The fir
 #### Scenario: A full-source run explicitly requests fresh queries
 - **WHEN** a new operation specifies refresh_queries=true and both process_activity and network_connections as required tools
 - **THEN** both tools must be attempted against the current fixed host/window, historical results are not reused, and persisted query IDs/results and model-visible source material allow verification of actual queries and untruncated retained raw data
+
+
+### Requirement: Empty-query boundaries survive every model phase
+Query, report and compact-correction prompts SHALL share the evidence interpretation rules. A successful empty result MUST carry unknown coverage and unknown absence reason in the model view. The program-generated query-source section SHALL state the actual tool, scope, status and returned count; unavailability MUST remain distinct from zero matches. These facts and prompts do not constitute a general semantic validator of model prose.
+
+#### Scenario: Both scoped queries return no matching rows
+- **WHEN** available results contain zero rows
+- **THEN** the model receives success_empty and unknown coverage/absence reason; the saved report query-source section states zero matches without concluding contradiction, safety or lost logs, while original Tool results remain unchanged
+
+#### Scenario: A source query fails
+- **WHEN** the source is unavailable
+- **THEN** the query-source section records unavailable and a null returned count, and does not describe it as a successful empty query
+
+### Requirement: Repeated triage judgments are not duplicated in the main model view
+For a main Run, the application SHALL omit an Alert saved_analysis from model input only when it exactly equals the same Alert's T rationale, or is explicitly marked truncated and exactly prefixes that rationale. It SHALL retain a reference to the T evidence and preserve the original ledger material. Existing follow-up omission rules remain unchanged.
+
+#### Scenario: Original r10 inputs duplicate both triage rationales
+- **WHEN** A1 contains the full T1 rationale and A2 contains a declared truncated prefix of T2
+- **THEN** the model sees each rationale once via T, the A items reference those T IDs, and raw source text and original persisted fields are unchanged; a distinct judgment remains visible

@@ -167,3 +167,54 @@ class StructuredReportExamples(IsolatedAsyncioTestCase):
         for text in ["已确认HTTPS通信。", "不是HTTPS。", "HTTPS尚未确认，但TLS已证实。"]:
             report["summary"] = text
             with self.assertRaises(models.ReportContractError):validate_synthesis(report, context, evidence)
+
+    async def test_r10_duplicate_triage_is_removed_only_from_model_view(self):
+        root = Path(__file__).resolve().parents[3] / "docs/operations/evidence/investigation-audit-fixes-20261031/live-r10/results"
+        context = json.loads(next(root.glob("*-step-1.response.txt")).read_text(encoding="utf-8"))["data"]
+        original = deepcopy(context)
+        view = analysis.model_context(context)
+        for item in view["evidence"]:
+            if item["kind"] == "alert":
+                self.assertNotIn("saved_analysis", item["data"])
+                self.assertEqual(item["data"]["saved_analysis_refs"], [item["evidence_id"].replace("A", "T")])
+                saved = next(x for x in original["evidence"] if x["evidence_id"] == item["evidence_id"])
+                self.assertEqual(json.loads(item["data"]["source_material"]["raw_event"]["text"]),
+                                 json.loads(saved["data"]["source_material"]["raw_event"]["text"]))
+            elif item["kind"] == "triage":
+                self.assertEqual(item, next(x for x in original["evidence"] if x["evidence_id"] == item["evidence_id"]))
+        self.assertEqual(context, original)
+        alert = next(x for x in context["evidence"] if x["kind"] == "alert")
+        alert["data"].update(saved_analysis="Different prior judgment", saved_analysis_truncated=False)
+        self.assertEqual(analysis.model_context(context)["evidence"][0]["data"]["saved_analysis"], "Different prior judgment")
+
+    async def test_empty_and_unavailable_results_keep_their_boundaries_in_report_and_model(self):
+        for index, failed in enumerate((False, True)):
+            with self.subTest(failed=failed):
+                self.wire.clear()
+                self.lake.side_effect = RuntimeError("source unavailable") if failed else None
+                self.lake.return_value = SimpleNamespace(columns=[], rows=[])
+                self.report["summary"] = "告警原文已读取，本次未取得可独立核验的行为记录，原因未知。"
+                self.report["findings"] = []
+                data = (await self.run_case(key=110+index, refresh_queries=True)).json()
+                self.assertEqual(data["status"], "completed", data)
+                for request in self.wire:
+                    self.assertIn(analysis.EVIDENCE_RULES, request["messages"][0]["content"])
+                sources = data["result"]["report"]["query_sources"]
+                self.assertTrue(all(s["query_status"] == ("unavailable" if failed else "success_empty") for s in sources))
+                self.assertTrue(all(s["returned_count"] == (None if failed else 0) for s in sources))
+                final = self.wire[-1]["messages"]
+                for message in final:
+                    if message["role"] == "tool":
+                        evidence = json.loads(message["content"])
+                        if failed:
+                            self.assertNotIn("empty_result_boundary", evidence)
+                        else:
+                            self.assertEqual(evidence["empty_result_boundary"]["absence_reason"], "unknown")
+                compact = analysis.compact_correction(final)
+                self.assertIn(analysis.EVIDENCE_RULES, compact[0]["content"])
+                if not failed:
+                    self.assertIn("不能反证告警", data["result"]["markdown"])
+                    self.assertEqual([x["empty_result_boundary"]["coverage"] for x in json.loads(compact[1]["content"])["evidence"]
+                                      if x.get("kind") == "tool"], ["unknown", "unknown"])
+                read = await self.client.get(self.path + f"/investigations/{data['run_id']}")
+                self.assertEqual(read.json()["result"], data["result"])

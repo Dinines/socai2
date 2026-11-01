@@ -701,7 +701,9 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertNotIn("source_alignment", saved_tool)
         self.assertEqual(saved_tool["rows"], parent["evidence"][-2]["rows"])
         self.assertEqual(outcome["result"]["report"]["query_sources"],
-                         [{"evidence_id": "E1", **expected, "reused_from": saved_tool["reused_from"]}])
+                         [{"evidence_id": "E1", **expected, "reused_from": saved_tool["reused_from"],
+                           "tool": "network_connections", "query_scope": saved_tool["query_scope"],
+                           "query_status": "success_with_rows", "returned_count": 3}])
         self.assertIn("本次未重新查询该来源", outcome["result"]["markdown"])
         self.assertIn("E1/rows/2：未匹配选定告警的来源事件ID", outcome["result"]["markdown"])
         clipped = json.loads(tools.model_result({**saved_tool, "rows": [{**saved_tool["rows"][0], "process_name": "x" * 9000}]}, context))

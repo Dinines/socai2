@@ -123,6 +123,8 @@ def model_result(result: dict, context: dict | None = None) -> str:
         if matches is not None:
             view["source_alignment"]["row_alert_refs"] = []
     view["query_status"] = ("success_with_rows" if result.get("rows") else "success_empty") if result.get("available") else "unavailable"
+    if view["query_status"] == "success_empty":
+        view["empty_result_boundary"] = {"coverage": "unknown", "absence_reason": "unknown"}
     view["rows"] = []
     for index, row in enumerate(result.get("rows", [])):
         if result.get("query_contract") == PROCESS_QUERY_CONTRACT:
