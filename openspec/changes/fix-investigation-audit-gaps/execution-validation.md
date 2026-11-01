@@ -1,3 +1,5 @@
+**2026-11-01最新本地验证：** 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 OpenSpec严格校验通过，任务仍16/17、5.3未完。见[回执](../../../docs/operations/investigation-source-boundaries-20261101.json)。
+
 **r10最新验证：** 42个受影响方法的最新实际结果通过（含7新增，未变通过项复用，非单次全量重跑）；源码51086a4已部署。唯一实际主Run completed/partial，3模型/2CH查询/0复用；全部原文完整入模，首份Schema报告合法。ClickHouse两QueryFinish均0异常/0结果，真实空结果推理仍不合格。首次打包权限失败与修正保留。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)及[核验](../../../docs/operations/evidence/investigation-audit-fixes-20261031/live-r10/review.md)。任务仍16/17，5.3未完，无归档。
 
 **2026-10-31 r9实际补充：** 用户明确确认后部署源码`bf2bd9c`，472应用源码一致；复用6项必要直接验证。唯一Run failed/partial，首次json_invalid、纠错后invalid_member_reference（关系条目重复A2）；3回复/11740 tokens、1复用/0新湖查询，23HTTP/48原件hash核，父报告保持。最长回复26.50秒，未实际覆盖大于45秒等待；完整语义仍未通过。见[实际回执](../../../docs/operations/investigation-model-wait-20261031.json)，16/17、不归档。

@@ -39,3 +39,5 @@
 2026-10-31 r9补充：此前自动审批拒绝已在用户明确确认后解除，更新和唯一追加均已执行；原拒绝与新授权分别保存。报告引用和语义仍未通过，任务16/17，5.3保持未完成，见[回执](../../../docs/operations/investigation-model-wait-20261031.json)。
 
 2026-10-31 r10补充：结构化报告及A引用映射已交付，唯一完整raw主调查 completed/partial，两个Tool实际CH查询/零复用，首份格式通过、纠错0；成功空结果被报告过度解释，语义验收未通过，5.3继续待办。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)。
+
+2026-11-01补充：本地49a04eb完成证据规则共用、同源摘要去重及查询事实展示，7个必要直接方法通过；未部署或新增真实Run。查明Office湖内只有登录数据，不能作为进程/网络正向样本；真实语义仍未验，5.3保持未完成，见[回执](../../../docs/operations/investigation-source-boundaries-20261101.json)。
