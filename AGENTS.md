@@ -1,3 +1,7 @@
+# 2026-11-01 r11发布准备与样本选择待答复
+
+r11更新包已本地固定，发布准备提交a543ad6（功能修复49a04eb），476文件含472应用源码及tar目录0755/文件0644已核。只读确认线上仍为r10，全部相关容器及配置hash保持。本轮0上传/部署/新数据/Run/模型，复用7项通过结果。已询问正向样本来源，尚无答复；仅准备专用fixture租户2告警+2事件+1Case+1Run的明确synthetic离线草案，未入库。见docs/operations/investigation-r11-preparation-20261101.json及openspec/changes/fix-investigation-audit-gaps/retest/r11/fixture-draft.json。下一先确定样本选择并核对原文与source_event_id/类别/窗口，再实际调查；不更改旧数据或报告。
+
 # 2026-11-01 空查询数据原因与本地边界修复
 
 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 线上最近核验仍r10/51086a4，r10批次已结束不重跑。回执docs/operations/investigation-source-boundaries-20261101.json，详解docs/investigation/source-boundaries-20261101.md。原42方法为r10历史证据，本轮7去重方法复用未变通过项；初额度失败保留，最终网络12244≤12296，原预算保持。下一先提供有完整raw且对应真实1007/4001事件的正向样本；不补造旧证据，不归档/推送/合并，5.3仍未完。

@@ -4,6 +4,8 @@
 
 **最新本地进展：** 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 [具体原因与修复](source-boundaries-20261101.md)。
 
+**发布准备：** r11包已固定（a543ad6，功能49a04eb），应用文件读权限已核；尚未上传/部署。下一正向样本来源已询问，只有离线草案，没有新数据或调查。[准备回执](../operations/investigation-r11-preparation-20261101.json)。
+
 [r10实际回执](../operations/investigation-structured-report-20261031.json)：源码`51086a4`已部署r10；首份正式报告使用JSON Schema，模型A引用映射公共UUID，具体校验反馈和原一次纠错/预算保持。唯一完整raw演示告警主Run `4f094ed4-b4f9-5db9-8cc2-b5f8c781858e` 为completed/partial：3模型、2真实湖查询、0复用、10292 tokens；首次报告格式/成员通过、纠错0。两次成功空查询经ClickHouse QueryFinish核实，报告却把空结果当矛盾并猜测采样/丢日志等原因，语义仍未过。 两条description/raw_event在三次模型输入均完整未截断；42个受影响直接用例的最新结果通过（含7新增，复用未变通过项），不代表42项全量重跑。[最终报告及核验](../operations/evidence/investigation-audit-fixes-20261031/live-r10/review.md)。
 
 [历史r9实际回执](../operations/investigation-model-wait-20261031.json)：用户明确确认后已部署，6项直接验证复用。唯一网络追加3次模型回复均取得，11740 tokens、1历史复用、0新湖查询；首份结论JSON无效，一次纠错后关系条目重复成员UUID，被校验拒绝，最终failed/partial。全部回复在26.51秒内，本批未实际覆盖超过45秒的等待；不能宣称完整报告通过。

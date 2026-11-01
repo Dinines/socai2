@@ -1,3 +1,5 @@
+**2026-11-01 r11准备：** 发布包和明确标记的正向样本草案已准备，等待样本来源选择；线上仍r10、没有新调查或数据写入。见[准备回执](docs/operations/investigation-r11-preparation-20261101.json)。
+
 **2026-11-01 本地报告边界修复与数据核对：** 本地`49a04eb`已修正三阶段共用证据规则、同源分诊摘要去重及程序生成的查询状态/数量，7个受影响直接用例最新结果通过（含2新增），未部署、0新Run/模型。只读核对确认生产湖6行均3002，Office两行raw为user.session.start，另fixture租户仅3条4001；现有完整raw告警没有对应进程/网络湖记录，不能放宽过滤或改造登录数据充数。新提示词真实语义仍未验，未新增通用语义校验器。 见[结果](docs/investigation/source-boundaries-20261101.md)。
 
 **2026-10-31 r10结构化报告交付与真实空查询核验：** 源码`51086a4`已部署r10；首份正式报告使用JSON Schema，模型A引用映射公共UUID，具体校验反馈和原一次纠错/预算保持。唯一完整raw演示告警主Run `4f094ed4-b4f9-5db9-8cc2-b5f8c781858e` 为completed/partial：3模型、2真实湖查询、0复用、10292 tokens；首次报告格式/成员通过、纠错0。两次成功空查询经ClickHouse QueryFinish核实，报告却把空结果当矛盾并猜测采样/丢日志等原因，语义仍未过。 42个受影响方法最新结果通过，详情见[回执](docs/operations/investigation-structured-report-20261031.json)。OpenSpec仍16/17，首次打包权限失败已修正并留证，无第二个Run/推送/合并。
