@@ -1,0 +1,113 @@
+{
+  "summary": "案例 [SYNTHETIC] INVHTTP-20261101-r11-positive-01 被明确标记为‘合成调查功能测试样本’，非真实攻击。告警 A1 和 A2 记录了 Word 启动 PowerShell 及随后的出站连接，工具验证了进程与网络记录的存在，但未提供脚本内容、目的或审批依据。因此，无法认定攻击成立，缺口在于协议类型和授权状态。",
+  "findings": [
+    {
+      "text": "告警原文‘明确标记的调查功能测试样本；不是实际攻击或生产告警’直接定性本案例为测试数据，而非违规事件。",
+      "evidence_ids": ["E1", "E2", "A1", "A2"]
+    },
+    {
+      "text": "A1 记录显示在用户 fixture.reader 下，process_name='powershell.exe' 启动成功，与工具 E1 返回的进程活动事件匹配；工具未记录父进程链或命令全文。",
+      "evidence_ids": ["A1", "E1"]
+    },
+    {
+      "text": "A2 记录显示 powershell.exe 向 198.51.100.80:443 发起 TCP 流出连接，与工具 E2 返回的网络连接记录一致（同源同宿同端口同进程名），但工具未确认应用层协议。",
+      "evidence_ids": ["A2", "E2"]
+    },
+    {
+      "text": "A1 和 A2 共享主机 INV-R11-FULL-RAW-01 和用户 fixture.reader，且时间间隔仅 1 分钟，存在操作连续性。但两者缺失 script body、应用协议和审批记录，无法建立因果或授权判断。",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    }
+  ],
+  "counterevidence": [],
+  "gaps": [
+    "告警与工具记录均未提供 PowerShell 执行的脚本内容或参数。",
+    "TCP/443 连接未被确认为 HTTPS 或 TLS，应用层协议未知，无法排除其他服务场景。",
+    "示例记录中的‘approval_status’为 not_supplied，缺乏审批材料的正 responseData 不能证明合法或非法。",
+    "合成标志‘synthetic=true’未通过工具字段获取，仅见于 case_material。"
+  ],
+  "recommendations": [
+    "向合成生成环境索取脚本正文、模拟流量载荷及测试假设说明。",
+    "检查测试引擎的类型与审批策略，确认该脚本是否有预期授权不在 real 系统中。",
+    "如使用相同模板产生其他告警，需持续追踪所有相关事件是否同样标记为 synthetic。"
+  ],
+  "member_assessments": [
+    {
+      "status": "unresolved",
+      "role": "supporting",
+      "summary": "A1 证明 PowerShell 在测试用户下启动，但未包含脚本内容；与 E1 在进程名、时间、主机全匹配。未决点需补充始发命令及父进程链。",
+      "evidence_ids": ["A1", "E1"],
+      "alert_ref": "A1"
+    },
+    {
+      "status": "unresolved",
+      "role": "supporting",
+      "summary": "A2 证明 PowerShell 向 198.51.100.80:443 流出连接，与 E2 在主机、时间、进程、端口全匹配。未决点需确认协议为 HTTPS/TLS 及目的合法性。",
+      "evidence_ids": ["A2", "E2"],
+      "alert_ref": "A2"
+    }
+  ],
+  "relationships": [
+    {
+      "kind": "shared_context",
+      "assessment": "not_supported",
+      "basis": "A1 和 A2 共享主机 INV-R11-FULL-RAW-01 和用户 fixture.reader；A2 连接发生在 A2 记录时间 16:02:00，较 A1 的 16:01:00 晚 1 分钟，时间线上连续但不足以证明授权或恶意目的。",
+      "evidence_ids": ["A1", "A2", "E1", "E2"],
+      "alert_refs": ["A1", "A2"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "PowerShell 执行的脚本内容是什么？是否有模拟载荷或编码？",
+      "evidence_ids": ["A1", "E1"]
+    ,
+    "missing_evidence": "script_body 未出现在 A1 的工具与告警原始字段中；合成记录未提供方言或载荷示例。"
+    ,
+    "suggested_action": "向合成场景提供方索要脚本正文或模拟载荷简述。"
+    ,
+    "alert_refs": ["A1"]
+    }
+  ,
+    {
+      "question": "TCP/443 连接是否运行 HTTPS/TLS 或其他协议？是否为 C2 或其他服务？",
+      "evidence_ids": ["A2", "E2"]
+    ,
+    "missing_evidence": "工具与告警均未包含 TLS 握手、SNI、端口应用层信息；TCP/443 不能直接推断为 HTTPS。"
+    ,
+    "suggested_action": "捕获原始流量或查看 SIP/日志中 HTTP/SNI 字段。"
+    ,
+    "alert_refs": ["A2"]
+    }
+    ,
+    {
+      "question": "even 为何 approval_status 为 not_supplied？是否存在测试授权例外？",
+      "evidence_ids": ["A1", "E1"]
+    ,
+    "missing_evidence": "无审批记录文本或审批流程说明；‘not_supplied’可能是合成环境未模拟审批填写。"
+    ,
+    "suggested_action": "核查合成运行的审批策略或记录，区分真实与测试授权。"
+    ,
+    "alert_refs": ["A1"]
+    }
+    ,
+    {
+      "question": "host INV-R11-FULL-RAW-01 上的 PowerShell 是否有父进程？是否由其他用户会话映射？",
+      "evidence_ids": ["E1"]
+    ,
+    "missing_evidence": "tools只返回单条进程活动记录，未包含进程链、PID 或启动树。"
+    ,
+    "suggested_action": "启用进程树采集或检查父进程日志。"
+    ,
+    "alert_refs": ["A1"]
+    }
+    ,
+    {
+      "question": "综合判断：本案应继续作为测试样本处理，还是进入真实调查？",
+      "evidence_ids": ["A1", "A2"],
+      "missing_evidence": "case_material 明确声明合成，但未覆盖其他来源对真实场景的定义差异。"
+      ,
+      "suggested_action": "以 case_material 为准归为合成样本；如有其他字段混入真实流量需人工审查。"
+      ,
+      "alert_refs": ["A1", "A2"]
+    }
+  ]
+}

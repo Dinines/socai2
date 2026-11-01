@@ -1,6 +1,6 @@
 # 实施任务
 
-状态：用户明确确认后r9源码bf2bd9c已部署，模型等待使用原120秒剩余时间，6项直接验证复用。唯一追加3次模型回复均取得/11740 tokens；首答json_invalid，一次纠错后关系成员重复导致invalid_member_reference，failed/partial。见[最新回执](../../../docs/operations/investigation-model-wait-20261031.json)。完成16/17，5.3未满足，不重试本批或归档。
+状态：r11/a543ad6 已部署；授权的唯一新 synthetic 正向样本调查完成，2 次真实查询各 1 行、0 复用，完整 raw 和 JSON/成员引用通过。报告协议校验和语义仍未通过，failed/partial，见[最新回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)。完成16/17，5.3未满足，本批不重试、不归档。
 
 ## 1. B1 — 修正进程证据类型（A01）
 
@@ -41,3 +41,5 @@
 2026-10-31 r10补充：结构化报告及A引用映射已交付，唯一完整raw主调查 completed/partial，两个Tool实际CH查询/零复用，首份格式通过、纠错0；成功空结果被报告过度解释，语义验收未通过，5.3继续待办。见[回执](../../../docs/operations/investigation-structured-report-20261031.json)。
 
 2026-11-01补充：本地49a04eb完成证据规则共用、同源摘要去重及查询事实展示，7个必要直接方法通过；未部署或新增真实Run。查明Office湖内只有登录数据，不能作为进程/网络正向样本；真实语义仍未验，5.3保持未完成，见[回执](../../../docs/operations/investigation-source-boundaries-20261101.json)。
+
+2026-11-01 r11补充：新标记样本2告警/2事件/1Case/1Run，4模型12728tokens。首份及纠错均有效JSON与成员引用，但协议误拒、纠错提示入正文和无源推测并存。真实数据链路已核，完整报告验收未过；未用非空样本冒称空查询推理已验，5.3保持待办。详见[复验原因](../../../docs/operations/evidence/investigation-r11-20261101/review.md)。

@@ -1,3 +1,7 @@
+# 2026-11-01 r11已部署，正向样本真实查询通过但报告仍失败
+
+用户选择新建明确标记测试样本后，r11/a543ad6（功能49a04eb）已部署，镜像59d9fe097588…，472实际源码hash一致；专用fixture租户新增2告警+2湖事件+1Case，唯一Run22b48b78-3716-5a64-994f-788d020dc760为failed/partial。两条raw371/425B在4次模型请求均完整；2正式真实查询各1行、2独立预检查询，全部QueryFinish核实，0复用，12728tokens/4调用未定价。首份与纠错JSON及成员均有效；首份协议待核措辞被拒，纠错后空格/状态/引号句式误拒与无源“文档服务器/故意缺失”、校验指令泄入正文并存，不能只放宽规则称通过。16事件18工件、30HTTP、75远端文件hash核；额外1只读状态查询单列。旧告警整行hash及r10报告字节保持，core/agents/网关/配置/开发Key保持。见docs/operations/investigation-r11-positive-fixture-20261101.json及evidence/investigation-r11-20261101/review.md。本批结束不重试；本轮未新增功能修复，复用7项直接验证；5.3继续待办，不归档/推送/合并。下一聚焦不确定句式误拒与纠错报告质量，不扩大框架。
+
 # 2026-11-01 r11发布准备与样本选择待答复
 
 r11更新包已本地固定，发布准备提交a543ad6（功能修复49a04eb），476文件含472应用源码及tar目录0755/文件0644已核。只读确认线上仍为r10，全部相关容器及配置hash保持。本轮0上传/部署/新数据/Run/模型，复用7项通过结果。已询问正向样本来源，尚无答复；仅准备专用fixture租户2告警+2事件+1Case+1Run的明确synthetic离线草案，未入库。见docs/operations/investigation-r11-preparation-20261101.json及openspec/changes/fix-investigation-audit-gaps/retest/r11/fixture-draft.json。下一先确定样本选择并核对原文与source_event_id/类别/窗口，再实际调查；不更改旧数据或报告。
