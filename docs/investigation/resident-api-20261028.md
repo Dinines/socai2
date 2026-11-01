@@ -1,4 +1,4 @@
-**最近核验（2026-11-01）：** r11 已部署，发布源码 a543ad6、功能修复49a04eb；实际工作目录 `/opt/investigation/app` 的472源码hash一致。[安装回执](../operations/evidence/investigation-r11-20261101/post-install.json) / [唯一真实批次](../operations/investigation-r11-positive-fixture-20261101.json)。完整raw及两次非空实际查询通过，报告仍 failed/partial。core、agents、网关及原配置保持；本轮文档更新未再次连接服务。
+**最近核验（2026-11-01）：** r13已部署，基于b758351的未提交工作区快照；实际`/opt/investigation/app`的473源码hash一致。[安装核对](../operations/evidence/investigation-r13-20261101/post-install.json) / [A/B真实批次](../operations/investigation-r13-report-validation-20261101.json)。A输出截断，B completed/partial但语义未过，C跳过。core、agents、网关及原环境文件保持。
 
 问题现保留，见[审阅指南](review-guide-20261101.md)。本文件是接入说明，不构成再次运行批次、更新服务或启用worker的指令。r1首次启动及四案例为下方历史记录；r9/r10等版本由[最新指南](audit-guide-20261031.md#6-历史验证索引)定位。
 
@@ -12,7 +12,7 @@
 
 ## 服务入口
 
-最近保存的核验为容器`socai2-investigation-api`运行r11，镜像`socai2-investigation-api:20261101-r11`，镜像ID为`sha256:59d9fe097588dad6c019797a9ba635f5f2126ae66ffddbdc3e466447ebc3ffcb`。实际只映射21的`127.0.0.1:18010`，连接`socai2_default`，restart=unless-stopped。复用原API镜像的已验证依赖，当前源码放在独立工作目录，入口为`app.investigation_v2.application:create_app`。
+最近保存的核验为容器`socai2-investigation-api`运行r13，镜像`socai2-investigation-api:20261101-r13`，镜像ID为`sha256:7ca0572275260ee96a677665e20d513b0ced6a58fcfdba1b13ca2c6922ac5093`。实际只映射21的`127.0.0.1:18010`，连接`socai2_default`，restart=unless-stopped。复用原API镜像的已验证依赖，当前源码放在独立工作目录，入口为`app.investigation_v2.application:create_app`。
 
 - 调查入口：`http://127.0.0.1:18010/api/v2/investigation/…`
 - 接口描述：`http://127.0.0.1:18010/api/v2/investigation/openapi.json`，目前18条路径。

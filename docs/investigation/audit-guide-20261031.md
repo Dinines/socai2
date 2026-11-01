@@ -1,22 +1,22 @@
 # 调查模块最新指南与审计入口
 
-更新日期：2026-11-01。当前以最近保存的 **r11** 部署和实际批次回执为准：发布源码 `a543ad6`，业务修复 `49a04eb`，21 独立调查 API 的 472 个应用源码 hash 已核。文档更新本身没有重新连接服务。
+更新日期：2026-11-01。最近核实部署为 **r13**：基于b758351的未提交工作区快照，按候选包hash固定；21独立调查API实际473应用源码一致。见[真实回执](../operations/investigation-r13-report-validation-20261101.json)。
 
-**当前结论：数据读取和真实 Tool 查询链路已验证，完整报告质量仍未通过。** 用户要求先保留当前问题，本轮只更新文档和审阅指南。问题登记、原答证据和审阅判据集中在 [当前审阅指南](review-guide-20261101.md)；OpenSpec 为 16/17，5.3 保持未完成。
+**当前结论：完整输入和真实Tool查询通过，报告质量仍失败。** A输出截断，B虽completed/partial但语义未过，C因前提不满足跳过。具体输出和来源偏差见[当前审阅指南](review-guide-20261101.md)；OpenSpec16/17，5.3保持未完成，不重复本批。
 
 ## 1 基线与验证状态
 
 | 对象 | 最新可确认状态 | 依据 |
 | --- | --- | --- |
-| 常驻版本 | `socai2-investigation-api:20261101-r11`，监听 21 的 `127.0.0.1:18010`；实际源码目录 `/opt/investigation/app` | [部署与源码核对](../operations/evidence/investigation-r11-20261101/post-install.json)、[接入说明](resident-api-20261028.md) |
+| 常驻版本 | `socai2-investigation-api:20261101-r13`，21的`127.0.0.1:18010`；源码目录`/opt/investigation/app` | [部署核对](../operations/evidence/investigation-r13-20261101/post-install.json)、[接入说明](resident-api-20261028.md) |
 | 功能修复 | A01 进程类别/版本、A02 概况失败来源模式、D01 有界 raw 材料已交付；后续含结构化报告、A 引用映射、来源标注和证据边界提示 | [实施记录](audit-fixes-implementation-20261031.md)、[来源边界](source-boundaries-20261101.md) |
-| 最新受影响直接验证 | 7 个不同方法的最新结果通过，含 2 新增；复用未变结果，不是单次 7 项重跑。r10 的 42 方法是前批证据 | [直接验证回执](../operations/investigation-source-boundaries-20261101.json) |
-| 最新真实调查 | Run `22b48b78-3716-5a64-994f-788d020dc760`，`failed/partial`；4 模型、2 正式湖查询、0 复用、12,728 tokens，4 调用未定价 | [r11 回执](../operations/investigation-r11-positive-fixture-20261101.json)、[原因分析](../operations/evidence/investigation-r11-20261101/review.md) |
-| 原始材料与查询 | raw 371/425 字节在全部 4 次模型请求完整；进程/网络正式查询各 1 行，来源 ID 精确对应。另有 2 次独立预检查询 | [核验](../operations/evidence/investigation-r11-20261101/verification.json)、[ClickHouse 日志](../operations/evidence/investigation-r11-20261101/post-batch-proof.json) |
-| 报告状态 | 首份及纠错 JSON Schema、成员引用有效；协议措辞校验两次拒绝，且原答含无来源推测。保存失败报告，不采纳被拒结论 | [最终报告](../operations/evidence/investigation-r11-20261101/final-report.md)、[问题清单](review-guide-20261101.md#当前问题登记) |
+| 最新受影响直接验证 | 来源值等窄修复17个不同方法最新通过，含6新增；本批复用，业务测试重跑0，五项源码/测试指纹未变 | [直接验证回执](../operations/investigation-report-grounding-20261101.json) |
+| 最新真实调查 | A failed/partial，B completed/partial但语义未过；6模型、4真实查询、0复用、20,334tokens；6调用未定价，C跳过 | [r13回执](../operations/investigation-r13-report-validation-20261101.json)、[分析](../operations/evidence/investigation-r13-20261101/review.md) |
+| 原始材料与查询 | A raw371/425B、B raw219/251B，各在3轮输入完整；A查询1/1行、B查询0/0行，全部QueryFinish成功 | [输入核验](../operations/evidence/investigation-r13-20261101/verification.json)、[查询日志](../operations/evidence/investigation-r13-20261101/query-and-cost-proof.json) |
+| 报告状态 | A输出3000tokens后截断，未触发纠错；B有效JSON及引用通过，但空查询反证化、未提供审批变无审批、Tool编号错误仍在 | [逐问题分析](../operations/evidence/investigation-r13-20261101/review.md)、[问题清单](review-guide-20261101.md#当前问题登记) |
 | OpenSpec | 当前审计 change 16/17，旧追加 change 5/5；严格校验通过不代表完整报告验收通过 | [任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)、[验证记录](../../openspec/changes/fix-investigation-audit-gaps/execution-validation.md) |
 
-r11 样本由用户选择新增并明确标记 synthetic：专用 fixture 租户内 2 告警、2 湖事件、1 Case、1 Run。它验证从数据库材料到真实模型、真实查询和保存读回的流程，不证明生产采集、检测、端点行为或真实攻击。原告警与 r10 报告保持；本批已结束，不重试挑选结果。
+历史r11样本由用户选择新增并明确标记synthetic；r12/r13 A复用其原Case与两条告警/湖事件，B复用r10完整raw Case，没有新增源数据。真实API/模型/查询指系统调用实际发生，不证明示例中的端点行为或真实攻击发生。这些批次均已结束，不重试挑选结果。
 
 ## 2 当前功能范围
 
@@ -25,7 +25,7 @@ r11 样本由用户选择新增并明确标记 synthetic：专用 fixture 租户
 | F1 事件成员与分诊汇总 | 读取 canonical 成员、已存分诊和当前处置；真实 HTTP 已覆盖 | 成员状态不自动决定事件关闭 |
 | F2 AI 概况 | 首次任务代码、手动刷新、失败保旧文、变化标旧；手动引用 Case 报告已真实联调 | 首次 worker 未启用；普通 GET 不生成概况，新 Run 不自动改写旧文 |
 | F4 成员转 Case | 告警/事件创建或关联 Case、读取关联及历史；真实 PG/HTTP 已覆盖 | 建案成功不代表调查已执行；F5/自动建案政策仍未纳入 |
-| F3 Case 调查 | 预览、原生 Tool、完整 raw、结构化报告、步骤/证据/报告读回及追加已有真实证据 | r11 真实查询有记录，最终报告仍 failed/partial；结构、查询成功和语义质量分别判断 |
+| F3 Case 调查 | 预览、原生 Tool、完整 raw、结构化报告、步骤/证据/报告读回及追加已有真实证据 | r13 A输出截断，B completed但内容偏差；结构、查询成功和语义质量分别判断 |
 | 多成员与公共读取 | 成员覆盖、关系、时间线、未决问题、executions 及来源行导航已有实现 | 引用合法不证明文字有依据；时间线的同主机候选成员不等于精确来源 ID 对应 |
 | 产品主机 Tool | `product_host_details` 已实现来源绑定和 CrowdStrike 当前快照，替身通过 | 真实厂商 HTTP 及模型使用未验；当前快照不证明历史状态 |
 | 追加及指定查询 | `required_tools`、`refresh_queries`、H1 历史保留和适用查询复用已实现，相关真实批次有证据 | 指定 Tool 尝试可由复用满足；实际重新查询须核 query_id 和数据库执行记录 |
@@ -46,7 +46,7 @@ r11 样本由用户选择新增并明确标记 synthetic：专用 fixture 租户
 
 `required_tools` 要求尝试指定工具，参数由模型在 schema 中生成。`refresh_queries=true` 禁止历史复用，但单独使用不保证模型调用 Tool。需要本次查库时同时使用两者，并检查实际执行证据。最多两轮查询决策后进入 Schema 约束报告，必要时一次纠错；总计最多 4 模型、4 数据 Tool、24,000 tokens，每次输出最多 3,000，调查循环 120 秒。`finish_analysis` 为本地结束查询信号，不查询数据。
 
-模型报告使用当前 `alert_ref/alert_refs`（A 编号），公开结果映射为 `alert_id/alert_ids`（UUID）。校验包括结构、引用、成员完整性和有限协议措辞，不是通用语义判断。HTTP 200、`completed`、`partial`、JSON 合法、报告有据各自表达不同含义。
+模型报告使用当前 `alert_ref/alert_refs`（A 编号），公开结果映射为 `alert_id/alert_ids`（UUID）。校验包括结构、引用、成员完整性、明确PID/账号的来源值及有限协议/空查询原因措辞，不是通用语义判断。HTTP 200、`completed`、`partial`、JSON 合法、报告有据各自表达不同含义。
 
 ## 4 推荐阅读顺序
 
@@ -54,16 +54,16 @@ r11 样本由用户选择新增并明确标记 synthetic：专用 fixture 租户
 | --- | --- | --- |
 | 1 | [当前审阅指南](review-guide-20261101.md) | 固定本次基线、当前问题和最短证据阅读路径 |
 | 2 | [设计对齐](current-design-alignment-20261027.md)、[接口合同](interface-contracts-20261027.md) | 职责、调用、模型和 Tool 数据合同 |
-| 3 | [r11 实际复验原因](../operations/evidence/investigation-r11-20261101/review.md) | 同看完整输入、真实查询、被拒原答和最终失败报告 |
+| 3 | [r13实际复验原因](../operations/evidence/investigation-r13-20261101/review.md) | 同看完整输入、真实查询、A残稿和B保存报告 |
 | 4 | [r10 空查询记录](../operations/evidence/investigation-audit-fixes-20261031/live-r10/review.md)、[来源核对](source-boundaries-20261101.md) | 区分旧空结果问题与 r11 非空正向样本 |
-| 5 | [当前 OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)、[原结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md) | 原审阅仅覆盖 r3 本地交付，不能当作 r11 语义验收 |
+| 5 | [当前 OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)、[原结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md) | 原审阅仅覆盖 r3 本地交付，不能当作 r13 语义验收 |
 | 6 | [证据目录](evidence-catalog-20261027.md) | 查找历史版本、冻结请求、失败及原始响应 |
 
 ## 5 审阅方法与当前安排
 
 先固定发布版本和真实批次，再沿材料→模型请求→Tool SQL/结果→首份报告→校验反馈→纠错原答→最终保存结果检查。具体字段、文件及问题编号见 [审阅步骤](review-guide-20261101.md#审阅顺序)。已有且未变化的直接验证继续复用，不增加恢复、压力、权限专项或逐层审阅门。
 
-用户当前要求先保留问题。本轮只整理文档，不修业务代码，不部署、不发新 Run、不重跑业务测试；原失败和未验范围保留。未来恢复功能修复时，优先处理协议误拒与纠错内容质量，不能只放宽规则、提高预算或循环调用来取得通过报告。
+用户继续后已更新独立API并完成r13 A/B固定复验，原失败和未验范围保留；本批业务测试重跑0。下一聚焦报告截断的既有一次纠错处理、空查询不构成反证、未提供不等于不存在及Tool编号一致性，使用本批反例做必要直接验证，不新增Case记忆或通用语义框架。不能只放宽规则、提高预算或循环调用来取得通过报告；新版本复验另固定范围。
 
 ## 6 历史验证索引
 

@@ -273,7 +273,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(schema["$defs"]["Finding"]["properties"]["evidence_ids"]["items"]["enum"], ["A1", "T1", "E1"])
         self.assertEqual(schema["$defs"]["MemberAssessment"]["properties"]["alert_ref"]["enum"], ["A1"])
         feedback = json.loads(correction["messages"][-1]["content"].split("\n", 1)[1])
-        self.assertEqual(feedback, {"errors": [{"type": "unknown_evidence_reference"}]})
+        self.assertEqual(feedback, {"errors": [{"issue": "证据编号须来自当前输入", "location": []}]})
         self.assertEqual(correction["messages"][1:-1], self.messages[1]["messages"][1:])
         self.assertEqual(correction["messages"][0]["content"], analysis.CORRECTION_SYSTEM)
         saved_feedback = next(json.loads(item.content) for item in self.artifacts
@@ -470,7 +470,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         view = json.loads(correction["messages"][1]["content"])
         raw = view["evidence"][0]["data"]["source_material"]["raw_event"]
         self.assertIn("approval_status", raw["text"])
-        self.assertFalse(raw["model_truncated"])
+        self.assertIs(raw.get("model_truncated", view.get("source_field_defaults", {}).get("model_truncated")), False)
         self.assertEqual(context["evidence"][-1], original_history)
         self.lake.assert_not_awaited()
         self.assertTrue(any(item.kind == "case_analysis_result" for item in self.artifacts))
@@ -692,9 +692,10 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         self.assertEqual(len(self.messages), 3)
         expected = {"origin": "historical_reuse", "already_in_history": "H1", "row_alert_refs": [["A1"], ["A2"], []]}
         for body in self.messages[1:]:
-            visible = json.loads(next(message["content"] for message in body["messages"] if message["role"] == "tool"))
-            self.assertEqual(visible["source_alignment"], expected)
             model_context = json.loads(body["messages"][1]["content"])
+            tools_visible = [json.loads(message["content"]) for message in body["messages"] if message["role"] == "tool"]
+            visible = next(item for item in tools_visible + model_context["evidence"] if item.get("evidence_id") == "E1")
+            self.assertEqual(visible["source_alignment"], expected)
             self.assertEqual(next(item["data"]["report"]["summary"] for item in model_context["evidence"]
                                   if item["kind"] == "prior_analysis"), history_summary)
         saved_tool = outcome["result"]["evidence"][-1]
@@ -923,7 +924,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         model_view = json.loads(self.messages[2]["messages"][1]["content"])
         model_history = next(item for item in model_view["evidence"] if item["kind"] == "prior_analysis")
         self.assertEqual(model_history["data"]["omitted_report_fields"],
-                         ["timeline", "member_coverage", "member_assessments", "relationships", "open_questions", "recommendations", "query_sources"])
+                         ["timeline", "member_coverage", "recommendations", "query_sources"])
         self.assertNotIn("timeline", model_history["data"]["report"])
         self.assertEqual(model_history["data"]["report"]["summary"], original["report"]["summary"])
         self.assertEqual(model_history["data"]["report"]["gaps"], original["report"]["gaps"])

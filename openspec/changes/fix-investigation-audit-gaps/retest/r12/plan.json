@@ -1,0 +1,71 @@
+{
+  "batch": "INVHTTP-20261101-r12-report-01",
+  "candidate": "20261101-r12",
+  "source_snapshot_sha256": "72709edea73b134d0226bc8666cc666701f7b1458df7877c0e9d8154a116568b",
+  "status": "prepared_not_dispatched",
+  "max_new_runs": 3,
+  "per_run_limits": {
+    "model_calls": 4,
+    "tool_calls": 4,
+    "tokens": 24000,
+    "duration_seconds": 120
+  },
+  "report_corrections_max": 1,
+  "batch_model_calls_max": 12,
+  "batch_tokens_max": 72000,
+  "cases": [
+    {
+      "label": "A",
+      "tenant_id": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "case_id": "5fbb643b-975b-4798-8729-801b50ba956f",
+      "method": "POST",
+      "path": "/api/v2/investigation/cases/5fbb643b-975b-4798-8729-801b50ba956f/investigate",
+      "body_file": "A-positive.body.json",
+      "body_file_sha256": "ac094814852e965dd64cf2a6285d0eb3ea16a882a6940fae82ca34f22a8a1c3a",
+      "client_wire_sha256": "7efd74ea3931e426a1c7529d6f32283c02eb279a187512c68aabfb4d471d4de4",
+      "planned_run_id": "24ec42ee-05aa-548e-a52e-e056df2bdeeb",
+      "original_request": "docs/operations/evidence/investigation-r11-20261101/live/results/010-synthetic-full-raw-main.body.json",
+      "readback_path": "/api/v2/investigation/cases/5fbb643b-975b-4798-8729-801b50ba956f/investigations/24ec42ee-05aa-548e-a52e-e056df2bdeeb",
+      "dispatches": 0
+    },
+    {
+      "label": "B",
+      "tenant_id": "f6a5c700-69b8-44fc-8238-609362fb1a9f",
+      "case_id": "be4aeda2-a89b-47e6-a6f9-285b1a7e8723",
+      "method": "POST",
+      "path": "/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigate",
+      "body_file": "B-empty-scope.body.json",
+      "body_file_sha256": "de088cd8d9e16799d09b70a977e79871b4cc4e6532b2ede224d0779a99e81df7",
+      "client_wire_sha256": "59dcff2e0e2de124b1659bcceff9478ae615bfc7aac099083abef0370e34c705",
+      "planned_run_id": "8d1b5ac8-962e-5c02-afa0-3badd109f758",
+      "original_request": "docs/operations/evidence/investigation-audit-fixes-20261031/live-r10/results/005-office-powershell-full-raw-main.body.json",
+      "readback_path": "/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/8d1b5ac8-962e-5c02-afa0-3badd109f758",
+      "dispatches": 0
+    },
+    {
+      "label": "C",
+      "tenant_id": "53824f24-d1d4-5820-8147-f6cfda8a1247",
+      "case_id": "5fbb643b-975b-4798-8729-801b50ba956f",
+      "method": "POST",
+      "path": "/api/v2/investigation/cases/5fbb643b-975b-4798-8729-801b50ba956f/investigate",
+      "template_file": "C-followup.template.json",
+      "template_sha256": "3eafb3fd72ddeadf62513ae83f9c93b2bc7b12e5fbc4ba55a0a12a8764b53b28",
+      "planned_run_id": "afa55a78-c91f-5cd9-813d-31ac7c1b2516",
+      "condition": "A returns the planned Run with completed status and passes source/semantic report review; bind previous_run_id to that returned ID, then revalidate/hash the body.",
+      "bound": false,
+      "dispatches": 0
+    }
+  ],
+  "credentials": "Existing private tenant-key mapping on 21; inject selected Bearer into AISOC_API_TOKEN without printing/copying it.",
+  "pre_dispatch": "Read current Case/members/raw and verify planned Run absent. Record changes to baseline; do not overwrite source data.",
+  "retry_policy": "A/B one dispatch each. C at most one after A acceptance. On ambiguous POST outcome use only GET by planned Run ID; no POST replay.",
+  "prohibited_actions": [
+    "create/seed Case or Alert or lake rows",
+    "refresh incident overview",
+    "change other services or shared config",
+    "reuse old operation_key",
+    "automatic repeat to select a better model reply"
+  ],
+  "live_preflight_done": false,
+  "executed": false
+}

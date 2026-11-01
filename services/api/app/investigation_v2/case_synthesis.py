@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from .case_navigation import citation_links, evidence_url
 from .case_analysis_models import ReportContractError
+from .case_report_grounding import empty_query_cause_errors, source_value_errors
 
 
 class MemberAssessment(BaseModel):
@@ -60,10 +61,20 @@ _PROTOCOL_LIST = _PROTOCOL_NAME + rf"(?:\s*(?:/|、|或)\s*{_PROTOCOL_NAME})*"
 _UNCERTAIN_PROTOCOL = re.compile(
     # Recognize explicit uncertainty only, not a negation of the protocol.
     rf"(?<![不非])(?<!不是)(?:(?:无法|不能|不足以|尚未|未能|未|不)(?:直接)?(?:确认|证实|证明|确定|验证)"
-    rf"(?:流量)?(?:是否(?:为|是|使用|采用)?|为|是|使用|采用)?\s*{_PROTOCOL_LIST}(?:协议|连接|流量|状态)?"
+    rf"\s*(?:流量)?(?:是否(?:为|是|使用|采用)?|为|是|使用|采用)?\s*{_PROTOCOL_LIST}\s*(?:协议|连接|流量|状态)?"
     rf"(?:或具体内容)?"
-    rf"|{_PROTOCOL_LIST}(?:协议)?(?:尚未确认|未确认|尚未证实|未证实|待核实|未核实|尚不明确))"
-    r"(?=$|[\s，。,；;!?！？)\]）])", re.I)
+    rf"|{_PROTOCOL_LIST}\s*(?:(?:协议|状态)\s*)?(?:尚未确认|未确认|尚未证实|未证实|待核实|未核实|尚不明确))"
+    r"(?=\s*(?:$|[，。,；;!?！？)\]）\"'”’]))", re.I)
+_NEGATED_UNCERTAINTY = re.compile(r"(?:不|非|不是|不能|不得|无法)\s*[\"'“‘]?\s*$")
+_SOURCE_PROTOCOL_ABSENCE = re.compile(
+    rf"(?:未|没有)(?:声明|提供|注明)(?:应用层?)?协议\s*[（(](?:如|例如)\s*{_PROTOCOL_LIST}\s*[）)]", re.I)
+_COORDINATED_UNCERTAINTY = re.compile(
+    rf"(?:无法|不能)(?:分析|核实|验证)(?:(?!{_PROTOCOL_NAME})[^，。,；;!?！？\n]){{1,32}}(?:或|及)确认是否(?:为|是)?\s*{_PROTOCOL_LIST}"
+    r"(?=\s*(?:$|[，。,；;!?！？)\]）\"'”’]))", re.I)
+# These are known r11 control leaks, not a general factuality/language filter.
+_REPORT_CONTROL = re.compile(
+    r"(?<![A-Za-z0-9_])(?:unobserved_application_protocol_use_gaps|report_control_text|response_format|evidence_id_list_\d*)(?![A-Za-z0-9_])"
+    r"|(?:依据|根据)校验规则|在(?:总结|报告)中必须|校验错误[：:]")
 
 
 def validate_synthesis(report, context, evidence):
@@ -71,49 +82,66 @@ def validate_synthesis(report, context, evidence):
     selected = set(context["selected_member_ids"])
     known = {item["evidence_id"] for item in evidence}
     alerts = {item["data"]["alert_id"]: item["evidence_id"] for item in evidence if item["kind"] == "alert"}
+    errors = []
 
-    def references(item, members, *, own_alerts=False):
+    def references(item, members, location, *, own_alerts=False):
         if len(members) != len(set(members)) or not set(members).issubset(selected):
-            raise ValueError("invalid_member_reference")
+            errors.append({"location": location, "type": "invalid_member_reference"})
         if not set(item["evidence_ids"]).issubset(known):
-            raise ValueError("unknown_evidence_reference")
+            errors.append({"location": location + ["evidence_ids"], "type": "unknown_evidence_reference"})
         if own_alerts and any(alerts.get(member) not in item["evidence_ids"] for member in members):
-            raise ValueError("missing_member_source_reference")
+            errors.append({"location": location + ["evidence_ids"], "type": "missing_member_source_reference",
+                           "required": [alerts[member] for member in members if member in alerts]})
 
     assessed = []
-    for item in report["member_assessments"]:
-        references(item, [item["alert_id"]], own_alerts=True)
+    for index, item in enumerate(report["member_assessments"]):
+        references(item, [item["alert_id"]], ["member_assessments", index], own_alerts=True)
         assessed.append(item["alert_id"])
     if len(assessed) != len(set(assessed)):
         raise ValueError("duplicate_member_assessment")
-    for item in report["relationships"]:
-        references(item, item["alert_ids"], own_alerts=True)
-    for item in report["open_questions"]:
-        references(item, item["alert_ids"])
+    for index, item in enumerate(report["relationships"]):
+        references(item, item["alert_ids"], ["relationships", index], own_alerts=True)
+    for index, item in enumerate(report["open_questions"]):
+        references(item, item["alert_ids"], ["open_questions", index])
+
+    conclusions = [(["summary"], report["summary"])] + [([section, index, field], item[field])
+        for section, field in (("findings", "text"), ("member_assessments", "summary"), ("relationships", "basis"))
+        for index, item in enumerate(report[section])]
+    narrative = conclusions + [([section, index], text)
+        for section in ("counterevidence", "gaps", "recommendations") for index, text in enumerate(report[section])]
+    narrative += [(["open_questions", index, field], item[field]) for index, item in enumerate(report["open_questions"])
+                  for field in ("question", "missing_evidence", "suggested_action")]
+    errors.extend({"location": location, "type": "report_control_text"}
+                  for location, text in narrative if _REPORT_CONTROL.search(text))
+    errors.extend(source_value_errors(report, evidence))
+    errors.extend(empty_query_cause_errors(report, evidence))
 
     # A port is not application-protocol evidence. Explicit uncertainty is
     # allowed; unsupported positive and negative protocol assertions are not.
     network = [item for item in evidence if item.get("kind") == "tool" and item.get("tool") == "network_connections"]
     if network:
         network_rows = [row for item in network if item.get("available") is True for row in item.get("rows", [])]
-        protocol = re.compile(r"(?<![A-Za-z0-9_])(HTTPS|TLS|SSL)(?:v?\d+(?:\.\d+)*)?(?![A-Za-z0-9_])", re.I)
-        observed = {match.group(1).upper() for row in network_rows
+        protocol = re.compile(r"(?<![A-Za-z0-9_])(HTTPS|TLS|SSL)(?:v?(\d+(?:\.\d+)*))?(?![A-Za-z0-9_])", re.I)
+        observed = {(match.group(1).upper(), match.group(2)) for row in network_rows
                     if (match := protocol.fullmatch(str(row.get("protocol", "")).strip()))}
-        conclusions = [(["summary"], report["summary"])] + [([section, index, field], item[field])
-            for section, field in (("findings", "text"), ("member_assessments", "summary"), ("relationships", "basis"))
-            for index, item in enumerate(report[section])]
-        errors = []
+        observed_names = {name for name, version in observed}
         for location, text in conclusions:
-            uncertainty = [match.span() for match in _UNCERTAIN_PROTOCOL.finditer(text)]
-            if any(match.group(1).upper() not in observed and not any(
+            uncertainty = [match.span() for pattern in (_UNCERTAIN_PROTOCOL, _SOURCE_PROTOCOL_ABSENCE, _COORDINATED_UNCERTAINTY)
+                           for match in pattern.finditer(text)
+                           if not _NEGATED_UNCERTAINTY.search(text[:match.start()])]
+            # A named protocol does not establish an unobserved version. A
+            # versioned record can still support its unversioned protocol name.
+            unsupported = [match for match in protocol.finditer(text) if not (
+                (match.group(1).upper(), match.group(2)) in observed or
+                match.group(2) is None and match.group(1).upper() in observed_names)]
+            if any(not any(
                     start <= match.start() and match.end() <= end for start, end in uncertainty)
-                   for match in protocol.finditer(text)):
-                errors.append({"location": location, "type": "unobserved_application_protocol_use_gaps",
-                               "instruction": "仅有TCP/端口不能确认HTTPS/TLS；若未确认，请明确写HTTPS尚未确认或移到gaps。"})
-        if errors:
-            raise ReportContractError(errors)
+                   for match in unsupported):
+                errors.append({"location": location, "type": "unobserved_application_protocol_use_gaps"})
     if set(assessed) != set(context["read_member_ids"]):
-        raise ValueError("missing_readable_member_assessment")
+        errors.append({"location": ["member_assessments"], "type": "missing_readable_member_assessment"})
+    if errors:
+        raise ReportContractError(errors)
 
 
 def _timestamp(value):

@@ -1,0 +1,206 @@
+{
+  "scope": "existing saved evidence review, not a new validation run or proof of universal semantic checks",
+  "A_truncation": {
+    "characters": 8520,
+    "utf8_bytes": 9732,
+    "trailing_whitespace": 6490,
+    "valid_json": false,
+    "count_basis": "exact content string in saved model-response JSON; standalone text copy has CRLF checkout conversion",
+    "standalone_copy_equal_after_crlf_normalization": true,
+    "status": "failed",
+    "stop_reason": "model_response_truncated",
+    "model_response_step_keys": [
+      "response",
+      "usage"
+    ],
+    "usage": {
+      "completion_tokens": 3000,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens": 2627,
+      "total_tokens": 5627
+    },
+    "finish_reason_saved_separately": false,
+    "member_states": [
+      "not_assessed",
+      "not_assessed"
+    ]
+  },
+  "A_source_attribution": {
+    "confluence_in_each_model_request": [
+      false,
+      false,
+      false
+    ],
+    "confluence_in_model_output": true,
+    "pid_4200_in_original_alert_material": true,
+    "pid_field_in_tool_rows": false,
+    "tool_fields": {
+      "process_activity": [
+        [
+          "action",
+          "activity_id",
+          "class_uid",
+          "event_id",
+          "event_time",
+          "file_path",
+          "hash_sha256",
+          "outcome",
+          "process_name",
+          "src_hostname",
+          "user_name"
+        ]
+      ],
+      "network_connections": [
+        [
+          "dest_ip",
+          "dst_port",
+          "event_id",
+          "event_time",
+          "process_name",
+          "protocol",
+          "source_ip",
+          "src_hostname"
+        ]
+      ]
+    },
+    "limitation": "A is an incomplete draft rejected before semantic validation; no claim that these sentences passed the validator."
+  },
+  "B_empty_result_and_source_claims": {
+    "saved_status": "completed",
+    "completion": "partial",
+    "tool_available_and_rows": [
+      {
+        "id": "E1",
+        "tool": "process_activity",
+        "available": true,
+        "rows": 0
+      },
+      {
+        "id": "E2",
+        "tool": "network_connections",
+        "available": true,
+        "rows": 0
+      }
+    ],
+    "incorrect_inference": {
+      "text": "判断 A2：待核。告警判定为 needs_review，理由是目的地虽为文档地址但风险分高。工具检索无结果，进一步削弱了关联性。缺口：无法验证流量内容及进程身份意图。",
+      "evidence_ids": [
+        "A2",
+        "E2"
+      ]
+    },
+    "approval_claim": {
+      "text": "告警 A1 原文：WINWORD.EXE (PID 4100) 在 DEMO-FIN-11 上启动了 hidden window 的 powershell.exe (PID 4200)，且无审批记录。工具 E1 (process_activity) 观察：在指定时间窗口内，DEMO-FIN-11 无任何返回的进程活动记录。分析推断：告警中指定的 PID 4100 和 4200 在工具层未见直接映射，无法确认父子进程关系是否真实发生或仅为告警误报/数据残留。",
+      "evidence_ids": [
+        "A1",
+        "E1"
+      ]
+    },
+    "approval_source_description": "WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.",
+    "approval_source_raw": "{\"approval_status\":\"not_supplied\",\"full_log\":\"WINWORD.EXE spawned powershell.exe with hidden window on DEMO-FIN-11 under demo.finance. Parent PID 4100, child PID 4200. No payload contents or approval records supplied.\"}",
+    "tool_name_id_claim": "process_activity/E2 无返回记录，无法与告警 Allegations 中的 PID 和连接行为进行同源印证。",
+    "program_query_sources": [
+      {
+        "evidence_id": "E1",
+        "origin": "current_tool_result",
+        "query_scope": {
+          "end": "2026-10-25T03:34:00+00:00",
+          "hostname": "DEMO-FIN-11",
+          "start": "2026-10-25T03:29:00+00:00"
+        },
+        "query_status": "success_empty",
+        "returned_count": 0,
+        "reused_from": null,
+        "row_alert_refs": [],
+        "tool": "process_activity"
+      },
+      {
+        "evidence_id": "E2",
+        "origin": "current_tool_result",
+        "query_scope": {
+          "end": "2026-10-25T03:34:00+00:00",
+          "hostname": "DEMO-FIN-11",
+          "start": "2026-10-25T03:29:00+00:00"
+        },
+        "query_status": "success_empty",
+        "returned_count": 0,
+        "reused_from": null,
+        "row_alert_refs": [],
+        "tool": "network_connections"
+      }
+    ],
+    "member_states": [
+      "unresolved",
+      "unresolved"
+    ]
+  },
+  "B_prior_judgment_boundary": {
+    "T1_rationale": "LLM auto-triage verdict: true_positive · LLM confidence: 0.85 · Rationale: The alert indicates WINWORD.EXE spawned a hidden PowerShell process, a classic indicator of fileless malware or living-off-the-land attacks (MITRE T1059.001). The high vendor risk score (0.92) and the specific behavior of hiding a shell from a document application strongly suggest malicious activity. There is no evidence of authorized scanning or approved penetration testing, and the lack of approval records supports the conclusion that this is an unauthorized threat requiring investigation.",
+    "T2_rationale": "LLM auto-triage verdict: needs_review · LLM confidence: 0.65 · Rationale: The alert indicates a script process connecting to a 'documentation-only synthetic address' (198.51.100.41), which is a reserved IP range often used for testing and not a real threat intelligence target. However, the high vendor risk score (0.92) and ML priority suggest potential malicious behavior like C2 or exfiltration that cannot be dismissed solely based on the IP description without verifying the process identity and intent. Since there is no evidence of authorization, and the 'synthetic' nature of the destination does not definitively prove benign activity in a production environment, human review is required to validate the process tree and context.",
+    "findings_referencing_T": [],
+    "interpretation": "Prior judgment is available and includes stronger approval/risk claims; the report retells prior rationale while citing A/E. This identifies a source-type attribution risk, not proof of why the model generated it."
+  },
+  "new_runs": 0,
+  "new_model_calls": 0,
+  "new_lake_queries": 0,
+  "source_files": [
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A-model-report-step-11.txt",
+      "sha256": "16ccb6c87495050680123d295e91b623d2633ad8efe20858f9e736817b7deae3"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/003-result.response.txt",
+      "sha256": "bf6b297875b332fd07c137c8393e7a42bcc9521ab096504007c34fab2fb88008"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/006-step-1.response.txt",
+      "sha256": "7223602207e3f8ba2ab4e87dba2048853bc6d5b3a52b7d4d0d169892383f103f"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/007-step-2.response.txt",
+      "sha256": "8e2d23a700a4e3bd957b1484db47f3b3e5a94c2d012757540fc24ebdcddabef9"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/010-step-5.response.txt",
+      "sha256": "62cd52aafe408c95e19079440a43c053db0f7b6ba3f99cd3d850a6bce51f2a6f"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/011-step-6.response.txt",
+      "sha256": "a10efc16769039a5ea03bf39dd7a986756258b8c830013142b02537ace7faba3"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/014-step-9.response.txt",
+      "sha256": "8e245be8379442035a8011a6b18cbaf7d71fca4cc5e555bd48075c4f16573eeb"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/015-step-10.response.txt",
+      "sha256": "9ded06964ea777445665a89776b45f4496220adaa0b0b84d349a840af37cbd3b"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/A/016-step-11.response.txt",
+      "sha256": "e72473ce8ba520a5638adc8e74e7f980e81625a1cfe42f4bb40b089e30113c7e"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/B-model-report-step-11.txt",
+      "sha256": "88677a808b20e78a74476ef6b61690dcddf86eb1db7c1161775d30a61e6fb517"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/B/003-result.response.txt",
+      "sha256": "657d47ebd7f5eade2a355a02185cc13834c3d038a76899b3840b5a6f9920c150"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/B/006-step-1.response.txt",
+      "sha256": "9cd590c477f6ddb60e901ec089670beaa9864db29bf47a40a665cb341797cf5c"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/B/010-step-5.response.txt",
+      "sha256": "a4f0aa501c704fc6904c5c31477dc55a7541d5b8dea8f43cd8b8150538817665"
+    },
+    {
+      "path": "docs/operations/evidence/investigation-r13-20261101/B/014-step-9.response.txt",
+      "sha256": "d4912469475148cf5920aee83e5f04c1727b53f4d1566020dc12b7ad23e51e9d"
+    }
+  ]
+}

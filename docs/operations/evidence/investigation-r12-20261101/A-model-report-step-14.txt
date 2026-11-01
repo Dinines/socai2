@@ -1,0 +1,83 @@
+{
+  "summary": "经核对，告警 A1 与 A2 均为标记为 `synthetic: true`的合成测试样本，用于验证办公场景下启动 PowerShell 及建立网络连接的事件日志。工具记录 E1/E2 证实了进程启动（WinWord->PowerShell）及 TCP 出站连接（443 端口），但未提供脚本载荷、明确协议细节或审批记录。所有证据指向受控测试环境，无实际攻击特征。",
+  "findings": [
+    {
+      "text": "直接观察：主机 INV-R11-FULL-RAW-01 下的用户 fixture.reader 启动了 powershell.exe (PID 4209，原文误标为 4200，工具体现 PID 关联 WinWord 4100)。随后该进程建立了指向 198.51.100.80:443 的 TCP 连接。",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    },
+    {
+      "text": "原文陈述：A1 明确记载'无脚本正文或审批记录'，属于仅由进程启动触发的观察；A2 仅描述端口和字节数，未声明应用层协议（如 HTTPS），亦未说明流量用途。",
+      "evidence_ids": ["A1", "A2"]
+    },
+    {
+      "text": "成员关系：告警 A1 与 A2 共享主机及用户上下文，按时间序构成'启动 - 出站'的行为链。工具 E1/E2 分别对齐这两起告警，独立验证了进程启动与网络连接的事实。",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    },
+    {
+      "text": "未决问题：1) 无法确认 TCP/443 是否为加密通道，也无法识别具体传输内容；2) 缺乏权限审批依据，仅知状态为未提供；3) 无逆向路径或认证失败记录。",
+      "evidence_ids": ["A1", "A2", "E2"]
+    },
+    {
+      "text": "必要补查：需在测试环境基线外复核该 IP 是否属于预期文档服务器；若生产探针采集类似指标（无 Payload、无审批）则需确认是否触发同类合成演练。目前所有条目均为非现实攻击场景的合成数据，无需阻断。",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    }
+  ],
+  "counterevidence": [
+    "case_material 显式声明为'明确标记的调查功能测试样本；不是实际攻击或生产告警'，且 raw_event 中包含'synthetic': true。"
+  ]
+  ,"gaps": [
+    "缺失 PowerShell 会话 Blob 内容或脚本体"
+  ]
+  ,"recommendations": ["查阅原始测试用例文档以确认预期行为边界，确保探针无遗漏虚假合成事件。"],
+  "member_assessments": [
+    {
+      "status": "unresolved",
+      "role": "supporting",
+      "summary": "A2 补充了出站连接细节，完善了-process_to-network"
+    ,
+    "evidence_ids": ["A1", "E1", "A2", "E2"]
+  ,
+    "alert_ref": "A2"
+    }
+  ,
+    {
+      "status": "unresolved",
+      "role": "supporting",
+      "summary": "A1 提供进程启动上下文，由 E1 验证",
+      "evidence_ids": ["A1", "E1"]
+    ,
+      "alert_ref": "A1"
+    }
+  ],
+  "relationships": [
+    {
+      "kind": "behavioral_link",
+      "assessment": "supported",
+      "basis": "A1 记录进程启动，A2 记录同进程随后出站连接，E1/E2 分别验证使命，形成完整合成行为链。",
+      "evidence_ids": ["A1", "E1", "A2", "E2"]
+    ,
+      "alert_refs": ["A1", "A2"]
+    }
+  ]
+  ,"open_questions": [
+    {"question": "TCP/443 的实际负载是否匹配预期文档服务协议？", "evidence_ids": ["A2", "E2"]
+    ,
+    "missing_evidence": "原始捕获包或应用层解析内容"
+  ,
+    "suggested_action": "在测试环境模拟客户端抓包对比"
+  ,
+    "alert_refs": ["A2"]
+  }
+  ,
+    {
+      "question": "无法审批流程的状态是否影响合规判定？",
+      "evidence_ids": ["A1", "E1"]
+    ,
+      "missing_evidence": "人工审批记录或自动化授权策略日志"
+    ,
+      "suggested_action": "确认 test fixture.reader 账户的预先授权状态"
+    ,
+      "alert_refs": ["A1"]
+    }
+  ]
+}

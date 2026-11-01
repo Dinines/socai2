@@ -1,0 +1,173 @@
+{
+  "part": "api",
+  "scope": "local synthetic current behaviour; no service calls; not acceptance",
+  "observation_count": 4,
+  "observations": [
+    {
+      "name": "pg_iocs_column_is_not_mapped_by_api_alert_orm",
+      "current_behaviour_confirmed": true,
+      "sink_column": "iocs",
+      "mapped_by_orm": false,
+      "note": "Initial constructor rejected iocs. The corrected fixture only hydrates actual mapped columns; no synthetic ORM field is added."
+    },
+    {
+      "name": "stored_shared_iocs_omitted_from_incident_and_case_entity_helper",
+      "current_behaviour_confirmed": true,
+      "stored_iocs_per_member": [
+        [
+          {
+            "type": "hash",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "type": "domain",
+            "value": "shared.example.invalid"
+          }
+        ],
+        [
+          {
+            "type": "hash",
+            "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "type": "domain",
+            "value": "shared.example.invalid"
+          }
+        ]
+      ],
+      "returned_entities": [
+        {
+          "type": "host",
+          "value": "same-text"
+        },
+        {
+          "type": "user",
+          "value": "same-text"
+        }
+      ],
+      "note": "Actual sink projection fed into ORM objects; DB returns are substitutes, not real inserts/SQL execution."
+    },
+    {
+      "name": "incident_projection_has_union_without_member_edges_or_tactic_counts",
+      "current_behaviour_confirmed": true,
+      "member_fields": [
+        "alert_id",
+        "alert_url",
+        "case_id",
+        "connector_id",
+        "disposition",
+        "event_time",
+        "recommendations",
+        "saved_analysis",
+        "severity",
+        "source_alert_id",
+        "status",
+        "title",
+        "triage",
+        "updated_at"
+      ],
+      "returned_tactics": [
+        "Execution",
+        "Persistence"
+      ],
+      "expected_counts_from_supplied_members": {
+        "Execution": 2,
+        "Persistence": 2
+      },
+      "actual_member_query": "SELECT alerts.id, alerts.tenant_id, alerts.title, alerts.description, alerts.severity, alerts.status, alerts.priority, alerts.category, alerts.mitre_tactics, alerts.mitre_techniques, alerts.connector_id, alerts.connector_type, alerts.source_event_ids, alerts.ocsf_class_uid, alerts.rule_id, alerts.rule_name, alerts.external_id, alerts.disposition, alerts.first_seen_at, alerts.ai_score, alerts.ai_summary, alerts.ai_recommendations, alerts.false_positive_score, alerts.confidence, alerts.confidence_label, alerts.confidence_rationale, alerts.narrative, alerts.affected_ips, alerts.affected_hosts, alerts.affected_users, alerts.affected_assets, alerts.entities, alerts.case_id, alerts.parent_alert_id, alerts.child_alert_ids, alerts.is_merged, alerts.assigned_to_id, alerts.assigned_at, alerts.snoozed_until, alerts.snoozed_by_id, alerts.raw_event, alerts.enrichment_data, alerts.tags, alerts.idempotency_key, alerts.event_time, alerts.first_seen, alerts.last_seen, alerts.resolved_at, alerts.created_at, alerts.updated_at \nFROM alerts \nWHERE alerts.tenant_id = %(tenant_id_1)s::UUID AND ((alerts.enrichment_data[%(enrichment_data_1)s]) ->> %(param_1)s) = %(param_2)s ORDER BY alerts.event_time, alerts.id"
+    },
+    {
+      "name": "asset_lookup_does_not_use_existing_entity_only_host",
+      "current_behaviour_confirmed": true,
+      "received_entities": [
+        {
+          "type": "host",
+          "value": "existing-host"
+        }
+      ],
+      "lookup_query": {
+        "hosts": [],
+        "accounts": [],
+        "ips": [],
+        "history_before": "2026-11-01 00:00:00+00:00",
+        "history_days": 7,
+        "limit_per_dimension": 20
+      },
+      "note": "Lookup mocked empty to inspect passed keys only; this does not claim a live inventory miss."
+    }
+  ],
+  "overview": {
+    "incident_id": "b3bb41d8-7196-4732-ae64-7b8624e36cd5",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "title": "Incident: SYNTHETIC relation audit",
+    "severity": "medium",
+    "member_count": 2,
+    "first_seen": "2026-11-01T00:00:00Z",
+    "last_seen": "2026-11-01T00:00:00Z",
+    "source_updated_at": "2026-11-01T00:00:00Z",
+    "by_status": {
+      "new": 2
+    },
+    "by_disposition": {
+      "unassessed": 2
+    },
+    "by_triage_verdict": {},
+    "members_without_saved_triage": 2,
+    "entities": [
+      {
+        "type": "host",
+        "value": "same-text"
+      },
+      {
+        "type": "user",
+        "value": "same-text"
+      }
+    ],
+    "mitre_tactics": [
+      "Execution",
+      "Persistence"
+    ],
+    "mitre_techniques": [],
+    "members": [
+      {
+        "alert_id": "b132c604-f0ab-534f-964b-06d53223dc9e",
+        "title": "SYNTHETIC relation audit",
+        "severity": "medium",
+        "status": "new",
+        "disposition": null,
+        "event_time": "2026-11-01T00:00:00Z",
+        "updated_at": "2026-11-01T00:00:00Z",
+        "case_id": null,
+        "connector_id": null,
+        "source_alert_id": null,
+        "saved_analysis": null,
+        "recommendations": [],
+        "triage": null,
+        "alert_url": "/api/v1/alerts/b132c604-f0ab-534f-964b-06d53223dc9e"
+      },
+      {
+        "alert_id": "513b139a-d072-5c91-a0c9-867821ac8240",
+        "title": "SYNTHETIC relation audit",
+        "severity": "medium",
+        "status": "new",
+        "disposition": null,
+        "event_time": "2026-11-01T00:00:00Z",
+        "updated_at": "2026-11-01T00:00:00Z",
+        "case_id": null,
+        "connector_id": null,
+        "source_alert_id": null,
+        "saved_analysis": null,
+        "recommendations": [],
+        "triage": null,
+        "alert_url": "/api/v1/alerts/513b139a-d072-5c91-a0c9-867821ac8240"
+      }
+    ],
+    "handling_status": null,
+    "ai_overview": null,
+    "ai_overview_metadata": null,
+    "investigations_url": "/api/v2/investigation/incidents/b3bb41d8-7196-4732-ae64-7b8624e36cd5/investigations",
+    "executions_url": "/api/v2/investigation/executions?incident_id=b3bb41d8-7196-4732-ae64-7b8624e36cd5",
+    "investigations": null
+  },
+  "probe_sha256": "3d6b5bbbec485fa16fef720de9f1c0aaa0856ed2f855d4224c3d5e8a8685485f"
+}

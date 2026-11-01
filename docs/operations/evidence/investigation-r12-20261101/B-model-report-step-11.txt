@@ -1,0 +1,56 @@
+{
+  "summary": "调查结果显示，现有监控工具（process_activity 和 network_connections）在指定时间内未返回关于 DEMO-FIN-11 的直接观察记录。告警原文（A1, A2）提出了 Office 启动隐藏 PowerShell 及后续网络连接的具体主张，但由于缺乏工具直接观察（Direct Observation），这些主张目前仅停留在告警检测层面，尚未得到系统记录的证实。无法确认进程是否存在、是否有有效载荷执行，也无法验证 TCP/443 连接的具体应用层协议或通信方向。",
+  "findings": [
+    {
+      "text": "进程活动：process_activity 工具查询 DEMO-FIN-11 在 03:29:00 至 03:34:00 之间返回空结果（E1）。这无法确认 WINWORD.EXE 是否真的启动了 PowerShell，也无法获取父/子进程 PID 或命令行的直接证据。",
+      "evidence_ids": ["E1", "A1"]
+    },
+    {
+      "text": "网络连接：network_connections 工具查询同一时间段返回空结果（E2）。无法确认 PID 4200 是否建立了到 198.51.100.41 的连接，也无法分析通信数据方向或确认是否为 HTTPS。",
+      "evidence_ids": ["E2", "A2"]
+    }
+  ],
+  "counterevidence": [],
+  "gaps": [
+    "告警 A1 声称 WINWORD.EXE 启动了隐藏 PowerShell，但 process_activity (E1) 无记录，无法核实进程启动行为。",
+    "告警 A2 声称进程建立了 TCP/443 连接，但 network_connections (E2) 无记录，无法核实网络连接事实及协议类型。",
+    "现有材料缺少批准记录或威胁情报验证，无法区分合法业务行为与恶意攻击（如 C2 或数据窃取）。",
+    "工具返回结果为空（Empty Result），原因未知，可能无数据接入、查询范围不匹配或告警仅存在于检测端而未进入较长的收集层。"
+  ],
+  "recommendations": [
+    "申请恢复或重试 process_activity 和 network_connections 对 DEMO-FIN-11 的查询，确认是否有历史数据未接入。",
+    "人工复核告警检测逻辑产生的原始日志（如 Sysmon 或 Windows Minimum Security），以验证被工具查询层遗漏的进程和连接记录。",
+    "检查 198.51.100.41 是否为文档说明中的'偶极合成地址'（Synthetic Address），若是，则需评估是否存在配置错误或策略测试场景。",
+    "进一步调查 user 'demo.finance' 在该时间段的活动，确认是否为授权操作。"
+  ]
+  ,
+  "member_assessments": [
+    {
+      "status": "unresolved",
+      "role": "undetermined",
+      "summary": "告警 A1 声称 Office 启动隐藏 PowerShell，但直接观察工具（process_activity）无匹配记录，无法印证告警原文。",
+      "evidence_ids": ["A1", "E1"],
+      "alert_ref": "A1"
+    },
+    {
+      "status": "unresolved",
+      "role": "undetermined",
+      "summary": "告警 A2 声称建立了 TCP/443 连接，但直接观察工具（network_connections）无匹配记录，无法印证告警原文。",
+      "evidence_ids": ["A2", "E2"],
+      "alert_ref": "A2"
+    }
+  ],
+  "relationships": [],
+  "open_questions": [
+    {
+      "question": "是否存在进程活动或网络连接但未被 process_activity/network_connections 工具捕获？",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    ,
+    "missing_evidence": "需要工具直接观察记录或被捕获的完整事件湖数据。"
+    ,
+    "suggested_action": "重新检查数据接入日志或增加查询频率以捕获潜在事件。"
+    ,
+    "alert_refs": ["A1", "A2"]
+    }
+  ]
+}

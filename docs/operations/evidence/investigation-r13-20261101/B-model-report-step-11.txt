@@ -1,0 +1,84 @@
+{
+  "summary": "两条告警 A1 和 A2 分别指向同一主机 DEMO-FIN-11 上的 demo.finance 用户。A1 称 WINWORD.EXE (PID 4100) 启动了隐藏的 PowerShell 子进程 (PID 4200)；A2 称该子进程 (PID 4200) 向 198.51.100.41 发送流量。尽管告警提供了具体的父子进程 PID 和主机名，但调用 process_activity、network_connections 等查询 DEMO-FIN-11 在 03:29:00-03:34:00 窗口内的原始工具数据时，均返回空结果。无法从工具层直接观测到进程实例启动、父链建立或网络连接行为，导致告警描述的进程关系和时间线缺乏工具数据的同源印证。",
+  "findings": [
+    {
+      "text": "告警 A1 原文：WINWORD.EXE (PID 4100) 在 DEMO-FIN-11 上启动了 hidden window 的 powershell.exe (PID 4200)，且无审批记录。工具 E1 (process_activity) 观察：在指定时间窗口内，DEMO-FIN-11 无任何返回的进程活动记录。分析推断：告警中指定的 PID 4100 和 4200 在工具层未见直接映射，无法确认父子进程关系是否真实发生或仅为告警误报/数据残留。",
+      "evidence_ids": ["A1", "E1"]
+    },
+    {
+      "text": "告警 A2 原文：进程 PID 4200 连接至 198.51.100.41 (TCP/443)，发送 8192 字节。工具 E2 (network_connections) 观察：在指定时间窗口内，DEMO-FIN-11 无任何返回的网络连接记录。分析推断：告警中提及的特定连接行为在工具层未找到对应记录，无法证实该出站流量是否确实存在或其目的地址的有效性。",
+      "evidence_ids": ["A2", "E2"]
+    },
+    {
+      "text": "判断 A1：待核。告警断定为 true_positive，但工具检索无结果，无法独立确认进程隐藏行为。缺口：需确认告警数据来源是否基于其他未展示的系统接口，或是否存在日志丢失。",
+      "evidence_ids": ["A1", "E1"]
+    },
+    {
+      "text": "判断 A2：待核。告警判定为 needs_review，理由是目的地虽为文档地址但风险分高。工具检索无结果，进一步削弱了关联性。缺口：无法验证流量内容及进程身份意图。",
+      "evidence_ids": ["A2", "E2"]
+    }
+  ]
+,
+  "counterevidence": []
+,
+  "gaps": [
+    "process_activity/E2 无返回记录，无法与告警 Allegations 中的 PID 和连接行为进行同源印证。",
+    "需确认告警生成时点的系统日志完整性，或是否有其他未列出的观测源。"
+  ]
+,
+  "recommendations": [
+    "核查告警 A1/A2 的详细原始日志（若可用），确认 PID 及 IP 数据的准确性。",
+    "若无法获取原始日志，需结合终端检测上下文或人工复核主机样本，以验证是否存在隐藏的进程活动。"
+  ]
+,
+  "member_assessments": [
+    {
+      "status": "unresolved",
+      "role": "undetermined",
+      "summary": "A1 与工具 E1 结果不匹配，缺乏进程启动的直接观测。",
+      "evidence_ids": ["A1", "E1"]
+    ,
+      "alert_ref": "A1"
+    },
+    {
+      "status": "unresolved",
+      "role": "undetermined",
+      "summary": "A2 与工具 E2 结果不匹配，缺乏网络连接的直接观测。",
+      "evidence_ids": ["A2", "E2"]
+    ,
+      "alert_ref": "A2"
+    }
+  ]
+,
+  "relationships": [
+    {
+      "kind": "shared_context",
+      "assessment": "supported",
+      "basis": "A1 和 A2 均指向 DEMO-FIN-11，且涉及 demo.finance 用户及 PID 4200。",
+      "evidence_ids": ["A1", "A2"]
+    ,
+      "alert_refs": ["A1", "A2"]
+    },
+    {
+      "kind": "behavioral_link",
+      "assessment": "supported",
+      "basis": "A1 中的子进程 PID 4200 被 A2 引用为发起连接的进程。",
+      "evidence_ids": ["A1", "A2"]
+    ,
+      "alert_refs": ["A1", "A2"]
+    }
+  ]
+,
+  "open_questions": [
+    {
+      "question": "PID 4100 和 4200 在 I/O 系统层是否实际建立过进程或网络连接？",
+      "evidence_ids": ["A1", "A2", "E1", "E2"]
+    ,
+      "missing_evidence": "process_activity, network_connections"
+    ,
+      "suggested_action": "排查原始系统日志或尝试在主机上重现/抓取对应流量"
+    ,
+      "alert_refs": ["A1", "A2"]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+# Case调查报告 be4aeda2-a89b-47e6-a6f9-285b1a7e8723
+
+两条告警 A1 和 A2 分别指向同一主机 DEMO-FIN-11 上的 demo.finance 用户。A1 称 WINWORD.EXE (PID 4100) 启动了隐藏的 PowerShell 子进程 (PID 4200)；A2 称该子进程 (PID 4200) 向 198.51.100.41 发送流量。尽管告警提供了具体的父子进程 PID 和主机名，但调用 process_activity、network_connections 等查询 DEMO-FIN-11 在 03:29:00-03:34:00 窗口内的原始工具数据时，均返回空结果。无法从工具层直接观测到进程实例启动、父链建立或网络连接行为，导致告警描述的进程关系和时间线缺乏工具数据的同源印证。
+
+## 查询来源与成员对应
+以下由保存的来源生成；事件ID对应不证明因果，未匹配不等于无关。
+- [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1)：本次工具返回。
+  process_activity：查询成功，返回0条匹配记录；仅限原证据记录的来源与范围。来源覆盖和无记录原因未知；不能反证告警、认定安全或推断日志丢失。
+- [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)：本次工具返回。
+  network_connections：查询成功，返回0条匹配记录；仅限原证据记录的来源与范围。来源覆盖和无记录原因未知；不能反证告警、认定安全或推断日志丢失。
+
+## 发现与依据
+- 告警 A1 原文：WINWORD.EXE (PID 4100) 在 DEMO-FIN-11 上启动了 hidden window 的 powershell.exe (PID 4200)，且无审批记录。工具 E1 (process_activity) 观察：在指定时间窗口内，DEMO-FIN-11 无任何返回的进程活动记录。分析推断：告警中指定的 PID 4100 和 4200 在工具层未见直接映射，无法确认父子进程关系是否真实发生或仅为告警误报/数据残留。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1)）
+- 告警 A2 原文：进程 PID 4200 连接至 198.51.100.41 (TCP/443)，发送 8192 字节。工具 E2 (network_connections) 观察：在指定时间窗口内，DEMO-FIN-11 无任何返回的网络连接记录。分析推断：告警中提及的特定连接行为在工具层未找到对应记录，无法证实该出站流量是否确实存在或其目的地址的有效性。（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2), [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)）
+- 判断 A1：待核。告警断定为 true_positive，但工具检索无结果，无法独立确认进程隐藏行为。缺口：需确认告警数据来源是否基于其他未展示的系统接口，或是否存在日志丢失。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1)）
+- 判断 A2：待核。告警判定为 needs_review，理由是目的地虽为文档地址但风险分高。工具检索无结果，进一步削弱了关联性。缺口：无法验证流量内容及进程身份意图。（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2), [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)）
+
+## 成员覆盖与判断
+选定2条，读取2条；给出判断0条，尚未明确2条，未逐项分析0条，材料不可读0条。
+给出判断不等于证实攻击或已解决；背景成员不等于已证明安全。
+- 4c71eec2-77da-5b81-b68a-72801d55ea24 [unresolved/undetermined]：A1 与工具 E1 结果不匹配，缺乏进程启动的直接观测。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1)）
+- f7af404b-26a6-5d15-bd6c-3a872bdaf451 [unresolved/undetermined]：A2 与工具 E2 结果不匹配，缺乏网络连接的直接观测。（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2), [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)）
+
+## 跨告警关联依据
+共同实体或时间接近不等于因果关系。
+- 4c71eec2-77da-5b81-b68a-72801d55ea24, f7af404b-26a6-5d15-bd6c-3a872bdaf451 [shared_context/supported]：A1 和 A2 均指向 DEMO-FIN-11，且涉及 demo.finance 用户及 PID 4200。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2)）
+- 4c71eec2-77da-5b81-b68a-72801d55ea24, f7af404b-26a6-5d15-bd6c-3a872bdaf451 [behavioral_link/supported]：A1 中的子进程 PID 4200 被 A2 引用为发起连接的进程。（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2)）
+
+## 来源时间线
+按来源时间排列；候选成员仅表示查询主机/来源范围的匹配，不证明因果。
+- 2026-10-25T03:30:16.539577+00:00 [告警时间]：Office启动隐藏PowerShell [DEMO-FIN-11]（依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1)；来源记录：见原告警；候选成员：4c71eec2-77da-5b81-b68a-72801d55ea24）
+- 2026-10-25T03:32:16.539577+00:00 [告警时间]：脚本进程向文档地址建立HTTPS连接 [DEMO-FIN-11]（依据：[A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2)；来源记录：见原告警；候选成员：f7af404b-26a6-5d15-bd6c-3a872bdaf451）
+
+## 未决问题
+- PID 4100 和 4200 在 I/O 系统层是否实际建立过进程或网络连接？（成员：4c71eec2-77da-5b81-b68a-72801d55ea24, f7af404b-26a6-5d15-bd6c-3a872bdaf451；依据：[A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1), [A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2), [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1), [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)） 缺少：process_activity, network_connections；建议：排查原始系统日志或尝试在主机上重现/抓取对应流量
+
+## 反证
+
+## 未解问题与限制
+- process_activity/E2 无返回记录，无法与告警 Allegations 中的 PID 和连接行为进行同源印证。
+- 需确认告警生成时点的系统日志完整性，或是否有其他未列出的观测源。
+- 部分历史告警摘要仅提供前600字符，未核对完整摘要。
+- 成员4c71eec2-77da-5b81-b68a-72801d55ea24：A1 与工具 E1 结果不匹配，缺乏进程启动的直接观测。
+- 成员f7af404b-26a6-5d15-bd6c-3a872bdaf451：A2 与工具 E2 结果不匹配，缺乏网络连接的直接观测。
+- 未决问题：PID 4100 和 4200 在 I/O 系统层是否实际建立过进程或网络连接？
+
+## 建议
+- 核查告警 A1/A2 的详细原始日志（若可用），确认 PID 及 IP 数据的准确性。
+- 若无法获取原始日志，需结合终端检测上下文或人工复核主机样本，以验证是否存在隐藏的进程活动。
+
+## 本次范围
+Case：be4aeda2-a89b-47e6-a6f9-285b1a7e8723
+时间：2026-10-25T03:29:00+00:00 至 2026-10-25T03:34:00+00:00（不含结束时刻）
+选定成员：4c71eec2-77da-5b81-b68a-72801d55ea24, f7af404b-26a6-5d15-bd6c-3a872bdaf451
+停止原因：analysis_complete
+
+## 证据索引
+- [A1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A1)：告警4c71eec2-77da-5b81-b68a-72801d55ea24，来源事件=bdb56855-5018-567e-b10d-68e7e7bb7073
+- [T1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/T1)：分诊记录1c92c9d5-e2e8-453e-ac8d-1bf074629692（分诊判断）
+- [A2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/A2)：告警f7af404b-26a6-5d15-bd6c-3a872bdaf451，来源事件=2d58f3fd-0e29-5e9b-bf0e-8fabe878cd72
+- [T2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/T2)：分诊记录066e345c-6212-41fa-8425-efd9c24fe757（分诊判断）
+- [E1](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E1)：process_activity，来源可用=True，记录ID=无
+- [E2](/api/v2/investigation/cases/be4aeda2-a89b-47e6-a6f9-285b1a7e8723/investigations/f582e350-1a30-58c4-9163-5f00617e33f7/evidence/E2)：network_connections，来源可用=True，记录ID=无

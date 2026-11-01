@@ -52,7 +52,7 @@ def _model_field(field, limit):
     reason = ("llm_input_contract" if field["model_blocked"] else field["omission_reason"]
               if size == field["retained_bytes"] else "model_limit") if truncated else None
     # Fingerprints and full retention metadata remain in the saved snapshot.
-    return {"status": field["status"], "text": text if field["text"] is not None else None,
+    return {"source_path": field["source_path"], "status": field["status"], "text": text if field["text"] is not None else None,
             "model_retained_bytes": size, "model_truncated": truncated, "model_omission_reason": reason}
 
 

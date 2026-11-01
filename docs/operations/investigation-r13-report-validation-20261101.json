@@ -1,0 +1,162 @@
+{
+  "date": "2026-11-01",
+  "recorded_at": "2026-11-01T09:34:46.071605+00:00",
+  "batch": "INVHTTP-20261101-r13-report-01",
+  "status": "batch_ended_report_acceptance_failed",
+  "authorization": {
+    "initial_export_rejection_preserved": true,
+    "user_explicitly_approved_same_export_scope_and_continuation": true,
+    "record": "docs/operations/evidence/investigation-r13-20261101/preflight-approval.json",
+    "credential_exported": false
+  },
+  "preparation_receipt": "docs/operations/investigation-r13-preparation-20261101.json",
+  "deployment": {
+    "executed": true,
+    "image_tag": "socai2-investigation-api:20261101-r13",
+    "image_id": "sha256:7ca0572275260ee96a677665e20d513b0ced6a58fcfdba1b13ca2c6922ac5093",
+    "previous_image_id": "sha256:17cac869d789fae8109cd04a686dc4c6f8d662a27195f9a7cb9b9ab0a0941de9",
+    "base_commit": "b758351d7125590c090a751837f96c86df331652",
+    "source_state": "uncommitted_working_tree_snapshot",
+    "source_snapshot_sha256": "868be3772b412ff10e4fb5f63b96bd74d552d00954bf0f29f633a681aef157b4",
+    "tar_sha256": "40ce764614737e42b7c0cbb72e192a6714eb2257b0403db59e4bbb796e3e67c0",
+    "package_files": 477,
+    "container_app_files_matched": 473,
+    "live_checks_passed": true
+  },
+  "runs": [
+    {
+      "label": "A",
+      "run_id": "ba9eb0ff-b7b2-52ff-8d4f-5b99140893f1",
+      "status": "failed",
+      "completion": "partial",
+      "stop_reason": "model_response_truncated",
+      "usage": {
+        "known_tokens": 10647,
+        "model_calls": 3,
+        "tool_calls": 2,
+        "unknown_usage": false
+      },
+      "returned_rows": [
+        1,
+        1
+      ],
+      "report_correction_calls": 0,
+      "post_dispatches": 1,
+      "reused_queries": 0,
+      "report_semantic_acceptance": false
+    },
+    {
+      "label": "B",
+      "run_id": "f582e350-1a30-58c4-9163-5f00617e33f7",
+      "status": "completed",
+      "completion": "partial",
+      "stop_reason": "analysis_complete",
+      "usage": {
+        "known_tokens": 9687,
+        "model_calls": 3,
+        "tool_calls": 2,
+        "unknown_usage": false
+      },
+      "returned_rows": [
+        0,
+        0
+      ],
+      "report_correction_calls": 0,
+      "post_dispatches": 1,
+      "reused_queries": 0,
+      "report_semantic_acceptance": false
+    }
+  ],
+  "C": {
+    "planned_run_id": "79cf4f1d-7b98-5e21-94fb-f0b3ef99579e",
+    "status": "skipped",
+    "template_bound": false,
+    "dispatches": 0,
+    "reason": "A failed/partial with model_response_truncated; report acceptance prerequisite unmet."
+  },
+  "totals": {
+    "new_runs": 2,
+    "model_calls": 6,
+    "known_tokens": 20334,
+    "unknown_usage": false,
+    "unpriced_calls": 6,
+    "actual_cost_usd": null,
+    "tool_queries": 4,
+    "query_finish_success": 4,
+    "query_reuse": 0,
+    "events": 24,
+    "artifacts": 28,
+    "http_response_hashes_verified": 57,
+    "http_breakdown": {
+      "preflight": 13,
+      "post_checks": 10,
+      "A": 17,
+      "B": 17
+    },
+    "installer_probes_separate": [
+      "liveness",
+      "openapi",
+      "unauthenticated_401"
+    ]
+  },
+  "checks": {
+    "all_raw_complete_in_all_6_model_requests": true,
+    "post_get_report_consistent": true,
+    "old_r12_reports_results_byte_equal": true,
+    "read_alert_case_responses_byte_equal": true,
+    "core_agents_gateway_unchanged": true,
+    "environment_file_unchanged": true,
+    "credential_file_mode_0600": true,
+    "latest_5_source_test_fingerprints_unchanged": true,
+    "business_tests_rerun": 0
+  },
+  "report_findings": {
+    "A": [
+      "首份报告关系段后产生6490个尾随空白字符，输出3000tokens，JSON不完整；运行在length分支停止，未进入语义校验或纠错",
+      "可读残稿将无PID字段的Tool写为确认PID4200，并引入所有请求中均不存在的Confluence名称；不能靠补齐JSON或加输出上限称通过"
+    ],
+    "B": [
+      "completed/partial但语义未过：空查询被写为进一步削弱关联性，以及告警误报/数据残留的候选解释",
+      "原文未提供审批记录被改写为无审批记录",
+      "gaps将process_activity标为E2，实际E1为进程、E2为网络；查询来源程序段正确，模型段仍可矛盾",
+      "两成员unresolved且引用有效，共同背景/原文PID关联引用A1/A2；未出现r12的PID4209/admin和占位文本，但不能据此称整体通过"
+    ]
+  },
+  "not_covered": [
+    "A完整报告语义验收",
+    "本批真实一次纠错路径及其多错误反馈效果",
+    "r12两种协议误拒反例在新真实合格报告中验收",
+    "C追加/历史未决事项与实际查询复用质量"
+  ],
+  "boundaries": {
+    "new_alerts": 0,
+    "new_cases": 0,
+    "new_lake_rows": 0,
+    "incident_overview_refresh": 0,
+    "shared_service_changes": false,
+    "new_memory_system": false,
+    "new_business_code_after_candidate": false,
+    "new_commit": false,
+    "push": false,
+    "merge": false,
+    "archive": false,
+    "retries": 0,
+    "P3_started": false,
+    "openspec_completed": 16,
+    "openspec_total": 17,
+    "task_5_3_complete": false
+  },
+  "evidence": {
+    "review": "docs/operations/evidence/investigation-r13-20261101/review.md",
+    "verification": "docs/operations/evidence/investigation-r13-20261101/verification.json",
+    "query_cost_proof": "docs/operations/evidence/investigation-r13-20261101/query-and-cost-proof.json",
+    "post_checks": "docs/operations/evidence/investigation-r13-20261101/post-checks/summary.json"
+  },
+  "next": "本批结束。下一限定评估报告截断能否进入原一次纠错并保持预算；修正空结果不构成反证、未提供不等于不存在和工具来源标注。不得加上限、拼接残稿、重跑本批或新增记忆/通用框架。",
+  "static_validation": {
+    "openspec_strict": "passed",
+    "git_diff_check": "passed",
+    "local_document_links_checked": 264,
+    "business_tests_rerun": 0
+  }
+}

@@ -1,13 +1,19 @@
 # 调查模块文档入口
 
-**当前状态（2026-11-01）：** r11 已部署（发布 a543ad6，功能 49a04eb）。唯一新 synthetic 样本调查的完整 raw、两次非空真实查询、JSON 和成员引用已核；最终报告仍为 failed/partial，协议误拒与纠错内容问题保留。OpenSpec 16/17，5.3 未完成。
+**最新范围边界：** 用户明确Fusion前置输入问题不用处理。输入缺失／错误及上游规范化只记限制，不追查或修复；从Fusion收到数据后检查内部保留、转换、存储及下游使用。第1段8项观察已[按此重分类](fusion-ingestion-field-audit-20261101.md#用户补充边界及结论重分类)，不把输入缺口自动列为开发任务。
+
+**当前工作：** 按用户最新要求，报告问题先保留、修复暂缓；[远端告警/事件页面对照及字段确认](field-alignment-confirmations-20261101.md)六段本地核对完成。以页面需求贯通Fusion接收/入库、API、Case调查、Tool和报告；第1—16项决定保留，没有新增业务语义待答复。排除调查页面设计比对，不排除调查后端。
+
+**分段结果：** [六段计划](field-alignment-confirmations-20261101.md#分段核对计划)全部完成本地核对：[入库](fusion-ingestion-field-audit-20261101.md)、[湖对应](fusion-lake-field-audit-20261101.md)、[关系与资产](fusion-relations-field-audit-20261101.md)、[页面API及管理](page-api-management-field-audit-20261101.md)、[Case输入/Tool](case-input-tool-field-audit-20261101.md)、[报告影响与修复顺序](field-alignment-impact-and-repair-plan-20261101.md)。最新确认检测/分诊字段遗漏、原文语义投影和Tool字段缺口；4项本地观察及r13原件复核。无需新建记忆层，字段与报告问题分开处理。下一建议先修S2-01/02事件ID及湖列绑定；尚未修改业务源码或线上验收。
+
+**当前状态（2026-11-01）：** r13已部署。A报告输出截断；B虽completed/partial，仍有空查询反证化、审批缺失语义及Tool编号偏差，整体报告验收未过，C跳过。4真实查询/0复用/6模型20334tokens；原raw完整，旧数据与报告保持。OpenSpec16/17，5.3未完成。
 
 - [最新指南](audit-guide-20261031.md)：部署、功能与证据边界。
 - [当前审阅指南](review-guide-20261101.md)：未解决问题、原答/反馈阅读顺序与代码定位。
 - [设计对齐](current-design-alignment-20261027.md) / [接口合同](interface-contracts-20261027.md) / [证据目录](evidence-catalog-20261027.md)。
-- [r11 原因与结果](../operations/evidence/investigation-r11-20261101/review.md) / [OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)。
+- [r13原因与结果](../operations/evidence/investigation-r13-20261101/review.md) / [OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)。
 
-用户当前要求先保留问题，只更新相关文档；不开始下一轮修复、部署或调查。下方按日期保留历史进展，其中“未部署”“下一步”“当前”均指当时批次，不覆盖以上现状。原 [r3 独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)仅说明其本地交付范围。
+用户继续后已完成本批部署与A/B复验，批次结束不重试；随后要求先保留报告问题、转入页面字段对照，当前尚未实施字段修改。下方按日期保留历史进展，其中“未部署”“下一步”“当前”均指当时批次，不覆盖以上现状。原 [r3 独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)仅说明其本地交付范围。
 
 ## 历史进展
 

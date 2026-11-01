@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-01",
+  "status": "local_fix_verified_not_deployed",
+  "base_commit": "b758351d7125590c090a751837f96c86df331652",
+  "online_last_verified": {
+    "version": "r11",
+    "source_commit": "a543ad6d043c35ec17fe792885ab48a11d325e4e",
+    "checked_this_batch": false
+  },
+  "decision": "Use existing Case/Run ledger and bounded model projection; no separate Case document memory, vector store, or additional model.",
+  "changes": [
+    "Preserve original source_path in model fields and distinguish Case description, per-alert raw material, Tool records and prior judgments.",
+    "Retain relevant whole prior open questions, unresolved member assessments and hypothesis relationships, with 2048-byte serialized-entry budget; keep prior Run citations and explicit omission counts. Drop only exact duplicated generated gaps from this model view.",
+    "Keep internal validation diagnostics in ledger; send field locations and actionable constraints separately from evidence; do not feed rejected prose back. Reject known r11 control text across narrative fields.",
+    "Accept explicit protocol uncertainty with spaces, status and closing quotes; keep rejecting unsupported positive/negative claims, negated uncertainty and mixed assertions."
+  ],
+  "validation": {
+    "unique_affected_methods": 14,
+    "new_methods": 3,
+    "latest_observed_all_passed": true,
+    "latest_pass_log_by_method": {
+      "test_case_structured_report.StructuredReportExamples.test_first_report_has_schema_and_public_uuid_readback": "evidence/investigation-report-context-20261101/direct-01.txt",
+      "test_case_structured_report.StructuredReportExamples.test_one_correction_reports_exact_missing_citations_after_reference_dedup": "evidence/investigation-report-context-20261101/direct-01.txt",
+      "test_case_structured_report.StructuredReportExamples.test_control_feedback_stays_outside_evidence_and_correction_is_once": "evidence/investigation-report-context-20261101/direct-01.txt",
+      "test_case_structured_report.StructuredReportExamples.test_r10_duplicate_triage_is_removed_only_from_model_view": "evidence/investigation-report-context-20261101/direct-01.txt",
+      "test_case_structured_report.StructuredReportExamples.test_empty_and_unavailable_results_keep_their_boundaries_in_report_and_model": "evidence/investigation-report-context-20261101/direct-01.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_r6_network_sources_survive_model_correction_and_report_readback": "evidence/investigation-report-context-20261101/direct-02.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_r7_fenced_response_gets_one_chinese_correction_with_uncertainty": "evidence/investigation-report-context-20261101/direct-02.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_followup_question_preserves_previous_report_and_can_refresh_queries": "evidence/investigation-report-context-20261101/direct-02.txt",
+      "test_case_structured_report.StructuredReportExamples.test_followup_keeps_bounded_open_state_in_prior_run": "evidence/investigation-report-context-20261101/direct-02.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_live_main_failures_reach_correction_with_original_usage_and_rows": "evidence/investigation-report-context-20261101/direct-03.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_office_frozen_followup_reaches_correction_with_new_sources": "evidence/investigation-report-context-20261101/direct-03.txt",
+      "test_case_analysis_api.CaseAnalysisExamples.test_protocol_uncertainty_does_not_allow_unsupported_assertions": "evidence/investigation-report-context-20261101/direct-03.txt",
+      "test_case_structured_report.StructuredReportExamples.test_r9_uncertain_protocol_phrases_and_unsupported_claims": "evidence/investigation-report-context-20261101/direct-03.txt",
+      "test_case_structured_report.StructuredReportExamples.test_r11_original_reports_and_control_leaks_are_rejected": "evidence/investigation-report-context-20261101/direct-03.txt"
+    },
+    "initial_failures": "direct-01: two frozen budget failures, two test assumptions about native Tool messages/long prompt. direct-02: network still over budget; Office execution passed but test ignored compact metadata defaults. Fixed by exact historical-gap deduplication, concise prompts, and adapting view assertions. Original limits and sources retained.",
+    "diagnostic_attempts": "budget-diagnosis.txt: helper used nonexistent title field, caused KeyError; not a product defect. budget-diagnosis-02.txt: corrected helper confirmed two budget failures. Both files retained; diagnostics are not added to unique passing method count.",
+    "final_frozen_budget": {
+      "office_main": {
+        "required": 14095,
+        "remaining": 15074
+      },
+      "network_main": {
+        "required": 12252,
+        "remaining": 12296
+      },
+      "office_followup": {
+        "required": 16752,
+        "remaining": 17018
+      }
+    },
+    "limits": {
+      "model_calls": 4,
+      "tool_calls": 4,
+      "tokens": 24000,
+      "duration_seconds": 120,
+      "max_output_tokens": 3000,
+      "report_corrections": 1
+    },
+    "r11_replay": "Both original model reports still rejected. Source text retained; concrete uncertainty phrases allowed, known control leaks rejected. Not an approval of either original report."
+  },
+  "source_sha256": {
+    "services/api/app/investigation_v2/case_analysis.py": "ef2c7bd88197f4acfbb66cdfbfe7320dbe1cfe4e32b7b363997a78da6d5b0b0b",
+    "services/api/app/investigation_v2/case_analysis_models.py": "223becb8ac82a37cee12cdcab35de8d25042f3ac292bf4190111bd3e010f569f",
+    "services/api/app/investigation_v2/case_source_material.py": "4b355f40efe40e70be41a62e94fb0b14b8fc273dcdc3c8bf0720e487412c1657",
+    "services/api/app/investigation_v2/case_synthesis.py": "913f24e35aeed27cbb913b6cf047a9e81b995de74da8af53e4ec27e11efcae6d",
+    "services/api/tests/test_case_analysis_api.py": "8666fbf9161ba48d4c394f174fcec78eae1d1b9078c68fda65b172dbfde12f1c",
+    "services/api/tests/test_case_structured_report.py": "6477890303d43173a6b5a925365582427a720b771cc969511f85175e5543eb66"
+  },
+  "boundaries": {
+    "remote_access": 0,
+    "deployments": 0,
+    "new_live_runs": 0,
+    "real_model_calls": 0,
+    "new_data": 0,
+    "commit_push_merge_archive": false,
+    "openspec_task_5_3": "pending",
+    "remaining": "Real model behavior, unsupported source interpretations and relationship judgments remain unverified. Limited control-text checks are not a general semantic validator. Historical failures and reports remain unchanged."
+  }
+}

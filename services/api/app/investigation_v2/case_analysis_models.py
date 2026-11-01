@@ -41,6 +41,31 @@ class ReportContractError(ValueError):
         self.errors = errors
 
 
+def report_feedback(errors):
+    """Expose actionable constraints, keeping internal diagnostics in the ledger."""
+    issues = {
+        "json_invalid": "需要完整JSON对象，无围栏或尾随文本",
+        "object_required": "需要JSON对象",
+        "unknown_member_reference": "成员超出可读范围",
+        "invalid_member_reference": "成员编号不得重复或超出范围",
+        "two_distinct_members_required": "关系至少涉及两个不同成员",
+        "duplicate_member_assessment": "每个成员只能评估一次",
+        "cover_each_readable_member_once": "逐项覆盖全部可读成员",
+        "missing_readable_member_assessment": "逐项覆盖全部可读成员",
+        "unknown_evidence_reference": "证据编号须来自当前输入",
+        "missing_member_source_reference": "引用须包含涉及成员的告警来源",
+        "use_alert_ref_fields": "成员使用alert_ref/alert_refs字段",
+        "unobserved_application_protocol_use_gaps": "应用协议缺少证据或未明确标为待核",
+        "report_control_text": "正文混入了写作约束或内部诊断",
+        "unsupported_source_value": "具体PID或账号须来自本条引用的原始字段；工具观察只能用实际返回字段，不能用告警或旧判断替代",
+        "unsupported_empty_query_cause": "成功空查询仅表示本来源和范围无匹配；缺失原因未知，不猜接入、采样、清洗或丢失",
+    }
+    return [{"location": error.get("location", []),
+             "issue": issues.get(error["type"], "字段不符合输出结构"),
+             **{key: error[key] for key in ("allowed", "required") if key in error}}
+            for error in errors]
+
+
 def translate_report(report, context, evidence):
     """Map explicit current A references to public UUID fields, without adding citations."""
     if not isinstance(report, dict):
@@ -77,9 +102,8 @@ def translate_report(report, context, evidence):
                 if set(citations) - known:
                     errors.append({"location": [section, index, "evidence_ids"],
                                    "type": "unknown_evidence_reference", "allowed": sorted(known)})
-                if section != "open_questions" and set(members) - set(citations):
-                    errors.append({"location": [section, index, "evidence_ids"],
-                                   "type": "missing_member_source_reference", "required": members})
+                # Source ownership is checked with the report's factual checks,
+                # so the single correction can see both instead of one at a time.
             # Reject public UUID fields in model output instead of silently overwriting them.
             public = "alert_id" if single else "alert_ids"
             if public in item:
