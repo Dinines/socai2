@@ -38,9 +38,9 @@ test('a newly created incident Case renders actual Run completeness and empty co
    state.s.location.hash=`#/cases/${c.id}/${view}`;const html=state.casePage();assert.ok(!/Invalid Date|>undefined<|investigation-notes.txt|evidence-register.csv/.test(html),view);
    if(view==='overview')assert.ok(html.includes('部分交付'));
    if(view==='comments')assert.ok(html.includes('附件 (0)'));
-   if(view==='case-info')assert.ok(html.includes('案件判定尚未设置'));
-   if(view==='tasks')assert.ok(html.includes('暂无任务'));
-   if(view==='attack')assert.ok(html.includes('源告警记录的对象关联'));
+   if(view==='case-info'){assert.ok(html.includes('分类'));assert.ok(html.includes('未设置'));assert.ok(html.includes('根据当前案件成员与资料汇总'));}
+   if(view==='tasks')assert.ok(html.includes('暂无人工跟进事项'));
+   if(view==='attack')assert.ok(html.includes(`data-run-id="${state.M.latestFinished(state.M.forCase(state.store,current)).id}"`));
   }
   assert.equal(JSON.stringify(state.store),before);assert.equal(state.M.forCase(state.store,current).length,2);
  }
@@ -63,13 +63,13 @@ function load(saved=null){
  return {...s.window.api,s,nodes,click:async (action,id='')=>{for(const fn of handlers.click)await fn({target:{closest:selector=>selector==='[data-action]'?{dataset:{action,id}}:null},preventDefault(){}});},M:s.window.investigationWorkspaceModel,F:s.window.alertFlowWorkspace};
 }
 test('three saved incident groups append once and preserve original and edited browser records',()=>{
- const x=load();assert.equal(x.store.incidents.length,21);assert.equal(x.store.alerts.length,78);assert.equal(x.store.cases.length,21);
+ const x=load();assert.equal(x.store.incidents.length,24);assert.equal(x.store.alerts.length,88);assert.equal(x.store.cases.length,23);
  for(const inc of x.store.incidents.filter(i=>i.recordedIncident&&i.sourceEnvironment==='socai2-21')){
   const members=x.store.alerts.filter(a=>a.incidentId===inc.id);assert.equal(members.length,2);assert.equal(inc.priority,null);assert.equal(inc.status,'New');assert.equal(inc.owner,'未记录');assert.equal(inc.tags.length,0);
   assert.deepEqual([...members.map(a=>a.id)].sort(),[...inc.sourceAlertIds].sort());assert.ok(members.every(a=>a.caseId===null));
  }
  const old=x.store.incidents[0],actual=x.store.incidents.find(i=>i.recordedIncident);old.title='local fixture edit';actual.title='local event edit';actual.owner='Analyst';
- const y=load(JSON.stringify(x.store));assert.equal(y.store.incidents.length,21);assert.equal(y.store.incidents[0].title,old.title);assert.equal(y.store.incidents.find(i=>i.id===actual.id).owner,'Analyst');
+ const y=load(JSON.stringify(x.store));assert.equal(y.store.incidents.length,24);assert.equal(y.store.incidents[0].title,old.title);assert.equal(y.store.incidents.find(i=>i.id===actual.id).owner,'Analyst');
  assert.equal(JSON.stringify(y.store.alerts),JSON.stringify(x.store.alerts));
 });
 test('incident statistics use six source alerts and do not claim disruption or inventory',()=>{
@@ -101,7 +101,7 @@ test('processing incident card follows effective handling state independently of
 });
 test('four incident metrics use distinct incidents and a rolling occurrence-time window without changing historical records',()=>{
  const x=load(),now=Date.parse('2026-10-31T12:00:00+08:00');
- assert.deepEqual({...x.incidentQueueMetrics(now)},{active:17,unassigned:5,recent:2,high:15});
+ assert.deepEqual({...x.incidentQueueMetrics(now)},{active:20,unassigned:5,recent:2,high:18});
  const summary=x.incidentPage().match(/<div class="queue-inline-stats"[\s\S]*?<\/div>/)[0];
  assert.equal((summary.match(/<b>/g)||[]).length,4);assert.ok(summary.includes('24h有新告警'));assert.ok(summary.includes('高严重程度'));assert.ok(!summary.includes('状态未提供'));
  x.store.incidents=[
@@ -203,7 +203,7 @@ test('editing only the incident title keeps the default state and unrecorded own
 test('reset restores all three real incident groups immediately without a page reload',async()=>{
  const x=load(),id=x.store.incidents.find(i=>i.recordedIncident).id;x.s.location.hash=`#/incidents/${id}/summary`;
  x.store.incidents.find(i=>i.id===id).title='local edit';await x.click('confirm-reset');
- assert.equal(x.store.incidents.length,21);assert.equal(x.store.alerts.length,78);assert.equal(x.store.cases.length,21);
+ assert.equal(x.store.incidents.length,24);assert.equal(x.store.alerts.length,88);assert.equal(x.store.cases.length,23);
  const actual=x.store.incidents.filter(i=>i.recordedIncident&&i.sourceEnvironment==='socai2-21');assert.equal(actual.length,3);
  for(const inc of actual){assert.equal(x.store.alerts.filter(a=>a.incidentId===inc.id).length,2);assert.equal(inc.status,'New');}
  assert.ok(x.nodes['#app'].innerHTML.includes(id));assert.ok(!x.store.incidents.find(i=>i.id===id).title.includes('local edit'));
@@ -235,9 +235,9 @@ test('all local Case regions and six Run views expose scoped materials and empty
    x.s.location.hash=`#/cases/${c.id}/${tab}`;const html=x.casePage();assert.ok(!/Invalid Date|>undefined<|>null</.test(html),tab);assert.ok(!html.includes('iv-source-notice'));assert.ok(!html.includes('本地整理'));
    if(tab==='overview')for(const r of x.M.forCase(x.store,c))assert.ok(html.includes(r.id));
    if(tab==='evidence'){for(const r of x.M.forCase(x.store,c))for(const a of r.artifacts)assert.ok(html.includes(a.sha256));assert.ok(html.includes('原件不自动视为'));assert.ok(!html.includes('本次调查中没有该材料'));}
-   if(tab==='attack'){assert.ok(html.includes('6 个对象'));assert.ok(html.includes('8 条来源关系'));assert.ok(!html.includes('MAPS_TO'));}
+   if(tab==='attack'){const r=x.M.latestFinished(x.M.forCase(x.store,c));assert.ok(html.includes(`data-run-id="${r.id}"`));assert.ok(html.includes('最近一次已完成调查'));for(const id of r.alertIds)assert.ok(html.includes(`data-id="${id}"`));}
    if(tab==='comments'){assert.ok(html.includes('附件 (0)'));assert.ok(!html.includes('investigation-notes.txt'));}
-   if(tab==='tasks')assert.ok(html.includes('暂无任务'));
+   if(tab==='tasks')assert.ok(html.includes('暂无人工跟进事项'));
   }
   for(const r of x.M.forCase(x.store,c))for(const view of ['overview','process','tools','graphs','ledger','report']){
    x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=${view}`;const html=x.casePage();assert.ok(html.includes(r.id));assert.ok(!/Invalid Date|>undefined<|>null</.test(html));
@@ -246,10 +246,10 @@ test('all local Case regions and six Run views expose scoped materials and empty
  }
  assert.equal(JSON.stringify(x.store),before);
 });
-test('member edits affect current relations but retain referenced Run inputs across reload',()=>{
+test('member edits preserve the latest investigation graph and referenced Run inputs across reload',()=>{
  const x=load(),c=x.store.cases.find(c=>c.alertFlowCollection),runs=x.M.forCase(x.store,c),saved=JSON.stringify(runs),removed=c.alertIds.pop();
- assert.equal(x.M.forCase(x.store,c).length,2);x.s.location.hash=`#/cases/${c.id}/attack`;let html=x.casePage();assert.ok(html.includes('5 个对象'));assert.ok(!html.includes('#/alerts/'+removed+'/overview'));
- c.alertIds=[];x.s.location.hash=`#/cases/${c.id}/overview`;assert.equal((x.casePage().match(/已不在当前成员中/g)||[]).length,2);
+ assert.equal(x.M.forCase(x.store,c).length,2);x.s.location.hash=`#/cases/${c.id}/attack`;const r=x.M.latestFinished(runs),html=x.casePage();assert.ok(html.includes(`data-run-id="${r.id}"`));for(const id of r.alertIds)assert.ok(html.includes(`data-id="${id}"`));assert.equal(JSON.stringify(runs),saved);
+ c.alertIds=[];x.s.location.hash=`#/cases/${c.id}/overview`;assert.ok(x.casePage().includes('查看全部调查历史'));for(const original of runs){x.s.location.hash=`#/cases/${c.id}/investigations?run=${original.id}&view=overview`;const detail=x.casePage();for(const id of original.alertIds)assert.ok(detail.includes(`data-id="${id}"`));}
  x.s.location.hash=`#/cases/${c.id}/activities`;assert.equal(x.scopeActivities().length,runs.reduce((n,r)=>n+r.steps.length,0));
  const y=load(JSON.stringify(x.store)),copy=y.store.cases.find(row=>row.id===c.id);assert.equal(copy.alertIds.length,0);assert.equal(JSON.stringify(y.M.forCase(y.store,copy)),saved);
 });
@@ -268,11 +268,11 @@ test('Case counts and source activities stay scoped without assigning a joint ve
 test('Case edits persist locally and reset restores collections without changing source records',async()=>{
  const x=load(),c=x.store.cases.find(c=>c.alertFlowCollection),alerts=JSON.stringify(x.store.alerts),runs=JSON.stringify(x.M.runs(x.store));x.s.window.referenceWorkspaces.updateCase(x.store,c,{title:'自定义案件',owner:'Megan Bowen',status:'Resolved'});c.alertIds.pop();
  const y=load(JSON.stringify(x.store)),copy=y.store.cases.find(row=>row.id===c.id);assert.equal(copy.title,'自定义案件');assert.equal(copy.alertIds.length,1);assert.equal(copy.owner,'Megan Bowen');assert.equal(JSON.stringify(y.store.alerts),alerts);assert.equal(JSON.stringify(y.M.runs(y.store)),runs);
- await y.click('confirm-reset');const reset=y.store.cases.find(row=>row.id===c.id);assert.equal(reset.alertIds.length,2);assert.equal(reset.status,'New');assert.equal(y.store.cases.length,21);
+ await y.click('confirm-reset');const reset=y.store.cases.find(row=>row.id===c.id);assert.equal(reset.alertIds.length,2);assert.equal(reset.status,'New');assert.equal(y.store.cases.length,23);
 });
 test('Case recent-date filter includes newly organized collections and keeps explicit custom dates',async()=>{
- const x=load();x.s.location.hash='#/cases';x.ui.modal={type:'date-filter',key:'cases'};assert.ok(x.modalMarkup().includes('2026-10-31'));
- x.nodes['#date-form']={range:'7',start:'',end:''};await x.click('save-dates');assert.equal(x.tableState('cases').end,'2026-10-31T23:59');assert.equal(x.filteredRows('cases',x.caseQueueRows()).filter(c=>c.alertFlowCollection).length,3);
+ const x=load();x.s.location.hash='#/cases';x.ui.modal={type:'date-filter',key:'cases'};assert.ok(x.modalMarkup().includes('2026-11-02'));
+ x.nodes['#date-form']={range:'7',start:'',end:''};await x.click('save-dates');assert.equal(x.tableState('cases').end,'2026-11-02T23:59');assert.equal(x.filteredRows('cases',x.caseQueueRows()).filter(c=>c.alertFlowCollection).length,3);
  x.ui.modal={type:'date-filter',key:'cases'};x.nodes['#date-form']={range:'custom',start:'2026-10-25T00:00',end:'2026-10-25T23:59'};await x.click('save-dates');assert.equal(x.tableState('cases').end,'2026-10-25T23:59');assert.equal(x.filteredRows('cases',x.caseQueueRows()).filter(c=>c.alertFlowCollection).length,0);
 });
 
@@ -387,7 +387,7 @@ test('quoted source identifiers remain intact in graph nodes, alert links and ed
  x.ui.graph.alert=null;x.ui.graph.edge=e.id;const detail=x.incidentPage();assert.ok(detail.includes('data-id="'+escape(a.id)+'"'));assert.ok(detail.includes('data-id="'+escape(asset.id)+'"'));
 });
 
-test('all incident graphs reject stale expansion and path state while Case controls remain available',()=>{
+test('incident and Case graphs reject stale expansion and path state',()=>{
  const x=load(),before=JSON.stringify(x.store);
  for(const inc of x.store.incidents){
   const members=x.store.alerts.filter(a=>a.incidentId===inc.id),memberIds=new Set(members.map(a=>a.id));
@@ -400,7 +400,7 @@ test('all incident graphs reject stale expansion and path state while Case contr
    for(const match of html.matchAll(/data-action="ws-alert" data-id="([^"]+)"/g))assert.ok(memberIds.has(match[1]),match[1]);
   }
  }
- x.s.location.hash='#/cases/17420/attack';x.workspaceView.resetScope();x.ui.graph.selected='u1';const html=x.casePage();assert.ok(html.includes('data-ws-scope'));assert.ok(html.includes('ws-blast'));
+ x.s.location.hash='#/cases/17420/attack';x.workspaceView.resetScope();x.ui.graph.selected='u1';const html=x.casePage();assert.ok(!html.includes('data-ws-scope'));assert.ok(!html.includes('ws-blast'));assert.ok(html.includes('data-investigation-graph'));assert.ok(html.includes('最近一次已完成调查'));
  assert.equal(JSON.stringify(x.store),before);
 });
 
@@ -412,7 +412,7 @@ test('an incident without a Case opens new-case mode and creates all members onl
  await x.click('incident-case-mode','existing');assert.ok(x.modalMarkup().includes('搜索 Case'));await x.click('close-modal');assert.equal(x.store.cases.length,count);
  await x.click('incident-case',inc.id);x.nodes['#incident-case-title']={value:inc.title};await x.click('save-incident-case');
  const c=x.store.cases.find(c=>c.incidentCreated&&c.incidentId===inc.id);assert.ok(c);assert.equal(x.store.cases.length,count+1);assert.equal(c.title,inc.title);
- assert.deepEqual(Array.from(c.alertIds).sort(),Array.from(x.store.alerts.filter(a=>a.incidentId===inc.id),a=>a.id).sort());assert.equal(x.s.location.hash,'#/cases/'+c.id+'/overview');
+ assert.deepEqual(Array.from(c.alertIds).sort(),Array.from(x.store.alerts.filter(a=>a.incidentId===inc.id),a=>a.id).sort());assert.equal(x.s.location.hash,'#/cases/'+c.id+'/case-info');
  assert.equal(JSON.stringify(x.store.cases.filter(row=>row.id!==c.id)),others);assert.equal(JSON.stringify(x.store.alerts),alerts);assert.equal(JSON.stringify(x.M.runs(x.store)),runs);assert.equal(inc.status,status);
  const y=load(JSON.stringify(x.store));y.s.location.hash=`#/incidents/${inc.id}/alerts`;html=y.incidentPage();assert.ok(html.includes('进入 Case')||html.includes('选择 Case'));assert.ok(y.incidentCases(y.store.incidents.find(i=>i.id===inc.id)).some(row=>row.id===c.id));assert.ok(!html.includes('>新建 Case<'));
 });

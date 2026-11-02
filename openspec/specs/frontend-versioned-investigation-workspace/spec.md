@@ -70,15 +70,13 @@ The V2 Case workspace SHALL distinguish current case materials, selected investi
 
 ### Requirement: Recorded AiSOC examples preserve source relationships
 V2 SHALL append the six saved AiSOC20 alert results and six Runs without replacing existing examples, and SHALL preserve the distinction between local presentation Cases and backend Case relationships in source data and handoff documentation. Partial completion, skipped stages, absent metadata and absent executed actions SHALL remain visible without fabricated values.
-
 #### Scenario: Inspect an imported local Case
 - **WHEN** a user opens a local AiSOC20 Case
 - **THEN** the page shows its actual single-alert Runs and saved reports without extra import labels, and source data retains null source Case identities
-- **AND** a skipped attack-path stage is shown as skipped, while the separate case graph contains only recorded direct relationships for its current members
-
+- **AND** a skipped attack-path stage is shown as skipped; its Case graph uses the latest eligible completed Run and any explicitly labelled saved context is limited to that Run's original inputs.
 #### Scenario: Inspect same-host alerts across environments
 - **WHEN** related or similar alerts are shown for an imported alert
-- **THEN** candidates are restricted to the same source environment and tenant, and raw entities without inventory relationships receive no invented inventory identifiers or scores
+- **THEN** candidates are restricted to the same source environment and tenant, and raw entities without inventory relationships receive no invented inventory identifiers or scores.
 
 ### Requirement: Persisted Case investigation retains joint scope and saved artifacts
 V2 SHALL display the saved historical Case and its joint investigation using original Case/Run identities and saved input members. It SHALL present adopted four-stage results, actual tool returns, saved chain/path/reachability artifacts and report without converting candidate alerts into Case members, Run completion into delivery completeness, or dry-run proposals into executions.
@@ -274,3 +272,293 @@ V2 SHALL retain saved AiSOC records and existing examples while providing separa
 #### Scenario: Reload without replacing edits
 - **WHEN** the fixtures are merged into a new or saved browser workspace more than once
 - **THEN** stable identities prevent duplicates, prior records and edits remain intact, and source records or historical Runs are never enriched by demonstration materials.
+
+### Requirement: Unified Case overview preserves per-Run scope
+V2 SHALL open every Case overview as a current-case summary with per-Run results and recorded next work side by side at wide widths and stacked at narrow widths, while preserving access to Case and Run detail capabilities.
+
+#### Scenario: Read a Case with independent alert results
+- **WHEN** a Case contains saved single-alert analysis or no results
+- **THEN** the overview presents current members separately from each Run's input, completeness and findings or an honest empty state
+- **AND** it does not manufacture a joint conclusion, task, score, Run or response; historical inputs and source ownership stay unchanged.
+
+#### Scenario: Open an existing Run deep link
+- **WHEN** a user follows a Case Run link or opens a Run without a Case
+- **THEN** the selected Run and all six detail views remain accessible, with a Case overview return link when applicable
+- **AND** opening the Case overview does not silently select one Run as the whole-case result.
+
+### Requirement: Analysis references resolve within the selected Run
+V2 SHALL expose existing stage summaries and references in readable analysis, and allow exact navigation to saved queries or artifacts belonging to the selected Run without inferring absent adoption relationships.
+
+#### Scenario: Inspect a referenced query
+- **WHEN** a saved analysis references a query ID present in the same Run
+- **THEN** the link shows that query with its original return and status, offers all queries and a return to analysis, and retains the selected Run
+- **AND** unavailable returns remain distinguishable from no matches and from successful evidence.
+
+#### Scenario: Invalid reference or changed Run
+- **WHEN** a query ID is absent from the selected Run or the user switches Runs
+- **THEN** an absent ID is reported without displaying another Run's content, and switching Runs clears the old detail selection while retaining the view
+- **AND** viewing or navigating does not mutate stored materials, Case membership or source records.
+
+### Requirement: Case objects and evidence share a workspace
+V2 SHALL combine Case objects and evidence into one navigation entry while preserving prior object and evidence URLs, current member sources, all recorded evidence, and per-Run material access.
+#### Scenario: Inspect consolidated materials
+- **WHEN** a Case material workspace is opened
+- **THEN** objects are deduplicated by recorded identity and expose linked member alerts and evidence, with unlinked evidence retained separately
+- **AND** records are not promoted to malicious evidence or combined judgments; incident navigation and Run graph capabilities stay unchanged.
+
+### Requirement: Case membership can be extended from within the Case
+V2 SHALL allow explicit addition of selected alerts or the selected members of events within a coherent source and tenant scope.
+#### Scenario: Add selected sources
+- **WHEN** the user confirms addition
+- **THEN** only eligible selected alerts are unioned into the current Case, duplicates are avoided, and other Cases and alert ownership are unchanged
+- **AND** historic Run references and inputs remain accessible, while cancellation adds nothing and association starts no investigation.
+
+### Requirement: Investigation preparation is separate from execution
+V2 SHALL retain preparations separately from Runs, including explicit objectives, input alerts, entity targets and material references.
+#### Scenario: Save an investigation preparation
+- **WHEN** a user saves or revises a valid draft
+- **THEN** historical Runs remain unchanged and saving never starts execution
+- **AND** execution remains unavailable for real records; dedicated demonstration Cases may explicitly simulate a start and manual progress without claiming real model replies or backend execution.
+
+### Requirement: Human follow-up and response decisions retain distinct effects
+V2 SHALL let users record human follow-up results and review specific response proposals without treating task completion or approval as an investigation conclusion or executed response.
+#### Scenario: Complete human follow-up
+- **WHEN** a user completes a task
+- **THEN** a result is required and recorded alongside owner, due date and optional existing source references
+- **AND** current task counts and activities update locally but Run completeness, verdict, Case status and response approval do not change.
+#### Scenario: Review a proposed response
+- **WHEN** a user approves or rejects a specific Run action locally
+- **THEN** the decision includes the concrete target and reason and remains separate from the saved proposal and execution receipts
+- **AND** approval does not mark an object remediated, the response executed or the Case resolved; generic evidence approval is not offered.
+
+### Requirement: Case entry prioritizes current case context
+V2 SHALL use Case information as the default Case entry while retaining explicit investigation overview and Run views.
+#### Scenario: Enter a Case from a general link
+- **WHEN** a user opens a Case from its list, preview, alert, incident, switcher or newly associated Case, or opens a Case URL without a tab or selected Run
+- **THEN** Case information is selected and is the first internal navigation entry
+- **AND** explicit overview and Run links retain their prior results, six Run views and historical inputs; entering the page changes no stored data.
+
+### Requirement: Case information displays current member attack stages
+V2 SHALL display ATT&CK stage coverage using the recorded categories of current Case member alerts and the same presentation semantics as incidents.
+#### Scenario: Inspect member stage coverage
+- **WHEN** Case information is displayed
+- **THEN** stage counts reflect only current members, missing categories remain unclassified and empty membership is shown honestly
+- **AND** an information control explains that alert counts are not detection coverage or proof of attack success; historic Run inputs are not silently included.
+
+### Requirement: Case materials provide an immediate reading context
+V2 SHALL provide a selectable object list with a directly visible detail pane and a separate in-page investigation-material view within the consolidated materials workspace.
+#### Scenario: Open or filter the object workspace
+- **WHEN** a Case material page opens or the user selects, searches or filters an object
+- **THEN** a matching object is visibly selected with its explicit evidence and source alerts, or a recoverable empty state is shown
+- **AND** default ordering reflects member-alert counts rather than inferred risk, unlinked evidence remains accessible, and switching Cases clears prior viewing context.
+#### Scenario: Inspect saved investigation materials
+- **WHEN** the investigation-material view is selected or a Case has neither objects nor unlinked evidence but has saved Runs
+- **THEN** each Run retains its own input scope, query/report links and artifact catalog with saved hashes and content access
+- **AND** displaying, selecting or filtering writes no business records and never treats a source relationship as model adoption or a new judgment.
+
+### Requirement: Case information uses a consistent presentation across sources
+V2 SHALL use the same Case information layout and member-alert, object, alert-evidence and investigation metrics for illustrative and recorded Cases.
+#### Scenario: Open Cases from different sources
+- **WHEN** a user opens any Case information page
+- **THEN** summary, details, member alerts, ATT&CK stages and objects use the same presentation structure, with actual values or missing states
+- **AND** saved artifacts are not substituted for alert evidence and no overall AI conclusion is invented.
+
+### Requirement: Case relationship views default to the latest finished investigation
+V2 SHALL default the Case relationship base to its latest completed investigation, excluding triage-only results, and preserve its original input scope and provenance.
+#### Scenario: Inspect or revise Case membership
+- **WHEN** completed investigations exist
+- **THEN** select the latest by end time with start time as a labelled fallback, disclose completeness, and link to its read-only Run
+- **AND** default to Path and direct-neighbor relationships; saved exploration pins its base until explicitly reset and never merges historical Runs.
+#### Scenario: Open a Case without a completed investigation
+- **WHEN** no eligible completed investigation exists
+- **THEN** use current member-to-object relationships as the identified base
+- **AND** optional exploration remains an explicitly separate overlay with no implicit membership or investigation execution.
+
+### Requirement: Investigation graph source navigation retains reading context
+V2 SHALL expose Chain, Path and reachability selection before the graph and preserve explicit source disclosure state through same-Run redraws.
+#### Scenario: Switch or inspect source material
+- **WHEN** a user selects a source kind or opens and closes an alert preview from graph material
+- **THEN** the selected material remains available without unintended collapse, same-Run kind switching retains the reading position, and manual collapse remains respected on redraw
+- **AND** switching Runs does not carry old disclosure state or change stored investigation data.
+
+### Requirement: Related alerts distinguish current membership from investigation input
+V2 SHALL offer a related-alert list without duplicating Run input alerts, preserve unavailable source states, and disclose current Case membership separately from original Run input.
+#### Scenario: Review a related alert outside the Case
+- **WHEN** the user selects an alert from the related list or graph
+- **THEN** the details show saved relationship evidence, available ranking/time difference and current Case membership
+- **AND** eligible alerts can be preselected in the existing add-member form, whose explicit confirmation only adds current Case membership and never changes historical Run inputs, other Cases or starts an investigation.
+
+### Requirement: Case relationship exploration preserves provenance and explicit adoption
+V2 SHALL support alert and concrete-entity pivots only in the Case relationship workspace, using bounded loaded records and preserving the source Run and explicit relationship evidence.
+#### Scenario: Explore a candidate and prepare further investigation
+- **WHEN** a user selects a supported node or requests recommended leads
+- **THEN** show ranked candidates and reasons separately from the base Path and direct-neighbor graph, allow preview, expansion, continuation, undo and saved exploration, and distinguish new nodes from existing scope and draft selections
+- **AND** taxonomy nodes are view-only, expansion never changes membership or Run input, and saved investigation drafts disclose any proposed new membership before confirmation.
+#### Scenario: Distinguish current exploration from historical source material
+- **WHEN** any recorded or demonstration Case relationship workspace is opened
+- **THEN** the common exploration controls are available and the page identifies its base provenance without repeating historical Chain/Path/Alert Graph source panels or their old skipped/no-Case status messages
+- **AND** the linked read-only Run retains original source materials and execution statuses unchanged, while a context-only base remains identified as saved input relationships.
+
+#### Scenario: Read object details and expansion candidates separately
+- **WHEN** recommendations or an entity expansion is opened
+- **THEN** the sidebar presents a dedicated leads view with compact candidate reasons and actions, while ranking rules, anchor time and complete shared objects remain accessible on demand
+- **AND** selecting a graph node returns to object details without losing the existing leads context, and switching sidebar views does not change membership, historical Runs or saved exploration.
+
+### Requirement: Case drafts and active investigation status are separate
+V2 SHALL support cancelled drafts with retained records and persistent Case-level active-Run notices, while allowing at most one active Case investigation in local demonstrations.
+#### Scenario: Save or start a draft while a Run is active
+- **WHEN** a Case has an active or pending-start investigation
+- **THEN** users may explore, add members and save or cancel drafts but cannot start a second Run or modify the active Run's frozen inputs
+- **AND** only explicitly identified simulation Cases can simulate a start and progress; original recorded Cases never invoke or invent execution.
+
+### Requirement: Case membership supports multiple incidents and actionable queue counts
+V2 SHALL allow selecting multiple incidents with deduplicated member alerts and show all related incidents without changing their original membership or other Cases.
+#### Scenario: Add events and inspect the Case queue
+- **WHEN** incident selections are confirmed
+- **THEN** selected current alerts are added once, event associations remain navigable, and historical Run inputs remain unchanged
+- **AND** the former multi-alert percentage card is replaced by the count of Cases in progress.
+
+### Requirement: Manual alert investigation enters Case preparation
+The prototype SHALL route an alert investigation request into the scoped Case assistant rather than a separate draft form, without creating an alert-local pending Run.
+#### Scenario: Prepare a linked alert
+- **WHEN** a user requests investigation of an alert with one Case or selects one of multiple linked Cases
+- **THEN** the selected Case assistant opens with that alert as context, without saving a task, Run or membership change
+- **AND** closing the assistant preserves existing data.
+#### Scenario: Associate before preparation
+- **WHEN** an alert has no Case and the user explicitly confirms eligible association or Case creation
+- **THEN** only the confirmed association is persisted, and the assistant opens with the selected alert
+- **AND** real execution remains unconnected and documented; opening does not invent a result.
+
+### Requirement: Incident management excludes independent security classification
+V2 SHALL keep incident lifecycle management separate from alert and Case judgments.
+#### Scenario: Edit an incident
+- **WHEN** the user edits a single incident or a batch
+- **THEN** no independent true-threat/false-positive classification control is offered, and the incident header does not present an independent classification
+- **AND** historical classification fields are preserved, while existing status, ownership and resolution behavior remains unchanged.
+
+### Requirement: Run response proposals have one review location
+V2 SHALL present each response proposal once in the response control section with its target, rationale and applicable review decision.
+#### Scenario: Read or review an action
+- **WHEN** a user opens report and response or reviews a specific proposal
+- **THEN** the original action index and content determine the decision, the decision does not imply execution, and targetless or approval-free suggestions remain readable
+- **AND** report text and all execution records remain intact; execution is associated with a proposal only by an explicit unambiguous identifier.
+
+### Requirement: Investigation reading prioritizes results over repeated technical detail
+V2 SHALL retain Case results and next work while replacing the repeated overview history list with a history entry, and expose execution details through a secondary analysis entry.
+#### Scenario: Read overview and execution details
+- **WHEN** users open Case overview, AI analysis or an existing ledger deep link
+- **THEN** per-Run scope and full history remain accessible, five primary detail tabs remain, and original ledger records and technical statistics are available under execution details
+- **AND** failures, stopping reasons and key limitations remain visible without requiring technical-log inspection.
+
+### Requirement: Exploration selection does not claim draft creation
+V2 SHALL distinguish selecting investigation material and saving exploration progress from saving an investigation draft.
+#### Scenario: Select graph material
+- **WHEN** users select nodes or save exploration
+- **THEN** labels describe selected material or exploration progress, without claiming a draft has already been saved
+- **AND** existing explicit preparation, membership and Run boundaries remain unchanged.
+
+### Requirement: All Case sources share one presentation pipeline
+V2 SHALL normalize investigation records through one reader and use the same Case routes, graph components and preparation workflow for reference, saved and newly created Cases.
+#### Scenario: Open different data sources
+- **WHEN** a Case or Run has complete, partial or missing material
+- **THEN** the same navigation and components render the available data, with shared empty states for missing fields and no legacy page fallback
+- **AND** source adapters preserve original records and tenant ownership, without copying demonstration results into saved records.
+
+### Requirement: Case queue metrics describe actionable Case counts
+The current Case queue SHALL show unassigned, in-progress, high-severity and pending-human-follow-up Case counts using one rule for all data sources. It SHALL exclude resolved and unknown-status Cases, count each Case once per metric, and explain scope and overlap through an information control. The queue SHALL omit nonfunctional Incident and Generic type tabs.
+#### Scenario: Read counts and inspect matching Cases
+- **WHEN** the queue is displayed
+- **THEN** metrics count all loaded Cases with known New or In progress status, independently of table filters; pending follow-up counts Cases with at least one New or In progress task, not task totals
+- **AND** selecting a metric replaces existing search and filters with that criterion while preserving columns and sort; toggling or removing it restores the remaining table scope
+- **AND** metric filtering can be saved in a filter set, old sets clear a previously selected metric, and these operations do not update Case or Run business data.
+
+### Requirement: Case overview separates current work from delivered results
+The shared Case overview SHALL prioritize delivered findings, expose one active-progress entry only when a Run exists, and show human task summaries rather than a separate draft section.
+#### Scenario: Inspect current work
+- **WHEN** a Case has an active Run and manually prepared work
+- **THEN** active progress is displayed once, pending manual work is readable through the human-task summary, and prior findings remain the main content
+- **AND** original drafts and Runs are preserved, task editing requires explicit save, and viewing creates no task or investigation
+- **AND** Cases without an active Run have no empty progress card.
+
+### Requirement: Human task references are optional and distinct from origin
+Human tasks SHALL explain the source investigation as origin and concrete optional references as reading material without requiring a work order or attachment.
+#### Scenario: Prepare a human confirmation
+- **WHEN** a user prepares a task from a Run
+- **THEN** the Run is available as its source and is not offered again as a new whole-Run reference choice
+- **AND** previously selected references remain preserved, completion accepts a written human result alone, and no model or investigation is started.
+
+### Requirement: Run statistics use saved scope and missing-value semantics
+Investigation history and detail SHALL share elapsed-time, saved-tool-record, model-call and token metrics for all data sources.
+#### Scenario: Read saved execution statistics
+- **WHEN** valid Run start and end times exist
+- **THEN** elapsed time is computed from those timestamps, saved tool entries are counted as records, and calls and tokens use the saved Run totals
+- **AND** missing or invalid values remain missing, explicit zero remains zero, Deep-stage latency is never treated as total duration, and reading does not modify records.
+
+### Requirement: Case story provides a shared chronological reading surface
+The prototype SHALL show all current deduplicated Case member alerts, saved investigations and completed human tasks through one story reader, newest first according to each record's actual timestamp, with missing times identified separately at the end.
+#### Scenario: Read and select story context
+- **WHEN** a user opens any Case story and selects alerts
+- **THEN** the same layout displays actual members, objects and links to related saved investigations, and selected alerts can be brought to the Case assistant
+- **AND** the latest timestamp appears at the top, the initial alert detail selects the latest available alert, and the summary range remains earliest to latest
+- **AND** reading does not create causal claims, alter membership or change Run history.
+
+### Requirement: Case assistant preview preserves explicit scoped context
+The prototype SHALL offer one Case assistant preview from general and contextual entries, distinguish stored source excerpts from system guidance, and document that no live AI or tools are connected without requiring prototype badges in the product UI.
+#### Scenario: Ask with local context
+- **WHEN** a user opens or sends a question about a Case, Run, member alert, graph entity or completed human task
+- **THEN** the context is validated within that Case, the local conversation retains its source references, and switching Cases does not carry another Case's conversation or selection
+- **AND** opening, sending or viewing records creates no draft, Run, task, membership change or invented model result.
+
+### Requirement: Assistant preview does not impose manual execution routing
+The prototype SHALL expose manual preparations through human tasks while preserving their source records, and SHALL NOT offer fixed preparation or human-assignment buttons after every preview question.
+#### Scenario: Read the unconnected assistant preview
+- **WHEN** a user sends a question in the local assistant preview
+- **THEN** the UI does not invent a response, execution or preparation/human-assignment prerequisite; real execution remains unconnected and explicitly documented
+- **AND** the current product document distinguishes the target send-to-execution and result-adoption workflow from this unconnected preview; existing manual workflows and historical records remain available.
+
+### Requirement: Case assistant distinguishes conversation roles and editable initial intent
+The prototype SHALL present user questions on the right and actual system responses on the left, preserve a clear composer, and keep supporting context secondary. Without a real response it SHALL NOT insert a placeholder reply.
+#### Scenario: Open an empty conversation
+- **WHEN** a user first opens the Case assistant with no prior messages or typed draft
+- **THEN** the composer contains an editable question based on the current Case or selected context; suggestions fill the composer without submitting
+- **AND** typed drafts and historical messages are retained, opening creates no message or business record, and the unconnected execution boundary remains explicit in the product document.
+#### Scenario: Read an existing exchange
+- **WHEN** a user opens a conversation with saved questions
+- **THEN** user questions remain right-aligned, actual response roles have a distinct left alignment, reference details are available on demand, and the input and all three scoped suggestion buttons stay available
+- **AND** suggestions only fill editable input without sending; source excerpts remain identified as saved records, not newly generated answers.
+
+### Requirement: Case human work and saved investigations share reading context
+The shared model SHALL project pending manual preparations into human tasks without modifying their original records and SHALL expose completed human results beside saved investigations in the Case story and assistant references.
+#### Scenario: Complete manual follow-up
+- **WHEN** a user explicitly saves a task result originating from a pending preparation
+- **THEN** one task is stored with its source preparation reference, the source preparation and historical Run inputs remain unchanged, and the story provides a contextual question entry for that result
+- **AND** the result remains attributed to the person and is not an automatic change to Case conclusions.
+
+### Requirement: Graph membership adoption marks baseline work without invented execution
+The graph SHALL distinguish exploration from explicitly adopting outside alerts and SHALL mark baseline investigation scope as pending update only after actual new members are confirmed.
+#### Scenario: Confirm an outside alert
+- **WHEN** the user selects an outside alert and confirms joining it to the Case
+- **THEN** membership is deduplicated, pending baseline-update scope records the new member, and historical Run inputs remain unchanged
+- **AND** mere expansion, viewing or selecting does not create a Run; automatic execution and AI conclusion saving remain documented future integration rather than fabricated local results.
+
+### Requirement: Shared membership change and pending analysis presentation
+The local workspace SHALL apply the same scope validation, deduplication, history retention and pending analysis feedback to alert association, incident association, Case addition and movement.
+
+#### Scenario: Cross-scope target is selected
+- **WHEN** a different source scope is selected by any member association or move entry
+- **THEN** the choice is absent and submission rejects it without mutation
+
+#### Scenario: Members are moved
+- **WHEN** a user confirms a valid move
+- **THEN** both Cases retain historical Run inputs and display the actual membership change
+
+### Requirement: Common outcomes and explicit AI conclusion retention
+The workspace SHALL render per-record purpose, conclusion, limitations and Case impact with a shared model; missing real results SHALL remain missing. AI replies SHALL be distinct from questions and require explicit saving before becoming formal investigation records.
+
+#### Scenario: An illustrative answer is saved
+- **WHEN** a user confirms a conclusion from an independent complete example
+- **THEN** a single scoped AI investigation record preserves the selected messages, input and references without changing Case judgment or creating an active Run
+
+#### Scenario: Saved real result is sparse
+- **WHEN** a source result has no conclusion or an AI service is unavailable
+- **THEN** the page states that condition and does not substitute demonstration results

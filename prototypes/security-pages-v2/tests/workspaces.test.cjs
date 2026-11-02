@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 function setup(){
  const sandbox={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases/17420/overview'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};
  vm.createContext(sandbox);
- for(const name of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-graph','investigation-workspace'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
+ for(const name of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-graph','investigation-workspace','case-workflow'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
  const app=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.testAPI={store,ui,casePage,scopeAlerts,workspaceView};\n})();');
  assert.ok(app.includes('window.testAPI='));vm.runInContext(app,sandbox);
  return {...sandbox.window.testAPI,W:sandbox.window.referenceWorkspaces,sandbox};
@@ -56,5 +56,5 @@ test('task creation and completion save only the current Case and its activity',
  const view=sandbox.window.createReferenceWorkspace({store,ui:{graph:{}},currentCase:()=>c,save:()=>saves++,render(){},toast(){},logActivity:(...args)=>logs.push(args)});
  view.submitTask({title:' 核对授权范围 ',owner:'Alex Wilber',due:'2026-10-26T12:00'});
  assert.equal(c.tasks[0].title,'核对授权范围');assert.equal(c.tasks[0].status,'New');
- view.changeTask(c.tasks[0].id,'Completed');assert.ok(c.tasks[0].completedAt);assert.equal(saves,2);assert.equal(logs.length,2);assert.equal(logs[1][4][0],c.id);assert.equal(JSON.stringify(store.alerts),alerts);assert.equal(store.cases[1].tasks,undefined);
+ view.changeTask(c.tasks[0].id,'Completed');assert.equal(c.tasks[0].status,'New');c.tasks[0].result='已核对授权工单，与当前范围一致';view.changeTask(c.tasks[0].id,'Completed');assert.ok(c.tasks[0].completedAt);assert.equal(saves,2);assert.equal(logs.length,2);assert.equal(logs[1][4][0],c.id);assert.equal(JSON.stringify(store.alerts),alerts);assert.equal(store.cases[1].tasks,undefined);
 });

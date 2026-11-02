@@ -18,7 +18,7 @@ test('design materials cover all six views and use valid artifact hashes and fix
 test('adding design materials changes none of the thirteen actual Runs or their source collections',()=>{
  const a=load({design:false}),b=load(),actual=x=>JSON.stringify(x.M.runs(x.store).filter(r=>r.recorded));assert.equal(a.M.runs(a.store).filter(r=>r.recorded).length,13);assert.equal(actual(a),actual(b));
  for(const key of ['alertFlowData','aisoc20RecordedData','persistedCaseData','savedInvestigationRuns'])assert.equal(JSON.stringify(a.s.window[key]),JSON.stringify(b.s.window[key]));
- assert.deepEqual([b.store.alerts.length,b.store.incidents.length,b.store.cases.length,b.M.runs(b.store).length],[78,21,21,18]);
+ assert.deepEqual([b.store.alerts.length,b.store.incidents.length,b.store.cases.length,b.M.runs(b.store).length],[88,24,23,21]);
 });
 test('Case source captions are removed without rewriting raw names, identities or saved edits',()=>{
  const x=load(),original=JSON.stringify(x.store);for(const c of x.store.cases.filter(c=>c.localCollection||c.recordedCase))for(const view of ['overview','case-info','alerts','evidence','activities']){

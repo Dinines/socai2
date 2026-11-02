@@ -23,7 +23,7 @@ test('external candidate selection and hidden endpoint restore do not change see
  s.chain=false;M.reconcile(g,s);assert.equal(s.selected,null);
 });
 test('relational fallback keeps Case-level techniques out of precise alert highlighting',()=>{
- const {M,run,store}=setup();run.graphs.attack_path.source='postgres_fallback';run.graphs.attack_path.fallback=true;
+ const {M,run,store}=setup();delete run.graphs.alert_graph;run.graphs.attack_path.source='postgres_fallback';run.graphs.attack_path.fallback=true;
  const g=M.build(run,store);assert.equal(g.caseTech.length,3);assert.equal(g.nodes.filter(n=>n.kind==='tech').length,0);assert.ok(g.edges.every(e=>e.layer!=='tech'));assert.equal(run.graphs.attack_path.data.edges.filter(e=>e.type==='MAPS_TO').length,3);
 });
 test('tenant mismatch and ambiguous natural keys are not merged',()=>{
@@ -43,4 +43,17 @@ test('controller state is isolated per Run and escaped labels cannot become mark
  ui.render(run);const g=M.build(run,store),a=g.nodes.find(n=>n.code==='A2');ui.handle('ug-node',a.id);let html=ui.render(run);assert.match(html,/3 条实体关联 · 1 条技术映射/);
  const second={...run,id:'different-run',alertIds:[],graphs:{}};html=ui.render(second);assert.match(html,/全部关系/);assert.ok(!html.includes(a.label));
  const host=run.graphs.attack_path.data.nodes.find(n=>n.label==='Host');host.properties.hostname='<img src=x onerror=attack()>';html=ui.render(run);assert.ok(html.includes('&lt;img'));assert.ok(!html.includes('<img'));
+});
+
+test('saved direct neighbors retain relation provenance, unknown direction and exclude untyped or reachability-only nodes',()=>{
+ const {M,run,store}=setup();run.graphs={alert_graph:{status:'success',source:'neo4j',data:{neighbors:{source:{id:run.alertIds[0],label:'Alert'},neighbors:[{node:{id:'direct-host',label:'Host',properties:{hostname:'host-qa'}},rel_type:'OBSERVED_ON'},{node:{id:'untyped',label:'Host'}}]},blast_radius:{nodes:[{id:'reach-only',label:'Host'}]}}}};
+ const before=JSON.stringify(run),g=M.build(run,store);assert.equal(g.edges.length,1);assert.equal(g.edges[0].sources[0].material,'alert_graph');assert.equal(g.edges[0].sources[0].direction,'unknown');assert.ok(g.nodes.some(n=>n.id==='direct-host'));assert.ok(!g.nodes.some(n=>['untyped','reach-only'].includes(n.id)));assert.equal(JSON.stringify(run),before);
+});
+test('related alerts exclude Run inputs and disclose current membership independently with honest empty source states',()=>{
+ const {c,M,run,store}=setup(),g=M.build(run,store);assert.equal(g.related.length,3);assert.ok(g.related.every(id=>!g.inputs.includes(id)));
+ const target=g.related[0],current={id:'case-qa',title:'本案',alertIds:[...run.alertIds]};store.alerts.push({id:target,title:'可加入的关联告警'});assert.ok(target);store.cases=[current,{id:'other',title:'另一个案件',alertIds:[target]}];
+ const esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x])),ui=c.window.createUnifiedInvestigationGraph({store,esc,I:()=>'',severity:esc,state:esc,format:v=>v||'未记录',getAlert:id=>store.alerts.find(a=>a.id===id),currentRoute:()=>({page:'cases'}),currentCase:()=>current,caseActions:()=>({eligible:()=>true}),render(){}});
+ const before=JSON.stringify([run,store]);ui.render(run,null,'all');ui.handle('ug-list','candidates');ui.handle('ug-node',target);let html=ui.render(run,null,'all');assert.ok(html.includes('未加入本案'));assert.ok(html.includes('cw-add-related'));assert.ok(html.includes('另一个案件'));assert.ok(html.includes('非本次输入'));assert.equal(JSON.stringify([run,store]),before);
+ current.alertIds.push(target);html=ui.render(run,null,'all');assert.ok(html.includes('已在本案中'));assert.ok(!html.includes('cw-add-related'));assert.ok(html.includes('非本次输入'));current.alertIds.pop();
+ for(const [status,label] of [['missing','未保存关联查询结果'],['unavailable','关联查询不可用'],['error','关联查询失败'],['empty','未发现其他关联告警']]){const r={...run,id:'empty-'+status,graphs:status==='missing'?{}:{attack_chain:{status,data:{chain:[]}}}};ui.render(r,null,'all');ui.handle('ug-list','candidates');html=ui.render(r,null,'all');assert.ok(html.includes(label));assert.ok(!html.includes('链候选'));}
 });

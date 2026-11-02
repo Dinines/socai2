@@ -20,7 +20,7 @@
   window.mergeReplayedAlerts?.(store);
   window.mergeAiSoc20Data?.(store);window.mergePersistedCaseData?.(store);
   window.alertFlowWorkspace?.merge(store);
-  window.mergeDesignWorkspace?.(store);window.mergePageShowcases?.(store);
+  window.mergeDesignWorkspace?.(store);window.mergePageShowcases?.(store);window.mergeCaseExplorationData?.(store);window.mergeCaseOutcomeData?.(store);
   initializeIncidentStates();
   // Update this fixture's old timestamp without replacing user edits or associations.
   const unlinkedSample=store.alerts.find(a=>a.id==='alert-unassigned-case-001');
@@ -118,11 +118,13 @@
     return `<div class="card incident-preview-overview"><h3>事件概述</h3><p class="inc-preview-description">${esc(description)}</p><p class="inc-preview-description">${esc(progress)}</p><div class="incident-preview-assessment"><span>事件整体研判结论尚未记录</span><span>事件优先级：${inc.priority==null?'尚未评分':esc(inc.priority)}</span></div></div>`;
   }
   const savedCase = c => !!(c?.localCollection||c?.recordedCase||c?.incidentCreated);
-  const caseTitle = c => c.localCollection ? c.title.replace(/（本地整理）$/, '') : c.title;
-  const caseDescription = c => c.localCollection && !c.alertFlowCollection ? '汇集成员告警、关联对象与各次调查材料，供继续核查。' : c.description;
+  const caseRecord = c => window.investigationWorkspaceModel.caseRecord(c);
+  const caseTitle = c => caseRecord(c).title;
+  const caseDescription = c => caseRecord(c).description;
   const orderedCases = () => store.cases.slice().sort((a,b)=>Number(savedCase(b))-Number(savedCase(a))||(savedCase(a)?Date.parse(b.created)-Date.parse(a.created):0));
   const caseIncidents = c => store.incidents.filter(i=>{
     if(savedCase(c)&&(i.sourceTenantId!==c.sourceTenantId||i.sourceEnvironment!==c.sourceEnvironment))return false;
+    if(c.incidentIds?.includes(i.id)&&i.sourceTenantId===c.sourceTenantId&&i.sourceEnvironment===c.sourceEnvironment)return true;
     return store.alerts.some(a=>{
       if(!c.alertIds.includes(a.id)||a.incidentId!==i.id)return false;
       if(!i.sourceTenantId)return true;
@@ -168,6 +170,7 @@
     const bound=v=>Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/.test(v)?v:v+'+08:00');
     let result=rows.filter(row=>(!q||JSON.stringify(row).toLowerCase().includes(q))&&(!t.severity||row.severity===t.severity)&&(!t.status||row.status===t.status)&&(!t.source||row.source===t.source||row.sources?.includes(t.source))&&(!t.owner||row.owner===t.owner)&&(!t.tag||row[tagField]?.includes(t.tag))&&(!t.minPriority||(Number.isFinite(row.priority)&&row.priority>=Number(t.minPriority)))&&(!t.start||!row[timeField]||Date.parse(row[timeField])>=bound(t.start))&&(!t.end||!row[timeField]||Date.parse(row[timeField])<=bound(t.end)));
     result=result.filter(row=>(!t.priorityBand||(Number.isFinite(row.priority)&&(t.priorityBand==='top'?row.priority>85:t.priorityBand==='medium'?row.priority>=15&&row.priority<=85:row.priority<15)))&&(!t.classification||row.classification===t.classification)&&(!t.investigation||row.investigation===t.investigation)&&(!t.category||row.category===t.category));
+    if(key==='cases'&&t.caseMetric)result=result.filter(row=>caseMetricDefinitions.find(m=>m.id===t.caseMetric)?.matches(row));
     if(t.sort)result=result.slice().sort((a,b)=>{
       if(t.sort==='severity')return (({高:3,中:2,低:1}[a.severity]||0)-({高:3,中:2,低:1}[b.severity]||0))*t.direction;
       return String(a[t.sort]??'').localeCompare(String(b[t.sort]??''),'zh-CN',{numeric:true})*t.direction;
@@ -250,13 +253,13 @@
   function incidentCases(inc){return store.cases.filter(c=>caseIncidents(c).some(i=>i.id===inc.id));}
   function incidentCaseAction(inc){
     const cases=incidentCases(inc);
-    return cases.length===1?`<a class="button primary" href="#/cases/${esc(cases[0].id)}/overview">进入 Case ${I('external',14)}</a>`:btn(cases.length?'选择 Case':'新建 Case','incident-case',inc.id,'primary',cases.length?'external':'plus');
+    return cases.length===1?`<a class="button primary" href="#/cases/${esc(cases[0].id)}/case-info">进入 Case ${I('external',14)}</a>`:btn(cases.length?'选择 Case':'新建 Case','incident-case',inc.id,'primary',cases.length?'external':'plus');
   }
   function incidentCaseCard(inc){
     const cases=incidentCases(inc),ids=new Set(incidentAlerts(inc).map(a=>a.id));
-    return `<article class="iv-card iv-incident-case"><div class="iv-heading"><div><h3>进一步研判</h3><p>在 Case 中开展联合调查、判断与处置。</p></div>${incidentCaseAction(inc)}</div>${cases.length?`<div class="iv-source-grid">${cases.map(c=>`<a class="iv-source-card" href="#/cases/${esc(c.id)}/overview"><b>${esc(caseTitle(c))}</b><p>包含本事件 ${c.alertIds.filter(id=>ids.has(id)).length} / ${ids.size} 条告警</p><span class="iv-link">进入 Case →</span></a>`).join('')}</div>`:'<p class="iv-muted">尚未关联 Case。可将本事件的成员告警关联到已有 Case，或创建新 Case。</p>'}</article>`;
+    return `<article class="iv-card iv-incident-case"><div class="iv-heading"><div><h3>进一步研判</h3><p>在 Case 中开展联合调查、判断与处置。</p></div>${incidentCaseAction(inc)}</div>${cases.length?`<div class="iv-source-grid">${cases.map(c=>`<a class="iv-source-card" href="#/cases/${esc(c.id)}/case-info"><b>${esc(caseTitle(c))}</b><p>包含本事件 ${c.alertIds.filter(id=>ids.has(id)).length} / ${ids.size} 条告警</p><span class="iv-link">进入 Case →</span></a>`).join('')}</div>`:'<p class="iv-muted">尚未关联 Case。可将本事件的成员告警关联到已有 Case，或创建新 Case。</p>'}</article>`;
   }
-  function incidentCaseCandidates(inc){return store.cases.filter(c=>!savedCase(c)||(c.sourceTenantId===inc.sourceTenantId&&c.sourceEnvironment===inc.sourceEnvironment));}
+  function incidentCaseCandidates(inc){const members=incidentAlerts(inc);return store.cases.filter(c=>members.length&&members.every(a=>caseWorkflow.eligible(c,a)));}
   function incidentCaseResults(m){
     const inc=store.incidents.find(i=>i.id===m.id),query=(m.query||'').trim().toLocaleLowerCase(),rows=incidentCaseCandidates(inc).filter(c=>!query||`${c.id} ${caseTitle(c)}`.toLocaleLowerCase().includes(query)).sort((a,b)=>Date.parse(b.updated||b.created)-Date.parse(a.updated||a.created));
     return (query?rows:rows.slice(0,7)).map(c=>`<button type="button" class="iv-case-choice ${m.caseId===c.id?'selected':''}" data-action="incident-case-select" data-id="${esc(c.id)}" aria-pressed="${m.caseId===c.id}"><b>${esc(caseTitle(c))}</b><small>Case ${esc(c.id)} · ${c.alertIds.length} 条告警</small></button>`).join('')||'<p class="muted">没有匹配的 Case。</p>';
@@ -269,13 +272,15 @@
       if(incidentCases(inc).length)throw new Error('当前事件已关联 Case，请进入已有 Case。');
       const title=String(data.title||'').trim();if(!title)throw new Error('请填写新 Case 名称。');
       const now=new Date().toISOString();let id='demo-'+Date.now();while(store.cases.some(c=>c.id===id))id+='-1';
-      target={id,title,incidentCreated:true,sourceEnvironment:inc.sourceEnvironment,sourceTenantId:inc.sourceTenantId,severity:inc.severity,status:'New',classification:'Not set',owner:inc.owner,priority:null,tasks:[],description:inc.description||inc.title,alertIds:[],incidentId:inc.id,critical:false,created:now,updated:now,tags:[]};store.cases.push(target);
+      target={id,title,incidentCreated:true,sourceEnvironment:inc.sourceEnvironment,sourceTenantId:inc.sourceTenantId,severity:inc.severity,status:'New',classification:'Not set',owner:inc.owner,priority:null,tasks:[],description:inc.description||inc.title,alertIds:[],incidentId:inc.id,critical:false,created:now,updated:now,tags:[]};
+      if(!members.every(a=>caseWorkflow.eligible(target,a)))throw new Error('请选择同一数据范围内的事件成员。');
+      store.cases.push(target);
     }else{
       target=incidentCaseCandidates(inc).find(c=>c.id===data.caseId);if(!target)throw new Error('请先选择可关联的 Case。');
     }
-    target.alertIds=[...new Set([...target.alertIds,...members.map(a=>a.id)])];target.updated=new Date().toISOString();return target;
+    caseWorkflow.addMembers(target,members.map(a=>a.id),[inc.id],{allowExisting:true});return target;
   }
-  function incidentHeader(inc){return `<div class="page-header">${breadcrumbs([{label:'告警和事件'},{label:'事件',href:'#/incidents'},{label:inc.id}])}<div class="title-line"><div><h1>${esc(inc.title)}</h1></div><div class="page-top-actions">${btn('管理事件','manage-incident',inc.id,'quiet','edit')}${incidentCaseAction(inc)}</div></div><div class="metadata"><button class="row" data-action="manage-incident" data-id="${inc.id}">${severity(inc.severity)}</button><button data-action="manage-incident" data-id="${inc.id}">${incidentState(inc)}</button><button class="row" data-action="manage-incident" data-id="${inc.id}">${avatar(inc.owner)}${esc(inc.owner)}</button><span class="muted">${esc(classificationNames[inc.classification]||inc.classification)}</span><span class="row muted" style="font-size:11px">${I('clock',14)}最近更新：${date(inc.updated||inc.last)}</span>${incidentContext(inc).tags.map(t=>badge(t,t==='关键资产'?'purple':'')).join('')}</div></div>`;}
+  function incidentHeader(inc){return `<div class="page-header">${breadcrumbs([{label:'告警和事件'},{label:'事件',href:'#/incidents'},{label:inc.id}])}<div class="title-line"><div><h1>${esc(inc.title)}</h1></div><div class="page-top-actions">${btn('管理事件','manage-incident',inc.id,'quiet','edit')}${incidentCaseAction(inc)}</div></div><div class="metadata"><button class="row" data-action="manage-incident" data-id="${inc.id}">${severity(inc.severity)}</button><button data-action="manage-incident" data-id="${inc.id}">${incidentState(inc)}</button><button class="row" data-action="manage-incident" data-id="${inc.id}">${avatar(inc.owner)}${esc(inc.owner)}</button><span class="row muted" style="font-size:11px">${I('clock',14)}最近更新：${date(inc.updated||inc.last)}</span>${incidentContext(inc).tags.map(t=>badge(t,t==='关键资产'?'purple':'')).join('')}</div></div>`;}
   function incidentPage(){
     if(!currentRoute().id)return incidentQueue();
     if(!store.incidents.some(i=>i.id===currentRoute().id))return `<section class="page">${empty('未找到该事件','当前数据中没有这个事件，请返回列表选择。')}<a class="button" href="#/incidents">返回事件列表</a></section>`;
@@ -292,14 +297,13 @@
     {key:'target',label:'目标'},{key:'performedBy',label:'执行者'},{key:'trigger',label:'触发方式'},
     {key:'status',label:'活动状态',render:a=>state(a.status)},
   ];}
-  function activitiesView(){return `<div class="section-title"><div><h2>活动</h2><p class="section-subtitle">${currentRoute().page==='cases'&&savedCase(currentCase())?'查看告警、调查过程与案件处理活动。':'查看事件中的人工与自动操作，以及每一步的执行结果'}</p></div>${badge('人工与自动','blue')}</div>${table('activities',scopeActivities(),activityColumns(),{unit:'条活动',searchLabel:'搜索活动'})}`;}
+  function activitiesView(){return `<div class="section-title"><div><h2>活动</h2><p class="section-subtitle">${currentRoute().page==='cases'?'查看告警、调查过程与案件处理活动。':'查看事件中的人工与自动操作，以及每一步的执行结果'}</p></div>${badge('人工与自动','blue')}</div>${table('activities',scopeActivities(),activityColumns(),{unit:'条活动',searchLabel:'搜索活动'})}`;}
   function assetsView(){
     const all=scopeEntities(),selected=ui.assetType,rows=selected==='all'?all:all.filter(a=>a.type===selected);
     const columns=[{key:'name',label:'资产名称',render:a=>entityChip(a)},{key:'risk',label:'风险等级',render:a=>a.risk?severity(a.risk):'—'},{key:'domain',label:'域 / 来源',render:a=>esc(a.domain||a.provider||a.department||(a.inventory===false?'—':'Contoso'))},{key:'type',label:'类型',render:a=>esc(typeNames[a.type])},{key:'id',label:'资产 ID',render:a=>a.inventory===false?'未关联库存':`<span class="mono">asset-${esc(a.id)}-20261024</span>`}];
     return `<div class="section-title"><div><h2>资产</h2><p class="section-subtitle">调查范围内的设备、身份与资源</p></div></div><div class="asset-layout"><div class="asset-categories">${[['all','全部资产','grid'],...Object.entries(typeNames).map(([t,n])=>[t,n,t])].map(([type,name,ico])=>`<button class="asset-category ${selected===type?'selected':''}" data-action="asset-type" data-id="${type}">${I(ico,17)}${name}<span class="count">${type==='all'?all.length:all.filter(a=>a.type===type).length}</span></button>`).join('')}</div><div class="asset-content"><h3>${selected==='all'?'全部资产':typeNames[selected]} (${rows.length})</h3>${table('assets-'+selected,rows,columns,{unit:'项资产',filter:false,searchLabel:'搜索资产'})}</div></div>`;
   }
   function evidenceView(){
-    if(currentRoute().page==='cases'&&savedCase(currentCase()))return investigationView.flowCaseMaterials();
     if(currentRoute().page==='incidents'&&currentIncident().recordedIncident)return investigationView.incidentMaterials();
     const all=scopeEvidence(),types=[...new Set(all.map(e=>e.type))],rows=ui.evidenceType==='all'?all:all.filter(e=>e.type===ui.evidenceType);
     const columns=[{key:'name',label:'实体 / 证据',render:e=>`<button class="cell-link" data-action="evidence" data-id="${e.id}">${esc(e.name)}</button>`},{key:'type',label:'实体类型'},{key:'verdict',label:'判定',render:e=>badge(verdictNames[e.verdict],e.verdict==='Malicious'?'red':e.verdict==='Suspicious'?'amber':'green')},{key:'remediation',label:'处置状态',render:e=>state(e.remediation)},{key:'origin',label:'检测来源'},{key:'threat',label:'威胁'}];
@@ -318,12 +322,23 @@
   }
   function recommendationsView(){if(!scopeEvidence().length)return `<div class="section-title"><h2>建议动作</h2></div><div class="card">${empty('暂无建议动作','此事件尚无关联证据，已有告警可在对应页签查看。')}</div>`;return `<div class="section-title"><div><h2>建议动作</h2><p class="section-subtitle">结合实体和证据核查建议，审批结果会记录在活动中</p></div></div><div class="recommendations">${scopeEvidence().filter(e=>e.verdict!=='Clean').slice(0,3).map((e,i)=>`<article class="recommendation"><div class="row between">${badge(i===0?'遏制':i===1?'修复':'调查','blue')}${state(e.remediation)}</div><h3 style="margin-top:15px">${i===0?'检查并阻止钓鱼入口':i===1?'隔离可疑文件':'复核外联与会话活动'}</h3><p>相关证据被判定为${verdictNames[e.verdict]}。请确认影响范围，并在审核后选择适当的处置动作。</p><div class="entity">${I('link',13)} ${esc(e.name)}</div>${btn('查看证据','evidence',e.id,'small','file')}</article>`).join('')}</div>`;}
   function attackWorkspace(){return workspaceView.attack();}
+  const caseNeedsWork=c=>['New','In progress'].includes(c.status);
+  const caseMetricDefinitions=[
+    {id:'unassigned',title:'待分配',description:'新建或处理中，负责人为空或明确未分配的案件。',matches:c=>caseNeedsWork(c)&&(!String(c.owner||'').trim()||c.owner==='未分配')},
+    {id:'processing',title:'处理中',description:'案件处理状态为“处理中”；不按 AI 调查是否运行判断。',matches:c=>c.status==='In progress'},
+    {id:'high',title:'高严重程度',description:'新建或处理中，案件严重程度为高的案件。',matches:c=>caseNeedsWork(c)&&c.severity==='高'},
+    {id:'followup',title:'待人工跟进',description:'新建或处理中，至少有一项未开始或进行中的人工任务；同一案件只计一次。',matches:c=>caseNeedsWork(c)&&window.investigationWorkspaceModel.humanTasks(c).some(t=>['New','In progress'].includes(t.status))}
+  ];
+  function resetCaseQueueFilters(){
+    const t=tableState('cases');for(const field of caseFilterFields)t[field]='';
+    Object.assign(t,{dataset:'all',minPriority:'',range:'7',page:1,selected:[]});ui.caseFilterSet='';return t;
+  }
   function caseQueueRows(){
     return orderedCases().map(c=>{
       const linked=caseAlerts(c),ids=new Set(c.alertIds),inc=store.incidents.find(i=>i.id===c.incidentId);
-      const flowRuns=savedCase(c)?window.investigationWorkspaceModel.forCase(store,c):null;
+      const flowRuns=window.investigationWorkspaceModel.forCase(store,c);
       const changes=[c.updated||c.created,...store.activities.filter(a=>a.caseIds?.includes(c.id)).map(a=>a.time),...store.comments.filter(x=>x.caseId===c.id).map(x=>x.time)];
-      return {...c,first:c.created,updated:changes.sort().at(-1),classification:c.classification||inc?.classification||'Not set',determination:c.determination||'未设置',sources:[...new Set(linked.map(a=>a.source))],source:[...new Set(linked.map(a=>a.source))].join(', '),category:linked[0]?.category||'未设置',investigation:flowRuns?(flowRuns.some(r=>r.completion==='partial')?'Partial':flowRuns.some(r=>r.status==='running')?'In progress':flowRuns.some(r=>!r.completion&&window.alertFlowWorkspace.started(r))?'Recorded':flowRuns.some(r=>window.alertFlowWorkspace.started(r))?'Completed':'Not started'):linked.length&&linked.every(a=>a.investigation==='Completed')?'Completed':linked.some(a=>a.investigation==='In progress')?'In progress':'New',alertCount:linked.length,activeCount:linked.filter(a=>a.status!=='Resolved').length,assetCount:new Set(linked.flatMap(a=>a.entityIds)).size,threatCount:new Set(store.evidence.filter(e=>ids.has(e.alertId)&&e.verdict!=='Clean').map(e=>e.threat)).size,due:c.due||'未设置'};
+      return {...c,first:c.created,updated:changes.sort().at(-1),classification:c.classification||inc?.classification||'Not set',determination:c.determination||'未设置',sources:[...new Set(linked.map(a=>a.source))],source:[...new Set(linked.map(a=>a.source))].join(', '),category:linked[0]?.category||'未设置',investigation:(flowRuns.some(r=>r.completion==='partial')?'Partial':flowRuns.some(r=>r.status==='running')?'In progress':flowRuns.some(r=>!r.completion&&window.alertFlowWorkspace.started(r))?'Recorded':flowRuns.some(r=>window.alertFlowWorkspace.started(r))?'Completed':'Not started'),alertCount:linked.length,activeCount:linked.filter(a=>a.status!=='Resolved').length,assetCount:new Set(linked.flatMap(a=>a.entityIds)).size,threatCount:new Set(store.evidence.filter(e=>ids.has(e.alertId)&&e.verdict!=='Clean').map(e=>e.threat)).size,due:c.due||'未设置'};
     });
   }
   function caseDateEnd(){const latest=Math.max(Date.parse('2026-10-24T23:59:59+08:00'),...store.cases.map(c=>Date.parse(c.created)).filter(Number.isFinite));return new Date(latest+8*3600000).toISOString().slice(0,10)+'T23:59';}
@@ -331,15 +346,15 @@
     const t=tableState('cases');
     return `<div class="toolbar case-queue-toolbar">${btn('创建','stub','','quiet','plus')}${btn('刷新','refresh','cases','quiet','refresh')}<label class="row auto-refresh"><input type="checkbox" role="switch" aria-label="自动刷新案件列表" data-case-auto ${ui.caseAuto?'checked':''}>自动刷新 ${I('info',13)}</label>${btn('导出','export','cases','quiet','download')}<span class="spacer"></span><span class="table-tools-count">${count} 个案件</span><label class="search-input">${I('search',15)}<input id="query-cases" data-query="cases" type="search" value="${esc(t.query)}" placeholder="搜索" aria-label="搜索案件名称或 ID"></label>${btn(t.range==='custom'?'自定义范围':t.range==='1'?'最近24小时':`最近 ${t.range||7} 天`,'date-filter','cases','quiet','calendar')}${btn('自定义列','columns','cases','quiet','columns')}</div>`;
   }
-  const caseFilterFields=['query','severity','status','source','owner','tag','priorityBand','classification','investigation','category','start','end','range'];
+  const caseFilterFields=['caseMetric','query','severity','status','source','owner','tag','priorityBand','classification','investigation','category','start','end','range'];
   function caseQueueFilters(){
     const t=tableState('cases'),sets=store.caseFilterSets||[];
-    const chips=[['priorityBand','优先级',{top:'最高（>85）',medium:'中等（15–85）',low:'低（<15）'}[t.priorityBand]],['severity','严重程度',t.severity],['status','状态',stateNames[t.status]],['owner','负责人',t.owner],['tag','标签',t.tag],['classification','分类',classificationNames[t.classification]],['investigation','调查状态',stateNames[t.investigation]],['category','类别',t.category],['source','检测源',t.source]];
+    const chips=[['caseMetric','案件范围',caseMetricDefinitions.find(m=>m.id===t.caseMetric)?.title],['priorityBand','优先级',{top:'最高（>85）',medium:'中等（15–85）',low:'低（<15）'}[t.priorityBand]],['severity','严重程度',t.severity],['status','状态',stateNames[t.status]],['owner','负责人',t.owner],['tag','标签',t.tag],['classification','分类',classificationNames[t.classification]],['investigation','调查状态',stateNames[t.investigation]],['category','类别',t.category],['source','检测源',t.source]];
     return `<div class="filterbar case-filterbar"><label class="row">筛选集：<select data-case-filter-set aria-label="选择筛选集"><option value="">无</option>${sets.map(x=>`<option value="${x.id}" ${ui.caseFilterSet===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}<option value="create">创建筛选集…</option></select></label>${btn('保存','save-case-filter-set','','quiet small','save')}${chips.filter(x=>x[2]).map(([field,label,value])=>`<span class="filter-chip">${label}: <b>${esc(value)}</b><button aria-label="移除${label}筛选" data-action="remove-filter" data-key="cases" data-field="${field}">${I('close',12)}</button></span>`).join('')}<span class="spacer"></span>${btn('添加筛选','filter','cases','quiet small','filter')}${btn('重置全部','clear-filters','cases','quiet small','filter')}</div>`;
   }
   function caseQueue(){
     const rows=caseQueueRows(),columns=[
-      {key:'title',label:'案件名称',render:c=>`<div class="row">${iconBtn('chevron','预览 Case '+c.id,'case-preview',c.id)}<a class="incident-name" title="${esc(caseTitle(c))}" href="#/cases/${c.id}/overview">${esc(caseTitle(c))}</a></div>`},
+      {key:'title',label:'案件名称',render:c=>`<div class="row">${iconBtn('chevron','预览 Case '+c.id,'case-preview',c.id)}<a class="incident-name" title="${esc(caseTitle(c))}" href="#/cases/${c.id}/case-info">${esc(caseTitle(c))}</a></div>`},
       {key:'id',label:'Case ID'},
       {key:'priority',label:'优先级评分',render:c=>`<button class="priority-pill ${c.priority>85?'high':''}" data-action="case-preview" data-id="${c.id}">${c.priority??'—'} ${c.priority>85?I('info',11):''}</button>`},
       {key:'created',label:'创建时间',render:c=>date(c.created)},
@@ -359,31 +374,30 @@
     ];
     const t=tableState('cases');t.columns ||= columns.slice(0,12).map(c=>c.key);
     tableContexts.set('cases',{rows,columns,opts:{timeField:'created'}});
-    const shown=filteredRows('cases',rows);
-    const multi=Math.round(shown.filter(c=>c.alertCount>1).length/Math.max(1,shown.length)*100),caseRuns=shown.map(c=>window.investigationWorkspaceModel.forCase(store,c)),uniqueRuns=[...new Map(caseRuns.flat().map(r=>[r.id,r])).values()];
-    return `<section class="page cases-queue"><div class="title-line"><h1>Cases</h1><div class="page-top-actions"><a class="button primary" href="#/investigations">查看调查运行</a>${btn('案件管理设置','stub','','quiet','settings')}</div></div><div class="tabs case-type-tabs"><span class="tab selected">Incident</span><span class="tab disabled" title="本轮范围为 Incident cases">Generic</span></div><div class="case-queue-metrics">${[['有关联调查的案件','可查看已有 AI 调查结果',caseRuns.filter(rs=>rs.some(r=>r.completion!=='not_escalated')).length,'sparkles'],['部分交付的调查','保留已有结果与未完成事项',uniqueRuns.filter(r=>r.completion==='partial').length,'search'],['待跟进任务','案件中尚未完成的任务',shown.flatMap(c=>c.tasks||[]).filter(t=>t.status!=='Completed').length,'check'],['多告警案件','包含多条成员告警',multi+'%','graph']].map(([title,description,value,ico])=>`<article class="case-list-metric"><h3>${title}</h3><p>${description}</p><div class="row"><b>${value}</b><small>当前案件</small><span class="spacer"></span>${I(ico,16)}</div></article>`).join('')}</div>${table('cases',rows,columns,{unit:'个案件',caseQueue:true,rowPreview:'case',dates:true})}</section>`;
+    return `<section class="page cases-queue"><div class="title-line"><h1>Cases</h1><div class="page-top-actions"><a class="button primary" href="#/investigations">查看调查运行</a>${btn('案件管理设置','stub','','quiet','settings')}</div></div><div class="case-metrics-heading"><span>待处理案件概况</span><div class="incident-stat-help"><button type="button" aria-label="查看案件统计说明" aria-describedby="case-metrics-help">${I('info',15)}</button><div class="incident-stat-tooltip" id="case-metrics-help" role="tooltip"><strong>案件统计说明</strong><dl>${caseMetricDefinitions.map(m=>`<dt>${m.title}</dt><dd>${m.description}</dd>`).join('')}</dl><p>统计全部已加载案件中的新建和处理中案件，不随表格筛选变化；已解决或状态未知不纳入。各项可重叠。点击卡片替换当前筛选，查看对应案件。</p></div></div></div><div class="case-queue-metrics" aria-label="案件快捷筛选">${caseMetricDefinitions.map(m=>`<button type="button" class="case-list-metric ${t.caseMetric===m.id?'selected':''}" data-action="case-metric" data-id="${m.id}" aria-pressed="${t.caseMetric===m.id}"><span class="case-metric-title">${m.title}</span><span class="case-metric-value"><b>${rows.filter(m.matches).length}</b><small>个案件</small><span class="spacer"></span>${I('chevron',16)}</span></button>`).join('')}</div>${table('cases',rows,columns,{unit:'个案件',caseQueue:true,rowPreview:'case',dates:true})}</section>`;
   }
   function casePage(){
     if(!currentRoute().id)return caseQueue();
     if(!store.cases.some(c=>c.id===currentRoute().id))return `<section class="page">${empty('未找到该 Case','当前数据中没有这个案件，请返回列表选择。')}<a class="button" href="#/cases">返回 Cases</a></section>`;
-    const c=currentCase(),tab=currentRoute().tab||'overview',alerts=caseAlerts(c),entities=scopeEntities(),ev=scopeEvidence();
-    const directory=[['overview','AI 调查','search'],['investigations','调查历史','clock',window.investigationWorkspaceModel.forCase(store,c).length],['case-info','案件资料','file'],['alerts','成员告警','shield',alerts.length],['assets','涉及对象','device',entities.length],['attack','案件关系图','graph'],['evidence','案件证据','file',savedCase(c)?undefined:ev.length],['similar','相似 Cases','link'],['tasks','跟进任务','check',(c.tasks||[]).filter(t=>t.status!=='Completed').length],['activities','处理活动','clock',scopeActivities().length],['comments','评论与附件','comment',store.comments.filter(x=>x.caseId===c.id).length+(savedCase(c)?0:2)]];
-    const selectedTab=tab==='investigations'&&new URLSearchParams(currentRoute().search).has('run')?'overview':tab;
-    let content=tab==='overview'?(c.localCollection||c.incidentCreated?investigationView.flowCaseOverview():investigationView.workbench()):tab==='case-info'?caseOverview():tab==='tasks'?workspaceView.tasks():tab==='attack'?(c.alertFlowCollection||c.incidentCreated?investigationView.flowCaseRelations():c.recordedCase?investigationView.persistedCaseRelations():c.localCollection?investigationView.caseRelations():`<div class="iv-root iv-context-caption"><h2>案件关系图</h2><p>当前案件成员的关联资料；某次调查保存的关系分析在 AI 调查内查看。</p></div>`+attackWorkspace()):tab==='alerts'?`<div class="section-title"><h2>成员告警</h2>${btn('移动所选告警','move-case','','small','link')}</div>${table('case-alerts',alerts,alertColumns,{unit:'条告警',dates:true})}`:tab==='assets'?assetsView():tab==='similar'?similarView(true):tab==='investigations'?investigationsView():tab==='evidence'?evidenceView():tab==='activities'?activitiesView():commentsView();
-    return `<header class="page-header">${breadcrumbs([{label:'Cases',href:'#/cases'},{label:caseTitle(c)}])}<div class="title-line"><h1>ID ${c.id}: ${esc(caseTitle(c))}</h1><div class="page-top-actions">${iconBtn('refresh','刷新 Case','refresh')}${iconBtn('list','切换 Case','choose-case')}</div></div><div class="metadata"><span class="row"><b class="priority">${c.priority??'—'}</b><span class="muted">优先级评分</span></span><button data-action="manage-case" data-id="${c.id}">${severity(c.severity)}</button><button data-action="manage-case" data-id="${c.id}">${state(c.status)}</button><button class="row" data-action="manage-case" data-id="${c.id}">${avatar(c.owner)}${esc(c.owner)}</button>${c.critical?badge('关键资产','purple'):''}${caseIncidents(c).map(i=>`<a class="button small" href="#/incidents/${i.id}/summary">关联事件 · ${esc(i.title)}</a>`).join('')}</div></header><div class="case-body"><nav class="case-nav" aria-label="Case 内部导航"><div class="case-nav-heading">Case</div>${directory.map(([key,label,ico,count],i)=>`${[0,2,8].includes(i)?`<div class="case-nav-group">${i===0?'AI 调查':i===2?'案件材料':'协作与跟进'}</div>`:''}<a class="case-nav-button ${selectedTab===key?'selected':''}" href="#/cases/${c.id}/${key}" ${selectedTab===key?'aria-current="page"':''}>${I(ico,16)}${label}${count!==undefined?`<span class="count">${count}</span>`:''}</a>`).join('')}</nav><section class="case-content">${content}</section></div>`;
+    const c=currentCase(),tab=currentRoute().tab||(new URLSearchParams(currentRoute().search).has('run')?'overview':'case-info'),alerts=caseAlerts(c),entities=scopeEntities(),ev=scopeEvidence();
+    const directory=[['case-info','案件资料','file'],['story','案件故事','clock'],['overview','调查概览','search'],['investigations','调查历史','clock',window.investigationWorkspaceModel.forCase(store,c).length],['alerts','成员告警','shield',alerts.length],['attack','案件关系图','graph'],['evidence','对象与证据','file',entities.length],['tasks','人工任务','check',window.investigationWorkspaceModel.humanTasks(c).filter(t=>['New','In progress'].includes(t.status)).length],['activities','处理活动','clock',scopeActivities().length],['comments','评论与附件','comment',store.comments.filter(x=>x.caseId===c.id).length+caseRecord(c).attachments.length]];
+    const selectedTab=tab==='assets'?'evidence':tab==='investigations'&&new URLSearchParams(currentRoute().search).has('run')?'overview':tab;
+    let content=tab==='story'?caseAssistant.story():tab==='overview'?(new URLSearchParams(currentRoute().search).has('run')?investigationView.workbench():investigationView.flowCaseOverview()):tab==='case-info'?caseOverview():tab==='tasks'?caseWorkflow.tasks():tab==='attack'?investigationView.latestCaseGraph():tab==='alerts'?`<div class="section-title case-member-heading"><h2>成员告警</h2><div class="case-member-actions" role="group" aria-label="成员告警操作">${btn('移动所选告警','move-case','','small','link')}${btn('添加告警 / 事件','cw-add','','small','plus')}</div></div>${table('case-alerts',alerts,alertColumns,{unit:'条告警',dates:true})}`:tab==='assets'?caseWorkflow.materials():tab==='similar'?similarView(true):tab==='investigations'?investigationsView():tab==='evidence'?caseWorkflow.materials():tab==='activities'?activitiesView():commentsView();
+    return `<header class="page-header">${breadcrumbs([{label:'Cases',href:'#/cases'},{label:caseTitle(c)}])}<div class="title-line"><h1>ID ${c.id}: ${esc(caseTitle(c))}</h1><div class="page-top-actions">${caseWorkflow.toolbar()}${iconBtn('refresh','刷新 Case','refresh')}${iconBtn('list','切换 Case','choose-case')}</div></div><div class="metadata">${c.priority!=null?`<span class="row"><b class="priority">${esc(c.priority)}</b><span class="muted">优先级评分</span></span>`:''}<button data-action="manage-case" data-id="${c.id}">${severity(c.severity)}</button><button data-action="manage-case" data-id="${c.id}">${state(c.status)}</button><button class="row" data-action="manage-case" data-id="${c.id}">${avatar(c.owner)}${esc(c.owner)}</button>${c.critical?badge('关键资产','purple'):''}${caseIncidents(c).slice(0,2).map(i=>`<a class="button small" href="#/incidents/${i.id}/summary">关联事件 · ${esc(i.title)}</a>`).join('')}${caseIncidents(c).length>2?`<details class="cw-more-incidents"><summary>另 ${caseIncidents(c).length-2} 个事件</summary>${caseIncidents(c).slice(2).map(i=>`<a href="#/incidents/${i.id}/summary">${esc(i.title)}</a>`).join('')}</details>`:''}</div>${tab==='overview'&&!new URLSearchParams(currentRoute().search).has('run')?'':caseWorkflow.activeBanner()}</header><div class="case-body"><nav class="case-nav" aria-label="Case 内部导航"><div class="case-nav-heading">Case</div>${directory.map(([key,label,ico,count],i)=>`${[2,4,7].includes(i)?`<div class="case-nav-group">${i===2?'AI 调查':i===4?'案件材料':'协作与跟进'}</div>`:''}<a class="case-nav-button ${selectedTab===key?'selected':''}" href="#/cases/${c.id}/${key}" ${selectedTab===key?'aria-current="page"':''}>${I(ico,16)}${label}${count!==undefined?`<span class="count">${count}</span>`:''}</a>`).join('')}</nav><section class="case-content">${content}</section></div>${caseAssistant.panel()}${caseAssistant.launcher()}`;
+  }
+  function assessmentSummary(c,alerts){
+    const M=window.investigationWorkspaceModel,a=M.caseAssessment(store,c),times=alerts.map(x=>x.event_time||(x.persistedRecord?null:x.first)).filter(x=>Number.isFinite(Date.parse(x))).sort((x,y)=>Date.parse(x)-Date.parse(y));
+    const resultUrl=id=>`#/cases/${encodeURIComponent(c.id)}/investigations?${new URLSearchParams({run:id,view:'overview'})}`;
+    return `<div class="case-assessment"><p class="case-description">${esc(caseDescription(c))}</p><div class="case-assessment-heading"><span>当前案件判断</span>${a.hasAssessment?badge(a.confirmedBy?'人工已确认':'分析判断','purple'):''}</div><h3>${esc(a.conclusion)}</h3>${a.hasAssessment?`<p class="iv-note">${esc(a.confirmedBy||a.author||'来源未记录')} · ${date(a.updatedAt)} · 适用 ${a.scope.length} / ${alerts.length} 条当前成员告警</p>`:'<p class="iv-note">各轮发现可查看，尚未保存适用于全案的判断。</p>'}${a.basis.length?`<h4>主要依据</h4><ul>${a.basis.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${a.unresolved.length?`<div class="iv-result-limits"><b>未解决问题</b><ul>${a.unresolved.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}${a.unanalysed.length?`<p class="iv-baseline-update">${a.unanalysed.length} 条当前成员告警尚未纳入已结束的调查。</p>`:''}${a.hasAssessment&&a.uncovered.length?`<p class="iv-note">当前判断未覆盖 ${a.uncovered.length} 条成员告警，不能直接沿用已有结论。</p>`:''}${a.pending.added.length||a.pending.removed.length?`<p class="iv-note">案件范围已变化：新增 ${a.pending.added.length} 条、移出 ${a.pending.removed.length} 条；基础调查待更新。</p>`:''}<div class="case-assessment-sources">${a.sourceRunIds.map(id=>`<a href="${resultUrl(id)}">${I('file',12)} ${esc(M.forCase(store,c).find(r=>r.id===id)?.title||id)}</a>`).join('')}${a.taskIds.map(id=>`<a href="#/cases/${encodeURIComponent(c.id)}/tasks">${I('check',12)} ${esc(M.humanTasks(c).find(t=>t.id===id)?.title||id)}</a>`).join('')}</div><div class="case-activity-range"><span>告警活动范围</span><span>${times.length?date(times[0])+' — '+date(times.at(-1)):'发生时间未记录'}</span></div><div class="row wrap"><a class="button primary" href="#/cases/${esc(c.id)}/overview">${I('sparkles',15)}查看调查结果</a>${btn('查看案件故事','to-tab','story','','clock')}</div></div>`;
   }
   function caseOverview(){
-    const c=currentCase(),alerts=caseAlerts(c),entities=scopeEntities();
-    if(savedCase(c))return flowCaseInfo(c,alerts,entities);
-    return `<div class="case-summary-metrics">${[['关联告警',alerts.length,'alerts'],['涉及资产',entities.length,'assets'],['证据',scopeEvidence().length,'evidence'],['待审批',scopeEvidence().filter(e=>e.remediation==='Pending approval').length,'evidence']].map(([label,n,tab])=>`<button class="card" style="text-align:left" data-action="to-tab" data-id="${tab}"><span class="muted" style="font-size:11px">${label}</span><b>${n}</b></button>`).join('')}</div><div class="case-overview-grid"><div><article class="copilot-card"><div class="copilot-title"><span class="copilot-icon">${I('sparkles',21)}</span>案件资料摘要<span class="spacer"></span>${iconBtn(ui.caseCollapsed?'down':'minus','折叠或展开摘要','case-summary-toggle')}</div>${!ui.caseCollapsed?`<h3>当前案件资料</h3><div class="updated">最近更新：${date(c.updated||c.created)}</div><p>${esc(caseDescription(c))}</p><ul><li>当前案件关联 ${alerts.length} 条告警，涉及 ${entities.filter(a=>a.type==='user').length} 个用户与 ${entities.filter(a=>a.type==='device').length} 台设备。</li><li>已有 ${scopeEvidence().length} 项关联证据、${window.investigationWorkspaceModel.forCase(store,c).length} 项调查记录，可从对应材料核对结果。</li><li>${scopeEvidence().filter(e=>e.remediation==='Pending approval').length} 项已有处置记录等待审核，可进入案件证据核对。</li></ul>${btn('查看案件关系图','to-tab','attack','small','graph')}<div class="copilot-footer"><small>根据当前案件成员与资料汇总。</small><div class="row">${iconBtn('check','摘要有帮助','feedback','helpful',ui.feedback==='helpful'?'active':'')}${iconBtn('flag','摘要需改进','feedback','improve',ui.feedback==='improve'?'active':'')}</div></div>`:''}</article><article class="card"><div class="card-title"><h3>关联告警</h3><span class="spacer"></span><button class="link-button" data-action="to-tab" data-id="alerts">查看全部</button></div>${alerts.slice(0,4).map(a=>`<div class="entity-list-item">${I('shield',17)}<button data-action="alert" data-id="${a.id}" style="max-width:100%;flex:1">${esc(a.title)}</button>${severity(a.severity)}</div>`).join('')||empty('暂无关联告警','可在其他视图查看案件信息')}</article></div><aside class="stack"><article class="card"><div class="card-title"><h3>Case 详细信息</h3></div><div class="info-grid">${keyInfo('Case ID',c.id)}${keyInfo('处理状态',state(c.status))}${keyInfo('负责人',esc(c.owner))}${keyInfo('严重程度',severity(c.severity))}${keyInfo('创建时间',date(c.created))}${keyInfo('截止时间',esc(c.due?.replace('T',' ')||'未设置'))}${keyInfo('结案说明',esc(c.resolutionNote||'—'))}${keyInfo(c.localCollection?'源 Case':'关联事件',c.localCollection?'未创建':c.incidentId?`<a href="#/incidents/${c.incidentId}/summary">${c.incidentId}</a>`:'—')}</div><div style="margin-top:20px">${btn('管理 Case','manage-case',c.id,'small','edit')}</div></article><article class="card"><div class="card-title"><h3>关键实体</h3></div>${entities.slice(0,4).map(a=>`<div class="entity-list-item">${entityChip(a)}</div>`).join('')}<button class="card-link" data-action="to-tab" data-id="assets">查看全部资产 ${I('chevron',12)}</button></article></aside></div>`;
+    const c=currentCase(),alerts=caseAlerts(c),entities=scopeEntities(),evidence=scopeEvidence(),runs=window.investigationWorkspaceModel.forCase(store,c),tasks=window.investigationWorkspaceModel.humanTasks(c).filter(t=>['New','In progress'].includes(t.status));
+    return `<div class="case-context-home"><div class="case-summary-metrics">${[['成员告警',alerts.length,'alerts'],['涉及对象',entities.length,'evidence'],['告警证据',evidence.length,'evidence'],['调查记录',runs.length,'investigations']].map(([label,n,tab])=>`<button class="card" style="text-align:left" data-action="to-tab" data-id="${tab}"><span class="muted" style="font-size:11px">${label}</span><b>${n}</b></button>`).join('')}</div><div class="case-overview-grid"><div class="stack"><article class="copilot-card"><div class="copilot-title"><span class="copilot-icon">${I('sparkles',21)}</span>案件资料摘要<span class="spacer"></span>${iconBtn(ui.caseCollapsed?'down':'minus','折叠或展开摘要','case-summary-toggle')}</div>${!ui.caseCollapsed?`${assessmentSummary(c,alerts)}`:''}</article><article class="card"><div class="card-title"><h3>成员告警</h3><span class="spacer"></span><button class="link-button" data-action="to-tab" data-id="alerts">查看全部</button></div>${alerts.slice(0,4).map(a=>`<div class="entity-list-item">${I('shield',17)}<div style="flex:1;min-width:0"><button data-action="alert" data-id="${esc(a.id)}" style="max-width:100%">${esc(a.title)}</button><small class="muted" style="display:block;margin-top:5px">${date(a.event_time||(a.persistedRecord?null:a.first))}</small></div>${severity(a.severity)}</div>`).join('')||empty('暂无成员告警','已有调查仍可从调查历史查看')}</article></div><aside class="stack"><article class="card"><div class="card-title"><h3>Case 详细信息</h3></div><div class="info-grid">${keyInfo('Case ID',esc(c.id))}${keyInfo('处理状态',state(c.status))}${keyInfo('负责人',esc(c.owner||'未分配'))}${keyInfo('严重程度',severity(c.severity))}${keyInfo('分类',esc(classificationNames[c.classification]||c.classification||'未设置'))}${keyInfo('创建时间',date(c.created))}${keyInfo('最近更新',date(c.updated))}${keyInfo('关联事件',caseIncidents(c).map(i=>`<a href="#/incidents/${esc(i.id)}/summary">${esc(i.title)}</a>`).join('<br>')||'未关联')}${keyInfo('截止时间',esc(c.due?.replace('T',' ')||'未设置'))}${keyInfo('结案说明',esc(c.resolutionNote||'—'))}</div><div style="margin-top:20px">${btn('管理 Case','manage-case',c.id,'small','edit')}</div></article>${investigationView.attackCoverage(alerts,{panel:true})}<article class="card"><div class="card-title"><h3>涉及对象</h3></div>${entities.slice(0,4).map(a=>`<div class="entity-list-item">${entityChip(a)}</div>`).join('')||'<p class="muted">当前成员尚未关联对象。</p>'}<button class="card-link" data-action="to-tab" data-id="evidence">查看对象与证据 ${I('chevron',12)}</button></article></aside></div></div>`;
   }
-  function flowCaseInfo(c,alerts,entities){
-    const stats=window.alertFlowWorkspace.caseStats(window.investigationWorkspaceModel.forCase(store,c));
-    return `<div class="case-summary-metrics">${[['当前成员',alerts.length,'alerts'],['涉及对象',entities.length,'assets'],['已保存工件',stats.artifacts,'evidence'],['调查记录',stats.runs,'investigations']].map(([label,n,tab])=>`<button class="card" data-action="to-tab" data-id="${tab}"><span>${label}</span><b>${n}</b></button>`).join('')}</div><div class="case-overview-grid"><div class="stack"><article class="card"><h3>案件资料摘要</h3><p>${esc(caseDescription(c))}</p><p>当前 ${alerts.length} 条成员告警，${stats.runs} 次既有运行，其中 ${stats.partial} 次部分交付、${stats.triage} 次仅完成分诊；未记录的交付完整性保持未知。</p><p>${stats.tools} 条工具记录、${stats.artifacts} 份工件及 ${stats.reports} 份报告按各次调查保存。</p><p class="muted">案件判定尚未设置；各次调查的判定、停止原因和建议分别查看。成员变更不会重写历史输入。</p><a class="button primary" href="#/cases/${c.id}/overview">查看 AI 调查</a></article><article class="card"><h3>当前成员告警</h3>${alerts.map(a=>`<div class="entity-list-item"><a href="#/alerts/${a.id}/overview">${esc(a.title)}</a>${severity(a.severity)}<span>${date(a.event_time||a.first)}</span></div>`).join('')||empty('暂无当前成员')}</article></div><aside class="stack"><article class="card"><h3>Case 详细信息</h3><div class="info-grid">${keyInfo('Case ID',esc(c.id))}${keyInfo('处理状态',state(c.status))}${keyInfo('负责人',esc(c.owner))}${keyInfo('严重程度',severity(c.severity))}${keyInfo('分类',esc(classificationNames[c.classification]||c.classification))}${keyInfo('创建时间',date(c.created))}${keyInfo('最近更新',date(c.updated))}${keyInfo('关联事件',caseIncidents(c).map(i=>`<a href="#/incidents/${i.id}/summary">${esc(i.title)}</a>`).join('<br>')||'未关联')}${keyInfo('截止时间',esc(c.due?.replace('T',' ')||'未设置'))}${keyInfo('结案说明',esc(c.resolutionNote||'—'))}</div><p class="muted">案件等级与优先级分别评估；未评分时保留为空。</p>${btn('管理 Case','manage-case',c.id,'small','edit')}</article><article class="card"><h3>涉及对象</h3>${entities.map(entityChip).join('')}</article></aside></div>`;
-  }
+
   function commentsView(){
-    const c=currentCase(),comments=store.comments.filter(x=>x.caseId===c.id);
-    return `<div class="section-title"><h2>评论与附件</h2>${badge('调查协作','blue')}</div><div class="comments-layout"><article class="card"><div class="card-title"><h3>评论 (${comments.length})</h3></div>${comments.map(x=>`<div class="comment">${avatar(x.author)}<div><span class="author">${esc(x.author)}</span><span class="time">${date(x.time)}</span><p>${esc(x.text)}</p></div></div>`).join('')||'<p class="muted">还没有评论，添加第一条调查备注。</p>'}<form id="comment-form"><label for="new-comment" class="info-label" style="display:block;margin-top:15px">添加调查备注</label><textarea id="new-comment" class="comment-input" name="comment" maxlength="4000" placeholder="记录调查发现、交接信息或待核事项…" required></textarea><div class="row between" style="margin-top:11px"><small class="muted">以 Alex Wilber 身份添加</small><button class="button primary" type="submit">添加评论</button></div></form></article><article class="card"><div class="card-title"><h3>附件 (${savedCase(c)?0:2})</h3></div>${(savedCase(c)?[]:[['investigation-notes.txt','调查摘记 · TXT · 1 KB'],['evidence-register.csv','证据索引 · CSV · 2 KB']]).map(([name,label])=>`<div class="attachment"><span class="entity-icon">${I('file',20)}</span><div style="min-width:0"><div class="attachment-name">${name}</div><div class="attachment-info">${label}</div></div><span class="spacer"></span>${iconBtn('download','下载 '+name,'attachment',name)}</div>`).join('')}<p class="muted" style="font-size:11px;line-height:1.8;margin-top:17px">${savedCase(c)?'尚无附件；已有报告可在各次调查的“报告与响应”中查看和下载。':'用于查看和交接调查材料。'}</p></article></div>`;
+    const c=currentCase(),comments=store.comments.filter(x=>x.caseId===c.id),attachments=caseRecord(c).attachments;
+    return `<div class="section-title"><h2>评论与附件</h2>${badge('调查协作','blue')}</div><div class="comments-layout"><article class="card"><div class="card-title"><h3>评论 (${comments.length})</h3></div>${comments.map(x=>`<div class="comment">${avatar(x.author)}<div><span class="author">${esc(x.author)}</span><span class="time">${date(x.time)}</span><p>${esc(x.text)}</p></div></div>`).join('')||'<p class="muted">还没有评论，添加第一条调查备注。</p>'}<form id="comment-form"><label for="new-comment" class="info-label" style="display:block;margin-top:15px">添加调查备注</label><textarea id="new-comment" class="comment-input" name="comment" maxlength="4000" placeholder="记录调查发现、交接信息或待核事项…" required></textarea><div class="row between" style="margin-top:11px"><small class="muted">以 Alex Wilber 身份添加</small><button class="button primary" type="submit">添加评论</button></div></form></article><article class="card"><div class="card-title"><h3>附件 (${attachments.length})</h3></div>${attachments.map(([name,label])=>`<div class="attachment"><span class="entity-icon">${I('file',20)}</span><div style="min-width:0"><div class="attachment-name">${esc(name)}</div><div class="attachment-info">${esc(label)}</div></div><span class="spacer"></span>${iconBtn('download','下载 '+name,'attachment',name)}</div>`).join('')}<p class="muted" style="font-size:11px;line-height:1.8;margin-top:17px">${!attachments.length?'尚无附件；已有报告可在各次调查的“报告与响应”中查看和下载。':'用于查看和交接调查材料。'}</p></article></div>`;
   }
   function fullAlert(a){return renderAlertDetail(a);}
   function alertInfo(a){return `<article class="card"><div class="card-title"><h3>告警属性</h3>${iconBtn('copy','复制告警 ID','copy',a.id)}</div><div class="info-grid">${keyInfo('严重程度',severity(a.severity))}${keyInfo('状态',state(a.status))}${keyInfo('分类',esc(classificationNames[a.classification]))}${keyInfo('负责人',esc(a.owner))}${keyInfo('首次活动',date(a.first))}${keyInfo('末次活动',date(a.last))}${keyInfo('调查状态',state(a.investigation))}${keyInfo('检测类别',esc(a.category))}</div><div class="detail-summary" style="padding:17px 0 0;margin:0;border:0"><div class="info-label">检测源</div><span class="info-value">${esc(a.source)}</span><div class="info-label" style="margin-top:13px">告警 ID</div><span class="mono">${a.id}</span></div></article>`;}
@@ -405,7 +419,7 @@
       const a=getAlert(d.id);if(!a)return '';
       title=a.title;subtitle='告警详情';
       tabs='<div class="tabs"><span class="tab selected">概览</span></div>';
-      body=`<div class="row wrap" style="margin-bottom:18px">${severity(a.severity)}${state(a.status)}${badge(a.category,'blue')}</div><div class="detail-summary"><h3>发生了什么</h3><p>${esc(a.description)}</p></div><div class="detail-summary"><h3>告警信息</h3><div class="info-grid alert-preview-info">${keyInfo('告警 ID',esc(a.id))}${keyInfo('告警时间',date(a.event_time||a.first))}${keyInfo('负责人',esc(a.owner))}${keyInfo('检测源',esc(a.source))}${keyInfo('资产标签',[...new Set(a.entityIds.flatMap(id=>getAsset(id)?.tags||[]))].map(t=>badge(t)).join(' ')||'—')}</div></div><div class="detail-summary"><h3>受影响实体</h3>${a.entityIds.slice(0,4).map(id=>`<div style="margin:11px 0">${alertAssetLink(getAsset(id))}</div>`).join('')}</div><div class="detail-summary"><h3>关联事件与 Case</h3><p>${store.incidents.some(i=>i.id===a.incidentId)?`<a href="#/incidents/${a.incidentId}/attack">事件 ${esc(a.incidentId)}</a>`:esc(a.incidentId||'—')}</p>${store.cases.filter(c=>c.alertIds.includes(a.id)).map(c=>`<p><a href="#/cases/${c.id}/overview">Case ${c.id} · ${esc(caseTitle(c))}</a></p>`).join('')||'<p>未关联 Case</p>'}</div>`;
+      body=`<div class="row wrap" style="margin-bottom:18px">${severity(a.severity)}${state(a.status)}${badge(a.category,'blue')}</div><div class="detail-summary"><h3>发生了什么</h3><p>${esc(a.description)}</p></div><div class="detail-summary"><h3>告警信息</h3><div class="info-grid alert-preview-info">${keyInfo('告警 ID',esc(a.id))}${keyInfo('告警时间',date(a.event_time||a.first))}${keyInfo('负责人',esc(a.owner))}${keyInfo('检测源',esc(a.source))}${keyInfo('资产标签',[...new Set(a.entityIds.flatMap(id=>getAsset(id)?.tags||[]))].map(t=>badge(t)).join(' ')||'—')}</div></div><div class="detail-summary"><h3>受影响实体</h3>${a.entityIds.slice(0,4).map(id=>`<div style="margin:11px 0">${alertAssetLink(getAsset(id))}</div>`).join('')}</div><div class="detail-summary"><h3>关联事件与 Case</h3><p>${store.incidents.some(i=>i.id===a.incidentId)?`<a href="#/incidents/${a.incidentId}/attack">事件 ${esc(a.incidentId)}</a>`:esc(a.incidentId||'—')}</p>${store.cases.filter(c=>c.alertIds.includes(a.id)).map(c=>`<p><a href="#/cases/${c.id}/case-info">Case ${c.id} · ${esc(caseTitle(c))}</a></p>`).join('')||'<p>未关联 Case</p>'}</div>`;
       footer=btn('管理告警','manage-alert',a.id,'primary','edit')+btn('打开告警页','full-alert',a.id,'','external');
     }else if(d.type==='entity'){
       const a=getAsset(d.id);if(!a)return '';title=a.name;subtitle=typeNames[a.type]+'详情';
@@ -415,8 +429,8 @@
       footer=a.inventory!==false&&a.type==='device'?btn(a.isolated?'已模拟隔离':'模拟隔离设备','simulate-response',a.id,'primary','shield'):btn('关闭','close-drawer');
     }else if(d.type==='evidence'){
       const e=store.evidence.find(x=>x.id===d.id);if(!e)return '';title=e.name;subtitle='证据详情';
-      body=`<div class="row wrap" style="margin-bottom:22px">${badge(e.type,'blue')}${badge(verdictNames[e.verdict],e.verdict==='Malicious'?'red':e.verdict==='Suspicious'?'amber':'green')}${state(e.remediation)}</div><div class="info-grid">${keyInfo('证据 ID',e.id)}${keyInfo('检测来源',esc(e.origin))}${keyInfo('威胁',esc(e.threat))}${keyInfo('关联告警',`<button class="link-button" data-action="alert" data-id="${e.alertId}">${e.alertId}</button>`)}</div><div class="detail-summary" style="padding-top:25px"><h3>受影响实体</h3>${entityChip(getAsset(e.entityId))}</div><div class="detail-summary"><h3>处置说明</h3><p>${e.remediation==='Pending approval'?'建议对相关实体执行处置。请先审阅告警及证据，再批准或拒绝。':'当前处置状态：'+(stateNames[e.remediation]||e.remediation)+'。相关操作记录可在活动页签中查看。'}</p></div>${e.remediation==='Pending approval'?'<div class="notice warning">'+I('info',15)+'请核对证据后审批。</div>':''}`;
-      footer=e.remediation==='Pending approval'?btn('批准','approve-evidence',e.id,'primary','check')+btn('拒绝','reject-evidence',e.id,'','close'):btn('关闭','close-drawer');
+      body=`<div class="row wrap" style="margin-bottom:22px">${badge(e.type,'blue')}${badge(verdictNames[e.verdict],e.verdict==='Malicious'?'red':e.verdict==='Suspicious'?'amber':'green')}${state(e.remediation)}</div><div class="info-grid">${keyInfo('证据 ID',e.id)}${keyInfo('检测来源',esc(e.origin))}${keyInfo('威胁',esc(e.threat))}${keyInfo('关联告警',`<button class="link-button" data-action="alert" data-id="${e.alertId}">${e.alertId}</button>`)}</div><div class="detail-summary" style="padding-top:25px"><h3>受影响实体</h3>${entityChip(getAsset(e.entityId))}</div><div class="detail-summary"><h3>处置说明</h3><p>${e.remediation==='Pending approval'?'这是保存的处置要求；请到对应调查的报告与响应中核对具体动作。':'当前处置状态：'+(stateNames[e.remediation]||e.remediation)+'。相关操作记录可在活动页签中查看。'}</p></div>${e.remediation==='Pending approval'?'<div class="notice warning">'+I('info',15)+'证据条目仅供核查；审批针对具体响应动作。</div>':''}`;
+      footer=btn('关闭','close-drawer');
     }else if(d.type==='activity'){
       const a=store.activities.find(x=>x.id===d.id)||scopeActivities().find(x=>x.id===d.id);if(!a)return '';title=a.title;subtitle='活动详情';body=`<div style="margin-bottom:20px">${state(a.status)}</div><div class="info-grid">${keyInfo('时间',date(a.time))}${keyInfo('执行者',esc(a.performedBy))}${keyInfo('类型',esc(a.type))}${keyInfo('触发方式',esc(a.trigger))}${keyInfo('目标',esc(a.target))}${keyInfo('关联事件',esc(a.incidentId))}</div><div class="notice" style="margin-top:25px">${I('info',15)}${a.status==='Recorded'?'此记录已保存；查询结果与调查完整性请在对应调查中核对。':a.status==='Failed'?'此步骤未完成，已有材料仍保留。':'此记录展示了操作来源、目标和实际处理结果。'}${a.runId?` <a href="${currentRoute().page==='cases'?`#/cases/${encodeURIComponent(currentCase().id)}/investigations?run=${encodeURIComponent(a.runId)}&view=ledger`:`#/investigations/${encodeURIComponent(a.runId)}/ledger`}">查看调查记录</a>`:''}</div>`;footer=btn('关闭','close-drawer');
     }else if(d.type==='investigation'){
@@ -432,7 +446,7 @@
     return `<div class="form-field"><label for="field-${name}">${esc(label)}</label><select id="field-${name}" name="${name}">${blank?'<option value="">保持不变</option>':''}${values.map(v=>{const item=Array.isArray(v)?v:[v,v];return `<option value="${esc(item[0])}" ${value===item[0]?'selected':''}>${esc(item[1])}</option>`;}).join('')}</select></div>`;
   }
   function modalMarkup(){
-    const m=ui.modal;if(!m)return '';let title='',body='',action='',saveLabel='保存';
+    const m=ui.modal;if(!m)return '';if(m.type?.startsWith('cw-'))return caseWorkflow.modal();let title='',body='',action='',saveLabel='保存';
     if(m.type==='manage-alert'||m.type==='bulk-manage'){
       const bulk=m.type==='bulk-manage',a=getAlert(m.ids[0]);if(!a)return '';
       const listManagement=m.type==='manage-alert'||(bulk&&m.key==='alerts');
@@ -441,7 +455,7 @@
     }else if(m.type==='manage-incident'||m.type==='bulk-incidents'){
       const bulk=m.type==='bulk-incidents',item=store.incidents.find(x=>x.id===(bulk?m.ids[0]:m.id));
       title=bulk?`管理 ${m.ids.length} 个事件`:'管理事件';action='save-incidents';
-      body=`<form id="manage-incidents-form">${!bulk?`<div class="form-field"><label for="incident-title">事件名称</label><input id="incident-title" name="title" maxlength="180" value="${esc(item.title)}" required></div>`:''}${selectField('严重程度','severity',['高','中','低'],bulk?'':item.severity,bulk)}${selectField('状态','status',Object.entries(incidentStateNames),bulk?'':item.status,bulk,true)}${selectField('负责人','owner',store.people,bulk?'':item.owner,bulk,true)}${selectField('分类','classification',Object.entries(classificationNames),bulk?'':item.classification,bulk)}<div class="form-field"><label for="incident-tags">${bulk?'添加事件标记':'事件标记'}</label><input id="incident-tags" name="tags" value="${bulk?'':esc(item.tags.join(', '))}" placeholder="多个标记用逗号分隔" maxlength="200"></div><div class="form-field"><label for="incident-note">解决说明 / 调查备注</label><textarea id="incident-note" name="note" maxlength="4000" placeholder="解决事件时请填写原因，其余情况下可选"></textarea></div><div id="modal-error" class="form-error"></div></form><p>新建事件分配负责人后自动转为处理中；已解决需手动设置并填写说明。变更负责人及解决事件会同步关联告警。</p>`;
+      body=`<form id="manage-incidents-form">${!bulk?`<div class="form-field"><label for="incident-title">事件名称</label><input id="incident-title" name="title" maxlength="180" value="${esc(item.title)}" required></div>`:''}${selectField('严重程度','severity',['高','中','低'],bulk?'':item.severity,bulk)}${selectField('状态','status',Object.entries(incidentStateNames),bulk?'':item.status,bulk,true)}${selectField('负责人','owner',store.people,bulk?'':item.owner,bulk,true)}<div class="form-field"><label for="incident-tags">${bulk?'添加事件标记':'事件标记'}</label><input id="incident-tags" name="tags" value="${bulk?'':esc(item.tags.join(', '))}" placeholder="多个标记用逗号分隔" maxlength="200"></div><div class="form-field"><label for="incident-note">解决说明 / 调查备注</label><textarea id="incident-note" name="note" maxlength="4000" placeholder="解决事件时请填写原因，其余情况下可选"></textarea></div><div id="modal-error" class="form-error"></div></form><p>新建事件分配负责人后自动转为处理中；已解决需手动设置并填写说明。变更负责人及解决事件会同步关联告警。</p>`;
     }else if(m.type==='manage-case'){
       const item=store.cases.find(x=>x.id===m.id);title='管理 Case';action='save-scope';
       body=workspaceView.manageBody(item,selectField);
@@ -457,7 +471,7 @@
     }else if(m.type==='case-filter-set'){
       title='保存筛选集';action='confirm-case-filter-set';body='<form id="filter-set-form"><div class="form-field"><label for="filter-set-name">筛选集名称</label><input id="filter-set-name" name="name" maxlength="80" required placeholder="例如：最高优先级案件"></div></form><div id="modal-error" class="form-error"></div>';
     }else if(m.type==='move-case'){
-      title='移动告警到其他 Case';action='save-move';saveLabel='移动';body=`<p>将选中的 ${m.ids.length} 条告警从 Case ${m.from} 移到目标 Case。告警本身的内容与关联事件保持。</p><form id="move-form">${selectField('目标 Case','caseId',store.cases.filter(c=>c.id!==m.from).map(c=>[c.id,`${c.id} · ${caseTitle(c)}`]),'')}</form>`;
+      title='移动告警到其他 Case';action='save-move';saveLabel='移动';body=`<p>将选中的 ${m.ids.length} 条告警从 Case ${m.from} 移到目标 Case。告警本身的内容与关联事件保持。</p><form id="move-form">${selectField('目标 Case','caseId',caseWorkflow.moveTargets(store.cases.find(c=>c.id===m.from),m.ids).map(c=>[c.id,`${c.id} · ${caseTitle(c)}`]),'')}</form>`;
     }else if(m.type==='reset'){
       title='重置数据数据';action='confirm-reset';saveLabel='重置';body='<p>恢复初始数据，清除本原型在当前浏览器中保存的状态修改、审批和评论。</p>';
     }else if(m.type==='simulate-response'){
@@ -467,13 +481,13 @@
     }else if(m.type==='incident-case'){
       const inc=store.incidents.find(i=>i.id===m.id);if(!inc)return '';
       const linked=incidentCases(inc);title=linked.length?'进入 Case':m.mode==='new'?'新建 Case':'关联已有 Case';
-      if(linked.length){body=`<p>选择 Case 继续研判。</p>${linked.map(c=>`<a class="card row" href="#/cases/${esc(c.id)}/overview" style="margin:8px 0;padding:12px"><span style="flex:1">${esc(caseTitle(c))}</span>${I('external',15)}</a>`).join('')}`;}
+      if(linked.length){body=`<p>选择 Case 继续研判。</p>${linked.map(c=>`<a class="card row" href="#/cases/${esc(c.id)}/case-info" style="margin:8px 0;padding:12px"><span style="flex:1">${esc(caseTitle(c))}</span>${I('external',15)}</a>`).join('')}`;}
       else{
         action='save-incident-case';saveLabel=m.mode==='new'?'创建并进入 Case':'关联并进入 Case';
         body=`<p>关联范围：本事件全部 ${incidentAlerts(inc).length} 条成员告警。</p><div class="case-mode-tabs" role="tablist" aria-label="Case 关联方式"><button type="button" role="tab" aria-selected="${m.mode!=='new'}" data-action="incident-case-mode" data-id="existing">关联已有 Case</button><button type="button" role="tab" aria-selected="${m.mode==='new'}" data-action="incident-case-mode" data-id="new">新建 Case</button></div><form id="incident-case-form">${m.mode==='new'?`<div class="form-field"><label for="incident-case-title">新 Case 名称</label><input id="incident-case-title" name="title" maxlength="4000" value="${esc(m.title??inc.title)}"></div>`:`<div class="form-field"><label for="incident-case-search">搜索 Case</label><input id="incident-case-search" type="search" placeholder="搜索 Case 名称或 ID" value="${esc(m.query||'')}" data-incident-case-search></div><div class="iv-case-choices">${incidentCaseResults(m)}</div><p class="muted">已选择：${esc(store.cases.find(c=>c.id===m.caseId)?.title||'尚未选择')}</p>`}</form><div id="modal-error" class="form-error" role="alert"></div>`;
       }
     }else if(m.type==='choose-case'){
-      title='切换 Case';body=orderedCases().map(x=>`<a class="card row" href="#/cases/${x.id}/overview" style="margin:8px 0;padding:12px"><span style="flex:1">${esc(caseTitle(x))}<small class="muted" style="display:block;margin-top:5px">ID ${x.id}</small></span>${severity(x.severity)}${I('chevron',15)}</a>`).join('');
+      title='切换 Case';body=orderedCases().map(x=>`<a class="card row" href="#/cases/${x.id}/case-info" style="margin:8px 0;padding:12px"><span style="flex:1">${esc(caseTitle(x))}<small class="muted" style="display:block;margin-top:5px">ID ${x.id}</small></span>${severity(x.severity)}${I('chevron',15)}</a>`).join('');
     }
     return `<div class="modal-backdrop"><section class="modal ${m.key==='cases'&&m.type==='columns'?'side-modal':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header class="modal-header"><h2>${title}</h2>${iconBtn('close','关闭弹窗','close-modal')}</header><div class="modal-content">${body}</div><footer class="modal-footer">${btn(action?'取消':'关闭','close-modal')}${action?btn(saveLabel,action,'','primary'):''}</footer></section></div>`;
   }
@@ -486,6 +500,7 @@
   function render(){
     const active=document.activeElement,focusId=active?.id,selection=active&&['text','search'].includes(active.type)?[active.selectionStart,active.selectionEnd]:null;
     const scroll=$('.drawer-content')?.scrollTop||0,r=currentRoute();tableContexts.clear();
+    caseWorkflow.consumeAlertPreparation();
     workspaceView.resetScope();
     const content=r.page==='assets'?assetPage():r.page==='alerts'?alertsPage():r.page==='incidents'?incidentPage():r.page==='investigations'?`<section class="page">${investigationView.workbench()}</section>`:casePage();
     $('#app').innerHTML=shell(content);
@@ -493,6 +508,7 @@
     const next=focusId?document.getElementById(focusId):null;
     if(next){next.focus({preventScroll:true});if(selection&&next.setSelectionRange)try{next.setSelectionRange(...selection);}catch{}}
     if($('.drawer-content'))$('.drawer-content').scrollTop=scroll;
+    caseAssistant.afterRender();
     if((ui.modal||ui.drawer)&&!next){const dialog=ui.modal?$('.modal'):$('.drawer');dialog?.querySelector('button, input, select, textarea, a[href]')?.focus({preventScroll:true});}
   }
   function stopPlaying(){if(ui.playing)clearInterval(ui.playing);ui.playing=null;}
@@ -500,18 +516,20 @@
   function openModal(type,extra={}){ui.modal={type,...extra};render();}
   function showDrawer(type,id){ui.drawer={type,id};ui.drawerTab='overview';render();}
   const workspaceView=window.createReferenceWorkspace({store,ui,esc,I,btn,badge,date,severity,state,empty,getAlert,getAsset,scopeAlerts,currentRoute,currentCase,render,save,toast,logActivity});
-  const investigationView=window.createInvestigationWorkspace({store,esc,I,btn,badge,severity,state,currentRoute,currentCase,scopeAlerts,getAlert,getAsset,navigate,render,downloadFile,incidentState,incidentContext,incidentSummaryText,incidentCaseCard});
+  const investigationView=window.createInvestigationWorkspace({store,esc,I,btn,badge,severity,state,currentRoute,currentCase,scopeAlerts,getAlert,getAsset,navigate,render,save,toast,downloadFile,incidentState,incidentContext,incidentSummaryText,incidentCaseCard,caseActions:()=>caseWorkflow,memberGraph:()=>attackWorkspace()});
+  const caseWorkflow=window.createCaseWorkflow({store,ui,esc,I,btn,badge,date,severity,currentCase,currentRoute,getAlert,getAsset,render,save,toast,logActivity,navigate,currentUser:CURRENT_USER_NAME,catalog:r=>investigationView.artifactCatalog(r),assistant:()=>caseAssistant});
+  const caseAssistant=window.createCaseAssistant({store,ui,esc,I,btn,badge,date,severity,currentCase,currentRoute,getAlert,getAsset,render,toast,workflow:()=>caseWorkflow});
   document.addEventListener('click',async event=>{
     const el=event.target.closest('[data-action]');if(!el){const row=event.target.closest('[data-preview-id]');if(row&&!event.target.closest('a,button,input,select'))showDrawer(row.dataset.previewType||'incident',row.dataset.previewId);return;}if(el.disabled)return;
     event.preventDefault();const action=el.dataset.action,id=el.dataset.id,key=el.dataset.key;
-    if(investigationView.handle(action,id)||workspaceView.handle(action,id))return;
+    if(caseAssistant.handle(action,id)||caseWorkflow.handle(action,id)||investigationView.handle(action,id)||workspaceView.handle(action,id))return;
     switch(action){
       case 'incident-case':openModal('incident-case',{id,mode:'new',query:'',caseId:''});break;
       case 'incident-case-mode':{const m=ui.modal;if(m?.type!=='incident-case')break;if(m.mode==='new')m.title=$('#incident-case-title')?.value;m.mode=id;render();break;}
       case 'incident-case-select':if(ui.modal?.type==='incident-case'){ui.modal.caseId=id;render();}break;
       case 'save-incident-case':{
         const m=ui.modal,inc=store.incidents.find(i=>i.id===m?.id);if(m?.type!=='incident-case'||!inc)break;
-        try{const c=associateIncidentCase(inc,{mode:m.mode,caseId:m.caseId,title:$('#incident-case-title')?.value});logActivity(`将事件告警关联至 Case ${c.id}`,'案件关联',c.title,inc.id,[c.id]);save();ui.modal=null;navigate('#/cases/'+c.id+'/overview');toast('已关联成员告警，可在 Case 中继续研判');}catch(error){$('#modal-error').textContent=error.message;}break;
+        try{const c=associateIncidentCase(inc,{mode:m.mode,caseId:m.caseId,title:$('#incident-case-title')?.value});logActivity(`将事件告警关联至 Case ${c.id}`,'案件关联',c.title,inc.id,[c.id]);save();ui.modal=null;navigate('#/cases/'+c.id+'/case-info');toast('已关联成员告警，可在 Case 中继续研判');}catch(error){$('#modal-error').textContent=error.message;}break;
       }
       case 'case-data':{const hash='#/cases?data='+id;if(location.hash===hash){readQueueLink();render();}else navigate(hash);break;}
       case 'stub':toast('该入口仅保留名称，本次聚焦告警、事件和 Case');break;
@@ -520,7 +538,7 @@
       case 'incident-preview':showDrawer('incident',id);break;
       case 'case-preview':showDrawer('case',id);break;
       case 'open-incident':navigate('#/incidents/'+id+'/attack');break;
-      case 'open-case':navigate('#/cases/'+id+'/overview');break;
+      case 'open-case':navigate('#/cases/'+id+'/case-info');break;
       case 'entity':showDrawer('entity',id);break;
       case 'evidence':showDrawer('evidence',id);break;
       case 'activity':showDrawer('activity',id);break;
@@ -552,7 +570,7 @@
         if(data.status==='Resolved'&&targets.some(x=>x.status!=='Resolved')&&!data.note.trim()){$('#modal-error').textContent='解决事件时请填写解决说明。';break;}
         for(const inc of targets){
           const ownerChanged=!!data.owner&&data.owner!==inc.owner,resolving=data.status==='Resolved'&&inc.status!=='Resolved',previousStatus=inc.status;
-          for(const k of ['severity','owner','classification'])if(data[k])inc[k]=data[k];
+          for(const k of ['severity','owner'])if(data[k])inc[k]=data[k];
           inc.status=incidentHandlingStatus(data.status||inc.status,inc.owner);
           if(!bulk)inc.title=data.title.trim();
           const tags=data.tags.split(/[,，]/).map(x=>x.trim()).filter(Boolean);inc.tags=bulk?[...new Set([...inc.tags,...tags])]:tags;
@@ -562,14 +580,15 @@
         }
         save();ui.modal=null;render();toast(`已保存 ${targets.length} 个事件`);break;
       }
+      case 'case-metric':{const t=tableState('cases');if(!caseMetricDefinitions.some(m=>m.id===id))break;if(t.caseMetric===id){t.caseMetric='';t.page=1;ui.caseFilterSet='';}else{resetCaseQueueFilters().caseMetric=id;}render();break;}
       case 'quick-filter':{const t=tableState(key);if(key==='alerts'&&['severity','status','owner'].includes(el.dataset.field)){t[el.dataset.field]=el.dataset.value;t.page=1;render();}break;}
       case 'save-filter':{const t=tableState(ui.modal.key),data=Object.fromEntries(new FormData($('#filter-form')));for(const field of ['severity','status','source','owner','tag','minPriority','priorityBand','classification','investigation','category'])t[field]=data[field]||'';t.page=1;closeModal();break;}
       case 'save-columns':{const cols=new FormData($('#columns-form')).getAll('columns');if(!cols.length){$('#modal-error').textContent='请至少保留一列。';break;}tableState(ui.modal.key).columns=cols;closeModal();break;}
       case 'save-dates':{const data=Object.fromEntries(new FormData($('#date-form')));if(ui.modal.key==='cases'&&data.range!=='custom'){const end=Date.parse(caseDateEnd()+':59+08:00');data.end=caseDateEnd();data.start=new Date(end-Number(data.range)*86400000+1000+8*3600000).toISOString().slice(0,16);}if(data.start&&data.end&&data.start>data.end){$('#modal-error').textContent='结束时间需要晚于开始时间。';break;}Object.assign(tableState(ui.modal.key),data,{page:1});closeModal();break;}
-      case 'clear-filters':{Object.assign(tableState(id),{dataset:'all',query:'',severity:'',status:'',source:'',start:'',end:'',owner:'',tag:'',minPriority:'',priorityBand:'',classification:'',investigation:'',category:'',range:'7',page:1});if(id==='cases')ui.caseFilterSet='';render();break;}
+      case 'clear-filters':{Object.assign(tableState(id),{dataset:'all',query:'',severity:'',status:'',source:'',start:'',end:'',owner:'',tag:'',minPriority:'',priorityBand:'',classification:'',investigation:'',category:'',range:'7',page:1});if(id==='cases')resetCaseQueueFilters();render();break;}
       case 'save-case-filter-set':openModal('case-filter-set');break;
       case 'confirm-case-filter-set':{const name=new FormData($('#filter-set-form')).get('name').trim();if(!name){$('#modal-error').textContent='请填写筛选集名称。';break;}const filters=Object.fromEntries(caseFilterFields.map(k=>[k,tableState('cases')[k]])),sets=store.caseFilterSets||=[],existing=sets.find(x=>x.name===name),item={id:existing?.id||'filters-'+Date.now(),name,filters};store.caseFilterSets=existing?sets.map(x=>x===existing?item:x):[...sets,item];ui.caseFilterSet=item.id;save();closeModal();toast('已保存并应用筛选集');break;}
-      case 'remove-filter':tableState(key)[el.dataset.field]='';tableState(key).page=1;render();break;
+      case 'remove-filter':tableState(key)[el.dataset.field]='';tableState(key).page=1;if(key==='cases')ui.caseFilterSet='';render();break;
       case 'sort':{if(key==='alerts'&&!alertListColumns.some(c=>c.key===el.dataset.field&&c.sortable))break;const t=tableState(key);t.direction=t.sort===el.dataset.field?-t.direction:1;t.sort=el.dataset.field;render();break;}
       case 'prev-page':tableState(id).page=Math.max(1,tableState(id).page-1);render();break;
       case 'next-page':tableState(id).page++;render();break;
@@ -592,13 +611,13 @@
       case 'case-summary-toggle':ui.caseCollapsed=!ui.caseCollapsed;render();break;
       case 'feedback':ui.feedback=id;render();toast('已记录对摘要的反馈（演示）');break;
       case 'move-case':{const ids=tableState('case-alerts').selected.filter(aid=>currentCase().alertIds.includes(aid));if(!ids.length){toast('请先勾选要移动的告警');break;}openModal(action,{ids,from:currentCase().id});break;}
-      case 'save-move':{const m=ui.modal,target=store.cases.find(c=>c.id===new FormData($('#move-form')).get('caseId')),source=store.cases.find(c=>c.id===m.from);if(!target)break;source.alertIds=source.alertIds.filter(aid=>!m.ids.includes(aid));target.alertIds=[...new Set([...target.alertIds,...m.ids])];logActivity(`移动 ${m.ids.length} 条告警至 Case ${target.id}`,'案件关联',target.title,source.incidentId,[source.id,target.id]);tableState('case-alerts').selected=[];save();ui.modal=null;render();toast(`已移动至 Case ${target.id}`);break;}
-      case 'approve-evidence':case 'reject-evidence':openModal(action,{id});break;
-      case 'confirm-evidence':{const m=ui.modal,e=store.evidence.find(x=>x.id===m.id),yes=m.type==='approve-evidence',a=getAlert(e.alertId);e.remediation=yes?'Remediated':'Rejected';logActivity((yes?'批准并完成模拟响应：':'拒绝模拟响应：')+e.name,'响应审批',e.name,a.incidentId,store.cases.filter(c=>c.alertIds.includes(a.id)).map(c=>c.id));save();ui.modal=null;render();toast(yes?'已批准并完成演示动作':'已拒绝演示动作');break;}
+      case 'save-move':{const m=ui.modal,target=store.cases.find(c=>c.id===new FormData($('#move-form')).get('caseId')),source=store.cases.find(c=>c.id===m.from);try{caseWorkflow.moveMembers(source,target,m.ids);}catch(error){toast(error.message);break;}tableState('case-alerts').selected=[];ui.modal=null;render();toast(`已移动至 Case ${target.id}`);break;}
+      case 'approve-evidence':case 'reject-evidence':toast('请在对应调查中审阅具体响应动作');break;
+      case 'confirm-evidence':toast('请在对应调查中审阅具体响应动作');break;
       case 'simulate-response':if(getAsset(id).isolated){toast('此设备已处于模拟隔离状态');break;}openModal(action,{id});break;
       case 'confirm-response':{const a=getAsset(ui.modal.id);a.isolated=true;const linked=store.alerts.find(x=>x.entityIds.includes(a.id));logActivity('模拟隔离设备','设备响应',a.name,linked?.incidentId,store.cases.filter(c=>caseAlerts(c).some(x=>x.entityIds.includes(a.id))).map(c=>c.id));save();ui.modal=null;render();toast('设备已标记为已隔离（演示）');break;}
       case 'reset':openModal(action);break;
-      case 'confirm-reset':stopPlaying();for(const key of Object.keys(store))delete store[key];Object.assign(store,window.makeDemoData());window.mergeReplayedAlerts?.(store);window.mergeAiSoc20Data?.(store);window.mergePersistedCaseData?.(store);window.alertFlowWorkspace?.merge(store);window.mergeDesignWorkspace?.(store);window.mergePageShowcases?.(store);initializeIncidentStates();seedAssetTags();save();ui.tables={};ui.modal=null;ui.drawer=null;ui.graph.index=99;render();toast('已恢复初始演示数据');break;
+      case 'confirm-reset':stopPlaying();for(const key of Object.keys(store))delete store[key];Object.assign(store,window.makeDemoData());window.mergeReplayedAlerts?.(store);window.mergeAiSoc20Data?.(store);window.mergePersistedCaseData?.(store);window.alertFlowWorkspace?.merge(store);window.mergeDesignWorkspace?.(store);window.mergePageShowcases?.(store);window.mergeCaseExplorationData?.(store);window.mergeCaseOutcomeData?.(store);initializeIncidentStates();seedAssetTags();save();ui.tables={};ui.modal=null;ui.drawer=null;ui.graph.index=99;render();toast('已恢复初始演示数据');break;
       case 'copy-incident-id':try{await navigator.clipboard.writeText(id);toast('已复制事件 ID');}catch{toast('事件 ID：'+id);}break;
       case 'copy':try{await navigator.clipboard.writeText(id);toast('已复制告警 ID');}catch{toast('告警 ID：'+id);}break;
       case 'copy-queue-link':{const t=tableState('incidents'),p=new URLSearchParams();for(const k of ['severity','status','source','owner','tag','minPriority','start','end'])if(t[k])p.set(k,t[k]);if(t.query)p.set('q',t.query);const url=location.origin+location.pathname+'#/incidents'+(p.size?'?'+p:'');try{await navigator.clipboard.writeText(url);toast('已复制含当前筛选条件的事件列表链接');}catch{toast(url);}break;}
@@ -610,12 +629,15 @@
   });
   document.addEventListener('input',event=>{
     const el=event.target;
+    if(caseAssistant.input(el)||caseWorkflow.input(el))return;
     if(el.hasAttribute('data-incident-case-search')&&ui.modal?.type==='incident-case'){ui.modal.query=el.value;render();return;}
     if(el.dataset.query){tableState(el.dataset.query).query=el.value;tableState(el.dataset.query).page=1;render();}
     if(el.hasAttribute('data-playback')){stopPlaying();ui.graph.index=Number(el.value);render();}
   });
+  document.addEventListener('toggle',event=>investigationView.toggle(event.target),true);
   document.addEventListener('change',event=>{
     const el=event.target;
+    if(caseAssistant.change(el)||caseWorkflow.change(el))return;
     if(el.closest('#manage-incidents-form')&&['owner','status'].includes(el.name)){
       if(ui.modal?.type==='manage-incident'){
         const form=el.closest('form'),status=form.elements.status;
@@ -626,7 +648,7 @@
     if(investigationView.change(el))return;
     if(el.hasAttribute('data-ws-scope')){ui.graph.associated=el.value==='associated';ui.graph.alert=null;ui.graph.edge=null;ui.graph.blast=false;ui.graph.index=99;render();return;}
     if(el.dataset.wsTask){workspaceView.changeTask(el.dataset.wsTask,el.value);return;}
-    if(el.hasAttribute('data-case-filter-set')){if(el.value==='create'){openModal('case-filter-set');return;}const selected=store.caseFilterSets?.find(s=>s.id===el.value);ui.caseFilterSet=el.value;if(selected)Object.assign(tableState('cases'),selected.filters,{page:1});render();}
+    if(el.hasAttribute('data-case-filter-set')){if(el.value==='create'){openModal('case-filter-set');return;}const selected=store.caseFilterSets?.find(s=>s.id===el.value);ui.caseFilterSet=el.value;if(selected)Object.assign(tableState('cases'),{caseMetric:''},selected.filters,{page:1});render();}
     if(el.hasAttribute('data-case-auto')){ui.caseAuto=el.checked;if(ui.caseAutoTimer)clearInterval(ui.caseAutoTimer);ui.caseAutoTimer=ui.caseAuto?setInterval(()=>{if(currentRoute().page==='cases'&&!currentRoute().id&&!ui.modal&&!ui.drawer&&document.activeElement?.tagName!=='INPUT')render();},30000):null;render();}
     if(el.dataset.selectRow){const t=tableState(el.dataset.selectRow);t.selected=el.checked?[...new Set([...t.selected,el.dataset.id])]:t.selected.filter(id=>id!==el.dataset.id);render();}
     if(el.dataset.selectAll){const key=el.dataset.selectAll,t=tableState(key),ctx=tableContexts.get(key),rows=filteredRows(key,ctx.rows).slice((t.page-1)*t.size,t.page*t.size),ids=rows.map(r=>r.id);t.selected=el.checked?[...new Set([...t.selected,...ids])]:t.selected.filter(id=>!ids.includes(id));render();}
@@ -642,6 +664,7 @@
   document.addEventListener('dragend',()=>{draggedColumn=null;});
   document.addEventListener('submit',event=>{
     event.preventDefault();
+    if(caseAssistant.submit(event.target)||caseWorkflow.submit(event.target))return;
     if(event.target.id==='workspace-task-form'){workspaceView.submitTask(event.target);return;}
     if(event.target.id==='comment-form'){
       const text=$('#new-comment').value.trim();if(!text)return;
@@ -657,7 +680,7 @@
     if(event.key==='Escape'){
       const help=$('.incident-stat-help');
       if(help&&!help.classList.contains('dismissed')&&help.matches(':hover,:focus-within')){help.classList.add('dismissed');return;}
-      if(ui.modal)closeModal();else if(ui.drawer){ui.drawer=null;render();}return;
+      if(ui.modal)closeModal();else if(ui.drawer){ui.drawer=null;render();}else if(currentRoute().page==='cases'&&currentRoute().id)caseAssistant.handle('ca-close','');return;
     }
     if(['Enter',' '].includes(event.key)&&event.target.matches('[data-action^="ws-"]')){event.preventDefault();workspaceView.handle(event.target.dataset.action,event.target.dataset.id);}
     if(event.key==='Enter'&&event.target.matches('tr[data-preview-id]')){event.preventDefault();showDrawer(event.target.dataset.previewType||'incident',event.target.dataset.previewId);}
@@ -667,8 +690,8 @@
       if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
     }
   });
-  window.addEventListener('hashchange',()=>{stopPlaying();ui.drawer=null;ui.modal=null;ui.graph.index=99;ui.graph.alert=null;ui.graph.blast=false;readQueueLink();render();window.scrollTo({top:0,behavior:'instant'});});
+  window.addEventListener('hashchange',event=>{const keepPosition=investigationView.keepGraphMaterialPosition(event.oldURL,event.newURL);stopPlaying();ui.drawer=null;ui.modal=null;ui.graph.index=99;ui.graph.alert=null;ui.graph.blast=false;readQueueLink();render();if(!keepPosition)window.scrollTo({top:0,behavior:'instant'});});
   if(!location.hash)history.replaceState(null,'','#/alerts');
-  const renderAlertDetail=window.createAlertDetail({store,esc,date,I,btn,badge,severity,state,entityChip:alertAssetLink,getAsset,save,render,navigate,toast,breadcrumbs,tabsMarkup});
+  const renderAlertDetail=window.createAlertDetail({store,esc,date,I,btn,badge,severity,state,entityChip:alertAssetLink,getAsset,save,render,navigate,toast,breadcrumbs,tabsMarkup,prepareInvestigation:(c,a)=>caseWorkflow.prepareFromAlert(c.id,a.id),canPrepareCase:(c,a)=>caseWorkflow.eligible(c,a),caseScope:a=>caseWorkflow.caseScope(a),addMembers:(c,ids)=>caseWorkflow.addMembers(c,ids)});
   readQueueLink();render();
 })();

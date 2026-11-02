@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 function load(){
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
- for(const file of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','persisted-case-data','recorded-examples','investigation-graph','investigation-workspace'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
+ for(const file of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','persisted-case-data','recorded-examples','investigation-graph','investigation-workspace','case-workflow'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.api={store,ui,casePage,fullAlert,investigationView,filteredRows,caseQueueRows,tableState};\n})();');
  vm.runInContext(code,s);return {...s.window.api,s,data:s.window.persistedCaseData};
 }
@@ -30,7 +30,7 @@ test('all Case and alert detail views render with truthful missing values and no
   x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=${view}`;const html=x.casePage();assert.ok(!/Invalid Date|undefined|>null</.test(html),view);assert.ok(!html.includes('iv-source-notice'));assert.ok(!html.includes('本地整理'));assert.ok(html.includes('完整性未记录'));
   if(view==='overview'){assert.ok(html.includes('取证分析置信度 10%'));assert.ok(html.includes('8 小时差异'));assert.ok(html.includes('判定未记录'));}
   if(view==='process')for(const text of ['侦察分析','取证分析','响应分析','报告整理','查看阶段采用结果','dry_run'])assert.ok(html.includes(text));
-  if(view==='tools'){assert.ok(html.includes('查询失败'));assert.ok(!html.includes('最多200字符'));}
+  if(view==='tools'){assert.ok(html.includes('资料不可用'));assert.ok(!html.includes('最多200字符'));}
  }
  for(const tab of ['overview','case-info','alerts','assets','attack','evidence','tasks','activities','comments','similar','investigations']){
   x.s.location.hash=`#/cases/${c.id}/${tab}`;const html=x.casePage();assert.ok(!/Invalid Date|undefined|>null</.test(html),tab);assert.ok(!html.includes('源系统未建 Case'));if(tab==='comments'){assert.ok(html.includes('附件 (0)'));assert.ok(!html.includes('investigation-notes.txt'));}
@@ -44,11 +44,12 @@ test('graph filters preserve external candidates and frozen Run path when curren
  const x=load(),r=x.data.runs[0],c=x.store.cases.find(row=>row.id===r.sourceCaseId);
  for(const kind of ['all','attack_chain','attack_path','alert_graph']){
   x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=graphs&graph=${kind}`;const html=x.casePage();assert.ok(!html.includes('本次未保存此类材料'));
-  if(['all','attack_chain'].includes(kind)){assert.equal((html.match(/历史外部候选/g)||[]).length,3);assert.ok(html.includes('候选评分'));assert.ok(html.includes('图距离'));}
+  if(['all','attack_chain'].includes(kind)){assert.equal((html.split('<details class="iv-graph-materials"')[1].match(/历史外部候选/g)||[]).length,3);assert.ok(html.includes('候选评分'));assert.ok(html.includes('图距离'));}
   if(['all','attack_path'].includes(kind)){assert.ok(html.includes('11 个对象 · 15 条已记录关系'));assert.ok(html.includes('本次 Case 联合调查保存的路径图'));}
   if(['all','alert_graph'].includes(kind)){assert.ok(html.includes('图可达实体'));assert.ok(html.includes('<strong>16</strong>'));}
  }
- c.alertIds.splice(0);assert.equal(x.s.window.investigationWorkspaceModel.forCase(x.store,c).length,1);x.s.location.hash=`#/cases/${c.id}/attack`;const html=x.casePage();assert.ok(html.includes('当时的 3 条输入'));assert.ok(html.includes('11 个对象'));assert.equal(r.alertIds.length,3);
- x.s.location.hash=`#/cases/${c.id}/overview`;assert.ok(x.casePage().includes('取证分析置信度 10%'));
+ c.alertIds.splice(0);assert.equal(x.s.window.investigationWorkspaceModel.forCase(x.store,c).length,1);x.s.location.hash=`#/cases/${c.id}/attack`;const html=x.casePage();assert.ok(html.includes(`data-run-id="${r.id}"`));assert.ok(html.includes('查看本次调查'));assert.ok(!html.includes('iv-graph-materials'));assert.equal(r.graphs.attack_path.data.nodes.length,11);assert.equal(r.graphs.attack_path.data.edges.length,15);assert.equal(r.alertIds.length,3);x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=graphs&graph=attack_path`;assert.ok(x.casePage().includes('11 个对象 · 15 条已记录关系'));
+ x.s.location.hash=`#/cases/${c.id}/overview`;assert.ok(x.casePage().includes('查看分析依据'));assert.ok(x.casePage().includes('查看全部调查历史'));assert.ok(x.casePage().includes('3 条本轮输入'));
+ x.s.location.hash=`#/cases/${c.id}/investigations?run=${r.id}&view=overview`;assert.ok(x.casePage().includes('取证分析置信度 10%'));
  x.s.location.hash=`#/cases/${c.id}/investigations`;assert.ok(x.casePage().includes('打开调查'));
 });

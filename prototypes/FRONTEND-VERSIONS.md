@@ -1,4 +1,7 @@
-# 前端当前入口与历史保存
+# 前端历史存档索引
+
+当前产品仅维护[这一份需求说明](../docs/design/alert-incident-case-product-requirements.md)和[当前页面](security-pages-v2/README.md)。下文的旧版本名称是历史文件原名，不是当前维护或发布的产品分支。
+
 
 更新：2026-10-31。当前只使用 **V2 / 4174**：[事件](http://127.0.0.1:4174/#/incidents)、[Case](http://127.0.0.1:4174/#/cases)、[调查运行](http://127.0.0.1:4174/#/investigations)。完整演示样例、实际 AiSOC 案例及边界统一见[当前页面说明](security-pages-v2/README.md)。
 

@@ -1,6 +1,6 @@
-**2026-10-31 当前事件与调查页面：** [统一入口、完整演示样例及 AiSOC 具体案例](../prototypes/security-pages-v2/README.md)。当前使用4174；当前78告警/21事件/21Case/18Run，原67告警/18事件/19Case/15Run保留，历史页面和设计已存档。页面不额外标注来源，实际Run的partial及数据缺口保持；完整演示材料独立于真实处理结果。
+**告警、事件与调查当前产品入口：** [产品需求说明](design/alert-incident-case-product-requirements.md)。统一描述每页功能、操作跳转、业务规则和验收场景；未解决的溯源分析等方向集中在同文档中。所有案例共用当前页面流程，历史设计仅存档。
 
-[当前版本与历史保存](../prototypes/FRONTEND-VERSIONS.md) · [设计讨论及字段对照](design/incident-investigation-page-analysis.md) · [验证回执](design/frontend-v2-verification.md) · [10月29日功能审计与待修问题](design/frontend-functional-audit-20261029.md)。后续继续按[逐元素核对原则](design/ui-discussion-principles.md)审计；当前去掉来源筛选后，旧F07对应控件已撤下，其余操作缺口未在本轮修复。
+[当前预览与启动](../prototypes/security-pages-v2/README.md) · [真实数据字段对照](design/incident-alert-data-showcase.md)。以下为其他模块及历史交接，不作为当前页面的另一套产品规范。
 
 **2026-10-24数据/调查统一续接：** [main总审计与数据湖协作](operations/data-investigation-integration-audit-20261024.md)汇总两分支最新进度、未修问题、共享夹具/写湖/查询/评估分工及各自下一步；不改变双方原设计，不代表新版启用。
 

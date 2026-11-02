@@ -1,3 +1,5 @@
+**页面产品需求：** [告警、事件与调查产品需求说明](../design/alert-incident-case-product-requirements.md)统一描述当前页面与业务流程。本目录下方保留标书原件及其对照资料。
+
 # 需求原件
 
 当前项目对照（2026-10-22）：[标书符合性、模块迁移评价与后续推进](../operations/tender-requirements-assessment-20261022.md)，以及 [35 子组与164条功能细项矩阵](socai2-requirements-matrix-20261022.md)。按本项目源码和实证重新判断，未沿用下列旧工程覆盖状态；技术迁移接通不等于标书完整满足。

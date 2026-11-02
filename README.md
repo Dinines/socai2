@@ -1,5 +1,7 @@
 # socai2 · stingAISOC
 
+**当前页面产品需求：** [告警、事件与调查产品需求说明](docs/design/alert-incident-case-product-requirements.md)，包含页面职责、按钮与跳转、调查及图谱流程、验收场景、未解决问题。[打开当前页面与样例](prototypes/security-pages-v2/README.md)。统一描述当前产品，历史设计仅作存档。
+
 以固定上游 [beenuar/AiSOC](https://github.com/beenuar/AiSOC) revision `34ca18c57dd4175539e5c6dd3d04a72dc057306b` 为参考，交付已有告警及后续调查的服务端：Kafka输入、Fusion、分诊、按策略自动关闭或自动升级调查、人工调查，以及API/持久化结果和Markdown报告。前端、采集和原始事件检测不在本轮迁移范围。
 
 **调查新版开发与评审：** 从[调查分支入口](docs/investigation/README.md)查看设计、相对开源的变化、当前进度、已知问题、测试和共享回执。新版在`codex/investigation-working`普通项目目录开发，代码/文档提交并推送供跨机器协作；旧业务源码保持，新版独立目录，当前尚未部署或接入完整流程。下文按日期保留的旧运行状态以PROGRESS及该入口链接的最新回执为准。

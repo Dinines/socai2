@@ -11,7 +11,7 @@ test('showcases append coherent records and preserve all original records, Runs 
  const old=load({showcase:false}),x=load();
  for(const key of ['alerts','incidents','assets','cases','evidence','activities','comments'])for(const a of old.store[key])assert.deepEqual(clone(x.store[key].find(row=>row.id===a.id)),clone(a));
  for(const r of old.M.runs(old.store))assert.deepEqual(clone(x.M.runs(x.store).find(row=>row.id===r.id)),clone(r));
- assert.deepEqual([x.store.alerts.length,x.store.incidents.length,x.store.cases.length,x.M.runs(x.store).length],[78,21,21,18]);
+ assert.deepEqual([x.store.alerts.length,x.store.incidents.length,x.store.cases.length,x.M.runs(x.store).length],[88,24,23,21]);
  const before=JSON.stringify(x.store);x.s.window.mergePageShowcases(x.store);assert.equal(JSON.stringify(x.store),before);
  const a=x.store.alerts.find(a=>a.fixtureSet);a.title='自定义标题';a.detailMaterial.history=[];
  const inc=x.store.incidents.find(i=>i.fixtureSet);inc.owner='Megan Bowen';inc.status='Resolved';

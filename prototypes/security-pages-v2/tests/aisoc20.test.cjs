@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 function load(){
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/alerts'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
- for(const file of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','recorded-examples','investigation-graph','investigation-workspace'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
+ for(const file of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','recorded-examples','investigation-graph','investigation-workspace','case-workflow'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.api={store,ui,casePage,drawerMarkup,fullAlert,investigationView,filteredRows,caseQueueRows,tableState};\n})();');
  vm.runInContext(code,s);return {...s.window.api,s,data:s.window.aisoc20RecordedData};
 }
@@ -42,10 +42,11 @@ test('related and similar alert candidates do not cross source environment or te
  const second=x.store.alerts.find(row=>row.id===x.data.cases[0].alertIds[1]);second.sourceTenantId='other-tenant';assert.ok(!x.fullAlert(a).includes(`#/alerts/${second.id}/overview`));
  assert.ok(other);
 });
-test('saved graph is filtered to current Case members and is separate from Run graphs',()=>{
+test('Case graph uses the latest recorded Run input context without rewriting saved graphs',()=>{
  const x=load(),c=x.store.cases.find(c=>c.id===x.data.cases[0].id);
- x.s.location.hash=`#/cases/${c.id}/attack`;let html=x.casePage();assert.ok(html.includes('OBSERVED_ON'));assert.ok(html.includes('DEMO-FIN-11'));assert.ok(!html.includes('DEMO-APP-12'));
- c.alertIds.splice(1);html=x.casePage();assert.ok(!html.includes(x.data.cases[0].alertIds[1]));
+ const M=x.s.window.investigationWorkspaceModel,r=M.latestFinished(M.forCase(x.store,c));
+ x.s.location.hash=`#/cases/${c.id}/attack`;let html=x.casePage();assert.ok(html.includes(`data-run-id="${r.id}"`));assert.ok(html.includes('保留本轮调查的原始范围'));assert.ok(html.includes('查看本次调查'));assert.ok(!html.includes('iv-graph-materials'));assert.ok(html.includes('DEMO-FIN-11'));assert.ok(!html.includes('DEMO-APP-12'));
+ const before=JSON.stringify(x.data.runs);c.alertIds.splice(1);html=x.casePage();assert.ok(html.includes(`data-run-id="${r.id}"`));for(const id of r.alertIds)assert.ok(html.includes(`data-id="${id}"`));assert.equal(JSON.stringify(x.data.runs),before);
  for(const r of x.data.runs)assert.equal(Object.keys(r.graphs).length,0);
  assert.ok(x.data.graph.nodes.every(n=>!n.attributes.labels.includes('Case')));
 });
@@ -65,14 +66,14 @@ test('unscored Cases do not match any numeric priority band or minimum',()=>{
  t.minPriority='';assert.equal(x.filteredRows('cases',x.caseQueueRows()).filter(c=>c.localCollection).length,3);
 });
 
-test('recorded Run graph tabs expose saved relations and chronology without turning them into Run artifacts',()=>{
+test('recorded Run graph tabs share material empty states and retain saved input relations without inventing artifacts',()=>{
  const x=load(),r=x.data.runs[1],before=JSON.stringify(x.store);
  for(const graph of ['all','attack_chain','attack_path','alert_graph']){
   x.s.location.hash=`#/cases/local-aisoc20-1/investigations?run=${r.id}&view=graphs&graph=${graph}`;
-  const html=x.casePage();for(const text of ['7 个对象','8 条已记录关系','DEMO-FIN-11','demo.finance','198.51.100.41','攻击路径分析已跳过','本次输入','不是本次 Run 产生的攻击路径'])assert.ok(html.includes(text));
-  assert.ok(!html.includes('本次未保存此类材料'));assert.ok(!html.includes('DEMO-APP-12'));
-  if(['all','attack_chain'].includes(graph)){assert.ok(html.includes('关联告警时序'));assert.ok(html.includes('#/alerts/'+x.data.alerts[0].id+'/overview'));}
+  const html=x.casePage();for(const text of ['DEMO-FIN-11','demo.finance','198.51.100.41','攻击路径分析已跳过','本次输入','关联资料不代表本次运行生成的攻击路径'])assert.ok(html.includes(text));
+  assert.ok(html.includes('本次未保存此类材料'));assert.ok(!html.includes('DEMO-APP-12'));
+  assert.ok(html.includes(`data-run-id="${r.id}"`));assert.ok(!html.includes('iv-recorded-chain'));
  }
- x.s.location.hash=`#/investigations/${r.id}/graphs`;assert.ok(x.investigationView.workbench().includes('7 个对象'));
+ x.s.location.hash=`#/investigations/${r.id}/graphs`;assert.ok(x.investigationView.workbench().includes(`data-run-id="${r.id}"`));
  assert.equal(JSON.stringify(x.store),before);assert.equal(Object.keys(r.graphs).length,0);
 });

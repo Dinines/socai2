@@ -2,16 +2,17 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function load(version='v2'){
  const root=path.resolve(__dirname,'../../security-pages-'+version);
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/alerts'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
- const files=['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view'];if(version==='v2')files.push('investigation-data','investigation-graph','investigation-workspace');
+ const files=['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view'];if(version==='v2')files.push('investigation-data','investigation-graph','investigation-workspace','case-workflow');
  for(const n of files)vm.runInContext(fs.readFileSync(path.join(root,n+'.js'),'utf8'),s);
  const extras=version==='v2'?',investigationView,casePage,incidentPage':'';
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();',`window.api={store,ui,alertsPage,drawerMarkup,fullAlert${extras}};\n})();`);
  assert.ok(code.includes('window.api='));vm.runInContext(code,s);return {...s.window.api,s,M:s.window.investigationWorkspaceModel};
 }
-test('V1 and V2 retain all 291 alert renders except the approved neutral asset header',()=>{
+test('V1 and V2 retain all 291 alert renders except approved asset wording, Case links and preparation entry',()=>{
+ const updatedLinks=html=>html.replace(/type="submit" form="case-form-[^"]+" name="mode" value="investigate" data-detail-investigate="([^"]+)">发起 AI 调查/g,'type="button" data-detail-investigate="$1">准备调查').replace(/(href="#\/cases\/[^"]+)\/overview"/g,'$1/case-info"');
  const a=load('v1'),b=load();assert.equal(a.alertsPage().replace('<th scope="col">受影响资产</th>','<th scope="col">涉及资产</th>'),b.alertsPage());let n=1;
- for(const row of a.store.alerts){a.ui.drawer=b.ui.drawer={type:'alert',id:row.id};assert.equal(a.drawerMarkup(),b.drawerMarkup());n++;
-  for(const tab of ['overview','timeline','raw','response']){a.s.location.hash=b.s.location.hash=`#/alerts/${row.id}/${tab}`;assert.equal(a.fullAlert(row),b.fullAlert(b.store.alerts.find(x=>x.id===row.id)));n++;}}
+ for(const row of a.store.alerts){a.ui.drawer=b.ui.drawer={type:'alert',id:row.id};assert.equal(updatedLinks(a.drawerMarkup()),b.drawerMarkup());n++;
+  for(const tab of ['overview','timeline','raw','response']){a.s.location.hash=b.s.location.hash=`#/alerts/${row.id}/${tab}`;assert.equal(updatedLinks(a.fullAlert(row)),b.fullAlert(b.store.alerts.find(x=>x.id===row.id)));n++;}}
  assert.equal(n,291);
 });
 test('all saved Runs and six views render; no Case is invented or state mutated',()=>{
@@ -35,7 +36,7 @@ test('Run state, completeness, verdict and tokens remain separate',()=>{
 });
 test('Case membership filters Runs and invalid Run does not silently select another',()=>{
  const x=load();x.s.location.hash='#/cases/17420/investigations?run=does-not-exist';assert.ok(x.investigationView.workbench().includes('没有关联调查运行'));
- x.store.cases[0].alertIds=[];x.s.location.hash='#/cases/17420/overview';assert.ok(x.casePage().includes('没有关联调查运行'));
+ x.store.cases[0].alertIds=[];x.s.location.hash='#/cases/17420/overview';assert.ok(x.casePage().includes('尚无分析结果'));assert.ok(x.casePage().includes('查看全部调查历史'));
  x.s.location.hash='#/investigations/missing/overview';assert.ok(!x.investigationView.workbench().includes('身份与终端活动调查'));
 });
 test('Chain seed/window filtering does not alter members or create service scores',()=>{
@@ -59,7 +60,7 @@ test('saved Run input is retained independently of the current Alert',()=>{
 });
 test('incident summaries keep saved sources and do not lazily generate missing material',()=>{
  const x=load(),before=JSON.stringify(x.store);x.s.location.hash='#/incidents/262144/summary';
- const html=x.incidentPage();assert.ok(html.includes('#/cases/17420/overview'));assert.ok(!html.includes('调查判定：'));assert.ok(!html.includes('INV-20261024-001'));
+ const html=x.incidentPage();assert.ok(html.includes('#/cases/17420/case-info'));assert.ok(!html.includes('调查判定：'));assert.ok(!html.includes('INV-20261024-001'));
  x.s.location.hash='#/incidents/262144/triage?filter=unknown';assert.ok(x.incidentPage().includes('尚无判定'));
  assert.equal(JSON.stringify(x.store),before);
  const a=x.store.alerts.find(a=>a.persistedRecord),rows=x.M.assessments(x.store,[a]),r=rows[0];
@@ -87,13 +88,13 @@ test('Case input evidence follows Run inputs rather than newly added members',()
  const expected=x.store.evidence.filter(e=>ids.has(e.alertId)).map(e=>e.id).sort();
  x.store.cases[0].alertIds=x.store.alerts.map(a=>a.id);
  assert.deepEqual(x.M.inputEvidence(x.store,r).map(e=>e.id).sort(),expected);assert.equal(JSON.stringify(r),before);
- x.s.location.hash='#/cases/17420/overview';const html=x.casePage();assert.ok(html.includes('输入告警携带的证据'));assert.ok(!html.includes('AI 已采用证据'));
+ x.s.location.hash=`#/cases/17420/investigations?run=${r.id}&view=overview`;const html=x.casePage();assert.ok(html.includes('输入告警携带的证据'));assert.ok(!html.includes('AI 已采用证据'));
 });
 test('recorded stages and ledger filters expose existing work without inventing roles',()=>{
  const x=load(),r=x.s.window.savedInvestigationRuns[0];x.s.location.hash=`#/investigations/${r.id}/process`;
- const phases=x.investigationView.workbench();assert.ok(phases.includes('上下文补充'));assert.ok(phases.includes(r.depth.strategy_id));assert.ok(phases.includes('调查截断'));assert.ok(!phases.includes('取证分析 · Forensic'));
+ const phases=x.investigationView.workbench();assert.ok(phases.includes('上下文补充'));assert.ok(!phases.includes(r.depth.strategy_id));assert.ok(phases.includes('执行明细'));assert.ok(!phases.includes('取证分析 · Forensic'));
  x.s.location.hash=`#/investigations/${r.id}/ledger?kind=tool_call&agent=deep-investigator`;
- const html=x.investigationView.workbench(),bodies=html.slice(html.indexOf('<div class="iv-timeline">'));
+ const html=x.investigationView.workbench();assert.ok(html.includes(r.depth.strategy_id));assert.ok(html.includes('调查截断'));const bodies=html.slice(html.indexOf('<div class="iv-timeline">'));
  assert.equal((bodies.match(/class="iv-step"/g)||[]).length,r.steps.filter(s=>s.kind==='tool_call'&&s.name==='deep-investigator').length);
  assert.ok(bodies.includes('process_activity'));assert.ok(!bodies.includes("graph node &#39;triage&#39; completed"));
  x.s.location.hash=`#/investigations/${r.id}/ledger?kind=missing`;assert.ok(x.investigationView.workbench().includes('没有符合筛选条件的记录'));
