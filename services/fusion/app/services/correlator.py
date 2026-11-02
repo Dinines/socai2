@@ -3,14 +3,14 @@ Alert correlation engine: groups related alerts into incidents using entity and
 MITRE ATT&CK context stored in Redis.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import redis.asyncio as aioredis
 import structlog
 
 from app.core.config import settings
-from app.models.alert import AlertSeverity, IncidentSummary, RawAlert
+from app.models.alert import AlertSeverity, CorrelationBasis, IncidentSummary, RawAlert
 
 logger = structlog.get_logger()
 
@@ -38,23 +38,25 @@ class Correlator:
         self._window = settings.correlation_window_seconds
         self._max_alerts = settings.max_alerts_per_incident
 
-    async def correlate(self, alert: RawAlert) -> tuple[bool, IncidentSummary]:
+    async def correlate(self, alert: RawAlert) -> tuple[bool, IncidentSummary, CorrelationBasis]:
         """
         Attempt to correlate an alert to an existing incident.
 
         Returns:
-            (is_correlated_to_existing, incident_summary)
+            (is_correlated_to_existing, incident_summary, actual_decision_basis)
         """
         corr_key = alert.correlation_key()
         index_key = f"{_CORRELATION_PREFIX}{corr_key}"
 
         # Look up existing incident ID for this correlation key
         incident_id_bytes = await self._redis.get(index_key)
+        reason = "no_index"
 
         if incident_id_bytes:
             incident_id = incident_id_bytes.decode()
             incident = await self._load_incident(incident_id)
             if incident and (str(alert.id) in incident.alert_ids or incident.alert_count < self._max_alerts):
+                reason = "existing_member" if str(alert.id) in incident.alert_ids else "matched"
                 # Update existing incident
                 incident = await self._merge_alert(incident, alert)
                 await self._save_incident(incident)
@@ -64,7 +66,8 @@ class Correlator:
                     alert_id=str(alert.id),
                     alert_count=incident.alert_count,
                 )
-                return True, incident
+                return True, incident, self._basis(alert, "correlated", reason)
+            reason = "member_limit" if incident else "missing_summary"
 
         # Create a new incident
         incident = self._create_incident(alert)
@@ -77,7 +80,17 @@ class Correlator:
             alert_id=str(alert.id),
             correlation_key=corr_key,
         )
-        return False, incident
+        return False, incident, self._basis(alert, "new_incident", reason)
+
+    def _basis(self, alert: RawAlert, decision: str, reason: str) -> CorrelationBasis:
+        kind, value = alert.correlation_entity()
+        return CorrelationBasis(
+            entity_type=kind, entity_value=value,
+            tactic=alert.mitre_tactics[0] if alert.mitre_tactics else None,
+            correlation_key=alert.correlation_key(), window_seconds=self._window,
+            max_alerts=self._max_alerts, decision=decision, reason=reason,
+            decided_at=datetime.now(UTC),
+        )
 
     def _create_incident(self, alert: RawAlert) -> IncidentSummary:
         incident = IncidentSummary(

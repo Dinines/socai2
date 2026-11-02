@@ -1,5 +1,7 @@
 # 第5段：Case实际输入、模型视图、Tool与历史复用
 
+**2026-11-02实施更新：** [第4批](field-alignment-fix4-20261102.md)已补S5-01：A检测/来源及T同次confidence/判定/建议、Run事件时间进入真实context及hash；新增模型字段值2048字节，guard和省略标记保留。S5-02/03原文语义及Tool明细仍待第7批；以下保留修前事实，尚未线上验收。
+
 日期：2026-11-01。接续[六段核对计划](field-alignment-confirmations-20261101.md)，本段本地核对完成，未实施修复或线上验收。需求仍为远端 `origin/codex/functional-analysis` 的 `48f54abd42d643ff53a71fffbb1f6045a90d9f80`（本段再次只读核对未变）及用户第1—16项决定。源码为 `b758351d7125590c090a751837f96c86df331652` 加现有工作区，不能将未提交的r13修复称为HEAD内容。
 
 边界从Fusion已接收的数据开始。本段只问已有材料怎样被调查消费、能补查哪些字段，不要求上游补数，也不比较调查页面设计。证据目录：[第5段本地观察](../operations/evidence/fusion-field-stage5-20261101/manifest.json)。

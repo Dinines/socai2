@@ -75,7 +75,7 @@ INSERT INTO alerts (
     connector_id, connector_type, source_event_ids, ocsf_class_uid,
     rule_id, rule_name, external_id,
     affected_hosts, affected_users, affected_ips,
-    session_id, session_key_kind, originating_human, enrichment_data
+    session_id, session_key_kind, originating_human, enrichment_data, first_seen, last_seen
 )
 SELECT
     $1, $2, $3, $4, $5, 'new',
@@ -85,7 +85,7 @@ SELECT
     $18, $19, $20::jsonb, $21,
     $22, $23, $24,
     $25::jsonb, $26::jsonb, $27::jsonb,
-    $28, $29, $30, $31::jsonb
+    $28, $29, $30, $31::jsonb, COALESCE($17, NOW()), COALESCE($17, NOW())
 WHERE NOT EXISTS (
     SELECT 1 FROM alerts WHERE tenant_id = $2 AND dedup_hash = $11::text
 )
@@ -117,11 +117,22 @@ RETURNING id
 #: ``'["evt-1"]'::jsonb @> '"evt-1"'::jsonb`` is the membership test.
 _DEDUP_SOURCE_EVENT_SQL = """
 UPDATE alerts
-   SET source_event_ids = source_event_ids || to_jsonb($3::text)
+   SET source_event_ids = CASE WHEN jsonb_array_length(source_event_ids) < $4
+                              THEN source_event_ids || to_jsonb($3::text) ELSE source_event_ids END,
+       enrichment_data = CASE WHEN jsonb_array_length(source_event_ids) >= $4
+                         THEN jsonb_set(COALESCE(enrichment_data, '{}'::jsonb), '{socai2_fusion}',
+                              COALESCE(enrichment_data->'socai2_fusion', '{}'::jsonb)
+                              || '{"source_event_ids_truncated":true}'::jsonb, true)
+                         ELSE enrichment_data END,
+       first_seen = LEAST(first_seen, COALESCE($5::timestamptz, first_seen)),
+       last_seen = GREATEST(last_seen, COALESCE($5::timestamptz, last_seen)),
+       updated_at = NOW()
  WHERE tenant_id = $1
    AND dedup_hash = $2::text
    AND NOT (source_event_ids @> to_jsonb($3::text))
-   AND jsonb_array_length(source_event_ids) < $4
+   AND (jsonb_array_length(source_event_ids) < $4
+        OR enrichment_data #>> '{socai2_fusion,source_event_ids_truncated}' IS DISTINCT FROM 'true'
+        OR $5::timestamptz < first_seen OR $5::timestamptz > last_seen)
 """
 
 #: Ceiling on `source_event_ids` per alert. 200 ids is ~8 KB of JSONB, and the
@@ -250,8 +261,16 @@ def _insert_args(fused: FusedAlert, *, delivery_snapshot: dict[str, Any] | None 
             "source_alert_id": str(alert.source_alert_id) if getattr(alert, "source_alert_id", None) else None,
             "source": getattr(alert, "source", None),
             "connector_id": str(alert.connector_id) if alert.connector_id else None,
+            "event_id": alert.identity_event_id,
+            "origin": alert.identity_origin,
         },
         "incident_id": str(fused.incident_id) if getattr(fused, "incident_id", None) else None,
+        "correlation_basis": fused.correlation_basis.model_dump(mode="json") if fused.correlation_basis else None,
+        "field_metadata": alert.field_metadata,
+        "event_time_source": alert.field_metadata.get("event_time_source", "alert.event_time" if alert.event_time else "unknown"),
+        "event_time_fallback": alert.event_time is None,
+        "source_event_ids_truncated": len(set(alert.source_event_ids)) > _MAX_SOURCE_EVENT_IDS or bool(alert.field_metadata.get("source_window", {}).get("truncated")),
+        "confidence_status": fused.confidence_status,
         "ioc_lookup": (getattr(fused, "enrichments", None) or {}).get("ioc_lookup"),
     }
     if delivery_snapshot is not None:
@@ -276,15 +295,15 @@ def _insert_args(fused: FusedAlert, *, delivery_snapshot: dict[str, Any] | None 
         json.dumps(_entities(fused)),
         json.dumps(alert.raw_event, default=str),
         alert.fingerprint(),
-        int(round(fused.confidence_score * 100)),
-        fused.confidence_label.value,
-        json.dumps([f.model_dump() for f in fused.confidence_rationale]),
+        int(round(fused.confidence_score * 100)) if fused.confidence_status == "computed" else None,
+        fused.confidence_label.value if fused.confidence_status == "computed" else None,
+        json.dumps([f.model_dump() for f in fused.confidence_rationale]) if fused.confidence_status == "computed" else None,
         fused.narrative,
         fused.anomaly_score,
         alert.event_time,
         alert.connector_id,
         alert.connector_type,
-        json.dumps(alert.source_event_ids),
+        json.dumps(list(dict.fromkeys(alert.source_event_ids))[:_MAX_SOURCE_EVENT_IDS]),
         alert.ocsf_class_uid,
         alert.rule_id,
         alert.rule_name,
@@ -519,6 +538,7 @@ class AlertSink:
                     fingerprint,
                     str(source_event_id),
                     _MAX_SOURCE_EVENT_IDS,
+                    alert.event_time,
                 )
         except Exception as exc:  # noqa: BLE001 — provenance is not worth the alert
             logger.warning("alert_sink.dedup_provenance_failed", error=str(exc))

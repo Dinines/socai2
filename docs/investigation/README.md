@@ -1,10 +1,18 @@
 # 调查模块文档入口
 
+**2026-11-03 最新入口：** [本地新版页面与独立设计分支](local-design-preview-20261103.md)。远端已更新为 c71afb5，用户要求先开本地页面、提交当前进度，再理解三类调查流程和页面设计；下方85项仍保留原需求版本，尚未全量按新版重审。
+
+**最新逐项对照（2026-11-02）：** [告警、事件页面 85 项字段与数据条件明细](page-field-support-matrix-20261102.md)。按页面字段→存储→读取出口→当前差异阅读；有明确剩余存储、关联和 Case／Tool 漏读清单。采用固定需求 48f54abd 与本地第 1—4 批修改，非线上验收；不继续实现页面功能。
+
+**最新任务边界（2026-11-02，用户纠偏）：** 本轮主要负责字段与数据支撑，页面功能由后端实现。以远端告警／事件页面及字段对照为需求参照，确认Fusion收到的已有数据是否保留、落库、关联、语义准确并可供读取／派生；只修这些内部数据断点。搜索、排序、统计卡、导出、管理表单、状态流转和级联处置只核其所需字段／关系／状态来源能否支撑，列出数据合同及缺口交给后端，不继续实现这些功能或把其尚未实现当字段验收失败。已确认16项口径保留为数据语义约束，不重问。输入前置问题仍排除，报告修复继续暂停。
+
+**最新实施（2026-11-02）：** [第4批](field-alignment-fix4-20261102.md)本地完成共享字段读取：原厂/编号、IOC/成员对象及阶段、负责人/资产/多Case、同次评分与Case检测字段、业务时间和材料新鲜度分开。68相关用例最新通过，初失败保留，基线对照通过，无DDL。第1—4批仍在工作区，HEAD为b400fd0，未部署；下一按顶部新范围汇总字段支撑及剩余数据缺口。功能实现交后端，Case字段读取缺口继续核对，报告保持暂停。
+
 **最新范围边界：** 用户明确Fusion前置输入问题不用处理。输入缺失／错误及上游规范化只记限制，不追查或修复；从Fusion收到数据后检查内部保留、转换、存储及下游使用。第1段8项观察已[按此重分类](fusion-ingestion-field-audit-20261101.md#用户补充边界及结论重分类)，不把输入缺口自动列为开发任务。
 
 **当前工作：** 按用户最新要求，报告问题先保留、修复暂缓；[远端告警/事件页面对照及字段确认](field-alignment-confirmations-20261101.md)六段本地核对完成。以页面需求贯通Fusion接收/入库、API、Case调查、Tool和报告；第1—16项决定保留，没有新增业务语义待答复。排除调查页面设计比对，不排除调查后端。
 
-**分段结果：** [六段计划](field-alignment-confirmations-20261101.md#分段核对计划)全部完成本地核对：[入库](fusion-ingestion-field-audit-20261101.md)、[湖对应](fusion-lake-field-audit-20261101.md)、[关系与资产](fusion-relations-field-audit-20261101.md)、[页面API及管理](page-api-management-field-audit-20261101.md)、[Case输入/Tool](case-input-tool-field-audit-20261101.md)、[报告影响与修复顺序](field-alignment-impact-and-repair-plan-20261101.md)。最新确认检测/分诊字段遗漏、原文语义投影和Tool字段缺口；4项本地观察及r13原件复核。无需新建记忆层，字段与报告问题分开处理。下一建议先修S2-01/02事件ID及湖列绑定；尚未修改业务源码或线上验收。
+**分段结果：** [六段计划](field-alignment-confirmations-20261101.md#分段核对计划)全部完成本地核对：[入库](fusion-ingestion-field-audit-20261101.md)、[湖对应](fusion-lake-field-audit-20261101.md)、[关系与资产](fusion-relations-field-audit-20261101.md)、[页面API及管理](page-api-management-field-audit-20261101.md)、[Case输入/Tool](case-input-tool-field-audit-20261101.md)、[报告影响与修复顺序](field-alignment-impact-and-repair-plan-20261101.md)。确认检测/分诊字段遗漏、原文语义投影和Tool字段缺口；核对阶段4项本地观察及r13原件复核。无需新建记忆层，字段与报告问题分开处理。后续修改按顶部实施记录，不以核对完成冒充线上验收。
 
 **当前状态（2026-11-01）：** r13已部署。A报告输出截断；B虽completed/partial，仍有空查询反证化、审批缺失语义及Tool编号偏差，整体报告验收未过，C跳过。4真实查询/0复用/6模型20334tokens；原raw完整，旧数据与报告保持。OpenSpec16/17，5.3未完成。
 
@@ -13,7 +21,7 @@
 - [设计对齐](current-design-alignment-20261027.md) / [接口合同](interface-contracts-20261027.md) / [证据目录](evidence-catalog-20261027.md)。
 - [r13原因与结果](../operations/evidence/investigation-r13-20261101/review.md) / [OpenSpec 任务](../../openspec/changes/fix-investigation-audit-gaps/tasks.md)。
 
-用户继续后已完成本批部署与A/B复验，批次结束不重试；随后要求先保留报告问题、转入页面字段对照，当前尚未实施字段修改。下方按日期保留历史进展，其中“未部署”“下一步”“当前”均指当时批次，不覆盖以上现状。原 [r3 独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)仅说明其本地交付范围。
+此前r13已完成部署与A/B复验，批次结束不重试；随后转入字段对照，现已有上述两批本地修复。下方按日期保留历史进展，其中“未部署”“下一步”“当前”均指当时批次，不覆盖以上现状。原 [r3 独立结束审阅](../../openspec/changes/fix-investigation-audit-gaps/audit.md)仅说明其本地交付范围。
 
 ## 历史进展
 

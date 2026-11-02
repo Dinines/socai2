@@ -8,6 +8,8 @@ needed; the live-container assertion is the integration.yml gate.
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 from app.services.lake_writer import LakeWriter, event_to_row
 
@@ -28,7 +30,7 @@ def _message(**ocsf_overrides) -> dict:
         "actor": {"user": {"name": "svc-backup"}},
         "src_endpoint": {"ip": "10.20.30.40", "port": 51515},
         "dst_endpoint": {"ip": "203.0.113.9", "port": 443},
-        "file": {"fingerprints": [{"value": "a" * 64}], "path": "/tmp/x"},
+        "file": {"fingerprints": [{"algorithm": "SHA256", "value": "a" * 64}], "path": "/tmp/x"},
         "mitre_attck": [{"technique_id": "T1003", "tactic_names": ["Credential Access"]}],
         "raw_data": "raw log line",
     }
@@ -40,11 +42,13 @@ class _FakeClient:
     def __init__(self) -> None:
         self.inserted: list[dict] = []
         self.fail = False
+        self.statements: list[str] = []
 
     def execute(self, sql, rows=None, **kwargs):  # noqa: ANN001
         if self.fail:
             raise RuntimeError("clickhouse down")
         if rows:
+            self.statements.append(sql)
             self.inserted.extend(rows)
         return []
 
@@ -132,12 +136,13 @@ async def test_flush_if_stale_flushes_old_buffer():
     assert len(fake.inserted) == 1
 
 
-async def test_omits_none_event_id_from_insert_row():
+async def test_omits_default_event_id_from_both_sql_and_insert_row():
     w, fake = _writer_with_fake(batch_size=1)
     msg = _message()
     msg["id"] = "not-a-uuid"
     await w.write_event(msg)
     assert "event_id" not in fake.inserted[0]
+    assert "event_id" not in fake.statements[0]
 
 
 # ── Fail-soft ────────────────────────────────────────────────────────────────
@@ -147,9 +152,10 @@ async def test_flush_failure_drops_batch_and_does_not_raise():
     w, fake = _writer_with_fake(batch_size=2)
     fake.fail = True
     await w.write_event(_message())
-    await w.write_event(_message())  # triggers flush -> fails
+    assert await w.write_event(_message()) is False  # triggers flush -> fails
     assert w.flush_failures == 1
     assert w.rows_written == 0
+    assert w.rows_dropped == 2
     assert w.metrics()["buffered"] == 0  # batch was dropped, not re-buffered
 
 
@@ -158,6 +164,52 @@ async def test_disabled_writer_is_noop():
     w._disabled = True  # noqa: SLF001
     assert await w.write_event(_message()) is False
     await w.flush()  # no raise
+
+
+@pytest.mark.parametrize("identity_kind", ["metadata.uid", "missing", "opaque"])
+async def test_mixed_batch_binds_with_actual_driver_columns(identity_kind):
+    from clickhouse_driver.block import RowOrientedBlock
+
+    class BindingClient(_FakeClient):
+        def execute(self, sql, rows=None, **kwargs):
+            columns = sql.split("(", 1)[1].split(")", 1)[0].split(", ")
+            # Real dict-row binding, without a network connection. A missing
+            # key in a declared column raises exactly as in the live driver.
+            assert all(set(row) == set(columns) for row in rows)
+            # The driver replaces dicts with value lists in-place; retain the
+            # input dictionaries for the fake client's recorded insert rows.
+            block = RowOrientedBlock([(c, "String") for c in columns], deepcopy(rows), types_check=True)
+            assert block.num_rows == len(rows)
+            return super().execute(sql, rows, **kwargs)
+
+    writer = LakeWriter(host="unused.invalid", batch_size=2)
+    client = BindingClient()
+    writer._client = client
+    first = _message()
+    first.pop("id")
+    if identity_kind == "metadata.uid":
+        first["ocsf_event"]["metadata"]["uid"] = "ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB"
+    elif identity_kind == "opaque":
+        first["id"] = "vendor-42"
+    assert await writer.write_event(first) is True
+    assert writer.rows_written == 0
+    assert await writer.write_event(_message()) is True
+    assert writer.rows_written == 2
+    assert writer.flush_failures == 0
+    assert writer.rows_dropped == 0
+    assert writer.metrics()["buffered"] == 0
+    if identity_kind == "metadata.uid":
+        assert client.inserted[0]["event_id"] == "abcdefab-cdef-abcd-efab-cdefabcdefab"
+        assert len(client.statements) == 1
+    else:
+        assert len(client.statements) == 2
+        assert sum("event_id" not in row for row in client.inserted) == 1
+
+
+async def test_unstarted_writer_does_not_report_buffer_acceptance():
+    writer = LakeWriter(host="unused.invalid")
+    assert await writer.write_event(_message()) is False
+    assert writer.metrics()["buffered"] == 0
 
 
 # ── depth plan 2.2: the activity projection ────────────────────────────────

@@ -191,6 +191,7 @@ class ConfidenceScorer:
 
     def score(self, fused: FusedAlert, priors: dict[str, SignaturePrior] | None = None) -> FusedAlert:
         if not self._enabled:
+            fused.confidence_status = "disabled"
             # Break-glass path. Leave the model defaults in place so the
             # frontend can degrade gracefully (no chip, no rationale panel)
             # without raising on missing fields.
@@ -320,6 +321,7 @@ class ConfidenceScorer:
         label = _band(score)
 
         fused.confidence_score = round(score, 4)
+        fused.confidence_status = "computed"
         fused.confidence_label = label
         # Sort rationale by absolute contribution, descending — UI shows the
         # most-impactful evidence first.

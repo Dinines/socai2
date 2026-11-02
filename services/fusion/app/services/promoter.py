@@ -45,6 +45,8 @@ from typing import Any
 import structlog
 
 from app.models.alert import AlertSeverity, RawAlert
+from app.services.event_schema import event_alert_identity, resolve_source_event_id
+from app.services.received_fields import received_projection, received_rule
 from app.services.provenance import extract_provenance, product_label
 from app.services.raw_data import decode_raw_data
 
@@ -304,9 +306,9 @@ def _note_not_promoted(message: dict[str, Any], ocsf: dict[str, Any]) -> None:
             severity_id=severity_id,
             promote_severity_floor=_PROMOTE_SEVERITY_FLOOR,
             reason=reason,
-            # The event is in the lake either way; this is the pointer to it.
-            event_id=str(message.get("id") or "")[:64] or None,
-            note="archived to the lake, not raised as an alert; further events of this shape are counted in promoter.not_promoted_rollup",
+            # Promotion does not establish whether the independent lake write succeeded.
+            event_id=(resolve_source_event_id(message, ocsf) or "")[:64] or None,
+            note="not raised as an alert; lake archival is independent, check writer metrics for persistence; further events of this shape are counted in promoter.not_promoted_rollup",
         )
 
     if len(_sampler.pending) < _MAX_TRACKED_SHAPES or shape in _sampler.pending:
@@ -373,7 +375,6 @@ def promote_normalized_event(message: dict[str, Any]) -> RawAlert | None:
     severity_id = ocsf.get("severity_id")
     severity = _SEVERITY_BY_ID.get(severity_id if isinstance(severity_id, int) else 0, AlertSeverity.MEDIUM)
 
-    tactics, techniques = _mitre(ocsf)
     connector_id, connector_type, class_uid = extract_provenance(message, ocsf)
 
     title = _title(ocsf)
@@ -388,20 +389,16 @@ def promote_normalized_event(message: dict[str, Any]) -> RawAlert | None:
         description = ""
 
     return RawAlert(
+        **event_alert_identity(message, ocsf, "promotion"),
         tenant_id=tenant_id,
         source=_source(ocsf),
         title=title,
         description=description,
         severity=severity,
-        src_ip=_get_nested(ocsf, "src_endpoint", "ip"),
-        dst_ip=_get_nested(ocsf, "dst_endpoint", "ip"),
-        hostname=_get_nested(ocsf, "device", "name"),
-        username=_get_nested(ocsf, "actor", "user", "name"),
+        **received_projection(message, ocsf),
+        **received_rule(ocsf),
         file_hash=_first_file_hash(ocsf),
-        mitre_tactics=tactics,
-        mitre_techniques=techniques,
         raw_event=ocsf,
-        event_time=_event_time(ocsf),
         connector_id=connector_id,
         connector_type=connector_type,
         ocsf_class_uid=class_uid,

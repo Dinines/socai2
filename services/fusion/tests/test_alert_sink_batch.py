@@ -145,59 +145,10 @@ def _coro(value):  # noqa: ANN001, ANN202
 
 
 def _fused(index: int):  # noqa: ANN202
-    """A fused alert with only what the sink reads."""
-    pytest.importorskip("app.models")
-    from types import SimpleNamespace
+    """Use the actual contract so optional model additions cannot break the double."""
     from uuid import uuid4
+    from app.models.alert import FusedAlert, FusionDecision, RawAlert
 
-    from app.services.alert_sink import FusionDecision
-
-    alert = SimpleNamespace(
-        tenant_id=uuid4(),
-        title=f"alert {index}",
-        description=None,
-        severity=SimpleNamespace(value="high"),
-        mitre_tactics=[],
-        mitre_techniques=[],
-        raw_event={},
-        fingerprint=lambda: f"fp-{index}",
-        event_time=None,
-        connector_id=None,
-        connector_type=None,
-        source_event_ids=[],
-        ocsf_class_uid=None,
-        rule_id=None,
-        rule_name=None,
-        external_id=None,
-        # The IOC and entity helpers read these. A namespace missing
-        # them raised inside the sink's own except clause and every row
-        # came back FAILED — a double more *limited* than the real
-        # model, which is the mirror of the usual problem here.
-        src_ip=None,
-        dst_ip=None,
-        file_hash=None,
-        domain=None,
-        url=None,
-        hostname=None,
-        username=None,
-        process_name=None,
-    )
-    return SimpleNamespace(
-        id=uuid4(),
-        alert=alert,
-        fusion_decision=FusionDecision.NEW_ALERT,
-        confidence_score=0.5,
-        confidence_label=SimpleNamespace(value="medium"),
-        confidence_rationale=[],
-        narrative="",
-        anomaly_score=0.0,
-        correlated_events=[],
-        # Depth plan 2.4. Same reason as the alert fields above: a double
-        # more *limited* than the real model raised inside the sink's own
-        # except clause and every row came back FAILED. None is also the
-        # right value here — these rows are not normalized events and
-        # genuinely have no session.
-        session_id=None,
-        session_key_kind=None,
-        originating_human=None,
-    )
+    alert = RawAlert(tenant_id=uuid4(), source="batch-fixture", title=f"alert {index}", severity="high")
+    alert.id = alert.deterministic_id()
+    return FusedAlert(id=alert.id, tenant_id=alert.tenant_id, alert=alert, fusion_decision=FusionDecision.NEW_ALERT)

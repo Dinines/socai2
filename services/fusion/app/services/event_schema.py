@@ -58,17 +58,39 @@ def resolve_schema_version(payload: dict[str, Any]) -> str:
     return str(v) if isinstance(v, str | int) and str(v).strip() else DEFAULT_SCHEMA_VERSION
 
 
-def _resolve_source_event_id(payload: dict[str, Any], ocsf: dict[str, Any] | None) -> str | None:
+def canonical_source_event_id(value: str) -> str:
+    """Normalize UUID references; keep opaque source identifiers unchanged."""
+    try:
+        return str(uuid.UUID(value))
+    except (ValueError, TypeError, AttributeError):
+        return value
+
+
+def resolve_source_event_id(payload: dict[str, Any], ocsf: dict[str, Any] | None) -> str | None:
+    """One precedence for alert lineage and lake rows: event_id, id, metadata.uid.
+
+    Do not replace an opaque preferred identifier with a different lower-priority
+    UUID. Original fields remain in the source payload for review.
+    """
     for candidate in (payload.get("event_id"), payload.get("id")):
         if isinstance(candidate, str) and candidate:
-            return candidate
+            return canonical_source_event_id(candidate)
     if ocsf is not None:
         meta = ocsf.get("metadata")
         if isinstance(meta, dict):
             uid = meta.get("uid")
             if isinstance(uid, str) and uid:
-                return uid
+                return canonical_source_event_id(uid)
     return None
+
+
+def event_alert_identity(payload: dict[str, Any], ocsf: dict[str, Any], origin: str) -> dict[str, Any]:
+    """Use received identity for generated alerts; never invent one from time/title."""
+    event_id = resolve_source_event_id(payload, ocsf)
+    if event_id is None:
+        return {}  # Input without identity keeps its existing legacy behavior.
+    return {"identity_version": "event-v1", "identity_event_id": event_id,
+            "identity_origin": origin, "source_event_ids": [event_id]}
 
 
 def validate_raw_event(payload: Any, *, topic: str = "aisoc.raw_events") -> EventValidation:
@@ -94,13 +116,13 @@ def validate_raw_event(payload: Any, *, topic: str = "aisoc.raw_events") -> Even
             ok=False,
             schema_version=version,
             reason="tenant_id is not a UUID (mis-configured connector)",
-            source_event_id=_resolve_source_event_id(payload, ocsf),
+            source_event_id=resolve_source_event_id(payload, ocsf),
         )
 
     return EventValidation(
         ok=True,
         schema_version=version,
-        source_event_id=_resolve_source_event_id(payload, ocsf),
+        source_event_id=resolve_source_event_id(payload, ocsf),
         tenant_id=tenant_id,
     )
 
@@ -119,7 +141,7 @@ def validate_raw_alert(payload: Any, *, topic: str = "aisoc.alerts.raw") -> Even
     known = KNOWN_SCHEMA_VERSIONS.get(topic, frozenset())
     if version not in known:
         return EventValidation(ok=False, schema_version=version, reason=f"unknown schema_version '{version}' for {topic}")
-    source_event_id = _resolve_source_event_id(payload, None)
+    source_event_id = resolve_source_event_id(payload, None)
     tenant = payload.get("tenant_id")
     return EventValidation(
         ok=True,

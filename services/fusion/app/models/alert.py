@@ -52,8 +52,11 @@ class RawAlert(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     tenant_id: UUID
-    identity_version: Literal["legacy-v1", "source-v1"] = "legacy-v1"
+    identity_version: Literal["legacy-v1", "source-v1", "event-v1"] = "legacy-v1"
     source_alert_id: UUID | None = None
+    # Identity of a received event, distinct from a vendor finding identifier.
+    identity_event_id: str | None = None
+    identity_origin: Literal["promotion", "rule", "window"] | None = None
     source: str
     title: str
     description: str = ""
@@ -75,6 +78,7 @@ class RawAlert(BaseModel):
 
     # Raw event
     raw_event: dict[str, Any] = Field(default_factory=dict)
+    field_metadata: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
     # Missing is unknown; zero is an explicitly supplied score.
     risk_score: float | None = Field(default=None, allow_inf_nan=False)
@@ -103,6 +107,8 @@ class RawAlert(BaseModel):
     def require_source_identity(self) -> "RawAlert":
         if self.identity_version == "source-v1" and self.source_alert_id is None:
             raise ValueError("source-v1 requires source_alert_id")
+        if self.identity_version == "event-v1" and (not self.identity_event_id or not self.identity_origin):
+            raise ValueError("event-v1 requires identity_event_id and identity_origin")
         return self
 
     def deterministic_id(self) -> UUID:
@@ -117,6 +123,17 @@ class RawAlert(BaseModel):
 
     def fingerprint(self) -> str:
         """Generate a stable deduplication fingerprint."""
+        if self.identity_version == "event-v1":
+            fields = {
+                "identity_version": self.identity_version,
+                "tenant_id": str(self.tenant_id),
+                "connector_id": str(self.connector_id) if self.connector_id else None,
+                "source": self.source,
+                "event_id": self.identity_event_id,
+                "origin": self.identity_origin,
+                "rule_id": self.rule_id if self.identity_origin != "promotion" else None,
+            }
+            return hashlib.sha256(json.dumps(fields, sort_keys=True).encode()).hexdigest()
         if self.identity_version == "source-v1":
             fields = {
                 "identity_version": self.identity_version,
@@ -141,12 +158,40 @@ class RawAlert(BaseModel):
         canonical = json.dumps(fields, sort_keys=True)
         return hashlib.sha256(canonical.encode()).hexdigest()
 
+    def correlation_entity(self) -> tuple[str | None, str | None]:
+        for kind, value in (("ip", self.src_ip), ("host", self.hostname), ("user", self.username), ("domain", self.domain)):
+            if value:
+                return kind, value
+        return None, None
+
     def correlation_key(self) -> str:
-        """Generate a key for alert correlation (grouping related alerts)."""
-        # Correlate by primary entity and tactic
-        entity = self.src_ip or self.hostname or self.username or self.domain or "unknown"
-        tactic = self.mitre_tactics[0] if self.mitre_tactics else "unknown"
-        return f"{self.tenant_id}:{entity}:{tactic}"
+        """Typed v2 key; missing objects cannot link unrelated alerts.
+
+        The version isolates old untyped Redis indexes. JSON keeps colons in
+        actual names from colliding with separators. The primary-object and
+        first-tactic policy is unchanged.
+        """
+        kind, value = self.correlation_entity()
+        if kind is None:
+            kind, value = "alert", str(self.deterministic_id())
+        tactic = self.mitre_tactics[0] if self.mitre_tactics else None
+        return f"{self.tenant_id}:entity-v2:" + json.dumps([kind, value, tactic], separators=(",", ":"))
+
+
+class CorrelationBasis(BaseModel):
+    """The decision actually made by Correlator, saved with each member."""
+
+    policy_version: Literal["primary-entity-v2"] = "primary-entity-v2"
+    entity_type: str | None
+    entity_value: str | None
+    tactic: str | None
+    correlation_key: str
+    window_seconds: int
+    window_basis: Literal["processing_time_index_ttl"] = "processing_time_index_ttl"
+    max_alerts: int
+    decision: Literal["new_incident", "correlated"]
+    reason: Literal["no_index", "missing_summary", "member_limit", "matched", "existing_member"]
+    decided_at: datetime
 
 
 class ConfidenceLabel(str, Enum):
@@ -187,6 +232,7 @@ class FusedAlert(BaseModel):
     fusion_decision: FusionDecision
     duplicate_of: UUID | None = None
     alert: RawAlert
+    correlation_basis: CorrelationBasis | None = None
 
     # Enrichment data (populated by enrichment service)
     enrichments: dict[str, Any] = Field(default_factory=dict)
@@ -205,6 +251,7 @@ class FusedAlert(BaseModel):
     confidence_label: ConfidenceLabel = ConfidenceLabel.MEDIUM
     confidence_score: float = Field(default=0.5, ge=0.0, le=1.0)
     confidence_rationale: list[ConfidenceFactor] = Field(default_factory=list)
+    confidence_status: Literal["unknown", "computed", "disabled", "failed"] = "unknown"
 
     # Deterministic correlation narrative — Wave 6 of v1.5 SOC Console Parity.
     # Populated at fusion time by ``services.fusion.app.services.narrative.build_narrative``

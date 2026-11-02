@@ -20,9 +20,12 @@ from app.models.alert import FusedAlert, FusionDecision, RawAlert
 from app.services.ai_asset_recorder import AiAssetRecorder
 from app.services.alert_sink import AlertSink, PersistOutcome
 from app.services.detection_engine import DetectionEngine
-from app.services.delivery_recovery import DeliveryHold, DeliveryRecovery, make_snapshot, restore_snapshot
+from app.services.delivery_recovery import (
+    DeliveryHold, DeliveryRecovery, legacy_event_candidate, make_snapshot, matches_legacy_event, restore_snapshot,
+)
 from app.services.dlq import DeadLetter, DeadLetterQueue, LoggingDLQ, safe_record
-from app.services.event_schema import validate_event
+from app.services.event_schema import canonical_source_event_id, validate_event
+from app.services.received_fields import nested
 from app.services.fusion_engine import FusionEngine
 from app.services.lake_writer import LakeWriter
 from app.services.promoter import promote_normalized_event
@@ -44,7 +47,7 @@ _METRICS = {
     "persisted": 0,
     "persist_unavailable": 0,
     "persist_failed": 0,
-    "laked": 0,
+    "lake_accepted": 0,  # May still be buffered; get_metrics derives laked from confirmed inserts.
     # Events recorded against a session (depth plan 2.4). Counted separately
     # from `laked` so a deployment can see that the session store is working
     # rather than inferring it from alerts that happen to carry an id.
@@ -374,13 +377,17 @@ class FusionWorker:
                     # id as the Postgres row and the graph node, which is what
                     # lets a hunt join the three without any of them having
                     # agreed on anything at write time.
-                    payload["activity"]["session"]["id"] = str(session.id)
+                    block = nested(payload, "activity", "session")
+                    if not isinstance(block, dict):
+                        block = nested(payload, "ocsf_event", "activity", "session")
+                    if isinstance(block, dict):
+                        block["id"] = str(session.id)
 
             # Phase A1 — archive EVERY normalized event into the ClickHouse lake
             # first, independent of the promotion decision below. A non-promoted
             # Medium event still has to be queryable via /lake/sql.
             if self._lake is not None and await self._lake.write_event(payload):
-                _METRICS["laked"] += 1
+                _METRICS["lake_accepted"] += 1
 
             # Depth 6.1 — the observed AI estate is built here rather than by
             # a separate worker reading the lake, for one reason: this is the
@@ -434,6 +441,8 @@ class FusionWorker:
             # Ingest-normalized OCSF event — run the deterministic promotion
             # policy (see app/services/promoter.py). Non-promoted events are
             # dropped here by design; the detect stage (above) owns rule eval.
+            if not settings.event_promotion_enabled:
+                return
             alert = promote_normalized_event(payload)
             if alert is None:
                 _METRICS["not_promoted"] += 1
@@ -482,8 +491,11 @@ class FusionWorker:
         durable row id + a truthful persistence outcome downstream can trust.
         """
         # Stamp source-event provenance + canonical id (issue #568).
-        if source_event_id and source_event_id not in alert.source_event_ids:
-            alert.source_event_ids.append(source_event_id)
+        alert.source_event_ids = list(dict.fromkeys(canonical_source_event_id(value) for value in alert.source_event_ids))
+        if source_event_id:
+            source_event_id = canonical_source_event_id(source_event_id)
+            if source_event_id not in alert.source_event_ids:
+                alert.source_event_ids.append(source_event_id)
         alert.id = alert.deterministic_id()
 
         if self._sink is None:
@@ -495,6 +507,13 @@ class FusionWorker:
         # different candidate. Never reconstruct an old row from current
         # raw/enrichment data and call it the first result.
         previous = await self._sink.lookup_delivery(alert)
+        if not previous.exists and alert.identity_version == "event-v1":
+            legacy = legacy_event_candidate(alert)
+            old = await self._sink.lookup_delivery(legacy)
+            if old.snapshot is not None:
+                saved = restore_snapshot(old.snapshot, legacy)
+                if matches_legacy_event(saved, alert):
+                    alert, previous = legacy, old
         if previous.exists:
             if previous.snapshot is None:
                 raise DeliveryHold("fusion existing row has no provable first-result snapshot")
@@ -571,9 +590,12 @@ class FusionWorker:
         )
         return fused
 
-    @staticmethod
-    def get_metrics() -> dict:
-        return dict(_METRICS)
+    def get_metrics(self) -> dict:
+        # Read the writer at observation time, including idle/stop flushes.
+        lake = self._lake.metrics() if self._lake is not None else {
+            "rows_written": 0, "rows_dropped": 0, "flush_failures": 0, "buffered": 0,
+        }
+        return {**_METRICS, "laked": lake["rows_written"], "lake": lake}
 
     async def consumer_lag(self) -> int | None:
         """Total backlog across the partitions this replica is assigned.

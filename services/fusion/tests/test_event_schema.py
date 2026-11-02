@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
+import pytest
+
 from app.services.event_schema import (
     KNOWN_SCHEMA_VERSIONS,
     validate_event,
@@ -79,3 +83,29 @@ def test_registered_schema_set_is_stable_drift_guard():
         "aisoc.raw_events": frozenset({"v1"}),
         "aisoc.alerts.raw": frozenset({"v1"}),
     }
+
+
+@pytest.mark.parametrize("location", ["event_id", "id", "metadata.uid"])
+def test_event_reference_and_lake_use_same_canonical_uuid(location):
+    from app.services.lake_writer import event_to_row
+
+    identity = "abcdefab-cdef-abcd-efab-cdefabcdefab"
+    payload = _raw_event()
+    if location == "metadata.uid":
+        payload["ocsf_event"]["metadata"]["uid"] = identity.upper()
+    else:
+        payload[location] = identity.upper()
+    if location == "event_id":
+        payload["id"] = "11111111-1111-1111-1111-111111111111"
+    original = deepcopy(payload)
+    assert validate_raw_event(payload).source_event_id == identity
+    assert event_to_row(payload)["event_id"] == identity
+    assert payload == original
+
+
+def test_opaque_preferred_identity_is_not_replaced_with_a_different_uuid():
+    from app.services.lake_writer import event_to_row
+
+    payload = _raw_event(event_id="vendor-event-42", id="11111111-1111-1111-1111-111111111111")
+    assert validate_raw_event(payload).source_event_id == "vendor-event-42"
+    assert event_to_row(payload)["event_id"] is None

@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.models.alert import FusedAlert, FusionDecision, RawAlert
+from app.services.event_schema import canonical_source_event_id
 
 SNAPSHOT_VERSION = 1
 MAX_SNAPSHOT_BYTES = 1024 * 1024
@@ -79,6 +80,40 @@ def restore_snapshot(snapshot: Any, expected: RawAlert) -> FusedAlert:
         raise
     except Exception as exc:
         raise DeliveryHold("fusion first-result snapshot is invalid") from exc
+
+
+def legacy_event_candidate(alert: RawAlert) -> RawAlert:
+    """Only a lookup candidate, never authority to reuse an old folded row."""
+    legacy = alert.model_copy(update={"identity_version": "legacy-v1", "identity_event_id": None,
+                                      "identity_origin": None})
+    legacy.id = legacy.deterministic_id()
+    return legacy
+
+
+def matches_legacy_event(fused: FusedAlert, incoming: RawAlert) -> bool:
+    """Reuse only the exact first event recorded in a verified legacy snapshot.
+
+    Appended PG references and similar titles cannot prove what the original
+    report described. No legacy data or snapshot is backfilled here.
+    """
+    saved = fused.alert
+    if saved.identity_version != "legacy-v1" or incoming.identity_version != "event-v1":
+        return False
+    # Older promotions did not project vendor rule IDs. Rule detection still
+    # requires the same rule; this exception cannot bypass exact source IDs.
+    same_rule = saved.rule_id == incoming.rule_id or (incoming.identity_origin == "promotion" and saved.rule_id is None)
+    if saved.connector_id != incoming.connector_id or not same_rule or saved.source != incoming.source:
+        return False
+    saved_origin = None
+    if saved.source.startswith("detection:"):
+        if saved.description.startswith("Windowed detection "):
+            saved_origin = "window"
+        elif saved.description.startswith("Detection rule "):
+            saved_origin = "rule"
+    else:
+        saved_origin = "promotion"
+    return (saved_origin == incoming.identity_origin
+            and incoming.identity_event_id in [canonical_source_event_id(value) for value in saved.source_event_ids])
 
 
 class DeliveryRecovery:

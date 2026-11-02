@@ -1,7 +1,7 @@
 """Typed, read-only lake queries confined to a Case's hosts and absolute window."""
 import json
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,7 +20,9 @@ DESCRIPTIONS = {
     "process_activity": "查询Case成员主机在本次固定时间窗口内的进程活动记录，核对事件类别、活动、动作、结果、进程、路径、账号及文件hash。活动或结果未知不证明启动成功；不包含父进程链。",
     "network_connections": "查询Case成员主机在本次固定时间窗口内的网络连接，核对目标IP、端口、协议及相关进程。空结果只表示本来源未返回匹配记录。",
 }
-PROCESS_QUERY_CONTRACT = "case.process_activity.v2"
+PROCESS_QUERY_CONTRACT = "case.process_activity.v3"
+NETWORK_QUERY_CONTRACT = "case.network_connections.v2"
+QUERY_CONTRACTS = {"process_activity": PROCESS_QUERY_CONTRACT, "network_connections": NETWORK_QUERY_CONTRACT}
 
 
 class CaseTools:
@@ -63,10 +65,14 @@ class CaseTools:
             fields = ("event_id", "event_time", "src_hostname", "process_name", "source_ip", "dest_ip", "dst_port", "protocol")
             condition = "class_uid = 4001"
         query_id = str(uuid4())
-        sql = f"""SELECT {', '.join(fields)} FROM aisoc.raw_events
+        sql = f"""SELECT {', '.join(fields)} FROM (
+SELECT {', '.join(fields)}, row_number() OVER (
+PARTITION BY tenant_id, event_time, class_uid, event_id ORDER BY ingest_time DESC) AS source_rank
+FROM aisoc.raw_events
 WHERE tenant_id = %(tenant_id)s AND src_hostname = %(hostname)s
 AND event_time >= toDateTime64(%(start)s, 6, 'UTC')
 AND event_time < toDateTime64(%(end)s, 6, 'UTC') AND {condition}
+) WHERE source_rank = 1
 ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
         params = {"tenant_id": str(self.tenant_id), "hostname": args.hostname,
                   # toDateTime64 does not accept ISO offsets on the deployed lake.
@@ -81,7 +87,7 @@ ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
                     "query_id": query_id, "query_scope": scope, "rows": []}
         # JSON-normalize driver values before they enter saved artifacts/messages.
         return {"available": True, "query_id": query_id, "query_scope": scope,
-                **({"query_contract": PROCESS_QUERY_CONTRACT} if name == "process_activity" else {}),
+                "query_contract": QUERY_CONTRACTS[name],
                 "rows": json.loads(json.dumps(rows[:args.limit], default=str)),
                 "returned_count": min(len(rows), args.limit), "truncated": len(rows) > args.limit,
                 "limitation": "本工具只查已接入事件湖；无记录不证明安全，进程活动不等于启动成功，也不包含父进程链。"}
@@ -89,7 +95,16 @@ ORDER BY event_time, event_id LIMIT %(fetch_limit)s"""
     def can_reuse(self, name, result):
         # Product reads describe now, unlike the lake's fixed historical window.
         return (name in DESCRIPTIONS and name in {item["function"]["name"] for item in self.schemas()}
-                and (name != "process_activity" or result.get("query_contract") == PROCESS_QUERY_CONTRACT))
+                and result.get("query_contract") == QUERY_CONTRACTS[name])
+
+
+def _source_id(value):
+    # Older saved references may use upper-case or another valid UUID spelling.
+    # Compare identity without rewriting the frozen evidence or opaque IDs.
+    try:
+        return str(UUID(str(value)))
+    except (ValueError, TypeError, AttributeError):
+        return value
 
 
 def source_alignment(result: dict, context: dict) -> dict:
@@ -106,7 +121,8 @@ def source_alignment(result: dict, context: dict) -> dict:
         alerts = [item for item in context["evidence"] if item.get("kind") == "alert"]
         alignment["row_alert_refs"] = [
             [item["evidence_id"] for item in alerts
-             if row.get("event_id") and row["event_id"] in item["data"].get("source_event_ids", [])]
+             if row.get("event_id") and _source_id(row["event_id"]) in
+             [_source_id(value) for value in item["data"].get("source_event_ids", [])]]
             for row in result.get("rows", [])]
     return alignment
 
@@ -127,7 +143,7 @@ def model_result(result: dict, context: dict | None = None) -> str:
         view["empty_result_boundary"] = {"coverage": "unknown", "absence_reason": "unknown"}
     view["rows"] = []
     for index, row in enumerate(result.get("rows", [])):
-        if result.get("query_contract") == PROCESS_QUERY_CONTRACT:
+        if result.get("query_contract") in {PROCESS_QUERY_CONTRACT, "case.process_activity.v2"}:
             # Raw OCSF envelopes/codes stay in evidence, under the existing LLM
             # input contract. Give the model the scoped semantic class instead.
             row = {**{key: value for key, value in row.items() if key not in {"class_uid", "activity_id"}},
@@ -142,7 +158,7 @@ def model_result(result: dict, context: dict | None = None) -> str:
             view["truncated"] = True
             break
     view["model_view_row_count"] = len(view["rows"])
-    if result.get("query_contract") == PROCESS_QUERY_CONTRACT:
+    if result.get("query_contract") in {PROCESS_QUERY_CONTRACT, "case.process_activity.v2"}:
         view["model_omitted_fields"] = ["rows.class_uid", "rows.activity_id"]
         view["model_omission_reason"] = "raw_ocsf_codes_retained_in_evidence"
     return json.dumps(view, ensure_ascii=False, separators=(",", ":"), default=str)

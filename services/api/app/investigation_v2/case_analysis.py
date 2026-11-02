@@ -18,6 +18,8 @@ from app.models.investigation import InvestigationArtifact, InvestigationEvent, 
 from app.services.alert_explain import _UPSERT_RUN_COST
 from app.services.cost_dashboard import _impute_public_cost
 from app.services.llm_resolver import resolve_llm_config
+from app.services.alert_projection import alert_source, detection_fields, triage_fields
+from app.services.llm_safety import classify_message
 from .case_analysis_models import (MAX_OUTPUT_TOKENS, FINISH_TOOL, ReportContractError, alert_references,
                                    call_model, conclusion_format, model_member_context, report_feedback, translate_report)
 from .case_analysis_tools import CaseTools, model_result, source_alignment
@@ -31,6 +33,8 @@ PROFILE = "case_analysis.v1"
 LIMITS = {"model_calls": 4, "tool_calls": 4, "tokens": 24000, "duration_seconds": 120}
 CORRECTION_PREFIX = "纠错约束（非证据，勿写入正文）：\n"
 HISTORY_OPEN_BYTES = 2048
+FIELD_PROJECTION_SCHEMA = "case.alert-fields.v1"
+MODEL_FIELD_BYTES = 2048
 
 
 def encoded(value, *, compact=False):
@@ -43,6 +47,15 @@ def digest(value):
     return hashlib.sha256(encoded(value).encode("utf-8")).hexdigest()
 
 
+def projection_blocked(value):
+    # Check original values before embedding them: nesting/JSON escaping must
+    # not turn a blocked raw fragment into an accepted detection field.
+    if classify_message(value if isinstance(value, str) else encoded(value, compact=True), role="user"):
+        return True
+    children = value.values() if isinstance(value, dict) else value if isinstance(value, list) else ()
+    return any(projection_blocked(child) for child in children)
+
+
 def model_context(context):
     """Keep full history in evidence and a bounded unresolved-state view for the model."""
     view = {**context, "evidence": []}
@@ -52,7 +65,25 @@ def model_context(context):
         view.pop("all_member_ids")
         view.pop("read_member_ids")
         view["member_sets_equal"] = True  # Both omitted sets exactly equal selected_member_ids.
+    field_budget = MODEL_FIELD_BYTES
     for item in context["evidence"]:
+        if context.get("field_projection_schema") == FIELD_PROJECTION_SCHEMA and item.get("kind") in {"alert", "triage"}:
+            data = dict(item["data"])
+            projected, omitted = {}, {}
+            keys = ("source", "detection") if item["kind"] == "alert" else ("confidence", "findings", "proposed_actions")
+            for key in keys:
+                if key not in data:
+                    continue
+                value = data.pop(key)
+                text = encoded(value, compact=True)
+                size = len(text.encode("utf-8"))
+                reason = "llm_input_contract" if projection_blocked(value) else "field_projection_budget" if size > field_budget else None
+                if reason:
+                    omitted[key] = reason
+                else:
+                    projected[key] = value
+                    field_budget -= size
+            item = {**item, "data": {**data, **projected, **({"omitted_projection_fields": omitted} if omitted else {})}}
         duplicate_refs = []
         if item.get("kind") == "alert":
             data = item["data"]
@@ -271,6 +302,7 @@ async def case_context(db, tenant_id, case_id, request):
         data = {"alert_id": str(alert.id), "title": alert.title, "event_time": alert.event_time,
                 "severity": alert.severity, "status": alert.status, "disposition": alert.disposition,
                 "source_connector_id": str(alert.connector_id) if alert.connector_id else None,
+                "source": alert_source(alert), "detection": detection_fields(alert),
                 "hosts": sorted(alert_hosts),
                 "entities": _entities([alert]),
                 "source_event_ids": alert.source_event_ids or [], "saved_analysis": (alert.ai_summary or "")[:600],
@@ -284,12 +316,11 @@ async def case_context(db, tenant_id, case_id, request):
             incident_ids.add(str(fusion["incident_id"]))
         if str(alert.id) in latest:
             event = latest[str(alert.id)]
-            payload = event.payload or {}
             evidence.append({"evidence_id": f"T{index}", "kind": "triage", "event_id": str(event.id),
-                             "data": {"alert_id": str(alert.id), **{key: payload.get(key)
-                                      for key in ("verdict", "rationale", "auto_closed")}}})
+                             "data": {"alert_id": str(alert.id), **triage_fields(event)}})
     return {"case_id": str(case_id), "case_title": case.title,
             "source_material_schema": SOURCE_SCHEMA, "case_material": case_material,
+            "field_projection_schema": FIELD_PROJECTION_SCHEMA,
             "all_member_ids": [str(value) for value in all_ids], "selected_member_ids": [str(value) for value in selected],
             "read_member_ids": [member["alert_id"] for member in members], "source_incident_ids": sorted(incident_ids),
             "hosts": sorted(hosts), "start": request.start.isoformat(), "end": request.end.isoformat(),

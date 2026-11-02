@@ -1,0 +1,48 @@
+.................................F....                                   [100%]
+================================== FAILURES ===================================
+_________ TestGetAlertEndpoint.test_does_not_persist_empty_narrative __________
+
+self = <api.v1.endpoints.test_alerts_detail_envelope.TestGetAlertEndpoint object at 0x00000239202D6210>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000239205A93A0>
+
+    @pytest.mark.asyncio
+    async def test_does_not_persist_empty_narrative(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A builder returning empty text is a no-op — no UPDATE, no commit.
+    
+        ``build_narrative`` can legitimately return ``""`` for an alert
+        with zero structured signal. We must not persist that empty
+        string back to the row (it'd shadow the next backfill attempt).
+        """
+        tenant_id = uuid.uuid4()
+        alert = _orm_alert(tenant_id=tenant_id, narrative=None)
+        session = _mock_session(alert=alert)
+        user = _mock_user(tenant_id)
+    
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.alerts.build_narrative",
+            lambda inputs: "",
+        )
+        monkeypatch.setattr(
+            "app.api.v1.endpoints.alerts.build_rail_envelope",
+            AsyncMock(
+                return_value=RailEnvelope(
+                    related_entities=[],
+                    mini_timeline=[],
+                    recommended_actions=[],
+                )
+            ),
+        )
+    
+        resp = await get_alert(alert.id, user, session)
+    
+>       assert resp.narrative is None
+E       AssertionError: assert '' is None
+E        +  where '' = AlertDetailResponse(source={}, detection={}, objects=[], iocs=[], case_links_url=None, id=UUID('aa9d5cb7-296a-44ea-827...cator={}, source_event_ids=[], external_id=None, fusion_identity=None, fusion_ioc_lookup=None, fusion_incident_id=None).narrative
+
+services\api\tests\api\v1\endpoints\test_alerts_detail_envelope.py:505: AssertionError
+=========================== short test summary info ===========================
+FAILED services\api\tests\api\v1\endpoints\test_alerts_detail_envelope.py::TestGetAlertEndpoint::test_does_not_persist_empty_narrative
+1 failed, 37 passed in 2.30s

@@ -1,0 +1,1072 @@
+{
+  "date": "2026-11-02",
+  "kind": "local_static_field_comparison_not_business_or_live_acceptance",
+  "baseline_commit": "b400fd05cef29075bcf2c1e73cab4bae0c6d3995",
+  "remote_refreshed": false,
+  "requirement_sources": [
+    {
+      "path": "docs/design/alert-ui-data-contract.md",
+      "commit": "48f54abd42d643ff53a71fffbb1f6045a90d9f80",
+      "git_blob": "4be0f6ba69292a23db7c3699ede4bcb909933743",
+      "sha256": "57bce1d7afef374343370c5be146bbc992febe8e787fdf5157287ba8d488a036"
+    },
+    {
+      "path": "docs/design/incident-investigation-page-analysis.md",
+      "commit": "48f54abd42d643ff53a71fffbb1f6045a90d9f80",
+      "git_blob": "5facd9d92eb735b23628a0b8866aefab39b5c841",
+      "sha256": "e19b9b6af7f7215cb43f7b673ab6da7edfeb5f26c77eb022a0c724008a0d8325"
+    },
+    {
+      "path": "docs/design/incident-alert-data-showcase.md",
+      "commit": "48f54abd42d643ff53a71fffbb1f6045a90d9f80",
+      "git_blob": "6c5d1c4f0bf797e4aae26bee84476187cb2741ef",
+      "sha256": "c7b66ac80ca488a3c0aca248f010db1d09f6a154178025fe1399201dc2546204"
+    }
+  ],
+  "comparison_document": {
+    "path": "docs/investigation/page-field-support-matrix-20261102.md",
+    "sha256": "4e89f581afe86f16ce0e249a84f8deeb244c3dd55d0b99f975985e73bc7f6b3f"
+  },
+  "row_counts": {
+    "A": 37,
+    "I": 24,
+    "D": 12,
+    "T": 12
+  },
+  "comparison_rows": [
+    {
+      "id": "A01",
+      "label": "告警名称",
+      "comparison_cells": [
+        "原告警标题；点击使用平台告警 ID",
+        "`A.title`、`A.id`",
+        "v1 列表／详情 `title/id`；事件 `members[].title/alert_id` [C1/C3]",
+        "字段已通。不能用标题充当唯一身份"
+      ]
+    },
+    {
+      "id": "A02",
+      "label": "严重程度",
+      "comparison_cells": [
+        "critical/high 归高，medium 中，low/info 低",
+        "`A.severity`",
+        "v1 `severity`；事件成员 `severity` [C1/C3]",
+        "字段已通；三档显示可派生，不缺评分表"
+      ]
+    },
+    {
+      "id": "A03",
+      "label": "告警时间",
+      "comparison_cells": [
+        "`event_time`；入库时间不是发生时间",
+        "`A.event_time`；`F.event_time_source/event_time_fallback`",
+        "v1 `event_time` 和 `detection`；成员 `event_time` [C1/C2/C3]",
+        "新写入已保留收到的时间及回退标记。历史被 NOW 代替的真发生时间不可恢复；迁移允许 NULL 而响应要求 datetime，历史 NULL 兼容仍有合同差异，不宣称旧记录已清理"
+      ]
+    },
+    {
+      "id": "A04",
+      "label": "资产标签",
+      "comparison_cells": [
+        "库存资产标签，不是告警标签",
+        "`assets.tags`，同租户 `alert_asset_correlations`；当前 name/FQDN/IP 匹配",
+        "告警 `processing-context` 的资产结果；事件须 `include_assets=true` [C4]",
+        "字段已通，但不内嵌在 v1 告警列表。列表接入需要使用／汇集现有资产出口。无库存匹配则没有可展示资产标签"
+      ]
+    },
+    {
+      "id": "A05",
+      "label": "处理状态",
+      "comparison_cells": [
+        "告警业务状态；旧 fp/false_positive 显示完成且保留误报标记",
+        "`A.status`，判定另存 `A.disposition`",
+        "v1／事件成员分别返回 `status/disposition` [C1/C3]",
+        "数据可支撑分组。现 `alert_status` 只把 resolved/closed 算已解决，旧 fp 分组未对齐；这是映射差异，不是缺列 [C5]"
+      ]
+    },
+    {
+      "id": "A06",
+      "label": "类别",
+      "comparison_cells": [
+        "检测的 ATT&CK 战术标签",
+        "`A.mitre_tactics`",
+        "v1 同名字段及 `detection.mitre_tactics`；事件成员同名字段 [C2/C3]",
+        "字段已通；不使用 `A.category` 或技术编号替代战术"
+      ]
+    },
+    {
+      "id": "A07",
+      "label": "检测源",
+      "comparison_cells": [
+        "原始厂商；未知留空",
+        "`A.raw_event.original_vendor/deviceVendor` 或已保存 `raw_data` 中同名明确字段",
+        "共享 `source.detection_source`，附 `detection_source_path` [C2]",
+        "上述明确字段已通；当前读取器仅支持这两类明确键。不用 connector、identity.source、metadata.product 猜原厂；其他格式没有确认映射，不能宣称已覆盖任意厂商格式"
+      ]
+    },
+    {
+      "id": "A08",
+      "label": "资产／账户",
+      "comparison_cells": [
+        "上报主机、账户等对象；库存身份另列",
+        "`A.affected_hosts/users/ips`、`A.entities/iocs`；库存 `assets.id/name`",
+        "`objects[]`；库存由 `processing-context` 提供 [C2/C4]",
+        "已存对象与库存读取均有出口。上报主机不是库存 ID，账户／IP 不冒充库存资产"
+      ]
+    },
+    {
+      "id": "A09",
+      "label": "分配给",
+      "comparison_cells": [
+        "处理负责人，非受影响账户",
+        "`A.assigned_to_id/assigned_at`；同租户 `users.id/username`",
+        "v1／事件成员 `assigned_to_id/assigned_at/assigned_to_name` [C1/C2/C3]",
+        "字段已通；ID 有值但用户名称未匹配时仍保留 ID，不写“未分配”"
+      ]
+    },
+    {
+      "id": "A10",
+      "label": "侧栏描述",
+      "comparison_cells": [
+        "源告警说明",
+        "`A.description`",
+        "v1 `description` [C1]",
+        "字段已通；不拿 ai_summary、narrative 或 Explain 替代"
+      ]
+    },
+    {
+      "id": "A11",
+      "label": "所属事件",
+      "comparison_cells": [
+        "Fusion Incident，不是 Case",
+        "`F.incident_id`",
+        "v1 详情 `fusion_incident_id`；事件按该键查询成员 [C1/C3]",
+        "已有归属可读。旧记录／非 Fusion 入口没有此键时不能编造事件归属；“所有入口都必有事件”当前不成立"
+      ]
+    },
+    {
+      "id": "A12",
+      "label": "已关联 Case",
+      "comparison_cells": [
+        "当前真实 Case 成员关系，允许多个",
+        "`aisoc_cases.alert_ids`",
+        "v1 `case_links_url`；v2 `case-links`／`investigations.cases`；事件需 `include_investigations=true` [C6]",
+        "当前多 Case 关系已读通，最多 50 条并标截断。v1 `case_id` 和 rail Case 芯片仍是旧单值，不能作为完整当前关系"
+      ]
+    },
+    {
+      "id": "A13",
+      "label": "平台告警 ID",
+      "comparison_cells": [
+        "页面跳转、成员关系、Tool 绑定的内部身份",
+        "`A.id`，同租户使用",
+        "v1 `id`；事件 `members[].alert_id` [C1/C3]",
+        "字段已通；不改为厂商／来源编号"
+      ]
+    },
+    {
+      "id": "A14",
+      "label": "源记录 ID",
+      "comparison_cells": [
+        "接入链路保存的来源告警编号",
+        "`F.identity.source_alert_id`",
+        "`source.source_alert_id`；事件成员 `source_alert_id` [C2/C3]",
+        "第 4 批已改掉使用 external_id 顶替的读取；为空就留空"
+      ]
+    },
+    {
+      "id": "A15",
+      "label": "外部告警编号",
+      "comparison_cells": [
+        "与源记录 ID 分开的外部编号",
+        "`A.external_id`",
+        "详情 `external_id`、共享 `source.external_id` [C1/C2]",
+        "字段已通，不与 A13/A14 合并"
+      ]
+    },
+    {
+      "id": "A16",
+      "label": "原始事件引用",
+      "comparison_cells": [
+        "告警指向的湖事件编号及完整性",
+        "`A.source_event_ids`；`F.source_event_ids_truncated/field_metadata`",
+        "详情 `source_event_ids/detection`；Case 冻结材料 [C1/C2/C7]",
+        "第 1、3 批统一 ID 并补窗口引用及省略信息。上限保留，截断集合不是全部参与事件证明"
+      ]
+    },
+    {
+      "id": "A17",
+      "label": "检测规则 ID、名称",
+      "comparison_cells": [
+        "已有规则身份，非补查规则全文",
+        "`A.rule_id/rule_name`",
+        "`detection.rule_id/rule_name`；Case A.detection [C2/C7]",
+        "字段已通；原始规则缺失不按标题补造"
+      ]
+    },
+    {
+      "id": "A18",
+      "label": "ATT&CK 技术",
+      "comparison_cells": [
+        "与战术分开的来源标签",
+        "`A.mitre_techniques`",
+        "v1／共享 detection／事件成员／Case [C1/C2/C3/C7]",
+        "字段已通；字典可解释名称，不能由战术推导技术事实"
+      ]
+    },
+    {
+      "id": "A19",
+      "label": "Fusion 置信度分数",
+      "comparison_cells": [
+        "Fusion 检测／融合分数，0—100",
+        "`A.confidence`、`F.confidence_status`",
+        "`detection.confidence.score/status/source`，v1 平铺 confidence 同步遵守状态 [C2]",
+        "已通；unknown/disabled/failed 不展示残留分数。旧分数标 legacy_unverified，不冒充新计算"
+      ]
+    },
+    {
+      "id": "A20",
+      "label": "Fusion 置信度等级、依据",
+      "comparison_cells": [
+        "与 A19 同来源",
+        "`A.confidence_label/confidence_rationale`",
+        "`detection.confidence.label/rationale`，v1 平铺字段 [C2]",
+        "字段已通，不将依据当独立观测"
+      ]
+    },
+    {
+      "id": "A21",
+      "label": "页面分诊评分",
+      "comparison_cells": [
+        "分诊 confidence，0—1 可换算 0—100；不是独立风险分",
+        "`A.ai_score`；原始值在同次 `E(kind=triage_verdict).payload.confidence`",
+        "v1 `ai_score`；v2 `triage.confidence`、Case T [C1/C2/C3/C7]",
+        "字段已通。要解释该分数的判定必须用同次 E；不能与当前人工 disposition 拼成一次分诊"
+      ]
+    },
+    {
+      "id": "A22",
+      "label": "当次分诊判定、理由、时间",
+      "comparison_cells": [
+        "同一次分析判断",
+        "同一 E 的 `payload.verdict/rationale/auto_closed/confidence`、`ts/run_id/id`",
+        "v2 triage／Case T [C2/C3/C7]",
+        "字段已通，来源 ID 和时间可追溯；没有分诊事件则不虚构当次结果"
+      ]
+    },
+    {
+      "id": "A23",
+      "label": "当前判定",
+      "comparison_cells": [
+        "当前业务判定，不覆盖历史分诊",
+        "`A.disposition`",
+        "v1／事件成员 `disposition` [C1/C3]",
+        "字段已通；反馈与关闭的写回一致性见 D05"
+      ]
+    },
+    {
+      "id": "A24",
+      "label": "Explain 正文",
+      "comparison_cells": [
+        "请求 Explain 返回的解释，非旧摘要替身",
+        "现有 Explain 服务按请求返回 `summary`",
+        "`POST /api/v1/alerts/{id}/explain` [C8]",
+        "返回合同已有；不要求预生成新表。本轮未调用生成、未验证实际返回内容质量"
+      ]
+    },
+    {
+      "id": "A25",
+      "label": "Explain 生成时间／方式",
+      "comparison_cells": [
+        "同次解释生成时间、是否用模型",
+        "同次响应 `generated_at/llm_used/llm_reason`",
+        "同 A24 [C8]",
+        "字段合同已有；不取 event_time/updated_at/分诊时间代替"
+      ]
+    },
+    {
+      "id": "A26",
+      "label": "Explain 关键依据",
+      "comparison_cells": [
+        "本次解释提取到的依据摘要",
+        "同次响应 `contributing_events[].label/value/annotation`",
+        "同 A24 [C8]",
+        "字段合同已有，最多 5 项；不是完整原文／完整取证链，不保证解析任意 full_log"
+      ]
+    },
+    {
+      "id": "A27",
+      "label": "Explain 建议动作",
+      "comparison_cells": [
+        "与正文一并显示；空建议留空",
+        "同次响应 `suggested_actions`",
+        "同 A24 [C8]",
+        "字段合同已有；不是已批准或已执行动作"
+      ]
+    },
+    {
+      "id": "A28",
+      "label": "原始数据",
+      "comparison_cells": [
+        "保存的来源材料及截断说明",
+        "PG `A.raw_event`；湖 `raw_payload/ocsf_json`",
+        "详情 `raw_event`；Case 来源工件 [C1/C7/C9]",
+        "PG 详情原文已读通；湖第 3 批改为合法 JSON／超限包装。旧已裁坏材料未恢复；Case 模型可见性另见 T02"
+      ]
+    },
+    {
+      "id": "A29",
+      "label": "IOC 候选",
+      "comparison_cells": [
+        "记录中的 IP／域名／文件哈希等",
+        "`A.iocs/entities/affected_ips`",
+        "v1 `iocs/objects`、事件对象、Case [C2/C3/C7]",
+        "ORM 原来漏映射 iocs，现已补；候选不是恶意结论"
+      ]
+    },
+    {
+      "id": "A30",
+      "label": "IOC 查询结果",
+      "comparison_cells": [
+        "租户库查询范围、时间、命中／失败状态",
+        "`F.ioc_lookup` 的 indicators/matches/status/checked_at/scope/external_status",
+        "详情 `fusion_ioc_lookup` [C1]",
+        "已有保存值可读；no_match 不代表安全，not_configured 不代表已查外部情报"
+      ]
+    },
+    {
+      "id": "A31",
+      "label": "租户",
+      "comparison_cells": [
+        "真实隔离范围和租户显示名",
+        "`A.tenant_id → tenants.id/name`",
+        "v1 暴露 tenant_id；同租户名称可联表读取 [C1]",
+        "ID 已通，名称可派生；不固定样例组织名"
+      ]
+    },
+    {
+      "id": "A32",
+      "label": "反馈判定和核查理由",
+      "comparison_cells": [
+        "明确告警、操作者、原判／改判、理由",
+        "`aisoc_analyst_feedback` 的 alert_id/analyst_id/ai_disposition/analyst_disposition/reason_code/note/context/created_at",
+        "feedback 现有接口与服务 [C10]",
+        "存储已具备，不能笼统说“没有反馈理由字段”；普通评论与按告警历史读取仍需区分，见 D03/D04"
+      ]
+    },
+    {
+      "id": "A33",
+      "label": "响应建议",
+      "comparison_cells": [
+        "原分析提出的动作及目标，不代表已建审批单",
+        "`A.ai_recommendations`、T/G 的 proposed_actions",
+        "v1 `ai_recommendations/recommended_actions`、已保存分析工件 [C1/C7/C11]",
+        "建议可读；通用建议条目没有强制 approval_id/action_id 关联，审批闭环不能按文本猜，见 D08"
+      ]
+    },
+    {
+      "id": "A34",
+      "label": "审批状态",
+      "comparison_cells": [
+        "已存在审批单的实际状态、决策人／时间／理由",
+        "`agent_approvals.id/alert_id/case_id/run_id/status/decided_by_id/decided_at/decision_comment/action`",
+        "approvals 列表／详情 [C12]",
+        "字段和读取存在。并非每条建议都有审批单；没有记录不能默认“待审核”"
+      ]
+    },
+    {
+      "id": "A35",
+      "label": "执行结果",
+      "comparison_cells": [
+        "与真实动作绑定的结果和错误",
+        "`aisoc_action_records.id/record` 内 status/output/error；审批 `action.dispatch.action_id/action_status`",
+        "actions 按 ID 读取；审批详情带 dispatch [C12/C13]",
+        "**审批入口复用 approval.id 作为 action.id，连接键已存在。** dispatch.state=executed 仍须结合 action_status/output，不能等同执行成功；actions.record.incident_id 在该入口写的是 Run ID 或审批 ID，不能当 Fusion Incident 键"
+      ]
+    },
+    {
+      "id": "A36",
+      "label": "Run、步骤、Tool、报告",
+      "comparison_cells": [
+        "真实运行状态／范围／工件，完成度另列",
+        "R/E/K；当前 profile 与冻结成员范围",
+        "执行索引／Case Run 及工件读取 [C7/C14]",
+        "已有字段可支撑保存记录展示。预览不等于完整输入输出；有工件索引不等于正文可读；completed 不等于完整报告通过"
+      ]
+    },
+    {
+      "id": "A37",
+      "label": "调用次数／token／成本",
+      "comparison_cells": [
+        "各自真实计量，不能以迭代数代替",
+        "`aisoc_run_costs`、R 的 total_tokens、E 的 usage",
+        "既有运行／用量读取 [C14]",
+        "已有计量来源；缺价格的调用不记零成本，不重复累加多个聚合"
+      ]
+    },
+    {
+      "id": "I01",
+      "label": "事件 ID／成员集合",
+      "comparison_cells": [
+        "同租户 Fusion Incident 及其 canonical 告警成员",
+        "`F.incident_id`，各成员 `A.id/tenant_id`",
+        "`read_incident` 按租户＋incident_id 查 PG [C3]",
+        "归属已持久化可读，不依赖 Redis 窗口存活；旧无归属行不能补造"
+      ]
+    },
+    {
+      "id": "I02",
+      "label": "事件名称",
+      "comparison_cells": [
+        "事件显示名／人工改名后的名称",
+        "当前只有成员 `A.title`",
+        "当前 `title = \"Incident: \" + 首条成员.title` [C3]",
+        "默认名称可派生；**独立事件标题／人工改名持久化缺失**，不能说已支持保存改名"
+      ]
+    },
+    {
+      "id": "I03",
+      "label": "事件说明",
+      "comparison_cells": [
+        "事件层说明；AI 概况注明生成来源",
+        "当前成员 description、保存的 `fusion_incident_summaries.summary_text` 等",
+        "`ai_overview/ai_overview_metadata`；成员材料可追溯 [C3/C15]",
+        "已保存 AI 概况可读；**独立人工事件说明缺持久化位置**。AI 概况缓存不是事件业务主记录"
+      ]
+    },
+    {
+      "id": "I04",
+      "label": "严重程度",
+      "comparison_cells": [
+        "当前成员最高等级作为聚合值",
+        "各成员 `A.severity`",
+        "`read_incident.severity` 按等级顺序取最大 [C3]",
+        "聚合字段已通；独立人工覆盖值未保存，不把成员最大值称人工设定"
+      ]
+    },
+    {
+      "id": "I05",
+      "label": "处理状态",
+      "comparison_cells": [
+        "独立的新建／处理中／已解决状态",
+        "当前无 Fusion Incident 业务状态记录",
+        "`handling_status` 默认 None [C3/C15]",
+        "**存储缺口**。不能由 Case.status、Run.status 或所有成员关闭推定"
+      ]
+    },
+    {
+      "id": "I06",
+      "label": "事件负责人",
+      "comparison_cells": [
+        "事件级负责人及分配时间",
+        "只有各告警 assigned_to_id/assigned_at；无事件级位置",
+        "成员负责人可读，overview 无独立负责人 [C3]",
+        "**存储缺口**。成员一致也不能证明事件已经分配；用户要求同步覆盖时仍要保存事件自身值"
+      ]
+    },
+    {
+      "id": "I07",
+      "label": "涉及资产",
+      "comparison_cells": [
+        "远端 22.10／24 的主机数与主机名称；不是对象总数",
+        "成员 `affected_hosts` 及 typed objects；库存另见 A04/A08",
+        "`members[].objects`、事件 entities/object_links [C2/C3]",
+        "主机集合去重可派生；不把 user/ip/domain 加入主机数。库存资产数须另按真实资产 ID 去重，不能偷换现页面口径"
+      ]
+    },
+    {
+      "id": "I08",
+      "label": "活跃／全部告警",
+      "comparison_cells": [
+        "完整成员数及未完成成员数",
+        "成员 `A.id/status`",
+        "member_count、by_status、members [C3]",
+        "总数已返回，活跃数可按已确认完成分组派生；旧 fp 映射差异沿 A05。不需新增计数表"
+      ]
+    },
+    {
+      "id": "I09",
+      "label": "最近更新时间",
+      "comparison_cells": [
+        "事件自身和成员变化；Run 进度不计",
+        "当前仅 `A.updated_at`；没有事件自身业务时钟",
+        "`updated_at=max(member.updated_at)`；source_updated_at 另含分析材料时间 [C3/C6]",
+        "**成员部分已通；事件自身部分存储缺口**。成员移出／清空时也不能只依赖剩余成员最大值；须有事件业务更新时间"
+      ]
+    },
+    {
+      "id": "I10",
+      "label": "首次活动",
+      "comparison_cells": [
+        "当前成员告警发生时间的最小值",
+        "成员 `A.event_time`",
+        "`first_seen=min(member.event_time)` [C3]",
+        "第 4 批已对齐用户第 8 项。旧缺时间／被回退的事实沿 A03，不以 created_at 修补"
+      ]
+    },
+    {
+      "id": "I11",
+      "label": "最近活动／发生范围终点",
+      "comparison_cells": [
+        "区分成员最后发生时间与单告警累计活动末尾",
+        "`A.event_time` 与 `A.last_seen` 均存在",
+        "当前 `last_seen=max(member.last_seen)` [C3]",
+        "**当前返回值不是 max(member.event_time)**。若页面范围表示成员告警发生时间范围，终点应从 event_time 派生；若展示累计活动末尾用 last_seen。两字段不能同名互代；不新增时间列"
+      ]
+    },
+    {
+      "id": "I12",
+      "label": "分类",
+      "comparison_cells": [
+        "事件人工分类，非 ATT&CK 战术",
+        "当前无事件级分类位置",
+        "无相应业务读回 [C3/C15]",
+        "**存储缺口**；不由 category／disposition／战术标签填充"
+      ]
+    },
+    {
+      "id": "I13",
+      "label": "优先级",
+      "comparison_cells": [
+        "事件人工优先级",
+        "当前无事件级位置；Alert.priority 与 Case.priority 属其他对象",
+        "overview 无独立优先级 [C3]",
+        "**存储缺口**；不把分诊 confidence 换成事件优先级"
+      ]
+    },
+    {
+      "id": "I14",
+      "label": "优先级评分／因素",
+      "comparison_cells": [
+        "页面保留的评分及依据；未评分为空",
+        "无对应事件评分／因素记录",
+        "无对应事件字段 [C3]",
+        "**已评分数据不能支撑；空态可支撑**。不要求本轮新增评分算法；后端实现评分后须保存分数、来源及因素，不能用 ai_score 顶替"
+      ]
+    },
+    {
+      "id": "I15",
+      "label": "事件标签",
+      "comparison_cells": [
+        "事件自身标签",
+        "当前仅告警 tags、资产 tags；无事件级位置",
+        "overview 无事件标签 [C3/C15]",
+        "**存储缺口**；两类已有 tags 都不是事件 tags"
+      ]
+    },
+    {
+      "id": "I16",
+      "label": "解决说明、解决人、解决时间",
+      "comparison_cells": [
+        "事件的解决事实，说明必填",
+        "当前无事件级位置",
+        "无事件业务读回 [C3/C15]",
+        "**存储缺口**；成员 resolved_at、Case 关闭或 Run 结束不能代替"
+      ]
+    },
+    {
+      "id": "I17",
+      "label": "ATT&CK 阶段数量",
+      "comparison_cells": [
+        "每成员在每个自带战术计 1 次，同战术去重",
+        "成员 `A.mitre_tactics`",
+        "`tactic_counts/tactic_count_notice` [C3]",
+        "已返回；总和可超过成员数，提示已在返回合同中；不是攻击阶段事实认定"
+      ]
+    },
+    {
+      "id": "I18",
+      "label": "检测技术并集",
+      "comparison_cells": [
+        "成员已有技术标签集合",
+        "成员 `A.mitre_techniques`",
+        "overview／成员 mitre_techniques [C3]",
+        "字段已通，不自动补战术或技术"
+      ]
+    },
+    {
+      "id": "I19",
+      "label": "实际归并依据",
+      "comparison_cells": [
+        "Fusion 当次的归并决定及范围",
+        "`F.correlation_basis` 和首份 delivery_snapshot",
+        "`members[].correlation_basis` [C3/C16]",
+        "第 2 批已持久化／读回：policy_version、entity_type/value、tactic、key、window、decision/reason/decided_at。旧未记录依据保持空"
+      ]
+    },
+    {
+      "id": "I20",
+      "label": "共同线索",
+      "comparison_cells": [
+        "当前成员共同报告的同类型对象",
+        "逐成员 objects",
+        "`members[].objects/object_links` [C3]",
+        "按 type/value 计算共享成员数可派生；不把“共同线索”写成当时归并原因"
+      ]
+    },
+    {
+      "id": "I21",
+      "label": "告警—对象关系图",
+      "comparison_cells": [
+        "哪条告警报告哪个对象",
+        "canonical Alert ID＋typed objects",
+        "`object_links[].source_alert_id/type/value` [C3]",
+        "关系已读通。这里的 source_alert_id 是平台告警 ID，与 A14 同名不同含义，消费方必须按此合同绑定，不能传给源记录查询"
+      ]
+    },
+    {
+      "id": "I22",
+      "label": "库存信息／匹配依据",
+      "comparison_cells": [
+        "当前库存标签、关键性、匹配来源",
+        "assets、alert_asset_correlations",
+        "include_assets 的成员 assets，带 lookup_matches／correlations／状态 [C4]",
+        "字段已通但有界：事件先读 20 成员，每成员最多 20 资产，asset_coverage 标省略；不能把该子集当完整库存总数。当前库存不是历史告警时点库存"
+      ]
+    },
+    {
+      "id": "I23",
+      "label": "关联调查／Case",
+      "comparison_cells": [
+        "当前成员真实参与的 Case 和固定 Run 范围",
+        "`aisoc_cases.alert_ids`；Run profile／冻结 selected_member_ids",
+        "include_investigations、case_ids、executions 索引 [C6/C14]",
+        "已读通且有截断／权限边界；不能把旧 Alert.case_id 或重载 Run.case_id 当唯一关系"
+      ]
+    },
+    {
+      "id": "I24",
+      "label": "处理活动",
+      "comparison_cells": [
+        "属于本事件及被变更成员的实际操作",
+        "只有通用 audit_log、告警与 Case／Run 各自记录",
+        "无完整 Fusion Incident 业务活动集合；告警 rail 仍串入旧 Case 全部活动 [C11]",
+        "**事件活动存储／关联合同缺口**。复用通用审计设施即可，不需要新通用审计框架；必须准确记录事件键和涉及成员"
+      ]
+    },
+    {
+      "id": "D01",
+      "label": "告警统计、过滤、排序、导出",
+      "comparison_cells": [
+        "A01—A09 的原子字段及租户；标题、时间、ID 可稳定排序；资产标签有单独关系出口",
+        "数据基础具备；列表具体条件和导出接口未对齐不称缺表。总体卡片不随下方筛选；有选导出所选，无选导出当前结果前 min(total,200)。原厂筛选须使用 A07 的已确认投影，不用 connector 代替"
+      ]
+    },
+    {
+      "id": "D02",
+      "label": "调查进行中统计／事件关联调查卡",
+      "comparison_cells": [
+        "当前 Case 成员关系、Run profile/status、固定选中成员；旧 Run 的真实阶段 E",
+        "可按明确范围派生并按 Alert／Incident 去重，不需要给每个统计另建字段；旧自动分诊 Run 不自动算调查。仅看 A.status 无法得到准确调查卡"
+      ]
+    },
+    {
+      "id": "D03",
+      "label": "普通告警评论",
+      "comparison_cells": [
+        "`aisoc_analyst_feedback.note` 是改判理由；CaseTimeline 是 Case 评论；audit_log 能保存通用动作",
+        "**普通 Alert 评论合同缺口**：需稳定 comment_id、tenant_id、alert_id、author_id、body、created_at 与对应读回。不能要求每次评论都改判／挂 Case；已有通用存储可承接，不预先强制新表"
+      ]
+    },
+    {
+      "id": "D04",
+      "label": "告警完整时间线",
+      "comparison_cells": [
+        "event_time、created_at、assigned_at、resolved_at；分诊 E、Run 时间；audit_log",
+        "基础时间已有，**完整性和对象关联未通**：rail 上限 6；按 legacy case_id 取整 Case Timeline，无法证明每条都属于此告警；批量动作需保存 target_alert_ids 或逐告警审计，不能只保存数量"
+      ]
+    },
+    {
+      "id": "D05",
+      "label": "反馈 fp／authorized 同步关闭",
+      "comparison_cells": [
+        "A.status/disposition/resolved_at/updated_at、反馈原件及选中 IDs",
+        "**写回不一致，不缺列**：现反馈只更新 disposition/updated_at，却记 resolved SLA；相似告警重判也不能仅改 disposition。后端按已确认规则写关闭字段、保留当次反馈与实际目标；不能以 SLA 事件证明状态已关闭 [C10]"
+      ]
+    },
+    {
+      "id": "D06",
+      "label": "手动关闭／重开告警",
+      "comparison_cells": [
+        "A.status/resolved_at；审计；评论另见 D03",
+        "字段足够；普通关闭说明选填。现 update 路径重开不清 resolved_at，字段组合不一致须交后端处理，不能用旧 resolved_at 推定当前已完成 [C1]"
+      ]
+    },
+    {
+      "id": "D07",
+      "label": "事件改派／解决及保存前覆盖提示",
+      "comparison_cells": [
+        "I01 完整成员 ID 集合、A09 原负责人、A05 原状态、A23 各自判定",
+        "**影响范围可派生；事件本体字段缺口见 I05/I06/I16，活动缺口见 I24**。改派保存事件及全部成员负责人；解决保存事件及全部成员关闭字段但不覆盖 disposition。提示要基于实际成员范围，而非浏览器已加载的一页；本轮不实现级联动作"
+      ]
+    },
+    {
+      "id": "D08",
+      "label": "建议→审批→执行",
+      "comparison_cells": [
+        "A33 建议、A34 审批、A35 动作记录；审批 ID 与动作 ID 明确相同",
+        "**审批→执行连接键已具备**；通用建议条目→审批的稳定键未要求保存，Case 范围审批未必有 Alert ID，不能按相同目标／文字强连。页面按真实 alert_id 或精确 Run 范围读取，有关联才显示。不得将 actions.record.incident_id 当 Fusion incident_id [C12/C13]"
+      ]
+    },
+    {
+      "id": "D09",
+      "label": "检测时间／完成取证时间",
+      "comparison_cells": [
+        "原材料存在时可保留；E 有真实阶段 ts",
+        "没有统一 Alert.detected_at 或通用“取证完成”字段。只显示明确来源／真实步骤的时间；输入没给检测时间不列补采任务；Tool 有返回不自动生成“取证完成”，不按发生时间加固定秒数"
+      ]
+    },
+    {
+      "id": "D10",
+      "label": "事件队列卡片",
+      "comparison_cells": [
+        "Incident 成员关系／严重程度具备；独立状态、负责人缺失",
+        "事件数、成员数、聚合等级可派生；“处理中”“待分配”不能准确支撑，依赖 I05/I06。不得以 Run running 或成员任一负责人补足"
+      ]
+    },
+    {
+      "id": "D11",
+      "label": "事件压缩率／攻击中断",
+      "comparison_cells": [
+        "当前归属可得到事件及成员数量；实际响应有动作记录",
+        "压缩率必须同租户、同范围、同一成员口径，不能混用全告警与部分事件；攻击中断必须准确关联真实成功执行证据，不能数标签。最新远端已换掉攻击中断卡，不新增该功能"
+      ]
+    },
+    {
+      "id": "D12",
+      "label": "启动调查与告警业务状态",
+      "comparison_cells": [
+        "当前 Run 有独立状态／范围；A.status 列存在",
+        "当前 v2 Case 启动不写 A.status；若按用户已确认“启动调查算进行中”呈现业务状态，后端需明确写回。该问题不是缺 Run 数据，不能把 Run 状态直接覆盖告警状态 [C7/C14]"
+      ]
+    },
+    {
+      "id": "T01",
+      "label": "来源、规则、战术／技术、Fusion 评分、同次分诊评分",
+      "comparison_cells": [
+        "A/F；同次 triage E",
+        "Case A.source/A.detection、T 实际冻结、入 hash 和有界模型投影 [C2/C7]",
+        "第 4 批已补。新增字段值共用 2048 字节、原文视图 8192 字节；超限／guard 省略有标记，不声称每次模型能看到全部"
+      ]
+    },
+    {
+      "id": "T02",
+      "label": "OCSF 进程 PID、命令行、父进程等",
+      "comparison_cells": [
+        "输入存在时保存在 A.raw_event、Case 冻结来源、湖 ocsf_json",
+        "OCSF 整段命中原输入 guard 时，模型不能看原段；当前无这些必要语义字段的独立安全投影 [C7/C9]",
+        "**读取／投影缺口（S5-02）**；不是没有保存原文。保 guard 和预算，按确切源路径投影已存值，不从标题／旧报告补造"
+      ]
+    },
+    {
+      "id": "T03",
+      "label": "进程名称、路径、SHA256、账户",
+      "comparison_cells": [
+        "湖 process_name/file_path/hash_sha256/user_name",
+        "process_activity SELECT 已取 [C9/C17]",
+        "已通；file_path 是湖 file.path 的当前映射，不能自动称可执行命令行；算法不明的 hash 不填 SHA256"
+      ]
+    },
+    {
+      "id": "T04",
+      "label": "进程类别、活动、动作、结果",
+      "comparison_cells": [
+        "湖 class_uid/activity_id/action/outcome",
+        "process_activity SELECT 已取 [C17]",
+        "已通；未知动作／结果不证明进程启动成功"
+      ]
+    },
+    {
+      "id": "T05",
+      "label": "进程会话 ID",
+      "comparison_cells": [
+        "湖 session_id",
+        "process_activity SELECT 未取 [C9/C17]",
+        "**读取缺口（S5-03）**；不需新列"
+      ]
+    },
+    {
+      "id": "T06",
+      "label": "进程 PID／父进程／命令行细节",
+      "comparison_cells": [
+        "有则存湖 ocsf_json/raw_payload，无独立上述平铺列",
+        "process_activity 未取 JSON，也未解析上述已有值 [C9/C17]",
+        "**读取缺口（S5-03）**；与 T02 分别是 Tool 和告警模型视图两条路径，不能只补一条就称全通"
+      ]
+    },
+    {
+      "id": "T07",
+      "label": "网络源／目标 IP、目标端口、协议、进程、主机、时间／ID",
+      "comparison_cells": [
+        "湖 source_ip/dest_ip/dst_port/protocol/process_name/src_hostname/event_time/event_id",
+        "network_connections SELECT 已取 [C17]",
+        "已通；TCP/443 仍不能直接证明 HTTPS"
+      ]
+    },
+    {
+      "id": "T08",
+      "label": "网络源端口",
+      "comparison_cells": [
+        "湖 src_port",
+        "network_connections 未取 [C9/C17]",
+        "**读取缺口（S5-03）**"
+      ]
+    },
+    {
+      "id": "T09",
+      "label": "网络目标主机名",
+      "comparison_cells": [
+        "湖 dst_hostname",
+        "network_connections 未取 [C9/C17]",
+        "**读取缺口（S5-03）**"
+      ]
+    },
+    {
+      "id": "T10",
+      "label": "网络动作／结果",
+      "comparison_cells": [
+        "湖 action/outcome",
+        "network_connections 未取 [C9/C17]",
+        "**读取缺口（S5-03）**；否则不能仅从连接记录判断允许／阻断／成功"
+      ]
+    },
+    {
+      "id": "T11",
+      "label": "网络会话 ID",
+      "comparison_cells": [
+        "湖 session_id",
+        "network_connections 未取 [C9/C17]",
+        "**读取缺口（S5-03）**"
+      ]
+    },
+    {
+      "id": "T12",
+      "label": "告警—查询行对应及重投去重",
+      "comparison_cells": [
+        "source_event_ids 对 event_id；tenant/time/class/host；查询工件",
+        "精确来源匹配；查询先按 tenant/event_time/class/event_id 去重后限量，process.v3/network.v2 [C7/C17]",
+        "第 1、3 批已补；仅同主机不是来源匹配；保原限额、省略和失败／空结果区别；旧结果不能冒充新合同结果"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "services/actions/app/api/router.py",
+      "sha256": "1e79f19844d6c2de1ff1c67ec331ed30d5fd6d25186b3892ad33f40a75932f41"
+    },
+    {
+      "path": "services/actions/app/models/action.py",
+      "sha256": "d64d891bf9fe3185f7e26fcbf072cbc6ae7ccfc37f2293cbedd6258551ecbf86"
+    },
+    {
+      "path": "services/actions/app/services/action_store.py",
+      "sha256": "b5235084b918c78bd425a011ab1d031bb51fd7156fd52f3f8421c66ca4432411"
+    },
+    {
+      "path": "services/api/app/api/v1/endpoints/alert_explain.py",
+      "sha256": "80d4b3f2256a7f3d98b7f64dc6bcaa6a15bb260978d264e05ec84464d0c3280a"
+    },
+    {
+      "path": "services/api/app/api/v1/endpoints/alerts.py",
+      "sha256": "f2734578ecfecd8efdddc69bc2f550c4f101dc140746d43fad455df22573caab"
+    },
+    {
+      "path": "services/api/app/api/v1/endpoints/approvals.py",
+      "sha256": "e57871bfb97b2f25bd7011257b80da0097349f7ef0afc646c5c484a60d867dc2"
+    },
+    {
+      "path": "services/api/app/api/v1/endpoints/feedback.py",
+      "sha256": "3c6d2ae9f89de43c16b013a17d265f66f59c889d4f778aa81656b1fa458161e4"
+    },
+    {
+      "path": "services/api/app/api/v1/endpoints/investigations.py",
+      "sha256": "06c964cedb078b672110eb64d13406279916e51ca486135489a7d36bf07d0ab2"
+    },
+    {
+      "path": "services/api/app/investigation_v2/alert_context_api.py",
+      "sha256": "4fcd31e799860375ddc5f16b24f45ae7faa5957a61155fceee1585769d77fbed"
+    },
+    {
+      "path": "services/api/app/investigation_v2/case_analysis.py",
+      "sha256": "e1635a5349d026af966301030ff277679afe25cbbd0bf2c4eea169ee6dd6b75b"
+    },
+    {
+      "path": "services/api/app/investigation_v2/case_analysis_tools.py",
+      "sha256": "ecfe9276341631acbf28371355f7d1e87785859eeb5b7d4dcb47162815eac0b8"
+    },
+    {
+      "path": "services/api/app/investigation_v2/case_links.py",
+      "sha256": "793c8d2165cf9d696315175e622029cae0839eef263e2889b13f952a3f3a6817"
+    },
+    {
+      "path": "services/api/app/investigation_v2/case_source_material.py",
+      "sha256": "4b355f40efe40e70be41a62e94fb0b14b8fc273dcdc3c8bf0720e487412c1657"
+    },
+    {
+      "path": "services/api/app/investigation_v2/execution_index.py",
+      "sha256": "0c4186f6289c730d16159fde4d2f853d6d9676de38765727b7756c25ca833490"
+    },
+    {
+      "path": "services/api/app/investigation_v2/incident_api.py",
+      "sha256": "b194ae6deb3fa16b984af2b9106d2baa1f54cc7229e974ba2f979e2ced25a3b6"
+    },
+    {
+      "path": "services/api/app/investigation_v2/incident_reader.py",
+      "sha256": "5a93429502e8d1de146707a541948d123dd100a730f8225da6bac37f7f2e3862"
+    },
+    {
+      "path": "services/api/app/investigation_v2/incident_summary.py",
+      "sha256": "8611e026208590d6e0eac3f8a8c6598620996adc65d9acda5fc92a76ddbdfca1"
+    },
+    {
+      "path": "services/api/app/investigation_v2/related_investigations.py",
+      "sha256": "2f3b54253ff54a30bcb150780fc9a32d601d857676f33c3527e2c18817f490aa"
+    },
+    {
+      "path": "services/api/app/models/alert.py",
+      "sha256": "785d2bfa1544f3cb20a86243315bac8a9b93d53695f1846c818d15115c364abc"
+    },
+    {
+      "path": "services/api/app/models/audit.py",
+      "sha256": "a2e90c82b86f2bbf00125adf9b93eb7f9a7cc4a311f5f960f1a7be20e1f9a6ac"
+    },
+    {
+      "path": "services/api/app/models/case.py",
+      "sha256": "337451c8f6bcef337942d9f4d13592abf346758bdb1bf5a3d685040630cb1526"
+    },
+    {
+      "path": "services/api/app/models/investigation.py",
+      "sha256": "67a3ffa96a8f97274e612c6ea56793a613e3e6f89601392a19cce33a56ab9667"
+    },
+    {
+      "path": "services/api/app/models/responder.py",
+      "sha256": "c2a07135130056c2b56ebbc0a27d22ffb585d360127a02a800ed925a94f0fa89"
+    },
+    {
+      "path": "services/api/app/services/alert_explain.py",
+      "sha256": "dd2499afa3240d9f2d04ec5f88582e4e6234efe10d852893b8561f14ae3731bd"
+    },
+    {
+      "path": "services/api/app/services/alert_projection.py",
+      "sha256": "24858037a1350848011e77674f62efc3488fa1edbca03b5dafe39c75febf8f3b"
+    },
+    {
+      "path": "services/api/app/services/alert_rail.py",
+      "sha256": "0e25b4dcb3f1568fcf8944e2e4012739642202bd28ac39167ea366f5ebb80701"
+    },
+    {
+      "path": "services/api/app/services/alert_status.py",
+      "sha256": "b2aea7f2b3021fd047f00d8fc6a7516415690c42d55e55609dfbe576be394de1"
+    },
+    {
+      "path": "services/api/app/services/analyst_feedback.py",
+      "sha256": "3fc53216e1f9df92da06f5758e76b7e04a7914616b3d6409d17cfe66e972bec9"
+    },
+    {
+      "path": "services/api/app/services/processing_context.py",
+      "sha256": "1b0921eba226ce080bbedf355119cc1070fe845fc48710ebec459ccdbfe07326"
+    },
+    {
+      "path": "services/api/migrations/001_init.sql",
+      "sha256": "cc12725a2375dc1235c80a9533d141286fdc0f2521fd8456b017deb4eb30e16e"
+    },
+    {
+      "path": "services/api/migrations/013_asset_inventory.sql",
+      "sha256": "fbd09675b553a3c4282f1ebf3d993f790f4cf89821220456656e60e226e73a35"
+    },
+    {
+      "path": "services/api/migrations/055_action_records.sql",
+      "sha256": "e485fa5edbc4ee0d8508c1084dbe8ad186b97ee7369a089700d2db0b35059746"
+    },
+    {
+      "path": "services/api/migrations/120_fusion_incident_summaries.sql",
+      "sha256": "b742a042ec2b17819f85177dd106ae7682e1c29efc193a7a6419e72291610497"
+    },
+    {
+      "path": "services/fusion/app/services/alert_sink.py",
+      "sha256": "e27256af6fe7740ed357f50ab0c7d203fa04289d670a20b49b50070765259d8b"
+    },
+    {
+      "path": "services/fusion/app/services/correlator.py",
+      "sha256": "2dd5c6adb08d33b96abe67f3735047a5f0500a99d0849bf8fe266246f9c3437b"
+    },
+    {
+      "path": "services/fusion/app/services/lake_material.py",
+      "sha256": "58c242fb7ec75931de61bb097fd4aeb5a25071e9489099d54fb03f5af6335f8f"
+    },
+    {
+      "path": "services/fusion/app/services/lake_writer.py",
+      "sha256": "dad3856ec2a028a2fe6e3cb816417c336c023914e8b666fc1860d5b2aedf5dfb"
+    }
+  ],
+  "prior_receipts": [
+    {
+      "path": "docs/operations/fusion-field-fix1-20261101.json",
+      "sha256": "28b17abe3ca8533524e6d655ff019a395a150d975fb8ce6f1a2650450a700cbd"
+    },
+    {
+      "path": "docs/operations/fusion-field-fix2-20261102.json",
+      "sha256": "2f821eb61e53a5acd2cb8f320a9489e9b9dfa633f158f4a583f68229a20c30a8"
+    },
+    {
+      "path": "docs/operations/fusion-field-fix3-20261102.json",
+      "sha256": "9976cacceb5bfe62343d9e4e38d15927ba16e0768ffbe959d791d47f27ddb1de"
+    },
+    {
+      "path": "docs/operations/fusion-field-fix4-20261102.json",
+      "sha256": "0629c92781a46262c5cf5fe99ea7256eae6f4fa03b57626262601c2dc2124f0a"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "c4f943d8b21722eb2cd74ea2cecd99f29325389c8cb7086dcc707d2b784c8adf"
+    },
+    {
+      "path": "PROGRESS.md",
+      "sha256": "0b962ea9317769885cf899e07e76032c4884b0ea83dc0b0f430ca99aed03e2c5"
+    },
+    {
+      "path": "docs/investigation/README.md",
+      "sha256": "f0a62183b1e445399b862dd4bbc402823511add54bb72bcc3f53b56278693dce"
+    },
+    {
+      "path": "docs/investigation/review-guide-20261101.md",
+      "sha256": "cea95b6b6631ca99ca0484ecf941a744e1a743f09efbf3f87994b6a4df49328b"
+    },
+    {
+      "path": "docs/investigation/field-alignment-confirmations-20261101.md",
+      "sha256": "7b98438a60812ff99c3ac5e2bfe68947d0b2bdcab828d611c7c1e54a34b110c0"
+    },
+    {
+      "path": "docs/investigation/field-alignment-impact-and-repair-plan-20261101.md",
+      "sha256": "8157a6c08504235c23c54fee83530988e530fc269b458c230a83607bb59cd399"
+    },
+    {
+      "path": "docs/investigation/page-field-support-matrix-20261102.md",
+      "sha256": "4e89f581afe86f16ce0e249a84f8deeb244c3dd55d0b99f975985e73bc7f6b3f"
+    }
+  ],
+  "validation": {
+    "unique_row_ids": true,
+    "latest_prior_service_fingerprints_checked": 48,
+    "prior_service_mismatches": [],
+    "business_tests_run": 0,
+    "new_business_code_changes": false,
+    "new_ddl": false,
+    "new_model_calls": 0,
+    "new_runs": 0,
+    "real_database_calls": 0,
+    "deployment": false,
+    "commit_created": false,
+    "pushed": false,
+    "matrix_local_links_missing": []
+  },
+  "limits": [
+    "Uses the fixed requirement commit; no remote refresh this turn.",
+    "Current local implementation includes uncommitted batches 1-4.",
+    "Stored-field availability is not evidence that every live row has a value.",
+    "Approval-to-action same-id linkage exists; generic recommendation linkage is not established.",
+    "Prior r13 failures and batch receipts are unchanged; report fixes remain paused."
+  ]
+}

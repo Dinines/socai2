@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -50,6 +50,8 @@ from typing import Any
 import structlog
 
 from app.models.alert import AlertSeverity, RawAlert
+from app.services.event_schema import event_alert_identity
+from app.services.received_fields import received_projection, strings
 from app.services.derived_fields import enrich, requested_derived_fields
 from app.services.detection_matcher import matches
 from app.services.provenance import extract_provenance
@@ -89,6 +91,9 @@ class DetectionHit:
     #: *messages produced by a match* identify the rule's author. An alert is
     #: such a message, so the attribution has to reach it.
     attribution: str = ""
+    tactics: list[str] = field(default_factory=list)
+    source_event_ids: list[str] | None = None
+    source_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 def _get(obj: Any, *path: str) -> Any:
@@ -317,6 +322,7 @@ class DetectionEngine:
                             category=rule["category"],
                             mitre=list(rule.get("mitre") or []),
                             attribution=_attribution(rule),
+                            tactics=strings(rule.get("mitre_tactics") or rule.get("tactics")),
                         )
                     )
             except Exception as exc:  # noqa: BLE001 — one bad rule must not wedge detection
@@ -333,6 +339,7 @@ class DetectionEngine:
             return None
         connector_id, connector_type, class_uid = extract_provenance(message, ocsf)
         return RawAlert(
+            **event_alert_identity(message, ocsf, "rule"),
             tenant_id=tenant_id,
             source=f"detection:{hit.rule_id}",
             title=hit.name,
@@ -341,11 +348,7 @@ class DetectionEngine:
                 + (f" {hit.attribution}" if hit.attribution else "")
             ),
             severity=_SEVERITY_MAP.get(hit.severity, AlertSeverity.MEDIUM),
-            src_ip=_get(ocsf, "src_endpoint", "ip"),
-            dst_ip=_get(ocsf, "dst_endpoint", "ip"),
-            hostname=_get(ocsf, "device", "name"),
-            username=_get(ocsf, "actor", "user", "name"),
-            mitre_techniques=hit.mitre,
+            **received_projection(message, ocsf, rule_tactics=hit.tactics, rule_techniques=hit.mitre),
             raw_event=ocsf,
             connector_id=connector_id,
             connector_type=connector_type,

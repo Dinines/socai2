@@ -85,13 +85,13 @@ def _to_narrative_inputs(
 
     # ``confidence_score`` is on [0, 1]; the narrative surfaces a /100 number
     # so the rail prose reads naturally ("Confidence: high (78/100)").
-    confidence_pct: int | None = round(max(0.0, min(1.0, fused.confidence_score)) * 100) if fused.confidence_score is not None else None
+    confidence_pct: int | None = round(max(0.0, min(1.0, fused.confidence_score)) * 100) if fused.confidence_status == "computed" else None
 
     return NarrativeInputs(
         severity=raw.severity.value,  # type: ignore[arg-type]
         title=raw.title,
         confidence=confidence_pct,
-        confidence_label=fused.confidence_label.value,  # type: ignore[arg-type]
+        confidence_label=fused.confidence_label.value if fused.confidence_status == "computed" else None,  # type: ignore[arg-type]
         rationale=rationale_factors,
         src_ip=raw.src_ip,
         dst_ip=raw.dst_ip,
@@ -176,7 +176,7 @@ class FusionEngine:
         await self._dedup.register(alert)
 
         # --- Step 2: Correlation ---
-        correlated, incident = await self._correlator.correlate(alert)
+        correlated, incident, basis = await self._correlator.correlate(alert)
 
         decision = FusionDecision.CORRELATED if correlated else FusionDecision.NEW_INCIDENT
 
@@ -185,6 +185,7 @@ class FusionEngine:
             tenant_id=alert.tenant_id,
             incident_id=incident.id,
             fusion_decision=decision,
+            correlation_basis=basis,
             duplicate_of=None,
             alert=alert,
         )
@@ -215,6 +216,7 @@ class FusionEngine:
             priors = self._memory_provider.get_priors(str(fused.tenant_id)) if self._memory_provider is not None else None
             fused = self._confidence_scorer.score(fused, priors=priors)
         except Exception as exc:
+            fused.confidence_status = "failed"
             logger.warning("confidence_scoring_failed", error=str(exc))
 
         # --- Step 3c: Exploit-in-wild boost (Tier 3.5) ---

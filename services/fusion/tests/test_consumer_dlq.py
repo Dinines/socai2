@@ -105,6 +105,54 @@ async def test_missing_ocsf_event_is_dead_lettered_not_dropped():
     worker._engine.process.assert_not_awaited()  # noqa: SLF001
 
 
+async def test_received_event_identity_reaches_both_lake_and_saved_alert():
+    from app.services.lake_writer import LakeWriter
+
+    rows = []
+    worker, dlq = _worker_with_dlq()
+    writer = LakeWriter(host="unused.invalid", batch_size=1)
+    writer._client = SimpleNamespace(execute=lambda sql, data, **kw: rows.extend(data))
+    worker._lake = writer
+    payload = _valid_raw_event()
+    identity = "abcdefab-cdef-abcd-efab-cdefabcdefab"
+    payload["event_id"] = identity.upper()
+    payload["id"] = "11111111-1111-1111-1111-111111111111"
+    await worker._process_message(payload, topic=RAW_EVENTS)
+    alert = worker._engine.process.await_args.args[0]
+    assert alert.source_event_ids == [identity]
+    assert rows[0]["event_id"] == identity
+    assert worker._sink.snapshot["fused"]["alert"]["source_event_ids"] == [identity]
+    assert worker.get_metrics()["laked"] == 1
+    assert dlq.records == []
+
+
+async def test_metrics_distinguish_buffered_written_and_dropped(monkeypatch):
+    from app.api import router
+    from app.services.lake_writer import LakeWriter
+
+    writer = LakeWriter(host="unused.invalid", batch_size=100)
+    writer._client = SimpleNamespace(execute=lambda *args, **kw: None)
+    worker = FusionWorker(engine=SimpleNamespace(), lake=writer)
+    monkeypatch.setattr(router, "_worker_ref", worker)
+    assert await writer.write_event(_valid_raw_event()) is True
+    before = (await router.metrics())["metrics"]
+    assert before["laked"] == 0 and before["lake"]["buffered"] == 1
+    assert await writer.flush() is True
+    after = (await router.metrics())["metrics"]
+    assert after["laked"] == 1 and after["lake"]["buffered"] == 0
+
+    def fail(*args, **kw):
+        raise RuntimeError("existing fail-soft path")
+
+    writer._client.execute = fail
+    await writer.write_event(_valid_raw_event())
+    assert await writer.flush() is False
+    failed = (await router.metrics())["metrics"]
+    assert failed["laked"] == 1
+    assert failed["lake"]["rows_dropped"] == 1
+    assert failed["lake"]["flush_failures"] == 1
+
+
 async def test_unknown_schema_version_is_dead_lettered():
     worker, dlq = _worker_with_dlq()
     poison = _valid_raw_event()

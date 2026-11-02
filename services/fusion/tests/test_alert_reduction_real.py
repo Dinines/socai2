@@ -8,7 +8,7 @@ merely reimplement fusion's grouping, it implements **different** grouping.
 
 Its docstring describes four tiers keyed on `(rule_id, host, user)` with
 10/30/5-minute windows. `RawAlert.correlation_key()` — the method
-`Correlator` actually calls — keys on `{tenant}:{entity}:{tactic}`, where
+`Correlator` actually calls — keys on tenant, entity type/value and tactic, where
 entity is the first of src_ip, hostname, username, domain. Different
 dimensions, different windows, different answer. The published
 alert-reduction figure therefore described an algorithm the product does
@@ -170,32 +170,26 @@ def test_the_key_is_the_products_key_not_a_local_one() -> None:
         username="alice",
         mitre_tactics=["execution"],
     )
-    assert alert.correlation_key() == f"{TENANT}:10.0.0.1:execution"
+    assert alert.correlation_key() == f'{TENANT}:entity-v2:["ip","10.0.0.1","execution"]'
 
 
 def test_entity_precedence_is_src_ip_then_hostname() -> None:
     """Which entity wins decides what groups with what, so it is worth
     pinning rather than inferring from the reduction number."""
     base = {"tenant_id": TENANT, "source": "s", "title": "t", "mitre_tactics": ["exec"]}
-    assert RawAlert(**base, hostname="ws-1").correlation_key().endswith("ws-1:exec")
-    assert RawAlert(**base, src_ip="10.0.0.1", hostname="ws-1").correlation_key().endswith("10.0.0.1:exec")
+    assert RawAlert(**base, hostname="ws-1").correlation_key().endswith('["host","ws-1","exec"]')
+    assert RawAlert(**base, src_ip="10.0.0.1", hostname="ws-1").correlation_key().endswith('["ip","10.0.0.1","exec"]')
 
 
 def test_alerts_without_a_tactic_do_not_all_collapse_together() -> None:
-    """`correlation_key()` falls back to the literal "unknown" for both
-    entity and tactic. Two unrelated alerts each missing one field still
-    differ on the other; two missing both would merge, which is worth
-    knowing rather than discovering in production."""
+    """Missing objects do not establish a shared entity between members."""
     a = RawAlert(tenant_id=TENANT, source="s", title="a", hostname="ws-1")
     b = RawAlert(tenant_id=TENANT, source="s", title="b", hostname="ws-2")
     assert a.correlation_key() != b.correlation_key()
 
     bare_a = RawAlert(tenant_id=TENANT, source="s", title="a")
     bare_b = RawAlert(tenant_id=TENANT, source="s", title="b")
-    assert bare_a.correlation_key() == bare_b.correlation_key(), (
-        "two alerts with no entity and no tactic share a key and will merge; "
-        "this is current behaviour, pinned so a change to it is deliberate"
-    )
+    assert bare_a.correlation_key() != bare_b.correlation_key()
 
 
 def test_the_stream_is_reproducible() -> None:

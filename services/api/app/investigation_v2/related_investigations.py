@@ -1,6 +1,7 @@
 """Read Case membership and Runs whose fixed selection covers source alerts."""
 from sqlalchemy import Text, and_, cast, func, select, tuple_
 from sqlalchemy.dialects.postgresql import JSONB, array
+from uuid import UUID
 
 from app.models.case import Case
 from app.models.investigation import InvestigationArtifact, InvestigationRun
@@ -61,4 +62,6 @@ async def attach_related(db, overview):
     if overview.source_updated_at is not None:
         updated.append(overview.source_updated_at)
     return overview.model_copy(update={"investigations": related,
+                                       "members": [member.model_copy(update={"case_ids": [UUID(item["case_id"]) for item in related["cases"]
+                                           if str(member.alert_id) in item["member_ids"]], "case_ids_truncated": related["cases_truncated"]}) for member in overview.members],
                                        "source_updated_at": max(updated) if updated else None})

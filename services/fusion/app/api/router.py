@@ -41,7 +41,7 @@ async def health():
 async def metrics():
     if _worker_ref is None:
         return {"status": "worker not started"}
-    return {"status": "ok", "metrics": FusionWorker.get_metrics()}
+    return {"status": "ok", "metrics": _worker_ref.get_metrics()}
 
 
 @router.get("/scale-hint")

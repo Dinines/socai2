@@ -37,13 +37,17 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
-import json
+import re
 import time
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+
+from app.services.event_schema import resolve_source_event_id
+from app.services.lake_material import bounded_material
+from app.services.received_fields import activity_block, received_time, source_labels
 
 logger = structlog.get_logger()
 
@@ -109,6 +113,8 @@ _COLUMNS = (
 )
 
 _INSERT_SQL = f"INSERT INTO aisoc.raw_events ({', '.join(_COLUMNS)}) VALUES"
+_DEFAULT_ID_COLUMNS = tuple(column for column in _COLUMNS if column != "event_id")
+_INSERT_DEFAULT_ID_SQL = f"INSERT INTO aisoc.raw_events ({', '.join(_DEFAULT_ID_COLUMNS)}) VALUES"
 
 # ClickHouse IPv6 columns reject empty/invalid strings; "::" is the safe null.
 _NULL_IP = "::"
@@ -208,10 +214,17 @@ def _event_time(ocsf: dict[str, Any]) -> datetime:
 
 
 def _first_hash(ocsf: dict[str, Any]) -> str:
+    def sha256(value):
+        return value if isinstance(value, str) and re.fullmatch(r"[0-9a-fA-F]{64}", value) else ""
+
     fps = _get(ocsf, "file", "fingerprints")
-    if isinstance(fps, list) and fps and isinstance(fps[0], dict):
-        return _as_str(fps[0].get("value"))
-    return _as_str(ocsf.get("hash_sha256"))
+    if isinstance(fps, list):
+        for fp in fps:
+            if isinstance(fp, dict) and str(fp.get("algorithm", "")).upper().replace("-", "") == "SHA256":
+                value = sha256(fp.get("value"))
+                if value:
+                    return value
+    return sha256(ocsf.get("hash_sha256"))
 
 
 def _mitre(ocsf: dict[str, Any]) -> tuple[list[str], list[str]]:
@@ -239,6 +252,11 @@ def _iocs(ocsf: dict[str, Any]) -> list[str]:
         _first_hash(ocsf),
     ):
         if isinstance(value, str) and value.strip():
+            out.append(value.strip())
+    fingerprints = _get(ocsf, "file", "fingerprints")
+    for fingerprint in fingerprints if isinstance(fingerprints, list) else []:
+        value = fingerprint.get("value") if isinstance(fingerprint, dict) else None
+        if isinstance(value, str) and value.strip() and value.strip() not in out:
             out.append(value.strip())
     return out
 
@@ -315,12 +333,22 @@ def event_to_row(message: dict[str, Any]) -> dict[str, Any] | None:
     if tenant is None:
         return None
 
-    techniques, tactics = _mitre(ocsf)
+    tactics, techniques = source_labels(ocsf)
     connector_type = _as_str(_get(ocsf, "metadata", "product", "name")) or _as_str(message.get("connector_type"))
+    activity, activity_source = activity_block(message)
+    event_time, time_source = received_time(message, ocsf)
+    raw_payload, raw_metadata = bounded_material(ocsf.get("raw_data"), 65536)
+    # Original OCSF fields stay at their established JSON paths when complete.
+    # Envelope activity is retained separately so its origin is explicit.
+    material = {**ocsf, "_socai2_storage": {"raw_payload": raw_metadata,
+                "event_time_source": time_source, "event_time_fallback": event_time is None,
+                "activity_source": activity_source,
+                **({"envelope_activity": message["activity"]} if activity_source.startswith("activity") else {})}}
+    ocsf_json, _ = bounded_material(material, 262144, structured=True)
 
     row: dict[str, Any] = {
         "tenant_id": tenant,
-        "event_time": _event_time(ocsf),
+        "event_time": (event_time or datetime.now(UTC)).replace(tzinfo=None),
         "class_uid": _as_int(ocsf.get("class_uid")),
         "category_uid": _as_int(ocsf.get("category_uid")),
         "severity_id": _as_int(ocsf.get("severity_id")),
@@ -338,17 +366,17 @@ def event_to_row(message: dict[str, Any]) -> dict[str, Any] | None:
         "file_path": _as_str(_get(ocsf, "file", "path")),
         "hash_sha256": _first_hash(ocsf),
         "connector_type": connector_type,
-        "raw_payload": _as_str(ocsf.get("raw_data"))[:65536],
-        "ocsf_json": json.dumps(ocsf, default=str)[:262144],
+        "raw_payload": raw_payload,
+        "ocsf_json": ocsf_json,
         "mitre_techniques": techniques,
         "mitre_tactics": tactics,
         "iocs": _iocs(ocsf),
-        **_activity_columns(ocsf),
+        **_activity_columns({"activity": activity}),
     }
 
     # Only set a deterministic event_id when the ingest id is a real UUID;
     # otherwise let ClickHouse default generateUUIDv4().
-    raw_id = message.get("id") or message.get("event_id")
+    raw_id = resolve_source_event_id(message, ocsf)
     try:
         row["event_id"] = str(uuid.UUID(str(raw_id)))
     except (TypeError, ValueError):
@@ -382,6 +410,9 @@ class LakeWriter:
         self._buffer_started_at: float = 0.0
         self._disabled = False
         self.rows_written = 0
+        # Rows discarded from the local buffer without a confirmed insert.
+        # An INSERT error does not prove the server stored none of those rows.
+        self.rows_dropped = 0
         self.flush_failures = 0
 
     async def start(self) -> None:
@@ -416,11 +447,12 @@ class LakeWriter:
             self._client = None
 
     async def write_event(self, message: dict[str, Any]) -> bool:
-        """Buffer one normalized event for the lake. Returns True if buffered.
+        """Return True if accepted into the buffer or a triggered insert succeeded.
 
-        Flushes automatically when the buffer reaches ``batch_size``.
+        True for a pending buffer is not a persistence receipt; use rows_written.
+        A triggered flush failure returns False. No retry is performed here.
         """
-        if self._disabled:
+        if self._disabled or self._client is None:
             return False
         row = event_to_row(message)
         if row is None:
@@ -429,44 +461,61 @@ class LakeWriter:
             self._buffer_started_at = time.monotonic()
         self._buffer.append(row)
         if len(self._buffer) >= self._batch_size:
-            await self.flush()
+            return await self.flush()
         return True
 
     async def flush_if_stale(self) -> None:
         if self._buffer and (time.monotonic() - self._buffer_started_at) >= self._batch_max_age:
             await self.flush()
 
-    async def flush(self) -> None:
-        if self._disabled or not self._buffer:
-            return
+    async def flush(self) -> bool:
+        if not self._buffer:
+            return True
+        if self._disabled:
+            return False
         batch = self._buffer
         self._buffer = []
         client = self._client
         if client is None:
-            return
+            self.rows_dropped += len(batch)
+            self.flush_failures += 1
+            return False
 
-        def _insert() -> None:
+        def _insert(sql: str, group: list[dict[str, Any]]) -> None:
             # clickhouse-driver executes INSERT ... VALUES with a list of dicts.
-            # Coerce the typed columns (IPv6) to the objects the driver binds,
-            # and omit event_id when None so the column DEFAULT applies.
+            # A DEFAULT applies only when the column is absent from the SQL as
+            # well as the row. Keep valid-ID rows separate from that fallback.
             rows: list[dict[str, Any]] = []
-            for row in batch:
+            for row in group:
                 out = {k: v for k, v in row.items() if not (k == "event_id" and v is None)}
                 out["source_ip"] = _to_ip_obj(row["source_ip"])
                 out["dest_ip"] = _to_ip_obj(row["dest_ip"])
                 rows.append(out)
-            client.execute(_INSERT_SQL, rows, types_check=True)
+            client.execute(sql, rows, types_check=True)
 
-        try:
-            await asyncio.to_thread(_insert)
-            self.rows_written += len(batch)
-        except Exception as exc:  # noqa: BLE001 — best-effort archival; drop the batch
+        succeeded = True
+        groups = (
+            (_INSERT_SQL, [row for row in batch if row["event_id"] is not None]),
+            (_INSERT_DEFAULT_ID_SQL, [row for row in batch if row["event_id"] is None]),
+        )
+        for sql, group in groups:
+            if not group:
+                continue
+            try:
+                await asyncio.to_thread(_insert, sql, group)
+                self.rows_written += len(group)
+            except Exception as exc:  # noqa: BLE001 — retain the existing fail-soft policy
+                succeeded = False
+                self.rows_dropped += len(group)
+                logger.error("lake_writer.flush_failed", error=str(exc), dropped=len(group))
+        if not succeeded:
             self.flush_failures += 1
-            logger.error("lake_writer.flush_failed", error=str(exc), dropped=len(batch))
+        return succeeded
 
     def metrics(self) -> dict[str, int]:
         return {
             "rows_written": self.rows_written,
+            "rows_dropped": self.rows_dropped,
             "flush_failures": self.flush_failures,
             "buffered": len(self._buffer),
         }

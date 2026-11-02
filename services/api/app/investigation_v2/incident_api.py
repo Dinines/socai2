@@ -21,12 +21,16 @@ async def get_incident(
     db: TenantDBSession,
     _credential: Annotated[None, Depends(_explicit_bearer)],
     user: Annotated[CurrentUser, Depends(require_permission("alerts:read"))],
+    include_assets: bool = False,
+    include_investigations: bool = False,
 ):
-    result = await read_incident(db, tenant_id=user.tenant_id, incident_id=incident_id)
+    if include_investigations:
+        user.require_permission("cases:read")
+    result = await read_incident(db, tenant_id=user.tenant_id, incident_id=incident_id, include_assets=include_assets)
     if result is None:
         raise HTTPException(404, "incident_not_found")
     record = await load_summary(db, user.tenant_id, incident_id)
-    if record is not None and (record.source_refs or {}).get("include_investigations"):
+    if include_investigations or record is not None and (record.source_refs or {}).get("include_investigations"):
         user.require_permission("cases:read")
         result = await attach_related(db, result)
     return attach_summary(result, record)

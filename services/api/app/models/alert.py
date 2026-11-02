@@ -82,6 +82,8 @@ class Alert(Base):
     # column has existed since migration 001 and was simply never mapped here,
     # so nothing above the database could read what the pipeline produced.
     entities: Mapped[list] = mapped_column(JSONB, default=list)
+    # Existing migration 001 column, written by Fusion. No new schema required.
+    iocs: Mapped[list] = mapped_column(JSONB, default=list)
 
     # Relations
     case_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)

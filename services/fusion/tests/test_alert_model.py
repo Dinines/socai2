@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from uuid import UUID, uuid4
 
 import pytest
@@ -69,17 +70,17 @@ class TestRawAlertCorrelationKey:
         key = a.correlation_key()
         assert "10.0.0.1" in key
         assert "host1" not in key
-        assert key.endswith(":initial-access")
+        assert json.loads(key.split(":entity-v2:", 1)[1]) == ["ip", "10.0.0.1", "initial-access"]
 
     def test_correlation_key_falls_through_to_hostname(self) -> None:
         a = _alert(hostname="server-42", mitre_tactics=["execution"])
         key = a.correlation_key()
         assert "server-42" in key
-        assert key.endswith(":execution")
+        assert json.loads(key.split(":entity-v2:", 1)[1]) == ["host", "server-42", "execution"]
 
-    def test_correlation_key_unknown_when_no_entity_or_tactic(self) -> None:
+    def test_correlation_key_is_member_specific_when_no_entity_or_tactic(self) -> None:
         a = _alert()
-        assert a.correlation_key().endswith(":unknown:unknown")
+        assert json.loads(a.correlation_key().split(":entity-v2:", 1)[1]) == ["alert", str(a.deterministic_id()), None]
 
     def test_correlation_key_includes_tenant(self) -> None:
         tenant = UUID("22222222-2222-2222-2222-222222222222")

@@ -44,6 +44,7 @@ from app.services.event_sanitiser import (
 )
 from app.services.narrative_loader import build_narrative
 from app.services.narrative_projection import project_alert_to_narrative_inputs
+from app.services.alert_projection import alert_objects, alert_source, detection_fields, assignee_names
 from app.services.timestamp_bounds import coerce_with_bounds, now_utc
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,27 @@ def _log_safe(value: str | None) -> str | None:
 
 
 class AlertResponse(BaseModel):
+    source: dict = Field(default_factory=dict)
+    detection: dict = Field(default_factory=dict)
+    objects: list[dict[str, str]] = Field(default_factory=list)
+    iocs: list = Field(default_factory=list)
+    case_links_url: str | None = None
+    assigned_to_id: uuid.UUID | None = None
+    assigned_at: datetime | None = None
+    assigned_to_name: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def stored_projection(cls, value):
+        if isinstance(value, Alert):
+            detection = detection_fields(value)
+            score = detection["confidence"]
+            return {**{key: getattr(value, key) for key in cls.model_fields if hasattr(value, key)},
+                    "source": alert_source(value), "detection": detection, "objects": alert_objects(value),
+                    "confidence": score["score"], "confidence_label": score["label"], "confidence_rationale": score["rationale"],
+                    "iocs": value.iocs or [], "case_links_url": f"/api/v2/investigation/case-links?alert_id={value.id}"}
+        return value
+
     id: uuid.UUID
     tenant_id: uuid.UUID
     title: str
@@ -100,7 +122,7 @@ class AlertResponse(BaseModel):
     affected_ips: list
     affected_hosts: list
     affected_users: list
-    case_id: uuid.UUID | None
+    case_id: uuid.UUID | None = Field(description="Legacy single pointer; current membership is read from case_links_url / Case.alert_ids")
     tags: list
     event_time: datetime
     first_seen: datetime
@@ -902,8 +924,9 @@ async def list_alerts(
     result = await db.execute(select(Alert).where(and_(*filters)).order_by(*order_by).offset(offset).limit(page_size))
     alerts = result.scalars().all()
 
+    names = await assignee_names(db, current_user.tenant_id, alerts)
     return AlertListResponse(
-        items=[AlertResponse.model_validate(a) for a in alerts],
+        items=[AlertResponse.model_validate(a).model_copy(update={"assigned_to_name": names.get(a.assigned_to_id)}) for a in alerts],
         total=total,
         page=page,
         page_size=page_size,
@@ -1016,8 +1039,8 @@ async def get_alert(
     The endpoint returns the standard alert fields plus everything the
     rail needs to render in one shot:
 
-    * a deterministic ``narrative`` (lazily filled and persisted if the
-      row was created before fusion started emitting it),
+    * a deterministic ``narrative`` (computed for this response if absent;
+      GET does not persist it or refresh business timestamps),
     * ``related_entities`` grouped for pivot,
     * a compact ``mini_timeline``,
     * normalised ``recommended_actions``.
@@ -1031,18 +1054,13 @@ async def get_alert(
     if alert is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
 
-    # ── Lazy-fill narrative for legacy rows ─────────────────────────────
-    # New alerts get a narrative at fusion time. Older rows predate that
-    # column being populated; the first detail-view read materialises
-    # and persists one so we only pay the cost once per row.
+    # Render missing legacy prose without mutating business timestamps or ORM
+    # state. A GET must not make an incident look newly active.
+    narrative_text = alert.narrative
     if not alert.narrative:
         try:
             inputs = project_alert_to_narrative_inputs(alert)
-            narrative_text = build_narrative(inputs)
-            if narrative_text:
-                alert.narrative = narrative_text
-                await db.execute(update(Alert).where(Alert.id == alert.id).values(narrative=narrative_text, updated_at=datetime.now(UTC)))
-                await db.commit()
+            narrative_text = build_narrative(inputs) or None
         except Exception:  # noqa: BLE001 — never let narrative kill a detail view
             logger.warning(
                 "narrative lazy-fill failed for alert %s; serving without narrative",
@@ -1051,6 +1069,7 @@ async def get_alert(
             )
 
     envelope = await build_rail_envelope(db, alert)
+    names = await assignee_names(db, current_user.tenant_id, [alert])
 
     # ``model_validate`` against the parent class to inherit field
     # coercion, then merge the rail fields. We don't add the rail data
@@ -1070,13 +1089,14 @@ async def get_alert(
     return payload.model_copy(
         update={
             "raw_event": raw_event,
+            "assigned_to_name": names.get(getattr(alert, "assigned_to_id", None)),
             "wazuh_locator": _build_wazuh_locator(raw_event),
             "source_event_ids": getattr(alert, "source_event_ids", None) or [],
             "external_id": getattr(alert, "external_id", None),
             "fusion_identity": fusion_identity,
             "fusion_ioc_lookup": fusion_meta.get("ioc_lookup") if isinstance(fusion_meta.get("ioc_lookup"), dict) else None,
             "fusion_incident_id": fusion_incident_id,
-            "narrative": alert.narrative,
+            "narrative": narrative_text,
             "related_entities": envelope.related_entities,
             "mini_timeline": envelope.mini_timeline,
             "recommended_actions": envelope.recommended_actions,

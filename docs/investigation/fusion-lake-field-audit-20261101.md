@@ -1,5 +1,7 @@
 # 第2段：Fusion收到事件后的入湖与调查对应
 
+**2026-11-02实施更新：** S2-01/02完成[第1批](field-alignment-fix1-20261101.md)后，S2-03—06已完成[第3批本地修复及对照](field-alignment-fix3-20261102.md)：activity/session统一、hash按算法、raw合法有界且显式截断、两Tool去重后限量及新合同。保留输入未知与有限存储边界，尚未部署/真实湖验收。下文仍是六段核对时的修前事实与原证据。
+
 2026-11-01。**本地实现核对完成，新增6项内部问题记录；尚未修复／线上验收。** 范围遵循[主记录](field-alignment-confirmations-20261101.md)：只核Fusion已经收到的数据如何转换、保存、关联和查询。输入缺字段、错误编号、错误类别或原始日志未提供，仅标输入限制，不追查、不修复、不要求补采。
 
 本轮没有修改业务源码、启动服务、执行新Run／模型或远端业务查询。完成13项本地行为观察，其中使用真实本地ClickHouse驱动的列绑定函数，并复核已有r13四次真实查询证据。详见[观察脚本](../operations/evidence/fusion-field-stage2-20261101/probe.py)及[结果／源码指纹](../operations/evidence/fusion-field-stage2-20261101/observations.json)。观察成立包括复现错误，不能称13项需求验收通过。

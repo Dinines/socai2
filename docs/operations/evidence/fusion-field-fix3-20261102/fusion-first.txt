@@ -1,0 +1,93 @@
+..................F................................FF................... [ 69%]
+...............................                                          [100%]
+================================== FAILURES ===================================
+_____________________ test_event_to_row_maps_core_fields ______________________
+
+    async def test_event_to_row_maps_core_fields():
+        row = event_to_row(_message())
+        assert row is not None
+        assert row["tenant_id"] == TENANT
+        assert row["class_uid"] == 2001
+        assert row["severity_id"] == 5
+        assert row["source_ip"] == "10.20.30.40"
+        assert row["dest_ip"] == "203.0.113.9"
+        assert row["user_name"] == "svc-backup"
+        assert row["src_hostname"] == "WIN-DC01"
+>       assert row["hash_sha256"] == "a" * 64
+E       AssertionError: assert '' == 'aaaaaaaaaaaa...aaaaaaaaaaaaa'
+E         
+E         - aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+services\fusion\tests\test_lake_writer.py:79: AssertionError
+__________________ test_temporal_ordered_requires_the_order ___________________
+
+    @pytest.mark.asyncio
+    async def test_temporal_ordered_requires_the_order() -> None:
+        rule = BY_TYPE["temporal_ordered"]
+        first, second = rule["sequence"][0], rule["sequence"][1]
+        tenant = str(uuid4())
+    
+        forwards = _engine_for(rule)
+        assert not await forwards.evaluate(_event(rule, tenant, first, "a@example.com", 1000.0))
+>       assert [h.rule_id for h in await forwards.evaluate(_event(rule, tenant, second, "a@example.com", 1100.0))] == [rule["id"]]
+E       AssertionError: assert [] == ['aisoc-corr-...then-session']
+E         
+E         Right contains one more item: 'aisoc-corr-okta-mfa-push-then-session'
+E         Use -v to get more diff
+
+services\fusion\tests\test_sigma_correlation_replay.py:150: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2026-11-02 11:14:27 [info     ] windowed_detection.ruleset_loaded builtins=3 count=76
+2026-11-02 11:14:27 [info     ] windowed_detection.sequence_ruleset_loaded count=3
+2026-11-02 11:14:27 [debug    ] windowed_detection.sequence_error error='[Errno 22] Invalid argument' rule=aisoc-corr-okta-mfa-push-then-session
+2026-11-02 11:14:27 [debug    ] windowed_detection.sequence_error error='[Errno 22] Invalid argument' rule=aisoc-corr-okta-mfa-push-then-session
+__________ test_temporal_accepts_either_order_but_needs_both_stages ___________
+
+    @pytest.mark.asyncio
+    async def test_temporal_accepts_either_order_but_needs_both_stages() -> None:
+        rule = BY_TYPE["temporal"]
+        first, second = rule["sequence"][0], rule["sequence"][1]
+        tenant = str(uuid4())
+    
+        backwards = _engine_for(rule)
+        assert not await backwards.evaluate(_event(rule, tenant, second, "admin@example.com", 1000.0))
+>       assert [h.rule_id for h in await backwards.evaluate(_event(rule, tenant, first, "admin@example.com", 1100.0))] == [rule["id"]]
+E       AssertionError: assert [] == ['aisoc-corr-...lock-removal']
+E         
+E         Right contains one more item: 'aisoc-corr-azure-role-grant-and-lock-removal'
+E         Use -v to get more diff
+
+services\fusion\tests\test_sigma_correlation_replay.py:165: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2026-11-02 11:14:27 [info     ] windowed_detection.ruleset_loaded builtins=3 count=76
+2026-11-02 11:14:27 [info     ] windowed_detection.sequence_ruleset_loaded count=3
+2026-11-02 11:14:27 [debug    ] windowed_detection.sequence_error error='[Errno 22] Invalid argument' rule=aisoc-corr-azure-role-grant-and-lock-removal
+2026-11-02 11:14:27 [debug    ] windowed_detection.sequence_error error='[Errno 22] Invalid argument' rule=aisoc-corr-azure-role-grant-and-lock-removal
+============================== warnings summary ===============================
+tests/test_field_alignment_preservation.py: 23 warnings
+tests/test_field_alignment_identity.py: 21 warnings
+tests/test_detection_engine.py: 1 warning
+tests/test_windowed_detection.py: 1 warning
+tests/test_alert_sink.py: 18 warnings
+tests/test_alert_sink_issue_1244.py: 18 warnings
+tests/test_confidence.py: 32 warnings
+  E:\aisoc\socai2\.venv\Lib\site-packages\pydantic\main.py:280: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_field_alignment_preservation.py::test_score_computed_disabled_failed_and_unknown_are_distinguishable
+tests/test_field_alignment_preservation.py::test_score_computed_disabled_failed_and_unknown_are_distinguishable
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[promotion]
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[promotion]
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[rule]
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[rule]
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[window]
+tests/test_field_alignment_identity.py::test_independent_occurrences_replay_and_connector_are_distinct[window]
+  E:\aisoc\socai2\services\fusion\app\services\correlator.py:122: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    incident.last_seen = datetime.utcnow()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED services\fusion\tests\test_lake_writer.py::test_event_to_row_maps_core_fields
+FAILED services\fusion\tests\test_sigma_correlation_replay.py::test_temporal_ordered_requires_the_order
+FAILED services\fusion\tests\test_sigma_correlation_replay.py::test_temporal_accepts_either_order_but_needs_both_stages
+3 failed, 100 passed, 122 warnings in 2.46s

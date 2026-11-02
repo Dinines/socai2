@@ -1,5 +1,7 @@
 # 第1段：Fusion输入到告警入库核对
 
+**2026-11-02实施更新：** 第2、3批补S1-01/03—08后，[第4批](field-alignment-fix4-20261102.md)补S1-02共享读取，原厂只认已有明确original_vendor/deviceVendor、不取中转产品兜底；时间/检测/同次分诊等实际进入相应API/Case。各输入/覆盖边界保留，尚未部署；下文仍是修前核对事实，不扩上游范围。
+
 2026-11-01。**本地实现核对完成，发现字段缺口；未修复，未完成线上链路验收。** 本段以[主记录及已确认口径](field-alignment-confirmations-20261101.md)为准，从Fusion输入一直核到PostgreSQL写入，并检查其对页面及Case取数的直接影响。后续按原计划核湖事件对应，不先扩展报告框架。
 
 远端需求分支本轮只读核实仍为`48f54abd42d643ff53a71fffbb1f6045a90d9f80`；本地HEAD为`b758351d7125590c090a751837f96c86df331652`，工作区另含既有r13改动，不能以HEAD代替全部当前源码。实际调用的Fusion文件指纹随[本地观察结果](../operations/evidence/fusion-field-stage1-20261101/observations.json)保存。

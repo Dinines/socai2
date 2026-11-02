@@ -237,7 +237,8 @@ def _pipeline_entities(alert: Alert) -> list[tuple[str, str]]:
     denormalised columns, so a row that happens to carry both spellings
     yields one chip rather than two.
     """
-    raw = getattr(alert, "entities", None)
+    from app.services.alert_projection import alert_objects
+    raw = alert_objects(alert)
     if not isinstance(raw, list):
         return []
     out: list[tuple[str, str]] = []

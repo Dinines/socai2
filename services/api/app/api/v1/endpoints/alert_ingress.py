@@ -53,6 +53,8 @@ async def accept_existing_alert(
     # These fields are set by the receiver, never delegated to the caller.
     wire['identity_version'] = identity_version
     wire['source_alert_id'] = str(payload.id) if identity_version == 'source-v1' else None
+    wire['identity_event_id'] = None
+    wire['identity_origin'] = None
     wire['tenant_id'] = str(user.tenant_id)
     if identity_version == 'source-v1':
         if db is None:

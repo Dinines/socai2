@@ -22,14 +22,17 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import structlog
 
 from app.models.alert import AlertSeverity, RawAlert
-from app.services.derived_fields import enrich, parse_event_time, requested_derived_fields
+from app.services.event_schema import event_alert_identity, resolve_source_event_id
+from app.services.received_fields import parse_received_time, received_projection, received_time, strings
+from app.services.window_sources import MAX_WINDOW_SOURCES, read_sources, record_sources
+from app.services.derived_fields import enrich, requested_derived_fields
 from app.services.detection_engine import DetectionHit
 from app.services.detection_matcher import matches
 from app.services.provenance import extract_provenance
@@ -68,6 +71,7 @@ class WindowRule:
     # needing a windowed evaluator name a `distinct_*` field, so without this
     # they had nowhere to go even after the engine existed.
     distinct_by: str = ""
+    tactics: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -106,6 +110,7 @@ class SequenceRule:
     #: one-event-one-stage — is identical and duplicating them is how the two
     #: drift apart.
     ordered: bool = True
+    tactics: list[str] = field(default_factory=list)
 
 
 #: How far out of order an event may arrive and still be stitched into a
@@ -219,6 +224,7 @@ def load_window_rules(path: Path | None = None) -> tuple[WindowRule, ...]:
                 threshold=int(entry["threshold"]),
                 window_seconds=int(entry["window_seconds"]),
                 distinct_by=str(entry.get("distinct_by") or ""),
+                tactics=strings(entry.get("mitre_tactics") or entry.get("tactics")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             logger.warning("windowed_detection.rule_skipped", rule_id=rule_id, error=str(exc))
@@ -273,6 +279,7 @@ def load_sequence_rules(path: Path | None = None) -> tuple[SequenceRule, ...]:
                 group_by=str(entry["group_by"]),
                 window_seconds=int(entry["window_seconds"]),
                 ordered=bool(entry.get("ordered", True)),
+                tactics=strings(entry.get("mitre_tactics") or entry.get("tactics")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             logger.warning("windowed_detection.sequence_skipped", rule_id=rule_id, error=str(exc))
@@ -456,6 +463,8 @@ class WindowedDetectionEngine:
             if privileged:
                 fields = {**fields, **privileged}
         now = time.time()
+        event_id = resolve_source_event_id(message, ocsf)
+        event_time, _ = received_time(message, ocsf)
         hits: list[DetectionHit] = []
         for rule in self._rules:
             try:
@@ -474,7 +483,10 @@ class WindowedDetectionEngine:
                         # different, louder detection wearing this one's id.
                         continue
                     member = str(value)
+                sources_key = f"{self._prefix}:{tenant}:{rule.id}:{observed}:sources:v1"
+                sources_available = await record_sources(self._redis, sources_key, event_id, event_time, now, rule.window_seconds)
                 if await self._observe_and_check(rule, tenant, observed, now, member=member):
+                    source_ids, source_metadata = await read_sources(self._redis, sources_key, now, rule.window_seconds, sources_available)
                     hits.append(
                         DetectionHit(
                             rule_id=rule.id,
@@ -482,6 +494,8 @@ class WindowedDetectionEngine:
                             severity=rule.severity,
                             category=rule.category,
                             mitre=list(rule.mitre),
+                            tactics=rule.tactics,
+                            source_event_ids=source_ids, source_metadata=source_metadata,
                         )
                     )
             except Exception as exc:  # noqa: BLE001 — one rule/Redis error must not wedge detection
@@ -492,7 +506,7 @@ class WindowedDetectionEngine:
             # stages satisfied by the *same* event can never be mistaken for
             # two events. Timestamps alone cannot carry that: two genuinely
             # distinct events routinely share a second.
-            token = uuid.uuid4().hex
+            token = json.dumps([uuid.uuid4().hex, event_id], separators=(",", ":"))
             for sequence in self._sequences:
                 try:
                     hit = await self._advance_sequence(sequence, tenant, fields, now, token)
@@ -511,8 +525,11 @@ class WindowedDetectionEngine:
         one. A source that stamps nothing must still be able to fire a
         sequence, which is what the fallback is for.
         """
-        when = parse_event_time(fields)
-        return when.timestamp() if when is not None else now
+        for key in ("event_time", "timestamp", "time", "@timestamp", "ingest_time"):
+            when = parse_received_time(fields.get(key))
+            if when is not None:
+                return when.timestamp()
+        return now
 
     async def _advance_sequence(
         self, rule: SequenceRule, tenant: str, fields: dict[str, Any], now: float, token: str
@@ -565,12 +582,30 @@ class WindowedDetectionEngine:
             return None
         if not await self._redis.set(f"{base}:fired", "1", nx=True, ex=rule.window_seconds):
             return None
+        source_ids = []
+        missing = False
+        # These are matched candidates, not a claimed minimal causal chain.
+        for _, value in sorted({entry for stage in observations for entry in stage}):
+            try:
+                source_id = json.loads(value)[1]
+            except (ValueError, TypeError, IndexError):
+                source_id = None  # pre-upgrade random stage token
+            if isinstance(source_id, str) and source_id:
+                source_ids.append(source_id)
+            else:
+                missing = True
+        source_ids = list(dict.fromkeys(source_ids))
         return DetectionHit(
             rule_id=rule.id,
             name=rule.name,
             severity=rule.severity,
             category=rule.category,
             mitre=list(rule.mitre),
+            tactics=rule.tactics, source_event_ids=source_ids[:MAX_WINDOW_SOURCES],
+            source_metadata={"scope": "matched_stage_candidates", "window_seconds": rule.window_seconds,
+                             "candidate_start": when - retain, "candidate_end": when + retain,
+                             "truncated": len(source_ids) > MAX_WINDOW_SOURCES, "missing_ids": missing,
+                             "complete": not missing and len(source_ids) <= MAX_WINDOW_SOURCES},
         )
 
     async def _observe_and_check(
@@ -608,18 +643,23 @@ class WindowedDetectionEngine:
             tenant_id = uuid.UUID(str(tenant_raw))
         except (ValueError, TypeError):
             return None
-        fields = self._fields(message)
         connector_id, connector_type, class_uid = extract_provenance(message, ocsf)
+        identity = event_alert_identity(message, ocsf, "window")
+        projection = received_projection(message, ocsf, rule_tactics=hit.tactics, rule_techniques=hit.mitre)
+        projection["field_metadata"]["source_window"] = hit.source_metadata or {"scope": "trigger_only", "complete": False}
+        if hit.source_event_ids is not None:
+            refs = list(dict.fromkeys([*identity.get("source_event_ids", []), *hit.source_event_ids]))
+            identity["source_event_ids"] = refs[:MAX_WINDOW_SOURCES]
+            if len(refs) > MAX_WINDOW_SOURCES:
+                projection["field_metadata"]["source_window"] = {**projection["field_metadata"]["source_window"], "complete": False, "truncated": True}
         return RawAlert(
+            **identity,
             tenant_id=tenant_id,
             source=f"detection:{hit.rule_id}",
             title=hit.name,
             description=f"Windowed detection {hit.rule_id} ({hit.category}) crossed its threshold.",
             severity=_SEVERITY_MAP.get(hit.severity, AlertSeverity.MEDIUM),
-            src_ip=fields.get("src_ip"),
-            hostname=fields.get("hostname") or fields.get("host"),
-            username=fields.get("user"),
-            mitre_techniques=hit.mitre,
+            **projection,
             raw_event=ocsf,
             connector_id=connector_id,
             connector_type=connector_type,

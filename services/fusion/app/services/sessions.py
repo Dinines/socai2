@@ -44,6 +44,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from app.services.received_fields import activity_block, received_time
+
 logger = logging.getLogger("aisoc.fusion.sessions")
 
 #: Namespace for the deterministic session id. A fixed, arbitrary UUID — its
@@ -346,9 +348,7 @@ def _session_block(payload: dict[str, Any]) -> dict[str, Any] | None:
     An event from a replayed topic or from before the projection shipped has
     no block at all and must flow through untouched rather than erroring.
     """
-    activity = payload.get("activity")
-    if not isinstance(activity, dict):
-        return None
+    activity, _ = activity_block(payload)
     block = activity.get("session")
     return block if isinstance(block, dict) and block else None
 
@@ -364,6 +364,9 @@ def _source_of(payload: dict[str, Any]) -> str:
 
 
 def _event_time(payload: dict[str, Any]) -> datetime:
+    received, _ = received_time(payload, payload.get("ocsf_event") or {})
+    if received is not None:
+        return received
     raw = payload.get("time") or payload.get("event_time")
     if isinstance(raw, datetime):
         return raw if raw.tzinfo else raw.replace(tzinfo=UTC)
@@ -386,9 +389,7 @@ def _event_time(payload: dict[str, Any]) -> datetime:
 
 
 def _actor_kind(payload: dict[str, Any]) -> str | None:
-    activity = payload.get("activity")
-    if not isinstance(activity, dict):
-        return None
+    activity, _ = activity_block(payload)
     actor = activity.get("actor")
     if not isinstance(actor, dict):
         return None
@@ -396,7 +397,7 @@ def _actor_kind(payload: dict[str, Any]) -> str | None:
 
 
 def _source_ip(payload: dict[str, Any]) -> str | None:
-    activity = payload.get("activity")
+    activity, _ = activity_block(payload)
     if isinstance(activity, dict):
         location = activity.get("location")
         if isinstance(location, dict):

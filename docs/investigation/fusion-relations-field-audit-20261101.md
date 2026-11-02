@@ -1,5 +1,7 @@
 # 第3段：事件、对象、资产与Case关系核对
 
+**2026-11-02实施更新：** 第2批修S3-01/02后，[第4批](field-alignment-fix4-20261102.md)补S3-03/04/05读取：IOC ORM及逐成员边/阶段、资产tags/匹配、当前多Case与图范围。资产覆盖和Case截断明确，旧case_id写入留兼容待管理批处理，不改旧图/冻结报告；无DDL，尚未部署，下文保留修前事实。
+
 2026-11-01。对应[六段计划](field-alignment-confirmations-20261101.md#分段核对计划)第3段。以远端告警／事件页和已确认口径为需求，核对Fusion收到数据后的关系处理；前置输入缺失、错误和库存未提供不列修复任务。**本地核对完成，发现5组内部缺口；未修改业务源码、未修复或线上验收。**
 
 需求基准仍为远端`codex/functional-analysis@48f54abd42d643ff53a71fffbb1f6045a90d9f80`，本轮只读`git ls-remote`结果未变。实现基准为`b758351d7125590c090a751837f96c86df331652`加当前已有工作区修改，不能把HEAD当全部当前源码。[证据索引](../operations/evidence/fusion-field-stage3-20261101/manifest.json)保存本段相关文件指纹；本轮未部署、创建Case／Run、调用模型或真实PG／Redis／图服务。

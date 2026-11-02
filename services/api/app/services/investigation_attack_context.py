@@ -46,8 +46,8 @@ async def _anchor(db: Any, tenant_id: Any, case_id: Any = None, alert_id: Any = 
     ambiguous = False
     if aid and not cid:
         cases = await _rows(db, "SELECT * FROM aisoc_cases WHERE tenant_id = CAST(:tenant AS UUID) "
-                            "AND (CAST(:id AS UUID) = ANY(alert_ids) OR id = CAST(:linked AS UUID)) ORDER BY id LIMIT 2",
-                            tenant=tenant, id=aid, linked=str(alert["case_id"]) if alert.get("case_id") else None)
+                            "AND CAST(:id AS UUID) = ANY(alert_ids) ORDER BY id LIMIT 2",
+                            tenant=tenant, id=aid)
         if len(cases) == 1:
             cid = str(cases[0]["id"])
         ambiguous = len(cases) > 1
@@ -59,13 +59,12 @@ async def _anchor(db: Any, tenant_id: Any, case_id: Any = None, alert_id: Any = 
             raise HTTPException(404, "case_not_found")
         case = cases[0]
         ids = [str(x) for x in case.get("alert_ids") or []]
-        if aid and aid not in ids and str(alert.get("case_id")) != cid:
+        if aid and aid not in ids:
             raise HTTPException(404, "alert_not_linked_to_case")
         alerts = await _rows(db, "SELECT * FROM alerts WHERE tenant_id = CAST(:tenant AS UUID) "
-                             "AND (id = ANY(CAST(:ids AS UUID[])) OR case_id = CAST(:case AS UUID)) "
-                             "ORDER BY CASE WHEN id = ANY(CAST(:ids AS UUID[])) THEN 0 ELSE 1 END, event_time ASC, id ASC LIMIT :limit", tenant=tenant, ids=ids, case=cid, limit=ALERT_LIMIT + 1)
-    # Keep the original Case seed rule: earliest explicitly linked alert,
-    # then alerts.case_id only when none of those explicit IDs resolve.
+                             "AND id = ANY(CAST(:ids AS UUID[])) "
+                             "ORDER BY event_time ASC, id ASC LIMIT :limit", tenant=tenant, ids=ids, limit=ALERT_LIMIT + 1)
+    # Current Case membership comes only from Case.alert_ids, as in v2.
     explicit = {str(x) for x in (case or {}).get("alert_ids") or []}
     seed = next((str(a["id"]) for a in alerts if str(a["id"]) in explicit), None)
     if aid and not case_id:
@@ -79,7 +78,7 @@ async def _anchor(db: Any, tenant_id: Any, case_id: Any = None, alert_id: Any = 
 
 def _values(alert: dict[str, Any], column: str, kinds: set[str]) -> list[str]:
     values = [x for x in alert.get(column) or [] if isinstance(x, str) and x.strip()]
-    entities = alert.get("entities") or []
+    entities = [*(alert.get("entities") or []), *(alert.get("iocs") or [])]
     if isinstance(entities, list):
         values += [e.get("value") for e in entities if isinstance(e, dict)
                    and e.get("type") in kinds and isinstance(e.get("value"), str)]

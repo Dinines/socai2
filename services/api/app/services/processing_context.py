@@ -14,11 +14,20 @@ from typing import Any
 from sqlalchemy import text
 
 from app.services.alert_priority import AssetContext, IdentityContext, score_alert_priority
+from app.services.alert_projection import alert_objects
 
 LIMIT = 20
 ASSETS = """
 SELECT a.id,a.name,a.fqdn,a.ip_addresses,a.criticality,a.owner_email,
-       a.last_seen,a.updated_at,jsonb_build_object(
+       a.last_seen,a.updated_at,a.tags,
+       jsonb_build_object('name',lower(a.name)=ANY(CAST(:hosts AS text[])),
+          'fqdn',lower(a.fqdn)=ANY(CAST(:hosts AS text[])),
+          'ip',a.ip_addresses && CAST(:ips AS text[])) AS lookup_matches,
+       (SELECT jsonb_agg(jsonb_build_object('match_field',c.match_field,'confidence',c.confidence)
+                        ORDER BY c.match_field,c.confidence)
+        FROM alert_asset_correlations c WHERE c.tenant_id=a.tenant_id AND c.asset_id=a.id
+          AND c.alert_id=CAST(:alert_id AS uuid)) AS correlations,
+       jsonb_build_object(
        'source',a.metadata->'source','source_ref',a.metadata->'source_ref',
        'observed_at',a.metadata->'observed_at','internet_facing',a.metadata->'internet_facing') AS metadata
 FROM assets a WHERE a.tenant_id=CAST(:tenant_id AS uuid) AND (
@@ -73,15 +82,24 @@ async def _read(db: Any, query: str, params: dict, source: str) -> dict:
         return {"status": "unavailable", "source": source, "rows": [],
                 "truncated": False, "error_type": type(exc).__name__}
 
-async def collect_processing_context(db: Any, alert: Any) -> dict:
-    hosts = _strings(getattr(alert, "affected_hosts", None))
-    accounts = _strings(getattr(alert, "affected_users", None))
-    ips = _strings(getattr(alert, "affected_ips", None))
+def lookup_params(alert):
+    objects = alert_objects(alert)
+    hosts, accounts, ips = (_strings([item["value"] for item in objects if item["type"] == kind]) for kind in ("host", "user", "ip"))
     reference = getattr(alert, "event_time", None) or alert.created_at
-    params = {"tenant_id": str(alert.tenant_id), "alert_id": str(alert.id),
+    return {"tenant_id": str(alert.tenant_id), "alert_id": str(alert.id),
               "hosts": [s.lower() for s in hosts], "hosts_original": hosts,
               "accounts": [s.lower() for s in accounts], "accounts_original": accounts,
               "ips": ips, "event_time": reference}
+
+
+async def read_asset_context(db, alert):
+    return await _read(db, ASSETS, lookup_params(alert), "assets/alert_asset_correlations")
+
+
+async def collect_processing_context(db: Any, alert: Any) -> dict:
+    params = lookup_params(alert)
+    hosts, accounts, ips = params["hosts_original"], params["accounts_original"], params["ips"]
+    reference = params["event_time"]
     assets = await _read(db, ASSETS, params, "assets/alert_asset_correlations")
     identities = await _read(db, IDENTITIES, params, "identity_privilege") if accounts else {
         "status": "not_requested", "source": "identity_privilege", "rows": [], "truncated": False}

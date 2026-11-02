@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 import sys
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import httpx
@@ -43,6 +43,12 @@ def verdict(number, reason, *, auto_closed=False, at=NOW, decision="needs_review
 
 
 class IncidentAPIExamples(IsolatedAsyncioTestCase):
+    async def test_optional_current_cases_requires_existing_cases_read_permission(self):
+        response = await self.client.get(f"/api/v2/investigation/incidents/{INCIDENT}?include_investigations=true",
+                                         headers={"Authorization": "Bearer fixture"})
+        self.assertEqual(response.status_code, 403)
+        self.db.execute.assert_not_awaited()
+
     async def asyncSetUp(self):
         self.db = AsyncMock(spec=AsyncSession)
         self.app = create_app(start_gateway=object(), result_gateway=object())
@@ -120,3 +126,29 @@ class IncidentAPIExamples(IsolatedAsyncioTestCase):
         response = await self.get()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(self.db.execute.await_count, 1)
+
+    async def test_saved_correlation_basis_is_read_per_member_without_inventing_legacy_reasons(self):
+        member, legacy = alert(1), alert(2)
+        basis = {"policy_version": "primary-entity-v2", "entity_type": "host", "entity_value": "original-host",
+                 "tactic": "execution", "decision": "correlated", "reason": "matched", "window_seconds": 731}
+        member.enrichment_data["socai2_fusion"]["correlation_basis"] = basis
+        self.rows([member, legacy], [])
+        data = (await self.get()).json()
+        self.assertEqual(data["members"][0]["correlation_basis"], basis)
+        self.assertIsNone(data["members"][1]["correlation_basis"])
+        self.db.commit.assert_not_awaited()
+
+    async def test_alert_context_reads_the_same_saved_basis(self):
+        from app.investigation_v2.alert_context_api import context
+        member = alert(1)
+        basis = {"policy_version": "primary-entity-v2", "entity_type": "user", "entity_value": "original-account"}
+        member.enrichment_data["socai2_fusion"]["correlation_basis"] = basis
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = member
+        self.db.execute.return_value = result
+        user = MagicMock(tenant_id=TENANT)
+        with patch("app.investigation_v2.alert_context_api.latest_triage", new=AsyncMock(return_value={})), \
+             patch("app.investigation_v2.alert_context_api.read_related", new=AsyncMock(return_value={})):
+            data = await context(member.id, self.db, None, user, limit=20, cursor=None)
+        self.assertEqual(data["correlation_basis"], basis)
+        self.db.commit.assert_not_awaited()

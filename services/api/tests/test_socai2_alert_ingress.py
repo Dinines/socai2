@@ -24,10 +24,12 @@ def test_principal_tenant_and_actual_ack_are_in_receipt(monkeypatch):
     p = AsyncMock()
     p.send_and_wait.return_value = SimpleNamespace(topic='socai2.alerts.raw',partition=2,offset=17)
     with patch('app.api.v1.endpoints.alert_ingress.AIOKafkaProducer',return_value=p):
-        r = asyncio.run(accept_existing_alert(ExistingAlert(**payload()),SimpleNamespace(tenant_id=TENANT)))
+        r = asyncio.run(accept_existing_alert(ExistingAlert(**payload(identity_event_id='caller-event', identity_origin='promotion')),SimpleNamespace(tenant_id=TENANT)))
     assert r['tenant_id']==str(TENANT) and r['message']=={'topic':'socai2.alerts.raw','partition':2,'offset':17}
     assert r['processing_confirmed'] is False
     assert b'"tenant_id":"114e173b-be2e-4b29-8cbc-48861175df51"' in p.send_and_wait.call_args.args[1]
+    assert b'"identity_event_id":null' in p.send_and_wait.call_args.args[1]
+    assert b'"identity_origin":null' in p.send_and_wait.call_args.args[1]
 
 
 def test_cross_tenant_is_refused_before_broker_is_constructed():

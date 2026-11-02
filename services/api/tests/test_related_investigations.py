@@ -78,7 +78,8 @@ class RelatedInvestigationExamples(IsolatedAsyncioTestCase):
         response = await self.client.get(path.format(UUID(int=1)))
         self.assertEqual(response.status_code, 200, response.text)
         data = response.json()
-        self.assertEqual(data["source"]["source_alert_id"], "source-1")
+        self.assertIsNone(data["source"]["source_alert_id"])
+        self.assertEqual(data["source"]["external_id"], "source-1")
         self.assertEqual(data["incident_url"], self.incident_path)
         self.assertEqual(data["triage"]["rationale"], "Needs review")
         item = data["investigations"]["items"][0]

@@ -1,0 +1,123 @@
+........................FFF..........                                    [100%]
+================================== FAILURES ===================================
+_______ test_mixed_batch_binds_with_actual_driver_columns[metadata.uid] _______
+
+identity_kind = 'metadata.uid'
+
+    @pytest.mark.parametrize("identity_kind", ["metadata.uid", "missing", "opaque"])
+    async def test_mixed_batch_binds_with_actual_driver_columns(identity_kind):
+        from clickhouse_driver.block import RowOrientedBlock
+    
+        class BindingClient(_FakeClient):
+            def execute(self, sql, rows=None, **kwargs):
+                columns = sql.split("(", 1)[1].split(")", 1)[0].split(", ")
+                # Real dict-row binding, without a network connection. A missing
+                # key in a declared column raises exactly as in the live driver.
+                block = RowOrientedBlock([(c, "String") for c in columns], rows, types_check=True)
+                assert block.num_rows == len(rows)
+                assert all(set(row) == set(columns) for row in rows)
+                return super().execute(sql, rows, **kwargs)
+    
+        writer = LakeWriter(host="unused.invalid", batch_size=2)
+        client = BindingClient()
+        writer._client = client
+        first = _message()
+        first.pop("id")
+        if identity_kind == "metadata.uid":
+            first["ocsf_event"]["metadata"]["uid"] = "ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB"
+        elif identity_kind == "opaque":
+            first["id"] = "vendor-42"
+        assert await writer.write_event(first) is True
+        assert writer.rows_written == 0
+>       assert await writer.write_event(_message()) is True
+E       assert False is True
+
+tests\test_lake_writer.py:192: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2026-11-01 22:43:31 [error    ] lake_writer.flush_failed       dropped=2 error="unhashable type: 'list'"
+_________ test_mixed_batch_binds_with_actual_driver_columns[missing] __________
+
+identity_kind = 'missing'
+
+    @pytest.mark.parametrize("identity_kind", ["metadata.uid", "missing", "opaque"])
+    async def test_mixed_batch_binds_with_actual_driver_columns(identity_kind):
+        from clickhouse_driver.block import RowOrientedBlock
+    
+        class BindingClient(_FakeClient):
+            def execute(self, sql, rows=None, **kwargs):
+                columns = sql.split("(", 1)[1].split(")", 1)[0].split(", ")
+                # Real dict-row binding, without a network connection. A missing
+                # key in a declared column raises exactly as in the live driver.
+                block = RowOrientedBlock([(c, "String") for c in columns], rows, types_check=True)
+                assert block.num_rows == len(rows)
+                assert all(set(row) == set(columns) for row in rows)
+                return super().execute(sql, rows, **kwargs)
+    
+        writer = LakeWriter(host="unused.invalid", batch_size=2)
+        client = BindingClient()
+        writer._client = client
+        first = _message()
+        first.pop("id")
+        if identity_kind == "metadata.uid":
+            first["ocsf_event"]["metadata"]["uid"] = "ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB"
+        elif identity_kind == "opaque":
+            first["id"] = "vendor-42"
+        assert await writer.write_event(first) is True
+        assert writer.rows_written == 0
+>       assert await writer.write_event(_message()) is True
+E       assert False is True
+
+tests\test_lake_writer.py:192: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2026-11-01 22:43:31 [error    ] lake_writer.flush_failed       dropped=1 error="unhashable type: 'list'"
+2026-11-01 22:43:31 [error    ] lake_writer.flush_failed       dropped=1 error="unhashable type: 'list'"
+__________ test_mixed_batch_binds_with_actual_driver_columns[opaque] __________
+
+identity_kind = 'opaque'
+
+    @pytest.mark.parametrize("identity_kind", ["metadata.uid", "missing", "opaque"])
+    async def test_mixed_batch_binds_with_actual_driver_columns(identity_kind):
+        from clickhouse_driver.block import RowOrientedBlock
+    
+        class BindingClient(_FakeClient):
+            def execute(self, sql, rows=None, **kwargs):
+                columns = sql.split("(", 1)[1].split(")", 1)[0].split(", ")
+                # Real dict-row binding, without a network connection. A missing
+                # key in a declared column raises exactly as in the live driver.
+                block = RowOrientedBlock([(c, "String") for c in columns], rows, types_check=True)
+                assert block.num_rows == len(rows)
+                assert all(set(row) == set(columns) for row in rows)
+                return super().execute(sql, rows, **kwargs)
+    
+        writer = LakeWriter(host="unused.invalid", batch_size=2)
+        client = BindingClient()
+        writer._client = client
+        first = _message()
+        first.pop("id")
+        if identity_kind == "metadata.uid":
+            first["ocsf_event"]["metadata"]["uid"] = "ABCDEFAB-CDEF-ABCD-EFAB-CDEFABCDEFAB"
+        elif identity_kind == "opaque":
+            first["id"] = "vendor-42"
+        assert await writer.write_event(first) is True
+        assert writer.rows_written == 0
+>       assert await writer.write_event(_message()) is True
+E       assert False is True
+
+tests\test_lake_writer.py:192: AssertionError
+---------------------------- Captured stdout call -----------------------------
+2026-11-01 22:43:31 [error    ] lake_writer.flush_failed       dropped=1 error="unhashable type: 'list'"
+2026-11-01 22:43:31 [error    ] lake_writer.flush_failed       dropped=1 error="unhashable type: 'list'"
+============================== warnings summary ===============================
+tests/test_consumer_dlq.py::test_valid_event_is_processed_and_not_dead_lettered
+tests/test_consumer_dlq.py::test_valid_event_is_processed_and_not_dead_lettered
+tests/test_consumer_dlq.py::test_received_event_identity_reaches_both_lake_and_saved_alert
+tests/test_consumer_dlq.py::test_received_event_identity_reaches_both_lake_and_saved_alert
+  E:\aisoc\socai2\.venv\Lib\site-packages\pydantic\main.py:280: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_lake_writer.py::test_mixed_batch_binds_with_actual_driver_columns[metadata.uid]
+FAILED tests/test_lake_writer.py::test_mixed_batch_binds_with_actual_driver_columns[missing]
+FAILED tests/test_lake_writer.py::test_mixed_batch_binds_with_actual_driver_columns[opaque]
+3 failed, 34 passed, 4 warnings in 1.61s

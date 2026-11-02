@@ -430,9 +430,9 @@ class TestGetAlertEndpoint:
 
         We assert four things in one shot:
           1. ``build_narrative`` was called exactly once
-          2. The result was assigned back to the in-memory row
-          3. ``db.execute`` was invoked with an UPDATE (the second call)
-          4. ``db.commit`` was awaited (so the lazy-fill persists)
+          2. The stored row is not mutated
+          3. Only the read query is executed
+          4. No commit changes the business update clock
         """
         tenant_id = uuid.uuid4()
         alert = _orm_alert(tenant_id=tenant_id, narrative=None)
@@ -463,17 +463,11 @@ class TestGetAlertEndpoint:
         resp = await get_alert(alert.id, user, session)
 
         assert resp.narrative == "Generated narrative"
-        # In-memory mutation so subsequent reads in the same request see
-        # the value (the endpoint reuses ``alert.narrative`` for the
-        # response payload).
-        assert alert.narrative == "Generated narrative"
+        assert alert.narrative is None
         # Builder fired exactly once.
         assert len(builder_calls) == 1
-        # commit() awaited (so the lazy-fill is durable).
-        assert session.commit.await_count == 1
-        # Two execute calls: SELECT alert, then UPDATE narrative.
-        # (build_rail_envelope is mocked out.)
-        assert session.execute.await_count == 2
+        assert session.commit.await_count == 0
+        assert session.execute.await_count == 1
 
     @pytest.mark.asyncio
     async def test_does_not_persist_empty_narrative(

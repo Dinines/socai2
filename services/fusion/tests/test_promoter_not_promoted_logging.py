@@ -104,11 +104,13 @@ class TestTheExplanationIsUseful:
         assert entry["severity_id"] is None
         assert "severity_id is absent" in entry["reason"]
 
-    def test_says_the_event_is_in_the_lake_so_nobody_hunts_for_lost_data(self, captured):
+    def test_nonpromotion_does_not_claim_lake_persistence(self, captured):
         assert promote_normalized_event(_unpromotable()) is None
 
         (entry,) = captured.of("promoter.not_promoted")
         assert "lake" in entry["note"]
+        assert "check writer metrics" in entry["note"]
+        assert "archived to" not in entry["note"]
         assert entry["event_id"]
 
     def test_a_promoted_event_is_not_logged_as_dropped(self, captured):

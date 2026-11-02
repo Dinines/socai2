@@ -37,6 +37,22 @@ def single_member_assessment():
              "summary": "告警材料已核对，行为性质尚未证实。", "evidence_ids": ["A1"]}]
 
 
+def current_network_fixture(parent):
+    """Adapt only an in-memory report fixture, never the archived evidence.
+
+    Old network queries are deliberately ineligible for new query reuse. These
+    report/correction tests need a synthetic current-contract parent; separate
+    query tests verify rejection of the actual legacy contract and SQL dedup.
+    """
+    parent = json.loads(json.dumps(parent))
+    for item in parent["evidence"]:
+        if item.get("tool") == "network_connections":
+            identities = [(row.get("event_time"), row["event_id"]) for row in item["rows"]]
+            assert len(set(identities)) == len(identities)
+            item["query_contract"] = tools.NETWORK_QUERY_CONTRACT
+    return parent
+
+
 def result(one=None, rows=None):
     response = MagicMock()
     response.scalar_one_or_none.return_value = one
@@ -375,12 +391,12 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
             event_id TEXT, tenant_id TEXT, event_time TEXT, src_hostname TEXT,
             process_name TEXT, file_path TEXT, hash_sha256 TEXT, user_name TEXT,
             class_uid INTEGER, activity_id INTEGER, action TEXT, outcome TEXT,
-            source_ip TEXT, dest_ip TEXT, dst_port INTEGER, protocol TEXT)""")
+            source_ip TEXT, dest_ip TEXT, dst_port INTEGER, protocol TEXT, ingest_time TEXT)""")
         when = NOW.strftime("%Y-%m-%d %H:%M:%S.%f")
         for event_id, event_class in (("process-1", 1007), ("network-1", 4001), ("file-1", 1001)):
-            connection.execute("INSERT INTO aisoc.raw_events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+            connection.execute("INSERT INTO aisoc.raw_events VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
                 event_id, str(TENANT), when, "host-01", "powershell.exe", "script.ps1", "a" * 64,
-                "alice", event_class, 2, "terminate", "", "10.0.0.1", "192.0.2.1", 443, "tcp"))
+                "alice", event_class, 2, "terminate", "", "10.0.0.1", "192.0.2.1", 443, "tcp", when))
 
         async def lake(sql, *, params, **kwargs):
             cursor = connection.execute(re.sub(r"%\((\w+)\)s", r":\1", sql), params)
@@ -391,7 +407,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         evidence = response.json()["result"]["evidence"][-1]
         self.assertEqual(response.json()["status"], "completed", response.text)
         self.assertEqual([row["event_id"] for row in evidence["rows"]], ["process-1"])
-        self.assertEqual(evidence["query_contract"], "case.process_activity.v2")
+        self.assertEqual(evidence["query_contract"], tools.PROCESS_QUERY_CONTRACT)
         model_evidence = next(json.loads(m["content"]) for m in self.messages[-1]["messages"] if m["role"] == "tool" and "query_status" in json.loads(m["content"]))
         self.assertEqual(model_evidence["rows"], [{**{key: value for key, value in evidence["rows"][0].items()
                                                       if key not in {"class_uid", "activity_id"}}, "event_kind": "process_activity"}])
@@ -600,6 +616,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         original_context = analysis.encoded(context)
         parent = json.loads(next((root / "live-r4/results").glob("*-network-positive-reuse-main-result.response.txt"))
                             .read_text(encoding="utf-8"))["result"]
+        parent = current_network_fixture(parent)
         request = analysis.CaseAnalysisRequest.model_validate_json(next(files.glob("*-network-positive-reuse-followup.body.json"))
                                                                  .read_text(encoding="utf-8"))
         replies = [step["data"] for step in steps if "response" in step["data"]]
@@ -657,6 +674,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
         context = steps[0]["data"]
         original_context = analysis.encoded(context)
         parent = json.loads((root / "005-network-positive-reuse-parent-result.response.txt").read_text(encoding="utf-8"))["result"]
+        parent = current_network_fixture(parent)
         original_parent = analysis.encoded(parent)
         request = analysis.CaseAnalysisRequest.model_validate_json(
             (root / "007-network-positive-reuse-followup.body.json").read_text(encoding="utf-8"))
@@ -747,6 +765,7 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
                         root.glob("*-followup-step-*.response.txt")], key=lambda step: step["seq"])
         context = steps[0]["data"]
         parent = json.loads(next(root.glob("*-parent-result.response.txt")).read_text(encoding="utf-8"))["result"]
+        parent = current_network_fixture(parent)
         original_parent = analysis.encoded(parent)
         request = analysis.CaseAnalysisRequest.model_validate_json(next(root.glob("*-followup.body.json")).read_text(encoding="utf-8"))
         replies = [step["data"] for step in steps if "response" in step["data"]]
@@ -773,8 +792,8 @@ class CaseAnalysisExamples(IsolatedAsyncioTestCase):
             outcome = await analysis.CaseAnalysis(self.db, run, context, request, parent).execute()
         self.assertEqual(outcome["status"], "completed", outcome["result"]["stop_reason"])
         self.assertEqual(len(self.messages), 3)
-        self.assertIn("完整中文JSON报告", self.messages[-1]["messages"][0]["content"])
-        self.assertIn("未证实攻击不等于证实非攻击", self.messages[-1]["messages"][0]["content"])
+        self.assertIn("完整中文JSON", self.messages[-1]["messages"][0]["content"])
+        self.assertIn("未证实攻击≠证实非攻击", self.messages[-1]["messages"][0]["content"])
         self.assertNotIn("tools", self.messages[-1])
         validation = [json.loads(item.content) for item in self.artifacts if item.kind == "case_analysis_step"
                       and "errors" in json.loads(item.content)]
