@@ -8,10 +8,12 @@ from sqlalchemy import insert, null, select, update
 from . import baseline_analysis_contract as analysis
 from .baseline_analysis import budget_reason, reserved_calls
 from .baseline_analysis_model import MAX_OUTPUT_TOKENS, usage
+from .baseline_capacity import final_wire_reason, remaining_seconds, reservation_for
 from .baseline_context import MAX_CONTEXT_BYTES, reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_evidence import BaselineEvidence
+from .baseline_final_evidence import update_query_visibility
 from .baseline_model_view import MAX_FIELD_BYTES, MAX_MODEL_BYTES, SYSTEM, blocked
 from .baseline_store import StoreError, digest, encoded
 from .model_errors import ModelCallError
@@ -50,6 +52,7 @@ def bounded_input(data, candidates, instruction):
     if "members" in data:
         for aid, member in data["members"].items():
             member["included"] = sum(aid in s["alert_ids"] for s in source_map.values())
+    update_query_visibility(data, source_map)
     messages = messages_for(data)
     reason = "required_model_input_unavailable" if required_failed else "mandatory_scope_exceeds_model_budget" if size(data) > MAX_MODEL_BYTES else None
     if reason is None and len(encoded(messages)) > 12288:
@@ -102,6 +105,7 @@ def fit_final_request(body, prepared, byte_limit):
         counts["remaining_final_token_budget"] = counts.get("remaining_final_token_budget", 0) + 1
         for aid, member in data.get("members", {}).items():
             member["included"] = sum(aid in src["alert_ids"] for src in prepared["source_map"].values())
+        update_query_visibility(data, prepared["source_map"])
         wire_messages[1]["content"] = encoded(compact(data) if grouped else data).decode()
         wire_schema["$defs"]["SourceId"]["enum"] = sorted(prepared["source_map"])
     prepared["coverage"] = data.get("members", {})
@@ -134,7 +138,8 @@ class ModelSteps(BaselineEvidence):
             ).values(state="unknown", error=error("reasoning_dispatch_or_commit_uncertain", await store.now())))
             await store.mark_unknown(case_id, run_id)
 
-    async def call(self, tenant_id, case_id, run_id, stage_id, stage_code, prepared, gateway, parser, *, output_format):
+    async def call(self, tenant_id, case_id, run_id, stage_id, stage_code, prepared, gateway, parser, *, output_format,
+                   response_adapter=None):
         if not prepared["ready"]:
             return None, prepared["reason"], None, None
         if not await gateway.configure(self.service, tenant_id):
@@ -153,13 +158,16 @@ class ModelSteps(BaselineEvidence):
                 raise StoreError("reasoning_owner_invalid")
             limits, now = Limits.model_validate(run["limits"]), await store.now()
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            reservation = await reservation_for(store, run, steps)
             reason = budget_reason(steps, limits, len(encoded(body)), now,
-                reserve_calls=reserved_calls(run, stage_code))
+                reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None)
             if reason == "model_token_budget_insufficient" and stage_code == "C6":
                 used = sum(s["usage"]["total_tokens"] for s in steps
                     if s["kind"] == "model" and s["state"] not in {"planned", "skipped"})
                 fit_final_request(body, prepared, limits.max_tokens - used - MAX_OUTPUT_TOKENS - 256)
                 reason = budget_reason(steps, limits, len(encoded(body)), now)
+            if reason is None and stage_code == "C6":
+                reason = final_wire_reason(body, reservation)
             if reason:
                 return None, reason, None, None
             model_id = uuid4()
@@ -172,12 +180,13 @@ class ModelSteps(BaselineEvidence):
                 "direction": "request", "payload": {"body": body, "source_map": prepared["source_map"],
                     "binding_map": prepared.get("binding_map", {}), "input_artifact_ids": prepared["input_artifact_ids"],
                     "input_sha256": digest(prepared), "omissions": prepared["omissions"],
-                    "reserved_token_upper_bound": len(encoded(body)) + MAX_OUTPUT_TOKENS + 256},
+                    "reserved_token_upper_bound": len(encoded(body)) + MAX_OUTPUT_TOKENS + 256,
+                    "final_reservation": reservation},
                 "captured_at": now.isoformat(), "request_id": None, "usage": None}
             refs = [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]]
             request_id = await self.save(store, run, model_id, request, "model_request", refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
-            deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
+            deadline = asyncio.get_running_loop().time() + remaining_seconds(limits, now, reservation, stage_code)
         try:
             async with asyncio.timeout_at(deadline):
                 payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
@@ -200,7 +209,7 @@ class ModelSteps(BaselineEvidence):
             if exc.rejection_code:
                 return None, exc.rejection_code, model_id, response_id
             raise
-        recorded, parsed, reason = usage(payload), None, None
+        recorded, parsed, reason, adaptation = usage(payload), None, None, None
         try:
             if recorded["usage_state"] != "reported":
                 raise analysis.AnalysisRejected("model_usage_unknown_or_inconsistent")
@@ -215,7 +224,10 @@ class ModelSteps(BaselineEvidence):
             if (not isinstance(msg, dict) or msg.get("tool_calls") or msg.get("function_call") or msg.get("refusal")
                     or not isinstance(msg.get("content"), str)):
                 raise analysis.AnalysisRejected("model_content_or_tool_protocol_invalid")
-            parsed = parser(msg["content"])
+            content = msg["content"]
+            if response_adapter is not None:
+                content, adaptation = response_adapter(content)
+            parsed = parser(content)
         except analysis.AnalysisRejected as exc:
             reason = str(exc)
         async with self.service.transaction(tenant_id) as store:
@@ -226,6 +238,8 @@ class ModelSteps(BaselineEvidence):
             response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
                 "direction": "response", "payload": {"raw": payload, "validation_error": reason},
                 "captured_at": now.isoformat(), "request_id": recorded["request_id"], "usage": recorded}
+            if adaptation is not None:
+                response["payload"]["output_adapter"] = adaptation
             response_id = await self.save(store, run, model_id, response, "model_response",
                 [reference("artifact", request_id, "execution_receipt")])
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(

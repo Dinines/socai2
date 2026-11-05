@@ -14,7 +14,7 @@ from app.models.socai2 import RunSteps
 from . import baseline_enrichment_sources as sources
 from .baseline_context import MAX_CONTEXT_BYTES, reference
 from .baseline_context import SCHEMA as C1_SCHEMA
-from .baseline_contracts import Limits
+from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Limits
 from .baseline_optional_sources import SourceUnavailable
 from .baseline_store import F, StoreError, digest, encoded
 
@@ -137,7 +137,11 @@ class BaselineEnrichment:
                 raise StoreError("baseline_not_running")
             limits = Limits.model_validate(run["limits"])
             now = await store.now()
-            dispatch_deadline = (asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
+            from .baseline_capacity import remaining_seconds, reservation_for
+            all_steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            reservation = await reservation_for(store, run, all_steps)
+            remaining = remaining_seconds(limits, now, reservation)
+            dispatch_deadline = (asyncio.get_running_loop().time() + remaining
                                  if limits.deadline_at else None)
             used = (await store.db.execute(select(func.count()).select_from(S).where(*store.where(S,
                 S.c.run_id == run_id, S.c.kind == "tool", S.c.state.not_in(["planned", "skipped"])
@@ -146,7 +150,7 @@ class BaselineEnrichment:
             # Keep standalone C2 and already persisted receipts on their original
             # contract; reserve within, never in addition to, the total budget.
             reserved = (min(2, (limits.max_tool_calls or 0) // 2)
-                if run["executor_version"] == "socai2.baseline-executor.v1" else 0)
+                if run["executor_version"] in FULL_EXECUTOR_VERSIONS else 0)
             reason = None
             if not sources.connected(source):
                 reason = "source_not_connected"
@@ -162,6 +166,8 @@ class BaselineEnrichment:
                 reason = "tool_budget_reserved_for_evidence"
             elif limits.deadline_at <= now:
                 reason = "deadline_reached"
+            elif remaining < 1:
+                reason = "final_model_time_reserved"
             args = {"tool_name": source, "contract_version": sources.VERSION,
                 "scope": context.scope.model_dump(mode="json"),
                 "limit": min(limits.max_rows_per_query or 0, MAX_QUERY_ROWS),

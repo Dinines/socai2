@@ -11,9 +11,16 @@ from sqlalchemy import String, and_, cast, func, literal, or_, select
 from app.models import socai2 as m
 
 from .baseline_context import MAX_CONTEXT_BYTES
-from .baseline_store import CA, RES, RESM, RM, A, F, R, StoreError, digest
+from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest
 from .case_contracts import (
+    CaseBaselineRecord,
+    CaseQueueCursor,
+    CaseQueueItem,
+    CaseQueueMetrics,
+    CaseQueuePage,
+    CaseQueueQuery,
     CaseView,
+    ExecutionSummary,
     HistoryCursor,
     HistoryEntry,
     HistoryPage,
@@ -26,8 +33,82 @@ from .case_contracts import (
 )
 
 S = m.RunSteps.__table__
+TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
 ASSESS, SOURCES, COVER = (m.CaseAssessments.__table__, m.CaseAssessmentSources.__table__, m.CaseAssessmentMembers.__table__)
 ARTIFACT_FIELDS = [c for c in F.c if c.name not in {"tenant_id", "content_json", "content_text", "blob_ref"}]
+
+
+def queue_open_tasks(tenant_id):
+    """Only the current task revision counts; historic completions do not."""
+    return select(func.count()).select_from(TASKS.join(TASK_REVISIONS,
+        (TASK_REVISIONS.c.tenant_id == TASKS.c.tenant_id)
+        & (TASK_REVISIONS.c.case_id == TASKS.c.case_id)
+        & (TASK_REVISIONS.c.task_id == TASKS.c.id)
+        & (TASK_REVISIONS.c.id == TASKS.c.current_revision_id))).where(
+            TASKS.c.tenant_id == tenant_id, TASKS.c.case_id == C.c.id,
+            TASK_REVISIONS.c.state.in_(["not_started", "in_progress"])).correlate(C)
+
+
+def queue_metric_predicates(tenant_id):
+    active = C.c.handling_status.in_(["new", "in_progress"])
+    return {
+        "awaiting_assignment": active & (C.c.assignment_state == "unassigned") & C.c.owner_id.is_(None),
+        "in_progress": C.c.handling_status == "in_progress",
+        "high_severity": active & (C.c.severity == "high"),
+        "awaiting_human": active & (queue_open_tasks(tenant_id).scalar_subquery() > 0),
+    }
+
+
+def queue_filter_fingerprint(tenant_id, query):
+    return digest({"tenant_id": str(tenant_id), "sort": "business_updated_at_desc,id_desc",
+        **query.model_dump(mode="json", exclude={"limit", "cursor"})})
+
+
+def queue_cursor(tenant_id, query):
+    if query.cursor is None:
+        return None
+    try:
+        raw = base64.b64decode(query.cursor, altchars=b"-_", validate=True)
+        point = CaseQueueCursor.model_validate_json(raw)
+    except (ValueError, TypeError, binascii.Error):
+        raise StoreError("invalid_case_cursor", 422) from None
+    if point.filter_fingerprint != queue_filter_fingerprint(tenant_id, query):
+        raise StoreError("case_cursor_filters_changed", 422)
+    return point
+
+
+def queue_filters(tenant_id, query):
+    clauses = [C.c.tenant_id == tenant_id]
+    if query.q:
+        escaped = query.q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        search = C.c.title.ilike("%" + escaped + "%", escape="\\")
+        try:
+            search = or_(search, C.c.id == UUID(query.q))
+        except ValueError:
+            pass
+        clauses.append(search)
+    for field in ("handling_status", "severity", "owner_id", "assignment_state"):
+        value = getattr(query, field)
+        if value is not None:
+            clauses.append(C.c[field] == value)
+    if query.metric:
+        clauses.append(queue_metric_predicates(tenant_id)[query.metric])
+    return clauses
+
+
+def start_availability(cas, run, member_count, active):
+    reason = "ready"
+    if run["kind"] != "baseline" or run["state"] != "pending_update":
+        reason = "not_pending"
+    elif cas["handling_status"] == "resolved":
+        reason = "resolved_case"
+    elif run["scope_revision"] != cas["scope_revision"]:
+        reason = "scope_changed"
+    elif not member_count:
+        reason = "empty_scope"
+    elif active:
+        reason = "baseline_active"
+    return StartAvailability(can_start=reason == "ready", reason=reason)
 
 
 def without_internal(row):
@@ -77,19 +158,55 @@ class CaseReader:
         return row
 
     async def eligibility(self, cas, run, member_count):
-        reason = "ready"
-        if run["kind"] != "baseline" or run["state"] != "pending_update":
-            reason = "not_pending"
-        elif cas["handling_status"] == "resolved":
-            reason = "resolved_case"
-        elif run["scope_revision"] != cas["scope_revision"]:
-            reason = "scope_changed"
-        elif not member_count:
-            reason = "empty_scope"
-        elif await self.store.one(select(R.c.id).where(*self.store.where(R, R.c.case_id == cas["id"],
-                R.c.kind == "baseline", R.c.state.in_(["running", "unknown"]))).limit(1)):
-            reason = "baseline_active"
-        return StartAvailability(can_start=reason == "ready", reason=reason)
+        eligibility = start_availability(cas, run, member_count, False)
+        if not eligibility.can_start:
+            return eligibility
+        active = await self.store.one(select(R.c.id).where(*self.store.where(R, R.c.case_id == cas["id"],
+            R.c.kind == "baseline", R.c.state.in_(["running", "unknown"]))).limit(1))
+        return start_availability(cas, run, member_count, bool(active))
+
+    async def queue(self, query: CaseQueueQuery):
+        """Called inside one tenant-bound REPEATABLE READ, READ ONLY transaction."""
+        tenant = self.store.tenant_id
+        point = queue_cursor(tenant, query)
+        predicates = queue_metric_predicates(tenant)
+        metrics = (await self.rows(select(*[
+            func.count().filter(predicate).label(name) for name, predicate in predicates.items()
+        ]).select_from(C).where(C.c.tenant_id == tenant)))[0]
+        clauses = queue_filters(tenant, query)
+        total = (await self.db.execute(select(func.count()).select_from(C).where(*clauses))).scalar_one()
+        member_count = select(func.count()).select_from(CA).where(
+            CA.c.tenant_id == tenant, CA.c.case_id == C.c.id).correlate(C).scalar_subquery()
+        listing = select(C, member_count.label("member_count"),
+            queue_open_tasks(tenant).scalar_subquery().label("open_task_count")).where(*clauses)
+        if point:
+            listing = listing.where(or_(C.c.business_updated_at < point.at,
+                and_(C.c.business_updated_at == point.at, C.c.id < point.id)))
+        selected = await self.rows(listing.order_by(C.c.business_updated_at.desc(), C.c.id.desc()).limit(query.limit + 1))
+        visible = selected[:query.limit]
+        runs = defaultdict(list)
+        if visible:
+            for run in await self.rows(select(R).where(*self.store.where(R,
+                    R.c.case_id.in_([row["id"] for row in visible]), R.c.kind == "baseline",
+                    R.c.state.in_(["pending_update", "running", "unknown"])))
+                    .order_by(R.c.requested_at, R.c.id)):
+                runs[run["case_id"]].append(run)
+        items = []
+        for row in visible:
+            baseline = runs[row["id"]]
+            active = any(run["state"] in {"running", "unknown"} for run in baseline)
+            items.append(CaseQueueItem(case=project(CaseView, row), member_count=row["member_count"],
+                open_task_count=row["open_task_count"], baseline_records=[
+                    CaseBaselineRecord(run=project(RunView, run), start_eligibility=start_availability(
+                        row, run, row["member_count"], active)) for run in baseline]))
+        next_cursor = None
+        if len(selected) > query.limit:
+            last = visible[-1]
+            cursor = CaseQueueCursor(at=last["business_updated_at"], id=last["id"],
+                filter_fingerprint=queue_filter_fingerprint(tenant, query))
+            next_cursor = base64.urlsafe_b64encode(cursor.model_dump_json().encode()).decode()
+        return CaseQueuePage(items=items, total=total, next_cursor=next_cursor,
+            metrics=CaseQueueMetrics.model_validate(metrics))
 
     async def case(self, case_id):
         cas = await self.store.case(case_id, lock=False)
@@ -122,6 +239,12 @@ class CaseReader:
                 .join(SOURCES, (SOURCES.c.tenant_id == RES.c.tenant_id) & (SOURCES.c.result_id == RES.c.id))
                 .where(*self.store.where(SOURCES, SOURCES.c.case_id == case_id,
                     SOURCES.c.assessment_id == row["id"]), RES.c.kind == "baseline").limit(2))
+            if not baseline_sources and row["origin"] == "system" and row["validity"] == "system_only":
+                baseline_sources = await self.rows(select(F.c.run_id.label("source_run_id"))
+                    .join(SOURCES, (SOURCES.c.tenant_id == F.c.tenant_id) & (SOURCES.c.artifact_id == F.c.id))
+                    .join(R, (R.c.tenant_id == F.c.tenant_id) & (R.c.id == F.c.run_id))
+                    .where(*self.store.where(SOURCES, SOURCES.c.case_id == case_id,
+                        SOURCES.c.assessment_id == row["id"]), F.c.kind == "report_json", R.c.kind == "baseline").limit(2))
             freshness = {"state": "unverified", "reasons": ["single_baseline_source_unavailable"]}
             if len(baseline_sources) == 1 and baseline_sources[0]["source_run_id"]:
                 freshness = (await self.store.db.execute(select(func.socai2.baseline_input_freshness(
@@ -177,6 +300,23 @@ class CaseReader:
             more = base64.urlsafe_b64encode(value.model_dump_json().encode()).decode()
         return HistoryPage(items=items, next_cursor=more)
 
+    async def execution_summary(self, case_id, run_id, steps):
+        """Read the frozen execution plan; never infer today's capabilities for history."""
+        plan = next((step for step in steps if step["stage_code"] == "C1.executor"
+            and step["state"] == "completed" and step["output_artifact_id"]), None)
+        if plan is None:
+            return None
+        artifact_id = plan["output_artifact_id"]
+        saved = await self.artifact(case_id, run_id, artifact_id)
+        if saved["availability"] != "available":
+            return ExecutionSummary(artifact_id=artifact_id, availability=saved["availability"])
+        body = saved["content_json"]
+        if not isinstance(body, dict) or body.get("type") != "execution_plan" or body.get("run_id") != str(run_id):
+            raise StoreError("execution_plan_link_invalid")
+        return ExecutionSummary(artifact_id=artifact_id, availability="available",
+            **{key: body[key] for key in ("schema_version", "capabilities", "limits", "final_reservation", "limitations")
+                if key in body})
+
     async def run(self, case_id, run_id):
         row = await self.run_row(case_id, run_id)
         cas = await self.store.case(case_id, lock=False)
@@ -220,7 +360,8 @@ class CaseReader:
             "artifacts_truncated": sum(r["n"] for r in artifact_counts) > len(artifacts),
             "duration_seconds": duration,
             "elapsed_seconds": (now - row["started_at"]).total_seconds() if row["started_at"] and not row["ended_at"] else None,
-            "last_recorded_at": max(t for t in recorded if t is not None), "observed_at": now}
+            "last_recorded_at": max(t for t in recorded if t is not None), "observed_at": now,
+            "execution_summary": await self.execution_summary(case_id, run_id, steps)}
 
     async def artifact(self, case_id, run_id, artifact_id):
         filters = self.store.where(F, F.c.case_id == case_id, F.c.run_id == run_id, F.c.id == artifact_id)

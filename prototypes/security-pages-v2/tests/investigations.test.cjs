@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function load(version='v2'){
  const root=path.resolve(__dirname,'../../security-pages-'+version);
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/alerts'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
- const files=['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view'];if(version==='v2')files.push('investigation-data','investigation-graph','investigation-workspace','case-workflow');
+ const files=['icons',...(version==='v2'?['workspace-layout']:[]),'data','replayed-alerts','alert-detail','workspace-model','workspace-view'];if(version==='v2')files.push('investigation-data','investigation-graph','investigation-workspace','case-workflow','case-assistant');
  for(const n of files)vm.runInContext(fs.readFileSync(path.join(root,n+'.js'),'utf8'),s);
  const extras=version==='v2'?',investigationView,casePage,incidentPage':'';
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();',`window.api={store,ui,alertsPage,drawerMarkup,fullAlert${extras}};\n})();`);

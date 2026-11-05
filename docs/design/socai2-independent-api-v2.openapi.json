@@ -209,15 +209,20 @@
         ],
         "summary": "Create Case",
         "operationId": "create_case_api_v1_socai2_cases_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CaseCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -240,12 +245,176 @@
               }
             }
           }
-        },
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Case Queue",
+        "operationId": "case_queue_api_v1_socai2_cases_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "awaiting_assignment",
+                    "in_progress",
+                    "high_severity",
+                    "awaiting_human"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metric"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseQueuePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/socai2/cases/{case_id}": {
@@ -3161,6 +3330,23 @@
         ],
         "title": "BaselinePreparation"
       },
+      "CaseBaselineRecord": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunView"
+          },
+          "start_eligibility": {
+            "$ref": "#/components/schemas/StartAvailability"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run",
+          "start_eligibility"
+        ],
+        "title": "CaseBaselineRecord"
+      },
       "CaseCreate": {
         "properties": {
           "operation_key": {
@@ -3305,6 +3491,111 @@
           "baseline_records"
         ],
         "title": "CaseDetail"
+      },
+      "CaseQueueItem": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/CaseView"
+          },
+          "member_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Member Count"
+          },
+          "open_task_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Open Task Count"
+          },
+          "baseline_records": {
+            "items": {
+              "$ref": "#/components/schemas/CaseBaselineRecord"
+            },
+            "type": "array",
+            "title": "Baseline Records"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case",
+          "member_count",
+          "open_task_count",
+          "baseline_records"
+        ],
+        "title": "CaseQueueItem"
+      },
+      "CaseQueueMetrics": {
+        "properties": {
+          "awaiting_assignment": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Awaiting Assignment"
+          },
+          "in_progress": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "In Progress"
+          },
+          "high_severity": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "High Severity"
+          },
+          "awaiting_human": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Awaiting Human"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "awaiting_assignment",
+          "in_progress",
+          "high_severity",
+          "awaiting_human"
+        ],
+        "title": "CaseQueueMetrics"
+      },
+      "CaseQueuePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaseQueueItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CaseQueueMetrics"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "metrics"
+        ],
+        "title": "CaseQueuePage"
       },
       "CaseView": {
         "properties": {
@@ -4011,6 +4302,80 @@
           "operation_key"
         ],
         "title": "ExecuteStage"
+      },
+      "ExecutionSummary": {
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Artifact Id"
+          },
+          "availability": {
+            "type": "string",
+            "title": "Availability"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limits"
+          },
+          "final_reservation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Reservation"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "availability"
+        ],
+        "title": "ExecutionSummary"
       },
       "ExplanationView": {
         "properties": {
@@ -5548,6 +5913,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Observed At"
+          },
+          "execution_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,

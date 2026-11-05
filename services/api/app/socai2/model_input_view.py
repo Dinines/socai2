@@ -60,6 +60,13 @@ def items(data):
     return sorted(result, key=lambda i: (i["id"].rsplit("_", 1)[-1][0], int(i["id"].rsplit("_", 1)[-1][1:])))
 
 
+def queries(data):
+    """Expand C6's explicitly shared query context; legacy views are unchanged."""
+    context = data.get("query_context", {})
+    shared = {key: value for key, value in context.items() if key != "applies_to"} if context.get("applies_to") == "queries" else {}
+    return [{**shared, **query} for query in data.get("queries", [])]
+
+
 def size(data):
     return len(encoded(compact(data)))
 

@@ -14,6 +14,7 @@ from .baseline_analysis import BaselineAnalysis
 from .baseline_analysis_model import TenantChatGateway
 from .baseline_context import reference
 from .baseline_enrichment import S
+from .baseline_final_evidence import query_candidates, share_query_context
 from .baseline_reasoning import ModelSteps, bounded_input, evidence_candidates
 from .baseline_store import F, StoreError, digest
 from .model_input_view import frozen_items, source_members
@@ -39,11 +40,20 @@ class BaselineReanalysis(ModelSteps):
                 raise StoreError("evidence_receipt_invalid")
             tools = {str(r["id"]): r["content_json"] for r in rows}
         current = await evidence.BaselineEvidence(self.service).model_view(tenant_id, case_id, run_id, context.questions[0].id)
-        inputs = [initial["artifact_id"], current["artifact_id"], str(prior_id), *[str(r["id"]) for r in bases]]
+        inputs = [initial["artifact_id"], current["artifact_id"], *([str(prior_id)] if prior_id else []), *[str(r["id"]) for r in bases]]
         if not initial["ready"] or not current["ready"]:
-            return {"ready": False, "reason": "model_view_not_ready", "input_artifact_ids": inputs}
+            return {"ready": False, "reason": "model_view_not_ready", "input_artifact_ids": inputs,
+                "messages": [], "source_map": {}, "coverage": {}, "omissions": []}
         old = json.loads(initial["messages"][1]["content"])
         new, observations = evidence_candidates(current)
+        final = (extra_data or {}).get("round") == "final_delivery"
+        final_observations = []
+        if final and new["queries"]:
+            final_observations, missing = query_candidates(new["queries"], bases)
+            if missing:
+                return {"ready": False, "reason": "required_query_evidence_unavailable", "messages": [],
+                    "source_map": {}, "coverage": {}, "omissions": missing, "input_artifact_ids": inputs}
+            observations = [c for c in observations if c["source"]["membership_basis"] != "query_binding_only"]
         old_candidates, judgments, graph_candidates = [], [], []
         for snapshot, graph in graphs:
             nodes = {n["id"]: n for n in graph["nodes"]}
@@ -72,10 +82,12 @@ class BaselineReanalysis(ModelSteps):
                     or item["source"]["source_path"].endswith(".alert.event_time")
                     or item["source"]["type"] == "alert_material" and item["source"]["role"] == "observation"})
         all_aids = sorted(context.alerts)
-        judgments.append({"original": previous["analysis"], "entry": {"role": "prior_analysis", "alert_ids": all_aids,
-            "value": {"previous_summary": previous["analysis"]["summary"]}},
-            "source": {"ref": reference("artifact", prior_id, "prior_analysis", "$.analysis"), "alert_ids": all_aids}})
-        for index, item in enumerate(previous["analysis"]["followups"]):
+        prior_analysis = (previous or {}).get("analysis")
+        if prior_analysis:
+            judgments.append({"original": prior_analysis, "entry": {"role": "prior_analysis", "alert_ids": all_aids,
+                "value": {"previous_summary": prior_analysis["summary"]}},
+                "source": {"ref": reference("artifact", prior_id, "prior_analysis", "$.analysis"), "alert_ids": all_aids}})
+        for index, item in enumerate((prior_analysis or {}).get("followups", [])):
             if str(prior_id) == executed_plan_id:
                 continue  # The original plan is already retained as required input.
             judgments.append({"original": item, "entry": {"role": "prior_analysis", "alert_ids": item["alert_ids"],
@@ -91,7 +103,7 @@ class BaselineReanalysis(ModelSteps):
                     "value": {"question_id": value["question_id"], "answer": {k: value["answer"][k]
                         for k in ("state", "text", "alternatives", "limitations")}}},
                     "source": {"ref": reference("artifact", r["id"], "prior_analysis", "$.answer"), "alert_ids": all_aids}})
-        candidates = list(lead_candidates)
+        candidates = [*lead_candidates, *final_observations]
         for group in zip_longest(old_candidates, observations, judgments, graph_candidates):
             for item in group:
                 if item:
@@ -111,7 +123,11 @@ class BaselineReanalysis(ModelSteps):
             "不要只复述旧判断。此步骤不发布最终案件结果。")
         if extra_data:
             data.update(extra_data)
-        return {**bounded_input(data, candidates, instruction or prompt), "input_artifact_ids": list(dict.fromkeys(inputs))}
+        instruction = instruction or prompt
+        if final and new["queries"]:
+            share_query_context(data)
+            instruction += "\nquery_context字段由所有queries继承；projected_fields仅计投影字段，visible_fields计本次可见字段，partial不是完整查询复核。"
+        return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs))}
 
     async def execute(self, tenant_id, case_id, run_id, gateway=None):
         gateway = gateway or TenantChatGateway()

@@ -154,11 +154,12 @@ def citation_roles(payload):
     return analysis.citation_roles(payload)
 
 
-PROMPT = """C6整案交付：仅按Schema输出完整JSON，不调用工具/执行响应。
+PROMPT = """C6交付：仅输出完整Schema JSON，不调用工具/执行响应。
+前序分析失败不取消收尾：依据当前实际可见事实独立汇总，缺证据明确uncertain及缺口，不把失败解释为无风险。
 source_groups角色/成员适用于组内项。observed只用本成员直接observation，时间仅为上下文；成员属性不互移。标题/厂商/演练标签不证明授权或良性；未提供审批非无审批，端口不证明应用协议。
-analysis覆盖全成员/六问题/四领域；无资料用not_analyzed/undetermined，列限制及替代解释。核验：identity认证/MFA/会话/权限/授权；cloud控制面/IAM/配置/影响；phishing邮件/链接/附件/投递/点击/执行；insider数据访问/外传量/目的地/基线/授权。非applicable须解释，引用finding非定性。conflicts仅列至少两条发现的实际矛盾；缺证据不算。
+analysis覆盖全成员/六问题/四领域；无资料用not_analyzed/undetermined，列限制/替代解释。核验：identity认证/MFA/会话/权限/授权；cloud控制面/IAM/配置/影响；phishing邮件/链接/附件/投递/点击/执行；insider数据访问/外传量/目的地/基线/授权。domain.alert_ids须覆盖所引findings全部成员；非applicable须解释，引用非定性。conflicts仅列至少两条发现的实际矛盾；缺证据不算。
 supported结论及实际影响须由对应成员的观察或人工陈述支持；旧判断/标签/图/query_binding_only不作直接事实。impact无确定变化填[]，说明不能推广。
 comparison限指定result_id：initial用summary=null/support_ids=[]；基线不可用用not_comparable并说明；可比时引用基线和当前来源，区分范围/判断变化。
-followups文字及object_keys限alert_ids，跨成员列全。query单次/deep按结果续查/graph关系核验/human人工确认，不写SQL或扩范围。execution_plan_index对应routes.followup_index；其他followup为新提议。completed/answer_available非问题解决，human handoff非人工确认。
-建议限已有对象，不声称审批/执行。closing_note写认识/待核，执行/交付/采用由服务端定。短句，最多3个findings/2个followups；不复制原文/内部码，不宣称全文已读。完整输出目标2200tokens。
+analysis.followups必填，无新建议填[]；文字及object_keys限alert_ids，跨成员列全。query单次/deep按结果续查/graph关系核验/human人工确认，不写SQL或扩范围。execution_plan_index对应routes.followup_index；其他followup为新提议。completed/answer_available非问题解决，human handoff非人工确认。
+建议限已有对象，不声称审批/执行；closing_note写认识/待核。每段≤50字，结论≤90字；findings≤2/followups≤1/recommendations≤1，各引用保必要1–3项；无矛盾用[]。不重复原文/内部码，不宣称全文已读，目标2000tokens。
 """

@@ -2,6 +2,7 @@
 import html
 import re
 
+from .baseline_closing import statement
 from .baseline_contracts import Publication
 
 
@@ -72,14 +73,14 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
         questions = [q.model_copy(update={"state": "not_attempted", "limitations": [
             "final_synthesis_not_accepted_prior_question_answers_remain_in_artifacts"]}).model_dump(mode="json") for q in context.questions]
         impact = {"summary": None, "supported_changes": [], "cannot_generalize": ["没有有效最终模型结论，不能确认案件影响"],
-            "affected_scope": scope([]), "next_steps": ["核对停止原因与已保存材料后，由用户决定后续调查"]}
+            "affected_scope": scope([]), "next_steps": ["继续核查告警所涉行为及影响范围"]}
     result = Publication.model_validate({"operation_key": operation_key,
         "terminal_state": "completed" if value else "failed", "stop_reason": "final_delivery_saved" if value else reason,
         "stop_detail": None, "title": "基础调查结果" if value else "基础调查系统交接",
-        "conclusion": value.conclusion.text if value else None,
-        "conclusion_state": value.conclusion.state if value else "unavailable",
+        "conclusion": value.conclusion.text if value else statement(len(members)),
+        "conclusion_state": value.conclusion.state if value else "uncertain",
         "conclusion_origin": "model" if value else "system", "validation_state": "accepted" if value else "system_only",
-        "closing_note": value.closing_note if value else "本轮未形成可采用的模型结论；执行材料和中间分析已保留，需后续跟进。",
+        "closing_note": value.closing_note if value else statement(len(members)),
         "findings": findings, "questions": questions, "recommendations": recommendations,
         "change_kind": value.comparison.kind if value else "initial" if comparison["state"] == "initial" else "not_comparable",
         "change_summary": value.comparison.summary if value else None if comparison["state"] == "initial" else "未形成有效最终结论，未进行判断比较。",
@@ -129,7 +130,7 @@ def markdown(report):
     lines += ["", "## 执行用量", "", "模型调用：" + str(report["execution"]["model_calls"]),
         "Tool调用：" + str(report["execution"]["tool_calls"]), "Token总量：" + (
             str(report["execution"]["total_tokens"]) if report["execution"]["total_tokens"] is not None else "未知")]
-    lines += ["", "## 来源与限制", "", "图工件：" + esc(data["graph_artifact_id"]),
+    lines += ["", "## 来源与限制", "", "图工件：" + esc(data["graph_artifact_id"] or "未生成"),
         "比较结果：" + esc(report["comparison"]["result_id"] or "无"),
         "来源别名对应本次模型实际可见字段；派生图与旧分析不作为独立证据。"]
     for sid, source in report["source_map"].items():

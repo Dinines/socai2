@@ -54,7 +54,7 @@ def branches(value):
             yield from branches(child)
 
 
-@pytest.mark.parametrize("model", [alert.Answer, incident.Answer, analysis.Analysis, deep.Decision, delivery.Delivery])
+@pytest.mark.parametrize("model", [alert.Answer, incident.Answer, analysis.Analysis, analysis.ExecutionAnalysis, deep.Decision, delivery.Delivery])
 def test_each_contract_exposes_union_types_without_changing_definitions_or_inputs(model):
     schema = response_format(model, ["N1_S1"], members=["00000000-0000-0000-0000-000000000001"],
         questions=["Q1"], objects=["host:synthetic"], bindings=["B1"])["json_schema"]["schema"]

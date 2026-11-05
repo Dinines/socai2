@@ -114,3 +114,14 @@ flowchart LR
 两份恢复后的视图均低于原7936 B预留线。原完整请求分别13340/13684 B，其中Schema为2590/2762 B、system文字1650/1742 B；**精简也要覆盖Schema和重复指令，不能只盯原始材料。** 这些是UTF-8字节数，不是token降幅；新增可见性元数据、正式提示、guard和实际质量仍待验证。本次0模型/DB调用，原件hash保持，实验没有发布为生产输入。
 
 具体采用方案统一放在[主设计4.3节](investigation-planning-design.md#43-模型输入与输出精简)，不另起一套调查架构。
+
+## 8. 模型或前序失败时如何收尾
+
+2026-11-05只读复核本地AiSOC固定revision `34ca18c57dd4175539e5c6dd3d04a72dc057306b`，并未重跑旧服务：
+
+- 默认Case的Recon在模型/JSON失败后以规则提取IOC和技术映射；Forensic降级为根因无法确定、影响未知、人工复核，置信度0.1。该降级结果继续传给后续步骤。见[Recon](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/investigator/recon_agent.py#L119)、[Forensic](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/investigator/forensic_agent.py#L132)。
+- Report Writer直接接收Markdown正文；模型调用异常时，用已保留告警、Recon、Forensic和响应计划拼接模板报告并标注模型不可用，不依赖当前C6严格JSON合同。见[最终报告及模板](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/investigator/report_writer_agent.py#L179)。
+- 默认四阶段仍有停止边：节点未内部捕获的异常被标failed，guard直接到END，可能不进Report Writer。因此不能概括为原版任何异常都保证最终报告。见[节点保护与条件边](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/investigator/orchestrator.py#L64)。
+- Router流路径捕获领域分支异常，将失败信息留在分支，继续汇合；末段即使状态failed仍渲染报告。见[分支异常](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/orchestrator/router.py#L951)及[最终渲染](https://github.com/beenuar/AiSOC/blob/34ca18c57dd4175539e5c6dd3d04a72dc057306b/services/agents/app/orchestrator/router.py#L1085)。
+
+原版常见失败更容易留下可读内容，但报告存在不证明有效安全定性。当前修复保留结构/来源/范围校验：校验决定模型内容能否被采用，C6收尾独立保证业务待核判断可读取，技术原因在专门执行记录中留存；不因一个可选空字段或前序被拒收让Case没有任何说明。新规则见[主设计4.1节](investigation-planning-design.md#41-本轮必须回答的问题)。

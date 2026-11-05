@@ -79,8 +79,8 @@ class CaseService(BaselineService):
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
             now = await store.now()
-        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=24000, max_rows_per_query=200,
-            deadline_at=now + timedelta(seconds=120), policy_version="socai2.manual-http.v1")
+        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=48000, max_rows_per_query=200,
+            deadline_at=now + timedelta(seconds=120), policy_version="socai2.manual-http.v2")
         # Await the existing executor. No BackgroundTasks, worker or automatic
         # successor. A client can read Run state while this request is active.
         await self.start_full(tenant_id, case_id, run_id, request, actor=actor, limits=limits)
@@ -124,6 +124,11 @@ class CaseService(BaselineService):
                 {"request_hash": intent, "outcome": out.model_dump(mode="json")},
                 [("run_id", run_id, None, {"state": "pending_update", "created": out.created})])
             return out
+
+    async def read_cases(self, tenant_id, query):
+        from .case_reader import CaseReader
+        async with self.transaction(tenant_id, readonly=True) as store:
+            return await CaseReader(store).queue(query)
 
     async def read_case(self, tenant_id, case_id):
         from .case_reader import CaseReader

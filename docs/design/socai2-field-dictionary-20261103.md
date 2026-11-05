@@ -3745,3 +3745,22 @@ content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON�
 | D04 | 空Case/已解决Case | proposal_not_confirmed | 允许保存空案/历史；无成员禁止启动；已解决案变更不静默重开，启动前显式重开 |
 
 D04特殊流程尚未开放，不能据建表完成推断相关API已实现。旧表历史不自动回填或迁移，当前业务写入尚未切换。
+
+## 7. 案件读取合同
+
+这些字段是已有新库记录的只读投影，不增加表列。对应[OpenAPI](socai2-independent-api-v2.openapi.json)。
+
+| 读取入口／字段 | 来源与口径 |
+| --- | --- |
+| `GET /api/v1/socai2/cases` | 当前身份有权读取的租户案件；`limit` 1—50，默认20；标题／完整ID搜索、状态、严重程度、负责人、分配状态与指标筛选 |
+| `items[].case`、`member_count`、`open_task_count`、`baseline_records` | 案件字段、当前成员数、当前未完成任务数、待启动及活跃基础调查；不从本地演示集合补齐 |
+| `total` | 本次筛选后的案件总数，不等于本页条数 |
+| `metrics` | 全部有权读取的待处理案件（新建／处理中），不随筛选和分页变化；待分配排除负责人无法解析，处理中按业务状态，高严重程度按`high`，待人工按有未开始／进行中任务的Case去重 |
+| `next_cursor` | 按`business_updated_at/id`倒序的稳定续页位置，绑定租户与筛选；单次GET为同一只读快照，跨请求不冻结整个集合 |
+| 当前判断`coverage`与`input_freshness` | 成员覆盖与受跟踪输入依据状态分开。材料、分诊／反馈、事件和H实质依据变化须核对；外部情报／湖后来变化不自动表示已重新核验 |
+| `RunDetail.execution_summary` | 通过本轮已完成`C1.executor`步骤读取原始、SHA校验通过的`execution_plan`；旧轮无工件返回null，不用当前配置回填 |
+| `execution_summary.capabilities` | 启动时绑定工具、可提供工具、绑定数、不支持项及未提供原因；四领域共享一次分析，200成员仅为保存上限，主机／窗口绑定不是告警归因证明 |
+| `execution_summary.limits/final_reservation` | 本轮冻结的限额及最终综合预留；新完整C为48000保守单位、4模型、4工具、120秒。保守字节上界不是真实tokens，旧Run及A/I保持原额度；历史未记录项为null |
+| `execution_summary.availability/artifact_id` | 原工件可用性及回查身份；不可读时不伪造能力摘要，不因GET执行查询或更新业务时间 |
+
+新执行器版本为`socai2.baseline-executor.v2`，C3执行建议合同为`socai2.baseline-analysis.v2`，含明确绑定和优先级；C6未来建议仍使用原v1建议合同。直接query不增加Deep模型调用；查询按绑定复用、Deep按问题复用；C6通过原计划索引及`projection_id`回查对应查询材料，不能用新建议接管旧执行记录。

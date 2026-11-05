@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');
 function load(){
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
- for(const file of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','persisted-case-data','recorded-examples','investigation-graph','investigation-workspace','case-workflow'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
+ for(const file of ['icons','workspace-layout','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','aisoc20-data','persisted-case-data','recorded-examples','investigation-graph','investigation-workspace','case-workflow','case-assistant'])vm.runInContext(fs.readFileSync(path.join(root,file+'.js'),'utf8'),s);
  const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.api={store,ui,casePage,fullAlert,investigationView,filteredRows,caseQueueRows,tableState};\n})();');
  vm.runInContext(code,s);return {...s.window.api,s,data:s.window.persistedCaseData};
 }

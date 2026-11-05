@@ -35,8 +35,8 @@ window.alertFlowWorkspace = (() => {
     for(const run of runs){
       const inputs=run.alertIds.filter(id=>alerts.has(id));if(!inputs.length)continue;
       for(const s of run.steps||[])rows.push({id:'event:'+(s.id||run.id+':'+s.seq),incidentId:incident.id,
-        caseIds:[],title:s.summary||s.kind,type:s.kind,target:inputs.map(id=>alerts.get(id).title).join('；'),
-        performedBy:s.name||'未记录',trigger:'自动',status:'Recorded',time:s.time,runId:run.id,seq:s.seq});
+        caseIds:[],title:run.recordedImport?`${s.name} · ${s.summary}`:s.summary||s.kind,type:run.recordedImport?'调查步骤投影':s.kind,target:inputs.map(id=>alerts.get(id).title).join('；'),
+        performedBy:run.recordedImport?(s.payload?.provider||'执行服务'):s.name||'未记录',trigger:'自动',status:'Recorded',time:s.time,runId:run.id,seq:s.seq});
     }
     return rows.sort((a,b)=>Date.parse(b.time)-Date.parse(a.time));
   }

@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 function setup(){
  const sandbox={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases/17420/overview'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};
  vm.createContext(sandbox);
- for(const name of ['icons','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-graph','investigation-workspace','case-workflow'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
+ for(const name of ['icons','workspace-layout','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','investigation-graph','investigation-workspace','case-workflow','case-assistant'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),sandbox);
  const app=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.testAPI={store,ui,casePage,scopeAlerts,workspaceView};\n})();');
  assert.ok(app.includes('window.testAPI='));vm.runInContext(app,sandbox);
  return {...sandbox.window.testAPI,W:sandbox.window.referenceWorkspaces,sandbox};

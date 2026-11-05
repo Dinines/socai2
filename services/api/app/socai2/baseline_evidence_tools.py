@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from . import baseline_optional_sources as optional
-from .baseline_semantics import project, scalar_reason
+from .baseline_semantics import project, same_scalar, scalar_reason
 from .baseline_store import digest
 
 VERSION = "socai2.c4-lake.v1"
@@ -153,8 +153,7 @@ def row_projection(row):
             value["omissions"].append({"source_path": "$." + name, "reason": why})
             continue
         existing = [f for f in value["fields"] if f["name"] == name]
-        conflict = any((f["value"].lower() != original.lower()) if name == "hash_sha256"
-            else f["value"] != original for f in existing)
+        conflict = any(not same_scalar(name, f["value"], original) for f in existing)
         for field in existing:
             field["conflict"] = field["conflict"] or conflict
         if not existing or conflict:

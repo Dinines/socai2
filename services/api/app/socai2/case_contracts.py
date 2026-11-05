@@ -242,6 +242,58 @@ class StartAvailability(Contract):
     reason: Literal["ready", "not_pending", "resolved_case", "scope_changed", "empty_scope", "baseline_active"]
 
 
+CaseMetric = Literal["awaiting_assignment", "in_progress", "high_severity", "awaiting_human"]
+
+
+class CaseQueueQuery(Contract):
+    limit: int = Field(default=20, ge=1, le=50)
+    cursor: str | None = Field(default=None, max_length=1024)
+    q: str | None = Field(default=None, max_length=200)
+    handling_status: WorkStatus | None = None
+    severity: Severity | None = None
+    owner_id: UUID | None = None
+    assignment_state: AssignmentState | None = None
+    metric: CaseMetric | None = None
+
+    @field_validator("q")
+    @classmethod
+    def normalize_search(cls, value):
+        return (value.strip() or None) if value is not None else None
+
+
+class CaseQueueCursor(Contract):
+    version: Literal[1] = 1
+    at: AwareDatetime
+    id: UUID
+    filter_fingerprint: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+
+
+class CaseQueueMetrics(Contract):
+    awaiting_assignment: int = Field(ge=0)
+    in_progress: int = Field(ge=0)
+    high_severity: int = Field(ge=0)
+    awaiting_human: int = Field(ge=0)
+
+
+class CaseBaselineRecord(Contract):
+    run: RunView
+    start_eligibility: StartAvailability
+
+
+class CaseQueueItem(Contract):
+    case: CaseView
+    member_count: int = Field(ge=0)
+    open_task_count: int = Field(ge=0)
+    baseline_records: list[CaseBaselineRecord]
+
+
+class CaseQueuePage(Contract):
+    items: list[CaseQueueItem]
+    total: int = Field(ge=0)
+    next_cursor: str | None
+    metrics: CaseQueueMetrics
+
+
 def project(model, row):
     return model.model_validate({key: row[key] for key in model.model_fields})
 
@@ -256,6 +308,16 @@ class CaseDetail(Contract):
     linked_incidents_truncated: bool
     current_assessment: dict[str, Any] | None
     baseline_records: list[dict[str, Any]]
+
+
+class ExecutionSummary(Contract):
+    artifact_id: UUID
+    availability: str
+    schema_version: str | None = None
+    capabilities: dict[str, Any] | None = None
+    limits: dict[str, Any] | None = None
+    final_reservation: dict[str, Any] | None = None
+    limitations: list[str] = Field(default_factory=list)
 
 
 class RunDetail(Contract):
@@ -281,6 +343,7 @@ class RunDetail(Contract):
     elapsed_seconds: float | None
     last_recorded_at: datetime
     observed_at: datetime
+    execution_summary: ExecutionSummary | None = None
 
 
 class SavedAnswerReference(Contract):

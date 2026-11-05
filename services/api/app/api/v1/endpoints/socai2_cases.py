@@ -16,6 +16,9 @@ from app.socai2.case_contracts import (
     BaselinePreparation,
     CaseCreate,
     CaseDetail,
+    CaseMetric,
+    CaseQueuePage,
+    CaseQueueQuery,
     HistoryPage,
     MemberChange,
     MoveMembers,
@@ -26,6 +29,7 @@ from app.socai2.case_contracts import (
     RunDetail,
 )
 from app.socai2.case_service import CaseService
+from app.socai2.enums import AssignmentState, Severity, WorkStatus
 
 
 def get_service():
@@ -56,6 +60,19 @@ async def invoke(call):
 @router.post("", response_model=AssociationReceipt)
 async def create_case(body: CaseCreate, user: WriteUser, service: Service):
     return await invoke(service.create_case(user.tenant_id, body, actor=actor(user)))
+
+
+@router.get("", response_model=CaseQueuePage)
+async def case_queue(user: ReadUser, service: Service,
+                     limit: Annotated[int, Query(ge=1, le=50)] = 20,
+                     cursor: Annotated[str | None, Query(max_length=1024)] = None,
+                     q: Annotated[str | None, Query(max_length=200)] = None,
+                     handling_status: WorkStatus | None = None,
+                     severity: Severity | None = None, owner_id: UUID | None = None,
+                     assignment_state: AssignmentState | None = None, metric: CaseMetric | None = None):
+    query = CaseQueueQuery(limit=limit, cursor=cursor, q=q, handling_status=handling_status,
+        severity=severity, owner_id=owner_id, assignment_state=assignment_state, metric=metric)
+    return await invoke(service.read_cases(user.tenant_id, query))
 
 
 @router.get("/{case_id}", response_model=CaseDetail)

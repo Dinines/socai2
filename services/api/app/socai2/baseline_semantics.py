@@ -108,6 +108,18 @@ def scalar_reason(name, value):
     return None
 
 
+def same_scalar(name, left, right):
+    """Compare typed values without rewriting their retained source representation."""
+    if name in {"source_ip", "dest_ip"}:
+        def address(value):
+            parsed = ipaddress.ip_address(value)
+            return parsed.ipv4_mapped or parsed if isinstance(parsed, ipaddress.IPv6Address) else parsed
+        return address(left) == address(right)
+    if name == "hash_sha256":
+        return left.lower() == right.lower()
+    return left == right
+
+
 def project(value, *, root="$.ocsf_json"):
     obj, reason = parse_object(value)
     result = {"schema_version": VERSION, "fields": [], "omissions": [],

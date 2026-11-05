@@ -1,12 +1,16 @@
 # 调查模块最新设计
 
+当前调整已进入实施：[OpenSpec设计](../../openspec/changes/complete-socai2-investigation-chain/design.md)中的完整请求容量/C6预留、query直接查询、Case集合读取及既有页面服务接线已有代码。用户批准新完整C使用48000保守单位，仍为4模型／4工具／120秒；旧Run及A/I不回写。用户侧以“本轮调查依据未变化／调查依据已更新／暂无法核对调查依据”表达受跟踪输入状态，与成员覆盖分开。代码、隔离PG与真实模型质量分别验收，实际进度以[任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)为准，未完成整链不作完成承诺。
+
+当前验证拓扑见[本机优先与VPN模型窗口](../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)。2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 原页面以真实导出回查；[修改与后续评审](../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)保留事实扩大、H容量和未实际消费知识等问题。
+
 2026-11-04范围更新：设计和后台现统一在主目录`E:/aisoc/socai2`、分支`codex/case-baseline-history-20261103`。[当前OpenSpec任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)区分已有实现、待完成和暂缓项。Q（AI问答）业务暂缓，仅预留接口，本文Q的流程仍是产品目标，不表示已执行或已交付；A/I/C/H职责和既定数据语义保持。
 
 当前落地边界：新版单开服务，不替换原版。C以领取时的完整冻结快照分析；当前判断的成员覆盖不等于已读取后来更新的材料或H反馈，相同成员的新反馈由用户显式prepare/start形成下一轮。H保存本身不触发调查。完整C2在原4次工具总额度内最多使用2次，为C4保留2次；未查询来源明确显示预算跳过，不宣称所有来源每轮都已查询。详见[人工反馈](../investigation/socai2-human-tasks-20261104.md)、[来源限制](../investigation/socai2-external-sources-20261104.md)和[独立服务方案](../operations/socai2-next-service-plan-20261104.md)。
 
 后续建议的对象须属于声明成员，跨成员关系核验显式列出所有相关成员。C6按原计划工件与建议序号关联执行状态，最新再分析提议不接管旧状态；原计划必要内容不能因压缩消失后仍猜测执行含义。C6使用独立最终交付规则和单一输出目标，共享来源/活动语义不重复堆叠；预算不足明确停止，不扩大额度。具体实现与验证见[当前差距](../design/investigation-design-current-gap-review-20261103.md)。
 
-当前实现核对：采用前与读取时比较冻结输入新鲜度，材料/判断指针或已完成人工反馈变化时不把历史输入冒充当前输入，任务纯元数据编辑除外。明确Schema拒绝记录为failed并释放Run；执行不确定仍unknown。C2按冻结对象选择来源，C6优先原始事实、人工反馈、实际计划和对比结论，A/I参考按同次整组保留或省略。完整请求还受原共享额度限制；三份冻结样本的C6剩余额度问题仍未闭环，见[审计与修复状态](../investigation/current-investigation-audit-20261105.md)。
+当前实现核对：采用前与读取时比较冻结输入新鲜度，材料/判断指针或已完成人工反馈变化时不把历史输入冒充当前输入，任务纯元数据编辑除外。明确Schema拒绝记录为failed并释放Run；执行不确定仍unknown。C2按冻结对象选择来源，C6优先原始事实、人工反馈、实际计划和对比结论，A/I参考按同次整组保留或省略。新C冻结完整wire预留并留30秒给最终综合，可选补查不得占用；C3只看到实际容纳的绑定，其余明确留账。三份双成员冻结样本已在新48000上限下离线容纳，真实质量须另验；旧失败保持，见[容量证据](../operations/evidence/investigation-repair-20261105/capacity-20261105.json)。
 
 更新：2026-11-05。本文是我们调查模块唯一的现行设计正文，统一告警基本查询、事件诊断、Case完整基础调查、AI对话和人工跟进。正文描述目标行为；每步实际输入、输出和写表在[当前执行账本](../investigation/current-execution-ledger.md)维护。
 
@@ -119,6 +123,8 @@ flowchart TD
 | 覆盖与后续 | 未处理成员/来源、关键矛盾、下一步 | 有报告或Run为completed |
 
 每项有答案、冲突、证据不足或不适用原因。“完整流程已执行”与“事实全部查清”分开：缺源时完成可执行部分并部分交付；内部能力未接入则如实标明，不能显示完整交付。
+
+C6是每轮必需的收尾。C3被拒收不取消C6；在原预算内依据实际冻结事实独立综合，不把失败的前序分析当成有效依据。没有有效模型回复时，conclusion保存明确的业务待核判断；技术失败原因单独保存在Run.stop_reason、RunSteps.error及执行工件，供调查执行详情回查，不拼入案件摘要或当前结论。来源为system、有效性为system_only，不能冒充模型判断或成员分析覆盖。Case无有效旧判断且范围/输入仍新鲜时显示该说明；已有人工或模型判断保持。执行状态不明时仍保存可追溯说明，但Run保持unknown、不重试、不释放槽；该路径以报告工件关联Case，不伪造要求终态Run的Result。
 
 ### 4.2 查询、证据和预算
 

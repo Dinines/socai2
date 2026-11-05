@@ -13,7 +13,8 @@ from . import baseline_graph_projection as graph_contract
 from .baseline_analysis import domain_block
 from .baseline_analysis_model import TenantChatGateway
 from .baseline_context import MAX_CONTEXT_BYTES, reference
-from .baseline_contracts import FULL_EXECUTOR_VERSION, Scope
+from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Scope
+from .baseline_delivery_compat import normalize as normalize_delivery
 from .baseline_delivery_projection import make_publication, markdown
 from .baseline_enrichment import S, error
 from .baseline_followup_projection import delivery_followups
@@ -103,7 +104,7 @@ class BaselineDelivery(ModelSteps):
             context = await store.read_context(case_id, run_id)
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
             dispatch_step = next((s for s in steps if s["stage_code"] == "C4.routing" and s["state"] == "completed"), None)
-            if run["executor_version"] == FULL_EXECUTOR_VERSION and not dispatch_step:
+            if run["executor_version"] in FULL_EXECUTOR_VERSIONS and not dispatch_step:
                 raise StoreError("full_executor_followups_not_settled")
             dispatch = await self.read_artifact(store, run_id, dispatch_step["output_artifact_id"]) if dispatch_step else None
             initial_plan = await self.read_artifact(store, run_id, UUID(dispatch["initial_analysis_artifact_id"])) if dispatch else None
@@ -125,15 +126,14 @@ class BaselineDelivery(ModelSteps):
                 state="running", implementation_version=contract.SCHEMA, started_at=await store.now(),
                 input_artifact_id=run["input_artifact_id"]))
         try:
-            if previous and previous.get("analysis"):
-                prepared = await BaselineReanalysis(self.service).input(tenant_id, case_id, run_id, context,
-                    previous, previous_step["output_artifact_id"], bases, instruction=contract.PROMPT,
-                    extra_data={"round": "final_delivery", "comparison": comparison,
-                        "followup_execution": execution}, lead_candidates=[*lead, *planned],
-                    executed_plan_id=dispatch["initial_analysis_artifact_id"] if dispatch else None)
-            else:
-                prepared = {"ready": False, "reason": "no_accepted_main_analysis", "input_artifact_ids": [],
-                    "source_map": {}, "coverage": {}, "omissions": [], "messages": []}
+            prepared = await BaselineReanalysis(self.service).input(tenant_id, case_id, run_id, context,
+                previous, previous_step["output_artifact_id"] if previous_step else None, bases,
+                instruction=contract.PROMPT,
+                extra_data={"round": "final_delivery", "comparison": comparison,
+                    **({"preliminary_analysis": {"state": "unavailable", "reason": "no_accepted_main_analysis"}}
+                       if previous is None else {}),
+                    "followup_execution": execution}, lead_candidates=[*lead, *planned],
+                executed_plan_id=dispatch["initial_analysis_artifact_id"] if dispatch else None)
             if prepared["ready"]:
                 prepared["source_states"] = json.loads(prepared["messages"][1]["content"])["source_states"]
             if dispatch_step:
@@ -143,6 +143,7 @@ class BaselineDelivery(ModelSteps):
             parser = lambda content: contract.parse(content, prepared["source_map"], context, prepared["coverage"], comparison)
             value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                 stage_id, "C6", prepared, gateway, parser,
+                response_adapter=normalize_delivery,
                 output_format=response_format(contract.Delivery, prepared["source_map"],
                     members=context.alerts, questions=[q.id for q in context.questions],
                     objects=context.scope.object_keys))
@@ -168,7 +169,9 @@ class BaselineDelivery(ModelSteps):
             pub, limits = make_publication(value, context, members, prepared, comparison, graph,
                 uuid5(run_id, "socai2-C6-publication-v1"), reason)
             now = await store.now()
-            stage_state = "completed" if value else "failed" if model_id else "skipped"
+            # C6 always closes the round. A failed/unavailable model is recorded
+            # separately; the system closing report is still a completed C6.
+            stage_state = "completed"
             refs = [reference("artifact", r["id"], "execution_receipt") for r in bases]
             if response_id:
                 refs.append(reference("artifact", response_id, "execution_receipt"))

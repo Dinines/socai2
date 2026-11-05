@@ -19,7 +19,10 @@ def delivery_followups(dispatch, initial):
         item = followups[index]
         if any(route[k] != item[k] for k in ("question_id", "mode")):
             raise StoreError("followup_dispatch_plan_mismatch")
-        states.append({k: route[k] for k in ("followup_index", "state", "reason", "answer_available") if k in route})
+        if "priority" in item and any(route.get(k) != item[k] for k in ("priority", "binding_id")):
+            raise StoreError("followup_dispatch_plan_mismatch")
+        states.append({k: route[k] for k in ("followup_index", "state", "reason", "answer_available",
+            "execution_order", "reused", "projection_id") if k in route})
         # Old source IDs belong to the initial request. All original text is
         # guarded before projection; required content cannot be budget-trimmed.
         candidates.append({"original": item, "required": True,

@@ -1,5 +1,29 @@
 ## ADDED Requirements
 
+### Requirement: Local data services remain independent of remote model connectivity
+
+本阶段验证 SHALL 复用本机已有镜像建立专属PG、ClickHouse、Kafka、ZooKeeper、Redis及本机API/Fusion，以隔离测试空间保存真实流程材料，保留旧数据；按用户授权停止的旧后台任务不得随本轮自动恢复。知识检索 SHALL 沿冻结告警标题→PG全文检索；Neo4j、向量库及Embedding MUST NOT 作为本轮启动前提，不新增RAG。DeepSeek直连验证 SHALL 不依赖VPN或21数据服务；远端已部署模型仅在用户连接VPN的阶段调用，只切换模型连接地址、认证及对应协议/profile，数据库、执行记录、工件及页面全过程 SHALL 保留在本机，不改用远端数据库或执行驱动。镜像已存在或容器已启动 MUST NOT 被当作目标身份、权限、schema或供应链已经通过。
+
+#### Scenario: VPN is unavailable during normal development
+- **WHEN** 用户未连接VPN
+- **THEN** 本机数据构造、入湖、上下游、DeepSeek、结果导出及页面复核仍可继续；不后台反复探测21或重派远端模型请求
+
+#### Scenario: Chat disconnects after a model dispatch
+- **WHEN** 固定批次已保存派发意图，聊天或VPN连接随后中断
+- **THEN** 本机有限执行脚本保留已发生的回执，重连先核状态；结果不明保留unknown，不自动重试、改模型或重复同一操作
+
+### Requirement: Existing context integrations are validated along their actual producer and reader paths
+
+系统 SHALL 复用已有知识导入及本轮所需资产、内部IOC路径，在模型前核对实际导入、目标存储、告警标题检索词、PG全文检索结果、租户范围及候选输入；实际模型发送、采用与引用 SHALL 在后续真实调查阶段单独验收，不作为模型前准备的完成前提。PG知识FTS与向量检索、UEBA anomaly表与risk profile、Feed存储与PG内部IOC SHALL 分别说明已有证据和未接边界，不因某服务可用就宣称另一路已接；本轮不启用的身份图、向量、UEBA生成及Feed链不要求补齐。直接种入合成行的验证 SHALL 明确只证明相应读写路径；既有工具预算和来源选择保持。
+
+#### Scenario: Title-based knowledge retrieval is ready before the model runs
+- **WHEN** 文档经已有导入路径写入本轮专属PG，冻结告警标题的全文检索按租户返回可回查材料，候选输入及来源已核对
+- **THEN** 模型前准备可完成，随后由真实调查核实际发送和引用；不等待已有模型结果，也不启动向量库或Embedding来替代当前FTS路径
+
+#### Scenario: A knowledge document is retrieved but not used by the investigation
+- **WHEN** 文档已导入且可检索，但本轮因范围、选择或预算未将它送入模型
+- **THEN** 保存导入与检索证据并明确未采用原因，不称模型已阅读该文档，也不把知识指导当作本案授权证明
+
 ### Requirement: Configured lake storage and retained traffic remain queryable
 
 Fusion湖写入 SHALL 对显式event_id与数据库默认ID两种INSERT都使用经标识符校验的配置库名；MUST NOT 因SQL硬编码将新空间数据写到旧湖。调查查询 SHALL 使用冻结来源库、租户、主机、左闭右开时间窗和事件类别，按实际事件ID核查返回集合。测试夹具期望及控制角色 MUST 与投放材料分离。
@@ -228,6 +252,8 @@ C6 SHALL 将已执行原计划的initial_analysis_artifact_id及followup_index�
 
 系统 SHALL 复用run_members及C1工件比较材料、分诊、反馈版本、相关事件诊断与成员、已完成人工反馈的正文/范围/引用/完成事实。发布时输入改变或不能核验 MUST 保留本轮结果且不自动采用。当前判断读取 SHALL 返回current/stale/unverified及原因，不回写历史。
 
+current SHALL 仅表示上述受跟踪输入一致，MUST NOT 宣称外部湖、资产或情报全部最新，亦不证明结论正确。成员覆盖与依据状态 SHALL 分开表达；有效partial的自动采用政策保持，不要求所有成员均被结论覆盖。
+
 #### Scenario: A completed task is renamed without changing feedback
 - **WHEN** 任务只改标题、负责人或期限且完成事实不变
 - **THEN** 不因revision ID变化将已冻结反馈判为失效
@@ -235,6 +261,14 @@ C6 SHALL 将已执行原计划的initial_analysis_artifact_id及followup_index�
 #### Scenario: Material changes after a result was adopted
 - **WHEN** 同一成员收到新材料或人工反馈发生实质变化
 - **THEN** 读取当前判断返回输入过期及原因；历史Run、结果和采用事实保留，下一轮由用户明确启动
+
+#### Scenario: Human feedback changes before publication
+- **WHEN** Run已冻结输入但尚未采用，当前人工结果或范围被重新确认
+- **THEN** 原轮按原输入保存，发布门返回stale_input而不覆盖当前判断；不改旧H版本，不自动启动新轮
+
+#### Scenario: Only external source data changes
+- **WHEN** 外部日志或TI更新，但受跟踪的PG输入与H语义没有变化
+- **THEN** 不假装已经检测到该变化；返回的依据状态限定在已跟踪输入，并保留来源时间和覆盖限制
 
 ### Requirement: Evidence hashes and background selection preserve meaning
 
@@ -269,3 +303,108 @@ H SHALL 保存人工确认内容、主体、完成时间和事实范围，并能
 #### Scenario: Another baseline is active during explicit preparation
 - **WHEN** 用户在同Case已有running/unknown基础Run时明确准备下一轮
 - **THEN** 可以准备/复用pending，但启动仍返回单活跃冲突；当前轮结束后不自动接续，原冻结范围和反馈保持
+
+### Requirement: Full-run resource allocation protects a feasible final synthesis
+
+新版本完整C执行 SHALL 使用用户已明确批准的48000共享保守预算（仍4模型/4Tool/120秒）先验证完整请求的可行容量，再为C6预留调用次数、请求/输出容量和时间；模型与Tool派发前 SHALL 根据实际已报usage、截止时间及有界新增必要输入重新核算。计量 MUST 使用协议转换后的完整请求，保持现有保守单位并与实际tokens分列；不得重置usage、只计8KiB视图、删除必要事实/H/反证/原计划或自动提高额度。预留参数及未执行原因 SHALL 记录在同Run执行计划，复用现有工件，不另建预算池。
+
+#### Scenario: An optional deep step would consume final capacity
+- **WHEN** 新Deep请求或其必要结果上界将挤占C6所需容量或时间
+- **THEN** 不派发该可选步骤，保留问题及停止原因，使用已有材料尝试有界C6；不得仅因还有调用次数就继续消耗最终资源
+
+#### Scenario: Complete mandatory input cannot fit
+- **WHEN** 无损去重后的完整必要请求无法在既有总上限或单次输入限制内完成
+- **THEN** 在真实模型调用前说明容量不足并按既有终态合同保存交接，不能让Run永久running、静默缩范围或伪造模型结论；只提前阻断所有正常小案不能算此修复通过
+
+#### Scenario: A bounded normal case is accepted for execution
+- **WHEN** 固定两成员案例包含必要事实、H与比较依据且准入通过
+- **THEN** 保存可检查的C3/补查/C6资源分配，真实验收还须获得有效最终模型结果；替身、离线容纳或次数预留成功均不能代替结果质量验收
+
+### Requirement: Deterministic followup queries do not require a deep model loop
+
+C3本轮query建议 SHALL 选择已发送给模型的服务端合法binding，直接通过现有受限Tool执行一次；MUST NOT 为选择已明确绑定再次调用Deep模型。binding的租户、主机、窗口、来源库及查询限制由服务端决定；客户端/模型不得提交自由SQL或扩范围参数。直接查询与Deep SHALL 共享同Run额度、回执及来源去重，明确空/不可用/失败/不确定。新执行合同 SHALL 版本化，旧Run与原答保持。
+
+#### Scenario: An explicit binding answers a requested evidence lookup
+- **WHEN** C3提出query并选择当前可见、范围合法的绑定
+- **THEN** 程序派发一次实际Tool或复用同Run已存回执，额外Deep模型调用为0，结果与原建议身份交C6综合
+
+#### Scenario: A query binding is invalid or not offered
+- **WHEN** 模型选择未提供、失配或越界绑定，或者本轮没有所需选择器
+- **THEN** 非法模型输出拒收；实际缺能力则明确留未决/限制，不猜绑定、静默转Deep或扩大查询
+
+#### Scenario: Direct query and deep share a question
+- **WHEN** 一个question同时有确定query和动态Deep建议，或多个建议引用同一绑定
+- **THEN** query按绑定复用，Deep按问题复用，两类路线不因question_id相同互相遮蔽；实际次数与复用引用可核查，不能把同源返回算多份独立证据
+
+### Requirement: Followup priority and future suggestions remain explicit
+
+本轮补查 SHALL 先按decision_critical/supporting优先级，再按同级query先于deep和原序号稳定调度；使用原objective/required_evidence解释需求。服务端 SHALL 留存模型建议、实际顺序、原计划工件/序号及未执行原因；优先级 MUST NOT 改变证据角色、事实归属或工具权限。C6新建议 MUST 不自动执行或承接C3原计划状态。
+
+#### Scenario: Two questions compete for remaining resources
+- **WHEN** 关键确定查询与辅助Deep同时待执行，剩余额度只足够一项并须保留C6
+- **THEN** 先执行关键确定查询，其他建议记录资源原因，C6准确区分已执行、复用及未执行，不宣称全部问题已回答
+
+#### Scenario: Final synthesis proposes another lookup
+- **WHEN** C6提出未来补查建议但没有本轮可执行binding
+- **THEN** 按未来建议读取与保存，不因此伪造已执行状态或启动新调用；其阶段合同与C3执行计划约束明确区分
+
+### Requirement: Every baseline round has an explicit C6 closing
+
+C6 SHALL 收尾，无论C3是否有被接受的分析。已知前序失败且预算允许时 SHALL 用本轮实际可见事实独立综合。无有效模型回复时 SHALL 保存system/system_only的明确业务待核判断和后续核查方向，技术失败原因单独保存在Run停止原因、步骤错误及执行工件，不伪造安全定性、发现或成员分析覆盖。没有既有人工/模型判断且范围与输入仍新鲜时 SHALL 将系统收尾保存到Case当前说明；已有有效判断 MUST 保留。数据库不可用等保存失败 MUST 如实报告，不能称已收尾。
+
+#### Scenario: Initial analysis is rejected
+
+- **WHEN** C3返回的引用范围不合规但调用状态与用量已知
+- **THEN** C6仍在原额度内执行，使用冻结事实及实际可见材料，不以拒收C3作为已验证分析
+
+#### Scenario: No accepted final model reply
+
+- **WHEN** C6回复格式不合法或模型不可用
+- **THEN** 保存系统来源的业务待核判断，原因另存执行记录，C6交付阶段完成，模型失败原答保留；Case无有效旧判断且输入新鲜时可读取该收尾，不宣称有效成员覆盖
+
+#### Scenario: An uncertain call interrupts execution
+
+- **WHEN** 调用超时或取消且最终执行状态不明
+- **THEN** 在可用存储上保存C6系统收尾，Run和原调用继续unknown并占槽，不重试、不标成正常完成
+
+#### Scenario: A known empty provider extension is returned
+
+- **WHEN** 最终原答仅带已确认额外字段analysis.conflicts_note且值严格为null
+- **THEN** 保留原答并保存适配路径与前后hash，移除此空字段后重新执行全部原校验；其他额外字段、缺必需字段与引用错误不自动修复
+
+#### Scenario: ClickHouse stores an IPv4 address as IPv4-mapped IPv6
+
+- **WHEN** 原始OCSF与湖存储列分别使用IPv4和相同地址的IPv4-mapped IPv6表示
+- **THEN** 按地址等价关系比较，不生成虚假矛盾；原始值与来源路径留存，真正不同的地址仍保留双方并标冲突
+
+### Requirement: Capacity and capability claims match the validated scope
+
+系统 SHALL 从本轮实际配置、冻结对象、工具选择器及请求容量说明可用和受限能力。四领域输出 MUST 不宣传成四次独立专家验证，200成员存储上限 MUST 不宣传为固定模型额度下的完成承诺。容量结论 SHALL 同时记录成员、必要资料/人工反馈/历史比较大小、profile和实际结果；缺源、超限和模型质量失败分别记录。
+
+#### Scenario: Only a user object is available
+- **WHEN** 案件只有用户名且没有现有认证工具要求的冻结主机
+- **THEN** 明确该查询能力不适用或不可用，不编造主机绑定，也不由领域标签宣称已查认证历史
+
+#### Scenario: Storage accepts a case larger than the model input
+- **WHEN** 成员数在200以内但必要输入超限
+- **THEN** 保留完整Case及已存材料，明确容量限制和本轮未分析项；不静默取前N条后宣称整案完成
+
+### Requirement: Semantic acceptance follows facts through human feedback and final output
+
+真实C→H→下一C验收 SHALL 逐项核对实际模型可见事实、引用、授权范围、补证结果与两轮结论变化。人工陈述 MAY 影响整案解释，但MUST保持其确认成员/对象/时间范围。程序结构校验、执行completed和needs_review MUST 不替代事实审核；复用既有良恶误判与待复核分列口径，不新增裁判模型或改写原答。
+
+#### Scenario: A process starts and network bytes are observed
+- **WHEN** 证据仅证明进程启动及端口/流量计数
+- **THEN** 最终解释不得无据升级为脚本目标实现、具体应用协议、数据内容或外传成功；存在合理推断时明确依据和限制
+
+#### Scenario: Human authorization covers one member
+- **WHEN** 人工确认A在指定窗口的操作获准，但没有确认B的网络活动
+- **THEN** 下一C实际读取该H版本并解释其对整案的影响，不能把B或其他时间自动列为已授权；原轮和H原版本仍可回查
+
+#### Scenario: A new full executor uses the revised shared budget
+- **WHEN** 用户启动新版本完整基础调查
+- **THEN** 新Run冻结48000共享保守上限；既有Run的24000限额、原usage及失败保持，A/I上限不变；实际token用量仍取供应商回执，不把保守字节量标成实际消耗
+
+#### Scenario: Case business fields do not contain execution diagnostics
+- **WHEN** C6不能形成有效模型判断且Case需要系统收尾，或页面读取保存的Case
+- **THEN** 案件摘要读取cases.description、当前判断读取case_assessments.conclusion；技术原因留在Run/步骤/工件的执行详情，不用拒收原答填充业务字段，历史版本保持可追溯

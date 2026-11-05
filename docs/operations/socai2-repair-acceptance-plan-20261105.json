@@ -1,0 +1,157 @@
+{
+  "status": "prepared_not_sealed_not_uploaded_not_deployed_not_dispatched",
+  "batch": "repair-k5",
+  "target": {
+    "ssh_alias": "sting-infra21",
+    "service": "socai2-next-api",
+    "database": "socai2_next_20261104",
+    "lake": "socai2_next_validation",
+    "planned_candidate": "n15"
+  },
+  "runtime_readback": "docs/operations/evidence/investigation-repair-20261105/runtime-20261105T071002612087Z.json",
+  "runtime_gaps": [
+    "n14 still running",
+    "125 freshness function absent",
+    "schema profile not explicit",
+    "Case collection GET absent"
+  ],
+  "cards": [
+    {
+      "backend": "deepseek",
+      "new_alerts": 2,
+      "new_incidents": 1,
+      "new_cases": 1,
+      "max_runs": 5,
+      "max_model_calls": 11
+    },
+    {
+      "backend": "small",
+      "new_alerts": 2,
+      "new_incidents": 1,
+      "new_cases": 1,
+      "max_runs": 5,
+      "max_model_calls": 11
+    }
+  ],
+  "total_max_model_calls": 22,
+  "retries": 0,
+  "baseline_policy": {
+    "tokens": 48000,
+    "model_calls": 4,
+    "tool_calls": 4,
+    "deadline_seconds": 120,
+    "max_output_tokens": 3000,
+    "executor": "socai2.baseline-executor.v2",
+    "policy": "socai2.manual-http.v2",
+    "initial_analysis_schema": "socai2.baseline-analysis.v2",
+    "final_reanalysis_proposal_schema": "socai2.baseline-analysis.v1"
+  },
+  "ai_policy": "unchanged",
+  "phases": [
+    "Root core review passes; freeze n15 source and manifest",
+    "Seal packet against candidate manifest; upload immutable packet",
+    "Backup 3 existing function definitions and prepare rollback SQL; apply only migration125 after core review",
+    "Deploy only independent n15 using existing model profiles; verify runtime source hashes and explicit schema profile",
+    "New isolated Kafka/Fusion ingest once (4 alerts,4 raw events,2 incidents), five fused receipts including one exact synthetic replay",
+    "DeepSeek A0,A1,I,first C then export",
+    "Root semantic review of saved first C; stop card on failure",
+    "H only authorizes A0, manual prepare, second C uses valid prior result; export",
+    "Switch only independent API to existing small profile; repeat its independent card with same gate",
+    "Root review both complete chains; restore independent selected profile explicitly"
+  ],
+  "semantic_expectations": [
+    "Maintenance fixture oracle is benign but authorization is withheld until H",
+    "needs_review acceptable, not counted as determined correct",
+    "process_start+success does not establish script completion or authorization",
+    "connection+success and TCP/443 do not establish HTTPS, process attribution or exfiltration",
+    "known remote IP must not be described as missing",
+    "H confirms A0 process task authorization only; A1 remains unconfirmed",
+    "second C must freeze H revision and prior accepted model result; trace to artifacts"
+  ],
+  "pairing_limit": "One semantically paired maintenance scenario; independent identities, hosts and windows prevent predecessor contamination. Does not estimate population accuracy or complete malicious/sparse scenario coverage.",
+  "migration_scope": "125 replaces three functions only; no table/column changes, old Run edits or repeated bootstrap. Rollback script retained for separate review, never automatic.",
+  "core_review_receipt_fields": [
+    "approved=true",
+    "reviewer=root",
+    "candidate_manifest_sha256",
+    "plan_sha256",
+    "max_model_calls=22"
+  ],
+  "semantic_review_receipt_fields": [
+    "approved=true",
+    "reviewer=root",
+    "result_id",
+    "plan_sha256",
+    "first_result_sha256"
+  ],
+  "credential_handling": "Identity and api.env remain server-side; no values or credential-derived hashes exported. Protected config comparisons are server-local, exported as boolean only.",
+  "offline_checks": {
+    "latest_passed": 5,
+    "initial_failure": "Datetime rebase parentheses error; corrected before successful offline replay.",
+    "scope": "temporary synthetic manifest and packet only; no network or business writes"
+  },
+  "script_sha256": {
+    "docs/operations/inspect_socai2_repair_runtime_20261105.py": "98aa159b22c49bb637b4393ea800b4ac48d0a82ad8261fc9323474c4688ee914",
+    "docs/operations/prepare_socai2_repair_acceptance_20261105.py": "893381c8fcc4bb9c77aae5fd4776ab3063eab9802d9aad2b9178c2758b728a9f",
+    "docs/operations/run_socai2_repair_acceptance_20261105.py": "1bc1643277d5f96f36d65f5afd46cab7eccba0fd20527ecbf2f2d01372c57616",
+    "docs/operations/test_socai2_repair_acceptance_20261105.py": "b4acc0b5cc5957379fc605bbe289096483afbe92ac5b97b07a2c75d262e8f5ec",
+    "deploy/aisoc21/repair_acceptance_remote_20261105.py": "d21ad19c5e2b65a83b8357c906d560c233f6998ae5e9c5e9a81e648a057b7f04",
+    "deploy/aisoc21/repair_migration_remote_20261105.py": "9437421043136bfe9b41ffb8a55b7e36b4310df46dbb096b67be6fd69a32d921",
+    "deploy/aisoc21/repair_page_proxy_20261105.py": "16e873aa53ad00d70160395f570ffd80a0a88c2a1f113c16522a11737d020273",
+    "docs/operations/serve_socai2_repair_page_20261105.py": "e01f2a59a85280e99fcfd00df72d6718b59b3fddbee78fdfcd4960d01653338b"
+  },
+  "remaining": [
+    "Root core independent audit",
+    "Actual n15 candidate manifest and seal",
+    "Review/upload/deployment authorization notification",
+    "Real calls and semantic acceptance"
+  ],
+  "ingest_guards": "Before any models, require exactly two distinct incidents; each must contain exactly its declared two alert IDs, with no extra member or cross-backend merge.",
+  "page_acceptance": {
+    "status": "prepared_not_started",
+    "browser_credentials": "No user credential or credential hash. Enter only the public marker local-acceptance; it is not an API key.",
+    "authentication": "Real API key remains on 21. Locally generated relay nonce stays only in local/remote Python memory, passed via SSH stdin and not logged or persisted.",
+    "network": "Both HTTP servers and SSH forwarding bind 127.0.0.1. Same-origin, Host, Referer and Sec-Fetch-Site checks on local API relay. Redirects disabled on credential-bearing upstream.",
+    "limits": {
+      "ttl_seconds": 900,
+      "forwarded_requests": 150,
+      "max_write_attempts": 3,
+      "task_creates": 1,
+      "subsequent_edits": 2
+    },
+    "allowed": "GET paths scoped to exactly one card Case, POST /tasks once and PUT only the task created by this session. Read-only mode denies every write.",
+    "denied": [
+      "other Cases",
+      "Case collection",
+      "start",
+      "prepare",
+      "associations",
+      "move",
+      "AI requests",
+      "other service paths"
+    ],
+    "start_write_session": ".local/conda-envs/socai2/bin/python docs/operations/serve_socai2_repair_page_20261105.py --backend deepseek",
+    "browser_steps": [
+      "After first C root semantic review, open printed URL; use printed service_base and public marker local-acceptance",
+      "Save one completed H explicitly covering process alert A0 only, using the approved authorization statement; inspect/edit its metadata and history",
+      "Ctrl-C closes remote session and SSH tunnel; export saved page-H-task and page-session-end",
+      "Root reviews exact H task/revision and its closed session; upload page-human-review before second"
+    ],
+    "review_upload": ".local/conda-envs/socai2/bin/python docs/operations/run_socai2_repair_acceptance_20261105.py upload-review --backend deepseek --review-kind page-human --review <review.json>",
+    "page_h_review_fields": [
+      "approved=true",
+      "reviewer=root",
+      "plan_sha256",
+      "first_result_id",
+      "task_id",
+      "task_revision_id",
+      "task_sha256 (canonical JSON of page-H-task)",
+      "session_end_sha256"
+    ],
+    "second_reuse": ".local/conda-envs/socai2/bin/python docs/operations/run_socai2_repair_acceptance_20261105.py second --backend deepseek --human-source page",
+    "readonly_after_second": ".local/conda-envs/socai2/bin/python docs/operations/serve_socai2_repair_page_20261105.py --backend deepseek --read-only",
+    "second_behavior": "Verify session closed and reviewed H matches current saved task exactly; record H provenance, then prepare/start only. Never POST another H. A card with a prior write-session cannot choose driver-created H.",
+    "backend_note": "Replace deepseek with small to use that independent card. If small does not use the page, second --human-source driver is explicit and refused when a page write-session exists.",
+    "verification_limit": "Five offline checks cover packet identity, review binding, route deny rules, H immutable readback and no duplicate H create. No browser/remote proxy session started yet."
+  }
+}

@@ -172,7 +172,9 @@ async def run_checks(engine, record, only=None):
         assert out["result"]["actual_args"]["parameters"]["query_id"] == gateway.query_ids[0]
         for schema, data in [("tool_exchange", out["result"]), ("tool_args", out["result"]["actual_args"])]:
             Draft202012Validator({**CONTRACTS, "$ref": "#/$defs/" + schema}, format_checker=FormatChecker()).validate(data)
-        assert out == await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
+        repeated = await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
+        assert out["reused"] is False and repeated["reused"] is True
+        assert {**out, "reused": True} == repeated
         assert gateway.calls == 1
         view = await service.prepare_evidence_view(T, cid, rid, q)
         assert view["ready"] and view["bytes"] <= 8192

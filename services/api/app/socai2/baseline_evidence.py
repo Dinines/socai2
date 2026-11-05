@@ -135,7 +135,7 @@ class BaselineEvidence:
             if prior:
                 if prior["state"] in {"running", "unknown", "planned"}:
                     raise StoreError("evidence_query_already_claimed")
-                return await self.receipt(store, run, prior)
+                return {**await self.receipt(store, run, prior), "reused": True}
             if run["state"] != "running":
                 raise StoreError("baseline_not_running")
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
@@ -148,7 +148,9 @@ class BaselineEvidence:
                 raise StoreError("baseline_step_in_progress")
             now, limits = await store.now(), Limits.model_validate(run["limits"])
             reason = None
-            remaining = (limits.deadline_at - now).total_seconds() if limits.deadline_at else 0
+            from .baseline_capacity import remaining_seconds, reservation_for
+            reservation = await reservation_for(store, run, steps)
+            remaining = remaining_seconds(limits, now, reservation)
             if binding["tool_name"] != "product_host_details" and (not context.scope.window_start or not context.scope.window_end):
                 reason = "query_window_not_defined"
             elif (binding["tool_name"] != "product_host_details"
@@ -163,7 +165,7 @@ class BaselineEvidence:
             elif sum(s["kind"] == "tool" and s["state"] not in {"planned", "skipped"} for s in steps) >= limits.max_tool_calls or limits.max_rows_per_query == 0:
                 reason = "tool_budget_exhausted"
             elif remaining < 1:
-                reason = "insufficient_query_time"
+                reason = "final_model_time_reserved" if reservation else "insufficient_query_time"
             step_id, query_id = uuid4(), str(uuid4())
             args = {"tool_name": binding["tool_name"], "contract_version": tools.VERSION,
                 "scope": binding["scope"], "limit": min(limits.max_rows_per_query or 0, 50),
@@ -242,7 +244,7 @@ class BaselineEvidence:
                     returned_rows=raw["returned_rows"], error=raw["error"] or null()))
                 step = await store.one(select(S).where(*store.where(S, S.c.id == step_id)))
                 receipt = await self.receipt(store, run, step)
-            return receipt
+            return {**receipt, "reused": False}
         except (Exception, asyncio.CancelledError):
             async with self.service.transaction(tenant_id) as store:
                 await self.locked(store, case_id, run_id)

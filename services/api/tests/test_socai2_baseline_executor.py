@@ -13,7 +13,7 @@ from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.baseline_executor import BaselineExecutor
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import A, C, F, R, StoreError, encoded
-from socai2_test_model_view import model_data
+from socai2_test_model_view import model_data, model_messages_data
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -43,6 +43,13 @@ class PipelineGateway:
             value["followups"] = [{**original, "mode": mode,
                 "question_id": value["questions"][qid]["id"] if isinstance(qid, int) else qid}
                 for mode, qid in [v if isinstance(v, tuple) else (v, 0) for v in modes]]
+            data = model_messages_data(self.initial.last_body["messages"])
+            if "tool_options" in data:
+                for item in value["followups"]:
+                    item.update(priority="decision_critical", binding_id=None)
+                    if item["mode"] == "query":
+                        option = next((o for o in data["tool_options"] if o["tool_name"] == "process_activity"), data["tool_options"][0])
+                        item.update(binding_id=option["binding_id"], alert_ids=option["alert_ids"], object_keys=[])
             payload["choices"][0]["message"]["content"] = json.dumps(value)
             if initial_mutate:
                 initial_mutate(payload)
@@ -56,7 +63,7 @@ class PipelineGateway:
         return self.enabled
 
     async def complete(self, body, timeout):
-        data = model_data(body["messages"][1]["content"])
+        data = model_messages_data(body["messages"])
         phase = "C6" if data.get("round") == "final_delivery" else "Deep" if "question" in data else "C3"
         self.order.append(phase)
         return await {"C3": self.initial, "Deep": self.middle, "C6": self.final}[phase].complete(body, timeout)
@@ -90,7 +97,7 @@ async def run_checks(engine, record, only=None):
             out = await store.replace_members(cid, {aid}, expected_revision=0, actor=ACTOR, operation_id=uuid4())
         request = Start(expected_scope_revision=1, operation_key=uuid4(), window_start=now - timedelta(minutes=5),
             window_end=now + timedelta(minutes=5))
-        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=24000, max_rows_per_query=5,
+        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=48000, max_rows_per_query=5,
             deadline_at=now + timedelta(seconds=120), policy_version="synthetic-full")
         return cid, UUID(out["pending_run_id"]), aid, host, request, limits
 
@@ -103,6 +110,31 @@ async def run_checks(engine, record, only=None):
     async def report(rid):
         artifacts = await rows(select(F).where(F.c.run_id == rid, F.c.kind == "source_snapshot"))
         return next(r["content_json"] for r in artifacts if r["content_json"].get("type") == "delivery_report")
+
+    async def system_closing(f):
+        saved = await report(f[1])
+        assert saved["result"]["conclusion"].startswith("案件性质待核实。")
+        assert saved["result"]["stop_reason"] not in saved["result"]["conclusion"]
+        assert "原因：" not in saved["result"]["conclusion"]
+        assert saved["result"]["conclusion_state"] == "uncertain"
+        assert saved["result"]["conclusion_origin"] == "system"
+        assert saved["result"]["validation_state"] == "system_only"
+        assert not any(m["conclusion_covered"] for m in saved["result"]["members"])
+        case = (await rows(select(C).where(C.c.id == f[0])))[0]
+        table = m.CaseAssessments.__table__
+        assessment = (await rows(select(table).where(table.c.id == case["current_assessment_id"])))[0]
+        assert assessment["conclusion"] == saved["result"]["conclusion"]
+        assert assessment["origin"] == "system" and assessment["validity"] == "system_only"
+        coverage = m.CaseAssessmentMembers.__table__
+        assert not await rows(select(coverage).where(coverage.c.assessment_id == assessment["id"]))
+        stage = (await rows(select(S).where(S.c.run_id == f[1], S.c.kind == "stage", S.c.stage_code == "C6")))[0]
+        assert stage["state"] == "completed" and stage["ended_at"] and stage["output_artifact_id"]
+        from app.socai2.case_reader import CaseReader
+        async with service.transaction(T) as store:
+            current = (await CaseReader(store).case(f[0]))["current_assessment"]
+        assert current["input_freshness"]["state"] == "current", current["input_freshness"]
+        assert current["covers_current_members"] is False
+        return saved
 
     async def reject(code, call):
         try:
@@ -139,9 +171,10 @@ async def run_checks(engine, record, only=None):
         assert gateway.order == ["C3", "Deep", "Deep", "C6"], (gateway.order, saved)
         assert saved["execution"]["tool_calls"] == 2 and saved["execution"]["total_tokens"] == 4000
         routes = saved["execution"]["followup_dispatch"]["routes"]
-        assert routes[0]["reason"] == routes[1]["reason"] == routes[2]["reason"] == "final_model_call_reserved", routes
-        assert routes[0]["deep_artifact_id"] == routes[1]["deep_artifact_id"]
-        assert not routes[0]["answer_available"] and routes[2]["state"] == "skipped"
+        assert routes[0]["mode"] == "query" and routes[0]["state"] == "completed"
+        assert "deep_artifact_id" not in routes[0] and routes[0]["query_artifact_id"]
+        assert routes[1]["answer_available"] and routes[2]["state"] == "skipped"
+        assert routes[2]["reason"] == "final_model_call_reserved", routes
         prompt = model_data(gateway.final.last_body["messages"][1]["content"])
         assert {q["tool_name"] for q in prompt["queries"]} == {"process_activity", "network_connections"}
         assert any(q["observed_rows_in_bounded_fetch"] == 0 for q in prompt["queries"])
@@ -155,8 +188,62 @@ async def run_checks(engine, record, only=None):
         await execute(f, gateway)
         saved = await report(f[1])
         assert gateway.order == ["C3", "C6"]
-        assert saved["execution"]["followup_dispatch"]["routes"][0]["reason"] == "final_model_call_reserved"
-        assert saved["execution"]["tool_calls"] == 0
+        assert saved["execution"]["followup_dispatch"]["routes"][0]["state"] == "completed"
+        assert saved["execution"]["tool_calls"] == 1
+
+    async def test_full_deep_receipt_reused_by_supporting_direct_query():
+        def priorities(payload):
+            value = json.loads(payload["choices"][0]["message"]["content"])
+            value["followups"][1]["priority"] = "supporting"
+            payload["choices"][0]["message"]["content"] = json.dumps(value)
+        f, source = await fixture(), deep.AdaptiveLake()
+        gateway = PipelineGateway(("deep", "query"), initial_mutate=priorities)
+        await execute(f, gateway, source)
+        saved = await report(f[1])
+        assert gateway.order == ["C3", "Deep", "Deep", "C6"], gateway.order
+        assert source.calls == saved["execution"]["tool_calls"] == 2
+        assert saved["result"]["validation_state"] == "accepted", saved["result"]
+        routes = saved["execution"]["followup_dispatch"]["routes"]
+        query = next(r for r in routes if r["followup_index"] == 1)
+        assert query["mode"] == "query" and query["reused"] is True
+        query_steps = await rows(select(S).where(S.c.run_id == f[1], S.c.stage_code == "C4.query",
+            S.c.name == query["resolved_binding_id"]))
+        assert len(query_steps) == 1 and query_steps[0]["parent_step_id"] is not None
+        data = model_data(gateway.final.last_body["messages"][1]["content"])
+        final_route = next(r for r in data["followup_execution"]["routes"] if r["followup_index"] == 1)
+        assert final_route["reused"] is True and final_route["projection_id"] == query["projection_id"]
+        assert any(q["artifact_id"] == final_route["projection_id"] and q["tool_name"] == "process_activity"
+            for q in data["queries"])
+        return {"run_id": str(f[1]), "model_order": gateway.order, "tool_calls": 2,
+            "reused_prior_Deep_receipt": True, "final_projection_link_preserved": True}
+
+    async def test_full_distinct_direct_queries_keep_final_plan_receipt_links():
+        def choose_second_binding(payload):
+            value = json.loads(payload["choices"][0]["message"]["content"])
+            data = model_messages_data(gateway.initial.last_body["messages"])
+            chosen = next(o for o in data["tool_options"] if o["tool_name"] == "network_connections")
+            value["followups"][1].update(binding_id=chosen["binding_id"], alert_ids=chosen["alert_ids"])
+            payload["choices"][0]["message"]["content"] = json.dumps(value)
+        f, source = await fixture(), deep.AdaptiveLake()
+        gateway = PipelineGateway(("query", "query"), initial_mutate=choose_second_binding)
+        await execute(f, gateway, source)
+        saved = await report(f[1])
+        assert gateway.order == ["C3", "C6"] and source.calls == saved["execution"]["tool_calls"] == 2
+        assert saved["result"]["validation_state"] == "accepted", saved["result"]
+        routes = saved["execution"]["followup_dispatch"]["routes"]
+        assert len({r["question_id"] for r in routes}) == 1
+        assert len({r["projection_id"] for r in routes}) == 2 and not any(r["reused"] for r in routes)
+        data = model_data(gateway.final.last_body["messages"][1]["content"])
+        queries = {q["artifact_id"]: q for q in data["queries"]}
+        linked = {r["followup_index"]: queries[r["projection_id"]]["tool_name"]
+            for r in data["followup_execution"]["routes"]}
+        assert linked == {0: "process_activity", 1: "network_connections"}
+        assert len(gateway.final.last_body["messages"][1]["content"].encode()) <= 8192
+        assert len(encoded(gateway.final.last_body["messages"])) <= 12288
+        requests = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "model_request"))
+        assert any(r["content_json"]["payload"]["body"] == gateway.final.last_body for r in requests)
+        return {"run_id": str(f[1]), "model_order": gateway.order, "tool_calls": 2,
+            "plan_to_query_links": linked, "final_request_bytes": len(encoded(gateway.final.last_body))}
 
     async def test_full_claim_committed_replay_and_scope_changes_wait_for_manual_start():
         f = await fixture()
@@ -211,7 +298,10 @@ async def run_checks(engine, record, only=None):
         else:
             raise AssertionError("expected cancellation")
         assert (await rows(select(R).where(R.c.id == f[1])))[0]["state"] == "unknown"
-        assert gateway.order == ["C3"] and not await rows(select(RESULT).where(RESULT.c.source_run_id == f[1]))
+        assert gateway.order == ["C3"]
+        saved = await system_closing(f)
+        assert saved["execution"]["run_state"] == "unknown"
+        assert not await rows(select(RESULT).where(RESULT.c.source_run_id == f[1]))
         replay = await execute(f, gateway)
         assert not replay.newly_claimed and replay.state == "unknown" and gateway.order == ["C3"]
 
@@ -221,16 +311,19 @@ async def run_checks(engine, record, only=None):
             f = await fixture()
             await execute(f, gateway)
             saved = await report(f[1])
-            assert gateway.order in ([], ["C3"])
-            assert saved["result"]["conclusion"] is None and saved["result"]["validation_state"] == "system_only"
             assert not saved["execution"]["followup_dispatch"]["routes"]
-            assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] is None
+            if gateway.initial.calls and gateway.initial.last_payload["choices"][0]["finish_reason"] == "length":
+                assert gateway.order == ["C3", "C6"]
+                assert saved["result"]["validation_state"] == "accepted"
+            else:
+                assert gateway.order in ([], ["C3"])
+                await system_closing(f)
             if gateway.initial.calls and "usage" not in gateway.initial.last_payload:
                 assert saved["execution"]["total_tokens"] is None
 
     async def test_full_limits_are_not_raised_and_exhaustion_still_delivers_receipt():
         f = await fixture()
-        for field, value in (("max_model_calls", 5), ("max_tool_calls", 5), ("max_tokens", 24001),
+        for field, value in (("max_model_calls", 5), ("max_tool_calls", 5), ("max_tokens", 48001),
                 ("max_rows_per_query", 201), ("deadline_at", f[5].deadline_at + timedelta(days=1))):
             bad = list(f)
             bad[-1] = f[-1].model_copy(update={field: value})
@@ -242,21 +335,104 @@ async def run_checks(engine, record, only=None):
             limited[-1] = limited[-1].model_copy(update=changes)
             gateway = PipelineGateway()
             await execute(limited, gateway)
-            assert not gateway.order and (await report(limited[1]))["result"]["validation_state"] == "system_only"
+            if changes == {"max_model_calls": 1}:
+                assert gateway.order == ["C6"]
+                assert (await report(limited[1]))["result"]["validation_state"] == "accepted"
+            else:
+                assert not gateway.order
+                await system_closing(limited)
 
     async def test_full_rejected_final_is_retained_without_retry_or_adoption():
         f, gateway = await fixture(), PipelineGateway(("human",))
         gateway.final.mutate = lambda p: p["choices"][0]["message"].update(content="{bad-json")
         await execute(f, gateway)
         saved = await report(f[1])
-        assert gateway.order == ["C3", "C6"] and saved["result"]["conclusion"] is None
+        assert gateway.order == ["C3", "C6"] and saved["result"]["conclusion"]
         assert saved["result"]["validation_state"] == "system_only"
-        assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] is None
+        await system_closing(f)
         originals = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "model_response"))
         assert any(r["content_json"]["payload"]["raw"]["choices"][0]["message"]["content"] == "{bad-json" for r in originals)
 
+    async def test_rejected_c3_scope_still_calls_c6_and_saves_case_judgment():
+        def wrong_scope(payload):
+            data = json.loads(payload["choices"][0]["message"]["content"])
+            data["followups"][0]["object_keys"] = ["ip:203.0.113.50"]
+            payload["choices"][0]["message"]["content"] = json.dumps(data)
+        f, gateway = await fixture(), PipelineGateway(initial_mutate=wrong_scope)
+        await execute(f, gateway)
+        assert gateway.order == ["C3", "C6"]
+        steps = await rows(select(S).where(S.c.run_id == f[1], S.c.kind == "stage"))
+        assert next(s for s in steps if s["stage_code"] == "C3")["state"] == "failed"
+        final_input = model_messages_data(gateway.final.last_body["messages"])
+        assert final_input["preliminary_analysis"]["state"] == "unavailable"
+        saved = await report(f[1])
+        assert saved["result"]["validation_state"] == "accepted"
+        case = (await rows(select(C).where(C.c.id == f[0])))[0]
+        table = m.CaseAssessments.__table__
+        assessment = (await rows(select(table).where(table.c.id == case["current_assessment_id"])))[0]
+        assert assessment["origin"] == "model" and assessment["validity"] == "accepted"
+        assert assessment["conclusion"] == saved["result"]["conclusion"]
+        return {"case_id": str(f[0]), "run_id": str(f[1]), "order": gateway.order}
+
+    async def test_c6_null_extension_is_audited_without_rewriting_original():
+        def extension(payload):
+            data = json.loads(payload["choices"][0]["message"]["content"])
+            data["analysis"]["conflicts_note"] = None
+            payload["choices"][0]["message"]["content"] = json.dumps(data)
+        f, gateway = await fixture(), PipelineGateway(())
+        gateway.final.mutate = extension
+        await execute(f, gateway)
+        saved = await report(f[1])
+        assert saved["result"]["validation_state"] == "accepted"
+        originals = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "model_response"))
+        adapted = next(a["content_json"]["payload"] for a in originals if a["content_json"]["payload"].get("output_adapter"))
+        assert adapted["raw"] == gateway.final.last_payload
+        assert adapted["output_adapter"]["removed"] == [{"path": ["analysis", "conflicts_note"], "value": None}]
+        assert "conflicts_note" not in json.loads(adapted["output_adapter"]["normalized_content"])["analysis"]
+
+    async def test_unavailable_model_view_closes_without_unknown_or_model_call():
+        from app.socai2.baseline_store import BaselineStore
+        original = BaselineStore.prepare_model_view
+        async def unavailable(store, *args, **kwargs):
+            view = await original(store, *args, **kwargs)
+            return {**view, "ready": False, "reason": "model_view_not_ready"}
+        f, gateway = await fixture(), PipelineGateway(())
+        with patch.object(BaselineStore, "prepare_model_view", unavailable):
+            await execute(f, gateway)
+        saved = await system_closing(f)
+        assert not gateway.order and saved["result"]["stop_reason"] == "model_view_not_ready"
+        run = (await rows(select(R).where(R.c.id == f[1])))[0]
+        assert run["state"] == "failed" and run["ended_at"]
+
+    async def test_system_closing_preserves_existing_model_and_human_judgment():
+        for origin in ("model", "human"):
+            f, gateway = await fixture(), PipelineGateway(())
+            await execute(f, gateway)
+            async with service.transaction(T) as store:
+                case = await store.case(f[0])
+                prior = case["current_assessment_id"]
+                assert prior
+                table = m.CaseAssessments.__table__
+                if origin == "human":
+                    old = await store.one(select(table).where(table.c.id == prior))
+                    prior = uuid4()
+                    await store.db.execute(insert(table).values(**{**dict(old), "id": prior,
+                        "revision": old["revision"] + 1, "origin": "human", "operation_key": str(uuid4())}))
+                    await store.db.execute(update(C).where(C.c.id == f[0]).values(current_assessment_id=prior))
+                aid = await new_alert(store, f[3])
+                changed = await store.replace_members(f[0], {f[2], aid}, expected_revision=1,
+                    actor=ACTOR, operation_id=uuid4())
+                now = await store.now()
+            request = f[4].model_copy(update={"expected_scope_revision": 2, "operation_key": uuid4()})
+            limits = f[5].model_copy(update={"deadline_at": now + timedelta(seconds=120)})
+            new = (f[0], UUID(changed["pending_run_id"]), aid, f[3], request, limits)
+            await execute(new, PipelineGateway(enabled=False))
+            saved = await report(new[1])
+            assert saved["result"]["validation_state"] == "system_only" and saved["result"]["conclusion"]
+            assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] == prior
+
     async def test_full_c2_and_deep_share_four_tool_calls():
-        f, gateway, source = await fixture(), PipelineGateway(("query",)), deep.AdaptiveLake()
+        f, gateway, source = await fixture(), PipelineGateway(("deep",)), deep.AdaptiveLake()
         async with service.transaction(T) as store:
             alert = await store.one(select(A).where(A.c.id == f[2]))
             await store.db.execute(insert(m.AlertObjects.__table__).values(id=uuid4(), tenant_id=T, alert_id=f[2],
@@ -287,14 +463,16 @@ async def run_checks(engine, record, only=None):
         def substantial_first_usage(payload):
             payload["usage"] = {"prompt_tokens": 11000, "completion_tokens": 1000, "total_tokens": 12000}
         gateway = PipelineGateway((), initial_mutate=substantial_first_usage)
-        f[-1] = f[-1].model_copy(update={"max_tokens": 20000})
+        f[-1] = f[-1].model_copy(update={"max_tokens": 8000})
         await execute(f, gateway)
         saved = await report(f[1])
-        assert gateway.order == ["C3"], gateway.order
-        assert saved["result"]["conclusion"] is None and saved["result"]["validation_state"] == "system_only"
+        assert gateway.order == [], gateway.order
+        await system_closing(f)
         final_step = (await rows(select(S).where(S.c.run_id == f[1], S.c.stage_code == "C6", S.c.kind == "stage")))[0]
         assert final_step["error"]["code"] == "model_token_budget_insufficient", final_step["error"]
-        assert saved["execution"]["total_tokens"] == 12000
+        initial_step = (await rows(select(S).where(S.c.run_id == f[1], S.c.stage_code == "C3", S.c.kind == "stage")))[0]
+        assert initial_step["error"]["code"] in {"final_model_tokens_reserved", "model_token_budget_insufficient"}
+        assert saved["execution"]["total_tokens"] == 0
 
     async def test_full_provider_error_receipts_c3_deep_c6_keep_run_unadopted():
         from test_socai2_model_errors import ModelCallError, failure
@@ -323,8 +501,7 @@ async def run_checks(engine, record, only=None):
             assert data["payload"]["transport_error"]["fields"]["param"] == "text.format.schema"
             assert data["usage"]["total_tokens"] is None and failed["usage"]["usage_state"] == "unavailable"
             assert (await rows(select(R).where(R.c.id == f[1])))[0]["state"] == "unknown"
-            assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] is None
-            assert not await rows(select(RESULT).where(RESULT.c.source_run_id == f[1]))
+            await system_closing(f)
             checked.append(phase)
         return {"failure_stages_checked": checked, "adopted_results": 0, "attempts_per_failing_stage": 1}
 
@@ -344,7 +521,7 @@ async def run_checks(engine, record, only=None):
         assert all(b["type"] for body in actual for b in branches(body["text"]["format"]["schema"]))
         assert saved["execution"]["model_calls"] == 4 and saved["execution"]["total_tokens"] == 4000
         return {"model_order": delegate.order, "exact_wire_saved": True, "limits_unchanged": True,
-            "final_request_bytes": len(encoded(actual[-1])), "final_request_byte_limit": 17744, "model_substitute": True}
+            "final_request_bytes": len(encoded(actual[-1])), "final_request_byte_limit": 48000 - 3000 - 3000 - 256, "model_substitute": True}
 
     async def test_final_original_followups_survive_new_reanalysis_proposal():
         def initial_text(payload):
@@ -400,14 +577,13 @@ async def run_checks(engine, record, only=None):
         await execute(f, gateway)
         saved = await report(f[1])
         assert gateway.order == ["C3"] and gateway.final.calls == 0
-        assert saved["result"]["conclusion"] is None and saved["result"]["validation_state"] == "system_only"
-        assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] is None
+        await system_closing(f)
         final_stage = (await rows(select(S).where(S.c.run_id == f[1], S.c.stage_code == "C6")))[0]
-        assert final_stage["state"] == "skipped" and final_stage["error"]["code"] == "required_model_input_unavailable"
+        assert final_stage["state"] == "completed" and final_stage["error"]["code"] == "required_model_input_unavailable"
         original_id = saved["execution"]["followup_dispatch"]["initial_analysis_artifact_id"]
         initial = (await rows(select(F).where(F.c.id == UUID(original_id))))[0]["content_json"]
         assert initial["analysis"]["followups"][0]["objective"] == "确认" * 500
-        return {"final_model_calls": 0, "current_assessment_unchanged": True, "original_plan_not_truncated": True}
+        return {"final_model_calls": 0, "system_closing_saved": True, "original_plan_not_truncated": True}
 
     async def test_full_schema_rejections_release_run_at_c3_deep_and_c6():
         from app.socai2.model_errors import ModelCallError
@@ -431,11 +607,17 @@ async def run_checks(engine, record, only=None):
             failed = next(s for s in steps if s["kind"] == "model" and s["state"] == "failed")
             assert failed["ended_at"] and failed["error"]["code"] == "model_schema_rejected"
             assert failed["usage"]["total_tokens"] is None
-            assert (await rows(select(C).where(C.c.id == f[0])))[0]["current_assessment_id"] is None
+            await system_closing(f)
             checked.append(str(f[1]))
         return {"run_ids": checked, "attempts_per_failure": 1, "active_slots_held": 0}
 
-    checks = [test_full_schema_rejections_release_run_at_c3_deep_and_c6,
+    checks = [test_rejected_c3_scope_still_calls_c6_and_saves_case_judgment,
+        test_c6_null_extension_is_audited_without_rewriting_original,
+        test_unavailable_model_view_closes_without_unknown_or_model_call,
+        test_system_closing_preserves_existing_model_and_human_judgment,
+        test_full_deep_receipt_reused_by_supporting_direct_query,
+        test_full_distinct_direct_queries_keep_final_plan_receipt_links,
+        test_full_schema_rejections_release_run_at_c3_deep_and_c6,
         test_final_original_followups_survive_new_reanalysis_proposal,
         test_final_oversize_required_plan_does_not_call_model_or_adopt,
         test_full_deepseek_wire_c3_deep_c6_preserves_saved_requests_and_budget,

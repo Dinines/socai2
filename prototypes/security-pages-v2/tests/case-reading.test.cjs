@@ -98,13 +98,14 @@ test('Case information shares layout and evidence metrics across all sources wit
  }
  assert.equal(JSON.stringify([x.store,x.M.runs(x.store)]),before);
 });
-test('all Case relationship views use the latest finished Run or identified member fallback without data mutation',()=>{
+test('all Case relationship views use a completed saved graph or identified member fallback without data mutation',()=>{
  const x=load(),before=JSON.stringify([x.store,x.M.runs(x.store)]);
  for(const c of x.store.cases){
   x.s.location.hash=`#/cases/${c.id}/attack`;Object.assign(x.ui.graph,{associated:true,blast:true,path:'potential-u1-c1',selected:'u1',index:99,hidden:new Set(),severity:'',status:'',source:''});
-  const html=x.casePage(),r=x.M.latestFinished(x.M.forCase(x.store,c).filter(r=>r.graphEligible!==false));
+  const html=x.casePage(),r=x.M.latestGraph(x.M.forCase(x.store,c));
   for(const bad of ['data-ws-scope','ws-blast','ws-path','潜在影响路径'])assert.ok(!html.includes(bad),c.id+bad);
-  if(r){assert.ok(html.includes(`data-run-id="${r.id}"`),c.id);assert.ok(html.includes('最近一次已完成调查'));for(const id of r.alertIds)assert.ok(html.includes(`data-id="${id}"`));}
+  if(r){assert.ok(html.includes(`data-run-id="${r.id}"`),c.id);assert.ok(html.includes(r.savedGraphStageCompleted&&r.status!=='completed'?'本轮已完成的关系整理（汇总未通过）':'最近一次已完成调查'));for(const id of r.alertIds)assert.ok(html.includes(`data-id="${id}"`));}
+  else if(c.recordedImport){assert.ok(html.includes('没有已完成调查的关系投影'));}
   else {assert.ok(html.includes('尚无已完成调查'));assert.ok(html.includes('data-investigation-graph'));for(const m of html.matchAll(/data-action="ug-node" data-id="([^"]+)"/g))assert.ok(c.alertIds.includes(m[1])||x.store.assets.some(a=>a.id===m[1])||m[1].startsWith('tech-'));}
  }
  assert.equal(JSON.stringify([x.store,x.M.runs(x.store)]),before);

@@ -16,7 +16,7 @@ from app.socai2.baseline_contracts import Actor, Limits, Publication, Start
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import RM, A, C, F, R, StoreError, digest
 from jsonschema import Draft202012Validator, FormatChecker
-from socai2_test_model_view import model_data
+from socai2_test_model_view import model_data, model_messages_data
 from sqlalchemy import insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -27,7 +27,7 @@ CONTRACTS = json.loads((Path(__file__).parents[1] / "app/socai2/contracts.schema
 
 
 def reply_for(body):
-    data = model_data(body["messages"][1]["content"])
+    data = model_messages_data(body["messages"])
     ids = list(data["members"])
     own = {aid: next(i["id"] for i in data["items"] if aid in i["alert_ids"]) for aid in ids}
     findings = [{"id": f"F{i}", "state": "inferred", "statement": explanation,
@@ -47,7 +47,8 @@ def reply_for(body):
             "explanation": "不能根据标签排除替代解释", "evidence_ids": []}],
         "followups": [{"question_id": data["questions"][0]["id"], "alert_ids": [ids[0]], "mode": "human",
             "objective": "确认行为用途", "required_evidence": "明确对象、时间和授权范围",
-            "source_ids": [own[ids[0]]], "object_keys": []}]}
+            "source_ids": [own[ids[0]]], "object_keys": [],
+            **({"binding_id": None, "priority": "decision_critical"} if "tool_options" in data else {})}]}
 
 
 class SyntheticGateway:

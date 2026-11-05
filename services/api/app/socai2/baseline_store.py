@@ -340,8 +340,8 @@ class BaselineStore:
                     context_roles[row["id"]][path + ".event_time"] = "source_label"
         prepared = (await self.db.execute(select(F.c.id, F.c.schema_version, F.c.content_json)
             .where(*self.where(F, F.c.run_id == run["id"],
-                              F.c.schema_version.in_([c2.SCHEMA, *view.READ_SCHEMAS, c3.SCHEMA, c4.SCHEMA, deep.SCHEMA, c5.SCHEMA, c6.SCHEMA,
-                                  "socai2.baseline-executor.v1"]))))).mappings().all()
+                              F.c.schema_version.in_([c2.SCHEMA, *view.READ_SCHEMAS, *c3.READ_SCHEMAS, c4.SCHEMA, deep.SCHEMA, c5.SCHEMA, c6.SCHEMA,
+                                  "socai2.baseline-executor.v1", "socai2.baseline-executor.v2"]))))).mappings().all()
         for row in prepared:
             if row["schema_version"] == c6.SCHEMA:
                 context_roles[row["id"]] = c6.citation_roles(row["content_json"])
@@ -351,7 +351,7 @@ class BaselineStore:
                 context_roles[row["id"]] = deep.citation_roles(row["content_json"])
             elif row["schema_version"] == c4.SCHEMA:
                 context_roles[row["id"]] = c4.citation_roles(row["content_json"])
-            elif row["schema_version"] == c3.SCHEMA:
+            elif row["schema_version"] in c3.READ_SCHEMAS:
                 context_roles[row["id"]] = c3.citation_roles(row["content_json"])
             else:
                 context_roles[row["id"]] = c2.citation_roles(row["content_json"]) if row["schema_version"] == c2.SCHEMA else {}
@@ -434,6 +434,9 @@ class BaselineStore:
         adoption = (await self.db.execute(text(
             "SELECT socai2.auto_adopt_baseline_result(:tenant, :result)"),
             {"tenant": self.tenant_id, "result": result_id})).scalar_one()
+        if publication.conclusion_origin == "system" and publication.validation_state == "system_only" and publication.conclusion:
+            from .baseline_closing import record_case_closing
+            adoption = await record_case_closing(self, run, result_id, publication.conclusion)
         outcome = {"result_id": str(result_id), "run_id": str(run_id), "adoption": adoption}
         await self.event(case_id, publication.operation_key,
             {"type": "service", "user_id": None, "name_snapshot": None,

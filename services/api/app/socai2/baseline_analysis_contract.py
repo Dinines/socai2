@@ -9,6 +9,8 @@ from pydantic import Field, StrictStr, ValidationError
 from .baseline_contracts import Contract
 
 SCHEMA = "socai2.baseline-analysis.v1"
+EXECUTION_SCHEMA = "socai2.baseline-analysis.v2"
+READ_SCHEMAS = {SCHEMA, EXECUTION_SCHEMA}
 DOMAINS = ("identity", "cloud", "phishing", "insider")
 Text = Annotated[StrictStr, Field(min_length=1, max_length=1200)]
 Refs = Annotated[list[StrictStr], Field(max_length=32)]
@@ -79,6 +81,15 @@ class Analysis(Contract):
     followups: list[Followup] = Field(max_length=12)
 
 
+class ExecutionFollowup(Followup):
+    binding_id: StrictStr | None
+    priority: Literal["decision_critical", "supporting"]
+
+
+class ExecutionAnalysis(Analysis):
+    followups: list[ExecutionFollowup] = Field(max_length=12)
+
+
 class AnalysisRejected(ValueError):
     """A safe code, never a provider body or a user-controlled validation message."""
 
@@ -100,7 +111,7 @@ def citation_roles(payload):
     return {}
 
 
-def parse(content, source_map, context, coverage):
+def parse(content, source_map, context, coverage, *, bindings=None):
     def fail(code):
         raise AnalysisRejected(code)
 
@@ -115,7 +126,7 @@ def parse(content, source_map, context, coverage):
     try:
         raw = json.loads(content, object_pairs_hook=pairs,
             parse_constant=lambda _: fail("invalid_json_number"))
-        analysis = Analysis.model_validate(raw)
+        analysis = (Analysis if bindings is None else ExecutionAnalysis).model_validate(raw)
     except (ValueError, TypeError, ValidationError) as exc:
         if isinstance(exc, AnalysisRejected):
             raise
@@ -225,7 +236,22 @@ def parse(content, source_map, context, coverage):
             if isinstance(obj.get("object_key"), str)}
         if not set(item.object_keys) <= owned:
             fail("followup_objects_outside_members")
+        if bindings is not None:
+            if item.mode == "query":
+                binding = bindings.get(item.binding_id)
+                if binding is None:
+                    fail("followup_binding_not_offered")
+                if set(binding["alert_ids"]) != members:
+                    fail("followup_binding_member_mismatch")
+                bound_objects = {obj["object_key"] for obj in binding["objects"]}
+                if not set(item.object_keys) <= bound_objects:
+                    fail("followup_binding_object_mismatch")
+            elif item.binding_id is not None:
+                fail("followup_binding_requires_query")
     return analysis
+
+
+EXECUTION_PROMPT = """后续user的tool_option_groups是固定范围目录；options继承hostname/alert_ids/object_keys。query选binding_id，照抄组的全部alert_ids（不可只写待查成员），对象限组内；无选项不能query。其他mode的binding_id=null。priority为decision_critical或supporting。query直接取证，deep继续推理。绑定不证明返回行属于告警。不输出SQL或参数。"""
 
 
 PROMPT = """执行C3初始主分析，不输出最终报告、不结案、不执行工具。只引用本次来源编号；source_groups的角色和成员适用于组内各项。

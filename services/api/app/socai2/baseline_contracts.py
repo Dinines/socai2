@@ -15,7 +15,8 @@ from .enums import (
     Validation,
 )
 
-FULL_EXECUTOR_VERSION = "socai2.baseline-executor.v1"
+FULL_EXECUTOR_VERSION = "socai2.baseline-executor.v2"
+FULL_EXECUTOR_VERSIONS = {"socai2.baseline-executor.v1", FULL_EXECUTOR_VERSION}
 
 
 class Contract(BaseModel):

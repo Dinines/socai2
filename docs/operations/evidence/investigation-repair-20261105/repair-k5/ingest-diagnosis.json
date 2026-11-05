@@ -1,0 +1,50 @@
+{
+  "checked_at": "2026-11-05T08:56:15.038830+00:00",
+  "batch": "repair-k5",
+  "model_calls": 0,
+  "phase": "actual Kafka/Fusion/PG/CH ingestion",
+  "outcome": "failed_before_models",
+  "root_cause": "Test harness reused the existing Fusion ClickHouse account scoped to aisoc.*, but targeted socai2_next_validation.raw_events. No target-database access is granted to that account.",
+  "classification": "validation_connection_permission_mismatch",
+  "observations": {
+    "same_account_select_1": {
+      "ok": true,
+      "value": 1
+    },
+    "same_account_describe_target": {
+      "ok": false,
+      "server_error_code": 497
+    },
+    "same_account_grants_database_scope": [
+      "aisoc.*"
+    ],
+    "clickhouse_version": "23.8.16.16",
+    "check_grant_probe": {
+      "error_code": 62,
+      "meaning": "Diagnostic CHECK GRANT syntax unsupported; not a business write failure"
+    },
+    "target_table_columns": 48,
+    "writer_insert_columns": 47,
+    "missing_writer_columns": [],
+    "actual_rows_for_four_frozen_event_ids": 0,
+    "fused_outputs_including_exact_replay": 5,
+    "unique_persisted_alerts": 4,
+    "unique_fused_incidents": 2,
+    "metric_new_incidents": 3,
+    "metric_explanation": "Exact replay of the first original fused response re-counts its new_incident decision; this counter does not mean a third persisted incident."
+  },
+  "data_checks": {
+    "all_four_event_to_row_conversions": "passed",
+    "columns_per_row": 47,
+    "unique_event_uuids": 4,
+    "timestamps_within_card_windows": true,
+    "ocsf_and_raw_data_values_equal": true,
+    "correlation_keys": 2
+  },
+  "limitations": [
+    "Successful read/schema and offline conversion checks do not substitute for a successful actual insert.",
+    "No retry of this immutable batch; retain failed originals."
+  ],
+  "next_action": "Use a separate new bounded batch with the existing server-local administrative CH connection only for fixed validation-table inserts; keep production account grants and business code unchanged.",
+  "credentials_exported": false
+}

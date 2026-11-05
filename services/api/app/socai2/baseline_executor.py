@@ -1,11 +1,16 @@
 """One manually claimed Run, one C1-C6 pipeline; no queue or automatic resume."""
+import asyncio
+from collections import Counter
+from types import SimpleNamespace
 from uuid import uuid4
 
 from sqlalchemy import insert, select, update
 
 from .baseline_analysis_model import TenantChatGateway
+from .baseline_capacity import final_reservation
 from .baseline_context import reference
-from .baseline_contracts import FULL_EXECUTOR_VERSION
+from .baseline_contracts import FULL_EXECUTOR_VERSION, Limits
+from .baseline_dispatch import dispatch_followups, offered_bindings
 from .baseline_enrichment import S
 from .baseline_evidence_tools import LakeGateway
 from .baseline_reasoning import ModelSteps
@@ -34,7 +39,18 @@ class BaselineExecutor(ModelSteps):
         return output_id
 
     async def __call__(self, claim):
+        try:
+            return await self.execute(claim)
+        except (Exception, asyncio.CancelledError) as exc:
+            if isinstance(exc, StoreError) and exc.code in {"full_executor_claim_required", "full_executor_already_claimed"}:
+                raise
+            from .baseline_closing import interrupted
+            await asyncio.shield(interrupted(self.service, self.tenant_id, claim.case_id, claim.run_id))
+            raise
+
+    async def execute(self, claim):
         tenant_id, case_id, run_id = self.tenant_id, claim.case_id, claim.run_id
+        configured = await self.gateway.configure(self.service, tenant_id)
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running" or run["executor_version"] != SCHEMA:
@@ -43,34 +59,34 @@ class BaselineExecutor(ModelSteps):
                     S.c.stage_code == "C1.executor"))):
                 raise StoreError("full_executor_already_claimed")
             await self.idle(store, run_id)
+            context = await store.read_context(case_id, run_id)
+            from .baseline_evidence_tools import catalog
+            capability_catalog = catalog(context, tenant_id)
+            _, enabled_bindings, excluded = offered_bindings(capability_catalog,
+                Limits.model_validate(run["limits"]), await store.now(), [], self.lake)
             plan_id = await self.record(store, run, "C1.executor", {
                 "schema_version": SCHEMA, "type": "execution_plan", "run_id": str(run_id),
                 "sequence": ["C1", "C2", "C3", "C4", "C5", "C6"],
                 "limits": run["limits"], "final_model_calls_reserved": 1,
-                "followup_policy": "C3_order_unique_question_query_or_deep_via_bounded_Deep",
-                "limitations": ["call_slot_only_tokens_and_deadline_still_shared",
+                "final_reservation": final_reservation(self.gateway if configured else SimpleNamespace(
+                    provider="chat_completions", model="unconfigured", schema_profile="standard"), context),
+                "followup_policy": "priority_then_query_before_deep_then_original_index",
+                "capabilities": {"bound_tools": sorted({b["tool_name"] for b in capability_catalog["bindings"].values()}),
+                    "binding_count": len(capability_catalog["bindings"]), "unsupported": capability_catalog["unsupported"],
+                    "offered_tools_at_start": sorted({b["tool_name"] for b in enabled_bindings.values()}),
+                    "unoffered_binding_reasons": dict(Counter(o["reason"] for o in excluded)),
+                    "limitations": ["four_domains_share_one_model_pass", "200_members_storage_limit_not_model_capacity_promise",
+                        "host_time_bindings_not_row_to_alert_attribution", "enabled_sources_checked_again_before_C3_and_dispatch"]},
+                "limitations": ["conservative_wire_units_not_provider_token_usage",
                     "no_automatic_successor_retry_or_task_creation", "graph_uses_retained_sources_only"],
             }, [reference("artifact", run["input_artifact_id"], "execution_receipt")])
 
         await self.service.enrich(tenant_id, case_id, run_id)
-        initial = await self.service.analyze(tenant_id, case_id, run_id, gateway=self.gateway)
         await self.service.prepare_evidence(tenant_id, case_id, run_id)
-        routes, by_question = [], {}
-        for index, item in enumerate((initial.get("analysis") or {}).get("followups", [])):
-            qid, mode = item["question_id"], item["mode"]
-            route = {"followup_index": index, "question_id": qid, "mode": mode}
-            if mode == "human":
-                route.update(state="handoff", reason="human_confirmation_required_no_task_created")
-            elif mode == "graph":
-                route.update(state="scheduled", reason="C5_retained_evidence_graph_only")
-            else:
-                if qid not in by_question:
-                    result = await self.service.deepen(tenant_id, case_id, run_id, qid,
-                        gateway=self.gateway, lake=self.lake)
-                    by_question[qid] = {"state": result["state"], "reason": result["stop_reason"],
-                        "deep_artifact_id": result["deep_artifact_id"], "answer_available": result["answer"] is not None}
-                route.update(by_question[qid])
-            routes.append(route)
+        initial = await self.service.analyze(tenant_id, case_id, run_id, gateway=self.gateway, lake=self.lake)
+        routes = await dispatch_followups(self.service, tenant_id, case_id, run_id,
+            (initial.get("analysis") or {}).get("followups", []),
+            (initial.get("basis") or {}).get("binding_map", {}), gateway=self.gateway, lake=self.lake)
 
         graph = await self.service.build_graph(tenant_id, case_id, run_id)
         for route in routes:
