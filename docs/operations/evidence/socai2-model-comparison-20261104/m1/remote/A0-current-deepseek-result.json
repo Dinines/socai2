@@ -1,0 +1,221 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "0f638077-9822-4ff2-978c-3ea72e2a4f18",
+    "object": "response",
+    "created_at": 1793789911,
+    "status": "completed",
+    "background": false,
+    "completed_at": 1793789915,
+    "content_filters": null,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 3000,
+    "max_tool_calls": null,
+    "model": "deepseek-flash",
+    "moderation": null,
+    "output": [
+      {
+        "type": "message",
+        "id": "1f5c1c8b-81c7-4c19-a5fd-b228233f870f",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"verdict\":\"needs_review\",\"confidence\":0.45,\"rationale\":\"告警描述为 PowerShell 执行 C:\\\\Lab\\\\inventory.ps1 的进程启动（S1-S3、S23-S24），父进程为 cmd.exe（S5、S26），用户 synthetic-operator、主机 next-validation-host（S6-S7、S20-S21），动作 process_start 且成功（S8-S9、S27-S28）。检测标签为 T1059.001、Execution（S14），但标签本身不证明恶意。告警描述明确说明共享主机/时间不能证明该进程发起了连接，且未提供授权（S11）；资产查询返回 0 行且存在“当前清单非事件时点状态”等限制，历史查询返回 0 行，威胁情报被跳过（无命中不等于安全）。因此无法确认该脚本是正常运维还是恶意执行，证据不足。\",\"explanation\":\"观察到的是在受管主机上由 cmd.exe 启动 PowerShell 执行本地脚本文件，属于常见的脚本执行行为；仅凭进程启动与脚本路径无法区分正常清单采集与恶意载荷执行，需要脚本内容、文件哈希、签名、命令行参数及网络/子进程行为等进一步证据。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S11\",\"S14\",\"S23\",\"S24\",\"S26\"],\"recommendations\":[{\"reason\":\"获取 C:\\\\Lab\\\\inventory.ps1 的内容、哈希与数字签名，确认脚本用途与来源。\",\"source_ids\":[\"S3\",\"S24\"]},{\"reason\":\"核查该主机上 powershell.exe 的子进程、网络连接与文件写入行为，判断是否存在后续恶意活动。\",\"source_ids\":[\"S2\",\"S7\",\"S22\"]},{\"reason\":\"向 synthetic-operator 或资产负责人确认该脚本是否为授权运维任务，并核对执行时间与变更记录。\",\"source_ids\":[\"S6\",\"S20\",\"S11\"]}],\"limitations\":[\"资产查询返回 0 行，且当前清单不代表事件时点状态，无法据此确认主机与用户归属。\",\"历史查询返回 0 行，仅覆盖已记录告警，不能证明无其他活动。\",\"威胁情报查询被跳过，无命中不等于安全。\",\"未提供脚本内容、哈希、签名及网络行为，无法判断执行意图。\",\"告警描述自述为合成验证且未提供授权，标签不能单独证明无害或授权。\"]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": null,
+    "reasoning": {
+      "effort": "none",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 0.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "socai2_answer",
+        "schema": {
+          "$defs": {
+            "Advice": {
+              "additionalProperties": false,
+              "properties": {
+                "reason": {
+                  "maxLength": 4000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "source_ids": {
+                  "items": {
+                    "$ref": "#/$defs/SourceId"
+                  },
+                  "maxItems": 30,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "reason",
+                "source_ids"
+              ],
+              "type": "object"
+            },
+            "SourceId": {
+              "type": "string",
+              "enum": [
+                "S1",
+                "S10",
+                "S11",
+                "S12",
+                "S13",
+                "S14",
+                "S15",
+                "S16",
+                "S17",
+                "S18",
+                "S19",
+                "S2",
+                "S20",
+                "S21",
+                "S22",
+                "S23",
+                "S24",
+                "S25",
+                "S26",
+                "S27",
+                "S28",
+                "S29",
+                "S3",
+                "S30",
+                "S4",
+                "S5",
+                "S6",
+                "S7",
+                "S8",
+                "S9"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "properties": {
+            "verdict": {
+              "enum": [
+                "true_positive",
+                "false_positive",
+                "benign",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "confidence": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rationale": {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "explanation": {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "evidence_ids": {
+              "items": {
+                "$ref": "#/$defs/SourceId"
+              },
+              "maxItems": 60,
+              "minItems": 1,
+              "type": "array"
+            },
+            "recommendations": {
+              "items": {
+                "$ref": "#/$defs/Advice"
+              },
+              "maxItems": 5,
+              "type": "array"
+            },
+            "limitations": {
+              "items": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            }
+          },
+          "required": [
+            "verdict",
+            "confidence",
+            "rationale",
+            "explanation",
+            "evidence_ids",
+            "recommendations",
+            "limitations"
+          ],
+          "type": "object"
+        },
+        "description": null,
+        "strict": true
+      },
+      "verbosity": null
+    },
+    "tool_choice": "auto",
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 1.0,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 2271,
+      "input_tokens_details": {
+        "cached_tokens": 2048
+      },
+      "output_tokens": 544,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2815
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "usage": {
+    "input_tokens": 2271,
+    "output_tokens": 544,
+    "total_tokens": 2815,
+    "cached_input_tokens": 2048,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "0f638077-9822-4ff2-978c-3ea72e2a4f18"
+  },
+  "elapsed_seconds": 3.849
+}

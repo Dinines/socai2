@@ -1,3 +1,5 @@
+**2026-11-03基础调查待更新：** Case成员变化同事务新增/更新Run表中的baseline/pending_update记录；领取时提交running并冻结，然后才调用执行器。每Case最多一条活跃基础调查及一条待更新记录；不含周期领取或结束自动接续。需要迁移122，尚未应用。53个本地用例通过，7个新增PG事务测试和18个既有DB测试跳过，真实并发未验。[字段、接口与边界](../../../../docs/investigation/baseline-execution-record-20261103.md)。
+
 **2026-10-28公共查询：** execution_index提供统一业务筛选和原生结果地址；case_navigation/case_evidence提供报告引用、证据、调用步骤和来源行跳转，仅读已存材料。[接口和验证](../../../../docs/investigation/execution-index-and-evidence-20261028.md)。
 
 **2026-10-28多告警分析：** case_synthesis提供逐成员判断、关联引用校验、来源时间线和未决问题，接入case_analysis的现有输出及报告。[字段和验证](../../../../docs/investigation/multi-alert-synthesis-20261028.md)。

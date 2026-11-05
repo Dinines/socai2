@@ -199,7 +199,8 @@ async def merge_cases(
         (
             await db.execute(
                 text(
-                    "SELECT id, status, merged_into_id FROM aisoc_cases WHERE tenant_id = :tenant_id AND id = ANY(CAST(:ids AS uuid[]))"
+                    "SELECT id, status, merged_into_id FROM aisoc_cases WHERE tenant_id = :tenant_id "
+                    "AND id = ANY(CAST(:ids AS uuid[])) ORDER BY id FOR UPDATE"
                 ).bindparams(tenant_id=tenant_id, ids=[str(i) for i in [primary_id, *unique]])
             )
         )

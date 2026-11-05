@@ -3,7 +3,6 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
-    alert_ingress,
     access_conditions,
     admin_users,
     agent_tools,
@@ -11,6 +10,7 @@ from app.api.v1.endpoints import (
     ai_assets,
     airgap,
     alert_explain,
+    alert_ingress,
     alert_writeback,
     alerts,
     api_keys,
@@ -93,6 +93,11 @@ from app.api.v1.endpoints import (
     scim_tokens,
     semantic_memory,
     sla,
+    socai2_analysis,
+    socai2_case_ai,
+    socai2_cases,
+    socai2_pages,
+    socai2_tasks,
     sso_connections,
     stix_taxii,
     taxii,
@@ -127,6 +132,11 @@ api_router.include_router(alert_explain.router)
 # Dry-run by default; AISOC_SIEM_WRITEBACK_EXECUTE opts in to the vendor call.
 api_router.include_router(alert_writeback.router)
 api_router.include_router(cases.router)
+api_router.include_router(socai2_cases.router)
+api_router.include_router(socai2_case_ai.router)
+api_router.include_router(socai2_analysis.router)
+api_router.include_router(socai2_pages.router)
+api_router.include_router(socai2_tasks.router)
 # Depth 9.3 (parity 5.6 remainder): alert and case merge, bulk triage,
 # tenant custom fields and per-analyst workload. Its own prefix rather
 # than hanging off /alerts and /cases, because a path parameter compiles

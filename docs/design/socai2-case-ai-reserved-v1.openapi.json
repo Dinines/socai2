@@ -1,0 +1,402 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "socai2 Case AI reserved API",
+    "version": "reserved.v1"
+  },
+  "paths": {
+    "/api/v1/socai2/cases/{case_id}/ai/messages": {
+      "post": {
+        "tags": [
+          "socai2-case-ai-reserved"
+        ],
+        "summary": "Reserved: send a Case AI question (not implemented)",
+        "operationId": "ask_api_v1_socai2_cases__case_id__ai_messages_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskCaseAI"
+              }
+            }
+          }
+        },
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUnavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Case write permission and a user actor are required"
+          },
+          "503": {
+            "description": "socai2 Case API is disabled"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/ai/messages/{message_id}/save": {
+      "post": {
+        "tags": [
+          "socai2-case-ai-reserved"
+        ],
+        "summary": "Reserved: save an AI answer as an investigation result (not implemented)",
+        "operationId": "save_api_v1_socai2_cases__case_id__ai_messages__message_id__save_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCaseAIAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUnavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Case write permission and a user actor are required"
+          },
+          "503": {
+            "description": "socai2 Case API is disabled"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/results/{result_id}/adopt": {
+      "post": {
+        "tags": [
+          "socai2-case-ai-reserved"
+        ],
+        "summary": "Reserved: explicitly adopt an AI result (not implemented)",
+        "operationId": "adopt_api_v1_socai2_cases__case_id__results__result_id__adopt_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdoptCaseAIResult"
+              }
+            }
+          }
+        },
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUnavailable"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Case write permission and a user actor are required"
+          },
+          "503": {
+            "description": "socai2 Case API is disabled"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIUnavailable": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/AIUnavailableDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AIUnavailable"
+      },
+      "AIUnavailableDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "case_ai_not_implemented",
+            "title": "Code",
+            "default": "case_ai_not_implemented"
+          },
+          "status": {
+            "type": "string",
+            "const": "not_implemented",
+            "title": "Status",
+            "default": "not_implemented"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AIUnavailableDetail"
+      },
+      "AdoptCaseAIResult": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "expected_scope_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Scope Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_scope_revision"
+        ],
+        "title": "AdoptCaseAIResult"
+      },
+      "AskCaseAI": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "question"
+        ],
+        "title": "AskCaseAI"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "SaveCaseAIAnswer": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "conclusion": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Conclusion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "title",
+          "conclusion"
+        ],
+        "title": "SaveCaseAIAnswer"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

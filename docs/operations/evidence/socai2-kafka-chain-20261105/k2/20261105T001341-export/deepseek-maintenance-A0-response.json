@@ -1,0 +1,292 @@
+{
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "80767d7f-0571-5cf2-acf0-8b98e4d4556d",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-05T00:04:03.832809Z",
+      "requested_by": "22155cc9-c340-59ba-99ff-b4d811837626",
+      "started_at": "2026-11-05T00:04:03.832809Z",
+      "ended_at": "2026-11-05T00:04:06.803751Z",
+      "executor_version": "socai2.alert-basic-executor.v3",
+      "input_artifact_id": "73d706c9-ba51-44f2-a203-e2b7292429b8",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "partial"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "00800b3b-447e-5db9-b1a6-3f722fe56c92",
+      "input_material_id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+      "source_run_id": "80767d7f-0571-5cf2-acf0-8b98e4d4556d",
+      "verdict": "needs_review",
+      "rationale": "告警仅记录 operator-0 在 k2-endpoint-0 上通过 cmd.exe 启动 powershell.exe -File C:\\Ops\\inventory.ps1，进程启动成功；检测置信度为低（28.2），无威胁情报命中，资产与历史查询均无返回。脚本内容、执行结果、是否外联及授权情况均未知，现有证据不足以判定恶意或正常。",
+      "confidence": 0.4,
+      "score_state": "available",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "获取并审查 C:\\Ops\\inventory.ps1 内容及哈希，确认其功能与来源。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "向 operator-0 或运维负责人核实该脚本执行是否属于计划内授权操作。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "73d706c9-ba51-44f2-a203-e2b7292429b8",
+              "role": "source_label",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.members.0.alert"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R3",
+          "reason": "检查该进程后续网络连接与子进程，确认是否存在数据外传或进一步执行。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.pid"
+            },
+            {
+              "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v3",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v3",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-05T00:04:06.803751Z"
+    },
+    "explanation": {
+      "artifact_id": "7a516191-a442-5fc3-ac36-7965b9343fee",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "该行为是 PowerShell 执行本地脚本文件，属于常见运维/清单采集形态，但仅凭命令行与成功状态无法区分合法运维与滥用；需核实脚本来源、内容及操作授权。",
+        "limitations": [
+          "未提供脚本内容与执行结果",
+          "资产与历史查询无返回，未验证主机与用户背景",
+          "威胁情报查询被跳过，无命中不代表安全",
+          "未提供授权信息，未知值保持未知",
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:skipped:no_supported_frozen_objects"
+        ],
+        "source_refs": [
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.name"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.parent_process.name"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "73d706c9-ba51-44f2-a203-e2b7292429b8",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.members.0.alert"
+          },
+          {
+            "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.detection"
+          }
+        ],
+        "generated_at": "2026-11-05T00:04:06.803751+00:00",
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "获取并审查 C:\\Ops\\inventory.ps1 内容及哈希，确认其功能与来源。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.process.cmd_line"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "向 operator-0 或运维负责人核实该脚本执行是否属于计划内授权操作。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.actor.user.name"
+              },
+              {
+                "id": "73d706c9-ba51-44f2-a203-e2b7292429b8",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.members.0.alert"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R3",
+            "reason": "检查该进程后续网络连接与子进程，确认是否存在数据外传或进一步执行。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.process.pid"
+              },
+              {
+                "id": "3119eb84-2474-55df-8a44-c96bfcf99de8",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.activity.outcome"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "model"
+      }
+    }
+  }
+}

@@ -229,6 +229,11 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"  # alias for APP_VERSION
     DEBUG: bool = False
     API_PREFIX: str = "/api/v1"
+    # Enable only after the explicit socai2 migration and new data writers are installed.
+    SOCAI2_CASE_API_ENABLED: bool = False
+    SOCAI2_ANALYSIS_READ_ENABLED: bool = False
+    SOCAI2_PAGE_READ_ENABLED: bool = False
+    SOCAI2_STAGE_EXECUTION_ENABLED: bool = False
 
     # Security
     SECRET_KEY: str = "change-me-in-production-at-least-32-chars"

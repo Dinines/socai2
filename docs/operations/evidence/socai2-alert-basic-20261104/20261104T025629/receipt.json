@@ -1,0 +1,84 @@
+{
+  "database": "socai2_schema_review_20261103_a1",
+  "synthetic_only": true,
+  "started_at": "20261104T025629",
+  "observations": [
+    {
+      "name": "test_alert_actual_sources_model_and_paired_output",
+      "passed": true,
+      "detail": {
+        "run_id": "0dda71c9-82a4-5b4e-bf0d-103551f36a45",
+        "tool_rows": {
+          "assets": 1,
+          "history": 1,
+          "threat_intel": 1
+        },
+        "model_calls": 1
+      }
+    },
+    {
+      "name": "test_alert_claim_replay_and_concurrent_no_redispatch",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_changed_input_stays_history",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_missing_sources_and_empty_are_distinct",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_invalid_output_preserves_raw_and_prior_pointer",
+      "passed": false,
+      "detail": "Traceback (most recent call last):\n  File \"C:\\Users\\lychee\\.conda\\envs\\python312\\Lib\\asyncio\\tasks.py\", line 520, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\services\\api\\tests\\test_socai2_alert_basic_executor.py\", line 205, in test_alert_invalid_output_preserves_raw_and_prior_pointer\n    assert not await rows(AS, AS.c.source_run_id == out[\"run_id\"])\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\services\\api\\tests\\test_socai2_alert_basic_executor.py\", line 60, in rows\n    async with service.transaction(tenant, readonly=True) as store:\n  File \"C:\\Users\\lychee\\.conda\\envs\\python312\\Lib\\contextlib.py\", line 210, in __aenter__\n    return await anext(self.gen)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\services\\api\\app\\socai2\\baseline_service.py\", line 24, in transaction\n    await db.execute(text(\"SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY\"))\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\ext\\asyncio\\session.py\", line 448, in execute\n    result = await greenlet_spawn(\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\util\\_concurrency_py3k.py\", line 203, in greenlet_spawn\n    result = context.switch(value)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\orm\\session.py\", line 2373, in execute\n    return self._execute_internal(\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\orm\\session.py\", line 2280, in _execute_internal\n    result = conn.execute(\n             ^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 1421, in execute\n    return meth(\n           ^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\sql\\elements.py\", line 526, in _execute_on_connection\n    return connection._execute_clauseelement(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 1643, in _execute_clauseelement\n    ret = self._execute_context(\n          ^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 1848, in _execute_context\n    return self._exec_single_context(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 1988, in _exec_single_context\n    self._handle_dbapi_exception(\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 2368, in _handle_dbapi_exception\n    raise exc_info[1].with_traceback(exc_info[2])\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\base.py\", line 1969, in _exec_single_context\n    self.dialect.do_execute(\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\engine\\default.py\", line 952, in do_execute\n    cursor.execute(statement, parameters)\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\dialects\\postgresql\\asyncpg.py\", line 585, in execute\n    self._adapt_connection.await_(\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\util\\_concurrency_py3k.py\", line 132, in await_only\n    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\util\\_concurrency_py3k.py\", line 196, in greenlet_spawn\n    value = await result\n            ^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\sqlalchemy\\dialects\\postgresql\\asyncpg.py\", line 550, in _prepare_and_execute\n    self._rows = deque(await prepared_stmt.fetch(*parameters))\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\asyncpg\\prepared_stmt.py\", line 177, in fetch\n    data = await self.__bind_execute(args, 0, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\asyncpg\\prepared_stmt.py\", line 268, in __bind_execute\n    data, status, _ = await self.__do_execute(\n                      ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\aisoc\\socai2\\.venv\\Lib\\site-packages\\asyncpg\\prepared_stmt.py\", line 257, in __do_execute\n    return await executor(protocol)\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"asyncpg/protocol/protocol.pyx\", line 205, in bind_execute\nasyncio.exceptions.CancelledError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"E:\\aisoc\\socai2\\services\\api\\tests\\test_socai2_alert_basic_executor.py\", line 303, in run_checks\n    detail = await asyncio.wait_for(check(), 45)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\lychee\\.conda\\envs\\python312\\Lib\\asyncio\\tasks.py\", line 519, in wait_for\n    async with timeouts.timeout(timeout):\n  File \"C:\\Users\\lychee\\.conda\\envs\\python312\\Lib\\asyncio\\timeouts.py\", line 115, in __aexit__\n    raise TimeoutError from exc_val\nTimeoutError\n"
+    },
+    {
+      "name": "test_alert_unknown_transport_is_not_retried",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_request_commit_before_dispatch",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_publication_rollback_keeps_response",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "test_alert_model_disabled_and_view_omissions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "restricted_test_role_and_tunnel_removed",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "hashes": {
+    "services\\api\\app\\socai2\\baseline_contracts.py": "506a64cab9927c85ff960363090226ed5d7e41cc064893e00b3ec29f7701e75b",
+    "services\\api\\app\\socai2\\baseline_store.py": "76508f06c5683c0f9319c2643a93f90dc5539315954ea12edac85e68994fcec6",
+    "services\\api\\app\\socai2\\baseline_service.py": "57971b8f9b42482b32569c8451229b546920f75be6f685a9d312f513ae5bc063",
+    "services\\api\\tests\\test_socai2_baseline_storage.py": "164acc7644ab4cea833b9a59119e34e88ebd76a947ec9432c8aacccd0efbb8b0",
+    "services\\api\\migrations\\123_socai2_page_data_model.sql": "ceb9a68012f84d6558cd0f75aa67b4047ae6245e1be64e79dd9b86587b8579da",
+    "docs\\operations\\verify_socai2_store_20261103.py": "467bac07102b105f95c562fb8438ed2b18434eb0b9c7314a8fd53da3ae2206a7",
+    "services\\api\\app\\socai2\\baseline_context.py": "bba5d05840df79491bf13dfa75ddf75494f23d51e7664ef415d326ec79fb4c7b",
+    "services\\api\\app\\socai2\\baseline_context.schema.json": "cc532df35af16b31b14efe29eaa09e4814871dfc65090a33a2c18adf0801233e",
+    "services\\api\\app\\socai2\\alert_basic_contract.py": "83440a442fc6063f7b47f55d8f6b37fca2b845af5bfc6f6dc9b808adc8a3febc",
+    "services\\api\\app\\socai2\\alert_basic_executor.py": "13c99353f5ca8c11330c207d65ddf8a64d8a4df6aafee65abb2ab302a0ccbc20",
+    "services\\api\\app\\socai2\\stage_results.py": "eeb72af145649540d54b6e2543d671dbd0d3e6a97445307941eaac535e9fc4cd",
+    "services\\api\\app\\socai2\\stage_result_contracts.py": "053d6d2a896cc6f6f40189bf292504e4ce1de5d8085d2bba2a22566177e48b18",
+    "services\\api\\app\\socai2\\stage_inputs.py": "3f6e57c7898eb6443e18639ac572f9e02fb9388260f5d5c11aa15d3c415c5636",
+    "services\\api\\app\\socai2\\baseline_enrichment_sources.py": "fa97ca7a348ed6118e02db01053d2d7550c14e4142c8415c33e7bc412d6fe0c3",
+    "services\\api\\app\\socai2\\baseline_analysis_model.py": "396875add7f277c06772596795946b26744ba1316ccc3ddc1b33ca075d94f54d",
+    "services\\api\\app\\socai2\\baseline_model_view.py": "b4f551b3357dcb1a6f6501080f80a51ef56e9b89ae8214df5cf19a868515f023",
+    "services\\api\\tests\\test_socai2_alert_basic_executor.py": "94d11b7152e5dad733560648523a91c3dcb8009733fdbf6cc69858c0cb618403"
+  }
+}

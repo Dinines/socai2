@@ -1,0 +1,43 @@
+.F......................                                                 [100%]
+================================== FAILURES ===================================
+_ test_no_objects_does_not_fabricate_ownership_or_block_object_free_followup __
+
+    def test_no_objects_does_not_fabricate_ownership_or_block_object_free_followup():
+        packet, answer = frozen()
+        context = Context.model_validate(packet["context"])
+        for alert in context.alerts.values():
+>           alert.objects = []
+            ^^^^^^^^^^^^^
+
+services\api\tests\test_socai2_followup_scope.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\pydantic\main.py:1111: in __setattr__
+    elif (setattr_handler := self._setattr_handler(name, value)) is not None:
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\pydantic\main.py:1147: in _setattr_handler
+    _check_frozen(cls, name, value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model_cls = <class 'app.socai2.baseline_context.AlertInput'>, name = 'objects'
+value = []
+
+    def _check_frozen(model_cls: type[BaseModel], name: str, value: Any) -> None:
+        if model_cls.model_config.get('frozen'):
+            error_type = 'frozen_instance'
+        elif getattr(model_cls.__pydantic_fields__.get(name), 'frozen', False):
+            error_type = 'frozen_field'
+        else:
+            return
+    
+>       raise ValidationError.from_exception_data(
+            model_cls.__name__, [{'type': error_type, 'loc': (name,), 'input': value}]
+        )
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for AlertInput
+E       objects
+E         Instance is frozen [type=frozen_instance, input_value=[], input_type=list]
+E           For further information visit https://errors.pydantic.dev/2.14/v/frozen_instance
+
+.venv\Lib\site-packages\pydantic\main.py:104: ValidationError
+=========================== short test summary info ===========================
+FAILED services\api\tests\test_socai2_followup_scope.py::test_no_objects_does_not_fabricate_ownership_or_block_object_free_followup
+1 failed, 23 passed in 1.44s

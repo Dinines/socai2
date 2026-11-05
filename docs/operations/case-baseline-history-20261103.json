@@ -1,0 +1,221 @@
+{
+  "schema": "case-baseline-history.local.v1",
+  "date": "2026-11-03",
+  "backend_baseline": "39f4033663bf478c7a8e8af2adb8333b45a6eb41",
+  "branch": "codex/case-baseline-history-20261103",
+  "scope": "Real pending baseline execution rows, atomic claim before first execution step, one active baseline per Case; manual start only. No UI change.",
+  "user_decisions": {
+    "coalesce_unstarted": true,
+    "freeze_after_claim": true,
+    "one_active_baseline": true,
+    "manual_start": true,
+    "no_periodic_claim": true,
+    "no_automatic_successor": true,
+    "no_ui_changes": true
+  },
+  "validation": {
+    "unique_tests": 78,
+    "latest_passed": 53,
+    "latest_skipped": 25,
+    "existing_subtests_passed": 16,
+    "new_api_tests": 11,
+    "new_postgres_tests": 7,
+    "new_postgres_executed": 0,
+    "existing_database_tests_skipped": 18,
+    "first_attempt": "38 passed, 2 failed, 6 skipped. New fake misinterpreted active query id != current Run; fixed only fake.",
+    "second_attempt": "20 passed, 18 skipped; 7 passing methods repeated, 2 original failures fixed. Union then 51 passed.",
+    "claim_order_attempt": "2 passed, 7 skipped; verifies commit-running before executor and no executor if commit fails.",
+    "python_ast_files": 12,
+    "ruff_existing_diagnostics": 10,
+    "ruff_new_diagnostics": 0,
+    "sql_parser_limit": "Top-level SQL only. PL/pgSQL functions parsed as opaque Command; not trigger syntax or PostgreSQL validation."
+  },
+  "pending_validation": [
+    "Migration 122 on PostgreSQL",
+    "7 real PostgreSQL transaction tests",
+    "Full schema/RLS/permissions and service integration"
+  ],
+  "real_actions": {
+    "migration_applied": false,
+    "deployed": false,
+    "business_database_calls": 0,
+    "business_runs": 0,
+    "model_calls": 0,
+    "lake_calls": 0,
+    "commit": false,
+    "push": false
+  },
+  "test_capture_1": {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "d36c60",
+      "wall_time_seconds": 9.4762,
+      "exit_code": 1,
+      "original_token_count": 412,
+      "output": ".......FFssssss...............................           [100%]\r\n================================== FAILURES ===================================\r\n_ BaselineAPIExamples.test_started_record_rejects_different_start_parameters __\r\n\r\nself = <test_case_baseline_api.BaselineAPIExamples testMethod=test_started_record_rejects_different_start_parameters>\r\n\r\n    async def test_started_record_rejects_different_start_parameters(self):\r\n        self.pending()\r\n>       self.assertEqual((await self.start_baseline()).status_code, 200)\r\nE       AssertionError: 409 != 200\r\n\r\ntests\\test_case_baseline_api.py:93: AssertionError\r\n_ BaselineAPIExamples.test_starts_existing_identity_and_repeat_reads_same_execution _\r\n\r\nself = <test_case_baseline_api.BaselineAPIExamples testMethod=test_starts_existing_identity_and_repeat_reads_same_execution>\r\n\r\n    async def test_starts_existing_identity_and_repeat_reads_same_execution(self):\r\n        run = self.pending()\r\n        original_baseline = dict(run.raw_alert[\"baseline\"])\r\n        response = await self.start_baseline()\r\n>       self.assertEqual(response.status_code, 200, response.text)\r\nE       AssertionError: 409 != 200 : {\"detail\":\"case_investigation_already_active\"}\r\n\r\ntests\\test_case_baseline_api.py:76: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_case_baseline_api.py::BaselineAPIExamples::test_started_record_rejects_different_start_parameters\r\nFAILED tests/test_case_baseline_api.py::BaselineAPIExamples::test_starts_existing_identity_and_repeat_reads_same_execution\r\n2 failed, 38 passed, 6 skipped, 16 subtests passed in 6.40s\r\n"
+    }
+  },
+  "test_capture_2": {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "1a3093",
+      "wall_time_seconds": 4.4240727,
+      "exit_code": 0,
+      "original_token_count": 29,
+      "output": "....................ssssssssssssssssss                                   [100%]\r\n20 passed, 18 skipped in 2.50s\r\n"
+    }
+  },
+  "claim_order_capture": {
+    "chunk_id": "3506e4",
+    "wall_time_seconds": 3.3415071,
+    "exit_code": 0,
+    "original_token_count": 28,
+    "output": "..sssssss                                                                [100%]\r\n2 passed, 7 skipped in 1.52s\r\n"
+  },
+  "lint_comparison_capture": {
+    "chunk_id": "e79b29",
+    "wall_time_seconds": 0.4950227,
+    "exit_code": 0,
+    "original_token_count": 26,
+    "output": "{\"baseline_diagnostics\": 10, \"current_diagnostics\": 10, \"new_diagnostics\": [], \"python_ast_files\": 12}\r\n"
+  },
+  "static_initial_capture": {
+    "status": "fulfilled",
+    "value": {
+      "chunk_id": "cc7bc4",
+      "wall_time_seconds": 0.4075635,
+      "exit_code": 0,
+      "original_token_count": 126,
+      "output": "'CREATE OR REPLACE FUNCTION maintain_case_pending_baseline()\r\nRETURNS trigger LANGUAGE plpgsql SET sea' contains unsupported syntax. Falling back to parsing as a 'Command'.\r\n'CREATE OR REPLACE FUNCTION freeze_started_baseline_scope()\r\nRETURNS trigger LANGUAGE plpgsql SET sear' contains unsupported syntax. Falling back to parsing as a 'Command'.\r\n{\"statements\": 11, \"types\": [\"Alter\", \"Alter\", \"Alter\", \"Alter\", \"Create\", \"Command\", \"Drop\", \"Create\", \"Command\", \"Drop\", \"Create\"]}\r\nPython AST parsed\r\n"
+    }
+  },
+  "file_audit": {
+    "files": [
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/api/v1/endpoints/investigations.py",
+        "sha256": "e4c59d8204215ae0f5888f2e98cf1e40bd5723287fa5bc7d2bdb0c630082c5d2",
+        "size": 45628
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/case_analysis.py",
+        "sha256": "7407a06819d9305255119af09a7d6ed9409797c93ef060ead51b9e6e56d87d07",
+        "size": 55971
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/case_analysis_api.py",
+        "sha256": "b448a3ca5548a508750dd1d50fe3109e25fafcd41d8b6b7ba6ddbd20af5fd87f",
+        "size": 6547
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/case_history.py",
+        "sha256": "0c1440bdc8f371d4655c372be9f927bc99b98f235d50d2cc8bb6c4257b3ef152",
+        "size": 2402
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/execution_index.py",
+        "sha256": "2aa77708df0d91e383b2858caec2611df8a1fab72cbc709550358e440c24518a",
+        "size": 7599
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/related_investigations.py",
+        "sha256": "070f2852d98ff4a281b0e271b6cf79c0f412e8b1fe0faa9a60308b2f300c08ae",
+        "size": 5073
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/models/investigation.py",
+        "sha256": "19a417d916b399fd0813b075b44ce46842055c7f96fe81b6b082f0071fc4e60c",
+        "size": 7602
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/services/case_depth.py",
+        "sha256": "304e776b61366274bda1b2d74116338748e8785bbd0008bfbed5876dc0222dbb",
+        "size": 23648
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/tests/test_case_links_api.py",
+        "sha256": "5c17ac7f1c78aade4af8c9d7e69cf88bbbc24c9697db809f5597eea70fe6cf71",
+        "size": 13538
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/case_baseline.py",
+        "sha256": "f995f2695fd1f6b01a8c80ddb224a5f36d9faba503095ce36ac70d1b47101e54",
+        "size": 1011
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/tests/test_case_baseline_api.py",
+        "sha256": "35aa7b85758c5f79031e99310095b9d9977432c3b5e53c18048b9bac2b7fafe9",
+        "size": 10148
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/tests/test_case_baseline_postgres.py",
+        "sha256": "3a1b291ca2dca315b5f318bc6117ab1a804532526a1a740c28087d82c47e4d8e",
+        "size": 9550
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/migrations/122_case_baseline_pending.sql",
+        "sha256": "3bf5c4d0414f80b7794719e067eb5d7e2b3141445c4df630aba359de6663a04c",
+        "size": 5911
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/AGENTS.md",
+        "sha256": "49429baf2dbd2cee6089499da28b589c841b5a1db8150f4e6cb0206ee9cc8fae",
+        "size": 178206
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/PROGRESS.md",
+        "sha256": "b418bcdb37e9d6820fbd494fbfbf71a24f9b21a223abf72a09ade0028331ae04",
+        "size": 128541
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/services/api/app/investigation_v2/README.md",
+        "sha256": "b899c789f4f885c650faa685c60d7c9006bcba3e7183b991575280ebfbff71ed",
+        "size": 5370
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103/docs/investigation/baseline-execution-record-20261103.md",
+        "sha256": "71dfbbc54be241d39ca1955971349d00fc858994f64913f485af14e633af33b1",
+        "size": 9173
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/functional-alignment-20261103/AGENTS.md",
+        "sha256": "1c3b3f59a084a8daa92b4660f27a448bcb274e3b1188b719c145d16044acc677",
+        "size": 119772
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/functional-alignment-20261103/PROGRESS.md",
+        "sha256": "fac0037bec282f042c49ad33ef2d4cb0295bac1c3b506ceb72b3a6d4d71dfd09",
+        "size": 144960
+      },
+      {
+        "path": "E:/aisoc/socai2/.local/worktrees/functional-alignment-20261103/docs/design/baseline-execution-handoff-20261103.md",
+        "sha256": "6300e89a1f3b34b99bb9f1bc4fd1b8b27de05862d96b34761a7211f2957bc815",
+        "size": 4447
+      }
+    ],
+    "diff_check_code": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "diff_check_design": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "main_status": {
+      "exit_code": 0,
+      "output": "?? START_HERE.md\n?? START_HERE.x86_64.md\n?? ding/\n?? inv-review.md\n"
+    },
+    "code_status": {
+      "exit_code": 0,
+      "output": " M AGENTS.md\n M PROGRESS.md\n M services/api/app/api/v1/endpoints/investigations.py\n M services/api/app/investigation_v2/README.md\n M services/api/app/investigation_v2/case_analysis.py\n M services/api/app/investigation_v2/case_analysis_api.py\n M services/api/app/investigation_v2/case_history.py\n M services/api/app/investigation_v2/execution_index.py\n M services/api/app/investigation_v2/related_investigations.py\n M services/api/app/models/investigation.py\n M services/api/app/services/case_depth.py\n M services/api/tests/test_case_links_api.py\n?? docs/investigation/baseline-execution-record-20261103.md\n?? services/api/app/investigation_v2/case_baseline.py\n?? services/api/migrations/122_case_baseline_pending.sql\n?? services/api/tests/test_case_baseline_api.py\n?? services/api/tests/test_case_baseline_postgres.py\n"
+    },
+    "design_status": {
+      "exit_code": 0,
+      "output": " M AGENTS.md\n M PROGRESS.md\n?? docs/design/baseline-execution-handoff-20261103.md\n?? docs/design/investigation-data-schema-plan-20261103.md\n?? docs/design/investigation-flow-alignment-20261103.md\n?? docs/design/investigation-gap-assessment-20261103.md\n?? docs/design/investigation-schema-preflight-20261103.sql\n?? docs/operations/investigation-data-schema-plan-20261103.json\n?? docs/operations/investigation-gap-assessment-20261103.json\n"
+    }
+  },
+  "notes": [
+    "Captured tool text is preserved in this receipt; no new evidence subdirectory could be created under the worktree (filesystem access denied).",
+    "Main tracked workspace remains unchanged. Design worktree changes are documentation only.",
+    "Existing reports and prior receipts remain unchanged; r13 not retried."
+  ]
+}

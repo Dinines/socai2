@@ -80,7 +80,7 @@ class RunSummary(BaseModel):
     estimated_cost_usd: float = 0.0
     estimated_call_count: int = 0
     unpriced_call_count: int = 0
-    started_at: datetime
+    started_at: datetime | None
     completed_at: datetime | None
     error: str | None
 

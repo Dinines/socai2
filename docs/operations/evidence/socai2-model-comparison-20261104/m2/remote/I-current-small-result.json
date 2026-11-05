@@ -1,0 +1,51 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "chatcmpl-bf3ea6556fc43029",
+    "created": 1793800564,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"summary\": \"事件汇聚包含两个关联告警：N1 (PowerShell 进程启动) 与 N2 (出站网络连接)。两者时间接近 (15 秒间隔)，共享源主机 'next-validation-host' 及用户 'synthetic-operator'。N1 显示执行本地脚本 'C:/Lab/inventory.ps1'，N2 显示连接外部域名 'inventory.example.invalid'。现有分诊均判定为 'needs_review'，理由充分：数据源明确为 'SyntheticLab' 合成验证数据，无法据此证明恶意或授权；且缺乏进程与流量的直接关联证据（如命令行参数、TLS SNI、授权记录），查空资产/威胁情报不构成反证。\",\n  \"conclusion\": \"待核 (needs_review)。需核实合成演练的具体授权范围、脚本实际功能及流量是否由该进程发起。\",\n  \"evidence_ids\": [\n    \"N1_S21\",\n    \"N1_S22\",\n    \"N1_S31\",\n    \"N1_S32\",\n    \"N1_S11\",\n    \"N1_S13\",\n    \"N1_S5\",\n    \"N1_S14\",\n    \"N1_S24\",\n    \"N1_S25\",\n    \"N1_S19\",\n    \"N1_S20\"\n  ],\n  \"members\": [\n    {\n      \"alert_id\": \"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\n      \"state\": \"summarized\",\n      \"assessment\": \"待核。SyntheticLab 合成数据，无法证明恶意或授权。进程由 cmd.exe 启动执行本地脚本，无直接证据表明该脚本发起后续外联。\",\n      \"source_ids\": [\"N1_S19\", \"N1_S24\", \"N1_S21\", \"N1_S30\", \"N1_S33\", \"N1_S11\", \"N1_S13\", \"N1_S5\", \"N1_S7\", \"N1_S9\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证\", \"资产查询无命中\", \"威胁情报被跳过\"]\n    },\n    {\n      \"alert_id\": \"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\n      \"state\": \"summarized\",\n      \"assessment\": \"待核。SyntheticLab 合成数据，无法证明恶意或授权。记录 TCP 443 出站连接，但缺乏进程关联、流量内容（SNI/Cookie）及授权证明。历史查询仅见同主机 PowerShell 告警，不能证明因果。\",\n      \"source_ids\": [\"N1_S20\", \"N1_S25\", \"N1_S22\", \"N1_S29\", \"N1_S14\", \"N1_S2\", \"N1_S4\", \"N1_S6\", \"N1_S8\", \"N1_S10\", \"N1_S12\", \"N1_S14\", \"N1_S16\", \"N1_S18\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证\", \"资产与威胁情报查空\", \"缺少进程/命令行/授权信息\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"statement\": \"数据源性质存疑：所有可见证据均源自 'SyntheticLab'，明确标识为合成验证数据。厂商自述、标题及描述不能单独证明行为良性或已获授权，也不能排除恶意。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"N1_S24\", \"N1_S25\", \"N1_S19\", \"N1_S20\"]\n    ,\n    \"limitations\": [\"合成数据无法直接映射真实环境授权状态\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"statement\": \"进程与流量关联缺失：N1 记录 PowerShell 执行本地脚本，N2 记录出站连接。现有数据未提供命令行参数、进程 PID 与连接源端口的映射、或 TLS SNI 信息，无法证明 N2 的流量由 N1 的进程发起。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"N1_S5\", \"N1_S7\", \"N1_S10\", \"N1_S12\", \"N1_S14\", \"N1_S16\"]\n    ,\n    \"limitations\": [\"端口 443 不等于 HTTPS/TLS 应用层协议\", \"无 SNI 字段\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"statement\": \"反证不足：资产查询返回 0 行、威胁情报被跳过、历史查询仅命中一条合成记录。这些‘查空’结果不构成对告警描述不成立或行为恶意的反证。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"N1_S19\", \"N1_S20\", \"N1_S14\"]\n    ,\n    \"limitations\": [\"查空不等于不存在\"]\n    },\n    {\n      \"id\": \"F4\",\n      \"statement\": \"分诊一致性：两个告警的已有分诊均判定为 'needs_review'，理由均为数据源为合成且缺乏授权/恶意证据。判定与理由逻辑一致，无冲突。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"N1_S19\", \"N1_S20\"]\n    ,\n    \"limitations\": [\"需人工介入确认合成演练上下文\"]\n    }\n  ],\n  \"open_questions\": [\n    {\n      \"text\": \"SyntheticLab 合成演练的具体授权范围是什么？该 'inventory.ps1' 脚本是否为演练预设的合法操作？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"]\n    ,\n    \"source_ids\": [\"N1_S24\", \"N1_S25\", \"N1_S19\", \"N1_S20\"]\n    ,\n    \"evidence_requirements\": [\"演练任务书\", \"授权审批记录\"]\n    },\n    {\n      \"text\": \"N2 的出站连接是否确实由 N1 的 PowerShell 进程发起？是否存在其他进程在同一时间发起连接？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"]\n    ,\n    \"source_ids\": [\"N1_S5\", \"N1_S10\", \"N1_S16\"]\n    ,\n    \"evidence_requirements\": [\"进程 - 网络连接关联日志\", \"TLS SNI 字段\"]\n    },\n    {\n      \"text\": \"目标域名 'inventory.example.invalid' 在演练环境中的预期用途是什么？\",\n      \"alert_ids\": [\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"]\n    ,\n    \"source_ids\": [\"N1_S4\", \"N1_S25\"]\n    ,\n    \"evidence_requirements\": [\"演练拓扑图\", \"域名解析记录\"]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"仅基于提供的结构化字段进行分析，未运行完整 Case 调查\",\n    \"SyntheticLab 标签限制了基于真实资产状态的推断\",\n    \"缺乏应用层协议细节（SNI, Content-Type）\",\n    \"查空的资产/威胁情报查询不构成反证\"\n  ]\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "reasoning": null,
+            "refusal": null
+          }
+        },
+        "provider_specific_fields": {
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 2128,
+      "prompt_tokens": 2842,
+      "total_tokens": 4970,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 2842,
+    "output_tokens": 2128,
+    "total_tokens": 4970,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-bf3ea6556fc43029"
+  },
+  "elapsed_seconds": 42.229
+}

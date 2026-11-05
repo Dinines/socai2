@@ -1,0 +1,218 @@
+{
+  "batch": "m4-schema-only-corrected",
+  "plan": {
+    "max_calls": 1,
+    "retries": 0,
+    "business_materials": false,
+    "model": "deepseek-flash",
+    "max_output_tokens_each": 512,
+    "purpose": "verify corrected typed anyOf branch, no investigation-quality claim"
+  },
+  "cells": [
+    {
+      "id": "typed-anyof",
+      "backend": "deepseek",
+      "body": {
+        "model": "deepseek-flash",
+        "input": [
+          {
+            "role": "system",
+            "content": "Return exactly the JSON supplied by the user. This is an output schema compatibility probe, not an investigation."
+          },
+          {
+            "role": "user",
+            "content": "{\"verdict\":\"needs_review\",\"confidence\":null,\"rationale\":\"Schema probe only.\",\"explanation\":\"No event data supplied.\",\"evidence_ids\":[\"N1_S1\"],\"recommendations\":[],\"limitations\":[\"Not an investigation.\"],\"decision_basis\":null}"
+          }
+        ],
+        "text": {
+          "format": {
+            "type": "json_schema",
+            "name": "socai2_answer",
+            "strict": true,
+            "schema": {
+              "$defs": {
+                "Advice": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "reason": {
+                      "$ref": "#/$defs/CompactString0"
+                    },
+                    "source_ids": {
+                      "items": {
+                        "$ref": "#/$defs/SourceId"
+                      },
+                      "maxItems": 30,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "reason",
+                    "source_ids"
+                  ],
+                  "type": "object"
+                },
+                "DecisionBasis": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "malicious_behavior",
+                        "authorized_or_expected_behavior",
+                        "refuted_detection"
+                      ],
+                      "type": "string"
+                    },
+                    "claim": {
+                      "$ref": "#/$defs/CompactString0"
+                    },
+                    "source_ids": {
+                      "items": {
+                        "$ref": "#/$defs/SourceId"
+                      },
+                      "maxItems": 30,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "claim",
+                    "source_ids"
+                  ],
+                  "type": "object"
+                },
+                "SourceId": {
+                  "type": "string",
+                  "enum": [
+                    "N1_S1"
+                  ]
+                },
+                "CompactString0": {
+                  "maxLength": 4000,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "properties": {
+                "verdict": {
+                  "enum": [
+                    "true_positive",
+                    "false_positive",
+                    "benign",
+                    "needs_review"
+                  ],
+                  "type": "string"
+                },
+                "confidence": {
+                  "anyOf": [
+                    {
+                      "maximum": 1,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rationale": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "explanation": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "evidence_ids": {
+                  "items": {
+                    "$ref": "#/$defs/SourceId"
+                  },
+                  "maxItems": 60,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "recommendations": {
+                  "items": {
+                    "$ref": "#/$defs/Advice"
+                  },
+                  "maxItems": 5,
+                  "type": "array"
+                },
+                "limitations": {
+                  "items": {
+                    "$ref": "#/$defs/CompactString0"
+                  },
+                  "maxItems": 20,
+                  "type": "array"
+                },
+                "decision_basis": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "malicious_behavior",
+                            "authorized_or_expected_behavior",
+                            "refuted_detection"
+                          ],
+                          "type": "string"
+                        },
+                        "claim": {
+                          "$ref": "#/$defs/CompactString0"
+                        },
+                        "source_ids": {
+                          "items": {
+                            "$ref": "#/$defs/SourceId"
+                          },
+                          "maxItems": 30,
+                          "minItems": 1,
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "claim",
+                        "source_ids"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "verdict",
+                "confidence",
+                "rationale",
+                "explanation",
+                "evidence_ids",
+                "recommendations",
+                "limitations",
+                "decision_basis"
+              ],
+              "type": "object"
+            }
+          }
+        },
+        "max_output_tokens": 512,
+        "temperature": 0,
+        "reasoning": {
+          "effort": "none"
+        },
+        "stream": false,
+        "store": false
+      },
+      "body_sha256": "b0b0e2fc60fb3944c0493c411707b8f5ff9b59772a8cbaf33a8147eefd4a5a62"
+    }
+  ],
+  "error_helper": "\"\"\"Bounded provider diagnostics, never request bodies, URLs or credentials.\"\"\"\nimport json\nimport re\n\nimport httpx\n\nMAX_ERROR_BODY = 16384\nFIELD_LIMITS = {\"code\": 128, \"type\": 128, \"param\": 256, \"message\": 1024}\n\n\ndef provider_error(exc, api_key):\n    response = exc.response if isinstance(exc, httpx.HTTPStatusError) else None\n    result = {\"exception_type\": type(exc).__name__,\n        \"http_status\": response.status_code if response is not None else None,\n        \"body_state\": \"unavailable\", \"fields\": {}, \"truncated_fields\": [], \"redacted_fields\": []}\n    if response is None:\n        return result\n    try:\n        body = response.content\n    except httpx.ResponseNotRead:\n        return result\n    if len(body) > MAX_ERROR_BODY:\n        result[\"body_state\"] = \"oversize_omitted\"\n        return result\n    try:\n        data = json.loads(body)\n    except (ValueError, UnicodeError, RecursionError):\n        result[\"body_state\"] = \"non_json_omitted\"\n        return result\n    data = data.get(\"error\", data) if isinstance(data, dict) else None\n    if isinstance(data, str):\n        data = {\"message\": data}\n    if not isinstance(data, dict):\n        result[\"body_state\"] = \"unsupported_shape_omitted\"\n        return result\n    result[\"body_state\"] = \"selected_json_fields\"\n    for key, limit in FIELD_LIMITS.items():\n        value = data.get(key)\n        if not isinstance(value, str):\n            continue\n        original = value\n        # Redact before limiting so a cut cannot expose a token prefix.\n        if api_key:\n            value = value.replace(api_key, \"[redacted]\")\n        value = re.sub(r\"(?i)https?://[^\\s<>\\\"']+\", \"[url omitted]\", value)\n        value = re.sub(r\"(?i)\\b(bearer|basic)\\s+[^\\s,;\\\"']+\", r\"\\1 [redacted]\", value)\n        value = re.sub(r\"(?i)\\bsk-[a-z0-9_-]+\", \"[redacted]\", value)\n        value = re.sub(r\"(?i)(\\b(?:api[-_]?key|token|password|secret|authorization)\\b\\s*[:=]\\s*)[^\\s,;]+\",\n                       r\"\\1[redacted]\", value)\n        value = \"\".join(c for c in value if c in \"\\n\\t\" or ord(c) >= 32)\n        if value != original:\n            result[\"redacted_fields\"].append(key)\n        raw = value.encode(\"utf-8\", errors=\"replace\")\n        value = raw.decode(\"utf-8\")\n        if len(raw) > limit:\n            result[\"truncated_fields\"].append(key)\n            value = raw[:limit].decode(\"utf-8\", errors=\"ignore\")\n        result[\"fields\"][key] = value\n    return result\n\n\nclass ModelCallError(RuntimeError):\n    \"\"\"The call did not yield a model answer; consumption may still be unknown.\"\"\"\n\n    def __init__(self, details):\n        super().__init__(\"model_transport_error\")\n        self.details = details\n\n    def payload(self):\n        # This is a local receipt, not an invented/raw provider response.\n        return {\"raw\": None, \"validation_error\": \"model_transport_error\", \"transport_error\": self.details}\n",
+  "packets": [],
+  "source_m3_packet_sha256": "26e19809e894607aff074f688f55d51b5aad3a8c431dfd1ea4c3301bd844886f",
+  "code_hashes": {
+    "services/api/app/socai2/model_protocol.py": "0c5baf503dc584bfcd55cdaaca122baf14f57f00ea5d71fa66d3437a9579eb76",
+    "services/api/app/socai2/model_errors.py": "d814f279ed9f873a8d92e313832ae404d2bd70707e9c3433a64ef0cf4a7a1083"
+  }
+}

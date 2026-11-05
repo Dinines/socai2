@@ -1,0 +1,283 @@
+{
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "21e7edf5-4216-5534-8b05-6e733275a178",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-05T00:11:59.758053Z",
+      "requested_by": "22155cc9-c340-59ba-99ff-b4d811837626",
+      "started_at": "2026-11-05T00:11:59.758053Z",
+      "ended_at": "2026-11-05T00:12:11.326573Z",
+      "executor_version": "socai2.alert-basic-executor.v3",
+      "input_artifact_id": "32992c4d-30fc-4535-a959-d1e5c2ac3ca3",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "partial"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "d9881593-2cb6-532e-9a24-b027b2010687",
+      "input_material_id": "d17e6163-8874-5602-bde4-9b60fd116002",
+      "source_run_id": "21e7edf5-4216-5534-8b05-6e733275a178",
+      "verdict": "needs_review",
+      "rationale": "Evidence is insufficient to confirm malicious intent or authorized status. The process `powershell.exe` running `-File` is flagged by a generic 'Process command observed' rule with low confidence. While the command line `C:/Ops/inventory.ps1` suggests a legitimate inventory task, there is no explicit authorization evidence (e.g., approved script list, user role confirmation) nor refutation of the alert. The lack of threat intel matches and low ML anomaly scores do not prove benignity. Per instructions, absence of proof does not constitute a counter-argument.",
+      "confidence": 0.65,
+      "score_state": "available",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "Verify if user 'operator-2' is authorized to execute scripts in the 'C:/Ops' directory.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "Confirm if 'inventory.ps1' is a known, approved script in the organization's inventory.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R3",
+          "reason": "Check if this activity aligns with standard operational procedures for the user's role.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v3",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v3",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-05T00:12:11.326573Z"
+    },
+    "explanation": {
+      "artifact_id": "9a27168f-cc6b-5769-a027-3ca7f545317d",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "The alert indicates `powershell.exe` was executed by user `operator-2` on host `k2-endpoint-5` to run a script named `inventory.ps1`. The action `process_start` succeeded. However, the detection is a generic observation of a command execution without specific context proving it is either a known threat or an explicitly authorized routine. The script name implies a business function, but without verification of the user's permissions or the script's legitimacy, the behavior remains unclassified.",
+        "limitations": [
+          "No explicit authorization evidence provided in the input.",
+          "No refutation of the alert's validity.",
+          "Threat intelligence query returned no results, which does not prove safety.",
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:skipped:no_supported_frozen_objects"
+        ],
+        "source_refs": [
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.name"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "32992c4d-30fc-4535-a959-d1e5c2ac3ca3",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.members.0.alert"
+          },
+          {
+            "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.detection"
+          }
+        ],
+        "generated_at": "2026-11-05T00:12:11.326573+00:00",
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "Verify if user 'operator-2' is authorized to execute scripts in the 'C:/Ops' directory.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.actor.user.name"
+              },
+              {
+                "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.process.cmd_line"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "Confirm if 'inventory.ps1' is a known, approved script in the organization's inventory.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.process.cmd_line"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R3",
+            "reason": "Check if this activity aligns with standard operational procedures for the user's role.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.actor.user.name"
+              },
+              {
+                "id": "d17e6163-8874-5602-bde4-9b60fd116002",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.device.name"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "model"
+      }
+    }
+  }
+}

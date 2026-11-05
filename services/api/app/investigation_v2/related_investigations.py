@@ -6,6 +6,7 @@ from uuid import UUID
 from app.models.case import Case
 from app.models.investigation import InvestigationArtifact, InvestigationRun
 from .case_analysis import PROFILE, analysis_urls
+from .case_baseline import history_time
 from .pagination import decode_cursor, encode_cursor
 
 
@@ -22,6 +23,9 @@ async def read_related(db, tenant_id, member_ids, *, subject, limit=20, cursor=N
                selected.has_any(array(ids, type_=Text)))
     content = cast(artifact.content, JSONB)
     query = select(run.id.label("run_id"), run.case_id, run.status, run.started_at, run.completed_at,
+        history_time().label("history_at"), run.created_at.label("requested_at"),
+        run.investigation_kind, run.scope_revision, run.scope_updated_at,
+        run.raw_alert["baseline"].label("baseline"),
         run.raw_alert["scope"].label("scope"), run.raw_alert["previous_run_id"].astext.label("previous_run_id"),
         run.raw_alert["source_incident_ids"].label("source_incident_ids"),
         artifact.id.is_not(None).label("result_available"),
@@ -31,8 +35,8 @@ async def read_related(db, tenant_id, member_ids, *, subject, limit=20, cursor=N
     ).outerjoin(artifact, and_(artifact.run_id == run.id, artifact.tenant_id == tenant_id,
                               artifact.kind == "case_analysis_result")).where(*filters)
     if after:
-        query = query.where(tuple_(run.started_at, run.id) < after)
-    rows = (await db.execute(query.order_by(run.started_at.desc(), run.id.desc()).limit(limit + 1))).mappings().all()
+        query = query.where(tuple_(history_time(), run.id) < after)
+    rows = (await db.execute(query.order_by(history_time().desc(), run.id.desc()).limit(limit + 1))).mappings().all()
     # Coverage is across matching Runs, not just the displayed history page.
     selected_rows = select(func.jsonb_array_elements_text(selected).label("member_id")).where(*filters).subquery()
     covered = set((await db.execute(select(selected_rows.c.member_id).where(
@@ -48,10 +52,10 @@ async def read_related(db, tenant_id, member_ids, *, subject, limit=20, cursor=N
                    "matched_member_ids": sorted(set(row["scope"]["selected_member_ids"]) & set(ids)),
                    "matched_read_member_ids": sorted(set(row["scope"].get("read_member_ids", [])) & set(ids)),
                    **analysis_urls(row["case_id"], row["run_id"])} for row in rows[:limit]],
-        "next_cursor": encode_cursor(rows[limit - 1]["started_at"], rows[limit - 1]["run_id"], scope)
+        "next_cursor": encode_cursor(rows[limit - 1].get("history_at") or rows[limit - 1]["started_at"], rows[limit - 1]["run_id"], scope)
                        if len(rows) > limit else None,
         "member_ids_with_runs": sorted(covered), "member_ids_without_runs": sorted(set(ids) - covered),
-        "coverage_notice": "有Run仅表示成员被选入过调查；执行是否结束、是否有结论及缺口须查看对应Run。",
+        "coverage_notice": "有Run表示已有调查执行或待更新记录；待更新不表示已经分析，须查看实际开始、结束和结果。",
     }
 
 

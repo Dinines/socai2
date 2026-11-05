@@ -1,0 +1,50 @@
+"""Reserved Q routes. No Case lookup, execution, or persistence is connected."""
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.v1.deps import CurrentUser, require_permission
+from app.core.config import settings
+from app.socai2.case_ai_contracts import (
+    AdoptCaseAIResult,
+    AIUnavailable,
+    AskCaseAI,
+    SaveCaseAIAnswer,
+)
+
+WriteUser = Annotated[CurrentUser, Depends(require_permission("cases:write"))]
+
+
+def reserved_user(user: WriteUser) -> CurrentUser:
+    if not settings.SOCAI2_CASE_API_ENABLED:
+        raise HTTPException(503, "socai2_case_api_not_enabled")
+    if user.workload_service:
+        raise HTTPException(403, "case_user_actor_required")
+    return user
+
+
+User = Annotated[CurrentUser, Depends(reserved_user)]
+router = APIRouter(
+    prefix="/socai2/cases", tags=["socai2-case-ai-reserved"],
+    responses={403: {"description": "Case write permission and a user actor are required"},
+               503: {"description": "socai2 Case API is disabled"}},
+)
+
+
+@router.post("/{case_id}/ai/messages", status_code=501, response_model=AIUnavailable,
+             summary="Reserved: send a Case AI question (not implemented)")
+async def ask(case_id: UUID, body: AskCaseAI, user: User):
+    return AIUnavailable()
+
+
+@router.post("/{case_id}/ai/messages/{message_id}/save", status_code=501, response_model=AIUnavailable,
+             summary="Reserved: save an AI answer as an investigation result (not implemented)")
+async def save(case_id: UUID, message_id: UUID, body: SaveCaseAIAnswer, user: User):
+    return AIUnavailable()
+
+
+@router.post("/{case_id}/results/{result_id}/adopt", status_code=501, response_model=AIUnavailable,
+             summary="Reserved: explicitly adopt an AI result (not implemented)")
+async def adopt(case_id: UUID, result_id: UUID, body: AdoptCaseAIResult, user: User):
+    return AIUnavailable()

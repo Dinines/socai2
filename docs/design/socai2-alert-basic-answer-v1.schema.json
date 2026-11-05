@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "Advice": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^S[1-9][0-9]*$",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reason",
+        "source_ids"
+      ],
+      "title": "Advice",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "enum": [
+        "true_positive",
+        "false_positive",
+        "benign",
+        "needs_review"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "rationale": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "explanation": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "pattern": "^S[1-9][0-9]*$",
+        "type": "string"
+      },
+      "maxItems": 60,
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "recommendations": {
+      "items": {
+        "$ref": "#/$defs/Advice"
+      },
+      "maxItems": 5,
+      "title": "Recommendations",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "maxLength": 4000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Limitations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdict",
+    "confidence",
+    "rationale",
+    "explanation",
+    "evidence_ids",
+    "recommendations",
+    "limitations"
+  ],
+  "title": "Answer",
+  "type": "object"
+}

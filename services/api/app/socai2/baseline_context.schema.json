@@ -1,0 +1,650 @@
+{
+  "$defs": {
+    "AlertInput": {
+      "additionalProperties": false,
+      "properties": {
+        "alert": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Alert",
+          "type": "object"
+        },
+        "membership": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Membership",
+          "type": "object"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Material"
+        },
+        "source_refs": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "objects": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Objects",
+          "type": "array"
+        },
+        "triage": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Triage"
+        },
+        "feedback": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Feedback"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "triage_freshness": {
+          "default": "unverified",
+          "enum": [
+            "current",
+            "stale",
+            "unverified",
+            "unavailable"
+          ],
+          "title": "Triage Freshness",
+          "type": "string"
+        },
+        "triage_usable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Triage Usable"
+        }
+      },
+      "required": [
+        "alert",
+        "membership",
+        "material",
+        "source_refs",
+        "objects",
+        "triage",
+        "feedback",
+        "limitations"
+      ],
+      "title": "AlertInput",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "alert_material",
+            "artifact",
+            "task_revision",
+            "result"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "external": {
+          "title": "External",
+          "type": "null"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Path"
+        },
+        "row_keys": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Row Keys",
+          "type": "array"
+        },
+        "role": {
+          "enum": [
+            "observation",
+            "source_label",
+            "prior_analysis",
+            "human_statement",
+            "execution_receipt"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "external",
+        "source_path",
+        "row_keys",
+        "role"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "IncidentInput": {
+      "additionalProperties": false,
+      "properties": {
+        "incident": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Incident",
+          "type": "object"
+        },
+        "linked_from_case": {
+          "title": "Linked From Case",
+          "type": "boolean"
+        },
+        "member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Member Ids",
+          "type": "array"
+        },
+        "case_member_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Case Member Ids",
+          "type": "array"
+        },
+        "member_links": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Member Links",
+          "type": "array"
+        },
+        "diagnosis": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Diagnosis"
+        },
+        "diagnosis_usable": {
+          "title": "Diagnosis Usable",
+          "type": "boolean"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "diagnosis_freshness": {
+          "default": "unverified",
+          "enum": [
+            "current",
+            "stale",
+            "unverified",
+            "unavailable"
+          ],
+          "title": "Diagnosis Freshness",
+          "type": "string"
+        }
+      },
+      "required": [
+        "incident",
+        "linked_from_case",
+        "member_ids",
+        "case_member_ids",
+        "member_links",
+        "diagnosis",
+        "diagnosis_usable",
+        "limitations"
+      ],
+      "title": "IncidentInput",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Omission": {
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "title": "Section",
+          "type": "string"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Id"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "section",
+        "source_id",
+        "reason"
+      ],
+      "title": "Omission",
+      "type": "object"
+    },
+    "Question": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        },
+        "evidence_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Requirements",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "open",
+            "answered",
+            "unresolved",
+            "not_attempted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Answer"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "scope",
+        "evidence_requirements",
+        "state",
+        "answer",
+        "evidence_refs",
+        "limitations"
+      ],
+      "title": "Question",
+      "type": "object"
+    },
+    "Scope": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "whole_case",
+            "selected_alerts",
+            "explicit_objects"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "alert_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Alert Ids",
+          "type": "array"
+        },
+        "object_keys": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Object Keys",
+          "type": "array"
+        },
+        "window_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window Start"
+        },
+        "window_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Window End"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "alert_ids",
+        "object_keys",
+        "window_start",
+        "window_end",
+        "limitations"
+      ],
+      "title": "Scope",
+      "type": "object"
+    },
+    "TaskInput": {
+      "additionalProperties": false,
+      "properties": {
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "revision": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Revision",
+          "type": "object"
+        },
+        "usable_feedback": {
+          "title": "Usable Feedback",
+          "type": "boolean"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "task_id",
+        "revision",
+        "usable_feedback",
+        "limitations"
+      ],
+      "title": "TaskInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "socai2.baseline-context.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/Scope"
+    },
+    "case": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Case",
+      "type": "object"
+    },
+    "alerts": {
+      "additionalProperties": {
+        "$ref": "#/$defs/AlertInput"
+      },
+      "title": "Alerts",
+      "type": "object"
+    },
+    "incidents": {
+      "additionalProperties": {
+        "$ref": "#/$defs/IncidentInput"
+      },
+      "title": "Incidents",
+      "type": "object"
+    },
+    "tasks": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TaskInput"
+      },
+      "title": "Tasks",
+      "type": "object"
+    },
+    "current_assessment": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Current Assessment"
+    },
+    "assessment_members": {
+      "items": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Assessment Members",
+      "type": "array"
+    },
+    "assessment_sources": {
+      "items": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Assessment Sources",
+      "type": "array"
+    },
+    "prior_results": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Prior Results",
+      "type": "object"
+    },
+    "adopted_task_revisions": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Adopted Task Revisions",
+      "type": "object"
+    },
+    "adopted_artifacts": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Adopted Artifacts",
+      "type": "object"
+    },
+    "questions": {
+      "items": {
+        "$ref": "#/$defs/Question"
+      },
+      "title": "Questions",
+      "type": "array"
+    },
+    "omissions": {
+      "items": {
+        "$ref": "#/$defs/Omission"
+      },
+      "title": "Omissions",
+      "type": "array"
+    },
+    "citation_roles": {
+      "additionalProperties": {
+        "enum": [
+          "source_label",
+          "prior_analysis",
+          "human_statement",
+          "execution_receipt"
+        ],
+        "type": "string"
+      },
+      "title": "Citation Roles",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "captured_at",
+    "scope",
+    "case",
+    "alerts",
+    "incidents",
+    "tasks",
+    "current_assessment",
+    "assessment_members",
+    "assessment_sources",
+    "prior_results",
+    "adopted_task_revisions",
+    "adopted_artifacts",
+    "questions",
+    "omissions",
+    "citation_roles"
+  ],
+  "title": "Context",
+  "type": "object"
+}

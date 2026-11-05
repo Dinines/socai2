@@ -1,0 +1,387 @@
+{
+  "database": "socai2_schema_review_20261103_a1",
+  "postgres": "16.15",
+  "migration_sha256": "ceb9a68012f84d6558cd0f75aa67b4047ae6245e1be64e79dd9b86587b8579da",
+  "observations": [
+    {
+      "name": "29 real PG tables",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "458 actual columns",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "all tables force strict RLS",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "one pending baseline",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23505: duplicate key value violates unique constraint \"runs_one_pending_baseline\"\nDETAIL:  Key (tenant_id, case_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-0000000003e9) already exists.\nSCHEMA NAME:  socai2\nTABLE NAME:  runs\nCONSTRAINT NAME:  runs_one_pending_baseline\nLOCATION:  _bt_check_unique, nbtinsert.c:666"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "claimed Run input frozen",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: claimed run input is frozen\nCONTEXT:  PL/pgSQL function guard_run() line 28 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "claimed member source frozen",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: claimed member source is frozen\nCONTEXT:  PL/pgSQL function guard_run_member() line 17 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "second active baseline rejected",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23505: duplicate key value violates unique constraint \"runs_one_active_baseline\"\nDETAIL:  Key (tenant_id, case_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-0000000003e9) already exists.\nSCHEMA NAME:  socai2\nTABLE NAME:  runs\nCONSTRAINT NAME:  runs_one_active_baseline\nLOCATION:  _bt_check_unique, nbtinsert.c:666"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "failed competing claim preserves pending",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "two AI executions parallel with baseline",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "immutable original artifact",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: socai2 history is append-only: artifacts\nCONTEXT:  PL/pgSQL function reject_history_mutation() line 3 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "unknown business status",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"alerts\" violates check constraint \"alerts_handling_status_enum\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-0000000003f2, 00000000-0000-0000-0000-000000000001, synthetic, null, null, null, null, null, 00000000-0000-0000-0000-0000000003f2, synthetic alert, null, null, null, null, null, unknown, null, null, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, magical, null, null, unassigned, null, null, {}, null, not_provided, null, null, null, null, null, null, null, null, 1, null).\nSCHEMA NAME:  socai2\nTABLE NAME:  alerts\nCONSTRAINT NAME:  alerts_handling_status_enum\nLOCATION:  ExecConstraints, execMain.c:2109"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "score cannot default50 without calculation",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"alerts\" violates check constraint \"alerts_priority\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-0000000003f2, 00000000-0000-0000-0000-000000000001, synthetic, null, null, null, null, null, 00000000-0000-0000-0000-0000000003f2, synthetic alert, null, null, null, null, null, unknown, null, null, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, new, null, null, unassigned, null, null, {}, 50.00, not_provided, null, null, null, null, null, null, null, null, 1, null).\nSCHEMA NAME:  socai2\nTABLE NAME:  alerts\nCONSTRAINT NAME:  alerts_priority\nLOCATION:  ExecConstraints, execMain.c:2109"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "incident override requires audit fields",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"incidents\" violates check constraint \"incidents_severity_override\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-000000000514, 00000000-0000-0000-0000-000000000001, synthetic, I1, test, null, new, null, unassigned, null, null, {}, high, null, null, null, null, not_provided, null, null, null, null, null, null, 2026-11-03 09:20:28.761975+00, 2026-11-03 09:20:28.761975+00, null, 1).\nSCHEMA NAME:  socai2\nTABLE NAME:  incidents\nCONSTRAINT NAME:  incidents_severity_override\nLOCATION:  ExecConstraints, execMain.c:2109"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "incident override accepted independently",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "cross tenant member FK",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23503: insert or update on table \"case_alerts\" violates foreign key constraint \"case_alerts_alert_id_fk\"\nDETAIL:  Key (tenant_id, alert_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-00000000051e) is not present in table \"alerts\".\nSCHEMA NAME:  socai2\nTABLE NAME:  case_alerts\nCONSTRAINT NAME:  case_alerts_alert_id_fk\nLOCATION:  ri_ReportViolation, ri_triggers.c:2608"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "task current pointer deferred cycle commits",
+      "passed": true,
+      "detail": null,
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "completed feedback version immutable",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: socai2 history is append-only: task_revisions\nCONTEXT:  PL/pgSQL function reject_history_mutation() line 3 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      },
+      "reused_from": "postgres-tests.initial.json"
+    },
+    {
+      "name": "valid partial baseline auto adopted",
+      "passed": true,
+      "detail": {
+        "state": "adopted",
+        "assessment_id": "23a27205-d2d8-4ca2-bad1-ccac20b964b8"
+      }
+    },
+    {
+      "name": "auto adoption idempotent",
+      "passed": true,
+      "detail": {
+        "state": "already_adopted",
+        "assessment_id": "23a27205-d2d8-4ca2-bad1-ccac20b964b8"
+      }
+    },
+    {
+      "name": "adoption only covers explicitly covered member",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "adoption does not resolve Case",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "published result immutable",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: socai2 history is append-only: results\nCONTEXT:  PL/pgSQL function reject_history_mutation() line 3 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      }
+    },
+    {
+      "name": "old scope result cannot overwrite current judgment",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "system handoff not auto adopted",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "newer human adoption preserved",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "concurrent duplicate claim only one succeeds",
+      "passed": true,
+      "detail": {
+        "first": [
+          0,
+          "00000000-0000-0000-0000-000000001771\nCLAIMED",
+          ""
+        ],
+        "second": [
+          0,
+          "00000000-0000-0000-0000-000000001771",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "claim-before-first-step then added alert uses next pending",
+      "passed": true,
+      "detail": {
+        "first": [
+          0,
+          "00000000-0000-0000-0000-000000001b59\nCLAIMED",
+          ""
+        ],
+        "second": [
+          0,
+          "",
+          ""
+        ],
+        "old_members": "1",
+        "next_members": "2"
+      }
+    },
+    {
+      "name": "member-update first rejects stale scope claim",
+      "passed": true,
+      "detail": {
+        "first": [
+          0,
+          "",
+          ""
+        ],
+        "second": [
+          0,
+          "00000000-0000-0000-0000-000000001f41",
+          ""
+        ]
+      }
+    },
+    {
+      "name": "RLS missing tenant returns no rows",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "name": "RLS filters tenant",
+      "passed": true,
+      "detail": "t"
+    },
+    {
+      "name": "RLS cross tenant write denied",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  42501: new row violates row-level security policy for table \"alerts\"\nLOCATION:  ExecWithCheckOptions, execMain.c:2234"
+      }
+    },
+    {
+      "name": "test-only role removed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "AI Run input and members publish atomically",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved AI result never auto adopted",
+      "passed": true,
+      "detail": {
+        "state": "not_eligible"
+      }
+    },
+    {
+      "name": "late AI member append rejected",
+      "passed": true,
+      "detail": "ERROR:  23514: claimed member set is frozen\nCONTEXT:  PL/pgSQL function guard_run_member() line 18 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+    },
+    {
+      "name": "concurrent foreign transaction cannot append to newly frozen AI Run",
+      "passed": true,
+      "detail": {
+        "parent": [
+          0,
+          "",
+          ""
+        ],
+        "child": [
+          3,
+          "",
+          "ERROR:  23503: insert or update on table \"run_members\" violates foreign key constraint \"run_members_run_id_fk\"\nDETAIL:  Key (tenant_id, run_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-000000002af8) is not present in table \"runs\".\nSCHEMA NAME:  socai2\nTABLE NAME:  run_members\nCONSTRAINT NAME:  run_members_run_id_fk\nLOCATION:  ri_ReportViolation, ri_triggers.c:2608"
+        ],
+        "committed_member_count": "0",
+        "expectation_correction": "Either the FK rejects before parent commit or the freeze guard rejects afterwards; both are correct. Original narrow SQLSTATE expectation retained separately."
+      }
+    },
+    {
+      "name": "baseline creation and claim still valid with deferred member guard",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "458 actual PostgreSQL column types and nullability match contract",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "late commit after concurrent parent committed still cannot append frozen AI member",
+      "passed": true,
+      "detail": {
+        "parent": [
+          0,
+          "",
+          ""
+        ],
+        "child": [
+          3,
+          "",
+          "ERROR:  23514: new members of a frozen Run must publish with its creation/claim transaction\nCONTEXT:  PL/pgSQL function check_new_member_transaction() line 9 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+        ],
+        "committed_members": "0"
+      }
+    }
+  ],
+  "passed": 39,
+  "total": 39,
+  "all_passed": true,
+  "first_batch_reused": 17,
+  "second_batch_reused": 15,
+  "current_changed_guard_verified_by": [
+    {
+      "name": "AI Run input and members publish atomically",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved AI result never auto adopted",
+      "passed": true,
+      "detail": {
+        "state": "not_eligible"
+      }
+    },
+    {
+      "name": "late AI member append rejected",
+      "passed": true,
+      "detail": "ERROR:  23514: claimed member set is frozen\nCONTEXT:  PL/pgSQL function guard_run_member() line 18 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+    },
+    {
+      "name": "concurrent foreign transaction cannot append to newly frozen AI Run",
+      "passed": false,
+      "detail": {
+        "parent": [
+          0,
+          "",
+          ""
+        ],
+        "child": [
+          3,
+          "",
+          "ERROR:  23503: insert or update on table \"run_members\" violates foreign key constraint \"run_members_run_id_fk\"\nDETAIL:  Key (tenant_id, run_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-000000002af8) is not present in table \"runs\".\nSCHEMA NAME:  socai2\nTABLE NAME:  run_members\nCONSTRAINT NAME:  run_members_run_id_fk\nLOCATION:  ri_ReportViolation, ri_triggers.c:2608"
+        ]
+      }
+    },
+    {
+      "name": "baseline creation and claim still valid with deferred member guard",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "458 actual PostgreSQL column types and nullability match contract",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "business_databases_read_or_written": false,
+  "test_database_retained": true
+}

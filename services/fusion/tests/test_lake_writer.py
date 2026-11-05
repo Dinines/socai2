@@ -66,6 +66,26 @@ def _writer_with_fake(**kw) -> tuple[LakeWriter, _FakeClient]:
 # ── Mapping ──────────────────────────────────────────────────────────────────
 
 
+async def test_configured_database_controls_both_insert_forms():
+    writer, client = _writer_with_fake(database="socai2_next_validation", batch_size=2)
+    first = _message()
+    fallback = _message()
+    fallback["id"] = "opaque-event-id"
+    assert await writer.write_event(first)
+    assert await writer.write_event(fallback)
+    assert len(client.statements) == 2
+    assert all(s.startswith("INSERT INTO socai2_next_validation.raw_events (") for s in client.statements)
+    assert "(event_id," in client.statements[0]
+    assert "(tenant_id," in client.statements[1]
+    assert writer.rows_written == 2
+
+
+@pytest.mark.parametrize("name", ["", "bad-name", "a.b", "aisoc;DROP", "a" * 64])
+async def test_database_identifier_rejected_before_client_use(name):
+    with pytest.raises(ValueError, match="invalid_clickhouse_database"):
+        LakeWriter(host="x", database=name)
+
+
 async def test_event_to_row_maps_core_fields():
     row = event_to_row(_message())
     assert row is not None

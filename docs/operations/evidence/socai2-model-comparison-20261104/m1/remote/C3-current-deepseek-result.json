@@ -1,0 +1,492 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "0b09e026-21fe-4ec6-ad2e-b0fb6050131a",
+    "object": "response",
+    "created_at": 1793789985,
+    "status": "completed",
+    "background": false,
+    "completed_at": 1793789995,
+    "content_filters": null,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 3000,
+    "max_tool_calls": null,
+    "model": "deepseek-flash",
+    "moderation": null,
+    "output": [
+      {
+        "type": "message",
+        "id": "24f7d5b9-6e27-4e35-8e73-99bd2dae2df2",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"summary\":\"两成员均为SyntheticLab合成验证数据，经共享主机next-validation-host归并；成员0为PowerShell清单脚本进程启动成功，成员1为约15秒后同主机到inventory.example.invalid的TCP 443出站连接成功。归并仅证明共享对象与时间接近，不证明进程发起连接或存在攻击链；授权、流量内容、进程归属均未提供，两成员维持待核。\",\"members\":[{\"alert_id\":\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"state\":\"analyzed\",\"summary\":\"观察到next-validation-host上synthetic-operator用户经cmd.exe(pid 2100)启动powershell.exe(pid 4242)执行-File C:\\\\Lab\\\\inventory.ps1，process_start成功；S24自述为合成验证且未提供授权。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S19\",\"S22\",\"S24\"],\"limitations\":[\"仅基于所选字段视图，未审阅完整原始日志\",\"脚本内容与执行结果未提供\",\"授权信息未提供\",\"资产查询为当前清单而非事件时点状态\"]},{\"alert_id\":\"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\"state\":\"analyzed\",\"summary\":\"观察到next-validation-host(192.0.2.20:50123)到inventory.example.invalid(198.51.100.20:443)的TCP network_connect成功；缺少进程、用户、流量内容与授权，无法区分正常清单上报与可疑外联。\",\"evidence_ids\":[\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S20\",\"S23\"],\"limitations\":[\"缺少发起进程、命令行与用户字段\",\"缺少流量内容与应用层协议证据\",\"授权信息未提供\",\"历史查询仅记录告警，非完整活动历史\"]}],\"findings\":[{\"id\":\"F1\",\"state\":\"observed\",\"statement\":\"成员0记录到next-validation-host上synthetic-operator经cmd.exe启动powershell.exe执行C:\\\\Lab\\\\inventory.ps1，进程启动成功。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\"],\"support_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S22\"],\"counter_ids\":[],\"alternatives\":[\"正常运维清单采集\",\"未授权脚本执行\"],\"limitations\":[\"脚本内容与执行结果未提供\",\"仅字段视图，未审阅完整原始日志\"]},{\"id\":\"F2\",\"state\":\"observed\",\"statement\":\"成员1记录到next-validation-host(192.0.2.20)到inventory.example.invalid(198.51.100.20)的TCP 443出站连接成功。\",\"alert_ids\":[\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"support_ids\":[\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S23\"],\"counter_ids\":[],\"alternatives\":[\"正常清单上报\",\"可疑外联\"],\"limitations\":[\"端口443不证明HTTPS/TLS\",\"缺少进程、用户与流量内容\"]},{\"id\":\"F3\",\"state\":\"inferred\",\"statement\":\"两成员共享主机next-validation-host且时间相差约15秒，但无证据表明成员0的进程发起了成员1的连接。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"support_ids\":[\"S7\",\"S10\",\"S21\",\"S22\",\"S24\"],\"counter_ids\":[],\"alternatives\":[\"同一清单任务先启动进程后外联上报\",\"两事件仅时间接近而无关\"],\"limitations\":[\"成员1缺少进程与用户字段\",\"共享主机与时间接近不构成因果\"]}],\"questions\":[{\"id\":\"detection_facts\",\"state\":\"answered\",\"answer\":\"成员0：next-validation-host上synthetic-operator经cmd.exe(2100)启动powershell.exe(4242)执行-File C:\\\\Lab\\\\inventory.ps1，process_start成功。成员1：同主机192.0.2.20:50123到198.51.100.20:443的TCP network_connect成功。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\"],\"limitations\":[\"仅字段视图，未审阅完整原始日志\",\"脚本内容与流量内容未提供\"]},{\"id\":\"member_relationships\",\"state\":\"unresolved\",\"answer\":\"已证实仅共享主机next-validation-host与约15秒时间接近；无进程、用户或流量证据把成员0的进程与成员1的连接连成因果链。\",\"evidence_ids\":[\"S7\",\"S10\",\"S21\",\"S22\",\"S24\"],\"limitations\":[\"成员1缺少进程与用户字段\",\"共享对象与时间接近不证明因果\"]},{\"id\":\"behavior_nature\",\"state\":\"unresolved\",\"answer\":\"正常运维清单与未授权执行/可疑外联两种解释均未被排除；S24自述合成验证不证明良性，来源标签不证明恶意。\",\"evidence_ids\":[\"S19\",\"S20\",\"S21\",\"S24\"],\"limitations\":[\"无脚本内容、流量内容与授权\",\"威胁情报未查询，查空不构成反证\"]},{\"id\":\"authorization\",\"state\":\"unresolved\",\"answer\":\"未提供任何审批、授权人或授权时间；S24明确说明未提供授权。\",\"evidence_ids\":[\"S19\",\"S20\",\"S24\"],\"limitations\":[\"未提供审批记录\",\"未接通不等于不存在\"]},{\"id\":\"impact\",\"state\":\"unresolved\",\"answer\":\"已观察到进程启动成功与出站连接成功；是否发生数据外传、落地执行或进一步横向仅为待核可能影响。\",\"evidence_ids\":[\"S9\",\"S18\",\"S20\"],\"limitations\":[\"无流量内容与进程后续行为\",\"端口443不证明应用层协议\"]},{\"id\":\"coverage\",\"state\":\"unresolved\",\"answer\":\"两成员均已分析；资产与历史查询为空，威胁情报、UEBA、知识库因预算未查询，graph未接通；存在字段省略与视图限制。\",\"evidence_ids\":[\"S19\",\"S20\",\"S21\"],\"limitations\":[\"威胁情报/UEBA/知识库未查询\",\"graph来源未接通\",\"模型视图有省略字段\"]}],\"domains\":[{\"name\":\"identity\",\"applicability\":\"undetermined\",\"reason\":\"仅有synthetic-operator用户名，无认证、MFA、会话与权限范围资料。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[\"F1\"],\"limitations\":[\"无认证与会话日志\",\"graph未接通\"]},{\"name\":\"cloud\",\"applicability\":\"undetermined\",\"reason\":\"未提供控制面、资源、IAM或配置资料，无法判断是否涉及云环境。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[],\"limitations\":[\"无云控制面数据\"]},{\"name\":\"phishing\",\"applicability\":\"undetermined\",\"reason\":\"未提供邮件头、链接、附件或投递点击资料。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[],\"limitations\":[\"无邮件与投递数据\"]},{\"name\":\"insider\",\"applicability\":\"undetermined\",\"reason\":\"无数据访问、外传数量、目的地与行为基线资料，不能凭角色或时间定性。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[\"F2\"],\"limitations\":[\"无数据访问与外传记录\",\"无行为基线\"]}],\"conflicts\":[],\"followups\":[{\"question_id\":\"member_relationships\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"mode\":\"query\",\"objective\":\"补查成员1连接的发起进程、命令行与用户，确认是否与成员0的powershell进程对应。\",\"required_evidence\":\"同主机同时间窗的进程-网络关联记录（pid、命令行、用户）。\",\"source_ids\":[\"S3\",\"S6\",\"S17\"],\"object_keys\":[\"[\\\"host\\\",\\\"next-validation-host\\\"]\",\"[\\\"ip\\\",\\\"198.51.100.20\\\"]\"]},{\"question_id\":\"authorization\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"mode\":\"human\",\"objective\":\"确认inventory.ps1执行与到inventory.example.invalid的443连接是否获授权及授权范围。\",\"required_evidence\":\"审批记录、授权人、授权对象与时间窗口。\",\"source_ids\":[\"S24\"],\"object_keys\":[\"[\\\"user\\\",\\\"synthetic-operator\\\"]\",\"[\\\"host\\\",\\\"inventory.example.invalid\\\"]\"]}]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": null,
+    "reasoning": {
+      "effort": "none",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 0.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "socai2_analysis",
+        "schema": {
+          "$defs": {
+            "Answer": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/QuestionId"
+                },
+                "state": {
+                  "enum": [
+                    "answered",
+                    "unresolved",
+                    "not_applicable"
+                  ],
+                  "type": "string"
+                },
+                "answer": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                },
+                "limitations": {
+                  "$ref": "#/$defs/CompactArray3"
+                }
+              },
+              "required": [
+                "id",
+                "state",
+                "answer",
+                "evidence_ids",
+                "limitations"
+              ],
+              "type": "object"
+            },
+            "Conflict": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "finding_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "minItems": 2,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "state": {
+                  "enum": [
+                    "resolved",
+                    "unresolved"
+                  ],
+                  "type": "string"
+                },
+                "explanation": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                }
+              },
+              "required": [
+                "id",
+                "finding_ids",
+                "state",
+                "explanation",
+                "evidence_ids"
+              ],
+              "type": "object"
+            },
+            "Domain": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "enum": [
+                    "identity",
+                    "cloud",
+                    "phishing",
+                    "insider"
+                  ],
+                  "type": "string"
+                },
+                "applicability": {
+                  "enum": [
+                    "applicable",
+                    "not_applicable",
+                    "undetermined"
+                  ],
+                  "type": "string"
+                },
+                "reason": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "alert_ids": {
+                  "items": {
+                    "$ref": "#/$defs/AlertId"
+                  },
+                  "maxItems": 200,
+                  "type": "array"
+                },
+                "finding_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                },
+                "limitations": {
+                  "$ref": "#/$defs/CompactArray3"
+                }
+              },
+              "required": [
+                "name",
+                "applicability",
+                "reason",
+                "alert_ids",
+                "finding_ids",
+                "limitations"
+              ],
+              "type": "object"
+            },
+            "Finding": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "state": {
+                  "enum": [
+                    "observed",
+                    "inferred",
+                    "unresolved"
+                  ],
+                  "type": "string"
+                },
+                "statement": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "alert_ids": {
+                  "items": {
+                    "$ref": "#/$defs/AlertId"
+                  },
+                  "maxItems": 200,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "support_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                },
+                "counter_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                },
+                "alternatives": {
+                  "items": {
+                    "$ref": "#/$defs/CompactString0"
+                  },
+                  "maxItems": 8,
+                  "type": "array"
+                },
+                "limitations": {
+                  "$ref": "#/$defs/CompactArray3"
+                }
+              },
+              "required": [
+                "id",
+                "state",
+                "statement",
+                "alert_ids",
+                "support_ids",
+                "counter_ids",
+                "alternatives",
+                "limitations"
+              ],
+              "type": "object"
+            },
+            "Followup": {
+              "additionalProperties": false,
+              "properties": {
+                "question_id": {
+                  "$ref": "#/$defs/QuestionId"
+                },
+                "alert_ids": {
+                  "items": {
+                    "$ref": "#/$defs/AlertId"
+                  },
+                  "maxItems": 200,
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "mode": {
+                  "enum": [
+                    "query",
+                    "deep",
+                    "graph",
+                    "human"
+                  ],
+                  "type": "string"
+                },
+                "objective": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "required_evidence": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "source_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                },
+                "object_keys": {
+                  "items": {
+                    "$ref": "#/$defs/ObjectKey"
+                  },
+                  "maxItems": 32,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "question_id",
+                "alert_ids",
+                "mode",
+                "objective",
+                "required_evidence",
+                "source_ids",
+                "object_keys"
+              ],
+              "type": "object"
+            },
+            "Member": {
+              "additionalProperties": false,
+              "properties": {
+                "alert_id": {
+                  "$ref": "#/$defs/AlertId"
+                },
+                "state": {
+                  "enum": [
+                    "analyzed",
+                    "unresolved",
+                    "not_analyzed"
+                  ],
+                  "type": "string"
+                },
+                "summary": {
+                  "$ref": "#/$defs/CompactString0"
+                },
+                "evidence_ids": {
+                  "$ref": "#/$defs/CompactArray11"
+                },
+                "limitations": {
+                  "$ref": "#/$defs/CompactArray3"
+                }
+              },
+              "required": [
+                "alert_id",
+                "state",
+                "summary",
+                "evidence_ids",
+                "limitations"
+              ],
+              "type": "object"
+            },
+            "SourceId": {
+              "type": "string",
+              "enum": [
+                "S1",
+                "S10",
+                "S11",
+                "S12",
+                "S13",
+                "S14",
+                "S15",
+                "S16",
+                "S17",
+                "S18",
+                "S19",
+                "S2",
+                "S20",
+                "S21",
+                "S22",
+                "S23",
+                "S24",
+                "S3",
+                "S4",
+                "S5",
+                "S6",
+                "S7",
+                "S8",
+                "S9"
+              ]
+            },
+            "AlertId": {
+              "type": "string",
+              "enum": [
+                "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+                "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+              ]
+            },
+            "QuestionId": {
+              "type": "string",
+              "enum": [
+                "authorization",
+                "behavior_nature",
+                "coverage",
+                "detection_facts",
+                "impact",
+                "member_relationships"
+              ]
+            },
+            "ObjectKey": {
+              "type": "string",
+              "enum": [
+                "[\"host\",\"inventory.example.invalid\"]",
+                "[\"host\",\"next-validation-host\"]",
+                "[\"ip\",\"192.0.2.20\"]",
+                "[\"ip\",\"198.51.100.20\"]",
+                "[\"user\",\"synthetic-operator\"]"
+              ]
+            },
+            "CompactString0": {
+              "maxLength": 1200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "CompactArray3": {
+              "items": {
+                "$ref": "#/$defs/CompactString0"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            "CompactArray11": {
+              "items": {
+                "$ref": "#/$defs/SourceId"
+              },
+              "maxItems": 32,
+              "type": "array"
+            }
+          },
+          "additionalProperties": false,
+          "properties": {
+            "summary": {
+              "$ref": "#/$defs/CompactString0"
+            },
+            "members": {
+              "items": {
+                "$ref": "#/$defs/Member"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "findings": {
+              "items": {
+                "$ref": "#/$defs/Finding"
+              },
+              "maxItems": 24,
+              "type": "array"
+            },
+            "questions": {
+              "items": {
+                "$ref": "#/$defs/Answer"
+              },
+              "maxItems": 6,
+              "minItems": 6,
+              "type": "array"
+            },
+            "domains": {
+              "items": {
+                "$ref": "#/$defs/Domain"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            "conflicts": {
+              "items": {
+                "$ref": "#/$defs/Conflict"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            "followups": {
+              "items": {
+                "$ref": "#/$defs/Followup"
+              },
+              "maxItems": 12,
+              "type": "array"
+            }
+          },
+          "required": [
+            "summary",
+            "members",
+            "findings",
+            "questions",
+            "domains",
+            "conflicts",
+            "followups"
+          ],
+          "type": "object"
+        },
+        "description": null,
+        "strict": true
+      },
+      "verbosity": null
+    },
+    "tool_choice": "auto",
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 1.0,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 4525,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 2233,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 6758
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "usage": {
+    "input_tokens": 4525,
+    "output_tokens": 2233,
+    "total_tokens": 6758,
+    "cached_input_tokens": 0,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "0b09e026-21fe-4ec6-ad2e-b0fb6050131a"
+  },
+  "elapsed_seconds": 10.529
+}

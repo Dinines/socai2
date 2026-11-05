@@ -1,0 +1,222 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "fc2ba1d9-b819-4aeb-9104-3f84189e6be7",
+    "object": "response",
+    "created_at": 1793789936,
+    "status": "completed",
+    "background": false,
+    "completed_at": 1793789939,
+    "content_filters": null,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 3000,
+    "max_tool_calls": null,
+    "model": "deepseek-flash",
+    "moderation": null,
+    "output": [
+      {
+        "type": "message",
+        "id": "d91206fc-6658-45ca-a431-ee25a2f7cab1",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警记录了一次从 next-validation-host(192.0.2.20:50123) 到 inventory.example.invalid(198.51.100.20:443) 的 TCP 连接且结果为成功(S1-S9,S20-S30)，但仅有网络连接元数据，缺少进程、用户、命令行等归因字段；历史查询仅命中同一主机上一条“Synthetic PowerShell inventory process”记录(S14)，属同对象非因果，不能证明该进程发起了本次连接。资产与威胁情报查询均无命中(S: assets/threat_intel 0 行)，无命中不等于安全。告警描述与厂商标签(S11,S31)为合成/验证性标签，不能单独证明无害或授权，故证据不足以定性。\",\"explanation\":\"行为本身是一次成功的外联 TCP 连接，目标为 inventory 类主机名；在缺少进程归因与授权依据的情况下，无法区分正常资产盘点流量与可疑外联，需补充进程与授权信息后再判定。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S11\",\"S14\",\"S15\",\"S31\"],\"recommendations\":[{\"reason\":\"补充该时段源主机上发起 198.51.100.20:443 连接的进程、用户与命令行信息，确认是否与历史 PowerShell 记录(S14)为同一行为。\",\"source_ids\":[\"S1\",\"S3\",\"S14\"]},{\"reason\":\"核实 inventory.example.invalid 与 198.51.100.20 是否为已知授权资产或盘点端点，并确认该外联是否有变更/授权记录。\",\"source_ids\":[\"S2\",\"S4\"]}],\"limitations\":[\"仅有网络连接元数据，缺少进程与用户归因\",\"历史命中为同对象非因果，不能证明连接来源\",\"资产与威胁情报查询无命中，不构成安全证明\",\"合成/验证标签不构成无害或授权证明\"]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": null,
+    "reasoning": {
+      "effort": "none",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 0.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "socai2_answer",
+        "schema": {
+          "$defs": {
+            "Advice": {
+              "additionalProperties": false,
+              "properties": {
+                "reason": {
+                  "maxLength": 4000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "source_ids": {
+                  "items": {
+                    "$ref": "#/$defs/SourceId"
+                  },
+                  "maxItems": 30,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "reason",
+                "source_ids"
+              ],
+              "type": "object"
+            },
+            "SourceId": {
+              "type": "string",
+              "enum": [
+                "S1",
+                "S10",
+                "S11",
+                "S12",
+                "S13",
+                "S14",
+                "S15",
+                "S16",
+                "S17",
+                "S18",
+                "S19",
+                "S2",
+                "S20",
+                "S21",
+                "S22",
+                "S23",
+                "S24",
+                "S25",
+                "S26",
+                "S27",
+                "S28",
+                "S29",
+                "S3",
+                "S30",
+                "S31",
+                "S4",
+                "S5",
+                "S6",
+                "S7",
+                "S8",
+                "S9"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "properties": {
+            "verdict": {
+              "enum": [
+                "true_positive",
+                "false_positive",
+                "benign",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "confidence": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rationale": {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "explanation": {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "evidence_ids": {
+              "items": {
+                "$ref": "#/$defs/SourceId"
+              },
+              "maxItems": 60,
+              "minItems": 1,
+              "type": "array"
+            },
+            "recommendations": {
+              "items": {
+                "$ref": "#/$defs/Advice"
+              },
+              "maxItems": 5,
+              "type": "array"
+            },
+            "limitations": {
+              "items": {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            }
+          },
+          "required": [
+            "verdict",
+            "confidence",
+            "rationale",
+            "explanation",
+            "evidence_ids",
+            "recommendations",
+            "limitations"
+          ],
+          "type": "object"
+        },
+        "description": null,
+        "strict": true
+      },
+      "verbosity": null
+    },
+    "tool_choice": "auto",
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 1.0,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 2578,
+      "input_tokens_details": {
+        "cached_tokens": 2432
+      },
+      "output_tokens": 443,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3021
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "usage": {
+    "input_tokens": 2578,
+    "output_tokens": 443,
+    "total_tokens": 3021,
+    "cached_input_tokens": 2432,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "fc2ba1d9-b819-4aeb-9104-3f84189e6be7"
+  },
+  "elapsed_seconds": 3.487
+}

@@ -398,9 +398,13 @@ class LakeWriter:
         batch_size: int = 100,
         batch_max_age_seconds: float = 2.0,
     ) -> None:
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", database):
+            raise ValueError("invalid_clickhouse_database")
         self._host = host
         self._port = port
         self._database = database
+        self._insert_sql = _INSERT_SQL.replace("aisoc.raw_events", f"{database}.raw_events")
+        self._insert_default_id_sql = _INSERT_DEFAULT_ID_SQL.replace("aisoc.raw_events", f"{database}.raw_events")
         self._user = user
         self._password = password
         self._batch_size = max(1, batch_size)
@@ -495,8 +499,8 @@ class LakeWriter:
 
         succeeded = True
         groups = (
-            (_INSERT_SQL, [row for row in batch if row["event_id"] is not None]),
-            (_INSERT_DEFAULT_ID_SQL, [row for row in batch if row["event_id"] is None]),
+            (self._insert_sql, [row for row in batch if row["event_id"] is not None]),
+            (self._insert_default_id_sql, [row for row in batch if row["event_id"] is None]),
         )
         for sql, group in groups:
             if not group:

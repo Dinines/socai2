@@ -1,0 +1,696 @@
+{
+  "created_at": "2026-11-03T00:35:28.644369+00:00",
+  "kind": "requirements_to_data_schema_proposal",
+  "backend": {
+    "workspace": "E:/aisoc/socai2",
+    "commit": "39f4033663bf478c7a8e8af2adb8333b45a6eb41",
+    "tracked_worktree_clean": true
+  },
+  "design": {
+    "workspace": "E:/aisoc/socai2/.local/worktrees/functional-alignment-20261103",
+    "branch": "codex/functional-alignment-20261103",
+    "commit": "c71afb5c6c4f939bf0243b60e02f224d01c6249a",
+    "product_prototype_unchanged": true
+  },
+  "document": {
+    "path": "docs/design/investigation-data-schema-plan-20261103.md",
+    "sha256": "171c350658430db1bd92af505c3d02354b4d62506c0380408c21170e3910281e"
+  },
+  "field_groups": [
+    {
+      "id": "C01",
+      "required_fields": "案件身份、租户、编号",
+      "current_storage_and_path": "`aisoc_cases.id/tenant_id/case_number`，v1 CaseResponse",
+      "recommendation": "现有；新表引用 UUID，展示编号不作关联键"
+    },
+    {
+      "id": "C02",
+      "required_fields": "名称、说明",
+      "current_storage_and_path": "`title/description`，v1 create/update/read",
+      "recommendation": "现有；说明是背景，不自动当已证实事实"
+    },
+    {
+      "id": "C03",
+      "required_fields": "严重程度",
+      "current_storage_and_path": "`severity`，v1 已读写",
+      "recommendation": "现有；不由分诊置信度替换"
+    },
+    {
+      "id": "C04",
+      "required_fields": "业务处理状态",
+      "current_storage_and_path": "`status` 六态及 `case_status.py`",
+      "recommendation": "映射；保留原状态，页面可映射为新建／处理中／已解决。旧 `OPEN_STATUSES` 包含 resolved，不能直接拿来算新版未解决案件"
+    },
+    {
+      "id": "C05",
+      "required_fields": "负责人",
+      "current_storage_and_path": "`assignee TEXT` 与 `assigned_to_id UUID/assigned_at` 并存；v1 写前者，部分编排写后者",
+      "recommendation": "映射；新写统一已有 UUID 列，兼容文本显示。仅同租户唯一可解析值可补 ID，冲突／无法解析返回 unknown；明确清空才能按未分配统计"
+    },
+    {
+      "id": "C06",
+      "required_fields": "优先级及依据",
+      "current_storage_and_path": "`priority TEXT` 已有；v1 CaseResponse 未暴露对应列；现无统一数值评分来源合同",
+      "recommendation": "映射；已有原值可读，来源不明明确标注，不改成数值平均或补造评分；评分合同待产品确定"
+    },
+    {
+      "id": "C07",
+      "required_fields": "案件标签",
+      "current_storage_and_path": "`tags JSONB`；v1 请求／响应是字典，原型为数组，ORM 默认亦为数组",
+      "recommendation": "映射；维持当前 KV 存储兼容，新增列表标签建议存保留命名空间 `tags.labels:string[]`，读接口输出 labels；旧字典不直接强转数组丢键值"
+    },
+    {
+      "id": "C08",
+      "required_fields": "当前成员告警",
+      "current_storage_and_path": "`alert_ids UUID[]`，Case 和链接接口",
+      "recommendation": "现有；保为当前成员真值，不立刻再建重复的成员主表；所有加入／移动／合并写入需走统一事务"
+    },
+    {
+      "id": "C09",
+      "required_fields": "当前关联事件",
+      "current_storage_and_path": "Alert enrichment 可派生来源事件；121 仅记录历史关联",
+      "recommendation": "新增 `case_incident_links`，表达显式当前关系；来源事件集合仍可派生，不能把两者混成一个数"
+    },
+    {
+      "id": "C10",
+      "required_fields": "创建／更新／解决／关闭及发生范围",
+      "current_storage_and_path": "Case 时钟已有；成员 `Alert.event_time` 已有",
+      "recommendation": "现有＋派生；发生范围取成员时间，Run 完成不写 Case 已解决；新增业务写入更新 Case 业务时钟"
+    },
+    {
+      "id": "C11",
+      "required_fields": "当前成员版本",
+      "current_storage_and_path": "当前无稳定范围版本",
+      "recommendation": "新增 `scope_revision BIGINT`，实际成员变化递增；重复添加或仅关联事件不冒充成员改变"
+    },
+    {
+      "id": "C12",
+      "required_fields": "基础调查待更新",
+      "current_storage_and_path": "当前无服务端持久状态",
+      "recommendation": "新增 `baseline_state JSONB`，保存待更新版本／新增移出／请求时间、已派发轮及其范围版本；不只存一个布尔值"
+    },
+    {
+      "id": "C13",
+      "required_fields": "当前判断、依据、确认者／时间、未决事项",
+      "current_storage_and_path": "`summary` 文字；单轮结果有判断",
+      "recommendation": "新增 `current_judgment JSONB`；采用时写来源引用、确认事实和覆盖快照，不能直接用最新报告覆盖"
+    },
+    {
+      "id": "C14",
+      "required_fields": "未分析／未被当前判断覆盖",
+      "current_storage_and_path": "当前成员和每轮 scope 已有，判断覆盖尚缺 C13",
+      "recommendation": "派生；分别计算当前成员减符合产品条件的已结束调查输入集合、当前成员减判断覆盖集合；参与分析不等于被证实"
+    },
+    {
+      "id": "R01",
+      "required_fields": "Run 身份和 Case 归属",
+      "current_storage_and_path": "`id/tenant_id/case_id`＋`raw_alert.analysis_profile`",
+      "recommendation": "映射＋新增 `case_ref_id UUID NULL`，只给已证实属于 Case 的执行填写；原 case_id 字符串保持兼容"
+    },
+    {
+      "id": "R02",
+      "required_fields": "基础首次／更新／AI 问题类型",
+      "current_storage_and_path": "当前主要 profile=case_analysis.v1，无该业务分类",
+      "recommendation": "新增 raw_alert 的版本化 `execution_kind`；历史未知留 legacy_unspecified，不能靠第几轮猜首次"
+    },
+    {
+      "id": "R03",
+      "required_fields": "目标与触发原因",
+      "current_storage_and_path": "请求 question 已存 intent／scope；自动更新原因未存",
+      "recommendation": "目标复用 question；新增 trigger、trigger_ref、initiator、compare_run_ref，区分人工发送与成员变化"
+    },
+    {
+      "id": "R04",
+      "required_fields": "当次成员／对象／窗口",
+      "current_storage_and_path": "冻结 context 的 all/selected/read_member_ids、hosts、start/end",
+      "recommendation": "现有；补 scope_revision、所选对象的带类型／来源身份，保留读取不足；历史范围不跟当前变化"
+    },
+    {
+      "id": "R05",
+      "required_fields": "当时输入、hash、缺失／截断",
+      "current_storage_and_path": "source-material 工件、source_hash/material_hash 及省略元数据",
+      "recommendation": "现有；沿用边界和 guard。新增来源也必须进入 hash，不只加页面 DTO"
+    },
+    {
+      "id": "R06",
+      "required_fields": "当时引用的人工结果",
+      "current_storage_and_path": "当前 context 无 CaseTask",
+      "recommendation": "映射＋新增上下文合同；固定 task_id、版本、结果、确认者、时间、范围和引用，随后更新不改旧材料"
+    },
+    {
+      "id": "R07",
+      "required_fields": "执行状态与单活跃",
+      "current_storage_and_path": "Run.status 可存文本；当前 Case 路径写 running/completed/failed",
+      "recommendation": "映射＋约束；明确 queued/running/unknown/等待人工的活跃集合，新增 Case 归属后的部分唯一索引；恢复规则另定"
+    },
+    {
+      "id": "R08",
+      "required_fields": "交付完整性／停止原因",
+      "current_storage_and_path": "`case_analysis_result` 的 completion/stop_reason，history 已读",
+      "recommendation": "现有；执行结束与完整性分别返回；失败不伪造有效结论"
+    },
+    {
+      "id": "R09",
+      "required_fields": "请求／开始／结束时间、耗时",
+      "current_storage_and_path": "created_at、started_at NOT NULL 默认 NOW、completed_at",
+      "recommendation": "映射；加入 queued 后 started_at 应允许空，实际开始才填；created_at 表示请求入账。等待包含在实际开始至结束内，不以单步骤耗时代整轮"
+    },
+    {
+      "id": "R10",
+      "required_fields": "结论、发现、证据、成员判断、未决",
+      "current_storage_and_path": "AnalysisConclusion 及结果工件",
+      "recommendation": "现有；只读实际保存内容；旧结论未保存时返回缺失"
+    },
+    {
+      "id": "R11",
+      "required_fields": "相比哪轮的变化／Case 影响",
+      "current_storage_and_path": "当前无统一变化、影响结构",
+      "recommendation": "新增版本化结果 JSON 的 comparison、changes、case_impact；不需要单独关系库，必须附原范围及依据"
+    },
+    {
+      "id": "R12",
+      "required_fields": "调用、Tokens、费用、Tool 数",
+      "current_storage_and_path": "Run 用量列、LLM 事件、Tool 工件；费用来源 063",
+      "recommendation": "现有＋映射；按真实事件／来源读取，历史缺记录不因默认 0 推断零消耗；保存文本不新增用量"
+    },
+    {
+      "id": "R13",
+      "required_fields": "查询原件、报告、历史图",
+      "current_storage_and_path": "Event／Artifact＋case_evidence/navigation，已有图服务",
+      "recommendation": "现有＋读取；绑定同 Run／artifact/evidence/row，缺材料不借另一轮；无法归类的工件仍保留"
+    },
+    {
+      "id": "T01",
+      "required_fields": "任务身份及归属",
+      "current_storage_and_path": "`aisoc_case_tasks.id/case_id/tenant_id`",
+      "recommendation": "现有；044 的 tenant_id 历史可空，新写必须从 Case 认证上下文得到"
+    },
+    {
+      "id": "T02",
+      "required_fields": "事项、工作说明",
+      "current_storage_and_path": "title 已有；description 无",
+      "recommendation": "新增 `description TEXT NULL`；不拿 blocked_reason 当说明"
+    },
+    {
+      "id": "T03",
+      "required_fields": "负责人、期限",
+      "current_storage_and_path": "assignee TEXT、due_at 已有",
+      "recommendation": "期限复用；新增 `assigned_to_id UUID NULL` 保存选定用户，旧 assignee 保留原值并兼容解析"
+    },
+    {
+      "id": "T04",
+      "required_fields": "状态",
+      "current_storage_and_path": "CHECK 与 API 都仅 todo/in_progress/done",
+      "recommendation": "扩展取消态 `cancelled`；保留 done 原值，不为中文“已完成”迁移全部旧枚举"
+    },
+    {
+      "id": "T05",
+      "required_fields": "确认／处理结果",
+      "current_storage_and_path": "无对应列",
+      "recommendation": "新增 `result_text TEXT NULL`；新完成必须有非空结果，普通改标题不冒充确认结果"
+    },
+    {
+      "id": "T06",
+      "required_fields": "结果适用范围和未确认部分",
+      "current_storage_and_path": "无对应合同",
+      "recommendation": "新增 `result_scope JSONB`，明确告警／对象身份；未确认文字在结果或范围说明内；缺范围不得默认为全案"
+    },
+    {
+      "id": "T07",
+      "required_fields": "完成时间及完成者",
+      "current_storage_and_path": "无 completed_at/completed_by",
+      "recommendation": "新增两列；实际进入 done 时记录；仅修改已完成任务标题不刷新完成时间"
+    },
+    {
+      "id": "T08",
+      "required_fields": "结果形成／修改时间及确认者",
+      "current_storage_and_path": "只有 updated_at/created_by，不能区分结果编辑",
+      "recommendation": "新增 `result_updated_at/result_updated_by`；结果编辑与完成事件分开，完成者不以当前负责人替代"
+    },
+    {
+      "id": "T09",
+      "required_fields": "来源调查和参考材料",
+      "current_storage_and_path": "无 source Run／reference 字段",
+      "recommendation": "新增 `source_refs JSONB`，类型化指向 Run／正式保存记录／具体工件，全部可选，不强制附件／工单"
+    },
+    {
+      "id": "T10",
+      "required_fields": "当前版本及历史引用",
+      "current_storage_and_path": "updated_at 已有，分析未冻结任务引用",
+      "recommendation": "新增 `row_version BIGINT` 支持条件更新和引用版本；历史冻结放到当次分析／保存记录，不先建通用任务版本库"
+    },
+    {
+      "id": "A01",
+      "required_fields": "同案对话",
+      "current_storage_and_path": "conversation.id/tenant/user/messages 已有，无 case_id",
+      "recommendation": "新增 conversation.case_id 可空；Case 对话按 tenant+case 唯一，原通用对话仍为空，不猜历史归属"
+    },
+    {
+      "id": "A02",
+      "required_fields": "原问题、原回答、消息身份／时间",
+      "current_storage_and_path": "messages 中已有 id/role/content/timestamp",
+      "recommendation": "现有；原消息 ID 沿用，不再发明第二套消息号"
+    },
+    {
+      "id": "A03",
+      "required_fields": "入口范围与历史 Run／对象／任务",
+      "current_storage_and_path": "请求 context 是自由字典",
+      "recommendation": "新增消息元数据合同：context_kind、选择范围、引用及来源命名空间，服务端解析；历史 Run 入口用该轮原范围"
+    },
+    {
+      "id": "A04",
+      "required_fields": "模型实际收到的案件材料",
+      "current_storage_and_path": "当前通用 chat 不将 context 放入模型 messages",
+      "recommendation": "修装配路径；固定 material_snapshot/ref/hash，确认模型请求实际携带来源；返回 context 参数不算完成"
+    },
+    {
+      "id": "A05",
+      "required_fields": "答复状态与实际执行关系",
+      "current_storage_and_path": "有 llm/template/reason，Case 执行另行存在",
+      "recommendation": "复用模板／失败真实性；补 request_id、可选 run_id、等待事实引用、回答归属，异步返回核对 case+conversation+message"
+    },
+    {
+      "id": "A06",
+      "required_fields": "正式记录身份／类别",
+      "current_storage_and_path": "当前 history 只列 Run；Artifact 必属 Run",
+      "recommendation": "新增 `case_saved_ai_records`；历史读取以类型化键区分 Run 与 saved_ai，不把后者插进 Run"
+    },
+    {
+      "id": "A07",
+      "required_fields": "确认后的标题、结论及原答复",
+      "current_storage_and_path": "对话内容已存，编辑确认值无正式保存位置",
+      "recommendation": "新表保存 title/conclusion 和原问题／答复副本，不能覆盖原消息"
+    },
+    {
+      "id": "A08",
+      "required_fields": "保存人、时间和重复保存",
+      "current_storage_and_path": "无正式出口",
+      "recommendation": "新表 saved_by/saved_at，tenant+case+conversation+answer_message_id 唯一；重试读已有行，取消不写"
+    },
+    {
+      "id": "A09",
+      "required_fields": "当次输入与引用快照",
+      "current_storage_and_path": "Run 冻结已有，聊天结果未接",
+      "recommendation": "新表 input_snapshot/reference_snapshot；复制答复实际使用的版本，不在保存按钮点击时重读已经变化的任务作为旧依据"
+    },
+    {
+      "id": "A10",
+      "required_fields": "保存记录与 Case／图／用量",
+      "current_storage_and_path": "当前没有分离合同",
+      "recommendation": "新表可选 source_run_id 回查真实执行；保存不改 Case 状态／成员／当前判断，纯文字不能作图底，usage 无来源时 null"
+    },
+    {
+      "id": "G01",
+      "required_fields": "图底图身份和资格",
+      "current_storage_and_path": "Case.observable_graph 无稳定 base Run 合同；历史图工件已有",
+      "recommendation": "图资格从实际图工件／执行结果派生；保存探索时固定 base_kind、base_run_id 和当时成员范围"
+    },
+    {
+      "id": "G02",
+      "required_fields": "已保存探索的节点、边、展开、筛选和布局",
+      "current_storage_and_path": "原型本地保存；服务端无此对象",
+      "recommendation": "新增 `case_graph_explorations`，与 Run 图、Case 当前成员分开"
+    },
+    {
+      "id": "G03",
+      "required_fields": "扩展候选和来源",
+      "current_storage_and_path": "现有邻居／路径查询，产品适配未完成",
+      "recommendation": "复用查询；节点存 source_ref、关联告警、查询窗口／排序依据；不根据同名主机跨来源合并"
+    },
+    {
+      "id": "G04",
+      "required_fields": "对象到告警和材料",
+      "current_storage_and_path": "entities/iocs、对象边、工件引用已有",
+      "recommendation": "派生读取；保留稳定对象键、来源及匹配依据，未归类材料单列，不必先新建一套对象库"
+    },
+    {
+      "id": "G05",
+      "required_fields": "案件故事条目／时间",
+      "current_storage_and_path": "告警 event_time、Run 起止已有；旧 timeline 混入 created_at",
+      "recommendation": "读取四类源：告警、Run、saved_ai、已完成任务；严格用发生／起止／保存／完成时间，不复用旧管理时间线拼法"
+    },
+    {
+      "id": "G06",
+      "required_fields": "统计、待办、覆盖",
+      "current_storage_and_path": "Case／任务／Run 原始行部分齐备",
+      "recommendation": "派生，不增计数列；先按 Case 去重，任务 todo/in_progress 算待办；覆盖、状态和未知负责人按明确口径读"
+    },
+    {
+      "id": "P01",
+      "required_fields": "Fusion 事件身份、成员、归并依据",
+      "current_storage_and_path": "Alert enrichment 的 incident_id／依据、成员查询",
+      "recommendation": "现有；保留既有 identity 与成员事实，不重复建事件成员主表"
+    },
+    {
+      "id": "P02",
+      "required_fields": "事件名称／说明",
+      "current_storage_and_path": "reader 标题由成员生成，summaries 为 AI 文本",
+      "recommendation": "新增事件业务表的 title_override/description；无人工覆盖时仍可由成员展示派生标题，AI summary 单独读"
+    },
+    {
+      "id": "P03",
+      "required_fields": "事件业务状态、负责人",
+      "current_storage_and_path": "没有事件本体相应记录",
+      "recommendation": "新表 handling_status、assigned_to_id/assigned_at、修改主体；成员状态／负责人不能替代事件事实"
+    },
+    {
+      "id": "P04",
+      "required_fields": "事件标签／解决说明／解决时间／业务更新时间",
+      "current_storage_and_path": "无事件本体相应记录",
+      "recommendation": "新表 tags、resolution_note、resolved_at/resolved_by、updated_at；最近更新时间取事件业务时钟和成员业务时钟的最大值"
+    },
+    {
+      "id": "P05",
+      "required_fields": "事件严重程度、优先级、分类",
+      "current_storage_and_path": "成员最高 severity 可派生；独立分类已取消；优先级来源未定",
+      "recommendation": "不为分类建列；不造优先级评分。严重程度管理与“成员最高”存在产品口径待确认，见第 8 节"
+    },
+    {
+      "id": "P06",
+      "required_fields": "普通告警评论",
+      "current_storage_and_path": "只有 Case 评论、分诊反馈 note、通用审计等",
+      "recommendation": "新增 `alert_comments`，不强迫评论先改判或创建 Case；Case 评论保留现表"
+    },
+    {
+      "id": "P07",
+      "required_fields": "操作人、主体、before/after、批量目标",
+      "current_storage_and_path": "CaseTimeline 和 audit_log 具备容器，缺统一业务写入／读取",
+      "recommendation": "复用，补准确主体与真实目标；大批量用父操作＋逐对象活动关联，避免只把所有 ID 塞进会裁剪的 audit changes"
+    },
+    {
+      "id": "P08",
+      "required_fields": "单条响应建议身份及目标",
+      "current_storage_and_path": "AnalysisConclusion.recommendations 是字符串列表",
+      "recommendation": "新结果 JSON 扩展结构化 recommendations：稳定 id、类型化目标、理由、证据 refs、审批要求 known/unknown；旧文本原样保留"
+    },
+    {
+      "id": "P09",
+      "required_fields": "审批事实及建议关系",
+      "current_storage_and_path": "agent_approvals 已有 action、run/case、决定人／时间／意见",
+      "recommendation": "不新建审批表；在 action JSON 绑定 recommendation_ref／目标／源 Run，审批与 action 的既有同 ID 保持"
+    },
+    {
+      "id": "P10",
+      "required_fields": "执行回执和事件归属",
+      "current_storage_and_path": "aisoc_action_records.record／status、approval.action.dispatch 已有",
+      "recommendation": "不新建执行表；显式传 case_ref/fusion_incident_ref，不能重解释旧 incident_id；按真实 action_status/receipt 表达执行，批准本身不是完成"
+    },
+    {
+      "id": "F01",
+      "required_fields": "来源、规则、战术、评分及同次判定",
+      "current_storage_and_path": "前四批已补写入／共享投影／冻结／hash",
+      "recommendation": "现有；继续保留来源语义和预算，原厂未知空，不把分析评分当证据"
+    },
+    {
+      "id": "F02",
+      "required_fields": "OCSF 必要进程语义",
+      "current_storage_and_path": "Alert.raw_event、来源副本和湖 ocsf_json 已存",
+      "recommendation": "映射；从确定源路径投影 PID／父进程／命令行，保 guard 和缺失说明，不增加记忆库"
+    },
+    {
+      "id": "F03",
+      "required_fields": "process Tool 的会话及进程细节",
+      "current_storage_and_path": "湖 session_id、ocsf_json 已存，SELECT／解析未消费",
+      "recommendation": "映射；补 SELECT／JSON 解析、结果合同、模型视图与复用版本；不先新增同义平铺列"
+    },
+    {
+      "id": "F04",
+      "required_fields": "network Tool 的端点／动作／结果／会话",
+      "current_storage_and_path": "湖 src_port/dst_hostname/action/outcome/session_id 已存",
+      "recommendation": "映射；五项进入真实结果与模型输入，缺值保空；不能据连接行推断允许或成功"
+    }
+  ],
+  "recommended_new_tables": {
+    "core": [
+      "case_saved_ai_records",
+      "case_incident_links",
+      "case_graph_explorations"
+    ],
+    "supporting": [
+      "fusion_incident_state",
+      "alert_comments"
+    ]
+  },
+  "existing_tables_with_proposed_column_changes": [
+    "aisoc_cases",
+    "aisoc_case_tasks",
+    "aisoc_copilot_conversations",
+    "investigation_runs"
+  ],
+  "sql_preflight": {
+    "path": "docs/design/investigation-schema-preflight-20261103.sql",
+    "sha256": "3c1495bad9004ea25b2cfc3b144c30ed79588fea77794cd6bdc4e027063b40eb",
+    "parser": "sqlglot 30.22.0",
+    "dialect": "postgres",
+    "select_statements": 6,
+    "executed_against_database": false
+  },
+  "sources": [
+    {
+      "workspace": "design",
+      "path": "docs/design/investigation-gap-assessment-20261103.md",
+      "sha256": "db51acf2de2161cecc00053506d96fc1b5a471cbf95757349929295375b136fb"
+    },
+    {
+      "workspace": "design",
+      "path": "docs/design/alert-incident-case-product-requirements.md",
+      "sha256": "b29077e1a82cd255b0de1d39d7ed236503aa0012b0bf0fca57a893ad9616df01"
+    },
+    {
+      "workspace": "design",
+      "path": "docs/design/investigation-schema-preflight-20261103.sql",
+      "sha256": "3c1495bad9004ea25b2cfc3b144c30ed79588fea77794cd6bdc4e027063b40eb"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/012_case_management.sql",
+      "sha256": "9311d245bc32f702562a0e67db860a3d75536b5bba54b24064cbc354ab3d029b"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/083_one_case_table.sql",
+      "sha256": "948a84093b1780db9dbe95916f8032b3fba8f3db8e68938d2051086c6bb7a1c9"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/086_case_orchestration.sql",
+      "sha256": "3381dd7f9c94ba94af7a792b82a163c37fdfd7bd104252602bb4707a972110e4"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/090_case_reopen.sql",
+      "sha256": "6e1169afb6dfa3c2f506e7a39507561cc70358e7ebdb137bacdc78e83bae1316"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/106_case_depth.sql",
+      "sha256": "3cbbd174453c0c27856302902ff06ea5fef9c4cb1c05e9a2d3fa96e768cb5e36"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/107_case_war_rooms.sql",
+      "sha256": "2021572bc65a284bdcc9e06654b6b3ffc86ff4ee41c2e749ca38716e935329d2"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/models/case.py",
+      "sha256": "337451c8f6bcef337942d9f4d13592abf346758bdb1bf5a3d685040630cb1526"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/api/v1/endpoints/cases.py",
+      "sha256": "1fffbdc75c66efeecc26970918ca3ad72f9cded368d357364d341a91622800ad"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/case_status.py",
+      "sha256": "a0208b9604e7a6c11dc4e1b9bcad4493680919de7f129ef4ccb156b7cb0e423a"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/case_depth.py",
+      "sha256": "1bc2b7590e89a5dfcbd80b7740a51a5905db2e3caffcca5efd0672e2f32a848b"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/121_investigation_case_links.sql",
+      "sha256": "9093a62c75fbea2af2dfbabf75b3d17c4d5ae8f8534b5d7a198489a9883dff28"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_links.py",
+      "sha256": "793c8d2165cf9d696315175e622029cae0839eef263e2889b13f952a3f3a6817"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/008_investigation_ledger.sql",
+      "sha256": "fbc3624d393865e7de37b4d0e71e0610e45e1892afbf6daa09ab8f8322978d7d"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/063_cost_provenance.sql",
+      "sha256": "5cc116f1ac13c4fb9aef81aa23a275673c32ed169894a0a60922a366ba582c89"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/models/investigation.py",
+      "sha256": "67a3ffa96a8f97274e612c6ea56793a613e3e6f89601392a19cce33a56ab9667"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_analysis.py",
+      "sha256": "e1635a5349d026af966301030ff277679afe25cbbd0bf2c4eea169ee6dd6b75b"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_source_material.py",
+      "sha256": "4b355f40efe40e70be41a62e94fb0b14b8fc273dcdc3c8bf0720e487412c1657"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_history.py",
+      "sha256": "11bbf64cb90cefb21991ca84ea2f87d47ebef70cc7cfb9b0557e09d5e5adcdac"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_evidence.py",
+      "sha256": "8820f0a1fc94d31dfbec520bc12ec8bb963ed71505ab7de4aa18ebbba7721f5d"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_navigation.py",
+      "sha256": "b00c74002ccd660ce9633ce82413d39bc6b03432abf7a4ead0e9018adddb41a5"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/application.py",
+      "sha256": "6919788896700612e3863f3fe96cca0e2e0b402e8034f5dec618cd160eb9312c"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/027_case_tasks.sql",
+      "sha256": "05a3bdd7c204a2c0efbfd9afd721417ff74c05ce144b4a493ef5ff3f4f91bc21"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/044_cases_tenant_isolation.sql",
+      "sha256": "c21e1829ff412d6e9562a2b9079537fc3d78a40f870f88d8e4216e777f2b5fb4"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/076_copilot_and_hunt_search_tenancy.sql",
+      "sha256": "0bdf5a565caaf16e5d8917a20243af2a6baa19b8cc88720f4165b763488a62ea"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/agents/app/api/copilot.py",
+      "sha256": "e0c0a0f3a223f50646e0c0d95172f3c029f98da904ebd8bfb1b02fa1456208c3"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/agents/app/api/conversation_store.py",
+      "sha256": "462b81eb138f3290fe57d7f72cc142b68a410b866910736013bf320b16561b64"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/graph_service.py",
+      "sha256": "0e5634060d98b2b0591778a62f7fb09e061f6bbb9bb708e873d40426c4a009bf"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/investigation_attack_context.py",
+      "sha256": "559f8c1be74ce55f642d7e7adf9f90f032a32e0bc4db87653b52403f707921eb"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/120_fusion_incident_summaries.sql",
+      "sha256": "b742a042ec2b17819f85177dd106ae7682e1c29efc193a7a6419e72291610497"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/incident_reader.py",
+      "sha256": "5a93429502e8d1de146707a541948d123dd100a730f8225da6bac37f7f2e3862"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/001_init.sql",
+      "sha256": "cc12725a2375dc1235c80a9533d141286fdc0f2521fd8456b017deb4eb30e16e"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/004_audit_log.sql",
+      "sha256": "b6bff19ce0307c2f663b4974d8fb1f1dffd8f9fe301dd472d001d57314753bdf"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/models/audit.py",
+      "sha256": "a2e90c82b86f2bbf00125adf9b93eb7f9a7cc4a311f5f960f1a7be20e1f9a6ac"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/audit.py",
+      "sha256": "3ec070ff027a8d81055ac613e5e9b9ad6a9a446989437cea746cc57316353e52"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/services/audit_redaction.py",
+      "sha256": "73f220c2e773067554738f44591fe632898eaf758828fb7e4c2fcb52585f325e"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/models/responder.py",
+      "sha256": "c2a07135130056c2b56ebbc0a27d22ffb585d360127a02a800ed925a94f0fa89"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/api/v1/endpoints/approvals.py",
+      "sha256": "e57871bfb97b2f25bd7011257b80da0097349f7ef0afc646c5c484a60d867dc2"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/055_action_records.sql",
+      "sha256": "e485fa5edbc4ee0d8508c1084dbe8ad186b97ee7369a089700d2db0b35059746"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/migrations/095_action_approval_tier.sql",
+      "sha256": "548142ccb1b5740239d6fef6cd883461a40f64f668b264cfd92953d392e89e3e"
+    },
+    {
+      "workspace": "backend",
+      "path": "docs/investigation/page-field-support-matrix-20261102.md",
+      "sha256": "4e89f581afe86f16ce0e249a84f8deeb244c3dd55d0b99f975985e73bc7f6b3f"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/api/app/investigation_v2/case_analysis_tools.py",
+      "sha256": "ecfe9276341631acbf28371355f7d1e87785859eeb5b7d4dcb47162815eac0b8"
+    },
+    {
+      "workspace": "backend",
+      "path": "services/fusion/app/services/lake_writer.py",
+      "sha256": "dad3856ec2a028a2fe6e3cb816417c336c023914e8b666fc1860d5b2aedf5dfb"
+    }
+  ],
+  "checks": {
+    "field_group_count": 67,
+    "ordered_unique_ids": true,
+    "source_links_resolve": true,
+    "business_code_changed": false,
+    "ddl_applied": false,
+    "business_tests_run": 0,
+    "live_database_queries": 0,
+    "model_calls": 0,
+    "new_runs": 0,
+    "remote_refreshed": false,
+    "deployed": false,
+    "committed": false,
+    "pushed": false
+  },
+  "limits": [
+    "Current schema support is inferred from pinned migrations, ORM, and reviewed read/write code; no live schema inspection.",
+    "Proposed columns, tables, indexes, and contracts are not implemented.",
+    "Product policy questions remain explicit; no automatic scope expansion or report retry.",
+    "The 67 items are requirement field groups, not a count of physical database columns."
+  ]
+}

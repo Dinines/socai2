@@ -2,6 +2,14 @@
 
 # 有界合成告警工具
 
+**2026-11-05 上下文扩充：** 新增 `context_fixture.py`，复用现有确定身份/时间及 JSON/hash/答案分离工具，围绕已有固定告警生成网络五元组和收发字节/包数、进程、认证及主机/时间范围对照。只离线生成，默认不联网、不创建告警或 Case；不同目的地址仍属于主机窗口查询上下文。一次实际 40 条 Kafka→Fusion→新湖、18 正式 Tool 查询与 96 计数值核对结果见[完整流程验收](../../docs/investigation/kafka-to-conclusion-validation-20261105.md)。原 fixture 和上游生成器保持。
+
+```powershell
+.venv/Scripts/python.exe tools/testdata/context_fixture.py --plan <固定告警计划.json> --out .local/testdata/<新目录> --run-id <新批次>
+```
+
+输出 `events.json` 和独立 `expected.json`，manifest 记录原计划及文件 hash。仅适配明确带两条进程/网络告警、Case 主机和原两分钟时间窗的计划；不猜生产字段，不把 expected 交给 Kafka 或模型。新批次真实投放由 `docs/operations/run_socai2_context_20261105.py` 固定实例完成，该 k4 已结束，脚本会拒绝重派；不要为重试删除 attempt 文件。新增 Tool 计数投影已本地及真实诊断进程验证，常驻 n14 尚未同步。
+
 2026-10-24代码审查与待处理项见[分支审计](../../docs/operations/data-evaluation-audit-20261024.md)：MCC非法分类边界、批次冻结/一对执行及证据截断尚未修复；现状合入不代表完整评测通过。
 
 后续数据/评估设计与E0离线入口见[评估设计](../../docs/operations/data-evaluation-design-20261023.md)。本轮工具位于隔离工作区/分支`codex/data-evaluation`；不改变调查实现。原迁移回执继续适用于原范围。

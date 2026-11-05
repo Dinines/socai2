@@ -1,0 +1,1021 @@
+{
+  "batch": "k1",
+  "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+  "source": "new user full Kafka flow and paired-model test request",
+  "destination": "192.168.1.21 independent next service",
+  "new_alerts": 12,
+  "lake_events": 8,
+  "new_cases": 6,
+  "max_runs": 26,
+  "max_model_calls": 50,
+  "retries": 0,
+  "max_baseline_model_calls": 4,
+  "max_baseline_tokens": 24000,
+  "max_baseline_tool_calls": 4,
+  "topic_prefix": "socai2.validation.k1.20261105",
+  "group": "socai2-validation-k1-20261105",
+  "mutation": "synthetic next-DB tenant only, no production topic/group/config mutation",
+  "pairing": "same semantic events; distinct source namespace and 40min shifted windows prevent history contamination",
+  "excluded": [
+    "Q implementation",
+    "production scheduler",
+    "original services",
+    "external vendor connection claims"
+  ],
+  "oracle_not_sent_to_models": {
+    "maintenance": "benign; authorization only added via H in second C",
+    "credential_access": "malicious simulation; process_start does not prove dump or exfil completed",
+    "sparse": "unknown; missing lake rows cannot disprove source observations"
+  },
+  "pass_rule": "benign/malicious reversal is misclassification; needs_review acceptable abstention; unsupported facts judged separately",
+  "cases": [
+    {
+      "key": "deepseek-maintenance",
+      "backend": "deepseek",
+      "scenario": "maintenance",
+      "window_start": "2026-11-04T21:58:09+00:00",
+      "window_end": "2026-11-04T22:00:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "10949bd7-ebeb-5fdf-9876-e61a786f270c",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T21:59:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-0",
+          "username": "operator-0",
+          "source_event_ids": [
+            "f041d85a-249d-57a0-886d-c65098929fce"
+          ],
+          "external_id": "e725792b-2918-50af-9cb4-b859d8c68138",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1059.001"
+          ],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "f041d85a-249d-57a0-886d-c65098929fce",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T21:59:09+00:00",
+              "device": {
+                "name": "k1-endpoint-0"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-0"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-0\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-0\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T21:59:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "5920ed09-1cd5-55a3-b7a3-1f13225c1164",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T21:59:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-0",
+          "username": null,
+          "source_event_ids": [
+            "63349437-eee6-5594-8cea-2bae8ee56e6d"
+          ],
+          "external_id": "7d2c5bf8-0b88-51a8-a4d2-e96e53f09c0e",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "63349437-eee6-5594-8cea-2bae8ee56e6d",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T21:59:24+00:00",
+              "device": {
+                "name": "k1-endpoint-0"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-0",
+                "ip": "192.0.2.30",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.30",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-0\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.30\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-0\", \"ip\": \"192.0.2.30\", \"port\": 50123}, \"time\": \"2026-11-04T21:59:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": [
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "f041d85a-249d-57a0-886d-c65098929fce",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 1007,
+            "time": "2026-11-04T21:59:09+00:00",
+            "device": {
+              "name": "k1-endpoint-0"
+            },
+            "actor": {
+              "user": {
+                "name": "operator-0"
+              }
+            },
+            "process": {
+              "pid": 4242,
+              "name": "powershell.exe",
+              "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+              "parent_process": {
+                "pid": 2100,
+                "name": "cmd.exe"
+              }
+            },
+            "activity": {
+              "action": "process_start",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-0\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-0\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T21:59:09+00:00\"}"
+          }
+        },
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "63349437-eee6-5594-8cea-2bae8ee56e6d",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 4001,
+            "time": "2026-11-04T21:59:24+00:00",
+            "device": {
+              "name": "k1-endpoint-0"
+            },
+            "src_endpoint": {
+              "hostname": "k1-endpoint-0",
+              "ip": "192.0.2.30",
+              "port": 50123
+            },
+            "dst_endpoint": {
+              "ip": "198.51.100.30",
+              "port": 443
+            },
+            "connection_info": {
+              "protocol_name": "tcp"
+            },
+            "activity": {
+              "action": "network_connect",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-0\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.30\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-0\", \"ip\": \"192.0.2.30\", \"port\": 50123}, \"time\": \"2026-11-04T21:59:24+00:00\"}"
+          }
+        }
+      ]
+    },
+    {
+      "key": "deepseek-credential_access",
+      "backend": "deepseek",
+      "scenario": "credential_access",
+      "window_start": "2026-11-04T22:08:09+00:00",
+      "window_end": "2026-11-04T22:10:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "601c5322-3837-593e-bf39-f94e904cb734",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:09:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-1",
+          "username": "operator-1",
+          "source_event_ids": [
+            "eea2bd5b-be0e-5617-9f94-4292abbfb7a4"
+          ],
+          "external_id": "8a49d84e-76b3-5209-a92e-251dda32e0fa",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "eea2bd5b-be0e-5617-9f94-4292abbfb7a4",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T22:09:09+00:00",
+              "device": {
+                "name": "k1-endpoint-1"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-1"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "rundll32.exe",
+                "cmd_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 612 C:\\ProgramData\\lsass.dmp full",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-1\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-1\"}, \"process\": {\"cmd_line\": \"rundll32.exe C:\\\\Windows\\\\System32\\\\comsvcs.dll, MiniDump 612 C:\\\\ProgramData\\\\lsass.dmp full\", \"name\": \"rundll32.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:09:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "047fcccc-248f-5f5f-9995-bc8e53c04992",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:09:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-1",
+          "username": null,
+          "source_event_ids": [
+            "d40f4c88-cbfb-59bc-a1fa-1406f396506b"
+          ],
+          "external_id": "9334ef62-2fac-508f-a68d-1570cada66b2",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "d40f4c88-cbfb-59bc-a1fa-1406f396506b",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T22:09:24+00:00",
+              "device": {
+                "name": "k1-endpoint-1"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-1",
+                "ip": "192.0.2.31",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.31",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-1\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.31\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-1\", \"ip\": \"192.0.2.31\", \"port\": 50123}, \"time\": \"2026-11-04T22:09:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": [
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "eea2bd5b-be0e-5617-9f94-4292abbfb7a4",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 1007,
+            "time": "2026-11-04T22:09:09+00:00",
+            "device": {
+              "name": "k1-endpoint-1"
+            },
+            "actor": {
+              "user": {
+                "name": "operator-1"
+              }
+            },
+            "process": {
+              "pid": 4242,
+              "name": "rundll32.exe",
+              "cmd_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 612 C:\\ProgramData\\lsass.dmp full",
+              "parent_process": {
+                "pid": 2100,
+                "name": "cmd.exe"
+              }
+            },
+            "activity": {
+              "action": "process_start",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-1\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-1\"}, \"process\": {\"cmd_line\": \"rundll32.exe C:\\\\Windows\\\\System32\\\\comsvcs.dll, MiniDump 612 C:\\\\ProgramData\\\\lsass.dmp full\", \"name\": \"rundll32.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:09:09+00:00\"}"
+          }
+        },
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "d40f4c88-cbfb-59bc-a1fa-1406f396506b",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 4001,
+            "time": "2026-11-04T22:09:24+00:00",
+            "device": {
+              "name": "k1-endpoint-1"
+            },
+            "src_endpoint": {
+              "hostname": "k1-endpoint-1",
+              "ip": "192.0.2.31",
+              "port": 50123
+            },
+            "dst_endpoint": {
+              "ip": "198.51.100.31",
+              "port": 443
+            },
+            "connection_info": {
+              "protocol_name": "tcp"
+            },
+            "activity": {
+              "action": "network_connect",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-1\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.31\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-1\", \"ip\": \"192.0.2.31\", \"port\": 50123}, \"time\": \"2026-11-04T22:09:24+00:00\"}"
+          }
+        }
+      ]
+    },
+    {
+      "key": "deepseek-sparse",
+      "backend": "deepseek",
+      "scenario": "sparse",
+      "window_start": "2026-11-04T22:18:09+00:00",
+      "window_end": "2026-11-04T22:20:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "54310ea4-651a-51c4-91b7-eadb961a094f",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:19:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-2",
+          "username": "operator-2",
+          "source_event_ids": [
+            "9693eb15-8b76-5820-8537-edda53fd38dc"
+          ],
+          "external_id": "4cdcc9ba-a607-5525-b78b-fb4981e896ae",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1059.001"
+          ],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "9693eb15-8b76-5820-8537-edda53fd38dc",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T22:19:09+00:00",
+              "device": {
+                "name": "k1-endpoint-2"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-2"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-2\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-2\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:19:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "3293837a-c3e5-545f-a478-53b506b41865",
+          "source": "k1-deepseek",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:19:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-2",
+          "username": null,
+          "source_event_ids": [
+            "3f5f150a-9352-5676-b4c6-3ea096eddf7f"
+          ],
+          "external_id": "2a39c81f-fc92-5077-aaaa-ffb05fe0e1cb",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "3f5f150a-9352-5676-b4c6-3ea096eddf7f",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T22:19:24+00:00",
+              "device": {
+                "name": "k1-endpoint-2"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-2",
+                "ip": "192.0.2.32",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.32",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-2\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.32\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-2\", \"ip\": \"192.0.2.32\", \"port\": 50123}, \"time\": \"2026-11-04T22:19:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": []
+    },
+    {
+      "key": "small-maintenance",
+      "backend": "small",
+      "scenario": "maintenance",
+      "window_start": "2026-11-04T22:38:09+00:00",
+      "window_end": "2026-11-04T22:40:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "271d7bdd-185c-53bc-87ec-f385b117591a",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:39:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-0",
+          "username": "operator-0",
+          "source_event_ids": [
+            "5def2138-02f7-53b5-b898-a57c7ed3b53d"
+          ],
+          "external_id": "9466a97d-0480-5413-8d52-0da043268b82",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1059.001"
+          ],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "5def2138-02f7-53b5-b898-a57c7ed3b53d",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T22:39:09+00:00",
+              "device": {
+                "name": "k1-endpoint-0"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-0"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-0\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-0\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:39:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "4616236d-19fb-5861-bc34-4a9ce09415ce",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:39:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-0",
+          "username": null,
+          "source_event_ids": [
+            "b16602c2-2f5f-507d-b33e-2ca5bf124d2b"
+          ],
+          "external_id": "d186fdc6-fb53-50ea-b463-3b5bc4d7970c",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "b16602c2-2f5f-507d-b33e-2ca5bf124d2b",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T22:39:24+00:00",
+              "device": {
+                "name": "k1-endpoint-0"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-0",
+                "ip": "192.0.2.30",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.30",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-0\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.30\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-0\", \"ip\": \"192.0.2.30\", \"port\": 50123}, \"time\": \"2026-11-04T22:39:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": [
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "5def2138-02f7-53b5-b898-a57c7ed3b53d",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 1007,
+            "time": "2026-11-04T22:39:09+00:00",
+            "device": {
+              "name": "k1-endpoint-0"
+            },
+            "actor": {
+              "user": {
+                "name": "operator-0"
+              }
+            },
+            "process": {
+              "pid": 4242,
+              "name": "powershell.exe",
+              "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+              "parent_process": {
+                "pid": 2100,
+                "name": "cmd.exe"
+              }
+            },
+            "activity": {
+              "action": "process_start",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-0\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-0\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:39:09+00:00\"}"
+          }
+        },
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "b16602c2-2f5f-507d-b33e-2ca5bf124d2b",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 4001,
+            "time": "2026-11-04T22:39:24+00:00",
+            "device": {
+              "name": "k1-endpoint-0"
+            },
+            "src_endpoint": {
+              "hostname": "k1-endpoint-0",
+              "ip": "192.0.2.30",
+              "port": 50123
+            },
+            "dst_endpoint": {
+              "ip": "198.51.100.30",
+              "port": 443
+            },
+            "connection_info": {
+              "protocol_name": "tcp"
+            },
+            "activity": {
+              "action": "network_connect",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-0\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.30\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-0\", \"ip\": \"192.0.2.30\", \"port\": 50123}, \"time\": \"2026-11-04T22:39:24+00:00\"}"
+          }
+        }
+      ]
+    },
+    {
+      "key": "small-credential_access",
+      "backend": "small",
+      "scenario": "credential_access",
+      "window_start": "2026-11-04T22:48:09+00:00",
+      "window_end": "2026-11-04T22:50:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "564fcd5d-c8a3-515a-a06c-c7dab938ca18",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:49:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-1",
+          "username": "operator-1",
+          "source_event_ids": [
+            "fcfec477-8e5d-506c-822a-d55e3814af61"
+          ],
+          "external_id": "437dde16-fbf4-54a5-916c-9d62611db95d",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "fcfec477-8e5d-506c-822a-d55e3814af61",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T22:49:09+00:00",
+              "device": {
+                "name": "k1-endpoint-1"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-1"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "rundll32.exe",
+                "cmd_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 612 C:\\ProgramData\\lsass.dmp full",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-1\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-1\"}, \"process\": {\"cmd_line\": \"rundll32.exe C:\\\\Windows\\\\System32\\\\comsvcs.dll, MiniDump 612 C:\\\\ProgramData\\\\lsass.dmp full\", \"name\": \"rundll32.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:49:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "990350be-e49d-5e83-afd9-ff31c4eb644f",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:49:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-1",
+          "username": null,
+          "source_event_ids": [
+            "9be51187-e4cf-57df-b2c8-28b37ea1def0"
+          ],
+          "external_id": "cc306b4c-6678-50c0-b212-68578ae41ae4",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "9be51187-e4cf-57df-b2c8-28b37ea1def0",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T22:49:24+00:00",
+              "device": {
+                "name": "k1-endpoint-1"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-1",
+                "ip": "192.0.2.31",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.31",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-1\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.31\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-1\", \"ip\": \"192.0.2.31\", \"port\": 50123}, \"time\": \"2026-11-04T22:49:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": [
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "fcfec477-8e5d-506c-822a-d55e3814af61",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 1007,
+            "time": "2026-11-04T22:49:09+00:00",
+            "device": {
+              "name": "k1-endpoint-1"
+            },
+            "actor": {
+              "user": {
+                "name": "operator-1"
+              }
+            },
+            "process": {
+              "pid": 4242,
+              "name": "rundll32.exe",
+              "cmd_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 612 C:\\ProgramData\\lsass.dmp full",
+              "parent_process": {
+                "pid": 2100,
+                "name": "cmd.exe"
+              }
+            },
+            "activity": {
+              "action": "process_start",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-1\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-1\"}, \"process\": {\"cmd_line\": \"rundll32.exe C:\\\\Windows\\\\System32\\\\comsvcs.dll, MiniDump 612 C:\\\\ProgramData\\\\lsass.dmp full\", \"name\": \"rundll32.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:49:09+00:00\"}"
+          }
+        },
+        {
+          "schema_version": "v1",
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "event_id": "9be51187-e4cf-57df-b2c8-28b37ea1def0",
+          "connector_type": "validation",
+          "original_vendor": "LabTelemetry",
+          "ocsf_event": {
+            "class_uid": 4001,
+            "time": "2026-11-04T22:49:24+00:00",
+            "device": {
+              "name": "k1-endpoint-1"
+            },
+            "src_endpoint": {
+              "hostname": "k1-endpoint-1",
+              "ip": "192.0.2.31",
+              "port": 50123
+            },
+            "dst_endpoint": {
+              "ip": "198.51.100.31",
+              "port": 443
+            },
+            "connection_info": {
+              "protocol_name": "tcp"
+            },
+            "activity": {
+              "action": "network_connect",
+              "outcome": "success"
+            },
+            "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-1\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.31\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-1\", \"ip\": \"192.0.2.31\", \"port\": 50123}, \"time\": \"2026-11-04T22:49:24+00:00\"}"
+          }
+        }
+      ]
+    },
+    {
+      "key": "small-sparse",
+      "backend": "small",
+      "scenario": "sparse",
+      "window_start": "2026-11-04T22:58:09+00:00",
+      "window_end": "2026-11-04T23:00:09+00:00",
+      "alerts": [
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "6172129d-90f2-518c-94af-e94f052855ed",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:59:09+00:00",
+          "title": "Process command observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-2",
+          "username": "operator-2",
+          "source_event_ids": [
+            "e2d7052f-eec0-5e74-ba59-ecb6494b5ad3"
+          ],
+          "external_id": "8d04eafe-d36b-586c-b977-871eccf936ae",
+          "rule_id": "endpoint-observation-0",
+          "rule_name": "Process command observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [
+            "T1059.001"
+          ],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "e2d7052f-eec0-5e74-ba59-ecb6494b5ad3",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 1007,
+              "time": "2026-11-04T22:59:09+00:00",
+              "device": {
+                "name": "k1-endpoint-2"
+              },
+              "actor": {
+                "user": {
+                  "name": "operator-2"
+                }
+              },
+              "process": {
+                "pid": 4242,
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -File C:\\Ops\\inventory.ps1",
+                "parent_process": {
+                  "pid": 2100,
+                  "name": "cmd.exe"
+                }
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"process_start\", \"outcome\": \"success\"}, \"actor\": {\"user\": {\"name\": \"operator-2\"}}, \"class_uid\": 1007, \"device\": {\"name\": \"k1-endpoint-2\"}, \"process\": {\"cmd_line\": \"powershell.exe -File C:\\\\Ops\\\\inventory.ps1\", \"name\": \"powershell.exe\", \"parent_process\": {\"name\": \"cmd.exe\", \"pid\": 2100}, \"pid\": 4242}, \"time\": \"2026-11-04T22:59:09+00:00\"}"
+            }
+          }
+        },
+        {
+          "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+          "identity_version": "source-v1",
+          "source_alert_id": "9aa1a993-63c1-5c39-90c3-66dc0b767f60",
+          "source": "k1-small",
+          "connector_type": "validation",
+          "event_time": "2026-11-04T22:59:24+00:00",
+          "title": "Outbound connection observed",
+          "description": "Recorded endpoint activity; relationship and authorization require evidence.",
+          "severity": "medium",
+          "hostname": "k1-endpoint-2",
+          "username": null,
+          "source_event_ids": [
+            "27a68662-dfc3-58c1-a971-274b1e122a93"
+          ],
+          "external_id": "ad17408e-e896-5b05-9d13-976d97c521da",
+          "rule_id": "endpoint-observation-1",
+          "rule_name": "Outbound connection observed",
+          "mitre_tactics": [
+            "Execution"
+          ],
+          "mitre_techniques": [],
+          "raw_event": {
+            "schema_version": "v1",
+            "tenant_id": "deefcfa8-dc3c-512d-849b-508d911f307c",
+            "event_id": "27a68662-dfc3-58c1-a971-274b1e122a93",
+            "connector_type": "validation",
+            "original_vendor": "LabTelemetry",
+            "ocsf_event": {
+              "class_uid": 4001,
+              "time": "2026-11-04T22:59:24+00:00",
+              "device": {
+                "name": "k1-endpoint-2"
+              },
+              "src_endpoint": {
+                "hostname": "k1-endpoint-2",
+                "ip": "192.0.2.32",
+                "port": 50123
+              },
+              "dst_endpoint": {
+                "ip": "198.51.100.32",
+                "port": 443
+              },
+              "connection_info": {
+                "protocol_name": "tcp"
+              },
+              "activity": {
+                "action": "network_connect",
+                "outcome": "success"
+              },
+              "raw_data": "{\"activity\": {\"action\": \"network_connect\", \"outcome\": \"success\"}, \"class_uid\": 4001, \"connection_info\": {\"protocol_name\": \"tcp\"}, \"device\": {\"name\": \"k1-endpoint-2\"}, \"dst_endpoint\": {\"ip\": \"198.51.100.32\", \"port\": 443}, \"src_endpoint\": {\"hostname\": \"k1-endpoint-2\", \"ip\": \"192.0.2.32\", \"port\": 50123}, \"time\": \"2026-11-04T22:59:24+00:00\"}"
+            }
+          }
+        }
+      ],
+      "events": []
+    }
+  ]
+}

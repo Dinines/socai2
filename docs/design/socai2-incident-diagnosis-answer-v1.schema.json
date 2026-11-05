@@ -1,0 +1,241 @@
+{
+  "$defs": {
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^F[1-9][0-9]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 3000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "inferred",
+            "unresolved"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "alert_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 200,
+          "minItems": 1,
+          "title": "Alert Ids",
+          "type": "array"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^S[1-9][0-9]*$",
+            "type": "string"
+          },
+          "maxItems": 40,
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "state",
+        "alert_ids",
+        "source_ids",
+        "limitations"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Member": {
+      "additionalProperties": false,
+      "properties": {
+        "alert_id": {
+          "format": "uuid",
+          "title": "Alert Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "summarized",
+            "unresolved",
+            "not_reviewed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "assessment": {
+          "maxLength": 3000,
+          "minLength": 1,
+          "title": "Assessment",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^S[1-9][0-9]*$",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "alert_id",
+        "state",
+        "assessment",
+        "source_ids",
+        "limitations"
+      ],
+      "title": "Member",
+      "type": "object"
+    },
+    "Question": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 3000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "alert_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 200,
+          "minItems": 1,
+          "title": "Alert Ids",
+          "type": "array"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^S[1-9][0-9]*$",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "evidence_requirements": {
+          "items": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Evidence Requirements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "alert_ids",
+        "source_ids",
+        "evidence_requirements"
+      ],
+      "title": "Question",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "maxLength": 3000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "conclusion": {
+      "maxLength": 3000,
+      "minLength": 1,
+      "title": "Conclusion",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "pattern": "^S[1-9][0-9]*$",
+        "type": "string"
+      },
+      "maxItems": 60,
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/Member"
+      },
+      "maxItems": 200,
+      "minItems": 1,
+      "title": "Members",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "maxItems": 8,
+      "title": "Findings",
+      "type": "array"
+    },
+    "open_questions": {
+      "items": {
+        "$ref": "#/$defs/Question"
+      },
+      "maxItems": 10,
+      "title": "Open Questions",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "maxLength": 3000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Limitations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "summary",
+    "conclusion",
+    "evidence_ids",
+    "members",
+    "findings",
+    "open_questions",
+    "limitations"
+  ],
+  "title": "Answer",
+  "type": "object"
+}

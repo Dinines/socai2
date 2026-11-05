@@ -1,0 +1,48 @@
+{
+  "final_release": "next-20261104-n4",
+  "final_image_id": "sha256:d93be0aa125f698daf5fd570f27ec26dad8d695a2b496e31b297a72c262cbb9c",
+  "candidate_archive_sha256": "319987a10408bbe04a606c9075993da97caf8b2ec9d46cda0fb16c31c6b669a9",
+  "manifest_sha256": "048f050f97b168123067fbd55b91774a2b331b67047866a959ea94583c86b0ca",
+  "application_files": 544,
+  "application_source_unchanged_from_n1": true,
+  "diagnoses": [
+    {
+      "candidate": "n1",
+      "observed": "ASGI module app.socai2_main not found",
+      "cause": "dependency base inherited /opt/investigation as WorkingDir and PYTHONPATH while new app was copied to /app/app",
+      "fix": "explicit WORKDIR /app and ENV PYTHONPATH=/app in generated Dockerfile"
+    },
+    {
+      "candidate": "n2",
+      "observed": "InsecureProductionDefaultsError: METRICS_TOKEN empty",
+      "fix": "new private api.env only: independent random METRICS_TOKEN; bootstrap generation synchronized",
+      "receipt": "runtime-metrics-fix/receipt.json"
+    },
+    {
+      "candidate": "n2",
+      "observed": "application running; configured /health returned 404",
+      "cause": "shared probe helper only installs /livez and /readyz",
+      "fix": "compose and start/verify now use /readyz"
+    },
+    {
+      "candidate": "n3",
+      "observed": "duplicate METRICS_TOKEN literal static lint failure",
+      "scope": "uploaded candidate only; not built or started",
+      "fix": "removed duplicate literal before n4"
+    }
+  ],
+  "success_receipt": "20261104T051835-start/receipt.json",
+  "original_four_containers_unchanged": true,
+  "credentials_exported": false,
+  "new_business_model_calls": 0,
+  "changes": [
+    "deploy/aisoc21/prepare_next_service.py",
+    "deploy/aisoc21/next_service_remote.py",
+    "deploy/aisoc21/compose.next-service.yml"
+  ],
+  "notes": [
+    "image tag is fixed socai2-next-api:20261104-n1; use final image ID and release manifest to identify exact deployment",
+    "no old container stopped/restarted/recreated; no old table queried or changed",
+    "new application/env edits frozen for root synthetic acceptance"
+  ]
+}

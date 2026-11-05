@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Path, Query, Response
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.db.rls import TenantDBSession
-from .case_analysis import CaseAnalysisRequest, CaseAnalysisScope, read_analysis, start_analysis
+from .case_analysis import (BaselineStartRequest, CaseAnalysisRequest, CaseAnalysisScope,
+                            read_analysis, start_analysis, start_baseline_analysis)
 from .case_history import list_analyses
 from .case_views import list_steps, preview_analysis, read_step, saved_report
 from .case_evidence import list_evidence, read_evidence, read_evidence_row
@@ -54,6 +55,15 @@ async def read(
 ):
     user.require_permission("alerts:read")
     return await read_analysis(db, user.tenant_id, case_id, run_id)
+
+
+@router.post("/{case_id}/investigations/{run_id}/start")
+async def start_baseline(case_id: UUID, run_id: UUID, request: BaselineStartRequest, db: TenantDBSession,
+                         _credential: Annotated[None, Depends(_explicit_bearer)],
+                         user: Annotated[CurrentUser, Depends(require_permission("investigation:run"))]):
+    user.require_permission("cases:read")
+    user.require_permission("alerts:read")
+    return await start_baseline_analysis(db, user.tenant_id, user.user_id, case_id, run_id, request)
 
 
 @router.get("/{case_id}/investigations/{run_id}/steps")

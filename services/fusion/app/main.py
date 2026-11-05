@@ -28,6 +28,7 @@ from app.services.fusion_engine import FusionEngine
 from app.services.ioc_match import TenantIocMatcher
 from app.services.lake_writer import LakeWriter
 from app.services.sessions import SessionStore
+from app.services.socai2_sink import Socai2AlertSink
 from app.services.tenant_overlay import OverlayCache
 from app.services.ueba_signal import UebaSignalCache
 from app.services.windowed_detection import WindowedDetectionEngine
@@ -107,7 +108,8 @@ async def lifespan(app: FastAPI):
     # Phase 3.1 — fused alerts land in the Postgres alert store so the spine
     # is continuous (raw event → alert row). Fail-soft: a missing/unreachable
     # DB never blocks the Kafka pipeline.
-    sink = AlertSink(settings.database_url) if settings.alert_sink_enabled else None
+    sink_type = Socai2AlertSink if settings.alert_store_schema == "socai2" else AlertSink
+    sink = sink_type(settings.database_url) if settings.alert_sink_enabled else None
     # Phase A1 — populate the ClickHouse event lake from the raw-events stream.
     lake = (
         LakeWriter(

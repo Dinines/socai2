@@ -12,6 +12,7 @@ from app.models.alert import Alert
 from app.models.case import Case
 from app.models.investigation import InvestigationArtifact, InvestigationRun
 from .case_analysis import PROFILE
+from .case_baseline import history_time
 from .case_navigation import analysis_urls
 from .pagination import decode_cursor, encode_cursor
 from .result_api import _explicit_bearer
@@ -23,6 +24,9 @@ def _query(tenant_id):
     run, artifact = InvestigationRun, InvestigationArtifact
     content = cast(artifact.content, JSONB)
     return select(run.id.label("run_id"), run.case_id.label("recorded_case_reference"), run.status,
+        history_time().label("history_at"), run.created_at.label("requested_at"),
+        run.investigation_kind, run.scope_revision, run.scope_updated_at,
+        run.raw_alert["baseline"].label("baseline"),
         run.started_at, run.completed_at, run.raw_alert["analysis_profile"].astext.label("profile"),
         run.raw_alert["id"].astext.label("source_alert_id"), run.raw_alert["scope"].label("scope"),
         run.raw_alert["previous_run_id"].astext.label("previous_run_id"),
@@ -45,6 +49,7 @@ def _entry(row, member_ids=None):
     return {"run_id": run_id, "case_id": case_id, "run_type": "case_analysis" if current else "legacy_or_other",
             "profile": row["profile"], "native_reader": "case_analysis" if current else "legacy_ledger",
             "status": row["status"], "started_at": row["started_at"], "completed_at": row["completed_at"],
+            **{key: row.get(key) for key in ("requested_at", "investigation_kind", "scope_revision", "scope_updated_at", "baseline")},
             "scope": row["scope"] if current else None, "source_alert_id": row["source_alert_id"],
             "previous_run_id": row["previous_run_id"] if current else None,
             "previous_result_url": analysis_urls(case_id, row["previous_run_id"])["result_url"]
@@ -80,11 +85,11 @@ async def list_executions(db, tenant_id, *, alert_id=None, incident_id=None, cas
     query = _query(tenant_id).where(or_(and_(profile == PROFILE, current_scope),
         and_(or_(profile.is_(None), profile != PROFILE), run.raw_alert["id"].astext.in_(members))))
     if after:
-        query = query.where(tuple_(run.started_at, run.id) < after)
-    rows = (await db.execute(query.order_by(run.started_at.desc(), run.id.desc()).limit(limit + 1))).mappings().all()
+        query = query.where(tuple_(history_time(), run.id) < after)
+    rows = (await db.execute(query.order_by(history_time().desc(), run.id.desc()).limit(limit + 1))).mappings().all()
     return {"source": {"type": kind, "id": str(identity), "current_member_ids": sorted(set(members))},
             "items": [_entry(row, members) for row in rows[:limit]],
-            "next_cursor": encode_cursor(rows[limit - 1]["started_at"], rows[limit - 1]["run_id"], scope) if len(rows) > limit else None,
+            "next_cursor": encode_cursor(rows[limit - 1].get("history_at") or rows[limit - 1]["started_at"], rows[limit - 1]["run_id"], scope) if len(rows) > limit else None,
             "notice": "Case筛选按新版Run的Case归属；旧记录只按当前成员的明确来源告警关联，不表示其历史Case归属。"}
 
 

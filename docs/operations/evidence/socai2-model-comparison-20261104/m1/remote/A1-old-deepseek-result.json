@@ -1,0 +1,221 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "0342d351-d4ac-44bd-b672-b8256080f657",
+    "object": "response",
+    "created_at": 1793789924,
+    "status": "completed",
+    "background": false,
+    "completed_at": 1793789928,
+    "content_filters": null,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 3000,
+    "max_tool_calls": null,
+    "model": "deepseek-flash",
+    "moderation": null,
+    "output": [
+      {
+        "type": "message",
+        "id": "4ec94395-9ccf-457d-ae13-a0c248355d9e",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警记录了一次从 next-validation-host（192.0.2.20:50123）到 inventory.example.invalid（198.51.100.20:443）的成功 TCP 出站连接，但仅有网络连接元数据，没有进程、命令行、用户或载荷信息，无法证明该连接由哪个进程发起或具有恶意意图。历史查询仅返回同一主机上一条更早的合成 PowerShell 清单进程记录，属于同一对象而非因果证据。资产与威胁情报查询均无命中，但查空不构成反证。来源标签自述为合成验证，但标签本身不能单独证明无害或授权。\",\"explanation\":\"观测到的行为是一次普通的主机到外部清单域名的 HTTPS 出站连接，目标端口 443、协议 TCP、结果成功。该行为本身既可能是正常的资产清单上报，也可能是未授权的数据外传或 C2 通信，现有数据不足以区分。缺少进程归属、命令行、用户上下文、目标域名解析与信誉、以及授权清单，因此无法判定为恶意或正常。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S19\",\"S20\",\"S21\",\"S22\",\"S23\",\"S24\",\"S25\",\"S26\",\"S27\",\"S28\",\"S29\",\"S30\"],\"recommendations\":[{\"reason\":\"补充该连接对应的进程信息（进程名、命令行、父进程、运行用户），以确认连接发起方是否为预期的清单/PowerShell 进程。\",\"source_ids\":[\"S1\",\"S3\",\"S8\",\"S13\"]},{\"reason\":\"核实 inventory.example.invalid 与 198.51.100.20 是否为组织授权的清单端点，并检查该域名解析与证书信息。\",\"source_ids\":[\"S2\",\"S4\",\"S26\"]},{\"reason\":\"确认该主机在事件时间点是否应执行清单上报任务，并核对是否存在授权记录。\",\"source_ids\":[\"S1\",\"S10\",\"S13\"]}],\"limitations\":[\"缺少进程与命令行上下文，无法将网络连接归属到具体进程\",\"资产查询无命中且为当前清单状态，非事件时间点状态，不能证明主机不存在或未授权\",\"威胁情报无命中不代表目标安全\",\"历史记录仅为同一对象的告警，不构成因果关系\",\"来源标签自述为合成验证，但未提供授权证明，不能据此判定无害\",\"目标域名使用 .invalid 保留域，其真实性与解析行为未核实\"]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": null,
+    "reasoning": {
+      "effort": "none",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 0.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "socai2_answer",
+        "schema": {
+          "type": "object",
+          "$defs": {
+            "Advice": {
+              "type": "object",
+              "required": [
+                "reason",
+                "source_ids"
+              ],
+              "properties": {
+                "reason": {
+                  "type": "string",
+                  "maxLength": 4000,
+                  "minLength": 1
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/SourceId"
+                  },
+                  "maxItems": 30,
+                  "minItems": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "SourceId": {
+              "enum": [
+                "S1",
+                "S10",
+                "S11",
+                "S12",
+                "S13",
+                "S14",
+                "S15",
+                "S16",
+                "S17",
+                "S18",
+                "S19",
+                "S2",
+                "S20",
+                "S21",
+                "S22",
+                "S23",
+                "S24",
+                "S25",
+                "S26",
+                "S27",
+                "S28",
+                "S29",
+                "S3",
+                "S30",
+                "S4",
+                "S5",
+                "S6",
+                "S7",
+                "S8",
+                "S9"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "verdict",
+            "confidence",
+            "rationale",
+            "explanation",
+            "evidence_ids",
+            "recommendations",
+            "limitations"
+          ],
+          "properties": {
+            "verdict": {
+              "enum": [
+                "true_positive",
+                "false_positive",
+                "benign",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "rationale": {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            "confidence": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "explanation": {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 4000,
+                "minLength": 1
+              },
+              "maxItems": 20
+            },
+            "evidence_ids": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SourceId"
+              },
+              "maxItems": 60,
+              "minItems": 1
+            },
+            "recommendations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Advice"
+              },
+              "maxItems": 5
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": null,
+        "strict": true
+      },
+      "verbosity": null
+    },
+    "tool_choice": "auto",
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 1.0,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 2716,
+      "input_tokens_details": {
+        "cached_tokens": 384
+      },
+      "output_tokens": 577,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3293
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "usage": {
+    "input_tokens": 2716,
+    "output_tokens": 577,
+    "total_tokens": 3293,
+    "cached_input_tokens": 384,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "0342d351-d4ac-44bd-b672-b8256080f657"
+  },
+  "elapsed_seconds": 4.132
+}

@@ -1,0 +1,141 @@
+{
+  "database": "socai2_schema_review_20261103_a1",
+  "migration_sha256": "379d1659a035d2c3a6677cfd32f08a5158e3439450a5fb4adc8579c8ea97553c",
+  "observations": [
+    {
+      "name": "29 real PG tables",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "458 actual columns",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all tables force strict RLS",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "one pending baseline",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23505: duplicate key value violates unique constraint \"runs_one_pending_baseline\"\nDETAIL:  Key (tenant_id, case_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-0000000003e9) already exists.\nSCHEMA NAME:  socai2\nTABLE NAME:  runs\nCONSTRAINT NAME:  runs_one_pending_baseline\nLOCATION:  _bt_check_unique, nbtinsert.c:666"
+      }
+    },
+    {
+      "name": "claimed Run input frozen",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: claimed run input is frozen\nCONTEXT:  PL/pgSQL function guard_run() line 28 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      }
+    },
+    {
+      "name": "claimed member source frozen",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: claimed member source is frozen\nCONTEXT:  PL/pgSQL function guard_run_member() line 17 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      }
+    },
+    {
+      "name": "second active baseline rejected",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23505: duplicate key value violates unique constraint \"runs_one_active_baseline\"\nDETAIL:  Key (tenant_id, case_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-0000000003e9) already exists.\nSCHEMA NAME:  socai2\nTABLE NAME:  runs\nCONSTRAINT NAME:  runs_one_active_baseline\nLOCATION:  _bt_check_unique, nbtinsert.c:666"
+      }
+    },
+    {
+      "name": "failed competing claim preserves pending",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "two AI executions parallel with baseline",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "immutable original artifact",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: socai2 history is append-only: artifacts\nCONTEXT:  PL/pgSQL function reject_history_mutation() line 3 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      }
+    },
+    {
+      "name": "unknown business status",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"alerts\" violates check constraint \"alerts_handling_status_enum\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-0000000003f2, 00000000-0000-0000-0000-000000000001, synthetic, null, null, null, null, null, 00000000-0000-0000-0000-0000000003f2, synthetic alert, null, null, null, null, null, unknown, null, null, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, magical, null, null, unassigned, null, null, {}, null, not_provided, null, null, null, null, null, null, null, null, 1, null).\nSCHEMA NAME:  socai2\nTABLE NAME:  alerts\nCONSTRAINT NAME:  alerts_handling_status_enum\nLOCATION:  ExecConstraints, execMain.c:2109"
+      }
+    },
+    {
+      "name": "score cannot default50 without calculation",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"alerts\" violates check constraint \"alerts_priority\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-0000000003f2, 00000000-0000-0000-0000-000000000001, synthetic, null, null, null, null, null, 00000000-0000-0000-0000-0000000003f2, synthetic alert, null, null, null, null, null, unknown, null, null, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, 2026-11-03 09:20:20.37291+00, new, null, null, unassigned, null, null, {}, 50.00, not_provided, null, null, null, null, null, null, null, null, 1, null).\nSCHEMA NAME:  socai2\nTABLE NAME:  alerts\nCONSTRAINT NAME:  alerts_priority\nLOCATION:  ExecConstraints, execMain.c:2109"
+      }
+    },
+    {
+      "name": "incident override requires audit fields",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: new row for relation \"incidents\" violates check constraint \"incidents_severity_override\"\nDETAIL:  Failing row contains (00000000-0000-0000-0000-000000000514, 00000000-0000-0000-0000-000000000001, synthetic, I1, test, null, new, null, unassigned, null, null, {}, high, null, null, null, null, not_provided, null, null, null, null, null, null, 2026-11-03 09:20:28.761975+00, 2026-11-03 09:20:28.761975+00, null, 1).\nSCHEMA NAME:  socai2\nTABLE NAME:  incidents\nCONSTRAINT NAME:  incidents_severity_override\nLOCATION:  ExecConstraints, execMain.c:2109"
+      }
+    },
+    {
+      "name": "incident override accepted independently",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "cross tenant member FK",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23503: insert or update on table \"case_alerts\" violates foreign key constraint \"case_alerts_alert_id_fk\"\nDETAIL:  Key (tenant_id, alert_id)=(00000000-0000-0000-0000-000000000001, 00000000-0000-0000-0000-00000000051e) is not present in table \"alerts\".\nSCHEMA NAME:  socai2\nTABLE NAME:  case_alerts\nCONSTRAINT NAME:  case_alerts_alert_id_fk\nLOCATION:  ri_ReportViolation, ri_triggers.c:2608"
+      }
+    },
+    {
+      "name": "task current pointer deferred cycle commits",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "completed feedback version immutable",
+      "passed": true,
+      "detail": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": "ERROR:  23514: socai2 history is append-only: task_revisions\nCONTEXT:  PL/pgSQL function reject_history_mutation() line 3 at RAISE\nLOCATION:  exec_stmt_raise, pl_exec.c:3897"
+      }
+    },
+    {
+      "name": "test harness stopped on unexpected error",
+      "passed": false,
+      "detail": "ERROR:  42703: record \"new\" has no field \"run_id\"\nCONTEXT:  SQL expression \"TG_TABLE_NAME='artifacts' AND NEW.run_id IS NOT NULL\"\nPL/pgSQL function check_publication_scope() line 4 at IF\nLOCATION:  plpgsql_exec_get_datum_type_info, pl_exec.c:5593"
+    }
+  ],
+  "passed": 17,
+  "total": 18,
+  "all_passed": false,
+  "business_databases_read_or_written": false,
+  "test_database_retained": true
+}

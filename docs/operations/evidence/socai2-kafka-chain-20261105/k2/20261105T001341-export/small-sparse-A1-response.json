@@ -1,0 +1,299 @@
+{
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "5cfd24f5-4606-5212-ab03-ce1338ff5a44",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-05T00:12:11.367018Z",
+      "requested_by": "22155cc9-c340-59ba-99ff-b4d811837626",
+      "started_at": "2026-11-05T00:12:11.367018Z",
+      "ended_at": "2026-11-05T00:12:25.392021Z",
+      "executor_version": "socai2.alert-basic-executor.v3",
+      "input_artifact_id": "e5650a72-91f1-432f-a0b9-e43cfb765bce",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "partial"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "c0e6f30f-4800-553a-b687-5077f4d2db3a",
+      "input_material_id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+      "source_run_id": "5cfd24f5-4606-5212-ab03-ce1338ff5a44",
+      "verdict": "needs_review",
+      "rationale": "Evidence is insufficient to confirm malicious intent or authorized status. The alert describes a standard outbound TCP connection to port 443 with a 'success' outcome, but lacks specific application protocol details (e.g., HTTP vs. custom), user context, or explicit authorization logs. The ML anomaly score is low (0.10), and no threat intelligence matches were found, yet the absence of these negative indicators does not prove the behavior is benign. The connection destination (198.51.100.32) is unknown in the provided context. Per guidelines, 'success' status and standard ports do not constitute proof of authorization, and the lack of specific protocol data prevents ruling out potential C2 channels disguised as HTTPS.",
+      "confidence": 0.65,
+      "score_state": "available",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "Verify if the destination IP 198.51.100.32 is a known legitimate service or flagged in external threat intelligence.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.ip"
+            },
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "source_label",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.detection"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "Inspect the actual payload or HTTP headers if available to determine if the traffic is standard web traffic or encrypted tunneling.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.port"
+            },
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.connection_info.protocol_name"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R3",
+          "reason": "Check endpoint logs for user activity or scheduled tasks coinciding with the connection time to establish a baseline for expected behavior.",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time"
+            },
+            {
+              "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v3",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v3",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-05T00:12:25.392021Z"
+    },
+    "explanation": {
+      "artifact_id": "c40d9316-e459-5f7f-bf3c-e25c18df7b4f",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "The endpoint 'k2-endpoint-5' initiated a TCP connection to an external IP '198.51.100.32' on port 443. While port 443 is commonly used for HTTPS, the raw data only specifies 'tcp' as the protocol, leaving the application layer unknown. The action 'network_connect' succeeded, but this confirms only the network handshake, not the business purpose or data exfiltration status. Without explicit authorization evidence or specific malicious indicators (like known bad IPs or suspicious payloads), the nature of this traffic remains ambiguous and requires further investigation to distinguish between legitimate web browsing and potential covert communication.",
+        "limitations": [
+          "Port 443 does not guarantee HTTPS/TLS usage based on provided fields.",
+          "No user identity or process command line arguments are available to link the connection to a specific application.",
+          "Threat intelligence query returned no results, but this does not confirm safety.",
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:completed:returned"
+        ],
+        "source_refs": [
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.ip"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.port"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.connection_info.protocol_name"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "e5650a72-91f1-432f-a0b9-e43cfb765bce",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.members.0.alert"
+          },
+          {
+            "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.detection"
+          }
+        ],
+        "generated_at": "2026-11-05T00:12:25.392021+00:00",
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "Verify if the destination IP 198.51.100.32 is a known legitimate service or flagged in external threat intelligence.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.dst_endpoint.ip"
+              },
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.detection"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "Inspect the actual payload or HTTP headers if available to determine if the traffic is standard web traffic or encrypted tunneling.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.dst_endpoint.port"
+              },
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.connection_info.protocol_name"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R3",
+            "reason": "Check endpoint logs for user activity or scheduled tasks coinciding with the connection time to establish a baseline for expected behavior.",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time"
+              },
+              {
+                "id": "ac9fb87b-c3cb-5a24-9562-d31a7d677b3d",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.device.name"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "model"
+      }
+    }
+  }
+}

@@ -1,0 +1,284 @@
+{
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "c17fa3dc-f51a-5bd8-b05c-419070d59ac1",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-05T00:06:07.557684Z",
+      "requested_by": "22155cc9-c340-59ba-99ff-b4d811837626",
+      "started_at": "2026-11-05T00:06:07.557684Z",
+      "ended_at": "2026-11-05T00:06:10.306353Z",
+      "executor_version": "socai2.alert-basic-executor.v3",
+      "input_artifact_id": "c58a3f7c-774e-4c7c-8fe1-7486eebc160f",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "partial"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "a2dcea22-c93e-5bc8-8401-e356e9ce57ec",
+      "input_material_id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+      "source_run_id": "c17fa3dc-f51a-5bd8-b05c-419070d59ac1",
+      "verdict": "needs_review",
+      "rationale": "告警仅记录 k2-endpoint-2（192.0.2.32）向 198.51.100.32:443 发起 TCP 连接且 outcome=success，属于通用出站连接观测；检测置信度低（19.0），无威胁情报命中、无 MITRE 技术覆盖，历史仅有一条同主机“Process command observed”记录，无法证明因果关系或授权状态。连接成功不等于业务完成或数据外传，端口 443 也不证明 TLS/HTTPS。",
+      "confidence": 0.35,
+      "score_state": "available",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "补充该连接对应的进程、命令行与用户上下文，确认发起方身份。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "id": "839a4dd6-72ee-4fbc-921f-be907f9b6106",
+              "role": "source_label",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.rows.0"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "核查目的地址 198.51.100.32 的信誉与业务归属，判断是否为预期服务端点。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.ip"
+            },
+            {
+              "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+              "role": "source_label",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.detection"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v3",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v3",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-05T00:06:10.306353Z"
+    },
+    "explanation": {
+      "artifact_id": "e47b1a83-b0aa-5dcd-9197-d9d76e9a8a03",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "这是一条低置信度的出站连接观测，缺少进程上下文、目的地址信誉和授权依据，无法判断是正常业务通信还是可疑外联，需进一步核查。",
+        "limitations": [
+          "仅有单条连接记录，无进程与命令行细节",
+          "威胁情报无命中不等于安全",
+          "资产匹配状态为 not_checked，未确认主机归属",
+          "历史记录与本次连接无因果证明",
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:completed:returned"
+        ],
+        "source_refs": [
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.hostname"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.ip"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.ip"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.port"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.port"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.connection_info.protocol_name"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "c58a3f7c-774e-4c7c-8fe1-7486eebc160f",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.members.0.alert"
+          },
+          {
+            "id": "839a4dd6-72ee-4fbc-921f-be907f9b6106",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.rows.0"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.detection"
+          },
+          {
+            "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.source_scope"
+          }
+        ],
+        "generated_at": "2026-11-05T00:06:10.306353+00:00",
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "补充该连接对应的进程、命令行与用户上下文，确认发起方身份。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.activity.action"
+              },
+              {
+                "id": "839a4dd6-72ee-4fbc-921f-be907f9b6106",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.rows.0"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "核查目的地址 198.51.100.32 的信誉与业务归属，判断是否为预期服务端点。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.dst_endpoint.ip"
+              },
+              {
+                "id": "0a8c7432-340e-5056-b001-11e8730ba9f1",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.detection"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "model"
+      }
+    }
+  }
+}

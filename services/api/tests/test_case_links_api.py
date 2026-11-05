@@ -188,3 +188,28 @@ class CaseLinkExamples(IsolatedAsyncioTestCase):
         self.db.execute.side_effect = [result()]
         self.assertEqual((await self.client.get(path)).status_code, 404)
         self.db.commit.assert_not_awaited()
+
+    async def test_pending_baseline_history_uses_creation_time_for_cursor(self):
+        rows = [{"run_id": UUID(int=700), "started_at": None, "completed_at": None,
+                 "requested_at": NOW, "history_at": NOW, "status": "pending_update",
+                 "investigation_kind": "baseline", "scope_revision": 3, "scope_updated_at": NOW,
+                 "baseline": {"added_member_ids": [str(UUID(int=2))], "removed_member_ids": []},
+                 "scope": {"selected_member_ids": [str(UUID(int=1)), str(UUID(int=2))]},
+                 "stop_reason": None, "completion": None},
+                {"run_id": UUID(int=701), "started_at": NOW - timedelta(minutes=1),
+                 "history_at": NOW - timedelta(minutes=1), "completed_at": NOW,
+                 "status": "completed", "scope": {}, "completion": "partial"}]
+        self.db.execute.side_effect = [result(CASE), result(rows=rows), result(CASE), result(rows=rows[1:])]
+        path = f"/api/v2/investigation/cases/{CASE}/investigations"
+        response = await self.client.get(path, params={"limit": 1})
+        self.assertEqual(response.status_code, 200, response.text)
+        pending = response.json()["items"][0]
+        self.assertEqual(pending["scope_revision"], 3)
+        self.assertIsNone(pending["started_at"])
+        self.assertEqual(pending["status"], "pending_update")
+        cursor = response.json()["next_cursor"]
+        self.assertIsNotNone(cursor)
+        self.assertEqual((await self.client.get(path, params={"limit": 1, "cursor": cursor})).status_code, 200)
+        sql = str(self.db.execute.await_args_list[-1].args[0].compile(dialect=postgresql.dialect()))
+        self.assertIn("coalesce(investigation_runs.started_at, investigation_runs.created_at)", sql)
+        self.db.commit.assert_not_awaited()

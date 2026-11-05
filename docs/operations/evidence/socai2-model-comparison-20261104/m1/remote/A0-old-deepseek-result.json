@@ -1,0 +1,220 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "cb401ca8-074c-4297-b980-ba1d76c6b64d",
+    "object": "response",
+    "created_at": 1793789899,
+    "status": "completed",
+    "background": false,
+    "completed_at": 1793789902,
+    "content_filters": null,
+    "error": null,
+    "frequency_penalty": 0.0,
+    "incomplete_details": null,
+    "instructions": null,
+    "max_output_tokens": 3000,
+    "max_tool_calls": null,
+    "model": "deepseek-flash",
+    "moderation": null,
+    "output": [
+      {
+        "type": "message",
+        "id": "324c68af-e1e7-40ee-8343-8cbabe6dad82",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": [],
+            "logprobs": [],
+            "text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警描述为 PowerShell 执行 C:\\\\Lab\\\\inventory.ps1 的进程启动（S1-S3、S8-S9），属于 T1059.001 的通用执行行为，本身不构成恶意证据。来源标签明确说明这是合成验证数据，且共享主机/时间不能证明进程发起了连接、未提供授权（S10）；但标签不能单独证明无害或授权。资产、历史查询均返回 0 行，威胁情报被跳过，均不构成反证。缺少脚本内容、命令行完整参数、父进程上下文及授权/变更记录，无法判定为真实威胁或已证实无害。\",\"explanation\":\"主机 next-validation-host 上，用户 synthetic-operator 通过 cmd.exe 启动 powershell.exe，以 -File 方式执行 C:\\\\Lab\\\\inventory.ps1，进程启动成功。该行为与常规清单采集脚本一致，但仅凭进程启动记录无法确认脚本内容、来源合法性或是否伴随后续网络/文件活动。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S13\",\"S15\",\"S16\"],\"recommendations\":[{\"reason\":\"核实 C:\\\\Lab\\\\inventory.ps1 的文件内容、哈希、创建来源与签名，确认是否为已知清单脚本\",\"source_ids\":[\"S3\",\"S23\"]},{\"reason\":\"确认该主机与用户执行此脚本的授权或变更记录，以及父进程 cmd.exe 的启动来源\",\"source_ids\":[\"S5\",\"S6\",\"S7\",\"S10\"]},{\"reason\":\"补充查询该进程后续网络连接、子进程与文件写入活动，以判断是否存在恶意行为\",\"source_ids\":[\"S2\",\"S11\"]}],\"limitations\":[\"资产查询返回 0 行，且为当前清单而非事件时点状态，无法确认主机/用户归属\",\"历史查询返回 0 行，仅覆盖已记录告警，非完整活动历史\",\"威胁情报查询被跳过，无命中不代表安全\",\"未提供脚本内容、命令行完整参数及父进程命令行\",\"来源标签自述为合成验证数据，但标签不能单独证明无害或授权\",\"未提供授权或变更管理记录\"]}"
+          }
+        ],
+        "phase": "final_answer",
+        "role": "assistant"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "presence_penalty": 0.0,
+    "previous_response_id": null,
+    "prompt_cache_key": null,
+    "prompt_cache_retention": null,
+    "reasoning": {
+      "effort": "none",
+      "summary": null
+    },
+    "safety_identifier": null,
+    "service_tier": "default",
+    "store": false,
+    "temperature": 0.0,
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "socai2_answer",
+        "schema": {
+          "type": "object",
+          "$defs": {
+            "Advice": {
+              "type": "object",
+              "required": [
+                "reason",
+                "source_ids"
+              ],
+              "properties": {
+                "reason": {
+                  "type": "string",
+                  "maxLength": 4000,
+                  "minLength": 1
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/SourceId"
+                  },
+                  "maxItems": 30,
+                  "minItems": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "SourceId": {
+              "enum": [
+                "S1",
+                "S10",
+                "S11",
+                "S12",
+                "S13",
+                "S14",
+                "S15",
+                "S16",
+                "S17",
+                "S18",
+                "S19",
+                "S2",
+                "S20",
+                "S21",
+                "S22",
+                "S23",
+                "S24",
+                "S25",
+                "S26",
+                "S27",
+                "S28",
+                "S29",
+                "S3",
+                "S4",
+                "S5",
+                "S6",
+                "S7",
+                "S8",
+                "S9"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "verdict",
+            "confidence",
+            "rationale",
+            "explanation",
+            "evidence_ids",
+            "recommendations",
+            "limitations"
+          ],
+          "properties": {
+            "verdict": {
+              "enum": [
+                "true_positive",
+                "false_positive",
+                "benign",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "rationale": {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            "confidence": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 1,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "explanation": {
+              "type": "string",
+              "maxLength": 4000,
+              "minLength": 1
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 4000,
+                "minLength": 1
+              },
+              "maxItems": 20
+            },
+            "evidence_ids": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SourceId"
+              },
+              "maxItems": 60,
+              "minItems": 1
+            },
+            "recommendations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Advice"
+              },
+              "maxItems": 5
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": null,
+        "strict": true
+      },
+      "verbosity": null
+    },
+    "tool_choice": "auto",
+    "tools": [],
+    "top_logprobs": 0,
+    "top_p": 1.0,
+    "truncation": "disabled",
+    "usage": {
+      "input_tokens": 2413,
+      "input_tokens_details": {
+        "cached_tokens": 128
+      },
+      "output_tokens": 500,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 2913
+    },
+    "user": null,
+    "metadata": {}
+  },
+  "usage": {
+    "input_tokens": 2413,
+    "output_tokens": 500,
+    "total_tokens": 2913,
+    "cached_input_tokens": 128,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "cb401ca8-074c-4297-b980-ba1d76c6b64d"
+  },
+  "elapsed_seconds": 3.452
+}

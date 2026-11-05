@@ -1,0 +1,51 @@
+{
+  "state": "response_received",
+  "raw": {
+    "id": "chatcmpl-9a7a838c7828c378",
+    "created": 1793789941,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"summary\": \"事件汇聚包含两个告警成员（cfcd94b7... 和 dabb136a...），均源自 SyntheticLab 合成验证环境。成员间存在时间接近（约 15 秒间隔）和共同对象（主机 next-validation-host），但缺乏直接因果或攻击链证据。两个告警的已有分诊（S19, S20）均判定为'needs_review'，理由一致：数据为合成测试，无法区分正常运维与恶意行为，且缺少授权证明。\",\n  \"conclusion\": \"待核\",\n  \"evidence_ids\": [\"S21\", \"S22\", \"S23\", \"S24\", \"S25\", \"S26\", \"S27\", \"S28\", \"S29\", \"S30\", \"S31\"],\n  \"members\": [\n    {\n      \"alert_id\": \"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\n      \"state\": \"not_reviewed\",\n      \"assessment\": \"分诊 S19 判定为待核。记录显示 powershell.exe 由 cmd.exe 启动，执行 C:Labinventory.ps1，用户 synthetic-operator，主机 next-validation-host。来源标签 S24/S30 明确为合成规则。无授权证据，无法排除恶意。\",\n      \"source_ids\": [\"S1\", \"S3\", \"S5\", \"S7\", \"S9\", \"S11\", \"S13\", \"S15\", \"S17\", \"S19\", \"S21\", \"S24\", \"S26\", \"S28\", \"S30\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证不能证明良性\", \"资产查询为空不构成反证\"]\n    },\n    {\n      \"alert_id\": \"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\n      \"state\": \"not_reviewed\",\n      \"assessment\": \"分诊 S20 判定为待核。记录显示从 next-validation-host 到 inventory.example.invalid 的 TCP 443 连接成功。来源标签 S25/S31 明确为合成规则。无法证明该连接由 S1 中的 PowerShell 进程发起，也无法证明连接性质。\",\n      \"source_ids\": [\"S2\", \"S4\", \"S6\", \"S8\", \"S10\", \"S12\", \"S14\", \"S16\", \"S18\", \"S20\", \"S22\", \"S25\", \"S27\", \"S29\", \"S31\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证不能证明良性\", \"查空不构成反证\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"statement\": \"两个告警成员共享主机 next-validation-host，时间间隔约 15 秒，符合合成演练中模拟'进程启动后产生外联'的场景特征，但无日志直接关联两者。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S1\", \"S2\", \"S5\", \"S13\", \"S16\", \"S21\", \"S22\"]\n    ,\n    \"limitations\": [\"时间接近不证明因果\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"statement\": \"所有可见证据均标记为 SyntheticLab 合成数据，标题和描述自述为验证用途。根据规则，此类自述不能单独证明行为良性或已获授权。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S24\", \"S25\", \"S30\", \"S31\"]\n    ,\n    \"limitations\": [\"自述不能排除恶意\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"statement\": \"分诊 S19 和 S20 的结论一致（needs_review），理由充分：合成数据背景 + 缺乏授权/恶意证据 + 资产查询为空。未发现判定与理由冲突。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S19\", \"S20\"]\n    ,\n    \"limitations\": [\"需人工核实授权状态\"]\n    }\n  ],\n  \"open_questions\": [\n    {\n      \"text\": \"是否存在针对主机 next-validation-host 的正式运维授权记录？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": []\n    ,\n    \"evidence_requirements\": [\"授权文档\", \"运维工单\"]\n    },\n    {\n      \"text\": \"告警 dabb136a... 中的网络流量是否确实由告警 cfcd94b7... 中的 PowerShell 进程发起？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S1\", \"S2\", \"S5\", \"S16\"]\n    ,\n      \"evidence_requirements\": [\"进程 - 网络连接关联日志\"]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未提供完整原始日志，仅依赖结构化字段\",\n    \"资产查询结果为空，无法通过资产状态反证\",\n    \"合成数据标签不能直接作为良性证据\"\n  ]\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "reasoning": null,
+            "refusal": null
+          }
+        },
+        "provider_specific_fields": {
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 1578,
+      "prompt_tokens": 2717,
+      "total_tokens": 4295,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 2717,
+    "output_tokens": 1578,
+    "total_tokens": 4295,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-9a7a838c7828c378"
+  },
+  "elapsed_seconds": 31.392
+}

@@ -1,5 +1,11 @@
 # 远端产品页面本地预览与工作衔接
 
+2026-11-04更新：按用户要求合并开发目录，预览现从`E:/aisoc/socai2/prototypes/security-pages-v2`运行，开发分支为`codex/case-baseline-history-20261103`，URL仍为http://127.0.0.1:4174。旧设计工作树已注销，以下11月3日分支和工作树记录仅作历史。当前重启命令：
+
+```powershell
+E:/aisoc/socai2/.venv/Scripts/python.exe E:/aisoc/socai2/prototypes/security-pages-v2/serve.py --port 4174
+```
+
 2026-11-03。用户要求依次完成：远端功能分支页面可在本地访问；本地提交当前进度；在独立分支继续对齐设计和功能。此前要求先理解三类调查流程、页面功能以及对当前存储和处理流程的影响，尚未要求直接实施新的调查架构。
 
 ## 本地页面
@@ -12,7 +18,7 @@
 
 已确认首页 HTTP 200、页面引用的 27 个脚本／样式资源 HTTP 200；浏览器已呈现“财务终端脚本与跨主机活动核查”的案件资料、当前判断及 10 个 Case 页签。只核预览可达与页面呈现，没有提交页面表单、重置浏览器数据、发送 AI 问题或调用后台。原型中的示例回答与本地保存不能作为真实模型／数据库验收。
 
-关闭服务后，可在独立目录运行：
+以下为原独立目录的历史启动方式，现请使用顶部命令：
 
 ```powershell
 E:/aisoc/socai2/.venv/Scripts/python.exe E:/aisoc/socai2/.local/worktrees/functional-alignment-20261103/prototypes/security-pages-v2/serve.py --port 4174

@@ -1,0 +1,242 @@
+......FF.FF..F.....FFF......FF.............                              [100%]
+================================== FAILURES ===================================
+_______ test_bound_prose_is_warning_but_unknown_reference_still_blocks ________
+services\api\app\socai2\alert_basic_contract.py:262: in parse
+    answer = model.model_validate(raw)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for Answer
+E   decision_basis
+E     Field required [type=missing, input_value={'verdict': 'needs_review...tablish authorization']}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+During handling of the above exception, another exception occurred:
+services\api\tests\test_socai2_compact_model_input.py:91: in test_bound_prose_is_warning_but_unknown_reference_still_blocks
+    assert alert.parse(json.dumps(value), mapping, data, diagnostics=diagnostics).rationale == value["rationale"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services\api\app\socai2\alert_basic_contract.py:264: in parse
+    bad("alert_answer_shape_invalid")
+services\api\app\socai2\alert_basic_contract.py:249: in bad
+    raise StoreError(code, 422)
+E   app.socai2.baseline_store.StoreError: alert_answer_shape_invalid
+_____ test_background_schema_and_parser_agree_and_report_multiple_issues ______
+services\api\tests\test_socai2_compact_model_input.py:118: in test_background_schema_and_parser_agree_and_report_multiple_issues
+    assert {"incident_source_wrong_member", "incident_answer_source_invalid", "source_alias_in_prose"} <= codes
+E   AssertionError: assert {'incident_an...ias_in_prose'} <= {'incident_an...wrong_member'}
+E     
+E     Extra items in the left set:
+E     'source_alias_in_prose'
+_____ test_case_frozen_material_and_triage_survive_initial_model_view[r4] _____
+services\api\tests\test_socai2_compact_model_input.py:145: in test_case_frozen_material_and_triage_survive_initial_model_view
+    assert prepared["schema_version"] == "socai2.baseline-model-view.v3"
+E   AssertionError: assert 'socai2.basel...model-view.v4' == 'socai2.basel...model-view.v3'
+E     
+E     - socai2.baseline-model-view.v3
+E     ?                             ^
+E     + socai2.baseline-model-view.v4
+E     ?                             ^
+_____ test_case_frozen_material_and_triage_survive_initial_model_view[r6] _____
+services\api\tests\test_socai2_compact_model_input.py:145: in test_case_frozen_material_and_triage_survive_initial_model_view
+    assert prepared["schema_version"] == "socai2.baseline-model-view.v3"
+E   AssertionError: assert 'socai2.basel...model-view.v4' == 'socai2.basel...model-view.v3'
+E     
+E     - socai2.baseline-model-view.v3
+E     ?                             ^
+E     + socai2.baseline-model-view.v4
+E     ?                             ^
+_______ test_late_required_feedback_precedes_large_optional_background ________
+services\api\tests\test_socai2_compact_model_input.py:226: in test_late_required_feedback_precedes_large_optional_background
+    assert prepared["ready"] and "S9" in prepared["source_map"]
+E   AssertionError: assert (True and 'S9' in {'N1_S9': {'ref': {'id': 'human'}, 'alert_ids': ['a'], 'visible_value_sha256': 'ed5499414a06bd3f258dd5d02cdcfce7617ade...], 'visible_value_sha256': 'b3ae2005db002de796c0ffc70c6b885752912f1579ff53ecfb89e53092f61026', 'required': False}, ...})
+________________ test_label_only_decisive_verdict_is_rejected _________________
+services\api\tests\test_socai2_stage_quality.py:107: in test_label_only_decisive_verdict_is_rejected
+    with pytest.raises(StoreError, match="alert_answer_requires_direct_source"):
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'alert_answer_requires_direct_source'
+E     Actual message: 'alert_answer_shape_invalid'
+_________ test_unbound_alias_rejected_but_literal_source_name_allowed _________
+services\api\app\socai2\alert_basic_contract.py:262: in parse
+    answer = model.model_validate(raw)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for Answer
+E   decision_basis
+E     Field required [type=missing, input_value={'verdict': 'needs_review...tablish authorization']}, input_type=dict]
+E       For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+During handling of the above exception, another exception occurred:
+services\api\tests\test_socai2_stage_quality.py:117: in test_unbound_alias_rejected_but_literal_source_name_allowed
+    assert alert.parse(json.dumps(value), mapping, data).explanation == value["explanation"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services\api\app\socai2\alert_basic_contract.py:264: in parse
+    bad("alert_answer_shape_invalid")
+services\api\app\socai2\alert_basic_contract.py:249: in bad
+    raise StoreError(code, 422)
+E   app.socai2.baseline_store.StoreError: alert_answer_shape_invalid
+_________ test_i_arrays_remain_strict_and_member_aliases_not_in_prose _________
+services\api\tests\test_socai2_stage_quality.py:140: in test_i_arrays_remain_strict_and_member_aliases_not_in_prose
+    with pytest.raises(StoreError, match="incident_answer_prose_source_unbound"):
+E   Failed: DID NOT RAISE StoreError
+____ test_a_provider_rejects_unknown_source_and_wrong_arrays_but_not_truth ____
+services\api\tests\test_socai2_structured_output.py:38: in test_a_provider_rejects_unknown_source_and_wrong_arrays_but_not_truth
+    jsonschema.validate(value, schema)
+.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'decision_basis' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'$defs': {'Advice': {'additionalProperties': False,
+E                             'properties': {'reason': {'$ref': '#/$defs/CompactString0'},
+E                                            'source_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                                           'maxItems': 30,
+E                                                           'minItems': 1,
+E                                                           'type': 'array'}},
+E                             'required': ['reason', 'source_ids'],
+E                             'type': 'object'},
+E                  'DecisionBasis': {'additionalProperties': False,
+E                                    'properties': {'kind': {'enum': ['malicious_behavior',
+E                                                                     'authorized_or_expected_behavior',
+E                                                                     'refuted_detection'],
+E                                                            'type': 'string'},
+E                                                   'claim': {'$ref': '#/$defs/CompactString0'},
+E                                                   'source_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                                                  'maxItems': 30,
+E                                                                  'minItems': 1,
+E                                                                  'type': 'array'}},
+E                                    'required': ['kind',
+E                                                 'claim',
+E                                                 'source_ids'],
+E                                    'type': 'object'},
+E                  'SourceId': {'type': 'string', 'enum': ['S1']},
+E                  'CompactString0': {'maxLength': 4000,
+E                                     'minLength': 1,
+E                                     'type': 'string'}},
+E        'additionalProperties': False,
+E        'properties': {'verdict': {'enum': ['true_positive',
+E                                            'false_positive',
+E                                            'benign',
+E                                            'needs_review'],
+E                                   'type': 'string'},
+E                       'confidence': {'anyOf': [{'maximum': 1,
+E                                                 'minimum': 0,
+E                                                 'type': 'number'},
+E                                                {'type': 'null'}]},
+E                       'rationale': {'$ref': '#/$defs/CompactString0'},
+E                       'explanation': {'$ref': '#/$defs/CompactString0'},
+E                       'evidence_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                        'maxItems': 60,
+E                                        'minItems': 1,
+E                                        'type': 'array'},
+E                       'recommendations': {'items': {'$ref': '#/$defs/Advice'},
+E                                           'maxItems': 5,
+E                                           'type': 'array'},
+E                       'limitations': {'items': {'$ref': '#/$defs/CompactString0'},
+E                                       'maxItems': 20,
+E                                       'type': 'array'},
+E                       'decision_basis': {'anyOf': [{'$ref': '#/$defs/DecisionBasis'},
+E                                                    {'type': 'null'}]}},
+E        'required': ['verdict',
+E                     'confidence',
+E                     'rationale',
+E                     'explanation',
+E                     'evidence_ids',
+E                     'recommendations',
+E                     'limitations',
+E                     'decision_basis'],
+E        'type': 'object'}
+E   
+E   On instance:
+E       {'verdict': 'needs_review',
+E        'confidence': None,
+E        'rationale': 'Unknown',
+E        'explanation': 'Pending',
+E        'evidence_ids': ['S1'],
+E        'recommendations': [],
+E        'limitations': []}
+_ test_prose_alias_constraint_matches_parser_and_preserves_literal_received_values _
+services\api\tests\test_socai2_structured_output.py:54: in test_prose_alias_constraint_matches_parser_and_preserves_literal_received_values
+    jsonschema.validate(value, fmt["json_schema"]["schema"])
+.venv\Lib\site-packages\jsonschema\validators.py:1332: in validate
+    raise error
+E   jsonschema.exceptions.ValidationError: 'decision_basis' is a required property
+E   
+E   Failed validating 'required' in schema:
+E       {'$defs': {'Advice': {'additionalProperties': False,
+E                             'properties': {'reason': {'$ref': '#/$defs/CompactString0'},
+E                                            'source_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                                           'maxItems': 30,
+E                                                           'minItems': 1,
+E                                                           'type': 'array'}},
+E                             'required': ['reason', 'source_ids'],
+E                             'type': 'object'},
+E                  'DecisionBasis': {'additionalProperties': False,
+E                                    'properties': {'kind': {'enum': ['malicious_behavior',
+E                                                                     'authorized_or_expected_behavior',
+E                                                                     'refuted_detection'],
+E                                                            'type': 'string'},
+E                                                   'claim': {'$ref': '#/$defs/CompactString0'},
+E                                                   'source_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                                                  'maxItems': 30,
+E                                                                  'minItems': 1,
+E                                                                  'type': 'array'}},
+E                                    'required': ['kind',
+E                                                 'claim',
+E                                                 'source_ids'],
+E                                    'type': 'object'},
+E                  'SourceId': {'type': 'string', 'enum': ['S1', 'S2', 'S20']},
+E                  'CompactString0': {'maxLength': 4000,
+E                                     'minLength': 1,
+E                                     'pattern': '^(?![\\s\\S]*(?:^|[^A-Za-z0-9_])(?:S2|S20)(?![A-Za-z0-9_]))[\\s\\S]*$',
+E                                     'type': 'string'}},
+E        'additionalProperties': False,
+E        'properties': {'verdict': {'enum': ['true_positive',
+E                                            'false_positive',
+E                                            'benign',
+E                                            'needs_review'],
+E                                   'type': 'string'},
+E                       'confidence': {'anyOf': [{'maximum': 1,
+E                                                 'minimum': 0,
+E                                                 'type': 'number'},
+E                                                {'type': 'null'}]},
+E                       'rationale': {'$ref': '#/$defs/CompactString0'},
+E                       'explanation': {'$ref': '#/$defs/CompactString0'},
+E                       'evidence_ids': {'items': {'$ref': '#/$defs/SourceId'},
+E                                        'maxItems': 60,
+E                                        'minItems': 1,
+E                                        'type': 'array'},
+E                       'recommendations': {'items': {'$ref': '#/$defs/Advice'},
+E                                           'maxItems': 5,
+E                                           'type': 'array'},
+E                       'limitations': {'items': {'$ref': '#/$defs/CompactString0'},
+E                                       'maxItems': 20,
+E                                       'type': 'array'},
+E                       'decision_basis': {'anyOf': [{'$ref': '#/$defs/DecisionBasis'},
+E                                                    {'type': 'null'}]}},
+E        'required': ['verdict',
+E                     'confidence',
+E                     'rationale',
+E                     'explanation',
+E                     'evidence_ids',
+E                     'recommendations',
+E                     'limitations',
+E                     'decision_basis'],
+E        'type': 'object'}
+E   
+E   On instance:
+E       {'verdict': 'needs_review',
+E        'confidence': None,
+E        'rationale': 'Host S1 needs review',
+E        'explanation': 'TCP port 443 does not establish HTTPS',
+E        'evidence_ids': ['S2'],
+E        'recommendations': [{'reason': 'Check host', 'source_ids': ['S20']}],
+E        'limitations': []}
+=========================== short test summary info ===========================
+FAILED services\api\tests\test_socai2_compact_model_input.py::test_bound_prose_is_warning_but_unknown_reference_still_blocks
+FAILED services\api\tests\test_socai2_compact_model_input.py::test_background_schema_and_parser_agree_and_report_multiple_issues
+FAILED services\api\tests\test_socai2_compact_model_input.py::test_case_frozen_material_and_triage_survive_initial_model_view[r4]
+FAILED services\api\tests\test_socai2_compact_model_input.py::test_case_frozen_material_and_triage_survive_initial_model_view[r6]
+FAILED services\api\tests\test_socai2_compact_model_input.py::test_late_required_feedback_precedes_large_optional_background
+FAILED services\api\tests\test_socai2_stage_quality.py::test_label_only_decisive_verdict_is_rejected
+FAILED services\api\tests\test_socai2_stage_quality.py::test_unbound_alias_rejected_but_literal_source_name_allowed
+FAILED services\api\tests\test_socai2_stage_quality.py::test_i_arrays_remain_strict_and_member_aliases_not_in_prose
+FAILED services\api\tests\test_socai2_structured_output.py::test_a_provider_rejects_unknown_source_and_wrong_arrays_but_not_truth
+FAILED services\api\tests\test_socai2_structured_output.py::test_prose_alias_constraint_matches_parser_and_preserves_literal_received_values
+10 failed, 33 passed in 2.08s

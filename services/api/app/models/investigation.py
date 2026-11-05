@@ -66,7 +66,11 @@ class InvestigationRun(Base):
     estimated_call_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unpriced_call_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     iterations: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    # A pending baseline is a persisted execution request, not a started Run.
+    investigation_kind: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    scope_revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    scope_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

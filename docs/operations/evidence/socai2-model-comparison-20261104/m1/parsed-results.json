@@ -1,0 +1,1660 @@
+{
+  "batch": "m1",
+  "cells": [
+    {
+      "cell": "A0-old-small",
+      "backend": "small",
+      "packet_id": "A0-old",
+      "result_sha256": "b73f18d469156c3842f442c855ad2d8a55d604a565d1912a53ff9e78c2582d16",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 1847,
+        "output_tokens": 341,
+        "total_tokens": 2188,
+        "cached_input_tokens": null,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "chatcmpl-b838ca1cd66323af"
+      },
+      "elapsed_seconds": 6.858,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "aisoc-investigation",
+      "finish_reason": "stop",
+      "raw_text": "{\n  \"verdict\": \"benign\",\n  \"rationale\": \"告警明确标记为'Synthetic validation only'（合成验证），且原始事件数据中包含'fixture'字段（socai2-next-acceptance-r1），表明这是测试环境中的模拟演练数据，非真实攻击。用户名为'synthetic-operator'，主机名为'next-validation-host'，均为测试标识。\",\n  \"confidence\": 0.95,\n  \"explanation\": \"该事件是安全运营中心（SOC）在验收测试阶段生成的模拟告警，用于验证检测规则（Synthetic PowerShell inventory process）的有效性。执行进程为PowerShell，但目的是运行名为inventory.ps1的清单脚本，由模拟用户synthetic-operator在测试主机上发起，属于正常的测试活动，不具备恶意特征。\",\n  \"limitations\": [\n    \"无法确认该测试环境是否已完全隔离，是否存在配置错误导致测试流量泄露到生产网络\",\n    \"无法验证测试脚本（inventory.ps1）的内容是否完全符合预期，防止测试脚本被篡改或包含意外逻辑\"\n  ],\n  \"evidence_ids\": [\n    \"S10\",\n    \"S16\",\n    \"S6\",\n    \"S7\",\n    \"S12\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"确认测试环境隔离状态及测试脚本完整性\",\n      \"source_ids\": [\n        \"S10\",\n        \"S16\"\n      ]\n    }\n  ]\n}",
+      "answer": {
+        "verdict": "benign",
+        "rationale": "告警明确标记为'Synthetic validation only'（合成验证），且原始事件数据中包含'fixture'字段（socai2-next-acceptance-r1），表明这是测试环境中的模拟演练数据，非真实攻击。用户名为'synthetic-operator'，主机名为'next-validation-host'，均为测试标识。",
+        "confidence": 0.95,
+        "explanation": "该事件是安全运营中心（SOC）在验收测试阶段生成的模拟告警，用于验证检测规则（Synthetic PowerShell inventory process）的有效性。执行进程为PowerShell，但目的是运行名为inventory.ps1的清单脚本，由模拟用户synthetic-operator在测试主机上发起，属于正常的测试活动，不具备恶意特征。",
+        "limitations": [
+          "无法确认该测试环境是否已完全隔离，是否存在配置错误导致测试流量泄露到生产网络",
+          "无法验证测试脚本（inventory.ps1）的内容是否完全符合预期，防止测试脚本被篡改或包含意外逻辑"
+        ],
+        "evidence_ids": [
+          "S10",
+          "S16",
+          "S6",
+          "S7",
+          "S12"
+        ],
+        "recommendations": [
+          {
+            "reason": "确认测试环境隔离状态及测试脚本完整性",
+            "source_ids": [
+              "S10",
+              "S16"
+            ]
+          }
+        ]
+      },
+      "diagnostics": []
+    },
+    {
+      "cell": "A0-old-deepseek",
+      "backend": "deepseek",
+      "packet_id": "A0-old",
+      "result_sha256": "1cdbefe4ad33e3c040e9ecfc9c2bfa5ce87a45ed0503e63c81ca49f47b161525",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2413,
+        "output_tokens": 500,
+        "total_tokens": 2913,
+        "cached_input_tokens": 128,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "cb401ca8-074c-4297-b980-ba1d76c6b64d"
+      },
+      "elapsed_seconds": 3.452,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警描述为 PowerShell 执行 C:\\\\Lab\\\\inventory.ps1 的进程启动（S1-S3、S8-S9），属于 T1059.001 的通用执行行为，本身不构成恶意证据。来源标签明确说明这是合成验证数据，且共享主机/时间不能证明进程发起了连接、未提供授权（S10）；但标签不能单独证明无害或授权。资产、历史查询均返回 0 行，威胁情报被跳过，均不构成反证。缺少脚本内容、命令行完整参数、父进程上下文及授权/变更记录，无法判定为真实威胁或已证实无害。\",\"explanation\":\"主机 next-validation-host 上，用户 synthetic-operator 通过 cmd.exe 启动 powershell.exe，以 -File 方式执行 C:\\\\Lab\\\\inventory.ps1，进程启动成功。该行为与常规清单采集脚本一致，但仅凭进程启动记录无法确认脚本内容、来源合法性或是否伴随后续网络/文件活动。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S13\",\"S15\",\"S16\"],\"recommendations\":[{\"reason\":\"核实 C:\\\\Lab\\\\inventory.ps1 的文件内容、哈希、创建来源与签名，确认是否为已知清单脚本\",\"source_ids\":[\"S3\",\"S23\"]},{\"reason\":\"确认该主机与用户执行此脚本的授权或变更记录，以及父进程 cmd.exe 的启动来源\",\"source_ids\":[\"S5\",\"S6\",\"S7\",\"S10\"]},{\"reason\":\"补充查询该进程后续网络连接、子进程与文件写入活动，以判断是否存在恶意行为\",\"source_ids\":[\"S2\",\"S11\"]}],\"limitations\":[\"资产查询返回 0 行，且为当前清单而非事件时点状态，无法确认主机/用户归属\",\"历史查询返回 0 行，仅覆盖已记录告警，非完整活动历史\",\"威胁情报查询被跳过，无命中不代表安全\",\"未提供脚本内容、命令行完整参数及父进程命令行\",\"来源标签自述为合成验证数据，但标签不能单独证明无害或授权\",\"未提供授权或变更管理记录\"]}",
+      "answer": {
+        "verdict": "needs_review",
+        "confidence": 0.4,
+        "rationale": "告警描述为 PowerShell 执行 C:\\Lab\\inventory.ps1 的进程启动（S1-S3、S8-S9），属于 T1059.001 的通用执行行为，本身不构成恶意证据。来源标签明确说明这是合成验证数据，且共享主机/时间不能证明进程发起了连接、未提供授权（S10）；但标签不能单独证明无害或授权。资产、历史查询均返回 0 行，威胁情报被跳过，均不构成反证。缺少脚本内容、命令行完整参数、父进程上下文及授权/变更记录，无法判定为真实威胁或已证实无害。",
+        "explanation": "主机 next-validation-host 上，用户 synthetic-operator 通过 cmd.exe 启动 powershell.exe，以 -File 方式执行 C:\\Lab\\inventory.ps1，进程启动成功。该行为与常规清单采集脚本一致，但仅凭进程启动记录无法确认脚本内容、来源合法性或是否伴随后续网络/文件活动。",
+        "evidence_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S10",
+          "S11",
+          "S13",
+          "S15",
+          "S16"
+        ],
+        "recommendations": [
+          {
+            "reason": "核实 C:\\Lab\\inventory.ps1 的文件内容、哈希、创建来源与签名，确认是否为已知清单脚本",
+            "source_ids": [
+              "S3",
+              "S23"
+            ]
+          },
+          {
+            "reason": "确认该主机与用户执行此脚本的授权或变更记录，以及父进程 cmd.exe 的启动来源",
+            "source_ids": [
+              "S5",
+              "S6",
+              "S7",
+              "S10"
+            ]
+          },
+          {
+            "reason": "补充查询该进程后续网络连接、子进程与文件写入活动，以判断是否存在恶意行为",
+            "source_ids": [
+              "S2",
+              "S11"
+            ]
+          }
+        ],
+        "limitations": [
+          "资产查询返回 0 行，且为当前清单而非事件时点状态，无法确认主机/用户归属",
+          "历史查询返回 0 行，仅覆盖已记录告警，非完整活动历史",
+          "威胁情报查询被跳过，无命中不代表安全",
+          "未提供脚本内容、命令行完整参数及父进程命令行",
+          "来源标签自述为合成验证数据，但标签不能单独证明无害或授权",
+          "未提供授权或变更管理记录"
+        ]
+      },
+      "diagnostics": [
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        }
+      ]
+    },
+    {
+      "cell": "A0-current-small",
+      "backend": "small",
+      "packet_id": "A0-current",
+      "result_sha256": "a42f88f5f62429958a252005d02e089f4e3cada103e6842393c203c3b1bf8dcc",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 1694,
+        "output_tokens": 288,
+        "total_tokens": 1982,
+        "cached_input_tokens": null,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "chatcmpl-97baa9fc20057d46"
+      },
+      "elapsed_seconds": 5.945,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "aisoc-investigation",
+      "finish_reason": "stop",
+      "raw_text": "{\n  \"verdict\": \"benign\",\n  \"confidence\": 0.95,\n  \"rationale\": \"Alert title and description explicitly state 'Synthetic validation only' and 'SyntheticLab', indicating this is a test/automation event. Process name 'powershell.exe' running '-File C:Labinventory.ps1' under user 'synthetic-operator' on host 'next-validation-host' aligns with the synthetic nature. Parent process 'cmd.exe' is consistent with manual or scripted invocation. No evidence of malicious intent, lateral movement, or unauthorized access; all indicators point to a controlled validation exercise.\",\n  \"explanation\": \"The observed activity is a PowerShell script execution triggered by a synthetic operator on a validation host. The context confirms this is a non-production, test environment simulation designed to validate detection rules, not an actual security incident.\"\n    ,\n  \"evidence_ids\": [\n    \"S1\",\n    \"S3\",\n    \"S6\",\n    \"S7\",\n    \"S11\",\n    \"S17\",\n    \"S30\"\n  ],\n  \"recommendations\": []\n    ,\n  \"limitations\": [\n    \"No external threat intelligence correlation performed as per scope.\",\n    \"File hash or content analysis not available in provided data.\"\n  ]\n}",
+      "answer": {
+        "verdict": "benign",
+        "confidence": 0.95,
+        "rationale": "Alert title and description explicitly state 'Synthetic validation only' and 'SyntheticLab', indicating this is a test/automation event. Process name 'powershell.exe' running '-File C:Labinventory.ps1' under user 'synthetic-operator' on host 'next-validation-host' aligns with the synthetic nature. Parent process 'cmd.exe' is consistent with manual or scripted invocation. No evidence of malicious intent, lateral movement, or unauthorized access; all indicators point to a controlled validation exercise.",
+        "explanation": "The observed activity is a PowerShell script execution triggered by a synthetic operator on a validation host. The context confirms this is a non-production, test environment simulation designed to validate detection rules, not an actual security incident.",
+        "evidence_ids": [
+          "S1",
+          "S3",
+          "S6",
+          "S7",
+          "S11",
+          "S17",
+          "S30"
+        ],
+        "recommendations": [],
+        "limitations": [
+          "No external threat intelligence correlation performed as per scope.",
+          "File hash or content analysis not available in provided data."
+        ]
+      },
+      "diagnostics": []
+    },
+    {
+      "cell": "A0-current-deepseek",
+      "backend": "deepseek",
+      "packet_id": "A0-current",
+      "result_sha256": "e7767b6264d023301af6fbc2b8433991967bd71866a73024e8f6a056da477ac9",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2271,
+        "output_tokens": 544,
+        "total_tokens": 2815,
+        "cached_input_tokens": 2048,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "0f638077-9822-4ff2-978c-3ea72e2a4f18"
+      },
+      "elapsed_seconds": 3.849,
+      "schema_valid": true,
+      "current_parser_accepts": false,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"verdict\":\"needs_review\",\"confidence\":0.45,\"rationale\":\"告警描述为 PowerShell 执行 C:\\\\Lab\\\\inventory.ps1 的进程启动（S1-S3、S23-S24），父进程为 cmd.exe（S5、S26），用户 synthetic-operator、主机 next-validation-host（S6-S7、S20-S21），动作 process_start 且成功（S8-S9、S27-S28）。检测标签为 T1059.001、Execution（S14），但标签本身不证明恶意。告警描述明确说明共享主机/时间不能证明该进程发起了连接，且未提供授权（S11）；资产查询返回 0 行且存在“当前清单非事件时点状态”等限制，历史查询返回 0 行，威胁情报被跳过（无命中不等于安全）。因此无法确认该脚本是正常运维还是恶意执行，证据不足。\",\"explanation\":\"观察到的是在受管主机上由 cmd.exe 启动 PowerShell 执行本地脚本文件，属于常见的脚本执行行为；仅凭进程启动与脚本路径无法区分正常清单采集与恶意载荷执行，需要脚本内容、文件哈希、签名、命令行参数及网络/子进程行为等进一步证据。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S11\",\"S14\",\"S23\",\"S24\",\"S26\"],\"recommendations\":[{\"reason\":\"获取 C:\\\\Lab\\\\inventory.ps1 的内容、哈希与数字签名，确认脚本用途与来源。\",\"source_ids\":[\"S3\",\"S24\"]},{\"reason\":\"核查该主机上 powershell.exe 的子进程、网络连接与文件写入行为，判断是否存在后续恶意活动。\",\"source_ids\":[\"S2\",\"S7\",\"S22\"]},{\"reason\":\"向 synthetic-operator 或资产负责人确认该脚本是否为授权运维任务，并核对执行时间与变更记录。\",\"source_ids\":[\"S6\",\"S20\",\"S11\"]}],\"limitations\":[\"资产查询返回 0 行，且当前清单不代表事件时点状态，无法据此确认主机与用户归属。\",\"历史查询返回 0 行，仅覆盖已记录告警，不能证明无其他活动。\",\"威胁情报查询被跳过，无命中不等于安全。\",\"未提供脚本内容、哈希、签名及网络行为，无法判断执行意图。\",\"告警描述自述为合成验证且未提供授权，标签不能单独证明无害或授权。\"]}",
+      "answer": {
+        "verdict": "needs_review",
+        "confidence": 0.45,
+        "rationale": "告警描述为 PowerShell 执行 C:\\Lab\\inventory.ps1 的进程启动（S1-S3、S23-S24），父进程为 cmd.exe（S5、S26），用户 synthetic-operator、主机 next-validation-host（S6-S7、S20-S21），动作 process_start 且成功（S8-S9、S27-S28）。检测标签为 T1059.001、Execution（S14），但标签本身不证明恶意。告警描述明确说明共享主机/时间不能证明该进程发起了连接，且未提供授权（S11）；资产查询返回 0 行且存在“当前清单非事件时点状态”等限制，历史查询返回 0 行，威胁情报被跳过（无命中不等于安全）。因此无法确认该脚本是正常运维还是恶意执行，证据不足。",
+        "explanation": "观察到的是在受管主机上由 cmd.exe 启动 PowerShell 执行本地脚本文件，属于常见的脚本执行行为；仅凭进程启动与脚本路径无法区分正常清单采集与恶意载荷执行，需要脚本内容、文件哈希、签名、命令行参数及网络/子进程行为等进一步证据。",
+        "evidence_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S11",
+          "S14",
+          "S23",
+          "S24",
+          "S26"
+        ],
+        "recommendations": [
+          {
+            "reason": "获取 C:\\Lab\\inventory.ps1 的内容、哈希与数字签名，确认脚本用途与来源。",
+            "source_ids": [
+              "S3",
+              "S24"
+            ]
+          },
+          {
+            "reason": "核查该主机上 powershell.exe 的子进程、网络连接与文件写入行为，判断是否存在后续恶意活动。",
+            "source_ids": [
+              "S2",
+              "S7",
+              "S22"
+            ]
+          },
+          {
+            "reason": "向 synthetic-operator 或资产负责人确认该脚本是否为授权运维任务，并核对执行时间与变更记录。",
+            "source_ids": [
+              "S6",
+              "S20",
+              "S11"
+            ]
+          }
+        ],
+        "limitations": [
+          "资产查询返回 0 行，且当前清单不代表事件时点状态，无法据此确认主机与用户归属。",
+          "历史查询返回 0 行，仅覆盖已记录告警，不能证明无其他活动。",
+          "威胁情报查询被跳过，无命中不等于安全。",
+          "未提供脚本内容、哈希、签名及网络行为，无法判断执行意图。",
+          "告警描述自述为合成验证且未提供授权，标签不能单独证明无害或授权。"
+        ]
+      },
+      "parse_error": "alert_answer_prose_source_unbound",
+      "diagnostics": [
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        }
+      ]
+    },
+    {
+      "cell": "A1-old-small",
+      "backend": "small",
+      "packet_id": "A1-old",
+      "result_sha256": "c6c287190a087be3886b985e8349ddf4eaa2ce89649e3d2f6c7d0aaf222fc251",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2184,
+        "output_tokens": 330,
+        "total_tokens": 2514,
+        "cached_input_tokens": null,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "chatcmpl-b335236ed9564b9d"
+      },
+      "elapsed_seconds": 6.616,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "aisoc-investigation",
+      "finish_reason": "stop",
+      "raw_text": "{\n  \"verdict\": \"benign\",\n  \"rationale\": \"告警明确标记为'SyntheticLab'生成的合成测试事件（fixture: socai2-next-acceptance-r1），且元数据声明'仅用于合成验证，共享主机/时间不能证明进程建立了连接'。主机名'next-validation-host'和域名'inventory.example.invalid'均为测试环境特征，非真实资产。\",\n  \"confidence\": 0.95,\n  \"explanation\": \"该事件是安全运营中心（SOC）验收测试的一部分，旨在验证检测规则（synthetic-rule-1）的有效性。源主机和目标主机名均表明这是受控的模拟流量，而非真实的恶意活动或未经授权的访问。\",\n  \"limitations\": [\n    \"无法完全排除测试环境与生产环境存在配置重叠导致误触发的可能性（尽管概率极低）\",\n    \"合成测试的时间戳（2026年）表明这是未来时间戳的模拟数据，需确认测试计划是否已归档\"\n  ],\n  \"evidence_ids\": [\n    \"S10\",\n    \"S17\",\n    \"S29\",\n    \"S26\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"确认该合成测试属于已批准的验收测试计划，无需进一步调查或处置。\",\n      \"source_ids\": [\n        \"S10\",\n        \"S17\"\n      ]\n    }\n  ]\n}",
+      "answer": {
+        "verdict": "benign",
+        "rationale": "告警明确标记为'SyntheticLab'生成的合成测试事件（fixture: socai2-next-acceptance-r1），且元数据声明'仅用于合成验证，共享主机/时间不能证明进程建立了连接'。主机名'next-validation-host'和域名'inventory.example.invalid'均为测试环境特征，非真实资产。",
+        "confidence": 0.95,
+        "explanation": "该事件是安全运营中心（SOC）验收测试的一部分，旨在验证检测规则（synthetic-rule-1）的有效性。源主机和目标主机名均表明这是受控的模拟流量，而非真实的恶意活动或未经授权的访问。",
+        "limitations": [
+          "无法完全排除测试环境与生产环境存在配置重叠导致误触发的可能性（尽管概率极低）",
+          "合成测试的时间戳（2026年）表明这是未来时间戳的模拟数据，需确认测试计划是否已归档"
+        ],
+        "evidence_ids": [
+          "S10",
+          "S17",
+          "S29",
+          "S26"
+        ],
+        "recommendations": [
+          {
+            "reason": "确认该合成测试属于已批准的验收测试计划，无需进一步调查或处置。",
+            "source_ids": [
+              "S10",
+              "S17"
+            ]
+          }
+        ]
+      },
+      "diagnostics": []
+    },
+    {
+      "cell": "A1-old-deepseek",
+      "backend": "deepseek",
+      "packet_id": "A1-old",
+      "result_sha256": "1067bd74a2d59a01a1a4bd1f60e087d70077fbe4266b2479047a47a4da2f9a12",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2716,
+        "output_tokens": 577,
+        "total_tokens": 3293,
+        "cached_input_tokens": 384,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "0342d351-d4ac-44bd-b672-b8256080f657"
+      },
+      "elapsed_seconds": 4.132,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警记录了一次从 next-validation-host（192.0.2.20:50123）到 inventory.example.invalid（198.51.100.20:443）的成功 TCP 出站连接，但仅有网络连接元数据，没有进程、命令行、用户或载荷信息，无法证明该连接由哪个进程发起或具有恶意意图。历史查询仅返回同一主机上一条更早的合成 PowerShell 清单进程记录，属于同一对象而非因果证据。资产与威胁情报查询均无命中，但查空不构成反证。来源标签自述为合成验证，但标签本身不能单独证明无害或授权。\",\"explanation\":\"观测到的行为是一次普通的主机到外部清单域名的 HTTPS 出站连接，目标端口 443、协议 TCP、结果成功。该行为本身既可能是正常的资产清单上报，也可能是未授权的数据外传或 C2 通信，现有数据不足以区分。缺少进程归属、命令行、用户上下文、目标域名解析与信誉、以及授权清单，因此无法判定为恶意或正常。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S19\",\"S20\",\"S21\",\"S22\",\"S23\",\"S24\",\"S25\",\"S26\",\"S27\",\"S28\",\"S29\",\"S30\"],\"recommendations\":[{\"reason\":\"补充该连接对应的进程信息（进程名、命令行、父进程、运行用户），以确认连接发起方是否为预期的清单/PowerShell 进程。\",\"source_ids\":[\"S1\",\"S3\",\"S8\",\"S13\"]},{\"reason\":\"核实 inventory.example.invalid 与 198.51.100.20 是否为组织授权的清单端点，并检查该域名解析与证书信息。\",\"source_ids\":[\"S2\",\"S4\",\"S26\"]},{\"reason\":\"确认该主机在事件时间点是否应执行清单上报任务，并核对是否存在授权记录。\",\"source_ids\":[\"S1\",\"S10\",\"S13\"]}],\"limitations\":[\"缺少进程与命令行上下文，无法将网络连接归属到具体进程\",\"资产查询无命中且为当前清单状态，非事件时间点状态，不能证明主机不存在或未授权\",\"威胁情报无命中不代表目标安全\",\"历史记录仅为同一对象的告警，不构成因果关系\",\"来源标签自述为合成验证，但未提供授权证明，不能据此判定无害\",\"目标域名使用 .invalid 保留域，其真实性与解析行为未核实\"]}",
+      "answer": {
+        "verdict": "needs_review",
+        "confidence": 0.4,
+        "rationale": "告警记录了一次从 next-validation-host（192.0.2.20:50123）到 inventory.example.invalid（198.51.100.20:443）的成功 TCP 出站连接，但仅有网络连接元数据，没有进程、命令行、用户或载荷信息，无法证明该连接由哪个进程发起或具有恶意意图。历史查询仅返回同一主机上一条更早的合成 PowerShell 清单进程记录，属于同一对象而非因果证据。资产与威胁情报查询均无命中，但查空不构成反证。来源标签自述为合成验证，但标签本身不能单独证明无害或授权。",
+        "explanation": "观测到的行为是一次普通的主机到外部清单域名的 HTTPS 出站连接，目标端口 443、协议 TCP、结果成功。该行为本身既可能是正常的资产清单上报，也可能是未授权的数据外传或 C2 通信，现有数据不足以区分。缺少进程归属、命令行、用户上下文、目标域名解析与信誉、以及授权清单，因此无法判定为恶意或正常。",
+        "evidence_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16",
+          "S17",
+          "S18",
+          "S19",
+          "S20",
+          "S21",
+          "S22",
+          "S23",
+          "S24",
+          "S25",
+          "S26",
+          "S27",
+          "S28",
+          "S29",
+          "S30"
+        ],
+        "recommendations": [
+          {
+            "reason": "补充该连接对应的进程信息（进程名、命令行、父进程、运行用户），以确认连接发起方是否为预期的清单/PowerShell 进程。",
+            "source_ids": [
+              "S1",
+              "S3",
+              "S8",
+              "S13"
+            ]
+          },
+          {
+            "reason": "核实 inventory.example.invalid 与 198.51.100.20 是否为组织授权的清单端点，并检查该域名解析与证书信息。",
+            "source_ids": [
+              "S2",
+              "S4",
+              "S26"
+            ]
+          },
+          {
+            "reason": "确认该主机在事件时间点是否应执行清单上报任务，并核对是否存在授权记录。",
+            "source_ids": [
+              "S1",
+              "S10",
+              "S13"
+            ]
+          }
+        ],
+        "limitations": [
+          "缺少进程与命令行上下文，无法将网络连接归属到具体进程",
+          "资产查询无命中且为当前清单状态，非事件时间点状态，不能证明主机不存在或未授权",
+          "威胁情报无命中不代表目标安全",
+          "历史记录仅为同一对象的告警，不构成因果关系",
+          "来源标签自述为合成验证，但未提供授权证明，不能据此判定无害",
+          "目标域名使用 .invalid 保留域，其真实性与解析行为未核实"
+        ]
+      },
+      "diagnostics": []
+    },
+    {
+      "cell": "A1-current-small",
+      "backend": "small",
+      "packet_id": "A1-current",
+      "result_sha256": "87214b63c776c5116cc36fde7ca73ca20891504b56c8240f9c694152f0334f72",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2033,
+        "output_tokens": 227,
+        "total_tokens": 2260,
+        "cached_input_tokens": null,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "chatcmpl-b090455525f10331"
+      },
+      "elapsed_seconds": 4.817,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "aisoc-investigation",
+      "finish_reason": "stop",
+      "raw_text": "{\n  \"verdict\": \"benign\",\n  \"confidence\": 0.95,\n  \"rationale\": \"告警明确标记为'Synthetic validation only'（合成验证），且原始事件包含'fixture'字段（S18）表明这是测试环境（socai2-next-acceptance-r1）。目标域名'inventory.example.invalid'为虚构测试域，无真实威胁情报关联。所有证据均指向预定义的演练场景，非真实攻击。\",\n  \"explanation\": \"该事件是安全团队在测试环境中进行的合成验证演练，模拟主机连接虚构的库存端点。由于目标地址不存在于真实网络且明确标注为测试数据，该行为属于正常的测试活动，不具备恶意特征。\"\n  ,\n  \"evidence_ids\": [\"S11\", \"S18\", \"S27\", \"S31\"]\n  ,\n  \"recommendations\": []\n  ,\n  \"limitations\": [\"仅基于提供的合成事件元数据判断，未查询真实网络状态\"]\n}",
+      "answer": {
+        "verdict": "benign",
+        "confidence": 0.95,
+        "rationale": "告警明确标记为'Synthetic validation only'（合成验证），且原始事件包含'fixture'字段（S18）表明这是测试环境（socai2-next-acceptance-r1）。目标域名'inventory.example.invalid'为虚构测试域，无真实威胁情报关联。所有证据均指向预定义的演练场景，非真实攻击。",
+        "explanation": "该事件是安全团队在测试环境中进行的合成验证演练，模拟主机连接虚构的库存端点。由于目标地址不存在于真实网络且明确标注为测试数据，该行为属于正常的测试活动，不具备恶意特征。",
+        "evidence_ids": [
+          "S11",
+          "S18",
+          "S27",
+          "S31"
+        ],
+        "recommendations": [],
+        "limitations": [
+          "仅基于提供的合成事件元数据判断，未查询真实网络状态"
+        ]
+      },
+      "diagnostics": [
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        }
+      ]
+    },
+    {
+      "cell": "A1-current-deepseek",
+      "backend": "deepseek",
+      "packet_id": "A1-current",
+      "result_sha256": "4a7ab06bb0d41420bdfe72a8104c7d149f3629dca58fbf8b60a5ae5618de916b",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2578,
+        "output_tokens": 443,
+        "total_tokens": 3021,
+        "cached_input_tokens": 2432,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "fc2ba1d9-b819-4aeb-9104-3f84189e6be7"
+      },
+      "elapsed_seconds": 3.487,
+      "schema_valid": true,
+      "current_parser_accepts": false,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"verdict\":\"needs_review\",\"confidence\":0.4,\"rationale\":\"告警记录了一次从 next-validation-host(192.0.2.20:50123) 到 inventory.example.invalid(198.51.100.20:443) 的 TCP 连接且结果为成功(S1-S9,S20-S30)，但仅有网络连接元数据，缺少进程、用户、命令行等归因字段；历史查询仅命中同一主机上一条“Synthetic PowerShell inventory process”记录(S14)，属同对象非因果，不能证明该进程发起了本次连接。资产与威胁情报查询均无命中(S: assets/threat_intel 0 行)，无命中不等于安全。告警描述与厂商标签(S11,S31)为合成/验证性标签，不能单独证明无害或授权，故证据不足以定性。\",\"explanation\":\"行为本身是一次成功的外联 TCP 连接，目标为 inventory 类主机名；在缺少进程归因与授权依据的情况下，无法区分正常资产盘点流量与可疑外联，需补充进程与授权信息后再判定。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S11\",\"S14\",\"S15\",\"S31\"],\"recommendations\":[{\"reason\":\"补充该时段源主机上发起 198.51.100.20:443 连接的进程、用户与命令行信息，确认是否与历史 PowerShell 记录(S14)为同一行为。\",\"source_ids\":[\"S1\",\"S3\",\"S14\"]},{\"reason\":\"核实 inventory.example.invalid 与 198.51.100.20 是否为已知授权资产或盘点端点，并确认该外联是否有变更/授权记录。\",\"source_ids\":[\"S2\",\"S4\"]}],\"limitations\":[\"仅有网络连接元数据，缺少进程与用户归因\",\"历史命中为同对象非因果，不能证明连接来源\",\"资产与威胁情报查询无命中，不构成安全证明\",\"合成/验证标签不构成无害或授权证明\"]}",
+      "answer": {
+        "verdict": "needs_review",
+        "confidence": 0.4,
+        "rationale": "告警记录了一次从 next-validation-host(192.0.2.20:50123) 到 inventory.example.invalid(198.51.100.20:443) 的 TCP 连接且结果为成功(S1-S9,S20-S30)，但仅有网络连接元数据，缺少进程、用户、命令行等归因字段；历史查询仅命中同一主机上一条“Synthetic PowerShell inventory process”记录(S14)，属同对象非因果，不能证明该进程发起了本次连接。资产与威胁情报查询均无命中(S: assets/threat_intel 0 行)，无命中不等于安全。告警描述与厂商标签(S11,S31)为合成/验证性标签，不能单独证明无害或授权，故证据不足以定性。",
+        "explanation": "行为本身是一次成功的外联 TCP 连接，目标为 inventory 类主机名；在缺少进程归因与授权依据的情况下，无法区分正常资产盘点流量与可疑外联，需补充进程与授权信息后再判定。",
+        "evidence_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S11",
+          "S14",
+          "S15",
+          "S31"
+        ],
+        "recommendations": [
+          {
+            "reason": "补充该时段源主机上发起 198.51.100.20:443 连接的进程、用户与命令行信息，确认是否与历史 PowerShell 记录(S14)为同一行为。",
+            "source_ids": [
+              "S1",
+              "S3",
+              "S14"
+            ]
+          },
+          {
+            "reason": "核实 inventory.example.invalid 与 198.51.100.20 是否为已知授权资产或盘点端点，并确认该外联是否有变更/授权记录。",
+            "source_ids": [
+              "S2",
+              "S4"
+            ]
+          }
+        ],
+        "limitations": [
+          "仅有网络连接元数据，缺少进程与用户归因",
+          "历史命中为同对象非因果，不能证明连接来源",
+          "资产与威胁情报查询无命中，不构成安全证明",
+          "合成/验证标签不构成无害或授权证明"
+        ]
+      },
+      "parse_error": "alert_answer_prose_source_unbound",
+      "diagnostics": [
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "alert_answer_prose_source_unbound",
+          "path": "$.rationale",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.rationale",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.recommendations.0.reason",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        }
+      ]
+    },
+    {
+      "cell": "I-current-small",
+      "backend": "small",
+      "packet_id": "I-current",
+      "result_sha256": "934929117eea25f37ca0e372dad744babb464378d87133a76c83bc02874b176a",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 2717,
+        "output_tokens": 1578,
+        "total_tokens": 4295,
+        "cached_input_tokens": null,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "chatcmpl-9a7a838c7828c378"
+      },
+      "elapsed_seconds": 31.392,
+      "schema_valid": true,
+      "current_parser_accepts": false,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "aisoc-investigation",
+      "finish_reason": "stop",
+      "raw_text": "{\n  \"summary\": \"事件汇聚包含两个告警成员（cfcd94b7... 和 dabb136a...），均源自 SyntheticLab 合成验证环境。成员间存在时间接近（约 15 秒间隔）和共同对象（主机 next-validation-host），但缺乏直接因果或攻击链证据。两个告警的已有分诊（S19, S20）均判定为'needs_review'，理由一致：数据为合成测试，无法区分正常运维与恶意行为，且缺少授权证明。\",\n  \"conclusion\": \"待核\",\n  \"evidence_ids\": [\"S21\", \"S22\", \"S23\", \"S24\", \"S25\", \"S26\", \"S27\", \"S28\", \"S29\", \"S30\", \"S31\"],\n  \"members\": [\n    {\n      \"alert_id\": \"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\n      \"state\": \"not_reviewed\",\n      \"assessment\": \"分诊 S19 判定为待核。记录显示 powershell.exe 由 cmd.exe 启动，执行 C:Labinventory.ps1，用户 synthetic-operator，主机 next-validation-host。来源标签 S24/S30 明确为合成规则。无授权证据，无法排除恶意。\",\n      \"source_ids\": [\"S1\", \"S3\", \"S5\", \"S7\", \"S9\", \"S11\", \"S13\", \"S15\", \"S17\", \"S19\", \"S21\", \"S24\", \"S26\", \"S28\", \"S30\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证不能证明良性\", \"资产查询为空不构成反证\"]\n    },\n    {\n      \"alert_id\": \"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\n      \"state\": \"not_reviewed\",\n      \"assessment\": \"分诊 S20 判定为待核。记录显示从 next-validation-host 到 inventory.example.invalid 的 TCP 443 连接成功。来源标签 S25/S31 明确为合成规则。无法证明该连接由 S1 中的 PowerShell 进程发起，也无法证明连接性质。\",\n      \"source_ids\": [\"S2\", \"S4\", \"S6\", \"S8\", \"S10\", \"S12\", \"S14\", \"S16\", \"S18\", \"S20\", \"S22\", \"S25\", \"S27\", \"S29\", \"S31\"]\n    ,\n    \"limitations\": [\"标题自述为合成验证不能证明良性\", \"查空不构成反证\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"statement\": \"两个告警成员共享主机 next-validation-host，时间间隔约 15 秒，符合合成演练中模拟'进程启动后产生外联'的场景特征，但无日志直接关联两者。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S1\", \"S2\", \"S5\", \"S13\", \"S16\", \"S21\", \"S22\"]\n    ,\n    \"limitations\": [\"时间接近不证明因果\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"statement\": \"所有可见证据均标记为 SyntheticLab 合成数据，标题和描述自述为验证用途。根据规则，此类自述不能单独证明行为良性或已获授权。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S24\", \"S25\", \"S30\", \"S31\"]\n    ,\n    \"limitations\": [\"自述不能排除恶意\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"statement\": \"分诊 S19 和 S20 的结论一致（needs_review），理由充分：合成数据背景 + 缺乏授权/恶意证据 + 资产查询为空。未发现判定与理由冲突。\",\n      \"state\": \"unresolved\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S19\", \"S20\"]\n    ,\n    \"limitations\": [\"需人工核实授权状态\"]\n    }\n  ],\n  \"open_questions\": [\n    {\n      \"text\": \"是否存在针对主机 next-validation-host 的正式运维授权记录？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": []\n    ,\n    \"evidence_requirements\": [\"授权文档\", \"运维工单\"]\n    },\n    {\n      \"text\": \"告警 dabb136a... 中的网络流量是否确实由告警 cfcd94b7... 中的 PowerShell 进程发起？\",\n      \"alert_ids\": [\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\", \"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\n      \"source_ids\": [\"S1\", \"S2\", \"S5\", \"S16\"]\n    ,\n      \"evidence_requirements\": [\"进程 - 网络连接关联日志\"]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未提供完整原始日志，仅依赖结构化字段\",\n    \"资产查询结果为空，无法通过资产状态反证\",\n    \"合成数据标签不能直接作为良性证据\"\n  ]\n}",
+      "answer": {
+        "summary": "事件汇聚包含两个告警成员（cfcd94b7... 和 dabb136a...），均源自 SyntheticLab 合成验证环境。成员间存在时间接近（约 15 秒间隔）和共同对象（主机 next-validation-host），但缺乏直接因果或攻击链证据。两个告警的已有分诊（S19, S20）均判定为'needs_review'，理由一致：数据为合成测试，无法区分正常运维与恶意行为，且缺少授权证明。",
+        "conclusion": "待核",
+        "evidence_ids": [
+          "S21",
+          "S22",
+          "S23",
+          "S24",
+          "S25",
+          "S26",
+          "S27",
+          "S28",
+          "S29",
+          "S30",
+          "S31"
+        ],
+        "members": [
+          {
+            "alert_id": "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+            "state": "not_reviewed",
+            "assessment": "分诊 S19 判定为待核。记录显示 powershell.exe 由 cmd.exe 启动，执行 C:Labinventory.ps1，用户 synthetic-operator，主机 next-validation-host。来源标签 S24/S30 明确为合成规则。无授权证据，无法排除恶意。",
+            "source_ids": [
+              "S1",
+              "S3",
+              "S5",
+              "S7",
+              "S9",
+              "S11",
+              "S13",
+              "S15",
+              "S17",
+              "S19",
+              "S21",
+              "S24",
+              "S26",
+              "S28",
+              "S30"
+            ],
+            "limitations": [
+              "标题自述为合成验证不能证明良性",
+              "资产查询为空不构成反证"
+            ]
+          },
+          {
+            "alert_id": "dabb136a-8ff4-5b84-a149-8f3818de0f76",
+            "state": "not_reviewed",
+            "assessment": "分诊 S20 判定为待核。记录显示从 next-validation-host 到 inventory.example.invalid 的 TCP 443 连接成功。来源标签 S25/S31 明确为合成规则。无法证明该连接由 S1 中的 PowerShell 进程发起，也无法证明连接性质。",
+            "source_ids": [
+              "S2",
+              "S4",
+              "S6",
+              "S8",
+              "S10",
+              "S12",
+              "S14",
+              "S16",
+              "S18",
+              "S20",
+              "S22",
+              "S25",
+              "S27",
+              "S29",
+              "S31"
+            ],
+            "limitations": [
+              "标题自述为合成验证不能证明良性",
+              "查空不构成反证"
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "id": "F1",
+            "statement": "两个告警成员共享主机 next-validation-host，时间间隔约 15 秒，符合合成演练中模拟'进程启动后产生外联'的场景特征，但无日志直接关联两者。",
+            "state": "unresolved",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S1",
+              "S2",
+              "S5",
+              "S13",
+              "S16",
+              "S21",
+              "S22"
+            ],
+            "limitations": [
+              "时间接近不证明因果"
+            ]
+          },
+          {
+            "id": "F2",
+            "statement": "所有可见证据均标记为 SyntheticLab 合成数据，标题和描述自述为验证用途。根据规则，此类自述不能单独证明行为良性或已获授权。",
+            "state": "unresolved",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S24",
+              "S25",
+              "S30",
+              "S31"
+            ],
+            "limitations": [
+              "自述不能排除恶意"
+            ]
+          },
+          {
+            "id": "F3",
+            "statement": "分诊 S19 和 S20 的结论一致（needs_review），理由充分：合成数据背景 + 缺乏授权/恶意证据 + 资产查询为空。未发现判定与理由冲突。",
+            "state": "unresolved",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S19",
+              "S20"
+            ],
+            "limitations": [
+              "需人工核实授权状态"
+            ]
+          }
+        ],
+        "open_questions": [
+          {
+            "text": "是否存在针对主机 next-validation-host 的正式运维授权记录？",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [],
+            "evidence_requirements": [
+              "授权文档",
+              "运维工单"
+            ]
+          },
+          {
+            "text": "告警 dabb136a... 中的网络流量是否确实由告警 cfcd94b7... 中的 PowerShell 进程发起？",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S1",
+              "S2",
+              "S5",
+              "S16"
+            ],
+            "evidence_requirements": [
+              "进程 - 网络连接关联日志"
+            ]
+          }
+        ],
+        "limitations": [
+          "未提供完整原始日志，仅依赖结构化字段",
+          "资产查询结果为空，无法通过资产状态反证",
+          "合成数据标签不能直接作为良性证据"
+        ]
+      },
+      "parse_error": "incident_answer_prose_source_unbound",
+      "diagnostics": [
+        {
+          "code": "incident_answer_prose_source_unbound",
+          "path": "$.summary",
+          "category": "source",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "incident_unread_member_has_sources",
+          "path": "$.members.0",
+          "category": "coverage",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.members.0.assessment",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.members.0.assessment",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "incident_unread_member_has_sources",
+          "path": "$.members.1",
+          "category": "coverage",
+          "severity": "error",
+          "check_state": "failed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.members.1.assessment",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        },
+        {
+          "code": "source_alias_in_prose",
+          "path": "$.findings.2.statement",
+          "category": "presentation",
+          "severity": "warning",
+          "check_state": "observed"
+        }
+      ]
+    },
+    {
+      "cell": "I-current-deepseek",
+      "backend": "deepseek",
+      "packet_id": "I-current",
+      "result_sha256": "2f961eef9119d9581e074b5a6c52d8c2b049b05db80fbf509cb6794783903fe3",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 3837,
+        "output_tokens": 1630,
+        "total_tokens": 5467,
+        "cached_input_tokens": 3584,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "5a76bb96-d78d-4319-a8c3-d5854a18564a"
+      },
+      "elapsed_seconds": 8.235,
+      "schema_valid": true,
+      "current_parser_accepts": true,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"summary\":\"两成员均为 SyntheticLab 合成数据，经 primary-entity-v2 以共享主机 next-validation-host 归并；成员0为 PowerShell 清单脚本进程启动成功，成员1为约15秒后同主机到 inventory.example.invalid 的 TCP 443 出站连接成功。归并仅说明共享对象与时间接近，不证明进程发起连接或存在攻击链。两份既有分诊均为 needs_review，理由与材料基本一致，但均未提供授权或恶意证据。\",\"conclusion\":\"维持待核：现有材料只能确认两条合成告警的字段与共享主机归并关系，无法判定脚本执行或出站连接是否授权、是否恶意，也不能确认二者因果。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S19\",\"S20\",\"S21\",\"S22\",\"S23\",\"S24\",\"S25\",\"S26\",\"S27\",\"S28\",\"S29\",\"S30\",\"S31\"],\"members\":[{\"alert_id\":\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"state\":\"summarized\",\"assessment\":\"进程启动成功：powershell.exe(pid 4242) 由 cmd.exe(pid 2100) 启动，命令行 -File C:\\\\Lab\\\\inventory.ps1，用户 synthetic-operator，主机 next-validation-host，时间 2026-11-04T05:14:01Z；检测标签 T1059.001/Execution，置信度75。既有分诊 needs_review 与材料一致，但无授权或恶意证据。\",\"source_ids\":[\"S1\",\"S3\",\"S5\",\"S7\",\"S9\",\"S11\",\"S13\",\"S15\",\"S17\",\"S19\",\"S21\",\"S24\",\"S26\",\"S28\",\"S30\"],\"limitations\":[\"合成数据，标题/厂商不能单独证明良性或授权\",\"未提供脚本内容、哈希、签名与授权信息\",\"资产匹配状态 not_checked\"]},{\"alert_id\":\"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\"state\":\"summarized\",\"assessment\":\"网络连接成功：next-validation-host(192.0.2.20:50123) 到 inventory.example.invalid(198.51.100.20:443)，协议字段为 tcp，时间 2026-11-04T05:14:16Z；检测置信度75，无战术/技术标签。既有分诊 needs_review 与材料一致；缺少进程、用户、流量内容与授权信息。\",\"source_ids\":[\"S2\",\"S4\",\"S6\",\"S8\",\"S10\",\"S12\",\"S14\",\"S16\",\"S18\",\"S20\",\"S22\",\"S25\",\"S27\",\"S29\",\"S31\"],\"limitations\":[\"端口443不证明 HTTPS/TLS，仅协议字段为 tcp\",\"合成数据，标题不能单独证明良性或授权\",\"无进程/用户/流量内容，无法关联到成员0进程\"]}],\"findings\":[{\"id\":\"F1\",\"statement\":\"两成员通过 primary-entity-v2 以共享主机 next-validation-host 归并，关系强度 shared_object，无时间窗口；归并本身不证明因果或攻击链。\",\"state\":\"inferred\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S26\",\"S27\"],\"limitations\":[\"共享对象仅为背景依据\"]},{\"id\":\"F2\",\"statement\":\"成员0记录 PowerShell 清单脚本进程启动成功，父进程 cmd.exe，用户 synthetic-operator；成员1记录约15秒后同主机 TCP 443 出站连接成功。两者时间接近但成员1无进程/用户字段，不能证明连接由该 PowerShell 进程发起。\",\"state\":\"inferred\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S1\",\"S5\",\"S9\",\"S11\",\"S21\",\"S22\",\"S14\",\"S16\"],\"limitations\":[\"时间接近不证明因果\",\"成员1缺少进程与用户信息\"]},{\"id\":\"F3\",\"statement\":\"两份既有分诊均为 needs_review、置信度0.4，理由与可见材料一致，未出现判定与理由冲突；但均未提供授权或恶意证据，不能据此定案。\",\"state\":\"inferred\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S19\",\"S20\"],\"limitations\":[\"分诊有效仅指版本与材料配对，不保证判断正确\"]},{\"id\":\"F4\",\"statement\":\"来源标签与标题自述为 SyntheticLab 合成验证数据，不能单独证明良性、授权或排除恶意；端口443仅原字段为 tcp，不证明 HTTPS/TLS。\",\"state\":\"inferred\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S24\",\"S25\",\"S30\",\"S31\",\"S12\",\"S14\"],\"limitations\":[\"测试/演练自述不构成排除依据\"]}],\"open_questions\":[{\"text\":\"C:\\\\Lab\\\\inventory.ps1 的内容、哈希、签名及执行授权情况为何？\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\"],\"source_ids\":[\"S5\",\"S19\"],\"evidence_requirements\":[\"脚本文件内容或哈希\",\"签名与授权记录\"]},{\"text\":\"成员1的出站连接是否由成员0的 PowerShell 进程发起，目标 inventory.example.invalid 是否为预期清单端点？\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S5\",\"S4\",\"S20\"],\"evidence_requirements\":[\"进程网络关联日志\",\"目标域名解析与归属\",\"流量内容或代理日志\"]},{\"text\":\"synthetic-operator 用户与 next-validation-host 在事件时点的资产与授权状态如何？\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"source_ids\":[\"S11\",\"S13\",\"S28\",\"S29\"],\"evidence_requirements\":[\"事件时点资产清单\",\"用户授权记录\"]}],\"limitations\":[\"仅基于分组视图字段，未审阅完整原始日志\",\"合成数据环境，结论不可外推至真实事件\",\"未执行完整调查，未改变告警判定或处置\"]}",
+      "answer": {
+        "summary": "两成员均为 SyntheticLab 合成数据，经 primary-entity-v2 以共享主机 next-validation-host 归并；成员0为 PowerShell 清单脚本进程启动成功，成员1为约15秒后同主机到 inventory.example.invalid 的 TCP 443 出站连接成功。归并仅说明共享对象与时间接近，不证明进程发起连接或存在攻击链。两份既有分诊均为 needs_review，理由与材料基本一致，但均未提供授权或恶意证据。",
+        "conclusion": "维持待核：现有材料只能确认两条合成告警的字段与共享主机归并关系，无法判定脚本执行或出站连接是否授权、是否恶意，也不能确认二者因果。",
+        "evidence_ids": [
+          "S1",
+          "S2",
+          "S3",
+          "S4",
+          "S5",
+          "S6",
+          "S7",
+          "S8",
+          "S9",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15",
+          "S16",
+          "S17",
+          "S18",
+          "S19",
+          "S20",
+          "S21",
+          "S22",
+          "S23",
+          "S24",
+          "S25",
+          "S26",
+          "S27",
+          "S28",
+          "S29",
+          "S30",
+          "S31"
+        ],
+        "members": [
+          {
+            "alert_id": "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+            "state": "summarized",
+            "assessment": "进程启动成功：powershell.exe(pid 4242) 由 cmd.exe(pid 2100) 启动，命令行 -File C:\\Lab\\inventory.ps1，用户 synthetic-operator，主机 next-validation-host，时间 2026-11-04T05:14:01Z；检测标签 T1059.001/Execution，置信度75。既有分诊 needs_review 与材料一致，但无授权或恶意证据。",
+            "source_ids": [
+              "S1",
+              "S3",
+              "S5",
+              "S7",
+              "S9",
+              "S11",
+              "S13",
+              "S15",
+              "S17",
+              "S19",
+              "S21",
+              "S24",
+              "S26",
+              "S28",
+              "S30"
+            ],
+            "limitations": [
+              "合成数据，标题/厂商不能单独证明良性或授权",
+              "未提供脚本内容、哈希、签名与授权信息",
+              "资产匹配状态 not_checked"
+            ]
+          },
+          {
+            "alert_id": "dabb136a-8ff4-5b84-a149-8f3818de0f76",
+            "state": "summarized",
+            "assessment": "网络连接成功：next-validation-host(192.0.2.20:50123) 到 inventory.example.invalid(198.51.100.20:443)，协议字段为 tcp，时间 2026-11-04T05:14:16Z；检测置信度75，无战术/技术标签。既有分诊 needs_review 与材料一致；缺少进程、用户、流量内容与授权信息。",
+            "source_ids": [
+              "S2",
+              "S4",
+              "S6",
+              "S8",
+              "S10",
+              "S12",
+              "S14",
+              "S16",
+              "S18",
+              "S20",
+              "S22",
+              "S25",
+              "S27",
+              "S29",
+              "S31"
+            ],
+            "limitations": [
+              "端口443不证明 HTTPS/TLS，仅协议字段为 tcp",
+              "合成数据，标题不能单独证明良性或授权",
+              "无进程/用户/流量内容，无法关联到成员0进程"
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "id": "F1",
+            "statement": "两成员通过 primary-entity-v2 以共享主机 next-validation-host 归并，关系强度 shared_object，无时间窗口；归并本身不证明因果或攻击链。",
+            "state": "inferred",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S26",
+              "S27"
+            ],
+            "limitations": [
+              "共享对象仅为背景依据"
+            ]
+          },
+          {
+            "id": "F2",
+            "statement": "成员0记录 PowerShell 清单脚本进程启动成功，父进程 cmd.exe，用户 synthetic-operator；成员1记录约15秒后同主机 TCP 443 出站连接成功。两者时间接近但成员1无进程/用户字段，不能证明连接由该 PowerShell 进程发起。",
+            "state": "inferred",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S1",
+              "S5",
+              "S9",
+              "S11",
+              "S21",
+              "S22",
+              "S14",
+              "S16"
+            ],
+            "limitations": [
+              "时间接近不证明因果",
+              "成员1缺少进程与用户信息"
+            ]
+          },
+          {
+            "id": "F3",
+            "statement": "两份既有分诊均为 needs_review、置信度0.4，理由与可见材料一致，未出现判定与理由冲突；但均未提供授权或恶意证据，不能据此定案。",
+            "state": "inferred",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S19",
+              "S20"
+            ],
+            "limitations": [
+              "分诊有效仅指版本与材料配对，不保证判断正确"
+            ]
+          },
+          {
+            "id": "F4",
+            "statement": "来源标签与标题自述为 SyntheticLab 合成验证数据，不能单独证明良性、授权或排除恶意；端口443仅原字段为 tcp，不证明 HTTPS/TLS。",
+            "state": "inferred",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S24",
+              "S25",
+              "S30",
+              "S31",
+              "S12",
+              "S14"
+            ],
+            "limitations": [
+              "测试/演练自述不构成排除依据"
+            ]
+          }
+        ],
+        "open_questions": [
+          {
+            "text": "C:\\Lab\\inventory.ps1 的内容、哈希、签名及执行授权情况为何？",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204"
+            ],
+            "source_ids": [
+              "S5",
+              "S19"
+            ],
+            "evidence_requirements": [
+              "脚本文件内容或哈希",
+              "签名与授权记录"
+            ]
+          },
+          {
+            "text": "成员1的出站连接是否由成员0的 PowerShell 进程发起，目标 inventory.example.invalid 是否为预期清单端点？",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S5",
+              "S4",
+              "S20"
+            ],
+            "evidence_requirements": [
+              "进程网络关联日志",
+              "目标域名解析与归属",
+              "流量内容或代理日志"
+            ]
+          },
+          {
+            "text": "synthetic-operator 用户与 next-validation-host 在事件时点的资产与授权状态如何？",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "source_ids": [
+              "S11",
+              "S13",
+              "S28",
+              "S29"
+            ],
+            "evidence_requirements": [
+              "事件时点资产清单",
+              "用户授权记录"
+            ]
+          }
+        ],
+        "limitations": [
+          "仅基于分组视图字段，未审阅完整原始日志",
+          "合成数据环境，结论不可外推至真实事件",
+          "未执行完整调查，未改变告警判定或处置"
+        ]
+      },
+      "diagnostics": []
+    },
+    {
+      "cell": "C3-current-small",
+      "backend": "small",
+      "packet_id": "C3-current",
+      "result_sha256": "740a075f970612c953b8ec14c4fccd9c0e67801008163d6785c36c5b29f2e486",
+      "transport_state": "failed_or_unknown_no_retry",
+      "usage": null,
+      "elapsed_seconds": 0.162,
+      "schema_valid": null,
+      "current_parser_accepts": null,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "transport_error_type": "HTTPStatusError",
+      "http_status": 400
+    },
+    {
+      "cell": "C3-current-deepseek",
+      "backend": "deepseek",
+      "packet_id": "C3-current",
+      "result_sha256": "6e42bc7f09bbc32c40ae6dd0c5cf467b550e628d82d86bed06d81bc6c56b5486",
+      "transport_state": "response_received",
+      "usage": {
+        "input_tokens": 4525,
+        "output_tokens": 2233,
+        "total_tokens": 6758,
+        "cached_input_tokens": 0,
+        "reasoning_tokens": 0,
+        "cost": null,
+        "currency": null,
+        "price_version": null,
+        "usage_state": "reported",
+        "cost_state": "unpriced",
+        "request_id": "0b09e026-21fe-4ec6-ad2e-b0fb6050131a"
+      },
+      "elapsed_seconds": 10.529,
+      "schema_valid": true,
+      "current_parser_accepts": false,
+      "business_adopted": false,
+      "semantic_review": "requires_explicit_review_against_frozen_sources",
+      "provider_reported_model": "deepseek-flash",
+      "finish_reason": "stop",
+      "raw_text": "{\"summary\":\"两成员均为SyntheticLab合成验证数据，经共享主机next-validation-host归并；成员0为PowerShell清单脚本进程启动成功，成员1为约15秒后同主机到inventory.example.invalid的TCP 443出站连接成功。归并仅证明共享对象与时间接近，不证明进程发起连接或存在攻击链；授权、流量内容、进程归属均未提供，两成员维持待核。\",\"members\":[{\"alert_id\":\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"state\":\"analyzed\",\"summary\":\"观察到next-validation-host上synthetic-operator用户经cmd.exe(pid 2100)启动powershell.exe(pid 4242)执行-File C:\\\\Lab\\\\inventory.ps1，process_start成功；S24自述为合成验证且未提供授权。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S19\",\"S22\",\"S24\"],\"limitations\":[\"仅基于所选字段视图，未审阅完整原始日志\",\"脚本内容与执行结果未提供\",\"授权信息未提供\",\"资产查询为当前清单而非事件时点状态\"]},{\"alert_id\":\"dabb136a-8ff4-5b84-a149-8f3818de0f76\",\"state\":\"analyzed\",\"summary\":\"观察到next-validation-host(192.0.2.20:50123)到inventory.example.invalid(198.51.100.20:443)的TCP network_connect成功；缺少进程、用户、流量内容与授权，无法区分正常清单上报与可疑外联。\",\"evidence_ids\":[\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S20\",\"S23\"],\"limitations\":[\"缺少发起进程、命令行与用户字段\",\"缺少流量内容与应用层协议证据\",\"授权信息未提供\",\"历史查询仅记录告警，非完整活动历史\"]}],\"findings\":[{\"id\":\"F1\",\"state\":\"observed\",\"statement\":\"成员0记录到next-validation-host上synthetic-operator经cmd.exe启动powershell.exe执行C:\\\\Lab\\\\inventory.ps1，进程启动成功。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\"],\"support_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S22\"],\"counter_ids\":[],\"alternatives\":[\"正常运维清单采集\",\"未授权脚本执行\"],\"limitations\":[\"脚本内容与执行结果未提供\",\"仅字段视图，未审阅完整原始日志\"]},{\"id\":\"F2\",\"state\":\"observed\",\"statement\":\"成员1记录到next-validation-host(192.0.2.20)到inventory.example.invalid(198.51.100.20)的TCP 443出站连接成功。\",\"alert_ids\":[\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"support_ids\":[\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\",\"S23\"],\"counter_ids\":[],\"alternatives\":[\"正常清单上报\",\"可疑外联\"],\"limitations\":[\"端口443不证明HTTPS/TLS\",\"缺少进程、用户与流量内容\"]},{\"id\":\"F3\",\"state\":\"inferred\",\"statement\":\"两成员共享主机next-validation-host且时间相差约15秒，但无证据表明成员0的进程发起了成员1的连接。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"support_ids\":[\"S7\",\"S10\",\"S21\",\"S22\",\"S24\"],\"counter_ids\":[],\"alternatives\":[\"同一清单任务先启动进程后外联上报\",\"两事件仅时间接近而无关\"],\"limitations\":[\"成员1缺少进程与用户字段\",\"共享主机与时间接近不构成因果\"]}],\"questions\":[{\"id\":\"detection_facts\",\"state\":\"answered\",\"answer\":\"成员0：next-validation-host上synthetic-operator经cmd.exe(2100)启动powershell.exe(4242)执行-File C:\\\\Lab\\\\inventory.ps1，process_start成功。成员1：同主机192.0.2.20:50123到198.51.100.20:443的TCP network_connect成功。\",\"evidence_ids\":[\"S1\",\"S2\",\"S3\",\"S4\",\"S5\",\"S6\",\"S7\",\"S8\",\"S9\",\"S10\",\"S11\",\"S12\",\"S13\",\"S14\",\"S15\",\"S16\",\"S17\",\"S18\"],\"limitations\":[\"仅字段视图，未审阅完整原始日志\",\"脚本内容与流量内容未提供\"]},{\"id\":\"member_relationships\",\"state\":\"unresolved\",\"answer\":\"已证实仅共享主机next-validation-host与约15秒时间接近；无进程、用户或流量证据把成员0的进程与成员1的连接连成因果链。\",\"evidence_ids\":[\"S7\",\"S10\",\"S21\",\"S22\",\"S24\"],\"limitations\":[\"成员1缺少进程与用户字段\",\"共享对象与时间接近不证明因果\"]},{\"id\":\"behavior_nature\",\"state\":\"unresolved\",\"answer\":\"正常运维清单与未授权执行/可疑外联两种解释均未被排除；S24自述合成验证不证明良性，来源标签不证明恶意。\",\"evidence_ids\":[\"S19\",\"S20\",\"S21\",\"S24\"],\"limitations\":[\"无脚本内容、流量内容与授权\",\"威胁情报未查询，查空不构成反证\"]},{\"id\":\"authorization\",\"state\":\"unresolved\",\"answer\":\"未提供任何审批、授权人或授权时间；S24明确说明未提供授权。\",\"evidence_ids\":[\"S19\",\"S20\",\"S24\"],\"limitations\":[\"未提供审批记录\",\"未接通不等于不存在\"]},{\"id\":\"impact\",\"state\":\"unresolved\",\"answer\":\"已观察到进程启动成功与出站连接成功；是否发生数据外传、落地执行或进一步横向仅为待核可能影响。\",\"evidence_ids\":[\"S9\",\"S18\",\"S20\"],\"limitations\":[\"无流量内容与进程后续行为\",\"端口443不证明应用层协议\"]},{\"id\":\"coverage\",\"state\":\"unresolved\",\"answer\":\"两成员均已分析；资产与历史查询为空，威胁情报、UEBA、知识库因预算未查询，graph未接通；存在字段省略与视图限制。\",\"evidence_ids\":[\"S19\",\"S20\",\"S21\"],\"limitations\":[\"威胁情报/UEBA/知识库未查询\",\"graph来源未接通\",\"模型视图有省略字段\"]}],\"domains\":[{\"name\":\"identity\",\"applicability\":\"undetermined\",\"reason\":\"仅有synthetic-operator用户名，无认证、MFA、会话与权限范围资料。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[\"F1\"],\"limitations\":[\"无认证与会话日志\",\"graph未接通\"]},{\"name\":\"cloud\",\"applicability\":\"undetermined\",\"reason\":\"未提供控制面、资源、IAM或配置资料，无法判断是否涉及云环境。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[],\"limitations\":[\"无云控制面数据\"]},{\"name\":\"phishing\",\"applicability\":\"undetermined\",\"reason\":\"未提供邮件头、链接、附件或投递点击资料。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[],\"limitations\":[\"无邮件与投递数据\"]},{\"name\":\"insider\",\"applicability\":\"undetermined\",\"reason\":\"无数据访问、外传数量、目的地与行为基线资料，不能凭角色或时间定性。\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"finding_ids\":[\"F2\"],\"limitations\":[\"无数据访问与外传记录\",\"无行为基线\"]}],\"conflicts\":[],\"followups\":[{\"question_id\":\"member_relationships\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"mode\":\"query\",\"objective\":\"补查成员1连接的发起进程、命令行与用户，确认是否与成员0的powershell进程对应。\",\"required_evidence\":\"同主机同时间窗的进程-网络关联记录（pid、命令行、用户）。\",\"source_ids\":[\"S3\",\"S6\",\"S17\"],\"object_keys\":[\"[\\\"host\\\",\\\"next-validation-host\\\"]\",\"[\\\"ip\\\",\\\"198.51.100.20\\\"]\"]},{\"question_id\":\"authorization\",\"alert_ids\":[\"cfcd94b7-b9c2-56bd-a516-01ceaab4e204\",\"dabb136a-8ff4-5b84-a149-8f3818de0f76\"],\"mode\":\"human\",\"objective\":\"确认inventory.ps1执行与到inventory.example.invalid的443连接是否获授权及授权范围。\",\"required_evidence\":\"审批记录、授权人、授权对象与时间窗口。\",\"source_ids\":[\"S24\"],\"object_keys\":[\"[\\\"user\\\",\\\"synthetic-operator\\\"]\",\"[\\\"host\\\",\\\"inventory.example.invalid\\\"]\"]}]}",
+      "answer": {
+        "summary": "两成员均为SyntheticLab合成验证数据，经共享主机next-validation-host归并；成员0为PowerShell清单脚本进程启动成功，成员1为约15秒后同主机到inventory.example.invalid的TCP 443出站连接成功。归并仅证明共享对象与时间接近，不证明进程发起连接或存在攻击链；授权、流量内容、进程归属均未提供，两成员维持待核。",
+        "members": [
+          {
+            "alert_id": "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+            "state": "analyzed",
+            "summary": "观察到next-validation-host上synthetic-operator用户经cmd.exe(pid 2100)启动powershell.exe(pid 4242)执行-File C:\\Lab\\inventory.ps1，process_start成功；S24自述为合成验证且未提供授权。",
+            "evidence_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5",
+              "S6",
+              "S7",
+              "S8",
+              "S9",
+              "S19",
+              "S22",
+              "S24"
+            ],
+            "limitations": [
+              "仅基于所选字段视图，未审阅完整原始日志",
+              "脚本内容与执行结果未提供",
+              "授权信息未提供",
+              "资产查询为当前清单而非事件时点状态"
+            ]
+          },
+          {
+            "alert_id": "dabb136a-8ff4-5b84-a149-8f3818de0f76",
+            "state": "analyzed",
+            "summary": "观察到next-validation-host(192.0.2.20:50123)到inventory.example.invalid(198.51.100.20:443)的TCP network_connect成功；缺少进程、用户、流量内容与授权，无法区分正常清单上报与可疑外联。",
+            "evidence_ids": [
+              "S10",
+              "S11",
+              "S12",
+              "S13",
+              "S14",
+              "S15",
+              "S16",
+              "S17",
+              "S18",
+              "S20",
+              "S23"
+            ],
+            "limitations": [
+              "缺少发起进程、命令行与用户字段",
+              "缺少流量内容与应用层协议证据",
+              "授权信息未提供",
+              "历史查询仅记录告警，非完整活动历史"
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "id": "F1",
+            "state": "observed",
+            "statement": "成员0记录到next-validation-host上synthetic-operator经cmd.exe启动powershell.exe执行C:\\Lab\\inventory.ps1，进程启动成功。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204"
+            ],
+            "support_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5",
+              "S6",
+              "S7",
+              "S8",
+              "S9",
+              "S22"
+            ],
+            "counter_ids": [],
+            "alternatives": [
+              "正常运维清单采集",
+              "未授权脚本执行"
+            ],
+            "limitations": [
+              "脚本内容与执行结果未提供",
+              "仅字段视图，未审阅完整原始日志"
+            ]
+          },
+          {
+            "id": "F2",
+            "state": "observed",
+            "statement": "成员1记录到next-validation-host(192.0.2.20)到inventory.example.invalid(198.51.100.20)的TCP 443出站连接成功。",
+            "alert_ids": [
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "support_ids": [
+              "S10",
+              "S11",
+              "S12",
+              "S13",
+              "S14",
+              "S15",
+              "S16",
+              "S17",
+              "S18",
+              "S23"
+            ],
+            "counter_ids": [],
+            "alternatives": [
+              "正常清单上报",
+              "可疑外联"
+            ],
+            "limitations": [
+              "端口443不证明HTTPS/TLS",
+              "缺少进程、用户与流量内容"
+            ]
+          },
+          {
+            "id": "F3",
+            "state": "inferred",
+            "statement": "两成员共享主机next-validation-host且时间相差约15秒，但无证据表明成员0的进程发起了成员1的连接。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "support_ids": [
+              "S7",
+              "S10",
+              "S21",
+              "S22",
+              "S24"
+            ],
+            "counter_ids": [],
+            "alternatives": [
+              "同一清单任务先启动进程后外联上报",
+              "两事件仅时间接近而无关"
+            ],
+            "limitations": [
+              "成员1缺少进程与用户字段",
+              "共享主机与时间接近不构成因果"
+            ]
+          }
+        ],
+        "questions": [
+          {
+            "id": "detection_facts",
+            "state": "answered",
+            "answer": "成员0：next-validation-host上synthetic-operator经cmd.exe(2100)启动powershell.exe(4242)执行-File C:\\Lab\\inventory.ps1，process_start成功。成员1：同主机192.0.2.20:50123到198.51.100.20:443的TCP network_connect成功。",
+            "evidence_ids": [
+              "S1",
+              "S2",
+              "S3",
+              "S4",
+              "S5",
+              "S6",
+              "S7",
+              "S8",
+              "S9",
+              "S10",
+              "S11",
+              "S12",
+              "S13",
+              "S14",
+              "S15",
+              "S16",
+              "S17",
+              "S18"
+            ],
+            "limitations": [
+              "仅字段视图，未审阅完整原始日志",
+              "脚本内容与流量内容未提供"
+            ]
+          },
+          {
+            "id": "member_relationships",
+            "state": "unresolved",
+            "answer": "已证实仅共享主机next-validation-host与约15秒时间接近；无进程、用户或流量证据把成员0的进程与成员1的连接连成因果链。",
+            "evidence_ids": [
+              "S7",
+              "S10",
+              "S21",
+              "S22",
+              "S24"
+            ],
+            "limitations": [
+              "成员1缺少进程与用户字段",
+              "共享对象与时间接近不证明因果"
+            ]
+          },
+          {
+            "id": "behavior_nature",
+            "state": "unresolved",
+            "answer": "正常运维清单与未授权执行/可疑外联两种解释均未被排除；S24自述合成验证不证明良性，来源标签不证明恶意。",
+            "evidence_ids": [
+              "S19",
+              "S20",
+              "S21",
+              "S24"
+            ],
+            "limitations": [
+              "无脚本内容、流量内容与授权",
+              "威胁情报未查询，查空不构成反证"
+            ]
+          },
+          {
+            "id": "authorization",
+            "state": "unresolved",
+            "answer": "未提供任何审批、授权人或授权时间；S24明确说明未提供授权。",
+            "evidence_ids": [
+              "S19",
+              "S20",
+              "S24"
+            ],
+            "limitations": [
+              "未提供审批记录",
+              "未接通不等于不存在"
+            ]
+          },
+          {
+            "id": "impact",
+            "state": "unresolved",
+            "answer": "已观察到进程启动成功与出站连接成功；是否发生数据外传、落地执行或进一步横向仅为待核可能影响。",
+            "evidence_ids": [
+              "S9",
+              "S18",
+              "S20"
+            ],
+            "limitations": [
+              "无流量内容与进程后续行为",
+              "端口443不证明应用层协议"
+            ]
+          },
+          {
+            "id": "coverage",
+            "state": "unresolved",
+            "answer": "两成员均已分析；资产与历史查询为空，威胁情报、UEBA、知识库因预算未查询，graph未接通；存在字段省略与视图限制。",
+            "evidence_ids": [
+              "S19",
+              "S20",
+              "S21"
+            ],
+            "limitations": [
+              "威胁情报/UEBA/知识库未查询",
+              "graph来源未接通",
+              "模型视图有省略字段"
+            ]
+          }
+        ],
+        "domains": [
+          {
+            "name": "identity",
+            "applicability": "undetermined",
+            "reason": "仅有synthetic-operator用户名，无认证、MFA、会话与权限范围资料。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "finding_ids": [
+              "F1"
+            ],
+            "limitations": [
+              "无认证与会话日志",
+              "graph未接通"
+            ]
+          },
+          {
+            "name": "cloud",
+            "applicability": "undetermined",
+            "reason": "未提供控制面、资源、IAM或配置资料，无法判断是否涉及云环境。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "finding_ids": [],
+            "limitations": [
+              "无云控制面数据"
+            ]
+          },
+          {
+            "name": "phishing",
+            "applicability": "undetermined",
+            "reason": "未提供邮件头、链接、附件或投递点击资料。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "finding_ids": [],
+            "limitations": [
+              "无邮件与投递数据"
+            ]
+          },
+          {
+            "name": "insider",
+            "applicability": "undetermined",
+            "reason": "无数据访问、外传数量、目的地与行为基线资料，不能凭角色或时间定性。",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "finding_ids": [
+              "F2"
+            ],
+            "limitations": [
+              "无数据访问与外传记录",
+              "无行为基线"
+            ]
+          }
+        ],
+        "conflicts": [],
+        "followups": [
+          {
+            "question_id": "member_relationships",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "mode": "query",
+            "objective": "补查成员1连接的发起进程、命令行与用户，确认是否与成员0的powershell进程对应。",
+            "required_evidence": "同主机同时间窗的进程-网络关联记录（pid、命令行、用户）。",
+            "source_ids": [
+              "S3",
+              "S6",
+              "S17"
+            ],
+            "object_keys": [
+              "[\"host\",\"next-validation-host\"]",
+              "[\"ip\",\"198.51.100.20\"]"
+            ]
+          },
+          {
+            "question_id": "authorization",
+            "alert_ids": [
+              "cfcd94b7-b9c2-56bd-a516-01ceaab4e204",
+              "dabb136a-8ff4-5b84-a149-8f3818de0f76"
+            ],
+            "mode": "human",
+            "objective": "确认inventory.ps1执行与到inventory.example.invalid的443连接是否获授权及授权范围。",
+            "required_evidence": "审批记录、授权人、授权对象与时间窗口。",
+            "source_ids": [
+              "S24"
+            ],
+            "object_keys": [
+              "[\"user\",\"synthetic-operator\"]",
+              "[\"host\",\"inventory.example.invalid\"]"
+            ]
+          }
+        ]
+      },
+      "parse_error": "non_observation_promoted_to_observed",
+      "diagnostics": []
+    }
+  ],
+  "attempts": 12,
+  "response_received": 11,
+  "known_total_tokens": 37506,
+  "business_adoptions": 0,
+  "business_runs": 0,
+  "tool_calls": 0,
+  "parser_version": "current_frozen_code_for_both_old_and_current_input_arms",
+  "parser_acceptance_is_not_semantic_acceptance": true,
+  "no_full_C_Deep_C6_H_or_second_C_execution": true
+}

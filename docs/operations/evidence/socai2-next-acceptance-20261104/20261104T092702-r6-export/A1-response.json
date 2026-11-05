@@ -1,0 +1,509 @@
+{
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "70954c25-60fc-5cb2-b18b-2815675bfa61",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-04T09:25:12.747128Z",
+      "requested_by": "22155cc9-c340-59ba-99ff-b4d811837626",
+      "started_at": "2026-11-04T09:25:12.747128Z",
+      "ended_at": "2026-11-04T09:25:17.731238Z",
+      "executor_version": "socai2.alert-basic-executor.v2",
+      "input_artifact_id": "d4c1d200-0ebc-4a85-a3b3-42b151ea1703",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "partial"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "72ac292f-09dc-53b9-84f2-5a3030e5edec",
+      "input_material_id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+      "source_run_id": "70954c25-60fc-5cb2-b18b-2815675bfa61",
+      "verdict": "needs_review",
+      "rationale": "告警记录了一次从 next-validation-host(192.0.2.20) 到 inventory.example.invalid(198.51.100.20) 的 TCP 443 出站连接，结果为成功(S1-S9,S20-S30)。但该记录来自 SyntheticLab 合成数据，fixture 为 socai2-next-acceptance-r1(S18,S31)，标题与描述自述为合成验证(S11)，不能据此认定恶意或授权。历史查询仅命中同一主机的一条合成 PowerShell 清单进程告警(S14)，只能说明同一对象曾出现，不能证明本次连接由该进程发起，也不能证明连接性质。资产与威胁情报查询均无命中(S14 之外无其他证据)，但查空不构成反证。缺少进程、命令行、用户、流量内容与授权信息，无法区分正常清单上报与可疑外联，故需人工核实。",
+      "confidence": 0.4,
+      "score_state": "available",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "核实 next-validation-host 上在 2026-11-04T05:14:16Z 前后是否有进程发起对 198.51.100.20:443 的连接，并确认其命令行、用户与父进程，以判断是否与历史 PowerShell 清单进程(S14)相关。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.hostname"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time"
+            },
+            {
+              "id": "dbb24c80-e6b7-4902-8630-cce5f36b6f29",
+              "role": "source_label",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.rows.0"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "确认 inventory.example.invalid 是否为组织已知的清单/管理端点，以及该主机是否被授权访问；域名使用 .invalid 保留域，需确认其真实解析与用途。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.hostname"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.ip"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.hostname"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R3",
+          "reason": "若确认为测试或演练数据，应补充授权与测试范围说明，并将该合成规则与生产告警区分，避免重复分诊。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "d4c1d200-0ebc-4a85-a3b3-42b151ea1703",
+              "role": "source_label",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.members.0.alert"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "source_label",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.detection"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "source_label",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.fixture"
+            },
+            {
+              "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+              "role": "source_label",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.original_vendor"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v2",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v2",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-04T09:25:17.731238Z"
+    },
+    "explanation": {
+      "artifact_id": "57e0d32b-8829-5428-abbd-9873ce69c0c9",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "这是一条主机向外部清单域名发起 443 出站连接的记录，连接成功。现有材料只能确认连接事实与来源为合成测试数据，无法确认发起进程、业务用途或授权状态，因此既不能判定为真实威胁，也不能判定为误报或正常行为。",
+        "limitations": [
+          "告警来源为 SyntheticLab 合成数据，fixture 标识为验收测试，不能代表真实生产事件。",
+          "历史查询仅返回同一主机的合成 PowerShell 清单进程告警，不能证明本次连接由该进程发起。",
+          "资产与威胁情报查询无命中，但查空不构成安全或恶意的反证。",
+          "缺少进程、命令行、用户、流量内容与授权信息，无法判定连接性质。",
+          "端口 443 与 protocol_name=tcp 不能证明使用了 HTTPS/TLS。",
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:completed:returned"
+        ],
+        "source_refs": [
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.hostname"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.hostname"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.ip"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.ip"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.port"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.port"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.network.protocol_name"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "d4c1d200-0ebc-4a85-a3b3-42b151ea1703",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.members.0.alert"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time"
+          },
+          {
+            "id": "dbb24c80-e6b7-4902-8630-cce5f36b6f29",
+            "role": "source_label",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.rows.0"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.detection"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.fixture"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.time"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.ip"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.port"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.hostname"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.port"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.hostname"
+          },
+          {
+            "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+            "role": "source_label",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.raw_event.original_vendor"
+          }
+        ],
+        "generated_at": "2026-11-04T09:25:17.731238+00:00",
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "核实 next-validation-host 上在 2026-11-04T05:14:16Z 前后是否有进程发起对 198.51.100.20:443 的连接，并确认其命令行、用户与父进程，以判断是否与历史 PowerShell 清单进程(S14)相关。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.src_endpoint.hostname"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.src_endpoint.ip"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time"
+              },
+              {
+                "id": "dbb24c80-e6b7-4902-8630-cce5f36b6f29",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.rows.0"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "确认 inventory.example.invalid 是否为组织已知的清单/管理端点，以及该主机是否被授权访问；域名使用 .invalid 保留域，需确认其真实解析与用途。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.dst_endpoint.hostname"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.dst_endpoint.ip"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.hostname"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R3",
+            "reason": "若确认为测试或演练数据，应补充授权与测试范围说明，并将该合成规则与生产告警区分，避免重复分诊。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "d4c1d200-0ebc-4a85-a3b3-42b151ea1703",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.members.0.alert"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.detection"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.raw_json.raw_event.fixture"
+              },
+              {
+                "id": "cd83f47c-b328-5f03-9d3c-908a35bcf937",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.raw_json.raw_event.original_vendor"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "model"
+      }
+    }
+  }
+}

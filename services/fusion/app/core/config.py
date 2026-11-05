@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,6 +30,8 @@ class Settings(BaseSettings):
     # Phase 3.1 spine bridge — persist fused (non-duplicate) alerts to the
     # Postgres alert store (app/services/alert_sink.py). Fail-soft by design.
     alert_sink_enabled: bool = Field(default=True, alias="AISOC_ALERT_SINK_ENABLED")
+    # Explicit single writer selection. Keep public until readers/consumers migrate.
+    alert_store_schema: Literal["public", "socai2"] = Field(default="public", alias="AISOC_ALERT_STORE_SCHEMA")
 
     # Phase A1 — archive every normalized OCSF event into the ClickHouse event
     # lake (app/services/lake_writer.py). Independent of promotion: an event

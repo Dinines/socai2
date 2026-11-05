@@ -1,0 +1,202 @@
+# 告警、事件与调查：页面驱动的新数据模型
+
+更新：2026-11-03。用户允许按自己的前端需求设计独立库表，并强调同时覆盖告警、事件和复杂调查。本方案取代“必须扩开源版本原表”的物理设计限制；流程仍以[唯一最新设计](../architecture/investigation-planning-design.md)为准。本文是新表方案，未创建数据库、执行迁移或改业务代码。
+
+## 1. 设计结论与边界
+
+建议在**现有PostgreSQL数据库中新建socai2 schema**，使用socai2.alerts、socai2.incidents、socai2.cases等表。新模块拥有自己的业务事实、关系和历史；沿用已有租户/用户身份、资产来源、连接器和事件湖读取能力。schema名称暂采用项目标识socai2，正式DDL前可统一替换，不把品牌字样散落为字段语义。
+
+页面是需求入口，表按业务对象、关系和生命周期组织。一个事实有一个明确写入者；列表、概览、图和时间线可以读取同一事实，不能为每个页面复制一套状态。
+
+| 隔离方式 | 结论 | 原因 |
+| --- | --- | --- |
+| 同一数据库、独立socai2 schema | 推荐 | 名字清楚；告警/事件/Case关联、成员变更和Run领取仍可在同一数据库事务中完成 |
+| public下socai2_前缀表 | 可替代命名方式 | 也能区分；选定一种后统一使用，不混用两套名字 |
+| 独立数据库或独立数据库服务 | 本期不需要 | 目前没有独立部署/容量要求；会把跨对象事务拆成跨库协作，增加本期复杂度 |
+
+这是告警、事件、Case与调查的数据模型重建，不是重建整个SOC平台。Fusion收到数据之前的输入问题继续排除；ClickHouse原始事件、已有身份/资产/连接器、审批执行服务不因此重建。开源版本原表和历史报告保持可读，新模块不持续同时写两套业务真值。
+
+## 2. 逐页反推需要哪些事实
+
+| 页面/操作 | 必须有的数据 | 新数据来源 | 直接保存或派生 |
+| --- | --- | --- | --- |
+| 告警列表/页头 | 名称、类别、严重程度、发生时间、处理状态、判定、负责人、标签 | alerts；当前分诊/反馈引用 | 当前业务值保存；调查状态从真实Run关联读取 |
+| 告警来源属性/原始数据 | 原厂、接入来源编号、厂商编号、原文/OCSF、规则和检测标签 | alerts、alert_materials、alert_source_refs | 原始来源和原件保存；三个来源概念不混用 |
+| 告警分诊/评分 | 同一次判定、理由、分数、评分来源和计算状态 | alert_assessments；alerts上的最新分诊引用 | 分诊记录不可变；不与后来的人工改判拼接 |
+| 告警实体/IOC/资产 | 对象类型/值/来源、IOC、库存匹配依据、库存标签 | alert_objects、alert_materials；现资产库存读取 | 来源对象保存；库存信息按匹配引用读取，未匹配不造资产 |
+| 告警反馈/管理/评论/时间线 | 人工判定及理由、状态变化、评论、真实操作者和时间、批量目标 | alert_assessments、alerts、comments、activities/targets | 每次反馈/活动保存；普通评论不借用反馈理由 |
+| 告警响应/自动过程 | 已存在的自动分析、建议、查询、审批和执行记录 | 兼容来源引用；response_links及相关结果 | 既有无Case过程保持原归属，不强造Case |
+| 事件列表/侧栏/页头 | 独立名称/说明、状态、负责人、标签、解决说明；成员/资产/时间/严重程度 | incidents、incident_alerts和成员资料 | 管理事实保存；计数/发生范围/成员最高严重程度派生 |
+| 事件概览/诊断 | 事件说明、成员判断、来源引用、生成时间和过期状态 | incident_diagnoses、incidents最新诊断引用 | 诊断版本保存；是否过期按来源版本/指纹判断 |
+| 事件关联分析/对象 | 实际归并依据、逐成员对象边、共享对象、关系类型 | incident_alerts.correlation_basis、alert_objects | 保存真实关系依据；图是读取投影，不能只存一个对象并集 |
+| 事件成员/ATT&CK | 成员列表、时间、状态、对象、各战术阶段涉及告警数 | incident_alerts→alerts及来源检测标签 | 同告警在各对应阶段各计1，同阶段去重；不是攻击链 |
+| 事件处理活动/管理级联 | 事件自身变更、全部实际成员、改派/解决前后状态、执行者 | incidents、alerts、activities/targets | 在事务中保存本次实际目标与前后值；不是只保存“共N条” |
+| Case列表/资料 | 业务状态、负责人、优先级来源、说明、当前判断及依据、当前成员/事件 | cases、case_alerts、case_incidents | 当前业务值和明确采用判断保存；计数/时间范围派生 |
+| Case成员添加/移动 | 当前成员、显式事件关系、真实新增/移出集合、范围版本 | case_alerts、case_incidents、cases.scope_revision、activities/targets | 关系为当前真值；不再同时维护Case.alert_ids数组 |
+| 调查概览/历史 | 基础首次/更新、待更新/活跃/结束、触发、时间、范围和交付状态 | runs、run_members；正式AI保存读results | 待更新是独立记录；聊天每条消息不自动进入正式结果历史 |
+| 调查发现/报告/故事 | 目的、有效结论、发现、反证、变化、Case影响、比较基线、未决 | results、result_members、artifacts | 同版结果保存；故事联合告警发生、Run结束、AI保存和任务完成时间 |
+| 调查步骤/原始查询/用量 | 每阶段/模型/工具实际输入输出、状态、时间、次数和未知用量 | run_steps、artifacts、runs | 实际调用保存；保存AI答案不新增次数或Tokens |
+| 当前判断覆盖/未分析提示 | 当前成员、实际读过/分析过的成员、被当前判断覆盖的成员 | case_alerts、run_members、result_members、cases.current_assessment | 三种范围分别存/读；不能用read_member_ids冒充已完成分析 |
+| AI助手/明确保存 | Case绑定、消息、发送时输入、引用/工具、回答状态、保存后的正式结果 | conversations、messages、runs、artifacts、results | 发送执行；保存复制当时答案/引用而不重新查当前材料 |
+| 人工任务 | 说明、负责人、期限、状态、结果、完成者/时间、适用范围、历史版本 | tasks、task_revisions | 编辑同一任务，追加版本；被引用版本不可覆盖 |
+| Case图谱/探索/历史图 | 当前底图来源、当轮图证据、探索起点和增量 | artifacts、results.graph_ref、graph_explorations | 历史图不可变；探索可编辑；展开不等于加入成员 |
+| 响应建议/审批/执行 | 建议稳定ID及目标/依据、审批ID、执行ID和实际回执 | results.recommendations、response_links、既有审批/动作服务 | 审批与执行分别引用；不能拿Run ID当Fusion Incident |
+
+## 3. 新表分组与关键字段
+
+以下为26张业务表的设计清单，按职责分组，分批落地。所有业务行均有tenant_id；有独立身份的行用UUID。关系用组合键/唯一约束，内部关联使用含tenant_id的外键。名称前的socai2是schema，不再重复加前缀。
+
+### 3.1 告警：5张表
+
+| 表 | 核心字段 | 写入者与不可混淆的语义 |
+| --- | --- | --- |
+| socai2.alerts | id、source_namespace、connector_id、source_alert_id、vendor_alert_id、original_vendor、title/description/category、severity及source、event_time及time_source、first_seen/last_seen、ingested_at、source_updated_at、business_updated_at；handling_status、disposition、owner_id/assignment_state、tags、priority_value/source、closed_at/by、row_version；latest_material_id/latest_triage_id/latest_feedback_id | Fusion适配器写来源/检测字段；管理服务写业务字段。接入重投不能覆盖人工负责人、反馈和关闭状态；未知值不填50、当前时间或接入平台厂商 |
+| socai2.alert_materials | id、alert_id、revision、raw_text/raw_json、ocsf_json、detection(rule_id/name、ATT&CK、检测置信度及计算状态/依据)、enrichment、received_at、source_version、hash、retention/truncation | 保存实际收到的告警材料版本；原文与投影分开。当前指针可更新，原件版本不覆盖；来源已经截断时如实记录 |
+| socai2.alert_source_refs | alert_id、material_id、source_namespace、source_event_id、relation_kind、observed_at | 指向已接收的来源事件/湖记录。引用范围和截断/完整性放material，不把仅采样来源称完整；规范化ID不改原文 |
+| socai2.alert_objects | id、alert_id、object_type、source_namespace、normalized_value、raw_value、source_material_id/source_path、asset_ref、match_basis/match_state | 逐告警保留host/user/IP/IOC等对象及字段出处；同名不同类型/来源不能合并。资产标签来自库存引用，不与告警tags混成一列 |
+| socai2.alert_assessments | id、alert_id、kind(triage/human_feedback)、verdict、rationale、score/score_kind/calculation_state、recommendations、producer、actor、occurred_at、input_material_id、source_execution_ref | 一次分诊或反馈一条不可变事实。历史分数永远跟当次判定配对；人工反馈改变当前disposition时仍保留分诊原记录 |
+
+alerts保留可搜索的当前列；详细检测/原文在版本材料中，API统一投影，避免一份字段被人工和Fusion两边同时修改。tags采用标签数组，其他来源属性放独立结构，不复用旧字典承载多种含义。发生时间缺失则保留NULL，入库时间单列；历史fallback时间带来源标记。
+
+### 3.2 事件：3张表
+
+| 表 | 核心字段 | 写入者与职责 |
+| --- | --- | --- |
+| socai2.incidents | id、source_namespace/source_incident_id、title、description、handling_status、owner_id/assignment_state、tags、priority_value/source、resolution_note、resolved_at/by、created_at、business_updated_at、row_version、latest_diagnosis_id | 独立保存事件业务事实。Fusion初始化事件和来源，人工管理有明确字段所有权；不再从第一条告警标题拼出唯一事件事实 |
+| socai2.incident_alerts | incident_id、alert_id、linked_at、membership_source、correlation_basis、basis_version | 当前事件成员及实际归并依据。按现Fusion单告警单事件口径，tenant+alert_id当前只能属于一个事件；历史变更进活动，不覆盖依据原文 |
+| socai2.incident_diagnoses | id、incident_id、revision、summary/diagnosis、open_questions、member_snapshot、source_assessment_refs、source_fingerprint、generated_at、producer、usage、attempt_status/error | 每次已保存诊断和生成尝试可追溯；刷新失败保留前次有效正文的引用。正文与“最近一次尝试”不能拼成同一成功结果 |
+
+成员数、涉及对象、战术计数、min(成员真实event_time)、最高严重程度由关系派生。展示的最近更新时间取事件业务时间与当前成员业务时间/成员关系变化时间的最新值；源材料新鲜度另存，GET和调查进度不更新业务时钟。
+
+事件严重程度存在产品“成员最高”与“管理可编辑”的冲突，本期不暗定覆盖规则：先明确提供derived_severity；人工编辑究竟覆盖事件还是改成员需确认后再定义写入。新表设计不增加已取消的事件classification，也不造优先级评分算法。
+
+### 3.3 Case与当前成员：3张表
+
+| 表 | 核心字段 | 职责 |
+| --- | --- | --- |
+| socai2.cases | id、title、description、handling_status、severity及source、owner_id/assignment_state、tags、priority_value/source、scope_revision、row_version、created/updated/resolved/reopened时间及操作者；current_assessment JSONB | 保存案件业务状态与当前成员版本。current_assessment含独立revision、结论、依据结果/任务版本引用、覆盖成员、形成/采用人时间和有效性，不默认取最后一条Run或聊天 |
+| socai2.case_alerts | case_id、alert_id、added_at/by、source_operation_id | Case当前成员唯一真值。允许一告警关联多个Case；“添加”不从别案移除，“移动”显式同时修改两案 |
+| socai2.case_incidents | case_id、incident_id、linked_at/by、source_operation_id | 当前显式事件关联。关联事件时把当时可用成员并入case_alerts；未来事件新增成员不自动进入Case |
+
+Case当前判断支持多份结果/人工材料作为依据，采用方式仍待产品明确。current_assessment通过Case行版本控制更新，并将旧/新值记业务活动；不能用非空summary证明它经过采用。
+
+### 3.4 调查执行、证据和结果：6张表
+
+| 表 | 核心字段 | 关键约束 |
+| --- | --- | --- |
+| socai2.runs | id、case_id、kind(baseline/ai_question)、trigger、purpose、operation_key/request_hash、scope_revision、window_start/end、state、requested_at/started_at/ended_at、executor_version、limits、known_usage/unknown_usage、stop_reason、delivery_state、input_artifact_id | baseline的pending_update也是此表真实记录；同案最多一条pending和一条活跃baseline；AI提问实际执行有Run，但未明确保存不自动成为正式结果记录 |
+| socai2.run_members | run_id、alert_id、material_ref、assessment_refs、read_state、analysis_state、omission_reason | 固定本轮成员及所用材料。未开始可随pending更新；领取后成员身份/材料引用冻结，读取和分析进度可更新；输入缺失不得静默缩范围 |
+| socai2.run_steps | id、run_id、seq、parent_step_id、kind(stage/model/tool/graph/render)、stage_code、question_ref、state、started_at/ended_at、input/output_artifact_refs、model/tool_name、actual_args、result_state、usage及unknown/error | C1–C6、模型、工具和重试有稳定身份；一次实际调用一条记录，父阶段不重复计调用成本；失败/重试新step关联原step，不能改旧调用为成功 |
+| socai2.artifacts | id、case_id、run_id可空、step_id可空、kind、schema_version、content_json/text或blob_ref、sha256/size、captured_at、source_refs、retention/truncation | 输入、原始工具/模型交换、图、任务引用快照、报告及附件统一存材料；有Run时绑定同Case。内容提交后不可覆盖；引用既有材料不改其归属 |
+| socai2.results | id、case_id、kind(baseline/ai_saved)、source_run_id、source_answer_id、purpose、conclusion、conclusion_origin/validity、findings、counterevidence、open_questions、recommendations、comparison_result_id、change_summary、case_impact、input_snapshot_ref、graph_ref/report_ref、delivery_state、created_at/created_by、saved_at/saved_by | 基础调查交付和明确保存的AI答案共用读取结构。pending没有结果；模型失败的交接标system_handoff，不冒充有效结论；同一基础Run至多一个正式结果；同一答复重复保存返回原结果 |
+| socai2.result_members | result_id、alert_id、assessment_state、conclusion_covered、assessment/limitations、evidence_refs | 明确结果实际分析/未分析/待核成员以及结论适用范围。进入run_members不等于被结论覆盖；部分问题的AI结果不能把整案标为完成 |
+
+整体发现、问题、图和建议先用有schema版本的JSON及稳定条目ID，不为每个Agent、问题或页面页签新建表。跨结果比较明确原结果及范围，允许新一轮成员不同；不复用“同范围续问”的previous_run_id限制。历史结果修订另建版本/记录，不在原报告上覆盖。
+
+### 3.5 人工与AI协作：4张表
+
+| 表 | 核心字段 | 职责 |
+| --- | --- | --- |
+| socai2.tasks | id、case_id、title、description、assignee_id、due_at、state、current_revision_id、row_version、created/updated_at/by、origin_result/finding_ref | 可编辑事项的当前状态；完成需要反馈结果，取消与完成分开；不从负责人推断实际完成人 |
+| socai2.task_revisions | id、task_id、revision、title/description/state/assignee快照、result_text、result_scope、source_refs、completed_at/by、changed_at/by | 编辑追加不可变版本，任务指向当前版本。Run/AI引用具体版本，后续编辑不改变旧依据；无结果的历史完成状态明确缺失，不补造正文 |
+| socai2.conversations | id、case_id、title、created_by、created_at、updated_at | 同案对话身份，不能仅靠前端传一段context猜Case |
+| socai2.messages | id、conversation_id、role、content、state、in_reply_to、source_run_id、input_snapshot_ref、source_refs、created_at/answered_at、usage_ref | 发送时固定真实上下文；回答完成后作为保存原件。用户保存时编辑的标题/结论进入results，原消息不被覆盖 |
+
+正式AI保存直接写results，不另建与它重复的saved_ai_records表。保存只引用当次回答/输入，不再执行模型；H为事实反馈，没有伪造的AI Run或Tokens。
+
+### 3.6 探索、活动、评论及响应关联：5张表
+
+| 表 | 核心字段 | 职责 |
+| --- | --- | --- |
+| socai2.graph_explorations | id、case_id、base_result_id/base_graph_ref或base_member_snapshot、graph_state、schema_version、row_version、created/updated_at/by | 保存探索起点/节点/边/布局状态；新Run到达不替换现探索。只有明确加入告警才改case_alerts |
+| socai2.activities | id、operation_id、actor_type/id/name_snapshot、action、subject_type/id、occurred_at、summary、detail | 真实业务操作账本；不由任务创建时间或当前负责人伪造活动；独立于模型步骤 |
+| socai2.activity_targets | activity_id、target_type/id、before/after、result_state | 批量实际目标逐行保存，避免大JSON截断后只剩目标数。应用校验目标类型与租户；同库核心目标可用受约束的分类型引用实现 |
+| socai2.comments | id、alert_id/incident_id/case_id三选一、body、author_id/name_snapshot、created_at、edited_at/row_version | 普通评论独立存储；允许管理告警时不填评论；编辑记录业务活动，不覆盖反馈理由 |
+| socai2.response_links | id、case_id可空、alert_id/incident_id可空、result_id可空、proposal_id/source_execution_ref、external_namespace、approval_id、action_id、linked_at、receipt_ref | 连接新建议与既有审批/执行事实；来源至少明确一种，不把建议当已执行，也不把actions.incident_id推定为Fusion事件 |
+
+活动/评论不创造通用工单平台；响应表是关联，不另写执行引擎。租户和操作者来自服务端身份，命名空间是名称边界，不能替代现有租户隔离。
+
+## 4. 调查最关键的四种范围
+
+| 范围 | 唯一来源 | 允许变化的时机 |
+| --- | --- | --- |
+| Case当前成员 | case_alerts | 明确成员管理事务，递增cases.scope_revision |
+| 某Run成员/输入 | run_members及input_artifact | pending可合并；领取时冻结，此后不跟随Case |
+| 某结果实际分析与结论覆盖 | result_members和results | 交付时固化；缺源/未分析/已分析未决分别标明 |
+| Case当前判断覆盖 | cases.current_assessment中的明确成员/依据版本 | 只有明确采用/修改动作更新；不能自动扩大到当前所有成员 |
+
+这四种范围解决页面的关键区别：“已加入Case”“本轮处理过”“某结论能解释”“当前案件判断已覆盖”不是一回事。
+
+## 5. 两个简单事务处理待更新和启动
+
+**成员变化事务：** 锁Case行（移动两案按固定ID顺序锁）→整体校验所选告警/事件及租户来源→写case_alerts/case_incidents→成员确有变化才递增scope_revision→锁/新建pending baseline并更新run_members→写活动及实际目标→提交。只新增事件关系而成员没有变化，不伪称新增告警或自动建下一轮。
+
+**启动事务：** 锁Case→锁指定pending Run→核expected_scope_revision、完整成员及同案活跃baseline→固定run_members材料版本/输入工件→写running与started_at→提交→进入C1–C6。外部模型和Tool不在数据库锁事务内执行。单活跃和单pending各有数据库部分唯一索引，重复operation_key先核请求hash再读原结果。
+
+新表初始状态集合建议pending_update/running/completed/failed/cancelled/unknown；pending_update只用于baseline。running和执行结果未定的unknown占活跃基础槽；结束后等待人工事实通过结果未决和任务表示，不保持一个无限running Run。AI补查是否与baseline共用活跃槽仍待明确，不在本期索引中暗定。
+
+例：R1领取已提交，但执行第一步未运行，A3加入时读取到R1的running，另建R2 pending。R1结束只结束R1；不清除R2。R2由用户手动启动，重新调查完整Case。保留现有原子领取思路，移植到新表，不新增调度器或自动接续。
+
+## 6. 已确认的页面规则怎样获得数据支持
+
+- 原厂只保存明确来源，未知NULL；接入来源编号与厂商编号分别保存。规则/ATT&CK/检测评分有则保留，检测标签和历史判断不当攻击事实。
+- 处理状态与disposition分开；历史fp/false_positive映射为完成且保留误报。人工误报/正常授权反馈与关闭在同一事务保存，勾选相似告警只更新实际选择；手动完成评论选填。
+- 事件改派覆盖全部成员负责人；事件解决关闭全部成员但保留各自判定。后端返回实际影响范围供原保存表单提示，活动目标逐条留存。
+- 事件首次活动取成员告警最早发生时间；业务更新时间包含事件自身和成员变化，排除单独调查进度与GET读取。
+- 各ATT&CK阶段分别按成员去重计数，数量之和可以超过告警总数；提示是展示合同，数据库不伪造互斥阶段。
+- 告警/事件顶部统计有独立读取范围；筛选不修改事实。未选择导出当前筛选/排序前200条，有选择导出所选；这些是查询合同，不另建导出/计数事实表。
+
+## 7. 索引、引用与写入约束
+
+高频列表按tenant+event_time/status/severity/owner建立必要索引；事件/Case成员关系按两端建立唯一和查找索引；Run按case+requested_at及状态，step按run+seq，result按case+时间/类型，task按case+state，message按conversation+时间。标签/对象/JSON索引按实际筛选合同选择，不为每个字段预建索引。
+
+关系不是裸ID字符串：新表内部引用同时校验tenant、父对象和ID。结果、图、问题引用必须落在同案/同轮的适用来源；跨Run复用用明确原工件引用，不重新编号冒充新查询。湖引用保source_namespace+source_event_id+查询窗口，不能建PostgreSQL外键假装跨存储一致。
+
+不可变结果、材料、反馈版本通过追加写入合同和必要数据库约束保护；pending范围允许更新，已领取范围禁止覆盖。Case/任务/探索等可编辑行用row_version防止后保存者覆盖前一编辑。多表写入在一个事务中提交，不用后台异步补写去修正半个关联。
+
+## 8. 与现有代码和数据如何衔接
+
+当前数据库连接及SQLAlchemy Base没有统一新schema；SQL迁移执行器按文件执行原始SQL，可用于显式schema建表。ORM映射、原生SQL、函数和迁移都应显式限定socai2，不靠修改全局search_path让开源表被同名新表隐式替代。迁移沿既有机制管理，用NNN_socai2_*命名；不另造迁移平台。新schema所需USAGE/表权限及现有tenant上下文/RLS必须随迁移配齐，但不开展新的权限产品设计。
+
+| 现有部分 | 新方案承接方式 | 不直接照搬的地方 |
+| --- | --- | --- |
+| Fusion告警落库/归并 | 在新版写入适配中把收到的字段、材料、事件及成员依据落新表，PG相关写入同事务 | 当前alert_sink只写alerts，事件多由enrichment_data反查；新模型需要真实incidents和关系，改表名不够 |
+| ClickHouse及工具 | 保留事件湖与查询能力，完善已有字段消费，再把返回存新artifacts/steps | 新表不能自动补出漏读的PID/父进程/命令行/网络端点，也不能解决来源本来没有的数据 |
+| Case待更新实现/迁移122 | 保留语义、锁顺序和直接验证场景，移植到新cases/runs/run_members | 当前122绑定public.aisoc_cases/public.investigation_runs；不能原样部署后假定新表生效 |
+| CaseAnalysis/Agents能力 | 复用有价值的分析、查询、留存能力，使用新存储接口组织C1–C6 | 当前循环窄、新表就绪不代表完整调查已实现；报告r13语义问题继续独立保留 |
+| 人工任务/Copilot | 新tasks/revisions及conversations/messages按页面合同写入；明确保存进入results | 不继续用整段messages JSON和缺结果的任务列去模拟所有行为 |
+| 审批、动作、用户、资产 | 用带来源的ID与适配读取复用现服务 | 不把跨模块字段名incident_id或同名对象直接当关系事实 |
+
+切换时由显式新入口/配置选择一个写入目标。开发期可离线回填固定样本和对比读取；不默认长期双写或失败后回落另一套表。旧入口和历史数据继续按原合同读；迁移历史材料时记录legacy来源，不补造已完成阶段、缺失反馈或有效结论。源ID可沿用已证明稳定的canonical UUID，来源命名空间同时保留，跨环境不能只凭相同UUID合并。
+
+## 9. 贯穿案例在新表里怎样落地
+
+沿用[完整案例](../architecture/investigation-planning-design.md)的A1/A2→R1→新增A3→H1/Q1→R2：
+
+1. Fusion保存A1/A2到alerts，原件到alert_materials，P01/N01到alert_source_refs，对象边到alert_objects；分诊写alert_assessments。I1和实际归并依据进入incidents/incident_alerts，事件诊断进incident_diagnoses。
+2. 用户创建C100，事务写cases、case_alerts(A1/A2)、case_incidents(I1)、runs(R1 pending)、run_members(R1 A1/A2)和activities/targets。
+3. 启动R1冻结输入并写running；C1–C6记录run_steps及artifacts。R1执行中加A3只更新当前case_alerts并建立R2 pending；R1成员不变。
+4. R1交付results和result_members，两成员各自说明分析情况/结论范围；失败或缺源仍有真实部分产物。
+5. H1完成写tasks当前值及task_revisions版本1。AI发送时messages关联一次真实ai_question Run与冻结artifacts；明确保存Q1才新增kind=ai_saved的results，不新发调用。
+6. R2手动启动后对A1/A2/A3完整执行；结果comparison_result_id指R1结果，分别保存新增材料、判断变化、Case影响；任务引用指H1版本1。
+7. H1编辑新增版本2，不覆盖R2/Q1引用。探索保存graph_explorations，不改run图或Case成员；加入告警必须再走成员事务。
+
+## 10. 分批落地与验收
+
+| 批次 | 交付 | 必须直接验证的页面数据链 |
+| --- | --- | --- |
+| 1 字段合同与新schema迁移草案 | 固定来源/业务字段所有权、主外键、枚举、nullable、版本和读DTO；26表分批DDL | 字段有明确来源/写入者/空值语义；不以页面样例当已有数据 |
+| 2 告警与事件 | 新写入适配、真实事件/成员/对象关系、诊断及管理读写 | 输入已有值不丢；分诊配对；事件聚合/状态/时间/活动准确，批量目标完整 |
+| 3 Case范围与基础Run | 当前成员/事件关系、待更新和原子领取、冻结输入 | 连续加告警、领取前后竞争、移动两案、唯一活跃/待更新、旧Run不变 |
+| 4 完整调查及结果 | C1–C6、新步骤/证据/结果/覆盖和比较 | 查询成功空/失败/未知、逐成员覆盖、图证据、比较变化、报告语义；不能只验表能写 |
+| 5 人工/AI/探索/响应关联 | 反馈版本、同案对话、明确保存、探索和真实审批/执行关联 | 改任务后旧引用不变；保存不重跑；探索不改成员；审批不冒充执行 |
+
+本期先形成可评审模型，不自动执行DDL或改Fusion。后续逐批实现/直接验证，真实PG并发仍需验证；历史通过记录只按其版本复用，不当作新schema已验。
+
+待定项保留：事件严重程度人工编辑含义；Case当前判断采用方式；AI补查与基础Run是否共用单活跃；空/已解决Case的特殊策略。它们各自明确后再固定有关写入合同，不重复询问已确认的16项规则。
+
+## 11. 依据与历史对照
+
+需求来自[产品页面说明](alert-incident-case-product-requirements.md)和已确认规则；当前后台按39f4033加[独立baseline实现](../../../case-baseline-history-20261103/docs/investigation/baseline-execution-record-20261103.md)核对。主要源码：[Alert模型](../../../case-baseline-history-20261103/services/api/app/models/alert.py)、[事件读取](../../../case-baseline-history-20261103/services/api/app/investigation_v2/incident_reader.py)、[Fusion写入](../../../case-baseline-history-20261103/services/fusion/app/services/alert_sink.py)、[迁移执行器](../../../case-baseline-history-20261103/services/api/app/scripts/run_migrations.py)、[数据库连接](../../../case-baseline-history-20261103/services/api/app/db/database.py)、[迁移122](../../../case-baseline-history-20261103/services/api/migrations/122_case_baseline_pending.sql)。
+
+此前67组字段的现表核对与“扩原表”建议保留在[改用新表前记录](../operations/investigation-data-schema-plan-20261103.pre-new-schema.txt)，其中已存字段事实仍可追溯，物理改造建议以本文取代；原静态回执保持。当前流程仍只有一份主设计，本文是它的数据模型附录。

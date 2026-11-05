@@ -1,0 +1,285 @@
+# 调查需求到字段、现表和改造工作的对应方案
+
+2026-11-03。承接用户要求：理解产品需求，结合当前代码确认所需字段、现表支持范围、具体存储改法和配套工作。本文给出推荐方案，不是已实施迁移。与前一份 [22 项差距分析](investigation-gap-assessment-20261103.md)相比，本页进一步落实到字段、表、约束、读写位置和旧数据处理。
+
+## 1. 基线与设计结论
+
+- 需求：本设计分支 `c71afb5c6c4f939bf0243b60e02f224d01c6249a` 的 [产品说明](alert-incident-case-product-requirements.md)。后台：主工作区 `E:/aisoc/socai2` 的 `39f4033663bf478c7a8e8af2adb8333b45a6eb41`。
+- “当前有列”指已核仓库迁移、ORM 和对应代码；本轮没有连接实际数据库，不能证明某环境已经应用这些迁移。上线前须执行 [只读 schema 核验清单](investigation-schema-preflight-20261103.sql)。
+- 继续复用 `aisoc_cases`、`aisoc_case_tasks`、Copilot 对话和 Run／Event／Artifact。推荐核心新增 **3 张表**：正式 AI 保存记录、当前 Case—事件关联、图谱探索。Case 当前判断先用结构化 JSONB 加业务活动保存，不另建记忆／判断服务。
+- 告警／事件配套另推荐 **2 张表**：事件业务状态、普通告警评论。它们不是三类调查各建一套库；事件 AI 摘要缓存、Case 评论和反馈理由不能替代这两个业务对象。
+- 原始日志湖暂不加列：确认的进程／网络缺口均先补已有列或已存 OCSF 的读取。案件故事、覆盖差集和统计不建冗余计数表。
+- 各字段名和新增表名是本方案建议；产品未定策略在第 8 节单列。本轮不改源码、DDL、真实数据，不恢复报告开发或 r13 重试。
+
+## 2. 先纠正“现表支持”的判断方式
+
+| 当前表／结构 | 已支持 | 不能因此视为支持的内容 |
+| --- | --- | --- |
+| `aisoc_cases`：迁移 012＋083＋086＋090＋106 | 案件资料、六态处理状态、成员 UUID[]、图／证据链 JSONB、摘要、优先级、负责人、SLA、重开和合并事实 | `summary` 不是有确认人与覆盖的当前判断；没有待更新范围；新旧负责人写入不一致。旧 `cases` 已有合并迁移，不能再把它当另一个主表 |
+| `investigation_case_links`：121 | 一次关联的选择、来源事件、幂等键、回执 | 是操作历史，不是当前事件关系；移动两案不能直接套其一条记录的 case_id；仅关联事件但无新告警也需独立表达 |
+| `investigation_runs`：008＋063 | 实际执行、状态、起止、用量、raw_alert 范围／来源元数据 | `case_id VARCHAR(200)` 是历史外部引用，不能给所有行直接加 Case UUID 外键；同操作幂等不等于同案单活跃 |
+| `investigation_events/artifacts`：008 | 步骤、Tool、输入／结果、报告与来源 hash | 工件 run_id 非空，不能为了保存一段答复伪造 Run；JSON 能装内容不等于已有正确的任务／判断引用 |
+| `aisoc_case_tasks`：027＋044＋086 | 标题、负责人文本、期限、三态、创建更新、依赖／阻塞 | 没有工作说明、结果、完成时间、取消、结果范围和引用；当前 API SELECT／DTO 也只读基础字段 |
+| `aisoc_copilot_conversations`：076 | 租户对话、messages JSONB、消息 UUID 和时间、并发追加 | 没有 Case 绑定；所核 chat 的请求 context 不进模型 messages；没有正式保存出口 |
+| `case_timeline_events`、`case_status_transitions`、`aisoc_case_comments` | Case 业务活动、状态变更、评论各有保存位置 | 当前 v1 时间线还从当前任务行按 created_at／assignee 拼接，不能当完成者／完成时间；Case 评论不能当普通 Alert 评论 |
+| `fusion_incident_summaries`：120 | AI 摘要、生成时间、输入指纹、尝试／错误／用量 | 是生成材料缓存，不是事件自身 title/status/owner/tags/resolution 的主记录 |
+| `agent_approvals`、`aisoc_action_records` | 审批人／意见／时间、动作及执行回执，审批 ID 已复用为动作 ID | 通用文字建议没有稳定 recommendation_id；当前 action.incident_id 的此入口值是 Run／审批 ID，不是 Fusion Incident |
+| `audit_log` | 操作人、业务主体、变更、不可变审计链 | `changes` 默认有 16 KiB 裁剪且会脱敏，不能把完整引用快照或无限批量目标仅放进去后声称可完整回查 |
+
+Case 自定义字段、外部工单和 war-room 表已存在，但它们不是人工确认结果、同案 AI 对话或正式调查记录的替代物。
+
+## 3. 67 个字段组逐项对应
+
+标记：**现有**＝存储和已核出口可复用；**映射**＝有列／材料，但需改实际读写、形态或语义；**派生**＝从明确事实计算，不加同义列；**新增**＝需要新字段、对象关系或 JSON 合同。一个字段组列出服务于同一需求的一组字段，不把它称作 67 个数据库列。
+
+### 3.1 Case 资料、范围及当前认识（C01—C14）
+
+| ID／页面需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| C01 案件身份、租户、编号 | `aisoc_cases.id/tenant_id/case_number`，v1 CaseResponse | 现有；新表引用 UUID，展示编号不作关联键 |
+| C02 名称、说明 | `title/description`，v1 create/update/read | 现有；说明是背景，不自动当已证实事实 |
+| C03 严重程度 | `severity`，v1 已读写 | 现有；不由分诊置信度替换 |
+| C04 业务处理状态 | `status` 六态及 `case_status.py` | 映射；保留原状态，页面可映射为新建／处理中／已解决。旧 `OPEN_STATUSES` 包含 resolved，不能直接拿来算新版未解决案件 |
+| C05 负责人 | `assignee TEXT` 与 `assigned_to_id UUID/assigned_at` 并存；v1 写前者，部分编排写后者 | 映射；新写统一已有 UUID 列，兼容文本显示。仅同租户唯一可解析值可补 ID，冲突／无法解析返回 unknown；明确清空才能按未分配统计 |
+| C06 优先级及依据 | `priority TEXT` 已有；v1 CaseResponse 未暴露对应列；现无统一数值评分来源合同 | 映射；已有原值可读，来源不明明确标注，不改成数值平均或补造评分；评分合同待产品确定 |
+| C07 案件标签 | `tags JSONB`；v1 请求／响应是字典，原型为数组，ORM 默认亦为数组 | 映射；维持当前 KV 存储兼容，新增列表标签建议存保留命名空间 `tags.labels:string[]`，读接口输出 labels；旧字典不直接强转数组丢键值 |
+| C08 当前成员告警 | `alert_ids UUID[]`，Case 和链接接口 | 现有；保为当前成员真值，不立刻再建重复的成员主表；所有加入／移动／合并写入需走统一事务 |
+| C09 当前关联事件 | Alert enrichment 可派生来源事件；121 仅记录历史关联 | 新增 `case_incident_links`，表达显式当前关系；来源事件集合仍可派生，不能把两者混成一个数 |
+| C10 创建／更新／解决／关闭及发生范围 | Case 时钟已有；成员 `Alert.event_time` 已有 | 现有＋派生；发生范围取成员时间，Run 完成不写 Case 已解决；新增业务写入更新 Case 业务时钟 |
+| C11 当前成员版本 | 当前无稳定范围版本 | 新增 `scope_revision BIGINT`，实际成员变化递增；重复添加或仅关联事件不冒充成员改变 |
+| C12 基础调查待更新 | 当前无服务端持久状态 | 新增 `baseline_state JSONB`，保存待更新版本／新增移出／请求时间、已派发轮及其范围版本；不只存一个布尔值 |
+| C13 当前判断、依据、确认者／时间、未决事项 | `summary` 文字；单轮结果有判断 | 新增 `current_judgment JSONB`；采用时写来源引用、确认事实和覆盖快照，不能直接用最新报告覆盖 |
+| C14 未分析／未被当前判断覆盖 | 当前成员和每轮 scope 已有，判断覆盖尚缺 C13 | 派生；分别计算当前成员减符合产品条件的已结束调查输入集合、当前成员减判断覆盖集合；参与分析不等于被证实 |
+
+### 3.2 实际执行及单轮结果（R01—R13）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| R01 Run 身份和 Case 归属 | `id/tenant_id/case_id`＋`raw_alert.analysis_profile` | 映射＋新增 `case_ref_id UUID NULL`，只给已证实属于 Case 的执行填写；原 case_id 字符串保持兼容 |
+| R02 基础首次／更新／AI 问题类型 | 当前主要 profile=case_analysis.v1，无该业务分类 | 新增 raw_alert 的版本化 `execution_kind`；历史未知留 legacy_unspecified，不能靠第几轮猜首次 |
+| R03 目标与触发原因 | 请求 question 已存 intent／scope；自动更新原因未存 | 目标复用 question；新增 trigger、trigger_ref、initiator、compare_run_ref，区分人工发送与成员变化 |
+| R04 当次成员／对象／窗口 | 冻结 context 的 all/selected/read_member_ids、hosts、start/end | 现有；补 scope_revision、所选对象的带类型／来源身份，保留读取不足；历史范围不跟当前变化 |
+| R05 当时输入、hash、缺失／截断 | source-material 工件、source_hash/material_hash 及省略元数据 | 现有；沿用边界和 guard。新增来源也必须进入 hash，不只加页面 DTO |
+| R06 当时引用的人工结果 | 当前 context 无 CaseTask | 映射＋新增上下文合同；固定 task_id、版本、结果、确认者、时间、范围和引用，随后更新不改旧材料 |
+| R07 执行状态与单活跃 | Run.status 可存文本；当前 Case 路径写 running/completed/failed | 映射＋约束；明确 queued/running/unknown/等待人工的活跃集合，新增 Case 归属后的部分唯一索引；恢复规则另定 |
+| R08 交付完整性／停止原因 | `case_analysis_result` 的 completion/stop_reason，history 已读 | 现有；执行结束与完整性分别返回；失败不伪造有效结论 |
+| R09 请求／开始／结束时间、耗时 | created_at、started_at NOT NULL 默认 NOW、completed_at | 映射；加入 queued 后 started_at 应允许空，实际开始才填；created_at 表示请求入账。等待包含在实际开始至结束内，不以单步骤耗时代整轮 |
+| R10 结论、发现、证据、成员判断、未决 | AnalysisConclusion 及结果工件 | 现有；只读实际保存内容；旧结论未保存时返回缺失 |
+| R11 相比哪轮的变化／Case 影响 | 当前无统一变化、影响结构 | 新增版本化结果 JSON 的 comparison、changes、case_impact；不需要单独关系库，必须附原范围及依据 |
+| R12 调用、Tokens、费用、Tool 数 | Run 用量列、LLM 事件、Tool 工件；费用来源 063 | 现有＋映射；按真实事件／来源读取，历史缺记录不因默认 0 推断零消耗；保存文本不新增用量 |
+| R13 查询原件、报告、历史图 | Event／Artifact＋case_evidence/navigation，已有图服务 | 现有＋读取；绑定同 Run／artifact/evidence/row，缺材料不借另一轮；无法归类的工件仍保留 |
+
+### 3.3 人工任务（T01—T10）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| T01 任务身份及归属 | `aisoc_case_tasks.id/case_id/tenant_id` | 现有；044 的 tenant_id 历史可空，新写必须从 Case 认证上下文得到 |
+| T02 事项、工作说明 | title 已有；description 无 | 新增 `description TEXT NULL`；不拿 blocked_reason 当说明 |
+| T03 负责人、期限 | assignee TEXT、due_at 已有 | 期限复用；新增 `assigned_to_id UUID NULL` 保存选定用户，旧 assignee 保留原值并兼容解析 |
+| T04 状态 | CHECK 与 API 都仅 todo/in_progress/done | 扩展取消态 `cancelled`；保留 done 原值，不为中文“已完成”迁移全部旧枚举 |
+| T05 确认／处理结果 | 无对应列 | 新增 `result_text TEXT NULL`；新完成必须有非空结果，普通改标题不冒充确认结果 |
+| T06 结果适用范围和未确认部分 | 无对应合同 | 新增 `result_scope JSONB`，明确告警／对象身份；未确认文字在结果或范围说明内；缺范围不得默认为全案 |
+| T07 完成时间及完成者 | 无 completed_at/completed_by | 新增两列；实际进入 done 时记录；仅修改已完成任务标题不刷新完成时间 |
+| T08 结果形成／修改时间及确认者 | 只有 updated_at/created_by，不能区分结果编辑 | 新增 `result_updated_at/result_updated_by`；结果编辑与完成事件分开，完成者不以当前负责人替代 |
+| T09 来源调查和参考材料 | 无 source Run／reference 字段 | 新增 `source_refs JSONB`，类型化指向 Run／正式保存记录／具体工件，全部可选，不强制附件／工单 |
+| T10 当前版本及历史引用 | updated_at 已有，分析未冻结任务引用 | 新增 `row_version BIGINT` 支持条件更新和引用版本；历史冻结放到当次分析／保存记录，不先建通用任务版本库 |
+
+### 3.4 案件对话与正式 AI 记录（A01—A10）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| A01 同案对话 | conversation.id/tenant/user/messages 已有，无 case_id | 新增 conversation.case_id 可空；Case 对话按 tenant+case 唯一，原通用对话仍为空，不猜历史归属 |
+| A02 原问题、原回答、消息身份／时间 | messages 中已有 id/role/content/timestamp | 现有；原消息 ID 沿用，不再发明第二套消息号 |
+| A03 入口范围与历史 Run／对象／任务 | 请求 context 是自由字典 | 新增消息元数据合同：context_kind、选择范围、引用及来源命名空间，服务端解析；历史 Run 入口用该轮原范围 |
+| A04 模型实际收到的案件材料 | 当前通用 chat 不将 context 放入模型 messages | 修装配路径；固定 material_snapshot/ref/hash，确认模型请求实际携带来源；返回 context 参数不算完成 |
+| A05 答复状态与实际执行关系 | 有 llm/template/reason，Case 执行另行存在 | 复用模板／失败真实性；补 request_id、可选 run_id、等待事实引用、回答归属，异步返回核对 case+conversation+message |
+| A06 正式记录身份／类别 | 当前 history 只列 Run；Artifact 必属 Run | 新增 `case_saved_ai_records`；历史读取以类型化键区分 Run 与 saved_ai，不把后者插进 Run |
+| A07 确认后的标题、结论及原答复 | 对话内容已存，编辑确认值无正式保存位置 | 新表保存 title/conclusion 和原问题／答复副本，不能覆盖原消息 |
+| A08 保存人、时间和重复保存 | 无正式出口 | 新表 saved_by/saved_at，tenant+case+conversation+answer_message_id 唯一；重试读已有行，取消不写 |
+| A09 当次输入与引用快照 | Run 冻结已有，聊天结果未接 | 新表 input_snapshot/reference_snapshot；复制答复实际使用的版本，不在保存按钮点击时重读已经变化的任务作为旧依据 |
+| A10 保存记录与 Case／图／用量 | 当前没有分离合同 | 新表可选 source_run_id 回查真实执行；保存不改 Case 状态／成员／当前判断，纯文字不能作图底，usage 无来源时 null |
+
+### 3.5 图、对象、故事和派生读取（G01—G06）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| G01 图底图身份和资格 | Case.observable_graph 无稳定 base Run 合同；历史图工件已有 | 图资格从实际图工件／执行结果派生；保存探索时固定 base_kind、base_run_id 和当时成员范围 |
+| G02 已保存探索的节点、边、展开、筛选和布局 | 原型本地保存；服务端无此对象 | 新增 `case_graph_explorations`，与 Run 图、Case 当前成员分开 |
+| G03 扩展候选和来源 | 现有邻居／路径查询，产品适配未完成 | 复用查询；节点存 source_ref、关联告警、查询窗口／排序依据；不根据同名主机跨来源合并 |
+| G04 对象到告警和材料 | entities/iocs、对象边、工件引用已有 | 派生读取；保留稳定对象键、来源及匹配依据，未归类材料单列，不必先新建一套对象库 |
+| G05 案件故事条目／时间 | 告警 event_time、Run 起止已有；旧 timeline 混入 created_at | 读取四类源：告警、Run、saved_ai、已完成任务；严格用发生／起止／保存／完成时间，不复用旧管理时间线拼法 |
+| G06 统计、待办、覆盖 | Case／任务／Run 原始行部分齐备 | 派生，不增计数列；先按 Case 去重，任务 todo/in_progress 算待办；覆盖、状态和未知负责人按明确口径读 |
+
+### 3.6 告警／事件／活动／响应配套（P01—P10）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| P01 Fusion 事件身份、成员、归并依据 | Alert enrichment 的 incident_id／依据、成员查询 | 现有；保留既有 identity 与成员事实，不重复建事件成员主表 |
+| P02 事件名称／说明 | reader 标题由成员生成，summaries 为 AI 文本 | 新增事件业务表的 title_override/description；无人工覆盖时仍可由成员展示派生标题，AI summary 单独读 |
+| P03 事件业务状态、负责人 | 没有事件本体相应记录 | 新表 handling_status、assigned_to_id/assigned_at、修改主体；成员状态／负责人不能替代事件事实 |
+| P04 事件标签／解决说明／解决时间／业务更新时间 | 无事件本体相应记录 | 新表 tags、resolution_note、resolved_at/resolved_by、updated_at；最近更新时间取事件业务时钟和成员业务时钟的最大值 |
+| P05 事件严重程度、优先级、分类 | 成员最高 severity 可派生；独立分类已取消；优先级来源未定 | 不为分类建列；不造优先级评分。严重程度管理与“成员最高”存在产品口径待确认，见第 8 节 |
+| P06 普通告警评论 | 只有 Case 评论、分诊反馈 note、通用审计等 | 新增 `alert_comments`，不强迫评论先改判或创建 Case；Case 评论保留现表 |
+| P07 操作人、主体、before/after、批量目标 | CaseTimeline 和 audit_log 具备容器，缺统一业务写入／读取 | 复用，补准确主体与真实目标；大批量用父操作＋逐对象活动关联，避免只把所有 ID 塞进会裁剪的 audit changes |
+| P08 单条响应建议身份及目标 | AnalysisConclusion.recommendations 是字符串列表 | 新结果 JSON 扩展结构化 recommendations：稳定 id、类型化目标、理由、证据 refs、审批要求 known/unknown；旧文本原样保留 |
+| P09 审批事实及建议关系 | agent_approvals 已有 action、run/case、决定人／时间／意见 | 不新建审批表；在 action JSON 绑定 recommendation_ref／目标／源 Run，审批与 action 的既有同 ID 保持 |
+| P10 执行回执和事件归属 | aisoc_action_records.record／status、approval.action.dispatch 已有 | 不新建执行表；显式传 case_ref/fusion_incident_ref，不能重解释旧 incident_id；按真实 action_status/receipt 表达执行，批准本身不是完成 |
+
+### 3.7 Fusion 已存字段的消费（F01—F04）
+
+| ID／需要 | 当前存储／出口 | 结论与具体改法 |
+| --- | --- | --- |
+| F01 来源、规则、战术、评分及同次判定 | 前四批已补写入／共享投影／冻结／hash | 现有；继续保留来源语义和预算，原厂未知空，不把分析评分当证据 |
+| F02 OCSF 必要进程语义 | Alert.raw_event、来源副本和湖 ocsf_json 已存 | 映射；从确定源路径投影 PID／父进程／命令行，保 guard 和缺失说明，不增加记忆库 |
+| F03 process Tool 的会话及进程细节 | 湖 session_id、ocsf_json 已存，SELECT／解析未消费 | 映射；补 SELECT／JSON 解析、结果合同、模型视图与复用版本；不先新增同义平铺列 |
+| F04 network Tool 的端点／动作／结果／会话 | 湖 src_port/dst_hostname/action/outcome/session_id 已存 | 映射；五项进入真实结果与模型输入，缺值保空；不能据连接行推断允许或成功 |
+
+## 4. 推荐的具体表结构调整
+
+### 4.1 修改已有表
+
+**`aisoc_cases`：增加 4 个字段，复用已有基础列。**
+
+| 新字段 | 类型／空值 | 写入规则 |
+| --- | --- | --- |
+| scope_revision | BIGINT NOT NULL DEFAULT 0 | 当前成员集合实际变化时递增；与成员及活动同事务 |
+| row_version | BIGINT NOT NULL DEFAULT 0 | 管理／判断／成员等业务写入递增，用于条件更新；不是调查版本 |
+| baseline_state | JSONB NULL | schema_version、pending_scope_revision、added_ids、removed_ids、requested_at、dispatched_run_id／scope_revision、last_finished_run_id／结果状态。旧记录未知为空，不凭空称已完成基础调查 |
+| current_judgment | JSONB NULL | schema_version、judgment_id、conclusion、basis_refs＋必要快照、covered_alert_ids／object_refs、formed_at、confirmed_by/at、author、unresolved、scope_revision。形成与确认时间分别保存已知事实；无明确采用事实时为空 |
+
+`baseline_state` 保存当前待处理事实，scope 变化活动记录到 `case_timeline_events.detail`。派发时冻结所接版本；Run 完成只能更新自己的接收版本，不能清掉后来新增的 pending。失败是否重新排队、何时认定更新已交付仍按产品策略决定，字段保留事实，不自动填成功。
+
+待更新不是第二个 queued Run：已有活跃执行时只保存 pending；获得同案执行名额后才创建 queued／running Run。基于已有材料阅读／提问不因保存记录而伪造一次 Run，确需新执行的提问遵守同一约束。
+
+当前判断更新与包含前后判断及引用的 CaseTimeline 活动同事务；新的分析保存再冻结所用判断。这样首版无需另立判断历史表。不要把唯一完整判断快照放入会裁剪的通用 audit_log.changes。
+
+负责人统一写已有 assigned_to_id；旧 assignee 作为兼容文本同步，读取返回 owner_id/display/state，两个值冲突显式呈现。不要只改 ORM 而漏掉 v1 SQL、case_depth 编排和关联创建入口。tags 兼容上述 labels 命名空间，旧数据不丢失。已有 priority/summary 没有必要重复加列。
+
+标签迁移先检查保留键是否被旧数据占用：已有字典键值保持，旧数组可无损包装为 labels；若 labels 已被用于别的类型，不覆盖，先明确兼容映射。来源环境不能取浏览器任意传入字符串作为授权依据：单部署从受信服务配置／来源映射得到命名空间，引用同时绑定 tenant、对象类型及 ID；未知来源不自动匹配到任意环境。
+
+**`aisoc_case_tasks`：扩现表，不重建任务系统。**
+
+新增 `description TEXT NULL`、`assigned_to_id UUID NULL`、`result_text TEXT NULL`、`result_scope JSONB NULL`、`completed_at TIMESTAMPTZ NULL`、`completed_by UUID NULL`、`result_updated_at TIMESTAMPTZ NULL`、`result_updated_by UUID NULL`、`source_refs JSONB NULL`、`row_version BIGINT NOT NULL DEFAULT 0`。用户引用由服务端校验同租户；账号删除后的展示需保留当时作者标签或已冻结来源，不从当前负责人反推。
+
+- 将状态 CHECK 和 API 枚举同时扩为 todo/in_progress/done/cancelled；不要只改页面枚举。
+- 新进入 done 的写入校验结果非空并填 completed_at/by；结果变化写 result_updated_at/by；仅改事项／期限不修改完成时间。
+- result_scope 明确所确认的成员／对象和范围说明；source_refs 是引出任务的材料，二者不是同一概念。
+- 已有 done 但无结果的历史行保留缺失，不用 title 充结果，也不拿 updated_at 回填完成时间。首批不加会拒绝所有历史行的“done 必有结果”全表 CHECK；新写由服务层落实，旧数据质量单列。
+- 列表／PATCH／RETURNING／DTO、上下文冻结、故事读取同时更新。支持 PATCH 显式 null 清空可选期限／负责人；当前 `is not None` 写法无法表达清空。
+
+**`aisoc_copilot_conversations`：增加 `case_id UUID NULL`。**
+
+建立同租户 Case 引用和 `UNIQUE(tenant_id, case_id) WHERE case_id IS NOT NULL`，原通用会话为空。Case 入口按 Case 找到唯一共享会话，不能按任意 conversationId 绕过归属。保留现 messages JSONB 和原消息 UUID，不立即加 messages 明细表。
+
+消息增加版本化元数据：request_id、context_kind、scope、source_refs、material_snapshot/ref/hash、可选 run_id、reply_state。**发送／执行时先固定实际输入；明确保存时复制该答复使用的版本**。如果任务在问答和保存之间已改，保存旧答复仍引用旧版本。模型上下文经过既有 guard／预算，再真正进入 messages，不只是答后 grounding。
+
+**`investigation_runs`：增加 `case_ref_id UUID NULL`；started_at 改为可空。**
+
+- 新的 Case 执行强制填 case_ref_id；其他旧执行保持空。原字符串 case_id 继续兼容，不能对全部历史内容强转 UUID。
+- 基础初次／更新／AI 问题类型、trigger、scope_revision、comparison 和来源任务引用先扩 raw_alert／结果 JSON 合同，不为每个展示字段增列。类型筛选确有负载后再评估表达式索引。
+- Case 活跃执行以 case_ref_id 为范围建部分唯一索引 `(tenant_id, case_ref_id)`，条件覆盖 queued/running/unknown 及仍占用原执行的 awaiting_human。awaiting_human 作为本方案建议执行态，具体续接策略不在本轮实施。
+- 入队显式写 started_at=NULL，created_at 是请求时间；真正开始才写 started_at；旧入口默认值可先保留兼容。所有以 started_at 排序／游标／耗时的读取需处理空值，不能只放宽 DB 约束。
+- Case 行锁负责成员／待更新和派发衔接；唯一索引负责不同操作键的执行冲突。现 operation_key 幂等继续保留，两者各管一件事。
+- 老行仅在 profile 明确属于 Case、字符串 UUID 有效且同租户 Case 存在时补 case_ref_id。多个旧活跃冲突先核事实，不为建索引直接把它们标完成。
+
+`investigation_events/artifacts` 不改 run_id 非空约束，不更改旧原件；新增结果／来源合同标版本。步骤、报告、图和原始 Tool 继续放这里。
+
+### 4.2 三张核心新增表
+
+| 建议表 | 字段与约束 | 为什么现表不能直接承担 |
+| --- | --- | --- |
+| `case_saved_ai_records` | id UUID PK；tenant_id/case_id/conversation_id、question_message_id、answer_message_id 均 UUID；source_run_id UUID NULL；title/conclusion TEXT；conversation_snapshot/input_snapshot/reference_snapshot JSONB；schema_version SMALLINT；content_hash VARCHAR(64)；saved_by UUID、saved_at TIMESTAMPTZ。唯一 tenant+case+conversation+answer_message_id；索引 tenant+case+saved_at+id | 对话保存的是交流，Run 保存的是实际执行；此表保存用户明确确认的结论。无真实执行时 source_run_id 空，不产生假 Run／费用 |
+| `case_incident_links` | tenant_id、case_id、incident_id 均 UUID，组合 PK；linked_at TIMESTAMPTZ、linked_by UUID、source_operation_key UUID、source_namespace TEXT。Case 同租户引用；事件按实际 Fusion 成员／来源校验 | 121 是操作回执，只能证明曾关联。新表表示当前显式关系，支持只加事件关系但没有新增告警，以及多事件分别计数 |
+| `case_graph_explorations` | id UUID PK；tenant_id/case_id UUID；base_kind TEXT(run/members)、base_run_id UUID NULL、base_scope_snapshot/graph_state JSONB；schema_version SMALLINT、row_version BIGINT、created_by/updated_by UUID、created_at/updated_at TIMESTAMPTZ。索引 tenant+case+updated_at+id | Case.observable_graph 没有独立探索身份／底图；历史工件不能随探索改写。选择具体 exploration_id 保存，不能自动覆盖历史图 |
+
+正式记录的 JSON 快照须有来源路径、版本／hash、保存范围和缺失说明；现有真实执行材料可通过稳定工件引用复用，必要的人工作用内容要冻结。原问题／答复与编辑后结论分别保留；不可用截断文本冒称完整。超出保存合同的材料应明确拒绝或使用已有可回查 blob，不静默截断后返回“完整保存”。
+
+新记录的主体键、类型、版本、保存时间和必要内容为 NOT NULL；选择性来源如 source_run_id 可空。创建／保存操作者由认证主体填写，历史迁移或用户删除后无法保持外键的情况须保留作者标签并明确空因，不能假填 system。保存后的内容不提供覆盖旧快照的 PATCH；如以后需要修订，另定修订合同。现 events 有数据库不可变触发器，不代表 artifacts／新表已自动具有同一保障，迁移与服务写权限需明确落实。
+
+消息位于 JSONB，没有可直接 FK 的 message 表：保存入口须在同一 Case／会话内验证消息确实存在及对应关系，不能把这项写成数据库已经保证。可选源 Run、工件和任务也必须核同租户、同 Case 或明确允许的历史范围。
+
+Case—事件表不在首批强加指向摘要缓存的外键：摘要未生成不代表事件不存在。来源事件派生集合和显式关联集合分别输出。移走最后一个成员是否自动解除显式事件关联尚待确定，不能靠重算 members 偷删关系。
+
+图探索保留底图来源、候选来源、节点／边引用、展开状态／过滤／布局；base_kind=run 时必须有有效原 Run，base_kind=members 时固定成员基线。新结果到来不自动替换既有探索；重置才重新选底图。协作共享／个人探索策略后定，表通过独立 id 支持，不预先用 case_id 唯一锁死。
+
+### 4.3 告警／事件配套两张表
+
+| 建议表 | 最小字段 | 边界 |
+| --- | --- | --- |
+| `fusion_incident_state` | tenant_id+incident_id PK；title_override、description、handling_status、assigned_to_id/assigned_at、tags JSONB、resolution_note、resolved_at/by、created_at/by、updated_at/by、row_version | 只存事件业务事实。成员／战术数／最高严重程度／首次活动仍派生；不挤入 fusion_incident_summaries，不新增已取消的 classification，也不先造 priority_score |
+| `alert_comments` | id UUID PK；tenant_id、alert_id、author_id、author_label、body、created_at；索引 tenant+alert+created_at+id | 普通告警评论；不是 analyst_feedback.note，也不要求 case_id。编辑功能未确定时先不加通用评论版本体系 |
+
+事件表可在首次明确业务写入时建立，旧事件无行返回“未记录业务状态／显示默认值”的来源说明，不回填为历史人工处理。严重程度覆盖字段因产品口径冲突先不列必加；如确认允许事件人工覆盖，再加独立 override 并与成员最高值分开。
+
+### 4.4 活动、响应、附件和不新增的表
+
+- **活动复用。** Case 操作写 `case_timeline_events`；状态变化可继续用 `case_status_transitions`；普通 Case 评论留 `aisoc_case_comments`。实际改派／移动／任务完成存真实 actor、subject、时间、before/after、operation_id 和范围版本。两案移动在同一事务分别记账，历史 Run 不改。
+- **批量目标不靠一个会裁剪的 JSON。** 复用 audit_log 的稳定 resource/resource_id：父事件记录操作身份，逐实际目标写子事件并绑定 operation_id；为关联查询增加必要表达式索引。Case 场景也可引用已保存的完整链接／范围活动，但不得只存目标数量。审计 writer 要支持保留关联键，脱敏／裁剪规则不能删掉唯一定位；不新建通用审计框架。
+- **响应复用。** 结构化 recommendation 放新结果 JSON；approval.action 保存 recommendation_ref、真实目标与 origin_refs；动作 record 继续保存实际 receipt/status。不要为了字段对齐重写旧 incident_id，也不要把批准回执当执行回执。
+- **附件不扩上传系统。** 当前工件 content/blob_ref/hash/size 足以表达已有调查材料；Case 的 artifact_ids 只是引用。任意附件上传、下载权限和保留策略属另行生产接入，不因页面列表而新增通用附件服务。
+- **不新增** Case 成员第二真值表、任务版本总表、全局记忆库、每页统计表、每种调查各一套 Run 表。现有 JSONB 能承载的结果结构先定版本化合同，按真实查询需求再加索引。
+
+## 5. 字段之外必须配套的工作
+
+| 工作 | 必须改到的现有路径 | 完成条件 |
+| --- | --- | --- |
+| 统一写入与 DTO | v1 cases 的 SQL/RETURNING/Request/Response、Case/CaseTask ORM、case_depth、case_links | 保存后读回同一事实；负责人、标签、任务 null 清空不再走不同语义 |
+| 成员与待更新事务 | case_links、新移动入口、v1 add alerts／create、case_depth merge | 所有会改 alert_ids 的入口都同步 scope_revision/pending；只改一个新入口仍会漏；重复提交不多记变化 |
+| Case 执行协调 | start_analysis／启动 API／调度适配 | 实际创建 queued Run 与确认接收版本同事务；新增成员不改活跃输入；不在持有数据库锁时等待模型或外部 Tool |
+| 上下文装配 | case_context、case_source_material、Copilot `_get_openai_reply`、material hash | Case／所选历史范围、人工结果、已保存判断按来源装入；执行时冻结，保存引用复制冻结版本；保 guard 和预算 |
+| 正式 AI 保存 | 新保存接口＋对话消息归属校验＋新表 | 一次确认只写一条；重复返回原记录；不再执行，不改 Case 判断／状态／成员／图底 |
+| 统一读取投影 | case_history、case_evidence/navigation、新故事／资料／概览 DTO | Run 与 saved_ai 以类型化引用组合；故事用正确时间；输出 current/analyzed/judgment_covered 三组范围 |
+| 图与对象适配 | graph_service、investigation_attack_context、探索存取 | 基于合格底图、保来源和候选范围；缺历史图不借别轮，未分类材料不丢 |
+| 字段消费 | case_analysis_tools、来源投影／模型视图及 query_contract | 已存值同时进入查询结果、保存工件和模型可见字段；旧结果合同不冒充新字段完整结果 |
+| 活动／状态／响应 | CaseTimeline/audit writer、approvals、action payload、相关读接口 | 写入主体和目标准确；批准／执行／解决分开；字段齐全后功能动作交后端实现 |
+| 数据库交付 | 正向增量迁移、ORM 镜像、部署清单、schema preflight | 迁移已执行与代码一致有证据；未核线上前只称仓库方案，不称数据库已支持 |
+
+当前 v2 使用独立 application factory；新增 Case 相关读写不能只放到旧 main/router 就认为当前部署可用。API、agents 的调用边界和所用表版本要一起交接。源码镜像若存在需同步，但本轮只形成方案。
+
+## 6. 迁移和历史数据处理
+
+1. **先核实际 schema 和现有状态。** 本文附只读 SQL 可核列／约束／索引／RLS；它不查告警原文或用户业务材料。本轮未执行。各环境迁移历史和实例级 schema 尚需核实。
+2. **增量增加可空列与新表。** 保持旧请求／旧报告可读；新业务入口严格写新合同。新表 tenant_id 非空，使用 RLS 和同租户关系验证；跨表只有 UUID 外键不自动保证同租户，可为父表 `(tenant_id,id)` 加唯一约束并使用组合 FK。
+3. **只回填能证明的事实。** 当前成员可建立迁移基线；历史 Run 输入不改。Case 来源明确的 Run 才补 case_ref_id；未知类型保持未标注。不能自动采用旧 summary、猜会话属于哪个 Case、用任务 updated_at 猜完成时间、用原负责人猜确认人。
+4. **新旧负责人／标签逐步兼容。** 可精确解析的同租户用户才写 UUID，冲突保留两原值；旧字典标签保留，列表标签从新 namespace 读。业务状态映射集中在 adapter，不改历史枚举来凑原型文案。
+5. **索引和约束按真实旧数据落地。** Run 单活跃唯一约束先排查旧冲突；不把 unknown 当完成。Case 对话只给明确新绑定的行加 case_id，旧通用会话不强行归档到某案。
+6. **快照与引用保持。** 旧来源、r13 报告和前四批证据不重写；新合同标版本，旧缺字段返回缺失。新增字段不会使旧空查询或报告语义自动通过。
+
+## 7. 建议实施批次与验证对象
+
+这是交接顺序，不在本轮实施整套页面功能。
+
+| 批次 | 数据交付 | 必要验证 |
+| --- | --- | --- |
+| 1 现有合同统一 | Case 状态／负责人／tags、Task 字段／枚举／DTO，schema 核验及迁移草案 | API 写入再读回；清空可选值；旧 done 缺结果如实显示；未知负责人不计未分配 |
+| 2 范围与执行身份 | scope_revision／pending、Case—事件关系、case_ref_id／单活跃约束 | 重复加入、仅关联事件、移动两案、不同操作键并发、执行期间新增成员保持旧 scope |
+| 3 人工与 AI 材料 | Task 结果消费、Case 对话实际入模、正式保存及快照 | 任务在答复前后变化；保存仍使用该答复实际依据；重复保存一条；跨 Case 引用拒绝 |
+| 4 结果与判断／读取 | 变化／影响、明确判断覆盖、故事／历史／对象证据、图探索 | 新成员未分析与未被判断覆盖分开；保存文字不换图底；缺图／缺时间不补造 |
+| 5 告警事件配套及 Tool | 事件业务表、评论／活动合同、两 Tool 漏读 | 真实主体与目标、事件时钟、已存 OCSF 各路径、Tool 保存／模型视图一致 |
+
+测试选择与改动直接相关的读写、约束和快照场景；静态 schema 检查不代替真实 PG 接缝，fixture 不代替 Fusion 实际链路。真实模型报告验收另开明确批次，r13 不重试，不增加原预算。
+
+## 8. 需要产品继续明确但不阻塞字段整理的事项
+
+- 多次成员变化怎样合并排队，基础更新和 AI 问题谁优先；失败／取消／未知状态如何恢复。先保存版本、范围及真实执行状态，不预先写成功。
+- 仅移出成员、空案首次分析、已解决案新增／最后成员移走后的事件关联策略。
+- 当前判断采用人／权限、冲突处理、需要重新确认的条件；目前可确定判断必须有范围、来源、确认事实。
+- **严重程度口径冲突：** PRD 4.2 说事件取成员最高，7.3 又允许管理严重程度。需要明确是事件人工覆盖、还是修改成员严重程度；不能静默新增 override 并把它当既定规则。
+- Case 生命周期原六态到页面三态的写入转换、审批后自动派发策略、生产协作权限和图扩展范围。已有用户 16 项规则继续沿用，未被新版明确改变的不重问。
+
+当前建议无需 Case 文档记忆或向量库。共享上下文的实质是明确归属、实际输入、范围、来源版本及可回查快照；先把这些字段和出口接通。
+
+## 9. 核对来源
+
+以下后台链接有意跨出本设计 worktree，读取主工作区 `39f4033`，不能替换成本分支同名旧源码。
+
+- Case：[012 建表](../../../../../services/api/migrations/012_case_management.sql)、[083 合并／补列](../../../../../services/api/migrations/083_one_case_table.sql)、[086 编排／状态／依赖](../../../../../services/api/migrations/086_case_orchestration.sql)、[090 重开](../../../../../services/api/migrations/090_case_reopen.sql)、[106 合并／自定义字段](../../../../../services/api/migrations/106_case_depth.sql)、[107 外部群聊](../../../../../services/api/migrations/107_case_war_rooms.sql)、[模型](../../../../../services/api/app/models/case.py)、[v1 SQL／DTO](../../../../../services/api/app/api/v1/endpoints/cases.py)、[状态集合](../../../../../services/api/app/services/case_status.py)、[编排读写](../../../../../services/api/app/services/case_depth.py)。
+- 成员：[121 操作关联表](../../../../../services/api/migrations/121_investigation_case_links.sql)、[实际写入](../../../../../services/api/app/investigation_v2/case_links.py)。
+- 执行：[008 账本](../../../../../services/api/migrations/008_investigation_ledger.sql)、[063 用量来源](../../../../../services/api/migrations/063_cost_provenance.sql)、[模型](../../../../../services/api/app/models/investigation.py)、[Case 分析](../../../../../services/api/app/investigation_v2/case_analysis.py)、[来源冻结](../../../../../services/api/app/investigation_v2/case_source_material.py)、[历史](../../../../../services/api/app/investigation_v2/case_history.py)、[证据](../../../../../services/api/app/investigation_v2/case_evidence.py)、[导航](../../../../../services/api/app/investigation_v2/case_navigation.py)、[独立入口](../../../../../services/api/app/investigation_v2/application.py)。
+- 任务／对话：[027 任务](../../../../../services/api/migrations/027_case_tasks.sql)、[044 租户列](../../../../../services/api/migrations/044_cases_tenant_isolation.sql)、[076 对话](../../../../../services/api/migrations/076_copilot_and_hunt_search_tenancy.sql)、[Copilot 入口／模型 messages](../../../../../services/agents/app/api/copilot.py)、[对话追加](../../../../../services/agents/app/api/conversation_store.py)。
+- 图：[graph_service](../../../../../services/api/app/services/graph_service.py)、[调查图上下文](../../../../../services/api/app/services/investigation_attack_context.py)。
+- 事件／活动：[120 摘要缓存](../../../../../services/api/migrations/120_fusion_incident_summaries.sql)、[事件 reader](../../../../../services/api/app/investigation_v2/incident_reader.py)、[001 CaseTimeline](../../../../../services/api/migrations/001_init.sql)、[004 审计](../../../../../services/api/migrations/004_audit_log.sql)、[审计模型](../../../../../services/api/app/models/audit.py)、[写入](../../../../../services/api/app/services/audit.py)、[裁剪／脱敏](../../../../../services/api/app/services/audit_redaction.py)。
+- 响应：[审批模型](../../../../../services/api/app/models/responder.py)、[审批派发](../../../../../services/api/app/api/v1/endpoints/approvals.py)、[055 动作](../../../../../services/api/migrations/055_action_records.sql)、[095 审批要求](../../../../../services/api/migrations/095_action_approval_tier.sql)。
+- 字段：[85 项旧明细](../../../../../docs/investigation/page-field-support-matrix-20261102.md)、[Tool 读取](../../../../../services/api/app/investigation_v2/case_analysis_tools.py)、[湖写入列与 OCSF](../../../../../services/fusion/app/services/lake_writer.py)。
+
+本轮文档／源码指纹、67 个字段组及链接检查见 [静态回执](../operations/investigation-data-schema-plan-20261103.json)。没有业务测试、真实 DB 或模型结果；前轮回执和历史审计原件保持不改。

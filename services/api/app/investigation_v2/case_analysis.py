@@ -25,6 +25,7 @@ from .case_analysis_models import (MAX_OUTPUT_TOKENS, FINISH_TOOL, ReportContrac
 from .case_analysis_tools import CaseTools, model_result, source_alignment
 from .case_source_material import SOURCE_SCHEMA, freeze_sources, model_source_view, source_fields
 from .case_navigation import analysis_urls, citation_links, report_navigation
+from .case_baseline import ACTIVE_STATUSES, PENDING_BASELINE, baseline_fields
 from .incident_reader import _entities
 from .case_synthesis import (AlertRelationship, MemberAssessment, OpenQuestion,
                              complete_synthesis, synthesis_markdown, validate_synthesis)
@@ -226,6 +227,10 @@ class CaseAnalysisRequest(CaseAnalysisScope):
         return value
 
 
+class BaselineStartRequest(CaseAnalysisScope):
+    expected_scope_revision: int = Field(ge=1)
+
+
 class Finding(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=1, max_length=3000)
@@ -348,7 +353,7 @@ async def read_analysis(db, tenant_id, case_id, run_id):
     ).order_by(InvestigationEvent.seq))).scalars().all())
     result = json.loads(artifact.content) if artifact else None
     previous_id = (run.raw_alert or {}).get("previous_run_id")
-    return {"run_id": str(run_id), "case_id": str(case_id), "status": run.status,
+    return {"run_id": str(run_id), "case_id": str(case_id), "status": run.status, **baseline_fields(run),
             **analysis_urls(case_id, run_id), "previous_run_id": (run.raw_alert or {}).get("previous_run_id"),
             "previous_result_url": analysis_urls(case_id, previous_id)["result_url"] if previous_id else None,
             "scope": (run.raw_alert or {}).get("scope"),
@@ -684,8 +689,23 @@ class CaseAnalysis:
                 "navigation": report_navigation(self.context["case_id"], self.run.id, result)}
 
 
-async def start_analysis(db, tenant_id, actor_id, case_id, request):
-    run_id = uuid5(NAMESPACE_URL, f"aisoc:case-analysis:{tenant_id}:{request.operation_key}")
+async def start_baseline_analysis(db, tenant_id, actor_id, case_id, run_id, request):
+    analysis_request = CaseAnalysisRequest(operation_key=run_id,
+        **request.model_dump(exclude={"expected_scope_revision"}))
+    return await start_analysis(db, tenant_id, actor_id, case_id, analysis_request,
+        baseline_run_id=run_id, expected_scope_revision=request.expected_scope_revision)
+
+
+async def start_analysis(db, tenant_id, actor_id, case_id, request, *,
+                         baseline_run_id=None, expected_scope_revision=None):
+    run_id = baseline_run_id or uuid5(NAMESPACE_URL, f"aisoc:case-analysis:{tenant_id}:{request.operation_key}")
+    # Membership UPDATE/its trigger holds this same row lock. Every start takes
+    # Case -> Run locks, never the reverse, and releases them before model I/O.
+    locked_case = (await db.execute(select(Case).where(
+        Case.tenant_id == tenant_id, Case.id == case_id).with_for_update()
+        .execution_options(populate_existing=True))).scalar_one_or_none()
+    if locked_case is None:
+        raise HTTPException(404, "case_not_found")
     # Keep the intent of requests made before optional follow-up fields existed.
     request_intent = request.model_dump(mode="json", exclude={"previous_run_id", "refresh_queries", "required_tools"})
     if request.previous_run_id is not None:
@@ -695,13 +715,39 @@ async def start_analysis(db, tenant_id, actor_id, case_id, request):
     if request.required_tools:
         request_intent["required_tools"] = request.required_tools
     intent = {"case_id": str(case_id), "actor_id": str(actor_id), "request": request_intent}
+    if baseline_run_id is not None:
+        intent["expected_scope_revision"] = expected_scope_revision
     existing = (await db.execute(select(InvestigationRun).where(
         InvestigationRun.tenant_id == tenant_id, InvestigationRun.id == run_id,
-    ))).scalar_one_or_none()
-    if existing:
+    ).with_for_update().execution_options(populate_existing=True))).scalar_one_or_none()
+    pending = None
+    if baseline_run_id is not None:
+        if (existing is None or existing.case_id != str(case_id) or existing.investigation_kind != "baseline"
+                or (existing.raw_alert or {}).get("analysis_profile") != PROFILE):
+            raise HTTPException(404, "case_baseline_not_found")
+        if existing.status == PENDING_BASELINE:
+            pending = existing
+            if pending.scope_revision != expected_scope_revision:
+                raise HTTPException(409, "baseline_scope_revision_conflict")
+            members = set(map(str, locked_case.alert_ids or []))
+            prepared_members = set((pending.raw_alert.get("scope") or {}).get("selected_member_ids", []))
+            if members != prepared_members:
+                raise HTTPException(409, "baseline_scope_membership_conflict")
+            if not members:
+                raise HTTPException(409, "baseline_scope_empty")
+            if request.selected_member_ids is not None and set(map(str, request.selected_member_ids)) != members:
+                raise HTTPException(409, "baseline_requires_full_prepared_scope")
+    if existing is not None and pending is None:
         if (existing.raw_alert or {}).get("intent") != intent:
             raise HTTPException(409, "operation_key_conflicts_with_existing_case_analysis")
         return await read_analysis(db, tenant_id, case_id, run_id)
+    active = (await db.execute(select(InvestigationRun.id).where(
+        InvestigationRun.tenant_id == tenant_id, InvestigationRun.case_id == str(case_id),
+        InvestigationRun.raw_alert["analysis_profile"].astext == PROFILE,
+        InvestigationRun.status.in_(ACTIVE_STATUSES), InvestigationRun.id != run_id,
+    ).limit(1))).scalar_one_or_none()
+    if active is not None:
+        raise HTTPException(409, "case_investigation_already_active")
     context = await case_context(db, tenant_id, case_id, request)
     source_hash = digest(context)
     material_hash = digest({key: value for key, value in context.items() if key != "question"})
@@ -749,6 +795,16 @@ async def start_analysis(db, tenant_id, actor_id, case_id, request):
         status="running", total_tokens=0, total_cost_usd=0, measured_call_count=0,
         estimated_cost_usd=0, estimated_call_count=0, unpriced_call_count=0, iterations=0,
         started_at=datetime.now(UTC), created_at=datetime.now(UTC))
+    if pending is not None:
+        # Claim this existing execution identity. Its scope/provenance become
+        # immutable at the pending -> running transition (migration 122).
+        values["raw_alert"]["baseline"] = pending.raw_alert["baseline"]
+        for key, value in values.items():
+            if key not in {"id", "tenant_id", "case_id", "created_at"}:
+                setattr(pending, key, value)
+        await db.commit()
+        await set_rls_context(db, tenant_id)
+        return await CaseAnalysis(db, pending, context, request, prior=prior).execute()
     fresh = (await db.execute(insert(InvestigationRun).values(**values).on_conflict_do_nothing(
         index_elements=["id"]).returning(InvestigationRun.id))).scalar_one_or_none()
     await db.commit()
