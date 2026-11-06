@@ -1,11 +1,16 @@
-"""C6 contract gates remain strict after prompt-only clarification."""
+"""C6 provider shape constraints and the independent local receipt gates."""
 import copy
 import json
+from types import SimpleNamespace
 
 import pytest
 from app.socai2 import baseline_analysis_contract as analysis
 from app.socai2 import baseline_delivery_contract as delivery
+from app.socai2.baseline_capacity import final_reservation, final_wire_reason
 from app.socai2.baseline_context import Context
+from app.socai2.baseline_store import encoded
+from app.socai2.model_protocol import DEEPSEEK_PROTOCOL, prepare_request
+from app.socai2.structured_output import response_format
 from jsonschema import Draft202012Validator
 from test_socai2_followup_scope import frozen
 
@@ -58,3 +63,57 @@ def test_final_domain_cannot_omit_member_of_linked_finding():
     with pytest.raises(analysis.AnalysisRejected, match="^domain_finding_scope_mismatch$"):
         parse(packet, context, value)
     assert value == original
+
+
+def test_narrow_domain_can_leave_a_cross_member_finding_in_the_case_only():
+    packet, context, value = candidate()
+    case_analysis = value["analysis"]
+    finding = next(f for f in case_analysis["findings"] if len(f["alert_ids"]) > 1)
+    domain = case_analysis["domains"][0]
+    domain["alert_ids"] = finding["alert_ids"][:1]
+    domain["finding_ids"] = [finding["id"]]
+    with pytest.raises(analysis.AnalysisRejected, match="^domain_finding_scope_mismatch$"):
+        parse(packet, context, value)
+
+    domain["finding_ids"] = []
+    accepted = parse(packet, context, value).analysis.model_dump(mode="json")
+    assert accepted == case_analysis
+
+
+def test_first_delivery_wire_requires_the_same_empty_comparison_as_the_parser():
+    packet, context, value = candidate()
+    sources = packet["source_map"]
+    initial = {"state": "initial", "result_id": None}
+    schema = delivery.delivery_format(sources, context, initial)["json_schema"]["schema"]
+    validator = Draft202012Validator(schema)
+    validator.validate(value)
+    parse(packet, context, value)
+    for field, invalid in (("summary", "没有基线"), ("support_ids", [next(iter(sources))]), ("kind", "expanded")):
+        wrong = copy.deepcopy(value)
+        wrong["comparison"][field] = invalid
+        assert not validator.is_valid(wrong)
+        with pytest.raises(analysis.AnalysisRejected, match="^initial_delivery_must_not_invent_comparison$"):
+            parse(packet, context, wrong)
+    with pytest.raises(analysis.AnalysisRejected, match="^delivery_shape_invalid$"):
+        delivery.parse(json.dumps(value)[:-1], sources, context, packet["coverage"], initial)
+
+
+@pytest.mark.parametrize("provider,profile", [("chat_completions", "standard"),
+    ("chat_completions", "vllm_grammar_v1"), (DEEPSEEK_PROTOCOL, "standard")])
+def test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema(provider, profile):
+    packet, context, value = candidate()
+    sources = packet["source_map"]
+    gateway = SimpleNamespace(model="synthetic", provider=provider, schema_profile=profile)
+    generic = response_format(delivery.Delivery, sources, members=context.alerts,
+        questions=[q.id for q in context.questions], objects=context.scope.object_keys)
+    for state, rid in (("eligible", "prior"), ("unavailable", "prior"), ("not_selected", None)):
+        assert delivery.delivery_format(sources, context, {"state": state, "result_id": rid}) == generic
+    envelope = {"model": gateway.model, "messages": [], "temperature": 0, "max_tokens": 3000}
+    base = prepare_request(gateway, {**envelope, "response_format": generic})
+    first = prepare_request(gateway, {**envelope, "response_format": delivery.delivery_format(
+        sources, context, {"state": "initial", "result_id": None})})
+    wire_schema = (first["text"]["format"]["schema"] if provider == DEEPSEEK_PROTOCOL
+                   else first["response_format"]["json_schema"]["schema"])
+    Draft202012Validator(wire_schema).validate(value)
+    assert len(encoded(first)) <= len(encoded(base))
+    assert final_wire_reason(first, final_reservation(gateway, context)) is None

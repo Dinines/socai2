@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from datetime import timezone
@@ -47,6 +48,12 @@ FROM socai2.cases WHERE tenant_id=$1 AND id=$2"""
 
 def case_query(table):
     """Read one table for the captured Case, its alert members and all related incidents."""
+    return ("WITH scope AS (SELECT $1::uuid tenant,$2::uuid[] aids,$3::uuid[] incident,$4::uuid cid,$5::uuid[] stages) "
+            + scoped_table_query(table))
+
+
+def scoped_table_query(table, *, revision_only=False):
+    """Select Case rows (or just their versions) from a caller-supplied scope CTE."""
     if table not in TABLES:
         raise ValueError("unsupported capture table")
     runs = "SELECT r.id FROM socai2.runs r WHERE r.tenant_id=s.tenant AND (r.case_id=s.cid OR r.id=ANY(s.stages))"
@@ -82,9 +89,10 @@ def case_query(table):
         clause = owners
     else:
         clause = "t." + ("id" if table == "cases" else "case_id") + "=s.cid"
-    return ("WITH scope AS (SELECT $1::uuid tenant,$2::uuid[] aids,$3::uuid[] incident,$4::uuid cid,$5::uuid[] stages) "
-            "SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) FROM socai2." + table
-            + " t CROSS JOIN scope s WHERE t.tenant_id=s.tenant AND (" + clause + ")")
+    aggregate = "coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb)"
+    if revision_only:
+        aggregate = "encode(sha256(convert_to(coalesce(string_agg(t.id::text || ':' || t.xmin::text, ',' ORDER BY t.id),''),'UTF8')),'hex')"
+    return f"SELECT {aggregate} FROM socai2.{table} t CROSS JOIN scope s WHERE t.tenant_id=s.tenant AND ({clause})"
 
 
 async def capture(connection, tenant, case):
@@ -104,8 +112,15 @@ def encode(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
 
 
-def save(folder, tenant, case, at, data, *, verify_history=True):
-    """Under the collector lock, publish both files by renaming one complete directory."""
+def discard_snapshots(folder, snapshots):
+    # Remove old exports from the reader's view before discarding either file.
+    for snapshot in snapshots:
+        with tempfile.TemporaryDirectory(dir=folder) as scratch:
+            snapshot.rename(Path(scratch) / "superseded")
+
+
+def save(folder, tenant, case, at, data):
+    """Publish a complete snapshot before removing earlier captures of this Case."""
     batch = f"case-{tenant}-{case}"
     identity = {"batch_id": batch, "case_id": str(case), "tenant_id": str(tenant)}
     counts = {t: len(r) for t, r in data.items()}
@@ -130,16 +145,20 @@ def save(folder, tenant, case, at, data, *, verify_history=True):
     exports.mkdir(exist_ok=True)
     snapshots = sorted(exports.iterdir())
     latest = snapshots[-1] if snapshots else None
-    if verify_history:
-        for earlier in snapshots[:-1]:
-            saved = importer.read(folder, earlier / "manifest.json")
-            require(all(saved.get(k) == v for k, v in identity.items()), "exports contain a different capture")
+    for snapshot in snapshots:
+        require(re.fullmatch(r"[0-9]{8}T[0-9]{12}Z", snapshot.name) and snapshot.resolve() == snapshot
+                and snapshot.is_dir() and all(p.is_file() and p.resolve() == p for p in snapshot.iterdir())
+                and {p.name for p in snapshot.iterdir()} == {"manifest.json", "database.json"},
+                "unexpected content in capture directory")
+        saved = importer.read(folder, snapshot / "manifest.json")
+        require(all(saved.get(k) == v for k, v in identity.items()), "exports contain a different capture")
     if latest is not None:
         previous = importer.read(folder, latest / "manifest.json")
         require(all(previous.get(k) == v for k, v in identity.items()), "exports contain a different capture")
         if previous["source_sha256"] == checksum:
             require(hashlib.sha256(importer.below(folder, latest / "database.json").read_bytes()).hexdigest() == checksum,
                     "stored snapshot checksum mismatch")
+            discard_snapshots(folder, snapshots[:-1])
             return latest, checksum, False
     timestamp = at.astimezone(timezone.utc)
     destination = exports / timestamp.strftime("%Y%m%dT%H%M%S%fZ")
@@ -154,6 +173,7 @@ def save(folder, tenant, case, at, data, *, verify_history=True):
         (stage / "database.json").write_bytes(body)
         (stage / "manifest.json").write_bytes(encode(manifest))
         stage.rename(destination)
+    discard_snapshots(folder, snapshots)
     return destination, checksum, True
 
 
@@ -165,7 +185,6 @@ async def collect(args):
     require(not output or (not output.is_relative_to(folder) and not folder.is_relative_to(output)),
             "keep the published site separate from the source folder")
     published = None
-    first_capture = True
     while True:
         try:
             with site.publishing(folder):
@@ -174,8 +193,7 @@ async def collect(args):
                     at, data = await capture(connection, args.tenant, args.case)
                 finally:
                     await connection.close(timeout=5)
-                path, checksum, changed = save(folder, args.tenant, args.case, at, data, verify_history=first_capture)
-                first_capture = False
+                path, checksum, changed = save(folder, args.tenant, args.case, at, data)
                 if output and checksum != published:
                     importer.import_folder(path, output)
                     published = checksum

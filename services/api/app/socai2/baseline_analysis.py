@@ -146,7 +146,7 @@ class BaselineAnalysis:
                 material, _ = await BaselineEvidence(self.service).prepared(store, run)
                 steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
                 options, bindings, excluded = offered_bindings(material["catalog"], Limits.model_validate(run["limits"]),
-                    await store.now(), steps, lake or LakeGateway(self.service))
+                    await store.now(), steps, lake or LakeGateway(self.service), members=material.get("members"))
             tool_rows = (await store.db.execute(select(F.c.id, F.c.content_json, F.c.sha256).where(
                 *store.where(F, F.c.run_id == run_id, F.c.kind == "tool_response")))).mappings().all()
             if any(digest(r["content_json"]) != r["sha256"] for r in tool_rows):

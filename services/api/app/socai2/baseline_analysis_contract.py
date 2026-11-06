@@ -251,12 +251,14 @@ def parse(content, source_map, context, coverage, *, bindings=None):
     return analysis
 
 
-EXECUTION_PROMPT = """后续user的tool_option_groups是固定范围目录；options继承hostname/alert_ids/object_keys。query选binding_id，照抄组的全部alert_ids（不可只写待查成员），对象限组内；无选项不能query。其他mode的binding_id=null。priority为decision_critical或supporting。query直接取证，deep继续推理。绑定不证明返回行属于告警。不输出SQL或参数。"""
+EXECUTION_PROMPT = """options继承组的hostname/alert_ids/object_keys。query按binding_id取证，列全组alert_ids，对象限组内；空目录禁query。其余模式binding_id=null，deep按结果续查。priority取decision_critical或supporting。绑定不证明返回行属于告警。禁写SQL或参数。"""
 
 
-PROMPT = """执行C3初始主分析，不输出最终报告、不结案、不执行工具。只引用本次来源编号；source_groups的角色和成员适用于组内各项。
+DOMAIN_FINDING_SCOPE = "先按证据定领域alert_ids。若finding的alert_ids有任一不在其中，finding_ids就略去该发现；无可引项填[]。"
+
+PROMPT = f"""执行C3初始主分析，不出终报、不结案、不调工具。只引本轮编号；source_groups组内共用角色/成员。
 本轮编号含N前缀；历史文本编号不属于本轮。source_label、旧判断、人工陈述不能证明observed；告警时间仅可附作上下文，仍须该成员的observation证明行为。无观察用inferred/unresolved。标题、厂商、测试/演练自述不证明授权、良性或排除恶意；有效旧分诊仍需核实。成员属性不得相互移植。
-逐一覆盖全部成员和六问题；未见资料填not_analyzed并说明。缺资料不能判领域不适用，应undetermined。各领域均可关联范围内已知finding，关联不代表领域已判定；非applicable必须解释限制。
+覆盖全员及六问；无资料填not_analyzed并说明。领域缺资料选undetermined；非applicable写限制，引用不决定适用性。{DOMAIN_FINDING_SCOPE}
 四领域：identity核认证/MFA/会话/权限及授权范围；cloud核控制面、资源/IAM/配置及影响；phishing核邮件身份/头、链接/附件、投递/点击/执行；insider核数据访问/外传、数量/目的地/时间、行为基线及授权，不凭作息或角色定恶意。
 保留替代解释与未决；conflicts仅列至少两条已有发现的实际矛盾，缺证据不算矛盾，不编造发现凑数。未提供审批、查空、未接通不构成不存在或反证；省略不同于未发生。端口不能证明HTTPS/TLS等应用协议。
 followups只提需求：一次补查用query、按返回继续查用deep、关系核验用graph、人工确认用human；不生成SQL或扩范围。正文仅涉及alert_ids，object_keys须属于这些成员；跨成员核验须列全相关成员。

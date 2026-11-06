@@ -20,6 +20,7 @@ tbody tr{cursor:pointer}tr.selected{background:#eaf4ee;box-shadow:inset 3px 0 #2
 .batch{display:block;overflow-wrap:anywhere}time{color:#40594d;font-size:12px;font-variant-numeric:tabular-nums}
 .lookup{padding:14px 16px}.lookup h2{margin-bottom:8px}.lookup form{display:grid;gap:8px}.input-line{display:flex;gap:6px}.input-line input{flex:1;min-width:0}
 input,select,button{border:1px solid #c3d0c7;background:#fff;color:#213f33;border-radius:5px;padding:6px 8px}button[type=submit]{background:#235f49;color:#fff;border-color:#235f49}
+.live-status,.list-actions{padding:7px 12px}.live-status{color:#53695f;font-size:12px}.live-status:empty{display:none}.list-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.manual-id{padding:8px 12px;border-top:1px solid #e5eae7}.manual-id summary,#archive>summary{cursor:pointer}#archive .panel-head::after{content:"▸";color:#53695f}#archive[open] .panel-head::after{content:"▾"}#case-count{margin-left:auto}.manual-id form{margin-top:8px}button:disabled{cursor:wait;opacity:.65}
 .lookup label{font-size:13px}.lookup select{padding:3px 5px;margin-left:4px}#lookup-note{overflow-wrap:anywhere;margin-top:7px}
 #lookup-options{padding-left:1.2em;overflow-wrap:anywhere}.detail-head{flex-wrap:wrap}.detail-head nav{display:flex;gap:12px;font-size:13px}.summary{padding:6px 16px;background:#f8faf8}
 iframe{width:100%;height:calc(100vh - 175px);min-height:26rem;display:block;border:0;border-top:1px solid #d9e2dc}.empty{padding:1rem;color:#556b5f}
@@ -31,17 +32,22 @@ dialog{border:1px solid #bfcec4;border-radius:10px;max-width:min(570px,92vw);col
 <dialog id="folder-guide"><h2>从资料目录更新</h2><p>在项目根目录运行下面的命令，将引号中的路径换成调查导出目录。完成后刷新本页。</p>
 <pre>python docs/operations/update_processing_audit.py --folder "调查导出目录"</pre>
 <p>可读取带清单的快照或已登记的批次目录。工作台按其中的记录生成步骤日志。</p><form method="dialog"><button>关闭</button></form></dialog>
-<main><aside class="left"><section class="panel" aria-labelledby="case-heading"><div class="panel-head"><h2 id="case-heading">Case 调查</h2><span id="case-count" class="hint"></span></div>
-<div class="list"><table><thead><tr><th>案件 / 批次</th><th>最近执行更新<br>（北京时间）</th></tr></thead><tbody id="case-rows"></tbody></table><p id="no-records" class="empty" hidden>尚无 Case 调查记录。</p></div></section>
+<main><aside class="left"><section id="live-panel" class="panel" aria-labelledby="live-heading" hidden><div class="panel-head"><h2 id="live-heading">最近更新的 Case</h2><button type="button" id="refresh-list">刷新</button></div>
+<div class="list"><table><thead><tr><th>案件 / Case ID</th><th>更新时间<br>（北京时间）</th></tr></thead><tbody id="live-rows"></tbody></table></div>
+<p id="list-status" class="live-status" role="status"></p><div class="list-actions"><small>每 15 秒检查更新</small><button type="button" id="more-cases" hidden>加载更多</button></div>
+<details class="manual-id"><summary>按 Case ID 打开</summary><form class="input-line" id="live-search"><input aria-label="Case ID" id="live-id" autocomplete="off" placeholder="输入完整 Case UUID" required spellcheck="false"><button type="submit">打开</button></form></details></section>
+<details class="panel" id="archive" open><summary class="panel-head"><h2 id="case-heading">已导出的 Case</h2><span id="case-count" class="hint"></span></summary>
+<div class="list"><table><thead><tr><th>案件 / 批次</th><th>最近执行更新<br>（北京时间）</th></tr></thead><tbody id="case-rows"></tbody></table><p id="no-records" class="empty" hidden>尚无 Case 调查记录。</p></div></details>
 <section class="panel lookup"><h2>告警与事件查询</h2><form id="lookup"><label>按 <select id="subject-kind" aria-label="查询类型"><option value="alert">告警 ID</option><option value="incident">事件 ID</option></select> 查询</label>
 <div class="input-line"><input id="subject-id" aria-label="主体 ID" placeholder="粘贴完整 ID" required autocomplete="off" spellcheck="false"><button type="submit">查找</button></div></form><p id="lookup-note" class="hint" role="status"></p><ul id="lookup-options" hidden></ul></section></aside>
 <section class="panel"><div class="detail-head"><h2 id="detail-title">Case 执行详情</h2><nav><a id="return-case" hidden>返回 Case</a><a id="open-detail" target="_blank" rel="noopener" hidden>单独打开 ↗</a></nav></div>
-<p id="selected-summary" class="summary" aria-live="polite"></p><iframe id="case-detail" title="调查执行详情" hidden></iframe></section></main>
+<p id="selected-summary" class="summary" aria-live="polite"></p><p id="case-status" class="live-status" role="status"></p><iframe id="case-detail" title="调查执行详情" hidden></iframe></section></main>
 <noscript><p class="empty">请启用 JavaScript 以选择 Case 或按 ID 查询。</p></noscript>
 <script type="application/json" id="audit-records">[{"id":"60b37d0930efee11a477dab18a1e8c5973eac4f695c1718bd9950fa26b3986a4","batch":"ie-audit-20261106-r300","key":"u03","title":"出站 TCP 会话","scope_id":"b83efdd1-034d-5b6f-be84-34340f35a5dc","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","snapshot_at":"2026-11-06T10:24:16.164026+00:00","started_at":"2026-11-06T10:21:47.073565+00:00","state":"failed","delivery_state":"partial","runs":3,"run_ids":["90d53052-3d2d-4f25-8c5f-9dda95e5a92b","c1293382-aacf-571e-9872-cb8cebd36049","ed3dae78-7cff-5295-9c70-cb2f0aa6f1a6"],"steps":22,"artifacts":47,"step_ids":["0f3efe38-ae4f-44b4-8b34-3bbaa769841a","13b7842b-f29a-41da-bf19-d789669c04d2","177efcf2-7a37-44c9-bcbe-87fcf7ec3cb0","1b24b4f0-6bb4-4ed7-a724-9509243979f2","2da63f99-df0c-4348-ab8f-b4f9533cbff6","34db3216-1cee-413a-9ac9-e0e134e6baef","48cf0cdf-b876-4e03-9984-463c876db217","48e54ae6-ae90-4415-b25b-45f95e1ad851","509b7ea4-0e1f-41a5-93e2-277fca0cfebb","54c26d66-822f-4dff-8eda-700d90c5d4cf","5ca3d632-30ae-4dfe-aaff-c76959eb098c","67335558-22a2-4e34-b13d-181ae429d7aa","6fb1d1a5-3b29-42a1-9e15-fda82bb7c088","75ec6f96-3c63-459c-ae62-f09a62a463cf","7d43ed38-f337-4038-85df-fa475b326a3e","9a8f1340-85d7-4a6f-958c-e721e1713313","9cb05f6d-12f1-446b-b98c-9d4d302b7fd2","a37fc808-8b2f-4635-8522-f7f7a4468fa5","a71ac9aa-2932-4e27-b6a2-e7afc2a79d11","afaf45df-5e7b-47d2-8fb5-97a21630cd68","c2eaa70f-3a47-4c9e-9cda-7746b6c4e45f","f3c13b64-930f-4ba0-85c3-d0ceb0977ba2"],"artifact_ids":["04de4cbb-26ed-43d5-800c-31dc80506a9b","0656d5ea-5f2d-4695-a1c0-1371bf673c1c","06f91178-d414-4ff6-8b01-bb7f48413693","0e427fc3-96f9-4ebd-975c-8c198e5e1509","110297f1-5b2b-5c9c-b9e8-be9dbd1e51ea","13cad778-76f8-427e-a7e7-225c7d4d7f62","18b84cb6-01f4-4dde-a316-38266417d0c7","2c735d74-1c77-456a-a7c2-ef18c87611f3","2f21f7bf-f5e8-4605-8c67-54952f8b9ec0","3c7a237b-3b42-40b1-93e7-00cba2e9acc7","47280c8f-2bbe-4205-9208-0f23a01ec8dd","4752f97f-d588-48d7-b4f2-d879b5e78981","48d32134-0cb0-484a-8651-a4c1f01b2f35","614a4326-ce83-4f5a-acbd-7e1e63c3f332","692ed87d-36d9-4183-801c-52e34e1a96c9","6f00e819-8d90-49a8-8503-4e87baafda79","7c064af3-7a7a-47c6-a8b8-6840a2b295fb","80e84d18-6666-4600-b29d-88be3091cc9a","844299e2-9d91-4251-b697-d985abe62724","8685ce8d-70a7-4e65-988a-f36c65e583c8","8755d8b2-35d7-4290-b721-44b15d400e44","8b5eb5c4-8df4-49a7-9086-06a03b2a0a84","97eb971e-12d6-4ad8-aa1c-ff3a5ef5d688","9f6b6603-5a0e-47f8-89ae-9675812acb55","a14e8623-24ff-4c5c-8231-a72a4a235243","a328d54a-cb54-487c-8050-d016835292fc","ab115bda-05d7-4755-bedf-830625e42bab","b6420692-7035-5c3d-aacb-5a5b9957e242","bdb4d489-b978-4534-97e4-0eeeb7fd2a4c","c478ed5c-0114-48f6-855a-6bd8192863a5","c49b0c05-e4f6-42c3-a15f-11e4576216c4","c687f3d1-aa5a-4f97-889f-0025aefa4f92","c7841d0b-456f-4354-a8a5-d8e456a6967a","ca04161c-426c-465c-ba23-bfe6fe4b7381","cb5b6989-701c-441b-8bcb-00bf33231fac","d23937ed-71a9-5e3a-8c74-cba51b8bae75","d6e21acd-cb25-4800-897a-843143fd834c","d73bf280-879b-40a9-bae7-58a4e4c1fc69","d7e2a157-b3f3-40f8-924f-a1fcc9c3c894","d86e3432-ceb8-4bce-8f47-c3cea4c5aced","df62b15a-3617-5b25-bee5-dbf0ac79b6b7","e047bb6c-4a09-41e3-90f2-afde9d4d268d","e489428f-6f84-42dd-98af-7faf1dc17463","e676f184-7be6-4e9a-a1e1-577d4534406c","ef807423-3b50-480e-b353-01bc9c344b3b","fe95eb6c-81f8-4711-ab03-60bb90604a19","ff3a05d9-e092-46b6-9e25-f77269f8f72c"],"run_states":{"90d53052-3d2d-4f25-8c5f-9dda95e5a92b":"failed","c1293382-aacf-571e-9872-cb8cebd36049":"completed","ed3dae78-7cff-5295-9c70-cb2f0aa6f1a6":"completed"},"subjects":[{"kind":"alert","id":"562bc535-d905-5261-9de4-5847f0e9bc39","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"记录到出站 TCP 会话","detail":"subjects/cde3b1c4aefae684df6a279bd8ab73df7703447cc2f089d3046901f28ae62592.html"},{"kind":"incident","id":"fdbc2a03-08dd-5b51-be23-70a70aa0ac3e","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"关联事件 · 记录到出站 TCP 会话","detail":"subjects/a47493f7ffd3e9ccd1455f79706547784458b9b5993fba5c14bd571432b423f5.html"}],"logs":{"index":"logs/05a14e3a705c874dc51acc4927aa93b2e4610e670b3b117ab550264ae911630c/index.html","manifest":"logs/05a14e3a705c874dc51acc4927aa93b2e4610e670b3b117ab550264ae911630c/manifest.json","run_count":1,"step_count":15,"artifact_count":31,"updated_at":"2026-11-06T10:23:21.038069+00:00","recent":[{"run_id":"90d53052-3d2d-4f25-8c5f-9dda95e5a92b","step_id":"9a8f1340-85d7-4a6f-958c-e721e1713313","label":"整理并保存最终交付","state":"completed","updated_at":"2026-11-06T10:23:21.017521+00:00","path":"logs/05a14e3a705c874dc51acc4927aa93b2e4610e670b3b117ab550264ae911630c/runs/001/steps/0014.json"},{"run_id":"90d53052-3d2d-4f25-8c5f-9dda95e5a92b","step_id":"9cb05f6d-12f1-446b-b98c-9d4d302b7fd2","label":"向模型请求最终结论","state":"failed","updated_at":"2026-11-06T10:23:20.988868+00:00","path":"logs/05a14e3a705c874dc51acc4927aa93b2e4610e670b3b117ab550264ae911630c/runs/001/steps/0015.json"},{"run_id":"90d53052-3d2d-4f25-8c5f-9dda95e5a92b","step_id":"54c26d66-822f-4dff-8eda-700d90c5d4cf","label":"记录每条补查建议的去向","state":"completed","updated_at":"2026-11-06T10:22:38.908103+00:00","path":"logs/05a14e3a705c874dc51acc4927aa93b2e4610e670b3b117ab550264ae911630c/runs/001/steps/0013.json"}]},"updated_at":"2026-11-06T10:23:21.038069+00:00","detail":"cases/188312a2bdb9afbc515eb73b19492652f32a2b6f0eeda07c717f49cc7e5f6b99.html"},{"id":"e96fde71df929b24779114f051d32f8f0e58baaf0f9ae378d65bf8114fe1d718","batch":"ie-audit-20261106-r300","key":"s02","title":"审计策略及安全日志变更","scope_id":"c5e460de-fc80-5e24-b376-d3b0e95b2fa4","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","snapshot_at":"2026-11-06T10:24:16.164026+00:00","started_at":"2026-11-06T10:19:04.242019+00:00","state":"failed","delivery_state":"partial","runs":4,"run_ids":["2e86940b-f838-4250-8b57-29435626b463","7ef274ea-9f1e-5bf8-88b5-c51ae9ecc427","b201affc-683f-5fad-ab50-ae331c438f00","ea5f4256-8acb-547b-841f-da64b0806612"],"steps":27,"artifacts":59,"step_ids":["05ea0754-a803-4a45-8b69-3e4a1dcdcc6c","235a38a7-e7ac-4e6f-a0aa-c22cc3405205","249a8a3a-2074-462a-8e61-3b3357b313fe","29944c14-2c68-4cde-872b-b604aeca1602","46149e17-389f-42d9-9f23-540e0de3c331","4b27bde0-9242-4cc1-864f-ff5491603f94","55624d4a-4523-43de-af5b-949644dbd60b","59b23153-8be0-4c00-90bd-ceed7b7cacac","79d0fa49-eea3-45ad-913c-483e75fb7423","8252f526-aace-445f-a123-77bf51afb4b4","82857260-3b43-4e77-813b-31789e159ce2","8b5fcb5f-a97e-4981-a975-99535241ed86","8cb97dde-edf2-430d-9a1c-57982f8f027a","8fc5c0f1-9777-4081-bf0f-11f927f9edd6","9a273de0-c014-48ce-a79d-f33895010ffb","ab37af72-680b-452b-8abf-83ce36fcb55a","ae75a00d-1be1-4c68-bc6f-36a7b08d3bae","af0fdf55-c3bd-40b8-a00c-37f613930837","b1fbd633-077b-40a4-aa7d-e2b4faee94d1","bec8a031-237f-44f2-b773-5c2e3b6568fa","c0a1afc3-3aa2-4b2f-8f03-6215b368dbfb","c3baabe8-3b75-4ed6-8ef7-9ccfb25e8547","d3b94245-a8b0-4c1c-a58e-987147861dcf","e4e70a23-71b4-4841-b6e9-c45159614205","eb206f79-829d-4924-a6fa-0f04d303b716","f7632898-acbe-4249-93ed-8df0e65b4b90","f951093e-4dba-4fd8-85fd-ec7b7c97d953"],"artifact_ids":["00291341-d05e-4b8f-a6f6-ec3387df4dc5","003de7d0-37bb-490b-a9dc-37a959ed9488","0279b1fe-3eb4-4bdb-a2a6-b95fd64fc1a6","07de6e0e-7143-48cd-92da-abf682a9adc3","114768cd-36c1-4dc1-aede-6965e2c856fb","1f311dce-c127-45fd-aad5-78859a5d52d2","24608736-8644-4174-93cd-bef3a766a4b7","25e69562-5486-4882-8611-e1df19f1c75b","2ac4bcdc-b16d-4271-8af1-bcfaefb090a0","32d9662e-aa35-4c48-978d-e4954a69e831","384a3bc8-b99a-4eec-b10b-55611acd143e","3e1353cb-03f7-46fa-ab02-9dc667599a00","44edaf29-f254-4e8e-b94e-47cdcbbc9b01","48469006-81b6-4d97-9779-31961e6827e7","496484bb-bafc-4c13-8119-ff2606e92a51","4dc258a7-b5e3-4777-80bd-e8e16f1cc7cb","4edbb25d-9ddb-49ca-839f-aa5544904f59","517b994c-6917-42b8-acfa-d96c7b539fc1","52c3f1f6-9a4f-417f-8cf2-5a4569d6cf1c","57bdac55-39b9-42ea-b181-e0cf80fe2b39","5de30f79-b1c0-485b-91a3-9652f7b127bf","6046af5a-1b0d-4b92-8c4f-6111887ce41d","631fe271-9d9c-421c-adfc-0018b75c3dd2","6534ac66-d87d-56ec-8713-34f090e8baa0","6ab9e553-ac59-4231-a375-63df0f89f0e1","6b027fcb-811c-46ad-8eef-ae8dd5011fe5","6b863010-e324-47eb-b328-971e5b26db47","6cd0eda4-7aa5-4d39-b7c5-bef9b589f81f","74bceb27-41cc-41de-8b46-252b22ea5d5e","7559fdf9-ba9a-4157-b4c6-245048402e22","7abafa67-0247-51c0-8a25-33921271e4e8","7b02b606-ac22-462e-b490-b9dc8c1dd611","7d5c4dba-f67c-481e-bae8-503e1868d8d2","8a30c92d-3c88-5f03-b15d-04d1682aef86","906ad5be-aab8-4216-8dbe-e83ef8419f65","924f61bc-61a9-41d9-bdbe-053e2e362989","9573833b-1b2c-4dfd-934c-700da14f7d3d","972045f9-7317-4532-b554-b9fbf26a562a","9bc7b7fe-12b4-40dd-a5d0-0f0b7827e936","a178f75a-b352-5e33-8fe8-bd21deeed56b","a59fc6a0-f8ca-5a23-8220-6d7223e6005d","aac7332c-c542-583b-9808-b68af38bc717","b04e86a0-1d38-4ac6-b0c3-bd0dad8bf99c","b30fd8fb-5af0-4335-807c-3dd35ff8c285","b6edba04-28b9-49ac-bfaf-e503bcaf3080","b75921e9-4b23-5c0a-a6f3-b9f540b1f503","bbd2cc1e-342e-4db5-88d9-834f35491004","c2785a09-9484-4789-bdbf-511a9963ac2a","dbf425c4-bb0b-4c8a-9ff1-f1a72fe1ca12","e3d84901-6224-4c4e-bc36-6e9ee9d7094b","e84e0dc8-8963-4cac-9a3f-d7e57b22d4e7","eae002cc-ad8a-42b7-aa41-a30c76b9aafc","ef584154-2678-40c0-8569-8afddde3821c","ef80ac00-d5c0-4066-9faf-a02aecbc605b","f211cbf1-5fcb-4e52-b5e2-b4fd07f4b370","f3adbb12-f286-4132-aad0-d76d4187859c","f6777ece-d22b-48b6-bbcc-45af86def39a","f90edf77-002d-4cde-8a9c-176b3c0842cb","faf89b4c-c12f-444f-beac-da4584976422"],"run_states":{"2e86940b-f838-4250-8b57-29435626b463":"failed","7ef274ea-9f1e-5bf8-88b5-c51ae9ecc427":"completed","b201affc-683f-5fad-ab50-ae331c438f00":"completed","ea5f4256-8acb-547b-841f-da64b0806612":"completed"},"subjects":[{"kind":"alert","id":"bc6c2562-3cde-509c-b062-0a3510cd5312","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"禁用登录审计的命令已启动","detail":"subjects/a9da720bf2343a1da27007c0090a66446c691b7d50898312e0c2928bfd1e569a.html"},{"kind":"alert","id":"c403a865-6f32-5c6f-86bc-db102d45bbfc","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"安全日志文件清零","detail":"subjects/4ce93807dddb2ebb79984a9e6069d25b11d730748ff0030d799ec32111bbbf71.html"},{"kind":"incident","id":"9131fd13-663f-5da9-be88-ee78091f43f9","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"关联事件 · 禁用登录审计的命令已启动","detail":"subjects/db1ae4452eb97ddfb0405816c579bc51d46d12a1c5c043540952827851527153.html"}],"logs":{"index":"logs/3b9d1700a067200476c1cbbb0c9702c575e1b32d4a02ffb9bdb947209ea6776e/index.html","manifest":"logs/3b9d1700a067200476c1cbbb0c9702c575e1b32d4a02ffb9bdb947209ea6776e/manifest.json","run_count":1,"step_count":15,"artifact_count":31,"updated_at":"2026-11-06T10:20:59.76135+00:00","recent":[{"run_id":"2e86940b-f838-4250-8b57-29435626b463","step_id":"af0fdf55-c3bd-40b8-a00c-37f613930837","label":"整理并保存最终交付","state":"completed","updated_at":"2026-11-06T10:20:59.738948+00:00","path":"logs/3b9d1700a067200476c1cbbb0c9702c575e1b32d4a02ffb9bdb947209ea6776e/runs/001/steps/0014.json"},{"run_id":"2e86940b-f838-4250-8b57-29435626b463","step_id":"4b27bde0-9242-4cc1-864f-ff5491603f94","label":"向模型请求最终结论","state":"failed","updated_at":"2026-11-06T10:20:59.71357+00:00","path":"logs/3b9d1700a067200476c1cbbb0c9702c575e1b32d4a02ffb9bdb947209ea6776e/runs/001/steps/0015.json"},{"run_id":"2e86940b-f838-4250-8b57-29435626b463","step_id":"05ea0754-a803-4a45-8b69-3e4a1dcdcc6c","label":"记录每条补查建议的去向","state":"completed","updated_at":"2026-11-06T10:20:03.124136+00:00","path":"logs/3b9d1700a067200476c1cbbb0c9702c575e1b32d4a02ffb9bdb947209ea6776e/runs/001/steps/0013.json"}]},"updated_at":"2026-11-06T10:20:59.76135+00:00","detail":"cases/55854a7dea42d7da7933153027fff0e335d56e832a00ab511c9b3290fc540d42.html"},{"id":"377f9b03b499fb2427f11897fd2ce81815be5537c2ac69476a449e59d1f7c048","batch":"ie-audit-20261106-r300","key":"m01","title":"Web 证书替换","scope_id":"f470c06b-0eb0-5cd7-95ea-7544755fb597","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","snapshot_at":"2026-11-06T10:24:16.164026+00:00","started_at":"2026-11-06T10:16:05.74903+00:00","state":"failed","delivery_state":"partial","runs":3,"run_ids":["4d5935b5-1018-5311-ab87-d628eef9077d","7631eb86-52ce-4933-a0cd-35d15393591f","bbbef3b7-a0cf-5842-993b-f28c35aca97c"],"steps":22,"artifacts":45,"step_ids":["0facda16-4840-47fa-8ab9-1f0b6ea6901a","1ddf2daa-c006-4f28-8881-29f8034991c4","294c4e4c-fa6c-4869-865b-1f008047dd61","2d767193-e316-4333-bde1-bc18132af143","2e3a1380-6850-499d-b453-374ec8478932","3fa3bf44-5481-4760-8a42-9594799d0949","43fae729-7d48-4071-924e-392d03d0a0f4","54dd96c6-fbd5-4ac8-962c-9351ad9e1006","580170ae-34a1-464b-887e-9b140d001bfa","59d4925c-955b-4683-b180-3cd335502025","59f8655d-34b4-4e1b-bb7c-d59033572672","934a7951-c2f9-45cf-9cd4-2fb77e3f81f4","96cdc65d-54cf-4681-81f7-67b9d4700b02","aea2b831-ebf7-4596-bb5c-2c67bafc3d8b","c6135d55-153e-4d09-8257-87c88c8b217f","cc219a1b-b752-43a7-96e4-f47557841585","d74edbaa-4fce-4d1b-9dd5-90b0747241d2","d890d443-de7c-49f1-80e6-5fff1e3e8807","e61a38c5-90c7-471e-9c9f-88bbd46229e5","e830297b-b2a0-4d56-8b93-a5e85bdfad98","eb504f2d-60cc-4777-8013-f67a021550de","ff74a002-a2bc-4f1d-b878-1fe54d7068af"],"artifact_ids":["01ae2c36-5e55-4450-ba71-fe64e1a7e2ca","0a0f03f7-7e73-4906-9e19-9f30eca2a89b","1927ccf1-0254-46e1-b7b1-ddedaa3bec0b","283c66fb-c006-4d8f-ae44-d9ff9fbcbe4d","2b104413-8b18-4554-a003-affaaf259f0b","2f37a1cb-cbca-4dde-a80d-db4408e086a7","3153b22c-cf6e-4bdc-a1a7-9b3f4e179864","325c4161-b24d-4414-996a-4f78efc3a552","3567599d-e25d-44a5-a357-2b4516c3c542","3760f75c-8e39-409c-a488-e9d07ebc2c64","3ac1c8a9-2638-4f02-941e-bfd605ee5a02","488038ec-d8b9-4ed7-aa02-b559c89e80c8","5b23fc8e-8449-466a-acc8-a8da99f05319","6038e56b-cd5e-4c19-9232-1c32bf642b4d","62f75a8f-343f-4d69-9bb7-75ad56664d0e","6574799c-b3cb-4b3a-b25e-1086145e9dd6","68f92154-f688-4a8b-b379-1bab961f7471","6f7254f1-aede-426d-8c5b-41deb34150cd","73c8b301-6296-5010-a32b-ec13af80173b","896147a6-0972-4edd-b564-0ec8efb2933c","90427918-91c0-5b4f-a819-5340a66b7b9a","9064b747-ba92-4f40-a584-29713b6eb737","96db4403-0c6b-47b7-9dcf-c5ac5007ae83","9cdf2173-bd8f-4d23-92bc-8905d755552b","a3de8f43-649e-47df-b482-e348e5ec9dff","a49ac144-7ce9-4a70-b1c5-c0eae1035c9c","a4c95abd-1911-46a1-a002-e3e51a7d9b20","b2e4f75a-fbaa-4ef1-9483-eed129e2922f","bcf7a695-05d2-472d-8b1b-0e61b61c4989","c2691cb7-003f-46d6-b08d-8d1673f73c51","c382523b-c33d-4b11-ba6b-8e77137197df","c46c2c43-78be-490c-8dd4-9b24e030282f","c61218df-225b-41d5-b57a-6924822cbdb8","cf2a3adc-10a3-4cfc-9f75-d8e68a3c1c13","d165ea54-ef61-45fc-8155-c95913385719","d57a8228-2d0a-4be0-91bd-0592bd5c2e12","d5883f6f-a023-4465-ae02-265d73739565","e43b6ba2-b35b-44d7-854c-4747631997b7","e6ad4617-5be0-41dd-8519-4b0b38de335c","ea7a87aa-203a-40e6-992b-761f55976fe2","f7d3d250-57e5-4345-b807-e59d9b78f546","fb39038a-7148-4129-9e3d-b1a7d1f15ca0","fd070bf2-0bdf-4118-9692-d5b270fa01b4","fd0f3955-9709-4b56-b6d4-8a13844f30fc","fe4e8d8b-f4cb-4a85-9766-4c64a9d84275"],"run_states":{"4d5935b5-1018-5311-ab87-d628eef9077d":"failed","7631eb86-52ce-4933-a0cd-35d15393591f":"failed","bbbef3b7-a0cf-5842-993b-f28c35aca97c":"completed"},"subjects":[{"kind":"alert","id":"75827d24-8392-5797-84bf-31e9783ef223","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"Web 证书替换完成","detail":"subjects/5c4dd82db6b830f837b83db597bf47b426c037cf841eb6412ebf31250bed6177.html"},{"kind":"incident","id":"b908e5ac-74b8-584c-9d53-35f70b1189fd","tenant_id":"6aff0ef7-c670-5a84-a2ee-83d73e25b964","title":"关联事件 · Web 证书替换完成","detail":"subjects/cbced10613c85a035b5174f82a3f30b72481d61fb41bc8870a7ffd4292577c51.html"}],"logs":{"index":"logs/5232623c28e0fcae15100f15a20126e71ce0f5a015893adfa2423f0a72c42c37/index.html","manifest":"logs/5232623c28e0fcae15100f15a20126e71ce0f5a015893adfa2423f0a72c42c37/manifest.json","run_count":1,"step_count":15,"artifact_count":31,"updated_at":"2026-11-06T10:17:58.665812+00:00","recent":[{"run_id":"7631eb86-52ce-4933-a0cd-35d15393591f","step_id":"96cdc65d-54cf-4681-81f7-67b9d4700b02","label":"整理并保存最终交付","state":"completed","updated_at":"2026-11-06T10:17:58.64478+00:00","path":"logs/5232623c28e0fcae15100f15a20126e71ce0f5a015893adfa2423f0a72c42c37/runs/001/steps/0014.json"},{"run_id":"7631eb86-52ce-4933-a0cd-35d15393591f","step_id":"d74edbaa-4fce-4d1b-9dd5-90b0747241d2","label":"向模型请求最终结论","state":"failed","updated_at":"2026-11-06T10:17:58.618217+00:00","path":"logs/5232623c28e0fcae15100f15a20126e71ce0f5a015893adfa2423f0a72c42c37/runs/001/steps/0015.json"},{"run_id":"7631eb86-52ce-4933-a0cd-35d15393591f","step_id":"43fae729-7d48-4071-924e-392d03d0a0f4","label":"记录每条补查建议的去向","state":"completed","updated_at":"2026-11-06T10:16:59.208644+00:00","path":"logs/5232623c28e0fcae15100f15a20126e71ce0f5a015893adfa2423f0a72c42c37/runs/001/steps/0013.json"}]},"updated_at":"2026-11-06T10:17:58.665812+00:00","detail":"cases/6479635e41ee721e813f06aceee19c4a22f823f79ad3056eadfe4a63ab155342.html"}]</script>
 <script>
 "use strict";
 const field = id => document.getElementById(id);
+const online = {enabled: false, listBusy: false, detailBusy: false, active: null, shown: null, depth: 1, cursor: null, items: new Map()};
 const records = JSON.parse(field("audit-records").textContent);
 const cases = records.filter(record => record.scope_id);
 const states = {unknown: "执行待确认", failed: "执行失败", completed: "已完成", running: "执行中", pending_update: "待启动", cancelled: "已取消"};
@@ -156,7 +162,8 @@ function showSubject(kind, id, owner) {
   const hit = matches.length === 1 ? matches[0] : null;
   if (hit?.record.scope_id) lastCase = hit.record;
   if (lastCase) {
-    field("return-case").href = "#" + encodeURIComponent(lastCase.id);
+    field("return-case").href = online.enabled && !cases.some(item => item.id === lastCase.id)
+      ? "#live/" + encodeURIComponent(lastCase.scope_id) : "#" + encodeURIComponent(lastCase.id);
     field("return-case").hidden = false;
   }
   highlight(hit?.record);
@@ -192,8 +199,13 @@ function route() {
   field("lookup-options").hidden = true;
   field("return-case").hidden = true;
   const [key, id, owner] = parts;
-  if (id && (key === "alert" || key === "incident")) showSubject(key, id, owner);
+  online.active = null;
+  field("case-status").textContent = "";
+  if (key === "live" && id && uuid.test(id)) {
+    showLive(id.toLowerCase());
+  } else if (id && (key === "alert" || key === "incident")) showSubject(key, id, owner);
   else showCase(key);
+  markLiveRow();
 }
 
 field("lookup").addEventListener("submit", event => {
@@ -208,5 +220,169 @@ field("lookup").addEventListener("submit", event => {
   else location.hash = hash;
 });
 window.addEventListener("hashchange", route);
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function api(path, options) {
+  const response = await fetch("/_workbench/" + path, {cache: "no-store", ...options});
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "读取失败，请稍后重试。");
+  return result;
+}
+
+function markLiveRow() {
+  for (const row of field("live-rows").rows) {
+    const selected = row.dataset.id === online.active;
+    row.classList.toggle("selected", selected);
+    if (selected) row.querySelector("a").setAttribute("aria-current", "true");
+    else row.querySelector("a").removeAttribute("aria-current");
+  }
+}
+
+function renderLiveList(items) {
+  const body = field("live-rows");
+  const focusId = body.contains(document.activeElement) ? document.activeElement.closest("tr")?.dataset.id : null;
+  body.replaceChildren();
+  for (const item of items.values()) {
+    const row = body.insertRow();
+    row.dataset.id = item.case_id;
+    const href = "#live/" + encodeURIComponent(item.case_id);
+    const anchor = link("", href);
+    anchor.className = "case-link";
+    anchor.append(element("strong", item.title || "未命名 Case"), element("small", item.case_id, "batch"));
+    row.insertCell().append(anchor);
+    const stamp = Date.parse(item.updated_at);
+    row.insertCell().textContent = Number.isFinite(stamp) ? clock.format(stamp) : "未记录";
+    row.addEventListener("click", event => { if (!event.target.closest("a")) location.hash = href; });
+    if (item.case_id === focusId) anchor.focus({preventScroll: true});
+  }
+  markLiveRow();
+}
+
+async function refreshList(more = false) {
+  if (!online.enabled || online.listBusy || document.hidden || (more && !online.cursor)) return;
+  online.listBusy = true;
+  field("refresh-list").disabled = true;
+  field("more-cases").disabled = true;
+  try {
+    const items = more ? new Map(online.items) : new Map();
+    let cursor = more ? online.cursor : null;
+    const depth = more ? 1 : online.depth;
+    for (let i = 0; i < depth; i++) {
+      const page = await api("cases" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""));
+      for (const item of page.cases) items.set(item.case_id, item);
+      cursor = page.next_cursor;
+      if (!cursor) break;
+    }
+    if (JSON.stringify([...items]) !== JSON.stringify([...online.items])) renderLiveList(items);
+    online.items = items;
+    online.cursor = cursor;
+    if (more) online.depth++;
+    field("more-cases").hidden = !cursor;
+    field("list-status").textContent = items.size ? "" : "当前数据库中还没有 Case。";
+    if (!location.hash && items.size) {
+      history.replaceState(null, "", "#live/" + encodeURIComponent(items.keys().next().value));
+      route();
+    }
+  } catch (error) {
+    field("list-status").textContent = "Case 列表更新失败。" + error.message;
+  } finally {
+    online.listBusy = false;
+    field("more-cases").disabled = false;
+    field("refresh-list").disabled = false;
+  }
+}
+
+function liveSummary(record) {
+  return [record.title, record.scope_id, (record.logs?.run_count ?? "—") + " 轮 Case 调查",
+    states[record.state] || record.state, delivery[record.delivery_state] || record.delivery_state].filter(Boolean).join(" · ");
+}
+
+function showLive(id) {
+  online.active = id;
+  highlight(null);
+  const saved = records.find(r => r.scope_id === id && r.id === online.shown?.record.id)
+    || records.find(r => r.scope_id === id);
+  if (saved) {
+    lastCase = saved;
+    display("Case 执行详情", liveSummary(saved), saved.detail);
+  } else {
+    display("Case 执行详情", online.items.get(id)?.title || id, null);
+  }
+  if (!online.enabled) {
+    field("case-status").textContent = "当前只可浏览已导出的记录。";
+    return;
+  }
+  field("case-status").textContent = "正在读取数据库中的执行记录…";
+  refreshDetail();
+}
+
+async function refreshDetail() {
+  const id = online.active;
+  if (!online.enabled || online.detailBusy || document.hidden || !id) return;
+  online.detailBusy = true;
+  const body = {case_id: id};
+  if (online.shown?.record.scope_id === id) body.version = online.shown.version;
+  try {
+    const result = await api("refresh", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    if (online.active !== id) return;
+    const record = result.record;
+    // Keep the published relative URLs so switching views and static lookups use the same files.
+    const index = records.findIndex(item => item.id === record.id);
+    if (index >= 0) records[index] = record;
+    else records.push(record);
+    lastCase = record;
+    online.shown = {record, version: result.version};
+    display("Case 执行详情", liveSummary(record), record.detail);
+    const stamp = Date.parse(result.snapshot_at);
+    field("case-status").textContent = Number.isFinite(stamp) ? "数据库快照 · " + clock.format(stamp) + "（北京时间）" : "已读取数据库记录。";
+  } catch (error) {
+    if (online.active === id) field("case-status").textContent = "此 Case 更新失败。" + error.message;
+  } finally {
+    online.detailBusy = false;
+    if (online.active && online.active !== id) refreshDetail();
+  }
+}
+
+function checkUpdates() {
+  if (!document.hidden && online.enabled) {
+    refreshList();
+    refreshDetail();
+  }
+}
+
+field("live-search").addEventListener("submit", event => {
+  event.preventDefault();
+  const input = field("live-id");
+  const id = input.value.trim();
+  if (!uuid.test(id)) {
+    input.setCustomValidity("请输入完整的 Case UUID。");
+    input.reportValidity();
+    return;
+  }
+  const hash = "#live/" + id.toLowerCase();
+  if (location.hash === hash) route();
+  else location.hash = hash;
+});
+field("live-id").addEventListener("input", event => event.target.setCustomValidity(""));
+field("more-cases").addEventListener("click", () => refreshList(true));
+field("refresh-list").addEventListener("click", checkUpdates);
+document.addEventListener("visibilitychange", checkUpdates);
+
+async function connectWorkbench() {
+  if (!["http:", "https:"].includes(location.protocol)) return;
+  try {
+    const status = await api("status");
+    online.enabled = Boolean(status.enabled ?? status.configured);
+    if (!online.enabled) return;
+    field("live-panel").hidden = false;
+    if (!location.hash || location.hash.startsWith("#live/")) field("archive").open = false;
+    field("list-status").textContent = "正在读取最近的 Case…";
+    checkUpdates();
+    window.setInterval(checkUpdates, 15000);
+  } catch {
+    // The same HTML can be opened directly or served as a static export.
+  }
+}
 route();
+connectWorkbench();
 </script><script type="application/json" id="audit-retired-records">[{"id": "bffededd5f43b3fffe03eec534acff2beadea4345ccee3b8414d6eb32a70b7d2", "batch": "ie-audit-20261106-a1", "key": "u03", "scope_id": "5f991bff-b400-5342-b8e3-5cb9b4461632"}, {"id": "809bf51fad5dc8311046a641e81f3273c8ea47f3703a6e5cb9c8cc6d0882653b", "batch": "ie-audit-20261106-a1", "key": "s02", "scope_id": "4f74d23e-d277-561a-bcab-d60ce11a60cd"}, {"id": "f348759f8311580871eb0705179b22d27da9d7db16b5f01c1a87756f9fb3f896", "batch": "ie-audit-20261106-a1", "key": "m01", "scope_id": "aa27a48f-10b7-53c8-bc80-d9ea022bcad3"}]</script></body></html>

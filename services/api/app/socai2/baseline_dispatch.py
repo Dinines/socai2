@@ -2,16 +2,45 @@
 from datetime import datetime
 
 from .baseline_capacity import FINAL_SECONDS
+from .baseline_evidence_tools import TOOLS
+from .baseline_semantics import EVENT_KINDS
 from .baseline_store import encoded
 
 
-def offered_bindings(catalog, limits, now, steps, lake):
+def ranked_bindings(catalog, members):
+    observations = {}
+    for aid, material in (members or {}).items():
+        fields = material.get("fields", [])
+        # Fusion projects device.name, then src_endpoint.hostname, into the
+        # case-sensitive src_hostname column used by all three lake queries.
+        device = next((f for f in fields if f.get("name") == "device_name"
+            and (f.get("source_path") or "").endswith(".device.name")), None)
+        host = device or next((f for f in fields if f.get("name") == "src_hostname"
+            and (f.get("source_path") or "").endswith(".src_endpoint.hostname")), None)
+        if host and host.get("conflict") is False and isinstance(host.get("value"), str):
+            kind = next((f.get("value") for f in fields if f.get("name") == "event_kind"
+                and f.get("conflict") is False), None)
+            observations[aid] = (host["value"], kind)
+
+    def rank(item):
+        bid, binding = item
+        host, tool = binding["hostname"], binding["tool_name"]
+        matched = [observations[aid][1] for aid in binding["alert_ids"]
+            if aid in observations and observations[aid][0] == host]
+        event_kind = EVENT_KINDS.get(TOOLS.get(tool))
+        return (-len(matched), -matched.count(event_kind) if event_kind else 0,
+            -len(binding["alert_ids"]), host, tool, bid)
+
+    return sorted(catalog["bindings"].items(), key=rank)
+
+
+def offered_bindings(catalog, limits, now, steps, lake, *, members=None):
     options, mapping, excluded = [], {}, []
     used = sum(s["kind"] == "tool" and s["state"] not in {"planned", "skipped"} for s in steps)
     available = (lake.configured() and limits.max_tool_calls is not None and used < limits.max_tool_calls
         and limits.max_rows_per_query is not None and limits.max_rows_per_query > 0
         and limits.deadline_at is not None and (limits.deadline_at - now).total_seconds() > FINAL_SECONDS)
-    for bid, binding in sorted(catalog["bindings"].items()):
+    for bid, binding in ranked_bindings(catalog, members):
         scope = binding["scope"]
         window = (scope["window_start"] and scope["window_end"]
             and datetime.fromisoformat(scope["window_start"]) < datetime.fromisoformat(scope["window_end"]))

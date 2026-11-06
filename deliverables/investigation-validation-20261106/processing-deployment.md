@@ -1,8 +1,40 @@
 # 21 调查处理作业 · 部署与交接
 
-**`processing-20261106-r3` 已安装在内网 `192.168.1.21`（`sting-infra21`）。** 操作员在主机上按需启动单次作业。部署复用既有内网模型网关、PostgreSQL 和只读湖库，使用独立数据库 `socai2_processing_handoff`。本次范围为按主体处理告警、事件和 Case；现有业务 Kafka 消费、Web 入口及旧服务继续按原方式运行。生产流量切换单独安排。本作业不监听端口。
+## 21 生产部署
 
-## 在 21 上检查
+21 通过 Docker Compose 运行告警同步服务和内部调查工作台。生产库为 PostgreSQL `aisoc`。Fusion 首先写入原告警表 `public.alerts`，独立的同步服务接收已落库的告警通知，按原租户、告警和事件 ID 将调查材料写入同库的 `socai2` 模式。告警分诊、事件诊断和 Case 调查均可由有权限的调用者显式启动。
+
+| 使用方 | 负责的内容 |
+| --- | --- |
+| 处理模块 | 部署时初始化 V1 的 29 张表。运行时写告警材料、事件成员、研判结果、Case、每轮执行、步骤和工件。后续变更表结构须人工确认。 |
+| 业务后端 | 按租户与主体 ID 查询页面所需字段，查询和关联键见[服务端字段交接](../../docs/investigation/socai2-page-data-handoff-20261106.md)。建表由处理模块部署统一完成。 |
+| 4177 工作台 | 通过专用只读角色查询同库，默认展示最近更新的五个 Case。管理员可按 Case 保存最新一份查看文件。 |
+
+在配置了 `sting-infra21` SSH 别名的仓库工作站执行。安装依赖 21 上已经部署的 R3 基础镜像、PostgreSQL、Kafka、内网模型网关和证书。
+
+```sh
+python deploy/aisoc21/deploy_production_services.py apply
+python deploy/aisoc21/deploy_production_services.py verify
+```
+
+`apply` 核对数据库设计和原告警表指纹，发布调查模块、启动两个常驻容器，健康检查通过后切换按需作业入口。`verify` 可单独执行。首次启用时，新消费组 `socai2-investigation-projection-v1` 从各分区当时的末端开始。重复部署会核对已有位点，遇到位点丢失或过期会停止并提示检查。
+
+21 上的生产作业入口为 `/opt/sting-aisoc-socai2/ops/processing-production.py`。使用 `python3 /opt/sting-aisoc-socai2/ops/processing-production.py check` 可核连接和权限。执行业务作业时，命令前缀为 `python3 /opt/sting-aisoc-socai2/ops/processing-production.py job --tenant <租户UUID> --actor <操作员UUID>`，随后使用下文的操作和参数。作业从终端隐藏提示或标准输入读取调用者自己的 API key。
+
+2026-11-06 部署时，两个常驻容器健康，本机与 21 的 4177 均已连到生产库。默认租户的 Case 起始为空。部署只核对了服务连接、权限和 Kafka 位点。新告警的实际落库、从建案到调查结束的输入输出和模型回复留给业务验收。
+
+| 部署回执 | 21 上的实测值 |
+| --- | --- |
+| 处理作业与同步服务版本 | `production-processing-4e6113567051022f` |
+| 工作台版本 | `production-workbench-1333f52d0b20a20c` |
+| 原有 6 张告警、事件表的定义与授权指纹 | 部署前后均为 `33dd8182c6830ddfe9b9960b6ffaa3215fc69013b4615081737ec6ccd361306e` |
+| 新消费组启用和重复部署后的位置 | 分区 0 为 34，分区 1 为 37，分区 2 为 42。首次启动时修正了激活目录的写挂载和客户端分区参数，沿用第一次保存的三个起点。 |
+
+## 独立交接样本环境
+
+合成案例使用独立库 `socai2_processing_handoff` 和 `/opt/sting-aisoc-socai2/ops/processing.py`。以下命令及样本 ID 用于复查该环境。
+
+### 在 21 上检查交接样本
 
 ```sh
 python3 /opt/sting-aisoc-socai2/ops/processing.py job check
@@ -23,7 +55,7 @@ python3 /opt/sting-aisoc-socai2/ops/processing.py smoke verify
 | Case | `8fb39b43-ba50-563d-9686-023ee0f5ae6a` |
 | 待执行 Run | `ced9da4c-818e-4a1b-8e65-c1ec192e6e58`（`pending_update`，范围版本 1） |
 
-## 对新的业务主体执行
+### 作业参数与交接库命令
 
 下表各行均接在 `python3 /opt/sting-aisoc-socai2/ops/processing.py job` 后。`<…>` 为需替换的值。请用该租户中实际存在的主体 UUID。每次新操作先生成并保存自己的 UUID 作为 `--operation-key`，与主体、参数、回执一同登记。同一次操作核对同一键；遇到超时、状态未知、部分交付或范围冲突，先查原执行记录，禁止换键重派。
 
@@ -37,7 +69,7 @@ python3 /opt/sting-aisoc-socai2/ops/processing.py smoke verify
 
 作业退出码 1 表示请求或处理报错，错误回执会带可用的主体和操作键。无效主体不返回推算的 Run ID。`case-start` 错误中的 `requested_run_id` 仅用于核对输入。退出码 2 表示回执状态为 `unknown`、`failed`、`cancelled`、`running` 或 `pending_update`，应结合主体及停止原因判断。退出码 0 仍须核对实际交付范围和结论来源。
 
-## 此次安装验了什么
+### 独立交接库的验证记录
 
 `r1` 在验收目录权限检查处失败，该次验收写入 0 条样本数据。`r2` 调整权限后完成合成告警、事件、建案和准备。当前 `r3` 修正启动服务返回字典时的回执解析，支持时间窗和比较结果参数，并修正无效主体的错误回执。正式包 `release.tar.gz` 的 SHA-256 为 `505beaeebd39d88bacbb69c85cd654f93bd2c605afe49168ba09f6eefe9f3b54`。[安装与复核记录](../../docs/operations/socai2-processing-install-20261106.json)
 

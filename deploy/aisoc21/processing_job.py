@@ -1,7 +1,7 @@
 """On-demand internal investigation processing. No HTTP listener or background dispatch.
 
-Run with services/api on PYTHONPATH and the isolated service's Python dependencies.
-Writes require the pinned tenant user's scoped API key in a mounted file. Keep the
+Run with services/api on PYTHONPATH and the processing image's dependencies.
+Writes require the tenant user's scoped API key through the configured stream. Keep the
 same subject, scope revision, run and operation key when checking a previous attempt.
 """
 import argparse
@@ -50,6 +50,10 @@ def self_test():
             "verified_model_coverage": 0, "database_writes": 0, "model_calls": 0}
 
 
+def production_profile():
+    return os.environ.get("SOCAI2_PROCESSING_PROFILE") == "production21"
+
+
 async def verify_target():
     from app.core.config import enforce_secure_defaults, settings
     from app.db.database import AsyncSessionLocal
@@ -59,9 +63,15 @@ async def verify_target():
     db_name = os.environ["SOCAI2_SERVICE_DATABASE_NAME"]
     role = os.environ["SOCAI2_PROCESSING_DB_ROLE"]
     tenant = UUID(os.environ["SOCAI2_PROCESSING_TENANT_ID"])
-    actor = UUID(os.environ["SOCAI2_PROCESSING_ACTOR_ID"])
+    actor_value = os.getenv("SOCAI2_PROCESSING_ACTOR_ID")
+    actor = UUID(actor_value) if actor_value else None
     dsn = urlsplit(str(settings.DATABASE_URL))
-    require(db_name.startswith("socai2_") and dsn.path == "/" + db_name and role
+    if production_profile():
+        require((db_name, role, dsn.hostname) == ("aisoc", "socai2_prod_processor", "192.168.1.21"),
+                "production_target_required")
+    else:
+        require(db_name.startswith("socai2_") and actor is not None, "isolated_target_required")
+    require(dsn.path == "/" + db_name and role
             and unquote(dsn.username or "") == role and tenant != actor, "isolated_target_required")
     require(settings.ENVIRONMENT == "production" and
             os.getenv("AISOC_DEV_AUTH_BYPASS", "").lower() not in {"1", "true", "yes"},
@@ -74,11 +84,16 @@ async def verify_target():
             FROM pg_catalog.pg_roles WHERE rolname=current_user
         """))).one()
         require(tuple(identity) == (db_name, role, True), "database_identity_mismatch")
-        user = (await store.db.execute(text("""
-            SELECT u.id FROM public.users u JOIN public.tenants t ON t.id=u.tenant_id
-            WHERE u.id=:actor AND t.id=:tenant AND u.is_active AND t.is_active
-        """), {"tenant": tenant, "actor": actor})).scalar_one_or_none()
-        require(user == actor, "inactive_or_unknown_tenant_actor")
+        if actor is not None:
+            user = (await store.db.execute(text("""
+                SELECT u.id FROM public.users u JOIN public.tenants t ON t.id=u.tenant_id
+                WHERE u.id=:actor AND t.id=:tenant AND u.is_active AND t.is_active
+            """), {"tenant": tenant, "actor": actor})).scalar_one_or_none()
+            require(user == actor, "inactive_or_unknown_tenant_actor")
+        else:
+            active = await store.db.scalar(text("SELECT is_active FROM public.tenants WHERE id=:tenant"),
+                                           {"tenant": tenant})
+            require(active is True, "inactive_or_unknown_tenant")
         await store.db.execute(text("SELECT classification, due_at, current_evidence_artifact_id FROM socai2.cases LIMIT 0"))
         ready = (await store.db.execute(text("""
             SELECT to_regprocedure('socai2.baseline_input_freshness(uuid,uuid)') IS NOT NULL
@@ -93,6 +108,7 @@ async def principal(tenant, actor, permission):
     from app.db.database import AsyncSessionLocal
     from fastapi.security import HTTPAuthorizationCredentials
     from starlette.requests import Request
+    from sqlalchemy import text
 
     key = Path(os.environ["SOCAI2_PROCESSING_API_KEY_FILE"]).read_text(encoding="utf-8").strip()
     require(key.startswith("aisoc_") and not key.startswith("aisoc_wl_"), "user_api_key_required")
@@ -102,6 +118,9 @@ async def principal(tenant, actor, permission):
     request = Request({"type": "http", "headers": []})
     credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=key)
     async with AsyncSessionLocal() as db, db.begin():
+        if production_profile():
+            require(actor is not None, "production_actor_required")
+            await db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"), {"tenant": str(tenant)})
         user = await get_current_user(request, credentials, db)
         require(user.api_key_prefix and not user.workload_service and user.tenant_id == tenant
                 and user.user_id == actor, "api_key_principal_mismatch")
@@ -114,13 +133,19 @@ async def verify_sources(tenant):
     from app.services.llm_resolver import resolve_llm_config
     from app.socai2.baseline_optional_sources import lake_database
     from app.socai2.baseline_service import BaselineService
+    from sqlalchemy import text
 
     require(os.environ.get("SOCAI2_MODEL_PROTOCOL") == "chat_completions"
             and os.environ.get("SOCAI2_MODEL_SCHEMA_PROFILE") == "vllm_grammar_v1"
             and os.environ.get("AISOC_AIRGAPPED", "").lower() in {"1", "true"}
             and json.loads(os.environ.get("AISOC_AIRGAP_ALLOWLIST", "[]")) == ["litellm"]
-            and lake_database().startswith("socai2_"), "isolated_sources_required")
+            and (lake_database() == "aisoc" if production_profile() else lake_database().startswith("socai2_")),
+            "processing_sources_required")
     async with BaselineService(AsyncSessionLocal).transaction(tenant, readonly=True) as store:
+        if production_profile():
+            override = await store.db.scalar(text("SELECT EXISTS(SELECT FROM public.tenant_llm_credentials "
+                                                  "WHERE tenant_id=:tenant AND enabled)"), {"tenant": tenant})
+            require(not override, "production_tenant_model_override_requires_review")
         config = await resolve_llm_config(store.db, tenant)
     require(config.base_url.rstrip("/") == "http://litellm:4000/v1" and config.model == "aisoc-investigation",
             "local_model_target_mismatch")
@@ -166,6 +191,29 @@ def case_start_receipt(record):
             "stop_reason": detail.run.stop_reason, "result_ids": detail.result_ids}
 
 
+async def prepare_production_subjects(args, tenant):
+    if args.command not in {"alert", "incident", "case-create"}:
+        return
+    params = ["--tenant", str(tenant)]
+    for subject in ("alert", "incident"):
+        ids = [args.subject] if args.command == subject else getattr(args, subject + "_id", [])
+        for uid in ids:
+            params.extend(("--" + subject + "-id", str(uid)))
+    env = {"DATABASE_URL": os.environ["SOCAI2_INGRESS_URL"], "PYTHONPATH": "/opt/processor/smoke-fusion",
+           "PYTHONDONTWRITEBYTECODE": "1", "PGSSLROOTCERT": os.environ["PGSSLROOTCERT"],
+           "PGSSLMODE": os.environ["PGSSLMODE"], "SSL_CERT_FILE": os.environ["SSL_CERT_FILE"]}
+    proc = await asyncio.create_subprocess_exec(sys.executable, "-B", "/opt/processor/production_ingress.py",
+        *params, env=env, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+    stdout, _ = await proc.communicate()
+    if proc.returncode:
+        try:
+            error = json.loads(stdout.decode().strip().splitlines()[-1])["error"]
+        except (ValueError, IndexError, KeyError, UnicodeError):
+            error = None
+        require(False, error if error in {"source_alert_snapshot_unavailable", "source_snapshot_invalid",
+                "source_subject_absent", "source_identity_mismatch"} else "ingress_unavailable")
+
+
 async def process(args):
     from app.db.database import AsyncSessionLocal, engine
     from app.socai2.baseline_contracts import Actor, Start
@@ -182,6 +230,8 @@ async def process(args):
                     **await check_dependencies(config)}
         stage = args.command in {"alert", "incident"}
         user = await principal(tenant, actor, "alerts:write" if stage else "cases:write")
+        if production_profile():
+            await prepare_production_subjects(args, tenant)
         if stage:
             service = StageResultService(AsyncSessionLocal)
             execute = service.execute_alert if args.command == "alert" else service.execute_incident

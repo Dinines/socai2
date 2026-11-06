@@ -23,7 +23,6 @@ from .baseline_model_view import MAX_FIELD_BYTES, blocked
 from .baseline_reanalysis import BaselineReanalysis
 from .baseline_reasoning import ModelSteps
 from .baseline_store import RES, RM, F, StoreError, digest, encoded
-from .structured_output import response_format
 
 
 class BaselineDelivery(ModelSteps):
@@ -144,9 +143,7 @@ class BaselineDelivery(ModelSteps):
             value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                 stage_id, "C6", prepared, gateway, parser,
                 response_adapter=normalize_delivery,
-                output_format=response_format(contract.Delivery, prepared["source_map"],
-                    members=context.alerts, questions=[q.id for q in context.questions],
-                    objects=context.scope.object_keys))
+                output_format=contract.delivery_format(prepared["source_map"], context, comparison))
             return await self.finish(tenant_id, case_id, run_id, stage_id, context, bases, key, graph,
                 comparison, prepared, value, reason, model_id, response_id)
         except (Exception, asyncio.CancelledError):

@@ -1,4 +1,5 @@
 """C3-only binding constraints and equivalent provider definition aliases."""
+from collections import Counter
 from copy import deepcopy
 from string import ascii_letters
 
@@ -65,7 +66,7 @@ def execution_format(response_format, bindings):
 
 
 def compact_definitions(schema):
-    """Rename root definitions and matching refs only; reject unsafe graphs.
+    """Inline single-use definitions and give shared definitions short names.
 
     Call after provider transformations, which may need semantic definition
     names. Output fields, enum strings and all validation constraints are kept.
@@ -86,11 +87,19 @@ def compact_definitions(schema):
             raise ValueError("execution_schema_ref_missing")
         return name
 
+    uses = Counter()
+    keep = set()
+
     def references(node):
         found = set()
         if isinstance(node, dict):
             if "$ref" in node:
-                found.add(ref_name(node["$ref"]))
+                target = ref_name(node["$ref"])
+                found.add(target)
+                uses[target] += 1
+                if len(node) > 1:
+                    # Preserve constraints alongside a reference as written.
+                    keep.add(target)
             if "$defs" in node:
                 raise ValueError("execution_schema_nested_definitions")
             for value in node.values():
@@ -100,8 +109,9 @@ def compact_definitions(schema):
                 found.update(references(value))
         return found
 
+    root = {key: value for key, value in schema.items() if key != "$defs"}
     graph = {name: references(value) for name, value in definitions.items()}
-    references({key: value for key, value in schema.items() if key != "$defs"})
+    references(root)
     visited = set()
 
     def check(name, active):
@@ -115,15 +125,23 @@ def compact_definitions(schema):
     for name in graph:
         check(name, set())
 
+    inline = {name for name, count in uses.items() if count == 1 and name not in keep}
+
     def rewrite(node):
         if isinstance(node, dict):
+            if "$ref" in node:
+                target = ref_name(node["$ref"])
+                if target in inline:
+                    return rewrite(definitions[target])
             return {key: "#/$defs/" + aliases[ref_name(value)] if key == "$ref" else rewrite(value)
                 for key, value in node.items()}
         if isinstance(node, list):
             return [rewrite(value) for value in node]
         return node
-    output = rewrite(schema)
-    output["$defs"] = {aliases[name]: value for name, value in output["$defs"].items()}
+    output = rewrite(root)
+    shared = {aliases[name]: rewrite(value) for name, value in definitions.items() if name not in inline}
+    if shared:
+        output["$defs"] = shared
     return output
 
 

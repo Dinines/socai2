@@ -1,0 +1,36 @@
+name: socai2-investigation-projection
+services:
+  projection:
+    image: socai2-processing:processing-20261106-r3
+    container_name: socai2-investigation-projection
+    entrypoint: [python, -B, /opt/processor/production_projection.py]
+    command: [serve]
+    user: "10001:10001"
+    env_file:
+      - path: /opt/sting-aisoc-socai2/private/processing-production/ingress.env
+        format: raw
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "192.168.1.21:19093"
+      KAFKA_SECURITY_PROTOCOL: SSL
+      KAFKA_SSL_CAFILE: /run/certs/ca.crt
+    volumes:
+      - ./production_projection.py:/opt/processor/production_projection.py:ro
+      - ./production_ingress.py:/opt/processor/production_ingress.py:ro
+      - /opt/sting-aisoc-socai2/certificates/socai2-ca.crt:/run/certs/ca.crt:ro
+      - /opt/sting-aisoc-socai2/state/production-projection:/var/lib/socai2-projection:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,nodev,size=32m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    mem_limit: 512m
+    healthcheck:
+      test: [CMD, python, -B, /opt/processor/production_projection.py, health]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks: [existing]
+networks:
+  existing:
+    external: true
+    name: socai2_default

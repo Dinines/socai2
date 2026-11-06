@@ -134,3 +134,19 @@ def test_aliases_preserve_field_names_literal_refs_and_handle_name_collisions():
     validator = Draft202012Validator(output)
     validator.validate({"a": 4, "z": "#/$defs/z"})
     assert not validator.is_valid({"a": 3, "z": "a"})
+
+
+def test_single_use_chain_is_inlined_without_copying_shared_refs_or_losing_sibling_constraints():
+    schema = {"$defs": {"Parent": {"type": "array", "items": {"$ref": "#/$defs/Item"}},
+        "Item": {"type": "string", "enum": ["x", "y"]}, "Shared": {"type": "boolean"},
+        "Positive": {"type": "integer", "minimum": 1}}, "type": "object", "properties": {
+            "items": {"$ref": "#/$defs/Parent"}, "a": {"$ref": "#/$defs/Shared"},
+            "b": {"$ref": "#/$defs/Shared"}, "bounded": {"$ref": "#/$defs/Positive", "maximum": 4}}}
+    output = compact_definitions(schema)
+    props = output["properties"]
+    assert props["items"] == {"type": "array", "items": schema["$defs"]["Item"]}
+    assert props["a"] == props["b"] and "$ref" in props["a"]
+    assert props["bounded"]["maximum"] == 4 and "$ref" in props["bounded"]
+    assert len(output["$defs"]) == 2
+    for row in ({"items": ["x"], "bounded": 3}, {"items": ["z"]}, {"bounded": 0}, {"bounded": 5}):
+        assert Draft202012Validator(output).is_valid(row) == Draft202012Validator(schema).is_valid(row)
