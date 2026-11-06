@@ -1,5 +1,5 @@
 """Opt-in new-schema Case surface; the old /cases routes keep their contract."""
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -27,6 +27,13 @@ from app.socai2.case_contracts import (
     PrepareBaseline,
     ResultDetail,
     RunDetail,
+)
+from app.socai2.case_data_contracts import (
+    CaseDataReceipt,
+    CaseDataUpdate,
+    CasePageData,
+    Classification,
+    EvidencePublish,
 )
 from app.socai2.case_service import CaseService
 from app.socai2.enums import AssignmentState, Severity, WorkStatus
@@ -69,15 +76,31 @@ async def case_queue(user: ReadUser, service: Service,
                      q: Annotated[str | None, Query(max_length=200)] = None,
                      handling_status: WorkStatus | None = None,
                      severity: Severity | None = None, owner_id: UUID | None = None,
-                     assignment_state: AssignmentState | None = None, metric: CaseMetric | None = None):
+                     assignment_state: AssignmentState | None = None, metric: CaseMetric | None = None,
+                     classification: Classification | Literal["not_set"] | None = None):
     query = CaseQueueQuery(limit=limit, cursor=cursor, q=q, handling_status=handling_status,
-        severity=severity, owner_id=owner_id, assignment_state=assignment_state, metric=metric)
+        severity=severity, owner_id=owner_id, assignment_state=assignment_state, metric=metric, classification=classification)
     return await invoke(service.read_cases(user.tenant_id, query))
 
 
 @router.get("/{case_id}", response_model=CaseDetail)
 async def case_detail(case_id: UUID, user: ReadUser, service: Service):
     return await invoke(service.read_case(user.tenant_id, case_id))
+
+
+@router.patch("/{case_id}/page-data", response_model=CaseDataReceipt)
+async def update_page_data(case_id: UUID, body: CaseDataUpdate, user: WriteUser, service: Service):
+    return await invoke(service.update_page_data(user.tenant_id, case_id, body, actor=actor(user)))
+
+
+@router.get("/{case_id}/page-data", response_model=CasePageData)
+async def page_data(case_id: UUID, user: ReadUser, service: Service):
+    return await invoke(service.read_page_data(user.tenant_id, case_id))
+
+
+@router.post("/{case_id}/evidence-index", response_model=CaseDataReceipt)
+async def publish_evidence(case_id: UUID, body: EvidencePublish, user: WriteUser, service: Service):
+    return await invoke(service.publish_evidence(user.tenant_id, case_id, body, actor=actor(user)))
 
 
 @router.put("/{case_id}/members", response_model=MutationReceipt)

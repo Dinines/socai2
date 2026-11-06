@@ -78,10 +78,15 @@ async def export(driver):
     for aid in driver.plan["canonical_alert_ids"]:
         responses.append(await driver.http(None, "GET", f"/api/v1/socai2/alerts/{aid}/analysis", record=False, require_success=False))
     classification = classify(data)
-    payloads = {"database.json": data, "api-responses.json": responses, "input-freshness.json": freshness,
+    import sys
+
+    from config import ROOT
+    sys.path.insert(0, str(ROOT / "services/api"))
+    from app.socai2.case_data import export_page_data
+    payloads = {"database.json": data, "case-page-data.json": await export_page_data(data), "api-responses.json": responses, "input-freshness.json": freshness,
         "failures.json": classification}
     sources = []
-    roles = {"database.json": "database", "api-responses.json": "api_responses", "input-freshness.json": "run_input_freshness", "failures.json": "failure_classification"}
+    roles = {"database.json": "database", "case-page-data.json": "case_page_data", "api-responses.json": "api_responses", "input-freshness.json": "run_input_freshness", "failures.json": "failure_classification"}
     for name, payload in payloads.items():
         body = encoded(payload) + b"\n"
         (folder / name).write_bytes(body)

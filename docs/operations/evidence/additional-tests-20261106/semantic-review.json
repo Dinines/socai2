@@ -1,0 +1,1671 @@
+{
+  "schema_version": "socai2.additional-tests.semantic-review.v1",
+  "reviewed_at": "2026-11-06T02:47:37.209242+00:00",
+  "reviewer": "independent review_design_audit agent",
+  "scope": "2026-11-06 新三组合成案例：固定原始材料、15份实际模型请求/原答与发布结果的离线语义核对；不是原调查实现最终验收。",
+  "actions": {
+    "new_model_calls": 0,
+    "business_service_or_database_calls": 0,
+    "network_calls": 0,
+    "credential_reads": 0,
+    "business_code_changes": 0,
+    "original_evidence_changes": 0,
+    "only_written_file": "docs/operations/evidence/additional-tests-20261106/semantic-review.json"
+  },
+  "method": {
+    "oracle": "各批 expected.json；未发现 oracle.json。真值仅用于审阅。",
+    "judgment_rule": "仅 benign 与 malicious 方向反转计误判；needs_review/uncertain 是待核，不计确定判对，事实/引用/范围仍须正确。",
+    "wire_schema": "原答逐份对各自已保存实际请求 Schema 离线校验，不生成或改写答复。",
+    "integrity": "原始 raw_event/ocsf_json 与固定计划逐值对比；请求/答复 content_json SHA 与工件 SHA 比对；解码实际 messages，核全部 source_map visible_value_sha256。",
+    "oracle_exclusion": "检查15份 wire 无独立真值专用键、完整 truth_scope/evaluation_limit 文本；不据此声称不存在任何合成场景线索。",
+    "lake_boundary": "本审阅未访问 ClickHouse，湖原件一致性沿用公开检查回执；03 query_projection及C6可见字段从冻结工件复核。"
+  },
+  "source_files": [
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-01/plan.json",
+      "sha256": "c3895cf14b3f881f4243c8b41445444c4a42f775bf5fb61413770c2bb611f7e7"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-01/expected.json",
+      "sha256": "a4d38ae6717f3b594036fde90bd6b224fe99fe18478e09f6b8b335f0c54d8219"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/database.json",
+      "sha256": "4d139365d76aefe8c7b42b3d012fcc4a029fca18bb5624d156b793bb187c3239"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/manifest.json",
+      "sha256": "c351edac5ba8fac32a25dcd39b2598fe34b699ee54bc9e96963900f4f8828a34"
+    },
+    {
+      "path": "docs/operations/evidence/additional-tests-20261106/local-eval-20261106-01.json",
+      "sha256": "5dbf1020221f63a4561898bc6be1cb1704cd62576897f17de7feb488378f21d4"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-02/plan.json",
+      "sha256": "454b14b70d4e57aa3d575d43d6c5a59949274f7e900ed879699d6af33b6962c3"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-02/expected.json",
+      "sha256": "26e7a1e6ff0e8c18caa9fdc8183d44864137e3e8981496f93a6ace6fc6ddbc3f"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+      "sha256": "5f048d7544e0935a0b58718f5853000510c7dba641967e9d684c6d1c2d1a99eb"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/manifest.json",
+      "sha256": "2f6336696bd3e8c999eb37210c7d34fa39c4e470d4430c55a86ba0813b167aff"
+    },
+    {
+      "path": "docs/operations/evidence/additional-tests-20261106/local-eval-20261106-02.json",
+      "sha256": "50f1b077ee51c2d4da36fef6ecb66800ff92f55bbe613d60bd105a7dffb4bf15"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-03/plan.json",
+      "sha256": "029549f8b881b33c3a46040ce064e3af39ea9609a9f678c9ee0c15ffad8a0475"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-03/expected.json",
+      "sha256": "e3b996062e7c2e03770dfabb657df9e736c2d7d7e1808f612b2248edac6371c1"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+      "sha256": "1e07d64e7ad8d118805cf9c2c67b65c027470284a81c04c3bc141568f77c98ee"
+    },
+    {
+      "path": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/manifest.json",
+      "sha256": "c759895f4c74acecf715329b71e0e24c4e00d9855c3334596d88f75b6f7fc85b"
+    },
+    {
+      "path": "docs/operations/evidence/additional-tests-20261106/local-eval-20261106-03.json",
+      "sha256": "f76fc75f548001bc326b3d8b8b11beaecaa2d3269f128e5a420d73f80bb2d077"
+    },
+    {
+      "path": "services/api/app/socai2/model_input_view.py",
+      "sha256": "10ffa4a9e273741a1702d572b50922d5b8250ba2003445da66a81b0e0f937533"
+    },
+    {
+      "path": "services/api/app/socai2/baseline_analysis_contract.py",
+      "sha256": "02db67010e2d91aff871f6056413c13442064dee4ba6041b24bc11c6aa7c0e33"
+    }
+  ],
+  "batches": [
+    {
+      "batch": "local-eval-20261106-01",
+      "scenario": "routine",
+      "oracle_behavior_truth": "benign",
+      "oracle_truth_scope": "Routine inventory and report copying; authorization and completion remain unverified in supplied observations.",
+      "case_id": "8b77d34f-e788-5fe9-8e41-abb5b2307b3d",
+      "database": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/database.json",
+      "originals": [
+        {
+          "alert_id": "3a5b63ee-f536-5a4a-9b2d-0d321f71c022",
+          "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+          "event_id": "22f3031c-f6e8-5c09-910e-d4b032eed21a",
+          "database_pointer": "/alert_materials/0",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "process_command_line": "robocopy.exe C:\\Ops\\reports \\\\192.0.2.80\\inventory /E /R:0 /W:0",
+          "file_path": null
+        },
+        {
+          "alert_id": "07247cff-5d9c-5e0d-8edf-e29235ba0bee",
+          "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+          "event_id": "04c57e23-8119-5b99-bd7a-715c58f6a59a",
+          "database_pointer": "/alert_materials/1",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "process_command_line": "whoami.exe /all",
+          "file_path": null
+        }
+      ],
+      "model_attempts": 5,
+      "run_count": 4,
+      "all_runs_terminal_completed": true,
+      "current_assessment_id": "4660066b-506c-4889-b8e4-4ddf1d3d6333",
+      "c6_result_and_current_assessment_conclusion_equal": true,
+      "human_tasks": 0,
+      "public_relationship_violations": [],
+      "public_lake_originals_exact": true,
+      "visible_value_hash_matches": 148,
+      "oracle_specific_keys_and_truth_text_absent_all_requests": true,
+      "stages": [
+        {
+          "stage": "A0",
+          "run_id": "55703c42-eec4-5efc-bbd2-e182e62dcf5b",
+          "step_id": "cf18b4bd-f031-44bd-82dd-b15998d7fae0",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "d0ff76d2-3d9b-461a-ba82-de73bbac8882",
+          "response_artifact_id": "87dc5175-58e9-45bf-84dd-3663cf995b12",
+          "response_artifact_pointer": "/artifacts/24",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 32,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S3",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "verdict": "needs_review",
+          "confidence": 0.4
+        },
+        {
+          "stage": "A1",
+          "run_id": "9eb0652e-7674-5112-9c15-f1351886462c",
+          "step_id": "c0798260-1da6-44b8-8731-aafc67e95c60",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "d4c63c0e-8acb-4be9-a481-e0d1eb6ff914",
+          "response_artifact_id": "2e882a5a-69f5-4504-96a9-1fa6b6e75038",
+          "response_artifact_pointer": "/artifacts/7",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 34,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S3",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "verdict": "needs_review",
+          "confidence": 0.35
+        },
+        {
+          "stage": "I",
+          "run_id": "7eb36aff-2535-50ea-a232-68e7ee10161e",
+          "step_id": "d7fcb66d-eaa4-4d12-8c25-4cacf000ca29",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "96b47068-a94f-46aa-a133-c34eaabd96d2",
+          "response_artifact_id": "4208e500-a8ae-4bdf-b22e-52e2986a11ea",
+          "response_artifact_pointer": "/artifacts/14",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 30,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S15",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S16",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S5",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S6",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ]
+        },
+        {
+          "stage": "C3",
+          "run_id": "43ce26a6-7643-4d83-8ecd-11a932b4548f",
+          "step_id": "1bc3a088-d565-409e-9e09-ac5e04c809a6",
+          "stored_state": "failed",
+          "stored_validation_error": "domain_finding_scope_mismatch",
+          "request_artifact_id": "2f14331b-5587-4bf8-9261-7c4c60f3e52d",
+          "response_artifact_id": "d1212ae7-9a44-4de1-894f-433c5b203e7f",
+          "response_artifact_pointer": "/artifacts/48",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 24,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S12",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S3",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ]
+        },
+        {
+          "stage": "C6",
+          "run_id": "43ce26a6-7643-4d83-8ecd-11a932b4548f",
+          "step_id": "dbe91a54-95d2-419d-80ac-6c8bbbc8d5d8",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "b2cf23ed-9f05-4c84-b203-752df07af1c9",
+          "response_artifact_id": "f7882e8d-8b60-4ee0-ac4f-57069d9d4219",
+          "response_artifact_pointer": "/artifacts/60",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 28,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S21",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S23",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S29",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S39",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S41",
+              "material_id": "4c4d7fda-c4df-59cf-9e61-4fe02b1776f4",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S7",
+              "material_id": "ebf74664-cbb4-53c5-8830-ff28ad30c23b",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ],
+          "conclusion": {
+            "text": "两成员为同主机同用户的 whoami 与 robocopy 进程启动记录，启动成功；授权、数据外传与恶意性均未证实，保持待核。",
+            "state": "uncertain",
+            "alert_ids": [
+              "07247cff-5d9c-5e0d-8edf-e29235ba0bee",
+              "3a5b63ee-f536-5a4a-9b2d-0d321f71c022"
+            ],
+            "support_ids": [
+              "N1_S7",
+              "N1_S29",
+              "N1_S23",
+              "N1_S41"
+            ],
+            "limitations": [
+              "无授权、流量与目的端证据",
+              "空来源不构成反证"
+            ]
+          },
+          "queries": []
+        }
+      ]
+    },
+    {
+      "batch": "local-eval-20261106-02",
+      "scenario": "credential",
+      "oracle_behavior_truth": "malicious",
+      "oracle_truth_scope": "Credential-dumping and staging attempts warrant escalation; PID 688 identity, successful dumping and exfiltration are not independently confirmed.",
+      "case_id": "0f27670e-c43d-584c-9e3d-c53c900c8f4e",
+      "database": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+      "originals": [
+        {
+          "alert_id": "a078a050-fe09-5665-992e-1d9c161887a6",
+          "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+          "event_id": "fcbf2a17-8f52-52a1-8cdc-af4b786c6b69",
+          "database_pointer": "/alert_materials/0",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "process_command_line": "7z.exe a C:\\Windows\\Temp\\stage.7z C:\\Windows\\Temp\\lsass.dmp",
+          "file_path": null
+        },
+        {
+          "alert_id": "bb64cd2e-d4f4-59f9-9314-769dd3a37d9d",
+          "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+          "event_id": "e082579a-9c30-5678-9dd0-cc1667957843",
+          "database_pointer": "/alert_materials/1",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "process_command_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 688 C:\\Windows\\Temp\\lsass.dmp full",
+          "file_path": null
+        }
+      ],
+      "model_attempts": 5,
+      "run_count": 4,
+      "all_runs_terminal_completed": true,
+      "current_assessment_id": "ce5515e6-65ef-4bd7-97ee-1269eb0eb43e",
+      "c6_result_and_current_assessment_conclusion_equal": true,
+      "human_tasks": 0,
+      "public_relationship_violations": [],
+      "public_lake_originals_exact": true,
+      "visible_value_hash_matches": 147,
+      "oracle_specific_keys_and_truth_text_absent_all_requests": true,
+      "stages": [
+        {
+          "stage": "A0",
+          "run_id": "3b3996bc-3fa9-5322-82bb-6ef988b7379f",
+          "step_id": "df08802f-7834-408c-9047-7b9253525111",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "33deeb62-d7ee-4de1-a6d7-34c1d9ac73c9",
+          "response_artifact_id": "86e45057-bdea-48a3-b798-c373e6d5908b",
+          "response_artifact_pointer": "/artifacts/32",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 32,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S3",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "verdict": "needs_review",
+          "confidence": 0.55
+        },
+        {
+          "stage": "A1",
+          "run_id": "234bf668-fb87-5fa3-a50b-79b8f3d38999",
+          "step_id": "0be0e521-f15a-4575-ad23-64d22fdd5046",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "496fced9-1b37-46fe-99f3-9ed7e2eb2336",
+          "response_artifact_id": "2fedb781-b86f-47dd-abcb-4fe78cf4c7a0",
+          "response_artifact_pointer": "/artifacts/16",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 34,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S3",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "verdict": "needs_review",
+          "confidence": 0.45
+        },
+        {
+          "stage": "I",
+          "run_id": "298b05c3-2816-58f5-ae9f-4da2330e9045",
+          "step_id": "0fb039ef-4b0d-4ec6-a8b6-cc88e134da12",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "b64a7e93-1876-41e1-b5bb-70060edf9bd2",
+          "response_artifact_id": "17a596f5-cde2-4a7d-9a3b-9b07fb20a968",
+          "response_artifact_pointer": "/artifacts/7",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 29,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S15",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S16",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S5",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S6",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ]
+        },
+        {
+          "stage": "C3",
+          "run_id": "3ecc530c-a51c-44b3-a757-2ac0cd94639f",
+          "step_id": "ecad1f32-f66c-4b6f-9dd9-dcea8e64f18f",
+          "stored_state": "failed",
+          "stored_validation_error": "followup_binding_object_mismatch",
+          "request_artifact_id": "6738300b-9fb3-4efb-a9bc-e7c6aec55732",
+          "response_artifact_id": "0c67a129-6a6e-4aa5-b5a4-df2dc30fe5fd",
+          "response_artifact_pointer": "/artifacts/4",
+          "wire_schema_valid": false,
+          "wire_schema_errors": [
+            {
+              "path": [
+                "followups",
+                1
+              ],
+              "validator": "anyOf",
+              "leaves": [
+                {
+                  "path": [
+                    "followups",
+                    1,
+                    "object_keys",
+                    0
+                  ],
+                  "validator": "enum",
+                  "message": "'[\"user\",\"operator-0\"]' is not one of ['[\"host\",\"local-eval-20261106-02-host\"]']"
+                },
+                {
+                  "path": [
+                    "followups",
+                    1,
+                    "binding_id"
+                  ],
+                  "validator": "type",
+                  "message": "'B1' is not of type 'null'"
+                },
+                {
+                  "path": [
+                    "followups",
+                    1,
+                    "mode"
+                  ],
+                  "validator": "enum",
+                  "message": "'query' is not one of ['deep', 'graph', 'human']"
+                }
+              ]
+            }
+          ],
+          "visible_source_values": 24,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S12",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S3",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ]
+        },
+        {
+          "stage": "C6",
+          "run_id": "3ecc530c-a51c-44b3-a757-2ac0cd94639f",
+          "step_id": "9ec8c2bf-4592-4a2e-b23d-3b66c571bc93",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "68335f4c-5e4e-491e-b6a5-c8fb5a3e8e8e",
+          "response_artifact_id": "e9453549-8308-4ecd-a431-dbc109f7e655",
+          "response_artifact_pointer": "/artifacts/57",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 28,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S21",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S23",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S29",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S39",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S41",
+              "material_id": "e1c39d14-1260-5a66-b010-38a751948f2c",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S7",
+              "material_id": "849d0229-6cb6-5184-9172-1a58a8935850",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ],
+          "conclusion": {
+            "text": "两成员记录同一主机同一用户下lsass内存转储与打包的进程启动，形态可疑但授权、完成度与外传均未证实，影响不确定。",
+            "state": "uncertain",
+            "alert_ids": [
+              "a078a050-fe09-5665-992e-1d9c161887a6",
+              "bb64cd2e-d4f4-59f9-9314-769dd3a37d9d"
+            ],
+            "support_ids": [
+              "N1_S29",
+              "N1_S7",
+              "N1_S41",
+              "N1_S23"
+            ],
+            "limitations": [
+              "仅进程启动记录",
+              "无授权与外传证据"
+            ]
+          },
+          "queries": []
+        }
+      ]
+    },
+    {
+      "batch": "local-eval-20261106-03",
+      "scenario": "impact",
+      "oracle_behavior_truth": "malicious",
+      "oracle_truth_scope": "Recovery-inhibition attempt and a file rename consistent with ransomware warrant escalation; no proof of completed shadow deletion or all-files encryption.",
+      "case_id": "0660179d-eb25-59fd-be63-373d6bd59173",
+      "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+      "originals": [
+        {
+          "alert_id": "49069c34-f1b1-5573-928b-fe81fc110457",
+          "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+          "event_id": "c2a350aa-e5c2-5936-952c-a2cc0983f975",
+          "database_pointer": "/alert_materials/0",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "process_command_line": "vssadmin.exe delete shadows /all /quiet",
+          "file_path": null
+        },
+        {
+          "alert_id": "b1a93f11-96f2-5b49-9f78-bc235d9f2062",
+          "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+          "event_id": "4154eb7c-06dc-5e7d-a8f3-4974f5d990f9",
+          "database_pointer": "/alert_materials/1",
+          "plan_raw_event_and_ocsf_exact": true,
+          "activity": {
+            "action": "file_rename",
+            "outcome": "success"
+          },
+          "process_command_line": "C:\\ProgramData\\enc.exe --encrypt C:\\Users\\operator-0\\Documents --extension .locked --note R3ADM3.txt",
+          "file_path": "C:\\Users\\operator-0\\Documents\\notes.docx.locked"
+        }
+      ],
+      "model_attempts": 5,
+      "run_count": 4,
+      "all_runs_terminal_completed": true,
+      "current_assessment_id": "cc4cda9b-ae58-4f20-b6d7-eca7c7b11f6d",
+      "c6_result_and_current_assessment_conclusion_equal": true,
+      "human_tasks": 0,
+      "public_relationship_violations": [],
+      "public_lake_originals_exact": true,
+      "visible_value_hash_matches": 148,
+      "oracle_specific_keys_and_truth_text_absent_all_requests": true,
+      "stages": [
+        {
+          "stage": "A0",
+          "run_id": "b61dcaa8-0747-56eb-a16b-c74bed713366",
+          "step_id": "3bdfa2bd-7b02-4b41-907a-0b5c6608ca56",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "cbf28025-af16-4f17-aff7-4b9c2ce34549",
+          "response_artifact_id": "3eb9f310-64a8-4ffb-9469-73193f6c85f1",
+          "response_artifact_pointer": "/artifacts/16",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 32,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S3",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "verdict": "needs_review",
+          "confidence": 0.45
+        },
+        {
+          "stage": "A1",
+          "run_id": "d13892c7-5fd6-5ee2-b04a-409771ead7bf",
+          "step_id": "0c123983-8ecf-41e9-a22e-1fe928be0f8e",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "c4f8ed89-6715-44a7-a88a-18553d22f4d0",
+          "response_artifact_id": "957c8db3-7151-43f7-bc84-a47b7b7b76a9",
+          "response_artifact_pointer": "/artifacts/39",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 36,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S10",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S3",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.file.path"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.action"
+            }
+          ],
+          "verdict": "true_positive",
+          "confidence": 0.9
+        },
+        {
+          "stage": "I",
+          "run_id": "a0c9a395-dc57-523c-9be0-1d8e673ee5aa",
+          "step_id": "5dada35e-9014-4102-a05b-ddd251bb48fa",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "e394b5e6-59f2-4009-b7b2-09b2d80e838d",
+          "response_artifact_id": "d91d2a86-90a0-4150-9ad5-72e255b1a9b2",
+          "response_artifact_pointer": "/artifacts/61",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 30,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S15",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S16",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.file.path"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S20",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S5",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S6",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            }
+          ]
+        },
+        {
+          "stage": "C3",
+          "run_id": "af187dbb-c025-4766-b1e8-e2a17232d084",
+          "step_id": "4c193e86-4792-40b3-a278-30d3785f89bc",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "3a14fc18-00dd-43db-bb94-65fb3bfbd4b4",
+          "response_artifact_id": "8410625a-aadb-41ea-9526-23f5a843fd34",
+          "response_artifact_pointer": "/artifacts/32",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 25,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N1_S12",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S17",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.file.path"
+            },
+            {
+              "source_id": "N1_S18",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S19",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N1_S3",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N1_S8",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N1_S9",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ]
+        },
+        {
+          "stage": "C6",
+          "run_id": "af187dbb-c025-4766-b1e8-e2a17232d084",
+          "step_id": "397676de-a4c4-4b50-8900-4ced38245f15",
+          "stored_state": "completed",
+          "stored_validation_error": null,
+          "request_artifact_id": "1ca4aa91-3e4e-4fde-b82c-6451f84a555e",
+          "response_artifact_id": "9cec9f36-93e0-491d-aa49-f4d5c23da334",
+          "response_artifact_pointer": "/artifacts/40",
+          "wire_schema_valid": true,
+          "wire_schema_errors": [],
+          "visible_source_values": 25,
+          "critical_raw_fields_visible": [
+            {
+              "source_id": "N2_S23",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N2_S38",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N2_S40",
+              "material_id": "086736bc-5a37-5d58-bae6-0c62444bfa82",
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "source_id": "N2_S46",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "source_id": "N2_S54",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.file.path"
+            },
+            {
+              "source_id": "N2_S55",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "source_id": "N2_S56",
+              "material_id": "6b0e1bdf-bf59-56b2-b594-53acfdfa5fcd",
+              "source_path": "$.ocsf_json.activity.outcome"
+            }
+          ],
+          "conclusion": {
+            "text": "两成员记录卷影删除与加密改名，同主机同用户且父进程相同，勒索行为特征明显；但授权、因果与外传均未证实，影响限于已观察字段。",
+            "state": "uncertain",
+            "alert_ids": [
+              "49069c34-f1b1-5573-928b-fe81fc110457",
+              "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+            ],
+            "support_ids": [
+              "N2_S23",
+              "N2_S46",
+              "N2_S54",
+              "N2_S56"
+            ],
+            "limitations": [
+              "无审批与业务背景",
+              "网络查询0行非反证",
+              "进程查询部分可见"
+            ]
+          },
+          "queries": [
+            {
+              "hostname": "local-eval-20261106-03-host",
+              "limitations": [
+                "host_time_match_is_not_causality_or_alert_membership",
+                "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+                "source_id_match_is_not_independent_corroboration",
+                "empty_query_is_not_counterevidence",
+                "coverage_and_collection_completeness_unknown"
+              ],
+              "omissions": [],
+              "reason": null,
+              "related_alert_ids": [
+                "49069c34-f1b1-5573-928b-fe81fc110457",
+                "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+              ],
+              "state": "completed",
+              "truncated": false,
+              "window_end": "2026-11-06T02:15:33Z",
+              "window_start": "2026-11-06T02:13:33Z",
+              "artifact_id": "a277336f-1547-4ca1-afb9-03df6a9d0ae2",
+              "observed_rows_in_bounded_fetch": 1,
+              "projected_fields": 13,
+              "question_id": "authorization",
+              "tool_name": "process_activity",
+              "view_state": "partial",
+              "visible_fields": 2
+            },
+            {
+              "hostname": "local-eval-20261106-03-host",
+              "limitations": [
+                "host_time_match_is_not_causality_or_alert_membership",
+                "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+                "source_id_match_is_not_independent_corroboration",
+                "empty_query_is_not_counterevidence",
+                "coverage_and_collection_completeness_unknown"
+              ],
+              "omissions": [],
+              "reason": null,
+              "related_alert_ids": [
+                "49069c34-f1b1-5573-928b-fe81fc110457",
+                "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+              ],
+              "state": "completed",
+              "truncated": false,
+              "window_end": "2026-11-06T02:15:33Z",
+              "window_start": "2026-11-06T02:13:33Z",
+              "artifact_id": "d31d9622-f935-4c51-ad63-d2072855033b",
+              "observed_rows_in_bounded_fetch": 0,
+              "projected_fields": 0,
+              "question_id": "impact",
+              "tool_name": "network_connections",
+              "view_state": "all_projected_fields",
+              "visible_fields": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "SR01",
+      "batch": "01",
+      "kind": "accepted_semantic_overclaim",
+      "severity": "quality_failure",
+      "title": "A1把进程启动扩大成实际文件复制",
+      "assessment": "rationale 明称文件复制真实发生，limitations 又承认没有完成状态/传输记录；只能证明 robocopy 按该命令行启动成功。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/database.json",
+          "artifact_id": "2e882a5a-69f5-4504-96a9-1fa6b6e75038",
+          "artifact_pointer": "/artifacts/7",
+          "raw_text_pointers": [
+            "/artifacts/7/content_json/raw/output/0/content/0/text"
+          ],
+          "stage": "A1",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/rationale",
+              "value": "告警记录的是 robocopy.exe 从 C:\\Ops\\reports 向 UNC 路径 \\\\192.0.2.80\\inventory 复制目录（/E /R:0 /W:0），父进程为 cmd.exe，操作者 operator-0，process_start 成功。该行为本身是真实发生的文件复制，但现有材料无法证明目标主机归属、复制内容敏感性或是否获授权；检测置信度低（20.8），无威胁情报命中，历史仅见同一主机/用户此前一条“账户枚举命令”告警，不能据此定性恶意，也不能据此定性正常。"
+            },
+            {
+              "path": "/limitations/0",
+              "value": "仅有 process_start 记录，无文件传输量、完成状态或目标端日志"
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "needs_review 方向可接受；不能把待核或合法引用视为正文无事实扩大。"
+    },
+    {
+      "id": "SR02",
+      "batch": "01",
+      "kind": "local_output_scope_rejection",
+      "severity": "contained_failure",
+      "title": "C3 insider只声明A1，却引用覆盖A0+A1的F3",
+      "assessment": "domain_finding_scope_mismatch 拒绝准确；原答符合其 wire Schema，交叉成员约束由应用解析器执行。未执行 C4 查询。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/database.json",
+          "artifact_id": "d1212ae7-9a44-4de1-894f-433c5b203e7f",
+          "artifact_pointer": "/artifacts/48",
+          "raw_text_pointers": [
+            "/artifacts/48/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C3",
+          "stored_state": "failed",
+          "decoded_fields": [
+            {
+              "path": "/domains/3",
+              "value": {
+                "name": "insider",
+                "applicability": "undetermined",
+                "reason": "robocopy 向 UNC 路径复制目录可能涉及数据访问与外传，但数量、内容、目的地归属与行为基线均缺。",
+                "alert_ids": [
+                  "3a5b63ee-f536-5a4a-9b2d-0d321f71c022"
+                ],
+                "finding_ids": [
+                  "F2",
+                  "F3"
+                ],
+                "limitations": [
+                  "不凭角色或作息定恶意",
+                  "未提供数据分类与基线"
+                ]
+              }
+            },
+            {
+              "path": "/findings/2/alert_ids",
+              "value": [
+                "07247cff-5d9c-5e0d-8edf-e29235ba0bee",
+                "3a5b63ee-f536-5a4a-9b2d-0d321f71c022"
+              ]
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "输出范围错误被拦住，不是湖能力缺失或目录没发。C6按既有规则独立收尾，C3拒收不等于Case无结果。"
+    },
+    {
+      "id": "SR03",
+      "batch": "02",
+      "kind": "provider_wire_schema_and_binding_violation",
+      "severity": "contained_failure",
+      "title": "C3在仅绑定host的B1查询中填入user",
+      "assessment": "实际第三 user 目录与动态 anyOf Schema 均只允许 host，原答仍选 user；wire 校验失败，本地 followup_binding_object_mismatch 正确拒绝。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+          "artifact_id": "0c67a129-6a6e-4aa5-b5a4-df2dc30fe5fd",
+          "artifact_pointer": "/artifacts/4",
+          "raw_text_pointers": [
+            "/artifacts/4/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C3",
+          "stored_state": "failed",
+          "decoded_fields": [
+            {
+              "path": "/followups/1",
+              "value": {
+                "question_id": "authorization",
+                "alert_ids": [
+                  "a078a050-fe09-5665-992e-1d9c161887a6",
+                  "bb64cd2e-d4f4-59f9-9314-769dd3a37d9d"
+                ],
+                "mode": "query",
+                "objective": "核实 operator-0 在该主机上的认证活动与授权范围，判断两操作是否在授权运维窗口内。",
+                "required_evidence": "认证活动记录与授权材料。",
+                "source_ids": [
+                  "N1_S6",
+                  "N1_S15"
+                ],
+                "object_keys": [
+                  "[\"user\",\"operator-0\"]"
+                ],
+                "binding_id": "B1",
+                "priority": "supporting"
+              }
+            }
+          ]
+        },
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+          "artifact_id": "6738300b-9fb3-4efb-a9bc-e7c6aec55732",
+          "artifact_pointer": "/artifacts/25",
+          "payload_paths": [
+            "/binding_map/B1/objects",
+            "/body/input/2/content",
+            "/body/text/format/schema"
+          ],
+          "binding_object_keys": [
+            "[\"host\",\"local-eval-20261106-02-host\"]"
+          ]
+        }
+      ],
+      "required_interpretation": "模型不遵守已发送约束；Case scope有user不等于B1可查user，不能为绕过失败放宽绑定。"
+    },
+    {
+      "id": "SR04",
+      "batch": "02",
+      "kind": "accepted_prose_qualifier_conflict",
+      "severity": "quality_failure",
+      "title": "C6 observed正文写已写出/打包，限制却否认完成证据",
+      "assessment": "F1/F2正文用内存写出与打包表述，原件仅两次process_start。各limitations、整体conclusion/impact正确保留完成度未知；这是正文与限制不一致，不能夸称整份报告确认dump/压缩完成。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+          "artifact_id": "e9453549-8308-4ecd-a431-dbc109f7e655",
+          "artifact_pointer": "/artifacts/57",
+          "raw_text_pointers": [
+            "/artifacts/57/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C6",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/analysis/findings/0",
+              "value": {
+                "id": "F1",
+                "state": "observed",
+                "statement": "成员bb64cd2e记录rundll32.exe执行comsvcs.dll MiniDump，将PID 688内存写至C:\\Windows\\Temp\\lsass.dmp，用户operator-0、主机local-eval-20261106-02-host。",
+                "alert_ids": [
+                  "bb64cd2e-d4f4-59f9-9314-769dd3a37d9d"
+                ],
+                "support_ids": [
+                  "N1_S25",
+                  "N1_S29",
+                  "N1_S35",
+                  "N1_S37",
+                  "N1_S41"
+                ],
+                "counter_ids": [],
+                "alternatives": [
+                  "合法运维或演练中的内存转储",
+                  "安全工具采集"
+                ],
+                "limitations": [
+                  "process_start成功不证明dump完成",
+                  "无审批材料"
+                ]
+              }
+            },
+            {
+              "path": "/analysis/findings/1",
+              "value": {
+                "id": "F2",
+                "state": "observed",
+                "statement": "成员a078a050记录7z.exe将C:\\Windows\\Temp\\lsass.dmp打包为stage.7z，同一用户与主机，父进程cmd.exe。",
+                "alert_ids": [
+                  "a078a050-fe09-5665-992e-1d9c161887a6"
+                ],
+                "support_ids": [
+                  "N1_S1",
+                  "N1_S7",
+                  "N1_S16",
+                  "N1_S19",
+                  "N1_S23"
+                ],
+                "counter_ids": [],
+                "alternatives": [
+                  "合法归档或演练产物打包"
+                ],
+                "limitations": [
+                  "process_start成功不证明压缩完成",
+                  "无外传证据"
+                ]
+              }
+            },
+            {
+              "path": "/impact/summary",
+              "value": "仅确认两次进程启动成功；未观察到凭据泄露、文件生成或外传等实际影响。"
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "描述命令意图/启动记录与产物已生成须区分；PID688身份仍未知，文件名不证明它是LSASS内存。"
+    },
+    {
+      "id": "SR05",
+      "batch": "03",
+      "kind": "accepted_semantic_overclaim",
+      "severity": "quality_failure",
+      "title": "A0把vssadmin进程启动成功写成删除执行成功",
+      "assessment": "原始action=process_start/outcome=success，rationale写删除全部卷影、执行成功；explanation又承认仅进程启动，无删除后状态或命令完成记录。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "3eb9f310-64a8-4ffb-9469-73193f6c85f1",
+          "artifact_pointer": "/artifacts/16",
+          "raw_text_pointers": [
+            "/artifacts/16/content_json/raw/output/0/content/0/text"
+          ],
+          "stage": "A0",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/rationale",
+              "value": "告警记录显示 vssadmin.exe 以 /all /quiet 参数删除全部卷影副本，父进程为 cmd.exe，执行成功；该命令是勒索软件常用的破坏备份行为，但同样可能由管理员或测试脚本执行。检测置信度低（20.8），无威胁情报命中，资产与历史查询均无返回，且无任何授权或正常运维依据，故不足以定性为恶意，也不足以排除。"
+            },
+            {
+              "path": "/explanation",
+              "value": "卷影副本被静默删除会削弱系统恢复能力，若为攻击者所为通常是勒索加密前的准备步骤；但仅凭进程启动成功无法区分恶意操作与合法运维/演练，需结合主机上下文与操作者意图核实。"
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "只能确认删除命令进程启动；可评估恢复受损风险，不能确认卷影已删除或实际恢复能力受损。"
+    },
+    {
+      "id": "SR06",
+      "batch": "03",
+      "kind": "accepted_semantic_overclaim",
+      "severity": "quality_failure",
+      "title": "A1把单次改名扩大为批量加密及勒索说明生成",
+      "assessment": "原件只有file_rename/success、目标路径和含--encrypt/--note参数的命令行；无内容加密、批量文件事件或R3ADM3.txt创建事件。explanation明确断言批量加密、生成说明，并沿用删除事实。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "957c8db3-7151-43f7-bc84-a47b7b7b76a9",
+          "artifact_pointer": "/artifacts/39",
+          "raw_text_pointers": [
+            "/artifacts/39/content_json/raw/output/0/content/0/text"
+          ],
+          "stage": "A1",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/verdict",
+              "value": "true_positive"
+            },
+            {
+              "path": "/rationale",
+              "value": "进程命令行明确包含 --encrypt、目标目录、--extension .locked 和勒索说明文件名 R3ADM3.txt，且同一进程成功将 notes.docx 重命名为 notes.docx.locked；历史记录显示同一主机和用户在约15秒前出现卷影副本删除命令。这些观察共同构成勒索加密行为的直接证据，而非仅规则命中。"
+            },
+            {
+              "path": "/explanation",
+              "value": "enc.exe 以命令行参数对用户文档目录执行批量加密并追加 .locked 扩展名，同时生成勒索说明文件；前置的卷影副本删除削弱恢复能力，符合勒索软件执行链。"
+            },
+            {
+              "path": "/decision_basis",
+              "value": {
+                "kind": "malicious_behavior",
+                "claim": "enc.exe 命令行显式指定加密目录、.locked 扩展名与勒索说明文件，并成功将文档重命名为 .locked，构成勒索加密行为。",
+                "source_ids": [
+                  "N1_S3",
+                  "N1_S8",
+                  "N1_S10",
+                  "N1_S28"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "true_positive与合成恶意意图方向一致，不计方向性误判，但错误理由不计质量正确；可表达勒索风险/疑似加密意图。"
+    },
+    {
+      "id": "SR07",
+      "batch": "03",
+      "kind": "prior_assessment_not_semantically_corrected",
+      "severity": "quality_limitation",
+      "title": "I认可A1既有定性，未纠正实际效果扩大",
+      "assessment": "I将命令行+单次改名视为较强加密行为证据，认可true_positive有材料支撑，未揭示A1批量加密/说明生成断言。I的F3标inferred且明确单次改名不证明全部完成；不把这推断夸称为I宣告全目录加密或说明已生成。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "d91d2a86-90a0-4150-9ad5-72e255b1a9b2",
+          "artifact_pointer": "/artifacts/61",
+          "raw_text_pointers": [
+            "/artifacts/61/content_json/raw/output/0/content/0/text"
+          ],
+          "stage": "I",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/conclusion",
+              "value": "成员1：卷影副本删除命令记录明确，但授权/运维依据缺失，既有分诊 needs_review 与理由一致，维持待核。成员2：命令行加密参数与文件重命名成功记录构成较强加密行为证据，既有 true_positive 判定有材料支撑，但厂商/环境名称与测试自述不能单独证明授权或排除恶意，仍需核实授权与影响范围。两成员判定差异源于证据强度不同，不按多数票定案。"
+            },
+            {
+              "path": "/members/1/assessment",
+              "value": "记录显示 enc.exe(pid 4243) 由 cmd.exe(pid 2100) 启动，命令行含 --encrypt、目标目录 C:\\Users\\operator-0\\Documents、--extension .locked、--note R3ADM3.txt；同一进程成功将 notes.docx 重命名为 notes.docx.locked（file_rename，outcome success），用户 operator-0，时间 2026-11-06T02:14:48Z。命令行参数与重命名结果相互印证加密行为，既有 true_positive 判定有材料支撑；但授权状态、影响文件范围与是否演练未核实。"
+            },
+            {
+              "path": "/members/1/limitations",
+              "value": [
+                "file_rename 成功仅证明该次重命名，不证明全部加密完成",
+                "厂商/环境名称与测试自述不能单独证明授权或良性",
+                "无授权与影响范围材料"
+              ]
+            },
+            {
+              "path": "/findings/2",
+              "value": {
+                "id": "F3",
+                "statement": "成员2记录 enc.exe 命令行含 --encrypt、目标目录、--extension .locked 与勒索说明文件名 R3ADM3.txt，并成功将 notes.docx 重命名为 notes.docx.locked，命令行与文件结果相互印证加密行为。",
+                "state": "inferred",
+                "alert_ids": [
+                  "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+                ],
+                "source_ids": [
+                  "N1_S2",
+                  "N1_S6",
+                  "N1_S16",
+                  "N1_S18",
+                  "N1_S20",
+                  "N1_S22"
+                ],
+                "limitations": [
+                  "单次重命名成功不证明全部加密完成",
+                  "授权状态未核实"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "记录传播与未纠错边界，不新增方向性误判计数；可疑行为推断与已发生效果分开。"
+    },
+    {
+      "id": "SR08",
+      "batch": "03",
+      "kind": "accepted_semantic_overclaim",
+      "severity": "quality_failure",
+      "title": "C3 impact明称卷影删除命令执行成功",
+      "assessment": "C3结构/范围解析通过，但impact.answer将process_start/success扩大为删除命令执行成功；两关键字段完整可见。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "8410625a-aadb-41ea-9526-23f5a843fd34",
+          "artifact_pointer": "/artifacts/32",
+          "raw_text_pointers": [
+            "/artifacts/32/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C3",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/questions/4",
+              "value": {
+                "id": "impact",
+                "state": "unresolved",
+                "answer": "已观察到卷影副本删除命令执行成功与单文件 notes.docx 重命名为 .locked；全目录加密范围、备份可恢复性、数据外传与横向影响均未观察。",
+                "evidence_ids": [
+                  "N1_S9",
+                  "N1_S17",
+                  "N1_S18",
+                  "N1_S19"
+                ],
+                "limitations": [
+                  "单文件记录不证明整体影响",
+                  "无网络或外传观察"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "结构通过不证明自然语言效果属实。"
+    },
+    {
+      "id": "SR09",
+      "batch": "03",
+      "kind": "accepted_semantic_overclaim",
+      "severity": "quality_failure",
+      "title": "C6保存为当前结果仍断言删除成功、加密和生成勒索说明",
+      "assessment": "impact.supported_changes把process_start改称卷影删除action；F2 observed及成员摘要断言加密Documents、生成R3ADM3.txt。原件和本轮补查均无这些效果证据。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "9cec9f36-93e0-491d-aa49-f4d5c23da334",
+          "artifact_pointer": "/artifacts/40",
+          "raw_text_pointers": [
+            "/artifacts/40/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C6",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/analysis/members/1/summary",
+              "value": "记录enc.exe以operator-0在目标主机加密Documents并改扩展名，生成勒索说明文件，file_rename成功。"
+            },
+            {
+              "path": "/analysis/findings/1",
+              "value": {
+                "id": "F2",
+                "state": "observed",
+                "statement": "成员二记录enc.exe加密Documents并改名为.locked，生成R3ADM3.txt，file_rename成功。",
+                "alert_ids": [
+                  "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+                ],
+                "support_ids": [
+                  "N2_S42",
+                  "N2_S46",
+                  "N2_S54",
+                  "N2_S55",
+                  "N2_S56"
+                ],
+                "counter_ids": [],
+                "alternatives": [
+                  "授权加密工具",
+                  "演练或测试"
+                ],
+                "limitations": [
+                  "未见全部文件清单与审批"
+                ]
+              }
+            },
+            {
+              "path": "/impact",
+              "value": {
+                "summary": "已观察到卷影删除与单个文件改名成功；外传、加密范围与业务影响未证实。",
+                "alert_ids": [
+                  "49069c34-f1b1-5573-928b-fe81fc110457",
+                  "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+                ],
+                "support_ids": [
+                  "N2_S40",
+                  "N2_S54",
+                  "N2_S56"
+                ],
+                "supported_changes": [
+                  "卷影删除action成功",
+                  "notes.docx改名为.locked成功"
+                ],
+                "cannot_generalize": [
+                  "不能推广为全部文件已加密",
+                  "不能认定存在数据外传",
+                  "不能认定两成员同一攻击链"
+                ],
+                "next_steps": [
+                  "扩大网络连接时间窗核查外传",
+                  "获取审批与业务背景"
+                ]
+              }
+            },
+            {
+              "path": "/conclusion",
+              "value": {
+                "text": "两成员记录卷影删除与加密改名，同主机同用户且父进程相同，勒索行为特征明显；但授权、因果与外传均未证实，影响限于已观察字段。",
+                "state": "uncertain",
+                "alert_ids": [
+                  "49069c34-f1b1-5573-928b-fe81fc110457",
+                  "b1a93f11-96f2-5b49-9f78-bc235d9f2062"
+                ],
+                "support_ids": [
+                  "N2_S23",
+                  "N2_S46",
+                  "N2_S54",
+                  "N2_S56"
+                ],
+                "limitations": [
+                  "无审批与业务背景",
+                  "网络查询0行非反证",
+                  "进程查询部分可见"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "conclusion.state=uncertain、外传/范围未知不能抵消局部效果扩大；accepted/partial/current assessment不是语义质量通过。"
+    },
+    {
+      "id": "SR10",
+      "batch": "01/02/03",
+      "kind": "accepted_domain_applicability_overreach",
+      "severity": "quality_failure",
+      "title": "缺云/邮件资料被写为not_applicable",
+      "assessment": "五处：01 cloud/phishing、02 cloud/phishing、03 cloud，仅因本地主机记录或缺对应源标not_applicable，又自列未查询/未提供。实际C6指令要求无资料用not_analyzed/undetermined；现有结构/范围门未挡住此语义冲突。",
+      "evidence": [
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-01/exports/20261106T022151584841Z/database.json",
+          "artifact_id": "f7882e8d-8b60-4ee0-ac4f-57069d9d4219",
+          "artifact_pointer": "/artifacts/60",
+          "raw_text_pointers": [
+            "/artifacts/60/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C6",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/analysis/domains/1",
+              "value": {
+                "name": "cloud",
+                "applicability": "not_applicable",
+                "reason": "记录为本地主机进程活动，无云控制面或 IAM 事件。",
+                "alert_ids": [],
+                "finding_ids": [],
+                "limitations": [
+                  "未查询云侧来源，不能推广"
+                ]
+              }
+            },
+            {
+              "path": "/analysis/domains/2",
+              "value": {
+                "name": "phishing",
+                "applicability": "not_applicable",
+                "reason": "无邮件、链接、附件或投递点击执行证据。",
+                "alert_ids": [],
+                "finding_ids": [],
+                "limitations": [
+                  "未提供邮件来源"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-02/exports/20261106T022426143195Z/database.json",
+          "artifact_id": "e9453549-8308-4ecd-a431-dbc109f7e655",
+          "artifact_pointer": "/artifacts/57",
+          "raw_text_pointers": [
+            "/artifacts/57/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C6",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/analysis/domains/1",
+              "value": {
+                "name": "cloud",
+                "applicability": "not_applicable",
+                "reason": "记录为主机本地进程活动，无云控制面、IAM或配置事件。",
+                "alert_ids": [],
+                "finding_ids": [],
+                "limitations": [
+                  "未查询云侧来源，不能推广至云环境"
+                ]
+              }
+            },
+            {
+              "path": "/analysis/domains/2",
+              "value": {
+                "name": "phishing",
+                "applicability": "not_applicable",
+                "reason": "无邮件、链接、附件或投递点击执行证据。",
+                "alert_ids": [],
+                "finding_ids": [],
+                "limitations": [
+                  "未提供邮件来源，不能排除初始投递"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "database": ".local/local-investigation/validation/local-eval-20261106-03/exports/20261106T022542293347Z/database.json",
+          "artifact_id": "9cec9f36-93e0-491d-aa49-f4d5c23da334",
+          "artifact_pointer": "/artifacts/40",
+          "raw_text_pointers": [
+            "/artifacts/40/content_json/payload/raw/output/0/content/0/text"
+          ],
+          "stage": "C6",
+          "stored_state": "completed",
+          "decoded_fields": [
+            {
+              "path": "/analysis/domains/1",
+              "value": {
+                "name": "cloud",
+                "applicability": "not_applicable",
+                "reason": "证据仅涉及本地主机进程与文件，无云控制面或IAM记录。",
+                "alert_ids": [],
+                "finding_ids": [],
+                "limitations": [
+                  "未查询云源，不能推广"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "required_interpretation": "保留undetermined与缺源限制；缺源本身不算数据库schema缺陷。"
+    }
+  ],
+  "summary": {
+    "new_batches": 3,
+    "alerts": 6,
+    "business_runs": 12,
+    "new_model_attempts": 15,
+    "provider_raw_responses": 15,
+    "wire_schema_valid_responses": 14,
+    "wire_schema_invalid_responses": 1,
+    "application_accepted_model_steps": 13,
+    "application_rejected_c3_steps": 2,
+    "saved_model_case_results": 3,
+    "current_model_case_assessments": 3,
+    "case_uncertain": 3,
+    "case_definitive_benign_or_malicious": 0,
+    "alert_needs_review": 5,
+    "alert_true_positive": 1,
+    "directional_reversals_observed": 0,
+    "directional_reversal_scope": "六条A和三份Case对固定合成意图的核对；I/C3无独立二元判定，不额外凑分母。",
+    "accuracy_claim": null,
+    "visible_source_values_sha_matched": 443,
+    "request_response_artifact_sha_matched": 30,
+    "original_materials_exact_to_plan": 6,
+    "c4_query_counts": {
+      "01": 0,
+      "02": 0,
+      "03": 2
+    },
+    "human_flow_tested": false,
+    "overall_semantic_quality": "NOT_PASSED",
+    "review_disposition": "ACCEPT_WITH_RECORDED_QUALITY_FAILURES for bounded evidence handoff; not model-quality or whole-chain acceptance",
+    "campaign_usage": "三批公开回执各5次。父代理账本报告此前48、本轮15、累计63；固定计划上限本轮21/累计69。本审阅未重统计全部历史。"
+  },
+  "input_and_context_assessment": {
+    "critical_behavior_values": "15份实际请求保留相关成员action/outcome/命令行，03单文件路径在A1/I/C3/C6可见；上述事实扩大没有发现由这些字段漏传或篡改造成的证据。",
+    "query_03": "process_activity返回1行，13投影字段中C6可见2个：event_kind与vssadmin命令行，view_state=partial；network返回0行不排除外传。query_binding_only仍保留，不当直接告警成员事实或独立佐证。",
+    "missing_context": "审批/业务授权、文件产物与内容、备份前后状态、完整进程因果/外传覆盖未提供，支持待核而非补造完成效果。C2空/跳过和图来源未接通应按实际状态表达。",
+    "code_boundary": "现有来源角色、成员范围和wire Schema检查不能证明自然语言主张为真；本轮复现规划R1/R3等已知语义缺口。未新增证明另一输入装配缺陷，不要求扩大当前数据交接范围或模型额度。",
+    "commands": "命令行仅作为日志字符串解析与引用，本审阅不执行。"
+  },
+  "limitations": [
+    "三组合成已知意图案例不估计通用准确率、模型排名或远端效果。",
+    "接受、保存、采用不追认自由正文真实；15原答未改写/重试。",
+    "本审阅未执行模型、网络、业务DB、UI或真实H操作，未审核全部代码。",
+    "主交接及后续页面/GET回执另做窄审，不从本报告声称其已独立验证。",
+    "只读提取首轮误用steps键、汇总首轮误用material_id映射键，均在写报告前修正后重核，未改原件。",
+    "hash为本审阅时点指纹；未来公开汇总更新须保留此历史边界。"
+  ]
+}

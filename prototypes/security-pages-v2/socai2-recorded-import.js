@@ -80,7 +80,7 @@
     // Case information is a persisted business field, not a stage-output fallback.
     return c.description||'';
   }
-  function adaptExport(database,manifest,apiResponses=[]){
+  function adaptExport(database,manifest,apiResponses=[],pageDataRows=[]){
     if(!database||typeof database!=='object'||Array.isArray(database))throw Error('database_object_required');
     if(['truth','ground_truth','answer_key','expected_answers','audit_truth'].some(k=>Object.hasOwn(database,k)||Object.hasOwn(manifest||{},k)))throw Error('audit_truth_is_not_page_input');
     if(manifest?.schema_version!=='socai2.page-export.v1'||manifest.input_kind!=='synthetic')throw Error('unsupported_page_export_manifest');
@@ -138,6 +138,13 @@
       const members=rows('case_alerts',cas.tenant_id,'case_id',cas.id).map(x=>required('alerts',cas.tenant_id,x.alert_id)),linked=rows('case_incidents',cas.tenant_id,'case_id',cas.id);
       linked.forEach(x=>required('incidents',cas.tenant_id,x.incident_id));
       const tasks=rows('tasks',cas.tenant_id,'case_id',cas.id).map(task=>{const current=taskView(task,required('task_revisions',task.tenant_id,task.current_revision_id));current.revisionHistory=rows('task_revisions',task.tenant_id,'task_id',task.id).sort((a,b)=>a.revision-b.revision).map(r=>taskView(task,r));return current;});
+      const matchingPageData=list(pageDataRows).filter(p=>p.case_id===cas.id&&p.tenant_id===cas.tenant_id);
+      if(matchingPageData.length>1)throw Error('ambiguous_case_page_data');
+      const projected=matchingPageData[0],pageData=projected?.page_data||null;
+      const sameDeadline=pageData?.due_at===(cas.due_at??null)||(pageData?.due_at&&cas.due_at&&Number.isFinite(Date.parse(cas.due_at))&&Date.parse(pageData.due_at)===Date.parse(cas.due_at));
+      if(projected&&(projected.case_row_version!==cas.row_version||projected.current_assessment_id!==cas.current_assessment_id||pageData?.schema_version!=='socai2.case-page-data.v1'||pageData.classification!==(cas.classification??null)||!sameDeadline))throw Error('case_page_data_snapshot_mismatch');
+      if(pageData&&pageData.evidence.artifact_id!==(cas.current_evidence_artifact_id??null))throw Error('case_evidence_pointer_mismatch');
+      if(cas.current_evidence_artifact_id&&!pageData)throw Error('case_evidence_projection_missing');
       let assessment=null;
       if(cas.current_assessment_id){
         const saved=required('case_assessments',cas.tenant_id,cas.current_assessment_id);if(saved.case_id!==cas.id)throw Error('case_assessment_owner_mismatch');
@@ -152,7 +159,13 @@
         const freshness=detail?.current_assessment?.input_freshness||null;
         assessment={conclusion:saved.conclusion,updatedAt:saved.formed_at??null,author:saved.adopted_by||null,alertIds:coverage.map(x=>uid(cas.tenant_id,'alert',x.alert_id)),sourceRunIds:[...new Set([...resultSources.map(x=>x.source_run_id),...artifactSources.map(x=>x.run_id)].filter(Boolean).map(id=>uid(cas.tenant_id,'run',id)))],taskIds:[...new Set(taskSources.map(x=>uid(cas.tenant_id,'task',x.task_id)))],basis:[],unresolved:[],inputFreshness:freshness?{state:freshness.state,reasons:list(freshness.reasons)}:null,sourceRecord:{assessment:clone(saved),sources:clone(sources),members:clone(coverage),case_api_response:clone(detail)||null}};
       }
-      data.cases.push({id:uid(cas.tenant_id,'case',cas.id),...scope(cas),recordedCase:true,sourceCaseId:cas.id,sourceRecord:clone(cas),exportProvenance:clone(manifest),title:cas.title||'未记录标题',description:cas.description||'',alertIds:members.map(x=>uid(x.tenant_id,'alert',x.id)),incidentIds:linked.map(x=>uid(cas.tenant_id,'incident',x.incident_id)),incidentId:linked.length===1?uid(cas.tenant_id,'incident',linked[0].incident_id):null,sourceRunIds:rows('runs',cas.tenant_id,'case_id',cas.id).map(x=>uid(cas.tenant_id,'run',x.id)),created:cas.created_at??null,updated:cas.business_updated_at??null,owner:owner(cas),status:states[cas.handling_status]||'Unknown',severity:severity[cas.severity]||'未记录',sourceSeverity:cas.severity??null,priority:cas.priority_state==='available'&&cas.priority_value!=null?numeric(Number(cas.priority_value)):null,classification:'Not set',tags:list(cas.tags),tasks,assessment,due:null,resolutionNote:cas.resolution_note??null,attachments:[]});
+      if(pageData&&pageData.determination!==(assessment?.conclusion??null))throw Error('case_determination_mismatch');
+      const verdictNames={malicious:'Malicious',suspicious:'Suspicious',clean:'Clean',unknown:'未判定',conflicting:'有冲突'};
+      for(const e of list(pageData?.evidence?.entries)){
+        const entityIds=list(e.object_keys).map(key=>tables.alert_objects.find(o=>o.tenant_id===cas.tenant_id&&o.material_id===key.material_id&&o.object_key===key.object_key)).filter(Boolean).map(assetFor);
+        data.evidence.push({id:uid(cas.tenant_id,'evidence',cas.id+':'+e.evidence_id),...scope(cas),caseId:uid(cas.tenant_id,'case',cas.id),name:e.title,type:e.type,entityId:entityIds[0]||null,entityIds,alertId:uid(cas.tenant_id,'alert',e.alert_ids[0]),alertIds:e.alert_ids.map(a=>uid(cas.tenant_id,'alert',a)),verdict:verdictNames[e.verdict],threat:e.threat?.label||'',remediation:e.remediation?'已有处置回执':'未记录',origin:'已保存证据条目',sourceRecord:clone(e),sourceRefs:clone(e.source_refs),indexArtifactId:pageData.evidence.artifact_id});
+      }
+      data.cases.push({id:uid(cas.tenant_id,'case',cas.id),...scope(cas),recordedCase:true,sourceCaseId:cas.id,sourceRecord:clone(cas),exportProvenance:clone(manifest),title:cas.title||'未记录标题',description:cas.description||'',alertIds:members.map(x=>uid(x.tenant_id,'alert',x.id)),incidentIds:linked.map(x=>uid(cas.tenant_id,'incident',x.incident_id)),incidentId:linked.length===1?uid(cas.tenant_id,'incident',linked[0].incident_id):null,sourceRunIds:rows('runs',cas.tenant_id,'case_id',cas.id).map(x=>uid(cas.tenant_id,'run',x.id)),created:cas.created_at??null,updated:cas.business_updated_at??null,owner:owner(cas),status:states[cas.handling_status]||'Unknown',severity:severity[cas.severity]||'未记录',sourceSeverity:cas.severity??null,priority:cas.priority_state==='available'&&cas.priority_value!=null?numeric(Number(cas.priority_value)):null,classification:({true_positive:'True positive',informational:'Informational',false_positive:'False positive'})[cas.classification]||'Not set',tags:list(cas.tags),tasks,assessment,determination:assessment?.conclusion??null,pageData:clone(pageData),due:cas.due_at??null,resolutionNote:cas.resolution_note??null,attachments:[]});
     }
     for(const run of tables.runs){
       const tenant=run.tenant_id,runId=uid(tenant,'run',run.id),steps=rows('run_steps',tenant,'run_id',run.id).sort((a,b)=>a.seq-b.seq),arts=rows('artifacts',tenant,'run_id',run.id),members=rows('run_members',tenant,'run_id',run.id);

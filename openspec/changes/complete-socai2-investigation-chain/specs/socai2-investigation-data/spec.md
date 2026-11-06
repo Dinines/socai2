@@ -1,5 +1,51 @@
 ## ADDED Requirements
 
+### Requirement: Case classification and deadline have explicit persisted meanings
+
+Case SHALL 独立保存可空classification及due_at。classification非空值 SHALL 为true_positive、informational或false_positive，null表示未设置；不得从Incident/成员告警继承，也不得从模型正文或conclusion_state推断。due_at SHALL 保存含时区的案件期限，不得以任务期限、Run超时或自动SLA代替。管理保存或有来源的导入 SHALL 沿现有Case版本检查，将实际值与活动中的操作者、时间、来源及前后值同事务保存；清空用null，历史行不回填推测值。
+
+#### Scenario: A user clears the case classification and changes its deadline
+- **WHEN** 操作者明确将案件分类清空并修改案件截止时间，当前Case版本匹配
+- **THEN** 保存null分类与实际含时区期限及变更来源，原任务期限、当前判断、成员范围版本和Run保持；不自动改变案件处理状态、产生pending或执行调查
+
+#### Scenario: An older case has no new management values
+- **WHEN** 增量迁移后的旧Case没有明确来源的分类或截止时间
+- **THEN** 两字段均为null，既有Incident分类、任务due_at及模型结论仍可单独读取，不被复制来填满页面
+
+### Requirement: Case evidence entries are versioned and traceable
+
+系统 SHALL 复用artifacts保存kind为case_evidence_index、schema_version为socai2.case-evidence.v1的不可变索引，由cases.current_evidence_artifact_id指定当前版本；MUST 校验同租户同Case、工件kind、JSON Schema及每个来源的归属/冻结成员范围。新工件、指针和变更活动 SHALL 同事务发布，旧索引保持，历史读取不得追随当前指针。索引 SHALL 保存scope_revision、实际纳入成员、前版引用、available/partial/unavailable状态及条目。
+
+发布 SHALL 沿现有Case行锁检查预期row_version、当前索引指针及scope_revision，过期发布拒绝。前版引用 MUST 等于事务内实际当前索引且同Case同kind，首次为null。同一索引的evidence_id MUST 唯一，重复ID直接拒绝；关联成员 MUST 非空且属于索引冻结成员。
+
+条目 SHALL 具有稳定evidence_id、名称/类型、关联成员、可空对象、原始材料引用、verdict及来源、可空威胁身份和处置引用、active/withdrawn状态。evidence_id MUST NOT 由数组位置、标题或单独文件hash替代；同一条目跨版本保持ID。verdict SHALL 为malicious、suspicious、clean、unknown或conflicting；非unknown必须有来源，冲突保双方，不提升source_label/prior_analysis/human_statement为独立观察。威胁身份 SHALL 使用明确来源的namespace/key/label，不从自由正文提取补造。原文/附件继续引用原材料，来源缺失不得假装已回查。
+
+#### Scenario: An evidence index is revised
+- **WHEN** 某条证据的判断变化或条目被撤回并发布新索引
+- **THEN** 稳定条目ID保持、更新依据与前版可查，旧工件不覆盖；只更新材料目录，不自动采用案件结论、启动Run或增加C必需输入
+
+#### Scenario: A proposed index references another case or tenant
+- **WHEN** 当前指针指向异案工件，或条目引用不属于允许租户/成员范围的材料
+- **THEN** 拒绝发布指针及索引，不以JSON形状合法代替归属验证，既有当前版本保持
+
+#### Scenario: A stale writer attempts to replace a revised evidence index
+- **WHEN** 当前索引已更新，但发布请求仍携带旧Case版本或旧当前指针
+- **THEN** 拒绝该次发布，已保存改判/撤回及当前指针保持，不能用任意supersedes引用绕过；同一索引的重复条目ID也拒绝而不静默去重
+
+### Requirement: Evidence and threat counts are reproducible from selected saved entries
+
+独立证据条目数 SHALL 对当前明确选定索引中active且适用于当前Case成员的evidence_id去重；告警原文、来源快照、Finding、对象和图节点不自动计为条目。关联威胁数 SHALL 对这些条目中malicious/suspicious且具有非空威胁身份的(namespace,key)去重，clean/unknown/conflicting不计；不得按显示名、材料数或对象数猜测。读出 SHALL 携带计数状态、索引身份、覆盖范围及可定位来源。
+
+适用 SHALL 要求条目的全部关联成员仍属于当前Case；部分移出的多成员条目整条退出当前计数但保留历史回查，MUST NOT 以取交集缩小其事实范围。成员范围变化 SHALL 返回partial及被排除/未覆盖范围。
+
+#### Scenario: Several entries refer to the same threat
+- **WHEN** 两条有效证据具有不同evidence_id但引用相同namespace/key的威胁，另有clean及未提供威胁身份的条目
+- **THEN** 独立条目按各有效ID计数，前两条威胁合计一次，clean及缺威胁身份条目不增加威胁数；数量不表示攻击次数或案件已定性
+
+#### Scenario: There is no saved index or the known index is partial
+- **WHEN** Case没有证据索引，或已选索引只覆盖部分当前成员
+- **THEN** 前者计数null且状态not_recorded；后者可返回已存适用条目的计数（含0）并标partial及覆盖限制。可用索引为空/全撤回/全部范围排除时条目数0，适用条目全clean/unknown/conflicting或无威胁身份时威胁数0；不可用或引用失效为null并带限制，成员变化不改写历史索引
+
 ### Requirement: Local data services remain independent of remote model connectivity
 
 本阶段验证 SHALL 复用本机已有镜像建立专属PG、ClickHouse、Kafka、ZooKeeper、Redis及本机API/Fusion，以隔离测试空间保存真实流程材料，保留旧数据；按用户授权停止的旧后台任务不得随本轮自动恢复。知识检索 SHALL 沿冻结告警标题→PG全文检索；Neo4j、向量库及Embedding MUST NOT 作为本轮启动前提，不新增RAG。DeepSeek直连验证 SHALL 不依赖VPN或21数据服务；远端已部署模型仅在用户连接VPN的阶段调用，只切换模型连接地址、认证及对应协议/profile，数据库、执行记录、工件及页面全过程 SHALL 保留在本机，不改用远端数据库或执行驱动。镜像已存在或容器已启动 MUST NOT 被当作目标身份、权限、schema或供应链已经通过。
@@ -14,7 +60,7 @@
 
 ### Requirement: Existing context integrations are validated along their actual producer and reader paths
 
-系统 SHALL 复用已有知识导入及本轮所需资产、内部IOC路径，在模型前核对实际导入、目标存储、告警标题检索词、PG全文检索结果、租户范围及候选输入；实际模型发送、采用与引用 SHALL 在后续真实调查阶段单独验收，不作为模型前准备的完成前提。PG知识FTS与向量检索、UEBA anomaly表与risk profile、Feed存储与PG内部IOC SHALL 分别说明已有证据和未接边界，不因某服务可用就宣称另一路已接；本轮不启用的身份图、向量、UEBA生成及Feed链不要求补齐。直接种入合成行的验证 SHALL 明确只证明相应读写路径；既有工具预算和来源选择保持。
+系统 SHALL 复用已有知识导入及本轮所需资产、内部IOC路径，在模型前核对实际导入、目标存储、告警标题检索词、PG全文检索结果、租户范围及候选输入；实际模型发送、采用与引用 SHALL 在后续真实调查阶段单独验收，不作为模型前准备的完成前提。PG知识FTS与向量检索、UEBA anomaly表与risk profile、Feed存储与PG内部IOC SHALL 分别说明已有证据和未接边界，不因某服务可用就宣称另一路已接；本轮不启用的身份图、向量、UEBA生成及Feed链不要求补齐。直接种入合成行的验证 SHALL 明确只证明相应读写路径；工具总预算和C4预留保持，来源按本change的有界相关性规则选择。
 
 #### Scenario: Title-based knowledge retrieval is ready before the model runs
 - **WHEN** 文档经已有导入路径写入本轮专属PG，冻结告警标题的全文检索按租户返回可回查材料，候选输入及来源已核对
@@ -128,15 +174,19 @@ A/I执行 SHALL 保存该次冻结输入、实际查询/模型请求回复、步
 
 ### Requirement: Compact model inputs preserve required meaning and actual visibility
 
-模型输入 SHALL 按阶段任务组织必需语义组，在预算内优先保留成员核心事实、同次已有判断及理由、适用人工限定和明确反证；可合并重复身份/来源元数据，但 MUST 保持值、类型、来源及成员映射。完整材料保存在库，实际模型视图 SHALL 分别说明材料保存完整性、分诊适用性和实际可见性，MUST NOT 将prepared或发送成功等同模型完整阅读。
+模型输入 SHALL 按阶段任务组织语义组，在预算内优先保留成员核心事实、适用人工限定和明确反证；I的同次分诊及配对理由仍为必要输入。C3/C6的A/I参考判断 SHALL 为可选原子组，不得挤出必要事实/H；C6实际补查、执行计划和有效指定比较仍为必要输入。可合并重复身份/来源元数据，但 MUST 保持值、类型、来源及成员映射。完整材料保存在库，实际模型视图 SHALL 分别说明材料保存完整性、分诊适用性和实际可见性，MUST NOT 将prepared或发送成功等同模型完整阅读。
 
 #### Scenario: Optional raw leaves compete with received detection context
 - **WHEN** I在核心事实、同次分诊及时间之后仍需选择检测规则/评分与可选原始叶字段
 - **THEN** 先轮询各成员的已有detection原值，再填可选元数据及原始叶字段，仍标source_label；单项guard和大小上限保持，无法容纳的项按原路径明确记录省略，不改为观察或提升模型预算
 
 #### Scenario: Repeated metadata displaces a valid triage
-- **WHEN** 原冻结输入含有效同次分诊，但平铺重复元数据占用视图额度
+- **WHEN** I的冻结输入含有效同次分诊，但平铺重复元数据占用视图额度
 - **THEN** 先去重复并为必需组预留空间，完整保留判定及配对理由/评分；不能只留分数或把省略分诊标成已发送
+
+#### Scenario: Human feedback competes with historical A and I judgments in C
+- **WHEN** C3或C6收到适用H，必要事实/H及指定比较与A/I参考竞争8192B视图
+- **THEN** 先保必要组，再将A/I判定/评分/理由/限制/来源整组放入或明确省略；不得因可选I摘要放不下阻断可容纳的完整必要输入，也不得丢H、反证或把省略参考标为已读；完整消息和wire仍核原上限
 
 #### Scenario: A mandatory group still cannot fit
 - **WHEN** 去重后必需组仍超过既有预算或单项边界
@@ -275,8 +325,8 @@ current SHALL 仅表示上述受跟踪输入一致，MUST NOT 宣称外部湖、
 系统 SHALL 保留明确SHA256字段及明确声明SHA-256算法的有效原值和路径，冲突保留双方，不从长度推断算法。C2 SHALL 在原Tool总预算及C4预留额度内按冻结对象相关性选择来源，保存优先级依据和未执行原因；空查询也计调用。
 
 #### Scenario: A case has explicit IOC and user selectors
-- **WHEN** 情报与UEBA已连接且具有冻结的合法对象
-- **THEN** 它们优先于通用历史查询；主机/仅检测等不同对象组合有不同选择，超预算来源仍明确跳过
+- **WHEN** 情报与UEBA已连接、具有冻结的合法对象，并与通用历史来源对当前预定义核查目标的相关性相同
+- **THEN** 同级稳定排序使它们优先于通用历史查询；其他相关性按有界问题选择规则确定，超预算来源仍明确跳过，不能因固定来源类别压过更相关知识
 
 ### Requirement: Human confirmations preserve historical cited facts
 
@@ -408,3 +458,59 @@ C6 SHALL 收尾，无论C3是否有被接受的分析。已知前序失败且预
 #### Scenario: Case business fields do not contain execution diagnostics
 - **WHEN** C6不能形成有效模型判断且Case需要系统收尾，或页面读取保存的Case
 - **THEN** 案件摘要读取cases.description、当前判断读取case_assessments.conclusion；技术原因留在Run/步骤/工件的执行详情，不用拒收原答填充业务字段，历史版本保持可追溯
+
+### Requirement: Published factual claims are bounded by the observed action and effect
+
+新A/I/C3/C6执行合同 SHALL 使用版本化、有界的事实主张与来源范围；原始动作、该动作结果、命令意图、明确效果和人工陈述 MUST 区分。程序 SHALL 从冻结原件/实际查询构造可引用事实，验证效果主张所需的已登记前提，未知类型不得默认成功。当前判断、发现、摘要、领域理由、比较/影响及JSON/Markdown报告 SHALL 从同版校验后的结构化主张投影，MUST NOT 将未约束自由正文直接发布或仅验证附加主张后继续采用相矛盾正文。此约束不替代真实安全推断的事实审核，不新增裁判模型或自动修复调用。
+
+#### Scenario: A launch and a rename are described as completed destruction
+- **WHEN** 来源仅有删除命令的process_start/success及一个file_rename/success，模型声称删除、加密完成或说明文件已生成
+- **THEN** 无对应明确结果的效果主张被拒，原答和字段原因保留；合法来源ID不能令其通过，C6采用既有系统收尾规则，旧有效判断和原运行结果不改写
+
+#### Scenario: A concrete effect has sufficient scoped evidence
+- **WHEN** 合法来源明确报告指定对象的删除结果，另有已关联的新文件创建和内容证据
+- **THEN** 只允许各自范围内相应效果表述；删除结果不证明加密，全案影响不由单对象推定，文件创建不能单独证明内容，未知授权仍未知
+
+#### Scenario: Valid structured claims accompany exaggerated prose
+- **WHEN** 模型主张集合只含启动和改名，但自由说明中写成加密或外传完成
+- **THEN** 新执行合同不得让该自由说明进入任何业务字段或报告；若其违反新输出合同则拒收并保原答，不靠改页面文字或静默删句声称模型质量通过
+
+#### Scenario: Old outputs are read after the execution contract changes
+- **WHEN** 新Run使用新的内部主张合同，用户同时读取旧版本输出
+- **THEN** 按各自版本读取原件并适配现有业务出口，不给旧错误结果补造新验证状态；新Run不能自动降级为旧自由正文合同
+
+#### Scenario: An A or I schema changes together with C
+- **WHEN** 新事实主张合同改变A/I模型输出结构或实际请求
+- **THEN** 实施准入同时核两协议下A/I各自原24000保守单位、3000输出预留及既有视图/消息上限的完整wire，不能只用C的48000容量证明整链可行，也不提高A/I额度
+
+### Requirement: Domain exclusion requires affirmative scoped support
+
+领域not_applicable SHALL 具有明确可见的范围或排除依据。缺少数据、工具关闭、空查询及只有另一领域记录 MUST NOT 单独构成不适用依据；这些情形使用undetermined及限制。明确不在本轮范围只说明本轮不覆盖，MUST NOT 表述为全案不存在该风险。工具无选择器的适用性与案件领域适用性 MUST 分开。
+
+#### Scenario: Cloud and phishing sources are absent
+- **WHEN** 输入只有主机活动，没有云或邮件来源
+- **THEN** cloud/phishing保持undetermined，不能因没有对应记录宣称不适用或不存在；仍可关联已有相关发现
+
+#### Scenario: Explicit scope excludes one domain from this round
+- **WHEN** 冻结调查范围明确不覆盖某领域且来源与范围有效
+- **THEN** 可说明该领域本轮不适用并引用范围依据，不把范围决定写成排除该风险的事实证据
+
+### Requirement: Evidence role catalogs guide generation without weakening rejection
+
+A/I/C阶段 SHALL 向模型清楚区分可作直接依据的观察/有范围人工陈述、标签、历史判断和执行回执；发现及逐成员结果仍须满足各自角色和成员覆盖合同。Schema能表达的限制可前置，程序 MUST 保留完整本地验证，不自动补来源、改范围或提升角色。不同阶段 SHALL 共用动作/效果语义，防止A错误经I或C变成观察。
+
+#### Scenario: A finding claims two members using evidence for one
+- **WHEN** I发现声明A/B但引用仅覆盖A，或A的直接依据/C的observed混入source_label
+- **THEN** 拒收并记录字段、角色或范围错误；不得自动补引用或缩小声明范围制造通过，已知前序失败不取消有资源的C6
+
+### Requirement: Background selection records relevance and actual knowledge consumption
+
+C2 SHALL 在最多2次来源调用内，依据冻结C1材料及预先定义的核查目标、合法选择器、来源能力及已有覆盖做确定性选择，为C4保留2次、总上限4次不变。问题 MUST NOT 依赖尚未发生的C3；先按问题相关性，同级按稳定既定顺序。高相关知识指导可以优于仅因存在用户名而入选的通用上下文；选中及跳过原因 SHALL 留存，不新增模型规划或暗中试查。知识导入、实际取回、进入实际模型请求、输出有效引用 SHALL 分别留证；知识指导 MUST NOT 冒充案件事实或授权。
+
+#### Scenario: Detection guidance competes with generic context
+- **WHEN** 标题检索可回答明确核查方法问题，另有未针对该问题的通用用户来源，C2只剩一席
+- **THEN** 按已记录的问题相关性选择知识，保存另一来源未执行原因；真实消费验收须核请求正文及正确引用，不能只看库里有SOP或强制测试注入
+
+#### Scenario: A selected knowledge lookup is empty
+- **WHEN** 正常排序选择知识但受限查询返回零行
+- **THEN** 调用计入原预算，保留空结果及范围，不宣称看过知识、不作为反证、不额外自动补查到所有来源都返回

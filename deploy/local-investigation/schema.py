@@ -13,7 +13,7 @@ HISTORY_TABLES = {"alert_materials", "alert_source_refs", "alert_objects", "aler
     "case_assessment_sources", "case_assessment_members", "artifacts", "results", "result_members", "task_revisions",
     "activities", "activity_targets", "response_links"}
 FUSION_TABLES = {"alerts", "alert_materials", "alert_source_refs", "alert_objects", "artifacts", "incidents", "incident_alerts"}
-MIGRATIONS = ["123_socai2_page_data_model.sql", "124_socai2_case_source_binding.sql", "125_socai2_baseline_input_freshness.sql"]
+MIGRATIONS = ["123_socai2_page_data_model.sql", "124_socai2_case_source_binding.sql", "125_socai2_baseline_input_freshness.sql", "126_socai2_case_page_data.sql"]
 
 
 def support_schema():

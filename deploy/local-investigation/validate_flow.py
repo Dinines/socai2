@@ -44,7 +44,9 @@ class Driver:
         self.plan = self.read("plan")
         assert self.plan["tenant_id"] == TENANT and self.plan["database"] == DATABASE
         assert self.plan["lake_database"] == LAKE and self.plan["topic_prefix"] == TOPIC
-        assert self.plan["global_local_model_call_cap"] == 50 and self.plan["max_model_calls"] == 11
+        limits = (self.plan["global_local_model_call_cap"], self.plan["max_model_calls"])
+        assert limits == (50, 11) or (limits == (69, 7) and
+            self.plan.get("campaign") == "additional-tests-20261106" and self.plan["case"]["rounds"] == 1)
         self.batch = self.plan["batch_id"]
         self.env = runtime_environment("api", values)
 
@@ -120,9 +122,10 @@ class Driver:
         if any(r["state"] in {"unknown", "running"} for r in rows):
             raise FlowStopped("active_or_unknown_run_blocks_dispatch")
         used = sum(r["calls"] for r in rows)
-        if used + reserve > 50:
-            raise FlowStopped("global_50_model_attempt_cap")
-        return {"attempted_models": used, "reserved_for_phase": reserve, "global_cap": 50}
+        cap = getattr(self, "plan", {}).get("global_local_model_call_cap", 50)
+        if used + reserve > cap:
+            raise FlowStopped(f"global_{cap}_model_attempt_cap")
+        return {"attempted_models": used, "reserved_for_phase": reserve, "global_cap": cap}
 
     async def preflight(self):
         import httpx
@@ -290,7 +293,8 @@ async def run(args):
     root = STATE / "validation" / args.batch
     assert root.parent == STATE / "validation" and args.batch.startswith("local-") and "/" not in args.batch
     if args.phase == "prepare":
-        plan, oracle = prepare(args.batch, args.window_start, backend=args.backend, model_values=read_private(), scenario=args.scenario)
+        plan, oracle = prepare(args.batch, args.window_start, backend=args.backend, model_values=read_private(),
+            scenario=args.scenario, additional_tests=args.additional_tests)
         root.mkdir(parents=True, exist_ok=False)
         for name, value in (("plan", plan), ("expected", oracle)):
             (root / (name + ".json")).write_bytes(encoded(value) + b"\n")
@@ -326,6 +330,7 @@ def main():
     parser.add_argument("--window-start")
     parser.add_argument("--backend", choices=BACKENDS, default="deepseek", help="Freeze backend during prepare only")
     parser.add_argument("--scenario", choices=["maintenance", "routine", "credential", "impact"], default="maintenance")
+    parser.add_argument("--additional-tests", action="store_true", help="Freeze the explicitly requested three-case 2026-11-06 campaign")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     if args.phase == "prepare" and not args.window_start:
@@ -334,6 +339,8 @@ def main():
         parser.error("--backend is only selected at prepare; other phases use the frozen plan")
     if args.phase != "prepare" and args.scenario != "maintenance":
         parser.error("--scenario is only selected at prepare; other phases use the frozen plan")
+    if args.phase != "prepare" and args.additional_tests:
+        parser.error("--additional-tests only applies at prepare")
     result = asyncio.run(run(args))
     print(json.dumps(result, ensure_ascii=False, default=str), flush=True)
     return 1 if result.get("passed") is False else 0

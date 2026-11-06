@@ -8,6 +8,8 @@
 
 ## What Changes
 
+- 2026-11-06按用户最新标准先推进R7数据合同：补Case分类/截止时间，判定复用当前判断；复用工件表保存有稳定身份和来源的证据索引，明确条目/威胁去重与空值规则。用DA01—DA06单独验收数据交接，主链可以并行对接，不等待模型质量、VPN或实时表单；下条R1—R8仍是独立质量路线。本轮数据部分已实施126、读取/导出及原页绑定，29表462列；见[交接](../../../docs/investigation/socai2-page-data-handoff-20261106.md)，完整任务与模型质量保持未完成。
+- 基于已推送`5eacb314`继续同一change规划R1—R8修复：先约束事实/效果及全部业务正文投影，再解决H输入容量，补领域/引用与知识选源、正常/恶意成对案例、原模板读回及远端对照。详见[设计](design.md)和[新验收矩阵](acceptance-plan-20261104.md)；本轮是规划，19/26状态不变，不启动模型或实现页面改版。
 - 承接已有新表、Fusion写入、C1–C6、Case API及A/I存储/读取，以原回执说明已完成范围；不重跑原批次或将替身验证当作真实质量验收。
 - 补A/I实际执行及模型/查询请求、返回、步骤和用量；完善页面字段出口、显式事件Case关系、人工结果与必要外部来源。
 - 保留完整C手动启动、同Case单活跃、领取前合并pending/领取后冻结、有效基础结果自动采用等已确认合同。
@@ -34,8 +36,9 @@
 
 ## Impact
 
-- `services/fusion/app/services/socai2_*`、`services/api/app/socai2/`、新API/测试与既有迁移123；本次目录迁移和Q预留不新增表/列/枚举。
+- 新增的数据目标为cases.classification、due_at、current_evidence_artifact_id三列及case_evidence_index工件kind/版本合同；通过后续增量迁移实现，不新增表或改123/124/125。本次尚未改DDL、物理合同JSON、运行代码或页面，实际仍29表459列。读取/导出允许必要字段绑定，分类不得沿用Incident回退，计数不得由演示数组或缺省0冒充。
+- `services/fusion/app/services/socai2_*`、`services/api/app/socai2/`、新API/测试与既有迁移123；此前已完成的目录迁移和Q预留当时未新增表/列/枚举，后续数据增量见上条。
 - [最新主设计](../../../docs/architecture/investigation-planning-design.md)、[字段字典](../../../docs/design/socai2-field-dictionary-20261103.md)、[交接](../../../docs/design/socai2-schema-implementation-20261103.md)为需求和字段依据。
 - 原123的29表458列保持；增量124增加Case固定来源命名空间，当前29表459列及125已在本机专属PG验证。原默认开关与生产配置保持；本机通过显式配置启用独立API及socai2 Fusion写入，不把测试环境开启说成生产切换。
-- 后续只补受影响的直接验证，不引入记忆平台或通用自动恢复；按最新授权复用/准备本机隔离数据服务。独立应用服务部署已获授权，不替换原版；不提交或推送。旧r13仍暂停、5.3未完成。
+- 后续只补受影响的直接验证，不引入记忆平台或通用自动恢复；按最新授权复用/准备本机隔离数据服务，不替换原版。现有实施已提交推送至`5eacb314`；本轮后续规划不部署或新增模型，旧r13仍暂停、5.3未完成。
 - 后续预计修改新API的baseline_analysis/reasoning/executor、followup合同、Case reader/路由及既有原型的数据适配层；不改旧API/Agents，不新增数据库表。JSON合同如需扩展应版本化，旧工件按原合同读取。详细选择与退出条件见[design](design.md)，原3.7/4.1/4.2继续待办。

@@ -31,6 +31,7 @@ from .case_contracts import (
     StartAvailability,
     project,
 )
+from .case_data import read_page_data
 
 S = m.RunSteps.__table__
 TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
@@ -93,6 +94,8 @@ def queue_filters(tenant_id, query):
             clauses.append(C.c[field] == value)
     if query.metric:
         clauses.append(queue_metric_predicates(tenant_id)[query.metric])
+    if query.classification is not None:
+        clauses.append(C.c.classification.is_(None) if query.classification == "not_set" else C.c.classification == query.classification)
     return clauses
 
 
@@ -196,7 +199,7 @@ class CaseReader:
             baseline = runs[row["id"]]
             active = any(run["state"] in {"running", "unknown"} for run in baseline)
             items.append(CaseQueueItem(case=project(CaseView, row), member_count=row["member_count"],
-                open_task_count=row["open_task_count"], baseline_records=[
+                open_task_count=row["open_task_count"], page_data=await read_page_data(self.store, row), baseline_records=[
                     CaseBaselineRecord(run=project(RunView, run), start_eligibility=start_availability(
                         row, run, row["member_count"], active)) for run in baseline]))
         next_cursor = None
@@ -260,6 +263,7 @@ class CaseReader:
             "linked_incidents": linked, "linked_incident_count": linked_count,
             "linked_incidents_truncated": linked_count > len(linked),
             "members_truncated": total > len(members), "current_assessment": assessment,
+            "page_data": await read_page_data(self.store, cas),
             "baseline_records": [{"run": project(RunView, r), "start_eligibility": await self.eligibility(cas, r, total)} for r in baseline]}
 
     async def history(self, case_id, *, limit=20, cursor=None):

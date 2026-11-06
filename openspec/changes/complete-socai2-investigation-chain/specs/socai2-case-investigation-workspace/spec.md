@@ -1,5 +1,19 @@
 ## ADDED Requirements
 
+### Requirement: Page data readiness is independent of investigation workflow maturity
+
+本轮页面数据合同 SHALL 以字段可持久保存/回查、来源关联及确定派生规则验收，允许通过真实数据库读回与导出交接，不要求先完成模型质量、VPN对照、实时页面写表或跨域接线。已有字段但当前无样例 SHALL 标为未产生数据，不当成结构缺口。原页面模板保持，允许必要字段绑定及缺值呈现适配；缓存、示例文案和演示值不能作为唯一业务数据来源。
+
+Case列表“判定” SHALL 为current_assessment.conclusion的读取别名，携带其来源、时间和适用范围，与资料/概览同源，不新增重复determination存储。无当前判断返回null；系统收尾保留system身份，技术原因从执行记录读取。分类和截止时间 SHALL 只从独立Case管理字段读取，证据/威胁计数 SHALL 使用版本化证据合同及计数状态，真实数据路径不得继承Incident分类或沿用演示数组长度计算。
+
+#### Scenario: Data contracts are verified while a later model improvement remains pending
+- **WHEN** 管理字段、当前判断、独立证据及来源已在隔离数据库保存并可按合同导出，而模型或流程仍待优化
+- **THEN** 可以单独交接数据合同并继续前后端开发，模型质量任务仍保留未完成；不能把此交接说成全部页面功能或调查质量已验收
+
+#### Scenario: A historical case has no current assessment or evidence index
+- **WHEN** 读出旧Case而两个当前指针均为空
+- **THEN** 判定与证据计数返回各自真实缺值及状态，原告警/材料仍可回查；不借最新Run正文、Incident分类或0计数填补
+
 ### Requirement: Real workflow exports can drive the existing review pages
 
 按用户最新阶段目标，系统 SHALL 支持将合成输入经真实入湖、Fusion、A/I/C/H及后续C得到的保存记录导出到既有页面，不要求先完成实时服务页面接线。导出 SHALL 保留环境／租户／原Case与Run身份、冻结输入、完整查询和模型工件、结果、人工任务版本及实际当前判断来源，并附导出时间和源文件摘要；合成输入与真实执行 SHALL 分开标记，不把预置回答当模型结果。
@@ -89,3 +103,15 @@ result_scope SHALL 显式列非空成员；对象仅在explicit_objects种类必
 #### Scenario: A user reaches a deferred AI entry
 - **WHEN** 用户打开AI入口而Q仍为预留501
 - **THEN** 显示AI问答暂未开放，不插入虚构模型回答、Run或已保存结果
+
+### Requirement: Internal investigation changes preserve the existing business presentation contract
+
+提示词、工具及内部执行工件演进 SHALL 由后端reader/export适配到既有业务DTO，保持Case/Run/Result/Task身份、来源关系、枚举与coverage/freshness/unknown语义；MUST NOT 要求页面解释新内部主张或步骤才能显示当前判断。实际模型判断与执行原因 SHALL 分别读取业务字段和执行记录。Case严重程度/分类/状态只读取其实际管理来源，缺值不得从模型正文推断填充；图谱共现不冒充已证实因果。公开合同如需变更 SHALL 显式规划兼容，不借内部适配静默改变。
+
+#### Scenario: A prompt or tool changes while the saved output contract stays compatible
+- **WHEN** 新Run增加工具或使用新的内部结果版本并完成合法保存
+- **THEN** 原页面布局仍能读取其当前判断、历史、材料、图谱及H，技术原因在执行详情回查；旧版本仍按原来源读取，不被补造或覆盖
+
+#### Scenario: An H and member-change loop is reviewed through an export
+- **WHEN** H及成员关联/移动通过现有服务或驱动保存，真实流程及新旧版本随后导出
+- **THEN** 既有页面能回查保存值、成员范围变化、pending/活跃轮与判断依据状态；导出模式不宣称本地页面操作已写回服务，实时表单不是本阶段必要验收条件

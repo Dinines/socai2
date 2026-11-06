@@ -1,6 +1,6 @@
 # 新库表字段字典
 
-2026-11-04当前：原123为29表/458列，增量124新增Case固定source_namespace，现29表/459列/36枚举/38JSON合同，已在既有独立验证库核对。原迁移/冻结Run保持，字段合同不等于生产已接入，见[关系批次](../investigation/socai2-case-relations-20261104.md)及[实现交接](socai2-schema-implementation-20261103.md)。来源：[结构化字典](socai2-data-contract-20261103.json)、[JSON schema](socai2-json-contracts-20261103.schema.json)。
+2026-11-06当前：增量126增加Case分类、截止时间和当前证据索引指针，本机隔离库已核对29表/462列；结构化字典现37枚举/39 JSON合同。原123为29表/458列，124增加固定source_namespace，125仅增加函数。原迁移和历史记录保留；字段合同不等于生产已接入。最新[页面数据交接](../investigation/socai2-page-data-handoff-20261106.md)，此前[关系批次](../investigation/socai2-case-relations-20261104.md)及[实现交接](socai2-schema-implementation-20261103.md)按各自日期阅读。来源：[结构化字典](socai2-data-contract-20261103.json)、[JSON schema](socai2-json-contracts-20261103.schema.json)。
 
 ## 1. 全表规则
 
@@ -53,7 +53,8 @@
 | change_kind | initial、unchanged、expanded、revised、withdrawn、not_comparable | 比较基线明确，initial无比较引用 |
 | approval_requirement | required、not_required、unknown | 未记录不等于无需审批 |
 | activity_result | succeeded、failed、skipped | 活动目标的实际处理结果，不用计数代目标 |
-| artifact_kind | input_snapshot、model_request、model_response、tool_request、tool_response、domain_analysis、deep_analysis、attack_chain、attack_path、alert_graph、report_json、report_markdown、attachment、source_snapshot、handoff、query_plan、alert_explanation | 稳定类别；新类型需版本变更 |
+| artifact_kind | input_snapshot、model_request、model_response、tool_request、tool_response、domain_analysis、deep_analysis、attack_chain、attack_path、alert_graph、report_json、report_markdown、attachment、source_snapshot、handoff、query_plan、alert_explanation、case_evidence_index | 稳定类别；126增加有版本的案件证据目录 |
+| case_classification | true_positive、informational、false_positive | Case明确管理分类；NULL为未设置，不继承Incident/Alert |
 | assessment_kind | triage、human_feedback | 自动与人工独立不可变历史 |
 | scope_kind | whole_case、selected_alerts、explicit_objects | 结果/人工反馈范围的声明，不等于已证明覆盖 |
 
@@ -306,6 +307,9 @@
 | priority_basis | JSONB / priority_basis | 是 | — | 已有依据 |
 | scope_revision | bigint | 否 | 0 | 仅当前告警成员真实变动+1 |
 | current_assessment_id | UUID → case_assessments | 是 | — | 已明确采用版本；不等于最新Run |
+| classification | TEXT / case_classification | 是 | — | 126新增；明确管理分类，允许清空，来源及操作人留活动 |
+| due_at | timestamptz | 是 | — | 126新增；Case期限，独立于任务期限及模型预算；输入必须有时区 |
+| current_evidence_artifact_id | UUID → artifacts | 是 | — | 126新增；同租户同Case的case_evidence_index/socai2.case-evidence.v1指针 |
 | created_at | timestamptz | 否 | transaction_timestamp() | 创建时间 |
 | created_by | uuid | 是 | — | 创建人，服务创建见活动 |
 | business_updated_at | timestamptz | 否 | transaction_timestamp() | 案件业务变化 |
@@ -317,6 +321,7 @@
 | legacy_ref | JSONB / external_ref | 是 | — | 导入时原Case命名空间/文本ID |
 
 - current_assessment须同Case同租户；后置FK打破建表循环
+- current_evidence_artifact_id由联合FK和延迟类型检查约束；正文SHA、来源角色/成员及版本由受控写入/读取校验，不能只写任意JSON冒充完整索引
 - scope_revision不由GET、任务编辑、调查进度增加
 - D02已确认有效baseline自动采用、AI明确采用；D04未定入口保持关闭
 
@@ -3764,3 +3769,15 @@ D04特殊流程尚未开放，不能据建表完成推断相关API已实现。�
 | `execution_summary.availability/artifact_id` | 原工件可用性及回查身份；不可读时不伪造能力摘要，不因GET执行查询或更新业务时间 |
 
 新执行器版本为`socai2.baseline-executor.v2`，C3执行建议合同为`socai2.baseline-analysis.v2`，含明确绑定和优先级；C6未来建议仍使用原v1建议合同。直接query不增加Deep模型调用；查询按绑定复用、Deep按问题复用；C6通过原计划索引及`projection_id`回查对应查询材料，不能用新建议接管旧执行记录。
+
+## 8. 页面数据合同（126增量）
+
+`CasePageData`的版本为`socai2.case-page-data.v1`；列表`items[].page_data`、详情`page_data`、专用GET及导出`case-page-data.json`使用相同读取/计数代码。`determination`直接等于当前采用的`case_assessments.conclusion`，同时携带该判断的来源、形成/采用时间、范围；无指针为null。执行错误留原Run/Step，不填到此字段。
+
+`PATCH /api/v1/socai2/cases/{case_id}/page-data`接收operation_key、expected_row_version、classification、due_at、source、source_note，两个业务字段需明确传入（可null）；不把省略理解为清空。`POST .../evidence-index`接收operation_key、expected_row_version、expected_current_artifact_id及index。写入要求cases:write和同租户真实用户；GET要求cases:read。幂等重放返回原回执，冲突返回409；管理变化与证据发布仅增加row_version和业务时间及活动，不更改处理状态/成员范围、不生成Run。
+
+证据正文使用[严格Schema](../../services/api/app/socai2/case_evidence.schema.json)：schema_version、scope_revision、alert_ids、supersedes_artifact_id、availability_state、limitations、entries。条目包含稳定命名空间ID、类型/标题、成员范围、对象材料键、原始来源、verdict及其来源、可空的命名空间威胁身份及来源、可空处置回执、active/withdrawn。每次发布追加不可变工件，Case锁内比较版本、当前指针及范围；前版必须是实际当前指针。撤回/改判不覆盖前版，重复ID拒绝。
+
+来源必须为同租户、同Case/条目成员的已保存行及有效JSON Pointer。v1支持Alert材料、C1冻结角色目录、结果的明确段落/条目范围、已完成人工任务及实际关联response_links的专用处置回执；普通模型请求不是处置回执。Alert原始材料仅登记的OCSF行为叶路径可作observation，其余保守为source_label，未注册工件格式拒绝。每组来源需覆盖条目声明成员；来源存在不代表标签的安全判断已经正确。
+
+当前条目只取active且所有声明成员仍在本案的条目；部分成员移出时整条排除，不缩小历史范围。独立证据按稳定ID计数；关联威胁仅从malicious/suspicious且有明确威胁身份的当前条目按(namespace,key)去重，clean/unknown/conflicting不计威胁。无索引/不可得/引用失效为null；有效空索引或全撤回为0；全clean可以证据>0、威胁=0。partial同时返回已知计数和未覆盖范围，0不代表全案无威胁。详见[只读查询](../investigation/socai2-page-data-readback-20261106.sql)及[验收/边界](../investigation/socai2-page-data-handoff-20261106.md)。

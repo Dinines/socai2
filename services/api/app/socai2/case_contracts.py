@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .baseline_contracts import Contract, Finding, Impact, Question, Recommendation
+from .case_data_contracts import Classification, CasePageData
 from .enums import (
     AssignmentState,
     ChangeKind,
@@ -149,6 +150,9 @@ class CaseView(Contract):
     priority_basis: dict[str, Any] | None
     scope_revision: int
     current_assessment_id: UUID | None
+    classification: Classification | None = None
+    due_at: AwareDatetime | None = None
+    current_evidence_artifact_id: UUID | None = None
     created_at: datetime
     created_by: UUID | None
     business_updated_at: datetime
@@ -254,6 +258,7 @@ class CaseQueueQuery(Contract):
     owner_id: UUID | None = None
     assignment_state: AssignmentState | None = None
     metric: CaseMetric | None = None
+    classification: Classification | Literal["not_set"] | None = None
 
     @field_validator("q")
     @classmethod
@@ -285,6 +290,7 @@ class CaseQueueItem(Contract):
     member_count: int = Field(ge=0)
     open_task_count: int = Field(ge=0)
     baseline_records: list[CaseBaselineRecord]
+    page_data: CasePageData | None = None
 
 
 class CaseQueuePage(Contract):
@@ -295,7 +301,7 @@ class CaseQueuePage(Contract):
 
 
 def project(model, row):
-    return model.model_validate({key: row[key] for key in model.model_fields})
+    return model.model_validate({key: row[key] for key in model.model_fields if key in row})
 
 
 class CaseDetail(Contract):
@@ -308,6 +314,7 @@ class CaseDetail(Contract):
     linked_incidents_truncated: bool
     current_assessment: dict[str, Any] | None
     baseline_records: list[dict[str, Any]]
+    page_data: CasePageData | None = None
 
 
 class ExecutionSummary(Contract):

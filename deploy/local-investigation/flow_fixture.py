@@ -31,7 +31,7 @@ def source_hashes():
     return {str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in sorted(paths)}
 
 
-def prepare(batch, window_start, *, backend="deepseek", model_values=None, scenario="maintenance"):
+def prepare(batch, window_start, *, backend="deepseek", model_values=None, scenario="maintenance", additional_tests=False):
     assert re.fullmatch(r"local-[a-z0-9][a-z0-9-]{1,60}", batch), "new local batch name required"
     if backend == "deployed" and model_values is None:
         raise ModelProfileMismatch("deployed_backend_requires_explicit_local_configuration")
@@ -89,4 +89,13 @@ def prepare(batch, window_start, *, backend="deepseek", model_values=None, scena
         plan["phase_order"] = ["ingest", "first", "export", "root_semantic_review"]
         upstream = ROOT / "tools/testdata/upstream/generate_eval_incidents.py"
         plan["comparison_source"] = {"path": str(upstream.relative_to(ROOT)), "sha256": sha(upstream.read_bytes())}
+    if additional_tests:
+        # User requested a separate three-case test batch on 2026-11-06.
+        # Preserve the previous 48 attempts; 21 additional attempts means an
+        # absolute ceiling of 69, without recycling the old unused allowance.
+        assert backend == "deepseek" and scenario in {"routine", "credential", "impact"}
+        assert batch in {"local-eval-20261106-01", "local-eval-20261106-02", "local-eval-20261106-03"}
+        plan.update(global_local_model_call_cap=69, max_model_calls=7, max_runs=4,
+            campaign="additional-tests-20261106", previous_attempts=48, additional_attempt_cap=21)
+        case.update(max_model_calls=7, max_runs=4)
     return plan, oracle

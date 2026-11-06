@@ -237,6 +237,7 @@ class ArtifactKind(StrEnum):
     HANDOFF = 'handoff'
     QUERY_PLAN = 'query_plan'
     ALERT_EXPLANATION = 'alert_explanation'
+    CASE_EVIDENCE_INDEX = 'case_evidence_index'
 
 class AssessmentKind(StrEnum):
     TRIAGE = 'triage'

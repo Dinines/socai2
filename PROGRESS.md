@@ -1,3 +1,43 @@
+# 2026-11-06 本轮数据与测试材料提交远程授权
+
+用户明确要求将本轮修改、测试结果、字段对应清单及剩余问题/下轮部署模型计划提交到远程。沿origin/codex/case-baseline-history-20261103，基线5eacb314；本次包含126页面数据增量、共用存取/导出、原页字段绑定、三组追加测试与四数据合同样例、F01—F28、OpenSpec及限定审计，并将原核验ZIP逐字复制到deliverables/investigation-validation-20261106供远端下载。见[发布范围与待办](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)。
+
+当前累计63/69、19/26及模型质量未通过保持。发布不启新模型/数据库/部署，不合并main；私密配置、API Token与较早tools/model-preflight工作保持本地。下文和包内“未提交/未上传”是各批原快照，最终提交推送结果以Git与远端核对为准，不回写历史证据。
+
+# 2026-11-06 追加三案测试与字段功能交接
+
+用户要求继续测试并同步核数据/页面/字段对应，已追加local-eval-20261106-01/02/03，真实Kafka/Fusion/PG/CH/DeepSeek合计15调用，累计63/69，三案C6均保存。01/02的C3分别领域发现范围/补查对象范围拒收；03格式通过但效果扩大，三案整体语义质量仍未通过。旧原答/失败保持，不用剩余6次试探，部署模型留下一轮。
+
+48次只读GET、674项比较、557原页面数据检查及87视图通过；入湖/原件逐值、当前结论/成员/图谱/执行工件关联可查。13本机模型批次与4无模型合同样例分列；F01—F28列功能→DB字段→读取→原页及空值/未接线。Case历史1条baseline与页面4条含A/I需聚合、活动混合计数、decimal编码和证据索引未生成已交代。见[统一交接](docs/investigation/investigation-test-handoff-20261106.md)和[索引](docs/operations/evidence/additional-tests-20261106/test-index.json)。
+
+本轮只新增有界测试入口、回查脚本/材料和原页数据引用，为加载126代码重启本机API；不改模板、提示或执行逻辑，不连VPN、不新增DDL、不清历史、不提交推送。校验器最初包装/元数据正文比较及数字字符串问题保留，修后用原件复核。19/26不变，模型质量/完整3.12/4.1/4.2不核销。以下为各批当时状态。
+
+本批独立结束审计限定ACCEPT/0剩余必须修，模型语义仍未通过；见[回执](openspec/changes/complete-socai2-investigation-chain/additional-validation-review-20261106.md)。1272文件、约10MB本机交接ZIP已CRC/逐文件SHA及页面本地依赖核对，初包漏Logo目录已修且保留初包；未含已知运行凭据、未上传，见[打包回执](docs/operations/evidence/additional-tests-20261106/package-receipt.json)。
+
+# 2026-11-06 页面数据增量与独立交接
+
+按用户继续推进实施D1—D3：126增加Case分类/期限/当前证据索引指针，复用工件存版本、活动存变更；当前判定复用已采用结论，共用读取/导出处理证据和威胁计数。实际本机29表462列，4案8告警为明确合成合同测试、0Run/0模型；14案含10旧案列表/详情一致，4模型/3系统/3legacy当前判断可读。原模板仅改字段/缺值/五态判定绑定，四样例和旧案例结论已浏览。见[数据交接](docs/investigation/socai2-page-data-handoff-20261106.md)与[公开回执](docs/operations/evidence/page-data-20261106/summary.json)。
+
+来源校验初审指出标签/分析提升和伪造处置回执，已按登记路径、冻结角色及成员范围修复；补unknown/conflicting显示。独立结束复核限定ACCEPT/0必须修，21后端/24前端定向通过。最初PG导出UTC字符串不一致、兼容验证取值错误及测试fixture错误均保留原因，修后只读复核。模型质量与完整3.12/4.1/4.2不核销，19/26、48/50保持；没有重启常驻API、VPN/远端动作或本轮提交推送。以下为各批当时状态。
+
+# 2026-11-06 数据合同优先修复规划
+
+按用户“规划推进”要求，在[同一OpenSpec](openspec/changes/complete-socai2-investigation-chain/design.md#页面数据合同优先推进2026-11-06)确定先字段含义→最小存储→一致读出/导出→数据交接。目标为Case分类、截止时间及当前证据索引指针三列，证据索引复用artifacts；判定复用current_assessment，证据/威胁计数有明确来源和去重规则，缺索引不造0。沿3.12及[DA01—DA06](openspec/changes/complete-socai2-investigation-chain/acceptance-plan-20261104.md#页面数据合同验收da01da06)独立验收数据，不等模型/VPN/实时表单，其他已具备字段并行对接。此轮仅规划，实际29表459列、19/26及48/50保持，未改DDL、运行代码、页面或历史数据。
+
+独立规划复核已完成：并发版本、重复ID/多成员范围及0/null口径三项澄清后ACCEPT/0剩余必须修，回执在同一设计节；不等同数据修复或整体验收完成。
+
+# 2026-11-06 页面数据覆盖核对与推进口径
+
+用户明确本轮只核页面数据能否保存、关联和取回，流程/算法/接口后续调整不阻碍前后端推进。[数据覆盖核对](openspec/changes/complete-socai2-investigation-chain/page-data-coverage-20261106.md)实际只读检查本机29表459列及七类来源关联，缺失关联计数均0；核心案件判断、调查结果、关系图、报告、人工反馈与材料可支撑继续开发。明确缺Case分类、Case截止时间两个存储字段，另有判定/关联威胁及独立证据的数据口径待定，纳入现有R7；已有字段的样例空值不当作数据库设计错误。此前实时对接问题保留为技术参考。本轮未改DDL、代码或页面，未新增模型调用，19/26与48/50保持。
+
+# 2026-11-06 前后端对接可行性评估
+
+[对接评估](openspec/changes/complete-socai2-investigation-chain/integration-assessment-20261106.md)确认核心Case/Run/Result/H数据及接口具备，原页真实导出与完整实时接线须分开。发现4174→18020跨域预检400（明确Disallowed CORS origin，服务livez/readyz正常）、服务启动comparison_result_id固定null、同Case快照只追加不更新、服务模式若干原页未接及内部图/阶段格式耦合；继续归3.12等原任务，不扩当前导出验收前提。原导出6项、模拟HTTP服务12项通过；首次8项被沙箱监听EPERM阻断，允许本机夹具后通过，非业务代码失败。一项内存探针复现旧判断保留/新Run追加。未使用凭据/模型、未写业务数据或改配置/代码/页面；19/26、48/50保持，未提交推送。
+
+# 2026-11-05 R1—R8后续修复规划
+
+基于已提交并推送的`5eacb314`，继续[现有OpenSpec](openspec/changes/complete-socai2-investigation-chain/design.md)：先版本化事实/效果主张及统一业务投影，解决引用合法但正文扩大；再修C3/C6历史参考与H容量、领域/引用/知识选源，按[验收矩阵](openspec/changes/complete-socai2-investigation-chain/acceptance-plan-20261104.md)推进新批DeepSeek、原模板读回和VPN远端配对。19/26任务状态保持，本机48/50尝试不变；拟议新批次数仅作计划，尚未取得额外额度。本轮仅规划，无运行代码/页面修改、模型/数据库/部署/提交推送，旧原件和tools/model-preflight工作保持。strict、链接/锚点及任务状态核对通过；[独立规划复核](openspec/changes/complete-socai2-investigation-chain/followup-planning-review-20261105.md)三项澄清后ACCEPT/0必须修，不核销实施或4.1结束审计。
+
 # 2026-11-05 提交远程分支与评审交接
 
 用户已明确要求将当前修改提交推送至origin/codex/case-baseline-history-20261103。已整理[修改与后续评审清单](docs/investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)：已实施6类修改、真实样例结果、R1—R8问题及复验要求；统一README/主设计/OpenSpec当前19/26、48/50模型时点，原始失败不改写。此次为进度提交，事实扩大、H后容量和完整质量仍未验收，不归档或部署；私密配置/原件及较早tools/model-preflight工作留本地。最终提交与推送结果以Git及远端指针核对为准，下方未提交/未推送为各批当时状态。

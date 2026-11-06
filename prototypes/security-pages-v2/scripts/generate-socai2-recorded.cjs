@@ -80,7 +80,7 @@ function generate(options) {
   if (manifest.sources !== undefined && !Array.isArray(manifest.sources)) throw new Error('Manifest sources must be an array.');
   const roles = new Set();
   for (const entry of manifest.sources || []) {
-    if (!entry || !['database', 'api_responses', 'run_input_freshness', 'failure_classification'].includes(entry.role) || roles.has(entry.role)) throw new Error('Invalid or duplicate source role.');
+    if (!entry || !['database', 'api_responses', 'run_input_freshness', 'failure_classification', 'case_page_data'].includes(entry.role) || roles.has(entry.role)) throw new Error('Invalid or duplicate source role.');
     roles.add(entry.role);
     if (typeof entry.file !== 'string' || !/^[A-Za-z0-9_.-]+$/.test(entry.file) || ['.', '..'].includes(entry.file) || !/^[a-f0-9]{64}$/.test(entry.sha256 || '')) throw new Error('Source requires a local filename and SHA256.');
     const file = path.join(path.dirname(files.manifest), entry.file);
@@ -95,7 +95,9 @@ function generate(options) {
   // Load the real adapter only after the source identity has been verified.
   const {adaptExport} = require('../socai2-recorded-import.js');
   if (typeof adaptExport !== 'function') throw new Error('Recorded-data adapter is unavailable.');
-  const data = adaptExport(database, manifest, responses);
+  const pageData = related.find(item => item.role === 'case_page_data')?.value || [];
+  if (!Array.isArray(pageData)) throw new Error('Case page data must be an array.');
+  const data = adaptExport(database, manifest, responses, pageData);
   const output = serializeRecordedData(data);
   const manifestHash = sha256(manifestBytes);
   const assertUnchanged = () => {

@@ -30,9 +30,41 @@ function load(data){
  const s={window:{addEventListener(){}},document:{addEventListener(){}},location:{hash:'#/cases'},localStorage:{getItem:()=>null},structuredClone,URLSearchParams,clearInterval};vm.createContext(s);
  for(const name of ['icons','workspace-layout','data','replayed-alerts','alert-detail','workspace-model','workspace-view','investigation-data','alert-flow-workspace','investigation-graph','investigation-workspace','case-workflow','case-assistant','socai2-recorded-import'])vm.runInContext(fs.readFileSync(path.join(root,name+'.js'),'utf8'),s);
  s.window.socai2RecordedData=structuredClone(data);
- const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.api={store,ui,casePage,incidentPage,fullAlert,investigationView,caseWorkflow,caseQueueRows};\n})();');
+ const code=fs.readFileSync(path.join(root,'app.js'),'utf8').replace('readQueueLink();render();\n})();','window.api={store,ui,casePage,incidentPage,fullAlert,investigationView,caseWorkflow,caseQueueRows,drawerMarkup};\n})();');
  vm.runInContext(code,s);return {...s.window.api,s,M:s.window.investigationWorkspaceModel};
 }
+test('persisted page-data examples retain zero, missing, sources and current judgments in the original views',()=>{
+ const s={window:{}};vm.createContext(s);vm.runInContext(fs.readFileSync(path.join(root,'socai2-recorded-page-data-20261106.js'),'utf8'),s);
+ const data=s.window.socai2RecordedData,x=load(data);
+ for(const c of data.cases){
+  const q=x.caseQueueRows().find(r=>r.id===c.id),v=c.pageData.evidence;
+  assert.equal(q.threatCount,v.threat_count);assert.equal(q.determination,c.assessment?.conclusion||'未设置');
+  x.ui.caseId=c.id;x.s.location.hash='#/cases/'+c.id+'/case-info';
+  const html=x.casePage();assert.ok(html.includes('独立证据条目'));assert.ok(html.includes(c.assessment?.conclusion||'尚未形成案件级判断'));
+  const es=x.store.evidence.filter(e=>e.caseId===c.id);assert.equal(es.length,v.entries.length);
+  for(const e of es){assert.ok(e.sourceRefs.length);assert.equal(e.indexArtifactId,v.artifact_id);assert.ok(e.alertIds.every(a=>c.alertIds.includes(a)));}
+ }
+ assert.deepEqual(Array.from(data.cases,c=>c.pageData.evidence.threat_count),[0,1,0,null]);
+ assert.equal(data.runs.length,0);
+});
+test('old exports use the adopted judgment and never inherit incident classification or invent threat counts',()=>{
+ const {data}=adapted();data.incidents[0].classification='True positive';delete data.cases[0].determination;
+ const x=load(data),row=x.caseQueueRows().find(c=>c.id===data.cases[0].id);
+ assert.equal(row.determination,'Unit explicitly adopted judgment');assert.equal(row.classification,'Not set');assert.equal(row.threatCount,null);
+});
+test('page-data companions reject snapshot, pointer and current-judgment mismatches',()=>{
+ const db=fixture(),cas=db.cases[0];cas.row_version=3;
+ const page={tenant_id:cas.tenant_id,case_id:cas.id,case_row_version:3,current_assessment_id:cas.current_assessment_id,page_data:{schema_version:'socai2.case-page-data.v1',classification:null,due_at:null,determination:'Unit explicitly adopted judgment',evidence:{artifact_id:null,entries:[],evidence_count:null,threat_count:null,state:'not_recorded'}}};
+ assert.equal(adaptExport(db,manifest,[],[page]).cases[0].pageData.determination,page.page_data.determination);
+ for(const change of ['version','pointer','determination']){
+  const wrong=structuredClone(page);
+  if(change==='version')wrong.case_row_version=2;
+  if(change==='pointer')wrong.page_data.evidence.artifact_id='other-index';
+  if(change==='determination')wrong.page_data.determination='Not adopted';
+  assert.throws(()=>adaptExport(db,manifest,[],[wrong]),/mismatch/);
+ }
+ cas.current_evidence_artifact_id='saved-index';assert.throws(()=>adaptExport(db,manifest),/case_evidence_projection_missing/);
+});
 test('unit export preserves identities, original values, critical/priority and unknown approval',()=>{
  const db=fixture(),before=JSON.stringify(db),d=adaptExport(db,manifest,responses(db));
  assert.equal(JSON.stringify(db),before);assert.equal(d.alerts[0].severity,'严重');assert.equal(d.incidents[0].priority,42.5);assert.equal(d.runs.find(r=>r.sourceRunId==='rc').actions[0].requires_approval,null);
@@ -89,4 +121,13 @@ test('pending and A/I records never establish Case baseline coverage; graph read
  const p=x.M.runs(x.store).find(r=>r.sourceRunId==='rp');assert.equal(x.M.activeStatuses.has(p.status),false);assert.equal(x.M.runOutcome(p).hasConclusion,false);assert.match(x.M.runOutcome(p).conclusion,/待启动/);
  x.store.socai2RecordedRuns=x.store.socai2RecordedRuns.filter(r=>r.investigationKind!=='baseline');assert.equal(x.M.caseAssessment(x.store,c).unanalysed.length,2);
  const graphBefore=JSON.stringify(x.s.window.investigationGraphModel.build(r,x.store,x.M.graphContext(x.store,r)));x.store.alerts.find(a=>a.id===r.alertIds[0]).title='edited current title';assert.equal(JSON.stringify(x.s.window.investigationGraphModel.build(r,x.store,x.M.graphContext(x.store,r))),graphBefore);
+});
+
+test('unknown and conflicting evidence detail labels are visible and neutral',()=>{
+ const {data}=adapted();const x=load(data);
+ for(const verdict of ['未判定','有冲突']){
+  x.store.evidence.push({id:'unit-'+verdict,name:'Unit evidence',type:'log',alertId:data.cases[0].alertIds[0],verdict,remediation:'未记录',origin:'unit'});
+  x.ui.drawer={type:'evidence',id:'unit-'+verdict};const html=x.drawerMarkup();
+  assert.ok(html.includes(verdict));assert.ok(!html.includes('badge green'));
+ }
 });

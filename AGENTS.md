@@ -1,3 +1,25 @@
+# 2026-11-06 本轮数据与测试材料提交远程授权
+
+用户明确要求将本轮修改、测试结果、字段对应清单及剩余问题/下轮部署模型计划提交到远程。沿origin/codex/case-baseline-history-20261103，基线5eacb314；本次包含126页面数据增量、共用存取/导出、原页字段绑定、三组追加测试与四数据合同样例、F01—F28、OpenSpec及限定审计，并将原核验ZIP逐字复制到deliverables/investigation-validation-20261106供远端下载。见[发布范围与待办](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)。
+
+当前累计63/69、19/26及模型质量未通过保持。发布不启新模型/数据库/部署，不合并main；私密配置、API Token与较早tools/model-preflight工作保持本地。下文和包内“未提交/未上传”是各批原快照，最终提交推送结果以Git与远端核对为准，不回写历史证据。
+
+# 2026-11-06 追加三案测试与字段功能交接
+
+用户要求继续测试并同步核数据/页面/字段对应，已追加local-eval-20261106-01/02/03，真实Kafka/Fusion/PG/CH/DeepSeek合计15调用，累计63/69，三案C6均保存。01/02的C3分别领域发现范围/补查对象范围拒收；03格式通过但效果扩大，三案整体语义质量仍未通过。旧原答/失败保持，不用剩余6次试探，部署模型留下一轮。
+
+48次只读GET、674项比较、557原页面数据检查及87视图通过；入湖/原件逐值、当前结论/成员/图谱/执行工件关联可查。13本机模型批次与4无模型合同样例分列；F01—F28列功能→DB字段→读取→原页及空值/未接线。Case历史1条baseline与页面4条含A/I需聚合、活动混合计数、decimal编码和证据索引未生成已交代。见[统一交接](docs/investigation/investigation-test-handoff-20261106.md)和[索引](docs/operations/evidence/additional-tests-20261106/test-index.json)。
+
+本轮只新增有界测试入口、回查脚本/材料和原页数据引用，为加载126代码重启本机API；不改模板、提示或执行逻辑，不连VPN、不新增DDL、不清历史、不提交推送。校验器最初包装/元数据正文比较及数字字符串问题保留，修后用原件复核。19/26不变，模型质量/完整3.12/4.1/4.2不核销。以下为各批当时状态。
+
+本批独立结束审计限定ACCEPT/0剩余必须修，模型语义仍未通过；见[回执](openspec/changes/complete-socai2-investigation-chain/additional-validation-review-20261106.md)。1272文件、约10MB本机交接ZIP已CRC/逐文件SHA及页面本地依赖核对，初包漏Logo目录已修且保留初包；未含已知运行凭据、未上传，见[打包回执](docs/operations/evidence/additional-tests-20261106/package-receipt.json)。
+
+# 2026-11-06 页面数据增量与独立交接
+
+按用户继续推进实施D1—D3：126增加Case分类/期限/当前证据索引指针，复用工件存版本、活动存变更；当前判定复用已采用结论，共用读取/导出处理证据和威胁计数。实际本机29表462列，4案8告警为明确合成合同测试、0Run/0模型；14案含10旧案列表/详情一致，4模型/3系统/3legacy当前判断可读。原模板仅改字段/缺值/五态判定绑定，四样例和旧案例结论已浏览。见[数据交接](docs/investigation/socai2-page-data-handoff-20261106.md)与[公开回执](docs/operations/evidence/page-data-20261106/summary.json)。
+
+来源校验初审指出标签/分析提升和伪造处置回执，已按登记路径、冻结角色及成员范围修复；补unknown/conflicting显示。独立结束复核限定ACCEPT/0必须修，21后端/24前端定向通过。最初PG导出UTC字符串不一致、兼容验证取值错误及测试fixture错误均保留原因，修后只读复核。模型质量与完整3.12/4.1/4.2不核销，19/26、48/50保持；没有重启常驻API、VPN/远端动作或本轮提交推送。以下为各批当时状态。
+
 # 2026-11-05 当前调查审计修复与剩余容量问题
 
 当前分支codex/case-baseline-history-20261103，直接更新既有文档，未新建工作树。用户现已授权提交并推送当前进度至origin同名分支；不合并主分支、不部署，C6剩余额度问题保持未闭环。A01已加125增量函数迁移：按冻结成员材料/triage/feedback、事件诊断/成员、已完成H语义检查输入新鲜度；采用前stale_input不覆盖，Case读取返回input_freshness，标题/负责人等元数据变化不误判。29表459列不变，125只应用21既有隔离验证库，业务库/常驻服务未更新。A03明确400/422 Schema拒绝失败收口、ended_at及释放Run，未知用量保持；超时/其他不确定仍unknown，旧记录不批改。独立小模型Compose绑定vllm_grammar_v1，DeepSeek覆盖standard，预检校验协议/profile；原配置保持。A04补明确SHA256及冲突/遗漏。A05按冻结对象选C2来源，保存选择依据，仍给C4留2次/总4次Tool。

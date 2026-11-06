@@ -363,7 +363,8 @@
         "source_snapshot",
         "handoff",
         "query_plan",
-        "alert_explanation"
+        "alert_explanation",
+        "case_evidence_index"
       ],
       "meaning": "稳定类别；新类型需版本变更"
     },
@@ -381,6 +382,14 @@
         "explicit_objects"
       ],
       "meaning": "结果/人工反馈范围的声明，不等于已证明覆盖"
+    },
+    "case_classification": {
+      "values": [
+        "true_positive",
+        "informational",
+        "false_positive"
+      ],
+      "meaning": "明确Case管理分类；NULL为未设置，与当前判断正文独立"
     }
   },
   "contracts": {
@@ -2263,7 +2272,10 @@
             "type": "string"
           },
           "schema_profile": {
-            "enum": ["standard", "vllm_grammar_v1"]
+            "enum": [
+              "standard",
+              "vllm_grammar_v1"
+            ]
           },
           "model": {
             "type": "string"
@@ -2479,7 +2491,11 @@
             "type": "string"
           },
           "applicability": {
-            "enum": ["applicable", "not_applicable", "undetermined"]
+            "enum": [
+              "applicable",
+              "not_applicable",
+              "undetermined"
+            ]
           },
           "questions": {
             "$ref": "#/$defs/questions"
@@ -3001,6 +3017,10 @@
         ],
         "additionalProperties": false
       }
+    },
+    "case_evidence_index": {
+      "meaning": "不可变案件证据目录；详见socai2.case-evidence.v1严格Schema、来源/版本/计数合同",
+      "schema": "services/api/app/socai2/case_evidence.schema.json"
     }
   },
   "tables": [
@@ -4248,12 +4268,38 @@
           "nullable": true,
           "default": null,
           "meaning": "导入时原Case命名空间/文本ID"
+        },
+        {
+          "name": "classification",
+          "type": "enum.case_classification",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确保存的案件管理分类；NULL未设置，不继承事件或告警",
+          "introduced_in_migration": 126
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "案件截止时间，与任务期限和运行超时分离",
+          "introduced_in_migration": 126
+        },
+        {
+          "name": "current_evidence_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "同租户同Case的当前case_evidence_index不可变工件；NULL未记录",
+          "introduced_in_migration": 126
         }
       ],
       "constraints": [
         "current_assessment须同Case同租户；后置FK打破建表循环",
         "scope_revision不由GET、任务编辑、调查进度增加",
-        "D02已确认有效baseline自动采用、AI明确采用；D04未定入口保持关闭"
+        "D02已确认有效baseline自动采用、AI明确采用；D04未定入口保持关闭",
+        "current_evidence_artifact_id须同租户同Case且kind=case_evidence_index/schema=socai2.case-evidence.v1；JSON引用由应用校验",
+        "classification/due_at修改留活动前后值，不改scope_revision/处理状态或启动Run"
       ]
     },
     {
@@ -6357,7 +6403,8 @@
     "source_snapshot": "raw_payload",
     "handoff": "handoff",
     "query_plan": "query_plan",
-    "alert_explanation": "alert_explanation"
+    "alert_explanation": "alert_explanation",
+    "case_evidence_index": "case_evidence_index"
   },
   "composite_unique_keys": {
     "alert_materials": [
@@ -6492,6 +6539,13 @@
       "path": "services/api/migrations/124_socai2_case_source_binding.sql",
       "tables": 29,
       "columns": 459,
+      "baseline_123_unchanged": true
+    },
+    {
+      "number": 126,
+      "path": "services/api/migrations/126_socai2_case_page_data.sql",
+      "tables": 29,
+      "columns": 462,
       "baseline_123_unchanged": true
     }
   ]

@@ -1,0 +1,316 @@
+{
+  "$defs": {
+    "EvidenceEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "maxLength": 300,
+          "pattern": "^[A-Za-z0-9_.-]+:[^\\s]+$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Type",
+          "type": "string"
+        },
+        "alert_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 200,
+          "minItems": 1,
+          "title": "Alert Ids",
+          "type": "array"
+        },
+        "object_keys": {
+          "items": {
+            "$ref": "#/$defs/EvidenceObject"
+          },
+          "maxItems": 50,
+          "title": "Object Keys",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SavedReference"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "verdict": {
+          "enum": [
+            "malicious",
+            "suspicious",
+            "clean",
+            "unknown",
+            "conflicting"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "verdict_sources": {
+          "items": {
+            "$ref": "#/$defs/SavedReference"
+          },
+          "maxItems": 30,
+          "title": "Verdict Sources",
+          "type": "array"
+        },
+        "threat": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Threat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SavedReference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "active",
+            "withdrawn"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "title",
+        "type",
+        "alert_ids",
+        "object_keys",
+        "source_refs",
+        "verdict",
+        "verdict_sources",
+        "threat",
+        "remediation",
+        "state"
+      ],
+      "title": "EvidenceEntry",
+      "type": "object"
+    },
+    "EvidenceObject": {
+      "additionalProperties": false,
+      "properties": {
+        "material_id": {
+          "format": "uuid",
+          "title": "Material Id",
+          "type": "string"
+        },
+        "object_key": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Object Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "material_id",
+        "object_key"
+      ],
+      "title": "EvidenceObject",
+      "type": "object"
+    },
+    "SavedReference": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "alert_material",
+            "artifact",
+            "task_revision",
+            "result"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "external": {
+          "title": "External",
+          "type": "null"
+        },
+        "source_path": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Source Path",
+          "type": "string"
+        },
+        "row_keys": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 0,
+          "title": "Row Keys",
+          "type": "array"
+        },
+        "role": {
+          "enum": [
+            "observation",
+            "source_label",
+            "prior_analysis",
+            "human_statement",
+            "execution_receipt"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "external",
+        "source_path",
+        "row_keys",
+        "role"
+      ],
+      "title": "SavedReference",
+      "type": "object"
+    },
+    "Threat": {
+      "additionalProperties": false,
+      "properties": {
+        "namespace": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Namespace",
+          "type": "string"
+        },
+        "key": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Label",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SavedReference"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "namespace",
+        "key",
+        "label",
+        "source_refs"
+      ],
+      "title": "Threat",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "socai2.case-evidence.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope_revision": {
+      "minimum": 0,
+      "title": "Scope Revision",
+      "type": "integer"
+    },
+    "alert_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 200,
+      "title": "Alert Ids",
+      "type": "array"
+    },
+    "supersedes_artifact_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Supersedes Artifact Id"
+    },
+    "availability_state": {
+      "enum": [
+        "available",
+        "partial",
+        "unavailable"
+      ],
+      "title": "Availability State",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "maxLength": 500,
+        "minLength": 1,
+        "pattern": "\\S",
+        "type": "string"
+      },
+      "maxItems": 30,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/EvidenceEntry"
+      },
+      "maxItems": 500,
+      "title": "Entries",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "scope_revision",
+    "alert_ids",
+    "supersedes_artifact_id",
+    "availability_state",
+    "limitations",
+    "entries"
+  ],
+  "title": "EvidenceIndex",
+  "type": "object"
+}

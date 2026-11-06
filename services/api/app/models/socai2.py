@@ -343,6 +343,9 @@ class Cases(Socai2Base):
     priority_basis: Mapped[object | None] = mapped_column(JSONB, nullable=True)
     scope_revision: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text('0'))
     current_assessment_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    classification: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    current_evidence_artifact_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=text('transaction_timestamp()'))
     created_by: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     business_updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=text('transaction_timestamp()'))
@@ -355,6 +358,8 @@ class Cases(Socai2Base):
     __table_args__ = (
         UniqueConstraint('tenant_id', 'id'),
         CheckConstraint('length(btrim("title")) > 0', name='cases_title_nonblank'),
+        CheckConstraint("classification IN ('true_positive','informational','false_positive')", name='cases_classification_enum'),
+        ForeignKeyConstraint(['tenant_id', 'id', 'current_evidence_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.case_id', 'socai2.artifacts.id'], name='cases_current_evidence_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         CheckConstraint('"handling_status" IN (\'new\',\'in_progress\',\'resolved\',\'unknown\')', name='cases_handling_status_enum'),
         CheckConstraint('"severity" IN (\'info\',\'low\',\'medium\',\'high\',\'critical\')', name='cases_severity_enum'),
         CheckConstraint('"assignment_state" IN (\'unassigned\',\'assigned\',\'unresolved\')', name='cases_assignment_state_enum'),
@@ -667,7 +672,7 @@ class Artifacts(Socai2Base):
         UniqueConstraint('tenant_id', 'alert_id', 'id', name='artifacts_scope_key_1'),
         UniqueConstraint('tenant_id', 'incident_id', 'id', name='artifacts_scope_key_2'),
         UniqueConstraint('tenant_id', 'run_id', 'id', name='artifacts_scope_key_3'),
-        CheckConstraint('"kind" IN (\'input_snapshot\',\'model_request\',\'model_response\',\'tool_request\',\'tool_response\',\'domain_analysis\',\'deep_analysis\',\'attack_chain\',\'attack_path\',\'alert_graph\',\'report_json\',\'report_markdown\',\'attachment\',\'source_snapshot\',\'handoff\',\'query_plan\',\'alert_explanation\')', name='artifacts_kind_enum'),
+        CheckConstraint('"kind" IN (\'input_snapshot\',\'model_request\',\'model_response\',\'tool_request\',\'tool_response\',\'domain_analysis\',\'deep_analysis\',\'attack_chain\',\'attack_path\',\'alert_graph\',\'report_json\',\'report_markdown\',\'attachment\',\'source_snapshot\',\'handoff\',\'query_plan\',\'alert_explanation\',\'case_evidence_index\')', name='artifacts_kind_enum'),
         CheckConstraint('"sha256" ~ \'^[0-9a-f]{64}$\'', name='artifacts_sha256_sha'),
         CheckConstraint('"size_bytes" >= 0', name='artifacts_size_bytes_range'),
         CheckConstraint('"material_state" IN (\'complete\',\'truncated\',\'summary_only\',\'unavailable\')', name='artifacts_material_state_enum'),

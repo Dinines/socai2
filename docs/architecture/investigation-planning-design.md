@@ -1,5 +1,9 @@
 # 调查模块最新设计
 
+2026-11-06最新推进顺序按用户要求调整为[页面数据合同优先](../../openspec/changes/complete-socai2-investigation-chain/design.md#页面数据合同优先推进2026-11-06)：Case分类/期限独立保存，判定复用当前结论，独立证据按有来源的版本索引保存并明确计数。先交接可保存/可查询的数据；下述算法/流程路线独立推进，不阻碍前后端取数。126增量及数据部分现已实施，本机29表462列，见[数据交接](../investigation/socai2-page-data-handoff-20261106.md)；19/26、48/50及原页面布局保持。
+
+2026-11-05后续修复规划：基于已提交`5eacb314`，在[同一OpenSpec设计](../../openspec/changes/complete-socai2-investigation-chain/design.md)落实R1—R8推进顺序。下一候选以现有工件中的有界事实/效果主张及同版业务投影防止正文扩大，C3/C6的A/I参考整组可选以保必要事实/H，再补领域/引用、知识选源及新批对照。公开DTO、原页面模板、预算与历史保持；这段是待实施合同，不是已修复声明，19/26、48/50状态不变。[验收矩阵](../../openspec/changes/complete-socai2-investigation-chain/acceptance-plan-20261104.md)分别规定离线、真实模型及原页读回；拟议额外模型额度未批准，服务器测试仍待VPN窗口。
+
 当前调整已进入实施：[OpenSpec设计](../../openspec/changes/complete-socai2-investigation-chain/design.md)中的完整请求容量/C6预留、query直接查询、Case集合读取及既有页面服务接线已有代码。用户批准新完整C使用48000保守单位，仍为4模型／4工具／120秒；旧Run及A/I不回写。用户侧以“本轮调查依据未变化／调查依据已更新／暂无法核对调查依据”表达受跟踪输入状态，与成员覆盖分开。代码、隔离PG与真实模型质量分别验收，实际进度以[任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)为准，未完成整链不作完成承诺。
 
 当前验证拓扑见[本机优先与VPN模型窗口](../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)。2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 原页面以真实导出回查；[修改与后续评审](../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)保留事实扩大、H容量和未实际消费知识等问题。

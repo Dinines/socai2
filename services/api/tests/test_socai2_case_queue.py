@@ -30,6 +30,7 @@ from sqlalchemy import (
     Uuid,
     create_engine,
     insert,
+    select,
 )
 from sqlalchemy.types import TypeDecorator
 
@@ -81,7 +82,11 @@ class QueueSQLTest(unittest.IsolatedAsyncioTestCase):
             self.selects.append(statement)
             return self.connection.execute(statement)
 
-        self.store = SimpleNamespace(tenant_id=TENANT, db=SimpleNamespace(execute=execute),
+        async def members(case_id):
+            return set(self.connection.execute(select(tables["CA"].c.alert_id).where(
+                tables["CA"].c.tenant_id == TENANT, tables["CA"].c.case_id == case_id)).scalars())
+
+        self.store = SimpleNamespace(tenant_id=TENANT, db=SimpleNamespace(execute=execute), members=members,
             where=lambda table, *conditions: [table.c.tenant_id == TENANT, *conditions])
         self.reader = reader.CaseReader(self.store)
         for ident, status, assignment, severity in (

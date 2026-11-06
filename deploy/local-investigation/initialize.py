@@ -119,7 +119,7 @@ async def verify_postgres(conn):
         pg_get_userbyid(c.relowner) AS owner FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='socai2' AND c.relkind='r'""")
     columns = await conn.fetchval("SELECT count(*) FROM information_schema.columns WHERE table_schema='socai2'")
-    assert len(tables) == 29 and columns == 459, "unexpected investigation schema"
+    assert len(tables) == 29 and columns == 462, "unexpected investigation schema"
     assert all(t["relrowsecurity"] and t["relforcerowsecurity"] for t in tables)
     assert all(t["owner"] not in {API_ROLE, FUSION_ROLE} for t in tables)
     for role in (API_ROLE, FUSION_ROLE):

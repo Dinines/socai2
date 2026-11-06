@@ -54,6 +54,20 @@ def test_fixture_uses_new_tenant_ids_and_separate_oracle():
     UUID(uid("local-unit-one", "A0"))
 
 
+def test_additional_campaign_preserves_prior_usage_and_bounds_dispatch():
+    plan, _ = prepare("local-eval-20261106-01", "2026-11-06T03:00:00+00:00",
+        scenario="routine", additional_tests=True)
+    assert (plan["previous_attempts"], plan["additional_attempt_cap"], plan["global_local_model_call_cap"]) == (48,21,69)
+    assert plan["max_model_calls"] == 7 and plan["case"]["rounds"] == 1
+    with pytest.raises(AssertionError):
+        prepare("local-unregistered", "2026-11-06T03:00:00+00:00",scenario="routine",additional_tests=True)
+    driver=Driver.__new__(Driver);driver.plan=plan
+    driver.pg=AsyncMock(return_value=[{"state":"completed","calls":63}])
+    with pytest.raises(FlowStopped,match="global_69"):
+        asyncio.run(driver.budget(7))
+    assert asyncio.run(driver.budget(6))["global_cap"] == 69
+
+
 def test_all_29_exports_are_readonly_and_parameter_scoped():
     assert len(TABLES) == len(set(TABLES)) == 29
     for table in TABLES:
@@ -151,12 +165,14 @@ def test_export_manifest_keeps_api_sources_and_excludes_oracle(tmp_path):
 
     from flow_export import export
     from flow_fixture import sha
+    case_row={"id":uid("local-test-export","case"),"tenant_id":TENANT,"title":"retained",
+        "row_version":1,"scope_revision":0,"current_assessment_id":None,"current_evidence_artifact_id":None}
     @asynccontextmanager
     async def transaction(**kwargs):
         assert kwargs == {"isolation": "repeatable_read", "readonly": True}
         yield
     async def fetchval(sql, *_args):
-        return json.dumps([{"id": "unaltered-case-row", "title": "retained"}]) if "FROM socai2.cases t " in sql else "[]"
+        return json.dumps([case_row]) if "FROM socai2.cases t " in sql else "[]"
     connection = SimpleNamespace(transaction=transaction, execute=AsyncMock(), fetchval=fetchval, close=AsyncMock())
     body = {"current_assessment": {"input_freshness": {"freshness_status": "current"}}}
     async def http(_label, method, path, **_kwargs):
@@ -170,7 +186,9 @@ def test_export_manifest_keeps_api_sources_and_excludes_oracle(tmp_path):
     manifest = json.loads((folder / "manifest.json").read_text())
     data = json.loads((folder / "database.json").read_text())
     assert manifest["schema_version"] == "socai2.page-export.v1" and manifest["input_kind"] == "synthetic"
-    assert data["cases"] == [{"id": "unaltered-case-row", "title": "retained"}] and len(data) == 29
+    assert data["cases"] == [case_row] and len(data) == 29
     assert manifest["source_sha256"] == sha((folder / "database.json").read_bytes())
     responses = json.loads((folder / "api-responses.json").read_text())
     assert all(r["body"] == body for r in responses) and not (folder / "expected.json").exists()
+    page=json.loads((folder/'case-page-data.json').read_text())[0]['page_data']
+    assert page['determination'] is None and page['evidence']['evidence_count'] is None

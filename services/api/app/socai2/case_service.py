@@ -21,6 +21,19 @@ USERS = table("users", column("id", PGUUID(as_uuid=True)), column("tenant_id", P
 
 
 class CaseService(BaselineService):
+    async def update_page_data(self, tenant_id, case_id, request, *, actor):
+        from .case_data import write_data
+        return await write_data(self, tenant_id, case_id, request, actor)
+
+    async def publish_evidence(self, tenant_id, case_id, request, *, actor):
+        from .case_data import write_data
+        return await write_data(self, tenant_id, case_id, request, actor, evidence=True)
+
+    async def read_page_data(self, tenant_id, case_id):
+        from .case_data import read_page_data
+        async with self.transaction(tenant_id, readonly=True) as store:
+            return await read_page_data(store, await store.case(case_id, lock=False))
+
     async def actor(self, store, actor):
         exists = await store.one(select(USERS.c.id).where(USERS.c.id == actor.user_id,
             USERS.c.tenant_id == store.tenant_id))
