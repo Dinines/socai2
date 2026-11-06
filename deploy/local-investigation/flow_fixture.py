@@ -11,6 +11,11 @@ from backend_profile import DEEPSEEK_DEFAULTS, ModelProfileMismatch, freeze
 from config import DATABASE, LAKE, ROOT, TENANT, TOPIC
 
 SOURCE = ROOT / "docs/operations/evidence/investigation-repair-20261105/repair-k5/plan.json"
+PILOT_BATCH = "local-deployed-20261106-01"
+PILOT_CAMPAIGN = "deployed-pilot-20261106"
+PILOT_PRIOR = 63
+PILOT_ALLOWANCE = 7
+PILOT_REFERENCE = "local-eval-20261106-01"
 
 
 def encoded(value):
@@ -31,14 +36,21 @@ def source_hashes():
     return {str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in sorted(paths)}
 
 
-def prepare(batch, window_start, *, backend="deepseek", model_values=None, scenario="maintenance", additional_tests=False):
+def prepare(batch, window_start, *, backend="deepseek", model_values=None, scenario="maintenance",
+            additional_tests=False, deployed_pilot=False):
     assert re.fullmatch(r"local-[a-z0-9][a-z0-9-]{1,60}", batch), "new local batch name required"
+    if deployed_pilot != (batch == PILOT_BATCH):
+        raise ValueError("deployed_pilot_requires_reserved_batch_and_explicit_flag")
+    if deployed_pilot and (backend != "deployed" or scenario != "routine" or additional_tests):
+        raise ValueError("deployed_pilot_requires_only_deployed_routine")
     if backend == "deployed" and model_values is None:
         raise ModelProfileMismatch("deployed_backend_requires_explicit_local_configuration")
     model_profile = freeze(DEEPSEEK_DEFAULTS if model_values is None else model_values, backend)
+    if deployed_pilot and model_profile["schema_profile"] != "vllm_grammar_v1":
+        raise ModelProfileMismatch("deployed_pilot_requires_vllm_grammar_v1")
     start = datetime.fromisoformat(window_start)
     assert start.tzinfo is not None and start.microsecond == 0
-    source = json.loads(SOURCE.read_text())
+    source = json.loads(SOURCE.read_text(encoding="utf-8"))
     original = next(c for c in source["cases"] if c["backend"] == "deepseek" and c["scenario"] == "maintenance")
     old_start = datetime.fromisoformat(original["window_start"])
     replacements = {source["tenant_id"]: TENANT, original["host"]: batch + "-host",
@@ -57,7 +69,8 @@ def prepare(batch, window_start, *, backend="deepseek", model_values=None, scena
     comparison = None
     if scenario != "maintenance":
         from comparison_fixture import apply
-        comparison = apply(case, scenario)
+        account = "operator-" + uid(batch, "account") if deployed_pilot else "operator-0"
+        comparison = apply(case, scenario, account=account)
         case["key"] = backend + "-" + scenario
     path = ROOT / "services/fusion/app/models/alert.py"
     spec = importlib.util.spec_from_file_location("local_flow_raw_alert", path)
@@ -98,4 +111,10 @@ def prepare(batch, window_start, *, backend="deepseek", model_values=None, scena
         plan.update(global_local_model_call_cap=69, max_model_calls=7, max_runs=4,
             campaign="additional-tests-20261106", previous_attempts=48, additional_attempt_cap=21)
         case.update(max_model_calls=7, max_runs=4)
+    if deployed_pilot:
+        plan.update(campaign=PILOT_CAMPAIGN, comparison_batch_id=PILOT_REFERENCE,
+            global_local_model_call_cap=PILOT_PRIOR + PILOT_ALLOWANCE,
+            previous_attempts=PILOT_PRIOR, additional_attempt_cap=PILOT_ALLOWANCE,
+            max_model_calls=PILOT_ALLOWANCE, max_runs=4)
+        case.update(max_model_calls=PILOT_ALLOWANCE, max_runs=4)
     return plan, oracle

@@ -6,8 +6,8 @@ existing intent is never replayed. This driver never starts a service or model.
 """
 import argparse
 import asyncio
-import fcntl
 import json
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from uuid import UUID, uuid5
 
@@ -27,7 +27,18 @@ from config import (
     runtime_environment,
 )
 from flow_export import export
-from flow_fixture import encoded, prepare, sha, source_hashes, uid
+from flow_fixture import (
+    PILOT_ALLOWANCE,
+    PILOT_BATCH,
+    PILOT_CAMPAIGN,
+    PILOT_PRIOR,
+    PILOT_REFERENCE,
+    encoded,
+    prepare,
+    sha,
+    source_hashes,
+    uid,
+)
 
 
 class FlowStopped(RuntimeError):
@@ -38,15 +49,44 @@ class ConfigurationStopped(FlowStopped):
     """Do not contact services, including automatic failure export."""
 
 
+def validate_campaign(plan, directory):
+    limits = (plan["global_local_model_call_cap"], plan["max_model_calls"])
+    case = plan["case"]
+    if PILOT_BATCH in (plan["batch_id"], directory) or plan.get("campaign") == PILOT_CAMPAIGN:
+        expected = {
+            "batch_id": PILOT_BATCH, "campaign": PILOT_CAMPAIGN, "comparison_batch_id": PILOT_REFERENCE,
+            "max_runs": 4, "max_model_calls": PILOT_ALLOWANCE, "additional_attempt_cap": PILOT_ALLOWANCE,
+            "previous_attempts": PILOT_PRIOR, "global_local_model_call_cap": PILOT_PRIOR + PILOT_ALLOWANCE, "retries": 0,
+        }
+        case_limits = {"backend": "deployed", "scenario": "routine", "rounds": 1, "max_runs": 4,
+                       "max_model_calls": PILOT_ALLOWANCE}
+        if (directory != PILOT_BATCH or any(plan.get(k) != v for k, v in expected.items()) or
+                any(case.get(k) != v for k, v in case_limits.items()) or
+                plan.get("model_profile", {}).get("schema_profile") != "vllm_grammar_v1"):
+            raise ConfigurationStopped("deployed_pilot_plan_mismatch")
+    elif not (limits == (50, 11) or (limits == (69, 7) and
+              plan.get("campaign") == "additional-tests-20261106" and case["rounds"] == 1)):
+        raise ConfigurationStopped("unrecognized_campaign_limits")
+
+
+@contextmanager
+def dispatch_lock():
+    try:
+        import fcntl
+    except ImportError:
+        raise ConfigurationStopped("execution_requires_posix_dispatch_lock") from None
+    with (STATE / "validation-dispatch.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+
+
 class Driver:
     def __init__(self, root, values):
         self.root, self.values = root, values
         self.plan = self.read("plan")
         assert self.plan["tenant_id"] == TENANT and self.plan["database"] == DATABASE
         assert self.plan["lake_database"] == LAKE and self.plan["topic_prefix"] == TOPIC
-        limits = (self.plan["global_local_model_call_cap"], self.plan["max_model_calls"])
-        assert limits == (50, 11) or (limits == (69, 7) and
-            self.plan.get("campaign") == "additional-tests-20261106" and self.plan["case"]["rounds"] == 1)
+        validate_campaign(self.plan, root.name)
         self.batch = self.plan["batch_id"]
         self.env = runtime_environment("api", values)
 
@@ -122,7 +162,10 @@ class Driver:
         if any(r["state"] in {"unknown", "running"} for r in rows):
             raise FlowStopped("active_or_unknown_run_blocks_dispatch")
         used = sum(r["calls"] for r in rows)
-        cap = getattr(self, "plan", {}).get("global_local_model_call_cap", 50)
+        plan = getattr(self, "plan", {})
+        if plan.get("campaign") == PILOT_CAMPAIGN and used < PILOT_PRIOR:
+            raise FlowStopped("deployed_pilot_prior_63_attempts_missing")
+        cap = plan.get("global_local_model_call_cap", 50)
         if used + reserve > cap:
             raise FlowStopped(f"global_{cap}_model_attempt_cap")
         return {"attempted_models": used, "reserved_for_phase": reserve, "global_cap": cap}
@@ -135,6 +178,16 @@ class Driver:
             raise ConfigurationStopped(str(exc)) from None
         if not self.values["OPENAI_API_KEY"]:
             raise ConfigurationStopped("local_model_credential_not_configured")
+        pilot = self.plan.get("campaign") == PILOT_CAMPAIGN
+        if pilot:
+            try:
+                identity = await self.http("model-profile", "GET", "/api/v1/socai2/validation/model-profile",
+                                           record=False, require_success=False)
+            except (httpx.HTTPError, FlowStopped):
+                raise ConfigurationStopped("running_api_model_profile_not_verified") from None
+            if identity["status"] != 200 or identity["body"] != self.plan["model_profile"]:
+                raise ConfigurationStopped("running_api_model_profile_not_verified")
+            model_profile["running_api_profile_verified"] = True
         # A simultaneous source change must not mask an unverified backend
         # and enter the ordinary failure-export path that reads local services.
         self.verify_sources()
@@ -146,7 +199,7 @@ class Driver:
         row = (await self.pg("SELECT current_database() AS database, (SELECT count(*) FROM information_schema.tables WHERE table_schema='socai2' AND table_type='BASE TABLE') AS tables, to_regprocedure('socai2.baseline_input_freshness(uuid,uuid)') IS NOT NULL AS freshness"))[0]
         assert row == {"database": DATABASE, "tables": 29, "freshness": True}
         return {"database": row, "runtime": model_profile,
-            "budget": await self.budget(), "model_calls": 0, "services_started": False}
+            "budget": await self.budget(PILOT_ALLOWANCE if pilot else 0), "model_calls": 0, "services_started": False}
 
     def verify_sources(self):
         if source_hashes() != self.plan["source_sha256"]:
@@ -231,9 +284,9 @@ class Driver:
         stages = [("A" + str(i), f"/alerts/{aid}/analyze") for i, aid in enumerate(subjects["alert_ids"])]
         stages.append(("I", f"/incidents/{subjects['incident_id']}/diagnose"))
         stage_outcomes = []
-        for label, path in stages:
+        for index, (label, path) in enumerate(stages, start=1):
             await self.http(label, "POST", "/api/v1/socai2" + path, {"operation_key": uid(self.batch, label)})
-            await self.budget()
+            await self.budget(PILOT_ALLOWANCE - index if self.plan.get("campaign") == PILOT_CAMPAIGN else 0)
             stage_id = uuid5(UUID(TENANT), "socai2.stage:" + uid(self.batch, label))
             row = (await self.pg("SELECT state,stop_reason FROM socai2.runs WHERE tenant_id=$1::uuid AND id=$2::uuid", UUID(TENANT), stage_id))[0]
             stage_outcomes.append({"stage": label, "run_id": str(stage_id), **row})
@@ -263,7 +316,8 @@ class Driver:
         return created, result
 
     async def second(self):
-        assert self.plan["case"].get("rounds", 2) == 2, "this fixture has no human follow-up phase"
+        if self.plan["case"].get("rounds", 2) != 2:
+            raise ConfigurationStopped("no_human_followup_phase")
         await self.preflight()
         created, previous = self.accepted_first()
         review = self.read("semantic-review")
@@ -290,19 +344,21 @@ class Driver:
 
 
 async def run(args):
+    if not __debug__:
+        raise ConfigurationStopped("validation_requires_nonoptimized_python")
     root = STATE / "validation" / args.batch
     assert root.parent == STATE / "validation" and args.batch.startswith("local-") and "/" not in args.batch
     if args.phase == "prepare":
         plan, oracle = prepare(args.batch, args.window_start, backend=args.backend, model_values=read_private(),
-            scenario=args.scenario, additional_tests=args.additional_tests)
+            scenario=args.scenario, additional_tests=args.additional_tests, deployed_pilot=args.deployed_pilot)
         root.mkdir(parents=True, exist_ok=False)
         for name, value in (("plan", plan), ("expected", oracle)):
             (root / (name + ".json")).write_bytes(encoded(value) + b"\n")
         return {"prepared": str(root), "model_calls": 0, "service_connections": 0}
-    assert args.execute, "explicit --execute is required; static preparation does not dispatch"
-    driver = Driver(root, read_private())
-    with (STATE / "validation-dispatch.lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    if not args.execute:
+        raise ConfigurationStopped("explicit_execute_required")
+    with dispatch_lock():
+        driver = Driver(root, read_private())
         try:
             result = await export(driver) if args.phase == "export" else await getattr(driver, args.phase)()
             if args.phase in {"first", "second"}:
@@ -331,6 +387,7 @@ def main():
     parser.add_argument("--backend", choices=BACKENDS, default="deepseek", help="Freeze backend during prepare only")
     parser.add_argument("--scenario", choices=["maintenance", "routine", "credential", "impact"], default="maintenance")
     parser.add_argument("--additional-tests", action="store_true", help="Freeze the explicitly requested three-case 2026-11-06 campaign")
+    parser.add_argument("--deployed-pilot", action="store_true", help="Freeze the single deployed routine case (7 attempts max)")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     if args.phase == "prepare" and not args.window_start:
@@ -339,8 +396,8 @@ def main():
         parser.error("--backend is only selected at prepare; other phases use the frozen plan")
     if args.phase != "prepare" and args.scenario != "maintenance":
         parser.error("--scenario is only selected at prepare; other phases use the frozen plan")
-    if args.phase != "prepare" and args.additional_tests:
-        parser.error("--additional-tests only applies at prepare")
+    if args.phase != "prepare" and (args.additional_tests or args.deployed_pilot):
+        parser.error("campaign flags only apply at prepare")
     result = asyncio.run(run(args))
     print(json.dumps(result, ensure_ascii=False, default=str), flush=True)
     return 1 if result.get("passed") is False else 0

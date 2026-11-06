@@ -17,13 +17,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("service", choices=("api", "fusion"))
     parser.add_argument("--check-import", action="store_true", help="Import application only; do not start or connect")
+    parser.add_argument("--deployed-pilot", action="store_true", help="Enable the local API's authenticated deployed-model preflight")
     args = parser.parse_args()
+    if args.deployed_pilot and args.service != "api":
+        parser.error("--deployed-pilot requires the api service")
     assert PYTHON.is_file(), "prepared Python 3.12 environment missing"
     values = read_private()
     env = {**minimal_process_environment(), **runtime_environment(args.service, values)}
     paths = [str(ROOT / "services" / args.service), str(ROOT / "deploy/local-investigation")]
     env.update(PYTHONPATH=os.pathsep.join(paths), PYTHONUNBUFFERED="1", PYTHONDONTWRITEBYTECODE="1")
     module = "app.socai2_main" if args.service == "api" else "fusion_app"
+    if args.deployed_pilot:
+        module = "pilot_api"
     if args.check_import:
         command = [str(PYTHON), "-c", "import importlib; importlib.import_module(" + repr(module) + "); print('import_passed')"]
     else:

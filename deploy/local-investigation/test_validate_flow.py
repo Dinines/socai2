@@ -8,8 +8,8 @@ from uuid import UUID
 import pytest
 from config import DATABASE, LAKE, TENANT
 from flow_export import TABLES, classify, query_for
-from flow_fixture import SOURCE, encoded, prepare, uid
-from validate_flow import Driver, FlowStopped
+from flow_fixture import PILOT_BATCH, PILOT_CAMPAIGN, SOURCE, encoded, prepare, uid
+from validate_flow import ConfigurationStopped, Driver, FlowStopped, validate_campaign
 
 
 @pytest.mark.parametrize("states", [("completed", "completed", "failed"), ("failed", "completed", "completed"),
@@ -66,6 +66,69 @@ def test_additional_campaign_preserves_prior_usage_and_bounds_dispatch():
     with pytest.raises(FlowStopped,match="global_69"):
         asyncio.run(driver.budget(7))
     assert asyncio.run(driver.budget(6))["global_cap"] == 69
+
+
+def pilot(**changes):
+    settings = {"batch": PILOT_BATCH, "window_start": "2026-11-06T07:00:00+00:00", "scenario": "routine",
+                "backend": "deployed", "deployed_pilot": True, "model_values": {
+                    "OPENAI_MODEL": "local-test-model", "OPENAI_BASE_URL": "http://model.invalid/v1",
+                    "SOCAI2_MODEL_PROTOCOL": "chat_completions", "SOCAI2_MODEL_SCHEMA_PROFILE": "vllm_grammar_v1"}}
+    return prepare(**{**settings, **changes})
+
+
+def test_deployed_pilot_real_inputs_and_campaign_boundaries():
+    plan, oracle = pilot()
+    validate_campaign(plan, PILOT_BATCH)
+    assert (plan["comparison_batch_id"], plan["previous_attempts"], plan["max_model_calls"],
+            plan["global_local_model_call_cap"], plan["max_runs"]) == ("local-eval-20261106-01", 63, 7, 70, 4)
+    assert oracle["behavior_truth"] == "benign" and b"behavior_truth" not in encoded(plan)
+    assert plan["case"]["rounds"] == 1 and "second" not in plan["phase_order"]
+    reference, _ = prepare("local-eval-20261106-01", "2026-11-06T03:00:00+00:00", scenario="routine",
+                           additional_tests=True)
+    assert set(reference["canonical_alert_ids"]).isdisjoint(plan["canonical_alert_ids"])
+    alerts = plan["case"]["alerts"]
+    assert alerts[0]["username"] == alerts[1]["username"] and "operator-0" not in str(plan["case"])
+    for alert, event, other in zip(alerts, plan["case"]["events"], reference["case"]["events"], strict=True):
+        ocsf = event["ocsf_event"]
+        assert alert["raw_event"] == event and ocsf["actor"]["user"]["name"] == alert["username"]
+        assert json.loads(ocsf["raw_data"]) == {k: v for k, v in ocsf.items() if k != "raw_data"}
+        assert ocsf["activity"] == other["ocsf_event"]["activity"] and ocsf["process"] == other["ocsf_event"]["process"]
+    with pytest.raises(ConfigurationStopped):
+        validate_campaign(plan, "local-different-directory")
+    with pytest.raises(ConfigurationStopped):
+        validate_campaign({**plan, "global_local_model_call_cap": 71}, PILOT_BATCH)
+    with pytest.raises(ConfigurationStopped):
+        validate_campaign({**plan, "campaign": "legacy", "global_local_model_call_cap": 50}, PILOT_BATCH)
+
+
+@pytest.mark.parametrize("changes", [
+    {"deployed_pilot": False}, {"batch": "local-different-batch"}, {"scenario": "credential"},
+    {"backend": "deepseek"}, {"additional_tests": True},
+])
+def test_deployed_pilot_is_explicit_and_single_case(changes):
+    with pytest.raises(ValueError):
+        pilot(**changes)
+
+
+@pytest.mark.parametrize("used,allowed", [(0, False), (62, False), (63, True), (64, False)])
+def test_deployed_pilot_requires_63_prior_attempts_and_7_available(used, allowed):
+    driver = Driver.__new__(Driver)
+    driver.plan = {"campaign": PILOT_CAMPAIGN, "global_local_model_call_cap": 70}
+    driver.pg = AsyncMock(return_value=[{"state": "completed", "calls": used}])
+    if allowed:
+        assert asyncio.run(driver.budget(7))["attempted_models"] == 63
+    else:
+        with pytest.raises(FlowStopped):
+            asyncio.run(driver.budget(7))
+
+
+def test_deployed_pilot_does_not_run_another_round():
+    driver = Driver.__new__(Driver)
+    driver.plan, _ = pilot()
+    driver.preflight = AsyncMock()
+    with pytest.raises(ConfigurationStopped, match="no_human_followup"):
+        asyncio.run(driver.second())
+    driver.preflight.assert_not_awaited()
 
 
 def test_all_29_exports_are_readonly_and_parameter_scoped():

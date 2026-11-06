@@ -1,5 +1,13 @@
 # 当前调查模块
 
+**前后端联调第一版**（`frontend-backend-integration-v1`）的[交付入口](../../deliverables/investigation-validation-20261106/README.md)汇总了[服务端数据交接](socai2-page-data-handoff-20261106.md)、[页面功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)和可离线验收的案例。
+
+[四案数据交接清单](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)列出告警、事件和 Case 的实际存值、失败记录及尚未产生的对象。原页显示差异另列供接手方参考。[本机预览](http://127.0.0.1:4176/) · [可离线查看的四案包](../../deliverables/investigation-validation-20261106/21-qwen9b-handoff-cases-20261106.zip)
+
+前后端从[告警、事件、调查三个原页面入口](investigation-test-handoff-20261106.md#前后端联调从这里开始)并行联调。01 案分别提供告警详情及原件、事件详情及成员、独立调查 Run 及其结果和关系图；四个字段样例补充 Case 管理字段、证据有值、零与未记录。
+
+[21 内网小模型实测](investigation-test-handoff-20261106.md#21-内网小模型实测)已完成一案。Qwen3.5-9B 的两条告警分诊和一次事件诊断均已发布；Case 调查在调用前因必需事件诊断超出输入视图剩余空间而停止，保留系统结果与关系图。两种运行状态可与 DeepSeek 三案配合联调，实际响应与预览见[交接包](../../deliverables/investigation-validation-20261106/README.md)。
+
 用户已明确要求将本轮修改、测试及字段清单提交到`origin/codex/case-baseline-history-20261103`。统一[提交范围、剩余问题及下轮部署模型计划](../../openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)；完整已核验材料可从仓库内[交接包入口](../../deliverables/investigation-validation-20261106/README.md)下载。下文及包内未提交/未上传字段均是各批原快照，以Git实际发布为准。
 
 最新[测试总表与前后端数据交接](investigation-test-handoff-20261106.md)：11月6日追加三案/15次DeepSeek，三案C6均保存；48次只读GET、674项比较、557项页面数据检查/87视图通过，F01—F28列字段/关系/读取/页面及未实现边界。两C3拒收、各案语义扩大保留，模型质量未通过。本机累计63/69，13个本机模型批次和4个无模型数据合同样例分别归档；部署模型留下一轮。原模板仅追加数据，19/26保持；下文48/50和未重启API为前批时点。

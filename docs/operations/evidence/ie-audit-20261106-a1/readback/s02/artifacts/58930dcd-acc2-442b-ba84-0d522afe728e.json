@@ -1,0 +1,330 @@
+{
+  "id": "58930dcd-acc2-442b-ba84-0d522afe728e",
+  "kind": "tool_response",
+  "run_id": "057c2974-8c3c-54eb-bd39-85356b4aad4c",
+  "sha256": "d92cbe3fbb2cf2bac0f223363f77c88922829c48fb74628342467b1a1bd0cd5b",
+  "case_id": null,
+  "step_id": "0bc58c86-f294-4f67-9f7d-1a1eb1cb4478",
+  "alert_id": "c403a865-6f32-5c6f-86bc-db102d45bbfc",
+  "blob_ref": null,
+  "file_name": null,
+  "mime_type": "application/json",
+  "retention": {
+    "reason": null,
+    "truncated": false,
+    "omitted_paths": [],
+    "original_sha256": "d92cbe3fbb2cf2bac0f223363f77c88922829c48fb74628342467b1a1bd0cd5b",
+    "retained_sha256": "d92cbe3fbb2cf2bac0f223363f77c88922829c48fb74628342467b1a1bd0cd5b",
+    "original_size_bytes": 7586,
+    "retained_size_bytes": 7586
+  },
+  "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964",
+  "created_by": null,
+  "event_time": null,
+  "size_bytes": 7586,
+  "captured_at": "2026-11-06T06:24:49.971666+00:00",
+  "incident_id": null,
+  "source_refs": [
+    {
+      "id": "5a52c9de-4499-477a-ac58-3500d2228a40",
+      "role": "execution_receipt",
+      "type": "artifact",
+      "external": null,
+      "row_keys": [],
+      "source_path": null
+    }
+  ],
+  "content_json": {
+    "rows": [
+      {
+        "record": {
+          "id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+          "title": "禁用登录审计的命令已启动",
+          "triage": {
+            "id": "dbe6af06-0fce-56cb-bec6-f18f8a4b5533",
+            "kind": "triage",
+            "actor": {
+              "type": "service",
+              "user_id": null,
+              "service_name": "socai2.alert-basic-executor.v3",
+              "name_snapshot": null,
+              "service_version": "socai2.stage-result.v1"
+            },
+            "verdict": "needs_review",
+            "alert_id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+            "producer": "socai2.alert-basic-executor.v3",
+            "rationale": "告警触发于用户 'temp-svc' 执行 'auditpol' 禁用登录审计子类别。虽然 'temp-svc' 名称暗示临时服务，但日志中无任何授权标签、工单记录或上下文证明该操作合法。同时，无证据表明该操作是恶意攻击的一部分（如后续清除痕迹），也未见业务需求说明。仅凭进程名和命令无法区分是配置错误、恶意禁用还是授权维护，证据不足以定性。",
+            "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964",
+            "confidence": 0.5,
+            "assessed_at": "2026-11-06T06:24:47.290823+00:00",
+            "score_state": "available",
+            "operation_key": "c89507ad-437d-59ee-88e1-f66930b13145",
+            "source_run_id": "c89507ad-437d-59ee-88e1-f66930b13145",
+            "recommendations": [
+              {
+                "id": "R1",
+                "reason": "需要确认 'temp-svc' 账户的用途及操作该命令的授权来源。",
+                "targets": [],
+                "action_type": "verify",
+                "limitations": [
+                  "recommendation_only_not_executed"
+                ],
+                "source_refs": [
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.actor.user.name"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.device.name"
+                  }
+                ],
+                "approval_requirement": "unknown"
+              },
+              {
+                "id": "R2",
+                "reason": "需评估禁用登录审计对合规性及事件检测的影响。",
+                "targets": [],
+                "action_type": "verify",
+                "limitations": [
+                  "recommendation_only_not_executed"
+                ],
+                "source_refs": [
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.activity.action"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.activity.outcome"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.raw_json.raw_event.ocsf_event.process.cmd_line"
+                  }
+                ],
+                "approval_requirement": "unknown"
+              }
+            ],
+            "input_material_id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+            "legacy_execution_ref": null
+          },
+          "feedback": null,
+          "severity": "high",
+          "event_time": "2026-11-06T05:30:00+00:00",
+          "material_id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+          "original_vendor": null
+        },
+        "namespace": "source:ie-audit-20261106-a1",
+        "record_id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+        "object_key": "[\"host\",\"win-c23\"]",
+        "match_basis": "exact_typed_namespaced_object"
+      },
+      {
+        "record": {
+          "id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+          "title": "禁用登录审计的命令已启动",
+          "triage": {
+            "id": "dbe6af06-0fce-56cb-bec6-f18f8a4b5533",
+            "kind": "triage",
+            "actor": {
+              "type": "service",
+              "user_id": null,
+              "service_name": "socai2.alert-basic-executor.v3",
+              "name_snapshot": null,
+              "service_version": "socai2.stage-result.v1"
+            },
+            "verdict": "needs_review",
+            "alert_id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+            "producer": "socai2.alert-basic-executor.v3",
+            "rationale": "告警触发于用户 'temp-svc' 执行 'auditpol' 禁用登录审计子类别。虽然 'temp-svc' 名称暗示临时服务，但日志中无任何授权标签、工单记录或上下文证明该操作合法。同时，无证据表明该操作是恶意攻击的一部分（如后续清除痕迹），也未见业务需求说明。仅凭进程名和命令无法区分是配置错误、恶意禁用还是授权维护，证据不足以定性。",
+            "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964",
+            "confidence": 0.5,
+            "assessed_at": "2026-11-06T06:24:47.290823+00:00",
+            "score_state": "available",
+            "operation_key": "c89507ad-437d-59ee-88e1-f66930b13145",
+            "source_run_id": "c89507ad-437d-59ee-88e1-f66930b13145",
+            "recommendations": [
+              {
+                "id": "R1",
+                "reason": "需要确认 'temp-svc' 账户的用途及操作该命令的授权来源。",
+                "targets": [],
+                "action_type": "verify",
+                "limitations": [
+                  "recommendation_only_not_executed"
+                ],
+                "source_refs": [
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.actor.user.name"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.device.name"
+                  }
+                ],
+                "approval_requirement": "unknown"
+              },
+              {
+                "id": "R2",
+                "reason": "需评估禁用登录审计对合规性及事件检测的影响。",
+                "targets": [],
+                "action_type": "verify",
+                "limitations": [
+                  "recommendation_only_not_executed"
+                ],
+                "source_refs": [
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.activity.action"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.activity.outcome"
+                  },
+                  {
+                    "id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.raw_json.raw_event.ocsf_event.process.cmd_line"
+                  }
+                ],
+                "approval_requirement": "unknown"
+              }
+            ],
+            "input_material_id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+            "legacy_execution_ref": null
+          },
+          "feedback": null,
+          "severity": "high",
+          "event_time": "2026-11-06T05:30:00+00:00",
+          "material_id": "494db72e-9aad-59f1-a8b0-b7f094b62dd6",
+          "original_vendor": null
+        },
+        "namespace": "source:ie-audit-20261106-a1",
+        "record_id": "bc6c2562-3cde-509c-b062-0a3510cd5312",
+        "object_key": "[\"user\",\"temp-svc\"]",
+        "match_basis": "exact_typed_namespaced_object"
+      }
+    ],
+    "state": "completed",
+    "reason": null,
+    "query_id": "local-step:0bc58c86-f294-4f67-9f7d-1a1eb1cb4478",
+    "tool_name": "history",
+    "truncated": false,
+    "actual_args": {
+      "limit": 200,
+      "scope": {
+        "kind": "selected_alerts",
+        "alert_ids": [
+          "c403a865-6f32-5c6f-86bc-db102d45bbfc"
+        ],
+        "window_end": "2026-11-06T05:30:30+00:00",
+        "limitations": [
+          "history_24h_before_alert_time"
+        ],
+        "object_keys": [
+          "[\"host\",\"win-c23\"]",
+          "[\"user\",\"temp-svc\"]"
+        ],
+        "window_start": "2026-11-05T05:30:30+00:00"
+      },
+      "tool_name": "history",
+      "parameters": {
+        "selectors": [
+          {
+            "value": "win-c23",
+            "ioc_type": "host",
+            "alert_ids": [
+              "c403a865-6f32-5c6f-86bc-db102d45bbfc"
+            ],
+            "namespace": "source:ie-audit-20261106-a1",
+            "object_key": "[\"host\",\"win-c23\"]",
+            "object_type": "host",
+            "source_paths": [
+              {
+                "alert_id": "c403a865-6f32-5c6f-86bc-db102d45bbfc",
+                "object_id": "0dec4844-57d0-515d-b562-82547975e244",
+                "material_id": "4ad7f3e4-6c5b-59eb-8478-176e67676b23",
+                "source_path": "$.raw_json.hostname"
+              }
+            ]
+          },
+          {
+            "value": "temp-svc",
+            "ioc_type": "user",
+            "alert_ids": [
+              "c403a865-6f32-5c6f-86bc-db102d45bbfc"
+            ],
+            "namespace": "source:ie-audit-20261106-a1",
+            "object_key": "[\"user\",\"temp-svc\"]",
+            "object_type": "user",
+            "source_paths": [
+              {
+                "alert_id": "c403a865-6f32-5c6f-86bc-db102d45bbfc",
+                "object_id": "7347a03a-36cf-5767-bec8-6a039fabe676",
+                "material_id": "4ad7f3e4-6c5b-59eb-8478-176e67676b23",
+                "source_path": "$.raw_json.username"
+              }
+            ]
+          }
+        ],
+        "source_scope": "tenant_only"
+      },
+      "contract_version": "socai2.c2-db.v1"
+    },
+    "captured_at": "2026-11-06T06:24:49.946992+00:00",
+    "limitations": [
+      "recorded_alerts_only_not_complete_activity_history",
+      "same_object_not_causality",
+      "prior_triage_and_human_feedback_are_not_independent_observations",
+      "legacy_public_alerts_not_queried"
+    ],
+    "returned_rows": 2,
+    "schema_version": "socai2.alert-basic-executor.v3",
+    "contract_version": "socai2.c2-db.v1",
+    "truncation_reasons": [],
+    "observed_rows_in_bounded_fetch": 2
+  },
+  "content_text": null,
+  "material_state": "complete",
+  "schema_version": "socai2.alert-basic-executor.v3"
+}

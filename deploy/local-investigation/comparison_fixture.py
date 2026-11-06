@@ -9,7 +9,7 @@ import json
 SCENARIOS = ("routine", "credential", "impact")
 
 
-def apply(case, scenario):
+def apply(case, scenario, *, account="operator-0"):
     assert scenario in SCENARIOS
     if scenario == "routine":
         title = "账户清点与报表复制"
@@ -55,6 +55,7 @@ def apply(case, scenario):
         event["event_id"] = alert["source_event_ids"][0]
         event["ocsf_event"].update(time=alert["event_time"], class_uid=1001 if file_path else 1007)
         ocsf = event["ocsf_event"]
+        ocsf["actor"]["user"]["name"] = account
         ocsf["process"] = {"name": name, "pid": 4242 + index, "cmd_line": command,
                            "parent_process": {"pid": 2100, "name": "cmd.exe"}}
         ocsf["activity"] = {"action": action, "outcome": "success"}
@@ -64,7 +65,7 @@ def apply(case, scenario):
         ocsf["raw_data"] = json.dumps(ocsf, ensure_ascii=False, sort_keys=True)
         case["events"][index] = event
         alert.update(title=label, rule_name=label, description="Recorded endpoint action; assess its scope and outcome from retained observations.",
-                     username="operator-0", severity="medium", mitre_tactics=[], mitre_techniques=[], raw_event=copy.deepcopy(event))
+                     username=account, severity="medium", mitre_tactics=[], mitre_techniques=[], raw_event=copy.deepcopy(event))
     case.update(scenario=scenario, title=title, description=description, rounds=1)
     return {
         "behavior_truth": truth, "truth_scope": expected,

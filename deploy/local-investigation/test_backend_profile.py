@@ -2,14 +2,15 @@
 import asyncio
 import hashlib
 import json
+from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from backend_profile import DEEPSEEK_DEFAULTS, ModelProfileMismatch, freeze, validate
 from config import DATABASE, LAKE, TOPIC
-from flow_fixture import prepare
-from validate_flow import Driver, FlowStopped
+from flow_fixture import PILOT_CAMPAIGN, prepare
+from validate_flow import ConfigurationStopped, Driver, FlowStopped
 
 DEPLOYED = {"OPENAI_MODEL": "fixture-deployed-model", "OPENAI_BASE_URL": "http://deployed-model.invalid:8000/v1/",
     "SOCAI2_MODEL_PROTOCOL": "chat_completions", "SOCAI2_MODEL_SCHEMA_PROFILE": "vllm_grammar_v1"}
@@ -17,6 +18,32 @@ DEPLOYED = {"OPENAI_MODEL": "fixture-deployed-model", "OPENAI_BASE_URL": "http:/
 
 def plan(values=DEPLOYED, backend="deployed"):
     return {"case": {"backend": backend}, "model_profile": freeze(values, backend)}
+
+
+@pytest.mark.parametrize("status,correct", [(401, False), (404, False), (None, False), (200, False), (200, True)])
+def test_deployed_pilot_requires_running_api_model_identity(status, correct):
+    driver = Driver.__new__(Driver)
+    driver.plan = {**plan(), "campaign": PILOT_CAMPAIGN}
+    driver.env, driver.values = DEPLOYED, {"OPENAI_API_KEY": "fixture-only"}
+    actual = driver.plan["model_profile"] if correct else freeze(DEEPSEEK_DEFAULTS)
+    driver.http = AsyncMock(return_value={"status": status, "body": actual})
+    driver.verify_sources = Mock()
+    driver.pg = AsyncMock(return_value=[{"database": DATABASE, "tables": 29, "freshness": True}])
+    driver.budget = AsyncMock(return_value={"attempted_models": 63, "global_cap": 70})
+    with patch("httpx.AsyncClient") as client:
+        client.return_value.__aenter__.return_value.get.return_value = SimpleNamespace(status_code=200)
+        if correct:
+            result = asyncio.run(driver.preflight())
+            assert result["runtime"]["running_api_profile_verified"] is True
+            driver.budget.assert_awaited_once_with(7)
+        else:
+            with pytest.raises(ConfigurationStopped, match="running_api_model_profile_not_verified"):
+                asyncio.run(driver.preflight())
+            driver.pg.assert_not_awaited()
+            driver.verify_sources.assert_not_called()
+            client.assert_not_called()
+    driver.http.assert_awaited_once_with("model-profile", "GET", "/api/v1/socai2/validation/model-profile",
+                                         record=False, require_success=False)
 
 
 def test_freeze_excludes_url_authentication_and_secret_fingerprints():
@@ -103,7 +130,8 @@ def test_configuration_rejection_does_not_trigger_failure_export(tmp_path, sourc
     driver.pg = AsyncMock(side_effect=AssertionError("database access is forbidden"))
     export = AsyncMock(side_effect=AssertionError("failure export is forbidden"))
     args = SimpleNamespace(batch=driver.root.name, phase="preflight", execute=True)
-    with patch("validate_flow.STATE", tmp_path), patch("validate_flow.Driver", return_value=driver), \
+    with patch("validate_flow.dispatch_lock", return_value=nullcontext()), \
+            patch("validate_flow.STATE", tmp_path), patch("validate_flow.Driver", return_value=driver), \
             patch("validate_flow.read_private", return_value={}), patch("validate_flow.export", export), \
             patch("httpx.AsyncClient", side_effect=AssertionError("network access is forbidden")):
         result = asyncio.run(run(args))

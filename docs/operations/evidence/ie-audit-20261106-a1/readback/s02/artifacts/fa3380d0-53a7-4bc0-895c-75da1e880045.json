@@ -1,0 +1,107 @@
+{
+  "id": "fa3380d0-53a7-4bc0-895c-75da1e880045",
+  "kind": "model_response",
+  "run_id": "057c2974-8c3c-54eb-bd39-85356b4aad4c",
+  "sha256": "f056681f066985c712f44ab5399ce017636e92861fcc47b542b14a099dfa1d70",
+  "case_id": null,
+  "step_id": "1e27ee64-a4d7-4d55-ad54-dfd40b754be6",
+  "alert_id": "c403a865-6f32-5c6f-86bc-db102d45bbfc",
+  "blob_ref": null,
+  "file_name": null,
+  "mime_type": "application/json",
+  "retention": {
+    "reason": null,
+    "truncated": false,
+    "omitted_paths": [],
+    "original_sha256": "f056681f066985c712f44ab5399ce017636e92861fcc47b542b14a099dfa1d70",
+    "retained_sha256": "f056681f066985c712f44ab5399ce017636e92861fcc47b542b14a099dfa1d70",
+    "original_size_bytes": 3905,
+    "retained_size_bytes": 3905
+  },
+  "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964",
+  "created_by": null,
+  "event_time": null,
+  "size_bytes": 3905,
+  "captured_at": "2026-11-06T06:25:04.376829+00:00",
+  "incident_id": null,
+  "source_refs": [
+    {
+      "id": "5a52c9de-4499-477a-ac58-3500d2228a40",
+      "role": "execution_receipt",
+      "type": "artifact",
+      "external": null,
+      "row_keys": [],
+      "source_path": null
+    }
+  ],
+  "content_json": {
+    "raw": {
+      "id": "chatcmpl-9b0c9ab0771bcac3",
+      "model": "aisoc-investigation",
+      "usage": {
+        "total_tokens": 3096,
+        "prompt_tokens": 2383,
+        "completion_tokens": 713,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "object": "chat.completion",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": 0.6,\n  \"rationale\": \"Evidence is insufficient to confirm malicious intent or authorized behavior. The alert 'Security log file truncation' by 'temp-svc' on 'win-c23' is flagged as high severity. While 'temp-svc' is a common service account, the action 'file_truncate' on 'Security.evtx' is a known indicator of log clearing to evade detection. However, there is no explicit evidence (e.g., process tree, network exfiltration, or specific authorized maintenance ticket) proving this was malicious or authorized. The presence of a prior alert regarding 'disabling login audit' (N1_S10, N1_S15) suggests a potential attack chain, but without direct causal proof or explicit authorization documentation in the provided data, the status remains indeterminate.\",\n  \"explanation\": \"The system detected a high-severity event where the user 'temp-svc' successfully truncated the Windows Security log file (Security.evtx) on host 'win-c23'. This action reduces the file size from 786432 bytes to 0. Such behavior is often associated with attackers attempting to cover their tracks after compromising a system. However, 'temp-svc' could also be a legitimate service performing log rotation or maintenance. Without additional context confirming the legitimacy of the action or evidence of malicious activity (like subsequent data exfiltration or command execution), the alert cannot be definitively classified as true positive or benign.\",\n  \"evidence_ids\": [\n    \"N1_S1\",\n    \"N1_S2\",\n    \"N1_S3\",\n    \"N1_S4\",\n    \"N1_S5\",\n    \"N1_S7\",\n    \"N1_S10\",\n    \"N1_S15\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"Verify if 'temp-svc' has legitimate permissions to truncate security logs and if this action aligns with standard operational procedures.\",\n      \"source_ids\": [\n        \"N1_S1\",\n        \"N1_S2\",\n        \"N1_S3\",\n        \"N1_S4\"\n      ]\n    },\n    {\n      \"reason\": \"Investigate the correlation with the prior alert regarding 'disabling login audit' to determine if these events are part of a coordinated attack.\",\n      \"source_ids\": [\n        \"N1_S10\",\n        \"N1_S15\"\n      ]\n    },\n    {\n      \"reason\": \"Check for any other suspicious activities on 'win-c23' around the timestamp 2026-11-06T05:30:30+00:00.\",\n      \"source_ids\": [\n        \"N1_S14\",\n        \"N1_S20\"\n      ]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"No explicit authorization documentation provided.\",\n    \"No direct evidence of malicious payload or data exfiltration in the current scope.\",\n    \"Prior alerts suggest potential compromise but lack causal proof in this specific record.\"\n  ]\n  ,\n  \"decision_basis\": null\n}",
+            "provider_specific_fields": {
+              "refusal": null,
+              "reasoning": null
+            }
+          },
+          "finish_reason": "stop",
+          "provider_specific_fields": {
+            "token_ids": null,
+            "stop_reason": null,
+            "routed_experts": null
+          }
+        }
+      ],
+      "created": 1793946290,
+      "system_fingerprint": "vllm-0.30.0-76652a79"
+    },
+    "usage": {
+      "cost": null,
+      "currency": null,
+      "cost_state": "unpriced",
+      "request_id": "chatcmpl-9b0c9ab0771bcac3",
+      "usage_state": "reported",
+      "input_tokens": 2383,
+      "total_tokens": 3096,
+      "output_tokens": 713,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "cached_input_tokens": null
+    },
+    "schema_version": "socai2.alert-basic-executor.v3",
+    "validation_error": null,
+    "validation_diagnostics": [
+      {
+        "code": "source_alias_in_prose",
+        "path": "$.rationale",
+        "category": "presentation",
+        "severity": "warning",
+        "check_state": "observed"
+      },
+      {
+        "code": "source_alias_in_prose",
+        "path": "$.rationale",
+        "category": "presentation",
+        "severity": "warning",
+        "check_state": "observed"
+      }
+    ]
+  },
+  "content_text": null,
+  "material_state": "complete",
+  "schema_version": "socai2.alert-basic-executor.v3"
+}
