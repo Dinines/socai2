@@ -366,7 +366,7 @@ def test_materials(extras):
 
 
 def flow_map(modules, by_run, steps_by_run, directory, run_ids, step_ids, titles):
-    kinds = list(dict.fromkeys(["alert_basic", "incident_diagnosis", "baseline", *modules]))
+    kinds = list(dict.fromkeys(["baseline", "alert_basic", "incident_diagnosis", *modules]))
     buttons, choices, panels = [], [], []
     default_kind = next((k for k in ["baseline", "incident_diagnosis", "alert_basic", *kinds] if modules.get(k)), "baseline")
     for group, kind in enumerate(kinds):
@@ -375,7 +375,7 @@ def flow_map(modules, by_run, steps_by_run, directory, run_ids, step_ids, titles
         group_label = MODULES.get(kind, kind)
         buttons.append(f'<button type="button" data-group="{group}" aria-pressed="{str(active).lower()}">'
                        f'{esc(group_label)}</button>')
-        default_run = next((r for r in reversed(runs) if steps_by_run[r["id"]]), runs[-1] if runs else None)
+        default_run = runs[-1] if runs else None
         options = []
         for i, run in enumerate(runs or [{"id": None, "kind": kind}]):
             rid = run["id"]
@@ -383,7 +383,9 @@ def flow_map(modules, by_run, steps_by_run, directory, run_ids, step_ids, titles
             panel = f"map-{group}-{i}"
             title = next((titles.get(run.get(field)) for field in ("alert_id", "incident_id", "case_id")
                           if titles.get(run.get(field))), None)
-            label = f'第 {i+1} 轮 · {title or run.get("title") or group_label} · {beijing(run.get("started_at"))}' if runs else "未记录执行"
+            state = STATES.get(run.get("state"), (run.get("state") or "未记录",))[0]
+            when = beijing(run.get("started_at") or run.get("requested_at"))
+            label = f'第 {i+1} 轮 · {title or run.get("title") or group_label} · {state} · {when}' if runs else "未记录执行"
             options.append(f'<option value="{panel}"{" selected" if selected else ""}>{esc(label)}</option>')
             contents = render_flow(run, steps_by_run.get(rid, []), by_run.get(rid, []), directory, step_ids, run_ids.get(rid))
             panels.append(f'<div class="flow-panel" id="{panel}"{"" if active and selected else " hidden"}>{contents}</div>')
@@ -410,6 +412,10 @@ dl{display:grid;grid-template-columns:minmax(6em,10em) minmax(0,1fr);gap:2px 10p
 dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}pre{background:#f2f6f3;border-radius:4px;padding:10px;
 white-space:pre-wrap;overflow-wrap:anywhere;max-height:32em;overflow:auto;font:12px/1.55 Consolas,monospace}
 .record:target{outline:2px solid #439079;outline-offset:1px}.record{padding:2px 6px}
+.files-head,.subject-links,.recent-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 14px}
+.files-head{justify-content:space-between}.files-head h2{margin:0}.recent-line{padding:4px 0}
+.recent-line time,.subject-links{font-size:13px;color:#50645d}
+.recent-line time{font-variant-numeric:tabular-nums}.recent-line a,.subject-links a{overflow-wrap:anywhere}
 details.run:target,details.step:target{outline:2px solid #39836f;outline-offset:2px}
 .source-note{margin-top:.85em}.flow-modules{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0}
 .flow-modules button,.flow-choice select{font:inherit;color:#23473d;background:white;border:1px solid #a4b8ad;border-radius:5px;padding:5px 9px}
@@ -437,7 +443,22 @@ a.flow-node:hover,a.flow-node:focus-visible{text-decoration:underline;outline:2p
 """
 
 
-def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: dict) -> str:
+def recent_files(logs):
+    if not logs:
+        return ""
+    parts = ['<section id="log-files"><div class="files-head"><h2>最近步骤日志</h2>',
+             f'<a target="_blank" rel="noopener" href="../{esc(logs["index"])}">全部轮次与文件 ↗</a></div>']
+    for item in logs["recent"]:
+        state = STATES.get(item.get("state"), (item.get("state") or "未记录",))[0]
+        parts.append(f'<div class="recent-line"><time>{esc(beijing(item.get("updated_at")))}</time>'
+                     f'<a target="_blank" rel="noopener" href="../{esc(item["path"])}">{esc(item["label"])}</a>'
+                     f'<span>{esc(state)}</span></div>')
+    if not logs["recent"]:
+        parts.append("<p>当前快照还没有 Case 步骤记录。</p>")
+    return "".join(parts) + "</section>"
+
+
+def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: dict, logs=None, subjects=()) -> str:
     """Use only the supplied snapshot. Links reference local, generated numeric anchors."""
     artifacts = data.get("artifacts", [])
     directory = {f["id"]: (i, f) for i, f in enumerate(artifacts)}
@@ -456,11 +477,17 @@ def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: 
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
             f"<title>{esc(title)} · 调查执行明细</title><style>{STYLE}</style></head><body><main>",
             f'<header><p class="quiet">{esc(batch)} · {esc(key)}</p><h1>{esc(title)}</h1>',
-            '<p class="quiet">执行时间为北京时间（UTC+8）。原始记录保留存储的时间和时区。</p></header>',
+            "".join(f'<p class="quiet">Case ID <code>{esc(row["id"])}</code></p>' for row in data.get("cases", ())),
+            '<p class="quiet">执行时间为北京时间（UTC+8）。</p>',
+            '<div class="subject-links">' + "".join(
+                f'<a href="../{esc(s["detail"])}" target="_blank" rel="noopener">'
+                f'{"告警" if s["kind"] == "alert" else "事件"} · {esc(s["title"])}</a>' for s in subjects
+            ) + '</div></header>',
+            recent_files(logs),
             flow_map(modules, by_run, steps_by_run, directory, run_ids, step_ids, titles),
             '<section id="execution-records"><h2>各轮执行的输入与输出</h2>',
             '<p class="quiet">一轮执行对应一次分诊、诊断或调查；一轮里面可以有多个步骤。</p>']
-    for kind in dict.fromkeys([*MODULES, *modules]):
+    for kind in dict.fromkeys(["baseline", *MODULES, *modules]):
         if not modules[kind] and kind not in ("alert_basic", "incident_diagnosis", "baseline"):
             continue
         view.append(f"<h3>{esc(MODULES.get(kind, kind))}（{len(modules[kind])} 轮）</h3>")

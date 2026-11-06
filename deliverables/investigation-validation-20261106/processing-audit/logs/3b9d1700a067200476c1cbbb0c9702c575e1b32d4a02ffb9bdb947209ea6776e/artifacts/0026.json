@@ -1,0 +1,106 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-06T10:20:03.068081+00:00",
+  "case_id": "c5e460de-fc80-5e24-b376-d3b0e95b2fa4",
+  "content_json": {
+    "captured_at": "2026-11-06T10:20:03.067565+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"summary\": \"主机 win-c23 用户 temp-svc 在 2026-11-06T05:30:00 禁用登录审计，30 秒后截断安全日志，分诊判定为待核实且证据不足。\",\n  \"members\": [\n    {\n      \"alert_id\": \"bc6c2562-3cde-509c-b062-0a3510cd5312\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录显示 temp-svc 以高严重度执行 auditpol 禁用登录审计子类别，时间戳为 2026-11-06T05:30:00。\",\n      \"evidence_ids\": [\"N3_S1\", \"N3_S2\", \"N3_S3\", \"N3_S4\", \"N3_S5\", \"N3_S6\", \"N3_S15\", \"N3_S17\", \"N3_S20\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\", \"分诊置信度较低且明确标注证据不足\"]\n    },\n    {\n      \"alert_id\": \"c403a865-6f32-5c6f-86bc-db102d45bbfc\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录显示 temp-svc 在 2026-11-06T05:30:30 对 Security.evtx 执行文件截断操作，时间间隔为 30 秒。\",\n      \"evidence_ids\": [\"N3_S7\", \"N3_S8\", \"N3_S9\", \"N3_S10\", \"N3_S11\", \"N3_S16\", \"N3_S18\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\", \"分诊置信度较低且明确标注证据不足\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"statement\": \"用户 temp-svc 在 win-c23 上于 2026-11-06T05:30:00 执行了禁用登录审计的命令，随后在 30 秒内截断了安全日志文件。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"support_ids\": [\"N3_S2\", \"N3_S10\", \"N3_S15\", \"N3_S16\"]\n    ,\n    \"counter_ids\": []\n    ,\n    \"alternatives\": [\"授权维护操作\", \"配置错误\", \"恶意攻击\"]\n    ,\n    \"limitations\": [\"缺乏授权工单或审批记录\", \"缺乏进程树以确认执行上下文\", \"缺乏网络数据以排除外传\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"两个高严重度告警在 30 秒内发生，且涉及审计禁用和日志清零，符合典型的攻击链特征，但无直接因果证明。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"support_ids\": [\"N3_S14\", \"N3_S19\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"自动化脚本误操作\", \"并发维护任务\"],\n      \"limitations\": [\"时间接近不等于因果\", \"无证据表明存在数据外传或后续攻击\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"unresolved\",\n      \"statement\": \"现有分诊结论为 needs_review，明确指出缺乏授权证据且无法区分恶意、正常或误操作。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"support_ids\": [\"N3_S12\", \"N3_S13\", \"N3_S14\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"需进一步调查授权状态\", \"需进一步调查执行上下文\"],\n      \"limitations\": [\"分诊置信度仅为 0.5-0.6\", \"未提供进程树或网络数据\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"answered\",\n      \"answer\": \"原始记录支持 temp-svc 在 win-c23 上执行 auditpol 禁用登录审计及截断 Security.evtx 的行为，时间分别为 05:30:00 和 05:30:30。\",\n      \"evidence_ids\": [\"N3_S2\", \"N3_S10\", \"N3_S15\", \"N3_S16\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"answered\",\n      \"answer\": \"两个告警在 30 秒内由同一用户在同一主机上发生，且涉及审计禁用和日志清零，存在潜在攻击链关联，但无直接因果证明。\",\n      \"evidence_ids\": [\"N3_S14\", \"N3_S19\"],\n      \"limitations\": [\"时间接近不等于因果\", \"无证据表明存在数据外传或后续攻击\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"现有证据不足以定性为恶意、正常或误操作，分诊明确标注证据不足且需进一步调查。\",\n      \"evidence_ids\": [\"N3_S12\", \"N3_S13\", \"N3_S14\"],\n      \"limitations\": [\"分诊置信度仅为 0.5-0.6\", \"未提供进程树或网络数据\"]\n    },\n    {\n      \"id\": \"authorization\",\n      \"state\": \"not_applicable\",\n      \"answer\": \"未提供授权工单、审批记录或业务需求说明，无法确认任何行为的授权状态。\",\n      \"evidence_ids\": [],\n      \"limitations\": [\"未提供授权证据\", \"未提供业务上下文\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"answered\",\n      \"answer\": \"已观察到审计日志被禁用和安全日志被截断，可能影响事件检测能力，但数据外传或后续攻击仅为推测。\",\n      \"evidence_ids\": [\"N3_S2\", \"N3_S10\", \"N3_S14\"],\n      \"limitations\": [\"未提供网络流量数据\", \"未提供后续攻击证据\"]\n    },\n    {\n      \"id\": \"coverage\",\n      \"state\": \"answered\",\n      \"answer\": \"两个告警成员已覆盖，但缺乏进程树、网络数据和授权证据，存在未决事项需进一步调查。\",\n      \"evidence_ids\": [\"N3_S14\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户 temp-svc 的认证和权限操作，但缺乏授权证据。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机 win-c23 的资源配置和日志管理，但缺乏控制面数据。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"finding_ids\": [\"F1\", \"F2\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件、链接或附件相关数据，无法评估钓鱼风险。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无邮件数据\", \"无链接或附件数据\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户 temp-svc 的数据访问和日志操作，但缺乏行为基线。\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"未提供进程树或父进程信息\", \"未提供网络流量数据\"]\n    }\n  ],\n  \"conflicts\": [\n    {\n      \"id\": \"C1\",\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"state\": \"unresolved\",\n      \"explanation\": \"F1 确认了审计禁用和日志清零行为，但 F3 指出缺乏授权证据且无法定性，两者在行为性质上存在矛盾。\"\n    ,\n    \"evidence_ids\": [\"N3_S12\", \"N3_S13\", \"N3_S14\"]\n    }\n  ],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"mode\": \"query\",\n      \"objective\": \"查询 temp-svc 用户的授权工单、审批记录或业务需求说明，以确认行为的授权状态。\",\n      \"required_evidence\": \"授权工单、审批记录或业务需求说明\"\n    ,\n    \"source_ids\": [\"N3_S12\", \"N3_S13\", \"N3_S14\"]\n    ,\n    \"object_keys\": [\"[\\\"host\\\",\\\"win-c23\\\"]\", \"[\\\"host\\\",\\\"win-c23\\\"]\"]\n    ,\n    \"binding_id\": \"B1\"\n    ,\n    \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"behavior_nature\",\n      \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n      \"mode\": \"query\",\n      \"objective\": \"查询 temp-svc 用户的进程树、父进程信息或网络流量数据，以确认执行上下文并排除数据外传。\",\n      \"required_evidence\": \"进程树、父进程信息或网络流量数据\"\n    ,\n    \"source_ids\": [\"N3_S12\", \"N3_S13\", \"N3_S14\"]\n    ,\n    \"object_keys\": [\"[\\\"host\\\",\\\"win-c23\\\"]\", \"[\\\"host\\\",\\\"win-c23\\\"]\"]\n    ,\n    \"binding_id\": \"B2\"\n    ,\n    \"priority\": \"decision_critical\"\n    }\n  ]\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1793960344,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-9be2a7a2cef4ca1f",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "aisoc-test-investigation",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 2952,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 3282,
+          "prompt_tokens_details": null,
+          "total_tokens": 6234
+        }
+      },
+      "validation_error": "domain_finding_scope_mismatch"
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-9be2a7a2cef4ca1f",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 3282,
+      "output_tokens": 2952,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-9be2a7a2cef4ca1f",
+      "total_tokens": 6234,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "0fa5e92d-8c36-5a4b-8bd4-8120b15356bd",
+  "event_time": null,
+  "file_name": null,
+  "id": "e3d84901-6224-4c4e-bc36-6e9ee9d7094b",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "afbb3991f1305b36d7c2d548d7b1d9d022f4c71fb42f1faf7d89e6f23720ab84",
+    "original_size_bytes": 10186,
+    "reason": null,
+    "retained_sha256": "afbb3991f1305b36d7c2d548d7b1d9d022f4c71fb42f1faf7d89e6f23720ab84",
+    "retained_size_bytes": 10186,
+    "truncated": false
+  },
+  "run_id": "2e86940b-f838-4250-8b57-29435626b463",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "afbb3991f1305b36d7c2d548d7b1d9d022f4c71fb42f1faf7d89e6f23720ab84",
+  "size_bytes": 10186,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "07de6e0e-7143-48cd-92da-abf682a9adc3",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "8b5fcb5f-a97e-4981-a975-99535241ed86",
+  "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964"
+}

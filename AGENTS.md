@@ -12,7 +12,7 @@
 
 # 调查测试的本机运行记录
 
-调查用例跑完并取得落库快照后，使用 `docs/operations/update_processing_audit.py` 将该批实际记录更新到本机 4177 页面。每次独立测试使用独立批次标识，保留已有批次；按存储的 Run 和步骤展示实际输入、输出、错误与空态。具体命令见[运行记录页用法](deliverables/investigation-validation-20261106/README.md#调查运行记录页)。
+4177 是调查人员的只读 Case 工作台。取得完整落库快照后，运行 `python docs/operations/update_processing_audit.py --folder "资料目录"` 登记本次运行。Case 按轮次保留流程、每步输入输出、错误和工件文件。告警、事件提供按 ID 查询的辅助入口。需要跟进正在执行的 Case 时，可用 `capture_processing_case.py` 指定租户、Case 和取样间隔。命令与目录格式见[工作台用法](deliverables/investigation-validation-20261106/README.md#调查运行记录页)。
 
 # 2026-11-06 本轮数据与测试材料提交远程授权
 

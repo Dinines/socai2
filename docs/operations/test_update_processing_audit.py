@@ -67,3 +67,23 @@ class AuditHistoryTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             update([batch], self.out)
         self.assertFalse((self.out / "index.html").exists())
+
+    def test_recent_pending_round_and_older_capture(self):
+        batch = self.batch("case-one", "2026-11-06T06:00:00Z")
+        snapshot = batch / "readback"
+        file = snapshot / "m01/database.json"
+        data = json.loads(file.read_bytes())
+        data["runs"].append({"id": "next-round", "case_id": "case-one", "kind": "baseline",
+                             "requested_at": "2026-11-07T09:10:00Z", "state": "pending_update"})
+        file.write_text(json.dumps(data), encoding="utf-8")
+        summary = snapshot / "summary.json"
+        summary.write_text('{"snapshot":{"at":"2026-11-07T10:00:00Z"}}', encoding="utf-8")
+        update([batch], self.out)
+        index = self.out / "index.html"
+        row, = existing(index).values()
+        self.assertEqual(row["state"], "pending_update")
+        previous = index.read_bytes()
+        summary.write_text('{"snapshot":{"at":"2026-11-07T09:40:00Z"}}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "replace history"):
+            update([batch], self.out)
+        self.assertEqual(index.read_bytes(), previous)

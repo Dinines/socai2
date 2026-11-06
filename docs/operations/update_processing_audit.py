@@ -13,6 +13,9 @@ from pathlib import Path
 
 from processing_audit_detail import render_case_detail
 from processing_audit_index import render_index
+from processing_audit_logs import case_log_files
+from processing_audit_subjects import prepare_subjects
+from read_processing_audit_20261106 import check_credentials
 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "docs/operations/evidence"
@@ -73,6 +76,7 @@ def readback_cases(root):
         events = {e["event_id"] for e in case.get("lake_events", [])}
         extras = {
             "plan": case or None, "inputs": inputs.get(key), "page_reads": pages.get(key),
+            "snapshot_at": (summary.get("snapshot") or {}).get("at"),
             "page_fields": optional(f.parent / "page-fields.json"),
             "receipts": json_files(root / "receipts" / key),
             "lake_rows": [r for r in lake.get("rows", []) if r.get("event_id") in events]
@@ -100,6 +104,7 @@ def page_export(folder, plan_folder):
     key = case.get("key") or batch
     extras = {
         "plan": case or None, "inputs": case.get("alerts"),
+        "snapshot_at": manifest.get("exported_at"),
         "page_fields": optional(folder / "case-page-data.json"),
         "page_reads": optional(folder / "three-page-gets.json"),
         "receipts": json_files(plan_folder / "execution"),
@@ -133,6 +138,7 @@ def cases_from(root):
 
 
 def prepare(batch, key, identity, title, data, extras):
+    check_credentials(json.dumps([batch, key, title, data, extras], ensure_ascii=False, allow_nan=False).encode())
     for table in ("runs", "run_steps", "artifacts"):
         if not isinstance(data.get(table), list):
             raise TypeError(f"{batch}/{key}: missing {table} array")
@@ -149,20 +155,66 @@ def prepare(batch, key, identity, title, data, extras):
         raise ValueError(f"{batch}/{key}: baseline Run belongs to a different case")
     started = [r for r in baselines if r.get("started_at")]
     latest = max(started, key=lambda r: (timestamp(r["started_at"]), r["id"]), default=None)
-    status_run = latest or max(baselines, key=lambda r: (timestamp(r.get("requested_at")), r["id"]), default=None)
+    status_run = max(baselines, key=lambda r: (timestamp(r.get("requested_at") or r.get("started_at")), r["id"]),
+                     default=None)
     title = title or next((r["title"] for rows in (cases, data.get("incidents", []), data.get("alerts", []))
                            for r in rows if r.get("title")), key)
-    extra_values = {k: v for k, v in extras.items() if v is not None}
-    body = render_case_detail(key=key, title=title, batch=batch, data=data, extras=extra_values).encode("utf-8")
+    extra_values = {k: v for k, v in extras.items() if k != "snapshot_at" and v is not None}
+    snapshot_at = extras.get("snapshot_at")
+    if snapshot_at:
+        timestamp(snapshot_at)  # Local time without an offset cannot order successive snapshots.
+    tenants = {r["tenant_id"] for table in ("cases", "alerts", "incidents", "runs")
+               for r in data.get(table, ()) if r.get("tenant_id")}
+    if len(tenants) > 1:
+        raise ValueError("Multiple tenants in a single workbench record")
     record = {
         "id": sha(json.dumps([batch, identity], ensure_ascii=False).encode("utf-8")),
         "batch": batch, "key": key, "title": title, "scope_id": scope_id,
+        "tenant_id": next(iter(tenants), None), "snapshot_at": snapshot_at,
         "started_at": latest["started_at"] if latest else None,
         "state": status_run["state"] if status_run else None,
+        "delivery_state": status_run.get("delivery_state") if status_run else None,
         "runs": len(runs), "run_ids": sorted(run_ids), "steps": len(data["run_steps"]),
-        "artifacts": len(data["artifacts"]), "detail": f"cases/{sha(body)}.html",
+        "artifacts": len(data["artifacts"]),
+        "step_ids": sorted(s["id"] for s in data["run_steps"]),
+        "artifact_ids": sorted(a["id"] for a in data["artifacts"]),
+        "run_states": {r["id"]: r.get("state") for r in runs},
     }
-    return record, body
+    logs, files = case_log_files(data, batch=batch, key=key)
+    subjects = prepare_subjects(record, data)
+    record["subjects"] = [subject for subject, _ in subjects]
+    record["logs"] = logs
+    record["updated_at"] = (logs or {}).get("updated_at") or record["started_at"]
+    files.update({subject["detail"]: content for subject, content in subjects})
+    body = render_case_detail(key=key, title=title, batch=batch, data=data, extras=extra_values,
+                              logs=logs, subjects=record["subjects"]).encode("utf-8")
+    record["detail"] = f"cases/{sha(body)}.html"
+    files[record["detail"]] = body
+    return record, files
+
+
+def publish_files(output, files):
+    base = output.resolve()
+    for name, content in files.items():
+        target = output / name
+        if not target.resolve().is_relative_to(base) or target.is_symlink():
+            raise ValueError("Publication path outside workbench")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.is_file() or target.read_bytes() != content:
+            atomic_save(target, content)
+
+
+def preserves_history(old, new):
+    if not old:
+        return True
+    terminal = {"completed", "failed", "cancelled"}
+    return ((not old.get("scope_id") or old["scope_id"] == new["scope_id"])
+            and (not old.get("tenant_id") or old["tenant_id"] == new["tenant_id"])
+            and (not old.get("snapshot_at") or timestamp(new.get("snapshot_at")) >= timestamp(old["snapshot_at"]))
+            and all(set(old.get(field, ())) <= set(new[field]) for field in ("run_ids", "step_ids", "artifact_ids"))
+            and old["steps"] <= new["steps"] and old["artifacts"] <= new["artifacts"]
+            and all(state not in terminal or new["run_states"].get(rid) == state
+                    for rid, state in old.get("run_states", {}).items()))
 
 
 def atomic_save(path, content):
@@ -207,6 +259,25 @@ def existing(index):
     raise ValueError(f"Unrecognized page at {index}; choose a separate --output")
 
 
+def retired_records(index):
+    if not index.is_file():
+        return []
+    match = re.search(r'<script type="application/json" id="audit-retired-records">(.*?)</script>',
+                      index.read_text(encoding="utf-8"), re.DOTALL)
+    return json.loads(match[1]) if match else []
+
+
+def registry_html(records, output, retired):
+    ordered = sorted(records.values(), key=lambda r: (timestamp(r["started_at"]), r["batch"], r["key"]), reverse=True)
+    controls = next((name for name in ("controlled-flow.html", "controls.html") if (output / name).is_file()), None)
+    html = render_index(ordered, controls_url=controls)
+    if retired:
+        body = json.dumps(retired, ensure_ascii=True).replace("<", "\\u003c")
+        html = html.replace("</body>", '<script type="application/json" id="audit-retired-records">'
+                            + body + "</script></body>", 1)
+    return html.encode("utf-8")
+
+
 def control_view(root, output):
     # This saved comparison uses controlled model/lake replies, separate from the test case registry.
     if root.resolve() != (EVIDENCE / "ie-audit-20261106-a1").resolve():
@@ -228,37 +299,61 @@ def control_view(root, output):
         atomic_save(path, content)
 
 
-def update(roots, output):
+def update(roots, output, *, load_cases=cases_from, retire_if_absent=()):
     detail_dir = output / "cases"
     detail_dir.mkdir(parents=True, exist_ok=True)
     index = output / "index.html"
     with publishing(output):
         records = existing(index)
+        retired = retired_records(index)
+        if retire_if_absent:
+            if records is None:
+                raise ValueError("migrate the original workbench before importing this replay")
+            by_id = {r["id"]: r for r in retired}
+            active_scopes = {(r["batch"], r["scope_id"]) for r in records.values()}
+            for row in retire_if_absent:
+                if row["id"] in records or (row["batch"], row["scope_id"]) in active_scopes:
+                    raise ValueError("migrate the previous three records with refresh_three_case_replay_20261106.py publish first")
+                previous = by_id.get(row["id"])
+                if previous and previous != row:
+                    raise ValueError("retired record identity conflict")
+                if not previous:
+                    retired.append(row)
+                    by_id[row["id"]] = row
+        retired_ids = {r["id"] for r in retired}
+        retired_scopes = {(r["batch"], r["scope_id"]) for r in retired}
         if records is None:
             # On first upgrade recover the three rows even when the first command adds a different batch.
             original = EVIDENCE / "ie-audit-20261106-a1"
             roots = [original, *(p for p in roots if p.resolve() != original.resolve())]
             records = {}
         imported = 0
+        additions = []
+        control_roots = []
         for root in roots:
-            for case in cases_from(root):
-                record, body = prepare(*case)
+            summary = optional(root / "readback/summary.json") or {}
+            if load_cases is cases_from and summary.get("publication") == "replace_three_case_replay":
+                print(f"{root}: use refresh_three_case_replay_20261106.py publish", file=sys.stderr)
+                continue
+            count_before = imported
+            for case in load_cases(root):
+                record, files = prepare(*case)
+                if record["id"] in retired_ids or (record["batch"], record["scope_id"]) in retired_scopes:
+                    continue
                 old = records.get(record["id"])
-                if old and ((old["scope_id"] and old["scope_id"] != record["scope_id"])
-                            or not set(old["run_ids"]).issubset(record["run_ids"])
-                            or old["steps"] > record["steps"] or old["artifacts"] > record["artifacts"]):
+                if not preserves_history(old, record):
                     raise ValueError(f"{record['batch']}/{record['key']}: snapshot would replace history; "
                                      "use a distinct batch for an independent test")
-                detail = output / record["detail"]
-                if not detail.exists() or sha(detail.read_bytes()) != detail.stem:
-                    atomic_save(detail, body)
+                additions.append(files)
                 records[record["id"]] = record
                 imported += 1
+            if imported != count_before:
+                control_roots.append(root)
+        for files in additions:
+            publish_files(output, files)
+        for root in control_roots:
             control_view(root, output)
-        ordered = sorted(records.values(), key=lambda r: (timestamp(r["started_at"]), r["batch"], r["key"]),
-                         reverse=True)
-        controls = next((name for name in ("controlled-flow.html", "controls.html") if (output / name).is_file()), None)
-        html = render_index(ordered, controls_url=controls).encode("utf-8")
+        html = registry_html(records, output, retired)
         if not index.exists() or index.read_bytes() != html:
             atomic_save(index, html)
     return imported, len(records)
@@ -269,9 +364,16 @@ def main():
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--batch", type=Path, action="append", help="saved batch or completed page-export directory")
     source.add_argument("--plan", type=Path, help="21 synthetic test plan.json; read its scoped snapshot if missing")
+    source.add_argument("--folder", type=Path, help="verify and load a local investigation export folder")
     parser.add_argument("--output", type=Path, default=OUTPUT, help="static site served on 4177")
     args = parser.parse_args()
     try:
+        if args.folder:
+            from processing_audit_import import import_folder
+
+            imported, total = import_folder(args.folder, args.output)
+            print(f"Read {imported} snapshots; {total} registered at {args.output / 'index.html'}")
+            return
         if args.plan:
             if args.plan.name != "plan.json" or not args.plan.is_file():
                 raise ValueError("--plan must point to the completed test batch's plan.json")

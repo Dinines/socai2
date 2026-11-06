@@ -212,6 +212,8 @@ def render_flow(run, steps, artifacts, artifact_indices, step_ids, run_anchor):
         if reanalysis:
             items.append(lane(step_nodes("补证后再分析", reanalysis),
                               model("C3.reanalysis", "再分析模型") + domain_outputs(reanalysis)))
+        else:
+            items.append(lane([node("补证后再分析")]))
         items.append(closing())
     elif kind == "alert_basic":
         items.append(lane(step_nodes("A 告警分诊", select("A", "stage")), backgrounds("A", ("assets", "history", "threat_intel"))))

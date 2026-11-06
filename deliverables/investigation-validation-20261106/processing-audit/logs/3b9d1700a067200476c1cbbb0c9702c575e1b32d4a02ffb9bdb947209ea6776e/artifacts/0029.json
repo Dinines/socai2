@@ -1,0 +1,106 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-06T10:20:59.71357+00:00",
+  "case_id": "c5e460de-fc80-5e24-b376-d3b0e95b2fa4",
+  "content_json": {
+    "captured_at": "2026-11-06T10:20:59.712851+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "message": {
+              "annotations": null,
+              "audio": null,
+              "content": "{\n  \"analysis\": {\n    \"summary\": \"本轮仅见两条告警：bc6c2562（auditpol.exe 禁用登录审计）与 c403a865（Security.evtx 被截断）。时间间隔 30 秒，同主机 win-c23 与账户 temp-svc。未见审批、MFA 或业务上下文。\",\n    \"members\": [\n      {\n        \"alert_id\": \"bc6c2562-3cde-509c-b062-0a3510cd5312\",\n        \"state\": \"analyzed\",\n        \"summary\": \"auditpol.exe 以 temp-svc 身份在 win-c23 上执行禁用登录审计命令，成功。来源为 N3_S1/4/7/10/13/15。\",\n        \"evidence_ids\": [\"N3_S1\", \"N3_S4\", \"N3_S7\", \"N3_S10\", \"N3_S13\", \"N3_S15\"],\n        \"limitations\": [\"无审批记录\", \"无 MFA/会话证据\", \"无业务授权说明\"]\n      },\n      {\n        \"alert_id\": \"c403a865-6f32-5c6f-86bc-db102d45bbfc\",\n        \"state\": \"analyzed\",\n        \"summary\": \"Security.evtx 被 temp-svc 在 win-c23 上截断，成功。来源为 N3_S17/19/21/23/25。\",\n        \"evidence_ids\": [\"N3_S17\", \"N3_S19\", \"N3_S21\", \"N3_S23\", \"N3_S25\"],\n        \"limitations\": [\"无截断原因\", \"无后续日志可见\", \"无业务授权说明\"]\n      }\n    ],\n    \"findings\": [\n      {\n        \"id\": \"F1\",\n        \"state\": \"observed\",\n        \"statement\": \"temp-svc 在 30 秒内于 win-c23 执行禁用登录审计并截断安全日志。\",\n        \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n        \"support_ids\": [\"N3_S4\", \"N3_S23\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"临时合规调整\", \"运维清理\"],\n        \"limitations\": [\"无审批/授权证据\", \"无业务上下文\"]\n      },\n      {\n        \"id\": \"F2\",\n        \"state\": \"inferred\",\n        \"statement\": \"禁用登录审计可能降低后续检测能力；日志截断可能阻碍取证。\",\n        \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n        \"support_ids\": [\"N3_S4\", \"N3_S23\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"计划内配置变更\"],\n        \"limitations\": [\"影响范围未量化\", \"无外传证据\"]\n      }\n    ],\n    \"questions\": [\n      {\n        \"id\": \"detection_facts\",\n        \"state\": \"answered\",\n        \"answer\": \"两条告警分别记录进程启动与文件截断行为，对象为 auditpol.exe 与 Security.evtx，主体为 temp-svc，主机为 win-c23。\",\n        \"evidence_ids\": [\"N3_S1\", \"N3_S4\", \"N3_S7\", \"N3_S10\", \"N3_S13\", \"N3_S15\", \"N3_S17\", \"N3_S19\", \"N3_S21\", \"N3_S23\", \"N3_S25\"]\n      ,\n      \"limitations\": [\"无原始日志全文\"]\n      },\n      {\n        \"id\": \"member_relationships\",\n        \"state\": \"answered\",\n        \"answer\": \"时间接近且同主机/账户，提示可能同一会话；但无因果证据，不能断言截断为审计禁用之后。\",\n        \"evidence_ids\": [\"N3_S31\", \"N3_S32\"],\n        \"limitations\": [\"时间差 30 秒不足以定序\", \"无会话 ID 关联\"]\n      },\n      {\n        \"id\": \"behavior_nature\",\n        \"state\": \"unresolved\",\n        \"answer\": \"禁用审计与截断日志常见于攻击，但也可能是运维操作；当前无审批或业务说明，无法定性。\",\n        \"evidence_ids\": [],\n        \"limitations\": [\"无审批记录\", \"无业务上下文\"]\n      },\n      {\n        \"id\": \"authorization\",\n        \"state\": \"not_applicable\",\n        \"answer\": \"未见任何审批、工单、MFA 或会话授权证据；不能推断为授权行为。\",\n        \"evidence_ids\": [],\n        \"limitations\": [\"无授权记录\", \"无审批流程\"]\n      },\n      {\n        \"id\": \"impact\",\n        \"state\": \"unresolved\",\n        \"answer\": \"已观察到审计配置变更与日志截断；对检测能力与取证的影响待核，未见数据外传。\",\n        \"evidence_ids\": [\"N3_S4\", \"N3_S23\"],\n        \"limitations\": [\"影响范围未量化\", \"无外传证据\"]\n      },\n      {\n        \"id\": \"coverage\",\n        \"state\": \"answered\",\n        \"answer\": \"已覆盖两条告警的所有成员；缺口包括审批、业务上下文、会话链路与外传目的。\",\n        \"evidence_ids\": [],\n        \"limitations\": [\"无原始日志\", \"无审批记录\"]\n      }\n    ],\n    \"domains\": [\n      {\n        \"name\": \"identity\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及账户 temp-svc 与主机 win-c23 的访问行为。\",\n        \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n        \"finding_ids\": [\"F1\"],\n        \"limitations\": [\"无 MFA/会话证据\", \"无授权记录\"]\n      },\n      {\n        \"name\": \"cloud\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"未见云控制面、IAM 或配置管理证据。\",\n        \"alert_ids\": [],\n        \"finding_ids\": [],\n        \"limitations\": [\"无云环境证据\"]\n      },\n      {\n        \"name\": \"phishing\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"未见邮件、链接或附件投递证据。\",\n        \"alert_ids\": [],\n        \"finding_ids\": [],\n        \"limitations\": [\"无邮件证据\"]\n      },\n      {\n        \"name\": \"insider\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及本地账户对系统日志的修改与截断。\",\n        \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n        \"finding_ids\": [\"F1\", \"F2\"],\n        \"limitations\": [\"无业务授权\", \"无外传证据\"]\n      }\n    ],\n    \"conflicts\": [\n      {\n        \"id\": \"C1\",\n        \"finding_ids\": [\"F1\", \"F2\"],\n        \"state\": \"unresolved\",\n        \"explanation\": \"禁用审计与截断日志可能为攻击，也可能为运维；当前无审批或业务说明，无法区分。\",\n        \"evidence_ids\": [\"N3_S4\", \"N3_S23\"]\n      },\n      {\n        \"id\": \"C2\",\n        \"finding_ids\": [\"F1\", \"F2\"],\n        \"state\": \"unresolved\",\n        \"explanation\": \"时间接近提示关联，但无会话 ID 或因果证据，不能断言截断为审计禁用之后。\",\n        \"evidence_ids\": [\"N3_S31\", \"N3_S32\"]\n      }\n    ],\n    \"followups\": [\n      {\n        \"question_id\": \"authorization\",\n        \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n        \"mode\": \"human\",\n        \"objective\": \"确认 temp-svc 在 win-c23 执行审计禁用与日志截断是否有审批或业务授权。\",\n        \"required_evidence\": \"工单、审批记录、MFA 日志或会话上下文。\",\n        \"source_ids\": [\"N3_S7\", \"N3_S17\"]\n      ,\n      \"object_keys\": [\"[\\\"user\\\",\\\"temp-svc\\\"]\",\"[\\\"host\\\",\\\"win-c23\\\"]\"]\n      }\n    ]\n  },\n  \"conclusion\": {\n    \"text\": \"两条告警显示 temp-svc 在 win-c23 禁用登录审计并截断安全日志，时间接近。未见审批或业务授权，影响待核。需人工确认授权与上下文。\",\n    \"state\": \"uncertain\",\n    \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n    \"support_ids\": [\"N3_S4\", \"N3_S23\"],\n    \"limitations\": [\"无审批记录\", \"无业务上下文\", \"无外传证据\"]\n  },\n  \"closing_note\": \"已覆盖两条告警成员；缺口为审批、业务上下文与外传目的。结论待人工确认授权后更新。\"\n  ,\n  \"comparison\": {\n    \"kind\": \"initial\",\n    \"summary\": \"无基线记录，无法比较。\",\n    \"support_ids\": []\n  }\n  ,\n  \"impact\": {\n    \"summary\": \"已观察到审计配置变更与日志截断；对检测与取证的影响待核，未见数据外传。\",\n    \"alert_ids\": [\"bc6c2562-3cde-509c-b062-0a3510cd5312\", \"c403a865-6f32-5c6f-86bc-db102d45bbfc\"],\n    \"support_ids\": [\"N3_S4\", \"N3_S23\"],\n    \"supported_changes\": []\n  ,\n  \"cannot_generalize\": [\"影响范围未量化\", \"无外传证据\"]\n  ,\n  \"next_steps\": [\"人工确认授权\", \"补充会话与审批证据\"]\n  }\n  ,\n  \"recommendations\": [\n    {\n      \"id\": \"R1\",\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"[\\\"user\\\",\\\"temp-svc\\\"]\",\"[\\\"host\\\",\\\"win-c23\\\"]\"],\n      \"reason\": \"需确认审计禁用与日志截断是否有审批或业务授权。\",\n      \"source_ids\": [\"N3_S4\", \"N3_S23\"],\n      \"limitations\": [\"无审批记录\", \"无业务上下文\"]\n    }\n  ]\n}",
+              "function_call": null,
+              "reasoning": null,
+              "refusal": null,
+              "role": "assistant"
+            },
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        ],
+        "created": 1793960403,
+        "ec_transfer_params": null,
+        "id": "chatcmpl-9b81431d5ba5cc02",
+        "kv_transfer_params": null,
+        "metrics": null,
+        "model": "aisoc-test-investigation",
+        "object": "chat.completion",
+        "prompt_logprobs": null,
+        "prompt_text": null,
+        "prompt_token_ids": null,
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 2854,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 2877,
+          "prompt_tokens_details": null,
+          "total_tokens": 5731
+        }
+      },
+      "validation_error": "answered_question_needs_sources"
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-9b81431d5ba5cc02",
+    "schema_version": "socai2.baseline-delivery.v1",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 2877,
+      "output_tokens": 2854,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-9b81431d5ba5cc02",
+      "total_tokens": 5731,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "0fa5e92d-8c36-5a4b-8bd4-8120b15356bd",
+  "event_time": null,
+  "file_name": null,
+  "id": "f3adbb12-f286-4132-aad0-d76d4187859c",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "4eb492a503668db1426084f00e5395731c7f67f98eb59cc19bf2309fc9fdce3f",
+    "original_size_bytes": 10120,
+    "reason": null,
+    "retained_sha256": "4eb492a503668db1426084f00e5395731c7f67f98eb59cc19bf2309fc9fdce3f",
+    "retained_size_bytes": 10120,
+    "truncated": false
+  },
+  "run_id": "2e86940b-f838-4250-8b57-29435626b463",
+  "schema_version": "socai2.baseline-delivery.v1",
+  "sha256": "4eb492a503668db1426084f00e5395731c7f67f98eb59cc19bf2309fc9fdce3f",
+  "size_bytes": 10120,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "6b863010-e324-47eb-b328-971e5b26db47",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "4b27bde0-9242-4cc1-864f-ff5491603f94",
+  "tenant_id": "6aff0ef7-c670-5a84-a2ee-83d73e25b964"
+}

@@ -19,7 +19,14 @@ async def main(plan):
     tenant = UUID("6aff0ef7-c670-5a84-a2ee-83d73e25b964")
     cases = CaseService(AsyncSessionLocal)
     pages, analyses = PageReadService(AsyncSessionLocal), StageReadService(AsyncSessionLocal)
-    assert plan["batch"] == "ie-audit-20261106-a1" and str(tenant) == plan["tenant_id"]
+    assert str(tenant) == plan["tenant_id"] and plan["batch"] in {"ie-audit-20261106-a1", "ie-audit-20261106-r300"}
+    if plan["batch"] == "ie-audit-20261106-r300":
+        assert plan["source"] == "ie-audit-20261106-a1"
+        assert {r["key"]: r["case_id"] for r in plan["cases"]} == {
+            "m01": "f470c06b-0eb0-5cd7-95ea-7544755fb597",
+            "s02": "c5e460de-fc80-5e24-b376-d3b0e95b2fa4",
+            "u03": "b83efdd1-034d-5b6f-be84-34340f35a5dc",
+        } and len(plan["cases"]) == 3
     result = {}
     try:
         async with cases.transaction(tenant, readonly=True) as store:
