@@ -1,3 +1,9 @@
+# 2026-11-06 联调交付合并与父项目引用授权
+
+用户要求拉取最新联调 V1，独立核对数据库表、字段、原产品页面与交接文档，并先补根目录[前后端交接指南](FRONTEND_BACKEND_HANDOFF.md)。现有 V1 与新增指南独立复核均限定 ACCEPT，无联调发布必须修；48 保存 GET 离线对账、618 页面检查/95 渲染、5 运行记录测试通过，见[本轮复核](openspec/changes/complete-socai2-investigation-chain/integration-v1-release-review-20261106.md)。
+
+用户明确授权通过后合入并推送 socai2 main，再更新父项目 wangjuelong26/SpiritHub 的 add-server-submoudle 分支中 server 子模块指针；不改父项目 main，不再拉取或复制父项目内容。本轮只补文档/发布，未改 V1 DDL、产品页面或模型逻辑。4177 仅为内部开发查阅，后续内部步骤改动须保持已确认契约兼容；数据库变更仍逐项人工确认。原 19/26、模型质量和未接功能不核销，以下“不合 main”为原批历史。
+
 # 调查数据库 V1 与人工确认
 
 2026-11-06，项目负责人已确认告警、事件和调查的 PostgreSQL `socai2` 表设计形成初版。V1 以迁移 123–126 为基准，共 29 表、462 列。[字段字典](docs/design/socai2-field-dictionary-20261103.md) · [部署用建表脚本](deploy/database/init_socai2_v1.sql)

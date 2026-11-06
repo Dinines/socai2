@@ -1,3 +1,9 @@
+# 2026-11-06 联调 V1 交付复核及发布
+
+已同步远端 624a57de，数据库 V1、字段/页面对应及交接资料经独立审阅限定 ACCEPT。新增根目录[前后端交接指南](FRONTEND_BACKEND_HANDOFF.md)，列明本机与 21 库名、角色、连接配置和凭据路径、SQL/接口、测试包与签收顺序；根指南再次独审通过。旧本机初始化只准备 125 的限制已明示，完整 V1 新部署沿独立 SQL。48 保存 GET 对账、618 原页检查/95 渲染、5 运行记录测试及 ZIP CRC 通过；4177 静态查阅页已在本机打开。
+
+用户授权 socai2 main 合并及父项目 SpiritHub/add-server-submoudle 的 server 指针更新，不再拉父仓库；实际发布以 Git 远端核对为准。[复核回执](openspec/changes/complete-socai2-investigation-chain/integration-v1-release-review-20261106.md)。本轮无 DDL/模型/业务调用/部署，产品页面保持；19/26、四项页面差异、Q501、其他待接能力和模型质量继续按原范围推进。
+
 # 2026-11-06 本轮数据与测试材料提交远程授权
 
 用户明确要求将本轮修改、测试结果、字段对应清单及剩余问题/下轮部署模型计划提交到远程。沿origin/codex/case-baseline-history-20261103，基线5eacb314；本次包含126页面数据增量、共用存取/导出、原页字段绑定、三组追加测试与四数据合同样例、F01—F28、OpenSpec及限定审计，并将原核验ZIP逐字复制到deliverables/investigation-validation-20261106供远端下载。见[发布范围与待办](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)。

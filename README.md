@@ -1,5 +1,7 @@
 # socai2 · stingAISOC
 
+**前后端接手先读 [交接指南 V1](FRONTEND_BACKEND_HANDOFF.md)。** 汇总数据库和凭据文件位置、表与接口合同、页面功能和跳转、离线案例、4177 开发查阅页，以及联调签收范围。
+
 **调查数据库初版（V1）已确认。** 告警、事件和调查共用 `socai2` 的 29 张表、462 列。后续任何表设计变更须走项目变更流程，经项目负责人明确人工确认后实施。[字段字典及初始化命令](docs/design/socai2-field-dictionary-20261103.md) · [V1 建表脚本](deploy/database/init_socai2_v1.sql)
 
 以固定上游 [beenuar/AiSOC](https://github.com/beenuar/AiSOC) revision `34ca18c57dd4175539e5c6dd3d04a72dc057306b` 为参考，交付已有告警及后续调查的服务端：Kafka输入、Fusion、分诊、按策略自动关闭或自动升级调查、人工调查，以及API/持久化结果和Markdown报告。前端、采集和原始事件检测不在本轮迁移范围。

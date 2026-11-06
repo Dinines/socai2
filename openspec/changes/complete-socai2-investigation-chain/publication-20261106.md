@@ -1,5 +1,7 @@
 # 本轮提交范围、剩余问题与下一轮模型验证
 
+**同日后续联调 V1 发布：** 远端新增 bbd3de02/624a57de 已同步；用户要求独立审核数据库、字段与页面交接，并补根目录[详细指南](../../../FRONTEND_BACKEND_HANDOFF.md)，通过后合入 socai2 main，再更新 SpiritHub/add-server-submoudle 的 server 子模块引用。已有 V1 与新增指南均限定 ACCEPT；本轮直接验证及剩余范围见[发布复核](integration-v1-release-review-20261106.md)。本轮不改数据库或产品页面、不调用模型、不再拉父仓库。下文“不合 main”“部署模型下一轮”为 34f33742 发布时的原记录；后续 21 已保存试验见[三案处理审计](../../../deliverables/investigation-validation-20261106/processing-functional-audit.md)，不改写各批预算或历史失败。
+
 2026-11-06，用户明确要求将本轮修改、测试结果、字段对应清单提交远程，并记录剩余问题及下一轮部署模型测试计划。目标为`origin/codex/case-baseline-history-20261103`，同步确认的提交基线为`5eacb3149a4b2202419549aefd24ff6ee964177a`。本次沿当前分支提交，不合并main；提交与远程成功状态以Git核对为准。
 
 ## 提交内容
