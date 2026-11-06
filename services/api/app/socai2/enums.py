@@ -248,6 +248,11 @@ class ScopeKind(StrEnum):
     SELECTED_ALERTS = 'selected_alerts'
     EXPLICIT_OBJECTS = 'explicit_objects'
 
+class CaseClassification(StrEnum):
+    TRUE_POSITIVE = 'true_positive'
+    INFORMATIONAL = 'informational'
+    FALSE_POSITIVE = 'false_positive'
+
 ENUM_VALUES = {
     'severity': tuple(v.value for v in Severity),
     'alert_status': tuple(v.value for v in AlertStatus),
@@ -285,4 +290,5 @@ ENUM_VALUES = {
     'artifact_kind': tuple(v.value for v in ArtifactKind),
     'assessment_kind': tuple(v.value for v in AssessmentKind),
     'scope_kind': tuple(v.value for v in ScopeKind),
+    'case_classification': tuple(v.value for v in CaseClassification),
 }

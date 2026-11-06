@@ -1,7 +1,7 @@
 {
   "version": "socai2.page-model.v1",
   "date": "2026-11-03",
-  "status": "current_contract_123_plus_124_verified_in_isolated_pg_only",
+  "status": "page_read_contract_123_through_126_verified_on_21_processing_handoff",
   "namespace": "socai2",
   "common": {
     "tenant_id": {
@@ -2875,6 +2875,9 @@
           },
           {
             "$ref": "#/$defs/alert_explanation"
+          },
+          {
+            "$ref": "#/$defs/case_evidence_index"
           }
         ]
       }
@@ -6524,10 +6527,11 @@
       "三个对象分别(tenant_id,target_id,created_at,id)"
     ]
   },
-  "sql_boundary": "已确认D01-D03，生成123_socai2_page_data_model.sql及ORM/枚举/JSON校验；尚未应用实际数据库或部署。D04特殊操作仍不开放，不影响建表。",
+  "sql_boundary": "2026-11-06只读核对21处理交接库socai2_processing_handoff：123至126已登记，socai2下29表462列可供告警、事件和调查页面查询。D04特殊操作仍按原范围。",
   "auto_adoption_policy": {
     "eligible": "baseline completed + result.validation_state=accepted + model结论非空，非system_handoff；允许partial但仅采用conclusion_covered成员",
     "scope": "Run.scope_revision等于Case.scope_revision且冻结成员集合等于当前成员；至少一条结论覆盖成员",
+    "input_freshness": "采用前核对冻结成员材料、分诊、反馈、事件上下文及已完成人工反馈版本；无法确认当前有效或已有变化时返回stale_input，保留Case当前判断",
     "order": "锁Case；本轮started_at之后已有判断采用则跳过，避免覆盖较新的人工/其他判断",
     "write": "新增case_assessment及sources/members，更新Case指针并写活动，同事务；重复同一result返回原采用记录",
     "ai": "仅明确采用；保存AI答案不更新Case",
@@ -6537,6 +6541,13 @@
     {
       "number": 124,
       "path": "services/api/migrations/124_socai2_case_source_binding.sql",
+      "tables": 29,
+      "columns": 459,
+      "baseline_123_unchanged": true
+    },
+    {
+      "number": 125,
+      "path": "services/api/migrations/125_socai2_baseline_input_freshness.sql",
       "tables": 29,
       "columns": 459,
       "baseline_123_unchanged": true

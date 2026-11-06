@@ -1,5 +1,7 @@
 # socai2 · stingAISOC
 
+**调查数据库初版（V1）已确认。** 告警、事件和调查共用 `socai2` 的 29 张表、462 列。后续任何表设计变更须走项目变更流程，经项目负责人明确人工确认后实施。[字段字典及初始化命令](docs/design/socai2-field-dictionary-20261103.md) · [V1 建表脚本](deploy/database/init_socai2_v1.sql)
+
 以固定上游 [beenuar/AiSOC](https://github.com/beenuar/AiSOC) revision `34ca18c57dd4175539e5c6dd3d04a72dc057306b` 为参考，交付已有告警及后续调查的服务端：Kafka输入、Fusion、分诊、按策略自动关闭或自动升级调查、人工调查，以及API/持久化结果和Markdown报告。前端、采集和原始事件检测不在本轮迁移范围。
 
 **调查新版开发与评审：** 从[调查分支入口](docs/investigation/README.md)查看设计、相对开源的变化、当前进度、已知问题、测试和共享回执。新版在`codex/investigation-working`普通项目目录开发，代码/文档提交并推送供跨机器协作；旧业务源码保持，新版独立目录，当前尚未部署或接入完整流程。下文按日期保留的旧运行状态以PROGRESS及该入口链接的最新回执为准。

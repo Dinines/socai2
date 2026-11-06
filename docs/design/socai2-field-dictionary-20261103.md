@@ -1,6 +1,16 @@
 # 新库表字段字典
 
-2026-11-06当前：增量126增加Case分类、截止时间和当前证据索引指针，本机隔离库已核对29表/462列；结构化字典现37枚举/39 JSON合同。原123为29表/458列，124增加固定source_namespace，125仅增加函数。原迁移和历史记录保留；字段合同不等于生产已接入。最新[页面数据交接](../investigation/socai2-page-data-handoff-20261106.md)，此前[关系批次](../investigation/socai2-case-relations-20261104.md)及[实现交接](socai2-schema-implementation-20261103.md)按各自日期阅读。来源：[结构化字典](socai2-data-contract-20261103.json)、[JSON schema](socai2-json-contracts-20261103.schema.json)。
+**设计状态：初版（V1）已确认，2026-11-06。** 迁移 123–126 构成本字典的数据库基线。后续任何表设计变更须先提交 OpenSpec 变更并取得项目负责人的明确人工确认，方可实施。[项目协作规则](../../AGENTS.md#调查数据库-v1-与人工确认)
+
+**部署初始化。** 在新建的专用 UTF-8 PostgreSQL 16 数据库上，用 psql 运行[独立建表脚本](../../deploy/database/init_socai2_v1.sql)。脚本包含与处理模块相同的公共依赖和四份迁移，在一个事务内建表、登记版本并核对结构。完整 V1 再运行时仅核对；部分安装或结构不符会报错退出。脚本只初始化库表，业务数据、账号和服务配置由部署方另行准备。
+
+```sh
+psql -X -d your_investigation_db -f deploy/database/init_socai2_v1.sql
+```
+
+2026-11-06 在一次性 PostgreSQL 16.15 容器实测：首次建成 29 张空调查表、462 列，登记 4 份迁移；再次执行保留了已有测试记录和迁移登记时间。缺少迁移登记、表约束被修改以及目标库已有其他表时均按预期拒绝；故意触发首次安装校验失败后，公共依赖和调查表一并回滚。
+
+2026-11-06 已在 21 处理交接库 `socai2_processing_handoff` 核对 29 表、462 列，供后端查询告警、事件和调查三页。123 建立 29 表、458 列，124 增加 Case 的固定来源命名空间，125 更新采用前的输入新鲜度判断，126 增加 Case 分类、截止时间和当前证据目录指针。现行字典含 37 组枚举、39 个 JSON 合同。逐字段取值和缺值样例见[三页字段取数清单](../../deliverables/investigation-validation-20261106/page-field-samples.md)，存储定义见[结构化字典](socai2-data-contract-20261103.json)和[JSON Schema](socai2-json-contracts-20261103.schema.json)。
 
 ## 1. 全表规则
 
@@ -3407,6 +3417,9 @@ content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON�
     },
     {
       "$ref": "#/$defs/alert_explanation"
+    },
+    {
+      "$ref": "#/$defs/case_evidence_index"
     }
   ]
 }
@@ -3723,7 +3736,8 @@ content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON�
   "source_snapshot": "raw_payload",
   "handoff": "handoff",
   "query_plan": "query_plan",
-  "alert_explanation": "alert_explanation"
+  "alert_explanation": "alert_explanation",
+  "case_evidence_index": "case_evidence_index"
 }
 ```
 
@@ -3733,6 +3747,7 @@ content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON�
 {
   "eligible": "baseline completed + result.validation_state=accepted + model结论非空，非system_handoff；允许partial但仅采用conclusion_covered成员",
   "scope": "Run.scope_revision等于Case.scope_revision且冻结成员集合等于当前成员；至少一条结论覆盖成员",
+  "input_freshness": "采用前核对冻结成员材料、分诊、反馈、事件上下文及已完成人工反馈版本；无法确认当前有效或已有变化时返回stale_input，保留Case当前判断",
   "order": "锁Case；本轮started_at之后已有判断采用则跳过，避免覆盖较新的人工/其他判断",
   "write": "新增case_assessment及sources/members，更新Case指针并写活动，同事务；重复同一result返回原采用记录",
   "ai": "仅明确采用；保存AI答案不更新Case",

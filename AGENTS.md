@@ -1,3 +1,9 @@
+# 调查数据库 V1 与人工确认
+
+2026-11-06，项目负责人已确认告警、事件和调查的 PostgreSQL `socai2` 表设计形成初版。V1 以迁移 123–126 为基准，共 29 表、462 列。[字段字典](docs/design/socai2-field-dictionary-20261103.md) · [部署用建表脚本](deploy/database/init_socai2_v1.sql)
+
+此后任何表设计变更（包括新增、删除、改名，以及字段、类型、默认值、空值规则、键、约束、索引、表关系或隔离规则的调整）都必须先走项目的 [OpenSpec 变更流程](openspec/README.md)。在变更记录中列出原因、涉及的表和字段、对既有数据及页面查询的影响，提交项目负责人逐项或按明确范围**人工确认**，记录确认人、日期及获准范围。确认前只可提出方案，不得修改正式表设计或实施迁移。测试通过、自动评审、一般性的“继续推进”均不能替代这次人工确认。获准后使用新的增量迁移，保留 V1 原件。
+
 # 2026-11-06 本轮数据与测试材料提交远程授权
 
 用户明确要求将本轮修改、测试结果、字段对应清单及剩余问题/下轮部署模型计划提交到远程。沿origin/codex/case-baseline-history-20261103，基线5eacb314；本次包含126页面数据增量、共用存取/导出、原页字段绑定、三组追加测试与四数据合同样例、F01—F28、OpenSpec及限定审计，并将原核验ZIP逐字复制到deliverables/investigation-validation-20261106供远端下载。见[发布范围与待办](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)。
