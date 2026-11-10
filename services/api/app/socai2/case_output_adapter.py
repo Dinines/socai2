@@ -5,8 +5,9 @@ import json
 from pydantic import ValidationError
 
 from . import baseline_analysis_contract as contract
-from .analysis_review import Review, decode, empty_reference_feedback
+from .analysis_review import Review, decode
 from .baseline_execution_schema import execution_format
+from .case_citation_feedback import feedback
 from .structured_output import response_format
 
 
@@ -60,10 +61,13 @@ class CaseReview(Review):
         self.boundary = prepared["case_boundary"]
 
     def feedback(self, content):
+        restore(content, self.boundary)
         sources = copy.deepcopy(self.sources)
         for item in sources.values():
-            item["alert_ids"] = [self.boundary["member_aliases"][aid] for aid in item["alert_ids"]]
-        return empty_reference_feedback(content, "C3", sources)
+            for key in ("alert_ids", "query_alert_ids", "record_alert_ids"):
+                if key in item:
+                    item[key] = [self.boundary["member_aliases"].get(aid, "案件外成员") for aid in item[key]]
+        return feedback(content, "C3", sources, self.boundary["member_aliases"].values(), [q.id for q in self.context.questions])
 
     def partial(self, content):
         return super().partial(restore(content, self.boundary))

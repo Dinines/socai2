@@ -65,11 +65,16 @@ class Gateway:
             context = await store.read_context(self.cid, self.rid)
         assert request["body"] == body and request["case_boundary"] == frozen["case_boundary"]
         answer = answer_for(frozen, context)
-        if self.mode == "followup":
+        if self.mode in {"followup", "scope_recovery"}:
             answer["followups"] = [{"question_id": context.questions[0].id,
                 "alert_ids": [m["alert_id"] for m in answer["members"]], "mode": "deep", "objective": "Synthetic one-question check.",
                 "required_evidence": "Synthetic query evidence.", "source_ids": [m["evidence_ids"][0] for m in answer["members"]],
                 "object_keys": [], "binding_id": None, "priority": "decision_critical"}]
+        if self.mode == "scope_recovery" and self.calls == 1:
+            answer["members"][0]["evidence_ids"] += answer["members"][1]["evidence_ids"]
+        if self.mode == "scope_recovery" and self.calls == 2:
+            feedback = json.loads(body["messages"][-1]["content"])
+            assert any(e.get("code") == "source_member_mismatch" for e in feedback["errors"])
         if self.mode == "correction" and self.calls == 1:
             answer["members"][0].update(state="analyzed", evidence_ids=[])
         if self.mode == "correction" and self.calls == 2:
@@ -93,6 +98,27 @@ class Gateway:
 async def run_checks(engine, record, only=None):
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     service, stages = BaselineService(sessions), StageResultService(sessions)
+
+    async def start(cid, rid, now, full=True):
+        limits = runtime_policy.active_policy().case.limits(now, "synthetic.case-boundary.v1")
+        async def idle(claim):
+            from app.socai2.baseline_capacity import final_reservation
+            from app.socai2.baseline_executor import BaselineExecutor
+            executor = BaselineExecutor(service, T, gateway=SimpleNamespace(), lake=SimpleNamespace())
+            async with service.transaction(T) as store:
+                run = await store.run(cid, rid)
+                context = await store.read_context(cid, rid)
+                await executor.record(store, run, "C1.executor", {"schema_version": FULL_EXECUTOR_VERSION,
+                    "type": "execution_plan", "run_id": str(rid), "limits": run["limits"],
+                    "limitations": ["Synthetic Case integration; model and tool substitutes."],
+                    "final_reservation": final_reservation(None, context, limits)}, [])
+        await service.start(T, cid, rid, Start(expected_scope_revision=1, operation_key=uuid4(),
+            window_start=now - timedelta(minutes=5) if full else None,
+            window_end=now + timedelta(minutes=5) if full else None), actor=ACTOR,
+            executor=idle, executor_version=FULL_EXECUTOR_VERSION, limits=limits)
+        with patch.object(baseline_enrichment_sources, "query", empty_query):
+            await service.enrich(T, cid, rid)
+        await service.prepare_evidence(T, cid, rid)
 
     async def fixture(full=False):
         cid, iid, aids, aruns = uuid4(), uuid4(), [uuid4(), uuid4()], []
@@ -125,29 +151,11 @@ async def run_checks(engine, record, only=None):
         assert result["state"] == "completed", result
         async with service.transaction(T) as store:
             pending = await store.replace_members(cid, set(aids), expected_revision=0, actor=ACTOR, operation_id=uuid4())
-            limits = runtime_policy.active_policy().case.limits(await store.now(), "synthetic.case-boundary.v1")
         rid = UUID(pending["pending_run_id"])
-        async def idle(claim):
-            from app.socai2.baseline_capacity import final_reservation
-            from app.socai2.baseline_executor import BaselineExecutor
-            executor = BaselineExecutor(service, T, gateway=SimpleNamespace(), lake=SimpleNamespace())
-            async with service.transaction(T) as store:
-                run = await store.run(cid, rid)
-                context = await store.read_context(cid, rid)
-                await executor.record(store, run, "C1.executor", {"schema_version": FULL_EXECUTOR_VERSION,
-                    "type": "execution_plan", "run_id": str(rid), "limits": run["limits"],
-                    "limitations": ["Synthetic C1/C3 test; no Deep or C6 model dispatch."],
-                    "final_reservation": final_reservation(None, context, limits)}, [])
-        await service.start(T, cid, rid, Start(expected_scope_revision=1, operation_key=uuid4(),
-            window_start=now - timedelta(minutes=5) if full else None,
-            window_end=now + timedelta(minutes=5) if full else None), actor=ACTOR,
-            executor=idle, executor_version=FULL_EXECUTOR_VERSION, limits=limits)
         sample = {"case_id": cid, "incident_id": iid, "run_id": rid, "alert_ids": aids,
                   "stage_run_ids": [*aruns, result["run_id"]]}
         record("fixture_registered", True, sample)
-        with patch.object(baseline_enrichment_sources, "query", empty_query):
-            await service.enrich(T, cid, rid)
-        await service.prepare_evidence(T, cid, rid)
+        await start(cid, rid, now, full)
         return sample
 
     async def close(sample, store=None):
@@ -186,7 +194,7 @@ async def run_checks(engine, record, only=None):
         if mode == "correction":
             assert gateway.calls == 2 and result["basis"]["correction_result"]["dispatched"]
         elif mode == "partial":
-            assert gateway.calls == 1 and result["analysis"]["members"][0]["state"] == "not_analyzed"
+            assert gateway.calls == 2 and result["analysis"]["members"][0]["state"] == "not_analyzed"
             assert result["analysis"]["members"][1]["state"] == "unresolved"
             assert result["basis"]["validation_review"]["state"] == "partial"
         else:
@@ -254,7 +262,8 @@ async def run_checks(engine, record, only=None):
         from test_socai2_case_followup_pg import scenario
         sample = await fixture(full=True)
         cid, rid = sample["case_id"], sample["run_id"]
-        gateway = Gateway(service, cid, rid, "rejected" if mode == "fallback" else "followup")
+        gateway = Gateway(service, cid, rid, "rejected" if mode == "fallback" else
+                          "scope_recovery" if mode == "scope_recovery" else "followup")
         initial = await service.analyze(T, cid, rid, gateway=gateway, lake=SimpleNamespace(configured=lambda: True))
         assert bool(initial.get("analysis")) == (mode != "fallback"), initial
         return await scenario(service, sample, initial, mode)
@@ -270,6 +279,42 @@ async def run_checks(engine, record, only=None):
 
     async def test_case_boundary_followups_without_c3():
         return await followup_scenario("fallback")
+
+    async def test_case_boundary_scope_and_finding_correction_full_flow():
+        return await followup_scenario("scope_recovery")
+
+    async def test_case_boundary_human_feedback_then_complete_next_flow():
+        from app.socai2.case_contracts import PrepareBaseline
+        from app.socai2.human_task_contracts import TaskCreate
+        from app.socai2.human_task_service import HumanTaskService
+        from test_socai2_case_followup_pg import scenario
+        first = await followup_scenario("valid")
+        cid, old_run = first["case_id"], first["run_id"]
+        human = HumanTaskService(sessions)
+        context = await service.read_context(T, cid, old_run)
+        note = "Synthetic material-completeness feedback only: process start does not prove command completion or authorization."
+        result = await human.write(T, cid, TaskCreate(operation_key=uuid4(), expected_scope_revision=1,
+            title="Synthetic material review", state="completed", result_text=note, result_scope=context.scope), actor=ACTOR)
+        pending = await human.prepare_baseline(T, cid, PrepareBaseline(operation_key=uuid4(), expected_scope_revision=1), actor=ACTOR)
+        async with service.transaction(T, readonly=True) as store:
+            assert (await store.input_freshness(old_run))["state"] == "stale"
+            now = await store.now()
+        second = {k: first[k] for k in ("case_id", "incident_id", "alert_ids", "stage_run_ids")}
+        second["run_id"] = pending.pending_run_id
+        record("fixture_registered", True, second)
+        await start(cid, second["run_id"], now)
+        gateway = Gateway(service, cid, second["run_id"], "followup")
+        initial = await service.analyze(T, cid, second["run_id"], gateway=gateway, lake=SimpleNamespace(configured=lambda: True))
+        outcome = await scenario(service, second, initial, "valid")
+        async with service.transaction(T, readonly=True) as store:
+            requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == second["run_id"], F.c.kind == "model_request")))).scalars().all()
+            assert len(requests) == 4
+            assert all(note in json.dumps(r["payload"]["body"], ensure_ascii=False) for r in requests)
+            assert (await store.input_freshness(second["run_id"]))["state"] == "current"
+        assert (await human.read_revision(T, cid, result.task.id, result.task.current_revision_id)).result_text == note
+        return {**outcome, "first_run_id": old_run, "human_revision_id": result.task.current_revision_id,
+                "feedback_in_all_model_requests": True, "first_stale_second_current": True}
 
     for name, check in list(locals().items()):
         if name.startswith("test_case_boundary_") and (not only or name in only):

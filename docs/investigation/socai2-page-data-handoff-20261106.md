@@ -52,6 +52,8 @@
 
 证据计数使用当前版本中 `state=active` 且全部关联告警仍在案件范围的条目。威胁数仅取其中 `malicious / suspicious` 且有明确威胁身份的条目，按 `(namespace,key)` 去重。`not_recorded / unavailable / invalid_reference` 的计数为 `null`；有效空目录或全撤回为 `0`；`partial` 返回已知计数、未覆盖成员及限制。证据的来源行、JSON Pointer、角色和范围均可核对。来源标签、模型判断和人工陈述应保留各自身份。[证据合同](../../services/api/app/socai2/case_evidence.schema.json) · [证据读取和验证](../../services/api/app/socai2/case_data.py)
 
+Case 模型请求工件中的 `payload.source_map` 分别给查询范围、历史返回主体、允许的本案成员及其依据（`query_alert_ids / record_alert_ids / alert_ids / membership_basis`）。它们属于内部工件内容，数据库仍使用原 `artifacts.content_json`；告警及 Case HTTP 字段没有调整。按 `ref.id / source_path / role` 回查原件，不能把发起查询的成员当返回行主体。模型原答、`correction_feedback` 和 `validation_review` 分别留在响应工件；一次纠正前后的模型 Step 都应可查。
+
 ## 查询形状与分页
 
 路径均相对于 `/api/v1/socai2`。告警、事件和 A/I 分析读取要求 `alerts:read`，其中 `records/cases` 还要求 `cases:read`；Case 与 H 读取要求 `cases:read`。A/I 执行与 Case 命令分别要求 `alerts:write`、`cases:write`。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，Case HTTP 写入口关闭。前端写按钮须按实际开放状态处理。[完整路径及参数](../design/socai2-independent-api-v2.openapi.json)

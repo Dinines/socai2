@@ -1,13 +1,13 @@
 # 21 调查服务部署
 
-主发布为 `v1.2-20261110-r4`，运行入口为 `/opt/sting-aisoc-socai2/current-v1.2`；4177 工作台单独发布为 `workbench-20261110-r2`。A/I 及 Case C1/C3/Deep/C6 策略已实际加载，API、Fusion、Agents、projection、工作台及 gateway 六项服务健康。Case/H GET 可用，Case HTTP 写入口关闭，Agents 消费暂停。
+主发布为 `v1.2-20261110-r5`，运行入口为 `/opt/sting-aisoc-socai2/current-v1.2`；处理组件为 `processing-20261110-r5`，4177 工作台独立组件保持 `workbench-20261110-r2`。A/I 及 Case C1/C3/Deep/C6 策略已实际加载，API、Fusion、Agents、projection、工作台及 gateway 六项服务健康。Case/H GET 可用，Case HTTP 写入口关闭，Agents 消费暂停。
 
 ## 发布来源
 
 - [统一发布清单](release-v1.2.json)：完整镜像 ID、实际 Compose 来源、挂载和显式策略检查。
 - [传输配置](current-rollout.json)：SSH 目标、独立发布目录、超时、包边界及证据位置。
 - [处理构建配置](processing-build-case-v1.toml)、[生产 profile](production-v1.2.toml)、[处理策略](../local-investigation/investigation-policy-case-v1.toml)：构建与运行均不回落其他环境。
-- [本批流程实测和发布](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)：修复、测试与完成边界。
+- [本批流程实测和发布](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)：修复、测试与完成边界；[发布回执](../../docs/operations/evidence/case-scope-recovery-20261110-01/delivery-summary.json)记录实际来源及读回。
 - [工作台组件配置](workbench-runtime-current.json)：4177 的实际源码挂载、Compose、固定镜像和独立发布回执；主服务和处理策略保持。
 
 源码冻结包含当前工作区内容，通过逐文件 hash 核镜像及运行挂载。发布目录不可覆盖；后续发布填写独立标识并核现场镜像和有效 Compose。构建使用已缓存的固定基础镜像，关闭网络拉取。
@@ -17,7 +17,7 @@
 1. `prepare_processing_release.py --profile <构建配置>` 冻结处理包；使用 `rollout_transport.py --config <传输配置> processing upload/build` 上传及构建。
 2. 将构建回执中的镜像 ID、标签、manifest hash 写入统一清单和生产 profile。
 3. `release_12.py freeze --config <发布清单> --directory <独立冻结目录>`；通过传输入口执行 `unified upload`、`build`、`preflight`、`prepare`。
-4. 按清单只对变化服务执行 `unified rollout --project <项目键> --service <服务键>`。本批只重建 API 和工作台，按需处理入口随发布选择固定镜像。
+4. 按清单只对变化服务执行 `unified rollout --project <项目键> --service <服务键>`。本批只重建 API，其余五项服务保持容器身份；按需处理入口随发布选择固定镜像。
 5. 服务健康后执行 `unified activate`、`verify`，核实际策略、源码、读取权限、当前指针。继承的服务保持容器身份。
 
 `prepare` 会保存有效 Compose、配置和入口的回退快照到受控 private 目录；不得输出其内容。回退用对应冻结目录的 `release_12.py rollback --directory <目录>`，随后重新核验服务。发布不执行 DDL、不重置消费位点、不重派调查。
@@ -38,7 +38,7 @@ python3 /opt/sting-aisoc-socai2/ops/processing-production.py check
 
 ## 工作台与测试
 
-4177 只绑定回环，沿 [Mac SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)访问。当前 Case 保存记录从正式库读取；本批两个 Case 的实际保存快照及既有隔离 Case 快照通过 [静态发布配置](workbench-current.json)追加，保留其他记录及原答。静态发布不会启动调查或重启容器。
+4177 只绑定回环，沿 [Mac SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)访问。当前 Case 保存记录从正式库读取；本批三轮真实本地模型与三类 PG 替身流程共 6 份资料通过 [静态发布配置](workbench-current.json)追加，服务端合计 26 份，保留其他记录及原答。524 文件／525 HTTP 核验通过；静态发布没有启动调查或重启容器。
 
 节点详情使用 `workbench-20261110-r2` 的源码：左侧流程、右侧提示词／输入／输出／失败原因；缓存按展示源码指纹刷新。组件保留主发布的固定镜像、环境、命令及数据挂载，只重建工作台容器。当前现场核验从本机执行：
 
@@ -50,4 +50,6 @@ python deploy/aisoc21/publish_workbench_runtime.py --config deploy/aisoc21/workb
 
 真实 GET 与数据库对照使用 [verify_current_release.py](../../docs/operations/verify_current_release.py)及独立批次配置。每次指定新输出目录，读取父主体、材料、工件、活动与同租户相关告警；凭据仅从私密文件加载。没有新增真实模型调用时，不报告模型质量或完整真实调查通过。
 
-本批 3 个 Run、8 次真实模型调用的原始记录保留在独立证据目录，实际运行的发布来源逐轮记录。当前 `processing-20261110-r4` 已收紧 Deep/C6 的结论依据枚举，边界检查通过，尚未新增真实模型生成验收。H 验收入口 [production_human_probe.py](../../docs/operations/production_human_probe.py)使用生产 profile 和既有 `HumanTaskService.write`，凭据由私密文件加载；它只用于明确批次的服务层验收，不能替代产品 HTTP 写入和页面操作验收。
+本批在本地完成 69 项定向检查、3 项真实 PostgreSQL 流程和 3 轮真实模型调查，14 次模型调用、161,323 reported tokens。Deep 完整分支生成通过；C3/C6 仍有来源角色及正文错误，模型质量 NOT_PASSED。完成独审后统一发布，随后 365 个生产 GET／16,820 项字段关联检查通过，没有新生产模型作业。来源、预算、失败和局部保留见验收报告。
+
+H 验收入口 [production_human_probe.py](../../docs/operations/production_human_probe.py)使用生产 profile 和既有 `HumanTaskService.write`，凭据由私密文件加载；它只用于明确批次的服务层验收，不能替代产品 HTTP 写入和页面操作验收。

@@ -84,6 +84,17 @@ def load_case_profile(selection):
     if (not isinstance(data, dict) or data.get("version") != "socai2.case-boundary.v1"
             or not isinstance(data.get("rules"), dict) or not isinstance(data.get("hierarchy"), dict)):
         raise ValueError("case_profile_contract_invalid")
+    enrichment = data.get("enrichment")
+    if (not isinstance(enrichment, dict) or set(enrichment) != {
+            "version", "reserved_tool_calls", "paired_source_penalty", "priorities"}
+            or enrichment["version"] != "socai2.case-background-coverage.v1"
+            or any(type(enrichment[k]) is not int or enrichment[k] < 0
+                   for k in ("reserved_tool_calls", "paired_source_penalty"))
+            or not isinstance(enrichment["priorities"], dict)
+            or set(enrichment["priorities"]) != {"assets", "history", "threat_intel", "ueba", "knowledge", "graph"}
+            or any(type(v) is not int or v < 0 for v in enrichment["priorities"].values())
+            or not isinstance(data.get("citation_instruction"), str) or not data["citation_instruction"].strip()):
+        raise ValueError("case_profile_enrichment_or_citation_invalid")
     followup = data.get("followup")
     if (not isinstance(followup, dict) or followup.get("version") != "socai2.case-followup.v1"
             or any(not isinstance(followup.get(k), str) or not followup[k].strip() for k in ("Deep", "C6", "common"))

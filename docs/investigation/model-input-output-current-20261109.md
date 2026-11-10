@@ -1,12 +1,12 @@
 # 每个模型环节的输入与输出
 
-更新于 2026-11-10。按模型调用环节列出，同一模型可以承担不同环节的任务。以下描述当前部署的输入、输出、程序职责和验证边界。
+更新于 2026-11-10。按模型调用环节列出，同一模型可以承担不同环节的任务。以下描述当前实现的输入、输出、程序职责和验证边界；实际部署状态以 [PROGRESS](../../PROGRESS.md) 为准。
 
-**A/I、C3、Deep、C6 已部署 21；当前批次实测 2 个 Case、3 个 Run、8 次真实模型调用，均部分交付，最终结论未采用。** H 传递、保存和读取验证通过，模型正文质量为 NOT_PASSED。当前 Deep/C6 生成引用约束已修正部署，其真实生成效果仍待独立批次核验。
+**A/I、C3、Deep、C6 已接入；本轮 Case 程序修复在本地完成 69 项检查、3 项 PostgreSQL 流程、3 轮真实模型复核及独审，统一发布 21 `r5` 后读取核验通过。** 真实模型共 14 调用，Deep 完整分支已通过；最终仍有部分交付／拒收，模型质量 NOT_PASSED。[本轮验收](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)分别记录原答、有限纠正、字段读回及质量边界。
 
 [完整实际输入/原答/Schema 目录](../operations/evidence/model-io-inventory-20261109-01/README.md)包含 7 次已保存的真实调用：3A、1I、C3 的一次独立生成、Deep/C6 保存调用各一次。该目录保留原批次，截断和拒收原答保持。C3 的业务接入验证使用过替身，目录中选用真实模型对照的原答，不能称为业务接入后的新实测。
 
-本批真实 C3 3 次、Deep 2 次、C6 3 次的请求、原答、用量、校验及落库位置见[逐轮统计](../operations/evidence/case-current-flow-20261110-01/execution-summary.json)和[流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)。共 154,491 reported tokens，费用未知；演练材料没有独立良恶真值，不报告准确率。
+此前 `case-current-flow-20261110-01` 批次的原始输入和答复继续保留，不能当作本轮调用；本轮 14 次调用、161,323 reported tokens 及逐轮失败见[汇总](../operations/evidence/case-scope-recovery-20261110-01/execution-summary.json)。
 
 ## 共同边界
 
@@ -15,6 +15,10 @@
 任务指令由代码或版本化 profile 提供，同一环节通常复用；材料、引用编号、成员及可用工具随本次请求变化。输入不是由助手临时理解后手写的案情概述。正文按原文保留，结构字段按规则整理；后台身份与状态由程序管理。
 
 来源角色分为原始观察、上游标签、先前判断、人工陈述和实际执行回执。短号用于引用和结构化关联；它与后台 UUID 不同，也不能把源 IP、业务用户、进程、会话等业务身份一并删掉。
+
+Case 查询来源的内部 `source_map` 同时保存 `query_alert_ids`（查询发起范围）、`record_alert_ids`（身份一致的历史记录主体）、`alert_ids`（可用于本案成员引用的范围）和 `membership_basis`（依据）。历史行须核对记录 ID 及存在的分析／反馈主体；案件外或身份不一致不猜归属。其他工具的查询绑定标为 `query_binding_only`，不构成逐行行为观察。C3、Deep、C6 均保留来源 UUID、路径、角色和原值，不回填旧工件。
+
+C3/C6 的一次纠正反馈列具体字段路径、允许来源范围和本次 finding 编号；最终 conclusion／impact 还核成员依据覆盖。纠正仍失败时保留有效局部，不采用无效结论。Deep query 需要已有 binding 且 answer=null；answer／handoff 需要非空 Answer，handoff 必须 unresolved 并写缺口。生成器为网关展开每个完整分支，不削弱接收校验。上述内部映射和反馈不增加数据库列或改变告警 API 字段。
 
 | 环节 | 要解决的问题 | 当前状态 |
 | --- | --- | --- |
@@ -157,7 +161,7 @@ followups: [{
 
 七块结构以及固定六问/四领域目前是沿用既有 Case 职责，**尚未证明每类 Case 都需要同样长度**；这不是已经完成所有输出精简。当前实现保留它们，材料和身份保存读取已验证。
 
-已保存的真实调用样例：[输入](../operations/evidence/model-io-inventory-20261109-01/C3/input.txt) · [原答](../operations/evidence/model-io-inventory-20261109-01/C3/output-original.txt)。该次独立生成的严格校验与正文质量未过。本批三个业务 Run 均实际调用 C3，均有 `source_member_mismatch` 并保存独立有效部分；后轮包含 H 完整正文，仍不能认定反馈已被正确使用。
+本轮三个独立本地 Run 的真实 C3 输入、原答和校验见[逐轮汇总](../operations/evidence/case-scope-recovery-20261110-01/execution-summary.json)。来源主体映射与有限纠正已复验，最后一轮仍有 `non_observation_promoted_to_observed`，保留有效部分，模型质量未过。H 完整正文进入后轮由单列 PostgreSQL 流程验证，与这三轮真实模型调查分别记录，不能据此认定模型正确使用反馈或已确认业务授权。
 
 依据：[输入边界](../../services/api/app/socai2/case_model_boundary.py)、[输出合同](../../services/api/app/socai2/baseline_analysis_contract.py)、[身份适配](../../services/api/app/socai2/case_output_adapter.py)。
 
@@ -181,7 +185,7 @@ answer: null | {
 
 `query` 时答案为 null，执行一个已有 binding 后再以实际返回决定下一步；`answer/handoff` 时 binding 为 null。`handoff` 必须未决；`answer` 也可以未决。程序记录执行结果，不因已返回 answer 就把问题视为确定解决。
 
-四项输出已经接入执行器，程序绑定 `question_id` 后沿原校验、保存和读取路径。本批 C01 首轮和 H 后各实际调用一次 Deep，均因执行回执被作为证据而拒收；C02 未触发 Deep。当前生成 Schema 的支持／反证来源已排除 `execution_receipt`，查询状态与来源映射仍完整保留。此修正通过配对边界检查，尚无修正后真实生成验收。
+四项输出已经接入执行器，程序绑定 `question_id` 后沿原校验、保存和读取路径。生成 Schema 的支持／反证来源排除 `execution_receipt`，查询状态与来源映射仍完整保留。每个 query／answer／handoff 分支分别带齐必填项和限制，避免供应商语法丢失公共约束；handoff 必须给出未决答案及限制。本批 `real-model-03` 的真实 handoff／answer 均完整并通过生成 Schema 和接收校验；query 分支有离线合同检查，没有新增真实 query 采样。各轮截断、缺字段及拒收原答保留。
 
 已保存调用：[输入](../operations/evidence/model-io-inventory-20261109-01/Deep/input.txt) · [原答](../operations/evidence/model-io-inventory-20261109-01/Deep/output-original.txt) · [离线模板样例](../operations/evidence/case-followup-comparison-20261110-01/deep-after-input.txt) · [当前生成约束](../../services/api/app/socai2/case_followup_output.py)。该例回答未决，没有追加网络查询。
 
@@ -228,7 +232,7 @@ recommendations: [{
 
 已保存调用：[输入](../operations/evidence/model-io-inventory-20261109-01/C6/input.txt) · [原答](../operations/evidence/model-io-inventory-20261109-01/C6/output-original.txt) · [离线模板样例](../operations/evidence/case-followup-comparison-20261110-01/c6-after-input.txt) · [当前生成约束](../../services/api/app/socai2/case_followup_output.py)。
 
-本批 3 次 C6 均保留原答并拒收最终结论，分别出现冲突发现引用、未知领域发现、执行回执结论引用错误。当前 Schema 对 conclusion/comparison/impact/recommendation 的依据排除执行回执；analysis 仍允许引用查询覆盖信息。成员范围、发现关系与正文质量问题继续保留，生成 Schema 的修正不等于实际生成已通过。
+本批三轮 C6 均保留原答及实际校验：首轮因 impact 缺成员覆盖拒收；第二轮重复来源经一次反馈纠正后采用；第三轮发现编号经一次纠正后仍存在标签／描述冒充观察，拒收最终结论并保存有效部分。Schema 对 conclusion/comparison/impact/recommendation 的依据排除执行回执；analysis 仍允许引用查询覆盖信息。有限纠正覆盖可定位的来源、成员及发现关联错误，不承诺修复所有正文语义错误；采用状态不能作为质量通过结论。
 
 依据：[当前输入装配](../../services/api/app/socai2/baseline_reanalysis.py)、[最终输出合同](../../services/api/app/socai2/baseline_delivery_contract.py)、[保存和报告](../../services/api/app/socai2/baseline_delivery.py)。
 
@@ -244,7 +248,7 @@ recommendations: [{
 
 ## 不调用模型的步骤及当前达成程度
 
-C1 冻结材料、C2 按策略查询背景、C4 直接执行已选 binding、C5 生成图、最终存储/报告渲染都由程序承担。Deep 是 C4 的另一条按需路线，不能与直接查询混成“每个工具调用前都问一次模型”。空引用纠正是同阶段有界再调用，不是另一个业务模型，也不保证每次发生。
+C1 冻结材料、C2 按策略查询背景、C4 直接执行已选 binding、C5 生成图、最终存储/报告渲染都由程序承担。Deep 是 C4 的另一条按需路线，不能与直接查询混成“每个工具调用前都问一次模型”。引用及关联纠正是同阶段最多一次的有界再调用，不是另一个业务模型，也不保证每次发生。
 
 按用户要求逐项核对：
 
@@ -254,8 +258,8 @@ C1 冻结材料、C2 按策略查询背景、C4 直接执行已选 binding、C5 
 | 输入形式固定、由程序转换 | A/I/C3/Deep/C6 已部署；可选再分析使用独立 JSON 装配 |
 | 只保必要信息，业务未知值不误删 | Deep/C6 共享结构规则、消除同值重复投影；补齐必要资料后输入仍变大 |
 | 模型只输出需要判断的业务内容 | Deep 去问题号；C6 去建议编号和固定首次比较。必要范围选择与发现关联仍保留 |
-| 程序管理身份、查询事实、状态和保存 | 适配已部署；4 条隔离 PG 路径和 12 次原服务读取通过，当前生产 GET 已另验 |
+| 程序管理身份、查询事实、状态和保存 | 适配已部署；本地 3 项 PG 流程／4 个 Run 快照／12 次服务读取通过，另有 160 次真实本地 GET 及发布后 365 次生产 GET 核验 |
 | 前序结论与证据完整交接 | 离线 Deep 4/4、C6 84/84 处依赖可见；真实后轮 H 完整进入 C3/Deep/C6。可见性通过，模型正确理解与使用未通过 |
-| 改动后质量与效率有数据 | 当前 3 轮真实调用分别耗时 164.47／156.58／165.37 秒，共 8 次、154,491 tokens，均部分交付、质量未过。生成约束修正后的真实效果待独立验收 |
+| 改动后质量与效率有数据 | 本批 3 轮共 14 次调用、161,323 reported tokens，均 completed/partial；Deep 完整分支通过，C6 一轮纠正后采用、两轮拒收，质量 NOT_PASSED，费用未知；不是受控 A/B |
 
-当前修正限定模型生成约束，数据库字段、存储、读取和告警合同保持。接入过程见 [Deep/C6 报告](../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)，实际调用、修正及部署见[本批实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)。
+本次修复涉及内部来源范围映射、有限纠正、背景调度及 Deep 生成约束，数据库字段、持久化和读取合同、告警交接字段保持。[本批验收](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)记录实际调用与发布；接入过程保留在 [Deep/C6 报告](../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。

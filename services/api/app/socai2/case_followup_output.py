@@ -7,7 +7,8 @@ from pydantic import ValidationError
 from . import baseline_analysis_contract as analysis
 from . import baseline_deep_contract as deep
 from . import baseline_delivery_contract as delivery
-from .analysis_review import Review, decode, empty_reference_feedback
+from .analysis_review import Review, decode
+from .case_citation_feedback import feedback
 from .structured_output import response_format
 
 
@@ -20,6 +21,31 @@ def deep_format(prepared):
     schema = fmt["json_schema"]["schema"]
     schema["properties"].pop("question_id")
     schema["required"].remove("question_id")
+    # Mirror the receiver's cross-field contract. A handoff still carries an
+    # unresolved answer describing the gap; null is reserved for a query.
+    def answer_variant(state):
+        value = copy.deepcopy(schema["$defs"]["Answer"])
+        value["properties"]["state"] = {"type": "string", "enum": [state]}
+        field = "limitations" if state == "unresolved" else "support_ids"
+        array = value["properties"][field]
+        while "$ref" in array:
+            array = copy.deepcopy(schema["$defs"][array["$ref"].removeprefix("#/$defs/")])
+        value["properties"][field] = {**array, "minItems": 1}
+        return value
+
+    def variant(action, answer, binding):
+        # The configured provider compiles branches separately. Include every
+        # required field/limit in each branch, not just discriminating fields.
+        props = copy.deepcopy(schema["properties"])
+        props.update(action={"type": "string", "enum": [action]}, answer=answer, binding_id=binding)
+        return {"type": "object", "properties": props, "required": list(schema["required"]), "additionalProperties": False}
+
+    unresolved = answer_variant("unresolved")
+    variants = [variant("answer", {"anyOf": [unresolved, answer_variant("supported")]}, {"type": "null"}),
+                variant("handoff", unresolved, {"type": "null"})]
+    if prepared["binding_map"]:
+        variants.append(variant("query", {"type": "null"}, {"$ref": "#/$defs/BindingId"}))
+    schema["anyOf"] = variants
     return fmt
 
 
@@ -111,10 +137,14 @@ class FinalReview(Review):
         self.prepared, self.comparison = prepared, comparison
 
     def feedback(self, content):
+        restore_final(content, self.prepared, self.comparison)
         sources = copy.deepcopy(self.sources)
         for row in sources.values():
-            row["alert_ids"] = [self.prepared["case_boundary"]["member_aliases"].get(a, a) for a in row["alert_ids"]]
-        return empty_reference_feedback(content, "C6", sources)
+            for key in ("alert_ids", "query_alert_ids", "record_alert_ids"):
+                if key in row:
+                    row[key] = [self.prepared["case_boundary"]["member_aliases"].get(a, "案件外成员") for a in row[key]]
+        aliases = self.prepared["case_boundary"]["member_aliases"]
+        return feedback(content, "C6", sources, [aliases[a] for a in self.context.alerts], [q.id for q in self.context.questions])
 
     def partial(self, content):
         return super().partial(restore_final(content, self.prepared, self.comparison))

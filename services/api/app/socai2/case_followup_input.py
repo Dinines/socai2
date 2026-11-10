@@ -10,6 +10,8 @@ from .baseline_model_view import blocked, draft_limit
 from .baseline_store import StoreError, digest, encoded
 from .case_input_hierarchy import project, render, render_tools
 from .case_model_boundary import selected_profile
+from .case_source_scope import describe, frozen_query_scope
+from .case_source_scope import metadata as scope_metadata
 from .model_input_view import source_prefix
 
 SCHEMA = "socai2.case-followup-input.v1"
@@ -89,7 +91,7 @@ class Sources:
         original = self.base_records.get(encoded(ref))
         if original:
             return self.add(ref, original["value"], original["alert_ids"], "dependency",
-                            original=original.get("original_value"))
+                            original=original.get("original_value"), **scope_metadata(original))
         # Exact references to frozen C4 projections remain valid dependencies.
         # Do not fetch latest data or material hidden by the business guard.
         artifact = self.artifacts.get(str(ref["id"]))
@@ -100,6 +102,10 @@ class Sources:
             if payload.get("citation_roles", {}).get(path) != ref["role"]:
                 return None
             value = path_value(payload, path)
+            query_identity = frozen_query_scope(payload, path, self.context.alerts)
+            if query_identity is not None:
+                return self.add(ref, value, query_identity["alert_ids"], "dependency",
+                                **scope_metadata(query_identity))
             cfg = selected_profile(self.context).config
             parent = next((rule for rule in cfg["followup"]["parent_dependencies"] if path.endswith(rule["suffix"])), None)
             if parent:
@@ -262,7 +268,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
             reg.omissions.append({"ref": row["ref"], "reason": "outside_frozen_question_scope"})
             continue
         sid = reg.add(row["ref"], row["value"], row["alert_ids"], "base",
-                      original=row.get("original_value"), business_block=row["block"])
+                      original=row.get("original_value"), business_block=row["block"], **scope_metadata(row))
         reg.base_ids[row["id"]] = sid
     queries, query_missing = query_records(reg, material, projections, final=stage == "C6") if projections else ([], False)
     if previous and previous.get("analysis"):
@@ -355,11 +361,14 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
             last = heading
         path = row["ref"]["source_path"] or ""
         caption = path.removeprefix("$.ocsf_json.").removeprefix("$.raw_json.") if row.get("business_block") == "material" else ""
-        blocks.append("[" + row["id"] + "] " + (caption + "=" if caption else "") + render(row["value"], cfg))
+        provenance = describe(row, lambda aid: boundary["member_aliases"].get(aid, "案件外成员"))
+        blocks.append("[" + row["id"] + "] " + (provenance + " " if provenance else "")
+                      + (caption + "=" if caption else "") + render(row["value"], cfg))
     if omissions:
         blocks.append("[材料限制] " + render(dict(Counter(r["reason"] for r in omissions)), cfg)
                       + "；省略或不可见不表示不存在，不能视作已读全文。")
-    messages = [{"role": "system", "content": policy[stage] + "\n" + policy["common"]},
+    messages = [{"role": "system", "content": policy[stage] + "\n" + policy["common"]
+                + ("\n" + cfg["citation_instruction"] if stage == "C6" else "")},
                 {"role": "user", "content": "\n".join(blocks)}]
     presentation = None
     if stage == "Deep":
@@ -367,7 +376,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         presentation = render_tools(identities(data(options), boundary), cfg)
         messages.append({"role": "user", "content": presentation["text"]})
     sources = {r["id"]: {"ref": r["ref"], "alert_ids": r["alert_ids"], "visible_value_sha256": digest(r["value"]),
-                            **{k: r[k] for k in ("membership_basis", "record_key") if k in r}} for r in reg.rows}
+                            **scope_metadata(r), **{k: r[k] for k in ("record_key",) if k in r}} for r in reg.rows}
     coverage = copy.deepcopy(base["coverage"])
     for aid, row in coverage.items():
         row["included"] = sum(aid in r["alert_ids"] for r in reg.rows)

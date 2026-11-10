@@ -50,6 +50,29 @@ C3 三次都有 `source_member_mismatch`，保留独立有效部分。Deep 两�
 
 工具实际状态单列：三轮 threat_intel／ueba 完成且返回 0；两个首轮的 authentication_activity 查询完成且返回 0。assets／history／knowledge 因 `tool_budget_reserved_for_evidence` 跳过，graph 为 `source_not_connected`。没有知识查询或实际使用的正向验收结论，也不因查空认定行为安全。
 
+## 流程与模型问题归因
+
+按用户要求，对本批保存的请求、原答、来源映射和当前校验代码逐项复核。下表区分直接原因与流程放大因素，不按拒收代码的数量统计模型错误；同一 finding 被剔除后，依赖它的领域及冲突引用也会被拒收。此处是已有证据分析，没有新增模型调用或修改原答，不能证明修正后的真实生成效果。
+
+| 现象 | 归因 | 证据及处理方向 |
+| --- | --- | --- |
+| Deep／C6 可生成执行回执引用，但接收校验禁止其作为结论依据 | 已确认的生成／接收合同不一致，属于流程实现问题；正文把查空当证据另算 | 已修正生成 Schema，查询状态仍留在输入。边界及离线验证通过，真实生成待核；见本报告直接修正部分 |
+| C02 的 A1 成员引用 A3 查询返回的 A1 历史记录，被报 `source_member_mismatch` | 已确认的来源归属表达偏差，不能全部归为模型错误 | 保存映射把 `N3_S119/N3_S120/N3_S122` 归到 A3；原始记录的 `record.id`／`triage.alert_id` 却是 A1。查询发起成员与返回行主体需要分别表达、核验；保留查询出处，不按标题猜主体，也不把所有返回行扩为全案证据 |
+| C01 跨 A1/A3 比较 IP，却只声明 A3；反馈后同类 finding／followup 重复此问题 | 模型输出范围错误，现有拒收正确 | 原答 F2 同时引两条成员的原始 IP，`alert_ids=[A3]`；应声明实际比较范围。即使范围改正，不同动作的两个 IP 也不能自动证明 IP 切换或横向移动 |
+| C6 的 findings 已无 F3，领域／冲突仍引用 F3，或把问题编号 `authorization` 填入 finding_ids | 模型关联输出错误；流程的编号约定和纠正覆盖需要改进 | C01 首轮 C6 只有 F1；C02 C6 只有 F1/F2。当前生成 Schema 的 finding_ids 仍是文本引用，最终接收才检查同一 analysis 内关系；不能补造发现使其通过 |
+| 成员错配、悬空 finding 等可定位错误没有针对性纠正 | 流程恢复能力缺口 | 当前只有“已回答／已分析但依据列表为空”会生成一次纠正反馈；其他上述错误走部分保留／拒收。已有一次纠正执行机制不能表述为所有引用错误都已覆盖 |
+| assets／history／knowledge 未查，graph 未接通 | 调度策略及接入覆盖问题，不是模型没有学会使用这些结果 | 本批每 Run 最多 4 次工具调用，C2 预留 2 次给后续；固定排序先执行 threat_intel、ueba，另外三项因预留跳过。需要按问题所需证据核优先级及实际可用工具，不以单纯扩大预算代替设计；图接入单列 |
+| 用 authentication_activity 查询业务审批／白名单 | 模型选择工具与理解能力错误；流程仍可加强目标与能力的匹配 | C01 首轮请求里的工具说明明确“不提供审批记录，需要审批证据时交人工确认”，模型仍把审批目标绑定 B1。程序只能执行实际认证查询，零行不能回答业务授权是否存在 |
+| 进程启动扩大为命令效果、不同角色 IP 被解释成异常切换、未查写成查空、查空或缺授权材料被填作反证／冲突 | 模型证据推理和指令遵循问题 | 保存的系统提示已明确这些边界。C02 原答一边写“查空不构成反证”，一边将相关回执放入 counter_ids，并把“无直接矛盾”写入 conflicts；不是必须填冲突的合同要求。H 后仍重复部分事实扩大，提示词可见性通过不等于正确使用 |
+
+C02 归属偏差的原件在 [C02 数据快照](../../../docs/operations/evidence/case-current-flow-20261110-01/published/C02/database.json)：C3 请求工件 `390faabb-07b4-4e4a-82d7-fbc5b873a515`，原答工件 `9d874568-5bf6-4b0f-b3d8-4b2b1b903446`。A1 为 `51382dcd-deac-54f5-9fa5-e7724f935402`，A3 为 `f8513c4d-5f58-55d2-bda1-983f60b83bb0`。上述三项来源在冻结工件 `19ef57c8-46b6-4e71-838b-9fe941124ce3` 的 `$.alerts.<A3 UUID>.queries.2.content_json.rows` 下，返回记录实际指向 A1。当前 [source_members](../../../services/api/app/socai2/model_input_view.py) 按 `$.alerts.<id>` 容器取成员，接收端 [refs](../../../services/api/app/socai2/baseline_analysis_contract.py) 按该成员集合拒收；冻结来源本身没有丢失。
+
+C01 的具体原答及工具说明在 [C01 数据快照](../../../docs/operations/evidence/case-current-flow-20261110-01/published/C01/database.json)。纠正边界见 [empty_reference_feedback](../../../services/api/app/socai2/analysis_review.py) 和 [ModelSteps.call](../../../services/api/app/socai2/baseline_reasoning.py)；工具预留与排序见 [C2 执行](../../../services/api/app/socai2/baseline_enrichment.py)和[来源选择](../../../services/api/app/socai2/baseline_enrichment_sources.py)。
+
+证据缺少真实业务授权、进程完成结果或因果链时，保持待核是合理结果，不以强制输出良性／恶意来验收。H 是材料完整性核查，没有补入新的业务授权事实；它已完整传递，当前问题是模型未正确利用其中的限制。现有结构／引用校验也不证明正文真实，部分保留内容进入后续时仍只能作为历史判断。
+
+后续先修来源归属表达并对齐生成／接收约束，再完善有限纠正与取证优先级，随后以独立批次验收正文是否仍扩大事实。编号关联复杂度、历史分析重复、输入长度可能影响生成，但本批没有受控对照，不能据此断言是上下文长度或模型型号导致。上述记录不改变告警交接字段或数据库设计，也不核销 M01／M02／F01／F02。
+
 ## H 保存、传递与新鲜度
 
 任务 `77f645bf-a6a4-56fc-aa54-1c1f968bb37b`：创建为修订 1，完成为修订 2，随后只修改负责人／期限为修订 3。范围包含 3 个告警、明确时间窗口及 10 个来源（3 项观察材料、7 项查询执行回执）。核查正文保持来源角色，不把执行回执升级成行为证明。

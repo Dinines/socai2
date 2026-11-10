@@ -76,6 +76,15 @@ class Gateway:
                 answer["analysis"]["members"][0].update(state="analyzed", evidence_ids=[])
             if self.mode == "correction" and self.final_calls == 2:
                 assert json.loads(body["messages"][-1]["content"])["errors"][0]["subject_id"] == "A1"
+            if self.mode == "scope_recovery" and self.final_calls == 1:
+                answer["analysis"]["domains"][0]["finding_ids"] = ["F99"]
+                answer["impact"].update(alert_ids=list(answer["conclusion"]["alert_ids"]),
+                                        support_ids=answer["conclusion"]["support_ids"][:1])
+            if self.mode == "scope_recovery" and self.final_calls == 2:
+                feedback = json.loads(body["messages"][-1]["content"])
+                assert any(e.get("code") == "unknown_local_finding" for e in feedback["errors"])
+                assert any(e["path"] == ["impact", "support_ids"] and e["uncovered_members"] for e in feedback["errors"])
+                assert feedback["local_findings"] == []
         Draft202012Validator(body["response_format"]["json_schema"]["schema"]).validate(answer)
         if stage == "C6" and self.mode == "partial":
             answer["analysis"]["members"][0]["evidence_ids"] = ["invalid-source"]
@@ -106,7 +115,7 @@ async def scenario(service, sample, initial, mode):
             "limitations": ["Synthetic integration only."]}, [reference("artifact", c3["output_artifact_id"], "execution_receipt")])
     out = await service.finalize(T, cid, rid, gateway=gateway)
     assert out["state"] == "completed", out
-    assert gateway.final_calls == (2 if mode == "correction" else 1), out
+    assert gateway.final_calls == (2 if mode in {"correction", "partial", "scope_recovery"} else 1), out
     assert gateway.deep_calls == (0 if mode == "fallback" else 2), out
     assert lake.calls == (0 if mode == "fallback" else 1), out
     assert out == await service.finalize(T, cid, rid, gateway=gateway)

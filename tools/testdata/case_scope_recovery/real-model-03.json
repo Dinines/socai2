@@ -1,0 +1,44 @@
+{
+  "batch": "case-scope-recovery-20261110-real-03",
+  "output": "docs/operations/evidence/case-scope-recovery-20261110-01/real-model-03",
+  "snapshot": "docs/operations/evidence/case-current-flow-20261110-01/published/C02/database.json",
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/v1.2-reader-validation/app-test-environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "actor_name": "Local Case scope recovery validation",
+  "title": "Case 流程修复验收：已有演练材料的独立本地调查",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "window_padding_seconds": 300,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false"
+  },
+  "transport_config": "tools/testdata/alert_io_eval/config.json",
+  "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/case-scope-recovery-20261110-real-03",
+  "preflight_timeout_seconds": 30,
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ],
+  "limitations": [
+    "Recorded C02 alert fields, original materials and object values are copied unchanged into new local identities.",
+    "Prior A/I judgments and tool receipts are not presented as newly executed; this is not a controlled A/B comparison.",
+    "Real local PostgreSQL and real model; no ClickHouse or vendor access is configured. Unavailable tools remain unavailable.",
+    "No production business data or running service is changed. SSH is only a transport to the existing model gateway.",
+    "One new Run uses the existing policy, including its finite correction and C6 reservation. Unknown calls are not retried."
+  ]
+}

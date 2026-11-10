@@ -6,10 +6,10 @@
 
 | 编号 | 问题及影响 | 当前处理与验收落点 |
 | --- | --- | --- |
-| M01 | 模型把检测标签当事实、扩大行为效果／攻击范围，引用合法仍可能正文无据；部分答复截断或范围拒收 | 质量为 NOT_PASSED。本批仍把进程启动成功扩大为命令效果，将不同动作的 source_ip 当作异常变化，混淆未查与查空，并夸大认证查询核实授权的能力。按 A/I/C 目标核正文，保持原答和失败。见[模型输入输出](model-input-output-current-20261109.md)与[任务 3.23／3.30](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
-| M02 | C3 成员范围及 C6 发现关联拒收；生成约束修正后的真实效果尚未验收 | 本批 3 轮、8 次真实调用均部分交付，最终结论未采用。C3 均出现 `source_member_mismatch`；C6 另有 `invalid_conflict_findings`／`unknown_domain_finding`。Deep/C6 执行回执引用约束已修正并部署，离线与边界检查通过；新批真实生成和语义质量仍待，不重派原 Run |
+| M01 | 模型扩大正文事实，结构合法不保证主张有据 | 质量 NOT_PASSED。本轮仍有进程启动被写作命令效果、未查与查空笼统并列、未提供环境属性被推断等问题；保留原答和局部结果，不报准确率。按 A/I/C 目标单列事实依据验收，见[本轮报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md) |
+| M02 | 模型的成员／发现关联可有限纠正，标签或描述冒充 observed 仍造成拒收 | 本地 3 轮、14 调用；第二轮 C6 重复引用纠正后采用，第三轮悬空 finding 经一次反馈处理后仍因 non_observation_promoted_to_observed 拒收。Deep 完整分支已复验通过。F03 程序主体映射已修；模型角色选择及正文质量不随程序修复核销 |
 | F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 用户授权助手代拟材料核查，3 个修订和后轮 C3/Deep/C6 输入均可追溯；仅管理字段变化不造成虚假过期。模型仍重复部分已指出的错误，可见性不核销 3.7，也不代表业务授权确认 |
-| F02 | 知识检索结果是否实际参与判断尚无完整证据 | 本批 3 轮均因工具预算预留跳过知识来源。下一适用样本需核实际查询、返回和使用，不能由索引成功或查空推断消费成功 |
+| F02 | 真实非空知识使用和背景取证覆盖仍待验证 | 配置排序、有效 A 配对回执覆盖降序及工具预留已实现；本地三轮真实查询 assets／knowledge 均完成零行，未把查空当使用成功。每 Run 4 工具、预留 2 不增额。下一适用批次验证非空知识及按问题使用；graph 接入仍单列 |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
 | W01 | Case/H 的实际写入与前端操作尚需接通验证 | 当前 `SOCAI2_CASE_API_ENABLED=false`；按需作业真实建案／准备／启动及 H 服务层创建／完成／修订已验证。服务层验收适配器不等于 HTTP 写操作开放；必要接线与配置随功能处理，读写权限不作为独立前置 |
 | P01 | 事件概览缺本次诊断入口 | 对应 J04；由成员主体及 Run UUID 打开实际诊断尝试，失败也可查 |
@@ -32,5 +32,8 @@
 | R05 | Deep/C6 生成 Schema 允许接收校验禁止的执行回执结论引用 | Deep 支持／反证及 C6 结论／比较／影响／建议的枚举排除执行回执；C6 analysis 保留查询覆盖引用。20 项边界检查、5 份原答离线复验通过；真实生成效果列 M02 |
 | R06 | 核验器假定当前判断非空、Case／活动仅属于单案 | 支持空判断并拒绝伪造判断；按同租户完整主体关系核 Case、活动及 `via_member_alert`，补 H 详情和全部修订逐值核对。16,820 检查及独立活动 1,083 检查通过 |
 | R07 | 4177 点击节点只能跳到下方原件，Deep 无动作时缺实际失败模型入口；展示源码变化不能刷新已有缓存 | 左侧流程／右侧详情已接通提示词、输入输出、错误和原件；Deep 每次实际调用可选，冻结输入分类经独审修正。30 项定向测试、307 条记录逐值保持及浏览器宽窄屏核验通过。见[节点详情验收](../../openspec/changes/complete-socai2-investigation-chain/workbench-node-inspector-20261110.md) |
+| F03 | 分别保留查询出处与历史行主体，修正 C02 A3 查询中 A1 记录的引用范围 | C3／Deep／C6、冻结依赖恢复及案件外／冲突身份直接检查通过，原路径／角色／正文保持；[本轮验收](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md) |
+| F04 | 来源可见性、成员覆盖、C6 本次 finding 及 conclusion／impact 覆盖可定位错误获得一次具体反馈 | PG 验证纠正成功与仍错时部分保留；真实 C6 已发生一次纠正，unknown／截断不重派。该反馈不承诺纠正全部模型角色或正文问题，剩余见 M01／M02 |
+| F05 | Deep handoff 生成允许空答复、网关分支丢公共必填项，与接收合同不一致 | 每个 action／Answer 分支展开完整结构与限制；真实第三轮 handoff／answer 均完整通过，前两轮原失败保留；[69 项直接检查](../operations/evidence/case-scope-recovery-20261110-01/final-contract-tests.xml) |
 
-当前结果见[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)与[读回证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)。前批回执与过程见[发布核验报告](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)及[证据目录](../operations/evidence/current-release-20261110-01/readback-03/summary.json)。
+本轮结果见[修复验收](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)与[逐轮汇总](../operations/evidence/case-scope-recovery-20261110-01/execution-summary.json)。此前结果见[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)与[读回证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)。前批回执与过程见[发布核验报告](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)及[证据目录](../operations/evidence/current-release-20261110-01/readback-03/summary.json)。

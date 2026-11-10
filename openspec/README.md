@@ -1,6 +1,6 @@
 # OpenSpec 实施说明
 
-本项目使用 `spec-driven`。当前变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次发布验收见[报告](changes/complete-socai2-investigation-chain/release-current-20261110.md)。
+本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case 程序修复的独立交付见[验收报告](changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)。
 
 ## 文档职责
 
@@ -14,6 +14,8 @@
 | 项目上下文和产物/操作规则 | [config.yaml](config.yaml)、[根AGENTS](../AGENTS.md) |
 
 不导入旧SOCAI的change，不把历史回执改写成新任务完成证明。既有验收记录继续有效于原范围；当前未建立全产品规格库，不声称OpenSpec已覆盖全部已迁功能。首次接入是纯工具/文档change，使用 `skip_specs: true`，不虚构产品能力。未来规格按实际change逐批建立或补齐。
+
+交付按一个 change 走一次完整流程：先在本地完成设计、实施、完整流程测试、交接文档和独立结束审计，再统一发布到获准环境；核实部署与读回、补齐回执后，统一推送最终 Git 内容并同步父项目引用。同一 change 不随每次小修反复更新 21 或推送远端，除非用户明确要求分阶段发布。具体长期规则见根 AGENTS；发布节奏不替代验收，也不扩大既有授权。
 
 ## 工作流
 

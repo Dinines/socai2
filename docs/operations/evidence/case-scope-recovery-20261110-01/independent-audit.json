@@ -1,0 +1,311 @@
+{
+  "schema_version": "socai2.independent-audit.v1",
+  "change": "fix-case-evidence-scope-and-recovery",
+  "batch": "case-scope-recovery-20261110-01",
+  "audited_at_utc": "2026-11-10T13:47:30.867386+00:00",
+  "auditor": {
+    "agent": "/root/current_release_audit",
+    "independent_of_implementation": true,
+    "business_source_edits": false,
+    "new_model_calls": 0,
+    "new_database_queries_or_writes": 0,
+    "ssh_or_deployment_calls": 0,
+    "git_mutations": 0,
+    "only_written_file": "docs/operations/evidence/case-scope-recovery-20261110-01/independent-audit.json"
+  },
+  "workspace": {
+    "branch": "V1.1",
+    "base_commit": "f80015e7602fcd5087bd5d8d1b21bd62a34a6414",
+    "reviewed_uncommitted_change": true,
+    "excluded_untracked_path": "tools/model-preflight/"
+  },
+  "decision": "ACCEPT",
+  "decision_scope": "本 change 的来源范围、一次引用纠正、C2 配置排序、Deep 生成合同及本地完整流程/交接可进入用户要求的一次统一发布。不是模型总体质量通过，也不是 21/Git/父项目已发布。",
+  "model_quality": "NOT_PASSED",
+  "unresolved_must_fix_findings": [],
+  "resolved_audit_findings": [
+    {
+      "id": "AUDIT-DOC-01",
+      "file": "docs/investigation/model-input-output-current-20261109.md",
+      "lines": [
+        3,
+        9
+      ],
+      "finding": "本地待发布改动曾被概括为当前部署，前批 8 次/154491 tokens 曾仍称本批，造成交付时点与批次混淆。",
+      "resolution": "开头改为当前实现和验证边界、部署以 PROGRESS 为准；前批明确命名，当前 14 次/161323 tokens 链接本批汇总。",
+      "verified": true
+    },
+    {
+      "id": "AUDIT-DOC-02",
+      "file": "docs/investigation/current-issues.md",
+      "finding": "文末当前结果入口曾只指向此前 Case 批次。",
+      "resolution": "当前入口指向本 change validation/execution-summary；原批次明确保留追溯。",
+      "verified": true
+    }
+  ],
+  "code_review": [
+    {
+      "area": "Query provenance and historical row identity",
+      "result": "PASS",
+      "detail": "history record_id、record.id 与存在的 triage/feedback.alert_id 一致才恢复主体；query_alert_ids/record_alert_ids/alert_ids 分开，案件外/冲突/缺失身份不猜归属。C3、Deep、C6 和冻结 C1 依赖恢复保留 ref、角色及原文；其他工具保留 query_binding_only。"
+    },
+    {
+      "area": "Bounded C3/C6 correction",
+      "result": "PASS",
+      "detail": "完整结构和必要成员/问题/领域身份先经适配器核对；诊断报告来源、成员覆盖与本次 finding 关系，原答不改写。同一调用路径最多一次纠正并完整重验，预算/时间预留继续生效；unknown/截断不进 feedback/partial，仍错按既有局部保留且不采用无效结论。"
+    },
+    {
+      "area": "Deep generation schema",
+      "result": "PASS",
+      "detail": "每个 action 分支复制完整 object/properties/required/additionalProperties；Answer 各状态分支包含全部字段和既有限制。handoff 非空 unresolved 且 limitations 至少一项；answer supported 至少一个支持引用；query 仅有已提供绑定时可选且 answer=null。接收解析器未放宽。"
+    },
+    {
+      "area": "C2 configured selection",
+      "result": "PASS",
+      "detail": "Case profile 显式优先级与已完成配对 A 查询覆盖降序；默认无 Case profile 路径保持。预留仍在原总工具额度内，未增加模型/工具/token/时限；查空、不可用、跳过不被当作证据或知识使用成功。"
+    },
+    {
+      "area": "Database and alert/API contracts",
+      "result": "PASS",
+      "detail": "新增元数据位于模型请求工件 payload.source_map；无表/字段/约束迁移和告警合同改动。原始素材、原失败、采用判断指针与交付状态保留。"
+    }
+  ],
+  "independent_test_commands": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=services/api:services/api/tests:docs/operations:. .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider services/api/tests/test_socai2_case_scope_recovery.py",
+      "exit_code": 0,
+      "passed": 16,
+      "seconds": 1.1,
+      "phase": "初审，完整分支展开前；最后变更的 Deep 用例另在最终实现复跑"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=services/api:services/api/tests:docs/operations:. SOCAI2_INVESTIGATION_POLICY=/Users/lychee/Documents/project/socai2/deploy/local-investigation/investigation-policy-case-v1.toml .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider services/api/tests/test_socai2_capacity_model_steps.py -k 'incomplete or unknown'",
+      "exit_code": 0,
+      "passed": 6,
+      "deselected": 2,
+      "seconds": 0.52
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=services/api:services/api/tests:docs/operations:. .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider services/api/tests/test_socai2_case_scope_recovery.py::test_deep_action_schema_and_receiver_agree_on_handoff_and_query",
+      "exit_code": 0,
+      "passed": 1,
+      "seconds": 0.9,
+      "phase": "最终完整分支实现"
+    },
+    {
+      "command": "openspec validate fix-case-evidence-scope-and-recovery --strict --no-interactive",
+      "exit_code": 0,
+      "result": "valid"
+    }
+  ],
+  "independent_validation_attempt_notes": [
+    "unknown/截断初次复跑由审计者误传相对 policy 路径，6 项均在 active_policy 加载时失败；改为项目要求的绝对路径后 6 项通过，无源码或业务修改。",
+    "离线重放脚本初次给 C6 解析器空 coverage，在 coverage[aid] 处 KeyError；改为使用同一 Run 已保存 socai2.case-model-input.v1 的真实 coverage 后完整重放通过。未修改原件、未进行外部调用。"
+  ],
+  "reused_direct_evidence": {
+    "tests": {
+      "path": "final-contract-tests.xml",
+      "tests": 69,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "independently_reran_all_69": false
+    },
+    "local_pg": {
+      "path": "local-pg-03/summary.json",
+      "complete_flow_scenarios": 3,
+      "run_snapshots": 4,
+      "service_reads": 12,
+      "real_model_calls": 0,
+      "models_and_lake": "substitutes",
+      "schema_tables": 29,
+      "schema_columns": 462,
+      "schema_unchanged": true,
+      "independently_reexecuted_pg": false,
+      "inspected": "纠正成功场景 C3 source_member_mismatch/C6 unknown_domain_finding 各一次原失败及一次成功；纠正仍错场景局部保留；H 后下一轮反馈进入请求、首轮过期后轮当前。completed 与 delivery_state=partial 分开。"
+    }
+  },
+  "independent_saved_evidence_replay": {
+    "mode": "offline only",
+    "field_check_entrypoint": "docs/operations/verify_database_handoff.py:audit(after, before, foreign_keys, responses)",
+    "method": "逐轮读取 export/database.json、database-after-reads.json、api-responses.json；按路径恢复 Case/history/page_data/run/result/artifact kind；使用未变化的 V1 外键定义重放，结果与 field-checks.json 按完整 JSON 多重集相等。",
+    "foreign_keys_source": "docs/operations/evidence/case-current-flow-20261110-01/readback-03/foreign-keys.json",
+    "foreign_key_definitions": 152,
+    "runs": [
+      {
+        "name": "real-model-01",
+        "reads": 52,
+        "checks": 3172,
+        "wire_and_raw_pairs": 4
+      },
+      {
+        "name": "real-model-02",
+        "reads": 54,
+        "checks": 3350,
+        "wire_and_raw_pairs": 5
+      },
+      {
+        "name": "real-model-03",
+        "reads": 54,
+        "checks": 3297,
+        "wire_and_raw_pairs": 5
+      }
+    ],
+    "reads": 160,
+    "checks": 9819,
+    "failed_checks": 0,
+    "saved_check_multisets_equal": true,
+    "before_after_snapshots_equal": true,
+    "wire_and_raw_method": "按响应 id 匹配每份 call-N-receipt.json 到 model_response 工件，原答逐值一致；关联该 Step 的 model_request.payload.body 与 call-N-intent.json.body 逐值一致。",
+    "wire_and_raw_pairs_equal": 14,
+    "real03_deep": [
+      {
+        "action": "handoff",
+        "state": "unresolved",
+        "current_schema_equals_frozen_wire": true,
+        "schema_and_receiver_passed": true
+      },
+      {
+        "action": "answer",
+        "state": "unresolved",
+        "current_schema_equals_frozen_wire": true,
+        "schema_and_receiver_passed": true
+      }
+    ],
+    "real03_c6_replay": {
+      "original_and_correction_rejected": true,
+      "reasons": [
+        "non_observation_promoted_to_observed",
+        "non_observation_promoted_to_observed"
+      ],
+      "feedback": "原 C6 反馈准确指出本次不存在 F2/F3，仅允许同回复实际 F1；一次纠正后剩余角色错误仍按原规则拒收。",
+      "current_assessment_id": null,
+      "independent_valid_partial_analysis_preserved": true
+    }
+  },
+  "real_model_totals_verified_from_saved_steps": {
+    "runs": 3,
+    "calls": 14,
+    "reported_tokens": 161323,
+    "cost": null,
+    "run_states": [
+      "completed",
+      "completed",
+      "completed"
+    ],
+    "delivery_states": [
+      "partial",
+      "partial",
+      "partial"
+    ],
+    "adopted_assessment_present": [
+      false,
+      true,
+      false
+    ],
+    "summary_equals_saved_manifest_and_steps": true,
+    "model_quality": "NOT_PASSED",
+    "not_controlled_ab": true
+  },
+  "provenance_and_static_material": {
+    "real03_frozen_source_files": 97,
+    "real03_frozen_source_mismatches": [],
+    "static_manifest_files": 524,
+    "static_file_hash_mismatches": [],
+    "local_record_count": 55,
+    "prepared_new_records": 6,
+    "all_new_record_ids_in_local_index": true,
+    "manifest": "docs/operations/evidence/case-scope-recovery-20261110-01/static-manifest.json",
+    "publication_state": "prepared locally; not a 21 publication receipt",
+    "model_route_after": {
+      "path": "docs/operations/evidence/case-scope-recovery-20261110-01/model-route-after.json",
+      "three_initial_preflights_equal_final_model_route_and_runtime_hash": true,
+      "generation_calls": 0
+    }
+  },
+  "limited_content_scan": {
+    "files_scanned": 714,
+    "json_files_walked": 646,
+    "scope": "本批证据、change 文档、tracked diff 文件和静态清单文件；排除 tools/model-preflight/",
+    "credential_pattern_hits": [],
+    "nonempty_hidden_reasoning_fields": [],
+    "limits": "仅常见凭据格式及命名推理字段检查，不是完整安全或内容审查。"
+  },
+  "handoff_review": {
+    "result": "PASS",
+    "current_and_prior_batches_distinguished": true,
+    "no_false_release_or_git_completion": true,
+    "human_feedback_not_business_authorization": true,
+    "master_tasks_3_7_3_23_3_30_not_closed": true,
+    "remaining_model_knowledge_product_and_automatic_flow_gaps_recorded": true,
+    "renamed_failed_reports_retain_actual_failure_status": {
+      "budget-tests-missing-policy.xml": {
+        "tests": 9,
+        "errors": 0,
+        "failures": 3,
+        "skipped": 0
+      },
+      "local-tests-before-assertion-fix.xml": {
+        "tests": 69,
+        "errors": 0,
+        "failures": 4,
+        "skipped": 0
+      }
+    }
+  },
+  "not_verified_or_not_completed_by_this_audit": [
+    "本轮 21 统一部署、运行来源/挂载与实际配置核验、生产读取及静态追加发布尚待实施；Git/父项目引用尚待。",
+    "本轮 160 GET 为本地 ASGI 路由和真实本地 PostgreSQL，认证依赖按测试租户覆盖；不是生产端到端认证/网络/HTTP 验收。",
+    "本审计未新增模型调用、SSH、浏览器、数据库查询或写入，仅重放已保存证据；未复跑全仓或真实 PG 场景。",
+    "real-03 实际供应商仅产生 handoff/answer；query 分支由离线合同检查覆盖，未新增真实 query 采样。",
+    "模型角色/正文质量、真实非空知识使用、产品页面 P01-P04、自动消费者、H 业务授权均不在本 change 的通过结论中。",
+    "无独立良恶真值，未报告准确率；费用未知，不记零。"
+  ],
+  "reviewed_file_sha256": {
+    "services/api/app/socai2/case_source_scope.py": "955cd15217fa653027a0e1fdf4fdc729be89c36024e83e3f3aadd3efa51cdf0c",
+    "services/api/app/socai2/case_citation_feedback.py": "907d8bc26d22f92fa507a28dbcebea51205d3f75c30b761937771e5901b686b2",
+    "services/api/app/socai2/case_followup_output.py": "34ccc623d733039ef753b87d2e8ac8933203ebc60424259571b74a91505f8acc",
+    "services/api/app/socai2/case_followup_input.py": "54639cc5e12c5ab44818b691e662da7beea96ee4d88352f847f0002ac14318cb",
+    "services/api/app/socai2/case_input_text.py": "0bfc4fb6835f8d50f3f075e1a1f817d156047e0c6352fc6295658597a5cc005d",
+    "services/api/app/socai2/case_model_boundary.py": "8d4268b630027fb8ebab6ff780005806c331370319abf17f2a9ab104bd41f747",
+    "services/api/app/socai2/case_output_adapter.py": "b30e587c662d7edc46e74c11ae0169e76f33fd3817af6df14a91f86ac243d2e9",
+    "services/api/app/socai2/baseline_enrichment.py": "3568d6dfd7a91a91fb9c85e322fb6fe159bc3fd9ef08616f5510beaad0d38615",
+    "services/api/app/socai2/baseline_enrichment_sources.py": "3accc03b702a66b07ac2eaefc46931037a36b5132430e83616865c9c152aa162",
+    "services/api/app/socai2/runtime_policy.py": "1f5c971d4234b18d45dac5d31cf7f62d0180819506fc611116d3bc6a43b7002d",
+    "services/api/app/socai2/case-input-v1.json": "c3e28dbde1ee4f6d3bf8f1c0ee9c0745182dc5fc8445b92d9b0c0aa713894a92",
+    "services/api/app/socai2/baseline_reasoning.py": "e6f4cec797d47baa98d2906ad64c1fd822c97bb56d5593d989f23b02dd37b0ca",
+    "services/api/app/socai2/baseline_analysis_contract.py": "046fe35f43ad90c06789b60706106b1309fd8d934972a006efa4d0e1961c5146",
+    "services/api/app/socai2/baseline_delivery_contract.py": "791e3bde6efa7fa974ebc84dd97ad61259e229afb21381d0d23b5afd814000da",
+    "services/api/app/socai2/baseline_deep_contract.py": "768986d150ab10541670735b32f64be59c9eecd7368e22278e6a2406b955655b",
+    "services/api/tests/test_socai2_case_scope_recovery.py": "580ea313e8de95ec92a90be9b05044ca16e505335922b59123618c695b42fa2f",
+    "services/api/tests/test_socai2_capacity_model_steps.py": "7cc7605cea1a6810665238f13a31991a6274eacf89b274deec9d03a12f1dacd8",
+    "services/api/tests/test_socai2_case_boundary_pg.py": "013fc757cd282a44b8a62240eeb7a994e9fa4ba7256f2577280984bf7204a5e4",
+    "services/api/tests/test_socai2_case_followup_pg.py": "cf2fe15bda85b57d89b04304e5819b6f35766d3af978e8076a7684fc52e753d2",
+    "tools/testdata/case_scope_recovery/real_model.py": "634b833e1cb28f6c3699228f44d39b3ee0499be697aede0ce3f8eeefbeb7f930",
+    "tools/testdata/case_scope_recovery/verify_local.py": "6559f667861cb37793f49339ddc49b9f3f994ea44895a3c5baba5687cd35528a",
+    "docs/operations/verify_database_handoff.py": "63c9e85d827ee6a5341d69d657d8bb43f8f5cb2928c4b951313cdfce6e965b24",
+    "AGENTS.md": "0edc8a19e37a9ba8d85a4d690b7728dd496022694b19f92d656cc371eb9711bc",
+    "PROGRESS.md": "332aa38047709d0f91113f0365c9ee99baea7144782b461706d9014d1493db16",
+    "FRONTEND_BACKEND_HANDOFF.md": "25f3a325122dafac1ae75379ed08f4cae24b84dc6a5c51a32ac9e382f2478ed2",
+    "docs/investigation/current-issues.md": "f779f0f671e47625e8971483bac4bda35bb95406f86d53f2c8e97a3d19fd12aa",
+    "docs/investigation/current-execution-ledger.md": "e62ab2e81892f67db895cd4d8e615eed40611b54377731f6efcdf51321a73b7b",
+    "docs/investigation/model-input-output-current-20261109.md": "774be847b7f7050b57dc08b9ae235e0dfa05f0bd8be86ea2b5b39ebe304944f1",
+    "docs/investigation/socai2-page-data-handoff-20261106.md": "75e6f0ee3b27122eb0fcde9004c3d0bdd51daf4e31f2dc6281d1c93e56929408",
+    "openspec/changes/complete-socai2-investigation-chain/tasks.md": "67277e509f3dd7c62a78cd99c099d955378dfcaa79d7bba15d354297abd2253e",
+    "openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md": "b14ffd74b9f5f5b27a2f1a9be41f83827c068d60bebfca8bb67f9d8f04472f62",
+    "openspec/changes/fix-case-evidence-scope-and-recovery/proposal.md": "1a23cee33fac32067701368e62c55886d0463ab25e6db65e67aac9aed71d46b8",
+    "openspec/changes/fix-case-evidence-scope-and-recovery/design.md": "a047f799d6234f0f7a0be649da94ef76f821b485d230d700e57fbfbbdf9733d0",
+    "openspec/changes/fix-case-evidence-scope-and-recovery/tasks.md": "91f3abe3a98b87d1709dcdcbfd84fe716451b28dff59792fa90a7e8ebf364b99",
+    "openspec/changes/fix-case-evidence-scope-and-recovery/validation.md": "fe06790fc72e3e8c07ff34932912f1a5f75ae6119ca928824e821f5df36a286b",
+    "openspec/changes/fix-case-evidence-scope-and-recovery/specs/case-evidence-scope-recovery/spec.md": "dde1c2f900f976bb859d45a62c7f22d8d97f200abacd3cd8f66fe390222a5a3d"
+  },
+  "evidence_sha256": {
+    "docs/operations/evidence/case-scope-recovery-20261110-01/execution-summary.json": "abd0f2d839494727e250f5f2b52eb5ca9bc7e0d23e774bf567e8b59026417498",
+    "docs/operations/evidence/case-scope-recovery-20261110-01/final-contract-tests.xml": "ceb0170b7ea9d5bc9333733d169a81b0150a398c52718729ea3e0a4f44513e6a",
+    "docs/operations/evidence/case-scope-recovery-20261110-01/local-pg-03/summary.json": "98bef1cc43649c833f52a470ee2ca0d06f1b02c43294bb59c6caeb7a53396d8c",
+    "docs/operations/evidence/case-scope-recovery-20261110-01/static-manifest.json": "6f80a5699016fb3c22e645f9cec0ac6ec50d2b7368f0c75997681a268e78614d",
+    "docs/operations/evidence/case-scope-recovery-20261110-01/real-model-03/plan.json": "deb06c8a0c4fd0cb67f8e8cc8a97065517a4ee5e6a7199ae483a1dece9b9a35f",
+    "docs/operations/evidence/case-scope-recovery-20261110-01/model-route-after.json": "bca03df98e9389f6fd357623f2160597c4353135e69c40bb47ec162eddafb758",
+    "tools/testdata/case_scope_recovery/README.md": "8d66c10e0b5c7716472c635c41db4148e1d82f6303a26906c66133c39e54eb39"
+  }
+}

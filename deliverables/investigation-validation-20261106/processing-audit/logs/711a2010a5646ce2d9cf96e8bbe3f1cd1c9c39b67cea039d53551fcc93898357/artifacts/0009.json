@@ -1,0 +1,4351 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-10T13:20:53.310141+00:00",
+  "case_id": "6d7e897f-7b9a-5bb8-8033-a6e6fca57198",
+  "content_json": {
+    "captured_at": "2026-11-10T13:20:53.246387+00:00",
+    "comparison": {
+      "added_alert_ids": [],
+      "limitations": [
+        "comparison_is_between_recorded_judgments_not_independent_evidence"
+      ],
+      "prior_scope": null,
+      "removed_alert_ids": [],
+      "result_id": null,
+      "shared_alert_ids": [],
+      "state": "initial"
+    },
+    "correction_result": {
+      "correction_response_artifact_id": "5f600f87-a0c5-4140-8442-c7d45b4e3148",
+      "dispatched": true,
+      "original_response_artifact_id": "225d167c-0e98-42c3-b317-049c5477f63b",
+      "reason": null
+    },
+    "delivery": {
+      "analysis": {
+        "conflicts": [
+          {
+            "evidence_ids": [
+              "N2_S15",
+              "N2_S4",
+              "N2_S8",
+              "N2_S33",
+              "N2_S64"
+            ],
+            "explanation": "告警内容显示具体攻击行为（登录、外连、枚举），但标签 synthetic 和背景描述暗示为演练，两者在行为真实性上存在潜在冲突。",
+            "finding_ids": [
+              "F1",
+              "F2"
+            ],
+            "id": "C1",
+            "state": "unresolved"
+          },
+          {
+            "evidence_ids": [
+              "N2_S8",
+              "N2_S93",
+              "N2_S94",
+              "N2_S95"
+            ],
+            "explanation": "告警明确记录了成功执行的操作，但关键验证工具（threat_intel, ueba 等）未执行或查空，导致无法确认这些操作是否基于真实环境或真实用户行为，存在‘有行为无上下文’的矛盾。",
+            "finding_ids": [
+              "F1",
+              "F3"
+            ],
+            "id": "C2",
+            "state": "unresolved"
+          }
+        ],
+        "domains": [
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c"
+            ],
+            "applicability": "applicable",
+            "finding_ids": [
+              "F1"
+            ],
+            "limitations": [
+              "无 MFA 信息",
+              "无会话详情",
+              "无授权记录"
+            ],
+            "name": "identity",
+            "reason": "涉及用户登录、认证及权限使用（A1）。"
+          },
+          {
+            "alert_ids": [
+              "d6340c4c-1425-51d0-babb-4390c57f05a9"
+            ],
+            "applicability": "applicable",
+            "finding_ids": [
+              "F1"
+            ],
+            "limitations": [
+              "无云配置变更",
+              "无资源隔离信息",
+              "无外传证据"
+            ],
+            "name": "cloud",
+            "reason": "涉及主机配置、网络连接及资源访问（A2）。"
+          },
+          {
+            "alert_ids": [],
+            "applicability": "not_applicable",
+            "finding_ids": [],
+            "limitations": [
+              "无相关数据"
+            ],
+            "name": "phishing",
+            "reason": "无邮件、链接或附件相关告警。"
+          },
+          {
+            "alert_ids": [
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "applicability": "applicable",
+            "finding_ids": [
+              "F1"
+            ],
+            "limitations": [
+              "无数据外传证据",
+              "无基线对比",
+              "无枚举结果"
+            ],
+            "name": "insider",
+            "reason": "涉及本地用户枚举及潜在数据访问（A3）。"
+          }
+        ],
+        "findings": [
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "alternatives": [
+              "用户可能在进行正常的系统维护或演练操作",
+              "标签 synthetic 暗示数据可能非真实生产流量"
+            ],
+            "counter_ids": [],
+            "id": "F1",
+            "limitations": [
+              "缺乏审批记录确认操作合法性",
+              "资产匹配状态为 not_checked"
+            ],
+            "state": "observed",
+            "statement": "用户 flow-observer 在案件时间窗口内对主机 socai2-flow-20261107-01 执行了登录、网络外连及本地用户枚举操作。",
+            "support_ids": [
+              "N2_S8",
+              "N2_S33",
+              "N2_S64"
+            ]
+          },
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "alternatives": [
+              "标签可能仅表示数据生成方式，不代表实际业务性质",
+              "演练可能未覆盖所有安全控制"
+            ],
+            "counter_ids": [],
+            "id": "F2",
+            "limitations": [
+              "标签定义未明确排除真实攻击可能性",
+              "无独立证据证实演练范围"
+            ],
+            "state": "inferred",
+            "statement": "所有告警均标记为 synthetic，且背景描述提及演练材料，暗示当前活动可能属于测试或模拟场景。",
+            "support_ids": [
+              "N2_S15",
+              "N2_S43",
+              "N2_S72",
+              "N2_S4",
+              "N2_S32"
+            ]
+          },
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "alternatives": [
+              "查空可能源于查询条件限制或数据缺失",
+              "工具未执行导致无法验证假设"
+            ],
+            "counter_ids": [],
+            "id": "F3",
+            "limitations": [
+              "工具状态为未执行或查空",
+              "无法获取外部情报和用户行为基线"
+            ],
+            "state": "unresolved",
+            "statement": "关键调查工具（threat_intel, ueba, history, graph）未执行，且 assets 和 knowledge 查询返回查空，无法确认 IP 信誉、用户基线及历史行为。",
+            "support_ids": [
+              "N2_S91",
+              "N2_S92",
+              "N2_S93",
+              "N2_S94",
+              "N2_S95",
+              "N2_S96"
+            ]
+          }
+        ],
+        "followups": [
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "mode": "human",
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "objective": "人工确认 flow-observer 用户及主机 socai2-flow-20261107-01 的授权状态，核实是否为已批准的演练或真实业务操作。",
+            "question_id": "authorization",
+            "required_evidence": "审批记录、人工确认邮件或演练计划文档。",
+            "source_ids": [
+              "N2_S4",
+              "N2_S32"
+            ]
+          },
+          {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "mode": "deep",
+            "object_keys": [
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "objective": "重新尝试通过威胁情报和用户行为分析工具，验证 IP 地址信誉及用户行为基线，排除真实攻击可能性。",
+            "question_id": "behavior_nature",
+            "required_evidence": "IP 信誉报告、用户历史行为数据。",
+            "source_ids": [
+              "N2_S93",
+              "N2_S94",
+              "N2_S95"
+            ]
+          }
+        ],
+        "members": [
+          {
+            "alert_id": "615795b5-e73f-5f28-997e-08dec4b4279c",
+            "evidence_ids": [
+              "N2_S8",
+              "N2_S9",
+              "N2_S10",
+              "N2_S11",
+              "N2_S12",
+              "N2_S14",
+              "N2_S17",
+              "N2_S18",
+              "N2_S21",
+              "N2_S22",
+              "N2_S23",
+              "N2_S24",
+              "N2_S25",
+              "N2_S26",
+              "N2_S27",
+              "N2_S28",
+              "N2_S29",
+              "N2_S30",
+              "N2_S31",
+              "N2_S32"
+            ],
+            "limitations": [
+              "无审批记录证明授权",
+              "资产匹配状态为 not_checked",
+              "标签 synthetic 不直接证明演练性质",
+              "工具查询未执行或查空"
+            ],
+            "state": "analyzed",
+            "summary": "记录用户 flow-observer 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01。告警等级 medium，标签含 synthetic。"
+          },
+          {
+            "alert_id": "d6340c4c-1425-51d0-babb-4390c57f05a9",
+            "evidence_ids": [
+              "N2_S33",
+              "N2_S34",
+              "N2_S35",
+              "N2_S36",
+              "N2_S37",
+              "N2_S39",
+              "N2_S40",
+              "N2_S41",
+              "N2_S42",
+              "N2_S45",
+              "N2_S46",
+              "N2_S50",
+              "N2_S51",
+              "N2_S52",
+              "N2_S53",
+              "N2_S54",
+              "N2_S55",
+              "N2_S56",
+              "N2_S57",
+              "N2_S58",
+              "N2_S59",
+              "N2_S60",
+              "N2_S61",
+              "N2_S62",
+              "N2_S63"
+            ],
+            "limitations": [
+              "连接成功不证明数据外传",
+              "无业务授权证据",
+              "资产匹配未检查",
+              "工具查询未执行或查空"
+            ],
+            "state": "analyzed",
+            "summary": "记录用户 flow-observer 从主机 socai2-flow-20261107-01 (IP 192.0.2.77) 成功连接至 IP 198.51.100.77 端口 443。告警等级 medium，标签含 synthetic。"
+          },
+          {
+            "alert_id": "f92e5286-219c-52df-9757-06f37979241d",
+            "evidence_ids": [
+              "N2_S64",
+              "N2_S65",
+              "N2_S66",
+              "N2_S67",
+              "N2_S68",
+              "N2_S69",
+              "N2_S70",
+              "N2_S71",
+              "N2_S72",
+              "N2_S74",
+              "N2_S75",
+              "N2_S76",
+              "N2_S77",
+              "N2_S78",
+              "N2_S79",
+              "N2_S80",
+              "N2_S81",
+              "N2_S82",
+              "N2_S83",
+              "N2_S84",
+              "N2_S85",
+              "N2_S86",
+              "N2_S87",
+              "N2_S88",
+              "N2_S89",
+              "N2_S90"
+            ],
+            "limitations": [
+              "进程启动不证明脚本完成",
+              "无授权证据",
+              "资产匹配未检查",
+              "工具查询未执行或查空"
+            ],
+            "state": "analyzed",
+            "summary": "记录用户 flow-observer 在主机 socai2-flow-20261107-01 上启动 powershell.exe 并执行 Get-LocalUser 命令。告警等级 medium，标签含 synthetic。"
+          }
+        ],
+        "questions": [
+          {
+            "answer": "原始记录支持用户 flow-observer 在主机 socai2-flow-20261107-01 上的登录（A1）、连接 198.51.100.77:443（A2）及启动 powershell.exe 执行 Get-LocalUser（A3）。",
+            "evidence_ids": [
+              "N2_S8",
+              "N2_S9",
+              "N2_S10",
+              "N2_S11",
+              "N2_S12",
+              "N2_S14",
+              "N2_S17",
+              "N2_S18",
+              "N2_S21",
+              "N2_S22",
+              "N2_S23",
+              "N2_S24",
+              "N2_S25",
+              "N2_S26",
+              "N2_S27",
+              "N2_S28",
+              "N2_S29",
+              "N2_S30",
+              "N2_S31",
+              "N2_S32",
+              "N2_S33",
+              "N2_S34",
+              "N2_S35",
+              "N2_S36",
+              "N2_S37",
+              "N2_S39",
+              "N2_S40",
+              "N2_S41",
+              "N2_S42",
+              "N2_S45",
+              "N2_S46",
+              "N2_S50"
+            ],
+            "id": "detection_facts",
+            "limitations": [
+              "资产匹配未检查",
+              "无审批记录"
+            ],
+            "state": "answered"
+          },
+          {
+            "answer": "成员 A1、A2、A3 共享同一主机、同一用户及相近时间窗口，且背景描述提及演练，表明行为具有关联性，但无直接因果证据。",
+            "evidence_ids": [
+              "N2_S4",
+              "N2_S5",
+              "N2_S6",
+              "N2_S7",
+              "N2_S10",
+              "N2_S34",
+              "N2_S65"
+            ],
+            "id": "member_relationships",
+            "limitations": [
+              "时间邻近不等于因果",
+              "无日志证明操作顺序"
+            ],
+            "state": "answered"
+          },
+          {
+            "answer": "行为性质存疑。标签 synthetic 和背景描述支持演练解释，但缺乏独立证据排除真实攻击或误操作。",
+            "evidence_ids": [
+              "N2_S15",
+              "N2_S43",
+              "N2_S72",
+              "N2_S4",
+              "N2_S32"
+            ],
+            "id": "behavior_nature",
+            "limitations": [
+              "标签不证明行为发生",
+              "无授权记录",
+              "工具未执行"
+            ],
+            "state": "unresolved"
+          },
+          {
+            "answer": "无明确授权材料。背景描述提及演练，但未提供具体审批记录或人工确认。",
+            "evidence_ids": [],
+            "id": "authorization",
+            "limitations": [
+              "未提供审批记录",
+              "查空不构成反证"
+            ],
+            "state": "unresolved"
+          },
+          {
+            "answer": "观察到登录、外连及进程启动，未观察到数据外传或系统破坏。影响范围限于主机 socai2-flow-20261107-01，但外连目的和枚举结果未知。",
+            "evidence_ids": [
+              "N2_S8",
+              "N2_S33",
+              "N2_S64"
+            ],
+            "id": "impact",
+            "limitations": [
+              "连接成功不证明数据外传",
+              "进程启动不证明脚本完成",
+              "无后续影响日志"
+            ],
+            "state": "unresolved"
+          },
+          {
+            "answer": "已覆盖 A1-A3 成员及主要对象，但威胁情报、用户行为分析及历史数据查询未执行或查空，存在重大证据缺口。",
+            "evidence_ids": [
+              "N2_S91",
+              "N2_S92",
+              "N2_S93",
+              "N2_S94",
+              "N2_S95",
+              "N2_S96"
+            ],
+            "id": "coverage",
+            "limitations": [
+              "工具未执行",
+              "查空结果",
+              "原计划 deep 调查失败"
+            ],
+            "state": "unresolved"
+          }
+        ],
+        "summary": "本轮基于冻结材料（N2_S1-N2_S96）及原计划执行回执（N2_S91-N2_S96）进行复核。核心发现为：A1、A2、A3 告警内容完整，分别记录了用户 flow-observer 的登录、外连及 PowerShell 枚举行为，且均标记为 synthetic（合成/演练）。然而，所有关键背景核查工具（threat_intel, ueba, history, graph）均处于 skipped 状态，资产匹配（assets）和知识库（knowledge）查询返回空结果。原计划中两项关键的 deep 调查（授权核实、情报验证）均执行失败（failed）。因此，案件处于‘行为事实清晰但性质与影响未定’的状态，无法排除真实攻击或误操作的可能性，必须依赖人工介入或重新配置工具环境。"
+      },
+      "closing_note": "本轮确认了 A1-A3 的行为事实，但核心问题（授权与性质）未解。原计划的两项 deep 调查均失败（failed），导致无法通过技术手段验证 synthetic 标签的真实性。当前结论高度依赖人工确认或工具环境修复。需优先联系安全运营人员核实演练计划，或检查工具配置以重新执行情报与基线查询。",
+      "comparison": {
+        "kind": "initial",
+        "summary": null,
+        "support_ids": []
+      },
+      "conclusion": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "limitations": [
+          "工具执行失败",
+          "缺乏独立证据",
+          "依赖人工判断"
+        ],
+        "state": "uncertain",
+        "support_ids": [
+          "N2_S4",
+          "N2_S98",
+          "N2_S99"
+        ],
+        "text": "案件目前判定为‘待核实的潜在风险事件’。虽然告警标签和背景描述强烈暗示为演练（synthetic），但由于所有关键背景核查工具未执行或返回空结果，且原计划的深度调查（授权核实、情报验证）全部失败，无法从技术层面排除真实攻击或误操作的可能性。行为事实（登录、外连、枚举）清晰，但行为性质（恶意/正常/演练）和实际影响（数据外传/系统破坏）均无法确定。必须依赖人工介入确认授权背景，或修复工具环境后重新执行深度调查。"
+      },
+      "impact": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "cannot_generalize": [
+          "连接成功不证明数据外传",
+          "进程启动不证明脚本完成",
+          "无后续影响日志"
+        ],
+        "next_steps": [
+          "需人工确认授权",
+          "需重新执行情报查询"
+        ],
+        "summary": "观察到登录、外连及进程启动，未观察到数据外传或系统破坏。影响范围限于主机 socai2-flow-20261107-01。",
+        "support_ids": [
+          "N2_S8",
+          "N2_S33",
+          "N2_S64"
+        ],
+        "supported_changes": []
+      },
+      "recommendations": [
+        {
+          "action_type": "investigate",
+          "id": "R1",
+          "limitations": [
+            "无现有审批记录"
+          ],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "reason": "必须人工确认 flow-observer 用户及主机 socai2-flow-20261107-01 的授权状态，以区分演练与真实攻击。",
+          "source_ids": [
+            "N2_S4",
+            "N2_S32"
+          ]
+        },
+        {
+          "action_type": "investigate",
+          "id": "R2",
+          "limitations": [
+            "工具执行失败"
+          ],
+          "object_keys": [
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "reason": "原计划的情报与基线查询失败，需重新尝试验证 IP 信誉及用户行为基线，以辅助判断行为性质。",
+          "source_ids": [
+            "N2_S98",
+            "N2_S99"
+          ]
+        }
+      ]
+    },
+    "domain_artifact_ids": {
+      "cloud": "0114bfc9-6975-40b5-892c-16fbedbc993d",
+      "identity": "332747f8-693a-4cc6-949b-84f5ef9c9565",
+      "insider": "42945dbf-639b-415b-8110-684b3a73680e",
+      "phishing": "96216dfa-5894-49c7-b6f0-cd26f38b5310"
+    },
+    "evidence_directory": {
+      "artifact_id": "70a1856f-8bf5-493c-a4fa-4283a779c954",
+      "entries": 3,
+      "limitations": [
+        "registered_material_observations_and_frozen_human_feedback_only",
+        "query_receipts_remain_in_run_artifacts_not_counted_as_independent_entries",
+        "no_evidence_specific_verdict_or_threat_assignment_available"
+      ],
+      "source_run_id": "748e604f-af8c-449c-b263-6c6ff2eda255",
+      "state": "available"
+    },
+    "evidence_set_key": "047f921ea8d43824ed7e34ce4cf843f00b8aa56de71d231d22a9e0b3b0645c32",
+    "execution": {
+      "followup_dispatch": {
+        "graph_artifact_id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+        "initial_analysis_artifact_id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+        "initial_state": "completed",
+        "limitations": [
+          "completed_Deep_does_not_mean_question_answered",
+          "graph_completion_does_not_mean_external_topology_queried",
+          "unexecuted_or_human_followups_remain_unresolved"
+        ],
+        "routes": [
+          {
+            "answer_available": false,
+            "binding_id": null,
+            "deep_artifact_id": "6ce9eaf1-ec5f-4b91-b120-cb632fad5647",
+            "execution_order": 0,
+            "followup_index": 0,
+            "mode": "deep",
+            "priority": "decision_critical",
+            "question_id": "authorization",
+            "reason": "deep_boundary_shape_invalid",
+            "reused": false,
+            "state": "failed"
+          },
+          {
+            "answer_available": false,
+            "binding_id": null,
+            "deep_artifact_id": "6159260a-02be-4ef9-a7c4-89f8feb475f8",
+            "execution_order": 1,
+            "followup_index": 1,
+            "mode": "deep",
+            "priority": "supporting",
+            "question_id": "behavior_nature",
+            "reason": "model_response_not_complete",
+            "reused": false,
+            "state": "failed"
+          }
+        ],
+        "run_id": "748e604f-af8c-449c-b263-6c6ff2eda255",
+        "schema_version": "socai2.baseline-executor.v2",
+        "type": "followup_dispatch"
+      },
+      "model_calls": 5,
+      "steps": [
+        {
+          "id": "5c162f80-48df-433e-9a52-0f3a6e5d1a98",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C1.executor",
+          "state": "completed"
+        },
+        {
+          "id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "completed"
+        },
+        {
+          "id": "25d6ace1-d165-43e0-86de-70fbd4d31d85",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "completed"
+        },
+        {
+          "id": "95afe196-30fd-43ef-92d2-f80184787cc9",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "completed"
+        },
+        {
+          "id": "f8f8520b-b97b-4a2e-88fb-3cf43f29816e",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "skipped"
+        },
+        {
+          "id": "e51ee1f4-acd8-4df8-8dfe-53d87c97f81f",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "skipped"
+        },
+        {
+          "id": "5daf5f7c-7c38-4908-acf9-4485ea3c4ae2",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "skipped"
+        },
+        {
+          "id": "72be47fa-47f1-41dd-bdad-5fd1de4006c5",
+          "kind": "tool",
+          "parent_step_id": "93d5d06b-f203-4c0f-8505-71854a227eb3",
+          "question_id": null,
+          "stage_code": "C2",
+          "state": "skipped"
+        },
+        {
+          "id": "667c81a6-1ff2-429c-ae97-2e5e2bd1e0c7",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C4.materials",
+          "state": "completed"
+        },
+        {
+          "id": "6ba8f8cb-5ced-4275-8ea6-f6ff63fc19a1",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C3",
+          "state": "completed"
+        },
+        {
+          "id": "c57a09cc-0331-4321-bb1c-d120e431a8a3",
+          "kind": "model",
+          "parent_step_id": "6ba8f8cb-5ced-4275-8ea6-f6ff63fc19a1",
+          "question_id": null,
+          "stage_code": "C3",
+          "state": "completed"
+        },
+        {
+          "id": "ef068040-cf77-4baa-a01c-9e2ad8d9709c",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": "authorization",
+          "stage_code": "C4.deep",
+          "state": "failed"
+        },
+        {
+          "id": "a0ff591d-902f-4868-b3d8-7bdfbdc7e3c4",
+          "kind": "model",
+          "parent_step_id": "ef068040-cf77-4baa-a01c-9e2ad8d9709c",
+          "question_id": "authorization",
+          "stage_code": "C4.deep",
+          "state": "failed"
+        },
+        {
+          "id": "ff294542-744b-408c-a854-5c822f4c98b7",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": "behavior_nature",
+          "stage_code": "C4.deep",
+          "state": "failed"
+        },
+        {
+          "id": "86497b2a-0519-4352-a8c0-fef50427006f",
+          "kind": "model",
+          "parent_step_id": "ff294542-744b-408c-a854-5c822f4c98b7",
+          "question_id": "behavior_nature",
+          "stage_code": "C4.deep",
+          "state": "failed"
+        },
+        {
+          "id": "0918f70c-c8e5-4c7e-b94f-b2491a7eb862",
+          "kind": "graph",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C5",
+          "state": "completed"
+        },
+        {
+          "id": "b4a32421-b69b-4e16-bec1-1f7d1e519991",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C4.routing",
+          "state": "completed"
+        },
+        {
+          "id": "dfe86f38-c26f-4cb9-a2fa-522ecff8b1b8",
+          "kind": "stage",
+          "parent_step_id": null,
+          "question_id": null,
+          "stage_code": "C6",
+          "state": "completed"
+        },
+        {
+          "id": "fd1924c6-36b6-4107-93c6-69d0797d4770",
+          "kind": "model",
+          "parent_step_id": "dfe86f38-c26f-4cb9-a2fa-522ecff8b1b8",
+          "question_id": null,
+          "stage_code": "C6",
+          "state": "failed"
+        },
+        {
+          "id": "2de89438-18ad-4ac3-aa0f-4e734890740b",
+          "kind": "model",
+          "parent_step_id": "dfe86f38-c26f-4cb9-a2fa-522ecff8b1b8",
+          "question_id": null,
+          "stage_code": "C6",
+          "state": "completed"
+        }
+      ],
+      "tool_calls": 2,
+      "total_tokens": 62557,
+      "usage_state": "reported"
+    },
+    "input_artifact_ids": [
+      "d954b81b-6e9a-4e0c-ad0a-2912ce8ce62d",
+      "dd8dfe08-98fc-492d-9b38-c192695cf125",
+      "7d072860-21db-4f48-b195-d880686fdd1f",
+      "51cbcdba-3b29-4643-9820-1711039b430a",
+      "3d246969-faac-49ef-bc37-6898262eca67",
+      "8b6db80e-f62f-47a6-b091-4624131a78ae",
+      "872053bc-a7de-407d-ad56-265027c1d7f4",
+      "cfeafe81-a5aa-4c2f-a922-c1dee031f6fe",
+      "95d7a2f6-c0aa-44e1-91d7-e00b028caf2d",
+      "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+      "39c80115-4f6d-4057-b4af-37df94dc4095"
+    ],
+    "limitations": [
+      "final_model_input_omitted_fields",
+      "frozen_context_has_omissions",
+      "source_graph_partial_external_topology_not_queried",
+      "background_source_coverage_incomplete",
+      "open_questions_or_followups",
+      "unresolved_conflicts",
+      "structure_scope_sources_checked_not_truth_proven"
+    ],
+    "program_facts": {
+      "case_severity": null,
+      "case_source": {
+        "external": null,
+        "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+        "role": "source_label",
+        "row_keys": [],
+        "source_path": "$.case",
+        "type": "artifact"
+      },
+      "execution_started_at": "2026-11-10T13:15:35.283168+00:00",
+      "execution_time_source": {
+        "field": "started_at",
+        "id": "748e604f-af8c-449c-b263-6c6ff2eda255",
+        "table": "socai2.runs"
+      },
+      "incident_severities": {},
+      "limitations": [
+        "frozen_metadata_not_new_observations",
+        "model_prose_not_rewritten",
+        "missing_activity_time_never_replaced_by_alert_or_execution_time"
+      ],
+      "members": [
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:38:27+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:38:27+00:00",
+            "event_time_source": "source",
+            "id": "615795b5-e73f-5f28-997e-08dec4b4279c",
+            "ingested_at": "2026-11-10T13:15:34.669199+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Account logon observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "material_received_at": "2026-11-10T13:15:34.669199+00:00",
+          "material_source": {
+            "external": null,
+            "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "203.0.113.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "203.0.113.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        },
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:39:07+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:39:07+00:00",
+            "event_time_source": "source",
+            "id": "d6340c4c-1425-51d0-babb-4390c57f05a9",
+            "ingested_at": "2026-11-10T13:15:34.669199+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Outbound connection observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "material_received_at": "2026-11-10T13:15:34.669199+00:00",
+          "material_source": {
+            "external": null,
+            "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "192.0.2.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "192.0.2.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "198.51.100.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "198.51.100.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        },
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:38:47+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:38:47+00:00",
+            "event_time_source": "source",
+            "id": "f92e5286-219c-52df-9757-06f37979241d",
+            "ingested_at": "2026-11-10T13:15:34.669199+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Process start observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "material_received_at": "2026-11-10T13:15:34.669199+00:00",
+          "material_source": {
+            "external": null,
+            "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        }
+      ],
+      "schema_version": "socai2.program-facts.v1.2",
+      "snapshot_captured_at": "2026-11-10T13:15:35.283168+00:00"
+    },
+    "result": {
+      "case_impact": {
+        "affected_scope": {
+          "alert_ids": [
+            "615795b5-e73f-5f28-997e-08dec4b4279c",
+            "d6340c4c-1425-51d0-babb-4390c57f05a9",
+            "f92e5286-219c-52df-9757-06f37979241d"
+          ],
+          "kind": "selected_alerts",
+          "limitations": [],
+          "object_keys": [],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "cannot_generalize": [
+          "连接成功不证明数据外传",
+          "进程启动不证明脚本完成",
+          "无后续影响日志"
+        ],
+        "next_steps": [
+          "需人工确认授权",
+          "需重新执行情报查询"
+        ],
+        "summary": "观察到登录、外连及进程启动，未观察到数据外传或系统破坏。影响范围限于主机 socai2-flow-20261107-01。",
+        "supported_changes": []
+      },
+      "change_kind": "initial",
+      "change_summary": null,
+      "closing_note": "本轮确认了 A1-A3 的行为事实，但核心问题（授权与性质）未解。原计划的两项 deep 调查均失败（failed），导致无法通过技术手段验证 synthetic 标签的真实性。当前结论高度依赖人工确认或工具环境修复。需优先联系安全运营人员核实演练计划，或检查工具配置以重新执行情报与基线查询。",
+      "conclusion": "案件目前判定为‘待核实的潜在风险事件’。虽然告警标签和背景描述强烈暗示为演练（synthetic），但由于所有关键背景核查工具未执行或返回空结果，且原计划的深度调查（授权核实、情报验证）全部失败，无法从技术层面排除真实攻击或误操作的可能性。行为事实（登录、外连、枚举）清晰，但行为性质（恶意/正常/演练）和实际影响（数据外传/系统破坏）均无法确定。必须依赖人工介入确认授权背景，或修复工具环境后重新执行深度调查。",
+      "conclusion_origin": "model",
+      "conclusion_state": "uncertain",
+      "delivery_state": "partial",
+      "findings": [
+        {
+          "counterevidence": [],
+          "id": "F1",
+          "limitations": [
+            "缺乏审批记录确认操作合法性",
+            "资产匹配状态为 not_checked",
+            "替代解释：用户可能在进行正常的系统维护或演练操作",
+            "替代解释：标签 synthetic 暗示数据可能非真实生产流量"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "selected_alerts",
+            "limitations": [],
+            "object_keys": [],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "observed",
+          "statement": "用户 flow-observer 在案件时间窗口内对主机 socai2-flow-20261107-01 执行了登录、网络外连及本地用户枚举操作。",
+          "support": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            }
+          ]
+        },
+        {
+          "counterevidence": [],
+          "id": "F2",
+          "limitations": [
+            "标签定义未明确排除真实攻击可能性",
+            "无独立证据证实演练范围",
+            "替代解释：标签可能仅表示数据生成方式，不代表实际业务性质",
+            "替代解释：演练可能未覆盖所有安全控制"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "selected_alerts",
+            "limitations": [],
+            "object_keys": [],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "inferred",
+          "statement": "所有告警均标记为 synthetic，且背景描述提及演练材料，暗示当前活动可能属于测试或模拟场景。",
+          "support": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.case",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+              "type": "artifact"
+            }
+          ]
+        },
+        {
+          "counterevidence": [],
+          "id": "F3",
+          "limitations": [
+            "工具状态为未执行或查空",
+            "无法获取外部情报和用户行为基线",
+            "替代解释：查空可能源于查询条件限制或数据缺失",
+            "替代解释：工具未执行导致无法验证假设"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "selected_alerts",
+            "limitations": [],
+            "object_keys": [],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "unresolved",
+          "statement": "关键调查工具（threat_intel, ueba, history, graph）未执行，且 assets 和 knowledge 查询返回查空，无法确认 IP 信誉、用户基线及历史行为。",
+          "support": [
+            {
+              "external": null,
+              "id": "51cbcdba-3b29-4643-9820-1711039b430a",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "3d246969-faac-49ef-bc37-6898262eca67",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "8b6db80e-f62f-47a6-b091-4624131a78ae",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "872053bc-a7de-407d-ad56-265027c1d7f4",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "cfeafe81-a5aa-4c2f-a922-c1dee031f6fe",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "95d7a2f6-c0aa-44e1-91d7-e00b028caf2d",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            }
+          ]
+        }
+      ],
+      "graph_artifact_id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+      "members": [
+        {
+          "alert_id": "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "assessment": "记录用户 flow-observer 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01。告警等级 medium，标签含 synthetic。",
+          "assessment_state": "analyzed",
+          "conclusion_covered": true,
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.title",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.source",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.ocsf_class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.detection",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.source_scope",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+              "type": "artifact"
+            }
+          ],
+          "limitations": "无审批记录证明授权；资产匹配状态为 not_checked；标签 synthetic 不直接证明演练性质；工具查询未执行或查空；final_model_input_omitted_fields；frozen_context_has_omissions；source_graph_partial_external_topology_not_queried；background_source_coverage_incomplete；open_questions_or_followups；unresolved_conflicts",
+          "read_state": "read"
+        },
+        {
+          "alert_id": "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "assessment": "记录用户 flow-observer 从主机 socai2-flow-20261107-01 (IP 192.0.2.77) 成功连接至 IP 198.51.100.77 端口 443。告警等级 medium，标签含 synthetic。",
+          "assessment_state": "analyzed",
+          "conclusion_covered": true,
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.port",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.connection_info.protocol_name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.title",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.source",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.port",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.connection_info.protocol_name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.ocsf_class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.detection",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.source_scope",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.alert",
+              "type": "artifact"
+            }
+          ],
+          "limitations": "连接成功不证明数据外传；无业务授权证据；资产匹配未检查；工具查询未执行或查空；final_model_input_omitted_fields；frozen_context_has_omissions；source_graph_partial_external_topology_not_queried；background_source_coverage_incomplete；open_questions_or_followups；unresolved_conflicts",
+          "read_state": "read"
+        },
+        {
+          "alert_id": "f92e5286-219c-52df-9757-06f37979241d",
+          "assessment": "记录用户 flow-observer 在主机 socai2-flow-20261107-01 上启动 powershell.exe 并执行 Get-LocalUser 命令。告警等级 medium，标签含 synthetic。",
+          "assessment_state": "analyzed",
+          "conclusion_covered": true,
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.title",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.source",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.hostname",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.username",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.process.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.process.cmd_line",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.ocsf_class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.detection",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.source_scope",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.alert",
+              "type": "artifact"
+            }
+          ],
+          "limitations": "进程启动不证明脚本完成；无授权证据；资产匹配未检查；工具查询未执行或查空；final_model_input_omitted_fields；frozen_context_has_omissions；source_graph_partial_external_topology_not_queried；background_source_coverage_incomplete；open_questions_or_followups；unresolved_conflicts",
+          "read_state": "read"
+        }
+      ],
+      "operation_key": "8b891883-b6b8-5efe-9e7a-5ae0767f4e9d",
+      "questions": [
+        {
+          "answer": "原始记录支持用户 flow-observer 在主机 socai2-flow-20261107-01 上的登录（A1）、连接 198.51.100.77:443（A2）及启动 powershell.exe 执行 Get-LocalUser（A3）。",
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.title",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.source",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.ocsf_class_uid",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.detection",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.source_scope",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.dst_endpoint.port",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.connection_info.protocol_name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.title",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.source",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+              "type": "alert_material"
+            }
+          ],
+          "evidence_requirements": [
+            "原始材料和具体来源；检测标签本身不是攻击事实"
+          ],
+          "id": "detection_facts",
+          "limitations": [
+            "资产匹配未检查",
+            "无审批记录"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "answered",
+          "text": "原始记录支持哪些行为和对象？"
+        },
+        {
+          "answer": "成员 A1、A2、A3 共享同一主机、同一用户及相近时间窗口，且背景描述提及演练，表明行为具有关联性，但无直接因果证据。",
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.case",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.objects",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.objects",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.objects",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name",
+              "type": "alert_material"
+            }
+          ],
+          "evidence_requirements": [
+            "同对象、时间邻近与有证据的行为连接分开"
+          ],
+          "id": "member_relationships",
+          "limitations": [
+            "时间邻近不等于因果",
+            "无日志证明操作顺序"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "answered",
+          "text": "成员告警之间有哪些已证实的行为联系？"
+        },
+        {
+          "answer": "行为性质存疑。标签 synthetic 和背景描述支持演练解释，但缺乏独立证据排除真实攻击或误操作。",
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.raw_json.tags.0",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.case",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+              "type": "artifact"
+            }
+          ],
+          "evidence_requirements": [
+            "可追溯行为证据与替代解释；不以单个标签或分数定性"
+          ],
+          "id": "behavior_nature",
+          "limitations": [
+            "标签不证明行为发生",
+            "无授权记录",
+            "工具未执行"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "unresolved",
+          "text": "恶意、正常或误操作等解释分别有哪些依据和反证？"
+        },
+        {
+          "answer": "无明确授权材料。背景描述提及演练，但未提供具体审批记录或人工确认。",
+          "evidence_refs": [],
+          "evidence_requirements": [
+            "明确授权材料或人工反馈及适用范围；未提供不等于不存在"
+          ],
+          "id": "authorization",
+          "limitations": [
+            "未提供审批记录",
+            "查空不构成反证"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "unresolved",
+          "text": "谁确认了哪些行为、对象和时间的授权？"
+        },
+        {
+          "answer": "观察到登录、外连及进程启动，未观察到数据外传或系统破坏。影响范围限于主机 socai2-flow-20261107-01，但外连目的和枚举结果未知。",
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            },
+            {
+              "external": null,
+              "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+              "role": "observation",
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time",
+              "type": "alert_material"
+            }
+          ],
+          "evidence_requirements": [
+            "影响对象、行为与证据；图可达不等于受影响"
+          ],
+          "id": "impact",
+          "limitations": [
+            "连接成功不证明数据外传",
+            "进程启动不证明脚本完成",
+            "无后续影响日志"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "unresolved",
+          "text": "哪些影响已经观察到，哪些只是待核的可能影响？"
+        },
+        {
+          "answer": "已覆盖 A1-A3 成员及主要对象，但威胁情报、用户行为分析及历史数据查询未执行或查空，存在重大证据缺口。",
+          "evidence_refs": [
+            {
+              "external": null,
+              "id": "51cbcdba-3b29-4643-9820-1711039b430a",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "3d246969-faac-49ef-bc37-6898262eca67",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "8b6db80e-f62f-47a6-b091-4624131a78ae",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "872053bc-a7de-407d-ad56-265027c1d7f4",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "cfeafe81-a5aa-4c2f-a922-c1dee031f6fe",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "95d7a2f6-c0aa-44e1-91d7-e00b028caf2d",
+              "role": "execution_receipt",
+              "row_keys": [],
+              "source_path": null,
+              "type": "artifact"
+            }
+          ],
+          "evidence_requirements": [
+            "全部成员的读取/分析覆盖、工具状态与明确限制"
+          ],
+          "id": "coverage",
+          "limitations": [
+            "工具未执行",
+            "查空结果",
+            "原计划 deep 调查失败"
+          ],
+          "scope": {
+            "alert_ids": [
+              "615795b5-e73f-5f28-997e-08dec4b4279c",
+              "d6340c4c-1425-51d0-babb-4390c57f05a9",
+              "f92e5286-219c-52df-9757-06f37979241d"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261107-01\"]",
+              "[\"ip\",\"192.0.2.77\"]",
+              "[\"ip\",\"198.51.100.77\"]",
+              "[\"ip\",\"203.0.113.77\"]",
+              "[\"user\",\"flow-observer\"]"
+            ],
+            "window_end": "2026-11-07T06:44:07Z",
+            "window_start": "2026-11-07T06:33:27Z"
+          },
+          "state": "unresolved",
+          "text": "还有哪些未处理成员、来源缺口、矛盾和后续事项？"
+        }
+      ],
+      "recommendations": [
+        {
+          "action_type": "investigate",
+          "approval_requirement": "unknown",
+          "id": "R1",
+          "limitations": [
+            "无现有审批记录",
+            "recommendation_only_no_approval_or_execution"
+          ],
+          "reason": "必须人工确认 flow-observer 用户及主机 socai2-flow-20261107-01 的授权状态，以区分演练与真实攻击。",
+          "source_refs": [
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.case",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+              "role": "source_label",
+              "row_keys": [],
+              "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+              "type": "artifact"
+            }
+          ],
+          "targets": [
+            {
+              "display_name": "[\"host\",\"socai2-flow-20261107-01\"]",
+              "object_key": "[\"host\",\"socai2-flow-20261107-01\"]"
+            },
+            {
+              "display_name": "[\"user\",\"flow-observer\"]",
+              "object_key": "[\"user\",\"flow-observer\"]"
+            }
+          ]
+        },
+        {
+          "action_type": "investigate",
+          "approval_requirement": "unknown",
+          "id": "R2",
+          "limitations": [
+            "工具执行失败",
+            "recommendation_only_no_approval_or_execution"
+          ],
+          "reason": "原计划的情报与基线查询失败，需重新尝试验证 IP 信誉及用户行为基线，以辅助判断行为性质。",
+          "source_refs": [
+            {
+              "external": null,
+              "id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+              "role": "prior_analysis",
+              "row_keys": [],
+              "source_path": "$.analysis.followups.0",
+              "type": "artifact"
+            },
+            {
+              "external": null,
+              "id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+              "role": "prior_analysis",
+              "row_keys": [],
+              "source_path": "$.analysis.followups.1",
+              "type": "artifact"
+            }
+          ],
+          "targets": [
+            {
+              "display_name": "[\"ip\",\"192.0.2.77\"]",
+              "object_key": "[\"ip\",\"192.0.2.77\"]"
+            },
+            {
+              "display_name": "[\"ip\",\"198.51.100.77\"]",
+              "object_key": "[\"ip\",\"198.51.100.77\"]"
+            },
+            {
+              "display_name": "[\"ip\",\"203.0.113.77\"]",
+              "object_key": "[\"ip\",\"203.0.113.77\"]"
+            },
+            {
+              "display_name": "[\"user\",\"flow-observer\"]",
+              "object_key": "[\"user\",\"flow-observer\"]"
+            }
+          ]
+        }
+      ],
+      "report_artifact_id": "2bbd85a3-6476-4168-988e-b1f2eefab0f1",
+      "stop_detail": null,
+      "stop_reason": "final_delivery_saved",
+      "terminal_state": "completed",
+      "title": "基础调查结果",
+      "validation_state": "accepted"
+    },
+    "result_id": "fe52a0ea-f8b7-428d-aa62-3b310e5edef0",
+    "run_id": "748e604f-af8c-449c-b263-6c6ff2eda255",
+    "schema_version": "socai2.baseline-delivery.v1",
+    "scope": {
+      "alert_ids": [
+        "615795b5-e73f-5f28-997e-08dec4b4279c",
+        "d6340c4c-1425-51d0-babb-4390c57f05a9",
+        "f92e5286-219c-52df-9757-06f37979241d"
+      ],
+      "kind": "whole_case",
+      "limitations": [],
+      "object_keys": [
+        "[\"host\",\"socai2-flow-20261107-01\"]",
+        "[\"ip\",\"192.0.2.77\"]",
+        "[\"ip\",\"198.51.100.77\"]",
+        "[\"ip\",\"203.0.113.77\"]",
+        "[\"user\",\"flow-observer\"]"
+      ],
+      "window_end": "2026-11-07T06:44:07Z",
+      "window_start": "2026-11-07T06:33:27Z"
+    },
+    "source_map": {
+      "N2_S1": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert.event_time",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "8aa0ef088ca3fa87f5454dccb417445190a0ee48e15fe2ce1a63739970da108b"
+      },
+      "N2_S10": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S100": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.0",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "fbd451d769c25db7404986a3bb1e2b4ee8eedcd51a4d0465cef5313561b57859"
+      },
+      "N2_S101": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.1",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "764f5defec4d8b099a13f3ac5edc0c1eeaf5964c75b9ab4c0007f521f21d1d86"
+      },
+      "N2_S102": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.2",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "8d0b915309ac9c374532014da420dbb8023932583be843a276c0af68d86b5427"
+      },
+      "N2_S103": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.3",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "827294834e6f175c6ccac5c5ce87fec23a8d269455b8810a1675bbe2ad1afdbd"
+      },
+      "N2_S104": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.4",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "4d9f54ec4006c6e6d667ed15b76e342035dbd2d0dcc868a2b8c7e9ef9385741e"
+      },
+      "N2_S105": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.5",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "f08fd68bb3e87b8663fc15b192d9f5c9c8ab9ee20645487eb71303340553d0fe"
+      },
+      "N2_S106": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.6",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "92f7d1bf3300ec58d439f2f7bde88a3c6a0113b3405c5f3d718ab94374588818"
+      },
+      "N2_S107": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.7",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "9df1110b8a6a99716a3512e6c7ad7a7075d465a236d85773204c246fe927c5fa"
+      },
+      "N2_S108": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "source_label",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.8",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "3cddb562141a80e093c6101a09ea6ddb8c70a15f672f04792256ce4850aa4bbe"
+      },
+      "N2_S109": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "membership_basis": "frozen_material",
+        "ref": {
+          "external": null,
+          "id": "dea32691-3b40-4efc-acfa-5f4fbfe6a8dc",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.edges.9",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "04d204fc1ee309d16a5ffe39f05db24f9deb78e52c87ac14c8e5cb13634f8e33"
+      },
+      "N2_S11": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "d0443f30fc2146b9e5c9ddb0d90c80ef6c20b4fd29d68147a83c373b699803d0"
+      },
+      "N2_S12": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S13": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "3ba982075eba89702c1637b9ce03d8a3d8b6dce9434dd07a4c30b5525ab27850"
+      },
+      "N2_S14": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "962eab3e9b3d6d34307522fa924e911d6c145be46c869b2098bed3bae1c8750c"
+      },
+      "N2_S15": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.0",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "85da8434c70bf817c2ac9335166317668a0ec40e2b135919aa200edbd2e9d23a"
+      },
+      "N2_S16": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.1",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "4222d21a219f461dd9335800547b2f44f9904f60634b20e577cb7e9294d1a0d1"
+      },
+      "N2_S17": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.title",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "911d1be9a517cb7948b0460396cfe643a1808e0d36800b1e3a0d90603eb4703d"
+      },
+      "N2_S18": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.source",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5ad10323072b58adaf259fa4e55d08e66d565ddf1d93559aca87a36e4b2850a6"
+      },
+      "N2_S19": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.hostname",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S2": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.alert.event_time",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "3e32b8f240b90c22790ac1e3033d6b3051e48b6f5b3a2498bb2cfc94fbcb440a"
+      },
+      "N2_S20": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.username",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S21": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "3755de557519cb0d7a0ac92ffa16200453edb17a7e92963d64b0d8b33669ca92"
+      },
+      "N2_S22": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S23": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S24": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "d0443f30fc2146b9e5c9ddb0d90c80ef6c20b4fd29d68147a83c373b699803d0"
+      },
+      "N2_S25": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S26": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "3ba982075eba89702c1637b9ce03d8a3d8b6dce9434dd07a4c30b5525ab27850"
+      },
+      "N2_S27": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "962eab3e9b3d6d34307522fa924e911d6c145be46c869b2098bed3bae1c8750c"
+      },
+      "N2_S28": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.event_time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "d8a873d18c302ae0e3c8f863b78e038de6af7ad2a5bba5a88f369aa9e1cbfe09"
+      },
+      "N2_S29": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.ocsf_class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "3ba982075eba89702c1637b9ce03d8a3d8b6dce9434dd07a4c30b5525ab27850"
+      },
+      "N2_S3": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.alert.event_time",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "23c730a50daba554df839a2f5f364d91818aade11898c0d3370a991a9a248f27"
+      },
+      "N2_S30": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.detection",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "241c9e11da25fd65e63f3cf7fedc48dd0095584618fe391200faae8f323ec378"
+      },
+      "N2_S31": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.source_scope",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2238acff631a49f87f0d1af8d2a7006853799700cf549e7ffd650ff87e295ef3"
+      },
+      "N2_S32": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.alert",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "78881b4bb59d66221cef3138636edfab00b8c043377beae3641493fdf6105519"
+      },
+      "N2_S33": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5b7bd3e7286ca67daebf6cee7a91388848a437802809a03c7c792721a0129fef"
+      },
+      "N2_S34": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S35": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S36": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "01fd3b6761e20497b26fa415ae78f9d81111b8f85f2b6807b28cc8542263dc72"
+      },
+      "N2_S37": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S38": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "b0efc797ea75795a4fc4d408463c70b8900e59baf58a91b6fa9761ec77e1681c"
+      },
+      "N2_S39": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.dst_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "a2b52988170d01ae591459bbc093558cfc20e7e291f6c74e7d806f81d5998769"
+      },
+      "N2_S4": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.case",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "05e3c948005715547fd5542cd8d716f00dccb56348e1228d7e5d3429873dfe59"
+      },
+      "N2_S40": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.dst_endpoint.port",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "6d05621ab7cb7b4fb796ca2ffbe1a141e0d4319d3deb6a05322b9de85d69b923"
+      },
+      "N2_S41": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "c3c77653b39111bffc2543807050adad0666bab5be92a4e8d26b577fccabe26f"
+      },
+      "N2_S42": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.connection_info.protocol_name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "fdc3ab5692b8306153cfd4fdb7567df53d06f3ab154a89a4c96a80918a0addb0"
+      },
+      "N2_S43": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.0",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "85da8434c70bf817c2ac9335166317668a0ec40e2b135919aa200edbd2e9d23a"
+      },
+      "N2_S44": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.1",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "4222d21a219f461dd9335800547b2f44f9904f60634b20e577cb7e9294d1a0d1"
+      },
+      "N2_S45": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.title",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "f49aacdf3fde15b5ae9b079c6490764a08a4f0c7ce8ebf24e5753998ee90a225"
+      },
+      "N2_S46": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.source",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5ad10323072b58adaf259fa4e55d08e66d565ddf1d93559aca87a36e4b2850a6"
+      },
+      "N2_S47": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.hostname",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S48": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.username",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S49": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5b7bd3e7286ca67daebf6cee7a91388848a437802809a03c7c792721a0129fef"
+      },
+      "N2_S5": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.615795b5-e73f-5f28-997e-08dec4b4279c.objects",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "6330a2e30c3eb72e0f423f7fb1277d60c73491cc46d795df3abdf3539b5fea95"
+      },
+      "N2_S50": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S51": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S52": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "01fd3b6761e20497b26fa415ae78f9d81111b8f85f2b6807b28cc8542263dc72"
+      },
+      "N2_S53": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S54": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "b0efc797ea75795a4fc4d408463c70b8900e59baf58a91b6fa9761ec77e1681c"
+      },
+      "N2_S55": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "a2b52988170d01ae591459bbc093558cfc20e7e291f6c74e7d806f81d5998769"
+      },
+      "N2_S56": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.dst_endpoint.port",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "6d05621ab7cb7b4fb796ca2ffbe1a141e0d4319d3deb6a05322b9de85d69b923"
+      },
+      "N2_S57": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "c3c77653b39111bffc2543807050adad0666bab5be92a4e8d26b577fccabe26f"
+      },
+      "N2_S58": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.connection_info.protocol_name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "fdc3ab5692b8306153cfd4fdb7567df53d06f3ab154a89a4c96a80918a0addb0"
+      },
+      "N2_S59": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.event_time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2001cd9d89db41cbe4139c34afb94404f0855028851aeaa1908894a67b78ea04"
+      },
+      "N2_S6": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.objects",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "6ca85a539d3552c0b0a167c2677debe2fdda61a837ed23eb664d4d06fa33bd93"
+      },
+      "N2_S60": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.ocsf_class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "b0efc797ea75795a4fc4d408463c70b8900e59baf58a91b6fa9761ec77e1681c"
+      },
+      "N2_S61": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.detection",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "aef6441db5f291d64674b6afdcec3415b9be8db6c148b1bac97ae2c5c1b4b64b"
+      },
+      "N2_S62": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "c0a89416-f70f-5c57-85de-a8ceef9509c6",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.source_scope",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2238acff631a49f87f0d1af8d2a7006853799700cf549e7ffd650ff87e295ef3"
+      },
+      "N2_S63": {
+        "alert_ids": [
+          "d6340c4c-1425-51d0-babb-4390c57f05a9"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.d6340c4c-1425-51d0-babb-4390c57f05a9.alert",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "056d7231314fe996ea5f68e35b25b86200f8b24906b5d9a05a7bd16506b49a27"
+      },
+      "N2_S64": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e8101c05183a9180580302710c9a790bb472ccf79dcff8a2ae3572960670b907"
+      },
+      "N2_S65": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S66": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S67": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.process.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7237e0de5323addc130ed5e08f14e800c4dc4ee79633517ce660c9e5869a7f62"
+      },
+      "N2_S68": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.process.cmd_line",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "d2e90147c5929ea30632f9c03ea42462803a2bcd980179488689e79326bc6df1"
+      },
+      "N2_S69": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "17601eec6960b7e14bcd7fa7bbdce30eaf5e32cf070c19f836d47b0ce0aaf10e"
+      },
+      "N2_S7": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.objects",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "a32ddeac27f8f6c7e90409c250171f509c618473ada13f422728bf6c209769ab"
+      },
+      "N2_S70": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S71": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2c8b871e52d4e5f5db5ff84a82a45327e20df77edef961c4b6fa0e9c3d97ce5b"
+      },
+      "N2_S72": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.0",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "85da8434c70bf817c2ac9335166317668a0ec40e2b135919aa200edbd2e9d23a"
+      },
+      "N2_S73": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.tags.1",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "4222d21a219f461dd9335800547b2f44f9904f60634b20e577cb7e9294d1a0d1"
+      },
+      "N2_S74": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.title",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "bc4fa103a95a50daff4feb03668ab04479bfc48dfa89a333da38d68dda4a028a"
+      },
+      "N2_S75": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.source",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5ad10323072b58adaf259fa4e55d08e66d565ddf1d93559aca87a36e4b2850a6"
+      },
+      "N2_S76": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.hostname",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S77": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.username",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S78": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e8101c05183a9180580302710c9a790bb472ccf79dcff8a2ae3572960670b907"
+      },
+      "N2_S79": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S8": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "3755de557519cb0d7a0ac92ffa16200453edb17a7e92963d64b0d8b33669ca92"
+      },
+      "N2_S80": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.device.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7b0876e4d8c20d3bfb55beb0ac41b50593430c987efd0654a29832c59aac12e0"
+      },
+      "N2_S81": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.process.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "7237e0de5323addc130ed5e08f14e800c4dc4ee79633517ce660c9e5869a7f62"
+      },
+      "N2_S82": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.process.cmd_line",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "d2e90147c5929ea30632f9c03ea42462803a2bcd980179488689e79326bc6df1"
+      },
+      "N2_S83": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.action",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "17601eec6960b7e14bcd7fa7bbdce30eaf5e32cf070c19f836d47b0ce0aaf10e"
+      },
+      "N2_S84": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.activity.outcome",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "68e7a69974a641064a6a5ae8b1a00997939a325ec585a49e9fe82b386a21726a"
+      },
+      "N2_S85": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.raw_event.ocsf_event.class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2c8b871e52d4e5f5db5ff84a82a45327e20df77edef961c4b6fa0e9c3d97ce5b"
+      },
+      "N2_S86": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.raw_json.event_time",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "01ea1c02809c3d1e7d306f4fffe0d8f056964d30e93e4d9516678d9d2ddb2198"
+      },
+      "N2_S87": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.raw_json.ocsf_class_uid",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2c8b871e52d4e5f5db5ff84a82a45327e20df77edef961c4b6fa0e9c3d97ce5b"
+      },
+      "N2_S88": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.detection",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "5aafb920a0d1c8bc3fd90a60530394f198c5cb4146c50f3a98c242f65ecb69cb"
+      },
+      "N2_S89": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "aab25af3-98c3-556e-940d-c1bd7ffec81f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.source_scope",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "2238acff631a49f87f0d1af8d2a7006853799700cf549e7ffd650ff87e295ef3"
+      },
+      "N2_S9": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c"
+        ],
+        "ref": {
+          "external": null,
+          "id": "bd006208-2174-5249-9a3d-f9dd25a6e4ba",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "visible_value_sha256": "e402a20ac0a7e386cef3f786c7858f4704edc8424067981ef481a3c1cf48a9ba"
+      },
+      "N2_S90": {
+        "alert_ids": [
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "7d072860-21db-4f48-b195-d880686fdd1f",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.f92e5286-219c-52df-9757-06f37979241d.alert",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "c39e4fd84598df1cc7a00fb6660453e55b0597e7414e88cca552fa024643b0cb"
+      },
+      "N2_S91": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "51cbcdba-3b29-4643-9820-1711039b430a",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "1b569c38620531fdb1756dfc975e0ed9b07470b37d6a0d3ff7e65018db5989f9"
+      },
+      "N2_S92": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "3d246969-faac-49ef-bc37-6898262eca67",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "ad9f24589aed8e62bc23358dc467146d82bf191e14b18ce39844dcbc663fe295"
+      },
+      "N2_S93": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "8b6db80e-f62f-47a6-b091-4624131a78ae",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "ce375fe57c66e3b80436f5c51079c5b4cf53acbded063b0d2ae259b7f34927b5"
+      },
+      "N2_S94": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "872053bc-a7de-407d-ad56-265027c1d7f4",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "bd0f5e0270caefe978f61ed023ac43687c8d5df21516f833fb52499bbb8384f9"
+      },
+      "N2_S95": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "cfeafe81-a5aa-4c2f-a922-c1dee031f6fe",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "69b5fb8f31d2ba9f03499fa1a7ec205ee7a93c915d540515d6bf2418be67c523"
+      },
+      "N2_S96": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "membership_basis": "query_execution_scope",
+        "query_alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "record_alert_ids": [],
+        "ref": {
+          "external": null,
+          "id": "95d7a2f6-c0aa-44e1-91d7-e00b028caf2d",
+          "role": "execution_receipt",
+          "row_keys": [],
+          "source_path": null,
+          "type": "artifact"
+        },
+        "visible_value_sha256": "7ba825f3322cd4e0f9a6d3c26a117fc907cb8bf674a1e0e87e818927dc64f415"
+      },
+      "N2_S97": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.analysis",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "3a0dd3952a951b7115ab589818f7176b20c5bae0bb2fdb43fe4683b92ae2e03d"
+      },
+      "N2_S98": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.analysis.followups.0",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "5802bf0631f3f0036cc72bfbc5783cb5b27ad19557ab6cab3202a6326ef94a0c"
+      },
+      "N2_S99": {
+        "alert_ids": [
+          "615795b5-e73f-5f28-997e-08dec4b4279c",
+          "d6340c4c-1425-51d0-babb-4390c57f05a9",
+          "f92e5286-219c-52df-9757-06f37979241d"
+        ],
+        "ref": {
+          "external": null,
+          "id": "dd8dfe08-98fc-492d-9b38-c192695cf125",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.analysis.followups.1",
+          "type": "artifact"
+        },
+        "visible_value_sha256": "525df259224273f77440010fe1a2bd82ecdde2134d542b2970157d90140dbe55"
+      }
+    },
+    "type": "delivery_report",
+    "validation_review": null
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "253e8370-ec2f-48ae-be95-620caeaf25ec",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "f6c6bed91f8c10dda74d249fde0bb53f54fafce965151ce44629f48e32f7ea00",
+    "original_size_bytes": 100164,
+    "reason": null,
+    "retained_sha256": "f6c6bed91f8c10dda74d249fde0bb53f54fafce965151ce44629f48e32f7ea00",
+    "retained_size_bytes": 100164,
+    "truncated": false
+  },
+  "run_id": "748e604f-af8c-449c-b263-6c6ff2eda255",
+  "schema_version": "socai2.baseline-delivery.v1",
+  "sha256": "f6c6bed91f8c10dda74d249fde0bb53f54fafce965151ce44629f48e32f7ea00",
+  "size_bytes": 100164,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "031451c3-e51c-44db-82d4-79cbb4d797b9",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "08205000-6019-4d33-b7e3-5c9894ba1a66",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "5209cd80-17cf-4fed-8f65-dba3df092c4b",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "dbcd196a-4524-42df-8f6d-31b806694d10",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "5f600f87-a0c5-4140-8442-c7d45b4e3148",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "39c80115-4f6d-4057-b4af-37df94dc4095",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "dfe86f38-c26f-4cb9-a2fa-522ecff8b1b8",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

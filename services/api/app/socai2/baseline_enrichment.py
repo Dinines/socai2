@@ -110,7 +110,7 @@ class BaselineEnrichment:
                     raise StoreError("baseline_not_running")
                 summary = {"schema_version": SCHEMA, "case_id": str(case_id), "run_id": str(run_id),
                     "scope": context.scope.model_dump(mode="json"), "sources": outputs,
-                    "selection_policy": "frozen_object_relevance.v1", "selection_plan": plan,
+                    "selection_policy": plan[0].get("selection_policy", "frozen_object_relevance.v1"), "selection_plan": plan,
                     "coverage_complete": all(o["outcome"] in {"data", "empty", "not_applicable"}
                         and not o["truncated"] for o in outputs),
                     "limitations": ["background_queries_are_not_complete_case_investigation",
@@ -149,7 +149,8 @@ class BaselineEnrichment:
             # The full executor needs evidence capacity after background reads.
             # Keep standalone C2 and already persisted receipts on their original
             # contract; reserve within, never in addition to, the total budget.
-            reserved = (min(2, (limits.max_tool_calls or 0) // 2)
+            config = sources.selection_config(context)
+            reserved = (min(config["reserved_tool_calls"] if config else 2, (limits.max_tool_calls or 0) // 2)
                 if run["executor_version"] in FULL_EXECUTOR_VERSIONS else 0)
             reason = None
             if not sources.connected(source):

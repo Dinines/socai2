@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="9" time="0.528" timestamp="2026-11-10T21:07:02.866421+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_capacity_model_steps" name="test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time[chat_completions]" time="0.023"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">protocol = 'chat_completions'
+
+    @pytest.mark.parametrize("protocol", ["chat_completions", "deepseek_responses"])
+    def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time(protocol):
+        from diagnose_socai2_kafka_inputs_20261105 import DIRECTORY, one
+        db = json.loads(max(DIRECTORY.glob("database-*.json")).read_text())
+        run = next(r for r in db["runs"] if r["stop_reason"] == "required_model_input_unavailable"
+            and any(s["run_id"] == r["id"] and s["stage_code"] == "C4.deep" for s in db["run_steps"]))
+        rows = [a for a in db["artifacts"] if a["run_id"] == run["id"] and isinstance(a["content_json"], dict)]
+        context = Context.model_validate(next(a["content_json"] for a in rows if a["schema_version"] == "socai2.baseline-context.v1"))
+        stage_ids = {s["id"] for s in db["run_steps"] if s["run_id"] == run["id"] and s["stage_code"] == "C4.deep"}
+        original = next(a["content_json"]["payload"] for a in rows if a["kind"] == "model_request" and a["step_id"] in stage_ids)
+        frozen = original["body"]
+        fmt = frozen["text"]["format"]
+        deep_format = {"type": "json_schema", "json_schema": {k: v for k, v in fmt.items() if k != "type"}}
+        deep_prepared = {"ready": True, "messages": frozen["input"], "source_map": original["source_map"],
+            "input_artifact_ids": original["input_artifact_ids"], "omissions": []}
+&gt;       final_prepared = asyncio.run(one(db, run))["prepared"]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_capacity_model_steps.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+docs/operations/diagnose_socai2_kafka_inputs_20261105.py:64: in one
+    prepared = await reanalysis.BaselineReanalysis(SimpleNamespace(transaction=transaction)).input(
+services/api/app/socai2/baseline_reanalysis.py:135: in input
+    return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs)),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+docs/operations/diagnose_socai2_kafka_inputs_20261105.py:59: in capture
+    return bounded_input(meta, candidates, instruction)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_reasoning.py:39: in bounded_input
+    if why is None and len(encoded(entry["value"])) &gt; field_limit():
+                                                      ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:267: in field_limit
+    return draft_limit()
+           ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:262: in draft_limit
+    return active_policy().model.max_prepared_bytes
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_capacity_model_steps" name="test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time[deepseek_responses]" time="0.021"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">protocol = 'deepseek_responses'
+
+    @pytest.mark.parametrize("protocol", ["chat_completions", "deepseek_responses"])
+    def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time(protocol):
+        from diagnose_socai2_kafka_inputs_20261105 import DIRECTORY, one
+        db = json.loads(max(DIRECTORY.glob("database-*.json")).read_text())
+        run = next(r for r in db["runs"] if r["stop_reason"] == "required_model_input_unavailable"
+            and any(s["run_id"] == r["id"] and s["stage_code"] == "C4.deep" for s in db["run_steps"]))
+        rows = [a for a in db["artifacts"] if a["run_id"] == run["id"] and isinstance(a["content_json"], dict)]
+        context = Context.model_validate(next(a["content_json"] for a in rows if a["schema_version"] == "socai2.baseline-context.v1"))
+        stage_ids = {s["id"] for s in db["run_steps"] if s["run_id"] == run["id"] and s["stage_code"] == "C4.deep"}
+        original = next(a["content_json"]["payload"] for a in rows if a["kind"] == "model_request" and a["step_id"] in stage_ids)
+        frozen = original["body"]
+        fmt = frozen["text"]["format"]
+        deep_format = {"type": "json_schema", "json_schema": {k: v for k, v in fmt.items() if k != "type"}}
+        deep_prepared = {"ready": True, "messages": frozen["input"], "source_map": original["source_map"],
+            "input_artifact_ids": original["input_artifact_ids"], "omissions": []}
+&gt;       final_prepared = asyncio.run(one(db, run))["prepared"]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_capacity_model_steps.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+docs/operations/diagnose_socai2_kafka_inputs_20261105.py:64: in one
+    prepared = await reanalysis.BaselineReanalysis(SimpleNamespace(transaction=transaction)).input(
+services/api/app/socai2/baseline_reanalysis.py:135: in input
+    return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs)),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+docs/operations/diagnose_socai2_kafka_inputs_20261105.py:59: in capture
+    return bounded_input(meta, candidates, instruction)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_reasoning.py:39: in bounded_input
+    if why is None and len(encoded(entry["value"])) &gt; field_limit():
+                                                      ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:267: in field_limit
+    return draft_limit()
+           ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:262: in draft_limit
+    return active_policy().model.max_prepared_bytes
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_followup_budget" name="test_original_budget_is_not_raised_to_fit_new_required_query_evidence" time="0.005"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">def test_original_budget_is_not_raised_to_fit_new_required_query_evidence():
+        before = json.loads((DIRECTORY / "wire-before.json").read_text("utf-8"))
+&gt;       current = asyncio.run(rebuild())
+                  ^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_followup_budget.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+docs/operations/rebuild_socai2_followup_wire_20261105.py:69: in rebuild
+    prepared = await BaselineReanalysis(SimpleNamespace(transaction=transaction)).input(
+services/api/app/socai2/baseline_reanalysis.py:135: in input
+    return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs)),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_reasoning.py:39: in bounded_input
+    if why is None and len(encoded(entry["value"])) &gt; field_limit():
+                                                      ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:267: in field_limit
+    return draft_limit()
+           ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:262: in draft_limit
+    return active_policy().model.max_prepared_bytes
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_token_budget" name="test_schema_and_template_counted_separately_with_preserved_request" time="0.001" /><testcase classname="tests.test_socai2_token_budget" name="test_token_limit_checks_context_with_output_not_serialized_byte_count" time="0.001" /><testcase classname="tests.test_socai2_token_budget" name="test_changed_backend_capacity_or_invalid_count_blocks_dispatch[payload0]" time="0.001" /><testcase classname="tests.test_socai2_token_budget" name="test_changed_backend_capacity_or_invalid_count_blocks_dispatch[payload1]" time="0.001" /><testcase classname="tests.test_socai2_token_budget" name="test_unreachable_counter_is_not_zero_input_or_a_model_retry" time="0.001" /><testcase classname="tests.test_socai2_token_budget" name="test_meter_uses_remaining_stage_time_and_never_runs_after_deadline" time="0.013" /></testsuite></testsuites>

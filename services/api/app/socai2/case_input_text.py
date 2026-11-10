@@ -16,6 +16,7 @@ from .case_input_hierarchy import (
     shared_fields,
     translate,
 )
+from .case_source_scope import describe, metadata, query_scope
 from .incident_model_boundary import fields, query_items
 from .incident_query_receipts import receipts
 from .model_input_view import frozen_items, source_prefix
@@ -178,7 +179,8 @@ def prepare(sample, config, business):
 
     for aid, row in verified_queries:
         for ref, original, projected, owners in query_items(aid, row, cfg):
-            entries.append({"ref": ref, "alert_ids": owners, "value": projected,
+            scope = query_scope(row["content_json"], ref["source_path"], owners, aliases)
+            entries.append({"ref": ref, **scope, "value": projected,
                             "original_value": original, "block": "query"})
     entries.extend(copy.deepcopy(sample.get("additional_queries", [])))
     available_queries = {aid for aid, _ in verified_queries}
@@ -205,7 +207,7 @@ def prepare(sample, config, business):
         index_by_ref[key] = len(rows)
         rows.append(entry)
         source_map[sid] = {"ref": entry["ref"], "alert_ids": entry["alert_ids"],
-                           "visible_value_sha256": digest(entry["value"])}
+                           "visible_value_sha256": digest(entry["value"]), **metadata(entry)}
         if "original_scope" in entry:
             source_map[sid]["original_scope"] = entry["original_scope"]
 
@@ -382,6 +384,9 @@ def prepare(sample, config, business):
                     caption = (f"回执 {receipt_id} 的第 {int(parts[2]) + 1} 条返回" if len(parts) == 3
                                else f"返回记录 {parent or receipt_id} 的 {'.'.join(parts[3:])}")
             shown = caption + "：" + render(value, config)
+        provenance = describe(row, owner_alias)
+        if provenance:
+            shown = provenance + " " + shown
         blocks.append("[" + ",".join(group["ids"]) + "] " + shown)
     facts = fact_projection(sample["data"].get("program_facts", {}), rows, aliases, incident_aliases, config, omissions)
     if facts:

@@ -10,6 +10,7 @@ from .baseline_store import StoreError, encoded
 from .case_input_hierarchy import render_tools
 from .case_input_text import prepare
 from .case_query_snapshot import source as query_source
+from .case_source_scope import query_scope
 from .incident_model_boundary import query_items
 from .model_input_view import source_members
 from .program_facts import case_facts
@@ -53,8 +54,9 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     for identity, body, _ in enrichment:
         owners = sorted(set(body.get("actual_args", {}).get("scope", {}).get("alert_ids", [])) & set(context.alerts))
         for ref, original, projected, _ in query_items(None, {"id": str(identity), "content_json": body}, profile.business["render"]):
+            query_members = source_members(context, ref, tool_payloads) if ref["source_path"] else owners
             additional.append({"ref": ref, "original_value": original, "value": projected,
-                "alert_ids": source_members(context, ref, tool_payloads) if ref["source_path"] else owners,
+                **query_scope(body, ref["source_path"], query_members, context.alerts),
                 "block": "background_query"})
     sample = {"context": frozen, "context_id": context_id, "materials": material_values,
         "data": data, "request": {"source_map": source_map}, "query_source": paired,
@@ -82,6 +84,7 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
         if not line.startswith("followups只提需求")) + "\n" + contract.EXECUTION_PROMPT + "\n" + profile.config["system_suffix"]
     for replacement in profile.config["system_replacements"]:
         system = system.replace(replacement["old"], replacement["new"])
+    system += "\n" + profile.config["citation_instruction"]
     messages = [{"role": "system", "content": system}, {"role": "user", "content": prepared["user"]}]
     reason = ("required_model_input_unavailable" if any(r["required"] for r in rejected) else
               "case_input_exceeds_prepared_limit" if len(encoded(messages)) > draft_limit() else

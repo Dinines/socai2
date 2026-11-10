@@ -18,4 +18,6 @@
 
 GET 使用授权租户的只读事务，不隐式启动处理或修改判断。Case、Run、Result、当前判断分别有稳定身份；历史材料不切换成当前材料。输入、输出、引用与数据库恢复的详细合同见[模型输入输出](model-input-output-current-20261109.md)及[数据交接](socai2-page-data-handoff-20261106.md)。
 
-当前实测完成两案首轮及一案 H 后调查，3 轮均部分交付，最终结论未采用；H 正文完整进入后轮 C3/Deep/C6，管理字段修订不产生虚假过期。模型正确使用及知识实际消费仍未通过。[本批报告](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)记录传递、正文、保存和读取的独立结论；未完项见[问题清单](current-issues.md)。
+本轮 Case 修复在本地完成 69 项定向检查、3 项真实 PostgreSQL 流程及 3 轮真实模型复核。C2 按配置及配对回执覆盖排序；C3／C6 对来源、成员和本次发现关系最多纠正一次；Deep 生成分支与接收一致。160 次本地 GET／9,819 项字段检查通过，模型质量仍为 NOT_PASSED；真实非空知识使用未核销。[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)与[问题清单](current-issues.md)记录边界。原生产两案及 H 后轮的记录保持，不改写原答或追认成功。
+
+独审 ACCEPT 后统一发布 21 `v1.2-20261110-r5`，六项服务健康；只更新 API，五项继承服务容器保持。365 次生产 GET／16,820 项字段关联检查通过，读取前后数据不变；4177 已追加 6 份资料，共 26 份。发布阶段没有新生产模型调用或业务写入。[交付回执](../operations/evidence/case-scope-recovery-20261110-01/delivery-summary.json)

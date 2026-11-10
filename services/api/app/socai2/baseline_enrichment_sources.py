@@ -55,6 +55,13 @@ def selectors(context, source):
     return sorted(found.values(), key=lambda item: (item["object_key"], item["namespace"], item["value"]))
 
 
+def selection_config(context):
+    if not getattr(context, "case_input_profile", None):
+        return None
+    from .case_model_boundary import selected_profile
+    return selected_profile(context).config["enrichment"]
+
+
 def selection_plan(context):
     """Rank frozen object relevance, without an LLM call or inferred verdict."""
     keys = {source: selectors(context, source) for source in SOURCES}
@@ -68,9 +75,29 @@ def selection_plan(context):
         "history": (60, "same_object_history"),
         "graph": (30, "user_identity_relationships"),
     }
+    config = selection_config(context)
+    paired = {}
+    if config:
+        from .case_query_snapshot import source as query_source
+        from .incident_query_receipts import receipts
+        for aid, receipt in receipts(query_source(context.model_dump(mode="json"))):
+            body = receipt["content_json"]
+            if body["state"] == "completed":
+                paired.setdefault(body["tool_name"], set()).add(aid)
     plan = [{"source": source, "priority": ranking[source][0] if keys[source] and connected(source) else 0,
         "reason": ranking[source][1], "selector_count": len(keys[source]), "connected": connected(source)}
         for source in SOURCES]
+    if config:
+        for item in plan:
+            source = item["source"]
+            eligible = {aid for key in keys[source] for aid in key["alert_ids"]}
+            covered = eligible & paired.get(source, set())
+            repeated = bool(eligible) and eligible <= covered
+            priority = config["priorities"][source] - (config["paired_source_penalty"] if repeated else 0)
+            item.update(priority=priority if eligible and item["connected"] else -1 - config["paired_source_penalty"],
+                        reason="paired_background_available" if repeated else "missing_paired_background",
+                        paired_query_members=sorted(covered), eligible_members=sorted(eligible),
+                        selection_policy=config["version"])
     return sorted(plan, key=lambda p: (-p["priority"], SOURCES.index(p["source"])))
 
 

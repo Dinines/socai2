@@ -23,7 +23,8 @@ from app.socai2.structured_output import response_format
 
 
 @pytest.mark.parametrize("protocol", ["chat_completions", "deepseek_responses"])
-def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time(protocol):
+@pytest.mark.parametrize("outcome", ["complete", "incomplete", "unknown_usage", "unknown_transport"])
+def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved_time(protocol, outcome):
     from diagnose_socai2_kafka_inputs_20261105 import DIRECTORY, one
     db = json.loads(max(DIRECTORY.glob("database-*.json")).read_text())
     run = next(r for r in db["runs"] if r["stop_reason"] == "required_model_input_unavailable"
@@ -79,13 +80,22 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
         async def complete(self, body, timeout):
             assert body == ledger.requests[-1]["payload"]["body"]
             assert 0 < timeout <= (1500 if ledger.owner["stage_code"] == "C6" else 1200)
+            if outcome == "unknown_transport":
+                from app.socai2.model_errors import ModelCallError
+                raise ModelCallError({"http_status": None, "fields": {}, "body_state": "unavailable", "exception_type": "TimeoutError"})
             if protocol == "deepseek_responses":
-                return {"object": "response", "id": "substitute", "status": "completed", "error": None,
+                reply = {"object": "response", "id": "substitute", "status": "completed", "error": None,
                     "output": [{"type": "message", "role": "assistant", "status": "completed",
                         "content": [{"type": "output_text", "text": '{"synthetic":true}'}]}],
                     "usage": {"input_tokens": 500, "output_tokens": 500, "total_tokens": 1000}}
-            return {"choices": [{"finish_reason": "stop", "message": {"content": '{"synthetic":true}'}}],
-                "usage": {"prompt_tokens": 500, "completion_tokens": 500, "total_tokens": 1000}}
+                if outcome == "incomplete":
+                    reply["status"] = "incomplete"
+            else:
+                reply = {"choices": [{"finish_reason": "stop" if outcome != "incomplete" else "length", "message": {"content": '{"synthetic":true}'}}],
+                    "usage": {"prompt_tokens": 500, "completion_tokens": 500, "total_tokens": 1000}}
+            if outcome == "unknown_usage":
+                reply.pop("usage")
+            return reply
     gateway = Gateway()
     reserve = final_reservation(gateway, context)
     plan_id = uuid4()
@@ -110,6 +120,22 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
             return uuid4()
     caller = Calls(SimpleNamespace(transaction=transaction), "synthetic-model-step-test")
     async def execute():
+        if outcome != "complete":
+            from app.socai2.model_errors import ModelCallError
+            ledger.owner = {"id": uuid4(), "stage_code": "C6", "question_id": "execution_fixture"}
+            def forbidden(_):
+                raise AssertionError("incomplete or unknown response must not enter correction or partial parsing")
+            call = caller.call(ledger.tenant_id, current["case_id"], current["id"], ledger.owner["id"], "C6",
+                copy.deepcopy(final_prepared), gateway, json.loads, output_format=final_format,
+                review=SimpleNamespace(feedback=forbidden, partial=forbidden, details=None))
+            if outcome == "unknown_transport":
+                with pytest.raises(ModelCallError):
+                    await call
+            else:
+                parsed, reason, _, _ = await call
+                assert parsed is None and reason in {"model_response_not_complete", "model_usage_unknown_or_inconsistent"}
+            assert len(ledger.requests) == 1
+            return
         for stage, prepared, output in [("C4.deep", deep_prepared, deep_format),
                 ("C4.deep", deep_prepared, deep_format), ("C6", final_prepared, final_format)]:
             ledger.owner = {"id": uuid4(), "stage_code": stage, "question_id": "execution_fixture"}
@@ -119,6 +145,8 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
         attempts = [s for s in ledger.steps if s["kind"] == "model"]
         assert len(attempts) == 4 and sum(s["usage"]["total_tokens"] for s in attempts) == 4000
     asyncio.run(execute())
+    if outcome != "complete":
+        return
     expected_final = prepare_request(gateway, {"model": gateway.model, "messages": final_prepared["messages"],
         "max_tokens": active_policy().model.output_tokens["C6"], "temperature": 0, "response_format": final_format})
     assert ledger.requests[-1]["payload"]["body"] == expected_final
