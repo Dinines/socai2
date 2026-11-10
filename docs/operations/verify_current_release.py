@@ -3,6 +3,7 @@ import argparse
 import json
 import shlex
 import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
 from uuid import UUID
@@ -12,6 +13,9 @@ from production_case_probe import query, save
 from verify_database_handoff import FK_SQL, audit, equivalent, request_plan
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'services/api'))
+from app.socai2.human_task_contracts import TaskRevisionView, TaskView
+
 HTTP_READS = r'''
 import concurrent.futures,json,sys,urllib.request,urllib.error
 p=json.load(sys.stdin)
@@ -66,16 +70,45 @@ def snapshot(runtime, case_id):
         ON (a.tenant_id,a.id,a.latest_material_id)=(o.tenant_id,o.alert_id,o.material_id)
       WHERE EXISTS (SELECT FROM keys k WHERE
         (k.namespace,k.object_type,k.object_key)=(o.namespace,o.object_type,o.object_key))
+    ), subject_ids AS MATERIALIZED (
+      SELECT (v->>'id')::uuid AS id,'alert' AS kind FROM captured,jsonb_array_elements(value->'data'->'alerts') v
+      UNION ALL SELECT (v->>'id')::uuid,'incident' FROM captured,jsonb_array_elements(value->'data'->'incidents') v
+    ), related_case_alerts AS MATERIALIZED (
+      SELECT ca.* FROM socai2.case_alerts ca WHERE ca.alert_id IN (SELECT id FROM subject_ids WHERE kind='alert')
+    ), related_case_incidents AS MATERIALIZED (
+      SELECT ci.* FROM socai2.case_incidents ci WHERE ci.incident_id IN (SELECT id FROM subject_ids WHERE kind='incident')
+    ), related_targets AS MATERIALIZED (
+      SELECT t.* FROM socai2.activity_targets t WHERE t.alert_id IN (SELECT id FROM subject_ids WHERE kind='alert')
+        OR t.incident_id IN (SELECT id FROM subject_ids WHERE kind='incident')
+    ), related_activities AS MATERIALIZED (
+      SELECT a.* FROM socai2.activities a WHERE a.id IN (SELECT activity_id FROM related_targets)
+        OR a.subject_alert_id IN (SELECT id FROM subject_ids WHERE kind='alert')
+        OR a.subject_incident_id IN (SELECT id FROM subject_ids WHERE kind='incident')
     ) SELECT value || jsonb_build_object(
       'related_objects',(SELECT coalesce(jsonb_agg(to_jsonb(o) ORDER BY o.id),'[]') FROM related_objects o),
       'related_alerts',(SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.id),'[]') FROM socai2.alerts a
-        WHERE a.id IN (SELECT alert_id FROM related_objects))) FROM captured;""")
+        WHERE a.id IN (SELECT alert_id FROM related_objects)),
+      'subject_relations',jsonb_build_object(
+        'cases',(SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY c.id),'[]') FROM socai2.cases c
+          WHERE c.id IN (SELECT case_id FROM related_case_alerts UNION SELECT case_id FROM related_case_incidents)),
+        'case_alerts',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM related_case_alerts t),
+        'case_incidents',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM related_case_incidents t),
+        'activities',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM related_activities t),
+        'activity_targets',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]') FROM related_targets t))) FROM captured;""")
 
 
 def extra_plan(data):
     case = data['cases'][0]['id']
     plan = [{'method': 'GET', 'path': f'/api/v1/socai2/cases/{case}/activities?limit=200',
              'kind': 'case_activities', 'expected_status': 200}]
+    for task in data['tasks']:
+        base = f"/api/v1/socai2/cases/{case}/tasks/{task['id']}"
+        plan += [{'method': 'GET', 'path': base, 'kind': 'human_task', 'id': task['id'], 'expected_status': 200},
+            {'method': 'GET', 'path': base + '/revisions?limit=100', 'kind': 'human_revisions',
+             'id': task['id'], 'expected_status': 200}]
+        plan += [{'method': 'GET', 'path': base + '/revisions/' + revision['id'],
+            'kind': 'human_revision', 'id': revision['id'], 'expected_status': 200}
+            for revision in data['task_revisions'] if revision['task_id'] == task['id']]
     for a in data['artifacts']:
         if a['run_id'] is not None:
             continue
@@ -85,6 +118,26 @@ def extra_plan(data):
                 'path': f"/api/v1/socai2/{subject}s/{a[subject + '_id']}/artifacts/{a['id']}",
                 'kind': 'source_artifact', 'id': a['id'], 'expected_status': 200})
     return plan
+
+
+def human_checks(response, data):
+    """Compare every public H field with its exact persisted task/revision."""
+    revisions = {r['id']: r for r in data['task_revisions']}
+    def revision(row):
+        return TaskRevisionView.model_validate({k: row[k] for k in TaskRevisionView.model_fields}).model_dump(mode='json')
+    kind, identity, body = response['kind'], response['id'], response['body']
+    if kind == 'human_task':
+        row = next(t for t in data['tasks'] if t['id'] == identity)
+        expected = {k: row[k] for k in TaskView.model_fields if k != 'current'}
+        expected['current'] = revision(revisions[row['current_revision_id']])
+        expected = TaskView.model_validate(expected).model_dump(mode='json')
+    elif kind == 'human_revision':
+        expected = revision(revisions[identity])
+    else:
+        rows = sorted((r for r in revisions.values() if r['task_id'] == identity), key=lambda r: r['revision'], reverse=True)
+        expected = {'items': [revision(r) for r in rows[:100]], 'total': len(rows),
+                    'next_offset': 100 if len(rows) > 100 else None}
+    return [{'name': response['path'] + '/all_saved_fields', 'passed': equivalent(body, expected)}]
 
 
 def run(config_path, output):
@@ -110,9 +163,10 @@ def run(config_path, output):
         # tenant-wide related-alert lookup; compare that section separately.
         base_responses = [{**r, 'kind': 'related_alerts'} if r.get('section') == 'related_alerts' else r
                           for r in responses]
-        checks = audit(after['data'], data, foreign_keys, base_responses)
+        checks = audit(after['data'], data, foreign_keys, base_responses,
+                       subject_relations=before['subject_relations'])
         checks.append({'name': 'related_snapshot_unchanged', 'passed':
-            all(equivalent(before[k], after[k]) for k in ('related_alerts', 'related_objects'))})
+            all(equivalent(before[k], after[k]) for k in ('related_alerts', 'related_objects', 'subject_relations'))})
         for response in responses:
             if response['status'] != 200:
                 continue
@@ -147,6 +201,8 @@ def run(config_path, output):
                 expected = {a['id']: a for a in data['activities']}
                 checks.append({'name': response['path'] + '/saved_activities_present',
                     'passed': set(expected) <= {a['id'] for a in body['items']}})
+            elif response['kind'] in {'human_task', 'human_revision', 'human_revisions'}:
+                checks.extend(human_checks(response, data))
         save(folder / 'checks.json', checks)
         summary = {'case_id': case_id, 'requests': len(responses),
             'statuses': dict(Counter(str(r['status']) for r in responses)),

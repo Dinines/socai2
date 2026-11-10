@@ -4,7 +4,7 @@
 
 当前字典有 **37 组枚举、40 项 JSON 合同**，JSON Schema 另含 4 个共用定义。[结构化字典](socai2-data-contract-20261103.json) · [JSON Schema](socai2-json-contracts-20261103.schema.json) · [字段取数样本](../../deliverables/investigation-validation-20261106/page-field-samples.md) · [实际核验](../operations/evidence/current-release-20261110-01/dictionary-catalog-final.json)
 
-任何表／列／键／约束／索引／关系／隔离设计变更仍须先走 OpenSpec，取得负责人明确人工确认后用增量迁移实施。[项目规则](../../AGENTS.md#调查数据库-v1-与人工确认)
+告警相关的前后端交接字段不得随意修改；字段名、类型、含义、空值／枚举、关联和接口取数关系确需调整时，先列影响并取得明确确认。其他功能所需内部调整按 OpenSpec 推进，迁移保留冻结原件和既有数据；读写配置不设独立设计或确认前置。[项目规则](../../AGENTS.md#调查数据库-v1-与人工确认)
 
 空的专用 PostgreSQL 16 数据库使用[冻结建表 SQL](../../deploy/database/init_socai2_v1.sql)；已有共享业务库按[21 部署说明](../../deploy/aisoc21/README.md)执行安装器 `verify`，不得用空库初始化替代核验。身份、凭据、授权和服务配置由当前 profile 明确选择。
 

@@ -1,32 +1,32 @@
 # 当前进度
 
-更新于 2026-11-10。**当前 A/I 与 Case C1/C3/Deep/C6 已部署到 21；功能读取、数据库和字段对应验收通过。模型正文质量仍为 NOT_PASSED。** 工作约定见 [AGENTS.md](AGENTS.md)，前后端统一从[交接指南](FRONTEND_BACKEND_HANDOFF.md)进入。
+更新于 2026-11-10。**21 已部署当前 A/I 与 Case C1/C3/Deep/C6；两案首轮及一案人工反馈后调查已实测，保存、读取和字段对应通过，模型正文质量为 NOT_PASSED。** 工作约定见 [AGENTS.md](AGENTS.md)，前后端从[交接指南](FRONTEND_BACKEND_HANDOFF.md)进入。
 
 ## 当前运行状态
 
 | 项目 | 已核验结果 |
 | --- | --- |
-| 分支 | `V1.1`，保留本轮之前的源码、测试及证据修改 |
-| 21 发布 | `v1.2-20261110-r2`，处理镜像 `processing-20261110-r2`；A/I/Case 三项 profile 与策略 hash 匹配 |
-| 正式数据 | `aisoc.socai2`，29 表、462 列；37 组枚举、40 项 JSON 合同及 4 个共用定义一致 |
-| 服务 | 6 服务健康；API、工作台使用当前源码，Fusion、Agents、projection、gateway 容器身份保持 |
-| 读取与写入 | 页面及分析读取启用，Case/H GET 可读；Case HTTP 写开关关闭，自动消费者仍暂停 |
-| 时限与预算 | 模型单次 300 秒、Case 1500 秒、最终阶段预留 300 秒；单 Run 限制来自策略，租户累计三项配额不限制 |
-| 数据及权限 | 结构、索引、约束、RLS、函数、触发器指纹保持；两案读取前后快照一致；本轮无 DDL、GRANT 或模型调用 |
-| 内部查阅 | 21 的 4177 增补 9 份实际隔离 PG 导出，登记 16 份；本机静态站点保留 47 份。模型／工具替身按来源标明，生产 Case 另按正式库读取 |
+| 分支 | `V1.1`；保留既有源码、测试和证据 |
+| 21 发布 | `v1.2-20261110-r4`，处理组件 `processing-20261110-r4`；A/I/Case 三项 profile 与策略 hash 匹配 |
+| 正式数据 | `aisoc.socai2`，29 表、462 列；37 组枚举、40 项 JSON 合同及 4 个共用定义保持 |
+| 服务 | 6 服务健康；API 和工作台已更新，Fusion、Agents、projection、gateway 容器身份保持 |
+| 读取与写入 | 页面及分析读取启用，Case/H GET 可读；Case HTTP 写开关关闭，自动消费者暂停；按需作业及 H 服务层验收可真实保存 |
+| 时限与预算 | 模型单次 300 秒、Case 1500 秒、最终阶段预留 300 秒；单 Run 限制读取策略，租户累计三项配额不限制 |
+| 数据与合同 | 本批无 DDL 或 GRANT，告警交接合同保持；两组来源原有 366 行未改写；GET 核验前后快照一致 |
+| 内部查阅 | 21 的 4177 保留并登记 18 份记录，本机 49 份；本批 2 个 Case 页面含 3 个 Run 的实际输入、原答、失败和保存结果 |
 
-## 本批验证与修正
+## 本批结果与修正
 
-299 次真实 GET：291 次 200，8 次错误父归属返回预期 404；13,098 项字段、正文及关联检查全部通过。样本覆盖模型来源的部分交付和系统失败收尾。已核对相关告警的同租户跨 Case 匹配、实际活动、冻结材料、工件正文、当前判断与证据目录。[读回汇总](docs/operations/evidence/current-release-20261110-01/readback-03/summary.json)
+批次 `case-current-flow-20261110-01` 使用两组已有演练材料，新建 2 个 Case、3 个 Run，共 8 次真实模型调用、154,491 reported tokens，费用未知。3 轮均为 `completed/partial`，最终结论拒收，两案 `current_assessment_id` 均为空。模型调用发生在本批修正发布前；当前生成约束修正尚未进行新的真实模型验收。[实测报告](openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md) · [逐轮统计](docs/operations/evidence/case-current-flow-20261110-01/execution-summary.json)
 
-本地定向流程检查 81 项通过、2 项数据库专用检查跳过；发布检查 18 项通过；读取开关及相关接口 42 项不同检查最终通过。C1/C3 与 Deep/C6 的隔离 PG 保存、原服务读回证据直接复用，不把测试替身记作真实模型。字段字典 462 列与实际类型／可空性一致，JSON 定义与运行合同一致。
+按用户“你帮我补充”整理的 H 明确标为助手代拟的材料完整性核查，不是业务授权或新增观察。创建、完成、仅改负责人／期限形成 3 个不可变版本；正文及完成事实保持。H 正文完整出现在后轮 C3、Deep、C6 请求中；首轮因反馈变化过期，后轮未因仅改管理字段而过期。模型仍重复部分错误推断，传递通过不等于正确理解。知识来源因工具预算预留而跳过，没有知识实际消费结论。
 
-已修正 Case/H GET 误用写开关导致的 503；数据库核验器已识别现有、获准的 API 只读权限；OpenAPI 已同步非 Run 来源工件、Case 活动和事件交付字段。首轮认证过期、接口失败和核验脚本误判的原始回执均保留。[本批报告](openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)
+已修正 Deep 与 C6 生成 Schema 允许执行回执充当结论依据的偏差；查询状态仍保留在输入，C6 analysis 仍可引用覆盖信息。20 项边界测试、26 项处理／发布测试通过，5 份保存原答的离线复验确认受影响引用被生成约束拒绝，原答及失败不改写。另修正核验器对空当前判断、跨 Case 关联和活动的误判，并补齐 H 版本逐值核对。
 
-## 当前未完项与下一步
+最终 365 次真实 GET：357 次 200、8 次预期 404；16,820 项字段／正文／关联检查全部通过。独立活动复核另有 1,083 项通过，不并入前述数量。4177 静态发布核实 199 个文件、200 次 HTTP 读取，已有记录和容器保持。[读回汇总](docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json) · [4177 回执](docs/operations/evidence/case-current-flow-20261110-01/workbench-publication.json)
 
-模型的事实扩大、标签推定、引用和截断问题仍待；当前部署没有新增真实模型质量结论。H 后完整真实调查、知识实际消费、自动消费者、未开放的 Q／协作／探索／真实处置及四项原页面显示差异，均在[问题清单](docs/investigation/current-issues.md)逐项登记。对应 OpenSpec 3.7、3.23、3.30 等未完成任务保持，不归档整个 change。
+## 未完项与下一步
 
-本批部署、测试、交接文档整理、独立结束审计及 Git 发布已完成。独审为 ACCEPT，额外活动复核 171 项通过，不混入原对账数量。源码、文档与证据已推送 `origin/V1.1`；父项目远端 `add-server-submoudle` 的 `server` 引用已更新，其余路径与本机分叉工作树保持。[发布核验回执](docs/operations/evidence/current-release-20261110-01/publication-initial.json)记录代码交付的已验证提交；收口记录随同一分支保存并同步父项目引用。
+先处理 C3 成员范围、C6 发现关联及正文事实扩大，再以独立批次核修正后的真实输出；不能重派已结束 Run。需要单独取得知识实际查询及使用证据，随后按[执行顺序](openspec/changes/complete-socai2-investigation-chain/design.md#后续工作顺序)联调页面操作与 P01–P04，再验证自动流程。3.7、3.23、3.30 等整体任务保持未完成，不归档 change。
 
-详细过程与原件进入报告／证据目录，整理前入口保存在[历史索引](docs/handoff/history/2026-11-10-current-handoff-cleanup.json)。本文只保留当前状态和未完项。
+读写权限和角色设计不作为独立前置，必要接线随功能处理；告警相关前后端字段合同保持稳定。问题、限制及验收落点统一记录在[问题清单](docs/investigation/current-issues.md)。本批独立结束审计为 ACCEPT，无必须修正项；该结论限定实现、交接和证据，模型质量仍未通过。[审计回执](docs/operations/evidence/case-current-flow-20261110-01/independent-audit.json)。Git／父项目发布结果随交付回执记录。

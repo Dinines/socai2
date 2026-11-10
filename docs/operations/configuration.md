@@ -1,5 +1,11 @@
 # 配置与凭据使用入口
 
+当前调查配置以[生产 profile](../../deploy/aisoc21/production-v1.2.toml)、[统一发布清单](../../deploy/aisoc21/release-v1.2.json)和[21 部署说明](../../deploy/aisoc21/README.md)为准：目标 `sting-infra21`，正式数据 `aisoc.socai2`，A/I/Case 策略由 profile 显式选择。功能及开放状态见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)，凭据只从受控私密文件加载。
+
+## 分批配置记录
+
+以下保留原批次时点，不作为当前运行参数或自动消费开关的依据。
+
 2026-10-22 v1.0.0已发布，生产tenant/新group/预算/凭据位置见[生产接入](../integration/v1/production.md)，运行以[16:48发布后快照](../integration/v1/service-runtime-snapshot.json)为准；下述16:02为发布前记录。后端交接优先读取[v1连接配置](../integration/v1/configuration.md)及[16:02远端白名单快照](../integration/v1/runtime-snapshot.json)：已核当前PG/Kafka/Redis/ClickHouse/OpenSearch等实际地址、对象、变量和关闭开关。下文各时间段保持原配置历史，不用早期sting库、9092明文或尚未接group的记录替代当前对接配置；真实密码/token仍通过受控位置交接。
 
 整理日期：2026-10-20。前述表格为初始化时的配置快照，1B新生效配置见文末。本页记录地址、用途和配置来源；真实密钥已按用户要求迁入本地私有目录 `.local/configuration/2026-10-20/`，由 Git 忽略，目录权限 0700、文件权限 0600。该快照采集时没有修改服务器配置、轮换密码或发起模型请求；后续1B变更单独记录。

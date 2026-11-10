@@ -6,12 +6,12 @@
 
 | 编号 | 问题及影响 | 当前处理与验收落点 |
 | --- | --- | --- |
-| M01 | 模型把检测标签当事实、扩大行为效果／攻击范围，引用合法仍可能正文无据；部分答复截断或范围拒收 | 质量为 NOT_PASSED。按 A/I/C 各目标校验事实、依据、范围及未决；保持原答和失败。见[模型输入输出](model-input-output-current-20261109.md)与[任务 3.23／3.30](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
-| M02 | Deep/C6 模板和前序交接已部署，真实模型对当前输入的理解、完整调查质量及 token／耗时尚未实测 | 本批只验证程序、真实隔离 PG 保存读取和生产 GET，无新增模型调用；另起独立模型批次验收，不重派已结束或 unknown 的 Run |
-| F01 | 人工确认 H 后的下一轮完整真实调查尚未完成验收 | 已有任务版本／范围及 C 输入代码不能代替完整首 C → H → 后 C 的真实结果；保留任务 3.7 |
-| F02 | 知识检索结果是否实际参与判断尚无完整证据 | 分别核实际查询、命中内容、引用及结论使用，不能由索引成功或查空推断消费成功 |
+| M01 | 模型把检测标签当事实、扩大行为效果／攻击范围，引用合法仍可能正文无据；部分答复截断或范围拒收 | 质量为 NOT_PASSED。本批仍把进程启动成功扩大为命令效果，将不同动作的 source_ip 当作异常变化，混淆未查与查空，并夸大认证查询核实授权的能力。按 A/I/C 目标核正文，保持原答和失败。见[模型输入输出](model-input-output-current-20261109.md)与[任务 3.23／3.30](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
+| M02 | C3 成员范围及 C6 发现关联拒收；生成约束修正后的真实效果尚未验收 | 本批 3 轮、8 次真实调用均部分交付，最终结论未采用。C3 均出现 `source_member_mismatch`；C6 另有 `invalid_conflict_findings`／`unknown_domain_finding`。Deep/C6 执行回执引用约束已修正并部署，离线与边界检查通过；新批真实生成和语义质量仍待，不重派原 Run |
+| F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 用户授权助手代拟材料核查，3 个修订和后轮 C3/Deep/C6 输入均可追溯；仅管理字段变化不造成虚假过期。模型仍重复部分已指出的错误，可见性不核销 3.7，也不代表业务授权确认 |
+| F02 | 知识检索结果是否实际参与判断尚无完整证据 | 本批 3 轮均因工具预算预留跳过知识来源。下一适用样本需核实际查询、返回和使用，不能由索引成功或查空推断消费成功 |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
-| W01 | 生产 Case HTTP 写入口关闭 | `SOCAI2_CASE_API_ENABLED=false`；GET 由页面开关控制。服务端写合同和按需作业存在，前端须按实际开放状态接入，禁止显示假保存 |
+| W01 | Case/H 的实际写入与前端操作尚需接通验证 | 当前 `SOCAI2_CASE_API_ENABLED=false`；按需作业真实建案／准备／启动及 H 服务层创建／完成／修订已验证。服务层验收适配器不等于 HTTP 写操作开放；必要接线与配置随功能处理，读写权限不作为独立前置 |
 | P01 | 事件概览缺本次诊断入口 | 对应 J04；由成员主体及 Run UUID 打开实际诊断尝试，失败也可查 |
 | P02 | 原页面 `severity_effective=medium` 显示错误 | 对应 F06；应显示“中”，保留来源为人工覆盖或成员最高值 |
 | P03 | 原运行页把 `delivery_state=none` 与字段缺失混为一类 | 对应 F15；已记录 none 显示未交付，缺失按未知处理 |
@@ -21,13 +21,15 @@
 
 四项 P01–P04 是已保存的原页面核对结论，本批没有修改页面交互或重新跑浏览器签收。[功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [原始页面证据](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)
 
-## 本批已修正并复验
+## 已修正并复验
 
 | 编号 | 发现与修正 | 证据 |
 | --- | --- | --- |
-| R01 | Case/H GET 共用关闭的写开关而 503；GET 现在接受页面读取开关，写操作仍受原开关约束 | 生产两案 299 GET、13,098 检查；读取开关／租户／权限与写入拒绝定向测试 |
+| R01 | Case/H GET 共用关闭的写开关而 503；GET 现在接受页面读取开关，写操作仍受原开关约束 | 当前两案 365 GET、16,820 检查；读取开关／租户／权限与写入拒绝定向测试 |
 | R02 | 安装核验器拒绝已经人工授权的 `aisoc_app` schema USAGE | 改为核实获准 SELECT、无调查写权限及无管理权限；实际 verify 通过，未执行 GRANT 或 DDL |
 | R03 | 对账脚本只在本 Case 计算相关告警，遗漏同租户跨 Case 的合法结果 | 从同一只读快照读取匹配对象及当前材料，按类型／命名空间／对象键核对关联，复验零偏差 |
 | R04 | 交接文档仍显示未部署／缺权限，OpenAPI 缺来源工件、活动及事件交付字段 | 当前入口、字段与接口导出统一更新；整理前文档归档，原失败／unknown／模型原答保持 |
+| R05 | Deep/C6 生成 Schema 允许接收校验禁止的执行回执结论引用 | Deep 支持／反证及 C6 结论／比较／影响／建议的枚举排除执行回执；C6 analysis 保留查询覆盖引用。20 项边界检查、5 份原答离线复验通过；真实生成效果列 M02 |
+| R06 | 核验器假定当前判断非空、Case／活动仅属于单案 | 支持空判断并拒绝伪造判断；按同租户完整主体关系核 Case、活动及 `via_member_alert`，补 H 详情和全部修订逐值核对。16,820 检查及独立活动 1,083 检查通过 |
 
-本批回执与故障过程见[发布核验报告](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)及[证据目录](../operations/evidence/current-release-20261110-01/readback-03/summary.json)。
+当前结果见[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)与[读回证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)。前批回执与过程见[发布核验报告](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)及[证据目录](../operations/evidence/current-release-20261110-01/readback-03/summary.json)。

@@ -2,16 +2,16 @@
 
 告警页以告警为主体，事件页以事件及其当前成员为主体，调查页要同时显示 Case、某次执行（Run）、正式结果（Result）和当前采用的判断。四者通过各自的 ID 关联。一次模型调用失败时，后端仍可交付已经保存的告警原件、事件诊断、执行回执和系统待核说明。
 
-适用范围为 PostgreSQL 16 的 `socai2` 命名空间，共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。表设计调整须按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)登记并取得负责人明确人工确认。
+适用范围为 PostgreSQL 16 的 `socai2` 命名空间，共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。告警相关的前后端字段合同保持稳定；确需调整时按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)列出影响并取得明确确认，必要读写接线和配置随功能处理。
 
-**当前正式库核验：** 2026-11-10 在 21 的 `aisoc.socai2` 完成两案 299 次 GET、13,098 项字段／正文／关联核对。291 次正常返回，8 次错误父归属按预期返回 404；29 表快照及结构指纹保持。Case/H GET、资产与用户关联、两项只读函数均可按已授权身份读取。[实际证据](../operations/evidence/current-release-20261110-01/readback-03/summary.json)
+**当前正式库核验：** 2026-11-10 在 21 的 `aisoc.socai2` 完成两案 365 次 GET、16,820 项字段／正文／关联核对。357 次正常返回，8 次错误父归属返回预期 404；读取前后快照一致。覆盖空当前判断、H 全部修订及同租户跨 Case 关系／活动。既有 29 表结构保持，Case/H GET、资产与用户关联、两项只读函数均可按现有身份读取。[实际证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)
 
 ## 来源边界
 
 | 环节 | 负责什么 | 交接边界 |
 | --- | --- | --- |
 | 采集与 Fusion | 提供告警来源标识、原始材料、事件引用、对象与归并依据，保存告警及事件成员 | `source_event_id` 是来源命名空间内的标识，可能缺失或尚无湖记录。后端沿已保存的关系取数；不得用相似标题、主机或时间自行认定成员。 |
-| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 21 的 `processing-20261110-r2` 是按需作业，数据库为 `aisoc.socai2`；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。[部署说明](../../deploy/aisoc21/README.md) |
+| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 21 的 `processing-20261110-r4` 是按需作业，数据库为 `aisoc.socai2`；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。[部署说明](../../deploy/aisoc21/README.md) |
 | 业务后端 | 从已认证用户确定租户与读取权限，调用读取服务或使用授权的只读 PG 连接，组装列表、详情、关联入口与空态 | 同一响应尽量使用同一只读快照。`GET` 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。 |
 | 页面 | 按后端返回的字段、状态、计数与实体 ID 展示，按主体与版本打开详情 | 业务状态、模型判定、执行状态、交付完整性分别展示。模型响应中的建议、事实主张与外部实际行动分别标明来源。 |
 
@@ -42,7 +42,7 @@
 | 页面用途 | 权威存储与关联 | 后端取值 |
 | --- | --- | --- |
 | 案件资料及成员 | `cases` 取 `title, handling_status, severity, owner_id, scope_revision, row_version, classification, due_at`；成员用 `case_alerts`、关联事件用 `case_incidents` | `classification` 可为 `true_positive / informational / false_positive / null`；`due_at` 是可空带时区的案件期限。任务期限和 Run 预算独立读取。 |
-| 当前判断 | `cases.current_assessment_id → case_assessments`，按 `(tenant_id,case_id,id)` 匹配；`case_assessment_sources / case_assessment_members` 给来源和已覆盖成员 | 返回 `conclusion, origin, validity, formed_at, adopted_at, scope_revision`。`origin=system, validity=system_only` 表示系统待核说明。列表和详情的 `page_data.determination` 均沿该指针取值。 |
+| 当前判断 | `cases.current_assessment_id → case_assessments`，按 `(tenant_id,case_id,id)` 匹配；`case_assessment_sources / case_assessment_members` 给来源和已覆盖成员 | 返回 `conclusion, origin, validity, formed_at, adopted_at, scope_revision`。`origin=system, validity=system_only` 表示系统待核说明。列表和详情的 `page_data.determination` 均沿该指针取值。指针为空时展示尚无采用判断，不能用最近 Result 填充；本批两案即为该空态。 |
 | 一次调查及其输入 | `runs.kind=baseline AND runs.case_id=cases.id`；`input_artifact_id` 是本轮输入；`run_members` 的 `alert_id, material_id, triage_id, feedback_id, read_state, analysis_state` 固定本轮版本 | `requested_at` 请求、`started_at` 实际启动、`ended_at` 实际结束。两端齐备才计算完成时长。`pending_update` 尚待启动，`unknown` 表示执行结果待确认；`running/unknown` 占用该 Case 的基础执行槽。 |
 | 步骤、模型及工具输入输出 | `run_steps` 按同 `run_id` 的 `seq` 排列，`parent_step_id` 指向父步骤。`input_artifact_id / output_artifact_id` 指向本轮输入和输出，`reused_artifact_id` 可指向同案其他 Run 的原件 | 读取 `stage_code, kind, state, actual_args, returned_rows, error, usage`。`completed + returned_rows=0` 是执行后查空。`skipped` 与失败原因各自保留。工件 `step_id=NULL` 仍可属于 Run。发生错误时继续返回可用原件与失败回执。 |
 | 正式结果、报告与图谱 | `results.source_run_id` 关联实际 Run，`result_members` 给 `conclusion_covered` 及依据。`report_artifact_id / graph_artifact_id` 指向同案同轮工件 | 分别展示 `runs.state`、`delivery_state`、结果的 `conclusion_state / conclusion_origin / validation_state` 和已采用判断。C6 回执中 `content_json.outcome.result_id` 可空。有报告及系统说明时，正式 Result 仍允许为零。 |

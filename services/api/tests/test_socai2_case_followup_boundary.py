@@ -107,6 +107,33 @@ def test_deep_omits_question_output_and_restores_only_bound_identity(sample):
         outputs.parse_deep(json.dumps({**answer, "question_id": "another-question"}), prepared)
 
 
+@pytest.mark.parametrize("has_observation", [True, False])
+def test_deep_wire_and_receive_agree_on_execution_receipt_evidence(has_observation):
+    sources = {"S1": {"ref": {"role": "execution_receipt"}}}
+    if has_observation:
+        sources["S2"] = {"ref": {"role": "observation"}}
+    prepared = {"source_map": sources, "binding_map": {}, "case_boundary": {"question_id": "coverage"}}
+    original = copy.deepcopy(prepared)
+    schema = outputs.deep_format(prepared)["json_schema"]["schema"]
+    validator = Draft202012Validator(schema)
+    answer = {"action": "handoff", "binding_id": None, "reason": "Source coverage still unknown.",
+        "answer": {"state": "unresolved", "text": "No substantive conclusion.", "support_ids": [],
+                   "counter_ids": [], "alternatives": [], "limitations": ["Query status alone is not evidence."]}}
+    validator.validate(answer)
+    outputs.parse_deep(json.dumps(answer), prepared)
+    for field in ("support_ids", "counter_ids"):
+        invalid = copy.deepcopy(answer)
+        invalid["answer"][field] = ["S1"]
+        assert list(validator.iter_errors(invalid))
+        with pytest.raises(AnalysisRejected, match="execution_receipt_is_not_evidence"):
+            outputs.parse_deep(json.dumps(invalid), prepared)
+    if has_observation:
+        answer["answer"]["support_ids"] = ["S2"]
+        validator.validate(answer)
+        outputs.parse_deep(json.dumps(answer), prepared)
+    assert prepared == original  # keep receipt input and its original role
+
+
 @pytest.mark.parametrize("state", ["initial", "not_selected"])
 def test_final_restores_original_contract_without_model_owned_known_fields(sample, state):
     context, base, prior = fixture(sample)
@@ -136,6 +163,32 @@ def test_final_feedback_and_partial_review_still_use_model_aliases(sample):
     assert review.partial(json.dumps(answer)) is None
     assert review.details["conclusion_adoptable"] is False
     assert review.details["retained_analysis"]["members"][1]["state"] == "unresolved"
+
+
+def test_final_evidence_slots_exclude_receipts_without_narrowing_analysis(sample):
+    context, base, prior = fixture(sample)
+    comparison = {"state": "not_selected", "result_id": None}
+    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4())
+    answer = final_answer(prepared, context, comparison)
+    receipt = next(sid for sid, source in prepared["source_map"].items()
+                   if source["ref"]["role"] == "execution_receipt")
+    schema = outputs.final_format(prepared, context, comparison)["json_schema"]["schema"]
+    validator = Draft202012Validator(schema)
+    validator.validate(answer)
+    outputs.parse_final(json.dumps(answer), prepared, context, comparison)
+    for name in ("conclusion", "comparison", "impact", "recommendations"):
+        invalid = copy.deepcopy(answer)
+        if name == "recommendations":
+            invalid[name][0]["source_ids"] = [receipt]
+        else:
+            invalid[name]["support_ids"] = [receipt]
+        assert list(validator.iter_errors(invalid))
+        with pytest.raises(AnalysisRejected, match="execution_receipt_not_conclusion_evidence"):
+            outputs.parse_final(json.dumps(invalid), prepared, context, comparison)
+    answer["analysis"]["questions"][0].update(state="unresolved", evidence_ids=[receipt],
+        limitations=["Execution coverage alone leaves the business question unresolved."])
+    validator.validate(answer)
+    outputs.parse_final(json.dumps(answer), prepared, context, comparison)
 
 
 def test_no_accepted_c3_remains_explicit_and_profile_mismatch_rejected(sample):

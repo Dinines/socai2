@@ -1,0 +1,574 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-10T10:35:07.655603+00:00",
+  "case_id": "17fef155-8dc3-532b-891a-b3d362c58fc1",
+  "content_json": {
+    "captured_at": "2026-11-10T10:35:07.654802+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "{\n  \"summary\": \"用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上于 10 分钟内连续执行登录、启动 PowerShell 获取本地用户列表及连接外部 IP 198.51.100.88 的行为，但缺乏授权证据且源 IP 发生异常变化。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录用户从 203.0.113.88 登录主机，标签为 synthetic，分诊认为需审查但无独立观察。\",\n      \"evidence_ids\": [\"N2_S10\", \"N2_S11\", \"N2_S12\", \"N2_S13\", \"N2_S14\", \"N2_S15\", \"N2_S16\", \"N2_S17\", \"N2_S18\", \"N2_S19\", \"N2_S20\", \"N2_S21\", \"N2_S22\", \"N2_S23\", \"N2_S24\", \"N2_S25\", \"N2_S26\", \"N2_S27\", \"N2_S28\", \"N2_S29\", \"N2_S30\", \"N2_S31\", \"N2_S32\", \"N2_S33\", \"N2_S34\", \"N2_S35\"]\n    ,\n    \"limitations\": [\"标签 synthetic 不证明攻击\", \"查空威胁情报不证明安全\", \"无审批记录\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录同一用户在 20 秒后启动 powershell.exe 执行 Get-LocalUser，分诊认为需审查但无授权证明。\",\n      \"evidence_ids\": [\"N2_S36\", \"N2_S37\", \"N2_S38\", \"N2_S39\", \"N2_S40\", \"N2_S41\", \"N2_S42\", \"N2_S43\", \"N2_S44\", \"N2_S45\", \"N2_S46\", \"N2_S47\", \"N2_S48\", \"N2_S49\", \"N2_S50\", \"N2_S51\", \"N2_S52\", \"N2_S53\", \"N2_S54\", \"N2_S55\", \"N2_S56\", \"N2_S57\", \"N2_S58\", \"N2_S59\", \"N2_S60\", \"N2_S61\", \"N2_S62\", \"N2_S63\"]\n    ,\n    \"limitations\": [\"历史查询仅返回重复告警\", \"无 MITRE 映射\", \"无授权证明\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录用户在 20 秒后建立出站连接至 198.51.100.88:443，源 IP 变为 192.0.2.88，需解释 IP 变化。\",\n      \"evidence_ids\": [\"N2_S64\", \"N2_S65\", \"N2_S66\", \"N2_S67\", \"N2_S68\", \"N2_S69\", \"N2_S70\", \"N2_S71\", \"N2_S72\", \"N2_S73\", \"N2_S74\", \"N2_S75\", \"N2_S76\", \"N2_S77\", \"N2_S78\", \"N2_S79\", \"N2_S80\", \"N2_S81\", \"N2_S82\", \"N2_S83\", \"N2_S84\", \"N2_S85\", \"N2_S86\", \"N2_S87\", \"N2_S88\", \"N2_S89\", \"N2_S90\", \"N2_S91\", \"N2_S92\", \"N2_S93\", \"N2_S94\", \"N2_S95\"]\n    ,\n    \"limitations\": [\"源 IP 变更未解释\", \"威胁情报查空\", \"无业务上下文\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"statement\": \"用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上于 01:26:09 至 01:26:49 间连续执行登录、启动 Get-LocalUser 进程及连接 198.51.100.88:443。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N2_S10\", \"N2_S36\", \"N2_S64\", \"N2_S11\", \"N2_S37\", \"N2_S65\", \"N2_S12\", \"N2_S38\", \"N2_S66\", \"N2_S13\", \"N2_S39\", \"N2_S67\", \"N2_S14\", \"N2_S40\", \"N2_S68\", \"N2_S16\", \"N2_S70\", \"N2_S72\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"正常运维流程\", \"自动化脚本执行\", \"授权数据收集\"]\n    ,\n    \"limitations\": [\"无审批记录\", \"无文件传输证据\", \"无会话保持信息\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"出站连接源 IP (192.0.2.88) 与登录源 IP (203.0.113.88) 不一致，且该 IP 未在资产库中明确匹配，需核实是否为代理或横向移动。\",\n      \"alert_ids\": [\"A3\"],\n      \"support_ids\": [\"N2_S72\", \"N2_S88\", \"N2_S16\", \"N2_S86\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"NAT 转换\", \"代理服务器\", \"多网卡主机\"]\n    ,\n    \"limitations\": [\"未查询代理配置\", \"未核实 IP 归属\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"unresolved\",\n      \"statement\": \"所有工具查询（威胁情报、资产、历史）均未返回独立于告警本身的证据，查空结果不能证明行为安全或不存在。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N2_S109\", \"N2_S110\", \"N2_S111\", \"N2_S112\", \"N2_S117\", \"N2_S118\", \"N2_S119\", \"N2_S120\", \"N2_S121\", \"N2_S130\", \"N2_S131\", \"N2_S132\", \"N2_S133\", \"N2_S134\", \"N2_S135\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"数据源覆盖不全\", \"查询条件限制\", \"工具预算限制\"]\n    ,\n    \"limitations\": [\"未执行 graph 和 knowledge 查询\", \"未访谈相关人员\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"answered\",\n      \"answer\": \"原始记录支持登录、进程启动和出站连接行为，对象包括主机、用户及三个 IP 地址。\",\n      \"evidence_ids\": [\"N2_S10\", \"N2_S36\", \"N2_S64\", \"N2_S11\", \"N2_S37\", \"N2_S65\", \"N2_S12\", \"N2_S38\", \"N2_S66\", \"N2_S13\", \"N2_S39\", \"N2_S67\", \"N2_S14\", \"N2_S40\", \"N2_S68\", \"N2_S16\", \"N2_S70\", \"N2_S72\", \"N2_S71\", \"N2_S86\", \"N2_S88\"]\n    ,\n    \"limitations\": [\"标签不证明攻击\", \"分诊非独立观察\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"answered\",\n      \"answer\": \"成员间存在时间邻近（40 秒内）和对象关联（同一用户/主机），但无直接因果证据，A3 的源 IP 变化是主要疑点。\",\n      \"evidence_ids\": [\"N2_S10\", \"N2_S36\", \"N2_S64\", \"N2_S16\", \"N2_S72\", \"N2_S88\"]\n    ,\n    \"limitations\": [\"时间邻近不等于因果\", \"IP 变化原因不明\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"行为性质无法定性，既可能是授权运维（如管理员检查用户），也可能是恶意侦察（获取用户列表后外传）。\",\n      \"evidence_ids\": [\"N2_S35\", \"N2_S63\", \"N2_S95\", \"N2_S96\", \"N2_S97\"]\n    ,\n    \"limitations\": [\"缺乏基线数据\", \"缺乏业务文档\"]\n    },\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无证据表明用户 flow-observer-20261108-01 有权执行 Get-LocalUser 或连接 198.51.100.88，本轮 authentication_activity 查询未返回授权记录。\",\n      \"evidence_ids\": [\"N2_S130\", \"N2_S131\", \"N2_S132\", \"N2_S133\", \"N2_S134\", \"N2_S135\", \"N2_S4\", \"N2_S95\"]\n    ,\n    \"limitations\": [\"未查询审批系统\", \"未访谈相关人员\", \"authentication_activity 查询结果为空\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"观察到进程启动和网络连接，未观察到数据外传或系统受损的确切证据，潜在影响待核。\",\n      \"evidence_ids\": [\"N2_S14\", \"N2_S42\", \"N2_S68\", \"N2_S95\", \"N2_S96\"]\n    ,\n    \"limitations\": [\"未检查文件完整性\", \"未检查数据流\"]\n    },\n    {\n      \"id\": \"coverage\",\n      \"state\": \"unresolved\",\n      \"answer\": \"已覆盖所有成员 A1-A3 及核心对象，但部分工具（assets, history, graph）未执行或查空，需进一步补查。\",\n      \"evidence_ids\": [\"N2_S132\", \"N2_S133\", \"N2_S134\", \"N2_S135\", \"N2_S4\"]\n    ,\n    \"limitations\": [\"工具未执行\", \"数据源限制\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户登录、认证活动及权限执行。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"无 MFA 信息\", \"无会话详情\", \"authentication_activity 未返回授权\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机资源、进程活动及网络连接。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"资产库无对象来源域\", \"未查询配置变更\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件、链接或附件相关记录。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无相关数据\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及数据访问、外传可能性及行为基线。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"未检查文件传输\", \"未核实用户角色\"]\n    }\n  ],\n  \"conflicts\": [\n    {\n      \"id\": \"C1\",\n      \"finding_ids\": [\"F1\", \"F2\"],\n      \"state\": \"unresolved\",\n      \"explanation\": \"登录源 IP (203.0.113.88) 与出站连接源 IP (192.0.2.88) 不一致，但现有证据无法确定是 NAT、代理还是横向移动，导致行为性质判断冲突。\"\n    ,\n    \"evidence_ids\": [\"N2_S16\", \"N2_S72\", \"N2_S88\"]\n    },\n    {\n      \"id\": \"C2\",\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"state\": \"unresolved\",\n      \"explanation\": \"行为序列（登录->Get-LocalUser->外连）符合攻击链特征，但所有辅助查询（威胁情报、资产、历史）均查空，无法排除正常运维或误报可能性。\"\n    ,\n    \"evidence_ids\": [\"N2_S109\", \"N2_S110\", \"N2_S111\", \"N2_S130\", \"N2_S131\"]\n    }\n  ],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"核查用户 flow-observer-20261108-01 的权限及变更审批记录，确认 Get-LocalUser 和连接 198.51.100.88 是否授权。\",\n      \"required_evidence\": \"审批工单、白名单记录、人工访谈\",\n      \"source_ids\": [\"N2_S4\", \"N2_S130\", \"N2_S131\"]\n    ,\n    \"object_keys\": [\"O5\"]\n    ,\n    \"binding_id\": null\n    ,\n    \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"member_relationships\",\n      \"alert_ids\": [\"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"核实出站连接源 IP 192.0.2.88 的归属及与登录源 IP 203.0.113.88 的关系，排除横向移动或代理可能性。\",\n      \"required_evidence\": \"网络拓扑、IP 归属、代理配置\",\n      \"source_ids\": [\"N2_S72\", \"N2_S88\", \"N2_S16\"]\n    ,\n    \"object_keys\": [\"O2\", \"O3\", \"O4\"]\n    ,\n    \"binding_id\": null\n    ,\n    \"priority\": \"supporting\"\n    }\n  ]\n}",
+              "provider_specific_fields": {
+                "reasoning": null,
+                "refusal": null
+              },
+              "role": "assistant"
+            },
+            "provider_specific_fields": {
+              "routed_experts": null,
+              "stop_reason": null,
+              "token_ids": null
+            }
+          }
+        ],
+        "created": 1794306829,
+        "id": "chatcmpl-be880e11652fe039",
+        "model": "aisoc-investigation",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 3755,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 20405,
+          "total_tokens": 24160
+        }
+      },
+      "validation_error": "source_member_mismatch",
+      "validation_review": {
+        "conclusion_adoptable": false,
+        "diagnostics": [
+          {
+            "action": "exclude_dependent_claim",
+            "code": "source_member_mismatch",
+            "original_sha256": "51dafe0ecff1bf03eecf25a393d97b748498c773f7bcc83c6b1da1cca63cc850",
+            "path": [
+              "findings",
+              1
+            ]
+          },
+          {
+            "action": "exclude_dependent_claim",
+            "code": "unknown_domain_finding",
+            "original_sha256": "f0830bef89f2eea3766818a2616143b502f20867ebafe95f86109674bc01d91c",
+            "path": [
+              "domains",
+              1
+            ]
+          },
+          {
+            "action": "exclude_dependent_claim",
+            "code": "unknown_domain_finding",
+            "original_sha256": "043e264c20f45dc1575aede53eb120c07a296d99b6060f5112f4c25f35949b57",
+            "path": [
+              "domains",
+              3
+            ]
+          },
+          {
+            "action": "exclude_dependent_claim",
+            "code": "invalid_conflict_findings",
+            "original_sha256": "7bc4301d7230e3055186145ab60a86cd297d8b70c4aaec1c50e21cb5f3cb309b",
+            "path": [
+              "conflicts",
+              0
+            ]
+          },
+          {
+            "action": "exclude_dependent_claim",
+            "code": "source_member_mismatch",
+            "original_sha256": "c23597aa674384fe8ece2657d90eac5c960a5204311cdd126128f15080f703c5",
+            "path": [
+              "followups",
+              1
+            ]
+          }
+        ],
+        "limitations": [
+          "source_identity_and_scope_checks_do_not_prove_prose_true",
+          "free_text_summary_dependencies_unknown_summary_not_reused",
+          "invalid_final_delivery_never_adopts_overall_conclusion"
+        ],
+        "policy": "socai2.analysis-review.v1.2",
+        "reason": "invalid_units_or_final_conclusion_excluded",
+        "retained_analysis": {
+          "conflicts": [
+            {
+              "evidence_ids": [
+                "N2_S109",
+                "N2_S110",
+                "N2_S111",
+                "N2_S130",
+                "N2_S131"
+              ],
+              "explanation": "行为序列（登录->Get-LocalUser->外连）符合攻击链特征，但所有辅助查询（威胁情报、资产、历史）均查空，无法排除正常运维或误报可能性。",
+              "finding_ids": [
+                "F1",
+                "F3"
+              ],
+              "id": "C2",
+              "state": "unresolved"
+            }
+          ],
+          "domains": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F1",
+                "F3"
+              ],
+              "limitations": [
+                "无 MFA 信息",
+                "无会话详情",
+                "authentication_activity 未返回授权"
+              ],
+              "name": "identity",
+              "reason": "涉及用户登录、认证活动及权限执行。"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "undetermined",
+              "finding_ids": [],
+              "limitations": [
+                "该项引用未通过校验，原答保留，结论待核。"
+              ],
+              "name": "cloud",
+              "reason": "该项引用未通过校验，原答保留，结论待核。"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "not_applicable",
+              "finding_ids": [],
+              "limitations": [
+                "无相关数据"
+              ],
+              "name": "phishing",
+              "reason": "无邮件、链接或附件相关记录。"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "undetermined",
+              "finding_ids": [],
+              "limitations": [
+                "该项引用未通过校验，原答保留，结论待核。"
+              ],
+              "name": "insider",
+              "reason": "该项引用未通过校验，原答保留，结论待核。"
+            }
+          ],
+          "findings": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "alternatives": [
+                "正常运维流程",
+                "自动化脚本执行",
+                "授权数据收集"
+              ],
+              "counter_ids": [],
+              "id": "F1",
+              "limitations": [
+                "无审批记录",
+                "无文件传输证据",
+                "无会话保持信息"
+              ],
+              "state": "observed",
+              "statement": "用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上于 01:26:09 至 01:26:49 间连续执行登录、启动 Get-LocalUser 进程及连接 198.51.100.88:443。",
+              "support_ids": [
+                "N2_S10",
+                "N2_S36",
+                "N2_S64",
+                "N2_S11",
+                "N2_S37",
+                "N2_S65",
+                "N2_S12",
+                "N2_S38",
+                "N2_S66",
+                "N2_S13",
+                "N2_S39",
+                "N2_S67",
+                "N2_S14",
+                "N2_S40",
+                "N2_S68",
+                "N2_S16",
+                "N2_S70",
+                "N2_S72"
+              ]
+            },
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "alternatives": [
+                "数据源覆盖不全",
+                "查询条件限制",
+                "工具预算限制"
+              ],
+              "counter_ids": [],
+              "id": "F3",
+              "limitations": [
+                "未执行 graph 和 knowledge 查询",
+                "未访谈相关人员"
+              ],
+              "state": "unresolved",
+              "statement": "所有工具查询（威胁情报、资产、历史）均未返回独立于告警本身的证据，查空结果不能证明行为安全或不存在。",
+              "support_ids": [
+                "N2_S109",
+                "N2_S110",
+                "N2_S111",
+                "N2_S112",
+                "N2_S117",
+                "N2_S118",
+                "N2_S119",
+                "N2_S120",
+                "N2_S121",
+                "N2_S130",
+                "N2_S131",
+                "N2_S132",
+                "N2_S133",
+                "N2_S134",
+                "N2_S135"
+              ]
+            }
+          ],
+          "followups": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "binding_id": null,
+              "mode": "deep",
+              "object_keys": [
+                "[\"user\",\"flow-observer-20261108-01\"]"
+              ],
+              "objective": "核查用户 flow-observer-20261108-01 的权限及变更审批记录，确认 Get-LocalUser 和连接 198.51.100.88 是否授权。",
+              "priority": "decision_critical",
+              "question_id": "authorization",
+              "required_evidence": "审批工单、白名单记录、人工访谈",
+              "source_ids": [
+                "N2_S4",
+                "N2_S130",
+                "N2_S131"
+              ]
+            }
+          ],
+          "members": [
+            {
+              "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+              "evidence_ids": [
+                "N2_S10",
+                "N2_S11",
+                "N2_S12",
+                "N2_S13",
+                "N2_S14",
+                "N2_S15",
+                "N2_S16",
+                "N2_S17",
+                "N2_S18",
+                "N2_S19",
+                "N2_S20",
+                "N2_S21",
+                "N2_S22",
+                "N2_S23",
+                "N2_S24",
+                "N2_S25",
+                "N2_S26",
+                "N2_S27",
+                "N2_S28",
+                "N2_S29",
+                "N2_S30",
+                "N2_S31",
+                "N2_S32",
+                "N2_S33",
+                "N2_S34",
+                "N2_S35"
+              ],
+              "limitations": [
+                "标签 synthetic 不证明攻击",
+                "查空威胁情报不证明安全",
+                "无审批记录"
+              ],
+              "state": "analyzed",
+              "summary": "记录用户从 203.0.113.88 登录主机，标签为 synthetic，分诊认为需审查但无独立观察。"
+            },
+            {
+              "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "evidence_ids": [
+                "N2_S36",
+                "N2_S37",
+                "N2_S38",
+                "N2_S39",
+                "N2_S40",
+                "N2_S41",
+                "N2_S42",
+                "N2_S43",
+                "N2_S44",
+                "N2_S45",
+                "N2_S46",
+                "N2_S47",
+                "N2_S48",
+                "N2_S49",
+                "N2_S50",
+                "N2_S51",
+                "N2_S52",
+                "N2_S53",
+                "N2_S54",
+                "N2_S55",
+                "N2_S56",
+                "N2_S57",
+                "N2_S58",
+                "N2_S59",
+                "N2_S60",
+                "N2_S61",
+                "N2_S62",
+                "N2_S63"
+              ],
+              "limitations": [
+                "历史查询仅返回重复告警",
+                "无 MITRE 映射",
+                "无授权证明"
+              ],
+              "state": "analyzed",
+              "summary": "记录同一用户在 20 秒后启动 powershell.exe 执行 Get-LocalUser，分诊认为需审查但无授权证明。"
+            },
+            {
+              "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "evidence_ids": [
+                "N2_S64",
+                "N2_S65",
+                "N2_S66",
+                "N2_S67",
+                "N2_S68",
+                "N2_S69",
+                "N2_S70",
+                "N2_S71",
+                "N2_S72",
+                "N2_S73",
+                "N2_S74",
+                "N2_S75",
+                "N2_S76",
+                "N2_S77",
+                "N2_S78",
+                "N2_S79",
+                "N2_S80",
+                "N2_S81",
+                "N2_S82",
+                "N2_S83",
+                "N2_S84",
+                "N2_S85",
+                "N2_S86",
+                "N2_S87",
+                "N2_S88",
+                "N2_S89",
+                "N2_S90",
+                "N2_S91",
+                "N2_S92",
+                "N2_S93",
+                "N2_S94",
+                "N2_S95"
+              ],
+              "limitations": [
+                "源 IP 变更未解释",
+                "威胁情报查空",
+                "无业务上下文"
+              ],
+              "state": "analyzed",
+              "summary": "记录用户在 20 秒后建立出站连接至 198.51.100.88:443，源 IP 变为 192.0.2.88，需解释 IP 变化。"
+            }
+          ],
+          "questions": [
+            {
+              "answer": "原始记录支持登录、进程启动和出站连接行为，对象包括主机、用户及三个 IP 地址。",
+              "evidence_ids": [
+                "N2_S10",
+                "N2_S36",
+                "N2_S64",
+                "N2_S11",
+                "N2_S37",
+                "N2_S65",
+                "N2_S12",
+                "N2_S38",
+                "N2_S66",
+                "N2_S13",
+                "N2_S39",
+                "N2_S67",
+                "N2_S14",
+                "N2_S40",
+                "N2_S68",
+                "N2_S16",
+                "N2_S70",
+                "N2_S72",
+                "N2_S71",
+                "N2_S86",
+                "N2_S88"
+              ],
+              "id": "detection_facts",
+              "limitations": [
+                "标签不证明攻击",
+                "分诊非独立观察"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "成员间存在时间邻近（40 秒内）和对象关联（同一用户/主机），但无直接因果证据，A3 的源 IP 变化是主要疑点。",
+              "evidence_ids": [
+                "N2_S10",
+                "N2_S36",
+                "N2_S64",
+                "N2_S16",
+                "N2_S72",
+                "N2_S88"
+              ],
+              "id": "member_relationships",
+              "limitations": [
+                "时间邻近不等于因果",
+                "IP 变化原因不明"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "行为性质无法定性，既可能是授权运维（如管理员检查用户），也可能是恶意侦察（获取用户列表后外传）。",
+              "evidence_ids": [
+                "N2_S35",
+                "N2_S63",
+                "N2_S95",
+                "N2_S96",
+                "N2_S97"
+              ],
+              "id": "behavior_nature",
+              "limitations": [
+                "缺乏基线数据",
+                "缺乏业务文档"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "无证据表明用户 flow-observer-20261108-01 有权执行 Get-LocalUser 或连接 198.51.100.88，本轮 authentication_activity 查询未返回授权记录。",
+              "evidence_ids": [
+                "N2_S130",
+                "N2_S131",
+                "N2_S132",
+                "N2_S133",
+                "N2_S134",
+                "N2_S135",
+                "N2_S4",
+                "N2_S95"
+              ],
+              "id": "authorization",
+              "limitations": [
+                "未查询审批系统",
+                "未访谈相关人员",
+                "authentication_activity 查询结果为空"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "观察到进程启动和网络连接，未观察到数据外传或系统受损的确切证据，潜在影响待核。",
+              "evidence_ids": [
+                "N2_S14",
+                "N2_S42",
+                "N2_S68",
+                "N2_S95",
+                "N2_S96"
+              ],
+              "id": "impact",
+              "limitations": [
+                "未检查文件完整性",
+                "未检查数据流"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "已覆盖所有成员 A1-A3 及核心对象，但部分工具（assets, history, graph）未执行或查空，需进一步补查。",
+              "evidence_ids": [
+                "N2_S132",
+                "N2_S133",
+                "N2_S134",
+                "N2_S135",
+                "N2_S4"
+              ],
+              "id": "coverage",
+              "limitations": [
+                "工具未执行",
+                "数据源限制"
+              ],
+              "state": "unresolved"
+            }
+          ],
+          "summary": "保留通过引用校验的分析片段；部分内容待核。"
+        },
+        "state": "partial"
+      }
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-be880e11652fe039",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 20405,
+      "output_tokens": 3755,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-be880e11652fe039",
+      "total_tokens": 24160,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+  "event_time": null,
+  "file_name": null,
+  "id": "7bf1b1d7-f8cf-44b8-991d-d62ac4d4e590",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "8e45051b7acfb3ae0132a81e290d08ea4a8837d48fe6a65f812bb4a7e410468a",
+    "original_size_bytes": 20175,
+    "reason": null,
+    "retained_sha256": "8e45051b7acfb3ae0132a81e290d08ea4a8837d48fe6a65f812bb4a7e410468a",
+    "retained_size_bytes": 20175,
+    "truncated": false
+  },
+  "run_id": "c0d94909-f0fe-4dbe-9cef-167881c2bb5d",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "8e45051b7acfb3ae0132a81e290d08ea4a8837d48fe6a65f812bb4a7e410468a",
+  "size_bytes": 20175,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "c8aacd70-34b6-47b4-b491-54658d89890a",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "682dd42c-b6be-4d29-9f73-f0d88190a501",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

@@ -11,6 +11,14 @@ The system SHALL provide configured Deep and final-delivery calls with frozen bu
 - **WHEN** a configured model response is received
 - **THEN** the program restores the bound Deep question identity, C6 member/object aliases and recommendation identities, and the fixed initial comparison where no historical result exists, before applying the original validation and persistence contract
 
+#### Scenario: Deep sees query status without citing it as substantive evidence
+- **WHEN** a configured Deep request includes execution receipts alongside business sources
+- **THEN** the receipts remain visible with their original role, but the generated support/counter source enumeration excludes execution receipts in agreement with the existing receive validator; if no eligible sources exist the arrays can only be empty, and an unresolved answer must still explain its limitations
+
+#### Scenario: Final conclusions use substantive references while analysis retains execution context
+- **WHEN** a configured C6 request includes execution receipts
+- **THEN** conclusion, comparison, impact and recommendation reference slots exclude those receipt IDs as required by their existing parser, without narrowing the analysis slots that may describe query coverage or removing receipts from the input
+
 #### Scenario: Old execution remains readable
 - **WHEN** a Run has no configured Case boundary or a previous stored result is read
 - **THEN** the original execution/read contract remains available and no historical source, answer, state or profile is rewritten

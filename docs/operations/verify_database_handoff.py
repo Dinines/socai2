@@ -18,7 +18,7 @@ from production_case_probe import query, save
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "deploy/local-investigation"))
-from remote_profile import load_profile  # noqa: E402 - explicit checkout module path
+from remote_profile import load_profile
 
 PREFIX = "/api/v1/socai2"
 FK_SQL = """SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY x.name),'[]') FROM (
@@ -141,7 +141,7 @@ async def fetch(plan, profile, concurrency):
         return await asyncio.gather(*(one(spec) for spec in plan))
 
 
-def audit(data, before, foreign_keys, responses):
+def audit(data, before, foreign_keys, responses, *, subject_relations=None):
     checks = []
     index = {t: {r["id"]: r for r in rows} for t, rows in data.items()}
     case = data["cases"][0]
@@ -281,8 +281,14 @@ def audit(data, before, foreign_keys, responses):
             for item in body["linked_incidents"]:
                 fields(path + "/incident_facts/" + item["incident_id"], item, index["incidents"][item["incident_id"]])
             current = body["current_assessment"]
-            fields(path + "/assessment", current["value"], index["case_assessments"][case["current_assessment_id"]])
             current_id = case["current_assessment_id"]
+            if current_id is None:
+                check(path + "/assessment_absent_without_adopted_result", current, None)
+                continue
+            if current is None:
+                check(path + "/assessment_present_for_saved_pointer", current is not None, True)
+                continue
+            fields(path + "/assessment", current["value"], index["case_assessments"][current_id])
             current_members = [r for r in data["case_assessment_members"] if r["assessment_id"] == current_id]
             rows(path + "/sources", current["sources"],
                  [r for r in data["case_assessment_sources"] if r["assessment_id"] == current_id])
@@ -311,7 +317,8 @@ def audit(data, before, foreign_keys, responses):
                 check(path + "/" + key, body[key], case[key])
             check(path + "/evidence_state", body["evidence"]["state"], "not_recorded" if case["current_evidence_artifact_id"] is None else body["evidence"]["state"])
         elif kind == "records":
-            verify_records(response, data, rows, check)
+            record_data = {**data, **subject_relations} if subject_relations and response['section'] in {'cases', 'activities'} else data
+            verify_records(response, record_data, rows, check)
     return checks
 
 
@@ -335,11 +342,12 @@ def verify_records(response, data, rows, check):
                 check(path + "/" + item["id"] + "/" + field, item[field], link[field])
     elif section == "cases":
         ids = {r["case_id"] for r in data["case_alerts"] if r["alert_id"] in member_ids}
-        expected = [r for r in data["cases"] if r["id"] in ids]
+        explicit_ids = {r['case_id'] for r in data['case_incidents'] if table == 'incidents' and r['incident_id'] == identity}
+        expected = [r for r in data["cases"] if r["id"] in ids | explicit_ids]
         for item in body["items"]:
             explicit = table == "incidents" and any(r["case_id"] == item["id"] and r["incident_id"] == identity for r in data["case_incidents"])
             check(path + "/explicit_incident_link", item["explicit_incident_link"], explicit)
-            check(path + "/via_member_alert", item["via_member_alert"], True)
+            check(path + "/via_member_alert", item["via_member_alert"], item['id'] in ids)
     elif section in {"comments", "responses"}:
         target = "comments" if section == "comments" else "response_links"
         key = "alert_id" if table == "alerts" else "incident_id"

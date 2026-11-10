@@ -12,7 +12,11 @@ from .structured_output import response_format
 
 
 def deep_format(prepared):
-    fmt = response_format(deep.Decision, prepared["source_map"], bindings=prepared["binding_map"])
+    # Query status stays visible in the input; it cannot substantiate a Deep
+    # answer. Match deep.parse's existing role check at generation time too.
+    evidence = {sid: source for sid, source in prepared["source_map"].items()
+                if source["ref"]["role"] != "execution_receipt"}
+    fmt = response_format(deep.Decision, evidence, bindings=prepared["binding_map"])
     schema = fmt["json_schema"]["schema"]
     schema["properties"].pop("question_id")
     schema["required"].remove("question_id")
@@ -38,6 +42,24 @@ def final_format(prepared, context, comparison):
         members=[boundary["member_aliases"][aid] for aid in context.alerts],
         questions=[q.id for q in context.questions], objects=[boundary["object_aliases"][key] for key in context.scope.object_keys])
     schema = fmt["json_schema"]["schema"]
+    # Only these final-delivery slots reject receipts. Analysis can still cite
+    # query coverage. Copy a compacted array instead of changing its shared def.
+    evidence = [sid for sid, source in prepared["source_map"].items()
+                if source["ref"]["role"] != "execution_receipt"]
+    if evidence:
+        schema["$defs"]["EvidenceSourceId"] = {"type": "string", "enum": sorted(evidence)}
+    for name, field in (("Conclusion", "support_ids"), ("Comparison", "support_ids"),
+                        ("Impact", "support_ids"), ("Recommendation", "source_ids")):
+        props = schema["$defs"][name]["properties"]
+        array = props[field]
+        while "$ref" in array:
+            array = schema["$defs"][array["$ref"].removeprefix("#/$defs/")]
+        array = copy.deepcopy(array)
+        if evidence:
+            array["items"] = {"$ref": "#/$defs/EvidenceSourceId"}
+        else:
+            array["maxItems"] = 0
+        props[field] = array
     recommendation = schema["$defs"]["Recommendation"]
     recommendation["properties"].pop("id")
     recommendation["required"].remove("id")

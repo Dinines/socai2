@@ -1,3 +1,9 @@
+# 当前环境入口
+
+21 运行环境由[生产 profile](../../deploy/aisoc21/production-v1.2.toml)与[部署说明](../../deploy/aisoc21/README.md)固定；实际状态见[进度](../../PROGRESS.md)。本机 Python／Ruff 使用 `.local/conda-envs/socai2/bin/`，OpenSpec 使用已安装 CLI，连接按[SSH 接入](mac-ssh-relay-20261107.md)。下方保留各批次环境记录，其中运行标识及未完项只适用于对应时点，不覆盖当前入口。
+
+## 分批环境记录
+
 当前本地环境以[2026-10-22依赖统一补齐回执](local-dependencies-20261022.md)为准：覆盖API/Agents runtime/dev及必需extras，已补本地动态库并移除新环境内继承的旧项目editable。两服务共享包锁版本不同，统一环境采用声明兼容的实际清单及SQLAlchemy本地覆盖，不等于任一部署锁；旧批次环境快照保原。
 
 # 环境交接

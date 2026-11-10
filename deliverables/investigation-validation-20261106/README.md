@@ -7,18 +7,18 @@
 | 页面功能与跳转 | [F01–F28／J01–J14](frontend-feature-list.md) |
 | 表、关联键和读取 | [服务端数据交接](../../docs/investigation/socai2-page-data-handoff-20261106.md) |
 | 字段及空态 | [字段取数样例](page-field-samples.md) |
-| 当前两案生产读取 | [299 次 GET 与 13,098 项核对](../../docs/operations/evidence/current-release-20261110-01/readback-03/summary.json) |
+| 当前两案生产读取 | [365 次 GET 与 16,820 项核对](../../docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json) |
 | 待完成功能 | [问题清单](../../docs/investigation/current-issues.md) |
 
 ## 调查运行记录页
 
-[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 当前发布为 `v1.2-20261110-r2`，只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
+[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 当前发布为 `v1.2-20261110-r4`，只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
 
 ```sh
 ssh -N -L 127.0.0.1:4177:127.0.0.1:4177 sting-infra21
 ```
 
-生产模式从 `aisoc.socai2` 按授权租户读取最近 Case，每批五案，详情每 15 秒检查已提交变化。生产缓存位于 21 的 `/opt/sting-aisoc-socai2/data/production-workbench/`。独立静态条目保留测试来源；21 已登记 16 份，本机保留 47 份，两者不混计。当前新增的 9 份 C1/C3/Deep/C6 导出来自真实隔离 PG，模型及工具使用替身；481 份发布文件及 482 项 HTTP／字节核对通过。[发布回执](../../docs/operations/evidence/current-release-20261110-01/workbench-publication.json)
+生产模式从 `aisoc.socai2` 按授权租户读取最近 Case，每批五案，详情每 15 秒检查已提交变化。生产缓存位于 21 的 `/opt/sting-aisoc-socai2/data/production-workbench/`。独立静态条目保留测试来源；21 登记 18 份，本机保留 49 份，两者不混计。本批两个 Case 导出来自正式库的实际保存，含两个首轮及一案 H 后调查，模型原答与拒收均可查；演练材料和助手代拟核查均明确标注。既有隔离 PG 条目的模型／工具替身标签保持。静态发布 199 个文件及 200 次 HTTP 核对通过。[发布回执](../../docs/operations/evidence/case-current-flow-20261110-01/workbench-publication.json)
 
 | 查阅对象 | 关联依据 |
 | --- | --- |
