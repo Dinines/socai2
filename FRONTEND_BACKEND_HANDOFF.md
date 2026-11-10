@@ -24,7 +24,7 @@
 | 发布 | `v1.2-20261110-r4`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
-| 开发查阅 | 21 回环 `127.0.0.1:4177`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
+| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台组件 `workbench-20261110-r2`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
 | Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=false`；页面不得将未开放写操作显示为已保存。按需处理作业使用专用身份和调用者权限 |
@@ -102,5 +102,7 @@ H 为用户要求助手补充的“验收材料完整性核查”，保留该来
 ## 7 内部查阅与离线资料
 
 [4177 调查运行记录](http://127.0.0.1:4177/)用于核查 Run、步骤、实际输入输出、错误和原件。生产 Case 从正式库读取；隔离测试条目标明模型／工具替身。它与产品页面分别维护。[使用方法与固定样例](deliverables/investigation-validation-20261106/README.md#调查运行记录页)
+
+Case 查阅页左侧为流程，点击节点后右侧按“概览与原因、提示词、输入、输出、原始记录”查阅；窄屏上下排列。提示词按 system/developer 分开，输入保留消息顺序和输出约束，输出保留模型原答及校验错误。阶段可继续进入关联模型或查询，失败的 Deep 调用也有独立入口；切换模块／轮次清空上一选择。冻结输入归输入，零行、跳过、未记录及未分派分别说明，不推断执行或模型成功。展示使用既有 `runs → run_steps → artifacts`，没有增加或调整告警、API、数据库字段。
 
 离线快照只提供字段和失败样例，不能代替实时接口。各批原答、unknown 和失败保持；追溯材料见[历史目录](docs/handoff/history/2026-11-10-current-handoff-cleanup.json)。

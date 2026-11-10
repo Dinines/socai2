@@ -21,7 +21,7 @@ class Nodes(HTMLParser):
             self.active = values
 
     def handle_endtag(self, tag):
-        if tag in {"a", "span"}:
+        if tag in {"a", "span", "button"}:
             self.active = None
 
     def handle_data(self, data):
@@ -30,6 +30,24 @@ class Nodes(HTMLParser):
 
 
 class ProcessingFlowTest(unittest.TestCase):
+    def test_failed_deep_call_remains_selectable_without_an_action_receipt(self):
+        steps = [
+            {"id": "stage", "run_id": "r", "stage_code": "C4.deep", "kind": "stage", "name": "deep",
+             "seq": 1, "state": "failed"},
+            {"id": "call", "parent_step_id": "stage", "run_id": "r", "stage_code": "C4.deep", "kind": "model",
+             "name": "model", "seq": 2, "state": "failed", "error": {"code": "invalid_reference"}},
+        ]
+        page = render_case_detail(key="t", title="test", batch="b", data={
+            "runs": [{"id": "r", "kind": "baseline", "state": "completed"}], "run_steps": steps,
+            "artifacts": [{"id": "reply", "run_id": "r", "step_id": "call", "kind": "model_response",
+                           "content_json": {"payload": {"raw": "</pre><script>alert(1)</script>"}}}],
+        }, extras={})
+        nodes = Nodes(page).nodes
+        self.assertEqual(nodes["深查模型 · 调用 1 · 失败"]["href"], "#step-1")
+        self.assertEqual(nodes["深查模型 · 回答 · 未记录"]["data-state"], "missing")
+        self.assertNotIn("<script>alert(1)</script>", page)
+        self.assertEqual(page.count("&lt;/pre&gt;&lt;script&gt;alert(1)&lt;/script&gt;"), 1)
+
     def render(self, routes):
         run = {"id": "r", "kind": "baseline", "state": "completed", "delivery_state": "partial"}
         steps = [

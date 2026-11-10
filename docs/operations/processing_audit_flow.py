@@ -23,13 +23,14 @@ def node(label, state=None, anchor=None, *, reason=None, note=None):
     state = state or "missing"
     word, color = STATES.get(state, (state, "idle"))
     text = f"{label} · {word}" + (f"（{note}）" if note else "")
-    attrs = f'class="flow-node is-{color}"'
+    attrs = (f'class="flow-node is-{color}" data-state="{html.escape(str(state), quote=True)}"'
+             ' aria-controls="node-inspector"')
     if reason:
         attrs += f' title="{html.escape(str(reason), quote=True)}"'
     text = html.escape(str(text))
     if anchor and re.fullmatch(r"(?:step|artifact|run)-[0-9]+", anchor):
         return f'<a {attrs} href="#{anchor}">{text}</a>'
-    return f"<span {attrs}>{text}</span>"
+    return f'<button type="button" {attrs}>{text}</button>'
 
 
 def lane(main, branches=()):
@@ -140,6 +141,7 @@ def render_flow(run, steps, artifacts, artifact_indices, step_ids, run_anchor):
                 branches.append(step_node("深查执行", s, answer_label))
                 iterations = summary.get("iterations") or []
                 calls = [m for m in select("C4.deep", "model") if m.get("parent_step_id") == s["id"]]
+                branches.extend(step_node(f"深查模型 · 调用 {i + 1}", call) for i, call in enumerate(calls))
                 if iterations or calls:
                     actions = []
                     for choice, label in (("query", "再查"), ("answer", "回答"), ("handoff", "交接")):

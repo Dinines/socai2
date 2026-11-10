@@ -19,7 +19,7 @@
 | P05 | Case 评论附件、探索保存、案件故事组合、完整管理／真实响应缺页面或服务接线 | F20/F24/F25/F27；已有表或模型建议不能宣称业务已开放。响应只以真实审批／动作／回执为据 |
 | Q01 | 问答、保存回答、采用回答为预留业务 | 服务预留返回 501；生产关闭 Case 开关时先返回 503。前端标明未开放，不能把演示回答写成服务结果 |
 
-四项 P01–P04 是已保存的原页面核对结论，本批没有修改页面交互或重新跑浏览器签收。[功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [原始页面证据](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)
+四项 P01–P04 是已保存的产品页面核对结论；4177 内部工作台的节点详情优化不核销这些产品页面事项。[功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [原始页面证据](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)
 
 ## 已修正并复验
 
@@ -31,5 +31,6 @@
 | R04 | 交接文档仍显示未部署／缺权限，OpenAPI 缺来源工件、活动及事件交付字段 | 当前入口、字段与接口导出统一更新；整理前文档归档，原失败／unknown／模型原答保持 |
 | R05 | Deep/C6 生成 Schema 允许接收校验禁止的执行回执结论引用 | Deep 支持／反证及 C6 结论／比较／影响／建议的枚举排除执行回执；C6 analysis 保留查询覆盖引用。20 项边界检查、5 份原答离线复验通过；真实生成效果列 M02 |
 | R06 | 核验器假定当前判断非空、Case／活动仅属于单案 | 支持空判断并拒绝伪造判断；按同租户完整主体关系核 Case、活动及 `via_member_alert`，补 H 详情和全部修订逐值核对。16,820 检查及独立活动 1,083 检查通过 |
+| R07 | 4177 点击节点只能跳到下方原件，Deep 无动作时缺实际失败模型入口；展示源码变化不能刷新已有缓存 | 左侧流程／右侧详情已接通提示词、输入输出、错误和原件；Deep 每次实际调用可选，冻结输入分类经独审修正。30 项定向测试、307 条记录逐值保持及浏览器宽窄屏核验通过。见[节点详情验收](../../openspec/changes/complete-socai2-investigation-chain/workbench-node-inspector-20261110.md) |
 
 当前结果见[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)与[读回证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)。前批回执与过程见[发布核验报告](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)及[证据目录](../operations/evidence/current-release-20261110-01/readback-03/summary.json)。

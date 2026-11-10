@@ -1,0 +1,228 @@
+{
+  "schema_version": "socai2.independent-audit.v1",
+  "batch": "workbench-node-inspector-20261110-01",
+  "recorded_at": "2026-11-10T12:10:03.461455+00:00",
+  "reviewer": "/root/current_release_audit",
+  "independence": "Reviewer did not implement or deploy the change. Reviewer read source, documentation and saved evidence, ran two targeted local tests with mocked database access, parsed saved HTML, inspected the saved desktop screenshot, and wrote only this audit receipt for this batch.",
+  "decision": {
+    "workbench_node_inspector_implementation_and_delivery": "ACCEPT",
+    "must_fix_findings": [],
+    "model_quality": "NOT_PASSED; unchanged and outside this UI acceptance",
+    "entire_investigation_change_complete": false,
+    "git_and_parent_publication": "Pending separate execution/receipt at audit time"
+  },
+  "scope": [
+    "Left flow/right node inspector, prompts/input/output/error/raw views, model call selection, absent and failed state handling, Run attribution and original-record navigation.",
+    "HTML/text rendering safety, lazy record parsing, saved evidence preservation and renderer-driven online cache invalidation.",
+    "Workbench-only runtime publication and verification, static publication receipts, current component/configuration provenance and handoff documentation."
+  ],
+  "findings_resolved_during_audit": [
+    {
+      "id": "F01",
+      "priority": "P2",
+      "status": "fixed_and_rechecked",
+      "file": "docs/operations/processing_audit_inspector.py",
+      "finding": "Selecting the C1 or I input_snapshot artifact incorrectly showed no input and presented that snapshot under output.",
+      "resolution": "The input view now displays the selected input_snapshot body itself; output excludes input_snapshot and tool_request. Code was rechecked and the implementation browser receipt verifies both C1 and I input nodes."
+    },
+    {
+      "id": "F02",
+      "priority": "P2",
+      "status": "fixed_and_rechecked",
+      "file": "PROGRESS.md",
+      "finding": "The current workbench progress reused an earlier batch statement that its audit and Git/parent publication were already complete.",
+      "resolution": "Removed the earlier completion statement; current progress now distinguishes the workbench implementation/deployment from its pending audit and Git/parent publication. Earlier Case execution evidence is explicitly identified."
+    }
+  ],
+  "source_review_results": [
+    {
+      "area": "Run and node association",
+      "result": "PASS",
+      "detail": "Flow builders filter steps/artifacts to the selected Run. Inspector resolves saved record IDs and rejects a selected target from another active Run. Switching module or Run clears selection/content. Stage and model records retain explicit IDs; existing linked/reused artifacts remain source-linked rather than copied or invented."
+    },
+    {
+      "area": "Deep failures and original output",
+      "result": "PASS",
+      "detail": "Every recorded Deep model child gets a selectable node even when no action receipt exists. Model response raw text and validation/transport errors remain independently readable; absent action nodes remain missing. Empty/skipped wording does not guarantee an original answer exists."
+    },
+    {
+      "area": "Safe original display",
+      "result": "PASS",
+      "detail": "Server JSON is HTML-escaped; dynamic views use createElement/textContent rather than treating saved text as HTML. JSON is lazily parsed from existing marked records, avoiding a second full evidence payload. Original anchors and no-script raw-record access remain available."
+    },
+    {
+      "area": "Input/output and states",
+      "result": "PASS",
+      "detail": "Input snapshots are displayed as inputs; model requests preserve ordered messages and output constraints; raw responses and error codes remain intact. Execution, delivery, validation, zero-row queries and missing/skipped routes are not treated as semantic model success. Existing database constraints restrict nonnull returned_rows to completed tool steps."
+    },
+    {
+      "area": "Renderer cache invalidation",
+      "result": "PASS",
+      "detail": "The server stores a renderer-source fingerprint with the published receipt. A changed renderer forces an unchanged database snapshot to be re-rendered while preserving the data version and snapshot contents; unchanged data/version is not represented as a business change."
+    },
+    {
+      "area": "Workbench publication scope",
+      "result": "PASS",
+      "detail": "Publication uses a new component directory, validates the pinned base manifest, limits overrides to configured Python files under docs/operations, and runs compose up only for workbench with --no-deps/--no-build/--pull never. Receipt checks preserve image, environment, command and non-source mounts and compare other running containers. Read-only --verify checks final manifest files, effective Compose/runtime and actual mounted override hashes."
+    },
+    {
+      "area": "Current handoff",
+      "result": "PASS",
+      "detail": "Main v1.2-20261110-r4 and processing component remain distinct from workbench-20261110-r2. Deployment README documents the separate source/Compose and requires later unified releases to account for that actual component. Product-page P01-P04 and model tasks are not closed by the workbench UI change."
+    }
+  ],
+  "independently_executed_checks": [
+    {
+      "kind": "targeted_unit_tests",
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=docs/operations .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider docs/operations/test_processing_audit_flow.py::ProcessingFlowTest::test_failed_deep_call_remains_selectable_without_an_action_receipt docs/operations/test_serve_processing_workbench.py::WorkbenchTest::test_changed_renderer_refreshes_unchanged_database_snapshot",
+      "exit_code": 0,
+      "output": "2 passed in 0.06s",
+      "passed": 2,
+      "coverage": [
+        "Failed Deep call remains selectable without an action receipt; hostile raw text remains escaped.",
+        "Changed renderer refreshes unchanged database snapshot while preserving data version."
+      ],
+      "boundary": "Mocked database source, temporary local files only; no network/model/database calls. These two tests are a subset of the saved 30-test suite and are not added to its count."
+    },
+    {
+      "kind": "saved_HTML_record_value_comparison",
+      "method": "Parsed each data-record-json pre block with HTMLParser, keyed by record kind and immutable ID, and compared the entire parsed object map to the existing source database.json runs/run_steps/artifacts maps. Verified source and page hashes.",
+      "cases": [
+        {
+          "case": "C01",
+          "runs": 6,
+          "steps": 52,
+          "artifacts": 129,
+          "records": 187,
+          "exact_values_equal": true
+        },
+        {
+          "case": "C02",
+          "runs": 5,
+          "steps": 33,
+          "artifacts": 82,
+          "records": 120,
+          "exact_values_equal": true
+        }
+      ],
+      "records": 307,
+      "failed_comparisons": 0
+    },
+    {
+      "kind": "committed_raw_text_preservation",
+      "basis_commit": "861956cb93834354f37bee7461d117f7fc532d85",
+      "method": "Read the two prior published pages with git show at the fixed basis commit. Parsed all pre text in order and required exact list equality with the two final generated pages.",
+      "C01_blocks": 273,
+      "C02_blocks": 183,
+      "total_blocks": 456,
+      "all_equal": true,
+      "boundary": "This establishes no added/rewritten raw evidence in these static publication pages; it does not deny the workbench performed its separately recorded read-only online cache refresh."
+    },
+    {
+      "kind": "final_file_and_receipt_integrity",
+      "method": "Compared local SHA-256 hashes to final runtime publication, verification and preparation receipts; checked matching container/image/release identity; compared 199 static files and static manifest to final receipt; checked screenshot hash.",
+      "current_runtime_files_matched": 5,
+      "static_files_matched": 199,
+      "runtime_receipt_identity_match": true,
+      "static_manifest_receipt_match": true,
+      "screenshot_hash_match": true,
+      "failed_checks": 0
+    },
+    {
+      "kind": "saved_screenshot_visual_review",
+      "path": "desktop.jpg",
+      "result": "PASS",
+      "observed": "Desktop left flow and right inspector are visible together, with the failed Deep call selected, its current Run context, preserved error code, and prompt/input/output/raw tabs. No overlapping content was observed in the saved image."
+    }
+  ],
+  "reused_implementation_validation": {
+    "tests": "tests.json",
+    "audit_rendering_tests_passed": 22,
+    "workbench_HTTP_and_cache_tests_passed": 4,
+    "updater_tests_passed": 4,
+    "total_tests_passed": 30,
+    "browser_receipt": "browser-checks.json",
+    "browser_checks_passed": 13,
+    "browser_scope": [
+      "C01/C02, A/I, Deep/C6 and failed calls",
+      "Prompt and original input/output text comparison",
+      "C1/I input-snapshot classification",
+      "Module/Run reset and empty nodes",
+      "Keyboard Enter, original-anchor return, zero-row/skipped display",
+      "1440x1000 two columns and 390x844 stacked layout without horizontal overflow",
+      "Production root iframe/direct page and reported console errors"
+    ],
+    "note": "Reviewer reused these broader tests/browser checks, independently reran only the two specified local tests, and did not operate a browser or remote service."
+  },
+  "recorded_delivery": {
+    "main_release": "v1.2-20261110-r4",
+    "workbench_component": "workbench-20261110-r2",
+    "image": "sha256:c68c72a9cfe6fa04f6963582d65ce49d73cbf5355c0d72dcf1905d3ecb84776c",
+    "health": "healthy",
+    "runtime_receipt": "runtime-publication-02.json",
+    "verification_receipt": "runtime-publication-02-verification.json",
+    "reported_release_source_files_verified": 645,
+    "actual_changed_files_verified": 5,
+    "other_services_unchanged": true,
+    "image_environment_command_data_mounts_unchanged": true,
+    "static_receipt": "static-publication-02.json",
+    "static_files_verified": 199,
+    "static_HTTP_reads_verified": 200,
+    "remote_registered_records": 20,
+    "local_registered_records": 49,
+    "refreshed_registered_records": 2,
+    "old_static_files_preserved": true,
+    "unrelated_registered_records_preserved": true,
+    "note": "Two targeted existing registration records were refreshed; static-publication-02 correctly reports old_records_preserved=false while old files and unrelated records remain preserved. No claim that every registration object stayed byte-identical.",
+    "new_model_calls": 0,
+    "business_database_writes": 0
+  },
+  "limits_and_unverified_items": [
+    "No new SSH, remote HTTP, browser interaction, model calls, database connections, business writes, service restart, Git commit or push by this reviewer.",
+    "Production 645-file/runtime/HTTP verification is assessed through saved receipts and publisher source, not an independent second remote execution.",
+    "Browser interactions, narrow-screen behavior and live cache refresh use saved implementation evidence; reviewer independently viewed only the desktop screenshot and static HTML.",
+    "This is an internal 4177 viewer acceptance. It does not establish model factuality, H semantic use, product-page write flows, automatic consumers or completion of tasks 3.7/3.23/3.30.",
+    "Task 3.32 remained unchecked pending this audit at review time; Git/parent publication must be recorded after actual completion.",
+    "Untracked tools/model-preflight/ was excluded and not modified or audited."
+  ],
+  "reviewed_source_sha256": {
+    "docs/operations/processing_audit_inspector.py": "87e75ac7948bbf0c57a562519b545d613e3527a4a8a180db16b0f3a755dccc45",
+    "docs/operations/processing_audit_detail.py": "577af9ae5a9f0bebb88084dca2e2478666bb56fba3947ec11a8a242164741c5e",
+    "docs/operations/processing_audit_flow.py": "c7f5452c34000e8f6c9f3d1ea5b139f6a4ac3d722a4c8b2285198c7cff34edb8",
+    "docs/operations/serve_processing_workbench.py": "73d181f1116cb5385c2c5f309939098f2a333ddcc21bf45e3e5c750d5e3cad67",
+    "docs/operations/update_processing_audit.py": "1c26b05665826124bdf15b9dd28f9ccac6c6f71012c9d9371d9ba4973be65383",
+    "docs/operations/test_processing_audit_flow.py": "75716cc40754c603df6765915b6380cf73753de38f3e91347801c5c5462e9617",
+    "docs/operations/test_serve_processing_workbench.py": "7446c08e6de4b08c7734089a39adb52c50ebe4a940c8bb955adf71b07469535b",
+    "deploy/aisoc21/publish_workbench_runtime.py": "9bb5eeddebb8b284718c591a35c62d3a2165a1d495c9961f43596d4daf4a514b",
+    "deploy/aisoc21/workbench-runtime-current.json": "e541220cc64e2f78f72db70d97e44e7e3f50bab7e532f1810c5d0cd27b447320",
+    "deploy/aisoc21/workbench-current.json": "a00c906db01ee92c893bc6a7a95b49fbf7d61c06592a87f0fcea56446cb90b4a",
+    "deploy/aisoc21/release-v1.2.json": "71c5c51e619abd4433b4658a35acb7f9b8b4c9b47bd2c6b2cc40c187ce1d5a78"
+  },
+  "reviewed_document_sha256": {
+    "PROGRESS.md": "31e8fc3eacc799b636c7c35408907676fec3d886cf552b0d743af964729de9d3",
+    "FRONTEND_BACKEND_HANDOFF.md": "b9343f53006075cdbe7257d6218d927eb3fab9a1b5a45a42e6efe9cd4df95b1e",
+    "deploy/aisoc21/README.md": "6b33cb52f09773cfd1e404346bad5730462b6559ce727b2ddaebe86b9f5693d1",
+    "deliverables/investigation-validation-20261106/README.md": "4665e1d36258bbae40f0ad18731961863087b07af56c329913ce357896d97039",
+    "docs/investigation/current-issues.md": "7ad7114d1c2ba80ebc1a1f33c689cfe0699723d0c06af0aea23641e4911a715e",
+    "openspec/changes/complete-socai2-investigation-chain/workbench-node-inspector-20261110.md": "a1618f7aeb33c293d2fc9f796b0da1c5baae6be6f9aee0641ac2a04905224c2a",
+    "openspec/changes/complete-socai2-investigation-chain/tasks.md": "3beb1d6e4d06d3bfd0acaec7d83335d60a9acdeb7e68bcb9560f9269469e395f",
+    "openspec/changes/complete-socai2-investigation-chain/specs/socai2-case-investigation-workspace/spec.md": "0264fe2f371c30c6b87f7860abef080ff7f15f6f9c277e7ee380e1d50ba1f2b0"
+  },
+  "reviewed_evidence_sha256": {
+    "tests.json": "3924c5c07dd5c150dae3e3564bd1a34ebf352931ef9d6a31a902d80335a1ca25",
+    "record-preservation.json": "9f07cfe73152e45d61b33820fde5acc517592ffc015d724926513acd8e120ee5",
+    "publication-provenance.json": "06b3c01d9957b275a98e8f0601485d7e5c676c05cd949e8170dcff2777068d62",
+    "browser-checks.json": "a6d7782d5f25a768a118cdeff347b7d4f7d33456a465f68e83c2dd39caf3b8f8",
+    "desktop.jpg": "f89cf48d0ea4c21b00da29e0d1aa2a6308e776bccf731290551518804c1cd0fe",
+    "runtime-manifest.json": "f6a68c055e2a16db97e5c25636f2666fb57037dfa0aa6c301b9ce5e9e71b1688",
+    "runtime-manifest-02.json": "562986d91016b5491fcec360a7c4fe1db0c0a757080c22e536ef62dd15634bba",
+    "runtime-manifest-03.json": "23badd1c86032e18c942352600ace0dd2b2882672e1faaecb9b5a6141bdb7571",
+    "runtime-publication.json": "3913b7aee9bb50cac99ab83c7c6ebfa45ffda5019c7d5cd057f8ecee284d3ef6",
+    "runtime-publication-02.json": "f7d6ebafd939b7af39b49517b325a12ead629050758f1ab4b2608f041f3f9843",
+    "runtime-publication-02-verification.json": "051c05405515036f2d1e74e8c5d937a0238d62854f36ae66dc21d8a9f86ee84b",
+    "static-manifest.json": "0c456843f7a7826d8cb2d3252b26c05a5416eea23a462c67bb5a374094c49f3e",
+    "static-manifest-02.json": "74a737b18d48278c2f69bcae25b18f65e6c95cfedd3e59c392283c5c835fdec3",
+    "static-publication.json": "f2e68c2d9a338b59bee3e8df010fead4ab52bb22a361eb34b002518ede5244af",
+    "static-publication-02.json": "171601bbca85f43139eaff122259146e4abf43da9e6a0d6dc3d50f6059c1eb8d"
+  }
+}

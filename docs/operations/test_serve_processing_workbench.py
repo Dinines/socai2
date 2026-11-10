@@ -102,6 +102,22 @@ class WorkbenchTest(unittest.TestCase):
             self.assertFalse(first_detail.exists())
             self.assertEqual(1, len(list(self.app.captures.rglob("database.json"))))
 
+    def test_changed_renderer_refreshes_unchanged_database_snapshot(self):
+        data = {t: [] for t in TABLES}
+        data["cases"] = [{"id": str(self.case), "tenant_id": str(self.app.tenant), "title": "保留材料"}]
+        with patch.object(web.source_db, "read_case_if_changed", return_value=(datetime.now(timezone.utc), data, "rev1")) as read:
+            before = self.app.refresh(self.case)
+            original = web.site.render_case_detail
+            with patch.object(web.site, "renderer_revision", return_value="different-renderer"), \
+                    patch.object(web.site, "render_case_detail", side_effect=lambda **kw: original(**kw) + "<!-- refreshed -->"):
+                restarted = web.Workbench("21", self.app.tenant, self.app.output, self.app.captures)
+                after = restarted.refresh(self.case)
+            read.assert_called_with("21", self.app.tenant, self.case, None)
+            self.assertFalse(after["changed"])
+            self.assertEqual(before["version"], after["version"])
+            self.assertNotEqual(before["detail_url"], after["detail_url"])
+            self.assertEqual(1, len(list(self.app.captures.rglob("database.json"))))
+
 
 if __name__ == "__main__":
     unittest.main()

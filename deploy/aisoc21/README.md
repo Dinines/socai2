@@ -1,6 +1,6 @@
 # 21 调查服务部署
 
-当前发布为 `v1.2-20261110-r4`，运行入口为 `/opt/sting-aisoc-socai2/current-v1.2`。A/I 及 Case C1/C3/Deep/C6 策略已实际加载，API、Fusion、Agents、projection、工作台及 gateway 六项服务健康。Case/H GET 可用，Case HTTP 写入口关闭，Agents 消费暂停。
+主发布为 `v1.2-20261110-r4`，运行入口为 `/opt/sting-aisoc-socai2/current-v1.2`；4177 工作台单独发布为 `workbench-20261110-r2`。A/I 及 Case C1/C3/Deep/C6 策略已实际加载，API、Fusion、Agents、projection、工作台及 gateway 六项服务健康。Case/H GET 可用，Case HTTP 写入口关闭，Agents 消费暂停。
 
 ## 发布来源
 
@@ -8,6 +8,7 @@
 - [传输配置](current-rollout.json)：SSH 目标、独立发布目录、超时、包边界及证据位置。
 - [处理构建配置](processing-build-case-v1.toml)、[生产 profile](production-v1.2.toml)、[处理策略](../local-investigation/investigation-policy-case-v1.toml)：构建与运行均不回落其他环境。
 - [本批流程实测和发布](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)：修复、测试与完成边界。
+- [工作台组件配置](workbench-runtime-current.json)：4177 的实际源码挂载、Compose、固定镜像和独立发布回执；主服务和处理策略保持。
 
 源码冻结包含当前工作区内容，通过逐文件 hash 核镜像及运行挂载。发布目录不可覆盖；后续发布填写独立标识并核现场镜像和有效 Compose。构建使用已缓存的固定基础镜像，关闭网络拉取。
 
@@ -24,7 +25,6 @@
 在 21 只读核验：
 
 ```sh
-python3 /opt/sting-aisoc-socai2/current-v1.2/deploy/aisoc21/release_12.py verify --directory /opt/sting-aisoc-socai2/current-v1.2
 python3 /opt/sting-aisoc-socai2/ops/processing-production.py check
 ```
 
@@ -39,6 +39,14 @@ python3 /opt/sting-aisoc-socai2/ops/processing-production.py check
 ## 工作台与测试
 
 4177 只绑定回环，沿 [Mac SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)访问。当前 Case 保存记录从正式库读取；本批两个 Case 的实际保存快照及既有隔离 Case 快照通过 [静态发布配置](workbench-current.json)追加，保留其他记录及原答。静态发布不会启动调查或重启容器。
+
+节点详情使用 `workbench-20261110-r2` 的源码：左侧流程、右侧提示词／输入／输出／失败原因；缓存按展示源码指纹刷新。组件保留主发布的固定镜像、环境、命令及数据挂载，只重建工作台容器。当前现场核验从本机执行：
+
+```sh
+python deploy/aisoc21/publish_workbench_runtime.py --config deploy/aisoc21/workbench-runtime-current.json --verify
+```
+
+后续仅更新工作台时，准备独立组件配置及证据目录，再使用同一入口的 `--publish`；先检查当前挂载和 Compose，按清单继承基础源码并替换所列展示文件。有效配置与回退 Compose 只保存在配置指定的 21 private 目录。统一主发布核验包含工作台挂载，后续整批发布需纳入本组件的实际挂载和 Compose，不再直接套用前批的工作台来源。
 
 真实 GET 与数据库对照使用 [verify_current_release.py](../../docs/operations/verify_current_release.py)及独立批次配置。每次指定新输出目录，读取父主体、材料、工件、活动与同租户相关告警；凭据仅从私密文件加载。没有新增真实模型调用时，不报告模型质量或完整真实调查通过。
 

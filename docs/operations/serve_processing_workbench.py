@@ -33,6 +33,7 @@ class Workbench:
             raise ValueError("use a separate runtime site for online Case data")
         self.reading_list = threading.Lock()
         self.refreshing = threading.Lock()
+        self.renderer_revision = site.renderer_revision()
 
     def prepare_site(self):
         if not self.output.exists():
@@ -72,6 +73,7 @@ class Workbench:
         previous = record
         revision = None
         if (record and record["scope_id"] == str(case) and record["tenant_id"] == str(self.tenant)
+                and receipt.get("renderer_revision") == self.renderer_revision
                 and record["detail"] == receipt.get("detail") and (self.output / record["detail"]).is_file()
                 and (folder / "exports" / receipt["snapshot"] / "database.json").is_file()):
             revision = receipt.get("revision")
@@ -88,7 +90,7 @@ class Workbench:
                                   and r.get("scope_id") == str(case))
                     prune_publication(self.output, previous, records.values())
             receipt = {"revision": new_revision, "version": version, "record_id": record["id"],
-                       "detail": record["detail"], "snapshot": path.name}
+                       "detail": record["detail"], "snapshot": path.name, "renderer_revision": self.renderer_revision}
             site.atomic_save(receipt_file, json.dumps(receipt).encode())
         return {"case_id": str(case), "changed": changed, "version": receipt["version"], "record_id": record["id"],
                 "snapshot_at": record["snapshot_at"], "detail_url": "/" + record["detail"], "record": record}

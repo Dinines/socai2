@@ -38,6 +38,15 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def renderer_revision():
+    """Invalidate generated UI caches when their renderer changes, not when the DB changes."""
+    folder = Path(__file__).parent
+    names = ("processing_audit_detail.py", "processing_audit_flow.py", "processing_audit_inspector.py",
+             "processing_audit_index.py", "processing_audit_delivery.py", "processing_audit_logs.py",
+             "processing_audit_subjects.py")
+    return sha(b"".join(name.encode() + b"\0" + (folder / name).read_bytes() for name in names))
+
+
 def timestamp(value):
     if not value:
         return float("-inf")

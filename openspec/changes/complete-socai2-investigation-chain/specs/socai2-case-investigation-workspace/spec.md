@@ -1,5 +1,17 @@
 ## ADDED Requirements
 
+### Requirement: Internal audit flow exposes preserved node details beside the flow
+
+4177 内部调查查阅页 SHALL 在宽屏左侧显示紧凑流程、右侧显示所选节点详情，在窄屏按上下顺序可用。详情 SHALL 来自该节点实际保存的步骤、Run 和工件，分开显示模型提示词、输入消息和约束、原答、执行/校验失败原因以及原件入口。缺失、跳过、未分派、零行和部分交付 MUST 保留实际含义，不推断成功或补造输出；选择节点不得产生模型调用或业务写入。
+
+#### Scenario: A deep model call failed before choosing an action
+- **WHEN** Deep 模型已调用但因校验失败未生成有效动作
+- **THEN** 流程保留可点击的实际模型调用，右侧可查原提示词、输入、原答及校验错误，未记录动作保持未记录
+
+#### Scenario: The reviewer switches run or selects an absent node
+- **WHEN** 用户切换模块/轮次或选择没有记录的节点
+- **THEN** 清除上一节点内容并显示所选轮次的空态，不把其他轮次输入输出留在详情区；节点可通过键盘选择，原件仍可单独查阅
+
 ### Requirement: Page data readiness is independent of investigation workflow maturity
 
 本轮页面数据合同 SHALL 以字段可持久保存/回查、来源关联及确定派生规则验收，允许通过真实数据库读回与导出交接，不要求先完成模型质量、VPN对照、实时页面写表或跨域接线。已有字段但当前无样例 SHALL 标为未产生数据，不当成结构缺口。原页面模板保持，允许必要字段绑定及缺值呈现适配；缓存、示例文案和演示值不能作为唯一业务数据来源。

@@ -6,6 +6,9 @@ from datetime import datetime, timedelta, timezone
 
 from processing_audit_delivery import incident_fields
 from processing_audit_flow import SOURCES, STATES, TOOLS, render_flow
+from processing_audit_inspector import PANEL
+from processing_audit_inspector import SCRIPT as INSPECTOR_SCRIPT
+from processing_audit_inspector import STYLE as INSPECTOR_STYLE
 
 BEIJING = timezone(timedelta(hours=8))
 MODULES = {
@@ -52,9 +55,10 @@ def esc(value):
     return html.escape(str(value), quote=True)
 
 
-def raw(label, value):
+def raw(label, value, *, record=False):
     body = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False)
-    return f"<details><summary>{esc(label)}</summary><pre>{esc(body)}</pre></details>"
+    attr = ' data-record-json' if record else ''
+    return f"<details><summary>{esc(label)}</summary><pre{attr}>{esc(body)}</pre></details>"
 
 
 def beijing(value):
@@ -185,8 +189,10 @@ def render_step(step, attached, directory, step_anchor):
     if isinstance(step.get("error"), dict):
         facts.append(("错误或跳过原因", step["error"].get("code") or step["error"].get("message")))
     usage = raw("用量", step["usage"]) if step.get("usage") is not None else ""
-    return (f'<details class="step" id="{esc(step_anchor)}">' + summary + refs(links) + fields(facts)
-            + usage + raw("步骤记录（数据库 run_steps）", step) + "</details>")
+    return (f'<details class="step" id="{esc(step_anchor)}" data-record-kind="step" data-record-id="{esc(step["id"])}"'
+            f' data-run-id="{esc(step.get("run_id") or "")}" data-parent-step-id="{esc(step.get("parent_step_id") or "")}">'
+            + summary + refs(links) + fields(facts)
+            + usage + raw("步骤记录（数据库 run_steps）", step, record=True) + "</details>")
 
 
 def frozen_input(run, directory):
@@ -284,7 +290,8 @@ def render_run(run, steps, by_step, run_artifacts, directory, titles, run_anchor
     name = run.get("title") or subject or rid
     state = run.get("state") or "未记录"
     delivery = run.get("delivery_state") or "未记录"
-    parts = [f'<details class="run" id="{esc(run_anchor)}"><summary>{esc(name)} <code>{esc(state)} / {esc(delivery)}</code></summary>',
+    parts = [(f'<details class="run" id="{esc(run_anchor)}" data-record-kind="run" data-record-id="{esc(rid)}"'
+              f' data-run-id="{esc(rid)}"><summary>{esc(name)} <code>{esc(state)} / {esc(delivery)}</code></summary>'),
              fields([("Run ID", rid), ("关联主体", subject),
                      ("实际开始", beijing(run.get("started_at"))), ("实际结束", beijing(run.get("ended_at"))),
                      ("请求时间", beijing(run.get("requested_at"))), ("执行状态", state), ("交付状态", delivery),
@@ -296,7 +303,7 @@ def render_run(run, steps, by_step, run_artifacts, directory, titles, run_anchor
         parts.append(case_outputs(run, run_artifacts, directory, data))
     else:
         parts.append("<p>已记录的输出见本轮步骤和关联工件。</p>")
-    parts.append(raw("执行记录（数据库 runs）", run))
+    parts.append(raw("执行记录（数据库 runs）", run, record=True))
     if run.get("kind") == "baseline":
         recorded = {str(s.get("stage_code") or "").split(".")[0] for s in steps}
         absent = [f"C{i}" for i in range(1, 7) if f"C{i}" not in recorded]
@@ -391,15 +398,17 @@ def flow_map(modules, by_run, steps_by_run, directory, run_ids, step_ids, titles
             label = f'第 {i+1} 轮 · {title or run.get("title") or group_label} · {state} · {when}' if runs else "未记录执行"
             options.append(f'<option value="{panel}"{" selected" if selected else ""}>{esc(label)}</option>')
             contents = render_flow(run, steps_by_run.get(rid, []), by_run.get(rid, []), directory, step_ids, run_ids.get(rid))
-            panels.append(f'<div class="flow-panel" id="{panel}"{"" if active and selected else " hidden"}>{contents}</div>')
+            panels.append(f'<div class="flow-panel" id="{panel}" data-run-id="{esc(rid or "")}"'
+                          f'{"" if active and selected else " hidden"}>{contents}</div>')
         choices.append(f'<label class="flow-choice" data-choice="{group}"{"" if active else " hidden"}>'
                        f'查看执行 <select aria-label="{esc(group_label)}的轮次">{"".join(options)}</select></label>')
     return ('<section id="flow-map" aria-labelledby="flow-title"><h2 id="flow-title">调查流程图</h2>'
-            '<p class="quiet">选择一轮执行。点击有记录的节点，可定位到该步的输入、输出或回执。</p>'
+            '<p class="quiet">选择一轮执行，点击节点查看提示词、输入、输出和失败原因。</p>'
+            '<div class="flow-workspace"><div class="flow-navigation">'
             '<div class="flow-modules" aria-label="模块">' + "".join(buttons) + '</div>' + "".join(choices)
             + '<div class="flow-legend"><span class="is-success">成功</span><span class="is-failed">失败</span>'
             '<span class="is-unknown">待确认 / 进行中</span><span class="is-idle">未走 / 跳过</span></div>'
-            + "".join(panels) + '</section>')
+            + "".join(panels) + '</div>' + PANEL + '</div></section>')
 
 
 STYLE = """
@@ -478,7 +487,8 @@ def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: 
     titles = {r["id"]: r.get("title") for table in ("alerts", "incidents", "cases") for r in data.get(table, [])}
     view = ['<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
-            f"<title>{esc(title)} · 调查执行明细</title><style>{STYLE}</style></head><body><main>",
+            (f'<title>{esc(title)} · 调查执行明细</title><style>{STYLE}{INSPECTOR_STYLE}</style>'
+             '</head><body><main class="workbench-detail">'),
             f'<header><p class="quiet">{esc(batch)} · {esc(key)}</p><h1>{esc(title)}</h1>',
             "".join(f'<p class="quiet">Case ID <code>{esc(row["id"])}</code></p>' for row in data.get("cases", ())),
             '<p class="quiet">执行时间为北京时间（UTC+8）。</p>',
@@ -505,7 +515,9 @@ def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: 
     for i, f in enumerate(artifacts):
         label = f'{f.get("kind")} · {f["id"]}'
         body = esc(json.dumps(f, ensure_ascii=False, indent=2, allow_nan=False))
-        view.append(f'<details id="artifact-{i}" class="record"><summary>{esc(label)}</summary><pre>{body}</pre></details>')
+        view.append(f'<details id="artifact-{i}" class="record" data-record-kind="artifact" data-record-id="{esc(f["id"])}"'
+                    f' data-run-id="{esc(f.get("run_id") or "")}" data-step-id="{esc(f.get("step_id") or "")}">'
+                    f'<summary>{esc(label)}</summary><pre data-record-json>{body}</pre></details>')
     if not artifacts:
         view.append('<p class="quiet">未记录工件。</p>')
     view.append('</section><section id="database-rows"><h2>数据库里的业务记录</h2>'
@@ -529,6 +541,7 @@ document.addEventListener("toggle", event => {
 }, true);
 const flow = document.getElementById("flow-map");
 function choose(group) {
+    resetInspector();
     let panelId;
     for (const button of flow.querySelectorAll("[data-group]")) {
         button.setAttribute("aria-pressed", String(button.dataset.group === group));
@@ -543,7 +556,10 @@ flow.addEventListener("click", event => {
     const button = event.target.closest("[data-group]");
     if (button) choose(button.dataset.group);
 });
-flow.addEventListener("change", event => choose(event.target.closest("[data-choice]").dataset.choice));
+flow.addEventListener("change", event => {
+    const choice = event.target.closest("[data-choice]");
+    if (choice) choose(choice.dataset.choice);
+});
 function showRecord() {
     const id = location.hash.slice(1);
     if (!/^(artifact|step|run)-[0-9]+$/.test(id)) return;
@@ -557,8 +573,8 @@ function showRecord() {
 window.addEventListener("hashchange", showRecord);
 document.addEventListener("click", event => {
     const link = event.target.closest("a[href^='#']");
-    if (link && link.hash === location.hash) showRecord();
+    if (link && !event.defaultPrevented && link.hash === location.hash) showRecord();
 });
 showRecord();
-</script></body></html>""")
+""" + INSPECTOR_SCRIPT + "</script></body></html>")
     return "".join(view)
