@@ -55,6 +55,6 @@
 
 未参与实施者的独立结束审计为 **ACCEPT，限本批部署、读取和字段交接范围**。复跑 21 项检查全过；独立补核两案 15 条活动、32 条目标的正文、关联、总数和分页，共 171 项通过，此数字不计入原 13,098。审计指出的正文大小、Case 预算、写入状态和路径说明已修正复查。[独审回执](../../../docs/operations/evidence/current-release-20261110-01/independent-audit.json)
 
-Git 发布在以上步骤之后执行；先推送 `origin/V1.1`，再根据父项目远端 `add-server-submoudle` 最新提交仅更新 `server` gitlink。父项目本机分支与远端分叉，使用独立临时 Git 元数据保留其工作目录和其他提交；不使用强推覆盖远端。
+Git 已在以上步骤之后发布：代码交付提交 `33257461ed6f8f63c16872bb7a8e52612583303c` 已推送 `origin/V1.1`，父项目远端 `add-server-submoudle` 的 `server` 引用已更新，双方远端均核验成功。[发布回执](../../../docs/operations/evidence/current-release-20261110-01/publication-initial.json)记录该次代码交付及父项目提交；收口记录继续保存在同一分支，并同步父项目引用。父项目本机分支与远端分叉，因此使用独立临时 Git 元数据更新远端，仅改 `server`，未修改其本机工作目录或其他提交，未强推。
 
 本次不归档整个 change。模型质量仍为 NOT_PASSED，H 后完整真实调查、知识实际消费、自动消费者、四项原页面显示问题及未开放业务均保留在[问题清单](../../../docs/investigation/current-issues.md)，不以本批发布核销。
