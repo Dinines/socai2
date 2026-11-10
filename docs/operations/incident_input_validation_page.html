@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>事件诊断输入输出测试 · 调查工作台</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f4;color:#1c322f;font:15px/1.7 system-ui,"Microsoft YaHei",sans-serif}a{color:#176459;text-underline-offset:3px}header,main{max-width:1120px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;gap:16px;align-items:center}h1{font-size:24px;margin:0}h2{font-size:18px;margin:0 0 8px}h3{font-size:16px}section,article{background:#fff;border:1px solid #d6dfd9;border-radius:9px;padding:20px;margin-bottom:16px}nav,.downloads{display:flex;gap:16px;flex-wrap:wrap}.muted{font-size:13px;color:#53695f}.note{padding:12px;background:#fff7e5;border:1px solid #e5d09e;border-radius:6px}.metrics{display:flex;gap:28px;flex-wrap:wrap;padding:12px 0}.metrics b{display:block;font-size:23px}.badge{display:inline-block;margin:6px 8px 4px 0;padding:3px 9px;background:#e5eee8;border-radius:5px;font-size:13px}.reject{background:#fbe9e5;color:#8e3026}details{border-top:1px solid #d6dfd9;padding:12px 0}summary{cursor:pointer;font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:600px;overflow:auto;background:#f7f9f7;border:1px solid #e0e7e2;border-radius:5px;padding:14px;font:13px/1.7 ui-monospace,Consolas,monospace}a:focus-visible,summary:focus-visible{outline:3px solid #429d89;outline-offset:3px}li{margin:8px 0}p{margin:6px 0}@media(max-width:700px){header{align-items:flex-start;flex-direction:column}header,main{padding:14px}section,article{padding:14px}}
+</style></head><body>
+<header><div><h1 id="title">事件诊断输入输出测试</h1><p id="batch" class="muted"></p></div><nav><a href="../../index.html">调查工作台</a><a href="../index.html">测试记录</a></nav></header>
+<main><section><h2 id="heading"></h2><p id="description"></p><p id="notice" class="note"></p><p id="method" class="muted"></p></section>
+<section><h2>本轮核对结果</h2><ol id="findings"></ol></section><div id="records"></div></main>
+<script type="application/json" id="comparison-data">__COMPARISON_DATA__</script>
+<script>
+"use strict";
+const data=JSON.parse(document.getElementById("comparison-data").textContent);
+const presentation=data.presentation||{};
+const $=id=>document.getElementById(id);
+function node(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;}
+function detail(parent,title,text,open=false,cls=""){const d=node("details",null,cls);d.open=open;d.append(node("summary",title),node("pre",text));parent.append(d);}
+function json(value){return JSON.stringify(value,null,2);}
+for(const [id,key] of [["title","page_title"],["heading","title"],["description","description"],["notice","notice"],["method","method"]])$(id).textContent=presentation[key]||"";
+document.title=$("title").textContent+" · 调查工作台";
+$("batch").textContent=data.batch+" · "+(presentation.status||"见实际回执");
+for(const text of presentation.findings||[])$("findings").append(node("li",text));
+for(const sample of data.samples){for(const cell of sample.cells){
+ const card=node("article");card.id=cell.id;card.append(node("h2",sample.title),node("p",sample.note,"note"));
+ const responseReceived=cell.state==="response_received";
+ card.append(node("span",responseReceived?"已收到模型原答":"未取得完整原答","badge"),node("span",cell.accepted?"结构及引用校验通过":"结构或引用校验未通过","badge"+(cell.accepted?"":" reject")));
+ const metrics=node("div",null,"metrics");
+ for(const [label,value] of [["输入 tokens",cell.usage?.input_tokens],["输出 tokens",cell.usage?.output_tokens],["HTTP 秒数",cell.http_seconds==null?null:cell.http_seconds.toFixed(2)]]){const item=node("div",label);item.append(node("b",value??"未知"));metrics.append(item);}card.append(metrics);
+ if(cell.answer?.diagnosis){detail(card,"模型给出的整体诊断",json(cell.answer.diagnosis),true,"diagnosis");}
+ detail(card,"模型输入 · 用户正文（"+cell.user_bytes+" B）",cell.user,true,"model-input");
+ detail(card,"模型输入 · 任务指令",cell.system);
+ detail(card,"模型输入 · 要求的输出格式",json(cell.response_format));
+ detail(card,"模型原始输出",cell.content||"没有取得模型正文，见完整响应回执。",true,"raw-output");
+ detail(card,"程序校验结果",json({state:cell.state,wire_schema_valid:cell.wire_schema_valid,canonical_schema_valid:cell.canonical_schema_valid,accepted:cell.accepted,parse_error:cell.parse_error,diagnostics:cell.diagnostics,partial_review:cell.partial_review||null}));
+ detail(card,"程序装配后的结果",cell.parsed_output?json(cell.parsed_output):"没有可采用的完整装配结果。原答保持不变；合法片段见校验结果。");
+ const links=node("div",null,"downloads");for(const [title,path] of [["完整请求 JSON",cell.request_path],["模型响应 JSON",cell.response_path],["校验与装配 JSON",cell.parsed_path]]){const link=node("a",title);link.href=path;link.download="";links.append(link);}card.append(links);$("records").append(card);
+}}
+</script></body></html>

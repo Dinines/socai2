@@ -1,0 +1,42 @@
+{
+  "revision": "incident-structural-input-v2",
+  "selector_policy": "Known schema paths and value types; no case ID, host, vendor value or verdict-based filtering. Unknown business fields retained.",
+  "rules": [
+    {
+      "path": "members[].included/omitted/triage_*/stored_material_state/view_coverage",
+      "treatment": "Backend bookkeeping; expose only a short material-unavailable, stale-analysis or omitted-input notice when applicable."
+    },
+    {
+      "path": "program_facts",
+      "treatment": "Full ledger retained; no bulk JSON. Material limitations and nonduplicated activity time/object/business values remain visible; meaningful label definitions retained."
+    },
+    {
+      "path": "detection.confidence_* / score_source / labels_provided",
+      "treatment": "Omit score computation and its metadata from I input, retain original storage."
+    },
+    {
+      "path": "detection.rule_id/rule_name/tactics/techniques and unknown extensions",
+      "treatment": "Keep nonempty business signals; treat as detection background, not observed behavior."
+    },
+    {
+      "path": "OCSF class_uid/activity.action/activity.outcome",
+      "treatment": "Use the configured typed dictionary; unknown values keep their original representation."
+    },
+    {
+      "path": "raw_json.raw_event event_id/tenant_id/schema_version/connector_type/original_vendor",
+      "treatment": "Backend routing/source metadata; no test-value-specific filtering."
+    },
+    {
+      "path": "members[].objects",
+      "treatment": "Drop index copies only when the same member/material has matching original observations and no additional business fields or normalization differences; other objects remain."
+    },
+    {
+      "path": "prior_analysis.rationale / human_statement / source description",
+      "treatment": "Preserve text verbatim; no manual correction or model-generated summary."
+    },
+    {
+      "path": "unknown business paths",
+      "treatment": "Keep original keys/values, including 0/false and meaningful empty lists; do not apply metadata rules recursively by key name."
+    }
+  ]
+}

@@ -1,72 +1,72 @@
 # 本机调查验证环境
 
-**V1 接手先读[根目录交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。** 下文 `prepare.py` 的历史建库流程只准备 123–125（459 列），当前 `initialize.py` 已按 126 校验 462 列；不能按这组旧命令从空库得到完整 V1。本机既有验证库已另行应用 126，继续保留。新环境使用[独立 V1 建表脚本](../database/init_socai2_v1.sql)，再由部署方配置运行身份、授权和基础服务。本文其余连接、运行及模型切换说明仍按对应本机环境使用。
+当前数据、功能和字段合同见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。Mac 读取 21 正式数据使用显式只读 profile；网络走[SSH 转发](../../docs/operations/mac-ssh-relay-20261107.md)。本机隔离验证与正式库分别配置，数据均保留。
 
-本目录使用当前 checkout 的 API/Fusion 源码和本机 Python 3.12。基础服务复用已安装镜像，数据写入本轮专属 Docker volumes；不复制旧环境的数据。应用只监听 loopback，启动或初始化不会调用模型。
+## 21 正式数据只读 profile
 
-| 服务 | 本机地址 | 数据空间 |
-| --- | --- | --- |
-| PostgreSQL | `127.0.0.1:15432` | `socai2_local_20261105` |
-| ClickHouse native / HTTP | `127.0.0.1:19000` / `18123` | `socai2_local_validation.raw_events` |
-| Kafka | `127.0.0.1:19092` | `socai2.local.20261105.*` |
-| Redis | `127.0.0.1:16379` | 独立容器的 DB 0 |
-| API / Fusion | `127.0.0.1:18020` / `18021` | 本机源码进程 |
+本次已准备 `.local/remote-21/profile.toml`，所有运行地址、端口、库名、角色、租户、TLS、超时和开关均来自该文件。模板为 [remote-profile.example.toml](remote-profile.example.toml)，凭据另存 `.local/remote-21/private/secrets.json`（目录 0700、文件 0600，Git 忽略）。不要将该文件内容复制进日志或提交。
 
-在仓库根目录执行：
+当前目标：数据库 `aisoc`、schema `socai2`、已有只读角色 `socai2_prod_reader`、业务租户 `00000000-0000-0000-0000-000000000001`。这是正式调查数据，不是 `socai2_next_20261104` 或 `socai2_processing_handoff`。它不自动返回 `public.alerts` 的全部旧告警，也不启动接入或调查。
+
+在仓库根目录启动：
 
 ```sh
-.local/conda-envs/socai2/bin/python deploy/local-investigation/prepare.py
-docker --context orbstack compose --env-file .local/local-investigation/private/runtime.env -f deploy/local-investigation/compose.yml up -d --pull never
-.local/conda-envs/socai2/bin/python deploy/local-investigation/initialize.py
-.local/conda-envs/socai2/bin/python deploy/local-investigation/run.py api
+.local/conda-envs/socai2/bin/python -B deploy/local-investigation/run.py api \
+  --profile .local/remote-21/profile.toml
 ```
 
-另一个终端运行：
+该命令管理自己的 `25432` SSH 转发及 `127.0.0.1:18022` API；端口已占用会报错，不接管其他隧道。Ctrl-C 同时关闭这两个进程，不影响常驻 4177 工作台。运行时只使用所选文件生成的应用环境，不继承 shell 的数据库或模型配置；`--profile` 不允许配合 Fusion 或模型预检入口。
+
+另一个终端执行只读验证，输出文件须为未存在的新路径：
 
 ```sh
-.local/conda-envs/socai2/bin/python deploy/local-investigation/run.py fusion
+.local/conda-envs/socai2/bin/python -B deploy/local-investigation/verify_remote_readonly.py \
+  .local/remote-21/profile.toml --output .local/remote-21/verification-new.json
 ```
 
-`prepare.py` 只运行一次：生成 `.local/local-investigation/private/runtime.env`（0600，目录 0700）、六份 SQL 及 schema 哈希清单。已有私有文件时拒绝重建，不覆盖凭据。应用启动器从私有文件读取各自最小环境，工作目录切到私有目录，避免加载仓库的旧 `.env`；PG/CH 管理密码不传给应用。
+客户端访问 `/api/v1/socai2/alerts`、`/incidents`、`/cases` 等 GET 时，使用本机私密配置中的 `access_token` 作为 Bearer token。它代表固定租户的本机读取服务，只有 `alerts:read/cases:read`，不是生产用户会话或生产 API key。该模式不开放登录、写入、调查或模型接口；所有非 GET/HEAD 方法先返回 405，认证缺失/错误返回 401，查询参数和 Header 不能更换租户。原 `app.socai2_main` 禁止连接 `aisoc` 的保护仍保留。
 
-`initialize.py` 只能连接上述固定 loopback 端口和数据库。首次创建数据库并标记归属，后续要求归属标记相同；不会删除数据库或表。按顺序执行 support schema、123/124/125、授权、固定本地租户/用户/API keys，再建立湖表和三个 Kafka topic。已应用迁移通过账本跳过。它校验 29 表/459 列、29 表强 RLS、7 张背景表强 RLS、非管理运行角色和实际跨租户拒读（探针回滚）、47 个湖写入列及精确读写权限。回执存于 `.local/local-investigation/evidence/`，失败保留阶段和脱敏原因。可用 `--phase postgres|clickhouse|kafka` 定向重跑；修改已准备 SQL 必须明确重建对应哈希，不能静默绕过校验。
+新机器准备步骤：先安装 API 依赖和 [requirements-remote.txt](requirements-remote.txt)，复制示例为自己的 profile 并核对参数，再运行 `bootstrap_remote_profile.py <profile>`。该工具仅经已验证 SSH 复制 profile 指定的现有只读账号密码及公开 CA，并生成本机访问凭据；不会修改远端密码、用户或授权，不覆盖已有私密文件。当前这台 Mac 已完成，不必重做。
 
-API 使用 `app.socai2_main` 的现有正式路由和 `local_socai2_api` 受限角色。认证只验收普通 `aisoc_` API key，key 绑定实际本地用户；写 key 仅有 `alerts:read/write,cases:read/write`，读 key 仅有 `alerts:read,cases:read`。认证先于租户 session，故 `users/api_keys/RBAC` 保持原认证读取设计；调查和背景数据使用租户 RLS。密码/MFA、workload 登录和通用管理页面不属于此最小环境，未补其依赖表。私有文件不能提交、复制到页面或放进日志。
+TLS 使用 psycopg 的 `hostaddr` 连接本机隧道，使用 `host` 和 CA 验证 21 的证书，强制 `verify-full`。启动核对实际数据库/角色、TLS、只读事务、强制 RLS、无调查表写权限及 V1 字段。此前 asyncpg 的连接行为保持兼容。依据：[SQLAlchemy 异步 psycopg](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg)、[PostgreSQL host/hostaddr](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS)。
 
-Fusion 由 `fusion_app.py` 装配现有 `FusionWorker`、去重/归并、`Socai2AlertSink`、`LakeWriter`，真实消费两个 Kafka 输入 topic，再发布 fused topic。只有消费者取得两个分区且 PG/CH 连接完成后 `/readyz` 才成功。它使用 `local_socai2_fusion`，仅可向 7 张 socai2 表读/新增，并更新 alerts/incidents 的指定列；不能创建 Case 或 Run。CH reader 只有本表 SELECT，writer 只有本表 INSERT。未装配外围检测、事件自动提升、session、AI 资产、UEBA 消费和外部 enrichment；本轮输入是明确的合成 raw alert 与 OCSF 日志。无持久 DLQ 时坏消息停止消费且不越过失败 offset；湖写失败仍沿现有 fail-soft 行为，验收必须核 `/metrics` 的 `lake.rows_written/rows_dropped/flush_failures` 和真实数据库行，不能只看健康状态。
+## 读取权限与安装
 
-背景源支持 `assets`、内部 `threat_intel_iocs`、`user_risk_profiles` 和 `aisoc_kb_documents`，初始化不填合成背景，也不假称已同步真实来源。知识库沿原 C2：冻结告警标题形成检索词，在 PG `to_tsvector/plainto_tsquery` 检索文档内容。C2 仍按原优先级和预算选源，不保证每次查询知识库。没有向量链、Embedding、Qdrant、Neo4j 或 OpenSearch 前置依赖；身份图与产品实时查询关闭。
+正式 `socai2` schema 共 29 表、462 列；读取角色具有这些表的 SELECT、两项新鲜度函数的 EXECUTE，以及 `public.assets/public.users` 的必要 SELECT，关联始终限定认证租户。当前生产两案 299 次 GET 与 13,098 项数据／字段核对通过，无结构或业务数据变化。[本批证据](../../docs/operations/evidence/current-release-20261110-01/readback-03/summary.json)
 
-模型只通过私有环境的五项切换：`OPENAI_BASE_URL`、`OPENAI_MODEL`、`OPENAI_API_KEY`、`SOCAI2_MODEL_PROTOCOL`、`SOCAI2_MODEL_SCHEMA_PROFILE`。默认是 DeepSeek 官方地址、`deepseek-flash`、`deepseek_responses`、`standard`；`prepare` 留空模型 key，由本机操作者安全写入。验证远端已部署模型时将地址/认证/模型改为该后端，协议用 `chat_completions`，所需 grammar profile 用 `vllm_grammar_v1`；有限值会校验。停止当前 API（确认无运行中的 Run）、修改私有配置、重启 API 即切换；PG/CH/Kafka/Redis 路由和已存 Run/工件不变。已启动 Run 不应中途切后端或重派。此次切换不自动执行 A/I/C，也不扩大每个 Run 的预算。
-
-切换时确认没有 active Run，在 API 终端按 Ctrl-C，然后用本机编辑器打开 `.local/local-investigation/private/runtime.env` 修改这五项（不要复制文件内容进聊天或日志），保持 0600。只重新执行下列 API 命令，Fusion 和数据服务继续运行；单轮验证固定同一个 backend，无需迁移数据：
+[reader-install.example.toml](../database/reader-install.example.toml)显式设置目标、管理员、schema owner 和 reader，凭据通过私密 PGPASSFILE 提供。新建空库和已有库使用不同入口；日常核验只执行 `verify`：
 
 ```sh
-.local/conda-envs/socai2/bin/python deploy/local-investigation/run.py api
+python deploy/database/install_reader.py verify --profile '<读取安装配置>'
 ```
 
-应用配置和验证批次是两个独立步骤。验证驱动默认只准备 DeepSeek；切为已有部署模型后，须给新批次显式指定 `--backend deployed`，不能把旧 a/b/c 计划切后端重派：
+空库的 `initialize` 使用冻结建表原件及共用读取授权；已有库的 `upgrade` 仅应用获准的读取授权，不重置 schema。两者共用 [upgrade_socai2_v1_2_reader.sql](../database/upgrade_socai2_v1_2_reader.sql)。新增表设计或权限范围仍遵守项目规则，不能由日常验证自行扩大。
+
+## 当前模型处理策略
+
+**当前处理策略：** 显式选择 [investigation-policy-case-v1.toml](investigation-policy-case-v1.toml)，其中 `[case_io] profile = "case-input-v1.json"` 启用 C1 冻结、C3/Deep/C6 结构文本和输出恢复。C1 保存 profile 与字段映射指纹，同一冻结 Run 不静默换规则。Deep 由程序恢复问题号；C6 恢复身份、生成建议编号和首次固定比较。未配置 `case_io` 的 Run 按其冻结 JSON 合同执行；可选 C3.reanalysis 使用独立装配。构建文件 [processing-build-case-v1.toml](../aisoc21/processing-build-case-v1.toml)对应 `processing-20261110-r2`，已随 `v1.2-20261110-r2` 部署 21。本批未新增真实模型调用，质量另验。[发布核验](../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)。
+
+执行隔离调查时使用明确策略：
 
 ```sh
-.local/conda-envs/socai2/bin/python deploy/local-investigation/validate_flow.py prepare --batch local-new-model-check --window-start 2026-11-05T12:00:00+00:00 --backend deployed
+.local/conda-envs/socai2/bin/python deploy/local-investigation/run.py api --investigation-policy deploy/local-investigation/investigation-policy-case-v1.toml
 ```
 
-将示例批次名和窗口改为新的固定值。准备过程只读本机私有配置，不连接模型；计划冻结 `backend/model/protocol/schema_profile/base_url_sha256`，不导出地址明文、API key 或 key 指纹。DeepSeek 必须是官方完整 base URL、`deepseek-flash/deepseek_responses/standard`；`deployed` 使用显式配置的 Chat 服务和 `standard` 或 `vllm_grammar_v1`，不预设远端地址。后续阶段按计划核对私有配置，任一冻结项变化会在服务读取之前拒绝，须另建批次。旧的无 profile 计划仅兼容原 DeepSeek 配置，原源码/唯一 intent 的关闭保护仍然有效。该核对证明本机配置与计划一致，不是对运行中 API 进程或远端模型身份的证明；修改配置后须按上文重启 API，再准备和执行新批。
+应用进程的 `SOCAI2_INVESTIGATION_POLICY` 由所选文件设置。当前 Case 预算为 6 次模型、4 次工具、131072 累计 tokens、1500 秒，最终阶段预留 300 秒；模型单次 300 秒。容量需计量完整消息、Schema／协议包络、安全余量和输出；工件保留上限 1 MiB 是字节值，与 token 预算分开。
 
-可选的合成背景导入沿已有 KB 函数和真实本机表进行，先固定验证批次 `plan.json`，再执行：
+当前计量器支持已核实的 `chat_completions` 后端；不匹配的协议应明确拒绝。模型路由、认证和协议保存在本机私密配置中，切换前核无活跃或未知执行，再正常停止并重启对应应用；不重派已结束批次。新批次固定配置和实际材料，不以读取、测试替身或生成工件认定质量通过。
 
-```sh
-.local/conda-envs/socai2/bin/python deploy/local-investigation/seed_context.py --plan .local/local-investigation/validation/<batch>/plan.json --prepare-only
-.local/conda-envs/socai2/bin/python deploy/local-investigation/seed_context.py --plan .local/local-investigation/validation/<batch>/plan.json --execute
-```
+21 按需处理使用[生产 profile](../aisoc21/production-v1.2.toml)与相同策略，通过[统一发布入口](../aisoc21/README.md#执行顺序)冻结源码、镜像及策略 hash；本机修改文件不会自动改变 21。
 
-前一步生成可审核的 `context-input.json`：仅有该批主机的 inventory 和一般调查 SOP/标题检索词，不读 oracle，不包含 H 结果或该案授权结论。后一步调用真实 `knowledge_base.ingest(IngestRequest, AsyncSession, CurrentUser)` 进行分块/写入，再用受限 API 数据库角色执行正式 C2 标题 FTS SQL 和资产匹配 SQL，保存全部原文块 ID 与匹配行；0 模型。这里是操作者执行的直接函数导入，未验证 HTTP 权限依赖链，也不等于每次 C2 自动选中知识源。一次写入 intent 已存在便拒绝重派，可加 `--verify-only --execute` 单独只读复核。
+## 隔离数据与原件
 
-只做无连接导入检查：
+本机已保存的调查数据库和 Docker volumes 继续保留。创建新的专用环境时使用[冻结建表 SQL](../database/init_socai2_v1.sql)和明确的本机运行配置；现有 `prepare.py` 生成材料不能代替已确认的完整 123–126 结构。`initialize.py` 会校验 462 列，结构不符应停止并查明原因，不能清库绕过。
+
+运行 API/Fusion 的来源与参数取当前 checkout 和私密配置；不带 `--profile` 的启动器仍指向本机隔离环境。只做无连接导入检查：
 
 ```sh
 .local/conda-envs/socai2/bin/python deploy/local-investigation/run.py api --check-import
 .local/conda-envs/socai2/bin/python deploy/local-investigation/run.py fusion --check-import
 ```
 
-停止 API/Fusion 时给对应前台进程正常发送 SIGTERM/Ctrl-C。停止基础服务用同一 compose 的 `stop`；保留 volumes 即保留历史数据，不使用 `down -v`。
+模型、工具替身与真实数据库的证据分别登记。导出后用[运行记录页说明](../../deliverables/investigation-validation-20261106/README.md#调查运行记录页)更新本机静态资料；已有批次、失败、unknown 和原答保持。停止前台进程使用 SIGTERM／Ctrl-C；基础服务使用原 compose 的 `stop`，保留数据卷。

@@ -79,3 +79,23 @@ class SubjectViewsTest(unittest.TestCase):
                 self.assertIn("汇总并保存事件诊断", html)
             else:
                 self.assertIn("向模型请求分诊", html)
+
+    def test_complete_delivery_and_pending_review_are_displayed_separately(self):
+        self.incident["latest_diagnosis_id"] = "d"
+        self.data["runs"] = [{"tenant_id": "tenant", "id": "r", "kind": "incident_diagnosis", "incident_id": "i",
+                              "state": "completed", "delivery_state": "complete"}]
+        self.data["incident_diagnoses"] = [{"tenant_id": "tenant", "id": "d", "incident_id": "i", "source_run_id": "r",
+            "summary": "事件概要", "diagnosis": {"delivery_assessment": {"schema_version": "socai2.incident-delivery.v1",
+                "state": "complete", "reasons": [], "review_items": {"state": "required", "unresolved_member_ids": ["a"],
+                    "unresolved_finding_ids": [], "open_question_ids": ["Q1"]}}}}]
+        view = self.views()["incident", "i"]
+        self.assertIn("完整交付", view)
+        self.assertIn("<dt>复核状态</dt><dd>待复核</dd>", view)
+        self.assertNotIn("部分交付", view)
+        self.data["runs"][0].update(state="failed", delivery_state="partial")
+        delivery = self.data["incident_diagnoses"][0]["diagnosis"]["delivery_assessment"]
+        delivery.update(state="partial", reasons=["invalid_response_units_excluded"])
+        view = self.views()["incident", "i"]
+        self.assertIn("部分交付", view)
+        self.assertIn("已单独排除", view)
+        self.assertIn("· 失败</h3>", view)

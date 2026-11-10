@@ -329,6 +329,10 @@ async def run_checks(engine, record, only=None):
                 provider,model="synthetic","synthetic-product-deep-no-network"
                 async def configure(self,*args):
                     return True
+                async def measure(self, body, stage):
+                    from socai2_test_model_view import synthetic_measure
+                    return await synthetic_measure(body, stage)
+
                 async def complete(self,body,timeout):
                     data=model_data(body["messages"][1]["content"])
                     if not data["queries"]:

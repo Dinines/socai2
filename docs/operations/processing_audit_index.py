@@ -3,10 +3,12 @@ import html
 import json
 
 
-def render_index(records: list[dict], controls_url: str | None = None) -> str:
+def render_index(records: list[dict], controls_url: str | None = None, comparison_url: str | None = None) -> str:
     payload = json.dumps(records, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
     controls = f'<a href="{html.escape(controls_url, quote=True)}">受控对照 ↗</a>' if controls_url else ""
-    return _PAGE.replace("<!--controls-->", controls).replace("<!--records-->", payload)
+    comparison = (f'<a href="{html.escape(comparison_url, quote=True)}">告警输入输出对比 ↗</a>'
+                  if comparison_url else "")
+    return _PAGE.replace("<!--controls-->", controls + comparison).replace("<!--records-->", payload)
 
 
 _PAGE = r"""<!doctype html>

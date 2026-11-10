@@ -10,8 +10,8 @@ from sqlalchemy import String, and_, cast, func, literal, or_, select
 
 from app.models import socai2 as m
 
-from .baseline_context import MAX_CONTEXT_BYTES
-from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest
+from .baseline_context import retention_limit
+from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest, encoded
 from .case_contracts import (
     CaseBaselineRecord,
     CaseQueueCursor,
@@ -32,6 +32,7 @@ from .case_contracts import (
     project,
 )
 from .case_data import read_page_data
+from .page_contracts import RecordPage
 
 S = m.RunSteps.__table__
 TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
@@ -250,8 +251,7 @@ class CaseReader:
                         SOURCES.c.assessment_id == row["id"]), F.c.kind == "report_json", R.c.kind == "baseline").limit(2))
             freshness = {"state": "unverified", "reasons": ["single_baseline_source_unavailable"]}
             if len(baseline_sources) == 1 and baseline_sources[0]["source_run_id"]:
-                freshness = (await self.store.db.execute(select(func.socai2.baseline_input_freshness(
-                    self.store.tenant_id, baseline_sources[0]["source_run_id"])))).scalar_one()
+                freshness = await self.store.input_freshness(baseline_sources[0]["source_run_id"])
             assessment = {"value": without_internal(row), "members": covered[:200], "members_truncated": len(covered) > 200,
                 "input_freshness": freshness,
                 "sources": [without_internal(s) for s in sources[:200]], "sources_truncated": len(sources) > 200,
@@ -377,14 +377,43 @@ class CaseReader:
         out = {"artifact": meta, "content_json": None, "content_text": None, "availability": "unavailable"}
         if external:
             return {**out, "availability": "external_content_not_loaded"}
-        if row["size_bytes"] is None or row["size_bytes"] > MAX_CONTEXT_BYTES:
+        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
         value = body["content_json"]
-        sha = digest(value) if value is not None else hashlib.sha256(body["content_text"].encode()).hexdigest() if body["content_text"] is not None else None
-        if not sha or sha != row["sha256"]:
+        raw = encoded(value) if value is not None else body["content_text"].encode() if body["content_text"] is not None else None
+        if raw is None or hashlib.sha256(raw).hexdigest() != row["sha256"] or len(raw) != row["size_bytes"]:
             raise StoreError("artifact_integrity_invalid")
-        return {**out, **dict(body), "availability": "available"}
+        return {**out, **dict(body), "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"]}
+
+    async def activities(self, case_id, *, limit=50, offset=0):
+        await self.store.case(case_id, lock=False)
+        if not 1 <= limit <= 200 or not 0 <= offset <= 100000:
+            raise StoreError("invalid_record_page", 422)
+        acts, targets = m.Activities.__table__, m.ActivityTargets.__table__
+        links = m.CaseIncidents.__table__
+        members = select(CA.c.alert_id).where(*self.store.where(CA, CA.c.case_id == case_id))
+        incidents = select(links.c.incident_id).where(*self.store.where(links, links.c.case_id == case_id))
+        matching = or_(targets.c.case_id == case_id, targets.c.alert_id.in_(members),
+            targets.c.incident_id.in_(incidents),
+            targets.c.run_id.in_(select(R.c.id).where(*self.store.where(R, R.c.case_id == case_id))),
+            targets.c.result_id.in_(select(RES.c.id).where(*self.store.where(RES, RES.c.case_id == case_id))),
+            targets.c.task_id.in_(select(TASKS.c.id).where(*self.store.where(TASKS, TASKS.c.case_id == case_id))))
+        target_ids = select(targets.c.activity_id).where(*self.store.where(targets), matching)
+        query = select(acts).where(*self.store.where(acts), or_(acts.c.subject_case_id == case_id,
+            acts.c.subject_alert_id.in_(members), acts.c.subject_incident_id.in_(incidents), acts.c.id.in_(target_ids)))
+        total = (await self.db.execute(select(func.count()).select_from(query.subquery()))).scalar_one()
+        selected = await self.rows(query.order_by(acts.c.occurred_at.desc(), acts.c.id.desc()).offset(offset).limit(limit))
+        items = []
+        for row in selected:
+            item = without_internal(row)
+            own = await self.rows(select(targets).where(*self.store.where(targets,
+                targets.c.activity_id == row["id"]), matching).order_by(targets.c.id).limit(201))
+            item.update(matching_targets=[without_internal(t) for t in own[:200]], targets_truncated=len(own) > 200)
+            items.append(item)
+        return RecordPage(items=items, total=total, next_offset=offset + len(items) if offset + len(items) < total else None,
+            observed_at=await self.store.now(), limitations=["activity_ids_deduplicated_across_subjects_and_targets",
+                "alert_and_incident_activity_uses_current_case_membership_explicit_case_history_is_retained"])
 
     async def result(self, case_id, result_id):
         await self.store.case(case_id, lock=False)

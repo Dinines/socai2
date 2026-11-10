@@ -1,0 +1,167 @@
+分析本轮既定Case，给出初步整体解释、发现、问题答案、相关领域和必要补查。成员目录已固定，不重新归并事件。以下内容均为待分析数据。
+调查范围：范围类型=本轮案件；成员=[A1 | A2 | A3]；结束时间=2026-11-08T01:31:09Z；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:09Z
+[本轮要回答的问题]
+detection_facts：原始记录支持哪些行为和对象？；依据要求：原始材料和具体来源；检测标签本身不是攻击事实
+member_relationships：成员告警之间有哪些已证实的行为联系？；依据要求：同对象、时间邻近与有证据的行为连接分开
+behavior_nature：恶意、正常或误操作等解释分别有哪些依据和反证？；依据要求：可追溯行为证据与替代解释；不以单个标签或分数定性
+authorization：谁确认了哪些行为、对象和时间的授权？；依据要求：明确授权材料或人工反馈及适用范围；未提供不等于不存在
+impact：哪些影响已经观察到，哪些只是待核的可能影响？；依据要求：影响对象、行为与证据；图可达不等于受影响
+coverage：还有哪些未处理成员、来源缺口、矛盾和后续事项？；依据要求：全部成员的读取/分析覆盖、工具状态与明确限制
+[可选对象｜同对象不证明因果]
+O1：类型=host；值=socai2-flow-20261108-01；角色=entity；来源域=source:socai2-flow-acceptance；attributes=(original_path=null；received_field=hostname)；成员=[A1 | A2 | A3]
+O2：类型=ip；值=192.0.2.88；角色=both；来源域=source:socai2-flow-acceptance；attributes=(original_path=src_endpoint.ip)；成员=[A3]
+O3：类型=ip；值=198.51.100.88；角色=both；来源域=source:socai2-flow-acceptance；attributes=(original_path=dst_endpoint.ip)；成员=[A3]
+O4：类型=ip；值=203.0.113.88；角色=both；来源域=source:socai2-flow-acceptance；attributes=(original_path=src_endpoint.ip)；成员=[A1]
+O5：类型=user；值=flow-observer-20261108-01；角色=entity；来源域=source:socai2-flow-acceptance；attributes=(original_path=null；received_field=username)；成员=[A1 | A2 | A3]
+[实际材料限制与范围｜程序提供]
+I1 事件背景原范围：成员=[A1 | A2 | A3]
+有原始字段被输入检查排除，不能视作完整材料。
+[查询回执共同限制｜仅适用于所列回执]
+N3_S100、N3_S103、N3_S112：[recorded_alerts_only_not_complete_activity_history | same_object_not_causality | prior_triage_and_human_feedback_are_not_independent_observations | legacy_public_alerts_not_queried]
+N3_S101、N3_S108、N3_S110：[tenant_internal_intelligence_only | no_hit_does_not_mean_safe | stored_score_not_case_confidence_or_proof_of_malice]
+N3_S102、N3_S109、N3_S111：[current_inventory_not_event_time_state | exact_name_or_ip_match_not_identity_proof | inventory_has_no_object_namespace_all_matches_retained]
+[告警原材料｜A1｜原始记录]
+[N3_S1,N3_S14] 活动时间：2026-11-08T01:26:09+00:00
+[N3_S2,N3_S15] 活动账号：flow-observer-20261108-01
+[N3_S3,N3_S16] 活动主机：socai2-flow-20261108-01
+[N3_S4,N3_S17] 记录动作：logon
+[N3_S5,N3_S18] 该动作结果：success
+[告警原材料｜A1｜来源标签或背景记录]
+[N3_S6,N3_S19] 记录类别：3002
+[告警原材料｜A1｜原始记录]
+[N3_S7,N3_S20] 源IP：203.0.113.88
+[告警原材料｜A1｜来源标签或背景记录]
+[N3_S8] tags.0：synthetic
+[N3_S9] tags.1：production-multialert-20261108-01
+[N3_S10] title：Account logon observed
+[N3_S11] source：socai2-flow-acceptance
+[告警原材料｜A1｜原始记录]
+[N3_S12] hostname：socai2-flow-20261108-01
+[N3_S13] username：flow-observer-20261108-01
+[N3_S21] event_time：2026-11-08T01:26:09Z
+[告警原材料｜A1｜来源标签或背景记录]
+[N3_S22] ocsf_class_uid：3002
+[N3_S23] detection：ocsf_class_uid=3002
+[N3_S24] source_scope：范围类型=已选择的来源；所选来源完整=true；是否截断=false
+[告警背景｜A1｜来源标签或背景记录]
+[N3_S25] 告警背景：上游标签=[synthetic | production-multialert-20261108-01]；标题=Account logon observed；告警等级/上游原始等级=medium；告警时间/末次时间/首次时间=2026-11-08T01:26:09+00:00；上游厂商=LabTelemetry；来源域=fusion.v1；时间来源=source
+[告警分诊原文｜A1｜已有分析原文]
+[N3_S26] 告警分诊原文：原判定=needs_review；原理由=告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。；原建议=[id=R1；原因=缺乏授权证据；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S2 | N3_S3 | N3_S7 | N3_S4 | N3_S5]；审批要求=unknown | id=R2；原因=威胁情报无命中不能证明安全；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S23]；审批要求=unknown]
+[告警原材料｜A2｜原始记录]
+[N3_S27,N3_S41] 活动时间：2026-11-08T01:26:29+00:00
+[N3_S28,N3_S42] 活动账号：flow-observer-20261108-01
+[N3_S29,N3_S43] 活动主机：socai2-flow-20261108-01
+[N3_S30,N3_S44] 进程名称：powershell.exe
+[N3_S31,N3_S45] 启动命令行：powershell.exe -NoProfile -Command Get-LocalUser
+[N3_S32,N3_S46] 记录动作：process_start
+[N3_S33,N3_S47] 该动作结果：success
+[告警原材料｜A2｜来源标签或背景记录]
+[N3_S34,N3_S48] 记录类别：1007
+[N3_S35] tags.0：synthetic
+[N3_S36] tags.1：production-multialert-20261108-01
+[N3_S37] title：Process start observed
+[N3_S38] source：socai2-flow-acceptance
+[告警原材料｜A2｜原始记录]
+[N3_S39] hostname：socai2-flow-20261108-01
+[N3_S40] username：flow-observer-20261108-01
+[N3_S49] event_time：2026-11-08T01:26:29Z
+[告警原材料｜A2｜来源标签或背景记录]
+[N3_S50] ocsf_class_uid：1007
+[N3_S51] detection：ocsf_class_uid=1007
+[N3_S52] source_scope：范围类型=已选择的来源；所选来源完整=true；是否截断=false
+[告警背景｜A2｜来源标签或背景记录]
+[N3_S53] 告警背景：上游标签=[synthetic | production-multialert-20261108-01]；标题=Process start observed；告警等级/上游原始等级=medium；告警时间/末次时间/首次时间=2026-11-08T01:26:29+00:00；上游厂商=LabTelemetry；来源域=fusion.v1；时间来源=source
+[告警分诊原文｜A2｜已有分析原文]
+[N3_S54] 告警分诊原文：原判定=needs_review；原理由=告警显示 powershell.exe 进程启动成功，执行命令为获取本地用户列表。现有证据（历史登录记录、威胁情报查空、资产库存查空）均不足以证明该行为是授权运维还是恶意侦察。检测标签明确标注'不证明攻击发生'，且无明确授权依据，符合需进一步调查的特征。；原建议=[id=R1；原因=缺乏授权证据；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S105]；审批要求=unknown | id=R2；原因=威胁情报无命中不能证明安全；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S51 | N3_S105]；审批要求=unknown]
+[告警原材料｜A3｜原始记录]
+[N3_S55,N3_S71] 活动时间：2026-11-08T01:26:49+00:00
+[N3_S56,N3_S72] 活动账号：flow-observer-20261108-01
+[N3_S57,N3_S73] 活动主机：socai2-flow-20261108-01
+[N3_S58,N3_S74] 记录动作：network_connection
+[N3_S59,N3_S75] 该动作结果：success
+[告警原材料｜A3｜来源标签或背景记录]
+[N3_S60,N3_S76] 记录类别：4001
+[告警原材料｜A3｜原始记录]
+[N3_S61,N3_S77] 目的IP：198.51.100.88
+[N3_S62,N3_S78] 目的端口：443
+[N3_S63,N3_S79] 源IP：192.0.2.88
+[N3_S64,N3_S80] 记录协议：TCP
+[告警原材料｜A3｜来源标签或背景记录]
+[N3_S65] tags.0：synthetic
+[N3_S66] tags.1：production-multialert-20261108-01
+[N3_S67] title：Outbound connection observed
+[N3_S68] source：socai2-flow-acceptance
+[告警原材料｜A3｜原始记录]
+[N3_S69] hostname：socai2-flow-20261108-01
+[N3_S70] username：flow-observer-20261108-01
+[N3_S81] event_time：2026-11-08T01:26:49Z
+[告警原材料｜A3｜来源标签或背景记录]
+[N3_S82] ocsf_class_uid：4001
+[N3_S83] detection：ocsf_class_uid=4001
+[N3_S84] source_scope：范围类型=已选择的来源；所选来源完整=true；是否截断=false
+[告警背景｜A3｜来源标签或背景记录]
+[N3_S85] 告警背景：上游标签=[synthetic | production-multialert-20261108-01]；标题=Outbound connection observed；告警等级/上游原始等级=medium；告警时间/末次时间/首次时间=2026-11-08T01:26:49+00:00；上游厂商=LabTelemetry；来源域=fusion.v1；时间来源=source
+[告警分诊原文｜A3｜已有分析原文]
+[N3_S86] 告警分诊原文：原判定=needs_review；原理由=现有证据不足以区分该出站连接是授权运维行为还是恶意外传。虽然检测到出站连接成功，但缺乏明确的授权依据（如白名单、审批记录）。威胁情报查询结果为空（查空），不能证明行为安全；历史查询仅显示同主机/用户的登录和进程启动记录，未提供因果关联或异常模式证明。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法排除潜在攻击前奏或正常业务的可能性。；原建议=[id=R1；原因=缺乏授权证据；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S56 | N3_S57 | N3_S63 | N3_S61 | N3_S62 | N3_S114]；审批要求=unknown | id=R2；原因=威胁情报无命中不能证明安全；建议类型=verify；限制=[recommendation_only_not_executed]；依据=[N3_S83 | N3_S116 | N3_S118 | N3_S120]；审批要求=unknown]
+[事件诊断原文｜A1、A2、A3｜已有分析原文]
+[N3_S87] 事件诊断原文：Incident 06f82d36-1964-4186-aed3-4c7b9ab1a375 aggregates three sequential alerts on host 'socai2-flow-20261108-01' involving user 'flow-observer-20261108-01'. The sequence includes a successful account logon (2026-11-08T01:26:09), a PowerShell process start executing 'Get-LocalUser' (2026-11-08T01:26:29), and a successful outbound TCP connection to 198.51.100.88:443 (2026-11-08T01:26:49). All alerts are rated 'medium' severity. Prior analysis for all members flags them as 'needs_review' due to lack of authorization evidence and inability to distinguish between authorized operations and potential reconnaissance/exfiltration. No causal chain is proven; temporal proximity is noted but not confirmed as attack progression.
+[N3_S88] 事件诊断原文：All three alerts require review. Evidence is insufficient to confirm malicious intent or authorize the actions. The outbound connection involves an external IP (198.51.100.88) not present in the logon or process start objects, requiring verification of its legitimacy.
+[N3_S89] 事件诊断原文：[N1_S19, N1_S23, N1_S27 rationales explicitly state that empty threat intel searches do not prove safety. | Detection labels 'does_not_establish_observed_attack' are upstream properties and do not negate alert validity. | No prior analysis or human statement provided to override the 'needs_review' verdict. | incident_diagnosis_not_case_investigation | structure_scope_sources_checked_not_truth_proven | model_view_has_omitted_fields]
+[事件发现原文｜A1｜已有分析原文]
+[N3_S90] 事件发现原文：状态=推断；原主张=needs_review；限制=[N1_S19 rationale states '查空结果不能证明行为安全' (empty search results do not prove safety) | N1_S29 indicates low confidence with no MITRE techniques or threat intel matches | Objects include host, user, and IP 203.0.113.88 | member_coverage:summarized]；原适用范围=(范围类型=指定成员；成员=[A1]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S23 | N3_S6 | N3_S19])；本次未展示的原引用数=(支持=10)
+[事件发现原文｜A2｜已有分析原文]
+[N3_S91] 事件发现原文：状态=推断；原主张=needs_review；限制=[N1_S23 rationale notes PowerShell command 'Get-LocalUser' lacks authorization proof | N1_S30 indicates low confidence with no MITRE techniques or threat intel matches | Objects include host and user; no IP addresses listed in objects for this specific alert | member_coverage:summarized]；原适用范围=(范围类型=指定成员；成员=[A2]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S51 | N3_S34 | N3_S48])；本次未展示的原引用数=(支持=10)
+[事件发现原文｜A3｜已有分析原文]
+[N3_S92] 事件发现原文：状态=推断；原主张=needs_review；限制=[N1_S27 rationale states inability to distinguish authorized ops from exfiltration; empty threat intel | N1_S31 indicates low confidence with no MITRE techniques or threat intel matches | Objects include host, user, and two IPs: 198.51.100.88 (destination) and 192.0.2.88 (source). Note: Source IP 192.0.2.88 differs from Logon source IP 203.0.113.88. | member_coverage:summarized]；原适用范围=(范围类型=指定成员；成员=[A3]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S83 | N3_S60 | N3_S76])；本次未展示的原引用数=(支持=10)
+[事件发现原文｜A1、A2、A3｜已有分析原文]
+[N3_S93] 事件发现原文：状态=待核；原主张=Temporal Sequence: Alerts occurred within 40 seconds (01:26:09 to 01:26:49).；限制=[Time proximity does not prove causal attack chain. | event_synthesis_not_independent_observation]；原适用范围=(范围类型=指定成员；成员=[A1 | A2 | A3]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S1 | N3_S27 | N3_S55])
+[事件发现原文｜A1、A2｜已有分析原文]
+[N3_S94] 事件发现原文：状态=待核；原主张=Process Behavior: PowerShell executed 'Get-LocalUser' immediately after logon.；限制=[Command could be authorized admin task or reconnaissance. | event_synthesis_not_independent_observation]；原适用范围=(范围类型=指定成员；成员=[A1 | A2]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S4 | N3_S32 | N3_S31 | N3_S45])
+[事件发现原文｜A3｜已有分析原文]
+[N3_S95] 事件发现原文：状态=待核；原主张=Network Activity: Outbound connection to 198.51.100.88:443 (TCP) observed.；限制=[Destination IP 198.51.100.88 not seen in prior alert objects. | Source IP 192.0.2.88 differs from Logon source IP 203.0.113.88. | event_synthesis_not_independent_observation]；原适用范围=(范围类型=指定成员；成员=[A3]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S61 | N3_S62 | N3_S64 | N3_S58 | N3_S59])
+[事件发现原文｜A1、A2、A3｜已有分析原文]
+[N3_S96] 事件发现原文：状态=待核；原主张=Authorization Status: No evidence of authorization found for any alert.；限制=[Absence of evidence is not evidence of absence; requires manual verification. | event_synthesis_not_independent_observation]；原适用范围=(范围类型=指定成员；成员=[A1 | A2 | A3]；限制=[frozen_incident_members_only])；本次未展示的原引用数=(支持=3)
+[N3_S97] 事件发现原文：状态=待核；原主张=Detection Confidence: All alerts have low confidence scores (20.8) and no MITRE technique mapping.；限制=[Low confidence suggests detection may be noisy or generic. | event_synthesis_not_independent_observation]；原适用范围=(范围类型=指定成员；成员=[A1 | A2 | A3]；限制=[frozen_incident_members_only])；可见原引用=(支持=[N3_S23 | N3_S51 | N3_S83])
+[事件待核问题原文｜A1、A2、A3｜已有分析原文]
+[N3_S98] 事件待核问题原文：原问题=Is user 'flow-observer-20261108-01' authorized to run 'Get-LocalUser' and connect to 198.51.100.88?；状态=待核；限制=[question_not_a_fact]；所需证据=[Check asset inventory for authorized users. | Verify network allowlist for 198.51.100.88. | Review job tickets or change management records for the timeframe.]；原适用范围=(范围类型=指定成员；成员=[A1 | A2 | A3]；限制=[frozen_incident_members_only])；本次未展示的原引用数=(依据=3)
+[事件待核问题原文｜A1、A3｜已有分析原文]
+[N3_S99] 事件待核问题原文：原问题=Why does the outbound connection source IP (192.0.2.88) differ from the logon source IP (203.0.113.88)?；状态=待核；限制=[question_not_a_fact]；所需证据=[Verify if 192.0.2.88 is a valid internal proxy or if it indicates lateral movement.]；原适用范围=(范围类型=指定成员；成员=[A1 | A3]；限制=[frozen_incident_members_only])；可见原引用=(依据=[N3_S7 | N3_S63 | N3_S79])
+[同一分诊的实际查询｜A1｜执行回执]
+[N3_S100] 工具=历史告警；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:09+00:00；限制=[history_24h_before_alert_time]；起始时间=2026-11-07T01:26:09+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host | 值=203.0.113.88；情报类型/对象类型=ip | 值=flow-observer-20261108-01；情报类型/对象类型=user]；来源范围=tenant_only；行数上限=200
+[N3_S101] 工具=威胁情报；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:09+00:00；起始时间=2026-11-07T01:26:09+00:00)；筛选对象=[值=203.0.113.88；情报类型/对象类型=ip]；来源范围=tenant_only；行数上限=200
+[N3_S102] 工具=资产库存；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:09+00:00；起始时间=2026-11-07T01:26:09+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host | 值=203.0.113.88；情报类型/对象类型=ip]；来源范围=tenant_only；行数上限=200
+[同一分诊的实际查询｜A2｜执行回执]
+[N3_S103] 工具=历史告警；状态=完成；返回行数=2；是否截断=false；结果=data；查询范围=(结束时间=2026-11-08T01:26:29+00:00；限制=[history_24h_before_alert_time]；起始时间=2026-11-07T01:26:29+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host | 值=flow-observer-20261108-01；情报类型/对象类型=user]；来源范围=tenant_only；行数上限=200
+[同一分诊的实际查询｜A2｜来源标签或背景记录]
+[N3_S104] 同一分诊的实际查询：返回记录=(标题=Account logon observed；告警等级=medium；告警时间=2026-11-08T01:26:09+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A2｜已有分析原文]
+[N3_S105] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。
+[同一分诊的实际查询｜A2｜来源标签或背景记录]
+[N3_S106] 同一分诊的实际查询：返回记录=(标题=Account logon observed；告警等级=medium；告警时间=2026-11-08T01:26:09+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A2｜已有分析原文]
+[N3_S107] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。
+[同一分诊的实际查询｜A2｜执行回执]
+[N3_S108] 工具=威胁情报；状态=跳过；原因=no_supported_frozen_objects；返回行数=null；是否截断=false；结果=not_queried；查询范围=(结束时间=2026-11-08T01:26:29+00:00；起始时间=2026-11-07T01:26:29+00:00)；筛选对象=[]；来源范围=tenant_only；行数上限=200
+[N3_S109] 工具=资产库存；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:29+00:00；起始时间=2026-11-07T01:26:29+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host]；来源范围=tenant_only；行数上限=200
+[同一分诊的实际查询｜A3｜执行回执]
+[N3_S110] 工具=威胁情报；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:49+00:00；起始时间=2026-11-07T01:26:49+00:00)；筛选对象=[值=192.0.2.88；情报类型/对象类型=ip | 值=198.51.100.88；情报类型/对象类型=ip]；来源范围=tenant_only；行数上限=200
+[N3_S111] 工具=资产库存；状态=完成；返回行数=0；是否截断=false；结果=empty；查询范围=(结束时间=2026-11-08T01:26:49+00:00；起始时间=2026-11-07T01:26:49+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host | 值=192.0.2.88；情报类型/对象类型=ip | 值=198.51.100.88；情报类型/对象类型=ip]；来源范围=tenant_only；行数上限=200
+[N3_S112] 工具=历史告警；状态=完成；返回行数=4；是否截断=false；结果=data；查询范围=(结束时间=2026-11-08T01:26:49+00:00；限制=[history_24h_before_alert_time]；起始时间=2026-11-07T01:26:49+00:00)；筛选对象=[值=socai2-flow-20261108-01；情报类型/对象类型=host | 值=192.0.2.88；情报类型/对象类型=ip | 值=198.51.100.88；情报类型/对象类型=ip | 值=flow-observer-20261108-01；情报类型/对象类型=user]；来源范围=tenant_only；行数上限=200
+[同一分诊的实际查询｜A3｜来源标签或背景记录]
+[N3_S113] 同一分诊的实际查询：返回记录=(标题=Account logon observed；告警等级=medium；告警时间=2026-11-08T01:26:09+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A3｜已有分析原文]
+[N3_S114] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。
+[同一分诊的实际查询｜A3｜来源标签或背景记录]
+[N3_S115] 同一分诊的实际查询：返回记录=(标题=Account logon observed；告警等级=medium；告警时间=2026-11-08T01:26:09+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A3｜已有分析原文]
+[N3_S116] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。
+[同一分诊的实际查询｜A3｜来源标签或背景记录]
+[N3_S117] 同一分诊的实际查询：返回记录=(标题=Process start observed；告警等级=medium；告警时间=2026-11-08T01:26:29+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A3｜已有分析原文]
+[N3_S118] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示 powershell.exe 进程启动成功，执行命令为获取本地用户列表。现有证据（历史登录记录、威胁情报查空、资产库存查空）均不足以证明该行为是授权运维还是恶意侦察。检测标签明确标注'不证明攻击发生'，且无明确授权依据，符合需进一步调查的特征。
+[同一分诊的实际查询｜A3｜来源标签或背景记录]
+[N3_S119] 同一分诊的实际查询：返回记录=(标题=Process start observed；告警等级=medium；告警时间=2026-11-08T01:26:29+00:00；上游厂商=LabTelemetry)；匹配依据=exact_typed_namespaced_object
+[同一分诊的实际查询｜A3｜已有分析原文]
+[N3_S120] 同一分诊的实际查询：原判定=needs_review；原理由=告警显示 powershell.exe 进程启动成功，执行命令为获取本地用户列表。现有证据（历史登录记录、威胁情报查空、资产库存查空）均不足以证明该行为是授权运维还是恶意侦察。检测标签明确标注'不证明攻击发生'，且无明确授权依据，符合需进一步调查的特征。
+[补充业务事实｜程序提供]
+事件既有等级=(I1=(程序计算等级/当前生效等级=medium；计算方式=成员告警最高等级))

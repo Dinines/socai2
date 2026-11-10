@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-b7a25d40010d798c",
+    "created": 1794111866,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": 0.6,\n  \"rationale\": \"告警触发于'Encoded PowerShell command executed'，但原始数据明确显示脚本由'Device Management Agent'启动，且'Script Signature'为'valid'，命令内容为标准的软件清单导出操作。虽然'detection_labels'中标记'does_not_establish_observed_attack'为true，但这仅表示标签本身未确立攻击，不能直接证明行为无害。关键矛盾在于'detection_labels'中的'fleetWidePattern'描述（1840台主机相同模式）暗示了潜在的横向移动或滥用风险，而'parentProcess'和签名状态又指向合法管理活动。由于缺乏外部威胁情报命中（not_queried）且存在模式异常与授权迹象的冲突，无法确认为benign或true_positive。\",\n  \"explanation\": \"该事件记录了一次由CrowdStrike设备管理代理执行的PowerShell命令，该命令解码后为从注册表获取已安装软件并导出到临时CSV文件。虽然脚本已签名且由受信任的管理代理启动，但告警描述强调'Encoded'，且元数据指出该命令在1840台主机上以完全相同的方式在20分钟内执行。这种大规模、同步的编码执行模式通常与自动化攻击工具或滥用管理代理进行横向移动/数据收集有关，尽管当前证据不足以定性为恶意，但也无法完全排除其作为正常批量运维或潜在滥用的可能性，需进一步人工核查上下文。\",\n  \"evidence_ids\": [\n    \"N1_S1\",\n    \"N1_S5\",\n    \"N1_S7\",\n    \"N1_S12\",\n    \"N1_S14\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"大规模同步执行模式与正常运维行为存在偏差，需核实是否为恶意利用管理代理进行横向移动或数据外传。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    },\n    {\n      \"reason\": \"脚本签名有效且由管理代理启动，需确认该批量操作是否为预授权的合规管理任务。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未执行威胁情报查询（not_queried），无法确认命令哈希或IP是否关联已知恶意活动。\",\n    \"未执行资产历史查询，无法判断该批量操作是否符合该环境的标准运维基线。\"\n  ]\n  ,\n  \"decision_basis\": null\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 595,
+      "prompt_tokens": 2783,
+      "total_tokens": 3378,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 12.003185,
+  "transport_seconds": 12.800815
+}

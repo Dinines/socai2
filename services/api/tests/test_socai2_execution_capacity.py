@@ -16,7 +16,7 @@ from app.socai2.baseline_capacity import (
     remaining_seconds,
 )
 from app.socai2.baseline_context import Context
-from app.socai2.baseline_contracts import FULL_EXECUTOR_VERSION, Limits
+from app.socai2.baseline_contracts import FULL_EXECUTOR_VERSION
 from app.socai2.baseline_dispatch import dispatch_followups, offered_bindings
 from app.socai2.baseline_evidence_tools import catalog
 from app.socai2.baseline_execution_schema import (
@@ -26,15 +26,16 @@ from app.socai2.baseline_execution_schema import (
 from app.socai2.baseline_followup_projection import delivery_followups
 from app.socai2.baseline_store import encoded
 from app.socai2.model_protocol import prepare_request
+from app.socai2.runtime_policy import active_policy, draft_limit
 from app.socai2.structured_output import response_format
+from socai2_test_model_view import synthetic_measure
 from test_socai2_followup_scope import frozen
 
 
 def fixture():
     packet, answer = frozen()
     context = Context.model_validate(packet["context"])
-    limits = Limits(max_model_calls=4, max_tokens=48000, max_tool_calls=4, max_rows_per_query=50,
-        deadline_at=context.captured_at + timedelta(seconds=120), policy_version="local-v2-fixture")
+    limits = active_policy().case.limits(context.captured_at, "synthetic-v12-fixture")
     lake = SimpleNamespace(configured=lambda: True)
     options, bindings, _ = offered_bindings(catalog(context, "00000000-0000-0000-0000-000000000001"), limits, context.captured_at, [], lake)
     return packet, answer, context, limits, options, bindings
@@ -150,13 +151,12 @@ def test_frozen_two_member_candidates_admit_c3_and_final_without_losing_required
     assert rebuilt["prepared"]["ready"] and not any(r["omitted"] for r in rebuilt["required"])
     gateway = SimpleNamespace(provider=protocol, schema_profile="standard", model="deepseek-flash")
     reservation = final_reservation(gateway, context)
-    limits = Limits.model_validate(run["limits"]).model_copy(update={"max_tokens": 48000,
-        "deadline_at": context.captured_at + timedelta(seconds=120)})
+    limits = active_policy().case.limits(context.captured_at, "synthetic-v12-replay")
     prepared = next(a["content_json"] for a in rows if a["schema_version"] == "socai2.baseline-model-view.v4")
     tools = {a["id"]: a["content_json"] for a in rows if a["kind"] == "tool_response"}
     options, _bindings, _ = offered_bindings(catalog(context, "00000000-0000-0000-0000-000000000001"), limits, context.captured_at, [], SimpleNamespace(configured=lambda: True))
     prompt, sources = messages(prepared, context, tools, options)
-    assert options and len(prompt[1]["content"].encode()) <= 8192 and len(encoded(prompt)) <= 12288
+    assert options and len(prompt[1]["content"].encode()) <= draft_limit() and len(encoded(prompt)) <= draft_limit()
     canonical = {"model": gateway.model, "messages": prompt, "max_tokens": 3000, "temperature": 0,
         "response_format": response_format(contract.ExecutionAnalysis, sources, members=context.alerts,
             questions=[q.id for q in context.questions], objects=context.scope.object_keys,
@@ -164,16 +164,16 @@ def test_frozen_two_member_candidates_admit_c3_and_final_without_losing_required
     canonical["response_format"] = execution_format(canonical["response_format"],
         {o["binding_id"]: _bindings[o["binding_id"]] for o in options})
     c3 = compact_execution_wire(prepare_request(gateway, canonical))
-    assert budget_reason([], limits, len(encoded(c3)), context.captured_at, reserve_calls=1, reservation=reservation) is None
+    assert budget_reason([], limits, len(encoded(c3)), context.captured_at, reserve_calls=2, reservation=reservation, measurement=asyncio.run(synthetic_measure(c3, "C3"))) is None
     p = rebuilt["prepared"]
     c6 = prepare_request(gateway, {**canonical, "messages": p["messages"], "response_format": response_format(
         delivery.Delivery, p["source_map"], members=context.alerts, questions=[q.id for q in context.questions], objects=context.scope.object_keys)})
-    assert final_wire_reason(c6, reservation) is None
+    assert final_wire_reason(c6, reservation, asyncio.run(synthetic_measure(c6, "C6"))) is None
     # Even a maximal provider-reported first-call charge leaves the entire
     # reserved C6 request affordable. Actual usage is never replaced by bytes.
-    actual = len(encoded(c3)) + 3000 + 256
+    actual = asyncio.run(synthetic_measure(c3, "C3"))["reserved_total_tokens"]
     previous = [{"kind": "model", "state": "completed", "usage": {"usage_state": "reported", "total_tokens": actual}}]
-    assert budget_reason(previous, limits, len(encoded(c6)), context.captured_at) is None
+    assert budget_reason(previous, limits, len(encoded(c6)), context.captured_at, measurement=asyncio.run(synthetic_measure(c6, "C6"))) is None
     assert run == before and run["limits"]["max_tokens"] == 24000
 
 
@@ -181,13 +181,15 @@ def test_reservation_protects_tokens_time_and_unknown_usage_without_changing_old
     _, _, context, limits, _, _ = fixture()
     reservation = final_reservation(SimpleNamespace(provider="chat_completions", model="local"), context)
     previous = [{"kind": "model", "state": "completed", "usage": {"usage_state": "reported", "total_tokens": 15000}}]
-    assert budget_reason(previous, limits, 14000, context.captured_at, reserve_calls=1, reservation=reservation) == "final_model_tokens_reserved"
+    measured = {"context_fits": True, "reserved_total_tokens": 14000}
+    limited = limits.model_copy(update={"max_tokens": 15000 + 14000 + reservation["reserved_tokens"] - 1})
+    assert budget_reason(previous, limited, 14000, context.captured_at, reserve_calls=2, reservation=reservation, measurement=measured) == "final_model_tokens_reserved"
     previous[0]["usage"] = {"usage_state": "unavailable", "total_tokens": None}
     assert budget_reason(previous, limits, 1, context.captured_at, reserve_calls=1, reservation=reservation) == "prior_model_usage_unknown"
     now = limits.deadline_at - timedelta(seconds=30)
     assert budget_reason([], limits, 1, now, reservation=reservation) == "final_model_time_reserved"
-    assert remaining_seconds(limits, context.captured_at, reservation, "C3") == 90
-    assert remaining_seconds(limits, context.captured_at, reservation, "C6") == 120
-    assert reserved_calls({"executor_version": FULL_EXECUTOR_VERSION}, "C3") == 1
-    assert reserved_calls({"executor_version": "socai2.baseline-executor.v1"}, "C3") == 1
-    assert budget_reason([], limits.model_copy(update={"max_tokens": 24000}), 1000, context.captured_at) is None
+    assert remaining_seconds(limits, context.captured_at, reservation, "C3") == 1200
+    assert remaining_seconds(limits, context.captured_at, reservation, "C6") == 1500
+    assert reserved_calls({"executor_version": FULL_EXECUTOR_VERSION}, "C3") == 2
+    assert reserved_calls({"executor_version": "socai2.baseline-executor.v1"}, "C3") == 2
+    assert budget_reason([], limits.model_copy(update={"max_tokens": 24000}), 1000, context.captured_at, measurement={"context_fits": True, "reserved_total_tokens": 4000}) is None

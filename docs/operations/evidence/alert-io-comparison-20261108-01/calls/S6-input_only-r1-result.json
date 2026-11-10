@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-8deb6c845631aab5",
+    "created": 1794111959,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"benign\",\n  \"confidence\": 0.95,\n  \"rationale\": \"告警描述为'Whole customer table read'，但程序事实（N1_S5）显示该操作由角色'reporting_ro'执行，计划为'nightly 02:10'，且过去 180 次运行均成功（'180 prior runs'），查询计划匹配基线（'queryPlanMatchesBaseline': true）。这些特征表明这是预期的夜间批量数据加载任务，而非异常恶意行为。尽管读取行数较大（410 万行），但在夜间调度且历史运行稳定的背景下，属于授权业务行为。\",\n  \"explanation\": \"该事件是数据库审计系统记录的一次常规夜间报表生成或数据仓库加载任务。虽然单次查询读取了大量数据（410 万行）触发了'Whole customer table read'规则，但结合执行角色（reporting_ro）、固定时间调度（nightly 02:10）以及极高的历史成功率（180 次无失败），可判定为正常的授权业务活动。\",\n  \"evidence_ids\": [\n    \"N1_S5\",\n    \"N1_S4\"\n  ],\n  \"recommendations\": []\n  ,\n  \"limitations\": [\n    \"未查询历史威胁情报或具体业务授权文档，判定基于日志内显式的调度与历史运行记录。\"\n  ]\n  ,\n  \"decision_basis\": {\n    \"kind\": \"authorized_or_expected_behavior\",\n    \"claim\": \"该操作符合预期的夜间调度任务特征，具有稳定的历史运行记录且由专用报表角色执行。\",\n    \"source_ids\": [\n      \"N1_S5\",\n      \"N1_S4\"\n    ]\n  }\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 402,
+      "prompt_tokens": 1316,
+      "total_tokens": 1718,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 8.021619,
+  "transport_seconds": 8.845416
+}

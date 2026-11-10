@@ -1,0 +1,181 @@
+{
+  "schema_version": "socai2.production-flow-check.v1",
+  "batch_id": "production-multialert-20261108-01",
+  "status": "frozen_before_dispatch",
+  "execution_environment": "production21",
+  "input_kind": "synthetic",
+  "analysis_source": "existing_model_execution_only",
+  "target": {
+    "database": "aisoc",
+    "schema": "socai2",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+    "user_api_key_file": "/Users/lychee/Documents/project/socai2/.local/production-multialert-20261107-01/private/tj0001.json",
+    "user_api_key_json_path": "api_key"
+  },
+  "transport": {
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "remote_python": "python3",
+    "api_base_url": "http://127.0.0.1:18000",
+    "ingress_path": "/api/v1/alert-ingress",
+    "processing_entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "workbench_url": "http://127.0.0.1:4177",
+    "http_timeout_seconds": 35,
+    "ssh_binary": "/usr/bin/ssh",
+    "remote_docker": "docker",
+    "pg_container": "spirithub-postgres-1",
+    "pg_client": "psql",
+    "pg_admin_role": "spirithub",
+    "pg_reader_role": "socai2_prod_reader",
+    "command_timeout_seconds": 45,
+    "job_timeout_seconds": 2100,
+    "local_api_port": 18022,
+    "local_preview_port": 4174,
+    "source_file": "docs/operations/evidence/production-multialert-20261108-01/plan.json",
+    "processing_profile_mode": "current_release",
+    "processing_profile_file": "/opt/sting-aisoc-socai2/current-v1.2/deploy/aisoc21/production-v1.2.toml"
+  },
+  "input": {
+    "source": "socai2-flow-acceptance",
+    "hostname": "socai2-flow-20261108-01",
+    "username": "flow-observer-20261108-01",
+    "rule": "Only source observations; no benign/malicious/authorization/attack-chain answers.",
+    "alerts": [
+      {
+        "key": "A1",
+        "upstream_alert_id": "8eb1558e-143f-485c-8763-8a8d076cb3c6",
+        "event_id": "83136178-4892-4673-b26f-95d421c2c3b7",
+        "event_offset_seconds": 0,
+        "title": "Account logon observed",
+        "class_uid": 3002,
+        "action": "logon",
+        "outcome": "success"
+      },
+      {
+        "key": "A2",
+        "upstream_alert_id": "45dfa0b7-8e51-4b5a-bb8c-eca33c9aafdd",
+        "event_id": "7e804497-d090-4948-9ca9-f835c9e67f5d",
+        "event_offset_seconds": 20,
+        "title": "Process start observed",
+        "class_uid": 1007,
+        "action": "process_start",
+        "outcome": "success",
+        "process_name": "powershell.exe",
+        "command_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+      },
+      {
+        "key": "A3",
+        "upstream_alert_id": "bd1e95f5-382c-420a-9877-e0001d473ab5",
+        "event_id": "4d959a91-40a1-48f7-8840-f8efb6ad7f6b",
+        "event_offset_seconds": 40,
+        "title": "Outbound connection observed",
+        "class_uid": 4001,
+        "action": "network_connection",
+        "outcome": "success",
+        "destination_ip": "198.51.100.88",
+        "destination_port": 443,
+        "protocol": "TCP"
+      }
+    ],
+    "severity": "medium",
+    "source_ip": "192.0.2.88",
+    "authentication_source_ip": "203.0.113.88",
+    "event_time_base": "2026-11-08T01:26:09+00:00"
+  },
+  "case": {
+    "title": "1.2 四项续修多告警验收 20261108-01",
+    "incident_id": null,
+    "case_id": null,
+    "run_id": null,
+    "window_start": "2026-11-08T01:21:09+00:00",
+    "window_end": "2026-11-08T01:31:09+00:00"
+  },
+  "operation_keys": {
+    "A1": "90c8d862-0a62-44f7-8942-e9d3641fa886",
+    "A2": "e264015b-0a7b-4dbe-aae7-194988040b94",
+    "A3": "723641ed-0f51-4a29-a262-d1c0331e7559",
+    "I": "c0b0126d-8265-4e57-a2da-9599d8d6c4ac",
+    "case_create": "5636fc6a-072c-493d-88b9-c0006f98b848",
+    "case_prepare": "b631dba6-e486-4404-be47-0ce0aee320b1",
+    "case_start": "ea24ee55-ea16-4ca7-a9c6-4d51e408d088"
+  },
+  "execution_bounds": {
+    "alert_attempts": 3,
+    "incident_attempts": 1,
+    "case_baseline_runs": 1,
+    "manual_retries": 0,
+    "existing_model_and_tool_budgets": "current released policy; A=1 each, I=1, Case<=6 including correction, Case tools<=4",
+    "no_additional_lake_events": true,
+    "no_asset_or_knowledge_seed": true,
+    "no_human_result_or_evidence_index_fabrication": true,
+    "model_calls_max_by_policy": 10,
+    "token_max_by_policy": 227072,
+    "real_human_feedback_rounds": 0
+  },
+  "page_acceptance": {
+    "contract": "deliverables/investigation-validation-20261106/frontend-feature-list.md",
+    "templates": "prototypes/security-pages-v2/",
+    "binding": "prototypes/security-pages-v2/scripts/generate-socai2-recorded.cjs",
+    "source": "saved database rows and unmodified API GET responses",
+    "checks": [
+      "alert facts/materials/analysis",
+      "incident members/diagnosis/correlation basis",
+      "case facts/current determination/runs/results/graphs/references/followups",
+      "real empty values for manual fields and independently generated records",
+      "4177 shows the same tenant/case/run/steps/artifacts/states"
+    ]
+  },
+  "dispatched_alerts": 0,
+  "case_runs_started": 0,
+  "model_calls": 0,
+  "account": {
+    "username": "tj0001",
+    "email": "tj0001@example.com",
+    "email_is_placeholder": true,
+    "base_role": "viewer",
+    "role_id": "bc9e481c-4617-402d-9806-9799110a4d6a",
+    "role_name": "tj0001_investigation",
+    "key_id": "060b169b-f230-45e3-a092-0d7c62340d14",
+    "key_name": "production-multialert-20261107-01",
+    "scopes": [
+      "alerts:read",
+      "alerts:write",
+      "cases:read",
+      "cases:write"
+    ],
+    "key_expires_at": "2026-11-08T06:34:27.343672+00:00",
+    "creation_authorized_by": "user",
+    "authorization_date": "2026-11-07",
+    "password_login": "generated_secret_saved_privately"
+  },
+  "provisioning": {
+    "statement_timeout_ms": 10000,
+    "lock_timeout_ms": 5000
+  },
+  "input_sha256": "5b2ed0b00e95085e7620450df225ffcb459d4533bfb9b3e7b94a7c425a935032",
+  "release": {
+    "version": "1.2",
+    "id": "v1.2-20261108-r1",
+    "manifest_sha256": "a1a3ce16d8b65f95da8a45d8b4c6387c6eda003e5a7367ca33383cf9fcd99008",
+    "current_pointer": "/opt/sting-aisoc-socai2/current-v1.2"
+  },
+  "authorization": {
+    "user_request": "继续推进，先把网关超时改到300秒，再修复这轮发现的判断依据、查询状态和报告状态问题。配置和部署文件同步更新，发布到21后再跑一轮新测试。",
+    "recorded_at": "2026-11-08T01:28:09+00:00",
+    "scope": "沿现有tj0001/正式库，独立3告警/3A/1I/单Case单Run；先核实际发布和网关300再执行；旧批不重派，Agents暂停，无额外语义造数/DDL/权限。"
+  },
+  "acceptance": {
+    "grouping": "3 members in one incident; recorded grouping basis",
+    "case_delivery": "C3 and C6 actual requests/responses, result and evidence index; partial and semantic issues reported separately",
+    "tools": "observe actual model selection, query results and downstream consumption; empty/unused is reported, no forced query",
+    "truth": "No independent benign/malicious ground truth; do not report accuracy; review factual scope and evidence support",
+    "source_review": "Only submitted observations and actual existing source lookups; no extra lake/asset/knowledge fixtures",
+    "four_fixes": [
+      "Actual gateway timeout300 and existing policy unchanged",
+      "all verdict/basis combinations valid on received raw",
+      "program query status equals real receipts; review model prose for skipped vs empty",
+      "Run/report state agrees; unknown stays unsettled without Result"
+    ]
+  }
+}

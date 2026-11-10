@@ -1,0 +1,280 @@
+{
+  "status": "design_catalog_not_runtime_configuration",
+  "date": "2026-11-08",
+  "scope": "33 declared RawAlert envelope fields; nested raw_event/field_metadata are open, not exhaustively mapped",
+  "source": "services/fusion/app/models/alert.py",
+  "source_sha256": "65f1ea5e4ad13d067ac2b7437ae6dfa7ba2124ad393bdfd2b117d84a91a682d0",
+  "field_count": 33,
+  "fields": [
+    {
+      "field": "id",
+      "declared_type": "UUID",
+      "block": "程序身份",
+      "meaning": "Fusion 内告警 UUID，用于去重和后续关联",
+      "proposed_model_input_policy": "后台保存；不让模型复述",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "tenant_id",
+      "declared_type": "UUID",
+      "block": "程序身份",
+      "meaning": "租户隔离身份，不是日志操作者",
+      "proposed_model_input_policy": "后台绑定与隔离",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "identity_version",
+      "declared_type": "Literal['legacy-v1', 'source-v1', 'event-v1']",
+      "block": "程序身份",
+      "meaning": "告警去重身份规则版本",
+      "proposed_model_input_policy": "后台按版本解析",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "source_alert_id",
+      "declared_type": "UUID | None",
+      "block": "程序身份",
+      "meaning": "来源告警关联身份，与厂商 external_id 有别",
+      "proposed_model_input_policy": "后台追溯，非行为事实",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "identity_event_id",
+      "declared_type": "str | None",
+      "block": "程序身份",
+      "meaning": "收到的源事件身份，与厂商 finding 标识不同",
+      "proposed_model_input_policy": "后台确定来源，源事件关联含义按需呈现",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "identity_origin",
+      "declared_type": "Literal['promotion', 'rule', 'window'] | None",
+      "block": "来源",
+      "meaning": "promotion/rule/window 告警生成路径",
+      "proposed_model_input_policy": "后台保留；若为规则或窗口生成，呈现与判断有关的检测范围",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "source",
+      "declared_type": "str",
+      "block": "来源",
+      "meaning": "来源系统/接入类别，也用于对象命名空间",
+      "proposed_model_input_policy": "需要区分来源或对象时呈现，不能猜成厂商名",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "title",
+      "declared_type": "str",
+      "block": "检测",
+      "meaning": "上游告警标题",
+      "proposed_model_input_policy": "非空原文保留并标为上游描述；仅按同源同版本同字段同值去重，不按语义相似改写或删减",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "description",
+      "declared_type": "str",
+      "block": "检测",
+      "meaning": "上游业务说明，可能含标题之外的信息",
+      "proposed_model_input_policy": "非空原文完整传递，程序只加来源标题；不摘要、提炼或按语义判定可删，本批为空不删除字段规则",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "severity",
+      "declared_type": "AlertSeverity",
+      "block": "检测",
+      "meaning": "该告警的上游严重度，模型默认 medium 需区分来源是否提供",
+      "proposed_model_input_policy": "有用时注明告警等级，不当日志等级/恶意结论",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "status",
+      "declared_type": "AlertStatus",
+      "block": "处置",
+      "meaning": "上游告警处理状态，不是 activity.outcome",
+      "proposed_model_input_policy": "通常后台；任务关心处置时按处置语义呈现",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "src_ip",
+      "declared_type": "str | None",
+      "block": "网络对象",
+      "meaning": "来源侧 IP，可能由标准化或原文投影",
+      "proposed_model_input_policy": "按原路径及方向呈现，和同条日志值一致才合并",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "dst_ip",
+      "declared_type": "str | None",
+      "block": "网络对象",
+      "meaning": "目的侧 IP",
+      "proposed_model_input_policy": "按原路径及方向呈现，不从 IP 推断外传",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "hostname",
+      "declared_type": "str | None",
+      "block": "主体对象",
+      "meaning": "顶层设备名；具体源路径记录在 field_metadata",
+      "proposed_model_input_policy": "保留业务对象，来源区分和冲突不得丢",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "username",
+      "declared_type": "str | None",
+      "block": "主体对象",
+      "meaning": "顶层账号名；不等于告警负责人或操作发起人",
+      "proposed_model_input_policy": "保留账号及其角色，不靠名称推断授权",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "file_hash",
+      "declared_type": "str | None",
+      "block": "文件对象",
+      "meaning": "文件哈希值；该顶层字段自身没有给出算法",
+      "proposed_model_input_policy": "保留值，算法需另有显式来源，不按长度猜",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "domain",
+      "declared_type": "str | None",
+      "block": "网络对象",
+      "meaning": "域名对象，可能来自 DNS 查询等不同路径",
+      "proposed_model_input_policy": "保留值及业务角色，不自动当作已连接目的地",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "url",
+      "declared_type": "str | None",
+      "block": "网络对象",
+      "meaning": "URL 对象或提取的地址",
+      "proposed_model_input_policy": "保留有意义原值和来源，不能据 URL 推断请求结果",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "mitre_tactics",
+      "declared_type": "list[str]",
+      "block": "检测",
+      "meaning": "上游/规则的战术标签",
+      "proposed_model_input_policy": "按来源解释；空标签不等于没有攻击",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "mitre_techniques",
+      "declared_type": "list[str]",
+      "block": "检测",
+      "meaning": "上游/规则的技术标签",
+      "proposed_model_input_policy": "按来源解释，不当作实际行为已获证实",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "raw_event",
+      "declared_type": "dict[str, Any]",
+      "block": "原始材料",
+      "meaning": "开放 JSON，可能是事件包络、OCSF 内容或厂商原件",
+      "proposed_model_input_policy": "按各业务块处理所有有意义内容；未知内容保留来源和原值",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "field_metadata",
+      "declared_type": "dict[str, Any]",
+      "block": "来源与覆盖",
+      "meaning": "开放 JSON，记录字段取值来源、时间来源、检测来源和窗口覆盖等",
+      "proposed_model_input_policy": "程序用于解释与去重；冲突、范围不完整等影响判断的信息应呈现",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "tags",
+      "declared_type": "list[str]",
+      "block": "检测",
+      "meaning": "上游提供的开放标签",
+      "proposed_model_input_policy": "先核标签含义和来源；有值不能因样例为空而忽略，也不当授权证明",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "risk_score",
+      "declared_type": "float | None",
+      "block": "检测",
+      "meaning": "上游提供的风险分；None 为未提供，0 是明确值；模型未声明统一刻度",
+      "proposed_model_input_policy": "任务相关时保留原值和来源/量纲未确认状态，不与 Fusion 分或模型 confidence 混用",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "connector_id",
+      "declared_type": "UUID | None",
+      "block": "程序身份",
+      "meaning": "连接器实例身份",
+      "proposed_model_input_policy": "后台追溯和来源区分",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "connector_type",
+      "declared_type": "str | None",
+      "block": "来源",
+      "meaning": "连接器类别，帮助解释来源，不一定是厂商",
+      "proposed_model_input_policy": "按来源解释需要呈现，不单独作为行为证据",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "source_event_ids",
+      "declared_type": "list[str]",
+      "block": "来源与覆盖",
+      "meaning": "关联源事件身份集合；可受窗口/截断规则影响",
+      "proposed_model_input_policy": "IDs 后台映射；来源范围、缺失和裁剪影响需呈现",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "ocsf_class_uid",
+      "declared_type": "int | None",
+      "block": "活动类别",
+      "meaning": "声明的 OCSF 类别，仅类型信息",
+      "proposed_model_input_policy": "有合同映射才译名；不能用类别推导具体 action/outcome",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "rule_id",
+      "declared_type": "str | None",
+      "block": "检测",
+      "meaning": "检测规则/保存搜索标识，与执行 Run ID 不同",
+      "proposed_model_input_policy": "后台定位规则；规则身份有判断价值时保留，不一律因 id 删除",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "rule_name",
+      "declared_type": "str | None",
+      "block": "检测",
+      "meaning": "检测规则名称",
+      "proposed_model_input_policy": "有值原文保留并标为检测规则名称；不从名称推断实际行为",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "external_id",
+      "declared_type": "str | None",
+      "block": "程序身份",
+      "meaning": "厂商 finding 标识，用于回溯和回写",
+      "proposed_model_input_policy": "后台关联，不代替行为证据",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "created_at",
+      "declared_type": "datetime",
+      "block": "时间",
+      "meaning": "RawAlert 创建时间，缺省由程序生成",
+      "proposed_model_input_policy": "后台保留，不补成事件发生时间",
+      "sample_empty_does_not_remove_field_rule": true
+    },
+    {
+      "field": "event_time",
+      "declared_type": "datetime | None",
+      "block": "时间",
+      "meaning": "来源给出的/接收层提取的事件时间；可未知",
+      "proposed_model_input_policy": "有值且来源明确时呈现；与日志活动时间冲突须分别表达",
+      "sample_empty_does_not_remove_field_rule": true
+    }
+  ],
+  "limitations": [
+    "Current A rendering does not expose every envelope field. Catalog policies are design requirements, not verified implementation.",
+    "Current 3 samples do not cover nonempty assets, nonempty threat intelligence, human feedback, DNS/HTTP/file-specific fields or all vendors.",
+    "Do not treat source labels, old model judgments, execution receipts and activity observations as equivalent evidence."
+  ],
+  "free_text_policy": "Preserve nonempty existing narrative fields verbatim with source labels; simplify structure and format known structured values only. No semantic summarization, extraction, correction or additional history reads in this scope."
+}

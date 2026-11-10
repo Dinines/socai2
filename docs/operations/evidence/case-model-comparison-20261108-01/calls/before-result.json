@@ -1,0 +1,42 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-9efd28db67fe63b5",
+    "created": 1794149453,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"summary\": \"主机 socai2-flow-20261108-01 在 2026-11-08T01:26:09Z 至 01:26:49Z 间由用户 flow-observer-20261108-01 完成登录、执行 Get-LocalUser 命令及连接外部 IP 198.51.100.88:443。现有证据仅证实行为发生，未证实授权或恶意意图，且威胁情报与资产库存查空结果不构成安全证明。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录用户登录成功，来源 IP 203.0.113.88，标签 synthetic 且无授权证据。\",\n      \"evidence_ids\": [\"N3_S1\", \"N3_S2\", \"N3_S7\", \"N3_S26\", \"N3_S100\", \"N3_S101\", \"N3_S102\"]\n    ,\n    \"limitations\": [\"查空结果不证明安全\", \"标签不证明行为性质\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录 PowerShell 启动 Get-LocalUser，时间紧邻登录，无授权依据。\",\n      \"evidence_ids\": [\"N3_S27\", \"N3_S31\", \"N3_S32\", \"N3_S54\", \"N3_S103\", \"N3_S108\", \"N3_S109\"]\n    ,\n    \"limitations\": [\"历史查询仅返回同告警\", \"进程启动不证明脚本完成\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录出站连接至 198.51.100.88:443，源 IP 192.0.2.88 与登录源不一致，无授权。\",\n      \"evidence_ids\": [\"N3_S55\", \"N3_S61\", \"N3_S63\", \"N3_S86\", \"N3_S110\", \"N3_S111\", \"N3_S112\"]\n    ,\n    \"limitations\": [\"源 IP 差异未解释\", \"查空不证明无外传\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"statement\": \"用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上成功登录并执行了获取本地用户列表的命令。\",\n      \"alert_ids\": [\"A1\", \"A2\"],\n      \"support_ids\": [\"N3_S1\", \"N3_S2\", \"N3_S4\", \"N3_S5\", \"N3_S27\", \"N3_S31\", \"N3_S32\", \"N3_S45\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"授权运维检查\", \"恶意侦察\"]\n    ,\n    \"limitations\": [\"缺乏审批记录\", \"无法区分意图\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"observed\",\n      \"statement\": \"同一主机在 20 秒后发起出站 TCP 连接至 198.51.100.88:443，源 IP 为 192.0.2.88。\",\n      \"alert_ids\": [\"A3\"],\n      \"support_ids\": [\"N3_S55\", \"N3_S58\", \"N3_S61\", \"N3_S62\", \"N3_S63\", \"N3_S77\", \"N3_S79\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"正常业务同步\", \"恶意 C2 通信\"]\n    ,\n    \"limitations\": [\"源 IP 与登录源不一致\", \"未确认目的 IP 合法性\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"inferred\",\n      \"statement\": \"现有自动化调查（威胁情报、资产库存、历史日志）未提供授权证据或异常关联，所有告警维持 needs_review 状态。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N3_S100\", \"N3_S101\", \"N3_S102\", \"N3_S108\", \"N3_S109\", \"N3_S110\", \"N3_S111\", \"N3_S26\", \"N3_S54\", \"N3_S86\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"正常运维\", \"攻击前奏\"]\n    ,\n    \"limitations\": [\"查空非反证\", \"工具未覆盖审批流\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无明确授权证据。\",\n      \"evidence_ids\": [\"N3_S26\", \"N3_S54\", \"N3_S86\", \"N3_S96\"],\n      \"limitations\": [\"未查询变更管理系统\", \"未查询白名单\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无法定性。\",\n      \"evidence_ids\": [\"N3_S87\", \"N3_S88\", \"N3_S97\"],\n      \"limitations\": [\"缺乏 MITRE 映射\", \"缺乏威胁情报命中\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"潜在影响待核。\",\n      \"evidence_ids\": [\"N3_S95\"],\n      \"limitations\": [\"未确认数据外传\", \"未确认横向移动\"]\n    },\n    {\n      \"id\": \"coverage\",\n      \"state\": \"unresolved\",\n      \"answer\": \"部分缺口。\",\n      \"evidence_ids\": [\"N3_S99\"],\n      \"limitations\": [\"源 IP 差异未解释\", \"历史查询未覆盖审批\"]\n    }\n  ,\n  {\n      \"id\": \"detection_facts\",\n      \"state\": \"unresolved\",\n      \"answer\": \"仅确认行为发生。\",\n      \"evidence_ids\": [\"N3_S1\", \"N3_S27\", \"N3_S55\"],\n      \"limitations\": [\"标签不证明攻击\"]\n    }\n  ,\n  {\n      \"id\": \"member_relationships\",\n      \"state\": \"unresolved\",\n      \"answer\": \"时间邻近，无因果证明。\",\n      \"evidence_ids\": [\"N3_S93\", \"N3_S94\", \"N3_S95\"],\n      \"limitations\": [\"图可达非因果\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及登录与权限。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"未验证用户身份真实性\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机配置与资源。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F2\", \"F3\"],\n      \"limitations\": [\"未查询云配置基线\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件或链接特征。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无相关数据\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及数据访问与外传。\",\n      \"alert_ids\": [\"A3\"],\n      \"finding_ids\": [\"F2\", \"F3\"],\n      \"limitations\": [\"未确认数据敏感性\"]\n    }\n  ],\n  \"conflicts\": [\n    {\n      \"id\": \"C1\",\n      \"finding_ids\": [\"F1\", \"F2\"],\n      \"state\": \"unresolved\",\n      \"explanation\": \"登录源 IP (203.0.113.88) 与出站连接源 IP (192.0.2.88) 不一致，但无证据表明存在代理或横向移动。\"\n    ,\n    \"evidence_ids\": [\"N3_S7\", \"N3_S63\", \"N3_S79\", \"N3_S99\"]\n    }\n  ],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"mode\": \"query\",\n      \"objective\": \"查询变更管理记录或白名单以验证授权。\",\n      \"required_evidence\": \"审批单号或白名单条目\",\n      \"source_ids\": [\"N3_S98\"]\n    ,\n    \"object_keys\": [\"O1\", \"O5\", \"O3\"]\n    ,\n    \"binding_id\": \"B1\"\n    ,\n    \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"behavior_nature\",\n      \"alert_ids\": [\"A3\"],\n      \"mode\": \"query\",\n      \"objective\": \"查询更详细的网络连接上下文以确认目的 IP 合法性。\",\n      \"required_evidence\": \"目的 IP 信誉或业务关联\",\n      \"source_ids\": [\"N3_S99\", \"N3_S95\"]\n    ,\n    \"object_keys\": [\"O3\"]\n    ,\n    \"binding_id\": \"B2\"\n    ,\n    \"priority\": \"supporting\"\n    }\n  ]\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 2410,
+      "prompt_tokens": 9663,
+      "total_tokens": 12073,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "provider_response_sha256": "83ab96b1c2e1ec08706202f187197550462a7fb0d30f5e0a45aea0232ef05a5b",
+  "hidden_message_fields_omitted": [],
+  "http_seconds": 49.038636,
+  "transport_seconds": 49.823785
+}

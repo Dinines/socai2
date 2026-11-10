@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-ada87cd8d3a98e5a",
+    "created": 1794111889,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": 0.6,\n  \"rationale\": \"告警描述为'Very large upload to an external destination'，原始数据中用户标记为'departing.engineer'且'userUnderNotice'为true，这提供了潜在的授权或预期行为依据。然而，数据中明确提到'no prior upload over 50 MB from this account'（此前无此类上传记录），且文件类型为敏感数据（source archives, customer database export），目的地类别为'uncategorised file sharing'。虽然存在离职通知背景，但缺乏明确的授权凭证（如审批记录、已知白名单）来完全排除数据外传风险。由于未执行威胁情报查询（not_queried），无法确认目的地是否恶意，且现有证据不足以直接定性为恶意（true_positive）或完全无害（benign），需进一步核实授权细节。\",\n  \"explanation\": \"该事件记录了一名标记为即将离职的员工在40分钟内向一个未分类的文件共享服务上传了约15GB的数据，包含源档案和客户数据库导出文件。尽管用户处于离职通知状态，但这是该账户首次进行超过50MB的上传，且目的地域名仅9天大且类别不明。虽然存在业务合理性（离职前转移数据），但缺乏明确的授权证明，且存在数据泄露的潜在风险，因此不能直接判定为安全或恶意，需要人工审查授权依据。\",\n  \"evidence_ids\": [\n    \"N1_S1\",\n    \"N1_S5\",\n    \"N1_S7\",\n    \"N1_S13\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"用户处于离职通知状态且上传了敏感数据，需立即核实该操作是否经过IT或安全部门的正式授权审批。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    },\n    {\n      \"reason\": \"目的地类别为'uncategorised file sharing'且域名较新，需调查该外部端点的信誉及与已知威胁情报的匹配情况。\",\n      \"source_ids\": [\n        \"N1_S5\"\n      ]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未执行威胁情报查询（threat_intel not_queried），无法确认外部目的地的恶意属性。\",\n    \"未获取历史行为基线对比（history not_queried），仅凭'no prior upload'陈述无法完全排除异常性。\",\n    \"缺乏明确的授权凭证（如工单号、审批记录）来证实该上传行为的合法性。\"\n  ]\n  ,\n  \"decision_basis\": null\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 600,
+      "prompt_tokens": 2753,
+      "total_tokens": 3353,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 12.10782,
+  "transport_seconds": 13.005348
+}

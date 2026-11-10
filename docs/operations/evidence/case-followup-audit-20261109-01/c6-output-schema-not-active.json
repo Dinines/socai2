@@ -1,0 +1,631 @@
+{
+  "type": "object",
+  "$defs": {
+    "Answer": {
+      "type": "object",
+      "required": [
+        "id",
+        "state",
+        "answer",
+        "evidence_ids",
+        "limitations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/QuestionId"
+        },
+        "state": {
+          "enum": [
+            "answered",
+            "unresolved",
+            "not_applicable"
+          ],
+          "type": "string"
+        },
+        "answer": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Domain": {
+      "type": "object",
+      "required": [
+        "name",
+        "applicability",
+        "reason",
+        "alert_ids",
+        "finding_ids",
+        "limitations"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "identity",
+            "cloud",
+            "phishing",
+            "insider"
+          ],
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "alert_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AlertId"
+          },
+          "maxItems": 200
+        },
+        "finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "applicability": {
+          "enum": [
+            "applicable",
+            "not_applicable",
+            "undetermined"
+          ],
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Impact": {
+      "type": "object",
+      "required": [
+        "summary",
+        "alert_ids",
+        "support_ids",
+        "supported_changes",
+        "cannot_generalize",
+        "next_steps"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "alert_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AlertId"
+          },
+          "maxItems": 200
+        },
+        "next_steps": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "support_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        },
+        "cannot_generalize": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CompactString0"
+          },
+          "maxItems": 12,
+          "minItems": 1
+        },
+        "supported_changes": {
+          "$ref": "#/$defs/CompactArray4"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Member": {
+      "type": "object",
+      "required": [
+        "alert_id",
+        "state",
+        "summary",
+        "evidence_ids",
+        "limitations"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "analyzed",
+            "unresolved",
+            "not_analyzed"
+          ],
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "alert_id": {
+          "$ref": "#/$defs/AlertId"
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AlertId": {
+      "enum": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "type": "string"
+    },
+    "Finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "state",
+        "statement",
+        "alert_ids",
+        "support_ids",
+        "counter_ids",
+        "alternatives",
+        "limitations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "state": {
+          "enum": [
+            "observed",
+            "inferred",
+            "unresolved"
+          ],
+          "type": "string"
+        },
+        "alert_ids": {
+          "$ref": "#/$defs/CompactArray0"
+        },
+        "statement": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "counter_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "support_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CompactString0"
+          },
+          "maxItems": 8
+        }
+      },
+      "additionalProperties": false
+    },
+    "Analysis": {
+      "type": "object",
+      "required": [
+        "summary",
+        "members",
+        "findings",
+        "questions",
+        "domains",
+        "conflicts",
+        "followups"
+      ],
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Domain"
+          },
+          "maxItems": 4,
+          "minItems": 4
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Member"
+          },
+          "maxItems": 3,
+          "minItems": 3
+        },
+        "summary": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "maxItems": 24
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Conflict"
+          },
+          "maxItems": 12
+        },
+        "followups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Followup"
+          },
+          "maxItems": 12
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Answer"
+          },
+          "maxItems": 6,
+          "minItems": 6
+        }
+      },
+      "additionalProperties": false
+    },
+    "Conflict": {
+      "type": "object",
+      "required": [
+        "id",
+        "finding_ids",
+        "state",
+        "explanation",
+        "evidence_ids"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "state": {
+          "enum": [
+            "resolved",
+            "unresolved"
+          ],
+          "type": "string"
+        },
+        "explanation": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 2
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Followup": {
+      "type": "object",
+      "required": [
+        "question_id",
+        "alert_ids",
+        "mode",
+        "objective",
+        "required_evidence",
+        "source_ids",
+        "object_keys"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "query",
+            "deep",
+            "graph",
+            "human"
+          ],
+          "type": "string"
+        },
+        "alert_ids": {
+          "$ref": "#/$defs/CompactArray0"
+        },
+        "objective": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        },
+        "object_keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ObjectKey"
+          },
+          "maxItems": 32
+        },
+        "question_id": {
+          "$ref": "#/$defs/QuestionId"
+        },
+        "required_evidence": {
+          "$ref": "#/$defs/CompactString0"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SourceId": {
+      "enum": [
+        "N4_S1",
+        "N4_S10",
+        "N4_S11",
+        "N4_S12",
+        "N4_S13",
+        "N4_S14",
+        "N4_S15",
+        "N4_S16",
+        "N4_S17",
+        "N4_S18",
+        "N4_S19",
+        "N4_S2",
+        "N4_S20",
+        "N4_S21",
+        "N4_S22",
+        "N4_S23",
+        "N4_S24",
+        "N4_S25",
+        "N4_S26",
+        "N4_S27",
+        "N4_S28",
+        "N4_S29",
+        "N4_S3",
+        "N4_S30",
+        "N4_S31",
+        "N4_S32",
+        "N4_S33",
+        "N4_S34",
+        "N4_S35",
+        "N4_S36",
+        "N4_S37",
+        "N4_S38",
+        "N4_S39",
+        "N4_S4",
+        "N4_S40",
+        "N4_S41",
+        "N4_S42",
+        "N4_S43",
+        "N4_S44",
+        "N4_S45",
+        "N4_S46",
+        "N4_S47",
+        "N4_S48",
+        "N4_S49",
+        "N4_S5",
+        "N4_S50",
+        "N4_S51",
+        "N4_S52",
+        "N4_S53",
+        "N4_S54",
+        "N4_S55",
+        "N4_S56",
+        "N4_S57",
+        "N4_S58",
+        "N4_S59",
+        "N4_S6",
+        "N4_S60",
+        "N4_S61",
+        "N4_S62",
+        "N4_S63",
+        "N4_S64",
+        "N4_S65",
+        "N4_S66",
+        "N4_S67",
+        "N4_S68",
+        "N4_S69",
+        "N4_S7",
+        "N4_S70",
+        "N4_S71",
+        "N4_S72",
+        "N4_S73",
+        "N4_S74",
+        "N4_S75",
+        "N4_S76",
+        "N4_S77",
+        "N4_S78",
+        "N4_S8",
+        "N4_S9"
+      ],
+      "type": "string"
+    },
+    "ObjectKey": {
+      "enum": [
+        "O1",
+        "O2",
+        "O3",
+        "O4",
+        "O5"
+      ],
+      "type": "string"
+    },
+    "Comparison": {
+      "type": "object",
+      "required": [
+        "kind",
+        "summary",
+        "support_ids"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "initial"
+          ],
+          "type": "string"
+        },
+        "summary": {
+          "type": "null"
+        },
+        "support_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "Conclusion": {
+      "type": "object",
+      "required": [
+        "text",
+        "state",
+        "alert_ids",
+        "support_ids",
+        "limitations"
+      ],
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "state": {
+          "enum": [
+            "supported",
+            "uncertain"
+          ],
+          "type": "string"
+        },
+        "alert_ids": {
+          "$ref": "#/$defs/CompactArray0"
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "support_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        }
+      },
+      "additionalProperties": false
+    },
+    "QuestionId": {
+      "enum": [
+        "authorization",
+        "behavior_nature",
+        "coverage",
+        "detection_facts",
+        "impact",
+        "member_relationships"
+      ],
+      "type": "string"
+    },
+    "CompactArray0": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AlertId"
+      },
+      "maxItems": 200,
+      "minItems": 1
+    },
+    "CompactArray4": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CompactString0"
+      },
+      "maxItems": 12
+    },
+    "CompactArray13": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SourceId"
+      },
+      "maxItems": 32
+    },
+    "CompactString0": {
+      "type": "string",
+      "maxLength": 1200,
+      "minLength": 1
+    },
+    "Recommendation": {
+      "type": "object",
+      "required": [
+        "id",
+        "action_type",
+        "object_keys",
+        "reason",
+        "source_ids",
+        "limitations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "reason": {
+          "$ref": "#/$defs/CompactString0"
+        },
+        "source_ids": {
+          "$ref": "#/$defs/CompactArray13"
+        },
+        "action_type": {
+          "enum": [
+            "investigate",
+            "contain",
+            "remediate",
+            "monitor"
+          ],
+          "type": "string"
+        },
+        "limitations": {
+          "$ref": "#/$defs/CompactArray4"
+        },
+        "object_keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ObjectKey"
+          },
+          "maxItems": 32
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "analysis",
+    "conclusion",
+    "closing_note",
+    "comparison",
+    "impact",
+    "recommendations"
+  ],
+  "properties": {
+    "impact": {
+      "$ref": "#/$defs/Impact"
+    },
+    "analysis": {
+      "$ref": "#/$defs/Analysis"
+    },
+    "comparison": {
+      "$ref": "#/$defs/Comparison"
+    },
+    "conclusion": {
+      "$ref": "#/$defs/Conclusion"
+    },
+    "closing_note": {
+      "$ref": "#/$defs/CompactString0"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Recommendation"
+      },
+      "maxItems": 12
+    }
+  },
+  "additionalProperties": false
+}

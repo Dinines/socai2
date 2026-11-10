@@ -12,8 +12,8 @@ from sqlalchemy.exc import DBAPIError
 from app.models.socai2 import RunSteps
 
 from . import baseline_enrichment_sources as sources
-from .baseline_context import MAX_CONTEXT_BYTES, reference
 from .baseline_context import SCHEMA as C1_SCHEMA
+from .baseline_context import reference, retention_limit
 from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Limits
 from .baseline_optional_sources import SourceUnavailable
 from .baseline_store import F, StoreError, digest, encoded
@@ -204,9 +204,9 @@ class BaselineEnrichment:
                     truncation_reasons.append("upstream_row_limit")
                 rows = rows[:args["limit"]]
                 # Whole rows only. Mark omitted rows; never clip JSON or a fact.
-                if len(encoded(rows)) > MAX_CONTEXT_BYTES:
+                if len(encoded(rows)) > retention_limit():
                     truncation_reasons.append("retained_row_bytes_limit")
-                while rows and len(encoded(rows)) > MAX_CONTEXT_BYTES:
+                while rows and len(encoded(rows)) > retention_limit():
                     rows.pop()
                     truncated = True
                 state = "completed"

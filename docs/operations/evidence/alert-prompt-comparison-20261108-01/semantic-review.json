@@ -1,0 +1,126 @@
+{
+  "decision": "do_not_promote_candidate",
+  "basis": "new factual contradictions and unsupported inferences; no performance improvement",
+  "samples": {
+    "A1": "两版均待复核。新指令把三项已查询且返回0行写成“未查”；名称猜用途从主要理由中减少，置信度由0.65变null。",
+    "A2": "两版均待复核。新指令把进程启动扩大为命令执行成功，并把TI未查写成未命中；原五字段的临时会话猜测消失。",
+    "A3": "两版均待复核；新指令置信度变null，两轮建议措辞/引用略有变化。查询查空符合本例事实，但正文仍复述状态。",
+    "S1": "两版均良性、0.95；都引用已批准工单、MFA与执行窗口，未见本批主要判定退化。",
+    "S2": "两版均待复核。新指令新增“主动安全加固”的无证据假设；待复核不计方向误判，也不代表已经识别恶意。",
+    "S3": "良性变待复核；新指令把上报厂商CrowdStrike当执行代理并据此提建议。作者误报/良性标签口径仍需对齐，不能仅按标签判对错。",
+    "S4": "两版均待复核。新指令少了部分无必要的前提，但仍需授权背景；短写账号名称不用于程序关联。",
+    "S5": "恶意变待复核；新指令以缺人工确认和假设演练为由不定性，并把明确false的演练登记字段称为标记缺失。",
+    "S6": "良性变待复核；新指令没有再把180次运行写成全成功，但把copyToProgramUsed=false扩大成未外传，并额外要求人工授权。原时间/计划不一致仍在。"
+  },
+  "findings": [
+    {
+      "id": "P01",
+      "samples": [
+        "A1"
+      ],
+      "change": "regression",
+      "claim": "completed empty -> not queried",
+      "input": "three program query receipts completed, returned_rows=0",
+      "candidate": "“未查”的资产库存、历史告警和威胁情报查询结果",
+      "impact": "program query facts contradicted in both candidate rounds"
+    },
+    {
+      "id": "P02",
+      "samples": [
+        "A2"
+      ],
+      "change": "regression_relative_to_five_field_control",
+      "claim": "process_start success -> command executed successfully",
+      "input": "action=process_start; outcome=success",
+      "candidate": "成功执行了 Get-LocalUser 命令",
+      "impact": "observed action effect enlarged; previously also seen in eight-field results"
+    },
+    {
+      "id": "P03",
+      "samples": [
+        "A2"
+      ],
+      "change": "persisted_or_more_explicit",
+      "claim": "TI not queried -> no hit",
+      "input": "threat_intel outcome=not_queried",
+      "candidate": "威胁情报未命中",
+      "control": "威胁情报查空 phrase follows historical-analysis discussion; ambiguous attribution",
+      "impact": "current and historical query facts remain mixed"
+    },
+    {
+      "id": "P04",
+      "samples": [
+        "S3"
+      ],
+      "change": "regression_relative_to_five_field_control",
+      "claim": "source vendor -> executing software",
+      "input": "original_vendor=crowdstrike; parentProcess=device management agent service; vendor identity not stated for parent",
+      "candidate": "CrowdStrike 代理 ... CrowdStrike 官方授权",
+      "impact": "wrong actor attribution extends to recommendations; previously observed in older eight-field baseline"
+    },
+    {
+      "id": "P05",
+      "samples": [
+        "S5"
+      ],
+      "change": "regression",
+      "claim": "false -> missing and speculative simulation blocks determination",
+      "input": "campaignRecordedInTrainingSchedule=false; simulationHeader=null; credentialsSubmitted=9",
+      "candidate": "演练登记标记缺失或录入错误假设；缺人工确认作为不能定性的理由",
+      "impact": "true_positive becomes needs_review; not a directional reversal under agreed metric"
+    },
+    {
+      "id": "P06",
+      "samples": [
+        "S6"
+      ],
+      "change": "mixed",
+      "claim": "history count corrected; boolean effect enlarged",
+      "input": "180 prior runs; no failed statements in preceding hour; copyToProgramUsed=false",
+      "control": "180次历史运行从未失败",
+      "candidate": "180次历史运行记录，但 copyToProgramUsed=false 被释为未用于数据外传",
+      "impact": "one old overstatement removed, different unsupported inference added; schedule fixture unresolved"
+    },
+    {
+      "id": "P07",
+      "samples": [
+        "A1",
+        "A2",
+        "S2"
+      ],
+      "change": "mixed",
+      "claim": "unsupported hypotheses changed rather than eliminated",
+      "input": "account names do not establish purpose; MFA approval and new method do not establish security-hardening intent",
+      "candidate": "A1/A2主要理由减少名称猜测，S2新增主动安全加固假设",
+      "impact": "no general factual reliability improvement demonstrated"
+    },
+    {
+      "id": "P08",
+      "samples": [
+        "S3",
+        "S5",
+        "S6"
+      ],
+      "change": "increased_abstention",
+      "claim": "manual confirmation treated as a necessary prerequisite",
+      "input": "task permits evidence from observation or human_statement; does not require human_statement for every determinate verdict",
+      "candidate": "三例以缺人工确认或授权为不能定性的关键理由",
+      "impact": "8/12 -> 11/12 needs_review, all candidate abstentions have confidence=null; null is schema-valid and not alone an error"
+    }
+  ],
+  "scope": "manual comparison against frozen input; no model output rewritten",
+  "root_cause_assessment": {
+    "established": "only system prompt changed; inputs/output schema/model settings/parser identical",
+    "hypotheses": [
+      "generic action-effect wording may have weakened explicit process_start boundary",
+      "model interpreted uncertainty and human-confirmation wording as an excessive decision gate"
+    ],
+    "not_established": "which individual sentence caused each behavior; full prompt rewrite is not a sentence ablation"
+  },
+  "next_direction": [
+    "retain original five-field candidate as comparison baseline, not a quality-approved production release",
+    "separate evidence supporting a verdict from suggestions to verify remaining details",
+    "retain meaningful explicit field semantics near relevant input; do not accumulate case-specific prohibition lists",
+    "new wording requires a new batch, do not rerun this ended batch"
+  ]
+}

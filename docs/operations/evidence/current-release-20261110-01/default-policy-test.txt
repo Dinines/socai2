@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ QueueBoundaryTest.test_manual_start_uses_authorized_capacity_policy ______
+
+self = <test_socai2_case_queue.QueueBoundaryTest testMethod=test_manual_start_uses_authorized_capacity_policy>
+
+    async def test_manual_start_uses_authorized_capacity_policy(self):
+        service = CaseService(None)
+    
+        @asynccontextmanager
+        async def transaction(tenant_id):
+            self.assertEqual(tenant_id, TENANT)
+            yield SimpleNamespace(now=AsyncMock(return_value=NOW))
+    
+        service.transaction = transaction
+        service.actor = AsyncMock()
+        service.start_full = AsyncMock()
+        service.read_run = AsyncMock(return_value="run")
+        case_id, run_id, request, actor = UUID(int=1), UUID(int=301), object(), object()
+>       result = await service.start_case(TENANT, case_id, run_id, request, actor=actor)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_case_queue.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/case_service.py:95: in start_case
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:242: StoreError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_queue.py::QueueBoundaryTest::test_manual_start_uses_authorized_capacity_policy
+1 failed in 0.37s

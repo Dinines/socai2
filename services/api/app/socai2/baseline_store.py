@@ -245,7 +245,7 @@ class BaselineStore:
         if not context.alerts:
             raise StoreError("baseline_scope_empty")
         payload = context.model_dump(mode="json")
-        if len(encoded(payload)) > c1.MAX_CONTEXT_BYTES:
+        if len(encoded(payload)) > c1.retention_limit():
             raise StoreError("baseline_context_too_large", 422)
         rows = [{key: UUID(a.alert[key]) if a.alert[key] else None
                  for key in ["id", "latest_material_id", "latest_triage_id", "latest_feedback_id"]}
@@ -294,7 +294,17 @@ class BaselineStore:
             F.c.run_id == run_id, F.c.kind == "source_snapshot", F.c.schema_version == c1.SCHEMA)))
         if context is None or digest(context["content_json"]) != context["sha256"]:
             raise StoreError("frozen_c1_context_invalid")
-        return c1.Context.model_validate(context["content_json"])
+        value = c1.Context.model_validate(context["content_json"])
+        from .case_query_snapshot import roles, source
+        source(value.model_dump(mode="json"))
+        if value.query_receipts_version is not None and any(
+                value.citation_roles.get(path) != role for path, role in roles(value.model_dump(mode="json")).items()):
+            raise StoreError("case_query_citation_roles_invalid", 422)
+        return value
+
+    async def input_freshness(self, run_id):
+        from .case_query_snapshot import input_freshness
+        return await input_freshness(self.db, self.tenant_id, run_id)
 
     async def read_material(self, case_id, run_id, material_id):
         """Read an immutable version, never the alert's latest pointer. No GET writes."""
@@ -431,9 +441,14 @@ class BaselineStore:
             vals = m.model_dump(mode="json", exclude={"alert_id", "read_state"})
             await self.db.execute(insert(RESM).values(id=uuid4(), tenant_id=self.tenant_id,
                 case_id=case_id, result_id=result_id, run_id=run_id, alert_id=m.alert_id, **vals))
-        adoption = (await self.db.execute(text(
-            "SELECT socai2.auto_adopt_baseline_result(:tenant, :result)"),
-            {"tenant": self.tenant_id, "result": result_id})).scalar_one()
+        freshness = await self.input_freshness(run_id)
+        if any(reason in {"case_query_version_unsupported", "paired_alert_queries_changed"}
+               for reason in freshness["reasons"]):
+            adoption = {"state": "stale_input", "input_freshness": freshness}
+        else:
+            adoption = (await self.db.execute(text(
+                "SELECT socai2.auto_adopt_baseline_result(:tenant, :result)"),
+                {"tenant": self.tenant_id, "result": result_id})).scalar_one()
         if publication.conclusion_origin == "system" and publication.validation_state == "system_only" and publication.conclusion:
             from .baseline_closing import record_case_closing
             adoption = await record_case_closing(self, run, result_id, publication.conclusion)
@@ -446,13 +461,16 @@ class BaselineStore:
              ("result_id", result_id, None, {"adoption": adoption})])
         return outcome
 
-    async def prepare_model_view(self, case_id, run_id):
+    async def prepare_model_view(self, case_id, run_id, *, case_boundary=False):
         from . import baseline_enrichment as c2
         from . import baseline_model_view as view
+        from . import case_model_boundary as boundary
+        builder = boundary if case_boundary else view
+        schemas = [boundary.SCHEMA] if case_boundary else view.READ_SCHEMAS
         await self.case(case_id)
         run = await self.run(case_id, run_id)
         prior = await self.one(select(F).where(*self.where(F, F.c.run_id == run_id,
-            F.c.schema_version.in_(view.READ_SCHEMAS), F.c.kind == "source_snapshot")))
+            F.c.schema_version.in_(schemas), F.c.kind == "source_snapshot")))
         if prior:
             if digest(prior["content_json"]) != prior["sha256"]:
                 raise StoreError("model_view_receipt_invalid")
@@ -483,12 +501,17 @@ class BaselineStore:
                 "captured_at": payload["captured_at"], "limitations": source["limitations"]})
         materials = {aid: await self.read_material(case_id, run_id, UUID(alert.material["id"]))
                      for aid, alert in context.alerts.items() if alert.material}
-        payload = view.build(context, c1_row["id"], evidence, states, materials)
+        payload = builder.build(context, c1_row["id"], evidence, states, materials,
+            execution_time=run["started_at"], run_id=run["id"])
         if payload["ready"]:
             from .model_input_view import frozen_items
-            visible = json.loads(payload["messages"][1]["content"])
-            read_ids = {UUID(item["source"]["id"]) for item in frozen_items(visible)
-                        if item["source"]["type"] == "alert_material" and item["source"]["role"] == "observation"}
+            if case_boundary:
+                refs = [item["ref"] for item in payload["source_map"].values()]
+            else:
+                visible = json.loads(payload["messages"][1]["content"])
+                refs = [item["source"] for item in frozen_items(visible)]
+            read_ids = {UUID(ref["id"]) for ref in refs
+                        if ref["type"] == "alert_material" and ref["role"] == "observation"}
             if read_ids:
                 await self.db.execute(update(RM).where(*self.where(RM, RM.c.run_id == run_id,
                     RM.c.material_id.in_(read_ids))).values(read_state="read"))
@@ -496,7 +519,7 @@ class BaselineStore:
         refs = [c1.reference("artifact", c1_row["id"], "execution_receipt"),
                 c1.reference("artifact", summary["id"], "execution_receipt")]
         await self.save_input_artifact(case_id, run_id, identity, payload, kind="source_snapshot",
-            schema=view.SCHEMA, captured_at=await self.now(), refs=refs, actor_id=run["requested_by"])
+            schema=builder.SCHEMA, captured_at=await self.now(), refs=refs, actor_id=run["requested_by"])
         return {"artifact_id": str(identity), **payload}
 
     async def mark_unknown(self, case_id, run_id):

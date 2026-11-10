@@ -17,6 +17,7 @@ from app.socai2.baseline_store import digest, encoded
 from app.socai2.model_errors import ModelCallError
 from app.socai2.model_input_view import items
 from app.socai2.model_protocol import prepare_request
+from app.socai2.runtime_policy import draft_limit
 from app.socai2.structured_output import response_format
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -30,7 +31,7 @@ def test_c6_frozen_packets_keep_facts_human_and_plans_in_original_budgets(run_in
     result = asyncio.run(one(db, run))
     prepared, captured = result["prepared"], result["captured"]
     assert prepared["ready"], prepared["reason"]
-    assert prepared["bytes"] <= 8192 and len(encoded(prepared["messages"])) <= 12288
+    assert prepared["bytes"] <= draft_limit() and len(encoded(prepared["messages"])) <= draft_limit()
     required = [c for c in captured["candidates"] if c.get("required")]
     context = Context.model_validate(next(a["content_json"] for a in db["artifacts"]
         if a["run_id"] == run["id"] and a["schema_version"] == "socai2.baseline-context.v1"))
@@ -47,7 +48,8 @@ def test_c6_frozen_packets_keep_facts_human_and_plans_in_original_budgets(run_in
     # those costs. Verify preparation and the remaining-budget stop separately.
     assert len(encoded(body)) + 3000 + 256 <= 24000
     limits = Limits.model_validate(run["limits"])
-    reason = budget_reason(previous, limits, len(encoded(body)), context.captured_at)
+    reason = budget_reason(previous, limits, len(encoded(body)), context.captured_at,
+        measurement={"context_fits": True, "reserved_total_tokens": len(encoded(body)) + 3000 + 256})
     assert reason == ("model_token_budget_insufficient" if len(encoded(body)) > allowance else None)
     visible = {i["id"]: i for i in items(json.loads(body["input"][1]["content"]))}
     selected = {encoded(s["ref"]): visible[sid]["value"] for sid, s in prepared["source_map"].items()}

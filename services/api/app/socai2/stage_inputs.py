@@ -4,6 +4,7 @@ from typing import Literal
 Freshness = Literal["current", "stale", "unverified", "unavailable"]
 VERSION = "socai2.stage-result.v1"
 TRIAGE_VALIDATION_VERSION = "socai2.incident-triage.v1"
+QUERY_RECEIPTS_VERSION = "socai2.incident-queries.v1"
 # Read the entire input in one statement. Own output pointers and ingestion clocks
 # are excluded so publishing a result does not make that result stale immediately.
 SOURCE_SQL = """SELECT jsonb_build_object('version',CAST(:version AS text),'kind',CAST(:kind AS text),
@@ -36,13 +37,14 @@ def freshness_sql(kind, subject_sql, run_sql):
     source = SOURCE_SQL
     if kind == "incident_diagnosis":
         # Old frozen inputs remain comparable under their original contract.
-        source = f"SELECT CASE WHEN sf.content_json->>'triage_validation_version'='{TRIAGE_VALIDATION_VERSION}' THEN ({incident_source_sql()}) ELSE ({SOURCE_SQL}) END"
+        source = f"SELECT CASE WHEN sf.content_json->>'query_receipts_version'='{QUERY_RECEIPTS_VERSION}' THEN ({incident_source_sql(with_queries=True)}) WHEN sf.content_json->>'triage_validation_version'='{TRIAGE_VALIDATION_VERSION}' THEN ({incident_source_sql()}) ELSE ({SOURCE_SQL}) END"
     source = source.replace(":kind", "'" + kind + "'").replace(":id", "st.sid").replace(":version", "'" + VERSION + "'")
     return f"""COALESCE((SELECT CASE
        WHEN sf.id IS NULL OR sf.material_state<>'complete' OR sf.content_json IS NULL THEN 'unavailable'
        WHEN sf.schema_version<>'{VERSION}' OR sf.content_json->>'version' IS DISTINCT FROM '{VERSION}' THEN 'unverified'
        WHEN sf.content_json->>'kind' IS DISTINCT FROM '{kind}' THEN 'unverified'
        WHEN sf.content_json ? 'triage_validation_version' AND sf.content_json->>'triage_validation_version'<>'{TRIAGE_VALIDATION_VERSION}' THEN 'unverified'
+       WHEN sf.content_json ? 'query_receipts_version' AND sf.content_json->>'query_receipts_version'<>'{QUERY_RECEIPTS_VERSION}' THEN 'unverified'
        WHEN sf.content_json=({source}) THEN 'current' ELSE 'stale' END
       FROM (SELECT CAST({subject_sql} AS uuid) AS sid, CAST(({run_sql}) AS uuid) AS rid) st
       JOIN socai2.runs sr ON sr.id=st.rid AND sr.{key}=st.sid
@@ -51,14 +53,14 @@ def freshness_sql(kind, subject_sql, run_sql):
       WHERE sr.tenant_id=:tenant AND sr.kind='{kind}'), 'unavailable')"""
 
 
-def incident_source_sql():
+def incident_source_sql(*, with_queries=False):
     """Freeze paired A validity and I members in the same statement snapshot.
 
     No Alert locks: publication retains the established Alert -> Incident order.
     The nested freshness expression uses only the unchanged A source contract.
     """
     fresh = freshness_sql("alert_basic", "a.id", "t.source_run_id")
-    return f"""SELECT frozen.body || jsonb_build_object(
+    sql = f"""SELECT frozen.body || jsonb_build_object(
       'triage_validation_version','{TRIAGE_VALIDATION_VERSION}',
       'triage_validation',coalesce((SELECT jsonb_object_agg(a.id::text,jsonb_build_object(
         'triage_id',t.id,'source_run_id',t.source_run_id,'freshness',f.value,
@@ -72,4 +74,22 @@ def incident_source_sql():
           AND r.id=t.source_run_id AND r.kind='alert_basic'
         CROSS JOIN LATERAL (SELECT {fresh} AS value) f),'{{}}'::jsonb))
       FROM ({SOURCE_SQL}) frozen(body)"""
+    if not with_queries:
+        return sql
+    # One statement snapshot, using the exact adopted and validated A Run.
+    # The step/output pointer proves that each artifact is an actual receipt.
+    return f"""SELECT paired.body || jsonb_build_object(
+      'query_receipts_version','{QUERY_RECEIPTS_VERSION}',
+      'triage_queries',coalesce((SELECT jsonb_object_agg(v.key,
+        (SELECT coalesce(jsonb_agg(to_jsonb(receipt) ORDER BY receipt.step_id,receipt.id),'[]'::jsonb)
+         FROM (SELECT f.id,f.tenant_id,f.alert_id,f.run_id,f.step_id,f.kind,f.schema_version,
+                      f.content_json,f.sha256,f.size_bytes,f.material_state,f.blob_ref
+               FROM socai2.artifacts f JOIN socai2.run_steps s
+                 ON s.tenant_id=f.tenant_id AND s.run_id=f.run_id AND s.id=f.step_id AND s.output_artifact_id=f.id
+               WHERE f.tenant_id=:tenant AND f.alert_id=CAST(v.key AS uuid)
+                 AND f.run_id=CAST(v.value->>'source_run_id' AS uuid)
+                 AND f.kind='tool_response' AND s.kind='tool') receipt)
+        ORDER BY v.key) FROM jsonb_each(paired.body->'triage_validation') v
+        WHERE v.value->>'usable'='true'),'{{}}'::jsonb))
+      FROM ({sql}) paired(body)"""
 

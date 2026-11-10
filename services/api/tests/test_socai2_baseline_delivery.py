@@ -25,6 +25,7 @@ from app.socai2.baseline_store import (
     digest,
     encoded,
 )
+from app.socai2.runtime_policy import active_policy, draft_limit
 from jsonschema import Draft202012Validator, FormatChecker
 from socai2_test_model_view import model_data
 from sqlalchemy import insert, select, update
@@ -75,8 +76,8 @@ class FinalGateway(c3.SyntheticGateway):
     model = "synthetic-C6-no-network"
 
     async def complete(self, body, timeout):
-        assert timeout > 0 and body["max_tokens"] == 3000 and len(encoded(body["messages"])) <= 12288
-        assert len(body["messages"][1]["content"].encode()) <= 8192
+        assert timeout > 0 and body["max_tokens"] == active_policy().model.output_tokens["C6"] and len(encoded(body["messages"])) <= draft_limit()
+        assert len(body["messages"][1]["content"].encode()) <= draft_limit()
         self.calls += 1
         self.last_body = copy.deepcopy(body)
         if self.hook:
@@ -233,6 +234,8 @@ async def run_checks(engine, record, only=None):
         out = await service.finalize(T, cid, rid, gateway=FinalGateway(hook=during_model))
         assert out["state"] == "completed" and out["outcome"]["adoption"]["state"] == "stale_scope", out
         assert (await report(out))["scope"]["alert_ids"] == list(map(str, aids))
+        assert (await report(out))["evidence_directory"]["reason"] == "case_evidence_or_scope_changed"
+        assert (await rows(select(C).where(C.c.id == cid)))[0]["current_evidence_artifact_id"] is None
         assert len(await rows(select(S).where(S.c.run_id == rid, S.c.kind == "model", S.c.stage_code == "C6"))) == 1
 
     async def test_c6_rebuilds_stale_graph_before_claim():
@@ -273,8 +276,9 @@ async def run_checks(engine, record, only=None):
             else:
                 raise AssertionError("deferred FK must roll back publication")
         assert not await rows(select(RESULT).where(RESULT.c.source_run_id == rid))
-        assert not await rows(select(F).where(F.c.run_id == rid, F.c.kind.in_(["report_json", "report_markdown"])))
+        assert not await rows(select(F).where(F.c.run_id == rid, F.c.kind.in_(["report_json", "report_markdown", "case_evidence_index"])))
         assert (await rows(select(C).where(C.c.id == cid)))[0]["current_assessment_id"] is None
+        assert (await rows(select(C).where(C.c.id == cid)))[0]["current_evidence_artifact_id"] is None
         assert (await rows(select(R).where(R.c.id == rid)))[0]["state"] == "unknown"
         assert len(await rows(select(F).where(F.c.run_id == rid, F.c.kind == "model_response", F.c.schema_version == contract.SCHEMA))) == 1
 

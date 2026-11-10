@@ -1,8 +1,10 @@
-# 告警、事件与 Case 页面功能清单 V1
+# 告警、事件与 Case 页面功能清单
 
 **交接目标**　用户从一条告警出发，能回答四个问题：收到了什么、为什么归入该事件、案件当前采纳了什么判断、某一轮调查实际做了什么。告警、事件、Case 三个页面可并行开发。调查运行详情是三个页面共用的下钻入口。
 
-本清单供产品、前端和业务后端共同签收。下表按页面给出功能、字段和数据出处；**J01–J14** 给出每个跳转的输入、目标、关联键及缺值行为。表中的“可读”指处理模块已提供读取合同；“组合”指业务后端需按给定关系组装；“待接”指页面或服务仍缺接线。数据库表、接口、权限、读回 SQL 见[服务端数据交接 V1](../../docs/investigation/socai2-page-data-handoff-20261106.md)。有值样例与导出位置见[逐字段样本](page-field-samples.md)。
+本清单供产品、前端和业务后端共同签收。下表按页面给出功能、字段和数据出处；**J01–J14** 给出每个跳转的输入、目标、关联键及缺值行为。表中的“可读”指处理模块已提供读取合同；“组合”指业务后端需按给定关系组装；“待接”指页面或服务仍缺接线。数据库表、接口、权限、读回 SQL 见[服务端数据交接](../../docs/investigation/socai2-page-data-handoff-20261106.md)。有值样例与导出位置见[逐字段样本](page-field-samples.md)。
+
+**生产开放状态：** 21 当前 A/I/Case 读取已核验。下表“可读写”表示已有服务合同；生产 `SOCAI2_CASE_API_ENABLED=false`，Case 管理、成员和 H 写入暂不开放，界面不能据合同存在显示保存成功。Q 服务预留为 501，生产关闭写开关时先返回 503。[当前问题](../../docs/investigation/current-issues.md)
 
 按交接角色查阅：[告警页](#告警页) · [事件页](#事件页) · [Case 页](#case-页) · [调查运行](#共用的调查运行详情) · [跳转规格](#跳转与关联规格) · [案例签收](#案例签收)
 
@@ -58,7 +60,7 @@
 | **F19、F25 关系图与探索**。查某轮已保存图，区分图上临时选择和保存的探索 | `result.graph_artifact_id`、图工件的 `nodes/edges/source_refs`；探索的 `base_result_id/base_graph_artifact_id/base_input_artifact_id/graph_state/row_version` | 已保存图可读（J10）。探索有 `graph_explorations` 表；预览可在本页选节点，持久保存与再次打开的服务接线待验。无图时标明无图，仍可查成员和证据。 |
 | **F21 对象与证据**。核对独立证据、关联威胁及每一条的依据 | `page_data.evidence.state/evidence_count/threat_count/covered_alert_ids/uncovered_alert_ids/limitations`；条目的 `evidence_id/verdict/alert_ids/source_refs/threat/remediation` | 可读。`cases.current_evidence_artifact_id → artifacts` 中的证据目录。只统计有效且成员全部在本案范围内的条目；可疑或恶意且有威胁身份的按 `namespace + key` 去重。缺索引显示“未记录”，有效空索引显示 0，部分可用显示限制。点来源用 J12；处置依据用 J13。 |
 | **F22 人工任务**。看谁需补什么材料、最新答复适用于哪些告警 | `task.id/current_revision_id`、当前版本的 `state/assignee_id/due_at/result_text/result_scope/completed_by/completed_at` | 可读写。`/cases/{C}/tasks`，`tasks.current_revision_id → task_revisions.id`；点任务和指定修订用 J11。创建或更新后读回版本。完成任务只在声明范围内提供人工结果；判断采用情况读 F11。 |
-| **F23 处理活动**。回看案件或成员调整及实际影响 | `activities.id/occurred_at/action/actor/summary`、`activity_targets.activity_id`、具体目标 ID、`before_value/after_value/result_state/reason` | 数据已存时可按 C 查询；Case 完整活动列表待业务后端组装。预览会混列步骤和其他记录，完整目标前后值未接入。点活动本页展开各目标，按类型回到 J06/J07/J08/J11。 |
+| **F23 处理活动**。回看案件或成员调整及实际影响 | `activities.id/occurred_at/action/actor/summary`、`activity_targets.activity_id`、具体目标 ID、`before_value/after_value/result_state/reason` | 可读。`GET /cases/{C}/activities` 返回案件、成员及显式事件的匹配活动，去重并包含目标前后值。原预览页面仍需按该合同接入，不能把步骤当作业务活动。点活动本页展开各目标，按类型回到 J06/J07/J08/J11。 |
 | **F24 评论与附件**。查看人工备注、作者与附带文件 | `comments.case_id/body/author_id/author_name_snapshot/created_at/edited_at`；附件 `artifacts.id/case_id/kind/file_name/mime_type/size_bytes/sha256` | 告警/事件可读各自 `records/comments`；Case 的表有归属字段，评论与附件列表、上传及受控下载待接。打开附件要用本案附件 ID 和授权内容入口。预览固定空附件、评论表单只读。正式页应区分“未接入”与“已查询、无记录”。 |
 | **F26 案件助手**。区分提问、保存一个回答、人工采用为当前判断 | `conversations.id`、`messages.id/conversation_id/content`、`results.source_answer_id`、`case_assessment_sources.result_id` | `conversations/messages` 有存储设计。提问、保存回答、显式采用三个服务入口为 501；四案只读 Case 隐藏助手，演示 Case 提供本地预置问答。业务页如保留入口，应标“未开放”。 |
 
@@ -89,7 +91,7 @@
 | **J07 Case 历史 → 指定运行** | `C + R + view`；读取前保留运行的父主体类型及 UUID | `#/cases/{C}/investigations?run={R}&view={view}`，默认 `overview`；独立入口 `#/investigations/{R}/{view}`。Case 基础调查读 `/cases/{C}/runs/{R}`；成员 A/I 走 J04 的父主体接口。无匹配运行显示“无关联运行”。 |
 | **J08 运行 → 正式结果／比对** | `C + result_id` 及当前 `R`；上一次用于比较的结果以 `comparison_result_id` 为准 | 调查发现或报告页内读 `/cases/{C}/results/{result_id}`，核 `results.case_id/source_run_id`。比对目标需明确存在并属于本案。没有 Result 时保留 Run 和已存工件，不生成结果详情。 |
 | **J09 当前判断 → 形成依据** | `C + current_assessment_id`，所选来源行的 `result_id/artifact_id/task_revision_id` | `case_assessment_sources.assessment_id` 定位该判断的来源，按类型进 J08、J10 或 J11；覆盖范围取 `case_assessment_members`。保留来源行的具体身份；定位不到时显示“来源不可用”。 |
-| **J10 步骤、报告、图 → 工件正文** | 父主体 + `R + artifact_id`；步骤传所点输入/输出指针，报告/图传明确引用；复用另取来源归属 | A/I 用 `/{subject}/{id}/analysis/runs/{R}/artifacts/{artifact_id}`，Case 用 `/cases/{C}/runs/{R}/artifacts/{artifact_id}`；在明细、报告或图页展示。核实际 `artifacts.run_id`。跨轮复用应带来源轮次；非 Run 工件按自身归属解析。正文缺失/超限/仅外部引用时给原因。 |
+| **J10 步骤、报告、图 → 工件正文** | 父主体 + `R + artifact_id`；步骤传所点输入/输出指针，报告/图传明确引用；复用另取来源归属 | A/I 用 `/{subject}/{id}/analysis/runs/{R}/artifacts/{artifact_id}`，Case 用 `/cases/{C}/runs/{R}/artifacts/{artifact_id}`；在明细、报告或图页展示。核实际 `artifacts.run_id`。跨轮复用应带来源轮次；非 Run 工件用 `/alerts/{A}/artifacts/{artifact_id}`、`/incidents/{I}/artifacts/{artifact_id}` 或 `/cases/{C}/artifacts/{artifact_id}`，按自身归属读取。正文缺失/超限/仅外部引用时给原因。 |
 | **J11 任务 → 指定人工版本** | `C + task_id`，当前版本取 `current_revision_id`，历史记录取所选 `revision_id` | 案件 `tasks` 页签内查看，`/cases/{C}/tasks/{task_id}/revisions/{revision_id}`。核 `task_revisions.task_id` 和任务所属 Case；范围、完成人、完成时间全部读该版本。 |
 | **J12 证据／对象 → 来源记录** | `C + evidence_id` 或同主体的对象身份；从条目读 `source_refs[].type/id/source_path`，对象用 `material_id + object_key` | 在 `evidence` 或 `tools` 页内展开。按引用类型定位同范围材料、结果、人工版本或回执，再定位保存的 JSON 路径；按需进 J02/J08/J10/J11。对象名称只展示。来源暂不可读时保留其身份和限制。 |
 | **J13 响应 → 外部审批、动作或回执** | 本主体、`result_id + proposal_id`（若来源为正式建议）、`external_namespace + approval_id/action_id`；回执另用 `receipt_artifact_id` | 响应页内按 `response_links` 查真实关联；已接且有权限时才打开命名空间对应的审批/动作详情或受控回执。当前未约定外部前端 URL，只有编号时显示编号与来源；没有回执就显示“无执行回执”。 |
@@ -97,7 +99,9 @@
 
 ## 案例签收
 
-先从[四案预览与原件](21-qwen9b-handoff-cases-20261106.zip)解压打开 `preview/index.html`。同一案分给三方并行核对。以下是业务 UUID，可直接在导出和后端查询中核对。
+生产取数先核[当前两案 GET 与数据库](../../docs/operations/evidence/current-release-20261110-01/readback-03/summary.json)。以下固定四案用于复现原页面跳转与空态，页面差异仍按问题清单追踪。
+
+从[四案预览与原件](21-qwen9b-handoff-cases-20261106.zip)解压打开 `preview/index.html`。同一案分给三方并行核对。以下是业务 UUID，可直接在导出和后端查询中核对。
 
 | 案例 | 操作与通过条件 |
 | --- | --- |

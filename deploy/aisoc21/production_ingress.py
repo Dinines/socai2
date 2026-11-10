@@ -15,7 +15,6 @@ from uuid import UUID
 
 import asyncpg
 
-ROLE = "socai2_prod_ingress"
 SOURCE = """
 SELECT id,tenant_id,source_incident_id,snapshot
 FROM socai2_ops.prod_alert_sources($1::uuid,$2::uuid,$3::boolean)
@@ -85,7 +84,9 @@ async def sync_subject(conn, sink, tenant, subject, by_incident, *, expected_inc
 def database_url():
     dsn = os.environ["DATABASE_URL"].replace("postgresql+asyncpg://", "postgresql://", 1)
     parsed = urlsplit(dsn)
-    if (parsed.scheme, parsed.path, parsed.username) != ("postgresql", "/aisoc", ROLE):
+    if (parsed.scheme, parsed.path, parsed.username, parsed.hostname, parsed.port) != (
+            "postgresql", "/" + os.environ["SOCAI2_SERVICE_DATABASE_NAME"], os.environ["SOCAI2_PROCESSING_INGRESS_ROLE"],
+            os.environ["SOCAI2_PROCESSING_DB_HOST"], int(os.environ["SOCAI2_PROCESSING_DB_PORT"])):
         raise IngressError("invalid_ingress_database")
     return dsn
 
@@ -93,11 +94,12 @@ def database_url():
 async def check_identity(conn, tenant):
     await conn.execute("SELECT set_config('app.current_tenant_id',$1,true)", str(tenant))
     ready = await conn.fetchval("""
-        SELECT current_database()='aisoc' AND current_user=$1 AND public.current_tenant_id()=$2::uuid
+        SELECT current_database()=$3 AND current_user=$1 AND public.current_tenant_id()=$2::uuid
          AND NOT (rolsuper OR rolcreatedb OR rolcreaterole OR rolbypassrls OR rolreplication)
          AND row_security_active('socai2.alerts'::regclass)
          AND has_function_privilege('socai2_ops.prod_alert_sources(uuid,uuid,boolean)','EXECUTE')
-        FROM pg_catalog.pg_roles WHERE rolname=current_user""", ROLE, tenant)
+        FROM pg_catalog.pg_roles WHERE rolname=current_user""", os.environ["SOCAI2_PROCESSING_INGRESS_ROLE"], tenant,
+        os.environ["SOCAI2_SERVICE_DATABASE_NAME"])
     if ready is not True:
         raise IngressError("invalid_ingress_database")
 
@@ -122,7 +124,7 @@ async def project(tenant, alerts, incidents, *, expected_incident=None):
                                                     expected_incident=expected_incident)
     finally:
         await conn.close()
-    return {"status": "ready", "source": "aisoc", "alert_ids_requested": len(set(alerts)),
+    return {"status": "ready", "source": os.environ["SOCAI2_SERVICE_DATABASE_NAME"], "alert_ids_requested": len(set(alerts)),
             "incident_ids_requested": len(set(incidents)), "projected": projected}
 
 

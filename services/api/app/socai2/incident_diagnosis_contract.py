@@ -19,10 +19,10 @@ from .baseline_context import reference
 from .baseline_contracts import Contract, Scope
 from .baseline_model_view import (
     ACTIVITY_RULE,
-    MAX_FIELD_BYTES,
-    MAX_MODEL_BYTES,
     blocked,
     compact_objects,
+    draft_limit,
+    field_limit,
 )
 from .baseline_store import StoreError, digest, encoded
 from .model_input_view import LIMITATIONS, compact, size, source_prefix
@@ -85,7 +85,8 @@ PROMPT = (
 )
 
 
-def build(source, input_id):
+def build(source, input_id, *, execution_time=None):
+    from .program_facts import stage_facts
     if len(source["members"]) > 200:
         raise StoreError("incident_member_directory_too_large", 422)
     validation = source.get("triage_validation")
@@ -157,9 +158,10 @@ def build(source, input_id):
                         group.append((reference("alert_material", material["id"], raw_field_role(field), field), original, original, [aid]))
         candidates.append(group)
     data = {"incident_id": parent["id"], "members": list(coverage.values()), "items": [], "omissions": {},
-        "view_limitations": LIMITATIONS, "citations": "structured_v3"}
+        "view_limitations": LIMITATIONS, "citations": "structured_v3",
+        "program_facts": stage_facts(source, input_id, execution_time)}
     required = {encoded(p[0]) for group in priority for p in group}
-    if size(data) > MAX_MODEL_BYTES - 256:
+    if size(data) > draft_limit() - 256:
         raise StoreError("incident_member_directory_too_large", 422)
     source_map = {}
     prefix = source_prefix(source)
@@ -168,12 +170,12 @@ def build(source, input_id):
             if item is None:
                 continue
             ref, original, projected, owned = item
-            reason = "input_guard" if blocked({ref["source_path"]: original}) else "field_size" if len(encoded(projected)) > MAX_FIELD_BYTES else None
+            reason = "input_guard" if blocked({ref["source_path"]: original}) else "field_size" if len(encoded(projected)) > field_limit() else None
             sid = f"{prefix}S{len(source_map) + 1}"
             if not reason:
                 value = {"id": sid, "alert_ids": owned, "role": ref["role"], "field": ref["source_path"], "value": projected}
                 data["items"].append(value)
-                if size(data) > MAX_MODEL_BYTES - 256:
+                if size(data) > draft_limit() - 256:
                     data["items"].pop()
                     reason = "view_size"
             if reason:
@@ -191,7 +193,7 @@ def build(source, input_id):
                         coverage[aid]["triage_visibility"] = "included"
     data["omissions"] = dict(omitted)
     messages = [{"role": "system", "content": PROMPT}, {"role": "user", "content": encoded(compact(data)).decode()}]
-    if not source_map or size(data) > MAX_MODEL_BYTES or len(encoded(messages)) > 12288 or blocked(messages):
+    if not source_map or size(data) > draft_limit() or len(encoded(messages)) > draft_limit() or blocked(messages):
         raise StoreError("incident_model_view_unavailable", 422)
     retain_omission_details(data, omission_details)
     return messages, source_map, data

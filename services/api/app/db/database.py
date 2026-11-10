@@ -40,10 +40,16 @@ def _normalize_async_pg_url(url: str) -> tuple[str, dict[str, Any]]:
     if url.startswith("postgres://"):
         url = "postgresql+asyncpg://" + url[len("postgres://") :]
     elif url.startswith("postgresql://"):
-        # No driver specified -> default to asyncpg (the only async driver
-        # we ship with). Anything matching "postgresql+<driver>://" already
+        # No driver specified -> keep the existing asyncpg default.
+        # Anything matching "postgresql+<driver>://" already
         # has an explicit choice and we leave it alone.
         url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+
+    # psycopg's async dialect uses libpq directly. Preserve host/hostaddr,
+    # sslmode, sslrootcert and channel_binding, including strict TLS through
+    # a local SSH forward. Its optional deployment dependency is separate.
+    if urlsplit(url).scheme in {"postgresql+psycopg", "postgresql+psycopg_async"}:
+        return url, {}
 
     # Translate libpq-style query params that asyncpg can't parse.
     parts = urlsplit(url)
@@ -71,8 +77,9 @@ _normalized_url, _connect_args = _normalize_async_pg_url(str(settings.DATABASE_U
 # Bound how long asyncpg waits for a single statement. Fly's proxy can hang
 # a cold-start connect for a long time; failing fast lets the demo wake loop
 # retry instead of blocking a worker for minutes.
-_connect_args.setdefault("timeout", 15)
-_connect_args.setdefault("command_timeout", 60)
+if urlsplit(_normalized_url).scheme == "postgresql+asyncpg":
+    _connect_args.setdefault("timeout", 15)
+    _connect_args.setdefault("command_timeout", 60)
 
 # pool_pre_ping + pool_recycle are required for Fly Postgres (and any
 # managed Postgres that autostops / idle-closes). Without pre_ping the

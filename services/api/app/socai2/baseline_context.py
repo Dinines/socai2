@@ -6,17 +6,17 @@ materials remain in their immutable versions, and are read by exact ID later.
 from typing import Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, JsonValue, ValidationError
+from pydantic import AwareDatetime, Field, JsonValue, ValidationError
 from sqlalchemy import text
 
 from .baseline_contracts import Contract, Question, Scope
+from .runtime_policy import (
+    retention_limit as retention_limit,  # noqa: PLC0414 - reader compatibility
+)
 from .stage_inputs import Freshness, freshness_sql
 
 SCHEMA = "socai2.baseline-context.v1"
 PROJECTION = "socai2.baseline-manifest.v2"
-# Preserve the existing source snapshot retention ceiling. Never silently take
-# the first N members or enlarge the downstream model budget to fit a Case.
-MAX_CONTEXT_BYTES = 131072
 
 
 def feedback_validity(revision, member_ids):
@@ -49,6 +49,8 @@ class AlertInput(Contract):
     # Defaults preserve parsing of historical frozen v1 contexts.
     triage_freshness: Freshness = "unverified"
     triage_usable: bool | None = None
+    triage_run_state: str | None = None
+    queries: list[dict[str, JsonValue]] = Field(default_factory=list)
 
 
 class IncidentInput(Contract):
@@ -96,6 +98,8 @@ class Context(Contract):
     # Only these paths may be cited through this context artifact. A diagnosis
     # remains prior analysis; completing a human task never makes it observation.
     citation_roles: dict[str, Literal["source_label", "prior_analysis", "human_statement", "execution_receipt"]]
+    query_receipts_version: str | None = None
+    case_input_profile: dict[str, str] | None = None
 
 
 CAPTURE_SQL = """
@@ -196,8 +200,15 @@ QUESTIONS = (
 
 async def capture(db, tenant_id, case_id, request) -> Context:
     """Called with the Case and pending Run locked, before any Run input freezes."""
-    raw = (await db.execute(text(CAPTURE_SQL), {"tenant": tenant_id, "case": case_id,
+    from . import case_query_snapshot
+    from .runtime_policy import active_policy
+
+    profile = active_policy().case_io
+    sql = case_query_snapshot.capture_sql(CAPTURE_SQL) if profile else CAPTURE_SQL
+    raw = (await db.execute(text(sql), {"tenant": tenant_id, "case": case_id,
         "comparison": request.comparison_result_id})).scalar_one()
+    if profile:
+        raw["case_input_profile"] = profile.identity
     omissions, roles = [], {"$.case": "source_label"}
 
     def omit(section, source_id, reason):
@@ -220,8 +231,14 @@ async def capture(db, tenant_id, case_id, request) -> Context:
             elif item["alert"][pointer]:
                 reasons.append(name + "_reference_invalid")
         item["triage_usable"] = bool(item["triage"] and item["triage_freshness"] == "current")
+        if profile:
+            item["triage_usable"] = bool(item["triage_usable"] and item.get("triage_run_state") == "completed"
+                and item["triage"]["input_material_id"] == item["alert"]["latest_material_id"])
         if item["triage"] and not item["triage_usable"]:
-            reasons.append("triage_input_" + item["triage_freshness"])
+            if item["triage_freshness"] != "current":
+                reasons.append("triage_input_" + item["triage_freshness"])
+            elif profile and item.get("triage_run_state") != "completed":
+                reasons.append("triage_run_not_completed")
             roles.pop(f"$.alerts.{aid}.triage", None)
         roles[f"$.alerts.{aid}.alert"] = "source_label"
         if item["alert"].get("event_time") is not None:
@@ -258,6 +275,16 @@ async def capture(db, tenant_id, case_id, request) -> Context:
             reasons.append("diagnosis_input_" + item["diagnosis_freshness"])
         if item["diagnosis_usable"]:
             roles[f"$.incidents.{iid}.diagnosis"] = "prior_analysis"
+            if profile:
+                base = f"$.incidents.{iid}.diagnosis"
+                roles[base + ".summary"] = "prior_analysis"
+                for key in ("conclusion", "limitations"):
+                    if key in diagnosis["diagnosis"]:
+                        roles[base + ".diagnosis." + key] = "prior_analysis"
+                for index, _ in enumerate(diagnosis["diagnosis"].get("findings", [])):
+                    roles[base + f".diagnosis.findings.{index}"] = "prior_analysis"
+                for index, _ in enumerate(diagnosis.get("open_questions", [])):
+                    roles[base + f".open_questions.{index}"] = "prior_analysis"
         roles[f"$.incidents.{iid}.incident"] = "source_label"
         roles[f"$.incidents.{iid}.member_links"] = "source_label"
         item["limitations"] = reasons
@@ -292,6 +319,8 @@ async def capture(db, tenant_id, case_id, request) -> Context:
         window_start=request.window_start, window_end=request.window_end, limitations=[])
     questions = [Question(id=key, text=question, scope=scope, evidence_requirements=[requirement],
         state="open", answer=None, evidence_refs=[], limitations=[]) for key, question, requirement in QUESTIONS]
+    if profile:
+        roles.update(case_query_snapshot.roles(raw))
     return Context(schema_version=SCHEMA, case_id=case_id, scope=scope,
                    questions=questions, omissions=omissions, citation_roles=roles, **raw)
 

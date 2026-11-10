@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-ad591b3e93ac9578",
+    "created": 1794111830,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": 0.65,\n  \"rationale\": \"证据不足以判定为恶意或良性。虽然检测到 22 次 MFA 提示且最终登录成功，但关键事实（如用户是否被社会工程学诱导、是否内部人员测试、或是否为自动化脚本）未知。'residential proxy ASN' 和 'no prior sign-in' 是风险指标，但不足以直接定性为攻击，也不能排除授权场景（如用户更换设备或网络环境）。缺乏人工确认或威胁情报命中，无法反驳检测逻辑。\",\n  \"explanation\": \"该告警记录了单一账户在 11 分钟内收到 22 次 MFA 提示，其中 21 次被拒绝，第 22 次被批准，导致登录成功。来源 IP 为住宅代理且该租户此前无此 IP 登录记录。这种行为模式符合'重复 MFA 提示'的特征，可能源于暴力破解、凭证填充或社会工程学攻击，但也可能是用户主动更换网络或设备时的正常行为。由于缺乏关于用户意图、授权状态或关联威胁情报的明确证据，且未执行外部查询以获取更多信息，判定为待复核。\",\n  \"evidence_ids\": [\n    \"N1_S4\",\n    \"N1_S5\",\n    \"N1_S6\",\n    \"N1_S7\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"需要进一步调查用户身份及登录上下文，确认是否存在社会工程学攻击或内部测试行为。\",\n      \"source_ids\": [\n        \"N1_S5\"\n      ]\n    },\n    {\n      \"reason\": \"建议检查该租户的威胁情报库，确认源 IP 或 ASN 是否已知恶意。\",\n      \"source_ids\": [\n        \"N1_S5\"\n      ]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未执行外部威胁情报查询或历史告警关联分析，导致无法确认源 IP 的恶意程度或排除重复告警。\",\n    \"缺乏人工反馈或用户行为日志，无法区分是恶意攻击还是授权操作。\"\n  ]\n  ,\n  \"decision_basis\": null\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 502,
+      "prompt_tokens": 1366,
+      "total_tokens": 1868,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 9.985444,
+  "transport_seconds": 10.698144
+}

@@ -51,6 +51,7 @@ def compose(rollback=False):
     for layer in LAYERS:
         args += ['-f', str(ROOT / f'source/deploy/aisoc21/compose.{layer}.yml')]
     args += ['-f', str(HERE / 'compose.release-v1.yml')]
+    args += ['-f', str(HERE / PLAN['triage_overlay_file'])]
     if rollback:
         args += ['-f', str(HERE / 'compose.release-v1-rollback.yml')]
     return args
@@ -108,7 +109,7 @@ def preview():
         result[name] = {'current_image': old['Image'], 'target_tag': new['image'], 'changed_environment_keys': changed,
                         'old_bind_count': len(oldmounts), 'new_bind_count': len(newmounts),
                         'model_configuration_sha256': model_hash(oldenv), 'security_and_old_mounts_preserved': True}
-    return {'stage': 'preview', 'layers': len(LAYERS) + 1, 'services': result}
+    return {'stage': 'preview', 'layers': len(LAYERS) + 2, 'services': result}
 
 
 PREPARE = r'''
@@ -137,7 +138,8 @@ async def main():
         for mapping in maps.values(): mapping[str(tenant)]=reader
         maps['context-readers.json']={str(tenant):reader}
         maps['writers.json']={str(tenant):writer}
-        maps['budget.json']={'schema_version':1,'tenants':{str(tenant):plan['budget']}}
+        if plan['budget'] is not None:
+            maps['budget.json']={'schema_version':1,'tenants':{str(tenant):plan['budget']}}
         print(json.dumps({'files':maps,'expires_at':expires.isoformat(),'tenant_id':str(tenant)}))
     finally: await conn.close()
 asyncio.run(main())
@@ -193,7 +195,7 @@ def main():
         os.chown(PRIVATE, 10001, 10001)
         result = {'stage': 'prepared', 'tenant_id': data['tenant_id'], 'expires_at': data['expires_at'], 'private_files': sorted(data['files']), 'credentials_printed': False}
     elif args.command == 'startpoint':
-        assert (PRIVATE / 'budget.json').exists(), 'Prepare tenant first'
+        assert (PRIVATE / 'context-readers.json').exists(), 'Prepare tenant first'
         assert env_of(inspect('agents')).get('AISOC_AGENT_KAFKA_DISABLE') == '1'
         assert not (PRIVATE / 'startpoint.json').exists(), 'Startpoint recorded; refuse offset reset'
         result = inner(STARTPOINT, PLAN)
@@ -222,10 +224,16 @@ def main():
                 assert response.status==200
                 readiness=json.load(response)
             if name == 'agents':
-                assert env['AISOC_AGENT_KAFKA_DISABLE']=='0' and env['AISOC_AGENT_ESCALATE_TO_GRAPH']=='1'
+                desired = json.loads(run(compose() + ['config', '--format', 'json']))['services']['agents']['environment']
+                assert env['AISOC_AGENT_KAFKA_DISABLE']==str(desired['AISOC_AGENT_KAFKA_DISABLE'])
+                assert env['AISOC_TRIAGE_BUDGET_POLICY_FILE']==str(desired['AISOC_TRIAGE_BUDGET_POLICY_FILE'])
+                assert env['AISOC_AGENT_ESCALATE_TO_GRAPH']=='1'
                 assert env['KAFKA_CONSUMER_GROUP']==PLAN['consumer_group']
                 assert model_hash(env)==PLAN['model_configuration_sha256']
             result['services'][name]={'image':d['Image'],'status':d['State']['Status'],'health':d['State'].get('Health',{}).get('Status'),'readiness':readiness,'model_configuration_sha256':model_hash(env)}
+            if name == 'agents':
+                result['services'][name].update(tenant_quota_unlimited=env['AISOC_TRIAGE_BUDGET_POLICY_FILE']=='',
+                    consumer_enabled=env['AISOC_AGENT_KAFKA_DISABLE'] not in {'1','true','yes','on'})
     else:
         run(compose(rollback=True) + ['up', '-d', '--no-deps', '--pull', 'never', '--no-build', 'api', 'agents'])
         result = {'stage': 'rollback', 'worker_disabled': env_of(inspect('agents'))['AISOC_AGENT_KAFKA_DISABLE'] == '1'}

@@ -1,11 +1,15 @@
-FROM socai2-next-api:20261104-n15
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+ARG RUNTIME_USER
 WORKDIR /app
-COPY --chown=0:10001 app/socai2 /app/app/socai2
-COPY --chown=0:10001 app/models/socai2.py /app/app/models/socai2.py
-COPY --chown=0:10001 processing_job.py processing_smoke.py /opt/processor/
-COPY --chown=0:10001 smoke-fusion /opt/processor/smoke-fusion
+USER 0:0
+# Replace the application snapshot; removed base-image modules must not survive.
+RUN rm -rf /app/app /opt/processor
+COPY --chown=${RUNTIME_USER} app /app/app
+COPY --chown=${RUNTIME_USER} processing_job.py production_ingress.py manifest.json investigation-policy.toml /opt/processor/
+COPY --chown=${RUNTIME_USER} smoke-fusion /opt/processor/smoke-fusion
 ENV PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-USER 10001:10001
+USER ${RUNTIME_USER}
 HEALTHCHECK NONE
 ENTRYPOINT ["python", "-B", "/opt/processor/processing_job.py"]
 CMD ["--help"]

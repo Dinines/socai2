@@ -1,0 +1,179 @@
+{
+  "status": "design_semantic_review_not_passed",
+  "date": "2026-11-08",
+  "source_snapshot": "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json",
+  "source_snapshot_sha256": "e389e406bff0a0e6b0b16f6d457e8acafbdc1716e604dccd959eb10c4aa963fe",
+  "scope": "Local source reading and frozen A1/A2/A3 comparison; no runtime change, database query or model call",
+  "field_catalog_declared_fields_verified": 33,
+  "examples": [
+    {
+      "sample": "A1",
+      "old_input_matches_recorded_request": true,
+      "current_action": "logon",
+      "current_outcome": "success",
+      "history_row_count": 0,
+      "history_unique_record_count": 0,
+      "history_record_fields": [],
+      "historical_activity_fields_returned": false,
+      "distinct_historical_rationales_removed": [],
+      "current_query_outcomes": [
+        {
+          "source": "assets",
+          "outcome": "empty",
+          "returned_rows": 0
+        },
+        {
+          "source": "history",
+          "outcome": "empty",
+          "returned_rows": 0
+        },
+        {
+          "source": "threat_intel",
+          "outcome": "empty",
+          "returned_rows": 0
+        }
+      ],
+      "review_result": "not_accepted_for_general_use"
+    },
+    {
+      "sample": "A2",
+      "old_input_matches_recorded_request": true,
+      "current_action": "process_start",
+      "current_outcome": "success",
+      "history_row_count": 2,
+      "history_unique_record_count": 1,
+      "history_record_fields": [
+        "event_time",
+        "id",
+        "material_id",
+        "original_vendor",
+        "severity",
+        "title"
+      ],
+      "historical_activity_fields_returned": false,
+      "distinct_historical_rationales_removed": [
+        {
+          "source_path": "$.rows.1.record.triage.rationale",
+          "prior_result_id": "435ab196-dcad-5049-99d5-21b1663181c2",
+          "rationale": "告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。",
+          "missing_from_preview": true
+        }
+      ],
+      "current_query_outcomes": [
+        {
+          "source": "assets",
+          "outcome": "empty",
+          "returned_rows": 0
+        },
+        {
+          "source": "history",
+          "outcome": "data",
+          "returned_rows": 2
+        },
+        {
+          "source": "threat_intel",
+          "outcome": "not_queried",
+          "returned_rows": null
+        }
+      ],
+      "review_result": "incomplete_historical_context"
+    },
+    {
+      "sample": "A3",
+      "old_input_matches_recorded_request": true,
+      "current_action": "network_connection",
+      "current_outcome": "success",
+      "history_row_count": 4,
+      "history_unique_record_count": 2,
+      "history_record_fields": [
+        "event_time",
+        "id",
+        "material_id",
+        "original_vendor",
+        "severity",
+        "title"
+      ],
+      "historical_activity_fields_returned": false,
+      "distinct_historical_rationales_removed": [
+        {
+          "source_path": "$.rows.1.record.triage.rationale",
+          "prior_result_id": "435ab196-dcad-5049-99d5-21b1663181c2",
+          "rationale": "告警显示用户'flow-observer-20261108-01'在主机'socai2-flow-20261908-01'上登录成功，但缺乏授权依据。威胁情报查询、资产库存和历史记录均未返回命中或异常关联，查空结果不能证明行为安全。检测标签'does_not_establish_observed_attack'为上游属性，不否定本次告警的有效性。无法区分是正常运维登录还是潜在攻击前奏。",
+          "missing_from_preview": true
+        },
+        {
+          "source_path": "$.rows.3.record.triage.rationale",
+          "prior_result_id": "e58d2501-4239-5c31-9613-6bd42548f208",
+          "rationale": "告警显示 powershell.exe 进程启动成功，执行命令为获取本地用户列表。现有证据（历史登录记录、威胁情报查空、资产库存查空）均不足以证明该行为是授权运维还是恶意侦察。检测标签明确标注'不证明攻击发生'，且无明确授权依据，符合需进一步调查的特征。",
+          "missing_from_preview": true
+        }
+      ],
+      "current_query_outcomes": [
+        {
+          "source": "assets",
+          "outcome": "empty",
+          "returned_rows": 0
+        },
+        {
+          "source": "history",
+          "outcome": "data",
+          "returned_rows": 4
+        },
+        {
+          "source": "threat_intel",
+          "outcome": "empty",
+          "returned_rows": 0
+        }
+      ],
+      "review_result": "incomplete_historical_context"
+    }
+  ],
+  "findings": [
+    {
+      "id": "S1",
+      "finding": "A1 own logon/success survives in E1; fixed prose should explicitly say login succeeded as reported by the log."
+    },
+    {
+      "id": "S2",
+      "finding": "A2/A3 drop the unique prior rationale as well as duplicates. history does not return original activity fields, so title/verdict/confidence cannot replace it."
+    },
+    {
+      "id": "S3",
+      "finding": "Lack of authorization evidence is an old model assessment; do not upgrade it into a raw log fact or confirmed lack of authorization."
+    },
+    {
+      "id": "S4",
+      "finding": "Current TI receipt is empty for A1/A3 and not_queried for A2. Fusion no TI match score text and historical query claims are not current query receipts."
+    },
+    {
+      "id": "S5",
+      "finding": "33 envelope fields are enumerated, but open nested vendor payloads and nonempty background sources are not fully semantically validated. No claim of general renderer completeness."
+    }
+  ],
+  "preserved_preview_sha256": {
+    "A1-current-input.txt": "bf4d88f5a43a3d5935d1b647425bbff9f7882a5fe5590ac1136a29e4f5d14a60",
+    "A1-current-output.json": "6615af0ba64694e957fc13ecb14d6837c07b1012b2c604f56497f9efa93afc6a",
+    "A1-evidence-map.json": "b1f1608871e36b486ceb518b3b2fabd0f7380753f47f240ae54f660bc5c856f1",
+    "A1-proposed-input.txt": "210f667e448ec091e1f90794975057a0e5709dcb4aea605d3753edd9a08078d0",
+    "A2-current-input.txt": "1e0010bf0e00ba987ed24d1bd54710054739b86301d8291144a974f255bd89fc",
+    "A2-current-output.json": "11f7b3cb0a76cdb64d2a2e2abae9a87937a83b7a65d7663ef5f70673dde7cdfb",
+    "A2-evidence-map.json": "d8a20b34e1189d5a202eada8a4bec654cae51010969862042b8fb874bcc76ee4",
+    "A2-proposed-input.txt": "9eddd02d1b4fcca407783b488d8a8df23fdc74da1d717fbef9a4a6b9050318d6",
+    "A3-current-input.txt": "4eab54602eadd66b848a195526942c80be4fb3b58c71171adb46aa92d9ffbaa1",
+    "A3-current-output.json": "abc26f4a37985eae11c3c7a57a82d7d2b863ef5b50964967648ab2590f5bd55f",
+    "A3-evidence-map.json": "8ea183c8ee1c6443df1a1a6cb238134c08b60980d267c610bfa947820d7f8c2a",
+    "A3-proposed-input.txt": "b23d48db51923331aa7177bb70d5719975c263408adf9023ec58f36a5ac3cdf8"
+  },
+  "verification_limits": [
+    "Matching evidence paths does not prove every important business detail is presented.",
+    "Byte metrics retained as initial-preview history, not accepted optimization results.",
+    "Additional original history reads must be evaluated separately from formatting-only comparisons."
+  ],
+  "checks": {
+    "rawalert_fields_match_source": 33,
+    "design_relative_links_resolved": 26,
+    "initial_previews_and_originals_unchanged": 12,
+    "snapshot_hash_unchanged": true,
+    "candidate_quality_passed": false
+  }
+}

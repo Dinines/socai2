@@ -1,0 +1,39 @@
+..........F...............................                               [100%]
+=================================== FAILURES ===================================
+_____ QueueBoundaryTest.test_manual_start_uses_authorized_capacity_policy ______
+
+self = <test_socai2_case_queue.QueueBoundaryTest testMethod=test_manual_start_uses_authorized_capacity_policy>
+
+    async def test_manual_start_uses_authorized_capacity_policy(self):
+        service = CaseService(None)
+    
+        @asynccontextmanager
+        async def transaction(tenant_id):
+            self.assertEqual(tenant_id, TENANT)
+            yield SimpleNamespace(now=AsyncMock(return_value=NOW))
+    
+        service.transaction = transaction
+        service.actor = AsyncMock()
+        service.start_full = AsyncMock()
+        service.read_run = AsyncMock(return_value="run")
+        case_id, run_id, request, actor = UUID(int=1), UUID(int=301), object(), object()
+        result = await service.start_case(TENANT, case_id, run_id, request, actor=actor)
+        self.assertEqual(result, "run")
+        call = service.start_full.await_args
+        self.assertEqual(call.args, (TENANT, case_id, run_id, request))
+        self.assertIs(call.kwargs["actor"], actor)
+        limits = call.kwargs["limits"]
+>       self.assertEqual((limits.max_tokens, limits.max_model_calls, limits.max_tool_calls), (48000, 4, 4))
+E       AssertionError: Tuples differ: (131072, 6, 4) != (48000, 4, 4)
+E       
+E       First differing element 0:
+E       131072
+E       48000
+E       
+E       - (131072, 6, 4)
+E       + (48000, 4, 4)
+
+services/api/tests/test_socai2_case_queue.py:210: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_queue.py::QueueBoundaryTest::test_manual_start_uses_authorized_capacity_policy
+1 failed, 41 passed in 1.47s

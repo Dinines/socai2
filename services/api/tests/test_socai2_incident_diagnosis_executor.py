@@ -4,13 +4,16 @@ import copy
 import json
 import traceback
 from contextlib import asynccontextmanager
+from pathlib import Path
 from uuid import UUID, uuid4
 
+import jsonschema
 from app.models import socai2 as m
 from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.baseline_enrichment import S
 from app.socai2.baseline_store import StoreError, encoded
 from app.socai2.incident_diagnosis_contract import build, parse
+from app.socai2.runtime_policy import draft_limit
 from app.socai2.stage_reader import StageReadService
 from app.socai2.stage_result_contracts import INCIDENT_EXECUTOR_VERSION, AlertOutput
 from app.socai2.stage_results import AS, A, D, F, I, R, StageResultService
@@ -22,6 +25,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 T, OTHER, USER = UUID(int=1), UUID(int=2), UUID(int=3)
 LIMITS = Limits(max_model_calls=0, max_tokens=0, max_tool_calls=0, max_rows_per_query=0,
                 deadline_at=None, policy_version="synthetic.storage")
+
+
+def validate_diagnosis_contract(value):
+    schema = json.loads((Path(__file__).resolve().parents[1] / "app/socai2/contracts.schema.json").read_text())
+    jsonschema.validate(value, {"$defs": schema["$defs"], "$ref": "#/$defs/diagnosis"})
 
 
 class Gateway:
@@ -36,6 +44,10 @@ class Gateway:
 
     async def configure(self, *_):
         return self.configured
+
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
 
     async def complete(self, body, timeout):
         assert timeout > 0
@@ -118,6 +130,8 @@ async def run_checks(engine, record, only=None):
         diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
         assert diagnosis["state"] == "completed" and len(diagnosis["diagnosis"]["findings"]) == 3
         assert diagnosis["open_questions"][0]["state"] == "open"
+        assert diagnosis["diagnosis"]["program_facts"] == data["program_facts"]
+        validate_diagnosis_contract(diagnosis["diagnosis"])
         assert (await rows(I, I.c.id == iid))[0]["latest_diagnosis_id"] == out["diagnosis_id"]
         assert before == [await rows(A, A.c.id == aid) for aid in aids]
         steps = await rows(S, S.c.run_id == out["run_id"])
@@ -163,11 +177,13 @@ async def run_checks(engine, record, only=None):
             gateway.release.set()
             out = await task
             assert out["state"] == "completed" and not await service.freshness(T, out["run_id"])
+            assert (await rows(R, R.c.id == out["run_id"]))[0]["delivery_state"] == "complete"
             assert (await rows(I, I.c.id == iid))[0]["latest_diagnosis_id"] is None
             replay = await service.execute_incident(T, iid, op, gateway=other)
             assert replay["run_id"] == out["run_id"] and other.calls == 0
             diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
             assert len([f for f in diagnosis["diagnosis"]["findings"] if f["id"].startswith("member:")]) == 2
+            assert diagnosis["diagnosis"]["delivery_assessment"]["state"] == "complete"
         finally:
             gateway.release.set()
             await task
@@ -192,7 +208,12 @@ async def run_checks(engine, record, only=None):
             out = await service.execute_incident(T, iid, uuid4(), gateway=gateway)
             assert out["state"] == "failed" and gateway.calls == 1
             diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
-            assert diagnosis["state"] == "failed" and diagnosis["diagnosis"] is None
+            assert diagnosis["state"] == "failed"
+            if mode == "wrong_member":
+                assert diagnosis["diagnosis"]["validation_state"] == "partial"
+                assert diagnosis["diagnosis"]["conclusion"] is None
+            else:
+                assert diagnosis["diagnosis"] is None
             assert (await rows(I, I.c.id == iid))[0]["latest_diagnosis_id"] == good["diagnosis_id"]
             artifacts = await rows(F, F.c.run_id == out["run_id"])
             response = next(r["content_json"] for r in artifacts if r["kind"] == "model_response")
@@ -270,6 +291,7 @@ async def run_checks(engine, record, only=None):
         out = await failing.execute_incident(T, iid, op, gateway=gateway)
         assert out["state"] == "unknown" and gateway.calls == 1
         diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
+        assert (await rows(R, R.c.id == out["run_id"]))[0]["delivery_state"] == "none"
         assert diagnosis["state"] == "unknown" and diagnosis["diagnosis"] is None
         assert (await rows(I, I.c.id == iid))[0]["latest_diagnosis_id"] is None
         assert len([r for r in await rows(F, F.c.run_id == out["run_id"]) if r["kind"] == "model_response"]) == 1
@@ -308,7 +330,7 @@ async def run_checks(engine, record, only=None):
         material = frozen["members"][0]["material"]
         material["raw_json"].update({"big": "x"*5000, "-----BEGIN PRIVATE KEY-----": "synthetic", "invalid.path": "synthetic"})
         messages, mapping, data = build(frozen, claim["input_artifact_id"])
-        assert len(encoded(data)) <= 8192 and len(encoded(messages)) <= 12288
+        assert len(encoded(data)) <= draft_limit() and len(encoded(messages)) <= draft_limit()
         assert data["omissions"]["input_guard"] and data["omissions"]["field_size"] and data["omissions"]["unaddressable_source_path"]
         assert "PRIVATE KEY" not in str(messages)
         stub = Gateway()
@@ -338,13 +360,14 @@ async def run_checks(engine, record, only=None):
         iid, _, _ = await fixture()
         good = await service.execute_incident(T, iid, uuid4(), gateway=Gateway())
         def change(mode):
-            def transform(payload, _):
+            def transform(payload, data):
                 answer = json.loads(payload["choices"][0]["message"]["content"])
                 if mode == "arrays":
                     answer["limitations"] = "source missing"
                     answer["members"][0]["limitations"] = None
                 else:
-                    answer["summary"] += " (S1)" if mode == "bound" else " (S999)"
+                    sid = data["items"][0]["id"] if mode == "bound" else "S999"
+                    answer["summary"] += f" ({sid})"
                 payload["choices"][0]["message"]["content"] = json.dumps(answer)
                 return payload
             return transform
@@ -387,7 +410,7 @@ async def run_checks(engine, record, only=None):
         assert by_path["$.ocsf_json.dst_endpoint.port"]["alert_ids"] == [str(aids[1])]
         request = next(r["content_json"] for r in await rows(F, F.c.run_id == out["run_id"]) if r["kind"] == "model_request")
         assert len([x for x in request["input_omission_details"] if x["source"]["source_path"] == "$.ocsf_json.metadata.notes"]) == 2
-        assert "omission_details" not in data and len(gateway.requests[0]["messages"][1]["content"].encode()) <= 8192
+        assert "omission_details" not in data and len(gateway.requests[0]["messages"][1]["content"].encode()) <= draft_limit()
 
     async def test_incident_provider_error_receipt_preserves_previous_diagnosis():
         from test_socai2_model_errors import FailingGateway, ModelCallError
@@ -428,6 +451,39 @@ async def run_checks(engine, record, only=None):
         assert all(s["state"] == "failed" and s["ended_at"] for s in await rows(S, S.c.run_id == out["run_id"]))
         diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
         assert diagnosis["state"] == "failed" and diagnosis["diagnosis"] is None
+
+    async def test_incident_partial_review_preserves_independent_content_and_previous_diagnosis():
+        iid, _, _ = await fixture()
+        good = await service.execute_incident(T, iid, uuid4(), gateway=Gateway())
+        def wrong_member(payload, data):
+            raw = json.loads(payload["choices"][0]["message"]["content"])
+            raw["members"][1]["source_ids"] = raw["members"][0]["source_ids"]
+            payload["choices"][0]["message"]["content"] = json.dumps(raw)
+            return payload
+        gateway, op = Gateway(wrong_member), uuid4()
+        out = await service.execute_incident(T, iid, op, gateway=gateway)
+        assert out["state"] == "failed" and gateway.calls == 1
+        assert (await rows(I, I.c.id == iid))[0]["latest_diagnosis_id"] == good["diagnosis_id"]
+        diagnosis = (await rows(D, D.c.id == out["diagnosis_id"]))[0]
+        assert diagnosis["state"] == "failed" and diagnosis["summary"] is None
+        assert diagnosis["diagnosis"]["validation_state"] == "partial" and diagnosis["diagnosis"]["conclusion"] is None
+        assert len(diagnosis["diagnosis"]["findings"]) == 2 and len(diagnosis["open_questions"]) == 1
+        validate_diagnosis_contract(diagnosis["diagnosis"])
+        entry = await reader.read_entry(T, "incident_diagnosis", iid, out["run_id"])
+        assert not entry.valid_for_current_input and not entry.is_current_pointer
+        assert entry.partial_analysis.available and not entry.partial_analysis.content["conclusion_adoptable"]
+        assert len(entry.partial_analysis.content["retained_analysis"]["members"]) == 1
+        response = next(r["content_json"] for r in await rows(F, F.c.run_id == out["run_id"]) if r["kind"] == "model_response")
+        assert response["raw"] == gateway.responses[0]
+        await service.execute_incident(T, iid, op, gateway=gateway)
+        assert gateway.calls == 1
+        try:
+            await reader.read_entry(OTHER, "incident_diagnosis", iid, out["run_id"])
+            raise AssertionError("cross-tenant partial content exposed")
+        except StoreError as exc:
+            assert exc.status == 404
+        return {"prior_run": str(good["run_id"]), "partial_run": str(out["run_id"]),
+            "valid_members_retained": 1, "global_judgment_adopted": False, "raw_preserved": True}
 
     checks = [v for k, v in locals().copy().items() if k.startswith("test_incident_")]
     for check in checks:

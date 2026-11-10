@@ -5,11 +5,10 @@ from sqlalchemy import and_, or_, select, text
 
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest, encoded
+from .runtime_policy import retention_limit
 from .stage_inputs import freshness_sql
 from .stage_read_contracts import StageEntry, StagePage, StageRunView
 from .stage_results import AS, D, F, R, parent
-
-MAX_CONTENT_BYTES = 131072
 
 
 class StageReader:
@@ -32,6 +31,27 @@ class StageReader:
             raise StoreError("stage_run_not_found", 404)
         return row
 
+    async def partial_analysis(self, run_id):
+        # Read only this subject's saved complete-response review. A missing or
+        # tampered artifact must never become a usable fragment in history.
+        rows = (await self.store.db.execute(select(F).where(*self.store.where(F,
+            F.c.run_id == run_id, F.c[self.key] == self.identity,
+            F.c.kind == "model_response")).order_by(F.c.captured_at, F.c.id))).mappings().all()
+        for art in reversed(rows):
+            body = art["content_json"]
+            if not isinstance(body, dict) or not isinstance(body.get("partial_review"), dict):
+                continue
+            reason = None
+            if art["material_state"] != "complete" or art["blob_ref"] is not None:
+                reason = "external_or_incomplete_content"
+            elif len(encoded(body)) > retention_limit():
+                reason = "content_exceeds_read_limit"
+            elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
+                reason = "content_integrity_mismatch"
+            return {"artifact_id": art["id"], "available": reason is None, "reason": reason,
+                    "content": body["partial_review"] if reason is None else None}
+        return None
+
     async def entry(self, row, subject):
         freshness = (await self.store.db.execute(text("SELECT " + freshness_sql(self.kind, ":subject", ":run")),
             {"tenant": self.store.tenant_id, "subject": self.identity, "run": row["id"]})).scalar_one()
@@ -50,7 +70,7 @@ class StageReader:
                 if body is not None and art["blob_ref"] is None:
                     if art["material_state"] != "complete":
                         reason = "material_" + art["material_state"]
-                    elif len(encoded(body)) > MAX_CONTENT_BYTES:
+                    elif len(encoded(body)) > retention_limit():
                         reason = "content_exceeds_read_limit"
                     elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
                         reason = "content_integrity_mismatch"
@@ -70,7 +90,7 @@ class StageReader:
         return StageEntry(run=StageRunView.model_validate({k: row[k] for k in StageRunView.model_fields}),
             freshness=freshness, is_current_pointer=selected,
             valid_for_current_input=selected and accepted and freshness == "current" and row["state"] == "completed",
-            result=public_result, explanation=explanation)
+            result=public_result, explanation=explanation, partial_analysis=await self.partial_analysis(row["id"]))
 
     async def page(self, *, limit=20, before_run_id=None):
         if not 1 <= limit <= 50:

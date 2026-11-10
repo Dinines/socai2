@@ -2,6 +2,7 @@
 import json
 import re
 from collections import Counter
+from copy import deepcopy
 from itertools import chain, zip_longest
 from typing import Annotated, Literal
 
@@ -12,10 +13,10 @@ from .baseline_context import reference
 from .baseline_contracts import Contract
 from .baseline_model_view import (
     ACTIVITY_RULE,
-    MAX_FIELD_BYTES,
-    MAX_MODEL_BYTES,
     blocked,
     compact_objects,
+    draft_limit,
+    field_limit,
 )
 from .baseline_semantics import material_projection
 from .baseline_store import StoreError, digest, encoded
@@ -51,6 +52,31 @@ class Answer(LegacyAnswer):
     decision_basis: DecisionBasis | None
 
 
+def constrained_response_format(sources):
+    """Bind verdict and basis during generation, without rewriting the answer.
+
+    Each union branch is a complete object. Do not use if/then, multi-allOf or
+    sibling property constraints: grammar backends may silently ignore them.
+    The existing parser remains authoritative if a provider ignores the schema.
+    """
+    from .structured_output import response_format
+    result = response_format(Answer, sources)
+    schema = result["json_schema"]["schema"]
+    definitions = schema.pop("$defs")
+    branches = []
+    for verdict, kind in (("needs_review", None), ("true_positive", "malicious_behavior"),
+                          ("benign", "authorized_or_expected_behavior"), ("false_positive", "refuted_detection")):
+        branch = deepcopy(schema)
+        branch["properties"]["verdict"] = {"type": "string", "enum": [verdict]}
+        basis = {"type": "null"} if kind is None else deepcopy(definitions["DecisionBasis"])
+        if kind is not None:
+            basis["properties"]["kind"] = {"type": "string", "enum": [kind]}
+        branch["properties"]["decision_basis"] = basis
+        branches.append(branch)
+    result["json_schema"]["schema"] = {"type": "object", "anyOf": branches, "$defs": definitions}
+    return result
+
+
 PROMPT = (
     ACTIVITY_RULE +
     "你仅分析一条告警，做基本查询后的分诊与解释，不执行完整Case调查或处置。"
@@ -69,6 +95,11 @@ PROMPT = (
     "needs_review的decision_basis为null；其他判定必须单列decision_basis的具体定性主张及来源，"
     "分别为malicious_behavior、authorized_or_expected_behavior、refuted_detection。"
     "这些来源须同时列入evidence_ids，且只能是observation或human_statement；"
+    "未证实攻击、没有更多异常或查空，不等于告警描述被反驳；此时不能填写refuted_detection。"
+    "program_facts.query_statuses是程序从本次工具回执生成的查询事实。"
+    "查询是否执行及查到几行由程序展示，不要在rationale/explanation重复编写查询结果。"
+    "not_queried表示没有查询，failed/unknown表示未获得确定结果，只有completed且0行才是查空。"
+    "检测标签里的no TI match是上游标签，不能称为本次威胁情报查询无命中；查空也不能证明安全。"
     "行为存在、进程名或成功状态不等于正常/授权依据，只有标签或无法提出定性依据时用needs_review。"
     "建议未执行，不宣称已关闭或已处置。"
 )
@@ -139,7 +170,8 @@ def retain_omission_details(data, details):
         omission_details_truncated=len(retained) < len(details))
 
 
-def build(source, input_id, queries):
+def build(source, input_id, queries, *, execution_time=None, complete_material=False):
+    from .program_facts import stage_facts
     member = source["members"][0]
     material = member["material"]
     groups = [[], [], [], []]
@@ -169,17 +201,22 @@ def build(source, input_id, queries):
             raw = material.get("raw_json")
             # Fusion's full RawAlert envelope also contains labels. Only its
             # raw_event is original log content; do not promote envelope scores.
-            if isinstance(raw, dict) and "raw_event" in raw:
+            if not complete_material and isinstance(raw, dict) and "raw_event" in raw:
                 roots.append(("$.raw_json.raw_event", raw["raw_event"]))
             else:
                 roots.append(("$.raw_json", raw))
             for path, original in roots:
-                for field, value in leaves(original, path):
+                if complete_material:
+                    from .incident_model_boundary import fields
+                    selected_fields = fields(original, path)
+                else:
+                    selected_fields = leaves(original, path)
+                for field, value in selected_fields:
                     if field is None:
                         omissions["unaddressable_source_path"] += 1
                     elif field not in preferred_paths:
                         add(1, reference("alert_material", material["id"], raw_field_role(field), field), value)
-        for key in ("detection", "source_scope"):
+        for key in (("detection", "source_scope", "enrichment") if complete_material else ("detection", "source_scope")):
             if material.get(key):
                 add(0, reference("alert_material", material["id"], "source_label", "$." + key), material[key])
     if member["objects"]:
@@ -202,6 +239,7 @@ def build(source, input_id, queries):
             for _, p in queries], "items": [], "omissions": {}, "view_limitations": LIMITATIONS,
         "view_coverage": "complete_required" if material and material["material_state"] == "complete" else "partial"}
     data["citations"] = "structured_v3"
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
     prefix = source_prefix([source, queries])
     source_map = {}
     for items in chain(((item,) for item in priority), zip_longest(*groups)):
@@ -213,7 +251,7 @@ def build(source, input_id, queries):
                 omissions["input_guard"] += 1
                 omission_details.append({"source": ref, "reason": "input_guard"})
                 continue
-            if len(encoded(value)) > MAX_FIELD_BYTES:
+            if len(encoded(value)) > field_limit():
                 omissions["field_size"] += 1
                 omission_details.append({"source": ref, "reason": "field_size"})
                 continue
@@ -221,7 +259,7 @@ def build(source, input_id, queries):
             item = {"id": sid, "role": ref["role"], "origin": origin, "field": ref["source_path"], "value": value}
             data["items"].append(item)
             # Leave room for counts and final serialization; never cut a field.
-            if size(data) > MAX_MODEL_BYTES - 256:
+            if size(data) > draft_limit() - 256:
                 data["items"].pop()
                 if candidate in priority:
                     raise StoreError("alert_required_input_exceeds_budget", 422)
@@ -233,7 +271,7 @@ def build(source, input_id, queries):
     if any(o["source"] == p[0] for o in omission_details for p in priority):
         raise StoreError("alert_required_input_unavailable", 422)
     messages = [{"role": "system", "content": PROMPT}, {"role": "user", "content": encoded(compact(data)).decode()}]
-    if not source_map or size(data) > MAX_MODEL_BYTES or len(encoded(messages)) > 12288 or blocked(messages):
+    if not source_map or size(data) > draft_limit() or len(encoded(messages)) > draft_limit() or blocked(messages):
         raise StoreError("alert_model_view_unavailable", 422)
     retain_omission_details(data, omission_details)
     return messages, source_map, data

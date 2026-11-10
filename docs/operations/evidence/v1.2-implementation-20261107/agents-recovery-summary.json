@@ -1,0 +1,68 @@
+{
+  "at": "2026-11-07T14:32:59.395687+00:00",
+  "mode": "read_only_recovery_precheck",
+  "consumer_enabled": false,
+  "offsets_unchanged": true,
+  "backlog_records_inspected": 7,
+  "old_agents_workflow": "auto-triage-v1",
+  "old_agents_existing_runs": 0,
+  "missing_default_tenant_credential_maps": [
+    "AISOC_INVESTIGATION_CONTEXT_KEYS_FILE",
+    "AISOC_INVESTIGATION_PREPARE_KEYS_FILE",
+    "AISOC_ORG_MEMORY_KEYS_FILE",
+    "AISOC_TENANT_SKILLS_KEYS_FILE",
+    "AISOC_TRIAGE_DISPOSITIONS_KEYS_FILE",
+    "AISOC_TRIAGE_IDENTITY_KEYS_FILE",
+    "AISOC_TRIAGE_KB_KEYS_FILE"
+  ],
+  "already_processed_in_ended_batch": {
+    "batch_id": "production-multialert-20261107-01",
+    "batch_state": "failed",
+    "case_run_id": "4c870247-444c-4083-b511-db9791c32a17",
+    "matches": [
+      {
+        "partition": 0,
+        "offset": 36,
+        "alert_id": "7211654f-4b65-5efc-8f10-b8464f2560b2",
+        "old_agents_run_id": "b9b1f1cd-cf56-583c-9234-cd88317fa704",
+        "existing_alert_verdict": "needs_review"
+      },
+      {
+        "partition": 1,
+        "offset": 38,
+        "alert_id": "51382dcd-deac-54f5-9fa5-e7724f935402",
+        "old_agents_run_id": "bef13b59-276d-5f8f-82ea-1b04067649bd",
+        "existing_alert_verdict": "needs_review"
+      },
+      {
+        "partition": 2,
+        "offset": 43,
+        "alert_id": "f8513c4d-5f58-55d2-bda1-983f60b83bb0",
+        "old_agents_run_id": "ff8df9b1-4b29-56aa-9e30-1733258e9f09",
+        "existing_alert_verdict": "needs_review"
+      }
+    ],
+    "prior_summary_sha256": "5ff097827be72b4988de87bf2d780b78b492e6da1bb1add05e6f481a909c672a"
+  },
+  "findings": [
+    "Empty old Agents ledger does not prove an alert was never analyzed by the newer manual A/I workflow.",
+    "Three backlog alerts already have saved A judgments in the ended batch. Directly enabling the old worker would admit a separate workflow for them.",
+    "Default tenant lacks seven context/preparation/read credential mappings; the other backlog tenant has valid stored key metadata."
+  ],
+  "next": [
+    "Reconcile configuration for the default tenant using configuration files and maintain deployment initialization sources.",
+    "Define and implement how the existing consumer recognizes already processed results across these workflows before resuming, without resetting offsets or replaying ended work.",
+    "Then verify actual triage artifacts and commit progress together; healthy paused service is not recovery."
+  ],
+  "limitations": [
+    "Other four messages have not been classified against every possible manual workflow.",
+    "No consumer resumed, Kafka offset committed, generation called, or business row changed.",
+    "This is a recovery diagnosis, not overall 1.2 acceptance."
+  ],
+  "evidence": [
+    "agents-recovery-readonly.json",
+    "../production-multialert-20261107-01/summary.json",
+    "triage-unlimited-final-readiness.json"
+  ],
+  "independent_review": "agents-recovery-limited-review.json"
+}

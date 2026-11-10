@@ -8,6 +8,7 @@ import base64
 import unittest
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 from uuid import UUID
@@ -18,6 +19,7 @@ from app.socai2 import case_reader as reader
 from app.socai2.baseline_store import StoreError
 from app.socai2.case_contracts import CaseQueuePage, CaseQueueQuery
 from app.socai2.case_service import CaseService
+from app.socai2.runtime_policy import load_policy
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
@@ -201,16 +203,19 @@ class QueueBoundaryTest(unittest.IsolatedAsyncioTestCase):
         service.start_full = AsyncMock()
         service.read_run = AsyncMock(return_value="run")
         case_id, run_id, request, actor = UUID(int=1), UUID(int=301), object(), object()
-        result = await service.start_case(TENANT, case_id, run_id, request, actor=actor)
+        policy = load_policy(Path(__file__).resolve().parents[3] /
+                             "deploy/local-investigation/investigation-policy-case-v1.toml")
+        with patch("app.socai2.runtime_policy.active_policy", return_value=policy):
+            result = await service.start_case(TENANT, case_id, run_id, request, actor=actor)
         self.assertEqual(result, "run")
         call = service.start_full.await_args
         self.assertEqual(call.args, (TENANT, case_id, run_id, request))
         self.assertIs(call.kwargs["actor"], actor)
         limits = call.kwargs["limits"]
-        self.assertEqual((limits.max_tokens, limits.max_model_calls, limits.max_tool_calls), (48000, 4, 4))
+        self.assertEqual((limits.max_tokens, limits.max_model_calls, limits.max_tool_calls), (131072, 6, 4))
         self.assertEqual(limits.max_rows_per_query, 200)
-        self.assertEqual((limits.deadline_at - NOW).total_seconds(), 120)
-        self.assertEqual(limits.policy_version, "socai2.manual-http.v2")
+        self.assertEqual((limits.deadline_at - NOW).total_seconds(), 1500)
+        self.assertEqual(limits.policy_version, policy.identity)
         service.read_run.assert_awaited_once_with(TENANT, case_id, run_id)
 
     async def test_service_uses_one_readonly_transaction(self):

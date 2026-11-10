@@ -1,0 +1,66 @@
+{
+  "local_site": "deliverables/investigation-validation-20261106/processing-audit",
+  "deployment": {
+    "ssh_binary": "ssh",
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "command_timeout_seconds": 90,
+    "remote_python": "python3",
+    "docker": "docker",
+    "container": "socai2-production-workbench",
+    "project": "socai2-production-workbench",
+    "service": "workbench",
+    "expected_image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+    "expected_base_release": "/opt/sting-aisoc-socai2/releases/v1.2-20261108-r1",
+    "expected_compose": "/opt/sting-aisoc-socai2/private/workbench-comparison-20261108-01/workbench-after.json",
+    "release": "/opt/sting-aisoc-socai2/releases/workbench-incident-input-validation-20261108-01",
+    "private": "/opt/sting-aisoc-socai2/private/workbench-incident-input-validation-20261108-01",
+    "site": "/opt/sting-aisoc-socai2/data/production-workbench/site",
+    "source_mount": "/opt/workbench",
+    "site_owner": [
+      10001,
+      10001
+    ],
+    "base_url": "http://127.0.0.1:4177",
+    "source_files": [],
+    "static_only": true,
+    "archive": "/opt/sting-aisoc-socai2/private/workbench-incident-input-validation-20261108-01/retired-site"
+  },
+  "evidence": "docs/operations/evidence/incident-input-validation-20261108-01",
+  "template": "docs/operations/incident_input_validation_page.html",
+  "receipt": "docs/operations/evidence/incident-input-validation-20261108-01/workbench-publication.json",
+  "local_receipt": "docs/operations/evidence/incident-input-validation-20261108-01/workbench-local-publication.json",
+  "variants": [
+    {
+      "id": "candidate",
+      "title": "事件结构映射v2与四块输出",
+      "description": "同一冻结事件的一次真实模型请求。"
+    }
+  ],
+  "samples": {
+    "I1": {
+      "title": "登录 → PowerShell进程启动 → 出站连接",
+      "note": "整体仍为待复核。结构和引用通过；正文扩大了进程启动效果，沿用旧分析的情报查空，并对时间顺序作了偏强的攻击链解释。"
+    }
+  },
+  "title": "事件诊断 · 新版输入实测",
+  "status": "结构通过，正文质量未通过",
+  "presentation": {
+    "page_title": "事件诊断 · 新版输入实测",
+    "title": "三条告警，一个事件，一次请求",
+    "description": "使用固定结构映射后的输入，输出整体诊断、成员评述、事件发现与待核问题。",
+    "notice": "本页只展示已保存的模型请求和原答，不会触发调用。候选尚未接入生产；没有新增业务Run或数据库结果。",
+    "status": "结构通过，正文质量未通过",
+    "method": "当前输入与已审阅的49行文本逐字相同；每样例一次，无重试。HTTP耗时不是完整业务流程耗时。",
+    "findings": [
+      "本轮1次请求，耗时44.12秒；输入1784、输出2236，共4020 tokens。",
+      "与同一事件原记录相比，输入tokens为9142→1784（减少80.49%），输出2954→2236；这是历史参照，未派发旧版对照，不能分离各项改动的影响或证明普遍提速。",
+      "四块格式、来源引用和成员映射通过；3成员评述、1事件级发现、2待核问题可还原到现有IncidentOutput。",
+      "正文将进程启动扩大为已获取本地用户列表；实际action与成功状态在本轮输入中完整保留。",
+      "A2写“查空的情报”，但其原A工具回执实际为skipped/no_supported_frozen_objects。新旧I均未交接该回执，旧分析中的错误被延续。",
+      "同账号同主机的40秒顺序被描述为典型侦察行动；风险措辞偏强。仍是待复核，并未明确判恶意。“约2分钟内”只记表达不精确，不作为算错2分钟。",
+      "主机、目的IP与TCP/443读对，未写HTTPS或断言外传。整体诊断引用53个编号，仍有冗余。",
+      "原答未改写；本轮只测当前候选，未进行数据库保存、正式API或生产切换验收。"
+    ]
+  }
+}

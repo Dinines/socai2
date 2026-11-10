@@ -1,6 +1,8 @@
 # 告警、事件与调查字段取数清单
 
-本清单按保存的 JSON 核对实际存值。四个 Qwen 案例共 8 条告警、4 个事件、15 个 Run、3 个 Case、1 份正式 Result。可从各表最右列定位到一个有值样本和一个空值样本（如有）。
+当前正式库取数见[两案 299 次 GET 与 13,098 项对账](../../docs/operations/evidence/current-release-20261110-01/readback-03/summary.json)，每案目录含 `snapshot-before.json`、`api-responses.json`、`checks.json`。功能／字段定义以[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)为准。
+
+本清单保留固定样例按保存的 JSON 核对实际存值。四个 Qwen 案例共 8 条告警、4 个事件、15 个 Run、3 个 Case、1 份正式 Result。可从各表最右列定位到一个有值样本和一个空值样本（如有）。
 
 主表计数只来自四个 Qwen 案例。每行分母是对应的告警、成员关系、事件、Run、Case、Result 或批次数。数值 0、布尔值 false 都算有值；空数组、显式 null 和上级对象为空分别列出。长文本仅展示开头，原文在所引位置。
 

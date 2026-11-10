@@ -1,18 +1,16 @@
-# 新库表字段字典
+# 调查数据库表字段字典
 
-**设计状态：初版（V1）已确认，2026-11-06。** 迁移 123–126 构成本字典的数据库基线。后续任何表设计变更须先提交 OpenSpec 变更并取得项目负责人的明确人工确认，方可实施。[项目协作规则](../../AGENTS.md#调查数据库-v1-与人工确认)
+更新于 2026-11-10。负责人于 2026-11-06 确认的表设计由迁移 123–126 定义，**29 表、462 列**。21 正式 `aisoc.socai2` 已逐列核对类型／可空性，结构、键、约束、索引、RLS、触发器及函数指纹保持。本轮没有表设计调整或 DDL。
 
-**部署初始化。** 在新建的专用 UTF-8 PostgreSQL 16 数据库上，用 psql 运行[独立建表脚本](../../deploy/database/init_socai2_v1.sql)。脚本包含与处理模块相同的公共依赖和四份迁移，在一个事务内建表、登记版本并核对结构。完整 V1 再运行时仅核对；部分安装或结构不符会报错退出。脚本只初始化库表，业务数据、账号和服务配置由部署方另行准备。
+当前字典有 **37 组枚举、40 项 JSON 合同**，JSON Schema 另含 4 个共用定义。[结构化字典](socai2-data-contract-20261103.json) · [JSON Schema](socai2-json-contracts-20261103.schema.json) · [字段取数样本](../../deliverables/investigation-validation-20261106/page-field-samples.md) · [实际核验](../operations/evidence/current-release-20261110-01/dictionary-catalog-final.json)
 
-```sh
-psql -X -d your_investigation_db -f deploy/database/init_socai2_v1.sql
-```
+任何表／列／键／约束／索引／关系／隔离设计变更仍须先走 OpenSpec，取得负责人明确人工确认后用增量迁移实施。[项目规则](../../AGENTS.md#调查数据库-v1-与人工确认)
 
-2026-11-06 在一次性 PostgreSQL 16.15 容器实测：首次建成 29 张空调查表、462 列，登记 4 份迁移；再次执行保留了已有测试记录和迁移登记时间。缺少迁移登记、表约束被修改以及目标库已有其他表时均按预期拒绝；故意触发首次安装校验失败后，公共依赖和调查表一并回滚。
-
-2026-11-06 已在 21 处理交接库 `socai2_processing_handoff` 核对 29 表、462 列，供后端查询告警、事件和调查三页。123 建立 29 表、458 列，124 增加 Case 的固定来源命名空间，125 更新采用前的输入新鲜度判断，126 增加 Case 分类、截止时间和当前证据目录指针。现行字典含 37 组枚举、39 个 JSON 合同。逐字段取值和缺值样例见[三页字段取数清单](../../deliverables/investigation-validation-20261106/page-field-samples.md)，存储定义见[结构化字典](socai2-data-contract-20261103.json)和[JSON Schema](socai2-json-contracts-20261103.schema.json)。
+空的专用 PostgreSQL 16 数据库使用[冻结建表 SQL](../../deploy/database/init_socai2_v1.sql)；已有共享业务库按[21 部署说明](../../deploy/aisoc21/README.md)执行安装器 `verify`，不得用空库初始化替代核验。身份、凭据、授权和服务配置由当前 profile 明确选择。
 
 ## 1. 全表规则
+
+`incident_diagnoses.diagnosis` 的可选 `delivery_assessment` 记录程序计算的交付原因、成员覆盖和独立待核项，与 `runs.delivery_state` 分别读取。当前已部署 21；该块缺失表示未记录，不能推断完整或无需复核。表、列、约束保持；字段路径见[状态及空态](../../FRONTEND_BACKEND_HANDOFF.md#5-状态交付和空态)。
 
 - **tenant_id**：{"type": "uuid", "nullable": false, "default": null, "meaning": "服务端租户；每表必有；引用 public.tenants(id)"}
 - **identity**：{"name": "id", "type": "uuid", "nullable": false, "default": "application UUID", "meaning": "新记录UUID；外部任意文本ID另存，不能强转"}
@@ -21,10 +19,10 @@ psql -X -d your_investigation_db -f deploy/database/init_socai2_v1.sql
 - **enums**：text+命名CHECK；API同一枚举字典；拒绝未知业务写入值，来源原值仍保存在材料；不使用中文标签入库
 - **json**：JSON字段必须引用本文contract；NULL为未记录/不可得，[]为已读取且为空；禁止无定义的万能data/extra列
 - **immutable**：材料/分诊反馈/诊断终态/结果/版本/活动追加；引用父对象不物理级联删除；应用无历史UPDATE/DELETE权限
-- **users**：public.users.id为UUID，旧表无(tenant_id,id)唯一键；先FK(id)，服务端在事务内校验同租户/可授权目标，禁止以用户名代外键；不宣称普通FK校验了租户
+- **users**：public.users.id为UUID，该公共表无(tenant_id,id)唯一键；先FK(id)，服务端在事务内校验同租户/可授权目标，禁止以用户名代外键；不宣称普通FK校验了租户
 - **writers**：列的写入权按表owner和字段说明划分；来源同步不得覆盖人工管理；GET无写回
 - **deletion**：业务接口不物理删除审计原件；成员移出仅删除当前关系并追加活动；保留/脱敏策略另作显式运维，不自动级联
-- **rls**：新schema开启并FORCE RLS，USING/WITH CHECK tenant_id=public.current_tenant_id()；缺租户拒绝，不复制旧NULL旁路。复用db/rls.py按事务set_config，Fusion异步入口亦须设置；实际运行角色/权限待部署预检。 无新数据写入前仍须验证运行角色；不会自动切换旧业务写入。
+- **rls**：schema 开启并 FORCE RLS，USING/WITH CHECK tenant_id=public.current_tenant_id()；事务必须设置认证租户，缺租户拒绝。21 当前运行角色与最小权限已核验，GET 无调查业务写入。
 
 ## 2. 枚举定义
 
@@ -3764,11 +3762,11 @@ content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON�
 | D03 | AI与baseline互斥 | confirmed_by_user | 仅限制基础调查单活跃；AI模型/工具问答可并行，不与基础调查共用槽 |
 | D04 | 空Case/已解决Case | proposal_not_confirmed | 允许保存空案/历史；无成员禁止启动；已解决案变更不静默重开，启动前显式重开 |
 
-D04特殊流程尚未开放，不能据建表完成推断相关API已实现。旧表历史不自动回填或迁移，当前业务写入尚未切换。
+D04特殊流程尚未开放，不能据建表完成推断相关API已实现。来源历史不自动回填或迁移；当前专用处理作业已使用调查表，生产 Case HTTP 写开关关闭。
 
 ## 7. 案件读取合同
 
-这些字段是已有新库记录的只读投影，不增加表列。对应[OpenAPI](socai2-independent-api-v2.openapi.json)。
+这些字段是调查记录的只读投影，不增加表列。对应[OpenAPI](socai2-independent-api-v2.openapi.json)。
 
 | 读取入口／字段 | 来源与口径 |
 | --- | --- |
@@ -3780,10 +3778,10 @@ D04特殊流程尚未开放，不能据建表完成推断相关API已实现。�
 | 当前判断`coverage`与`input_freshness` | 成员覆盖与受跟踪输入依据状态分开。材料、分诊／反馈、事件和H实质依据变化须核对；外部情报／湖后来变化不自动表示已重新核验 |
 | `RunDetail.execution_summary` | 通过本轮已完成`C1.executor`步骤读取原始、SHA校验通过的`execution_plan`；旧轮无工件返回null，不用当前配置回填 |
 | `execution_summary.capabilities` | 启动时绑定工具、可提供工具、绑定数、不支持项及未提供原因；四领域共享一次分析，200成员仅为保存上限，主机／窗口绑定不是告警归因证明 |
-| `execution_summary.limits/final_reservation` | 本轮冻结的限额及最终综合预留；新完整C为48000保守单位、4模型、4工具、120秒。保守字节上界不是真实tokens，旧Run及A/I保持原额度；历史未记录项为null |
+| `execution_summary.limits/final_reservation` | 读取该 Run 冻结的限额及最终阶段预留，当前参数见[调查策略](../../deploy/local-investigation/investigation-policy-case-v1.toml)。不同 Run 按各自保存值读取，不用当前配置回填；未记录项为 null，字节上限与 token 预算分别展示 |
 | `execution_summary.availability/artifact_id` | 原工件可用性及回查身份；不可读时不伪造能力摘要，不因GET执行查询或更新业务时间 |
 
-新执行器版本为`socai2.baseline-executor.v2`，C3执行建议合同为`socai2.baseline-analysis.v2`，含明确绑定和优先级；C6未来建议仍使用原v1建议合同。直接query不增加Deep模型调用；查询按绑定复用、Deep按问题复用；C6通过原计划索引及`projection_id`回查对应查询材料，不能用新建议接管旧执行记录。
+执行器合同为`socai2.baseline-executor.v2`，C3执行建议合同为`socai2.baseline-analysis.v2`，含明确绑定和优先级；C6未来建议仍使用原v1建议合同。直接query不增加Deep模型调用；查询按绑定复用、Deep按问题复用；C6通过原计划索引及`projection_id`回查对应查询材料，不能用最终建议替代实际执行记录。
 
 ## 8. 页面数据合同（126增量）
 

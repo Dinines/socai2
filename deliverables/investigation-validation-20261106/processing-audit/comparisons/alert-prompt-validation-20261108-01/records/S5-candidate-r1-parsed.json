@@ -1,0 +1,148 @@
+{
+  "id": "S5-candidate-r1",
+  "sample": "S5",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 6.171719,
+  "usage": {
+    "input_tokens": 1260,
+    "output_tokens": 308,
+    "total_tokens": 1568,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-857488c05e868016"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "needs_review",
+    "confidence": null,
+    "rationale": "告警显示邮件包含凭证窃取链接，但关键证据存在矛盾：DMARC 结果为 fail（可能暗示伪造或配置问题，但也可能是内部测试环境特征），且 senderDomain 仅 4 天大（新域名常被用于钓鱼，但也可能是新业务上线）。虽然 credentialsSubmitted 为 9 且 recipientCount 为 1200，但 campaignRecordedInTrainingSchedule 为 false，无法确认是否为授权的安全演练。缺乏人工确认或明确的授权记录，无法区分是真实攻击还是未标记的测试活动。",
+    "evidence_ids": [
+      "N1_S4",
+      "N1_S5",
+      "N1_S7"
+    ],
+    "recommendations": [
+      {
+        "reason": "确认该邮件发送活动是否为授权的安全演练或内部测试，需核实是否有对应的演练计划或审批记录。",
+        "source_ids": [
+          "N1_S5"
+        ]
+      },
+      {
+        "reason": "核实 senderDomain (example.com.secure-mail.test) 的注册信息及所有权，确认其是否为内部测试域名或新业务域名，以排除误报可能。",
+        "source_ids": [
+          "N1_S5"
+        ]
+      }
+    ]
+  },
+  "parsed_output": {
+    "verdict": "needs_review",
+    "rationale": "告警显示邮件包含凭证窃取链接，但关键证据存在矛盾：DMARC 结果为 fail（可能暗示伪造或配置问题，但也可能是内部测试环境特征），且 senderDomain 仅 4 天大（新域名常被用于钓鱼，但也可能是新业务上线）。虽然 credentialsSubmitted 为 9 且 recipientCount 为 1200，但 campaignRecordedInTrainingSchedule 为 false，无法确认是否为授权的安全演练。缺乏人工确认或明确的授权记录，无法区分是真实攻击还是未标记的测试活动。",
+    "confidence": null,
+    "score_state": "not_computed",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:05:00+00:00\"；{\"campaignRecordedInTrainingSchedule\": false, \"credentialsSubmitted\": 9, \"dmarcResult\": \"fail\", \"linkDestination\": \"https://example.com.secure-mail.test/sso/login\", \"recipientCount\": 1200, \"replyToProvider\": \"free mail provider, unrelated to the sender domain\", \"senderDomain\": \"example.com.secure-mail.test\", \"senderDomainAgeDays\": 4, \"simulationHeader\": null}\n分析原文：告警显示邮件包含凭证窃取链接，但关键证据存在矛盾：DMARC 结果为 fail（可能暗示伪造或配置问题，但也可能是内部测试环境特征），且 senderDomain 仅 4 天大（新域名常被用于钓鱼，但也可能是新业务上线）。虽然 credentialsSubmitted 为 9 且 recipientCount 为 1200，但 campaignRecordedInTrainingSchedule 为 false，无法确认是否为授权的安全演练。缺乏人工确认或明确的授权记录，无法区分是真实攻击还是未标记的测试活动。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "artifact",
+        "id": "1a5156f3-f9bd-5113-8b4c-76253b190be4",
+        "external": null,
+        "source_path": "$.members.0.alert",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+        "external": null,
+        "source_path": "$.ocsf_json.raw_data",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "R1",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "确认该邮件发送活动是否为授权的安全演练或内部测试，需核实是否有对应的演练计划或审批记录。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      },
+      {
+        "id": "R2",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "核实 senderDomain (example.com.secure-mail.test) 的注册信息及所有权，确认其是否为内部测试域名或新业务域名，以排除误报可能。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "fcc119e9-3dad-5db9-b70e-aead735f940a",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      }
+    ],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.00022079190239310265
+}

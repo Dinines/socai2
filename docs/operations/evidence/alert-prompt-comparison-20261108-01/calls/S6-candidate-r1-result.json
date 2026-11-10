@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-b9add979930784db",
+    "created": 1794115593,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": null,\n  \"rationale\": \"现有证据显示该告警触发了'Whole customer table read'规则，但原始记录提供了多项良性指标：执行角色为'reporting_ro'（只读报告角色），目标为'read replica'（只读副本），且明确标注'copyToProgramUsed': false（未用于数据外传），查询计划匹配基线且过去一小时无错误。同时，日志显示该操作属于'nightly'（夜间）调度，且已有'180 prior runs'（180 次历史运行记录），强烈暗示这是正常的定期批量数据加载任务。然而，判定为'benign'仍缺乏人工确认或明确的业务授权文档作为最终依据，仅凭日志特征无法 100% 排除配置变更或异常调度的可能性，因此证据虽指向良性但不足以完全定论。\",\n  \"evidence_ids\": [\n    \"N1_S5\",\n    \"N1_S7\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"需核实该'nightly'调度任务是否经过正式审批，确认其业务目的为常规数据仓库加载，以排除因配置错误导致的非预期全表扫描。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    },\n    {\n      \"reason\": \"需确认执行该查询的'reporting_ro'角色权限范围是否严格限制在内部网络及目标仓库加载器，防止权限滥用。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    }\n  ]\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 384,
+      "prompt_tokens": 1129,
+      "total_tokens": 1513,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 7.634892,
+  "transport_seconds": 8.330878
+}

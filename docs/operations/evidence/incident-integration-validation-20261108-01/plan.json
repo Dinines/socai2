@@ -1,0 +1,862 @@
+{
+  "batch": "incident-integration-validation-20261108-01",
+  "config": {
+    "version": "socai2.incident-integration-eval.v1",
+    "batch": "incident-integration-validation-20261108-01",
+    "output": "docs/operations/evidence/incident-integration-validation-20261108-01",
+    "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+    "environment_file": ".local/v1.2-reader-validation/app-test-environment.json",
+    "expected_database": "v12_upgrade_dev",
+    "sslmode": "disable",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "policy": "deploy/local-investigation/investigation-policy-incident-v1.toml",
+    "transport_config": "tools/testdata/alert_io_eval/config.json",
+    "transport_overrides": {
+      "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/incident-integration-validation-20261108-01"
+    },
+    "snapshot": "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json",
+    "source_incident_run": "27db8785-fa50-5e08-afef-40150a1310bc",
+    "corpus": "services/agents/tests/eval_data/verdict/verdict_corpus_v1.json",
+    "planned_model_calls": 3,
+    "attempts_per_event": 1,
+    "runtime_overrides": {
+      "AISOC_AIRGAPPED": "true",
+      "AISOC_AIRGAP_ALLOWLIST": "[\"192.168.1.43\",\"litellm\"]"
+    },
+    "scenarios": [
+      {
+        "key": "E1",
+        "title": "合成验证：登录、进程和网络记录",
+        "kind": "recorded_materials",
+        "material": "all"
+      },
+      {
+        "key": "E2",
+        "title": "合成验证：云审计业务字段",
+        "kind": "corpus",
+        "block": "cloud",
+        "templates": [
+          "VRD-AWS-01-B",
+          "VRD-AWS-02-B"
+        ],
+        "material": "all"
+      },
+      {
+        "key": "E3",
+        "title": "合成验证：邮件记录与缺失材料",
+        "kind": "corpus",
+        "block": "email",
+        "templates": [
+          "VRD-MAIL-01-M",
+          "VRD-MAIL-01-B"
+        ],
+        "material": "first_only"
+      }
+    ],
+    "transport": {
+      "ssh_binary": "ssh",
+      "ssh_target": "sting-infra21",
+      "remote_python": "python3",
+      "connect_timeout_seconds": 8,
+      "command_timeout_seconds": 340,
+      "gateway_base_url": "http://127.0.0.1:14000/v1",
+      "runtime_env_file": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+      "key_variable": "OPENAI_API_KEY",
+      "model_variable": "OPENAI_MODEL",
+      "expected_model": "aisoc-investigation",
+      "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/incident-integration-validation-20261108-01"
+    }
+  },
+  "cases": [
+    {
+      "key": "E1",
+      "title": "合成验证：登录、进程和网络记录",
+      "members": [
+        {
+          "alert": {
+            "title": "Account logon observed",
+            "description": null,
+            "event_time": "2026-11-08T01:26:09+00:00",
+            "event_time_source": "source",
+            "severity": "medium",
+            "original_vendor": "LabTelemetry"
+          },
+          "material": {
+            "raw_text": "{\"time\":\"2026-11-08T01:26:09+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.88\"}}",
+            "raw_json": {
+              "id": "09e91978-d201-5435-901e-b6a40368b921",
+              "url": null,
+              "tags": [
+                "synthetic",
+                "production-multialert-20261108-01"
+              ],
+              "title": "Account logon observed",
+              "domain": null,
+              "dst_ip": null,
+              "source": "socai2-flow-acceptance",
+              "src_ip": null,
+              "status": "new",
+              "rule_id": null,
+              "hostname": "socai2-flow-20261108-01",
+              "severity": "medium",
+              "username": "flow-observer-20261108-01",
+              "file_hash": null,
+              "raw_event": {
+                "event_id": "83136178-4892-4673-b26f-95d421c2c3b7",
+                "tenant_id": "00000000-0000-0000-0000-000000000001",
+                "ocsf_event": {
+                  "time": "2026-11-08T01:26:09+00:00",
+                  "actor": {
+                    "user": {
+                      "name": "flow-observer-20261108-01"
+                    }
+                  },
+                  "device": {
+                    "name": "socai2-flow-20261108-01"
+                  },
+                  "activity": {
+                    "action": "logon",
+                    "outcome": "success"
+                  },
+                  "raw_data": "{\"time\":\"2026-11-08T01:26:09+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.88\"}}",
+                  "class_uid": 3002,
+                  "src_endpoint": {
+                    "ip": "203.0.113.88"
+                  }
+                },
+                "connector_type": "validation",
+                "schema_version": "v1",
+                "original_vendor": "LabTelemetry"
+              },
+              "rule_name": null,
+              "tenant_id": "00000000-0000-0000-0000-000000000001",
+              "created_at": "2026-11-08T01:26:09Z",
+              "event_time": "2026-11-08T01:26:09Z",
+              "risk_score": null,
+              "description": "",
+              "external_id": null,
+              "connector_id": null,
+              "mitre_tactics": [],
+              "connector_type": "validation",
+              "field_metadata": {},
+              "ocsf_class_uid": 3002,
+              "identity_origin": null,
+              "source_alert_id": "8eb1558e-143f-485c-8763-8a8d076cb3c6",
+              "identity_version": "source-v1",
+              "mitre_techniques": [],
+              "source_event_ids": [
+                "83136178-4892-4673-b26f-95d421c2c3b7",
+                "8eb1558e-143f-485c-8763-8a8d076cb3c6"
+              ],
+              "identity_event_id": null
+            },
+            "ocsf_json": {
+              "time": "2026-11-08T01:26:09+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer-20261108-01"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261108-01"
+              },
+              "activity": {
+                "action": "logon",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-08T01:26:09+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.88\"}}",
+              "class_uid": 3002,
+              "src_endpoint": {
+                "ip": "203.0.113.88"
+              }
+            },
+            "detection": {
+              "rule_id": null,
+              "tactics": [],
+              "rule_name": null,
+              "techniques": [],
+              "score_source": "fusion",
+              "ocsf_class_uid": 3002,
+              "labels_provided": false,
+              "confidence_label": "low",
+              "confidence_state": "available",
+              "confidence_value": 20.8,
+              "confidence_rationale": [
+                "{\"contribution\":-0.8,\"factor\":\"ml_anomaly\",\"label\":\"ML anomaly score\",\"value\":\"0.10\",\"weight\":0.18}",
+                "{\"contribution\":-1.0,\"factor\":\"upstream_risk\",\"label\":\"Upstream provided risk score (source unverified)\",\"value\":\"not supplied; numeric feature baseline only\",\"weight\":0.08}",
+                "{\"contribution\":-0.4,\"factor\":\"mitre_coverage\",\"label\":\"MITRE technique coverage\",\"value\":\"0 techniques\",\"weight\":0.14}",
+                "{\"contribution\":-0.3,\"factor\":\"threat_intel\",\"label\":\"Threat-intel match\",\"value\":\"no TI match\",\"weight\":0.16}",
+                "{\"contribution\":0.19999999999999996,\"factor\":\"ml_priority\",\"label\":\"ML priority rank\",\"value\":\"0.60\",\"weight\":0.18}",
+                "{\"contribution\":0.0,\"factor\":\"severity\",\"label\":\"Alert severity\",\"value\":\"medium\",\"weight\":0.2}",
+                "{\"contribution\":0.0,\"factor\":\"ioc_density\",\"label\":\"IOC density\",\"value\":\"2 populated fields\",\"weight\":0.06}"
+              ]
+            },
+            "enrichment": {
+              "items": [
+                {
+                  "kind": "first_fusion_result_reference",
+                  "value": {
+                    "artifact_id": "98dc2856-c1b9-51aa-9442-95290ff31d48",
+                    "same_material_input": true
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                },
+                {
+                  "kind": "fusion_session",
+                  "value": {
+                    "session_id": null,
+                    "session_key_kind": null,
+                    "originating_human": null
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                }
+              ],
+              "schema_version": "socai2.fusion-material.v1"
+            },
+            "source_scope": {
+              "kind": "explicit_sources",
+              "complete": true,
+              "truncated": false,
+              "window_end": null,
+              "window_start": null,
+              "received_count": 2,
+              "retained_count": 2,
+              "omission_reason": null
+            },
+            "retention": {
+              "reason": null,
+              "truncated": false,
+              "omitted_paths": [],
+              "original_sha256": "25bab6d15068e7021a33b80d45c218a04e9ecb7fda7de0bf9680599ab2c49454",
+              "retained_sha256": "25bab6d15068e7021a33b80d45c218a04e9ecb7fda7de0bf9680599ab2c49454",
+              "original_size_bytes": 4313,
+              "retained_size_bytes": 4313
+            },
+            "material_state": "complete"
+          },
+          "alert_id": "cb5d6107-adc9-508f-9931-2ee64e57daf3",
+          "material_id": "edf1ee60-d4d8-5412-ac90-e5ddc799e7a7"
+        },
+        {
+          "alert": {
+            "title": "Process start observed",
+            "description": null,
+            "event_time": "2026-11-08T01:26:29+00:00",
+            "event_time_source": "source",
+            "severity": "medium",
+            "original_vendor": "LabTelemetry"
+          },
+          "material": {
+            "raw_text": "{\"time\":\"2026-11-08T01:26:29+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+            "raw_json": {
+              "id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "url": null,
+              "tags": [
+                "synthetic",
+                "production-multialert-20261108-01"
+              ],
+              "title": "Process start observed",
+              "domain": null,
+              "dst_ip": null,
+              "source": "socai2-flow-acceptance",
+              "src_ip": null,
+              "status": "new",
+              "rule_id": null,
+              "hostname": "socai2-flow-20261108-01",
+              "severity": "medium",
+              "username": "flow-observer-20261108-01",
+              "file_hash": null,
+              "raw_event": {
+                "event_id": "7e804497-d090-4948-9ca9-f835c9e67f5d",
+                "tenant_id": "00000000-0000-0000-0000-000000000001",
+                "ocsf_event": {
+                  "time": "2026-11-08T01:26:29+00:00",
+                  "actor": {
+                    "user": {
+                      "name": "flow-observer-20261108-01"
+                    }
+                  },
+                  "device": {
+                    "name": "socai2-flow-20261108-01"
+                  },
+                  "process": {
+                    "name": "powershell.exe",
+                    "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+                  },
+                  "activity": {
+                    "action": "process_start",
+                    "outcome": "success"
+                  },
+                  "raw_data": "{\"time\":\"2026-11-08T01:26:29+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+                  "class_uid": 1007
+                },
+                "connector_type": "validation",
+                "schema_version": "v1",
+                "original_vendor": "LabTelemetry"
+              },
+              "rule_name": null,
+              "tenant_id": "00000000-0000-0000-0000-000000000001",
+              "created_at": "2026-11-08T01:26:29Z",
+              "event_time": "2026-11-08T01:26:29Z",
+              "risk_score": null,
+              "description": "",
+              "external_id": null,
+              "connector_id": null,
+              "mitre_tactics": [],
+              "connector_type": "validation",
+              "field_metadata": {},
+              "ocsf_class_uid": 1007,
+              "identity_origin": null,
+              "source_alert_id": "45dfa0b7-8e51-4b5a-bb8c-eca33c9aafdd",
+              "identity_version": "source-v1",
+              "mitre_techniques": [],
+              "source_event_ids": [
+                "7e804497-d090-4948-9ca9-f835c9e67f5d",
+                "45dfa0b7-8e51-4b5a-bb8c-eca33c9aafdd"
+              ],
+              "identity_event_id": null
+            },
+            "ocsf_json": {
+              "time": "2026-11-08T01:26:29+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer-20261108-01"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261108-01"
+              },
+              "process": {
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-08T01:26:29+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+              "class_uid": 1007
+            },
+            "detection": {
+              "rule_id": null,
+              "tactics": [],
+              "rule_name": null,
+              "techniques": [],
+              "score_source": "fusion",
+              "ocsf_class_uid": 1007,
+              "labels_provided": false,
+              "confidence_label": "low",
+              "confidence_state": "available",
+              "confidence_value": 20.8,
+              "confidence_rationale": [
+                "{\"contribution\":-0.8,\"factor\":\"ml_anomaly\",\"label\":\"ML anomaly score\",\"value\":\"0.10\",\"weight\":0.18}",
+                "{\"contribution\":-1.0,\"factor\":\"upstream_risk\",\"label\":\"Upstream provided risk score (source unverified)\",\"value\":\"not supplied; numeric feature baseline only\",\"weight\":0.08}",
+                "{\"contribution\":-0.4,\"factor\":\"mitre_coverage\",\"label\":\"MITRE technique coverage\",\"value\":\"0 techniques\",\"weight\":0.14}",
+                "{\"contribution\":-0.3,\"factor\":\"threat_intel\",\"label\":\"Threat-intel match\",\"value\":\"no TI match\",\"weight\":0.16}",
+                "{\"contribution\":0.19999999999999996,\"factor\":\"ml_priority\",\"label\":\"ML priority rank\",\"value\":\"0.60\",\"weight\":0.18}",
+                "{\"contribution\":0.0,\"factor\":\"severity\",\"label\":\"Alert severity\",\"value\":\"medium\",\"weight\":0.2}",
+                "{\"contribution\":0.0,\"factor\":\"ioc_density\",\"label\":\"IOC density\",\"value\":\"2 populated fields\",\"weight\":0.06}"
+              ]
+            },
+            "enrichment": {
+              "items": [
+                {
+                  "kind": "first_fusion_result_reference",
+                  "value": {
+                    "artifact_id": "aec38a31-1d4e-5768-a965-ca95f4721055",
+                    "same_material_input": true
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                },
+                {
+                  "kind": "fusion_session",
+                  "value": {
+                    "session_id": null,
+                    "session_key_kind": null,
+                    "originating_human": null
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                }
+              ],
+              "schema_version": "socai2.fusion-material.v1"
+            },
+            "source_scope": {
+              "kind": "explicit_sources",
+              "complete": true,
+              "truncated": false,
+              "window_end": null,
+              "window_start": null,
+              "received_count": 2,
+              "retained_count": 2,
+              "omission_reason": null
+            },
+            "retention": {
+              "reason": null,
+              "truncated": false,
+              "omitted_paths": [],
+              "original_sha256": "b0749cd1aef4ef54ec4bb333953c82f9ff1154b3609d1f30f5a9a408185e0307",
+              "retained_sha256": "b0749cd1aef4ef54ec4bb333953c82f9ff1154b3609d1f30f5a9a408185e0307",
+              "original_size_bytes": 4670,
+              "retained_size_bytes": 4670
+            },
+            "material_state": "complete"
+          },
+          "alert_id": "7e4c1853-d984-55dd-a930-77f500b1997b",
+          "material_id": "2a22f622-4f54-5c88-9b1e-afa292092a61"
+        },
+        {
+          "alert": {
+            "title": "Outbound connection observed",
+            "description": null,
+            "event_time": "2026-11-08T01:26:49+00:00",
+            "event_time_source": "source",
+            "severity": "medium",
+            "original_vendor": "LabTelemetry"
+          },
+          "material": {
+            "raw_text": "{\"time\":\"2026-11-08T01:26:49+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.88\"},\"dst_endpoint\":{\"ip\":\"198.51.100.88\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+            "raw_json": {
+              "id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "url": null,
+              "tags": [
+                "synthetic",
+                "production-multialert-20261108-01"
+              ],
+              "title": "Outbound connection observed",
+              "domain": null,
+              "dst_ip": null,
+              "source": "socai2-flow-acceptance",
+              "src_ip": null,
+              "status": "new",
+              "rule_id": null,
+              "hostname": "socai2-flow-20261108-01",
+              "severity": "medium",
+              "username": "flow-observer-20261108-01",
+              "file_hash": null,
+              "raw_event": {
+                "event_id": "4d959a91-40a1-48f7-8840-f8efb6ad7f6b",
+                "tenant_id": "00000000-0000-0000-0000-000000000001",
+                "ocsf_event": {
+                  "time": "2026-11-08T01:26:49+00:00",
+                  "actor": {
+                    "user": {
+                      "name": "flow-observer-20261108-01"
+                    }
+                  },
+                  "device": {
+                    "name": "socai2-flow-20261108-01"
+                  },
+                  "activity": {
+                    "action": "network_connection",
+                    "outcome": "success"
+                  },
+                  "raw_data": "{\"time\":\"2026-11-08T01:26:49+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.88\"},\"dst_endpoint\":{\"ip\":\"198.51.100.88\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+                  "class_uid": 4001,
+                  "dst_endpoint": {
+                    "ip": "198.51.100.88",
+                    "port": 443
+                  },
+                  "src_endpoint": {
+                    "ip": "192.0.2.88"
+                  },
+                  "connection_info": {
+                    "protocol_name": "TCP"
+                  }
+                },
+                "connector_type": "validation",
+                "schema_version": "v1",
+                "original_vendor": "LabTelemetry"
+              },
+              "rule_name": null,
+              "tenant_id": "00000000-0000-0000-0000-000000000001",
+              "created_at": "2026-11-08T01:26:49Z",
+              "event_time": "2026-11-08T01:26:49Z",
+              "risk_score": null,
+              "description": "",
+              "external_id": null,
+              "connector_id": null,
+              "mitre_tactics": [],
+              "connector_type": "validation",
+              "field_metadata": {},
+              "ocsf_class_uid": 4001,
+              "identity_origin": null,
+              "source_alert_id": "bd1e95f5-382c-420a-9877-e0001d473ab5",
+              "identity_version": "source-v1",
+              "mitre_techniques": [],
+              "source_event_ids": [
+                "4d959a91-40a1-48f7-8840-f8efb6ad7f6b",
+                "bd1e95f5-382c-420a-9877-e0001d473ab5"
+              ],
+              "identity_event_id": null
+            },
+            "ocsf_json": {
+              "time": "2026-11-08T01:26:49+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer-20261108-01"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261108-01"
+              },
+              "activity": {
+                "action": "network_connection",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-08T01:26:49+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer-20261108-01\"}},\"device\":{\"name\":\"socai2-flow-20261108-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.88\"},\"dst_endpoint\":{\"ip\":\"198.51.100.88\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+              "class_uid": 4001,
+              "dst_endpoint": {
+                "ip": "198.51.100.88",
+                "port": 443
+              },
+              "src_endpoint": {
+                "ip": "192.0.2.88"
+              },
+              "connection_info": {
+                "protocol_name": "TCP"
+              }
+            },
+            "detection": {
+              "rule_id": null,
+              "tactics": [],
+              "rule_name": null,
+              "techniques": [],
+              "score_source": "fusion",
+              "ocsf_class_uid": 4001,
+              "labels_provided": false,
+              "confidence_label": "low",
+              "confidence_state": "available",
+              "confidence_value": 20.8,
+              "confidence_rationale": [
+                "{\"contribution\":-0.8,\"factor\":\"ml_anomaly\",\"label\":\"ML anomaly score\",\"value\":\"0.10\",\"weight\":0.18}",
+                "{\"contribution\":-1.0,\"factor\":\"upstream_risk\",\"label\":\"Upstream provided risk score (source unverified)\",\"value\":\"not supplied; numeric feature baseline only\",\"weight\":0.08}",
+                "{\"contribution\":-0.4,\"factor\":\"mitre_coverage\",\"label\":\"MITRE technique coverage\",\"value\":\"0 techniques\",\"weight\":0.14}",
+                "{\"contribution\":-0.3,\"factor\":\"threat_intel\",\"label\":\"Threat-intel match\",\"value\":\"no TI match\",\"weight\":0.16}",
+                "{\"contribution\":0.19999999999999996,\"factor\":\"ml_priority\",\"label\":\"ML priority rank\",\"value\":\"0.60\",\"weight\":0.18}",
+                "{\"contribution\":0.0,\"factor\":\"severity\",\"label\":\"Alert severity\",\"value\":\"medium\",\"weight\":0.2}",
+                "{\"contribution\":0.0,\"factor\":\"ioc_density\",\"label\":\"IOC density\",\"value\":\"2 populated fields\",\"weight\":0.06}"
+              ]
+            },
+            "enrichment": {
+              "items": [
+                {
+                  "kind": "first_fusion_result_reference",
+                  "value": {
+                    "artifact_id": "5783e78a-0a5b-518d-ab7c-4162f9121cc2",
+                    "same_material_input": true
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                },
+                {
+                  "kind": "fusion_session",
+                  "value": {
+                    "session_id": null,
+                    "session_key_kind": null,
+                    "originating_human": null
+                  },
+                  "source": "fusion",
+                  "source_path": "$.fused",
+                  "collected_at": null
+                }
+              ],
+              "schema_version": "socai2.fusion-material.v1"
+            },
+            "source_scope": {
+              "kind": "explicit_sources",
+              "complete": true,
+              "truncated": false,
+              "window_end": null,
+              "window_start": null,
+              "received_count": 2,
+              "retained_count": 2,
+              "omission_reason": null
+            },
+            "retention": {
+              "reason": null,
+              "truncated": false,
+              "omitted_paths": [],
+              "original_sha256": "df1a20669529d94be826c84a95ed560646a9da92653bfec6c3ea10b86c9af2b1",
+              "retained_sha256": "df1a20669529d94be826c84a95ed560646a9da92653bfec6c3ea10b86c9af2b1",
+              "original_size_bytes": 4871,
+              "retained_size_bytes": 4871
+            },
+            "material_state": "complete"
+          },
+          "alert_id": "33cac26c-4515-5b05-9291-87e6fd05fad9",
+          "material_id": "37674ed5-100d-5b06-8bb5-0348262f69d4"
+        }
+      ],
+      "incident_id": "2db0385b-41c0-5c92-84de-f7578bf1dd3e",
+      "operation_key": "0ad64cce-9ccb-5f09-94d8-ee0a584fbae9"
+    },
+    {
+      "key": "E2",
+      "title": "合成验证：云审计业务字段",
+      "members": [
+        {
+          "alert": {
+            "title": "Break-glass administrative role assumed",
+            "description": "Break-glass administrative role assumed",
+            "event_time": null,
+            "event_time_source": "unknown",
+            "severity": "high",
+            "original_vendor": "aws_cloudtrail"
+          },
+          "material": {
+            "raw_json": {
+              "cloud": {
+                "eventName": "AssumeRole",
+                "roleArn": "arn:aws:iam::210987654321:role/OrganizationAccountAccessRole",
+                "principal": "oncall.sre@example.com",
+                "mfaAuthenticated": true,
+                "sourceIPAddress": "198.51.100.17",
+                "sourceIpOwner": "corporate egress range 198.51.100.0/27",
+                "changeTicket": "CHG-20261003-0412",
+                "ticketState": "approved 14 minutes before the assumption, window 02:00-04:00Z",
+                "sessionDurationSeconds": 3180,
+                "actionsInSession": [
+                  "DescribeInstances",
+                  "RebootInstances",
+                  "DescribeAlarms"
+                ]
+              }
+            },
+            "raw_text": "{\"eventName\": \"AssumeRole\", \"roleArn\": \"arn:aws:iam::210987654321:role/OrganizationAccountAccessRole\", \"principal\": \"oncall.sre@example.com\", \"mfaAuthenticated\": true, \"sourceIPAddress\": \"198.51.100.17\", \"sourceIpOwner\": \"corporate egress range 198.51.100.0/27\", \"changeTicket\": \"CHG-20261003-0412\", \"ticketState\": \"approved 14 minutes before the assumption, window 02:00-04:00Z\", \"sessionDurationSeconds\": 3180, \"actionsInSession\": [\"DescribeInstances\", \"RebootInstances\", \"DescribeAlarms\"]}",
+            "ocsf_json": null,
+            "detection": {
+              "rule_id": "cloud-aws-breakglass-role-assumption",
+              "rule_name": "Break-glass administrative role assumed"
+            },
+            "enrichment": {},
+            "source_scope": {
+              "kind": "synthetic_corpus",
+              "complete": true,
+              "truncated": false
+            },
+            "retention": {},
+            "material_state": "complete"
+          },
+          "alert_id": "f96ab815-cd0c-5003-b402-0ee8eda61d04",
+          "material_id": "3b93840e-b228-5312-8595-464b67224eda"
+        },
+        {
+          "alert": {
+            "title": "Many S3 bucket policies rewritten in one window",
+            "description": "Many S3 bucket policies rewritten in one window",
+            "event_time": null,
+            "event_time_source": "unknown",
+            "severity": "medium",
+            "original_vendor": "aws_cloudtrail"
+          },
+          "material": {
+            "raw_json": {
+              "cloud": {
+                "eventName": "PutBucketPolicy",
+                "callCount": 38,
+                "windowSeconds": 142,
+                "principal": "arn:aws:iam::210987654321:role/terraform-ci",
+                "userAgent": "aws-sdk-go/1.55.5 APN/1.0 HashiCorp/1.0 Terraform/1.9.8",
+                "pipelineRunId": "pipeline-run-8841",
+                "sourceIPAddress": "198.51.100.33",
+                "policyDelta": "PublicAccessBlockConfiguration set to BlockPublicAcls=true on 38 of 38 buckets",
+                "wildcardPrincipalsAfter": 0
+              }
+            },
+            "raw_text": "{\"eventName\": \"PutBucketPolicy\", \"callCount\": 38, \"windowSeconds\": 142, \"principal\": \"arn:aws:iam::210987654321:role/terraform-ci\", \"userAgent\": \"aws-sdk-go/1.55.5 APN/1.0 HashiCorp/1.0 Terraform/1.9.8\", \"pipelineRunId\": \"pipeline-run-8841\", \"sourceIPAddress\": \"198.51.100.33\", \"policyDelta\": \"PublicAccessBlockConfiguration set to BlockPublicAcls=true on 38 of 38 buckets\", \"wildcardPrincipalsAfter\": 0}",
+            "ocsf_json": null,
+            "detection": {
+              "rule_id": "cloud-aws-bulk-bucket-policy-change",
+              "rule_name": "Many S3 bucket policies rewritten in one window"
+            },
+            "enrichment": {},
+            "source_scope": {
+              "kind": "synthetic_corpus",
+              "complete": true,
+              "truncated": false
+            },
+            "retention": {},
+            "material_state": "complete"
+          },
+          "alert_id": "80ec4c07-4719-5e7d-9cde-4cff4c11a5b1",
+          "material_id": "075876c4-803e-5039-8ed8-9f4282644dfa"
+        }
+      ],
+      "incident_id": "cb2a77a3-2524-5d08-ab7d-d046e5466745",
+      "operation_key": "ddbeca77-46e9-579a-a9ad-45a4181433ec"
+    },
+    {
+      "key": "E3",
+      "title": "合成验证：邮件记录与缺失材料",
+      "members": [
+        {
+          "alert": {
+            "title": "Message carrying a credential-harvesting link delivered",
+            "description": "Message carrying a credential-harvesting link delivered",
+            "event_time": null,
+            "event_time_source": "unknown",
+            "severity": "high",
+            "original_vendor": "email_security"
+          },
+          "material": {
+            "raw_json": {
+              "email": {
+                "senderDomain": "example.com.secure-mail.test",
+                "senderDomainAgeDays": 4,
+                "dmarcResult": "fail",
+                "simulationHeader": null,
+                "campaignRecordedInTrainingSchedule": false,
+                "linkDestination": "https://example.com.secure-mail.test/sso/login",
+                "replyToProvider": "free mail provider, unrelated to the sender domain",
+                "recipientCount": 1200,
+                "credentialsSubmitted": 9
+              }
+            },
+            "raw_text": "{\"senderDomain\": \"example.com.secure-mail.test\", \"senderDomainAgeDays\": 4, \"dmarcResult\": \"fail\", \"simulationHeader\": null, \"campaignRecordedInTrainingSchedule\": false, \"linkDestination\": \"https://example.com.secure-mail.test/sso/login\", \"replyToProvider\": \"free mail provider, unrelated to the sender domain\", \"recipientCount\": 1200, \"credentialsSubmitted\": 9}",
+            "ocsf_json": null,
+            "detection": {
+              "rule_id": "email-credential-harvest-link",
+              "rule_name": "Message carrying a credential-harvesting link delivered"
+            },
+            "enrichment": {},
+            "source_scope": {
+              "kind": "synthetic_corpus",
+              "complete": true,
+              "truncated": false
+            },
+            "retention": {},
+            "material_state": "complete"
+          },
+          "alert_id": "e33efb66-53a2-5f2c-a265-56afdf23ad46",
+          "material_id": "2f9e386a-9d77-5062-808b-ea8b61a76ae2"
+        },
+        {
+          "alert": {
+            "title": "Message carrying a credential-harvesting link delivered",
+            "description": "Message carrying a credential-harvesting link delivered",
+            "event_time": null,
+            "event_time_source": "unknown",
+            "severity": "high",
+            "original_vendor": "email_security"
+          },
+          "material": null,
+          "alert_id": "2fcbff15-e670-5c09-86bd-b6b304ea8d5b",
+          "material_id": null
+        }
+      ],
+      "incident_id": "5e47513e-e305-5396-bfc9-15c87de13dde",
+      "operation_key": "5a340ca2-dae4-5799-8bfe-0245dfc1d976"
+    }
+  ],
+  "planned_model_calls": 3,
+  "retries": 0,
+  "real_A_calls": 0,
+  "fake_query_receipts": 0,
+  "database_scope": "existing isolated local database",
+  "source_sha256": {
+    "services/api/app/socai2/baseline_deep.py": "7a8ee10bde0aa9f29452f6bc98069b65f14c93a3ccf0a50fa1b2d68ed441ed80",
+    "services/api/app/socai2/structured_output.py": "0fbc461d263047bd3334877642cd44aeb71e6b678a5d87bad0010231648943c8",
+    "services/api/app/socai2/read_sources.py": "3e1ea79061aecec216e66c5f6f405abe15c50934809a34b14dba0f24bf9d693f",
+    "services/api/app/socai2/baseline_delivery_projection.py": "f1c23598d8fcfb56d357e3516f7811493befbdc21925d4b3e3c541ef9c23eb77",
+    "services/api/app/socai2/baseline_analysis_contract.py": "046fe35f43ad90c06789b60706106b1309fd8d934972a006efa4d0e1961c5146",
+    "services/api/app/socai2/baseline_deep.schema.json": "38142132085e9c65bef2fc70cd5ef67aacef67d8195299bf0b3b4015ebcd69b4",
+    "services/api/app/socai2/baseline_context.py": "001f655658d3269ae8ff2d66c86ddd574d5335040a5951703d764e040193ac3e",
+    "services/api/app/socai2/stage_reader.py": "02b7a33e4a4559f578fe43cdc60445587ad7e5fe602cd9f832d3bd0d026c95d1",
+    "services/api/app/socai2/incident_output_adapter.py": "3020629e529acdb2ba44512318cb60d981a83c20dd95f6cf04fe9e045cdd03b5",
+    "services/api/app/socai2/baseline_graph_projection.py": "5729152ffe6a4c6ae03c5b0d9f21013a77feff27415ba83589a091cc57a6e643",
+    "services/api/app/socai2/program_facts.py": "67dd9d4db4b56a25db5e86460dfb61fd42d5a081a2bb6b1766d3bb42011d31cd",
+    "services/api/app/socai2/stage_inputs.py": "3389e63d7886e0b278836b452564bc9ff14e8478db35e78f7598f5ad39d4c4db",
+    "services/api/app/socai2/incident_model_boundary.py": "5627fd667a014da2d159ef4ab59eeb31c700ab415241e0dfef016df54f9cfc66",
+    "services/api/app/socai2/enums.py": "552b4e6c7945737d277cac28d4b21047b15dfb854400dc4849a6e5f83c178ce4",
+    "services/api/app/socai2/case_data.py": "f8cf1a2b8c83e938d81ed2a9c7cf1bd4d1d3a00236c6ed35f51a4939fbdd5c56",
+    "services/api/app/socai2/baseline_followup_projection.py": "1a0d0ed80bf514e70b07475a31880b68c4b7cb784f6e409e0d21fc63856cc676",
+    "services/api/app/socai2/baseline_tool_catalog.py": "da8ba5003b8cf2027997ee405951c8b500f1e3a09fbbd5ab41c4102b01349e1c",
+    "services/api/app/socai2/baseline_graph.py": "199baa715abcb9bcf76b7c2eb4220d525c13ba6df3d341eca7f4c7ac1bebfa6d",
+    "services/api/app/socai2/token_budget.py": "2d0c73c52221e9782b8a02b4c3f7f85e1e812f66a7e641b81a01d4b5424e91bc",
+    "services/api/app/socai2/incident_input_text.py": "5efff213e46e898bd437c3ace98db14b7a9428af92a725fa1279906fad15cb83",
+    "services/api/app/socai2/baseline_delivery_contract.py": "791e3bde6efa7fa974ebc84dd97ad61259e229afb21381d0d23b5afd814000da",
+    "services/api/app/socai2/baseline_dispatch.py": "29b71cb8fa68f0a9512904484f36bd552f26590e64d44b6294feb6e9a3c74bb2",
+    "services/api/app/socai2/baseline_reanalysis.py": "e5080c9a85e07c4c51c36cefffb7e750251edebf19895ea412104d4d853239b6",
+    "services/api/app/socai2/case_contracts.py": "3072a329dae65bcc6baa2f3abc97a79f3de3d35e8783bfa8f5be258d677deb41",
+    "services/api/app/socai2/baseline_enrichment_sources.py": "7460bc8c3065aa02aebeeadb1109f947005b4ab7f17c55c976cecbcee808aa9a",
+    "services/api/app/socai2/incident_delivery.py": "fcf9c698258388b145201800f616cac78e26040302bc1b70bde1a6cc634262bb",
+    "services/api/app/socai2/baseline_analysis_model.py": "d9ef5a3601e3175dc162a6d36f794e7f0d58a4b0937426875916e13ee19d7229",
+    "services/api/app/socai2/case_data_contracts.py": "12e077052a0502fbac890589a8171305e3977c1768cdef00d6f745bf9212f005",
+    "services/api/app/socai2/runtime_policy.py": "1254b3c3228fc9a809d87f6af7d42d18bfd3319ec82b45533948baa5e7c00783",
+    "services/api/app/socai2/baseline_delivery.schema.json": "998ce709ade453b6bb2f6b35ba61c2b40dabee504df68efffbb463dd542cb448",
+    "services/api/app/socai2/baseline_analysis.py": "139517c7bc8cceace05f764819314e9020f416124da5d1f7c8b31fa6925b43a6",
+    "services/api/app/socai2/stage_answer_review.py": "e426e11c9e33c1e309a3006daebe7eaed310384c7a8f67478c759b255c0e6190",
+    "services/api/app/socai2/baseline_delivery_compat.py": "62e5adf16700beeb2534ea6a0e262aa967499da10bdac645ab849d5046f416da",
+    "services/api/app/socai2/baseline_context.schema.json": "5577e802298ef25697c839cb0a023cfa43850da4ef59b682fde6b4c2598227ef",
+    "services/api/app/socai2/baseline_deep_contract.py": "768986d150ab10541670735b32f64be59c9eecd7368e22278e6a2406b955655b",
+    "services/api/app/socai2/baseline_analysis.schema.json": "68e0b6dbddc64b32093b781375311306839d6d088e4655eac5c31fc4d62d764a",
+    "services/api/app/socai2/__init__.py": "be2d94f704e700c50cb5408ac582c0426fa36043d48662e429820f2b49798acf",
+    "services/api/app/socai2/baseline_capacity.py": "eafffb04e12546efe28763242ef21ee135c406cbef5d782495149cbdb40cb9cc",
+    "services/api/app/socai2/case_service.py": "52b938845c98815b519672a90b08dd5e0c9fae67d7abaa8bac592a099fff4a58",
+    "services/api/app/socai2/baseline_store.py": "6688d822e0c7ffdaea40e899b0d189c86a4c2f5cd1e710327aafd96d0faefdd7",
+    "services/api/app/socai2/baseline_semantics.py": "a13c22c526f7744845c9ad083fc2b96dd7a8916fba2e9ef9f17bbe250d53b2fc",
+    "services/api/app/socai2/baseline_delivery.py": "9d080de7425541fb49112cf2778e04fc534b2e30ca955ad162f0105f542d1e6c",
+    "services/api/app/socai2/contracts.schema.json": "43ad06df1ba858331a784a9ca5295010465c013247ee759539b8ccb599290260",
+    "services/api/app/socai2/baseline_model_view.py": "006411c7790460c1810cef3f6b5993f1d73c972e17f89f72f1bd957b2fc89572",
+    "services/api/app/socai2/baseline_executor.py": "0a1c2be89ea41993ddf82d7a10fec462b74a746d889eeb55be384d65e9da6a32",
+    "services/api/app/socai2/baseline_service.py": "321cff69376f61bfaa7224191f7437fa78e773dc139ea49f38e12a3d26828c4b",
+    "services/api/app/socai2/page_reader.py": "7297a94fc9de8f14799452f13c5244e6ede5a0683f8579d8c6fd170beb0a240e",
+    "services/api/app/socai2/baseline_reasoning.py": "02c960f721bcc0e6dbcdf514c7289645697de1ecf126b5dc4a328535ef7c3802",
+    "services/api/app/socai2/baseline_optional_sources.py": "f18f82cdc80c678df0e0b3f7ba5fa7d7ff74f957859ba0b189e091d9c1a18e3a",
+    "services/api/app/socai2/baseline_evidence_index.py": "0e4aeedb86daef068929a5cb72c1316d0ecf761bd4ccd353bbc1e6239a9f6b3c",
+    "services/api/app/socai2/baseline_contracts.py": "4336ab263ef455b44770ba3f19ad7f1153bfc47e68f00353e77982889124b728",
+    "services/api/app/socai2/baseline_enrichment.py": "b254ee3cc7e7ab49b30173dc9aa4e5a196f9f0ca7a857420a521e04452b2d388",
+    "services/api/app/socai2/case_ai_contracts.py": "086d1b626ac5ab60618d4de7891b55acc9b983a7146e9d72863ca5401a4a46c4",
+    "services/api/app/socai2/baseline_evidence.py": "1d3c5fd5ba8f124fa225f69ce56f6adb64bdca1133bf5c004b141865898e99a2",
+    "services/api/app/socai2/analysis_review.py": "c41d29b18a6afe1a0769dc7d2b23d8d456c88b4876b164f993625075a0d18c12",
+    "services/api/app/socai2/page_contracts.py": "2d82f3416df17b8d32c268d2ed40ebee6e9b2bd9da58e0a181ec6a3b61d4c1eb",
+    "services/api/app/socai2/alert_basic_executor.py": "4794a6a898700672899a79033a15066bc2bdbe01d66b246bbf88a8a522e6523e",
+    "services/api/app/socai2/case_reader.py": "849cf3bb75139255999118e857b6cbb03d3a816be419fb41fe4ca987f66e2784",
+    "services/api/app/socai2/case_evidence.schema.json": "9e9ce6f94a163be068aedc812fe4839e7328dcf1872ee8eae253b669f83c7007",
+    "services/api/app/socai2/human_task_service.py": "a24d3e7b186b71e68021ff4d13f1f82532f8250aad615c54b5832f357b9036cd",
+    "services/api/app/socai2/human_task_contracts.py": "5bd389f2f61948172e26fd4f7056a9f4b30ba4832ee62aeb01fb2d02a188f9b3",
+    "services/api/app/socai2/answer_validation.py": "f0e1d3aede83b23cf5234f4e741d044a275ac92675240179b1950f1b77474295",
+    "services/api/app/socai2/alert_basic_contract.py": "731d8ae6e0699b2865622cb20029d002b285416597d926afcb458945196bc248",
+    "services/api/app/socai2/incident_query_receipts.py": "ed3bec3fbf28f533e39c354dc0c8c63f2c716870bcc320dbc7a53c96d4dced45",
+    "services/api/app/socai2/stage_read_contracts.py": "02fec7c20d2868fa400d9723f2574eee20848934b48b6c7a7189e2ed46b34150",
+    "services/api/app/socai2/incident_diagnosis_contract.py": "45c4f07d4eacecb53a152e630ef3e47af97f781c4faba2f2a4ae47f0732a93e2",
+    "services/api/app/socai2/baseline_final_evidence.py": "b4cfcf1150030d894626ac7d8d20f543fce796c265b71ad351fc7a4d90b882da",
+    "services/api/app/socai2/baseline_closing.py": "5edb588e72f58dad14bbd9ba1a4cd3e7bf16b9b0fa24541ea5ff7a8420b0dcd6",
+    "services/api/app/socai2/case_relations.py": "3da26e2d221d16405cb899e4ae2f19082d9bb60216878befd374e142a07fe69e",
+    "services/api/app/socai2/model_errors.py": "7862e990b1a0ed6b59ef61b7e2e8545be158bf30a9508a06b1346b606d02cd07",
+    "services/api/app/socai2/baseline_execution_schema.py": "201a31aa1e410cd84e71e90d4d99f790a6e0f1b4e95fdfde686843490f601527",
+    "services/api/app/socai2/baseline_evidence_tools.py": "0c9ac079da9c387fec23fde68018287b8ffca2eb73bc28ed868668410b82c41e",
+    "services/api/app/socai2/stage_results.py": "ad5d17e073e01b5e8cb180e7967e917397e24fecffc4d0dabc876b88491955cf",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "7aff6628da1d6eb7b534feb7ac27519961dfaf83b79c0b79a57ce7f98b2e4a15",
+    "services/api/app/socai2/model_protocol.py": "0c5baf503dc584bfcd55cdaaca122baf14f57f00ea5d71fa66d3437a9579eb76",
+    "services/api/app/socai2/incident-input-v1.json": "253284cf902eeff261785dd4138a929a3e05af3b2315b5f7a2b322009463637a",
+    "services/api/app/socai2/model_input_view.py": "e06ff39d9cab6985d6babdd9ba2432928cb0e708d980bc79691c4a500c7b35b3",
+    "services/api/app/socai2/stage_result_contracts.py": "59d20b362c8f2f61b0b0de0673fb00f667e0b9905e457d8ba9a340a18b971a52",
+    "tools/testdata/incident_integration/run.py": "5f78dc73a8a33be50afd9f1ee6b82d0f9ef27021a746cede5525cbfeb172d000",
+    "tools/testdata/incident_integration/gateway.py": "53fc98160c6e0c7ac43d69e0c02d5cce51e40db259b25e16332a962fe9ab190f",
+    "tools/testdata/incident_integration/config.json": "80fab0a724afd972094aadc221b8fbfe140e658ae94e903749aa19d63bb8f829",
+    "tools/testdata/incident_integration/__init__.py": "aafe848654147ce2d2db22168ef7ccfc8acde416d38a88ac32240202c75cae2a",
+    "tools/testdata/incident_integration/test_runner.py": "3c3dec7bbe4e32a39040ccca216b75478ad8d4704783da61565d56ab5c8b399c",
+    "tools/testdata/incident_integration/remote_tokenizer.py": "23a4648c3c36d20e9be35e32722d371b289a0d47d64c95a034b2a0a513f74320",
+    "tools/testdata/incident_integration/fixtures.py": "ab85ae1c34e539264110d7cad878fe2c5e45c5fd6811fc389ed23591340a8852",
+    "deploy/local-investigation/investigation-policy-incident-v1.toml": "9b1792acf5c6fcd819a06bdb94fb1e520728b37064473adf038a090325e8cd06",
+    "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json": "e389e406bff0a0e6b0b16f6d457e8acafbdc1716e604dccd959eb10c4aa963fe",
+    "services/agents/tests/eval_data/verdict/verdict_corpus_v1.json": "ec60d7bddabcc5b28d8942cea52d770bd8a2d13b93396826a6deab1dcba6aa86",
+    "tools/testdata/alert_io_eval/evaluate.py": "0755ae224a821c5d341f262f91e253c03f6e061bfd3bfc8cc12bb0ec370bacb2",
+    "tools/testdata/alert_io_eval/remote_worker.py": "e45ea848410ca72c4bca2af6290211b8b6e024a11cae824178d1b69ff2412bf9"
+  },
+  "limitations": [
+    "Synthetic test membership; no Fusion/Kafka verification.",
+    "Recorded materials are copied unchanged; prior A conclusions and query receipts are not replayed as newly executed.",
+    "No expected verdicts or authored answer key sent to the model; no accuracy claim from these examples."
+  ]
+}

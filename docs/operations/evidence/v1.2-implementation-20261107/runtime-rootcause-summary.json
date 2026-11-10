@@ -1,0 +1,68 @@
+{
+  "captured_at": "2026-11-07T14:05:33.417842+00:00",
+  "mode": "read_only_diagnosis",
+  "fusion": {
+    "finding": "Inspected running Fusion correlate method returns no decision basis; the three inspected sources differ from the repository and contain no correlation_basis; the inspected live messages also omit it",
+    "runtime_return": "tuple[bool, IncidentSummary]",
+    "current_return": "tuple[bool, IncidentSummary, CorrelationBasis]",
+    "runtime_model_has_correlation_basis": false,
+    "consequence": "Live notifications and saved projection cannot include actual merge basis; historical unrecorded must stay unchanged",
+    "next": "Deploy/configure a separate current Fusion candidate and validate a new create/merge path; do not infer historical rules"
+  },
+  "agents": {
+    "finding": "Unconfigured default tenant caused BudgetHold; the consumer task then exited",
+    "at_utc": "2026-11-06T12:09:08Z",
+    "topic": "socai2.alerts.fused",
+    "partition": 1,
+    "offset": 37,
+    "alert_id": "9cef967a-ce7d-52c2-93ee-c156b7473e67",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "configured_tenants": [
+      "f6a5c700-69b8-44fc-8238-609362fb1a9f"
+    ],
+    "underlying_exception": "KeyError for missing tenant; BudgetHold; LedgerPersistError in commit window",
+    "consumer_state": "Empty",
+    "health": "unhealthy",
+    "current_positions": [
+      {
+        "topic": "socai2.alerts.fused",
+        "partition": 0,
+        "committed_next": 34,
+        "start": 34,
+        "end": 37
+      },
+      {
+        "topic": "socai2.alerts.fused",
+        "partition": 1,
+        "committed_next": 37,
+        "start": 37,
+        "end": 39
+      },
+      {
+        "topic": "socai2.alerts.fused",
+        "partition": 2,
+        "committed_next": 42,
+        "start": 42,
+        "end": 44
+      }
+    ],
+    "offsets_unchanged_by_diagnosis": true,
+    "next": "Before any recovery, reconcile business tenant with budget/context/writer configuration and fixed new-batch allowance; retain group offsets and old/unknown ledger state, then verify actual triage plus commits. Merely restart is insufficient.",
+    "inspected_source_files_match_repository": true,
+    "inspected_source_file_count": 3,
+    "offset_lag_total": 7,
+    "offset_lag_basis": "end minus committed offsets summed across three partitions; only each partition head was inspected"
+  },
+  "limitations": [
+    "No consumer restored or skipped",
+    "No service configuration changed",
+    "No generation or business database write",
+    "Kafka first diagnostic failed due to response parsing; preserved then corrected"
+  ],
+  "evidence": [
+    "runtime-readonly-20261107.json",
+    "runtime-rootcause-details.json",
+    "agents-kafka-readonly.json",
+    "agents-kafka-readonly-second.json"
+  ]
+}

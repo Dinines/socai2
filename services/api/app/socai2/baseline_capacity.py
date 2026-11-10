@@ -1,34 +1,25 @@
 """Persisted full-wire C6 allowance, within the new Run's shared limits."""
 from .baseline_contracts import FULL_EXECUTOR_VERSION
 from .baseline_store import StoreError, digest, encoded
-
-FINAL_SECONDS = 30
-FINAL_SOURCE_ENUM_BYTES = 4600
-MAX_MESSAGE_BYTES = 12288
-OUTPUT_TOKENS = 3000
-MARGIN = 256
+from .runtime_policy import (
+    draft_limit as draft_limit,  # noqa: PLC0414 - shared limit re-export
+)
 
 
-def final_reservation(gateway, context):
-    from .baseline_delivery_contract import Delivery
-    from .model_protocol import prepare_request
-    from .structured_output import response_format
-    # The source dictionary is the only part of the output schema that grows
-    # after C3. Its explicit allowance is checked against the actual final wire;
-    # no source or required value is removed to meet this allowance.
-    body = prepare_request(gateway, {"model": getattr(gateway, "model", "") or "",
-        "messages": [], "max_tokens": OUTPUT_TOKENS, "temperature": 0,
-        "response_format": response_format(Delivery, ["reserved_source"], members=context.alerts,
-            questions=[q.id for q in context.questions], objects=context.scope.object_keys)})
-    envelope = len(encoded(body)) - len(encoded([])) - len(encoded(["reserved_source"]))
-    request_bytes = envelope + MAX_MESSAGE_BYTES + FINAL_SOURCE_ENUM_BYTES
-    return {"policy": "socai2.final-reservation.v1", "model_calls": 1,
-        "request_bytes": request_bytes, "output_tokens": OUTPUT_TOKENS, "margin": MARGIN,
-        "conservative_units": request_bytes + OUTPUT_TOKENS + MARGIN,
-        "seconds": FINAL_SECONDS, "messages_bytes": MAX_MESSAGE_BYTES,
-        "source_enum_bytes": FINAL_SOURCE_ENUM_BYTES,
-        "limitations": ["required_final_input_must_still_fit_original_view_and_field_limits",
-            "final_wire_checked_again_before_dispatch", "usage_remains_provider_reported_tokens"]}
+def final_reservation(gateway, context, limits=None):
+    from .runtime_policy import active_policy
+    policy = active_policy()
+    model = policy.model
+    calls = min(model.final_reserved_calls, max(1, limits.max_model_calls - 1)) if limits else model.final_reserved_calls
+    per_call = model.final_reserved_input_tokens + model.output_tokens["C6"] + model.tokenizer["safety_tokens"]
+    return {"policy": "socai2.final-reservation.v2", "policy_sha256": policy.sha256,
+        "model_calls": calls, "reserved_tokens": per_call * calls,
+        "input_tokens_per_call": model.final_reserved_input_tokens, "output_tokens": model.output_tokens["C6"],
+        "margin_tokens": model.tokenizer["safety_tokens"], "seconds": policy.final_reserve_seconds,
+        "context_tokens": model.context_tokens,
+        "limitations": ["minimum_final_allowance_not_a_fixed_message_byte_cap",
+            "actual_final_request_measured_again_against_context_and_remaining_total",
+            "correction_requires_remaining_call_time_and_token_allowances"]}
 
 
 async def reservation_for(store, run, steps):
@@ -51,9 +42,12 @@ def remaining_seconds(limits, now, reservation=None, stage="C4"):
     return seconds - (reservation["seconds"] if reservation and stage != "C6" else 0)
 
 
-def final_wire_reason(body, reservation):
+def final_wire_reason(body, reservation, measurement=None):
     if not reservation:
         return None
+    if reservation.get("policy") == "socai2.final-reservation.v2":
+        return None if measurement and measurement["context_fits"] else "final_context_capacity_exceeded"
+    # Retain inspection support for persisted legacy reservations.
     schema = body["text"]["format"]["schema"] if "text" in body else body["response_format"]["json_schema"]["schema"]
     sources = schema.get("$defs", {}).get("SourceId", {}).get("enum", [])
     if len(encoded(sources)) > reservation["source_enum_bytes"]:

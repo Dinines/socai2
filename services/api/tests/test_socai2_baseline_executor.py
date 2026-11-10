@@ -9,10 +9,11 @@ from unittest.mock import patch
 from uuid import UUID, uuid4
 
 from app.models import socai2 as m
-from app.socai2.baseline_contracts import Actor, Limits, Start
+from app.socai2.baseline_contracts import Actor, Start
 from app.socai2.baseline_executor import BaselineExecutor
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import A, C, F, R, StoreError, encoded
+from app.socai2.runtime_policy import active_policy, draft_limit
 from socai2_test_model_view import model_data, model_messages_data
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -62,6 +63,10 @@ class PipelineGateway:
         assert tenant == T
         return self.enabled
 
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
+
     async def complete(self, body, timeout):
         data = model_messages_data(body["messages"])
         phase = "C6" if data.get("round") == "final_delivery" else "Deep" if "question" in data else "C3"
@@ -97,8 +102,7 @@ async def run_checks(engine, record, only=None):
             out = await store.replace_members(cid, {aid}, expected_revision=0, actor=ACTOR, operation_id=uuid4())
         request = Start(expected_scope_revision=1, operation_key=uuid4(), window_start=now - timedelta(minutes=5),
             window_end=now + timedelta(minutes=5))
-        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=48000, max_rows_per_query=5,
-            deadline_at=now + timedelta(seconds=120), policy_version="synthetic-full")
+        limits = active_policy().case.limits(now, "synthetic-v12-full").model_copy(update={"max_rows_per_query": 5})
         return cid, UUID(out["pending_run_id"]), aid, host, request, limits
 
     async def execute(f, gateway, source=None, *, connected=frozenset()):
@@ -151,6 +155,16 @@ async def run_checks(engine, record, only=None):
             assert claim.newly_claimed and gateway.order == ["C3", "C6"], gateway.order
             saved = await report(f[1])
             assert saved["execution"]["model_calls"] == 2 and saved["execution"]["tool_calls"] == 0
+            facts = model_data(gateway.final.last_body["messages"][1]["content"])["program_facts"]
+            assert saved["program_facts"] == facts and [m["alert"]["id"] for m in facts["members"]] == [str(f[2])]
+            run = (await rows(select(R).where(R.c.id == f[1])))[0]
+            assert facts["execution_started_at"] == run["started_at"].isoformat()
+            assert facts["execution_time_source"] == {"table": "socai2.runs", "id": str(f[1]), "field": "started_at"}
+            rendered = (await rows(select(F).where(F.c.id == saved["result"]["report_artifact_id"])))[0]
+            assert rendered["content_json"]["program_facts"] == facts
+            import jsonschema
+            schema = json.loads((Path(__file__).resolve().parents[1] / "app/socai2/contracts.schema.json").read_text())
+            jsonschema.validate(rendered["content_json"], {"$defs": schema["$defs"], "$ref": "#/$defs/report_result"})
             assert saved["result"]["validation_state"] == "accepted" and saved["result"]["delivery_state"] == "partial"
             routes = saved["execution"]["followup_dispatch"]["routes"]
             assert [r["state"] for r in routes] == ([] if not modes else ["handoff", "completed"])
@@ -164,17 +178,125 @@ async def run_checks(engine, record, only=None):
                 assert all("source_ids" not in i["value"]["followup"] for i in items
                     if isinstance(i["value"], dict) and "followup" in i["value"])
 
+    async def test_v12_empty_c3_reference_corrects_once_in_same_run():
+        received = []
+        def empty_once(payload):
+            value = json.loads(payload["choices"][0]["message"]["content"])
+            if not received:
+                value["questions"][0].update(state="answered", evidence_ids=[])
+                payload["choices"][0]["message"]["content"] = json.dumps(value)
+            received.append(value)
+        f, gateway = await fixture(), PipelineGateway(initial_mutate=empty_once)
+        await execute(f, gateway)
+        saved = await report(f[1])
+        assert gateway.order == ["C3", "C3", "C6"]
+        assert saved["result"]["validation_state"] == "accepted" and saved["execution"]["model_calls"] == 3
+        attempts = await rows(select(S).where(S.c.run_id == f[1], S.c.stage_code == "C3", S.c.kind == "model").order_by(S.c.seq))
+        assert [a["state"] for a in attempts] == ["failed", "completed"]
+        for index, attempt in enumerate(attempts):
+            artifact = (await rows(select(F).where(F.c.id == attempt["output_artifact_id"])))[0]
+            assert json.loads(artifact["content_json"]["payload"]["raw"]["choices"][0]["message"]["content"]) == received[index]
+        request = (await rows(select(F).where(F.c.id == attempts[1]["input_artifact_id"])))[0]["content_json"]["payload"]
+        assert request["correction"]["original_response_artifact_id"] == str(attempts[0]["output_artifact_id"])
+        return {"case_id": str(f[0]), "run_id": str(f[1]), "model_calls": 3, "synthetic_model_and_tokenizer": True}
+
+    async def test_v12_invalid_final_conclusion_retains_findings_without_adoption():
+        def invalid_conclusion(payload):
+            value = json.loads(payload["choices"][0]["message"]["content"])
+            value["conclusion"]["support_ids"] = ["unavailable-source"]
+            payload["choices"][0]["message"]["content"] = json.dumps(value)
+        f, gateway = await fixture(), PipelineGateway()
+        gateway.final.mutate = invalid_conclusion
+        await execute(f, gateway)
+        saved = await report(f[1])
+        assert gateway.order == ["C3", "C6"]
+        assert saved["result"]["validation_state"] == "rejected"
+        assert saved["result"]["conclusion"] is None and saved["result"]["findings"]
+        assert saved["result"]["delivery_state"] == "partial" and saved["validation_review"]["retained_analysis"]
+        case = (await rows(select(C).where(C.c.id == f[0])))[0]
+        assert case["current_assessment_id"] is None
+        assert not await rows(select(R).where(R.c.case_id == f[0], R.c.state.in_(["running", "unknown"])))
+        run = (await rows(select(R).where(R.c.id == f[1])))[0]
+        assert run["state"] == "completed"
+        return {"case_id": str(f[0]), "run_id": str(f[1]), "findings": len(saved["result"]["findings"]), "adopted": False}
+
+    async def test_v12_c6_publishes_directory_empty_and_failure_are_distinct():
+        from app.socai2 import baseline_evidence_index as directory
+        from app.socai2.case_data import read_page_data
+        results = []
+        for mode in ("normal", "empty", "failed"):
+            f, gateway = await fixture(), PipelineGateway()
+            calls, original = [], directory.save_index
+            async def fail_first(*args, calls=calls, original=original, **kwargs):
+                calls.append(True)
+                if len(calls) == 1:
+                    raise StoreError("synthetic_directory_validation_failed", 422)
+                return await original(*args, **kwargs)
+            with patch.object(directory, "material_entry", (lambda *_: None) if mode == "empty" else directory.material_entry), \
+                    patch.object(directory, "save_index", fail_first if mode == "failed" else original):
+                await execute(f, gateway)
+            saved = await report(f[1])
+            async with service.transaction(T, readonly=True) as store:
+                cas = await store.case(f[0], lock=False)
+                view = (await read_page_data(store, cas)).evidence
+            assert view.artifact_id == UUID(saved["evidence_directory"]["artifact_id"])
+            assert saved["result"]["validation_state"] == "accepted"
+            if mode == "normal":
+                assert view.state == "available" and view.evidence_count == 1 and view.threat_count == 0
+                entry = view.entries[0]
+                assert entry.evidence_id.startswith("material:") and entry.alert_ids == [f[2]]
+                assert entry.verdict == "unknown" and not entry.verdict_sources and entry.threat is None
+                assert len(entry.source_refs) > 1  # many fields, one evidence item
+            elif mode == "empty":
+                assert view.state == "available" and view.evidence_count == 0 and not view.entries
+            else:
+                assert view.state == "unavailable" and view.evidence_count is None and not view.entries
+                assert "synthetic_directory_validation_failed" in view.limitations
+            before = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "case_evidence_index"))
+            await execute(f, gateway)
+            after = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "case_evidence_index"))
+            assert len(before) == len(after) == 1 and before[0]["sha256"] == after[0]["sha256"]
+            results.append({"mode": mode, "case_id": str(f[0]), "run_id": str(f[1]), "state": view.state,
+                "evidence_count": view.evidence_count, "same_run_replay_created_versions": 0})
+        return results
+
+    async def test_v12_c6_preserves_existing_manual_evidence_withdrawal():
+        from app.socai2.baseline_evidence_index import material_entry
+        from app.socai2.case_data_contracts import EvidenceIndex, EvidencePublish
+        from app.socai2.case_service import CaseService
+        f, gateway = await fixture(), PipelineGateway()
+        async with service.transaction(T, readonly=True) as store:
+            cas = await store.case(f[0], lock=False)
+            material = await store.one(select(m.AlertMaterials.__table__).where(m.AlertMaterials.alert_id == f[2]))
+        entry = material_entry(str(f[2]), material)
+        entry["state"] = "withdrawn"
+        index = EvidenceIndex(schema_version="socai2.case-evidence.v1", scope_revision=cas["scope_revision"],
+            alert_ids=[f[2]], supersedes_artifact_id=None, availability_state="available", limitations=[], entries=[entry])
+        case_service = CaseService(service.sessions)
+        published = await case_service.publish_evidence(T, f[0], EvidencePublish(operation_key=uuid4(),
+            expected_row_version=cas["row_version"], expected_current_artifact_id=None, index=index), actor=ACTOR)
+        await execute(f, gateway)
+        saved = await report(f[1])
+        view = (await case_service.read_page_data(T, f[0])).evidence
+        assert saved["evidence_directory"]["reason"] == "existing_curated_evidence_directory"
+        assert view.artifact_id == published.current_evidence_artifact_id
+        assert view.evidence_count == 0 and view.index.entries[0].state == "withdrawn"
+        assert not await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "case_evidence_index"))
+        return {"manual_index_unchanged": True, "withdrawn_material_reactivated": False}
+
     async def test_full_adaptive_queries_reserve_fourth_call_and_deduplicate_questions():
         f, gateway = await fixture(), PipelineGateway(("query", "deep", ("deep", 1), "human"))
         await execute(f, gateway)
         saved = await report(f[1])
-        assert gateway.order == ["C3", "Deep", "Deep", "C6"], (gateway.order, saved)
-        assert saved["execution"]["tool_calls"] == 2 and saved["execution"]["total_tokens"] == 4000
+        assert gateway.order == ["C3", "Deep", "Deep", "Deep", "C6"], (gateway.order, saved)
+        assert saved["execution"]["tool_calls"] == 2 and saved["execution"]["total_tokens"] == 5000
         routes = saved["execution"]["followup_dispatch"]["routes"]
         assert routes[0]["mode"] == "query" and routes[0]["state"] == "completed"
         assert "deep_artifact_id" not in routes[0] and routes[0]["query_artifact_id"]
-        assert routes[1]["answer_available"] and routes[2]["state"] == "skipped"
-        assert routes[2]["reason"] == "final_model_call_reserved", routes
+        assert routes[1]["answer_available"] and routes[2]["answer_available"]
+        # The unused C3 correction allowance can serve the other question;
+        # C6 plus its optional correction still retain two slots before C6.
+        assert len(gateway.order) < f[-1].max_model_calls
         prompt = model_data(gateway.final.last_body["messages"][1]["content"])
         assert {q["tool_name"] for q in prompt["queries"]} == {"process_activity", "network_connections"}
         assert any(q["observed_rows_in_bounded_fetch"] == 0 for q in prompt["queries"])
@@ -238,8 +360,8 @@ async def run_checks(engine, record, only=None):
         linked = {r["followup_index"]: queries[r["projection_id"]]["tool_name"]
             for r in data["followup_execution"]["routes"]}
         assert linked == {0: "process_activity", 1: "network_connections"}
-        assert len(gateway.final.last_body["messages"][1]["content"].encode()) <= 8192
-        assert len(encoded(gateway.final.last_body["messages"])) <= 12288
+        assert len(gateway.final.last_body["messages"][1]["content"].encode()) <= draft_limit()
+        assert len(encoded(gateway.final.last_body["messages"])) <= draft_limit()
         requests = await rows(select(F).where(F.c.run_id == f[1], F.c.kind == "model_request"))
         assert any(r["content_json"]["payload"]["body"] == gateway.final.last_body for r in requests)
         return {"run_id": str(f[1]), "model_order": gateway.order, "tool_calls": 2,
@@ -281,7 +403,7 @@ async def run_checks(engine, record, only=None):
         # The successor only starts after this explicit user-equivalent call.
         new_gateway = PipelineGateway(enabled=False)
         async with service.transaction(T) as store:
-            fresh = f[5].model_copy(update={"deadline_at": await store.now() + timedelta(seconds=120)})
+            fresh = f[5].model_copy(update={"deadline_at": await store.now() + timedelta(seconds=1500)})
         new_f = (f[0], pending, second, f[3], next_request, fresh)
         await execute(new_f, new_gateway)
         assert set((await report(pending))["scope"]["alert_ids"]) == {str(f[2]), str(second), str(third)}
@@ -301,6 +423,23 @@ async def run_checks(engine, record, only=None):
         assert gateway.order == ["C3"]
         saved = await system_closing(f)
         assert saved["execution"]["run_state"] == "unknown"
+        assert saved["result"]["run_state"] == "unknown"
+        assert saved["result"]["terminal_state"] is None
+        assert saved["result"]["delivery_state"] == saved["execution"]["delivery_state"] == "none"
+        assert saved["result"]["closing_state"] == "saved"
+        assert saved["result"]["closing_delivery_state"] == "partial"
+        from app.socai2.baseline_closing import InterruptedReport
+        InterruptedReport.model_validate(saved["result"])
+        artifacts = await rows(select(F).where(F.c.run_id == f[1]))
+        report_json = next(a["content_json"] for a in artifacts if a["kind"] == "report_json")
+        assert report_json == saved["result"]
+        receipt = next(a["content_json"] for a in artifacts
+                       if a["content_json"] and a["content_json"].get("type") == "delivery_receipt")
+        assert (receipt["state"], receipt["run_state"], receipt["delivery_state"]) == ("completed", "unknown", "none")
+        markdown = next(a["content_text"] for a in artifacts if a["kind"] == "report_markdown")
+        assert "执行状态：unknown" in markdown and "交付状态：none" in markdown
+        unknown_run = (await rows(select(R).where(R.c.id == f[1])))[0]
+        assert unknown_run["ended_at"] is None and unknown_run["delivery_state"] == "none"
         assert not await rows(select(RESULT).where(RESULT.c.source_run_id == f[1]))
         replay = await execute(f, gateway)
         assert not replay.newly_claimed and replay.state == "unknown" and gateway.order == ["C3"]
@@ -323,7 +462,7 @@ async def run_checks(engine, record, only=None):
 
     async def test_full_limits_are_not_raised_and_exhaustion_still_delivers_receipt():
         f = await fixture()
-        for field, value in (("max_model_calls", 5), ("max_tool_calls", 5), ("max_tokens", 48001),
+        for field, value in (("max_model_calls", 7), ("max_tool_calls", 5), ("max_tokens", 131073),
                 ("max_rows_per_query", 201), ("deadline_at", f[5].deadline_at + timedelta(days=1))):
             bad = list(f)
             bad[-1] = f[-1].model_copy(update={field: value})
@@ -424,7 +563,7 @@ async def run_checks(engine, record, only=None):
                     actor=ACTOR, operation_id=uuid4())
                 now = await store.now()
             request = f[4].model_copy(update={"expected_scope_revision": 2, "operation_key": uuid4()})
-            limits = f[5].model_copy(update={"deadline_at": now + timedelta(seconds=120)})
+            limits = f[5].model_copy(update={"deadline_at": now + timedelta(seconds=1500)})
             new = (f[0], UUID(changed["pending_run_id"]), aid, f[3], request, limits)
             await execute(new, PipelineGateway(enabled=False))
             saved = await report(new[1])
@@ -632,6 +771,10 @@ async def run_checks(engine, record, only=None):
         test_full_rejected_final_is_retained_without_retry_or_adoption,
         test_full_c2_and_deep_share_four_tool_calls,
         test_full_reserved_call_does_not_hide_insufficient_final_tokens]
+    checks.extend([test_v12_empty_c3_reference_corrects_once_in_same_run,
+        test_v12_invalid_final_conclusion_retains_findings_without_adoption,
+        test_v12_c6_publishes_directory_empty_and_failure_are_distinct,
+        test_v12_c6_preserves_existing_manual_evidence_withdrawal])
     for check in checks:
         if only is not None and check.__name__ not in only:
             continue

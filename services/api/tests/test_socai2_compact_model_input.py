@@ -10,6 +10,7 @@ from app.socai2 import alert_basic_contract as alert
 from app.socai2 import incident_diagnosis_contract as incident
 from app.socai2.baseline_store import StoreError, encoded
 from app.socai2.model_input_view import compact, items
+from app.socai2.runtime_policy import draft_limit, field_limit
 from app.socai2.structured_output import response_format
 from test_socai2_stage_quality import answer, incident_answer, source
 
@@ -34,7 +35,7 @@ def test_frozen_incident_preserves_original_visible_values_and_restores_paired_t
     old_data = json.loads(old["body"]["input"][1]["content"])
     messages, refs, data = incident.build(original, run["input_artifact_id"])
     wire = json.loads(messages[1]["content"])
-    assert "items" not in wire and len(encoded(wire)) <= 8192
+    assert "items" not in wire and len(encoded(wire)) <= draft_limit()
     assert items(wire) == data["items"]
     by_source = {(tuple(i["alert_ids"]), i["field"]): i for i in items(wire)}
     for item in old_data["items"]:
@@ -77,8 +78,8 @@ def test_m2_incident_keeps_both_detection_bundles_before_optional_raw_leaves():
             k: member["triage"].get(k) for k in ("verdict", "rationale", "confidence", "score_state", "assessed_at")}
         for path, value in incident.semantic_fields(member["material"], aid):
             assert visible[((aid,), path)]["value"] == value
-    assert original == before and len(messages[1]["content"].encode()) <= 8192
-    assert len(encoded(messages)) <= 12288
+    assert original == before and len(messages[1]["content"].encode()) <= draft_limit()
+    assert len(encoded(messages)) <= draft_limit()
     # Any optional item dropped to make room is explicitly accounted for.
     old = json.loads((ROOT / "docs/operations/evidence/socai2-model-comparison-20261104/m2/plan-and-packets.json").read_text("utf-8"))
     old_i = next(p for p in old["packets"] if p["id"] == "I-current")
@@ -90,7 +91,8 @@ def test_m2_incident_keeps_both_detection_bundles_before_optional_raw_leaves():
 
 @pytest.mark.parametrize("value,reason", [({"rule_name": "x" * 2200}, "field_size"),
     ({"rule_name": '{"class_uid":4001,"activity_id":1}'}, "input_guard")])
-def test_detection_priority_keeps_guard_and_explicit_omissions(value, reason):
+def test_detection_priority_keeps_guard_and_explicit_omissions(value, reason, monkeypatch):
+    monkeypatch.setattr(incident, "field_limit", lambda: 2048)
     frozen = source()
     frozen["members"][0]["material"]["detection"] = value
     _, _, data = incident.build(frozen, uuid4())
@@ -104,13 +106,13 @@ def test_required_values_never_silently_disappear(reason):
     frozen = source()
     member = frozen["members"][0]
     if reason == "large_fact":
-        member["material"]["ocsf_json"]["process"]["cmd_line"] = "x" * 2500
+        member["material"]["ocsf_json"]["process"]["cmd_line"] = "x" * (field_limit() + 1)
         with pytest.raises(StoreError, match="required_semantic_input_unavailable"):
             alert.build(frozen, uuid4(), [])
         expected = "required_semantic_input_unavailable"
     else:
         paired = {"id": str(uuid4()), "source_run_id": str(uuid4()), "verdict": "needs_review",
-            "rationale": "x" * 2500 if reason == "large_triage" else '{"class_uid":4001,"activity_id":1}',
+            "rationale": "x" * (field_limit() + 1) if reason == "large_triage" else '{"class_uid":4001,"activity_id":1}',
             "confidence": None, "score_state": "not_computed"}
         member["triage"] = paired
         frozen["triage_validation"][member["alert"]["id"]] = {"usable": True, "freshness": "current",
@@ -185,7 +187,7 @@ def test_case_frozen_material_and_triage_survive_initial_model_view(batch):
     frozen = frozen_items(json.loads(prepared["messages"][1]["content"]))
     assert all(m["triage_visibility"] == "included" for m in prepared["coverage"].values() if m["triage_eligible"])
     messages, refs = baseline_analysis.messages(prepared, context, tools)
-    assert len(messages[1]["content"].encode()) == prepared["bytes"] <= 8192
+    assert len(messages[1]["content"].encode()) == prepared["bytes"] <= draft_limit()
     assert len(prepared["messages"][1]["content"].encode()) == prepared["prepared_ledger_bytes"]
     visible = items(json.loads(messages[1]["content"]))
     assert len(frozen) == len(visible) == len(refs)
@@ -196,7 +198,7 @@ def test_case_frozen_material_and_triage_survive_initial_model_view(batch):
     assert "selected_fields_not_full_raw_review" in messages[1]["content"]
     if batch == "r6":
         from unittest.mock import patch
-        with patch.object(baseline_model_view, "MAX_MODEL_BYTES", 1000):
+        with patch.object(baseline_model_view, "draft_limit", lambda: 1000):
             denied = baseline_model_view.build(context, context_art["id"], enrichment, states, materials)
         assert not denied["ready"] and all(m["view_coverage"] == "unavailable" for m in denied["coverage"].values())
         assert prepared["prepared_ledger_bytes"] > 8192  # off-wire provenance is not model input
@@ -234,7 +236,9 @@ def test_final_budget_never_discards_required_feedback_or_paired_judgment():
     assert len(encoded(body)) > 1  # caller must reject capacity; never pretend fit
 
 
-def test_required_clock_survives_omission_of_large_alert_metadata():
+def test_required_clock_survives_omission_of_large_alert_metadata(monkeypatch):
+    monkeypatch.setattr(alert, "field_limit", lambda: 2048)
+    monkeypatch.setattr(incident, "field_limit", lambda: 2048)
     from app.socai2.stage_results import validate_refs
     frozen = source()
     member = frozen["members"][0]
@@ -261,7 +265,9 @@ def test_late_required_feedback_precedes_large_optional_background():
     candidates.append({"original": "authorization applies only to the script", "required": True,
         "entry": {"id": "S9", "role": "human_statement", "alert_ids": ["a"], "value": "authorization applies only to the script"},
         "source": {"ref": {"id": "human"}, "alert_ids": ["a"]}})
-    prepared = bounded_input({"members": {"a": {"included": 0}}}, candidates, "Analyze the evidence.")
+    from unittest.mock import patch
+    with patch("app.socai2.baseline_reasoning.draft_limit", return_value=8192):
+        prepared = bounded_input({"members": {"a": {"included": 0}}}, candidates, "Analyze the evidence.")
     assert prepared["ready"] and "N1_S9" in prepared["source_map"]
     assert prepared["omissions"] and prepared["source_map"]["N1_S9"]["required"]
 

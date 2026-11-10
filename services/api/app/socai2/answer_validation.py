@@ -5,6 +5,7 @@ from .baseline_store import StoreError
 from .model_input_view import items
 
 SOURCE_TOKEN = r"(?<![A-Za-z0-9_])(?:N[1-9][0-9]*_)?S[1-9][0-9]*(?![A-Za-z0-9_])"
+NAMESPACED_SOURCE_TOKEN = r"(?<![A-Za-z0-9_])N[1-9][0-9]*_S[1-9][0-9]*(?![A-Za-z0-9_])"
 
 
 def literal_source_name(sid, data, owned=None):
@@ -45,7 +46,11 @@ class Checks:
             raise StoreError(self.first_error, 422)
 
     def prose(self, text, path, permitted, source_map, data, prefix, *, owned=None):
-        for sid in sorted(set(re.findall(SOURCE_TOKEN, text))):
+        # The opt-in I format issues only N<n>_S<n> aliases. Bare S<n> can be
+        # business terminology, not a citation; arrays remain authoritative and
+        # are validated separately. Legacy contracts retain their prior grammar.
+        token = NAMESPACED_SOURCE_TOKEN if data.get("prose_alias_format") == "namespaced_v1" else SOURCE_TOKEN
+        for sid in sorted(set(re.findall(token, text))):
             if literal_source_name(sid, data, owned):
                 continue
             if sid not in source_map:

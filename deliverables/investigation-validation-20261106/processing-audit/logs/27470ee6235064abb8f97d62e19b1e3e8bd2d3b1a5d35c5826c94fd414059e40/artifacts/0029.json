@@ -1,0 +1,1521 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-08T01:38:09.638892+00:00",
+  "case_id": "2b37f5b3-862b-52cc-84bd-86db50dd3ad4",
+  "content_json": {
+    "analysis": {
+      "conflicts": [
+        {
+          "evidence_ids": [
+            "N2_S26",
+            "N2_S23",
+            "N2_S24",
+            "N2_S25"
+          ],
+          "explanation": "行为序列紧凑暗示攻击，但用户身份合法且无明确恶意 IOC，存在授权运维与恶意攻击的解释冲突。",
+          "finding_ids": [
+            "F1",
+            "F2"
+          ],
+          "id": "C1",
+          "state": "unresolved"
+        }
+      ],
+      "domains": [
+        {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921"
+          ],
+          "applicability": "applicable",
+          "finding_ids": [
+            "F1",
+            "F3"
+          ],
+          "limitations": [
+            "无 MFA 信息",
+            "无会话密钥"
+          ],
+          "name": "identity",
+          "reason": "涉及账户登录和会话信息"
+        },
+        {
+          "alert_ids": [],
+          "applicability": "undetermined",
+          "finding_ids": [],
+          "limitations": [
+            "该项引用未通过校验，原答保留，结论待核。"
+          ],
+          "name": "cloud",
+          "reason": "该项引用未通过校验，原答保留，结论待核。"
+        },
+        {
+          "alert_ids": [],
+          "applicability": "not_applicable",
+          "finding_ids": [],
+          "limitations": [
+            "无相关数据"
+          ],
+          "name": "phishing",
+          "reason": "无邮件、链接或附件相关告警"
+        },
+        {
+          "alert_ids": [
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "applicability": "applicable",
+          "finding_ids": [
+            "F1",
+            "F2",
+            "F3"
+          ],
+          "limitations": [
+            "无数据访问日志",
+            "无外传目的地确认"
+          ],
+          "name": "insider",
+          "reason": "涉及数据访问和外部连接"
+        }
+      ],
+      "findings": [
+        {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "alternatives": [
+            "授权运维人员执行快速故障排查",
+            "恶意攻击者利用合法凭证进行横向移动或数据窃取"
+          ],
+          "counter_ids": [],
+          "id": "F1",
+          "limitations": [
+            "缺乏审批记录",
+            "威胁情报查空"
+          ],
+          "state": "unresolved",
+          "statement": "用户 flow-observer-20261108-01 在极短时间内（20 秒内）完成登录、执行侦察命令并建立外部连接，时间序列高度紧凑，符合攻击链特征但无法排除自动化运维脚本。",
+          "support_ids": [
+            "N2_S26"
+          ]
+        },
+        {
+          "alert_ids": [
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "alternatives": [
+            "连接至未知业务服务器",
+            "连接至恶意基础设施"
+          ],
+          "counter_ids": [],
+          "id": "F2",
+          "limitations": [
+            "查空不构成反证",
+            "无历史连接基线"
+          ],
+          "state": "unresolved",
+          "statement": "出站连接目的地 198.51.100.88 未在登录或进程启动的关联对象中直接出现，且威胁情报查询结果为空，无法确认该 IP 是否为已知恶意 C2 或合法业务伙伴。",
+          "support_ids": [
+            "N2_S17",
+            "N2_S25",
+            "N2_S32"
+          ]
+        },
+        {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "alternatives": [
+            "误报",
+            "真实攻击"
+          ],
+          "counter_ids": [],
+          "id": "F3",
+          "limitations": [
+            "标签不证明行为发生",
+            "无授权证据"
+          ],
+          "state": "unresolved",
+          "statement": "所有告警均标记为 medium 严重性且检测标签显示不证明攻击发生，但人工陈述和优先分析均建议 review，表明当前证据不足以定性为良性或恶意。",
+          "support_ids": [
+            "N2_S23",
+            "N2_S24",
+            "N2_S25",
+            "N2_S26"
+          ]
+        }
+      ],
+      "followups": [
+        {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "binding_id": "B1",
+          "mode": "query",
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261108-01\"]"
+          ],
+          "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的认证活动，验证登录来源和会话上下文。",
+          "priority": "decision_critical",
+          "question_id": "authorization",
+          "required_evidence": "session_id, session_originating_human, outcome",
+          "source_ids": [
+            "N2_S1",
+            "N2_S4",
+            "N2_S6"
+          ]
+        },
+        {
+          "alert_ids": [
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "binding_id": null,
+          "mode": "deep",
+          "object_keys": [
+            "[\"ip\",\"198.51.100.88\"]"
+          ],
+          "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的网络连接，确认 198.51.100.88 的连接细节及流量特征。",
+          "priority": "decision_critical",
+          "question_id": "impact",
+          "required_evidence": "dest_ip, dst_port, protocol, file_path, hash_sha256",
+          "source_ids": [
+            "N2_S17",
+            "N2_S22"
+          ]
+        }
+      ],
+      "members": [
+        {
+          "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+          "evidence_ids": [
+            "N2_S1",
+            "N2_S4",
+            "N2_S5",
+            "N2_S6",
+            "N2_S27",
+            "N2_S30",
+            "N2_S34",
+            "N2_S35"
+          ],
+          "limitations": [
+            "认证日志非审批记录",
+            "查空威胁情报不构成安全证明"
+          ],
+          "state": "analyzed",
+          "summary": "账户登录告警显示用户 flow-observer-20261108-01 于 01:26:09 在主机 socai2-flow-20261108-01 上成功登录，来源 IP 为 203.0.113.88，但缺乏授权审批记录。"
+        },
+        {
+          "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "evidence_ids": [
+            "N2_S7",
+            "N2_S8",
+            "N2_S11",
+            "N2_S12",
+            "N2_S13",
+            "N2_S28",
+            "N2_S31",
+            "N2_S36",
+            "N2_S37"
+          ],
+          "limitations": [
+            "进程启动成功不证明脚本完成或业务授权"
+          ],
+          "state": "analyzed",
+          "summary": "进程启动告警显示 powershell.exe 于 01:26:29 启动并执行 Get-LocalUser 命令，由同一用户在同一主机上运行，行为符合侦察特征但需核实授权。"
+        },
+        {
+          "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+          "evidence_ids": [
+            "N2_S14",
+            "N2_S16",
+            "N2_S17",
+            "N2_S18",
+            "N2_S20",
+            "N2_S21",
+            "N2_S22",
+            "N2_S29",
+            "N2_S32",
+            "N2_S38",
+            "N2_S39"
+          ],
+          "limitations": [
+            "连接成功不证明数据外传或具体文件传输"
+          ],
+          "state": "analyzed",
+          "summary": "出站连接告警显示主机于 01:26:49 通过 TCP 443 端口连接外部 IP 198.51.100.88，该 IP 未出现在登录或进程对象中，需验证其业务合法性。"
+        }
+      ],
+      "questions": [
+        {
+          "answer": "原始记录支持用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上的登录、powershell.exe 进程启动及至 198.51.100.88 的出站连接，时间分别为 01:26:09、01:26:29 和 01:26:49。",
+          "evidence_ids": [
+            "N2_S1",
+            "N2_S4",
+            "N2_S7",
+            "N2_S8",
+            "N2_S11",
+            "N2_S14",
+            "N2_S16",
+            "N2_S17",
+            "N2_S20",
+            "N2_S22"
+          ],
+          "id": "detection_facts",
+          "limitations": [
+            "对象资产匹配状态为未检查"
+          ],
+          "state": "answered"
+        },
+        {
+          "answer": "三个告警共享同一主机、同一用户和连续的时间窗口，形成逻辑上的行为序列，但无直接因果证据（如会话 ID 传递）证明它们是同一攻击会话。",
+          "evidence_ids": [
+            "N2_S26"
+          ],
+          "id": "member_relationships",
+          "limitations": [
+            "时间接近不等于因果"
+          ],
+          "state": "answered"
+        },
+        {
+          "answer": "现有证据既不支持恶意也不支持良性，Get-LocalUser 命令常见于侦察但也用于权限审计，外部连接目的不明，需进一步取证。",
+          "evidence_ids": [
+            "N2_S23",
+            "N2_S24",
+            "N2_S25"
+          ],
+          "id": "behavior_nature",
+          "limitations": [
+            "缺乏授权审批",
+            "无威胁情报命中"
+          ],
+          "state": "unresolved"
+        },
+        {
+          "answer": "当前数据集中无审批记录、工单或业务授权证据，无法确认任何行为的授权状态。",
+          "evidence_ids": [],
+          "id": "authorization",
+          "limitations": [
+            "认证日志非审批记录",
+            "需人工确认"
+          ],
+          "state": "not_applicable"
+        },
+        {
+          "answer": "已观察到网络连接建立，但未观察到数据外传、文件哈希或敏感信息访问的具体证据，潜在影响待核。",
+          "evidence_ids": [
+            "N2_S17",
+            "N2_S21"
+          ],
+          "id": "impact",
+          "limitations": [
+            "连接成功不证明数据外传"
+          ],
+          "state": "unresolved"
+        },
+        {
+          "answer": "已覆盖三个核心告警成员，但威胁情报、资产库存和历史记录查询因预算或连接限制未执行，存在证据缺口。",
+          "evidence_ids": [
+            "N2_S33"
+          ],
+          "id": "coverage",
+          "limitations": [
+            "工具预算保留",
+            "源未连接"
+          ],
+          "state": "answered"
+        }
+      ],
+      "summary": "保留通过引用校验的分析片段；部分内容待核。"
+    },
+    "basis": {
+      "binding_map": {
+        "B1": {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "binding_id": "afd6edd07e90ff8ae56bfa9c7f0c56d87de8ffd48905edcb74d247e5674161d2",
+          "case_id": "2b37f5b3-862b-52cc-84bd-86db50dd3ad4",
+          "contract_version": "socai2.c4-lake.v1",
+          "hostname": "socai2-flow-20261108-01",
+          "limitations": [
+            "host_time_match_is_not_causality_or_alert_membership",
+            "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+            "source_id_match_is_not_independent_corroboration",
+            "empty_query_is_not_counterevidence",
+            "coverage_and_collection_completeness_unknown"
+          ],
+          "objects": [
+            {
+              "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "180e6638-4961-53f8-b9d2-14a190f72b6e",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "1b744980-af98-5398-a0ae-6318ed793dd6",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "02ef8f94-818c-5749-9466-b238d45266cf",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            }
+          ],
+          "scope": {
+            "alert_ids": [
+              "09e91978-d201-5435-901e-b6a40368b921",
+              "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261108-01\"]",
+              "[\"ip\",\"192.0.2.88\"]",
+              "[\"ip\",\"198.51.100.88\"]",
+              "[\"ip\",\"203.0.113.88\"]",
+              "[\"user\",\"flow-observer-20261108-01\"]"
+            ],
+            "window_end": "2026-11-08T01:31:09Z",
+            "window_start": "2026-11-08T01:21:09Z"
+          },
+          "source_database": "aisoc",
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "tool_name": "authentication_activity",
+          "window_semantics": "start_inclusive_end_exclusive"
+        },
+        "B2": {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "binding_id": "a77f87852be523c7591051455543630e216f97395273464cdfc0fd5d5725eed0",
+          "case_id": "2b37f5b3-862b-52cc-84bd-86db50dd3ad4",
+          "contract_version": "socai2.c4-lake.v1",
+          "hostname": "socai2-flow-20261108-01",
+          "limitations": [
+            "host_time_match_is_not_causality_or_alert_membership",
+            "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+            "source_id_match_is_not_independent_corroboration",
+            "empty_query_is_not_counterevidence",
+            "coverage_and_collection_completeness_unknown"
+          ],
+          "objects": [
+            {
+              "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "180e6638-4961-53f8-b9d2-14a190f72b6e",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "1b744980-af98-5398-a0ae-6318ed793dd6",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "02ef8f94-818c-5749-9466-b238d45266cf",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            }
+          ],
+          "scope": {
+            "alert_ids": [
+              "09e91978-d201-5435-901e-b6a40368b921",
+              "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261108-01\"]",
+              "[\"ip\",\"192.0.2.88\"]",
+              "[\"ip\",\"198.51.100.88\"]",
+              "[\"ip\",\"203.0.113.88\"]",
+              "[\"user\",\"flow-observer-20261108-01\"]"
+            ],
+            "window_end": "2026-11-08T01:31:09Z",
+            "window_start": "2026-11-08T01:21:09Z"
+          },
+          "source_database": "aisoc",
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "tool_name": "network_connections",
+          "window_semantics": "start_inclusive_end_exclusive"
+        },
+        "B3": {
+          "alert_ids": [
+            "09e91978-d201-5435-901e-b6a40368b921",
+            "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+            "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+          ],
+          "binding_id": "995bbf09d882fe7c6abc7b0878a52dab161ecda9ef133029f082a5e3f8e7e885",
+          "case_id": "2b37f5b3-862b-52cc-84bd-86db50dd3ad4",
+          "contract_version": "socai2.c4-lake.v1",
+          "hostname": "socai2-flow-20261108-01",
+          "limitations": [
+            "host_time_match_is_not_causality_or_alert_membership",
+            "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+            "source_id_match_is_not_independent_corroboration",
+            "empty_query_is_not_counterevidence",
+            "coverage_and_collection_completeness_unknown"
+          ],
+          "objects": [
+            {
+              "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "180e6638-4961-53f8-b9d2-14a190f72b6e",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "1b744980-af98-5398-a0ae-6318ed793dd6",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            },
+            {
+              "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "namespace": "source:socai2-flow-acceptance",
+              "object_id": "02ef8f94-818c-5749-9466-b238d45266cf",
+              "object_key": "[\"host\",\"socai2-flow-20261108-01\"]"
+            }
+          ],
+          "scope": {
+            "alert_ids": [
+              "09e91978-d201-5435-901e-b6a40368b921",
+              "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+            ],
+            "kind": "whole_case",
+            "limitations": [],
+            "object_keys": [
+              "[\"host\",\"socai2-flow-20261108-01\"]",
+              "[\"ip\",\"192.0.2.88\"]",
+              "[\"ip\",\"198.51.100.88\"]",
+              "[\"ip\",\"203.0.113.88\"]",
+              "[\"user\",\"flow-observer-20261108-01\"]"
+            ],
+            "window_end": "2026-11-08T01:31:09Z",
+            "window_start": "2026-11-08T01:21:09Z"
+          },
+          "source_database": "aisoc",
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "tool_name": "process_activity",
+          "window_semantics": "start_inclusive_end_exclusive"
+        }
+      },
+      "correction_result": null,
+      "unoffered_bindings": [],
+      "validation_review": {
+        "conclusion_adoptable": false,
+        "diagnostics": [
+          {
+            "action": "exclude_dependent_claim",
+            "code": "domain_finding_scope_mismatch",
+            "original_sha256": "abc2471b7b2329bc665927295b3e6e54354294f36d9660e61c84f187bc3f89bc",
+            "path": [
+              "domains",
+              1
+            ]
+          }
+        ],
+        "limitations": [
+          "source_identity_and_scope_checks_do_not_prove_prose_true",
+          "free_text_summary_dependencies_unknown_summary_not_reused",
+          "invalid_final_delivery_never_adopts_overall_conclusion"
+        ],
+        "policy": "socai2.analysis-review.v1.2",
+        "reason": "invalid_units_or_final_conclusion_excluded",
+        "retained_analysis": {
+          "conflicts": [
+            {
+              "evidence_ids": [
+                "N2_S26",
+                "N2_S23",
+                "N2_S24",
+                "N2_S25"
+              ],
+              "explanation": "行为序列紧凑暗示攻击，但用户身份合法且无明确恶意 IOC，存在授权运维与恶意攻击的解释冲突。",
+              "finding_ids": [
+                "F1",
+                "F2"
+              ],
+              "id": "C1",
+              "state": "unresolved"
+            }
+          ],
+          "domains": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F1",
+                "F3"
+              ],
+              "limitations": [
+                "无 MFA 信息",
+                "无会话密钥"
+              ],
+              "name": "identity",
+              "reason": "涉及账户登录和会话信息"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "undetermined",
+              "finding_ids": [],
+              "limitations": [
+                "该项引用未通过校验，原答保留，结论待核。"
+              ],
+              "name": "cloud",
+              "reason": "该项引用未通过校验，原答保留，结论待核。"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "not_applicable",
+              "finding_ids": [],
+              "limitations": [
+                "无相关数据"
+              ],
+              "name": "phishing",
+              "reason": "无邮件、链接或附件相关告警"
+            },
+            {
+              "alert_ids": [
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F1",
+                "F2",
+                "F3"
+              ],
+              "limitations": [
+                "无数据访问日志",
+                "无外传目的地确认"
+              ],
+              "name": "insider",
+              "reason": "涉及数据访问和外部连接"
+            }
+          ],
+          "findings": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "alternatives": [
+                "授权运维人员执行快速故障排查",
+                "恶意攻击者利用合法凭证进行横向移动或数据窃取"
+              ],
+              "counter_ids": [],
+              "id": "F1",
+              "limitations": [
+                "缺乏审批记录",
+                "威胁情报查空"
+              ],
+              "state": "unresolved",
+              "statement": "用户 flow-observer-20261108-01 在极短时间内（20 秒内）完成登录、执行侦察命令并建立外部连接，时间序列高度紧凑，符合攻击链特征但无法排除自动化运维脚本。",
+              "support_ids": [
+                "N2_S26"
+              ]
+            },
+            {
+              "alert_ids": [
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "alternatives": [
+                "连接至未知业务服务器",
+                "连接至恶意基础设施"
+              ],
+              "counter_ids": [],
+              "id": "F2",
+              "limitations": [
+                "查空不构成反证",
+                "无历史连接基线"
+              ],
+              "state": "unresolved",
+              "statement": "出站连接目的地 198.51.100.88 未在登录或进程启动的关联对象中直接出现，且威胁情报查询结果为空，无法确认该 IP 是否为已知恶意 C2 或合法业务伙伴。",
+              "support_ids": [
+                "N2_S17",
+                "N2_S25",
+                "N2_S32"
+              ]
+            },
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "alternatives": [
+                "误报",
+                "真实攻击"
+              ],
+              "counter_ids": [],
+              "id": "F3",
+              "limitations": [
+                "标签不证明行为发生",
+                "无授权证据"
+              ],
+              "state": "unresolved",
+              "statement": "所有告警均标记为 medium 严重性且检测标签显示不证明攻击发生，但人工陈述和优先分析均建议 review，表明当前证据不足以定性为良性或恶意。",
+              "support_ids": [
+                "N2_S23",
+                "N2_S24",
+                "N2_S25",
+                "N2_S26"
+              ]
+            }
+          ],
+          "followups": [
+            {
+              "alert_ids": [
+                "09e91978-d201-5435-901e-b6a40368b921",
+                "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "binding_id": "B1",
+              "mode": "query",
+              "object_keys": [
+                "[\"host\",\"socai2-flow-20261108-01\"]"
+              ],
+              "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的认证活动，验证登录来源和会话上下文。",
+              "priority": "decision_critical",
+              "question_id": "authorization",
+              "required_evidence": "session_id, session_originating_human, outcome",
+              "source_ids": [
+                "N2_S1",
+                "N2_S4",
+                "N2_S6"
+              ]
+            },
+            {
+              "alert_ids": [
+                "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+              ],
+              "binding_id": null,
+              "mode": "deep",
+              "object_keys": [
+                "[\"ip\",\"198.51.100.88\"]"
+              ],
+              "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的网络连接，确认 198.51.100.88 的连接细节及流量特征。",
+              "priority": "decision_critical",
+              "question_id": "impact",
+              "required_evidence": "dest_ip, dst_port, protocol, file_path, hash_sha256",
+              "source_ids": [
+                "N2_S17",
+                "N2_S22"
+              ]
+            }
+          ],
+          "members": [
+            {
+              "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+              "evidence_ids": [
+                "N2_S1",
+                "N2_S4",
+                "N2_S5",
+                "N2_S6",
+                "N2_S27",
+                "N2_S30",
+                "N2_S34",
+                "N2_S35"
+              ],
+              "limitations": [
+                "认证日志非审批记录",
+                "查空威胁情报不构成安全证明"
+              ],
+              "state": "analyzed",
+              "summary": "账户登录告警显示用户 flow-observer-20261108-01 于 01:26:09 在主机 socai2-flow-20261108-01 上成功登录，来源 IP 为 203.0.113.88，但缺乏授权审批记录。"
+            },
+            {
+              "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+              "evidence_ids": [
+                "N2_S7",
+                "N2_S8",
+                "N2_S11",
+                "N2_S12",
+                "N2_S13",
+                "N2_S28",
+                "N2_S31",
+                "N2_S36",
+                "N2_S37"
+              ],
+              "limitations": [
+                "进程启动成功不证明脚本完成或业务授权"
+              ],
+              "state": "analyzed",
+              "summary": "进程启动告警显示 powershell.exe 于 01:26:29 启动并执行 Get-LocalUser 命令，由同一用户在同一主机上运行，行为符合侦察特征但需核实授权。"
+            },
+            {
+              "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+              "evidence_ids": [
+                "N2_S14",
+                "N2_S16",
+                "N2_S17",
+                "N2_S18",
+                "N2_S20",
+                "N2_S21",
+                "N2_S22",
+                "N2_S29",
+                "N2_S32",
+                "N2_S38",
+                "N2_S39"
+              ],
+              "limitations": [
+                "连接成功不证明数据外传或具体文件传输"
+              ],
+              "state": "analyzed",
+              "summary": "出站连接告警显示主机于 01:26:49 通过 TCP 443 端口连接外部 IP 198.51.100.88，该 IP 未出现在登录或进程对象中，需验证其业务合法性。"
+            }
+          ],
+          "questions": [
+            {
+              "answer": "原始记录支持用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上的登录、powershell.exe 进程启动及至 198.51.100.88 的出站连接，时间分别为 01:26:09、01:26:29 和 01:26:49。",
+              "evidence_ids": [
+                "N2_S1",
+                "N2_S4",
+                "N2_S7",
+                "N2_S8",
+                "N2_S11",
+                "N2_S14",
+                "N2_S16",
+                "N2_S17",
+                "N2_S20",
+                "N2_S22"
+              ],
+              "id": "detection_facts",
+              "limitations": [
+                "对象资产匹配状态为未检查"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "三个告警共享同一主机、同一用户和连续的时间窗口，形成逻辑上的行为序列，但无直接因果证据（如会话 ID 传递）证明它们是同一攻击会话。",
+              "evidence_ids": [
+                "N2_S26"
+              ],
+              "id": "member_relationships",
+              "limitations": [
+                "时间接近不等于因果"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "现有证据既不支持恶意也不支持良性，Get-LocalUser 命令常见于侦察但也用于权限审计，外部连接目的不明，需进一步取证。",
+              "evidence_ids": [
+                "N2_S23",
+                "N2_S24",
+                "N2_S25"
+              ],
+              "id": "behavior_nature",
+              "limitations": [
+                "缺乏授权审批",
+                "无威胁情报命中"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "当前数据集中无审批记录、工单或业务授权证据，无法确认任何行为的授权状态。",
+              "evidence_ids": [],
+              "id": "authorization",
+              "limitations": [
+                "认证日志非审批记录",
+                "需人工确认"
+              ],
+              "state": "not_applicable"
+            },
+            {
+              "answer": "已观察到网络连接建立，但未观察到数据外传、文件哈希或敏感信息访问的具体证据，潜在影响待核。",
+              "evidence_ids": [
+                "N2_S17",
+                "N2_S21"
+              ],
+              "id": "impact",
+              "limitations": [
+                "连接成功不证明数据外传"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "已覆盖三个核心告警成员，但威胁情报、资产库存和历史记录查询因预算或连接限制未执行，存在证据缺口。",
+              "evidence_ids": [
+                "N2_S33"
+              ],
+              "id": "coverage",
+              "limitations": [
+                "工具预算保留",
+                "源未连接"
+              ],
+              "state": "answered"
+            }
+          ],
+          "summary": "保留通过引用校验的分析片段；部分内容待核。"
+        },
+        "state": "partial"
+      }
+    },
+    "captured_at": "2026-11-08T01:38:09.627692+00:00",
+    "case_id": "2b37f5b3-862b-52cc-84bd-86db50dd3ad4",
+    "domain_artifact_ids": {
+      "cloud": "219570c2-b488-406f-a795-ebde82581eee",
+      "identity": "8e3d3fe0-f81b-460e-8b85-edfb1832e96e",
+      "insider": "f99385d0-5493-47fc-8212-fc0d7b64544b",
+      "phishing": "9881b085-e537-48fe-8da6-26b02fb37978"
+    },
+    "domains_not_executed": [],
+    "limitations": [
+      "initial_shared_model_pass",
+      "semantic_accuracy_not_proven",
+      "raw_material_not_fully_read",
+      "not_full_baseline_delivery",
+      "only_offered_query_bindings_executable"
+    ],
+    "reason": "domain_finding_scope_mismatch",
+    "run_id": "8d53cdb1-1cba-4df3-8ac2-f2724c062342",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "source_map": {
+      "N2_S1": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "f7650ccfdab922d950a3b1ee08590d3e2f7a51b2ca4374e656ef888d45843ba7"
+      },
+      "N2_S10": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "b6fe71b501e8c7649d9ff57a8d84ea461997001037f38546c26ae2efa84d482c"
+      },
+      "N2_S11": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "6a9ddf82b1993baf17c6cc9bc8131dba564efcb6503fd77750db576cd0ad8330"
+      },
+      "N2_S12": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "3863ee0a9a320461c866f2b3b4b746e6acf6251770f062fec4136d31ff1c0f99"
+      },
+      "N2_S13": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "13c911f0d94d9210248be417dfec22ce6dba836e88d15bcbc06bcf7569ba3948"
+      },
+      "N2_S14": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "f7650ccfdab922d950a3b1ee08590d3e2f7a51b2ca4374e656ef888d45843ba7"
+      },
+      "N2_S15": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "b6fe71b501e8c7649d9ff57a8d84ea461997001037f38546c26ae2efa84d482c"
+      },
+      "N2_S16": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "b98414bfe292353b08d19e86a7b8e88599fe9de24062b71c2b7a4f9ca3658306"
+      },
+      "N2_S17": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.dst_endpoint.ip",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "e4d56bdc28ce802efeba417d1b55052412000f88068be4c19a778c0b12f0dfe3"
+      },
+      "N2_S18": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.dst_endpoint.port",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "562abcbff42b8847a437c757ac0a5ecfd657976f3b57a012305ca5a8e5c9cbda"
+      },
+      "N2_S19": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.connection_info.protocol_name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "c66bc12ed7840bbc281de806b5ddf4db13c14eb3b61831ae249072a70e83d72a"
+      },
+      "N2_S2": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.device.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "b6fe71b501e8c7649d9ff57a8d84ea461997001037f38546c26ae2efa84d482c"
+      },
+      "N2_S20": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "19db24f819763a12c59c167728de6cfec9a851e9198808ce3111044cc02fd2a5"
+      },
+      "N2_S21": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "3863ee0a9a320461c866f2b3b4b746e6acf6251770f062fec4136d31ff1c0f99"
+      },
+      "N2_S22": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "55392e11-5674-5664-9294-1125ad2bfd8c",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "0c78e03980652a5e7e6b1ee33977f2864070006a74b95f5afafc878d95471085"
+      },
+      "N2_S23": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.alerts.09e91978-d201-5435-901e-b6a40368b921.triage",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "9b546fad9730167edbd77ff826c4fb4e7ddfb144469791d91d9e39bb8c14305e"
+      },
+      "N2_S24": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.alerts.3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3.triage",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "38d7d196813e86e19bb3fd890cc1ec74655dd6289ed69f87d548f311d43160ef"
+      },
+      "N2_S25": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.alerts.65e2a5f9-3b00-5def-9547-c21f1b9cc4bf.triage",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "064eaa58c6ba18eebd409d8006fc72a9260cd9452a56cfd2b6fb39aacd5fb64f"
+      },
+      "N2_S26": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921",
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "prior_analysis",
+          "row_keys": [],
+          "source_path": "$.incidents.06f82d36-1964-4186-aed3-4c7b9ab1a375.diagnosis",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "306e03eb36f60169976876e2ea68a1286eb9ef9061b5f8f52321e759f714ca41"
+      },
+      "N2_S27": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.09e91978-d201-5435-901e-b6a40368b921.alert.event_time",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "fdb60fcd993d262514a7ff2704909b27a67f28b448c48af6aa5749d26413b8ba"
+      },
+      "N2_S28": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3.alert.event_time",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "09ad166b7a2adfae2f42bf5ce2e188bfce0e24541d060e92b2ca22aa76ac6a26"
+      },
+      "N2_S29": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.65e2a5f9-3b00-5def-9547-c21f1b9cc4bf.alert.event_time",
+          "type": "artifact"
+        },
+        "required": true,
+        "visible_value_sha256": "515183abe599c9ad6a2f8b58f3f751a9bc37235c108383de17afbc6409e496bc"
+      },
+      "N2_S3": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "4b3cf18ab955390e1a79edb138b0c56c593a56fcc8cbf723ff0610c154addeac"
+      },
+      "N2_S30": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.09e91978-d201-5435-901e-b6a40368b921.alert",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "3a385b3c81200dd975e3d283811822c5e5c2269d17547b153a197a4164f1a46a"
+      },
+      "N2_S31": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3.alert",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "08e707285a39c896c789b6cb29493b3c3d9be6c3060a392ba756ddca9b34f370"
+      },
+      "N2_S32": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.65e2a5f9-3b00-5def-9547-c21f1b9cc4bf.alert",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "94defe857cd0f5c04f9cec4733a91df0d8bacfad24dc353783642433032dc647"
+      },
+      "N2_S33": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921",
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.case",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "cafb8d86de7836516deef6da72cd9ad348c931314d4d750a52b05c4ccb592ee0"
+      },
+      "N2_S34": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.09e91978-d201-5435-901e-b6a40368b921.material",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "14e91e34b9b9cab7887b6e22c116d28481f658f7865782926faa652edbc6f465"
+      },
+      "N2_S35": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.09e91978-d201-5435-901e-b6a40368b921.objects",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "b765325c1cfc572efdd00c617ddc2a448afaa070bf5190a4a252e385aca4c8d7"
+      },
+      "N2_S36": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3.material",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "36cb8cee929299ba91d3cf6aa3456b2b07fcd7c4f4f6fe59272052fc8147e6a7"
+      },
+      "N2_S37": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3.objects",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "78b0e24bfffb9bfa1b13ff98d832dd0ebde127af78c8a477103c70f1a498879b"
+      },
+      "N2_S38": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.65e2a5f9-3b00-5def-9547-c21f1b9cc4bf.material",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "af22201f223fc95210b25b706796bf4756b04136f71dccb6053a889bdbe551b5"
+      },
+      "N2_S39": {
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "ref": {
+          "external": null,
+          "id": "caf24824-0f93-4941-ab4d-b5dd7f029435",
+          "role": "source_label",
+          "row_keys": [],
+          "source_path": "$.alerts.65e2a5f9-3b00-5def-9547-c21f1b9cc4bf.objects",
+          "type": "artifact"
+        },
+        "required": false,
+        "visible_value_sha256": "3cee82f2ee60725088b27c266fa6b7192741caeff052fd066bd46944a91e1af5"
+      },
+      "N2_S4": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.action",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "eb1378546783e4ba8a9b00a79173227bf7b0c42064ac8de757e3c2f42978e514"
+      },
+      "N2_S5": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.activity.outcome",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "3863ee0a9a320461c866f2b3b4b746e6acf6251770f062fec4136d31ff1c0f99"
+      },
+      "N2_S6": {
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "ref": {
+          "external": null,
+          "id": "a33e4af8-47dc-54db-8f4e-ca8c7ab02e97",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.time",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "4f1664ec4b2d2ae35ca28aa8319111d70e3bd1aa08fbabd93de72a6661a951d5"
+      },
+      "N2_S7": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.process.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "fe156d41c1c3d9e213256bd31ee3fe8278567cbbbd0844e6cd9c8d29e277320d"
+      },
+      "N2_S8": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.process.cmd_line",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "8db31d2c0a152e1be30f4d8e7a94a019f7f6cc492d68060022683a66de1d7321"
+      },
+      "N2_S9": {
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "ref": {
+          "external": null,
+          "id": "25264355-e52c-5778-a11f-4a65769ca021",
+          "role": "observation",
+          "row_keys": [],
+          "source_path": "$.ocsf_json.actor.user.name",
+          "type": "alert_material"
+        },
+        "required": true,
+        "visible_value_sha256": "f7650ccfdab922d950a3b1ee08590d3e2f7a51b2ca4374e656ef888d45843ba7"
+      }
+    },
+    "stage": "C3_initial",
+    "state": "completed",
+    "validation": "structure_scope_sources_checked"
+  },
+  "content_text": null,
+  "created_by": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+  "event_time": null,
+  "file_name": null,
+  "id": "b0f75871-2834-4c99-86bc-f716d474263b",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "29a2da5537f5216e271a86c422ddc1ca93d9e1c9bcd1e2f61b336961e755a943",
+    "original_size_bytes": 34889,
+    "reason": null,
+    "retained_sha256": "29a2da5537f5216e271a86c422ddc1ca93d9e1c9bcd1e2f61b336961e755a943",
+    "retained_size_bytes": 34889,
+    "truncated": false
+  },
+  "run_id": "8d53cdb1-1cba-4df3-8ac2-f2724c062342",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "29a2da5537f5216e271a86c422ddc1ca93d9e1c9bcd1e2f61b336961e755a943",
+  "size_bytes": 34889,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "d57ebf2e-aeae-4d8d-b72e-ed639592e3b1",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "3df4c04f-4e05-439f-b9e8-b51fea279fd2",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

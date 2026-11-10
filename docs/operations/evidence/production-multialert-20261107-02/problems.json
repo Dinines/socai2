@@ -1,0 +1,85 @@
+{
+  "recorded_at": "2026-11-07T15:54:07.656028+00:00",
+  "batch": "production-multialert-20261107-02",
+  "scope": "新批实际执行发现；只登记，不在本批修改调查逻辑、模型或网关配置，不重派 unknown。",
+  "items": [
+    {
+      "id": "P01",
+      "title": "网关仍按45秒截断，应用300秒未贯穿调用链",
+      "observed": "I和Case C3均HTTP408；错误正文明确timeout value=45.0、time taken=45.0、无fallback。",
+      "impact": "事件综合诊断和Case C3均无原答；Case未进入模型决定的C4/Deep补查或C6模型总结。两次用量未知。",
+      "confirmed_cause": "应用发布策略为300秒，但运行中的socai2-litellm-1环境AISOC_LITELLM_REQUEST_TIMEOUT仍为45；上一轮统一发布遗漏了网关配置对齐。",
+      "next_fix": "通过部署配置源对齐调查别名的网关超时与应用300秒策略，核实际网关/后端链路及重启后的生效值；用独立新批验证，不重跑本批。",
+      "evidence": [
+        "gateway-timeout-readonly.json",
+        "exports/20261107T154334948315Z/database.json"
+      ],
+      "artifact_ids": [
+        "ddd688b3-3fc1-4a0b-a739-8776e2e59478",
+        "ad358f45-1f6e-4d72-bffb-468ba94e91d1"
+      ],
+      "fixed_in_this_batch": false
+    },
+    {
+      "id": "P02",
+      "title": "A2/A3待复核判断与非空反驳检测依据冲突",
+      "observed": "两份原答verdict=needs_review，decision_basis非空且kind=refuted_detection；当前合同要求needs_review时decision_basis=null。",
+      "impact": "两个A核心判断被拒收，不进入当前assessment；各2条合法建议已通过partial_review保留且GET可读。",
+      "confirmed_cause": "模型输出不满足条件合同；这些原答把尚未证实攻击的材料放入反驳检测依据，并不证明检测已被反驳。",
+      "next_fix": "核对输入说明和条件输出约束是否一致，明确待复核与反驳检测的区别；评估具体反馈纠正，不放宽成接受无依据的核心判断，继续独立保留有效建议。",
+      "evidence": [
+        "exports/20261107T154334948315Z/database.json",
+        "readback-20261107T154335Z/api-responses.json"
+      ],
+      "artifact_ids": [
+        "0758724b-4f35-40eb-b3b7-1f5d53cc450d",
+        "3aefa982-3754-464e-9743-edc52f5edc04"
+      ],
+      "fixed_in_this_batch": false
+    },
+    {
+      "id": "P03",
+      "title": "A2把未执行威胁情报查询写成查询未命中",
+      "observed": "A2的TI工具实际skipped/no_supported_frozen_objects/returned_rows=null；模型rationale写threat intel returned no hits，limitations写Lack of threat intel hits。",
+      "impact": "混淆未查与已查无结果，形成没有实际查询支持的表述；该核心已因P02被拒收，未采用。",
+      "confirmed_cause": "实际请求已经提供跳过状态，模型仍将其写成查空；Fusion检测标签的no TI match不能代表本次工具调用结果。",
+      "next_fix": "把来源可用性和实际查询回执作为程序事实稳定展示，检查模型读取到的状态说明及相关输出约束；以本例验证未查、失败、查空的区别，不能仅靠已有编号合法认定语义正确。",
+      "evidence": [
+        "exports/20261107T154334948315Z/database.json"
+      ],
+      "step_ids": [
+        "74ce6270-d743-4ab7-9fd4-61b0ff2a35c5"
+      ],
+      "artifact_ids": [
+        "919a21e5-6ade-475d-89a7-9ed936a892c2",
+        "0758724b-4f35-40eb-b3b7-1f5d53cc450d"
+      ],
+      "fixed_in_this_batch": false
+    },
+    {
+      "id": "P04",
+      "title": "系统收尾报告状态与实际Run状态不一致",
+      "observed": "Case Run为unknown/none且ended_at=null；report_json顶层terminal_state=failed、delivery_state=partial。",
+      "impact": "后端如以报告状态当作执行状态，会将同一轮显示为已失败收口；当前4177按Run展示unknown/none。",
+      "confirmed_cause": "不确定执行后生成系统收尾的报告状态与Run标记unknown使用不同表达；原始模型请求的结算和用量仍不确定。",
+      "next_fix": "统一执行状态的权威来源；如另需表达系统交接工件已保存，应明确独立字段语义，保持unknown防重和用量未知，不改写本批原件。",
+      "evidence": [
+        "exports/20261107T154334948315Z/database.json",
+        "workbench-verification.json"
+      ],
+      "artifact_ids": [
+        "6e3a1d16-724c-42ce-b360-803ab7e75b95"
+      ],
+      "fixed_in_this_batch": false
+    }
+  ],
+  "resolved_test_readiness_issue": {
+    "title": "本机只读API仍缓存旧读取路由",
+    "action": "按原remote-21 profile重启本机只读API并重新导出；4条新增读取路由已出现，未改远端业务服务或数据。",
+    "evidence": [
+      "local-read-api-preflight.json",
+      "local-read-api-reloaded.json",
+      "new-read-routes.json"
+    ]
+  }
+}

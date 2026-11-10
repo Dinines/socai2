@@ -1,0 +1,255 @@
+{
+  "version": "socai2.release.v1.2",
+  "release": "v1.2-20261110-r2",
+  "architecture": "amd64",
+  "build_timeout_seconds": 180,
+  "deploy_timeout_seconds": 90,
+  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r2",
+  "agents_container": "socai2-agents-1",
+  "build": {
+    "api": {
+      "source": "services/api/app",
+      "base_id": "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9",
+      "tag": "socai2-api:v1.2-20261110-r2",
+      "user": "10001:10001"
+    }
+  },
+  "files": [
+    "deploy/aisoc21/processing_job.py",
+    "deploy/aisoc21/production_ingress.py",
+    "deploy/aisoc21/production_processing.py",
+    "deploy/aisoc21/production_profile.py",
+    "deploy/aisoc21/production_projection.py",
+    "deploy/local-investigation/backend_profile.py",
+    "deploy/local-investigation/config.py",
+    "deploy/local-investigation/flow_export.py",
+    "deploy/local-investigation/flow_fixture.py",
+    "deploy/local-investigation/investigation-policy.toml",
+    "docs/operations/capture_processing_case.py",
+    "docs/operations/export_processing_audit_batch.py",
+    "docs/operations/processing_audit_detail.py",
+    "docs/operations/processing_audit_delivery.py",
+    "docs/operations/processing_audit_flow.py",
+    "docs/operations/processing_audit_import.py",
+    "docs/operations/processing_audit_index.py",
+    "docs/operations/publish_alert_io_comparison.py",
+    "docs/operations/alert_io_comparison_page.html",
+    "deploy/aisoc21/workbench-comparison-20261108.json",
+    "docs/operations/processing_audit_logs.py",
+    "docs/operations/processing_audit_subjects.py",
+    "docs/operations/processing_workbench_retention.py",
+    "docs/operations/processing_workbench_source.py",
+    "docs/operations/read_processing_audit_20261106.py",
+    "docs/operations/refresh_three_case_replay_20261106.py",
+    "docs/operations/serve_processing_workbench.py",
+    "docs/operations/update_processing_audit.py",
+    "services/api/app/socai2/runtime_policy.py",
+    "deploy/aisoc21/production-v1.2.toml",
+    "deploy/aisoc21/production_entry.py",
+    "deploy/aisoc21/compose.gateway.yml",
+    "deploy/aisoc21/litellm.config.yaml",
+    "deploy/aisoc21/workbench-prompt-comparison-20261108.json",
+    "deploy/aisoc21/workbench-alert-validation-20261108.json",
+    "deploy/aisoc21/workbench-incident-validation-20261108.json",
+    "docs/operations/incident_input_validation_page.html",
+    "deploy/local-investigation/investigation-policy-ai-v1.toml",
+    "deploy/local-investigation/investigation-policy-incident-v1.toml",
+    "deploy/aisoc21/processing-build-ai-v1.toml",
+    "deploy/aisoc21/ai-rollout-20261108.json",
+    "deploy/aisoc21/rollout_transport.py",
+    "deploy/database/install_reader.py",
+    "deploy/database/api-reader-21.toml",
+    "deploy/database/api_read_access_20261108.sql",
+    "deploy/database/reader_freshness_access_20261107.sql",
+    "deploy/database/reader_public_lookups_20261107.sql",
+    "deploy/database/verify_socai2_v1_2_reader.sql",
+    "deploy/database/init_socai2_v1.sql",
+    "deploy/database/init_socai2_v1_2_reader.sql",
+    "deploy/database/upgrade_socai2_v1_2_reader.sql",
+    "deploy/local-investigation/investigation-policy-case-v1.toml",
+    "deploy/aisoc21/processing-build-case-v1.toml",
+    "deploy/aisoc21/current-rollout.json",
+    "deploy/database/install_aisoc21_v1.py",
+    "deploy/database/verify_aisoc21_processing_access.sql",
+    "deploy/database/aisoc21_processing_access.sql"
+  ],
+  "projects": {
+    "main": {
+      "name": "socai2",
+      "directory": "/opt/sting-aisoc-socai2",
+      "files": [
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r1/main-after.json"
+      ],
+      "services": {
+        "api": {
+          "container": "socai2-api-1",
+          "expected_image": "sha256:9d4bfce79ed0170909baade1c3a9f1f4bf8762d24b140fc144a668a3e6e6fd71",
+          "build": "api",
+          "override": {
+            "env_file": [
+              {
+                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r2/api-model.env",
+                "format": "raw"
+              }
+            ],
+            "volumes": [
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro"
+            ],
+            "environment": {
+              "AISOC_STARTUP_SCHEMA_MIGRATIONS": "false",
+              "ENVIRONMENT": "production",
+              "ENV": "production",
+              "AISOC_DEMO_MODE": "false",
+              "SOCAI2_PAGE_READ_ENABLED": "true",
+              "SOCAI2_ANALYSIS_READ_ENABLED": "true"
+            }
+          },
+          "allowed_env_changes": [
+            "OPENAI_API_KEY",
+            "OPENAI_BASE_URL",
+            "OPENAI_MODEL",
+            "SOCAI2_MODEL_PROTOCOL",
+            "SOCAI2_MODEL_SCHEMA_PROFILE",
+            "SOCAI2_INVESTIGATION_POLICY",
+            "SOCAI2_INVESTIGATION_POLICY_SHA256",
+            "SOCAI2_PROCESSING_PROFILE_SHA256",
+            "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS"
+          ],
+          "use_processing_environment": true
+        },
+        "fusion": {
+          "container": "socai2-fusion-1",
+          "expected_image": "sha256:2c17132903aa1c8130cf36b76e990adf19da4b1a3e4473ec5fd660b9d6e53a94",
+          "image": "sha256:2c17132903aa1c8130cf36b76e990adf19da4b1a3e4473ec5fd660b9d6e53a94"
+        },
+        "agents": {
+          "container": "socai2-agents-1",
+          "expected_image": "sha256:c208190e744643ce8f4084edab7f31e91c67ae000dd8595df88f84279d870243",
+          "image": "sha256:c208190e744643ce8f4084edab7f31e91c67ae000dd8595df88f84279d870243"
+        }
+      }
+    },
+    "projection": {
+      "name": "socai2-investigation-projection",
+      "directory": "/opt/sting-aisoc-socai2/releases/production-processing-4e6113567051022f/deploy/aisoc21",
+      "files": [
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r1/projection-after.json"
+      ],
+      "services": {
+        "projection": {
+          "container": "socai2-investigation-projection",
+          "expected_image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+          "image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+          "allowed_env_changes": [
+            "DATABASE_URL",
+            "SOCAI2_SERVICE_DATABASE_NAME",
+            "SOCAI2_PROCESSING_DB_HOST",
+            "SOCAI2_PROCESSING_DB_PORT",
+            "SOCAI2_PROCESSING_INGRESS_ROLE"
+          ]
+        }
+      }
+    },
+    "workbench": {
+      "name": "socai2-production-workbench",
+      "directory": "/opt/sting-aisoc-socai2/private/production-workbench",
+      "files": [
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r1/workbench-after.json"
+      ],
+      "services": {
+        "workbench": {
+          "container": "socai2-production-workbench",
+          "expected_image": "sha256:f97dafe20baabc3f89c59e9b3b9010e9fe54d3c7c518979805cccd638aebfd27",
+          "image": "sha256:df86e69caf87a4ec76e179e4fbe636085ca5e93b5cb0233db0d4b33649afda52",
+          "override": {
+            "volumes": [
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2:/opt/workbench:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/docs/operations/processing_audit_index.py:/opt/workbench/docs/operations/processing_audit_index.py:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/docs/operations/update_processing_audit.py:/opt/workbench/docs/operations/update_processing_audit.py:ro"
+            ]
+          }
+        }
+      }
+    },
+    "gateway": {
+      "name": "socai2",
+      "directory": "/opt/sting-aisoc-socai2",
+      "files": [
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r1/gateway-after.json"
+      ],
+      "services": {
+        "litellm": {
+          "container": "socai2-litellm-1",
+          "expected_image": "sha256:2e4c0371f3a8c28e4da131d77abaa8341cd3b0c2fcc4d34d7c5900431af7b9d0",
+          "image": "sha256:2e4c0371f3a8c28e4da131d77abaa8341cd3b0c2fcc4d34d7c5900431af7b9d0",
+          "override": {
+            "environment": {
+              "AISOC_LITELLM_REQUEST_TIMEOUT": "300"
+            }
+          }
+        }
+      }
+    }
+  },
+  "processing": {
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/deploy/aisoc21/production-v1.2.toml",
+    "entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "image": "sha256:df86e69caf87a4ec76e179e4fbe636085ca5e93b5cb0233db0d4b33649afda52",
+    "required_existing_secrets": [
+      "db-password",
+      "ingress-password",
+      "lake-password",
+      "credential-key",
+      "runtime.env",
+      "ingress.env"
+    ],
+    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r2/api-model.env",
+    "api_model_keys": [
+      "OPENAI_API_KEY",
+      "OPENAI_BASE_URL",
+      "OPENAI_MODEL",
+      "SOCAI2_MODEL_PROTOCOL",
+      "SOCAI2_MODEL_SCHEMA_PROFILE",
+      "SOCAI2_INVESTIGATION_POLICY",
+      "SOCAI2_INVESTIGATION_POLICY_SHA256",
+      "SOCAI2_PROCESSING_PROFILE_SHA256",
+      "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS"
+    ],
+    "image_tag": "socai2-processing:processing-20261110-r2",
+    "manifest_sha256": "42593b9cdb36e3a41e8d3a63136df26a5d254b40706886b6670cdac20c2f4b0c"
+  },
+  "current_pointer": "/opt/sting-aisoc-socai2/current-v1.2",
+  "required_environment": {
+    "socai2-agents-1": {
+      "AISOC_AGENT_KAFKA_DISABLE": "1",
+      "AISOC_PLAYBOOK_SEED_DISABLE": "1",
+      "AISOC_ATTCK_STARTUP_DISABLE": "1",
+      "AISOC_ATTCK_INDEX_DISABLE": "1",
+      "AISOC_HUNT_SCHEDULER_DISABLE": "1",
+      "AISOC_PLAYBOOK_SWEEPER_DISABLE": "1",
+      "AISOC_TRIAGE_BUDGET_POLICY_FILE": ""
+    }
+  },
+  "inherited_services": [
+    "fusion",
+    "agents",
+    "projection",
+    "litellm"
+  ],
+  "scope": "A/I/Case workflow and separate Case/task read gate; current access verification; no DDL or automatic consumers",
+  "processing_policy_check": {
+    "container": "socai2-api-1",
+    "profiles": {
+      "alert_io": "socai2.alert-boundary.v1",
+      "incident_io": "socai2.incident-boundary.v1",
+      "case_io": "socai2.case-boundary.v1"
+    },
+    "read_flags": {
+      "SOCAI2_PAGE_READ_ENABLED": true,
+      "SOCAI2_ANALYSIS_READ_ENABLED": true
+    }
+  },
+  "api_reader_check": {
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/deploy/database/api-reader-21.toml"
+  }
+}

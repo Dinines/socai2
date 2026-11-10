@@ -1,0 +1,103 @@
+{
+  "evidence": "docs/operations/evidence/alert-prompt-validation-20261108-01",
+  "local_site": "deliverables/investigation-validation-20261106/processing-audit",
+  "template": "docs/operations/alert_io_comparison_page.html",
+  "receipt": "docs/operations/evidence/alert-prompt-validation-20261108-01/workbench-publication.json",
+  "variants": [
+    {
+      "id": "candidate",
+      "title": "整理版五字段指令",
+      "description": "本轮每样例调用一次；实际输入、五字段原答与校验结果均可展开。"
+    }
+  ],
+  "samples": {
+    "A1": {
+      "title": "账号登录",
+      "note": "待复核。本次三项查询均完成且返回0行，原答此处正确；仍依据账号名称猜测用途、复写查询状态，第二条建议的N1_S22只是connector_type=validation，不能证明情报查询。"
+    },
+    "A2": {
+      "title": "PowerShell 启动",
+      "note": "待复核。只说启动命令，未声称命令完成；理由中的“无威胁情报命中”未注明是上游标签，本次TI实际未查询，仍存在来源混淆。"
+    },
+    "A3": {
+      "title": "网络连接",
+      "note": "待复核，但把明确给出的TCP/443写成HTTPS，违反提示中的协议边界；仍按observer名称猜用途。查空表述符合本次资产/TI回执，但重复查询事实。"
+    },
+    "S1": {
+      "title": "已批准的云运维",
+      "note": "良性，0.95。批准工单、MFA、企业出口与执行窗口支持主要判定；“最高权限”是额外解释，材料未给权限清单。"
+    },
+    "S2": {
+      "title": "连续 MFA 请求",
+      "note": "待复核。把新增认证方法推断为用户主动响应安全提示，并称关键事实矛盾；材料只记录操作发生，还明确no registration flow open，不能证明本人意愿。"
+    },
+    "S3": {
+      "title": "管理代理清点软件",
+      "note": "待复核。正确区分CrowdStrike上报与设备管理服务执行，未见主要行为字段改写；仍未形成确定性判定。原样例的良性/误报标注口径问题保留。"
+    },
+    "S4": {
+      "title": "离职员工大量上传",
+      "note": "待复核。建议把目的分类uncategorised file sharing当成“目标域名”，导致核实对象不准确；原始材料没有具体目的域名。"
+    },
+    "S5": {
+      "title": "凭证窃取邮件",
+      "note": "待复核。读对了演练登记=false，却用无证据的内部测试/新业务假设把恶意线索称为矛盾，判断仍过度依赖人工确认；待复核不计良恶方向误判。"
+    },
+    "S6": {
+      "title": "客户表批量读取",
+      "note": "良性，0.95，但把180 prior runs改写为“历史180次成功运行”。原材料仅说明此前一小时无失败语句。样例活动时间与计划时间未对齐，不能计为确定判对。"
+    }
+  },
+  "deployment": {
+    "ssh_binary": "ssh",
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "command_timeout_seconds": 90,
+    "remote_python": "python3",
+    "docker": "docker",
+    "container": "socai2-production-workbench",
+    "project": "socai2-production-workbench",
+    "service": "workbench",
+    "expected_image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+    "expected_base_release": "/opt/sting-aisoc-socai2/releases/v1.2-20261108-r1",
+    "expected_compose": "/opt/sting-aisoc-socai2/private/workbench-comparison-20261108-01/workbench-after.json",
+    "release": "/opt/sting-aisoc-socai2/releases/workbench-alert-validation-20261108-01",
+    "private": "/opt/sting-aisoc-socai2/private/workbench-alert-validation-20261108-01",
+    "site": "/opt/sting-aisoc-socai2/data/production-workbench/site",
+    "source_mount": "/opt/workbench",
+    "site_owner": [
+      10001,
+      10001
+    ],
+    "base_url": "http://127.0.0.1:4177",
+    "source_files": [],
+    "static_only": true,
+    "archive": "/opt/sting-aisoc-socai2/private/workbench-alert-validation-20261108-01/retired-site"
+  },
+  "title": "整理版五字段指令 · 本轮测试",
+  "status": "格式通过，正文质量未通过",
+  "presentation": {
+    "page_title": "告警五字段指令 · 本轮测试",
+    "status": "格式通过，正文质量未通过",
+    "title": "整理后的任务指令，9 个样例实测",
+    "description": "保留已有告警材料、五字段输出格式、证据编号与模型参数，只使用本次整理的任务指令。",
+    "notice": "本页展示本轮9次真实模型调用的保存记录，打开页面不会发起新调用。格式与程序解析均通过，正文事实仍有错误；当前尚未接入生产分诊。",
+    "metrics_label": "本轮 9 次请求",
+    "method": "3 个已有告警样例、6 个既有合成样例，各调用一次，无重试。未派发旧指令对照组；HTTP耗时不是完整业务处理时间。",
+    "findings_title": "本轮核对结果",
+    "findings": [
+      "9次均取得原答并通过格式/核心解析；共16,918 tokens，平均HTTP耗时约6.09秒。",
+      "模型给出2个良性、7个待复核；待复核不是方向误判，也不等于已经正确识别恶意。",
+      "仍有TCP/443被写成HTTPS、180次历史运行被写成全成功、目的分类被写成域名等错误。",
+      "新增MFA方法不能证明用户主动操作；假设存在内部演练也不能当成已观察到的矛盾事实。",
+      "结构化引用均合法，但不代表引用内容支持每一项主张。旧对比已移出当前展示。",
+      "S3分类口径、S6时间计划限制保持；本轮不报告准确率，生产分诊未切换。"
+    ]
+  },
+  "local_receipt": "docs/operations/evidence/alert-prompt-validation-20261108-01/workbench-local-publication.json",
+  "local_archive": ".local/workbench-archive/alert-prompt-validation-20261108-01",
+  "retire_batches": [
+    "alert-io-comparison-20261108-01",
+    "alert-prompt-comparison-20261108-01"
+  ]
+}

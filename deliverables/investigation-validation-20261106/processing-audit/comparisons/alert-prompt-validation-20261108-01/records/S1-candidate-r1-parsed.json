@@ -1,0 +1,78 @@
+{
+  "id": "S1-candidate-r1",
+  "sample": "S1",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 3.603701,
+  "usage": {
+    "input_tokens": 1436,
+    "output_tokens": 176,
+    "total_tokens": 1612,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-8ca360bece161bb8"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "benign",
+    "confidence": 0.95,
+    "rationale": "告警触发于假设最高权限角色（Break-glass）的行为，但日志明确显示该操作关联了已批准的变更工单（CHG-20261003-0412），且该工单在操作前 14 分钟已获批，时间窗口匹配。同时，操作主体通过了 MFA 认证，来源 IP 属于企业出口范围，会话内的具体动作（DescribeInstances, RebootInstances 等）均为常规运维操作，无异常数据外传或破坏迹象。",
+    "evidence_ids": [
+      "N1_S5",
+      "N1_S2",
+      "N1_S1"
+    ],
+    "recommendations": []
+  },
+  "parsed_output": {
+    "verdict": "benign",
+    "rationale": "告警触发于假设最高权限角色（Break-glass）的行为，但日志明确显示该操作关联了已批准的变更工单（CHG-20261003-0412），且该工单在操作前 14 分钟已获批，时间窗口匹配。同时，操作主体通过了 MFA 认证，来源 IP 属于企业出口范围，会话内的具体动作（DescribeInstances, RebootInstances 等）均为常规运维操作，无异常数据外传或破坏迹象。",
+    "confidence": 0.95,
+    "score_state": "available",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:01:00+00:00\"；{\"actionsInSession\": [\"DescribeInstances\", \"RebootInstances\", \"DescribeAlarms\"], \"changeTicket\": \"CHG-20261003-0412\", \"eventName\": \"AssumeRole\", \"mfaAuthenticated\": true, \"principal\": \"oncall.sre@example.com\", \"roleArn\": \"arn:aws:iam::210987654321:role/OrganizationAccountAccessRole\", \"sessionDurationSeconds\": 3180, \"sourceIPAddress\": \"198.51.100.17\", \"sourceIpOwner\": \"corporate egress range 198.51.100.0/27\", \"ticketState\": \"approved 14 minutes before the assumption, window 02:00-04:00Z\"}\n分析原文：告警触发于假设最高权限角色（Break-glass）的行为，但日志明确显示该操作关联了已批准的变更工单（CHG-20261003-0412），且该工单在操作前 14 分钟已获批，时间窗口匹配。同时，操作主体通过了 MFA 认证，来源 IP 属于企业出口范围，会话内的具体动作（DescribeInstances, RebootInstances 等）均为常规运维操作，无异常数据外传或破坏迹象。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "alert_material",
+        "id": "6afe6fb0-2155-557f-81be-538cc56f8732",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "6afe6fb0-2155-557f-81be-538cc56f8732",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "6afe6fb0-2155-557f-81be-538cc56f8732",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.00020520901307463646
+}

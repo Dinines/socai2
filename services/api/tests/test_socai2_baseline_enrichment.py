@@ -14,6 +14,7 @@ from app.socai2 import baseline_model_view as view
 from app.socai2.baseline_contracts import Actor, Limits, Publication, Start
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import RM, A, C, F, R, StoreError
+from app.socai2.runtime_policy import draft_limit
 from jsonschema import Draft202012Validator, FormatChecker
 from socai2_test_model_view import model_data
 from sqlalchemy import insert, select, text, update
@@ -221,7 +222,7 @@ async def run_checks(engine, record, only=None):
         await reject("enrichment_not_completed", service.prepare_model_view(T, cid, rid))
         await service.enrich(T, cid, rid)
         prepared = await service.prepare_model_view(T, cid, rid)
-        assert prepared["ready"] and prepared["bytes"] <= 8192
+        assert prepared["ready"] and prepared["bytes"] <= draft_limit()
         assert set(prepared["coverage"]) == set(map(str, aids))
         assert all(x["included"] >= 1 for x in prepared["coverage"].values())
         assert any(o["source"]["source_path"] == "$.case" and o["reason"] == "source_guard_blocked"
@@ -238,7 +239,7 @@ async def run_checks(engine, record, only=None):
         ctx = await service.read_context(T, cid, rid)
         aid = next(iter(ctx.alerts))
         ctx.alerts[aid].alert["description"] = "x" * 3000
-        with patch.object(view, "MAX_MODEL_BYTES", 500):
+        with patch.object(view, "draft_limit", lambda: 500):
             denied = view.build(ctx, uuid4(), [], [])
         assert not denied["ready"] and not denied["messages"]
         prepared = view.build(ctx, uuid4(), [], [])
@@ -246,7 +247,7 @@ async def run_checks(engine, record, only=None):
         # A nested forbidden field is rejected before a harmless projection.
         assert view.blocked({"safe": {"class_uid": 4001}})
         assert view.blocked("x" * 5000 + ' password="1234567890123456"')
-        assert prepared["bytes"] <= 8192
+        assert prepared["bytes"] <= draft_limit()
         assert len(prepared["messages"][1]["content"].encode()) == prepared["prepared_ledger_bytes"]
 
     async def test_publish_cannot_race_active_steps_or_forge_c2_role():

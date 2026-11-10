@@ -1,0 +1,201 @@
+{
+  "text": "[可用调查工具｜程序提供]\n选择原则=先确定调查方向和缺失证据，再选能回答该问题的工具及已有 binding_id。领域不是工具；多个主机候选可对应同一种工具。没有可用候选时不执行；未查、查空、失败分别记录。；候选绑定=[成员=[A1 | A2 | A3]；主机=socai2-flow-20261108-01；对象=[O1]；选项=[绑定=B1；工具=authentication_activity | 绑定=B2；工具=network_connections | 绑定=B3；工具=process_activity]]\n共同返回字段（适用于 authentication_activity、network_connections、process_activity）：[event_id | event_time | class_uid | src_hostname | dst_hostname | process_name | source_ip | dest_ip | src_port | dst_port | protocol | file_path | hash_sha256 | user_name | action | outcome | session_id | session_key | session_key_kind | session_originating_human | ocsf_json]\n共同限制（适用于 authentication_activity、network_connections、process_activity）：[host_time_match_is_not_causality_or_alert_membership | lake_has_no_source_namespace_filter_may_include_multiple_connectors | source_id_match_is_not_independent_corroboration | empty_query_is_not_counterevidence | coverage_and_collection_completeness_unknown]\n可用=true；返回内容与可回答问题=登录或认证尝试的账号、来源、时间、结果和已有会话信息；字段可能缺失。；不能回答=认证日志不是审批记录，无法证明变更获批或操作被业务授权；需要审批证据时交人工确认。；使用范围=选择已有 binding_id；按冻结源主机、租户和时间窗口查询，不按任意用户名扩查。；用途=调查主机在案件时间窗口内记录的认证活动。；工具=authentication_activity\n可用=true；返回内容与可回答问题=连接端点、端口、协议、时间、结果及已记录的流量计数；字段可能缺失。；不能回答=连接成功不证明敏感数据外传、具体文件传输或业务授权；计数缺失不等于零，查空不是反证。；使用范围=选择已有 binding_id；按冻结源主机、租户和时间窗口查询。；用途=调查主机在案件时间窗口内记录的网络连接。；工具=network_connections\n可用=true；返回内容与可回答问题=有哪些进程启动、父子进程、命令行、用户、会话、文件或哈希记录；字段可能缺失。；不能回答=进程启动成功不能证明脚本执行完成、业务成功或操作获批；相同主机和时间不能证明因果。；使用范围=选择已有 binding_id；主机、租户、案件成员和时间窗口由程序冻结，不接受模型 SQL 或额外对象。；用途=调查主机在案件时间窗口内记录的进程活动。；工具=process_activity\n可用=false；返回内容与可回答问题=设备标识、操作系统、代理版本、IP、首次及最近出现时间、隔离状态和产品标签。；不能回答=当前快照不是案件窗口历史，不返回审批记录或进程树；标签不证明授权或恶意，主机匹配不证明人的身份。；使用范围=选择已有 binding_id；固定连接器和主机，仅对提供了连接器的成员可用。；限制=[current_product_snapshot_not_case_window_history | source_host_match_not_identity_proof | not_a_process_tree_or_authorization_record | empty_product_lookup_is_not_counterevidence]；用途=读取已关联 CrowdStrike 连接器中的当前主机快照。；返回字段=[device_id | hostname | platform | os_version | agent_version | local_ip | external_ip | last_seen | first_seen | containment_status | tags | source_connector_id | upstream_request_id | observed_at]；工具=product_host_details",
+  "ledger": [
+    {
+      "reason": "shared_exact_value",
+      "field": "returned_fields",
+      "applies_to": [
+        "authentication_activity",
+        "network_connections",
+        "process_activity"
+      ],
+      "value_sha256": "5ac25ddacb22ae64be4c7597fd2f2d111980b9ccb88f7e340942d0e28ef9b56f"
+    },
+    {
+      "reason": "shared_exact_value",
+      "field": "limitations",
+      "applies_to": [
+        "authentication_activity",
+        "network_connections",
+        "process_activity"
+      ],
+      "value_sha256": "5279abe2d54878790eed3425cf37051763176990dc51327502d5ac86ea97ed5c"
+    }
+  ],
+  "catalog": {
+    "selection_rule": "先确定调查方向和缺失证据，再选能回答该问题的工具及已有 binding_id。领域不是工具；多个主机候选可对应同一种工具。没有可用候选时不执行；未查、查空、失败分别记录。",
+    "tool_option_groups": [
+      {
+        "alert_ids": [
+          "A1",
+          "A2",
+          "A3"
+        ],
+        "hostname": "socai2-flow-20261108-01",
+        "object_keys": [
+          "O1"
+        ],
+        "options": [
+          {
+            "binding_id": "B1",
+            "tool_name": "authentication_activity"
+          },
+          {
+            "binding_id": "B2",
+            "tool_name": "network_connections"
+          },
+          {
+            "binding_id": "B3",
+            "tool_name": "process_activity"
+          }
+        ]
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "available": true,
+      "can_answer": "登录或认证尝试的账号、来源、时间、结果和已有会话信息；字段可能缺失。",
+      "cannot_answer": "认证日志不是审批记录，无法证明变更获批或操作被业务授权；需要审批证据时交人工确认。",
+      "inputs": "选择已有 binding_id；按冻结源主机、租户和时间窗口查询，不按任意用户名扩查。",
+      "limitations": [
+        "host_time_match_is_not_causality_or_alert_membership",
+        "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+        "source_id_match_is_not_independent_corroboration",
+        "empty_query_is_not_counterevidence",
+        "coverage_and_collection_completeness_unknown"
+      ],
+      "purpose": "调查主机在案件时间窗口内记录的认证活动。",
+      "returned_fields": [
+        "event_id",
+        "event_time",
+        "class_uid",
+        "src_hostname",
+        "dst_hostname",
+        "process_name",
+        "source_ip",
+        "dest_ip",
+        "src_port",
+        "dst_port",
+        "protocol",
+        "file_path",
+        "hash_sha256",
+        "user_name",
+        "action",
+        "outcome",
+        "session_id",
+        "session_key",
+        "session_key_kind",
+        "session_originating_human",
+        "ocsf_json"
+      ],
+      "tool_name": "authentication_activity"
+    },
+    {
+      "available": true,
+      "can_answer": "连接端点、端口、协议、时间、结果及已记录的流量计数；字段可能缺失。",
+      "cannot_answer": "连接成功不证明敏感数据外传、具体文件传输或业务授权；计数缺失不等于零，查空不是反证。",
+      "inputs": "选择已有 binding_id；按冻结源主机、租户和时间窗口查询。",
+      "limitations": [
+        "host_time_match_is_not_causality_or_alert_membership",
+        "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+        "source_id_match_is_not_independent_corroboration",
+        "empty_query_is_not_counterevidence",
+        "coverage_and_collection_completeness_unknown"
+      ],
+      "purpose": "调查主机在案件时间窗口内记录的网络连接。",
+      "returned_fields": [
+        "event_id",
+        "event_time",
+        "class_uid",
+        "src_hostname",
+        "dst_hostname",
+        "process_name",
+        "source_ip",
+        "dest_ip",
+        "src_port",
+        "dst_port",
+        "protocol",
+        "file_path",
+        "hash_sha256",
+        "user_name",
+        "action",
+        "outcome",
+        "session_id",
+        "session_key",
+        "session_key_kind",
+        "session_originating_human",
+        "ocsf_json"
+      ],
+      "tool_name": "network_connections"
+    },
+    {
+      "available": true,
+      "can_answer": "有哪些进程启动、父子进程、命令行、用户、会话、文件或哈希记录；字段可能缺失。",
+      "cannot_answer": "进程启动成功不能证明脚本执行完成、业务成功或操作获批；相同主机和时间不能证明因果。",
+      "inputs": "选择已有 binding_id；主机、租户、案件成员和时间窗口由程序冻结，不接受模型 SQL 或额外对象。",
+      "limitations": [
+        "host_time_match_is_not_causality_or_alert_membership",
+        "lake_has_no_source_namespace_filter_may_include_multiple_connectors",
+        "source_id_match_is_not_independent_corroboration",
+        "empty_query_is_not_counterevidence",
+        "coverage_and_collection_completeness_unknown"
+      ],
+      "purpose": "调查主机在案件时间窗口内记录的进程活动。",
+      "returned_fields": [
+        "event_id",
+        "event_time",
+        "class_uid",
+        "src_hostname",
+        "dst_hostname",
+        "process_name",
+        "source_ip",
+        "dest_ip",
+        "src_port",
+        "dst_port",
+        "protocol",
+        "file_path",
+        "hash_sha256",
+        "user_name",
+        "action",
+        "outcome",
+        "session_id",
+        "session_key",
+        "session_key_kind",
+        "session_originating_human",
+        "ocsf_json"
+      ],
+      "tool_name": "process_activity"
+    },
+    {
+      "available": false,
+      "can_answer": "设备标识、操作系统、代理版本、IP、首次及最近出现时间、隔离状态和产品标签。",
+      "cannot_answer": "当前快照不是案件窗口历史，不返回审批记录或进程树；标签不证明授权或恶意，主机匹配不证明人的身份。",
+      "inputs": "选择已有 binding_id；固定连接器和主机，仅对提供了连接器的成员可用。",
+      "limitations": [
+        "current_product_snapshot_not_case_window_history",
+        "source_host_match_not_identity_proof",
+        "not_a_process_tree_or_authorization_record",
+        "empty_product_lookup_is_not_counterevidence"
+      ],
+      "purpose": "读取已关联 CrowdStrike 连接器中的当前主机快照。",
+      "returned_fields": [
+        "device_id",
+        "hostname",
+        "platform",
+        "os_version",
+        "agent_version",
+        "local_ip",
+        "external_ip",
+        "last_seen",
+        "first_seen",
+        "containment_status",
+        "tags",
+        "source_connector_id",
+        "upstream_request_id",
+        "observed_at"
+      ],
+      "tool_name": "product_host_details"
+    }
+  ]
+}

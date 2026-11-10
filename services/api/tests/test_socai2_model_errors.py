@@ -35,6 +35,10 @@ class FailingGateway:
     async def configure(self, *_):
         return True
 
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
+
     async def complete(self, *_):
         self.calls += 1
         raise failure()

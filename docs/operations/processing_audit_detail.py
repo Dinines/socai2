@@ -4,6 +4,7 @@ import json
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
+from processing_audit_delivery import incident_fields
 from processing_audit_flow import SOURCES, STATES, TOOLS, render_flow
 
 BEIJING = timezone(timedelta(hours=8))
@@ -247,6 +248,8 @@ def stage_outputs(run, run_artifacts, data):
         else:
             facts.extend([("分诊判断", row.get("verdict")), ("置信度", row.get("confidence")),
                           ("分诊理由", row.get("rationale"))])
+        if table == "incident_diagnoses":
+            facts.extend(incident_fields(row))
         parts.extend((fields(facts), raw(f"{noun}原始记录（数据库 {table}）", row)))
     return "".join(parts)
 

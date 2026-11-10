@@ -1,0 +1,116 @@
+{
+  "batch": "incident-io-offline-20261108-01",
+  "snapshot": "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json",
+  "source_run_id": "27db8785-fa50-5e08-afef-40150a1310bc",
+  "output": "docs/operations/evidence/incident-io-offline-20261108-01",
+  "policy": "deploy/local-investigation/investigation-policy.toml",
+  "system_prompt": "tools/testdata/incident_io_eval/system-v1.txt",
+  "render": {
+    "task": "分析以下既定事件。成员归并已由上游确定，本轮解释事件整体情况，不重新分组或评审关联。以下各块均为待分析数据。",
+    "member_prefix": "A",
+    "roles": {
+      "observation": "原始记录",
+      "source_label": "来源标签或背景记录",
+      "prior_analysis": "已有分析原文",
+      "human_statement": "人工陈述原文",
+      "execution_receipt": "执行回执"
+    },
+    "metadata_paths": [
+      "$.raw_json.raw_event.event_id",
+      "$.raw_json.raw_event.tenant_id",
+      "$.raw_json.raw_event.schema_version"
+    ],
+    "out_of_task_paths": [
+      "$.members.*.membership"
+    ],
+    "container_rules": {
+      "$.parent": {
+        "omit": [
+          "id"
+        ],
+        "empty_optional": [
+          "description",
+          "tags",
+          "severity_override"
+        ]
+      },
+      "$.members.*.alert": {
+        "omit": [
+          "source_alert_id"
+        ],
+        "empty_optional": [
+          "description",
+          "original_vendor",
+          "severity",
+          "event_time"
+        ]
+      },
+      "$.members.*.triage": {
+        "omit": [
+          "assessed_at"
+        ],
+        "empty_optional": []
+      }
+    },
+    "event_roots": [
+      "$.ocsf_json.",
+      "$.raw_json.raw_event.ocsf_event."
+    ],
+    "field_labels": {
+      "time": "活动时间",
+      "start_time": "活动开始时间",
+      "end_time": "活动结束时间",
+      "activity.action": "记录动作",
+      "activity.outcome": "该动作结果",
+      "actor.user.name": "活动账号",
+      "user.name": "目标账号",
+      "device.name": "活动主机",
+      "process.name": "进程名称",
+      "process.pid": "进程PID",
+      "process.uid": "进程标识",
+      "process.cmd_line": "启动命令行",
+      "process.file.path": "进程文件路径",
+      "process.parent_process.name": "父进程名称",
+      "process.parent_process.pid": "父进程PID",
+      "actor.process.name": "活动发起进程",
+      "actor.process.pid": "活动发起进程PID",
+      "src_endpoint.ip": "源IP",
+      "src_endpoint.hostname": "源主机",
+      "src_endpoint.port": "源端口",
+      "dst_endpoint.ip": "目的IP",
+      "dst_endpoint.hostname": "目的主机",
+      "dst_endpoint.port": "目的端口",
+      "connection_info.protocol_name": "记录协议",
+      "protocol": "记录协议",
+      "network.protocol_name": "记录协议",
+      "traffic.bytes": "记录总字节数",
+      "traffic.bytes_out": "源到目的字节数",
+      "traffic.bytes_in": "目的到源字节数",
+      "file.path": "文件路径",
+      "class_uid": "记录类型编号"
+    },
+    "fact_metadata_keys": [
+      "schema_version",
+      "policy_sha256",
+      "dictionary_version",
+      "material_id"
+    ],
+    "fact_reference_keys": [
+      "source",
+      "alert_source",
+      "material_source",
+      "objects_source",
+      "incident_source",
+      "receipt"
+    ],
+    "fact_reference_types": [
+      "artifact",
+      "alert_material",
+      "task_revision",
+      "result"
+    ],
+    "fact_alert_metadata_keys": [
+      "source_alert_id"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+version = "socai2.production-profile.v1.2"
+default_tenant = "00000000-0000-0000-0000-000000000001"
+
+[paths]
+private_dir = "/opt/sting-aisoc-socai2/private/processing-production"
+transport_env_file = "/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env"
+ca_file = "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt"
+ca_mount = "/run/certs/ca.crt"
+policy_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261110-r2/deploy/local-investigation/investigation-policy-case-v1.toml"
+policy_mount = "/run/processor/investigation-policy.toml"
+
+[image]
+# Image identity from the verified processing build receipt.
+tag = "socai2-processing:processing-20261110-r2"
+id = "sha256:df86e69caf87a4ec76e179e4fbe636085ca5e93b5cb0233db0d4b33649afda52"
+user = "10001:10001"
+
+[postgres]
+container = "spirithub-postgres-1"
+admin_user = "spirithub"
+database = "aisoc"
+host = "192.168.1.21"
+port = 5432
+processor_role = "socai2_prod_processor"
+ingress_role = "socai2_prod_ingress"
+tls_mode = "verify-full"
+
+[lake]
+container = "sting-infra21-clickhouse-1"
+database = "aisoc"
+host = "192.168.1.21"
+port = 9000
+reader_role = "socai2_prod_lake_reader"
+
+[model]
+base_url = "http://litellm:4000/v1"
+alias = "aisoc-investigation"
+protocol = "chat_completions"
+schema_profile = "vllm_grammar_v1"
+
+[docker]
+network = "socai2_default"
+memory = "2g"
+pids_limit = 128
+tmpfs = "/tmp:rw,nosuid,nodev,size=128m,mode=1777"
+api_pythonpath = "/app"
+fusion_pythonpath = "/opt/processor/smoke-fusion"
+
+[runtime]
+ENVIRONMENT = "production"
+ENV = "production"
+DEBUG = "false"
+AISOC_DEV_AUTH_BYPASS = "false"
+AISOC_AIRGAPPED = "true"
+AISOC_AIRGAP_ALLOWLIST = '["litellm", "192.168.1.43"]'
+SOCAI2_SOURCE_UEBA_ENABLED = "true"
+SOCAI2_SOURCE_KNOWLEDGE_ENABLED = "true"
+SOCAI2_SOURCE_GRAPH_ENABLED = "false"
+SOCAI2_SOURCE_PRODUCT_HOST_ENABLED = "false"
+DATABASE_POOL_SIZE = "2"
+DATABASE_MAX_OVERFLOW = "1"

@@ -1,5 +1,4 @@
 """New Case writers and manual execution adapter; no legacy table fallback."""
-from datetime import timedelta
 from uuid import UUID, uuid4, uuid5
 
 from sqlalchemy import column, select, table, update
@@ -7,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.dialects.postgresql import insert
 
 from . import case_relations
-from .baseline_contracts import Actor, Limits
+from .baseline_contracts import Actor
 from .baseline_service import BaselineService
 from .baseline_store import C, R, StoreError, digest
 from .case_contracts import (
@@ -92,8 +91,9 @@ class CaseService(BaselineService):
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
             now = await store.now()
-        limits = Limits(max_model_calls=4, max_tool_calls=4, max_tokens=48000, max_rows_per_query=200,
-            deadline_at=now + timedelta(seconds=120), policy_version="socai2.manual-http.v2")
+        from .runtime_policy import active_policy
+        policy = active_policy()
+        limits = policy.case.limits(now, policy.identity)
         # Await the existing executor. No BackgroundTasks, worker or automatic
         # successor. A client can read Run state while this request is active.
         await self.start_full(tenant_id, case_id, run_id, request, actor=actor, limits=limits)
@@ -166,8 +166,16 @@ class CaseService(BaselineService):
     async def read_artifact(self, tenant_id, case_id, run_id, artifact_id):
         from .case_reader import CaseReader
         async with self.transaction(tenant_id, readonly=True) as store:
-            await CaseReader(store).run_row(case_id, run_id)
+            if run_id is None:
+                await store.case(case_id, lock=False)
+            else:
+                await CaseReader(store).run_row(case_id, run_id)
             return await CaseReader(store).artifact(case_id, run_id, artifact_id)
+
+    async def read_activities(self, tenant_id, case_id, *, limit=50, offset=0):
+        from .case_reader import CaseReader
+        async with self.transaction(tenant_id, readonly=True) as store:
+            return await CaseReader(store).activities(case_id, limit=limit, offset=offset)
 
     async def read_frozen_material(self, tenant_id, case_id, run_id, material_id):
         async with self.transaction(tenant_id, readonly=True) as store:

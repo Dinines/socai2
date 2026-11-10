@@ -494,6 +494,9 @@ async def init_lake_schema() -> None:
     ``error`` and the pending list stays readable for diagnostics, so a
     degraded start is visible rather than assumed.
     """
+    if not settings.AISOC_STARTUP_SCHEMA_MIGRATIONS:
+        logger.info("lake startup migrations disabled by deployment configuration")
+        return
     from app.db.lake_migrations import pending_ids, run_migrations  # noqa: PLC0415
 
     try:

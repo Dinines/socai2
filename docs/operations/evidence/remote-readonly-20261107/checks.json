@@ -1,0 +1,53 @@
+{
+  "scope": "local readonly API -> SSH relay -> aisoc.socai2; existing socai2_prod_reader; fixed production tenant",
+  "latest_unique_pytest_cases": 21,
+  "test_files": {
+    "deploy/local-investigation/test_remote_profile.py": 10,
+    "services/api/tests/test_database_pool.py": 4,
+    "services/api/tests/test_db_url_normalize.py": 7
+  },
+  "checks": {
+    "ruff": "passed",
+    "openspec_strict": "passed",
+    "git_diff_check": "passed",
+    "actual_readonly_http_checks": 13,
+    "tls_wrong_identity": "rejected",
+    "private_config_git_ignored": true
+  },
+  "initial_check_failures": [
+    {
+      "check": "offline authentication guard test",
+      "reason": "Test attempted to replace a read-only AsyncEngine instance attribute; replaced the class method in an isolated test process. Application unchanged.",
+      "initial_result": "13 passed, 1 failed; targeted rerun 14 passed"
+    },
+    {
+      "check": "standalone SQL verification",
+      "reason": "SQLAlchemy URI encodes options spaces as plus signs, which libpq did not decode. Verification now supplies decoded connection keywords, matching the already working API dialect.",
+      "initial_result": "server rejected connection options before SQL; corrected verification passed"
+    },
+    {
+      "check": "static lint",
+      "reason": "Initial import ordering, redundant noqa, subprocess capture/check arguments corrected.",
+      "latest_result": "passed"
+    }
+  ],
+  "limits": [
+    "Current production-tenant cases count is zero; Case list empty state was verified, nonempty Case detail was not.",
+    "Only socai2 schema was read through the API. public.alerts aggregate probes using the existing ingress role were permission-denied; no full legacy alert count is claimed.",
+    "No production schema/data/role/grant changes, model calls, investigations, consumers or remote deployments.",
+    "No audit of concurrent external writers; production_mutations=0 describes this verification process.",
+    "Existing legacy launcher hardcoded configuration remains registered for later migration.",
+    "Credentials are local ignored files; no production login signing key or API key was copied."
+  ],
+  "source_sha256": {
+    "services/api/app/db/database.py": "73a97a4b7d66804fd4f53da7222011429114655b56a6d3d2d604796cd46887c5",
+    "deploy/local-investigation/run.py": "ff7111c4e68f110ac4ed541caac9c61af1a613858042bab68dbd7a306f52cfc0",
+    "deploy/local-investigation/remote_profile.py": "2342c17151f1f4111032662cb1b51025ed45b8cd032e0166561a51ba7dbfcd0f",
+    "deploy/local-investigation/remote_readonly_api.py": "06843d278bf32c42cc3fc17a53c804196fff417d8ba2bd498a9b5a24b7af171c",
+    "deploy/local-investigation/bootstrap_remote_profile.py": "2b047a7291db6296e41dbcb1c816e1a52248d65ad46f653bf483c06f1ddbb1ff",
+    "deploy/local-investigation/verify_remote_readonly.py": "9bc898388f04015dbff01402af66878000c92201693492e9c6f9255756cbbe62",
+    "deploy/local-investigation/remote-profile.example.toml": "34123e210c00f72e3802b75fe2b233942dab133a7c6c7d905c23b04e5ae8eb4f",
+    "deploy/local-investigation/requirements-remote.txt": "aa49686bd8b5a79fe43d2292c15c89688a54d0f04a0eb619d000622c185a56fa",
+    "deploy/local-investigation/test_remote_profile.py": "689b5c96c6602cca69fc83c6f14e37bd6b90d37da80db3ef3d6738f116ae70c9"
+  }
+}

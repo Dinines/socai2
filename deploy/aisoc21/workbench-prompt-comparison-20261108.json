@@ -1,0 +1,97 @@
+{
+  "evidence": "docs/operations/evidence/alert-prompt-comparison-20261108-01",
+  "local_site": "deliverables/investigation-validation-20261106/processing-audit",
+  "template": "docs/operations/alert_io_comparison_page.html",
+  "receipt": "docs/operations/evidence/alert-prompt-comparison-20261108-01/workbench-publication.json",
+  "variants": [
+    {
+      "id": "control",
+      "title": "原五字段指令",
+      "description": "本批重新调用，完整复用原五字段请求。"
+    },
+    {
+      "id": "candidate",
+      "title": "整理后的五字段指令",
+      "description": "只替换任务指令，输入正文、输出格式及模型参数保持。"
+    }
+  ],
+  "samples": {
+    "A1": {
+      "title": "账号登录",
+      "note": "两版均待复核。新指令把三项已查询且返回0行写成“未查”；名称猜用途从主要理由中减少，置信度由0.65变null。"
+    },
+    "A2": {
+      "title": "PowerShell 启动",
+      "note": "两版均待复核。新指令把进程启动扩大为命令执行成功，并把TI未查写成未命中；原五字段的临时会话猜测消失。"
+    },
+    "A3": {
+      "title": "网络连接",
+      "note": "两版均待复核；新指令置信度变null，两轮建议措辞/引用略有变化。查询查空符合本例事实，但正文仍复述状态。"
+    },
+    "S1": {
+      "title": "已批准的云运维",
+      "note": "两版均良性、0.95；都引用已批准工单、MFA与执行窗口，未见本批主要判定退化。"
+    },
+    "S2": {
+      "title": "连续 MFA 请求",
+      "note": "两版均待复核。新指令新增“主动安全加固”的无证据假设；待复核不计方向误判，也不代表已经识别恶意。"
+    },
+    "S3": {
+      "title": "管理代理清点软件",
+      "note": "良性变待复核；新指令把上报厂商CrowdStrike当执行代理并据此提建议。作者误报/良性标签口径仍需对齐，不能仅按标签判对错。"
+    },
+    "S4": {
+      "title": "离职员工大量上传",
+      "note": "两版均待复核。新指令少了部分无必要的前提，但仍需授权背景；短写账号名称不用于程序关联。"
+    },
+    "S5": {
+      "title": "凭证窃取邮件",
+      "note": "恶意变待复核；新指令以缺人工确认和假设演练为由不定性，并把明确false的演练登记字段称为标记缺失。"
+    },
+    "S6": {
+      "title": "客户表批量读取",
+      "note": "良性变待复核；新指令没有再把180次运行写成全成功，但把copyToProgramUsed=false扩大成未外传，并额外要求人工授权。原时间/计划不一致仍在。"
+    }
+  },
+  "deployment": {
+    "ssh_binary": "ssh",
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "command_timeout_seconds": 90,
+    "remote_python": "python3",
+    "docker": "docker",
+    "container": "socai2-production-workbench",
+    "project": "socai2-production-workbench",
+    "service": "workbench",
+    "expected_image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+    "expected_base_release": "/opt/sting-aisoc-socai2/releases/v1.2-20261108-r1",
+    "expected_compose": "/opt/sting-aisoc-socai2/private/workbench-comparison-20261108-01/workbench-after.json",
+    "release": "/opt/sting-aisoc-socai2/releases/workbench-prompt-comparison-20261108-01",
+    "private": "/opt/sting-aisoc-socai2/private/workbench-prompt-comparison-20261108-01",
+    "site": "/opt/sting-aisoc-socai2/data/production-workbench/site",
+    "source_mount": "/opt/workbench",
+    "site_owner": [
+      10001,
+      10001
+    ],
+    "base_url": "http://127.0.0.1:4177",
+    "source_files": [],
+    "static_only": true
+  },
+  "title": "五字段任务指令前后对比",
+  "status": "候选质量未通过",
+  "presentation": {
+    "status": "候选质量未通过",
+    "title": "同一告警，只改变任务指令",
+    "description": "原五字段指令与整理后的指令对比。两组使用相同的材料、五字段格式、证据编号和模型参数。",
+    "metrics_label": "本批每组 12 次请求",
+    "method": "3 个已有样例各两轮、6 个合成样例各一轮，共 24 次新调用。对照组也重新请求；只有 system 指令不同，HTTP 耗时不代表完整业务处理时间。",
+    "findings": [
+      "本次只改变任务指令，原/新两组均为五字段，输入正文、输出Schema和模型参数完全相同。",
+      "输入平均少0.8%，输出多17.3%，HTTP耗时多18.3%；本候选不采用。",
+      "S3/S5/S6从明确判定转为待复核；不计良恶方向误判，但未证明判断质量改善。",
+      "两组格式/引用均通过，候选仍新增查询状态、动作效果、厂商归属等事实错误。",
+      "S3分类口径/S6时间计划限制保留，不报告准确率；旧批与生产分诊保持。"
+    ]
+  }
+}

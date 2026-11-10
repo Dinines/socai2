@@ -313,7 +313,7 @@ async def run_checks(engine, record, only=None):
         cid, _aids, mids, rid = await fixture(1)
         await reject("frozen_material_not_found", service.read_material(T, cid, rid, mids[0]))
         async with service.transaction(T) as store:
-            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * c1.MAX_CONTEXT_BYTES))
+            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * c1.retention_limit()))
         await reject("baseline_context_too_large", start(cid, rid))
         assert (await one(select(R.c.state).where(R.c.id == rid)))["state"] == "pending_update"
         assert await one(select(F.c.id).where(F.c.run_id == rid)) is None

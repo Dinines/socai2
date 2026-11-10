@@ -215,7 +215,9 @@ def parse(content, source_map, context, coverage, *, bindings=None):
         if item.applicability != "applicable" and not item.limitations:
             fail("unapplied_domain_needs_limitations")
         for fid in item.finding_ids:
-            if not set(map(str, finding_lookup[fid].alert_ids)) <= members:
+            # Domain focus and the underlying finding's scope are independent.
+            # A relevant multi-member finding keeps its original full scope.
+            if not set(map(str, finding_lookup[fid].alert_ids)) & members:
                 fail("domain_finding_scope_mismatch")
     unique([c.id for c in analysis.conflicts], "duplicate_conflict")
     for item in analysis.conflicts:
@@ -254,7 +256,7 @@ def parse(content, source_map, context, coverage, *, bindings=None):
 EXECUTION_PROMPT = """options继承组的hostname/alert_ids/object_keys。query按binding_id取证，列全组alert_ids，对象限组内；空目录禁query。其余模式binding_id=null，deep按结果续查。priority取decision_critical或supporting。绑定不证明返回行属于告警。禁写SQL或参数。"""
 
 
-DOMAIN_FINDING_SCOPE = "先按证据定领域alert_ids。若finding的alert_ids有任一不在其中，finding_ids就略去该发现；无可引项填[]。"
+DOMAIN_FINDING_SCOPE = "领域alert_ids表示本领域关注成员。可引用与其有成员交集的相关跨成员finding，保留finding原alert_ids；引用不把发现结论扩给整个领域，也不把发现范围缩为交集。无相关发现填[]。"
 
 PROMPT = f"""执行C3初始主分析，不出终报、不结案、不调工具。只引本轮编号；source_groups组内共用角色/成员。
 本轮编号含N前缀；历史文本编号不属于本轮。source_label、旧判断、人工陈述不能证明observed；告警时间仅可附作上下文，仍须该成员的observation证明行为。无观察用inferred/unresolved。标题、厂商、测试/演练自述不证明授权、良性或排除恶意；有效旧分诊仍需核实。成员属性不得相互移植。

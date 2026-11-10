@@ -14,9 +14,11 @@ from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_evidence import BaselineEvidence
 from .baseline_evidence_tools import LakeGateway
-from .baseline_model_view import MAX_FIELD_BYTES, blocked
+from .baseline_model_view import blocked, field_limit
 from .baseline_reasoning import ModelSteps, bounded_input, evidence_candidates
 from .baseline_store import F, StoreError, digest, encoded
+from .baseline_tool_catalog import capabilities
+from .runtime_policy import draft_limit
 from .structured_output import response_format
 
 SCHEMA = contract.SCHEMA
@@ -27,13 +29,18 @@ class BaselineDeep(ModelSteps):
         super().__init__(service, SCHEMA)
 
     async def input(self, tenant_id, case_id, run_id, question_id, initial, initial_id, lake):
+        async with self.service.transaction(tenant_id) as store:
+            frozen = await store.read_context(case_id, run_id)
+        if frozen.case_input_profile is not None:
+            from .case_followup_loader import deep
+            return await deep(self, tenant_id, case_id, run_id, question_id, initial, initial_id, lake)
         view = await BaselineEvidence(self.service).model_view(tenant_id, case_id, run_id, question_id)
         if not view["ready"]:
             return {**view, "input_artifact_ids": [view["artifact_id"], str(initial_id)]}
         data, candidates = evidence_candidates(view)
         prior = {"role": "prior_analysis", "question": next(q for q in initial["analysis"]["questions"] if q["id"] == question_id),
                  "followups": [f for f in initial["analysis"]["followups"] if f["question_id"] == question_id]}
-        prior_reason = "source_guard_blocked" if blocked(prior) else "whole_field_exceeds_budget" if len(encoded(prior)) > MAX_FIELD_BYTES else None
+        prior_reason = "source_guard_blocked" if blocked(prior) else "whole_field_exceeds_budget" if len(encoded(prior)) > field_limit() else None
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             context = await store.read_context(case_id, run_id)
@@ -81,7 +88,7 @@ class BaselineDeep(ModelSteps):
             alias = "B" + str(len(options) + 1)
             option = {"id": alias, "tool_name": binding["tool_name"], "hostname": binding["hostname"],
                 "related_alert_ids": binding["alert_ids"]}
-            if len(encoded([*options, option])) > 1800:
+            if len(encoded([*options, option])) > draft_limit():
                 break
             options.append(option)
             mapping[alias] = bid
@@ -89,6 +96,7 @@ class BaselineDeep(ModelSteps):
             aid: {**row, "included": 0} for aid, row in data["coverage"].items()},
             "queries": data["queries"], "prior_analysis": None if prior_reason else prior,
             "prior_analysis_omission": prior_reason, "tool_options": options,
+            "tool_capabilities": capabilities({o["tool_name"] for o in options}),
             "unoffered_query_count": len(choices) - len(options),
             "tool_availability": ("available" if choices else "no_unqueried_enabled_binding")
                 if available else "source_scope_or_remaining_budget_unavailable",
@@ -134,10 +142,15 @@ class BaselineDeep(ModelSteps):
             while True:
                 prepared = await self.input(tenant_id, case_id, run_id, question_id, initial, initial_id, lake)
                 parser = lambda content, p=prepared: contract.parse(content, p["source_map"], p.get("binding_map", {}), question_id)
+                output_format = response_format(contract.Decision, prepared["source_map"],
+                    questions=[question_id], bindings=prepared.get("binding_map", {}))
+                if "followup_boundary" in prepared:
+                    from .case_followup_output import deep_format, parse_deep
+                    parser = lambda content, p=prepared: parse_deep(content, p)
+                    output_format = deep_format(prepared)
                 decision, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                     stage_id, "C4.deep", prepared, gateway, parser,
-                    output_format=response_format(contract.Decision, prepared["source_map"],
-                        questions=[question_id], bindings=prepared.get("binding_map", {})))
+                    output_format=output_format)
                 if model_id:
                     iterations.append({"model_step_id": str(model_id), "response_id": str(response_id),
                         "input_artifact_ids": prepared["input_artifact_ids"],

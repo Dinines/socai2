@@ -1,0 +1,55 @@
+> 此文件保存 2026-11-10 整理前的过程快照，仅供追溯。当前说明见仓库入口。
+
+**2026-11-06发布授权：** 用户明确要求提交本轮数据修复、测试和字段对应到远程同名分支；[发布记录及剩余问题/部署模型计划](../../../openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)和[可下载交接包](../../../deliverables/investigation-validation-20261106/README.md)已备齐。当前63/69、19/26，语义质量仍未通过；下文未提交为历史时点，本次仅Git发布，不执行下一轮模型。
+
+**2026-11-06最新测试交接：** 用户追加三案已完成15次DeepSeek，累计63/69，三案均形成C6；模型质量仍未通过。48只读GET/674比较、557页面检查/87视图通过，原模板只追加样例。统一[测试与F01—F28字段功能交接](../../investigation/investigation-test-handoff-20261106.md)，[追加计划及结果](../../../openspec/changes/complete-socai2-investigation-chain/additional-validation-20261106.md)。19/26保持，部署模型下轮再测；下文旧额度/状态为历史。
+
+**2026-11-05当前实施：** 2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 详见[修改及评审清单](../../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)、[本机执行记录](../../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)和[任务](../../../openspec/changes/complete-socai2-investigation-chain/tasks.md)。
+
+**2026-11-04当前实施：** [complete-socai2-investigation-chain](../../../openspec/changes/complete-socai2-investigation-chain/proposal.md)在主目录开发分支推进新表调查链；AI问答暂缓业务、预留接口，已有批次与剩余任务分列。旧`fix-investigation-audit-gaps`仍暂停16/17、5.3未完成。历史“当前”记录按当时日期理解。
+
+**2026-10-31当前调查实施：** [fix-investigation-audit-gaps](../../../openspec/changes/fix-investigation-audit-gaps/proposal.md)已本地实现A01/A02/D01并保存源码commit `bb8dbc3`，31项直接结果及[结束独审0必须修](../../../openspec/changes/fix-investigation-audit-gaps/audit.md)有据。[任务](../../../openspec/changes/fix-investigation-audit-gaps/tasks.md)完成14/17，r3候选和5份定向请求已固定；真实更新/复验及归档条件仍待，21只读连接超时。与[已有追加修复](../../../openspec/changes/fix-case-followup-gaps/tasks.md)共用后续实际回执；不提前归档或同步主规格。[实施校验](../../../openspec/changes/fix-investigation-audit-gaps/execution-validation.md)与原规划校验分开。
+
+**2026-10-24收尾状态：** 用户将背景事件入湖/相关调查验证交独立调查开发，本会话停止重复测试。迁移change按[收尾回执](../../operations/migration-closeout-20261024.md)结算实际交付及转出责任，已通过静态结束独审及归档前检查，归档并同步17条有证据的主规格合同。新调查不再沿该归档change实施。原5/15/B5→B6为10月21—23日过程状态，历史R02仍暂缓0/17；不等于新调查实现或质量已通过。
+
+# OpenSpec实施说明
+
+2026-11-06按用户要求先做[页面数据合同](../../../openspec/changes/complete-socai2-investigation-chain/design.md#页面数据合同优先推进2026-11-06)：固定Case分类/期限、当前判断及证据计数，补最小存储并以DA01—DA06单独交接。R1—R8质量路线不阻挡这一部分；数据部分已实施126、共用读出/导出与原页字段绑定，本机29表462列，见[交接](../../investigation/socai2-page-data-handoff-20261106.md)；19/26、48/50保持，不改页面布局。
+
+2026-11-05后续规划基于已推送`5eacb314`，继续[同一change设计](../../../openspec/changes/complete-socai2-investigation-chain/design.md)的R1—R8修复：事实/效果及统一业务投影→H容量→知识/领域/引用→真实新批→原模板读回→远端配对与结束审计。见[验收矩阵](../../../openspec/changes/complete-socai2-investigation-chain/acceptance-plan-20261104.md)；本轮仅规划，19/26、48/50保持，额外模型额度未批准，不归档。
+
+2026-10-21起，OpenSpec是本项目的变更实施规范。使用本机OpenSpec 1.13.0的 `spec-driven` schema，由CLI与根AGENTS接入；本次 `init --tools none` 未安装 `/opsx:*` 快捷指令或改写个人工具配置。
+
+## 文档职责
+
+| 内容 | 维护位置 |
+| --- | --- |
+| 服务端职责、阶段退出、路线依赖 | [范围](../../operations/alert-processing-scope.md)、[路线](../../operations/service-roadmap.md)、[完成计划](../../operations/completion-plan.md) |
+| 实际完成、下一项 | [PROGRESS](../../../PROGRESS.md) |
+| 固定输入、判据、原始结果、失败、来源 | 原批次计划/冻结回执及 `docs/handoff/` 清单 |
+| 当前增量的需求/场景、设计、任务、审计追踪 | `changes/<change>/` |
+| 经实施、验收和独审后同步的规格 | `specs/<capability>/spec.md` |
+| 项目上下文和产物/操作规则 | [config.yaml](../../../openspec/config.yaml)、[根AGENTS](../../../AGENTS.md) |
+
+不导入旧SOCAI的change，不把历史回执改写成新任务完成证明。既有验收记录继续有效于原范围；当前未建立全产品规格库，不声称OpenSpec已覆盖全部已迁功能。首次接入是纯工具/文档change，使用 `skip_specs: true`，不虚构产品能力。未来规格按实际change逐批建立或补齐。
+
+## 工作流
+
+实施以功能完整、结果正确为先，采用最小必要适配。所有一体模块/依赖可整体原样迁入，不额外修改或测试；不为拆分暂缓模块、统一架构或补齐专项而增加工作。冗余设计及服务可用性测试/修复登记后置，OpenSpec只追踪本次实际功能变化和最少验证，不引入另一套完整性/恢复框架。未专项验证如实标记，历史失败不改写。
+
+1. 读取根AGENTS、上述权威文档及相关完整规格；运行 `openspec list` 和 `openspec list --specs`，复用合适的活动change。
+2. 新变更运行 `openspec new change <name>`，形成proposal、必要规格增量、简短design和tasks。设计仅说明本次影响及必要边界，不默认增加抽象层；原样一体迁入不新增独立改测任务。纯工具/文档/重构且无规格级行为变化时在 `.openspec.yaml` 设置 `skip_specs: true`，不创建空的规格增量。
+3. 运行 `openspec validate <name> --strict --no-interactive`，沿用已有受控授权/运行边界，只核本次实际操作必要条件。旧批全量冻结、逐项计数及恢复清单不自动变成新功能前置；旧R02仍暂缓。没有明确运行范围时不改变运行开关，不新增常规逐批用户确认。
+4. 按tasks实施和直接验证，留下输入→实际中间产品/调用→最终值/关系。每完成一项再勾选，失败与unknown保留；校验通过仅证明结构，不证明业务通过。
+5. 由未参与实现者做结束审计，将结论/限制/证据写入change的 `audit.md` 或链接专用审计回执；补回执、来源清单及PROGRESS。发现本批阻塞先修并复审。
+6. 所有实施任务和独审完成后运行 `openspec archive <name> --yes`；工具/文档change加 `--skip-specs`。复核 `openspec validate --all --strict --no-interactive` 与 `openspec validate --archived --strict --no-interactive`，检查新主规格没有把计划写成已交付。tasks只勾选已完成的归档前条件，归档操作与封后校验写入audit记录，避免提前勾选尚未发生的归档。
+
+可用 `openspec status --change <name>` 检查产物、`openspec instructions apply --change <name>`取得CLI上下文。产物齐全不是任务完成；checkbox、证据和独审共同约束归档。按根AGENTS执行，不自动Git提交/推送。
+
+## 已归档迁移与后续变更
+
+[restore-alert-investigation-integrity](../../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/proposal.md)于2026-10-24按用户明确范围归档，原15编号已完成实际交付及转出责任结算；原5/15是历史状态，非当前业务完成比例。[主规格](../../../openspec/specs/alert-investigation-integrity/spec.md)同步17条合同并保留版本/证据边界，线上v1与本地小修分开，不代表全部质量或独立调查通过。实际证据、范围和后续规划见[收尾回执](../../operations/migration-closeout-20261024.md)。
+
+后续调查、背景数据和其他业务改动使用各自独立change/分支，不在归档迁移中继续实施。原B1—B6只作历史路线与证据导航，后续规划尚未因此启动。
+
+[admit-review-only-triage-worker](../../../openspec/changes/admit-review-only-triage-worker/status.md)为旧R02，仍暂缓0/17、未执行未验收，不归档为通过。原五文件保持，本次仅维护status侧附的归档引用/日期说明；CLI显示不授权恢复。旧模型失败、unknown和原批运行事实保持。

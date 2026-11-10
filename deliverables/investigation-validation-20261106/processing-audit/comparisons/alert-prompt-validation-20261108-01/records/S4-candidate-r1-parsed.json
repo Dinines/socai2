@@ -1,0 +1,157 @@
+{
+  "id": "S4-candidate-r1",
+  "sample": "S4",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 5.916713,
+  "usage": {
+    "input_tokens": 1260,
+    "output_tokens": 295,
+    "total_tokens": 1555,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-8ead21f5872a716b"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "needs_review",
+    "confidence": null,
+    "rationale": "告警显示用户（departing.engineer）上传了约 15GB 的源档案和客户数据库导出文件至外部，且该用户处于离职通知期（userUnderNotice: true），无历史大流量上传记录。虽然存在数据泄露的高风险特征，但缺乏确凿证据证明该行为是恶意的（如被入侵、勒索软件）还是经授权的离职数据迁移。材料中未提供授权依据、演练标签或人工确认，无法在现有证据下区分 true_positive 或 benign。",
+    "evidence_ids": [
+      "N1_S5",
+      "N1_S7"
+    ],
+    "recommendations": [
+      {
+        "reason": "核实该用户是否拥有将客户数据库导出并上传至外部存储的明确业务授权或离职交接流程记录。",
+        "source_ids": [
+          "N1_S5",
+          "N1_S7"
+        ]
+      },
+      {
+        "reason": "确认目标域名（uncategorised file sharing）是否为公司认可的合规数据归档或迁移通道。",
+        "source_ids": [
+          "N1_S5",
+          "N1_S7"
+        ]
+      }
+    ]
+  },
+  "parsed_output": {
+    "verdict": "needs_review",
+    "rationale": "告警显示用户（departing.engineer）上传了约 15GB 的源档案和客户数据库导出文件至外部，且该用户处于离职通知期（userUnderNotice: true），无历史大流量上传记录。虽然存在数据泄露的高风险特征，但缺乏确凿证据证明该行为是恶意的（如被入侵、勒索软件）还是经授权的离职数据迁移。材料中未提供授权依据、演练标签或人工确认，无法在现有证据下区分 true_positive 或 benign。",
+    "confidence": null,
+    "score_state": "not_computed",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:04:00+00:00\"；{\"destinationCategory\": \"uncategorised file sharing\", \"destinationDomainAgeDays\": 9, \"destinationTenantId\": null, \"durationMinutes\": 40, \"fileTypes\": \"source archives and a customer database export\", \"schedule\": \"no prior upload over 50 MB from this account\", \"uploadBytes\": 15032385536, \"user\": \"departing.engineer@example.com\", \"userUnderNotice\": true}\n分析原文：告警显示用户（departing.engineer）上传了约 15GB 的源档案和客户数据库导出文件至外部，且该用户处于离职通知期（userUnderNotice: true），无历史大流量上传记录。虽然存在数据泄露的高风险特征，但缺乏确凿证据证明该行为是恶意的（如被入侵、勒索软件）还是经授权的离职数据迁移。材料中未提供授权依据、演练标签或人工确认，无法在现有证据下区分 true_positive 或 benign。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "alert_material",
+        "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+        "external": null,
+        "source_path": "$.ocsf_json.raw_data",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "R1",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "核实该用户是否拥有将客户数据库导出并上传至外部存储的明确业务授权或离职交接流程记录。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          },
+          {
+            "type": "alert_material",
+            "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+            "external": null,
+            "source_path": "$.ocsf_json.raw_data",
+            "row_keys": [],
+            "role": "source_label"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      },
+      {
+        "id": "R2",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "确认目标域名（uncategorised file sharing）是否为公司认可的合规数据归档或迁移通道。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          },
+          {
+            "type": "alert_material",
+            "id": "219565e5-013b-59d9-9f1f-64cf4aab024f",
+            "external": null,
+            "source_path": "$.ocsf_json.raw_data",
+            "row_keys": [],
+            "role": "source_label"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      }
+    ],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.0001852500718086958
+}

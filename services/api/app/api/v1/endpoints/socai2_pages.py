@@ -79,3 +79,13 @@ async def trace(subject: Subject, identity: UUID, run_id: UUID, user: User, serv
 @router.get("/{subject}/{identity}/analysis/runs/{run_id}/artifacts/{artifact_id}", response_model=ContentView)
 async def artifact(subject: Subject, identity: UUID, run_id: UUID, artifact_id: UUID, user: User, service: Service):
     return await invoke(service.read(user.tenant_id, subject, identity, "artifact_content", run_id=run_id, artifact_id=artifact_id))
+
+
+@router.get("/alerts/{identity}/artifacts/{artifact_id}", response_model=ContentView)
+async def alert_source_artifact(identity: UUID, artifact_id: UUID, user: User, service: Service):
+    return await invoke(service.read(user.tenant_id, "alerts", identity, "artifact_content", run_id=None, artifact_id=artifact_id))
+
+
+@router.get("/incidents/{identity}/artifacts/{artifact_id}", response_model=ContentView)
+async def incident_source_artifact(identity: UUID, artifact_id: UUID, user: User, service: Service):
+    return await invoke(service.read(user.tenant_id, "incidents", identity, "artifact_content", run_id=None, artifact_id=artifact_id))

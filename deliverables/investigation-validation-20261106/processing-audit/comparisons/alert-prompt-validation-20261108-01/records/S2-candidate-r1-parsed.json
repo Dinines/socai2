@@ -1,0 +1,122 @@
+{
+  "id": "S2-candidate-r1",
+  "sample": "S2",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 5.131927,
+  "usage": {
+    "input_tokens": 1309,
+    "output_tokens": 255,
+    "total_tokens": 1564,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-a66473cca8b4bb84"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "needs_review",
+    "confidence": null,
+    "rationale": "告警显示 22 次 MFA 提示中 21 次被拒绝，仅 1 次成功，且来源 IP 为无历史登录记录的住宅代理，符合异常行为特征。然而，关键事实存在矛盾：日志明确记录在提示第 22 次后新增了认证方法（AuthenticationPhoneMethod added at T+2m），这通常意味着用户主动响应了安全提示并完成了身份验证流程。由于缺乏人工确认该新增方法是否为授权操作，且无法排除用户主动修改安全设置的可能性，当前证据不足以确认为恶意攻击或完全排除误报。",
+    "evidence_ids": [
+      "N1_S5",
+      "N1_S7"
+    ],
+    "recommendations": [
+      {
+        "reason": "核实新增的认证方法（AuthenticationPhoneMethod）是否为授权操作，以及用户是否主动响应了安全提示。",
+        "source_ids": [
+          "N1_S5",
+          "N1_S7"
+        ]
+      }
+    ]
+  },
+  "parsed_output": {
+    "verdict": "needs_review",
+    "rationale": "告警显示 22 次 MFA 提示中 21 次被拒绝，仅 1 次成功，且来源 IP 为无历史登录记录的住宅代理，符合异常行为特征。然而，关键事实存在矛盾：日志明确记录在提示第 22 次后新增了认证方法（AuthenticationPhoneMethod added at T+2m），这通常意味着用户主动响应了安全提示并完成了身份验证流程。由于缺乏人工确认该新增方法是否为授权操作，且无法排除用户主动修改安全设置的可能性，当前证据不足以确认为恶意攻击或完全排除误报。",
+    "confidence": null,
+    "score_state": "not_computed",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:02:00+00:00\"；{\"concurrentActivity\": \"no registration flow open\", \"distinctSourceIps\": 3, \"finalOutcome\": \"sign-in succeeded on prompt 22\", \"newMfaMethodAfter\": \"AuthenticationPhoneMethod added at T+2m\", \"outcomePerPrompt\": \"21 denied by the user, 1 approved\", \"promptCount\": 22, \"sourceIp\": \"203.0.113.119\", \"sourceIpOwner\": \"residential proxy ASN, no prior sign-in for this tenant\", \"windowMinutes\": 11}\n分析原文：告警显示 22 次 MFA 提示中 21 次被拒绝，仅 1 次成功，且来源 IP 为无历史登录记录的住宅代理，符合异常行为特征。然而，关键事实存在矛盾：日志明确记录在提示第 22 次后新增了认证方法（AuthenticationPhoneMethod added at T+2m），这通常意味着用户主动响应了安全提示并完成了身份验证流程。由于缺乏人工确认该新增方法是否为授权操作，且无法排除用户主动修改安全设置的可能性，当前证据不足以确认为恶意攻击或完全排除误报。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "alert_material",
+        "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+        "external": null,
+        "source_path": "$.ocsf_json.raw_data",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "R1",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "核实新增的认证方法（AuthenticationPhoneMethod）是否为授权操作，以及用户是否主动响应了安全提示。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          },
+          {
+            "type": "alert_material",
+            "id": "00b48f2b-3f99-5c11-973a-204b51e4c1ea",
+            "external": null,
+            "source_path": "$.ocsf_json.raw_data",
+            "row_keys": [],
+            "role": "source_label"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      }
+    ],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.00018066586926579475
+}

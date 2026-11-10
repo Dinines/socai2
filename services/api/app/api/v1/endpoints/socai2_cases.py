@@ -2,7 +2,7 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.core.config import settings
@@ -37,10 +37,12 @@ from app.socai2.case_data_contracts import (
 )
 from app.socai2.case_service import CaseService
 from app.socai2.enums import AssignmentState, Severity, WorkStatus
+from app.socai2.page_contracts import RecordPage
 
 
-def get_service():
-    if not settings.SOCAI2_CASE_API_ENABLED:
+def get_service(request: Request):
+    if not (settings.SOCAI2_CASE_API_ENABLED
+            or request.method == "GET" and settings.SOCAI2_PAGE_READ_ENABLED):
         raise HTTPException(503, "socai2_case_api_not_enabled")
     return CaseService(AsyncSessionLocal)
 
@@ -156,6 +158,18 @@ async def result_detail(case_id: UUID, result_id: UUID, user: ReadUser, service:
 @router.get("/{case_id}/runs/{run_id}/artifacts/{artifact_id}", response_model=ArtifactContent)
 async def artifact_content(case_id: UUID, run_id: UUID, artifact_id: UUID, user: ReadUser, service: Service):
     return await invoke(service.read_artifact(user.tenant_id, case_id, run_id, artifact_id))
+
+
+@router.get("/{case_id}/artifacts/{artifact_id}", response_model=ArtifactContent)
+async def case_source_artifact(case_id: UUID, artifact_id: UUID, user: ReadUser, service: Service):
+    return await invoke(service.read_artifact(user.tenant_id, case_id, None, artifact_id))
+
+
+@router.get("/{case_id}/activities", response_model=RecordPage)
+async def case_activities(case_id: UUID, user: ReadUser, service: Service,
+                          limit: Annotated[int, Query(ge=1, le=200)] = 50,
+                          offset: Annotated[int, Query(ge=0, le=100000)] = 0):
+    return await invoke(service.read_activities(user.tenant_id, case_id, limit=limit, offset=offset))
 
 
 @router.get("/{case_id}/runs/{run_id}/materials/{material_id}")

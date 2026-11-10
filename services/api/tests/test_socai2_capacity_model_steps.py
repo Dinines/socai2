@@ -7,7 +7,6 @@ import asyncio
 import copy
 import json
 from contextlib import asynccontextmanager
-from datetime import timedelta
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -15,10 +14,11 @@ import pytest
 from app.socai2 import baseline_delivery_contract as delivery
 from app.socai2.baseline_capacity import final_reservation
 from app.socai2.baseline_context import Context
-from app.socai2.baseline_contracts import FULL_EXECUTOR_VERSION, Limits
+from app.socai2.baseline_contracts import FULL_EXECUTOR_VERSION
 from app.socai2.baseline_reasoning import ModelSteps
-from app.socai2.baseline_store import digest, encoded
+from app.socai2.baseline_store import digest
 from app.socai2.model_protocol import prepare_request
+from app.socai2.runtime_policy import active_policy
 from app.socai2.structured_output import response_format
 
 
@@ -72,9 +72,13 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
         provider, model, schema_profile = protocol, "deepseek-flash", "standard"
         async def configure(self, *_):
             return True
+        async def measure(self, body, stage):
+            from socai2_test_model_view import synthetic_measure
+            return await synthetic_measure(body, stage)
+
         async def complete(self, body, timeout):
             assert body == ledger.requests[-1]["payload"]["body"]
-            assert 0 < timeout <= (120 if ledger.owner["stage_code"] == "C6" else 90)
+            assert 0 < timeout <= (1500 if ledger.owner["stage_code"] == "C6" else 1200)
             if protocol == "deepseek_responses":
                 return {"object": "response", "id": "substitute", "status": "completed", "error": None,
                     "output": [{"type": "message", "role": "assistant", "status": "completed",
@@ -88,8 +92,7 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
     ledger.plan = {"content_json": {"final_reservation": reserve}}
     ledger.plan["sha256"] = digest(ledger.plan["content_json"])
     ledger.steps.insert(0, {"id": uuid4(), "kind": "stage", "state": "completed", "stage_code": "C1.executor", "output_artifact_id": plan_id})
-    limits = Limits(max_model_calls=4, max_tokens=48000, max_tool_calls=4, max_rows_per_query=50,
-        deadline_at=context.captured_at + timedelta(seconds=120), policy_version="local-v2-ledger-substitute")
+    limits = active_policy().case.limits(context.captured_at, "synthetic-v12-ledger")
     current = {**run, "id": UUID(run["id"]), "case_id": UUID(run["case_id"]), "state": "running",
         "executor_version": FULL_EXECUTOR_VERSION, "limits": limits.model_dump(mode="json")}
     @asynccontextmanager
@@ -117,7 +120,7 @@ def test_shared_call_path_dispatches_two_deep_and_final_exact_wire_with_reserved
         assert len(attempts) == 4 and sum(s["usage"]["total_tokens"] for s in attempts) == 4000
     asyncio.run(execute())
     expected_final = prepare_request(gateway, {"model": gateway.model, "messages": final_prepared["messages"],
-        "max_tokens": 3000, "temperature": 0, "response_format": final_format})
+        "max_tokens": active_policy().model.output_tokens["C6"], "temperature": 0, "response_format": final_format})
     assert ledger.requests[-1]["payload"]["body"] == expected_final
-    assert all(r["payload"]["reserved_token_upper_bound"] == len(encoded(r["payload"]["body"])) + 3256 for r in ledger.requests)
+    assert all(r["payload"]["reserved_token_upper_bound"] == r["payload"]["token_measurement"]["reserved_total_tokens"] for r in ledger.requests)
     assert [r["usage"]["total_tokens"] for r in ledger.responses] == [1000, 1000, 1000]

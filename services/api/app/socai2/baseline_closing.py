@@ -1,9 +1,22 @@
 """Every investigation leaves an explicit, source-labelled closing statement."""
+from typing import Literal
 from uuid import uuid4, uuid5
 
-from sqlalchemy import func, insert, select, text, update
+from sqlalchemy import func, insert, select, update
 
 from app.models import socai2 as models
+
+from .baseline_contracts import Publication
+
+
+class InterruptedReport(Publication):
+    """Artifact-only closing; never supplied to Result publication."""
+    terminal_state: None
+    run_state: Literal["unknown"]
+    delivery_state: Literal["none"]
+    closing_state: Literal["saved"]
+    closing_delivery_state: Literal["partial"]
+    closing_reason: Literal["investigation_execution_uncertain"]
 
 
 def statement(member_count):
@@ -33,8 +46,7 @@ async def record_case_closing(store, run, source_id, conclusion, *, source_kind=
         return {"state": "existing_judgment_preserved", "assessment_id": str(current["id"])}
     if case["scope_revision"] != run["scope_revision"]:
         return {"state": "stale_scope"}
-    freshness = (await store.db.execute(text("SELECT socai2.baseline_input_freshness(:tenant,:run)"),
-        {"tenant": store.tenant_id, "run": run["id"]})).scalar_one()
+    freshness = await store.input_freshness(run["id"])
     if freshness["state"] != "current":
         return {"state": "stale_input", "input_freshness": freshness}
     if current and current["adopted_at"] >= run["started_at"]:
@@ -58,6 +70,16 @@ async def record_case_closing(store, run, source_id, conclusion, *, source_kind=
         [("case_id", run["case_id"], {"current_assessment_id": str(case["current_assessment_id"]) if case["current_assessment_id"] else None},
             {"current_assessment_id": str(identity)})])
     return {"state": "system_closing_saved", "assessment_id": str(identity)}
+
+
+def interrupted_report(publication, run):
+    """An artifact is not a terminal Result; retain the actual unsettled Run."""
+    if run["state"] != "unknown" or run["ended_at"] is not None:
+        raise ValueError("interrupted_report_requires_unsettled_run")
+    return InterruptedReport.model_validate({**publication.model_dump(mode="json"), "terminal_state": None,
+        "run_state": run["state"], "delivery_state": run["delivery_state"],
+        "stop_reason": run["stop_reason"], "closing_state": "saved",
+        "closing_delivery_state": "partial", "closing_reason": "investigation_execution_uncertain"}).model_dump(mode="json")
 
 
 async def interrupted(service, tenant_id, case_id, run_id):
@@ -98,13 +120,15 @@ async def interrupted(service, tenant_id, case_id, run_id):
             prepared, comparison, graph, uuid5(run_id, "socai2-C6-interrupted-closing-v1"), reason)
         report_id, summary_id = uuid4(), uuid4()
         publication = publication.model_copy(update={"report_artifact_id": report_id})
+        report_data = interrupted_report(publication, run)
         steps = (await store.db.execute(select(steps_table).where(*store.where(steps_table,
             steps_table.c.run_id == run_id)).order_by(steps_table.c.seq))).mappings().all()
         report = {"schema_version": SCHEMA, "type": "delivery_report", "run_id": str(run_id),
-            "result_id": None, "result": publication.model_dump(mode="json"), "delivery": None,
+            "result_id": None, "result": report_data, "delivery": None,
             "scope": context.scope.model_dump(mode="json"), "source_map": {}, "comparison": comparison,
             "input_artifact_ids": prepared["input_artifact_ids"], "domain_artifact_ids": {},
-            "execution": {"run_state": "unknown", "model_calls": sum(s["kind"] == "model" and s["state"] not in {"planned", "skipped"} for s in steps),
+            "execution": {"run_state": run["state"], "delivery_state": run["delivery_state"],
+                "model_calls": sum(s["kind"] == "model" and s["state"] not in {"planned", "skipped"} for s in steps),
                 "tool_calls": sum(s["kind"] == "tool" and s["state"] not in {"planned", "skipped"} for s in steps),
                 "total_tokens": None, "usage_state": "unknown", "followup_dispatch": None,
                 "steps": [{"id": str(s["id"]), "kind": s["kind"], "stage_code": s["stage_code"],
@@ -112,7 +136,7 @@ async def interrupted(service, tenant_id, case_id, run_id):
             "limitations": limitations + ["unsettled_calls_remain_unknown_no_automatic_retry"], "captured_at": now.isoformat()}
         refs = [reference("artifact", run["input_artifact_id"], "execution_receipt")]
         detail_id = await executor.save(store, run, stage_id, report, "source_snapshot", refs)
-        await store.save_input_artifact(case_id, run_id, report_id, publication.model_dump(mode="json"),
+        await store.save_input_artifact(case_id, run_id, report_id, report_data,
             kind="report_json", schema=SCHEMA, captured_at=now, refs=refs, actor_id=run["requested_by"], step_id=stage_id)
         text_id = await executor.save_markdown(store, run, stage_id, markdown(report), report_id, detail_id)
         await store.db.execute(update(steps_table).where(*store.where(steps_table, steps_table.c.id == stage_id))
@@ -124,7 +148,8 @@ async def interrupted(service, tenant_id, case_id, run_id):
         adoption = await record_case_closing(store, run, report_id, publication.conclusion, source_kind="artifact")
         outcome = {"run_id": str(run_id), "result_id": None, "adoption": adoption}
         summary = {"schema_version": SCHEMA, "type": "delivery_receipt", "run_id": str(run_id),
-            "state": "completed", "reason": reason, "delivery_state": "partial", "outcome": outcome,
+            "state": "completed", "reason": reason, "delivery_state": run["delivery_state"], "outcome": outcome,
+            "run_state": run["state"], "closing_state": "saved", "closing_delivery_state": "partial",
             "report_artifact_id": str(report_id), "detail_artifact_id": str(detail_id),
             "markdown_artifact_id": str(text_id), "domain_artifact_ids": {}, "captured_at": now.isoformat()}
         await store.save_input_artifact(case_id, run_id, summary_id, summary, kind="source_snapshot", schema=SCHEMA,

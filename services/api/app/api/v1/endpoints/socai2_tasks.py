@@ -2,7 +2,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.api.v1.endpoints.socai2_cases import actor, invoke
@@ -20,8 +20,9 @@ from app.socai2.human_task_contracts import (
 from app.socai2.human_task_service import HumanTaskService
 
 
-def get_service():
-    if not settings.SOCAI2_CASE_API_ENABLED:
+def get_service(request: Request):
+    if not (settings.SOCAI2_CASE_API_ENABLED
+            or request.method == "GET" and settings.SOCAI2_PAGE_READ_ENABLED):
         raise HTTPException(503, "socai2_case_api_not_enabled")
     return HumanTaskService(AsyncSessionLocal)
 

@@ -1,0 +1,152 @@
+{
+  "schema_version": "socai2.production-flow-check.v1",
+  "batch_id": "production-multialert-20261107-01",
+  "status": "frozen_before_dispatch",
+  "execution_environment": "production21",
+  "input_kind": "synthetic",
+  "analysis_source": "existing_model_execution_only",
+  "target": {
+    "database": "aisoc",
+    "schema": "socai2",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+    "user_api_key_file": "/Users/lychee/Documents/project/socai2/.local/production-multialert-20261107-01/private/tj0001.json",
+    "user_api_key_json_path": "api_key"
+  },
+  "transport": {
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "remote_python": "python3",
+    "api_base_url": "http://127.0.0.1:18000",
+    "ingress_path": "/api/v1/alert-ingress",
+    "processing_entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "workbench_url": "http://127.0.0.1:4177",
+    "http_timeout_seconds": 35,
+    "ssh_binary": "/usr/bin/ssh",
+    "remote_docker": "docker",
+    "pg_container": "spirithub-postgres-1",
+    "pg_client": "psql",
+    "pg_admin_role": "spirithub",
+    "pg_reader_role": "socai2_prod_reader",
+    "command_timeout_seconds": 45,
+    "job_timeout_seconds": 1800,
+    "local_api_port": 18022,
+    "local_preview_port": 4174,
+    "source_file": "docs/operations/evidence/production-multialert-20261107-01/plan.json"
+  },
+  "input": {
+    "source": "socai2-flow-acceptance",
+    "hostname": "socai2-flow-20261107-01",
+    "username": "flow-observer",
+    "rule": "Only source observations; no benign/malicious/authorization/attack-chain answers.",
+    "alerts": [
+      {
+        "key": "A1",
+        "upstream_alert_id": "38689fff-ce4d-4923-b4e9-b90ea6a89b86",
+        "event_id": "8486fd46-f6d3-4574-86a0-f885b8a82c3d",
+        "event_offset_seconds": 0,
+        "title": "Account logon observed",
+        "class_uid": 3002,
+        "action": "logon",
+        "outcome": "success"
+      },
+      {
+        "key": "A2",
+        "upstream_alert_id": "8657ba9c-f6dd-4853-9733-633964da64a9",
+        "event_id": "da81fda2-5305-474d-87af-391360e19eed",
+        "event_offset_seconds": 20,
+        "title": "Process start observed",
+        "class_uid": 1007,
+        "action": "process_start",
+        "outcome": "success",
+        "process_name": "powershell.exe",
+        "command_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+      },
+      {
+        "key": "A3",
+        "upstream_alert_id": "0442dd3a-13e7-4f91-97c2-c49488e7ec30",
+        "event_id": "888fcea7-ce97-45d7-b577-6ea70d5e7ea8",
+        "event_offset_seconds": 40,
+        "title": "Outbound connection observed",
+        "class_uid": 4001,
+        "action": "network_connection",
+        "outcome": "success",
+        "destination_ip": "198.51.100.77",
+        "destination_port": 443,
+        "protocol": "TCP"
+      }
+    ],
+    "severity": "medium",
+    "source_ip": "192.0.2.77",
+    "authentication_source_ip": "203.0.113.77",
+    "event_time_base": "2026-11-07T06:38:27+00:00"
+  },
+  "case": {
+    "title": "多告警原流程验收 20261107-01",
+    "incident_id": null,
+    "case_id": null,
+    "run_id": null,
+    "window_start": "2026-11-07T06:33:27+00:00",
+    "window_end": "2026-11-07T06:43:27+00:00"
+  },
+  "operation_keys": {
+    "A1": "a5e96c33-9352-45a3-8c4c-816de43e921a",
+    "A2": "81567892-1e76-4aaa-9a4a-90326de66f09",
+    "A3": "1c75716d-84f7-4df9-9c98-d7b75e95fee7",
+    "I": "3c5c0861-350f-4c70-bcd8-3c65bd86699e",
+    "case_create": "acede58c-a33a-4d60-ac6a-2ca03effeb90",
+    "case_prepare": "564e51c4-5edd-4dbf-81ea-9a6c69d6ed9e",
+    "case_start": "7ebb8760-135f-4068-aadc-61ea200b032d"
+  },
+  "execution_bounds": {
+    "alert_attempts": 3,
+    "incident_attempts": 1,
+    "case_baseline_runs": 1,
+    "manual_retries": 0,
+    "existing_model_and_tool_budgets": "unchanged",
+    "no_additional_lake_events": true,
+    "no_asset_or_knowledge_seed": true,
+    "no_human_result_or_evidence_index_fabrication": true
+  },
+  "page_acceptance": {
+    "contract": "deliverables/investigation-validation-20261106/frontend-feature-list.md",
+    "templates": "prototypes/security-pages-v2/",
+    "binding": "prototypes/security-pages-v2/scripts/generate-socai2-recorded.cjs",
+    "source": "saved database rows and unmodified API GET responses",
+    "checks": [
+      "alert facts/materials/analysis",
+      "incident members/diagnosis/correlation basis",
+      "case facts/current determination/runs/results/graphs/references/followups",
+      "real empty values for manual fields and independently generated records",
+      "4177 shows the same tenant/case/run/steps/artifacts/states"
+    ]
+  },
+  "dispatched_alerts": 0,
+  "case_runs_started": 0,
+  "model_calls": 0,
+  "account": {
+    "username": "tj0001",
+    "email": "tj0001@example.com",
+    "email_is_placeholder": true,
+    "base_role": "viewer",
+    "role_id": "bc9e481c-4617-402d-9806-9799110a4d6a",
+    "role_name": "tj0001_investigation",
+    "key_id": "060b169b-f230-45e3-a092-0d7c62340d14",
+    "key_name": "production-multialert-20261107-01",
+    "scopes": [
+      "alerts:read",
+      "alerts:write",
+      "cases:read",
+      "cases:write"
+    ],
+    "key_expires_at": "2026-11-08T06:34:27.343672+00:00",
+    "creation_authorized_by": "user",
+    "authorization_date": "2026-11-07",
+    "password_login": "generated_secret_saved_privately"
+  },
+  "provisioning": {
+    "statement_timeout_ms": 10000,
+    "lock_timeout_ms": 5000
+  },
+  "input_sha256": "03c6c0d8b71fff8c07c5291d8e1805fd79d016416aa9d16d226eaab5f041f36d"
+}

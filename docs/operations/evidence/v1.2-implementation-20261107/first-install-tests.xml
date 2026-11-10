@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="4" time="2.194" timestamp="2026-11-07T17:16:22.826425+08:00" hostname="lycheeMac.local"><testcase classname="deploy.database.test_reader_install" name="test_one_increment_is_shared_by_new_and_existing_installs" time="0.002" /><testcase classname="deploy.database.test_reader_install" name="test_both_install_paths_match_and_preserve_existing_catalog" time="1.161" /><testcase classname="deploy.database.test_reader_install" name="test_tenant_guard_minimum_columns_and_permission_boundaries[fresh_database]" time="0.496"><failure message="assert 0 != 0&#10; +  where 0 = CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument &quot;1&quot; ignored\n').returncode&#10; +    where CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument &quot;1&quot; ignored\n') = &lt;function execute at 0x104b9ed40&gt;({'database': 'v12_fresh', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...}, 'initialize')&#10; +      where &lt;function execute at 0x104b9ed40&gt; = install_reader.execute&#10; +      and   {'database': 'v12_fresh', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...} = profile({'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}, 'v12_fresh')">installed = {'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}
+database_key = 'fresh_database'
+
+    @pytest.mark.parametrize("database_key", ["fresh_database", "upgrade_database"])
+    def test_tenant_guard_minimum_columns_and_permission_boundaries(installed, database_key):
+        cfg = installed
+        db, role = cfg[database_key], cfg["reader"]
+        prefix = f'BEGIN READ ONLY; SET LOCAL ROLE "{role}";\n'
+        select = "SELECT row_to_json(r) FROM socai2.reader_asset_inventory_v1() r; SELECT row_to_json(r) FROM socai2.reader_user_names_v1() r;"
+        assert sql(cfg, db, prefix + select + "ROLLBACK;").stdout.strip() == ""
+        for suffix in ("1", "2"):
+            tenant = "00000000-0000-0000-0000-00000000000" + suffix
+            result = sql(cfg, db, prefix + f"SET LOCAL app.current_tenant_id='{tenant}';" + select + "ROLLBACK;")
+            rows = [json.loads(row) for row in result.stdout.splitlines() if row]
+            assert len(rows) == 2 and all(r["tenant_id"] == tenant for r in rows)
+            assert set(rows[0]) == {"id", "tenant_id", "name", "fqdn", "asset_type", "tags", "criticality", "os", "os_version", "ip_addresses"}
+            assert set(rows[1]) == {"id", "tenant_id", "username"}
+            assert "SECRET-SYNTHETIC" not in result.stdout
+        assert sql(cfg, db, prefix + "SET LOCAL app.current_tenant_id='';" + select + "ROLLBACK;").stdout.strip() == ""
+        for denied in ("SELECT * FROM public.assets", "SELECT username FROM public.users",
+                       "SELECT hashed_password FROM socai2.reader_user_names_v1()",
+                       "DELETE FROM public.assets", "DELETE FROM socai2.alerts"):
+            sql(cfg, db, prefix + denied + ";ROLLBACK;", expected=1)
+        sql(cfg, db, prefix + "SET LOCAL app.current_tenant_id='invalid';" + select, expected=1)
+        # Reapplying a fresh-only entry refuses existing schemas; no silent reset.
+        before = sql(cfg, db, catalog()).stdout
+&gt;       assert install_reader.execute(profile(cfg, db), "initialize").returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument "1" ignored\n').returncode
+E        +    where CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument "1" ignored\n') = &lt;function execute at 0x104b9ed40&gt;({'database': 'v12_fresh', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...}, 'initialize')
+E        +      where &lt;function execute at 0x104b9ed40&gt; = install_reader.execute
+E        +      and   {'database': 'v12_fresh', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...} = profile({'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}, 'v12_fresh')
+
+deploy/database/test_reader_install.py:134: AssertionError</failure></testcase><testcase classname="deploy.database.test_reader_install" name="test_tenant_guard_minimum_columns_and_permission_boundaries[upgrade_database]" time="0.488"><failure message="assert 0 != 0&#10; +  where 0 = CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument &quot;1&quot; ignored\n').returncode&#10; +    where CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument &quot;1&quot; ignored\n') = &lt;function execute at 0x104b9ed40&gt;({'database': 'v12_upgrade', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...}, 'initialize')&#10; +      where &lt;function execute at 0x104b9ed40&gt; = install_reader.execute&#10; +      and   {'database': 'v12_upgrade', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...} = profile({'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}, 'v12_upgrade')">installed = {'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}
+database_key = 'upgrade_database'
+
+    @pytest.mark.parametrize("database_key", ["fresh_database", "upgrade_database"])
+    def test_tenant_guard_minimum_columns_and_permission_boundaries(installed, database_key):
+        cfg = installed
+        db, role = cfg[database_key], cfg["reader"]
+        prefix = f'BEGIN READ ONLY; SET LOCAL ROLE "{role}";\n'
+        select = "SELECT row_to_json(r) FROM socai2.reader_asset_inventory_v1() r; SELECT row_to_json(r) FROM socai2.reader_user_names_v1() r;"
+        assert sql(cfg, db, prefix + select + "ROLLBACK;").stdout.strip() == ""
+        for suffix in ("1", "2"):
+            tenant = "00000000-0000-0000-0000-00000000000" + suffix
+            result = sql(cfg, db, prefix + f"SET LOCAL app.current_tenant_id='{tenant}';" + select + "ROLLBACK;")
+            rows = [json.loads(row) for row in result.stdout.splitlines() if row]
+            assert len(rows) == 2 and all(r["tenant_id"] == tenant for r in rows)
+            assert set(rows[0]) == {"id", "tenant_id", "name", "fqdn", "asset_type", "tags", "criticality", "os", "os_version", "ip_addresses"}
+            assert set(rows[1]) == {"id", "tenant_id", "username"}
+            assert "SECRET-SYNTHETIC" not in result.stdout
+        assert sql(cfg, db, prefix + "SET LOCAL app.current_tenant_id='';" + select + "ROLLBACK;").stdout.strip() == ""
+        for denied in ("SELECT * FROM public.assets", "SELECT username FROM public.users",
+                       "SELECT hashed_password FROM socai2.reader_user_names_v1()",
+                       "DELETE FROM public.assets", "DELETE FROM socai2.alerts"):
+            sql(cfg, db, prefix + denied + ";ROLLBACK;", expected=1)
+        sql(cfg, db, prefix + "SET LOCAL app.current_tenant_id='invalid';" + select, expected=1)
+        # Reapplying a fresh-only entry refuses existing schemas; no silent reset.
+        before = sql(cfg, db, catalog()).stdout
+&gt;       assert install_reader.execute(profile(cfg, db), "initialize").returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument "1" ignored\n').returncode
+E        +    where CompletedProcess(args=['/usr/local/bin/docker', '--context', 'orbstack', 'exec', '-i', 'socai2-v12-reader-validation-2...de=0, stdout='reader_v1_2_requires_fresh_database_and_explicit_owner\n', stderr='\\quit: extra argument "1" ignored\n') = &lt;function execute at 0x104b9ed40&gt;({'database': 'v12_upgrade', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...}, 'initialize')
+E        +      where &lt;function execute at 0x104b9ed40&gt; = install_reader.execute
+E        +      and   {'database': 'v12_upgrade', 'admin_role': 'postgres', 'function_owner': 'v12_schema_owner', 'reader_role': 'v12_reader', ...} = profile({'docker': '/usr/local/bin/docker', 'image': 'sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685', 'container': 'socai2-v12-reader-validation-20261107', 'host': '127.0.0.1', ...}, 'v12_upgrade')
+
+deploy/database/test_reader_install.py:134: AssertionError</failure></testcase></testsuite></testsuites>

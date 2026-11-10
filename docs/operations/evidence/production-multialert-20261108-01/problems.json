@@ -1,0 +1,82 @@
+{
+  "scope": "Observed remaining quality problems; source/raw answers preserved; not a claim of directionally wrong benign/malicious verdict",
+  "overall_semantic_quality": "not_passed",
+  "items": [
+    {
+      "id": "F01",
+      "issue": "模型正文仍混淆未查与查空",
+      "state": "remaining_after_structural_fix",
+      "observed": "A2 rationale写“威胁情报查空”，explanation写“威胁情报无匹配”；C3 coverage说威胁情报、资产库存和历史记录均因预算或连接限制未执行。",
+      "actual": "A2 TI实际skipped/no_supported_frozen_objects/returned_rows=null；输入与保存解释均明确not_queried。Case C2 TI实际completed/0，资产和历史才因保留补查预算跳过。",
+      "impact": "会误导读者对取证完整性的判断，且可能经历史分析向后传播；正式结构化查询状态正确不代表正文正确。",
+      "evidence": [
+        "45cdfb41-edcf-412d-94fc-813e1f7fe912",
+        "31c512dd-cee3-488f-a220-9ada7ec3a8be",
+        "dc3745b5-5035-4108-992c-757e3232640c",
+        "a0408218-ff3d-421e-bb91-14a36ad3a7ba"
+      ],
+      "cause_boundary": "错误原答已收到明确状态；不是回执或输入遗漏。A2引用detection和历史A1triage不能证明本次TI结果，未断言模型内部成因。",
+      "next": "继续以程序查询状态作为显示依据；单独设计正文事实核验/纠正机制，不用再次添加同样提示替代验收。"
+    },
+    {
+      "id": "F02",
+      "issue": "正文复制事实出错",
+      "state": "remaining",
+      "observed": "A1 rationale主机名写成socai2-flow-20261908-01；C3 F1将首尾40秒写为20秒内。",
+      "actual": "冻结主机名为socai2-flow-20261108-01，三条事件01:26:09、01:26:29、01:26:49。",
+      "impact": "影响对象辨识和行为时序；结构化程序字段保持正确。",
+      "evidence": [
+        "3ea413ff-a591-4628-9283-53e340adc077",
+        "dc3745b5-5035-4108-992c-757e3232640c"
+      ],
+      "C6": "C6使用正确主机名与首尾时点，旧原答仍保留。"
+    },
+    {
+      "id": "F03",
+      "issue": "来源角色和行为效果仍有不准确表述",
+      "state": "remaining",
+      "observed": "A1/A3/I把程序does_not_establish_observed_attack警示称上游属性；C3 F3声称有人工陈述建议review，本批H为0；A2/I部分表述将process_start命令行说成命令已执行。",
+      "actual": "警示来自program_facts，非原detection字段；没有人工反馈。原始进程材料只证明带该命令行的进程启动，无命令输出或完成记录。",
+      "impact": "程序规则、上游标签和人工证据容易混同；不应提升为已证授权、命令完成或实际影响。",
+      "evidence": [
+        "98d3872a-99a9-4b35-94e6-fc77d1a51fd5",
+        "dc3745b5-5035-4108-992c-757e3232640c",
+        "45cdfb41-edcf-412d-94fc-813e1f7fe912"
+      ],
+      "limit": "needs_review/uncertain不计方向性误判；此处是事实支撑不足。"
+    },
+    {
+      "id": "F04",
+      "issue": "C3引用了与领域关注成员无交集的发现",
+      "state": "invalid_unit_excluded_in_this_run",
+      "observed": "cloud关注A2，引用F1/F2/F3；F2仅涉及A3，因此无交集。identity关注A1引用涉及三成员的F1/F3有交集，已允许并保留发现原范围。",
+      "impact": "仅cloud依赖项被替换为undetermined；其他成员/发现/问题/补查继续，未否定整轮。",
+      "evidence": [
+        "dc3745b5-5035-4108-992c-757e3232640c",
+        "b0f75871-2834-4c99-86bc-f716d474263b"
+      ],
+      "C6": "cloud最终not_applicable且引用为空。此次是已允许跨成员后的无关引用，不能退回全包含规则。"
+    },
+    {
+      "id": "F05",
+      "issue": "最终报告部分措辞超出或弱化已有事实",
+      "state": "remaining",
+      "observed": "C6 F2/C2把“未在登录或进程对象中出现”扩大成目的IP“未在现有对象中明确关联”；detection_facts限制写“未提供日志原始内容”。",
+      "actual": "目的IP已在A3对象、原始材料与来源图关联；模型收到材料字段投影，原件可查。可说目的身份/业务用途未明，不能把已有对象关联或已给字段说成不存在。",
+      "impact": "最终报告虽正式accepted/uncertain，内容质量不能因此整体通过。",
+      "evidence": [
+        "4b0b8f19-d7da-4dad-a65c-9ca65c0c51be",
+        "081644e8-f1e9-4fbe-bdf0-15dfc4a76368",
+        "511aefa6-f108-4aa3-947e-4d20ca691439"
+      ]
+    }
+  ],
+  "execution_boundaries": {
+    "actual_authentication_query": "completed,0rows; does not answer authorization",
+    "Deep": "one model returned unresolved from existing materials; no network query",
+    "C6_new_followups": "four new suggestions only; no automatic H or additional dispatch",
+    "unknown_report_branch": "not triggered in this real batch; verified through isolated PG",
+    "empty_citation_correction": "not triggered; no manufactured invalid input"
+  },
+  "no_manual_rewriting_or_replay": true
+}

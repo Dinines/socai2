@@ -1,7 +1,7 @@
 {
   "version": "socai2.page-model.v1",
-  "date": "2026-11-03",
-  "status": "page_read_contract_123_through_126_verified_on_21_processing_handoff",
+  "date": "2026-11-10",
+  "status": "page_read_contract_123_through_126_verified_on_21_aisoc",
   "namespace": "socai2",
   "common": {
     "tenant_id": {
@@ -22,10 +22,10 @@
     "enums": "text+命名CHECK；API同一枚举字典；拒绝未知业务写入值，来源原值仍保存在材料；不使用中文标签入库",
     "json": "JSON字段必须引用本文contract；NULL为未记录/不可得，[]为已读取且为空；禁止无定义的万能data/extra列",
     "immutable": "材料/分诊反馈/诊断终态/结果/版本/活动追加；引用父对象不物理级联删除；应用无历史UPDATE/DELETE权限",
-    "users": "public.users.id为UUID，旧表无(tenant_id,id)唯一键；先FK(id)，服务端在事务内校验同租户/可授权目标，禁止以用户名代外键；不宣称普通FK校验了租户",
+    "users": "public.users.id为UUID，该公共表无(tenant_id,id)唯一键；先FK(id)，服务端在事务内校验同租户/可授权目标，禁止以用户名代外键；不宣称普通FK校验了租户",
     "writers": "列的写入权按表owner和字段说明划分；来源同步不得覆盖人工管理；GET无写回",
     "deletion": "业务接口不物理删除审计原件；成员移出仅删除当前关系并追加活动；保留/脱敏策略另作显式运维，不自动级联",
-    "rls": "新schema开启并FORCE RLS，USING/WITH CHECK tenant_id=public.current_tenant_id()；缺租户拒绝，不复制旧NULL旁路。复用db/rls.py按事务set_config，Fusion异步入口亦须设置；实际运行角色/权限待部署预检。 无新数据写入前仍须验证运行角色；不会自动切换旧业务写入。"
+    "rls": "schema 开启并 FORCE RLS，USING/WITH CHECK tenant_id=public.current_tenant_id()；事务必须设置认证租户，缺租户拒绝。21 当前运行角色与最小权限已核验，GET 无调查业务写入。"
   },
   "enums": {
     "severity": {
@@ -1805,7 +1805,8 @@
               "accepted",
               "rejected",
               "system_only",
-              "legacy_unverified"
+              "legacy_unverified",
+              "partial"
             ]
           },
           "findings": {
@@ -1819,16 +1820,163 @@
             "items": {
               "type": "string"
             }
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "partial_review_artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delivery_assessment": {
+            "additionalProperties": false,
+            "properties": {
+              "schema_version": {
+                "const": "socai2.incident-delivery.v1",
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "complete",
+                  "partial",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "reasons": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "member_coverage": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "analyzed_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "not_reviewed_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "missing_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "expected_ids",
+                  "analyzed_ids",
+                  "not_reviewed_ids",
+                  "missing_ids"
+                ],
+                "type": "object"
+              },
+              "review_items": {
+                "additionalProperties": false,
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "required",
+                      "none_listed",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "unresolved_member_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "unresolved_finding_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "open_question_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "state",
+                  "unresolved_member_ids",
+                  "unresolved_finding_ids",
+                  "open_question_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "schema_version",
+              "state",
+              "reasons",
+              "member_coverage",
+              "review_items"
+            ],
+            "type": "object"
           }
         },
         "required": [
           "conclusion",
           "validation_state",
           "findings",
-          "source_refs",
           "limitations"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "validation_state": {
+                  "const": "partial"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "partial_review_artifact_id"
+              ],
+              "properties": {
+                "conclusion": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": [
+                "source_refs"
+              ],
+              "properties": {
+                "partial_review_artifact_id": false
+              }
+            }
+          }
+        ]
       }
     },
     "case_impact": {
@@ -2480,7 +2628,7 @@
       }
     },
     "analysis_block": {
-      "meaning": "领域/Deep分析保持统一证据结构，domain不是新增四套状态机；新C3/C6领域块保存applicability，旧块缺失表示未记录，不能从findings推定适用",
+      "meaning": "领域/Deep分析保持统一证据结构，domain不是新增四套状态机；新C3/C6领域块保存applicability，旧块缺失表示未记录，不能从findings推定适用；新领域块的focus_scope为领域关注范围，finding.scope保留发现完整范围，旧块无focus_scope时不反推",
       "schema": {
         "type": "object",
         "properties": {
@@ -2511,6 +2659,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "focus_scope": {
+            "$ref": "#/$defs/scope"
           }
         },
         "required": [
@@ -2734,6 +2885,16 @@
           },
           "case_impact": {
             "$ref": "#/$defs/case_impact"
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3007,6 +3168,16 @@
             "items": {
               "type": "string"
             }
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3024,6 +3195,129 @@
     "case_evidence_index": {
       "meaning": "不可变案件证据目录；详见socai2.case-evidence.v1严格Schema、来源/版本/计数合同",
       "schema": "services/api/app/socai2/case_evidence.schema.json"
+    },
+    "program_facts": {
+      "meaning": "程序提供的冻结事实；原值和时钟分层，不从模型正文回填；缺映射/不完整范围明确未知",
+      "schema": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "members"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "socai2.program-facts.v1.2"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "execution_started_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "execution_time_source": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "snapshot_captured_at": {
+            "type": "string"
+          },
+          "time_rule": {
+            "type": "string"
+          },
+          "incident_severity": {
+            "type": "object"
+          },
+          "incident_source": {
+            "$ref": "#/$defs/evidence_ref"
+          },
+          "case_severity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_source": {
+            "$ref": "#/$defs/evidence_ref"
+          },
+          "incident_severities": {
+            "type": "object"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "query_statuses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "source",
+                "state",
+                "outcome",
+                "reason",
+                "returned_rows",
+                "truncated",
+                "statement",
+                "receipt"
+              ],
+              "properties": {
+                "source": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "outcome": {
+                  "enum": [
+                    "not_queried",
+                    "failed",
+                    "unknown",
+                    "empty",
+                    "data"
+                  ]
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "returned_rows": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "truncated": {
+                  "type": "boolean"
+                },
+                "statement": {
+                  "type": "string"
+                },
+                "receipt": {
+                  "$ref": "#/$defs/evidence_ref"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "tables": [

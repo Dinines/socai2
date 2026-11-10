@@ -1,0 +1,157 @@
+{
+  "id": "S3-candidate-r1",
+  "sample": "S3",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 6.44072,
+  "usage": {
+    "input_tokens": 1289,
+    "output_tokens": 322,
+    "total_tokens": 1611,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-83b61a0d39372c28"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "needs_review",
+    "confidence": null,
+    "rationale": "告警显示 CrowdStrike 检测到 1840 台主机在 20 分钟内执行了完全相同的编码 PowerShell 命令（Get-CimInstance Win32_Product | Export-Csv...），且父进程为设备管理服务，脚本签名有效。虽然该行为具有批量自动化特征，但缺乏明确的恶意意图证据（如网络外传、子进程异常、非授权执行上下文）。同时，材料中未提供人工确认、授权记录或威胁情报匹配结果，无法区分是大规模合规资产盘点（良性）还是自动化横向移动/侦察（恶意），证据相互矛盾或不足。",
+    "evidence_ids": [
+      "N1_S4",
+      "N1_S5",
+      "N1_S7"
+    ],
+    "recommendations": [
+      {
+        "reason": "核实该批量命令是否为租户授权的资产盘点或合规检查任务，确认是否有对应的工单或策略配置。",
+        "source_ids": [
+          "N1_S5",
+          "N1_S7"
+        ]
+      },
+      {
+        "reason": "检查这 1840 台主机是否属于同一业务域或受同一管理策略控制，以评估批量执行行为的合理性。",
+        "source_ids": [
+          "N1_S5"
+        ]
+      }
+    ]
+  },
+  "parsed_output": {
+    "verdict": "needs_review",
+    "rationale": "告警显示 CrowdStrike 检测到 1840 台主机在 20 分钟内执行了完全相同的编码 PowerShell 命令（Get-CimInstance Win32_Product | Export-Csv...），且父进程为设备管理服务，脚本签名有效。虽然该行为具有批量自动化特征，但缺乏明确的恶意意图证据（如网络外传、子进程异常、非授权执行上下文）。同时，材料中未提供人工确认、授权记录或威胁情报匹配结果，无法区分是大规模合规资产盘点（良性）还是自动化横向移动/侦察（恶意），证据相互矛盾或不足。",
+    "confidence": null,
+    "score_state": "not_computed",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:03:00+00:00\"；{\"childProcesses\": [], \"commandLineEncoded\": true, \"decodedCommand\": \"Get-CimInstance Win32_Product | Export-Csv -Path $env:TEMP\\\\inventory.csv\", \"fleetWidePattern\": \"identical on 1840 managed hosts in the same 20 minutes\", \"hostCount\": 1840, \"networkConnectionsFromProcess\": 0, \"parentProcess\": \"device management agent service\", \"processName\": \"powershell.exe\", \"scriptSignature\": \"signed by the device management vendor, chain valid\"}\n分析原文：告警显示 CrowdStrike 检测到 1840 台主机在 20 分钟内执行了完全相同的编码 PowerShell 命令（Get-CimInstance Win32_Product | Export-Csv...），且父进程为设备管理服务，脚本签名有效。虽然该行为具有批量自动化特征，但缺乏明确的恶意意图证据（如网络外传、子进程异常、非授权执行上下文）。同时，材料中未提供人工确认、授权记录或威胁情报匹配结果，无法区分是大规模合规资产盘点（良性）还是自动化横向移动/侦察（恶意），证据相互矛盾或不足。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "artifact",
+        "id": "babd9658-5842-58e7-b839-2ee42a269753",
+        "external": null,
+        "source_path": "$.members.0.alert",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+        "external": null,
+        "source_path": "$.ocsf_json.raw_data",
+        "row_keys": [],
+        "role": "source_label"
+      },
+      {
+        "type": "alert_material",
+        "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "R1",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "核实该批量命令是否为租户授权的资产盘点或合规检查任务，确认是否有对应的工单或策略配置。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          },
+          {
+            "type": "alert_material",
+            "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+            "external": null,
+            "source_path": "$.ocsf_json.raw_data",
+            "row_keys": [],
+            "role": "source_label"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      },
+      {
+        "id": "R2",
+        "action_type": "verify",
+        "targets": [],
+        "reason": "检查这 1840 台主机是否属于同一业务域或受同一管理策略控制，以评估批量执行行为的合理性。",
+        "approval_requirement": "unknown",
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "aaf4555c-1e28-5442-aab1-19304f8b5309",
+            "external": null,
+            "source_path": "$.raw_text",
+            "row_keys": [],
+            "role": "observation"
+          }
+        ],
+        "limitations": [
+          "recommendation_only_not_executed"
+        ]
+      }
+    ],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.00020295893773436546
+}

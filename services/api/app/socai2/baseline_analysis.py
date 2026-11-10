@@ -8,17 +8,15 @@ from sqlalchemy import func, insert, null, select, update
 from . import baseline_analysis_contract as contract
 from . import baseline_model_view as view
 from . import baseline_tool_catalog as catalog
-from .baseline_analysis_model import MAX_OUTPUT_TOKENS, TenantChatGateway, usage
-from .baseline_capacity import MAX_MESSAGE_BYTES, remaining_seconds, reservation_for
+from .baseline_analysis_model import TenantChatGateway
+from .baseline_capacity import draft_limit, remaining_seconds
 from .baseline_context import reference
 from .baseline_contracts import FULL_EXECUTOR_VERSION, FULL_EXECUTOR_VERSIONS, Limits
 from .baseline_dispatch import offered_bindings
 from .baseline_enrichment import S, error
 from .baseline_execution_schema import compact_execution_wire, execution_format
 from .baseline_store import RM, F, StoreError, digest, encoded
-from .model_errors import ModelCallError
 from .model_input_view import case_model_data
-from .model_protocol import prepare_request, response_choices
 from .structured_output import response_format
 
 SCHEMA = contract.SCHEMA
@@ -35,25 +33,30 @@ def messages(prepared, context, tool_payloads, options=None):
     if options is not None:
         if view.blocked(catalog.data(options)):
             raise StoreError("analysis_input_contract_or_size", 422)
-        # Facts keep the original 8 KiB limit. Capabilities are a separate user
-        # data message; the complete group still shares the original 12 KiB cap.
+        # Preparation is bounded for storage. The final complete wire request
+        # is admitted using the actual backend tokenizer and context capacity.
         # Only repeated scope metadata is hoisted. Never remove evidence to fit
         # a capability; every unoffered original remains in C4.materials.
         output.append(catalog.message(options))
-        while options and len(encoded(output)) > MAX_MESSAGE_BYTES:
+        while options and len(encoded(output)) > draft_limit():
             options.pop()
             output[-1] = catalog.message(options)
-    if len(output[1]["content"].encode()) > view.MAX_MODEL_BYTES or len(encoded(output)) > MAX_MESSAGE_BYTES or any(view.blocked(m["content"]) for m in output):
+    if len(output[1]["content"].encode()) > draft_limit() or len(encoded(output)) > draft_limit() or any(view.blocked(m["content"]) for m in output):
         raise StoreError("analysis_input_contract_or_size", 422)
     return output, source_map
 
 
 def reserved_calls(run, stage_code):
     # Read the persisted executor identity, never a request-controlled flag.
-    return int(run["executor_version"] in FULL_EXECUTOR_VERSIONS and stage_code != "C6")
+    from .runtime_policy import active_policy
+    if run["executor_version"] not in FULL_EXECUTOR_VERSIONS or stage_code == "C6":
+        return 0
+    configured = active_policy().model.final_reserved_calls
+    maximum = (run.get("limits") or {}).get("max_model_calls")
+    return min(configured, max(1, maximum - 1)) if maximum is not None else configured
 
 
-def budget_reason(steps, limits, request_bytes, now, *, reserve_calls=0, reservation=None):
+def budget_reason(steps, limits, request_bytes, now, *, reserve_calls=0, reservation=None, measurement=None):
     if limits.max_model_calls is None or limits.max_tokens is None or limits.deadline_at is None:
         return "model_limits_not_defined"
     if limits.deadline_at <= now:
@@ -72,9 +75,14 @@ def budget_reason(steps, limits, request_bytes, now, *, reserve_calls=0, reserva
         if reported.get("usage_state") != "reported" or type(total) is not int or total < 0:
             return "prior_model_usage_unknown"
         used += total
-    if request_bytes + MAX_OUTPUT_TOKENS + 256 > limits.max_tokens - used:
+    if measurement is not None and not measurement["context_fits"]:
+        return "model_context_capacity_exceeded"
+    if measurement is None:
+        return "token_measurement_missing"
+    required = measurement["reserved_total_tokens"]
+    if required > limits.max_tokens - used:
         return "model_token_budget_insufficient"
-    if reservation and request_bytes + MAX_OUTPUT_TOKENS + 256 + reservation["conservative_units"] > limits.max_tokens - used:
+    if reservation and required + reservation.get("reserved_tokens", reservation.get("conservative_units", 0)) > limits.max_tokens - used:
         return "final_model_tokens_reserved"
     return None
 
@@ -92,7 +100,10 @@ def domain_block(domain, analysis, source_map, context):
             "scope": scope, "support": [source_map[s]["ref"] for s in item.support_ids],
             "counterevidence": [source_map[s]["ref"] for s in item.counter_ids],
             "limitations": item.limitations})
-    return {"schema_version": SCHEMA, "domain": domain.name, "applicability": domain.applicability, "questions": [],
+    focus = context.scope.model_dump(mode="json")
+    focus.update(kind="selected_alerts", alert_ids=list(map(str, domain.alert_ids)), object_keys=[])
+    return {"schema_version": SCHEMA, "domain": domain.name, "applicability": domain.applicability,
+        "focus_scope": focus, "questions": [],
         "findings": findings, "recommendations": [], "limitations": [domain.reason, *domain.limitations,
             "shared_initial_model_pass_not_independent_expert_vote", "structure_validated_not_truth_proven"]}
 
@@ -138,8 +149,12 @@ class BaselineAnalysis:
             if await store.one(select(S.c.id).where(*store.where(S, S.c.run_id == run_id,
                     S.c.state.in_(["planned", "running", "unknown"]))).limit(1)):
                 raise StoreError("baseline_step_in_progress")
-            prepared = await store.prepare_model_view(case_id, run_id)
             context = await store.read_context(case_id, run_id)
+            use_boundary = context.case_input_profile is not None
+            prepared = await store.prepare_model_view(case_id, run_id, case_boundary=use_boundary)
+            if use_boundary:
+                self.schema = contract.EXECUTION_SCHEMA
+                bindings, options = {}, []
             if run["executor_version"] == FULL_EXECUTOR_VERSION:
                 from .baseline_evidence import BaselineEvidence
                 from .baseline_evidence_tools import LakeGateway
@@ -165,7 +180,11 @@ class BaselineAnalysis:
                 return await self.finish(tenant_id, case_id, run_id, stage_id, None,
                     "skipped", "model_view_not_ready", refs)
             try:
-                prompt, source_map = messages(prepared, context, tool_payloads, options)
+                if use_boundary:
+                    from . import case_model_boundary, case_output_adapter
+                    prompt, source_map = case_model_boundary.messages(prepared, context, options)
+                else:
+                    prompt, source_map = messages(prepared, context, tool_payloads, options)
                 if bindings is not None:
                     offered = {o["binding_id"] for o in options}
                     excluded.extend({"binding_id": b["binding_id"], "reason": "binding_catalog_input_limit"}
@@ -174,96 +193,36 @@ class BaselineAnalysis:
             except StoreError:
                 return await self.finish(tenant_id, case_id, run_id, stage_id, None,
                     "skipped", "analysis_input_contract_or_size", refs)
-            if not await gateway.configure(self.service, tenant_id):
-                return await self.finish(tenant_id, case_id, run_id, stage_id, None,
-                    "skipped", "model_not_configured", refs)
-            body = {"model": gateway.model, "messages": prompt, "max_tokens": MAX_OUTPUT_TOKENS, "temperature": 0,
-                    "response_format": response_format(contract.Analysis if bindings is None else contract.ExecutionAnalysis, source_map,
-                        members=context.alerts, questions=[q.id for q in context.questions],
-                        objects=context.scope.object_keys, bindings=bindings or ())}
+            from .analysis_review import Review
+            from .baseline_reasoning import ModelSteps
+            fmt = response_format(contract.Analysis if bindings is None else contract.ExecutionAnalysis, source_map,
+                members=context.alerts, questions=[q.id for q in context.questions],
+                objects=context.scope.object_keys, bindings=bindings or ())
             if bindings is not None:
-                body["response_format"] = execution_format(body["response_format"], bindings)
-            body = prepare_request(gateway, body)
-            if bindings is not None:
-                body = compact_execution_wire(body)
-            async with self.service.transaction(tenant_id) as store:
-                run = await self.locked(store, case_id, run_id)
-                if run["state"] != "running":
-                    raise StoreError("baseline_not_running")
-                limits, now = Limits.model_validate(run["limits"]), await store.now()
-                steps = (await store.db.execute(select(S).where(*store.where(S,
-                    S.c.run_id == run_id)))).mappings().all()
-                reservation = await reservation_for(store, run, steps)
-                reason = budget_reason(steps, limits, len(encoded(body)), now, reserve_calls=reserved_calls(run, "C3"), reservation=reservation)
-                if reason is None:
-                    deadline = asyncio.get_running_loop().time() + remaining_seconds(limits, now, reservation, "C3")
-                    model_id = uuid4()
-                    await store.db.execute(insert(S).values(id=model_id, tenant_id=tenant_id, run_id=run_id,
-                        seq=await self.next_seq(store, run_id), parent_step_id=stage_id, kind="model", stage_code="C3",
-                        state="running", name="main_with_domain_views", provider=gateway.provider,
-                        implementation_version=self.schema, started_at=now))
-                    request = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                        "schema_profile": getattr(gateway, "schema_profile", "standard"),
-                        "direction": "request", "payload": {"body": body, "source_map": source_map,
-                            "input_view_id": prepared["artifact_id"], "input_view_sha256": digest({k: v for k, v in prepared.items() if k != "artifact_id"}),
-                            "reserved_token_upper_bound": len(encoded(body)) + MAX_OUTPUT_TOKENS + 256,
-                            "binding_map": bindings, "unoffered_bindings": excluded, "final_reservation": reservation},
-                        "captured_at": now.isoformat(), "request_id": None, "usage": None}
-                    request_id = await self.artifact(store, run, model_id, request, "model_request", refs)
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
-            if reason:
-                return await self.finish(tenant_id, case_id, run_id, stage_id, None, "skipped", reason, refs)
-            # The model claim and exact input are committed before dispatch.
-            phase = "model_dispatch"
-            try:
-                async with asyncio.timeout_at(deadline):
-                    payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-            except ModelCallError as exc:
-                async with self.service.transaction(tenant_id) as store:
-                    run = await self.locked(store, case_id, run_id)
-                    if run["state"] != "running":
-                        raise StoreError("baseline_not_running")
-                    response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                        "direction": "response", "payload": exc.payload(), "captured_at": (await store.now()).isoformat(),
-                        "request_id": None, "usage": usage(None)}
-                    response_id = await self.artifact(store, run, model_id, response, "model_response", refs)
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
-                        output_artifact_id=response_id, usage=usage(None)))
-                    if exc.rejection_code:
-                        now = await store.now()
-                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
-                            state="failed", ended_at=now, error=error(exc.rejection_code, now)))
-                if exc.rejection_code:
-                    return await self.finish(tenant_id, case_id, run_id, stage_id, model_id,
-                        "failed", exc.rejection_code, refs, response_id=response_id)
-                raise
-            phase = "response_processing"
-            recorded_usage = usage(payload)
-            analysis, rejection = None, None
-            try:
-                if recorded_usage["usage_state"] != "reported":
-                    raise contract.AnalysisRejected("model_usage_unknown_or_inconsistent")
-                if recorded_usage["total_tokens"] > len(encoded(body)) + MAX_OUTPUT_TOKENS + 256:
-                    raise contract.AnalysisRejected("provider_usage_exceeds_reservation")
-                choices = response_choices(payload)
-                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
-                    raise contract.AnalysisRejected("model_choices_invalid")
-                choice, content = choices[0], choices[0].get("message")
-                if choice.get("finish_reason") != "stop":
-                    raise contract.AnalysisRejected("model_response_not_complete")
-                if (not isinstance(content, dict) or content.get("tool_calls") or content.get("function_call")
-                        or content.get("refusal") or not isinstance(content.get("content"), str)):
-                    raise contract.AnalysisRejected("model_content_or_tool_protocol_invalid")
-                analysis = contract.parse(content["content"], source_map, context, prepared["coverage"], bindings=bindings)
-            except contract.AnalysisRejected as exc:
-                rejection = str(exc)
-            response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                "direction": "response", "payload": {"raw": payload, "validation_error": rejection},
-                "captured_at": None, "request_id": recorded_usage["request_id"], "usage": recorded_usage}
+                fmt = execution_format(fmt, bindings)
+            call_input = {"ready": True, "messages": prompt, "source_map": source_map,
+                "binding_map": bindings, "input_artifact_ids": [prepared["artifact_id"]],
+                "input_view_id": prepared["artifact_id"], "omissions": prepared.get("omissions", []),
+                "coverage": prepared["coverage"], "unoffered_bindings": excluded}
+            review = Review("C3", source_map, context, prepared["coverage"], bindings=bindings)
+            parser = lambda content: contract.parse(content, source_map, context, prepared["coverage"], bindings=bindings)
+            if use_boundary:
+                fmt = case_output_adapter.output_format(prepared, context, bindings)
+                call_input["case_boundary"] = prepared["case_boundary"]
+                call_input["tool_presentation"] = prepared["tool_presentation"]
+                review = case_output_adapter.CaseReview(prepared, context, bindings)
+                parser = lambda content: case_output_adapter.parse(content, prepared, context, bindings)
+            phase = "model_dispatch_and_review"
+            analysis, rejection, model_id, response_id = await ModelSteps(self.service, self.schema).call(
+                tenant_id, case_id, run_id, stage_id, "C3", call_input, gateway, parser,
+                output_format=fmt, wire_transform=compact_execution_wire if bindings is not None else None, review=review)
             phase = "response_publication"
             return await self.finish(tenant_id, case_id, run_id, stage_id, model_id,
-                "completed" if analysis else "failed", rejection, refs, response, analysis, source_map, context,
-                basis={"binding_map": bindings, "unoffered_bindings": excluded} if bindings is not None else None)
+                "completed" if analysis else "failed" if model_id else "skipped", rejection, refs,
+                analysis=analysis, source_map=source_map, context=context, response_id=response_id,
+                basis={"binding_map": bindings, "unoffered_bindings": excluded,
+                    "validation_review": call_input.get("validation_review"),
+                    "correction_result": call_input.get("correction_result")})
         except (Exception, asyncio.CancelledError) as exc:
             # No retry after transport/commit uncertainty. Retain the active Run.
             async with self.service.transaction(tenant_id) as store:

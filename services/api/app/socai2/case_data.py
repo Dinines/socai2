@@ -1,5 +1,4 @@
 """Small page-data writer/reader. No executor, model or inferred defaults."""
-import json
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
@@ -7,7 +6,7 @@ from sqlalchemy import select, update
 
 from app.models import socai2 as m
 
-from .baseline_store import C, F, StoreError, digest
+from .baseline_store import C, F, StoreError, digest, encoded
 from .case_data_contracts import (
     KIND,
     SCHEMA,
@@ -57,7 +56,8 @@ OCSF_OBSERVATION_PATHS = {
 def material_role(parts, row, value):
     if parts == ["raw_json", "event"] and (row.get("raw_json") or {}).get("record_kind") == "synthetic_page_data":
         return "observation" if isinstance(value, str) else "source_label"
-    ocsf_path = parts[1:] if parts[0] == "ocsf_json" else parts[2:] if parts[:2] == ["raw_json", "ocsf_event"] else []
+    ocsf_path = parts[1:] if parts[0] == "ocsf_json" else parts[2:] if parts[:2] in (
+        ["raw_json", "ocsf_event"], ["raw_json", "raw_event"]) else []
     if tuple(ocsf_path) in OCSF_OBSERVATION_PATHS and isinstance(value, (str, int, float)) and not isinstance(value, bool):
         return "observation"
     return "source_label"
@@ -316,6 +316,33 @@ async def export_page_data(tables):
     return outputs
 
 
+async def save_index(store, cas, index, *, actor_id, now, run_id=None, step_id=None):
+    """Shared validation/storage for manual and normal C6 publication."""
+    from .runtime_policy import retention_limit
+    current, case_id = cas["current_evidence_artifact_id"], cas["id"]
+    if index.supersedes_artifact_id != current:
+        raise StoreError("case_evidence_version_conflict")
+    if index.scope_revision != cas["scope_revision"]:
+        raise StoreError("case_scope_revision_conflict")
+    members = await store.members(case_id)
+    if not set(index.alert_ids) <= members or index.availability_state == "available" and set(index.alert_ids) != members:
+        raise StoreError("evidence_index_scope_invalid", 422)
+    lookup = Lookup(store)
+    if current:
+        old = await lookup("artifact", current)
+        if not old or old["case_id"] != case_id or old["kind"] != KIND or old["schema_version"] != SCHEMA:
+            raise StoreError("evidence_previous_index_invalid", 422)
+    await validate_sources(index, store.tenant_id, case_id, lookup, await object_map(store, index))
+    payload = index.model_dump(mode="json")
+    if len(encoded(payload)) > retention_limit():
+        raise StoreError("evidence_index_too_large", 422)
+    identity = uuid4()
+    refs = [r.model_dump(mode="json") for e in index.entries for r in e.source_refs]
+    await store.save_input_artifact(case_id, run_id, identity, payload, kind=KIND, schema=SCHEMA,
+        captured_at=now, refs=refs, actor_id=actor_id, step_id=step_id)
+    return identity
+
+
 async def write_data(service, tenant_id, case_id, request, actor, *, evidence=False):
     action = "case_evidence_published" if evidence else "case_management_data_updated"
     intent = digest({"actor": str(actor.user_id), "request": request.model_dump(mode="json")})
@@ -334,24 +361,7 @@ async def write_data(service, tenant_id, case_id, request, actor, *, evidence=Fa
             index, current = request.index, cas["current_evidence_artifact_id"]
             if request.expected_current_artifact_id != current or index.supersedes_artifact_id != current:
                 raise StoreError("case_evidence_version_conflict")
-            if index.scope_revision != cas["scope_revision"]:
-                raise StoreError("case_scope_revision_conflict")
-            members = await store.members(case_id)
-            if not set(index.alert_ids) <= members or index.availability_state == "available" and set(index.alert_ids) != members:
-                raise StoreError("evidence_index_scope_invalid", 422)
-            lookup = Lookup(store)
-            if current:
-                old = await lookup("artifact", current)
-                if not old or old["case_id"] != case_id or old["kind"] != KIND or old["schema_version"] != SCHEMA:
-                    raise StoreError("evidence_previous_index_invalid", 422)
-            await validate_sources(index, tenant_id, case_id, lookup, await object_map(store, index))
-            payload = index.model_dump(mode="json")
-            if len(json.dumps(payload, ensure_ascii=False).encode()) > 1048576:
-                raise StoreError("evidence_index_too_large", 422)
-            identity = uuid4()
-            refs = [r.model_dump(mode="json") for e in index.entries for r in e.source_refs]
-            await store.save_input_artifact(case_id, None, identity, payload, kind=KIND, schema=SCHEMA,
-                captured_at=now, refs=refs, actor_id=actor.user_id)
+            identity = await save_index(store, cas, index, actor_id=actor.user_id, now=now)
             values = {"current_evidence_artifact_id": identity}
         else:
             values = {"classification": request.classification, "due_at": request.due_at}

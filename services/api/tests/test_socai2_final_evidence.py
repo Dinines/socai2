@@ -85,7 +85,8 @@ def test_projection_digest_must_match():
         query_candidates(qs, bases)
 
 
-def test_required_query_field_guard_blocks_instead_of_using_metadata():
+def test_required_query_field_guard_blocks_instead_of_using_metadata(monkeypatch):
+    monkeypatch.setattr("app.socai2.baseline_reasoning.field_limit", lambda: 2048)
     qs, bases = packet("process_activity", ("process_command_line",))
     field = bases[0]["content_json"]["rows"][0]["semantics"]["fields"][0]
     field["value"] = "x" * 3000

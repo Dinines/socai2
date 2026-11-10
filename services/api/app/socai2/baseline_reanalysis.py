@@ -27,6 +27,9 @@ class BaselineReanalysis(ModelSteps):
 
     async def input(self, tenant_id, case_id, run_id, context, previous, prior_id, bases, *,
                     instruction=None, extra_data=None, lead_candidates=(), executed_plan_id=None):
+        if context.case_input_profile is not None and (extra_data or {}).get("round") == "final_delivery":
+            from .case_followup_loader import final
+            return await final(self, tenant_id, case_id, run_id, previous, prior_id, bases, extra_data, lead_candidates)
         async with self.service.transaction(tenant_id) as store:
             initial = await store.prepare_model_view(case_id, run_id)
             snapshots = [r["content_json"] for r in bases if r["content_json"].get("type") == "graph_snapshot"]
@@ -116,6 +119,8 @@ class BaselineReanalysis(ModelSteps):
             "round": "post_evidence_reanalysis", "limitations": ["original_scope_and_material_versions_unchanged",
                 "query_binding_only_does_not_prove_alert_membership", "old_analysis_is_not_independent_evidence",
                 "derived_graph_is_not_independent_evidence_or_confirmed_impact"]}
+        if "program_facts" in old:
+            data["program_facts"] = old["program_facts"]
         prompt = contract.PROMPT.replace("C3初始主分析", "C3补证后再分析") + (
             "\n综合本轮新观察与冻结前序资料，逐成员和六问题重新说明当前认识、替代解释和限制。"
             "query_binding_only表示主机/时间匹配，不能据此写为某条告警的observed发现；关系只能暂作inferred或unresolved。"
@@ -127,7 +132,8 @@ class BaselineReanalysis(ModelSteps):
         if final and new["queries"]:
             share_query_context(data)
             instruction += "\nquery_context字段由所有queries继承；projected_fields仅计投影字段，visible_fields计本次可见字段，partial不是完整查询复核。"
-        return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs))}
+        return {**bounded_input(data, candidates, instruction), "input_artifact_ids": list(dict.fromkeys(inputs)),
+                "program_facts": data.get("program_facts")}
 
     async def execute(self, tenant_id, case_id, run_id, gateway=None):
         gateway = gateway or TenantChatGateway()

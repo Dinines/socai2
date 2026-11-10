@@ -7,8 +7,8 @@ import copy
 from collections import Counter
 from uuid import UUID
 
-from .baseline_context import MAX_CONTEXT_BYTES, reference
-from .baseline_model_view import MAX_FIELD_BYTES, blocked
+from .baseline_context import reference, retention_limit
+from .baseline_model_view import blocked, field_limit
 from .baseline_store import StoreError, digest, encoded
 
 SCHEMA = "socai2.baseline-graph.v1"
@@ -25,7 +25,7 @@ def identity(*parts):
 
 
 def usable(value):
-    return value is not None and not blocked(value) and len(encoded(value)) <= MAX_FIELD_BYTES
+    return value is not None and not blocked(value) and len(encoded(value)) <= field_limit()
 
 
 def node(key, kind, label, aids, refs, object_key=None):
@@ -60,8 +60,8 @@ class Projection:
         self.edges.update({e["id"]: e for e in edges})
         self.records.append(record)
         if (len(self.nodes) > MAX_NODES or len(self.edges) > MAX_EDGES
-                or len(encoded(self.graph())) > MAX_CONTEXT_BYTES - 8192
-                or len(encoded(self.records)) > MAX_CONTEXT_BYTES - 16384):
+                or len(encoded(self.graph())) > retention_limit() - 8192
+                or len(encoded(self.records)) > retention_limit() - 16384):
             self.nodes, self.edges, self.records = before
             if mandatory:
                 raise StoreError("graph_member_anchors_exceed_retention_limit", 422)
@@ -203,7 +203,7 @@ def build(context, context_id, bases):
     graph = p.graph()
     return graph, {"records": p.records, "coverage": coverage, "queries": queries,
         "omissions": dict(p.omissions), "limits": {"nodes": MAX_NODES, "edges": MAX_EDGES,
-            "artifact_bytes": MAX_CONTEXT_BYTES}, "limitations": LIMITATIONS + [
+            "artifact_bytes": retention_limit()}, "limitations": LIMITATIONS + [
             "query_binding_does_not_prove_alert_membership", "empty_query_does_not_disprove_relationship",
             "missing_or_omitted_edge_does_not_disprove_relationship"]}
 

@@ -16,7 +16,7 @@ from .enums import (
 )
 
 Subject = Literal["alerts", "incidents"]
-Section = Literal["members", "incidents", "objects", "sources", "assets", "cases", "comments", "activities", "related_alerts", "responses"]
+Section = Literal["members", "incidents", "objects", "sources", "source_artifacts", "assets", "cases", "comments", "activities", "related_alerts", "responses"]
 
 
 class SharedFacts(Contract):

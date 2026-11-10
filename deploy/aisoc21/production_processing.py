@@ -12,22 +12,24 @@ import secrets
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit, urlunsplit
+from urllib.parse import quote, urlencode
 from uuid import UUID
 
-BASE = Path("/opt/sting-aisoc-socai2")
+from production_profile import ProfileError, load, runtime_values
+
 HERE = Path(__file__).resolve().parent
-PRIVATE = BASE / "private/processing-production"
-IMAGE = "sha256:7218b535ca88c17616f563aa1efb6935f8eedd89e5fed4140ea6c8e4949c0be7"
-TAG = "socai2-processing:processing-20261106-r3"
-PROCESSOR = "socai2_prod_processor"
-INGRESS = "socai2_prod_ingress"
-LAKE_READER = "socai2_prod_lake_reader"
-DEFAULT_TENANT = UUID("00000000-0000-0000-0000-000000000001")
-PG = "spirithub-postgres-1"
-CH = "sting-infra21-clickhouse-1"
-API = "socai2-api-1"
 ACTIONS = ("alert", "incident", "case-create", "case-prepare", "case-start")
+
+
+def select_profile(path):
+    global PROFILE, PRIVATE, IMAGE, TAG, PROCESSOR, INGRESS, LAKE_READER, PG, CH
+    PROFILE = load(path)
+    PRIVATE = Path(PROFILE.paths.private_dir)
+    IMAGE, TAG = PROFILE.image.id, PROFILE.image.tag
+    PROCESSOR, INGRESS = PROFILE.postgres.processor_role, PROFILE.postgres.ingress_role
+    LAKE_READER = PROFILE.lake.reader_role
+    PG, CH = PROFILE.postgres.container, PROFILE.lake.container
+    return PROFILE
 
 
 class SetupError(Exception):
@@ -46,8 +48,8 @@ def call(args, *, body=None, code):
 
 
 def image_check():
-    info = json.loads(call(["docker", "image", "inspect", TAG], code="r3_image_missing"))[0]
-    need(info["Id"] == IMAGE and info["Config"]["User"] == "10001:10001", "r3_image_changed")
+    info = json.loads(call(["docker", "image", "inspect", TAG], code="configured_image_missing"))[0]
+    need(info["Id"] == IMAGE and info["Config"]["User"] == PROFILE.image.user, "configured_image_changed")
 
 
 def secure_file(path):
@@ -68,7 +70,7 @@ def secret(name):
 
 def pg(sql):
     return call(["docker", "exec", "-i", PG, "psql", "-XAtq", "-v", "ON_ERROR_STOP=1",
-                 "-U", "spirithub", "-d", "aisoc"], body=sql, code="pg_identity_setup_failed")
+                 "-U", PROFILE.postgres.admin_user, "-d", PROFILE.postgres.database], body=sql, code="pg_identity_setup_failed")
 
 
 def scram(password, salt, iterations):
@@ -120,7 +122,7 @@ def lake_credential():
          f'exec clickhouse-client --user {LAKE_READER} --password "$PROD_CH_PASS" --query "SELECT currentUser()"'],
         env={**os.environ, "PROD_CH_PASS": password}, text=True, capture_output=True, check=False, timeout=60)
     need(result.returncode == 0 and result.stdout.strip() == LAKE_READER, "existing_lake_identity_mismatch")
-    grant = f"GRANT SELECT ON aisoc.raw_events TO {LAKE_READER}"
+    grant = f"GRANT SELECT ON {PROFILE.lake.database}.raw_events TO {LAKE_READER}"
     grants = lake_admin(f"SHOW GRANTS FOR {LAKE_READER}").splitlines()
     need(all(g == grant for g in grants), "unexpected_lake_privilege")
     if grant not in grants:
@@ -138,65 +140,53 @@ def save_env(name, values):
 
 
 def configure():
-    transport_path = BASE / "private/processing-handoff/runtime.env"
+    transport_path = Path(PROFILE.paths.transport_env_file)
     secure_file(transport_path)
     shared = dict(line.split("=", 1) for line in transport_path.read_text().splitlines() if "=" in line)
-    live = json.loads(call(["docker", "inspect", API], code="production_service_settings_missing"))[0]
-    live_env = dict(s.split("=", 1) for s in live["Config"]["Env"] if "=" in s)
-    dsn = urlsplit(shared["DATABASE_URL"])
-    need(dsn.hostname == "192.168.1.21" and (dsn.port or 5432) == 5432
-         and parse_qs(dsn.query) == {"sslmode": ["verify-full"]}
-         and shared["PGSSLROOTCERT"] == "/run/certs/ca.crt",
-         "production_transport_mismatch")
-    need(live_env["CLICKHOUSE_DATABASE"] == "aisoc" and live_env["CLICKHOUSE_HOST"] == "192.168.1.21"
-         and live_env["CLICKHOUSE_PORT"] == "9000", "production_lake_endpoint_mismatch")
-    need(shared["OPENAI_BASE_URL"] == "http://litellm:4000/v1" and shared["OPENAI_MODEL"] == "aisoc-investigation"
-         and shared["OPENAI_API_KEY"], "internal_gateway_missing")
+    need(shared.get("OPENAI_API_KEY"), "internal_gateway_missing")
+    env = runtime_values(PROFILE)
+    db = PROFILE.postgres
     def url(role, pwd):
-        return urlunsplit((dsn.scheme, f"{role}:{pwd}@192.168.1.21:5432", "/aisoc", dsn.query, ""))
+        return (f"postgresql+asyncpg://{quote(role, safe='')}:{quote(pwd, safe='')}@{db.host}:{db.port}/{db.database}?"
+                + urlencode({"sslmode": db.tls_mode}))
     processor_url = url(PROCESSOR, pg_credential(PROCESSOR, "db-password"))
     ingress_url = url(INGRESS, pg_credential(INGRESS, "ingress-password"))
     lake_password = lake_credential()
-    env = {"PGSSLMODE": "verify-full", "PGSSLROOTCERT": shared["PGSSLROOTCERT"],
-           "SSL_CERT_FILE": shared["PGSSLROOTCERT"]}
-    save_env("ingress.env", {**env, "DATABASE_URL": ingress_url, "PYTHONPATH": "/opt/processor/smoke-fusion"})
+    ingress = {key: env[key] for key in ("PGSSLMODE", "PGSSLROOTCERT", "SSL_CERT_FILE",
+        "SOCAI2_SERVICE_DATABASE_NAME", "SOCAI2_PROCESSING_DB_HOST", "SOCAI2_PROCESSING_DB_PORT", "SOCAI2_PROCESSING_INGRESS_ROLE")}
+    save_env("ingress.env", {**ingress, "DATABASE_URL": ingress_url, "PYTHONPATH": PROFILE.docker.fusion_pythonpath})
     for k in ("SECRET_KEY", "JWT_SECRET", "REALTIME_INTERNAL_TOKEN", "AISOC_REALTIME_JWT_SECRET", "METRICS_TOKEN"):
         env[k] = secret(k.lower())
-    for k in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL"):
-        env[k] = shared[k]
+    env["OPENAI_API_KEY"] = shared["OPENAI_API_KEY"]
     # The job uses the internal gateway, can run without Redis, and has no need
     # to decrypt a production tenant's BYOK or connector credentials.
     env["AISOC_CREDENTIAL_KEY"] = base64.urlsafe_b64encode(bytes.fromhex(secret("credential-key"))).decode()
-    for k in ("CLICKHOUSE_HOST", "CLICKHOUSE_PORT"):
-        env[k] = live_env[k]
-    env.update(DATABASE_URL=processor_url, SOCAI2_INGRESS_URL=ingress_url, ENVIRONMENT="production", ENV="production",
-               DEBUG="false", AISOC_DEV_AUTH_BYPASS="false", CLICKHOUSE_DATABASE="aisoc", CLICKHOUSE_USER=LAKE_READER,
-               CLICKHOUSE_PASSWORD=lake_password, SOCAI2_SERVICE_DATABASE_NAME="aisoc", SOCAI2_LAKE_DATABASE="aisoc",
-               SOCAI2_PROCESSING_PROFILE="production21", SOCAI2_PROCESSING_DB_ROLE=PROCESSOR,
-               SOCAI2_PROCESSING_API_KEY_FILE="/dev/stdin", SOCAI2_MODEL_PROTOCOL="chat_completions",
-               SOCAI2_MODEL_SCHEMA_PROFILE="vllm_grammar_v1", AISOC_AIRGAPPED="true", AISOC_AIRGAP_ALLOWLIST='["litellm"]',
-               SOCAI2_SOURCE_UEBA_ENABLED="true", SOCAI2_SOURCE_KNOWLEDGE_ENABLED="true",
-               SOCAI2_SOURCE_GRAPH_ENABLED="false", SOCAI2_SOURCE_PRODUCT_HOST_ENABLED="false",
-               DATABASE_POOL_SIZE="2", DATABASE_MAX_OVERFLOW="1")
+    env.update(DATABASE_URL=processor_url, SOCAI2_INGRESS_URL=ingress_url, CLICKHOUSE_PASSWORD=lake_password)
     save_env("runtime.env", env)
 
 
 def run(tenant, actor, args):
     secure_file(PRIVATE / "runtime.env")
+    saved = dict(line.split("=", 1) for line in (PRIVATE / "runtime.env").read_text().splitlines() if "=" in line)
+    need(saved.get("SOCAI2_PROCESSING_PROFILE_SHA256") == PROFILE.sha256
+         and saved.get("SOCAI2_INVESTIGATION_POLICY_SHA256") == PROFILE.policy_sha256,
+         "installed_profile_or_policy_changed_reinstall_required")
     key = ""
     if actor:
         key = getpass.getpass("Scoped user API key: ") if sys.stdin.isatty() else sys.stdin.read(4096).strip()
         need(key.startswith("aisoc_") and not key.startswith("aisoc_wl_") and not any(c.isspace() for c in key),
              "user_api_key_required")
-    argv = ["docker", "run", "--rm", "-i", "--pull=never", "--network", "socai2_default", "--read-only",
-            "--cap-drop=ALL", "--security-opt=no-new-privileges", "--memory=2g", "--pids-limit=128",
-            "--tmpfs", "/tmp:rw,nosuid,nodev,size=128m,mode=1777", "--env-file", str(PRIVATE / "runtime.env"),
+    argv = ["docker", "run", "--rm", "-i", "--pull=never", "--network", PROFILE.docker.network, "--read-only",
+            "--cap-drop=ALL", "--security-opt=no-new-privileges", "--memory=" + PROFILE.docker.memory,
+            "--pids-limit=" + str(PROFILE.docker.pids_limit), "--tmpfs", PROFILE.docker.tmpfs,
+            "--env-file", str(PRIVATE / "runtime.env"),
             "-e", "SOCAI2_PROCESSING_TENANT_ID=" + str(tenant)]
     if actor:
         argv.extend(("-e", "SOCAI2_PROCESSING_ACTOR_ID=" + str(actor)))
     for local, remote in ((HERE / "processing_job.py", "/opt/processor/production_job.py"),
                           (HERE / "production_ingress.py", "/opt/processor/production_ingress.py"),
-                          (BASE / "certificates/socai2-ca.crt", "/run/certs/ca.crt")):
+                          (Path(PROFILE.paths.ca_file), PROFILE.paths.ca_mount),
+                          (Path(PROFILE.paths.policy_file), PROFILE.paths.policy_mount)):
         need(local.is_file(), "production_mount_missing")
         argv.extend(("--mount", "type=bind,src=" + str(local) + ",dst=" + remote + ",readonly"))
     argv.extend(("--entrypoint", "python", IMAGE, "-B", "/opt/processor/production_job.py", *args))
@@ -214,17 +204,19 @@ def run(tenant, actor, args):
 
 def main():
     os.umask(0o077)
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    parser.add_argument("--profile", required=True, help="explicit production TOML; no implicit host, database or image")
     actions = parser.add_subparsers(dest="mode", required=True)
     actions.add_parser("install", help="configure service identities and credentials")
     check = actions.add_parser("check", help="read schema, lake permissions and local model catalog")
-    check.add_argument("--tenant", type=UUID, default=DEFAULT_TENANT)
+    check.add_argument("--tenant", type=UUID)
     job = actions.add_parser("job", help="run exactly one requested operation with the caller's key on stdin")
     job.add_argument("--tenant", type=UUID, required=True)
     job.add_argument("--actor", type=UUID, required=True)
     job.add_argument("action", choices=ACTIONS)
     job.add_argument("arguments", nargs=argparse.REMAINDER)
     args = parser.parse_args()
+    profile = select_profile(args.profile)
     need(os.geteuid() == 0, "root_required")
     image_check()
     if args.mode == "install":
@@ -234,11 +226,12 @@ def main():
         with (PRIVATE / "install.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             configure()
-        print(json.dumps({"mode": "on_demand", "database": "aisoc", "role": PROCESSOR, "image_id": IMAGE,
-                          "ingress_role": INGRESS, "lake_role": LAKE_READER, "published_ports": []}))
+        print(json.dumps({"mode": "on_demand", "database": profile.postgres.database, "role": PROCESSOR, "image_id": IMAGE,
+                          "ingress_role": INGRESS, "lake_role": LAKE_READER, "published_ports": [],
+                          "profile_sha256": profile.sha256, "policy_sha256": profile.policy_sha256}))
         return 0
     if args.mode == "check":
-        return run(args.tenant, None, ["check"])
+        return run(args.tenant or profile.default_tenant, None, ["check"])
     return run(args.tenant, args.actor, [args.action, *args.arguments])
 
 
@@ -246,5 +239,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except Exception as exc:  # noqa: BLE001 -- configuration and driver errors can contain private DSNs
-        print(json.dumps({"error": str(exc) if isinstance(exc, SetupError) else type(exc).__name__}))
+        print(json.dumps({"error": str(exc) if isinstance(exc, (SetupError, ProfileError)) else type(exc).__name__}))
         sys.exit(1)

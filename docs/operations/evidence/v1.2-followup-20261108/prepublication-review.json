@@ -1,0 +1,196 @@
+{
+  "status": "ACCEPT",
+  "reviewed_at": "2026-11-08T01:29:47.268863+00:00",
+  "reviewer": {
+    "agent": "/root/handoff_readonly_review",
+    "independent_of_implementation": true,
+    "method": "本机只读源码、冻结包及已保存回执复核；独立复跑纯检查；仅写本审计回执。"
+  },
+  "workflow": "openspec/README.md 工作流第 5 项",
+  "scope": "2026-11-08 四项修复的发布前源码、配置及本地证据一致性；不代表正式部署、新批模型质量、整链或全部 1.2 完成。",
+  "release": "v1.2-20261108-r1",
+  "must_fix": [],
+  "findings": [
+    {
+      "id": "F01",
+      "status": "ACCEPT",
+      "subject": "A 判定与依据的发送约束",
+      "evidence": "constrained_response_format 从现有 Answer/SourceId 约束形成四个完整对象 anyOf；needs_review 只允许 null，其余三种判定各绑定相应非空 basis.kind。四分支保留 required、additionalProperties、内容约束及来源枚举。prepare_request 后计量、保存和发送；原 parse、raw 及局部建议处理未被归零或静默修答替代。"
+    },
+    {
+      "id": "F02",
+      "status": "ACCEPT",
+      "subject": "真实回执形成查询事实",
+      "evidence": "program_facts.query_statuses 区分 not_queried/failed/unknown/empty/data，null 或截断为零不会被提升为查空。事实包含真实工具回执 ID 和 execution_receipt 角色。StageResultService 按同租户、同 Run、同 Alert 的实际工具输出关联收集并校验 hash/大小，只有 completed 回执加入查询引用。PG 保存回执含输入事实与解释事实逐值一致以及失败/跳过/查空区别。I 不伪称执行这些 A 查询。"
+    },
+    {
+      "id": "F03",
+      "status": "ACCEPT",
+      "subject": "unknown 收尾状态",
+      "evidence": "InterruptedReport 为实际 model_validate 的独立收尾合同；report_json 与 detail.result 保持 terminal_state=null、run_state=unknown、delivery_state=none，系统保存状态另列 closing_state=saved/closing_delivery_state=partial。receipt 与 Markdown 对齐；C6 步骤 completed 仅表示收尾说明保存。现有事务、幂等、当前判断保护及未知 Run 活跃槽行为保持，不创建 Result、不填 Run.ended_at，不把未知用量归零或重派旧 Run。"
+    },
+    {
+      "id": "F04",
+      "status": "ACCEPT",
+      "subject": "网关配置及本轮发布来源",
+      "evidence": "新 release 显式加入独立 gateway 目标，沿既有镜像仅将 AISOC_LITELLM_REQUEST_TIMEOUT 设为 300 并挂载本次冻结 litellm.config.yaml；新装 compose 与选定 policy 同为 300。litellm_settings 从该环境项取值，现有 retries=0/fallbacks=[] 保持。rollout 以容器 Id 区分原实例和已重建实例，再按冻结 before/after 核运行配置，支持同镜像配置升级。五服务 expected_image 与已保存 r3 verify 回执一致；Agents paused/unlimited 及其他后台禁用项保持。"
+    }
+  ],
+  "independent_checks": {
+    "pure_tests": {
+      "passed": 61,
+      "failed": 0,
+      "execution": "先独立复跑 60 项，再仅运行新增网关配置一致性 1 项；均 python -B、pytest 禁缓存，未重跑 PG。",
+      "commands": [
+        ".local/conda-envs/socai2/bin/python -B .local/v1.2-reader-validation/run_tests.py -p no:cacheprovider services/api/tests/test_socai2_v12_followup.py services/api/tests/test_socai2_stage_partial_review.py services/api/tests/test_socai2_program_facts.py services/api/tests/test_socai2_m1_contract_fixes.py deploy/aisoc21/test_release_12.py",
+        ".local/conda-envs/socai2/bin/python -B .local/v1.2-reader-validation/run_tests.py -p no:cacheprovider deploy/aisoc21/test_release_12.py::test_gateway_timeout_is_in_release_and_new_install_configuration"
+      ]
+    },
+    "schema_copies": {
+      "api_and_design_defs_identical": true,
+      "dictionary_program_facts_identical": true,
+      "query_statuses_optional_for_old_content": true
+    },
+    "grammar_evidence": {
+      "source": "grammar-backend-check.json",
+      "vllm": "0.30.0",
+      "xgrammar": "0.2.8",
+      "verdict_basis_combinations": 16,
+      "all_expected": true,
+      "model_calls": 0,
+      "schema_sha256": "94d20690b2f31d8525cb4d6fbcc73d6c91d855a96033c6a1525030bf296074bc",
+      "probe_equals_current_vllm_wire_schema": true,
+      "receipt_hash_matches_probe": true,
+      "independently_executed_grammar_backend": false
+    },
+    "processing_candidate": {
+      "source": "processing-candidate.json",
+      "image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+      "manifest_sha256": "f54431190ee65a77af655f20c4fd6c0df56b8e4ebed048f2447c97e0d9d63c3f",
+      "archive_sha256": "db8f4802363ba21744bcaeaea20d1a17df7b2572f28689df24c2bb870aee4cea",
+      "archive_entries_hash_and_size_verified": 631,
+      "runtime_source_files_equal_current_workspace": 629,
+      "unexpected_archive_files": 0,
+      "release_and_profile_image_manifest_match": true,
+      "build_and_network_none_self_test": "仅复核已保存成功回执，独审未运行 Docker/远端。"
+    },
+    "old_batch_unchanged": {
+      "batch": "production-multialert-20261107-02",
+      "previous_audit_evidence_hashes_checked": 42,
+      "mismatches": 0
+    },
+    "latest_pg_receipts": {
+      "distinct_methods_passed": 5,
+      "model_and_lake": "explicit_substitutes",
+      "independently_rerun": false,
+      "methods": [
+        "test_full_cancel_holds_slot_and_does_not_finalize",
+        "test_full_no_model_or_rejected_initial_yields_system_handoff",
+        "test_alert_missing_sources_and_empty_are_distinct",
+        "test_alert_partial_review_keeps_advice_and_never_adopts_bad_judgment",
+        "test_alert_deepseek_wire_saved_after_union_expansion"
+      ]
+    },
+    "unified_release_freeze": {
+      "release": "v1.2-20261108-r1",
+      "manifest_sha256": "a1a3ce16d8b65f95da8a45d8b4c6387c6eda003e5a7367ca33383cf9fcd99008",
+      "frozen_files_verified": 954,
+      "frozen_hash_mismatches": 0,
+      "working_tree_byte_mismatches": 0,
+      "release_config_equals_reviewed_current_file": true,
+      "files_include_gateway_compose_and_litellm_config": true,
+      "saved_build_receipt": {
+        "network": "none",
+        "services_changed": false,
+        "images": {
+          "api": {
+            "id": "sha256:c2afdd4cdf96b82e00efb1ef25ae2b445797b02b54d3d61d5de27efb1bcd6066",
+            "tag": "socai2-api:v1.2-20261108-r1",
+            "files": 567
+          },
+          "fusion": {
+            "id": "sha256:2c17132903aa1c8130cf36b76e990adf19da4b1a3e4473ec5fd660b9d6e53a94",
+            "tag": "socai2-fusion:v1.2-20261108-r1",
+            "files": 64
+          },
+          "agents": {
+            "id": "sha256:c208190e744643ce8f4084edab7f31e91c67ae000dd8595df88f84279d870243",
+            "tag": "socai2-agents:v1.2-20261108-r1",
+            "files": 293
+          }
+        },
+        "counts_match_manifest": true
+      },
+      "saved_preflight_receipt": {
+        "runtime_definitions_verified": [
+          "socai2-api-1",
+          "socai2-fusion-1",
+          "socai2-agents-1",
+          "socai2-investigation-projection",
+          "socai2-production-workbench",
+          "socai2-litellm-1"
+        ],
+        "runtime_changes": false
+      },
+      "saved_prepare_receipt": {
+        "targets": 6,
+        "all_before_and_target_images_match_reviewed_release": true,
+        "consumer_enabled": false,
+        "model_calls": 0
+      },
+      "independent_remote_operations": false
+    }
+  },
+  "retained_initial_failures": [
+    "initial-checks.json 保存 3 项初轮夹具/合同同步问题；最新纯检查通过不改写初轮。",
+    "closing-pg-second.json 的两个方法因本机 127.0.0.1:28412 连接 Operation not permitted 失败；closing-pg-third.json 最新两方法通过。",
+    "alert-pg.json 的 wire 方法先因隔离 assets 夹具权限失败；使用 background=False 并保留实际 wire/raw 断言后 alert-wire-pg-second.json 通过。"
+  ],
+  "limitations": [
+    "独审未连 21/43 或正式库、未运行模型、未执行部署；远端 grammar 和候选构建结论仅来自已保存回执，源码/Schema/包 hash 已离线独立核对。",
+    "本回执为发布前审查；已保存的六目标 preflight、prepare 与断网构建回执通过且与冻结清单一致，独审未到远端。实际 rollout、健康、activate、verify 和有效网关 300 秒读回仍须部署后证据。",
+    "Schema 与 grammar 验证只约束判定/依据形状；引用合法不证明陈述真实，程序事实及提示也不能保证模型不会再误述查询，需新授权批次验收。",
+    "网关 timeout 为共享网关设置；原有别名/模型/重试策略未修改，不能据此宣称全产品所有客户端超时都已迁移。",
+    "保留旧批原答、失败及 unknown；不重派旧 Case，不恢复 Agents，不变更 DDL/权限或补造材料。"
+  ],
+  "source_sha256": {
+    "services/api/app/socai2/alert_basic_contract.py": "731d8ae6e0699b2865622cb20029d002b285416597d926afcb458945196bc248",
+    "services/api/app/socai2/alert_basic_executor.py": "4794a6a898700672899a79033a15066bc2bdbe01d66b246bbf88a8a522e6523e",
+    "services/api/app/socai2/program_facts.py": "a208f561be51a19f13433dd764515dbdd34f8a50e7f7f4f2f15b36afe20e70f9",
+    "services/api/app/socai2/stage_results.py": "7d2fe0809ced46d526ddbc95035e2d3f8f335002064b4b5fdfa67fb1869ec495",
+    "services/api/app/socai2/baseline_closing.py": "5edb588e72f58dad14bbd9ba1a4cd3e7bf16b9b0fa24541ea5ff7a8420b0dcd6",
+    "services/api/app/socai2/baseline_delivery_projection.py": "f1c23598d8fcfb56d357e3516f7811493befbdc21925d4b3e3c541ef9c23eb77",
+    "services/api/app/socai2/contracts.schema.json": "138d7fc8e87e437abb8b4206d4444f7015ce1181e3282916945589c09be481c5",
+    "docs/design/socai2-json-contracts-20261103.schema.json": "92aec81629d0874049b485914f2d2acbd983f4ba051cae22a60d9cb461065a0d",
+    "docs/design/socai2-data-contract-20261103.json": "ead91fcbf6910e6d1550efc05386dd78fdebcb78f9701d61a186f18095bcc4e1",
+    "deploy/aisoc21/compose.gateway.yml": "f49257139ca44d2f37f18d16f2d17cde7a7c6cb019a7b96b53a897fc109cdfec",
+    "deploy/aisoc21/litellm.config.yaml": "66a3100a15563631093e7f6326b857001eee609feb3e45e83f8f89bd91041012",
+    "deploy/aisoc21/release_12.py": "7e80d0127c4389f17c1b0c69163cf54878f3e3e15335aae15ea05baf3c4c1390",
+    "deploy/aisoc21/release-v1.2.json": "4f96f8f195a1c3b4bb4f2c67d37b32e696a93b4e01aa3ae8a95a6ae28dd2b359",
+    "deploy/aisoc21/production-v1.2.toml": "220f0d10e96f8d6afb94ac12d3f4237fc09af906a9fe7383014487f0c6e8d062",
+    "deploy/local-investigation/investigation-policy.toml": "6ac7ffbd7e2632c9362e21eb72ef9b6d02a8bc71e220fa077556c73ebcc81b5c",
+    "services/api/tests/test_socai2_v12_followup.py": "aa09cece657ac1f5dcb8b8393a3885166b3d2327215e5ae205b482ac2120ada0",
+    "services/api/tests/test_socai2_stage_partial_review.py": "d7467745e739b918dd04e9e2dd037de9e2cc941c294144881637127592b73d0c",
+    "services/api/tests/test_socai2_program_facts.py": "84f90d48be51686db497328ec64d118ba0a17085ac169dc763733ec9e63c4514",
+    "services/api/tests/test_socai2_m1_contract_fixes.py": "8816001354b5e6a3b611ae9456d8ad090a9b3461a5e27c5a6e1853df323a01fd",
+    "services/api/tests/test_socai2_alert_basic_executor.py": "5cfc7dfbd2dda79acdae220c371160b202c1f3c4ba8a910412b2cc8ac60a97c7",
+    "services/api/tests/test_socai2_baseline_executor.py": "4e412942730b0c6927d69af850f96a24038c17a9b12181b8a9d7b4c8d64d6440",
+    "deploy/aisoc21/test_release_12.py": "b8b1e39e5532094ad12edb83e278b553fced591081fba33499f84a1135346f5d"
+  },
+  "evidence_sha256": {
+    "initial-checks.json": "e3d8959f65637dd572bb5daf3009a1efff080804776b91485701e1727e869de9",
+    "pure-second.xml": "fd128777e0f2eaf626b91e20a505bec60e8550a2aeec3b17735878b0ad14b266",
+    "release-tests.xml": "951119da3ac73200b4552f4c96b73e6554c0b2f34b6b2e39e30edeed33d63573",
+    "closing-pg-second.json": "16ee247584fa8d38e1582cf5335088bda664f903e89b8078af4d81b0eba8538e",
+    "closing-pg-third.json": "745f97ff693d8cf527a74014df1e55b05ad99c86a439122564627bd794d0cf7f",
+    "alert-pg.json": "30d083108f1b8ec2a2b61ca35dddb5096403f73f1a809c138704d3bc2c35162b",
+    "alert-wire-pg-second.json": "37ba1845c2272061719f62273ff40ff6163898ba0b9baaaf7fff0298945fda97",
+    "grammar-probe.json": "6ff99752e1cbad795174943769b824a7d3da06dd40505d4adc95037942639ead",
+    "grammar-backend-check.json": "8d755deeb3dedba5f6d029e3c0812a9139e87f7b1f29c9a89d1dd0b4b5b47033",
+    "processing-candidate.json": "d454a3517d1dc2116811c6fcc058602a360650db9218cde253487eb9f8360986",
+    "unified-v1.2-20261108-r1-build.json": "ae7a836c079220a920808c4d046134e9de15fa577a8c65dbf59f3c0242070661",
+    "unified-v1.2-20261108-r1-preflight.json": "b14747fe0226f127399cefc2ccacee6e901ef6f8de88475a687f85cb98842756",
+    "unified-v1.2-20261108-r1-prepare.json": "025b53f072b9d816b6fae8d14135c656fa19c3d4bc32b6389073be66fc77ccf7"
+  },
+  "frozen_manifest_sha256": "a1a3ce16d8b65f95da8a45d8b4c6387c6eda003e5a7367ca33383cf9fcd99008"
+}

@@ -1,225 +1,100 @@
-# 告警事件与调查模块前后端交接指南 V1
+# 告警、事件与 Case 前后端交接
 
-本指南是业务后端、前端和调查模块开发者的共同入口。交付内容包括已确认的数据库结构、字段与查询合同、原产品页面功能及跳转、离线测试案例和调查运行记录。可以据此开始数据读取、页面绑定和按功能逐项联调；尚未接通的操作和模型质量问题按第八节继续验收。
+更新于 2026-11-10。本文是功能、数据库、字段和接口的共同入口，以 21 当前部署和实际读回为准。告警分诊、事件诊断、Case C1/C3/Deep/C6 输入输出已部署；数据读取验收通过，模型正文质量继续单列验收。
 
-数据库基线为 PostgreSQL 16 中 `socai2` schema 的 **29 张表、462 列**，对应迁移 **123–126**。原联调版本标签为 `frontend-backend-integration-v1`（`624a57de`）；本指南随其后的交接文档提交补充发布，不改写该标签或历史测试原件。本文的服务器信息来自 2026-11-06 保存的部署回执和启动配置；切换环境时以对应私有配置为准。
+## 1 接手入口
 
-## 1 从哪里开始
-
-| 接手工作 | 入口与用途 |
+| 内容 | 权威资料 |
 | --- | --- |
-| 产品与前端功能 | [当前产品需求](docs/design/alert-incident-case-product-requirements.md)、[页面功能与跳转 V1](deliverables/investigation-validation-20261106/frontend-feature-list.md)：28 项功能 F01–F28、14 项跳转 J01–J14，以及输入 ID、目标页和空态。 |
-| 业务后端取数 | [服务端数据交接 V1](docs/investigation/socai2-page-data-handoff-20261106.md)：权威表、联表关系、权限、分页、四段只读 SQL 和签收范围。 |
-| 数据库定义 | [字段字典](docs/design/socai2-field-dictionary-20261103.md)、[机器可读字典](docs/design/socai2-data-contract-20261103.json)、[JSON 字段合同](docs/design/socai2-json-contracts-20261103.schema.json)。 |
-| 数据库部署 | 21 的业务库使用[共享库安装与核验程序](deploy/database/install_aisoc21_v1.py)。新建独立库使用[V1 初始化 SQL](deploy/database/init_socai2_v1.sql)。使用条件见第三节。 |
-| HTTP 合同 | [完整 OpenAPI](docs/design/socai2-independent-api-v2.openapi.json)。文件名中的 v2 是既有 API 合同版本；本次“联调 V1”是交付基线名称，不把 API 文件改名或视作另一套数据库。 |
-| 字段有值和空值样本 | [字段取数清单](deliverables/investigation-validation-20261106/page-field-samples.md)：81 个主表字段及具体文件、JSON Pointer，含四案以外的补充正例。 |
-| 下载案例与离线预览 | [版本交付入口](deliverables/investigation-validation-20261106/README.md)、[完整测试索引](docs/investigation/investigation-test-handoff-20261106.md)。 |
-| 调查模块内部开发 | 生产连接与触发见第 2.1 节。[当前执行账本](docs/investigation/current-execution-ledger.md) · [21 生产部署与独立样本命令](deliverables/investigation-validation-20261106/processing-deployment.md) · [处理审计及剩余问题](deliverables/investigation-validation-20261106/processing-functional-audit.md)。 |
+| 功能及跳转 | [产品需求](docs/design/alert-incident-case-product-requirements.md)、[F01–F28／J01–J14 清单](deliverables/investigation-validation-20261106/frontend-feature-list.md) |
+| 字段到存储、关联及读取 | [服务端数据交接](docs/investigation/socai2-page-data-handoff-20261106.md) |
+| 表和列 | [字段字典](docs/design/socai2-field-dictionary-20261103.md)、[机器可读字典](docs/design/socai2-data-contract-20261103.json) |
+| JSON 与 HTTP 合同 | [JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json)、[OpenAPI](docs/design/socai2-independent-api-v2.openapi.json) |
+| 有值、空值与原件 | [字段取数样例](deliverables/investigation-validation-20261106/page-field-samples.md)、[运行记录及离线材料](deliverables/investigation-validation-20261106/README.md) |
+| 程序流程和模型职责 | [执行账本](docs/investigation/current-execution-ledger.md)、[每个模型环节的输入输出](docs/investigation/model-input-output-current-20261109.md) |
+| 已有问题与完成边界 | [问题清单](docs/investigation/current-issues.md)、[OpenSpec 任务](openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 
-**产品页面和开发查阅页各有用途。** `prototypes/security-pages-v2/` 及产品需求说明承载原产品设计。4177 的“调查运行记录”用于开发者查看 Run、步骤、请求、原答和错误，不替代产品页面，也不作为重新设计产品功能的依据。后续前后端可按产品需求调整页面实现；调查模块可调整提示词、工具和内部步骤，但必须保持已确认字段、取值语义、关联关系和读取合同兼容。
+## 2 当前运行环境
 
-## 2 数据在哪个环境
-
-### 2.1 21 生产环境
-
-21（`192.168.1.21`，SSH 别名 `sting-infra21`）的生产告警和调查共用 PostgreSQL 数据库 **`aisoc`**。Fusion 收到告警，先写 `public.alerts`。同一告警在调查模块的主表是 `socai2.alerts`，事件是 `socai2.incidents`。两处使用同一租户和业务 ID。后端查询本指南的告警、事件和 Case 字段时连接 `aisoc`，使用 `socai2` schema。
-
-| 操作 | 触发方式和可查询的数据 |
+| 项目 | 当前值与用途 |
 | --- | --- |
-| 收到一条新告警 | Fusion 提交告警并发布 `socai2.alerts.fused` 通知。接入进程从启用时的位置开始消费，按租户及 ID 核对已落库的原始快照，把告警、材料、来源、对象、工件、事件和成员关系写入 `socai2`。写入成功后才确认消息，重复投递沿用同一告警 ID。 |
-| 分析告警、诊断事件 | 有权限的调用者分别执行 `alert`、`incident` 作业。此时才产生相应的 `runs`、`run_steps` 与工件。只有接入记录时，执行历史可以为空。 |
-| 建立 Case 并执行调查 | 调用者执行 `case-create` 选择成员，再用 `case-prepare` 准备该轮，最后用 `case-start` 启动。按 `tenant_id` 和 `case_id` 查各轮，再按 `run_id` 查步骤和工件。Case 调查须显式启动。 |
-| 查看运行进度 | 4177 工作台以专用账号 `socai2_prod_reader` 只读访问调查表。刷新页面只读取已经提交的记录，处理作业与工作台可以独立运行。默认查看业务租户 `00000000-0000-0000-0000-000000000001`。 |
+| 目标 | 21，SSH 别名 `sting-infra21` |
+| 发布 | `v1.2-20261110-r2`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
+| HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
+| 开发查阅 | 21 回环 `127.0.0.1:4177`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
+| 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
+| 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
+| Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=false`；页面不得将未开放写操作显示为已保存。按需处理作业使用专用身份和调用者权限 |
+| 自动消费 | Agents 暂停；没有自动启动 Case 或恢复消息消费的验收结论 |
+| 配置 | [生产 profile](deploy/aisoc21/production-v1.2.toml)选取 [A/I/Case 策略](deploy/local-investigation/investigation-policy-case-v1.toml)；凭据留在受控私有文件 |
 
-生产处理作业使用 `socai2_prod_processor` 和 ClickHouse 的 `aisoc.raw_events`。读取原告警快照的接入进程使用 `socai2_prod_ingress`。生产安装已核对 V1 的 29 表、462 列和全部表的强制租户隔离。既有六张告警、事件相关表的结构与授权指纹与安装前一致。进程状态、消息消费和实际调查执行应分别核对。[接入进程](deploy/aisoc21/production_projection.py) · [按需作业](deploy/aisoc21/production_processing.py)
+模型单次时限 300 秒，Case 整轮 1500 秒，最终阶段预留 300 秒；单 Run 的调用与容量限制读取策略。租户累计调用、token、未结算数量配额不限制。失败、unknown 和待复核按实际状态保存。
 
-### 2.2 21 合成测试材料的来源
+`aisoc_app` 获授调查表 SELECT、两个只读函数 EXECUTE 及 `public.assets/public.users` SELECT。工作台使用 `socai2_prod_reader`，按需处理使用 `socai2_prod_processor`，入站来源读取使用 `socai2_prod_ingress`。只读账号、处理账号和数据库 owner 各按职责使用。
 
-| 项目 | 地址或数据空间 | 用途及配置来源 |
-| --- | --- | --- |
-| 主机 | `192.168.1.21`，已有 SSH 别名 `sting-infra21` | 访问内网需要工作站到该主机的网络；当前只读交接也可完全使用第六节离线包。 |
-| PostgreSQL | `192.168.1.21:5432`，数据库 **`socai2_processing_handoff`**，schema **`socai2`** | M01/S02/U03 合成测试及交接复查使用的独立数据库，运行角色为 `socai2_processing_job`。生产查询使用第 2.1 节的数据库和租户。 |
-| PostgreSQL 依赖 | 同一数据库的 `public` schema | 租户、用户、API key/RBAC、资产、威胁情报、知识和用户风险等支持表；不计入 29 张调查表。 |
-| ClickHouse | **`socai2_next_validation.raw_events`** | 此批测试读取的湖表，用户名为 `socai2_next_reader_20261104`。连接参数取测试作业 `runtime.env` 的 `CLICKHOUSE_*`。 |
-| Redis | 取该作业 `runtime.env` 的 `REDIS_URL` | 复用配置中的基础设施；不作为案件、Run 或正式结果的权威存储。 |
-| 模型 | 作业内 `http://litellm:4000/v1`，别名 `aisoc-investigation` | 21 网关转 43 的 `192.168.1.43:8000`，已保存路由为 Qwen3.5-9B 对应别名。协议 `chat_completions`、Schema profile `vllm_grammar_v1`。`litellm` 是容器网络名，不能直接当工作站地址。 |
-| 测试作业入口 | `/opt/sting-aisoc-socai2/ops/processing.py` | 三案回执使用 `releases/processing-20261106-r3/processing_host.py` 按需执行。 |
+## 3 数据库与字段关系
 
-固定租户为 `6aff0ef7-c670-5a84-a2ee-83d73e25b964`，测试操作者为 `0fa5e92d-8c36-5a4b-8bd4-8120b15356bd`。它们用于本次合成样例，不是所有部署的默认租户。[安装回执](docs/operations/socai2-processing-install-20261106.json) · [实际模型路由](docs/operations/evidence/ie-audit-20261106-a1/model-route.json)
+已确认结构为 **29 表、462 列、37 组枚举、40 项 JSON 合同**；JSON Schema 另含 4 个共用定义。迁移 123–126、初始化 SQL、ORM 和字段字典共同描述该结构。2026-11-10 逐列核对类型及可空性无偏差，表、约束、索引、RLS、触发器与函数指纹在发布前后完全一致。
 
-另有历史独立验证库 `socai2_next_20261104`，其 API 配置在 `private/next-20261104/api.env`，21 上的 API 为 loopback `127.0.0.1:18020`。这不是上述 `socai2_processing_handoff` 库的 HTTP 服务。四案小模型试验也使用各自隔离库；复查四案优先按包内原件及 manifest，不用同名标题跨库关联。
-
-### 2.3 本机 Mac 验证环境
-
-| 服务 | 本机连接 | 数据空间与身份 |
-| --- | --- | --- |
-| PostgreSQL | `127.0.0.1:15432` | **`socai2_local_20261105`**；schema `socai2`。API 角色 `local_socai2_api`，Fusion 角色 `local_socai2_fusion`。 |
-| ClickHouse | native `127.0.0.1:19000`；HTTP `127.0.0.1:18123` | **`socai2_local_validation.raw_events`**；读角色 `local_socai2_reader`、写角色 `local_socai2_writer`。 |
-| Kafka | `127.0.0.1:19092` | `socai2.local.20261105.alerts.raw`、`.raw_events`、`.alerts.fused`；Fusion group 为 `socai2.local.20261105.fusion`。 |
-| Redis | `127.0.0.1:16379`，DB 0 | 专用本机容器，不清空历史数据。 |
-| API / Fusion | `127.0.0.1:18020` / `127.0.0.1:18021` | API 前缀 `/api/v1/socai2`；Bearer API key 认证。运行代码来自本机 checkout，不会因 Git 更新自动重启。 |
-| 产品原型 / 运行记录 | `127.0.0.1:4174` / `127.0.0.1:4177` | 产品原型默认读取保存的样例。4177 可以按第七节启动，查看数据库中最近更新的 Case，也可离线浏览导出的记录。 |
-| 模型 | 当前私有配置为 DeepSeek `deepseek-flash` | `deepseek_responses / standard`。改测内网已部署模型只切模型配置，过程数据仍可留本机；新测试需独立批次和明确额度。 |
-
-连接地址和角色由 [config.py](deploy/local-investigation/config.py) 组装，容器端口见 [compose.yml](deploy/local-investigation/compose.yml)，应用启动见 [run.py](deploy/local-investigation/run.py)。当前知识查询使用 PostgreSQL 全文检索：以冻结告警标题构造检索词，读取知识文档；没有向量库、Embedding、Neo4j 或 OpenSearch 的必需前置依赖。来源查询是否实际执行，以该 Run 的步骤和工件为准。
-
-## 3 表结构与初始化
-
-### 3.1 29 张表的功能分组
-
-| 功能 | `socai2` 表 |
+| 功能 | 权威表及主要关联 |
 | --- | --- |
-| 告警、材料、对象、分诊与人工反馈 | `alerts`、`alert_materials`、`alert_source_refs`、`alert_objects`、`alert_assessments` |
-| 事件、成员及诊断 | `incidents`、`incident_alerts`、`incident_diagnoses` |
-| 案件、成员、当前判断及来源 | `cases`、`case_alerts`、`case_incidents`、`case_assessments`、`case_assessment_sources`、`case_assessment_members` |
-| 执行、冻结成员、步骤和工件 | `runs`、`run_members`、`run_steps`、`artifacts` |
-| 正式结果及结果成员 | `results`、`result_members` |
-| 人工任务和版本 | `tasks`、`task_revisions` |
-| 助手会话、消息及探索画布 | `conversations`、`messages`、`graph_explorations` |
-| 活动、目标前后值、评论和响应关联 | `activities`、`activity_targets`、`comments`、`response_links` |
+| 告警事实与分诊 | `alerts` 的当前材料／分诊／人工反馈指针连接 `alert_materials`、`alert_assessments`；同材料的来源和对象在 `alert_source_refs`、`alert_objects` |
+| 事件与诊断 | `incidents → incident_alerts → alerts`；诊断指针连接 `incident_diagnoses`，诊断尝试按 `runs.incident_id` 查 |
+| Case 范围 | `cases → case_alerts/case_incidents`；成员关系与显式事件关系分别展示 |
+| 冻结输入和执行 | `runs → run_members/run_steps/artifacts`；Run 固定材料版本，步骤按 `seq/parent_step_id` 组织 |
+| 正式结果及当前判断 | `results/result_members` 保存各轮结果；`cases.current_assessment_id → case_assessments → case_assessment_sources/case_assessment_members` 给采用依据和覆盖范围 |
+| 人工确认 | `tasks → task_revisions`；范围、正文、完成人和完成时刻读取选中的版本 |
+| 活动和协作 | `activities → activity_targets`；`comments`、`response_links` 保存明确归属与真实回执引用 |
+| 问答及探索设计 | `conversations/messages`、`graph_explorations`；有表不代表相关业务已开放 |
 
-数据库名和 schema 名不同。线上查询案件时，先连接数据库 `aisoc`，再查询表 `socai2.cases`。所有联查限定授权 `tenant_id`，再按主体 UUID 和明确保存的指针关联。案件信息看 `Case`，每轮执行看 `Run`，正式结果看 `Result`，当前采用的判断看 `assessment`。
+所有关联同时限定租户和父主体。显示名称、主机名和厂商编号不能替代 UUID。当前材料、历史冻结材料与外部来源分别读取。结构调整仍须按 [AGENTS.md](AGENTS.md#调查数据库-v1-与人工确认)取得明确人工确认；本批无 DDL 或授权变更。
 
-### 3.2 部署文件
+部署时使用[部署说明](deploy/aisoc21/README.md)的统一发布入口。独立空库初始化使用[建表 SQL](deploy/database/init_socai2_v1.sql)，共享业务库核验使用[安装核验程序](deploy/database/install_aisoc21_v1.py)的 `verify`。不得对已有数据执行空库初始化。
 
-| 文件 | 职责 |
+## 4 页面读取合同
+
+下列路径均以 `/api/v1/socai2` 为前缀。前端优先沿响应中的身份和内容链接取数；完整参数、返回类型和限制以 OpenAPI 为准。
+
+| 页面需要的数据 | GET 路径与说明 |
 | --- | --- |
-| [21 业务库安装程序](deploy/database/install_aisoc21_v1.py) | 在已有公共表的 `aisoc` 中安装冻结的四个迁移，以单一事务建调查对象和[运行角色授权](deploy/database/aisoc21_processing_access.sql)。`inspect` 看安装前目录，`rehearse` 完整预演后回滚，`apply` 提交，`verify` 复核目录、权限和既有告警表指纹。 |
-| [init_socai2_v1.sql](deploy/database/init_socai2_v1.sql) | 在新的、独立的 UTF-8 PostgreSQL 16 数据库初始化已确认 V1；包含公共依赖、123–126 和校验。完整 V1 再运行只核对，部分安装或结构不符会拒绝。 |
-| [123](services/api/migrations/123_socai2_page_data_model.sql) | 原始调查 schema 基线。 |
-| [124](services/api/migrations/124_socai2_case_source_binding.sql)、[125](services/api/migrations/125_socai2_baseline_input_freshness.sql)、[126](services/api/migrations/126_socai2_case_page_data.sql) | 依次补 Case 来源命名空间、更新采用前的新鲜度判定、补分类/期限/当前证据索引指针；保留历史迁移原件。 |
-| [ORM](services/api/app/models/socai2.py) | 应用中的表映射。 |
-| [目录回查 SQL](docs/operations/read_socai2_v1_catalog.sql) | 查询列、约束、索引和 RLS 等实际目录，用于和 V1 定义对账。 |
-| [Case 回查 SQL](docs/investigation/socai2-page-data-readback-20261106.sql) | 当前判断、证据目录及相关表的只读联查。 |
+| 告警／事件列表和详情 | `/alerts`、`/incidents` 及 `/{id}`；列表默认 20、上限 50，按返回游标分页 |
+| 成员、对象、来源、资产、活动、相关告警、响应 | `/alerts/{id}/records/{section}`、`/incidents/{id}/records/{section}`；默认 50、上限 200，按 `next_offset` 分页 |
+| 告警材料 | `/alerts/{id}/materials/{material_id}`；保留版本、hash、原描述与结构字段，正文受限时返回 availability |
+| A/I 尝试与步骤 | `/{alerts或incidents}/{id}/analysis`、`/{alerts或incidents}/{id}/analysis/runs/{run_id}`；在该完整 Run 路径下追加 `/trace` 或 `/artifacts/{artifact_id}` |
+| Case 队列、资料与资料字段 | `/cases`、`/cases/{case_id}`、`/cases/{case_id}/page-data`；队列的筛选总数和全租户 metrics 分开 |
+| Case 历史及指定结果 | `/cases/{case_id}/history`、`/cases/{case_id}/runs/{run_id}`、`/cases/{case_id}/results/{result_id}`；历史默认 20、上限 100 |
+| Case 工件与冻结材料 | `/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}`、同 Run 下 `/materials/{material_id}` |
+| 非 Run 来源工件 | `/alerts/{id}/artifacts/{artifact_id}`、`/incidents/{id}/artifacts/{artifact_id}`、`/cases/{case_id}/artifacts/{artifact_id}`；按真实归属读原文 |
+| Case 活动 | `/cases/{case_id}/activities`；含案件、成员和显式事件的匹配活动，去重并保留目标前后值 |
+| 人工任务及版本 | `/cases/{case_id}/tasks`、`/cases/{case_id}/tasks/{task_id}`、`/cases/{case_id}/tasks/{task_id}/revisions`、`/cases/{case_id}/tasks/{task_id}/revisions/{revision_id}` |
 
-在已配置 21 的 SSH 工作站从仓库根目录执行 `python deploy/aisoc21/deploy_production_services.py apply`，可统一安装数据库、同步服务、按需作业和工作台。使用 `verify` 可单独检查服务与数据库。仅需复核表结构时，执行 `python deploy/database/install_aisoc21_v1.py verify`。[统一部署入口](deploy/aisoc21/deploy_production_services.py) · [独立消费组配置](deploy/aisoc21/compose.production-projection.yml)
+“相关告警”按**同租户、同类型、同命名空间、同对象键**匹配当前材料，可跨 Case；它不表示因果关系。错误父主体返回 404，权限不足与正文不可用分别处理。Case Run 的成员、步骤、工件和结果集合分别检查总数及截断标志。
 
-若部署目标是新建的**独立空库**，以有权建表的身份运行下列命令。
+## 5 状态、交付和空态
 
-```sh
-psql -X -d your_investigation_db -f deploy/database/init_socai2_v1.sql
-```
-
-连接主机、用户和口令通过部署方的受控连接配置提供。脚本不创建业务租户、案例、运行账号或口令；这些由部署方单独配置。已有调查数据的库先做目录比对，不套用“空库初始化”来修补。运行角色、最小权限和租户 RLS 必须按交接方案设置，不能将建表 owner 当业务读账号。
-
-本机验证环境通过迁移 126 形成完整的 462 列。`deploy/local-investigation/prepare.py` 单独运行只准备 123–125。复查本机既有案例时直接读取即可；正式部署按第 3.2 节区分 21 共享业务库和独立空库。
-
-### 3.3 后续变更规则
-
-V1 已经人工确认。新增、删除或修改表、字段、类型、默认值、可空性、键、约束、索引、关系和隔离规则，都必须先在 OpenSpec 记录原因、影响字段、旧数据和页面查询影响，取得项目负责人对明确范围的人工确认，并记确认人和日期。确认后用新的增量迁移，保留 V1 原件。普通“继续推进”、自动评审或测试通过不能替代该确认。[项目规则](AGENTS.md#调查数据库-v1-与人工确认)
-
-## 4 连接配置与凭据保管位置
-
-以下只交接文件位置和变量用途。真实口令、Token、完整含口令 DSN 不进入 Git、页面、截图或测试包；新接手者通过项目负责人或环境维护者取得对应权限和私有配置。
-
-| 环境与文件 | 应取哪些项 | 用途 |
-| --- | --- | --- |
-| 21 `/opt/sting-aisoc-socai2/private/processing-production/` | `runtime.env`、`ingress.env` | 前者给按需处理作业，后者给生产告警接入进程，均连接业务库 `aisoc`。执行业务命令时由调用者提供其租户范围的 API key。 |
-| 21 `/opt/sting-aisoc-socai2/private/production-workbench/reader.env` | `SOCAI2_AUDIT_DATABASE_URL` | 4177 使用独立只读身份、TLS 和生产租户读调查表。 |
-| 本机 `.local/local-investigation/private/runtime.env` | `API_DB_PASSWORD`、`FUSION_DB_PASSWORD`；`CH_READER_PASSWORD`、`CH_WRITER_PASSWORD` | 对应第二节固定运行角色；`DATABASE_URL` 由 `config.py` 组装，不直接存于该文件。 |
-| 同一本机文件 | `PG_ADMIN_PASSWORD`、`CH_ADMIN_PASSWORD` | 本机基础服务管理凭据，不给业务页面或普通 API 使用。 |
-| 同一本机文件 | `READ_API_KEY`、`API_KEY` | 前者用于已有只读接口；后者包含业务写权限，不能作为前端静态文件常量。 |
-| 同一本机文件 | `OPENAI_BASE_URL`、`OPENAI_MODEL`、`OPENAI_API_KEY`、`SOCAI2_MODEL_PROTOCOL`、`SOCAI2_MODEL_SCHEMA_PROFILE` | 五项共同确定模型后端；模型密钥与业务 API key 不互换。 |
-| 21 `/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env` | `DATABASE_URL`、`SOCAI2_SERVICE_DATABASE_NAME`、`SOCAI2_PROCESSING_DB_ROLE`、租户/操作者变量、`CLICKHOUSE_*`、`SOCAI2_LAKE_DATABASE`、`REDIS_URL`、模型变量 | 第 2.2 节合成测试作业的连接配置。完整 DSN 含密码，禁止直接打印。 |
-| 21 同目录 `db-password` | `socai2_processing_job` 的数据库密码 | 与上述交接库运行角色配对，不是历史 next 库密码。 |
-| 21 同目录 `job-key` | 作业的服务身份 key | 容器只读挂载到 `/run/processor/key`，通过 `SOCAI2_PROCESSING_API_KEY_FILE` 指定。不是已提供的对外 HTTP 入口。 |
-| 21 `/opt/sting-aisoc-socai2/private/next-20261104/api.env`、`identity.json` | 历史独立 API 的运行配置和身份材料 | 处理作业从 `api.env` 选取部分已有湖、Redis、CA、网关配置，再生成自己的 `runtime.env`；不要混用两套库和角色。 |
-| 21 `/opt/sting-aisoc-socai2/certificates/socai2-ca.crt` | 服务连接的 CA 公证书 | 作业挂载到 `/run/certs/ca.crt`；TLS 参数保持对应环境配置，不能照搬本机 `sslmode=disable`。 |
-
-本机私有目录按 0700、文件按 0600 管理，已被 Git 忽略；从 Git 下载代码不会得到这些文件。较早的 `.local/configuration/2026-10-20/` 和 `docs/operations/configuration.md` 是历史环境索引，不能覆盖本节的 V1 交接对象。没有凭据时先使用离线案例即可进行字段和页面开发。
-
-## 5 接口与数据库功能代码
-
-| 能力 | 实现位置 |
+| 要表达的含义 | 取值来源和展示规则 |
 | --- | --- |
-| 最小 API 应用 | [socai2_main.py](services/api/app/socai2_main.py)；正式合同统一前缀 `/api/v1/socai2`。 |
-| 告警、事件字段及相关记录 | [page_reader.py](services/api/app/socai2/page_reader.py)、[page_contracts.py](services/api/app/socai2/page_contracts.py)、[socai2_pages.py](services/api/app/api/v1/endpoints/socai2_pages.py)。 |
-| A/I 分析目录、Run 和工件 | [stage_reader.py](services/api/app/socai2/stage_reader.py)、[stage_read_contracts.py](services/api/app/socai2/stage_read_contracts.py)、[socai2_analysis.py](services/api/app/api/v1/endpoints/socai2_analysis.py)。 |
-| Case、历史、Run、Result | [case_reader.py](services/api/app/socai2/case_reader.py)、[case_contracts.py](services/api/app/socai2/case_contracts.py)、[socai2_cases.py](services/api/app/api/v1/endpoints/socai2_cases.py)。 |
-| 当前判断、分类、期限、证据计数 | [case_data.py](services/api/app/socai2/case_data.py)、[case_data_contracts.py](services/api/app/socai2/case_data_contracts.py)、[证据 JSON Schema](services/api/app/socai2/case_evidence.schema.json)。 |
-| 建案、准备、启动、成员关联与移动 | [case_service.py](services/api/app/socai2/case_service.py)、[case_relations.py](services/api/app/socai2/case_relations.py)。 |
-| 人工任务与修订 | [human_task_service.py](services/api/app/socai2/human_task_service.py)、[human_task_contracts.py](services/api/app/socai2/human_task_contracts.py)、[socai2_tasks.py](services/api/app/api/v1/endpoints/socai2_tasks.py)。 |
-| 调查内部执行与模型交换 | [socai2 模块目录](services/api/app/socai2/)、[当前执行账本](docs/investigation/current-execution-ledger.md)，按 Run 和 Step 留存，不把内部函数名作为页面固定字段。 |
+| 业务处理状态 | 告警／事件／Case 的状态字段；Run 结束不自动关闭案件 |
+| 机器执行状态 | `run.state/stop_reason`；有工件不代表执行成功，unknown 保持未知 |
+| 交付完整性 | `run.delivery_state`；`none/partial/complete/unknown` 与待复核分开 |
+| 事件交付说明 | `result.diagnosis.delivery_assessment.reasons/member_coverage`；部分拒收内容可沿 `partial_analysis` 读取 |
+| 事件待复核 | `delivery_assessment.review_items.state` 为 `required/none_listed/unknown`；成员、发现及问题 ID 分别列出 |
+| 采用与新鲜度 | `is_current_pointer/valid_for_current_input/freshness` 以及 Case 当前判断来源；完整保存不保证当前仍可采用 |
+| 业务判定和模型质量 | 判定取该环节有效结果，`accepted` 是程序校验／采用状态，不能作为准确率或正文质量结论 |
 
-读权限为 `alerts:read` 或 `cases:read`；告警/事件关联 Case 的出口同时要求 `cases:read`。写操作经服务命令、租户校验、幂等键及相应版本条件执行。后端可组装多个读取结果满足页面，例如 Case 历史需要额外组合相关 A/I；这是明确的聚合工作，不应假设单个 `/history` 已含全部执行。
+`null` 表示未记录或不可得；空数组表示对应集合为空；`0/false` 是有效值。未查、失败、成功查空分别显示，查空不证明安全。费用和 token 未知不能填零。已保存证据目录的条目数、威胁数与没有目录分别处理；威胁数为零不等于“已证明无威胁”。报告建议不得显示为已执行响应。
 
-保持这些语义：当前判断沿 `cases.current_assessment_id`；正式结果沿 `results.source_run_id`；步骤按 `run_steps.run_id/seq/parent_step_id`；原件用版本和实际工件 ID。`null`、未接入、有效空数组、有效计数 0 和 HTTP 失败分别处理。Run 状态、交付完整性、结论来源、模型覆盖和案件管理状态不能合为一个“成功/失败”。GET 不触发调查或隐式补写。
+## 6 本次验证与交付边界
 
-## 6 测试数据与离线使用
+当前 21 的 2 个 Case 样本覆盖模型来源的部分交付、系统收尾与失败。299 次真实 GET 中 291 次正常返回、8 次错误父归属返回 404；13,098 项字段、正文和关联核对通过。读取前后 29 表快照一致，正式结构指纹保持。[实际读回](docs/operations/evidence/current-release-20261110-01/readback-03/summary.json) · [发布与核验报告](openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)
 
-所有案例均为构造数据，执行和保存过程按各包回执区分真实模型、真实基础设施及确定性替身。模型输出不是预设真值；不可因有结论就认定语义质量合格。
+本地流程定向检查 81 项通过，2 项数据库专用检查跳过；发布检查 18 项通过。Case 读取开关及相关接口的 42 项不同检查最终通过。C1/C3 和 Deep/C6 的真实隔离 PG 保存／读取证据已复用，模型和工具为替身；本次没有新增真实模型调用，不认定模型质量通过。
 
-| 数据包 | 解压后的阅读入口 | 适合验什么 |
-| --- | --- | --- |
-| [21 小模型四案包](deliverables/investigation-validation-20261106/21-qwen9b-handoff-cases-20261106.zip) | `README.md`、`preview/index.html`；每案 `cases/<编号>/export/database.json`、`three-page-gets.json`、`api-responses.json` | 8 告警、4 事件、15 Run、3 Case、1 正式 Result；已发布、拒收、超时、未建案以及关联跳转。 |
-| [21 单案包](deliverables/investigation-validation-20261106/21-qwen9b-pilot-20261106.zip) | `preview/index.html` 和对应预览页 | A/I 已发布、Case 在模型调用前容量停止；27 份 GET 保存记录。 |
-| [三案处理审计包](deliverables/investigation-validation-20261106/ie-processing-audit-20261106.zip) | 包内 `docs/operations/evidence/ie-audit-20261106-a1/`；当前开发查看页见第七节 | M01/S02/U03 共 10 Run、62 步骤、130 工件，C3 超时及 C6 系统收尾。受控成功链、拒收链和人工版本另列，不混作真实模型成功。 |
-| [历史与数据合同包](deliverables/investigation-validation-20261106/socai2-investigation-tests-20261106.zip) | `START_HERE.md`；13 个本机模型批次和 4 个无模型合同 Case 分列 | 模型来源当前判断、图谱、分类/期限、证据及威胁计数、人工反馈；补齐四案中为空的字段。 |
+[问题清单](docs/investigation/current-issues.md)集中记录模型正文、H 后完整调查、知识实际消费、自动消费者、页面显示及未开放业务。前后端可按本合同实现读取和展示；生产写入、复杂协作、探索保存、Q 和外部处置分别按其开放状态接入。
 
-完整解压后再开预览，保留相对路径。离线页来自保存的数据导出，不会连接 21 或调用模型。JSON 快照是对账和接口样例，不是可直接执行的 SQL 全库备份；不要把原租户和 ID 不加区分地导入生产库。
+## 7 内部查阅与离线资料
 
-在项目根目录复核原交接包，并可导出 48 份已保存 GET 响应体和 4 份字段合同样例：
+[4177 调查运行记录](http://127.0.0.1:4177/)用于核查 Run、步骤、实际输入输出、错误和原件。生产 Case 从正式库读取；隔离测试条目标明模型／工具替身。它与产品页面分别维护。[使用方法与固定样例](deliverables/investigation-validation-20261106/README.md#调查运行记录页)
 
-```sh
-.local/conda-envs/socai2/bin/python docs/operations/check_investigation_handoff.py
-.local/conda-envs/socai2/bin/python docs/operations/check_investigation_handoff.py --examples-dir .local/handoff-v1-api-examples
-```
-
-第二条输出目录须尚不存在；没有本机 Conda 环境时使用可用的 Python 3.9+，该检查脚本仅使用标准库。生成的 `index.json` 标明响应出处、路径与身份。先用保存响应做前端绑定，再用目标环境同权限 API 对账，不能把旧快照当作实时接口返回。
-
-本机新测试过程通常保存在 `.local/local-investigation/validation/<批次>/`，包含计划、导出和回执；21 三案的公开原件已在 `docs/operations/evidence/ie-audit-20261106-a1/`。这些私有工作目录不随 Git 自动交接，需使用上述已提交的包。后续复测创建新的批次和操作键，保留旧失败、unknown 和用量未知；按 [后续计划](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md) 先明确范围与额度。
-
-## 7 本地查看页面
-
-在能通过 SSH 访问 21 的工作站，从仓库根目录启动下列程序，即可打开[调查运行记录](http://127.0.0.1:4177/)。
-
-```sh
-python docs/operations/serve_processing_workbench.py --source aisoc
-```
-
-生产页从 21 的 `aisoc.socai2` 读取当前租户最近更新的五个 Case，可继续加载。选中 Case 后，每 15 秒检查已提交的运行、步骤和工件等记录；有变化才刷新该案文件，每案保留最新一份。流程节点链接到各步输入、输出与错误。告警和事件 ID 入口搜索已发布的主体快照，可在案件内核对成员和各自的执行记录。生产页使用独立缓存；尚未建案时，Case 列表为空。复查 M01/S02/U03 可打开交接包或用 `--source 21` 查询独立交接库。
-
-在 21 上，4177 只绑定 `127.0.0.1`。需要查看服务器上的工作台时，在本机 4177 空闲的情况下运行 `ssh -N -L 127.0.0.1:4177:127.0.0.1:4177 sting-infra21`，然后打开同一地址。[工作台访问、快照与离线用法](deliverables/investigation-validation-20261106/README.md#调查运行记录页)
-
-若需在独立资料页查阅测试人员交付的快照，可从本地批次更新静态站点。
-
-```sh
-python3 docs/operations/update_processing_audit.py --batch "本次测试导出目录"
-```
-
-该命令读取本地快照并更新静态文件；不同测试使用独立批次，同一快照重复导入去重。`--plan` 在本地无快照时可能通过 SSH 从 21 只读导出，离线查看优先用 `--batch`。保留原有批次，不把受控替身混入实际测试列表。[完整用法](deliverables/investigation-validation-20261106/README.md#调查运行记录页)
-
-产品原型可另外启动，仍使用原有模板：
-
-```sh
-python3 -m http.server 4174 --bind 127.0.0.1 --directory prototypes/security-pages-v2
-```
-
-若端口已被对应服务占用，直接打开已有页面，不重复启动或停止其他进程。4174 的静态导出与真实服务模式需要分别签收；4177 的可读性不代替原产品页的功能验收。
-
-## 8 联调签收顺序与剩余事项
-
-1. 对齐数据库名、schema、租户和读权限，用字段字典及目录 SQL 核对 V1；无权访问服务器时先用离线包。
-2. 按 F01–F28/J01–J14 绑定列表、详情、材料、当前判断、执行和正式结果，逐页核对至少一个有值和一个缺值场景；关联 ID 和分页口径须一致。
-3. 用四案 Q01–Q04 核正常读取、未建案、分诊拒收、超时及系统判断；用历史与合同样例补模型结论、图谱、证据计数和人工版本。
-4. 再按相应命令接建案、成员变更、准备/启动、分类/期限、H 任务等写操作；确认写后读回和版本冲突。页面查看不自动执行流程。
-
-以下已知项保留在联调清单，不因此修改已确认表结构：
-
-| 剩余项 | 当前边界与后续验收 |
-| --- | --- |
-| 原页四处显示差异 | 事件概览缺本次 I 诊断入口；有效严重度 `medium` 显示；Run 的 `none` 与字段缺失区分；无效告警 ID 的未找到及返回。见功能清单末尾，正式页面签收前关闭。 |
-| 聚合及部分写回 | Case 的完整 A/I/C 历史、活动、全局运行列表等由业务后端组合；通用管理、协作附件、受控下载、探索保存及外部响应接线分别验收。对应存储位置已有说明，有表不等于接口已完成。 |
-| 案件助手 | 提问、保存回答、显式采用三个预留入口目前返回 501，页面应标未开放。 |
-| 证据索引生产 | 有合同及样例，不表示每个模型 Run 自动产出索引；缺索引保留 `not_recorded/null`，不能显示成已核对的 0。 |
-| 模型结果质量 | 21 三案 C3 均 HTTP 408，已有系统收尾和当前待核判断，正式模型 Result 为 0；历史 DeepSeek 存在范围拒收和效果扩大。模型质量单独回归，不更改旧原答或伪造结果。 |
-| 服务接入 | 21 区分告警接入进程、按需处理命令和 4177 只读工作台。联调应分别记录 Kafka 接入成功的告警/事件 ID，以及显式启动的 A/I/Case 的 Run ID。产品业务 HTTP 的接线由业务后端负责。 |
-
-[完整测试交接及责任边界](docs/investigation/investigation-test-handoff-20261106.md) · [三案问题证据](deliverables/investigation-validation-20261106/processing-functional-audit.md) · [后续修复与模型计划](openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)
-
-## 9 Git 发布与父项目引用
-
-子项目为 `Dinines/socai2`。本轮交付复核通过后，将 `codex/case-baseline-history-20261103` 的成果合并到 `main`。父项目为 `wangjuelong26/SpiritHub`，用户指定更新现有 **`add-server-submoudle`** 分支的 **`server`** 子模块指针；`.gitmodules` 中子模块名为 `socai2`，路径为 `server`，跟踪 `main`。
-
-父项目提交只需将 gitlink 指向已在 socai2 远端存在的提交，不把父项目复制进本仓库，不重复发布父项目源码，也不修改父项目 `main`。最终发布身份以两仓库的实际提交 SHA 和远端分支核对为准。
+离线快照只提供字段和失败样例，不能代替实时接口。各批原答、unknown 和失败保持；追溯材料见[历史目录](docs/handoff/history/2026-11-10-current-handoff-cleanup.json)。

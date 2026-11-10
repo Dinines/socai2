@@ -138,7 +138,7 @@ def verify_services(processor, workbench):
     return data
 
 
-def host(mode, paths):
+def host(mode, paths, processing_profile):
     import fcntl  # Linux on 21; the orchestrator may run on Windows.
 
     need(os.geteuid() == 0 and ENTRY.parent == ENTRY.parent.resolve() and ENTRY.parent.is_dir(), "21 host layout required")
@@ -155,8 +155,8 @@ def host(mode, paths):
             workbench = host_release(mounted(WORKBENCH, "/opt/workbench"), "workbench")
         launcher = processor / "deploy/aisoc21/production_processing.py"
         if mode == "apply":
-            call(["python3", str(launcher), "install"], "install processor")
-        receipt = json.loads(call(["python3", str(launcher), "check"], "check processor").splitlines()[-1])
+            call(["python3", str(launcher), "--profile", processing_profile, "install"], "install processor")
+        receipt = json.loads(call(["python3", str(launcher), "--profile", processing_profile, "check"], "check processor").splitlines()[-1])
         need(receipt.get("database") == "aisoc" and receipt.get("db_role") == "socai2_prod_processor"
              and receipt.get("lake_table") == "aisoc.raw_events" and receipt.get("model_calls") == 0,
              "processor target check mismatch")
@@ -179,7 +179,7 @@ def host(mode, paths):
         os.close(lock)
 
 
-def local(mode):
+def local(mode, processing_profile):
     schema = HERE.parent / "database/install_aisoc21_v1.py"
     output = call([sys.executable, str(schema), mode], "schema " + mode, timeout=180)
     need("verified_socai2_v1 29_tables_462_columns" in output, "V1 schema verification missing")
@@ -191,7 +191,7 @@ def local(mode):
             need(re.fullmatch("/opt/sting-aisoc-socai2/releases/production-" + component + "-[0-9a-f]{16}", path),
                  "unexpected published release")
             releases.append(path)
-    command = shlex.join(["python3", "-I", "-", "--host", mode, *releases])
+    command = shlex.join(["python3", "-I", "-", "--processing-profile", processing_profile, "--host", mode, *releases])
     result = call([*SSH, command], "21 " + mode, body=Path(__file__).read_bytes(), timeout=680)
     print(result)
 
@@ -199,15 +199,16 @@ def local(mode):
 if __name__ == "__main__":
     args = argparse.ArgumentParser(description=__doc__)
     args.add_argument("--host", action="store_true", help=argparse.SUPPRESS)
+    args.add_argument("--processing-profile", required=True, help="explicit profile file already placed on 21")
     args.add_argument("mode", choices=("apply", "verify"))
     args.add_argument("releases", nargs="*", help=argparse.SUPPRESS)
     opts = args.parse_args()
     try:
         need(len(opts.releases) == (2 if opts.host and opts.mode == "apply" else 0), "unexpected release arguments")
         if opts.host:
-            host(opts.mode, opts.releases)
+            host(opts.mode, opts.releases, opts.processing_profile)
         else:
-            local(opts.mode)
+            local(opts.mode, opts.processing_profile)
     except Exception as exc:  # noqa: BLE001 -- never disclose subprocess environments
         print(json.dumps({"error": str(exc) if isinstance(exc, DeployError) else type(exc).__name__}))
         sys.exit(1)

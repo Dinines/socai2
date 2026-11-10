@@ -1,10 +1,10 @@
 """Service-owned C3 choices and deterministic, separately deduplicated routing."""
 from datetime import datetime
 
-from .baseline_capacity import FINAL_SECONDS
 from .baseline_evidence_tools import TOOLS
 from .baseline_semantics import EVENT_KINDS
 from .baseline_store import encoded
+from .runtime_policy import active_policy
 
 
 def ranked_bindings(catalog, members):
@@ -39,7 +39,7 @@ def offered_bindings(catalog, limits, now, steps, lake, *, members=None):
     used = sum(s["kind"] == "tool" and s["state"] not in {"planned", "skipped"} for s in steps)
     available = (lake.configured() and limits.max_tool_calls is not None and used < limits.max_tool_calls
         and limits.max_rows_per_query is not None and limits.max_rows_per_query > 0
-        and limits.deadline_at is not None and (limits.deadline_at - now).total_seconds() > FINAL_SECONDS)
+        and limits.deadline_at is not None and (limits.deadline_at - now).total_seconds() > active_policy().final_reserve_seconds)
     for bid, binding in ranked_bindings(catalog, members):
         scope = binding["scope"]
         window = (scope["window_start"] and scope["window_end"]
@@ -53,7 +53,7 @@ def offered_bindings(catalog, limits, now, steps, lake, *, members=None):
         alias = "B" + str(len(options) + 1)
         option = {"binding_id": alias, "tool_name": binding["tool_name"], "hostname": binding["hostname"],
             "alert_ids": binding["alert_ids"], "object_keys": sorted({o["object_key"] for o in binding["objects"]})}
-        if len(encoded([*options, option])) > 1800:
+        if len(encoded([*options, option])) > active_policy().model.max_prepared_bytes:
             excluded.append({"binding_id": bid, "reason": "binding_catalog_input_limit"})
             continue
         options.append(option)

@@ -270,7 +270,8 @@ def retired_records(index):
 def registry_html(records, output, retired):
     ordered = sorted(records.values(), key=lambda r: (timestamp(r["started_at"]), r["batch"], r["key"]), reverse=True)
     controls = next((name for name in ("controlled-flow.html", "controls.html") if (output / name).is_file()), None)
-    html = render_index(ordered, controls_url=controls)
+    comparison = "comparisons/index.html" if (output / "comparisons/index.html").is_file() else None
+    html = render_index(ordered, controls_url=controls, comparison_url=comparison)
     if retired:
         body = json.dumps(retired, ensure_ascii=True).replace("<", "\\u003c")
         html = html.replace("</body>", '<script type="application/json" id="audit-retired-records">'

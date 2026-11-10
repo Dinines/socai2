@@ -5,12 +5,14 @@ from uuid import uuid4, uuid5
 from sqlalchemy import func, insert, null, select, update
 
 from . import incident_diagnosis_contract as contract
+from . import incident_model_boundary, incident_output_adapter
 from .baseline_analysis import budget_reason
-from .baseline_analysis_model import MAX_OUTPUT_TOKENS, TenantChatGateway, usage
+from .baseline_analysis_model import TenantChatGateway, usage
 from .baseline_context import reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_store import StoreError, digest, encoded
+from .incident_delivery import assess
 from .model_errors import ModelCallError
 from .model_protocol import prepare_request, response_choices
 from .stage_result_contracts import INCIDENT_EXECUTOR_VERSION as VERSION
@@ -78,23 +80,43 @@ class IncidentDiagnosisExecutor:
                     raise StoreError("incident_input_snapshot_invalid", 422)
                 stage = await self.step(store, run, "stage")
             try:
-                messages, source_map, data = contract.build(source, claim["input_artifact_id"])
+                from .runtime_policy import active_policy
+                prepared = None
+                if "query_receipts_version" in source:
+                    profile = active_policy().incident_io
+                    if profile is None:
+                        raise StoreError("incident_boundary_profile_unavailable", 422)
+                    messages, source_map, data, prepared = incident_model_boundary.build(source,
+                        claim["input_artifact_id"], profile, execution_time=run["started_at"].isoformat())
+                else:
+                    messages, source_map, data = contract.build(source, claim["input_artifact_id"],
+                        execution_time=run["started_at"].isoformat())
             except StoreError as exc:
                 await self.stop(tenant, rid, "failed", exc.code)
                 return await self.outcome(tenant, claim)
             if not await self.gateway.configure(self.service, tenant):
                 await self.stop(tenant, rid, "failed", "model_not_configured")
                 return await self.outcome(tenant, claim)
-            body = {"model": self.gateway.model, "messages": messages, "max_tokens": MAX_OUTPUT_TOKENS, "temperature": 0,
-                    "response_format": response_format(contract.Answer, source_map,
+            body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["I"], "temperature": 0,
+                    "response_format": {"type": "json_schema", "json_schema": {"name": "socai2_incident_boundary",
+                        "strict": True, "schema": incident_output_adapter.candidate_schema(prepared)}} if prepared else response_format(contract.Answer, source_map,
                         members=[m["alert"]["id"] for m in source["members"]],
                         member_sources=[sid for sid, ref in source_map.items() if ref["alert_ids"]])}
             body = prepare_request(self.gateway, body)
             async with self.service.transaction(tenant) as store:
+                meter_run, _ = await self.locked(store, rid)
+                meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
+            try:
+                from .token_budget import measure_with_deadline
+                measurement = await measure_with_deadline(self.gateway, body, "I", meter_seconds)
+            except StoreError as exc:
+                await self.stop(tenant, rid, "failed", exc.code)
+                return await self.outcome(tenant, claim)
+            async with self.service.transaction(tenant) as store:
                 run, _ = await self.locked(store, rid)
                 limits, now = Limits.model_validate(run["limits"]), await store.now()
                 steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == rid)))).mappings().all()
-                reason = budget_reason(steps, limits, len(encoded(body)), now)
+                reason = budget_reason(steps, limits, len(encoded(body)), now, measurement=measurement)
                 if not reason:
                     model = await self.step(store, run, "model", stage)
                     request = {"schema_version": VERSION, "provider": self.gateway.provider, "model": self.gateway.model,
@@ -104,7 +126,9 @@ class IncidentDiagnosisExecutor:
                         "input_omission_details": data["omission_details"],
                         "input_omission_detail_count": data["omission_detail_count"],
                         "input_omission_details_truncated": data["omission_details_truncated"],
-                        "reserved_token_upper_bound": len(encoded(body)) + MAX_OUTPUT_TOKENS + 256}
+                        "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement}
+                    if prepared:
+                        request["incident_boundary"] = prepared["boundary"]
                     request_id = await self.save(store, run, model, "model_request", request)
                     await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
                         input_artifact_id=request_id, provider=self.gateway.provider))
@@ -128,6 +152,7 @@ class IncidentDiagnosisExecutor:
                 raise
             recorded = usage(payload)
             rejection, result, validated, diagnostics = None, None, None, []
+            review, complete_content = None, None
             try:
                 if recorded["usage_state"] != "reported":
                     raise StoreError("model_usage_unknown_or_inconsistent", 422)
@@ -142,20 +167,41 @@ class IncidentDiagnosisExecutor:
                 if (not isinstance(message, dict) or not isinstance(message.get("content"), str)
                         or message.get("tool_calls") or message.get("function_call") or message.get("refusal")):
                     raise StoreError("model_content_or_tool_protocol_invalid", 422)
-                result, validated = contract.parse(message["content"], source_map, data, diagnostics=diagnostics)
+                complete_content = message["content"]
+                if prepared:
+                    result, validated = incident_output_adapter.parse(complete_content, prepared, diagnostics=diagnostics)
+                else:
+                    result, validated = contract.parse(complete_content, source_map, data, diagnostics=diagnostics)
             except StoreError as exc:
                 rejection = exc.code
+                if complete_content is not None:
+                    from .stage_answer_review import review_incident
+                    review = (incident_output_adapter.review(complete_content, prepared) if prepared
+                              else review_incident(complete_content, source_map, data))
             async with self.service.transaction(tenant) as store:
-                run, _ = await self.locked(store, rid)
+                run, frozen_source = await self.locked(store, rid)
                 response_id = await self.save(store, run, model, "model_response", {"schema_version": VERSION,
                     "raw": payload, "usage": recorded, "validation_error": rejection, "validated_members": validated,
-                    "validation_diagnostics": diagnostics})
+                    "validation_diagnostics": diagnostics, "partial_review": review,
+                    **({"incident_boundary_version": prepared["boundary"]["version"],
+                        "diagnostic_paths": "canonical_incident_answer"} if prepared else {})})
+                if review is not None:
+                    kept = review["retained_analysis"]
+                    delivery = assess(frozen_source, partial_review=review)
+                    await store.db.execute(update(D).where(*store.where(D, D.c.source_run_id == rid)).values(
+                        summary=None, diagnosis={"validation_state": "partial", "conclusion": None,
+                            "findings": kept["findings"], "partial_review_artifact_id": str(response_id),
+                            "limitations": review["limitations"], "program_facts": data["program_facts"],
+                            "delivery_assessment": delivery},
+                        open_questions=kept["open_questions"]))
+                    await store.db.execute(update(R).where(*store.where(R, R.c.id == rid)).values(
+                        delivery_state=delivery["state"], row_version=R.c.row_version + 1))
                 now = await store.now()
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
                     state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
                     usage=recorded, error=error(rejection, now) if rejection else null()))
             if result:
-                await self.service.finish(tenant, rid, result, execution_step_id=stage)
+                await self.service.finish(tenant, rid, result, execution_step_id=stage, validated_members=validated)
             else:
                 await self.stop(tenant, rid, "failed", rejection)
         except (Exception, asyncio.CancelledError):

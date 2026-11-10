@@ -1,0 +1,675 @@
+{
+  "provenance": "offline_structure_replay_of_historical_answer",
+  "candidate": {
+    "summary": "主机 socai2-flow-20261108-01 在 2026-11-08T01:26:09 至 01:26:49 间记录用户 flow-observer-20261108-01 登录、启动 PowerShell 获取本地用户列表及连接外部 IP 198.51.100.88，现有证据无法区分授权运维与恶意侦察。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "analyzed",
+        "summary": "账户登录告警显示用户 flow-observer-20261108-01 于 01:26:09 在主机 socai2-flow-20261108-01 上成功登录，来源 IP 为 203.0.113.88，但缺乏授权审批记录。",
+        "evidence_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S5",
+          "N2_S6",
+          "N2_S27",
+          "N2_S30",
+          "N2_S34",
+          "N2_S35"
+        ],
+        "limitations": [
+          "认证日志非审批记录",
+          "查空威胁情报不构成安全证明"
+        ]
+      },
+      {
+        "alert_id": "A2",
+        "state": "analyzed",
+        "summary": "进程启动告警显示 powershell.exe 于 01:26:29 启动并执行 Get-LocalUser 命令，由同一用户在同一主机上运行，行为符合侦察特征但需核实授权。",
+        "evidence_ids": [
+          "N2_S7",
+          "N2_S8",
+          "N2_S11",
+          "N2_S12",
+          "N2_S13",
+          "N2_S28",
+          "N2_S31",
+          "N2_S36",
+          "N2_S37"
+        ],
+        "limitations": [
+          "进程启动成功不证明脚本完成或业务授权"
+        ]
+      },
+      {
+        "alert_id": "A3",
+        "state": "analyzed",
+        "summary": "出站连接告警显示主机于 01:26:49 通过 TCP 443 端口连接外部 IP 198.51.100.88，该 IP 未出现在登录或进程对象中，需验证其业务合法性。",
+        "evidence_ids": [
+          "N2_S14",
+          "N2_S16",
+          "N2_S17",
+          "N2_S18",
+          "N2_S20",
+          "N2_S21",
+          "N2_S22",
+          "N2_S29",
+          "N2_S32",
+          "N2_S38",
+          "N2_S39"
+        ],
+        "limitations": [
+          "连接成功不证明数据外传或具体文件传输"
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "unresolved",
+        "statement": "用户 flow-observer-20261108-01 在极短时间内（20 秒内）完成登录、执行侦察命令并建立外部连接，时间序列高度紧凑，符合攻击链特征但无法排除自动化运维脚本。",
+        "alert_ids": [
+          "A1",
+          "A2",
+          "A3"
+        ],
+        "support_ids": [
+          "N2_S26"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "授权运维人员执行快速故障排查",
+          "恶意攻击者利用合法凭证进行横向移动或数据窃取"
+        ],
+        "limitations": [
+          "缺乏审批记录",
+          "威胁情报查空"
+        ]
+      },
+      {
+        "id": "F2",
+        "state": "unresolved",
+        "statement": "出站连接目的地 198.51.100.88 未在登录或进程启动的关联对象中直接出现，且威胁情报查询结果为空，无法确认该 IP 是否为已知恶意 C2 或合法业务伙伴。",
+        "alert_ids": [
+          "A3"
+        ],
+        "support_ids": [
+          "N2_S17",
+          "N2_S25",
+          "N2_S32"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "连接至未知业务服务器",
+          "连接至恶意基础设施"
+        ],
+        "limitations": [
+          "查空不构成反证",
+          "无历史连接基线"
+        ]
+      },
+      {
+        "id": "F3",
+        "state": "unresolved",
+        "statement": "所有告警均标记为 medium 严重性且检测标签显示不证明攻击发生，但人工陈述和优先分析均建议 review，表明当前证据不足以定性为良性或恶意。",
+        "alert_ids": [
+          "A1",
+          "A2",
+          "A3"
+        ],
+        "support_ids": [
+          "N2_S23",
+          "N2_S24",
+          "N2_S25",
+          "N2_S26"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "误报",
+          "真实攻击"
+        ],
+        "limitations": [
+          "标签不证明行为发生",
+          "无授权证据"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "原始记录支持用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上的登录、powershell.exe 进程启动及至 198.51.100.88 的出站连接，时间分别为 01:26:09、01:26:29 和 01:26:49。",
+        "evidence_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S7",
+          "N2_S8",
+          "N2_S11",
+          "N2_S14",
+          "N2_S16",
+          "N2_S17",
+          "N2_S20",
+          "N2_S22"
+        ],
+        "limitations": [
+          "对象资产匹配状态为未检查"
+        ]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "三个告警共享同一主机、同一用户和连续的时间窗口，形成逻辑上的行为序列，但无直接因果证据（如会话 ID 传递）证明它们是同一攻击会话。",
+        "evidence_ids": [
+          "N2_S26"
+        ],
+        "limitations": [
+          "时间接近不等于因果"
+        ]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "现有证据既不支持恶意也不支持良性，Get-LocalUser 命令常见于侦察但也用于权限审计，外部连接目的不明，需进一步取证。",
+        "evidence_ids": [
+          "N2_S23",
+          "N2_S24",
+          "N2_S25"
+        ],
+        "limitations": [
+          "缺乏授权审批",
+          "无威胁情报命中"
+        ]
+      },
+      {
+        "id": "authorization",
+        "state": "not_applicable",
+        "answer": "当前数据集中无审批记录、工单或业务授权证据，无法确认任何行为的授权状态。",
+        "evidence_ids": [],
+        "limitations": [
+          "认证日志非审批记录",
+          "需人工确认"
+        ]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "已观察到网络连接建立，但未观察到数据外传、文件哈希或敏感信息访问的具体证据，潜在影响待核。",
+        "evidence_ids": [
+          "N2_S17",
+          "N2_S21"
+        ],
+        "limitations": [
+          "连接成功不证明数据外传"
+        ]
+      },
+      {
+        "id": "coverage",
+        "state": "answered",
+        "answer": "已覆盖三个核心告警成员，但威胁情报、资产库存和历史记录查询因预算或连接限制未执行，存在证据缺口。",
+        "evidence_ids": [
+          "N2_S33"
+        ],
+        "limitations": [
+          "工具预算保留",
+          "源未连接"
+        ]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及账户登录和会话信息",
+        "alert_ids": [
+          "A1"
+        ],
+        "finding_ids": [
+          "F1",
+          "F3"
+        ],
+        "limitations": [
+          "无 MFA 信息",
+          "无会话密钥"
+        ]
+      },
+      {
+        "name": "cloud",
+        "applicability": "applicable",
+        "reason": "涉及主机配置和进程活动",
+        "alert_ids": [
+          "A2"
+        ],
+        "finding_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "limitations": [
+          "无云控制面信息",
+          "无 IAM 变更"
+        ]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "无邮件、链接或附件相关告警",
+        "alert_ids": [],
+        "finding_ids": [],
+        "limitations": [
+          "无相关数据"
+        ]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及数据访问和外部连接",
+        "alert_ids": [
+          "A3"
+        ],
+        "finding_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "limitations": [
+          "无数据访问日志",
+          "无外传目的地确认"
+        ]
+      }
+    ],
+    "conflicts": [
+      {
+        "id": "C1",
+        "finding_ids": [
+          "F1",
+          "F2"
+        ],
+        "state": "unresolved",
+        "explanation": "行为序列紧凑暗示攻击，但用户身份合法且无明确恶意 IOC，存在授权运维与恶意攻击的解释冲突。",
+        "evidence_ids": [
+          "N2_S26",
+          "N2_S23",
+          "N2_S24",
+          "N2_S25"
+        ]
+      }
+    ],
+    "followups": [
+      {
+        "question_id": "authorization",
+        "alert_ids": [
+          "A1",
+          "A2",
+          "A3"
+        ],
+        "mode": "query",
+        "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的认证活动，验证登录来源和会话上下文。",
+        "required_evidence": "session_id, session_originating_human, outcome",
+        "source_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S6"
+        ],
+        "object_keys": [
+          "O1"
+        ],
+        "binding_id": "B1",
+        "priority": "decision_critical"
+      },
+      {
+        "question_id": "impact",
+        "alert_ids": [
+          "A3"
+        ],
+        "mode": "deep",
+        "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的网络连接，确认 198.51.100.88 的连接细节及流量特征。",
+        "required_evidence": "dest_ip, dst_port, protocol, file_path, hash_sha256",
+        "source_ids": [
+          "N2_S17",
+          "N2_S22"
+        ],
+        "object_keys": [
+          "O3"
+        ],
+        "binding_id": null,
+        "priority": "decision_critical"
+      }
+    ]
+  },
+  "restored": {
+    "summary": "主机 socai2-flow-20261108-01 在 2026-11-08T01:26:09 至 01:26:49 间记录用户 flow-observer-20261108-01 登录、启动 PowerShell 获取本地用户列表及连接外部 IP 198.51.100.88，现有证据无法区分授权运维与恶意侦察。",
+    "members": [
+      {
+        "alert_id": "09e91978-d201-5435-901e-b6a40368b921",
+        "state": "analyzed",
+        "summary": "账户登录告警显示用户 flow-observer-20261108-01 于 01:26:09 在主机 socai2-flow-20261108-01 上成功登录，来源 IP 为 203.0.113.88，但缺乏授权审批记录。",
+        "evidence_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S5",
+          "N2_S6",
+          "N2_S27",
+          "N2_S30",
+          "N2_S34",
+          "N2_S35"
+        ],
+        "limitations": [
+          "认证日志非审批记录",
+          "查空威胁情报不构成安全证明"
+        ]
+      },
+      {
+        "alert_id": "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+        "state": "analyzed",
+        "summary": "进程启动告警显示 powershell.exe 于 01:26:29 启动并执行 Get-LocalUser 命令，由同一用户在同一主机上运行，行为符合侦察特征但需核实授权。",
+        "evidence_ids": [
+          "N2_S7",
+          "N2_S8",
+          "N2_S11",
+          "N2_S12",
+          "N2_S13",
+          "N2_S28",
+          "N2_S31",
+          "N2_S36",
+          "N2_S37"
+        ],
+        "limitations": [
+          "进程启动成功不证明脚本完成或业务授权"
+        ]
+      },
+      {
+        "alert_id": "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf",
+        "state": "analyzed",
+        "summary": "出站连接告警显示主机于 01:26:49 通过 TCP 443 端口连接外部 IP 198.51.100.88，该 IP 未出现在登录或进程对象中，需验证其业务合法性。",
+        "evidence_ids": [
+          "N2_S14",
+          "N2_S16",
+          "N2_S17",
+          "N2_S18",
+          "N2_S20",
+          "N2_S21",
+          "N2_S22",
+          "N2_S29",
+          "N2_S32",
+          "N2_S38",
+          "N2_S39"
+        ],
+        "limitations": [
+          "连接成功不证明数据外传或具体文件传输"
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "unresolved",
+        "statement": "用户 flow-observer-20261108-01 在极短时间内（20 秒内）完成登录、执行侦察命令并建立外部连接，时间序列高度紧凑，符合攻击链特征但无法排除自动化运维脚本。",
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921",
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "support_ids": [
+          "N2_S26"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "授权运维人员执行快速故障排查",
+          "恶意攻击者利用合法凭证进行横向移动或数据窃取"
+        ],
+        "limitations": [
+          "缺乏审批记录",
+          "威胁情报查空"
+        ]
+      },
+      {
+        "id": "F2",
+        "state": "unresolved",
+        "statement": "出站连接目的地 198.51.100.88 未在登录或进程启动的关联对象中直接出现，且威胁情报查询结果为空，无法确认该 IP 是否为已知恶意 C2 或合法业务伙伴。",
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "support_ids": [
+          "N2_S17",
+          "N2_S25",
+          "N2_S32"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "连接至未知业务服务器",
+          "连接至恶意基础设施"
+        ],
+        "limitations": [
+          "查空不构成反证",
+          "无历史连接基线"
+        ]
+      },
+      {
+        "id": "F3",
+        "state": "unresolved",
+        "statement": "所有告警均标记为 medium 严重性且检测标签显示不证明攻击发生，但人工陈述和优先分析均建议 review，表明当前证据不足以定性为良性或恶意。",
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921",
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "support_ids": [
+          "N2_S23",
+          "N2_S24",
+          "N2_S25",
+          "N2_S26"
+        ],
+        "counter_ids": [],
+        "alternatives": [
+          "误报",
+          "真实攻击"
+        ],
+        "limitations": [
+          "标签不证明行为发生",
+          "无授权证据"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "原始记录支持用户 flow-observer-20261108-01 在主机 socai2-flow-20261108-01 上的登录、powershell.exe 进程启动及至 198.51.100.88 的出站连接，时间分别为 01:26:09、01:26:29 和 01:26:49。",
+        "evidence_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S7",
+          "N2_S8",
+          "N2_S11",
+          "N2_S14",
+          "N2_S16",
+          "N2_S17",
+          "N2_S20",
+          "N2_S22"
+        ],
+        "limitations": [
+          "对象资产匹配状态为未检查"
+        ]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "三个告警共享同一主机、同一用户和连续的时间窗口，形成逻辑上的行为序列，但无直接因果证据（如会话 ID 传递）证明它们是同一攻击会话。",
+        "evidence_ids": [
+          "N2_S26"
+        ],
+        "limitations": [
+          "时间接近不等于因果"
+        ]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "现有证据既不支持恶意也不支持良性，Get-LocalUser 命令常见于侦察但也用于权限审计，外部连接目的不明，需进一步取证。",
+        "evidence_ids": [
+          "N2_S23",
+          "N2_S24",
+          "N2_S25"
+        ],
+        "limitations": [
+          "缺乏授权审批",
+          "无威胁情报命中"
+        ]
+      },
+      {
+        "id": "authorization",
+        "state": "not_applicable",
+        "answer": "当前数据集中无审批记录、工单或业务授权证据，无法确认任何行为的授权状态。",
+        "evidence_ids": [],
+        "limitations": [
+          "认证日志非审批记录",
+          "需人工确认"
+        ]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "已观察到网络连接建立，但未观察到数据外传、文件哈希或敏感信息访问的具体证据，潜在影响待核。",
+        "evidence_ids": [
+          "N2_S17",
+          "N2_S21"
+        ],
+        "limitations": [
+          "连接成功不证明数据外传"
+        ]
+      },
+      {
+        "id": "coverage",
+        "state": "answered",
+        "answer": "已覆盖三个核心告警成员，但威胁情报、资产库存和历史记录查询因预算或连接限制未执行，存在证据缺口。",
+        "evidence_ids": [
+          "N2_S33"
+        ],
+        "limitations": [
+          "工具预算保留",
+          "源未连接"
+        ]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及账户登录和会话信息",
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921"
+        ],
+        "finding_ids": [
+          "F1",
+          "F3"
+        ],
+        "limitations": [
+          "无 MFA 信息",
+          "无会话密钥"
+        ]
+      },
+      {
+        "name": "cloud",
+        "applicability": "applicable",
+        "reason": "涉及主机配置和进程活动",
+        "alert_ids": [
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3"
+        ],
+        "finding_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "limitations": [
+          "无云控制面信息",
+          "无 IAM 变更"
+        ]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "无邮件、链接或附件相关告警",
+        "alert_ids": [],
+        "finding_ids": [],
+        "limitations": [
+          "无相关数据"
+        ]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及数据访问和外部连接",
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "finding_ids": [
+          "F1",
+          "F2",
+          "F3"
+        ],
+        "limitations": [
+          "无数据访问日志",
+          "无外传目的地确认"
+        ]
+      }
+    ],
+    "conflicts": [
+      {
+        "id": "C1",
+        "finding_ids": [
+          "F1",
+          "F2"
+        ],
+        "state": "unresolved",
+        "explanation": "行为序列紧凑暗示攻击，但用户身份合法且无明确恶意 IOC，存在授权运维与恶意攻击的解释冲突。",
+        "evidence_ids": [
+          "N2_S26",
+          "N2_S23",
+          "N2_S24",
+          "N2_S25"
+        ]
+      }
+    ],
+    "followups": [
+      {
+        "question_id": "authorization",
+        "alert_ids": [
+          "09e91978-d201-5435-901e-b6a40368b921",
+          "3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3",
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "mode": "query",
+        "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的认证活动，验证登录来源和会话上下文。",
+        "required_evidence": "session_id, session_originating_human, outcome",
+        "source_ids": [
+          "N2_S1",
+          "N2_S4",
+          "N2_S6"
+        ],
+        "object_keys": [
+          "[\"host\",\"socai2-flow-20261108-01\"]"
+        ],
+        "binding_id": "B1",
+        "priority": "decision_critical"
+      },
+      {
+        "question_id": "impact",
+        "alert_ids": [
+          "65e2a5f9-3b00-5def-9547-c21f1b9cc4bf"
+        ],
+        "mode": "deep",
+        "objective": "查询主机 socai2-flow-20261108-01 在案件时间窗口内的网络连接，确认 198.51.100.88 的连接细节及流量特征。",
+        "required_evidence": "dest_ip, dst_port, protocol, file_path, hash_sha256",
+        "source_ids": [
+          "N2_S17",
+          "N2_S22"
+        ],
+        "object_keys": [
+          "[\"ip\",\"198.51.100.88\"]"
+        ],
+        "binding_id": null,
+        "priority": "decision_critical"
+      }
+    ]
+  }
+}

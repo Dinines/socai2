@@ -1,0 +1,97 @@
+version = "socai2.investigation-policy.v1.2"
+single_model_timeout_seconds = 300
+final_reserve_seconds = 300
+
+# Candidate capacity allocation for V1.2. Validate complete saved requests
+# before issuing a separately recorded real test batch.
+[case]
+max_model_calls = 6
+max_tool_calls = 4
+max_total_tokens = 131072
+max_rows_per_query = 200
+deadline_seconds = 1500
+
+[alert_basic]
+max_model_calls = 1
+max_tool_calls = 3
+max_total_tokens = 24000
+max_rows_per_query = 200
+deadline_seconds = 300
+
+[incident_diagnosis]
+max_model_calls = 1
+max_tool_calls = 0
+max_total_tokens = 24000
+max_rows_per_query = 0
+deadline_seconds = 300
+
+[model]
+alias = "aisoc-investigation"
+protocol = "chat_completions"
+schema_profile = "vllm_grammar_v1"
+context_tokens = 65536
+# This bounds preparation/storage, not model admission. The full final request
+# is measured by the actual backend tokenizer, including its chat template.
+max_prepared_bytes = 262144
+max_artifact_bytes = 1048576
+final_reserved_input_tokens = 16384
+final_reserved_calls = 2
+
+[model.output_tokens]
+A = 3000
+I = 3000
+C3 = 4096
+Deep = 3000
+C6 = 8192
+
+[model.tokenizer]
+endpoint = "http://192.168.1.43:8000/tokenize"
+served_model = "aisoc-test-investigation"
+timeout_seconds = 30
+safety_tokens = 1024
+authentication = "none"
+
+[tools.process_activity]
+purpose = "调查主机在案件时间窗口内记录的进程活动。"
+inputs = "选择已有 binding_id；主机、租户、案件成员和时间窗口由程序冻结，不接受模型 SQL 或额外对象。"
+can_answer = "有哪些进程启动、父子进程、命令行、用户、会话、文件或哈希记录；字段可能缺失。"
+cannot_answer = "进程启动成功不能证明脚本执行完成、业务成功或操作获批；相同主机和时间不能证明因果。"
+
+[tools.network_connections]
+purpose = "调查主机在案件时间窗口内记录的网络连接。"
+inputs = "选择已有 binding_id；按冻结源主机、租户和时间窗口查询。"
+can_answer = "连接端点、端口、协议、时间、结果及已记录的流量计数；字段可能缺失。"
+cannot_answer = "连接成功不证明敏感数据外传、具体文件传输或业务授权；计数缺失不等于零，查空不是反证。"
+
+[tools.authentication_activity]
+purpose = "调查主机在案件时间窗口内记录的认证活动。"
+inputs = "选择已有 binding_id；按冻结源主机、租户和时间窗口查询，不按任意用户名扩查。"
+can_answer = "登录或认证尝试的账号、来源、时间、结果和已有会话信息；字段可能缺失。"
+cannot_answer = "认证日志不是审批记录，无法证明变更获批或操作被业务授权；需要审批证据时交人工确认。"
+
+[tools.product_host_details]
+purpose = "读取已关联 CrowdStrike 连接器中的当前主机快照。"
+inputs = "选择已有 binding_id；固定连接器和主机，仅对提供了连接器的成员可用。"
+can_answer = "设备标识、操作系统、代理版本、IP、首次及最近出现时间、隔离状态和产品标签。"
+cannot_answer = "当前快照不是案件窗口历史，不返回审批记录或进程树；标签不证明授权或恶意，主机匹配不证明人的身份。"
+
+# Explicit reviewed subset. Unmapped received labels remain unknown; expand
+# this dictionary only with verified sources, never by a model-generated name.
+[labels]
+version = "socai2.attack-labels.20261107"
+
+[labels.entries.TA0009]
+name = "Collection"
+description = "收集与攻击目标有关的信息；该检测标签本身不证明数据已被收集或外传。"
+source_url = "https://attack.mitre.org/tactics/TA0009/"
+verified_on = "2026-11-07"
+
+[labels.entries.T1005]
+name = "Data from Local System"
+description = "从本机文件系统、配置、本地数据库或内存等来源寻找和收集数据；标签本身不证明行为已发生。"
+source_url = "https://attack.mitre.org/techniques/T1005/"
+verified_on = "2026-11-07"
+
+# Select the packaged event boundary explicitly; the base policy stays unchanged.
+[incident_io]
+profile = "incident-input-v1.json"

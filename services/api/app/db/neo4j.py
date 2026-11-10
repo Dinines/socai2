@@ -96,7 +96,8 @@ async def init_neo4j() -> None:
             logger.info("Neo4j connection established uri=%s", settings.NEO4J_URI)
 
             # Create schema constraints and indexes
-            await _create_schema()
+            if settings.AISOC_STARTUP_SCHEMA_MIGRATIONS:
+                await _create_schema()
             return
         except ServiceUnavailable:
             if attempt < 4:

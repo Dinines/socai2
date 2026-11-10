@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-af32b47c5423fa42",
+    "created": 1794111848,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": 0.6,\n  \"rationale\": \"告警标题为'Repeated MFA prompts'，但原始日志明确显示'finalOutcome: sign-in succeeded on prompt 22'且'outcomePerPrompt: 21 denied by the user, 1 approved'。虽然存在 21 次拒绝和 3 个不同 IP，但登录最终成功且用户手动批准了第 22 次请求。缺乏外部威胁情报或历史行为基线证明这是攻击而非用户误操作或临时网络问题，证据不足以定性为恶意或授权，需人工复核。\",\n  \"explanation\": \"该事件记录了一次身份验证活动，其中用户面对 22 次多因素认证（MFA）提示，前 21 次被用户拒绝，第 22 次被用户批准，最终登录成功。尽管来源 IP 显示为住宅代理且无该租户的先前登录记录，但缺乏确凿证据表明这是恶意攻击（如凭证填充或暴力破解），也不能仅凭成功登录就认定为完全授权（可能存在账户接管后的即时验证）。因此，判定为需进一步审查。\",\n  \"evidence_ids\": [\n    \"N1_S1\",\n    \"N1_S5\",\n    \"N1_S7\",\n    \"N1_S13\",\n    \"N1_S4\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"登录最终成功且用户手动批准了 MFA 请求，需确认该账户是否近期有异常活动或用户是否知晓此次登录。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    },\n    {\n      \"reason\": \"来源 IP 为住宅代理且无历史登录记录，建议检查该 IP 是否属于已知威胁情报或该租户的合法用户范围。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    }\n  ]\n  ,\n  \"limitations\": [\n    \"未执行外部威胁情报查询（threat_intel not_queried），无法确认 IP 信誉。\",\n    \"未查询历史登录行为（history not_queried），无法判断该 IP 是否为异常。\",\n    \"未查询资产上下文（assets not_queried），无法确认账户归属或权限状态。\"\n  ]\n  ,\n  \"decision_basis\": null\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 561,
+      "prompt_tokens": 2824,
+      "total_tokens": 3385,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 11.334048,
+  "transport_seconds": 12.280602
+}

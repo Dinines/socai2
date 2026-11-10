@@ -64,12 +64,13 @@ class BaselineExecutor(ModelSteps):
             capability_catalog = catalog(context, tenant_id)
             _, enabled_bindings, excluded = offered_bindings(capability_catalog,
                 Limits.model_validate(run["limits"]), await store.now(), [], self.lake)
+            from .baseline_analysis import reserved_calls
             plan_id = await self.record(store, run, "C1.executor", {
                 "schema_version": SCHEMA, "type": "execution_plan", "run_id": str(run_id),
                 "sequence": ["C1", "C2", "C3", "C4", "C5", "C6"],
-                "limits": run["limits"], "final_model_calls_reserved": 1,
+                "limits": run["limits"], "final_model_calls_reserved": reserved_calls(run, "C3"),
                 "final_reservation": final_reservation(self.gateway if configured else SimpleNamespace(
-                    provider="chat_completions", model="unconfigured", schema_profile="standard"), context),
+                    provider="chat_completions", model="unconfigured", schema_profile="standard"), context, Limits.model_validate(run["limits"])),
                 "followup_policy": "priority_then_query_before_deep_then_original_index",
                 "capabilities": {"bound_tools": sorted({b["tool_name"] for b in capability_catalog["bindings"].values()}),
                     "binding_count": len(capability_catalog["bindings"]), "unsupported": capability_catalog["unsupported"],
@@ -77,8 +78,8 @@ class BaselineExecutor(ModelSteps):
                     "unoffered_binding_reasons": dict(Counter(o["reason"] for o in excluded)),
                     "limitations": ["four_domains_share_one_model_pass", "200_members_storage_limit_not_model_capacity_promise",
                         "host_time_bindings_not_row_to_alert_attribution", "enabled_sources_checked_again_before_C3_and_dispatch"]},
-                "limitations": ["conservative_wire_units_not_provider_token_usage",
-                    "no_automatic_successor_retry_or_task_creation", "graph_uses_retained_sources_only"],
+                "limitations": ["backend_token_measurement_reserves_output_and_safety_margin",
+                    "no_unknown_call_retry_or_automatic_successor_or_task_creation", "graph_uses_retained_sources_only"],
             }, [reference("artifact", run["input_artifact_id"], "execution_receipt")])
 
         await self.service.enrich(tenant_id, case_id, run_id)

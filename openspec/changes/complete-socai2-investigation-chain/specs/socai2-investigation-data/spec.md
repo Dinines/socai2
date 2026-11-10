@@ -1,5 +1,122 @@
 ## ADDED Requirements
 
+### Requirement: Configured Case followup model boundary
+The system SHALL provide configured Deep and final-delivery calls with frozen business materials, effective prior judgments, and their explicit evidence dependencies, while restoring program-owned output fields without changing the stored Case contract.
+
+#### Scenario: Prior judgments and citations are handed to the next stage
+- **WHEN** a configured Deep or final-delivery request is assembled
+- **THEN** effective C3 judgments and applicable Deep answers retain their original prose and scope, structured support and counterevidence map to currently visible sources, and unavailable dependencies are explicitly recorded instead of invented or silently inherited
+
+#### Scenario: Program-owned fields are restored
+- **WHEN** a configured model response is received
+- **THEN** the program restores the bound Deep question identity, C6 member/object aliases and recommendation identities, and the fixed initial comparison where no historical result exists, before applying the original validation and persistence contract
+
+#### Scenario: Old execution remains readable
+- **WHEN** a Run has no configured Case boundary or a previous stored result is read
+- **THEN** the original execution/read contract remains available and no historical source, answer, state or profile is rewritten
+
+### Requirement: Case C1 freezes paired query receipts for configured C3 input
+
+配置选择新版 Case 输入时，C1 SHALL 在读取当前成员及有效 A 指针的同一快照中冻结该 A Run 实际工具步骤的回执，登记版本、原工件身份、完整性及逐路径来源角色。C3 SHALL 从冻结副本生成结构模板文本并恢复原七类输出合同；MUST NOT 从“最新查询”补写旧快照或将 prior_analysis/execution_receipt 提升为 observation。现有数据库表列、原字段与原 GET 合同保持。
+
+#### Scenario: Query receipt and selected triage belong to the same execution
+- **WHEN** 新 Case profile 启动且当前 A 输入有效、工具步骤 output 指向已保存回执
+- **THEN** C1 冻结精确配对的回执及返回内容，C3 按程序状态区分未查、失败、查空和有返回，并引用本 Run 的冻结路径
+
+#### Scenario: Historical context has no query extension
+- **WHEN** 读取没有查询扩展版本的旧 C1 快照
+- **THEN** 按旧合同读取，不查询或补写后来回执，不声称旧模型已看过这些材料
+
+#### Scenario: Extended input freshness changes
+- **WHEN** 有效 A 配对、实际回执或支持的扩展版本与冻结来源不符
+- **THEN** 应用侧当前判断读取、采用、系统收尾和证据目录统一返回非 current，保持原判断与历史工件；旧 V1 数据库函数不单独代替扩展检查
+
+#### Scenario: C3 restores aliases and keeps independent valid units
+- **WHEN** 配置模板输入后的 C3 返回成员/对象短号和七类业务内容
+- **THEN** 程序只恢复冻结身份与来源关系，沿现有绑定、角色、范围及局部校验处理，不补造模型结论；有界空引用纠正仍使用模型看过的短号命名空间
+
+### Requirement: Case input candidates preserve frozen material and prior-analysis provenance
+
+Configured Case input candidates SHALL render the complete selected material through structural rules, preserve meaningful unknown values and original prose, and distinguish observations, labels, prior analyses, human statements and execution receipts. Incident findings and open questions MUST retain their own declared scope. Additional A receipts MUST match the frozen accepted triage Run, tenant and alert and remain distinguishable from the historical C1 snapshot. Candidate short identifiers MUST restore the existing analysis contract without inventing judgments or changing stored originals. Offline conversion is not a model, storage or deployment acceptance result.
+
+#### Scenario: A cloud or email record has no fields in the old scalar projection
+- **WHEN** its complete frozen material is rendered by the candidate
+- **THEN** nonempty business structures, meaningful zero/false/empty values and original text remain addressable, with structural omissions recorded separately
+
+#### Scenario: A shared incident finding is relevant to one Case member
+- **WHEN** the candidate presents that finding
+- **THEN** it retains the original scope and prior-analysis role, marks any scope outside this Case, and does not promote the finding or its unavailable references into direct observations
+
+#### Scenario: A historical triage claim disagrees with a paired execution receipt
+- **WHEN** saved receipts from that same frozen triage Run are included in an offline candidate
+- **THEN** the original claim remains unchanged, the verified execution state is shown separately, and the candidate records that these receipts were not in the original C1 snapshot
+
+#### Scenario: Nested wrappers repeat metadata and empty optional fields
+- **WHEN** a candidate renders material, prior findings, scopes, receipts, program facts and tool descriptions
+- **THEN** configured structural paths determine which administrative or empty optional fields stay in the ledger; unknown business values and meaningful zero/false/empty values survive, prior prose is not rewritten, and shared presentation never merges distinct evidence identities
+- **AND** a same-material offline comparison records the removed paths, retained observations, scopes, references and complete request sizes without claiming model quality or production acceptance
+
+#### Scenario: A known field is presented by its business meaning
+- **WHEN** a configured structural path and value type match an existing reviewed dictionary
+- **THEN** the candidate may render the dictionary meaning while retaining the original value and source mapping; unknown values and unrelated nested paths are not interpreted by key-name similarity
+- **AND** a tool's technical return-field list stays in the ledger only when its business capability description is complete and all those fields are recognized; otherwise the list remains visible
+
+### Requirement: Configured event model boundaries preserve frozen business data and stored field contracts
+
+启用事件输入输出profile时，I SHALL 从完整冻结成员材料按结构模板生成模型输入，保留非空业务说明、原始正文、当前有效A理由和未知业务字段；已知管理字段/空可选值及重复索引 MAY 留后台。查询回执 SHALL 来自冻结采用A的同Run、同租户/成员且由实际工具步骤指向，随I输入冻结并校验完整性。程序 SHALL 提供真实查询执行事实，历史判断不得代替回执；新快照新鲜度包含回执，旧输入继续按原合同比较。四块模型输出 SHALL 由程序恢复原身份及既有保存字段，不修改原告警描述、关系或历史结果。策略、模板、指令及版本指纹 SHALL 走配置与发布来源；完整请求计量和局部有效内容保留规则继续适用。
+
+#### Scenario: Prior triage says empty but its actual query was skipped
+- **WHEN** 当前有效A理由声称查空，而同Run回执为skipped且returned_rows为null
+- **THEN** I输入保留A原文为已有分析，另提供未执行查询的回执，不补0行或改写原理由；查询返回与回执保持各自角色
+
+#### Scenario: Event output uses short member aliases
+- **WHEN** 模型按profile返回diagnosis、members、findings、open_questions，引用与成员通过原校验
+- **THEN** 程序恢复原UUID、生成稳定形状的成员/发现/问题编号，保存原summary/conclusion/findings/source_refs/open_questions/limitations；原GET可按原身份读取描述、成员、材料、诊断与来源工件
+
+#### Scenario: Existing event results are read after selecting a new profile
+- **WHEN** 已存在不含查询回执版本标记的旧I冻结输入，进程改选新版profile
+- **THEN** 原历史内容不改写，新鲜度仍沿旧快照合同；只有实际相关输入改变才失效，新增无步骤指针的孤立工件不作为已执行回执
+
+### Requirement: Development triage can explicitly disable tenant aggregate quotas
+
+按用户2026-11-07明确决定，部署配置 SHALL 通过已有空 `AISOC_TRIAGE_BUDGET_POLICY_FILE` 关闭可选的租户调用次数、累计token及未结算数量限制；所有租户均不再查询该限额文件。初始化与升级配置 SHALL 同步，不使用大整数伪装无限额。已有执行领取、用量记录、同Run幂等和未知调用防重派 MUST 保留，不能清账或跳消费位点制造恢复。
+
+#### Scenario: A new tenant uses the unlimited development configuration
+- **WHEN** 预算策略路径明确为空且该租户进行正常分析
+- **THEN** 此层返回无租户额度策略，不因原文件缺少租户行或三项总额度而拒绝；其他实际处理条件仍按既有合同验证，消费进度与结果另行留证
+
+### Requirement: Independent A and I content survives invalid references without adopting unsupported judgments
+
+A/I SHALL 保存完整模型原答及逐项校验结果，并对完整、身份确定、用量已知的答复逐项保留可独立验证的内容；MUST NOT 从截断的错误列表推断其他项全部有效。A 核心判断和建议 SHALL 分开校验；I 总摘要/结论不能证明独立有效时 SHALL 为空，保留合法成员/发现/问题。局部诊断 SHALL 关联原答，非采用结果不得替换既有当前判断；历史运行详情 MAY 返回 `partial_analysis`。JSON 不可解析、必要身份缺失/重复及 unknown 执行 SHALL 不挽救或重新调用。
+
+#### Scenario: One A recommendation has an invalid reference
+- **WHEN** A 核心判断通过完整校验而其中一条建议引用无效
+- **THEN** 保留原核心判断、其他合法建议和原答，明确排除项；若核心判断本身也无效则不采用，不补造 needs_review 来冒充模型回答
+
+#### Scenario: One I member cites another member's material
+- **WHEN** I 各成员身份完整，但一项引用越界，其他成员/发现/问题可独立验证
+- **THEN** 保存这些有效内容和局部诊断，`conclusion=null` 且必有关联原答的工件 ID；既有有效诊断指针保持，执行失败与局部内容可读分别表达
+
+### Requirement: Known structured facts come from frozen program sources
+
+程序 SHALL 从同轮冻结来源提供可追溯 `program_facts`，分别标识活动、告警、入库与实际 Run 执行时间及其单位/来源，不要求模型重新生成已有事实。日志等级、告警等级、事件派生等级和 Case 既有严重度 SHALL 区分；事件按现有成员最大值/人工覆盖规则计算，不将部分成员冒充完整事件。标签 SHALL 使用配置中的版本化释义与出处，未知标签保留 unknown。事实 SHALL 随实际输入传递到 A/I 结果与 C6 报告；不机械修改模型自由正文，也不由标签或角色推断授权/攻击成功。
+
+#### Scenario: The source lacks an activity clock or complete incident members
+- **WHEN** 原件没有有效活动时间，或 Case 仅冻结了事件的部分成员
+- **THEN** 活动时间明确缺失而非借用告警/入库时间；事件自动等级不可声称完整，列明缺少成员，已有人工覆盖可独立保留；Case 未设置严重度仍空
+
+#### Scenario: A historical diagnosis has no program facts
+- **WHEN** 读取旧诊断、告警说明或报告
+- **THEN** 可选事实字段缺失仍符合合同；新正常诊断保持原 source_refs 必填，局部诊断必须关联原答且总判断为空，不回写旧记录
+
+### Requirement: Processing candidates and runtime profiles have verifiable configuration sources
+
+构建与按需处理 SHALL 由显式文件选择目标镜像、架构、数据库、模型、网络资源与调查策略；缺配置或身份不符 MUST 失败。候选 SHALL 冻结完整运行源码、策略及逐文件 hash，构建前与镜像内核源码全集，清除基础镜像旧源码，核基础与候选实际镜像身份。运行安装 SHALL 复用应用完整 policy 校验并保存 profile/policy 指纹，启动核一致性；构建/断网内存自检 MUST NOT 被标成正式服务或真实模型验收。
+
+#### Scenario: An unchanged release name points to changed source
+- **WHEN** 同名候选目录、镜像标签、文件全集或 hash 与冻结清单不同
+- **THEN** 拒绝覆盖或执行，保留旧候选并使用新标识；运行配置更改后须重新生成对应运行环境，不悄悄切换数据库、模型或预算
+
 ### Requirement: Case classification and deadline have explicit persisted meanings
 
 Case SHALL 独立保存可空classification及due_at。classification非空值 SHALL 为true_positive、informational或false_positive，null表示未设置；不得从Incident/成员告警继承，也不得从模型正文或conclusion_state推断。due_at SHALL 保存含时区的案件期限，不得以任务期限、Run超时或自动SLA代替。管理保存或有来源的导入 SHALL 沿现有Case版本检查，将实际值与活动中的操作者、时间、来源及前后值同事务保存；清空用null，历史行不回填推测值。
@@ -32,6 +149,18 @@ Case SHALL 独立保存可空classification及due_at。classification非空值 S
 - **WHEN** 当前索引已更新，但发布请求仍携带旧Case版本或旧当前指针
 - **THEN** 拒绝该次发布，已保存改判/撤回及当前指针保持，不能用任意supersedes引用绕过；同一索引的重复条目ID也拒绝而不静默去重
 
+### Requirement: Normal final delivery records an evidence directory without inferring judgments
+
+C6 SHALL 在结果发布的同一事务中，使用现有索引存储及来源校验，登记冻结材料中明确注册的观察字段和适用 H 版本。每份不可变材料 SHALL 只有一个稳定 material 身份，多个字段不增加条目数；模型段落、图节点和查询回执不自动成为独立证据。没有证据级合法判定来源时，性质 SHALL 为 unknown、威胁和处置保持空。目录能力及未登记来源 SHALL 明确列在限制中，不把零威胁数解释为已排除风险。
+
+#### Scenario: Final delivery creates an index or encounters a validation failure
+- **WHEN** 原冻结成员、输入和当前目录仍适用，正常 C6 发布
+- **THEN** 目录、当前指针、活动、报告及结果同事务提交；成功空目录为 available/0，来源缺失为 partial，生成校验失败为 unavailable/null；重复同 Run 不增加版本，事务失败不留下孤立目录或指针
+
+#### Scenario: An existing directory contains a manual withdrawal or judgment
+- **WHEN** C6 遇到人工发布的目录，或已有 withdrawn、明确 verdict、threat 或 remediation 的条目
+- **THEN** 保留当前目录并记录跳过原因，不自动恢复条目、清空判断或处置；后续目录合并须显式维护。Run 期间指针/成员改变、旧目录合同或 hash 错误也保留旧指针并记录原因
+
 ### Requirement: Evidence and threat counts are reproducible from selected saved entries
 
 独立证据条目数 SHALL 对当前明确选定索引中active且适用于当前Case成员的evidence_id去重；告警原文、来源快照、Finding、对象和图节点不自动计为条目。关联威胁数 SHALL 对这些条目中malicious/suspicious且具有非空威胁身份的(namespace,key)去重，clean/unknown/conflicting不计；不得按显示名、材料数或对象数猜测。读出 SHALL 携带计数状态、索引身份、覆盖范围及可定位来源。
@@ -45,6 +174,62 @@ Case SHALL 独立保存可空classification及due_at。classification非空值 S
 #### Scenario: There is no saved index or the known index is partial
 - **WHEN** Case没有证据索引，或已选索引只覆盖部分当前成员
 - **THEN** 前者计数null且状态not_recorded；后者可返回已存适用条目的计数（含0）并标partial及覆盖限制。可用索引为空/全撤回/全部范围排除时条目数0，适用条目全clean/unknown/conflicting或无威胁身份时威胁数0；不可用或引用失效为null并带限制，成员变化不改写历史索引
+
+### Requirement: Explicit remote profiles support read-only access to approved production data
+
+经用户 2026-11-07 明确授权，本机读取服务 SHALL 通过显式配置文件选择正式数据库、既有只读角色和唯一业务租户，MUST NOT 隐式回退到历史或合成测试库。环境地址、端口、凭据、TLS 和超时 SHALL 来自配置文件；数据库连接 SHALL 验证服务端证书和身份，转发地址与证书身份可分别配置。该新增模式不改变下方本机隔离实验模式的既有数据归属。
+
+#### Scenario: The local read-only API connects through an SSH forward
+- **WHEN** 用户选择远端只读 profile
+- **THEN** 读取服务核对实际数据库/角色、TLS、只读事务和 schema，使用独立本机访问凭据绑定唯一租户与读取权限；GET 返回已有记录或真实空态，不创建生产用户或更新认证使用记录
+
+#### Scenario: Configuration or a request would broaden access
+- **WHEN** 必要配置缺失、数据库身份不符、TLS 校验失败、只读角色拥有调查表写权限，或客户端发起写方法
+- **THEN** 启动或请求明确拒绝，不降低 TLS、不回退测试库、不执行生产写入，也不启动调查、模型或后台消费者
+
+### Requirement: Reader fixes ship through shared initialization and upgrade sources
+
+按用户 2026-11-07 开发授权，读取账号 SHALL 具备调查表及 `public.assets/public.users` 的 SELECT，以及 Case 新鲜度所需两个函数的 EXECUTE。应用 SHALL 使用认证租户过滤并只投影页面字段。数据库修复 MUST 同步维护新库初始化、现有库增量升级与实际读取验证；两种路径 SHALL 复用同一份增量，保留 V1 建表原件。部署目标和角色 MUST 来自显式配置，不依赖默认连接。缺读取依赖 MUST 报可识别服务错误，不返回伪装的业务空态。
+
+#### Scenario: A fresh environment receives the reader fixes
+- **WHEN** 部署方在新库初始化 V1.2 读取能力，或为已部署 V1 执行增量升级
+- **THEN** 两条路径得到相同的必要读取能力，资产关联和非空负责人可通过现有接口取回；升级不重放 V1、不改既有表结构和业务数据，重复授权可安全执行
+
+### Requirement: Domain focus remains separate from finding scope
+
+C3/C6 领域 `alert_ids` SHALL 表示本领域关注成员，发现 `alert_ids` SHALL 表示该发现完整涉及范围。领域 MAY 引用与关注成员相交的相关跨成员发现，MUST 保留发现原成员范围，不能自动扩展领域关注或把发现缩为交集；无成员交集、未知发现及超出冻结 Case 的成员仍无效。领域工件 SHALL 分别保存领域关注范围和发现范围，旧工件未记录领域关注时不得反推。
+
+#### Scenario: An identity analysis focuses on one member of a shared finding
+- **WHEN** 身份领域关注 A2，引用 F1(A1,A2,A3)，F1 的范围和来源均有效
+- **THEN** 接受这一相关引用，领域仍关注 A2，F1 仍保留 A1/A2/A3；此引用不自动决定领域适用性或扩大任何成员结论
+
+#### Scenario: A domain references a finding with no focused member
+- **WHEN** 领域只关注 A2，而被引发现只涉及 A1
+- **THEN** 将该关联标为无关范围，不能通过缩改发现成员使其合法；局部失效由引用处理规则收口
+
+### Requirement: Citation failures preserve independent analysis and permit one bounded correction
+
+C3/C6 SHALL 分别保存原答、反馈、纠正答、逐项诊断和可用交付。对完整回答中 answered/已分析/有发现却空引用的字段，系统 MAY 返回具体路径、原因及本轮可引用来源，要求一次纠正或明确未解决；同一份 C3/C6 最多一次纠正，计入原 Run 次数、时间和 tokens，并保护 C6。模型调用 unknown、超时和非完整答复 MUST NOT 自动重派。
+
+#### Scenario: One answer has an empty citation list
+- **WHEN** 已完整收到答复，问题或其他要求证据的结构化字段没有引用，且同 Run 额度充足
+- **THEN** 原答先保存，反馈只列实际可用编号及角色/成员，纠正后重新完整校验；不能为过校验自动补编号。额度不足或第二次仍错误时记录原因并保留独立有效部分
+
+#### Scenario: A final conclusion depends on an invalid source
+- **WHEN** C6 总判断依据无效，但部分成员、发现或问题仍有有效来源
+- **THEN** 无依据的总判断不可采用，可用片段保存为 partial/rejected，conclusion 为 null 且 conclusion_covered=false，旧 Case 判断不覆盖；坏 JSON 或必要身份不明确不能形成可采用交付。保留首答片段时关联首答 ID，纠正失败答另留回执
+
+### Requirement: Stored non-run sources and case activities are directly readable
+
+后端 SHALL 提供非 Run 的告警/事件/Case 来源正文读取，按认证租户、父主体、空 Run 归属、原版本和 hash/长度校验；外置、超限或不完整内容 SHALL 如实标记，GET 不产生业务写入。Case 活动 SHALL 汇总显式主体/目标及当前成员告警、显式关联事件的活动，以唯一活动 ID 去重，保存的步骤不混作业务活动计数。
+
+#### Scenario: A client reads a source artifact outside a Run
+- **WHEN** 客户端用主体 ID 和来源工件 ID 请求正文
+- **THEN** 正确归属可返回原版本，错误父主体或租户返回 404，完整性不符不返回正文；保留截断原件时标 retained 状态，不能称全文可用
+
+#### Scenario: One activity matches both the case and a member
+- **WHEN** 同一活动同时具有 Case 主体及成员告警目标
+- **THEN** Case 活动列表和总数只计算一次，分页保持相同范围；不混入无关主体活动，并明确成员活动使用当前 Case 关系
 
 ### Requirement: Local data services remain independent of remote model connectivity
 
@@ -182,7 +367,7 @@ A/I执行 SHALL 保存该次冻结输入、实际查询/模型请求回复、步
 
 #### Scenario: Repeated metadata displaces a valid triage
 - **WHEN** I的冻结输入含有效同次分诊，但平铺重复元数据占用视图额度
-- **THEN** 先去重复并为必需组预留空间，完整保留判定及配对理由/评分；不能只留分数或把省略分诊标成已发送
+- **THEN** 先去重复并为必需组预留空间，完整保留判定及配对理由；旧模式维持原配对评分，新结构profile可将评分元数据留后台；不能只留分数或把省略分诊标成已发送
 
 #### Scenario: Human feedback competes with historical A and I judgments in C
 - **WHEN** C3或C6收到适用H，必要事实/H及指定比较与A/I参考竞争8192B视图
@@ -356,7 +541,9 @@ H SHALL 保存人工确认内容、主体、完成时间和事实范围，并能
 
 ### Requirement: Full-run resource allocation protects a feasible final synthesis
 
-新版本完整C执行 SHALL 使用用户已明确批准的48000共享保守预算（仍4模型/4Tool/120秒）先验证完整请求的可行容量，再为C6预留调用次数、请求/输出容量和时间；模型与Tool派发前 SHALL 根据实际已报usage、截止时间及有界新增必要输入重新核算。计量 MUST 使用协议转换后的完整请求，保持现有保守单位并与实际tokens分列；不得重置usage、只计8KiB视图、删除必要事实/H/反证/原计划或自动提高额度。预留参数及未执行原因 SHALL 记录在同Run执行计划，复用现有工件，不另建预算池。
+新版本完整C执行 SHALL 从显式配置读取单次 300 秒、Case 1500 秒及 C6 预留 300 秒，单次上下文、输出、整轮累计 tokens、模型/Tool 次数和存储字节上限分别管理。模型和 tokenizer 派发前 SHALL 检查截止、次数及未知用量；计量本身受扣除 C6 预留后的剩余时间约束，生成前再次检查。计量 MUST 使用协议转换后的完整请求及实际后端 tokenizer/chat template，包含消息、Schema/协议包络、安全余量和输出预留，不以字节充当 tokens。不得重置 usage、删除必要事实/H/反证/原计划或运行中自动提高额度。预留参数、配置指纹和未执行原因 SHALL 保存在同 Run 执行计划。
+
+1.2 本地候选为 Case 6 模型/4 Tool/131072 累计 tokens、C3 输出 4096/C6 输出 8192；默认预留 C6 两次（初答及可选纠正），更低的显式调用上限只预留实际可用次数。这是开发候选，真实批次额度须另行固定，不能追认旧批。当前后端计量仅支持已核实的 chat_completions/vLLM；未支持的协议 SHALL 明确拒绝，不沿用其他后端计数冒充兼容。
 
 #### Scenario: An optional deep step would consume final capacity
 - **WHEN** 新Deep请求或其必要结果上界将挤占C6所需容量或时间
@@ -481,7 +668,7 @@ C6 SHALL 收尾，无论C3是否有被接受的分析。已知前序失败且预
 
 #### Scenario: An A or I schema changes together with C
 - **WHEN** 新事实主张合同改变A/I模型输出结构或实际请求
-- **THEN** 实施准入同时核两协议下A/I各自原24000保守单位、3000输出预留及既有视图/消息上限的完整wire，不能只用C的48000容量证明整链可行，也不提高A/I额度
+- **THEN** 实施准入分别核 A/I 完整 wire、输出预留和选定模型实际窗口；当前候选各 24000 累计 tokens/3000 输出，不能用 Case 容量代替 A/I 验证，也不能用替身计量证明未支持协议的真实兼容
 
 ### Requirement: Domain exclusion requires affirmative scoped support
 
@@ -514,3 +701,14 @@ C2 SHALL 在最多2次来源调用内，依据冻结C1材料及预先定义的�
 #### Scenario: A selected knowledge lookup is empty
 - **WHEN** 正常排序选择知识但受限查询返回零行
 - **THEN** 调用计入原预算，保留空结果及范围，不宣称看过知识、不作为反证、不额外自动补查到所有来源都返回
+### Requirement: Production page reads remain available independently of Case writes
+The system SHALL allow authenticated, tenant-scoped Case and human-task GET routes when the page-read switch is enabled, while keeping all Case and human-task mutation routes gated by the Case API switch and write permission. Deployment verification MUST recognize the explicitly approved API read-only grants without accepting database write privileges.
+
+#### Scenario: Read-only deployment serves Case history without enabling writes
+- **WHEN** `SOCAI2_PAGE_READ_ENABLED=true` and `SOCAI2_CASE_API_ENABLED=false`
+- **THEN** a caller with `cases:read` can read Case queues, details, page data, history, runs, results, artifacts, activities, frozen materials, tasks and task revisions, subject to tenant and parent ownership checks
+- **AND** mutation requests remain disabled and GET requests do not write investigation data
+
+#### Scenario: Both Case and page read switches are disabled
+- **WHEN** both switches are false
+- **THEN** Case and human-task reads remain unavailable

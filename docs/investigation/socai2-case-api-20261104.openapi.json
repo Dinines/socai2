@@ -12,15 +12,20 @@
         ],
         "summary": "Create Case",
         "operationId": "create_case_api_v1_socai2_cases_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CaseCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -43,12 +48,201 @@
               }
             }
           }
-        },
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Case Queue",
+        "operationId": "case_queue_api_v1_socai2_cases_get",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "awaiting_assignment",
+                    "in_progress",
+                    "high_severity",
+                    "awaiting_human"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metric"
+            }
+          },
+          {
+            "name": "classification",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "true_positive",
+                    "informational",
+                    "false_positive"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "not_set",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Classification"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseQueuePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/socai2/cases/{case_id}": {
@@ -82,6 +276,168 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/page-data": {
+      "patch": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Update Page Data",
+        "operationId": "update_page_data_api_v1_socai2_cases__case_id__page_data_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseDataUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDataReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Page Data",
+        "operationId": "page_data_api_v1_socai2_cases__case_id__page_data_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CasePageData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/evidence-index": {
+      "post": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Publish Evidence",
+        "operationId": "publish_evidence_api_v1_socai2_cases__case_id__evidence_index_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidencePublish"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDataReceipt"
                 }
               }
             }
@@ -660,6 +1016,136 @@
         }
       }
     },
+    "/api/v1/socai2/cases/{case_id}/artifacts/{artifact_id}": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Case Source Artifact",
+        "operationId": "case_source_artifact_api_v1_socai2_cases__case_id__artifacts__artifact_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Artifact Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/activities": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Case Activities",
+        "operationId": "case_activities_api_v1_socai2_cases__case_id__activities_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/socai2/cases/{case_id}/runs/{run_id}/materials/{material_id}": {
       "get": {
         "tags": [
@@ -770,6 +1256,77 @@
           "availability"
         ],
         "title": "ArtifactContent"
+      },
+      "AssessmentPageView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conclusion": {
+            "type": "string",
+            "title": "Conclusion"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "model",
+              "human",
+              "system",
+              "legacy"
+            ],
+            "title": "Origin"
+          },
+          "validity": {
+            "type": "string",
+            "title": "Validity"
+          },
+          "scope_revision": {
+            "type": "integer",
+            "title": "Scope Revision"
+          },
+          "formed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Formed At"
+          },
+          "adopted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Adopted At"
+          },
+          "alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Alert Ids"
+          },
+          "sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "conclusion",
+          "origin",
+          "validity",
+          "scope_revision",
+          "formed_at",
+          "adopted_at",
+          "alert_ids",
+          "sources"
+        ],
+        "title": "AssessmentPageView"
       },
       "AssignmentState": {
         "type": "string",
@@ -904,6 +1461,23 @@
         ],
         "title": "BaselinePreparation"
       },
+      "CaseBaselineRecord": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunView"
+          },
+          "start_eligibility": {
+            "$ref": "#/components/schemas/StartAvailability"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run",
+          "start_eligibility"
+        ],
+        "title": "CaseBaselineRecord"
+      },
       "CaseCreate": {
         "properties": {
           "operation_key": {
@@ -976,6 +1550,112 @@
         ],
         "title": "CaseCreate"
       },
+      "CaseDataReceipt": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "row_version": {
+            "type": "integer",
+            "title": "Row Version"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed"
+          },
+          "current_evidence_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Evidence Artifact Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case_id",
+          "row_version",
+          "changed",
+          "current_evidence_artifact_id"
+        ],
+        "title": "CaseDataReceipt"
+      },
+      "CaseDataUpdate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true_positive",
+                  "informational",
+                  "false_positive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "import"
+            ],
+            "title": "Source"
+          },
+          "source_note": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Source Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version",
+          "classification",
+          "due_at",
+          "source",
+          "source_note"
+        ],
+        "title": "CaseDataUpdate"
+      },
       "CaseDetail": {
         "properties": {
           "case": {
@@ -1032,6 +1712,16 @@
             },
             "type": "array",
             "title": "Baseline Records"
+          },
+          "page_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CasePageData"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -1048,6 +1738,193 @@
           "baseline_records"
         ],
         "title": "CaseDetail"
+      },
+      "CasePageData": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "socai2.case-page-data.v1",
+            "title": "Schema Version",
+            "default": "socai2.case-page-data.v1"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true_positive",
+                  "informational",
+                  "false_positive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "determination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Determination"
+          },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssessmentPageView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceView"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "classification",
+          "due_at",
+          "determination",
+          "assessment",
+          "evidence"
+        ],
+        "title": "CasePageData"
+      },
+      "CaseQueueItem": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/CaseView"
+          },
+          "member_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Member Count"
+          },
+          "open_task_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Open Task Count"
+          },
+          "baseline_records": {
+            "items": {
+              "$ref": "#/components/schemas/CaseBaselineRecord"
+            },
+            "type": "array",
+            "title": "Baseline Records"
+          },
+          "page_data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CasePageData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case",
+          "member_count",
+          "open_task_count",
+          "baseline_records"
+        ],
+        "title": "CaseQueueItem"
+      },
+      "CaseQueueMetrics": {
+        "properties": {
+          "awaiting_assignment": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Awaiting Assignment"
+          },
+          "in_progress": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "In Progress"
+          },
+          "high_severity": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "High Severity"
+          },
+          "awaiting_human": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Awaiting Human"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "awaiting_assignment",
+          "in_progress",
+          "high_severity",
+          "awaiting_human"
+        ],
+        "title": "CaseQueueMetrics"
+      },
+      "CaseQueuePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaseQueueItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CaseQueueMetrics"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "metrics"
+        ],
+        "title": "CaseQueuePage"
       },
       "CaseView": {
         "properties": {
@@ -1204,6 +2081,46 @@
             ],
             "title": "Current Assessment Id"
           },
+          "classification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true_positive",
+                  "informational",
+                  "false_positive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classification"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "current_evidence_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Evidence Artifact Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1341,6 +2258,256 @@
         ],
         "title": "Delivery"
       },
+      "EvidenceEntry": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "maxLength": 300,
+            "pattern": "^[A-Za-z0-9_.-]+:[^\\s]+$",
+            "title": "Evidence Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Title"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Type"
+          },
+          "alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Alert Ids"
+          },
+          "object_keys": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceObject"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Object Keys"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/SavedReference"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Source Refs"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "malicious",
+              "suspicious",
+              "clean",
+              "unknown",
+              "conflicting"
+            ],
+            "title": "Verdict"
+          },
+          "verdict_sources": {
+            "items": {
+              "$ref": "#/components/schemas/SavedReference"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Verdict Sources"
+          },
+          "threat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Threat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "remediation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "title",
+          "type",
+          "alert_ids",
+          "object_keys",
+          "source_refs",
+          "verdict",
+          "verdict_sources",
+          "threat",
+          "remediation",
+          "state"
+        ],
+        "title": "EvidenceEntry"
+      },
+      "EvidenceIndex": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "socai2.case-evidence.v1",
+            "title": "Schema Version"
+          },
+          "scope_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Scope Revision"
+          },
+          "alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Alert Ids"
+          },
+          "supersedes_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Artifact Id"
+          },
+          "availability_state": {
+            "type": "string",
+            "enum": [
+              "available",
+              "partial",
+              "unavailable"
+            ],
+            "title": "Availability State"
+          },
+          "limitations": {
+            "items": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Limitations"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceEntry"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "scope_revision",
+          "alert_ids",
+          "supersedes_artifact_id",
+          "availability_state",
+          "limitations",
+          "entries"
+        ],
+        "title": "EvidenceIndex"
+      },
+      "EvidenceObject": {
+        "properties": {
+          "material_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Material Id"
+          },
+          "object_key": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Object Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "material_id",
+          "object_key"
+        ],
+        "title": "EvidenceObject"
+      },
+      "EvidencePublish": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version"
+          },
+          "expected_current_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Current Artifact Id"
+          },
+          "index": {
+            "$ref": "#/components/schemas/EvidenceIndex"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version",
+          "expected_current_artifact_id",
+          "index"
+        ],
+        "title": "EvidencePublish"
+      },
       "EvidenceRef": {
         "properties": {
           "type": {
@@ -1403,6 +2570,191 @@
           "role"
         ],
         "title": "EvidenceRef"
+      },
+      "EvidenceView": {
+        "properties": {
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "available",
+              "partial",
+              "unavailable",
+              "not_recorded",
+              "invalid_reference"
+            ],
+            "title": "State"
+          },
+          "evidence_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Count"
+          },
+          "threat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threat Count"
+          },
+          "covered_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Covered Alert Ids"
+          },
+          "uncovered_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Uncovered Alert Ids"
+          },
+          "excluded_evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Excluded Evidence Ids"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "state",
+          "evidence_count",
+          "threat_count",
+          "covered_alert_ids",
+          "uncovered_alert_ids",
+          "excluded_evidence_ids",
+          "limitations",
+          "entries",
+          "index"
+        ],
+        "title": "EvidenceView"
+      },
+      "ExecutionSummary": {
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Artifact Id"
+          },
+          "availability": {
+            "type": "string",
+            "title": "Availability"
+          },
+          "schema_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Version"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limits"
+          },
+          "final_reservation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Reservation"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "availability"
+        ],
+        "title": "ExecutionSummary"
       },
       "Finding": {
         "properties": {
@@ -1894,6 +3246,55 @@
           "limitations"
         ],
         "title": "Recommendation"
+      },
+      "RecordPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_offset",
+          "observed_at",
+          "limitations"
+        ],
+        "title": "RecordPage"
       },
       "ResultDetail": {
         "properties": {
@@ -2532,6 +3933,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Observed At"
+          },
+          "execution_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -2871,6 +4282,65 @@
         ],
         "title": "SavedAnswerReference"
       },
+      "SavedReference": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "alert_material",
+              "artifact",
+              "task_revision",
+              "result"
+            ],
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "external": {
+            "type": "null",
+            "title": "External"
+          },
+          "source_path": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Source Path"
+          },
+          "row_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 0,
+            "title": "Row Keys"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "observation",
+              "source_label",
+              "prior_analysis",
+              "human_statement",
+              "execution_receipt"
+            ],
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "external",
+          "source_path",
+          "row_keys",
+          "role"
+        ],
+        "title": "SavedReference"
+      },
       "Scope": {
         "properties": {
           "kind": {
@@ -3066,6 +4536,49 @@
           "display_name"
         ],
         "title": "Target"
+      },
+      "Threat": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Namespace"
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Label"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/components/schemas/SavedReference"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Source Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "namespace",
+          "key",
+          "label",
+          "source_refs"
+        ],
+        "title": "Threat"
       },
       "Validation": {
         "type": "string",

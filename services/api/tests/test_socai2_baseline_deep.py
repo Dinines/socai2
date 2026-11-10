@@ -18,6 +18,7 @@ from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.baseline_reasoning import ModelSteps
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import A, C, F, R, StoreError
+from app.socai2.runtime_policy import draft_limit
 from jsonschema import Draft202012Validator, FormatChecker
 from socai2_test_model_view import model_data
 from sqlalchemy import insert, select, update
@@ -49,6 +50,10 @@ class DecisionGateway:
     async def configure(self, service, tenant):
         assert tenant == T
         return self.enabled
+
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
 
     async def complete(self, body, timeout):
         assert timeout > 0 and "tools" not in body and body["max_tokens"] == 3000
@@ -362,8 +367,8 @@ async def run_checks(engine, record, only=None):
         assert out["state"] == "completed" and out["answer"]["state"] == "supported"
         assert out["source_map"][out["answer"]["support_ids"][0]]["ref"]["role"] == "human_statement"
         for body in gateway.bodies:
-            assert len(c3.encoded(body["messages"])) <= 12288
-            assert len(body["messages"][1]["content"].encode()) <= 8192
+            assert len(c3.encoded(body["messages"])) <= draft_limit()
+            assert len(body["messages"][1]["content"].encode()) <= draft_limit()
         schema = json.loads((Path(__file__).parents[1] / "app/socai2/baseline_deep.schema.json").read_text("utf-8"))
         Draft202012Validator(schema).validate(json.loads(gateway.payloads[0]["choices"][0]["message"]["content"]))
 

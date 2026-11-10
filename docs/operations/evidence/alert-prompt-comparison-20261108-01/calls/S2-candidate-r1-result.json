@@ -1,0 +1,40 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-90861280536a471c",
+    "created": 1794115535,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"verdict\": \"needs_review\",\n  \"confidence\": null,\n  \"rationale\": \"现有证据显示存在高严重性告警（Repeated MFA prompts），且源 IP 为无历史登录记录的住宅代理，符合异常特征。然而，关键事实存在矛盾：虽然提示了 21 次被拒，但最终结果（finalOutcome）为'21 denied by the user, 1 approved'，即用户主动批准了第 22 次验证并成功登录。同时，日志显示在登录成功后 2 分钟内新增了手机验证方法（AuthenticationPhoneMethod added at T+2m），这可能表明用户正在主动配置安全策略以应对潜在风险，而非单纯被攻击。由于缺乏人工确认（human_statement）来解释这 21 次拒绝和新增验证方法的具体意图，无法确定这是成功的账户接管攻击（攻击者利用用户疏忽）还是用户主动的安全加固行为，证据不足以做出确定性判定。\",\n  \"evidence_ids\": [\n    \"N1_S4\",\n    \"N1_S5\",\n    \"N1_S6\",\n    \"N1_S7\"\n  ],\n  \"recommendations\": [\n    {\n      \"reason\": \"需核实用户是否主动批准了第 22 次 MFA 验证，以及随后新增手机验证方法（AuthenticationPhoneMethod）是否为受信任操作，以区分是攻击者诱导用户授权还是用户主动防御。\",\n      \"source_ids\": [\n        \"N1_S5\",\n        \"N1_S7\"\n      ]\n    },\n    {\n      \"reason\": \"需确认源 IP（203.0.113.119）所属的住宅代理 ASN 是否与该租户有已知业务关联，排除内部员工使用代理登录的可能性。\",\n      \"source_ids\": [\n        \"N1_S5\"\n      ]\n    }\n  ]\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 420,
+      "prompt_tokens": 1179,
+      "total_tokens": 1599,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "http_seconds": 8.413375,
+  "transport_seconds": 9.111349
+}

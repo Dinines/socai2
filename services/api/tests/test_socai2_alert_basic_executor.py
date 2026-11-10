@@ -12,6 +12,7 @@ from app.socai2 import baseline_enrichment_sources as sources
 from app.socai2.alert_basic_contract import build
 from app.socai2.baseline_enrichment import S
 from app.socai2.baseline_store import StoreError, encoded
+from app.socai2.runtime_policy import draft_limit
 from app.socai2.stage_results import AS, A, F, R, StageResultService
 from socai2_test_model_view import model_data
 from sqlalchemy import insert, select, text, update
@@ -33,6 +34,10 @@ class Gateway:
 
     async def configure(self, *_):
         return self.configured
+
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
 
     async def complete(self, body, timeout):
         assert timeout > 0
@@ -173,13 +178,23 @@ async def run_checks(engine, record, only=None):
                     sqlstate = "42501"
                 raise DBAPIError("synthetic", {}, Unavailable(), False)
             return await sources.query(service, tenant, name, args)
-        out = await service.execute_alert(T, aid, uuid4(), gateway=Gateway(), query=query)
+        gateway = Gateway()
+        out = await service.execute_alert(T, aid, uuid4(), gateway=gateway, query=query)
         artifacts = await rows(F, F.c.run_id == out["run_id"])
         tools = {r["content_json"]["tool_name"]: r["content_json"] for r in artifacts if r["kind"] == "tool_response"}
         assert tools["assets"]["state"] == "failed" and tools["assets"]["returned_rows"] is None
         assert tools["history"]["state"] == "skipped" and tools["history"]["reason"] == "history_window_not_defined"
         assert tools["threat_intel"]["state"] == "completed" and tools["threat_intel"]["returned_rows"] == 0
         assert out["state"] == "completed"
+        input_facts = model_data(gateway.requests[0]["messages"][1]["content"])["program_facts"]
+        explanation = next(r["content_json"] for r in artifacts if r["kind"] == "alert_explanation")
+        assert explanation["program_facts"] == input_facts
+        query_facts = {x["source"]: x for x in input_facts["query_statuses"]}
+        assert {name: x["outcome"] for name, x in query_facts.items()} == {
+            "assets": "failed", "history": "not_queried", "threat_intel": "empty"}
+        by_id = {str(r["id"]): r for r in artifacts}
+        for name, value in query_facts.items():
+            assert by_id[value["receipt"]["id"]]["content_json"] == tools[name]
 
     async def test_alert_invalid_output_preserves_raw_and_prior_pointer():
         aid, _ = await fixture()
@@ -293,7 +308,7 @@ async def run_checks(engine, record, only=None):
         assert data["omissions"]["field_size"] >= 1 and data["omissions"]["input_guard"] >= 2
         assert data["omissions"]["unaddressable_source_path"] == 1
         assert "PRIVATE KEY" not in str(messages)
-        assert len(encoded(data)) <= 8192 and len(encoded(messages)) <= 12288
+        assert len(encoded(data)) <= draft_limit() and len(encoded(messages)) <= draft_limit()
         assert mapping and all("oversize" not in x["ref"]["source_path"] for x in mapping.values())
         try:
             await service.execute_alert(OTHER, aid, uuid4(), gateway=Gateway())
@@ -371,9 +386,10 @@ async def run_checks(engine, record, only=None):
         assert items["$.raw_json.raw_event.original_vendor"]["value"] == "VendorClaim"
         assert items["$.raw_json.raw_event.custom_note"]["role"] == "source_label"
         request = next(r["content_json"] for r in await rows(F, F.c.run_id == out["run_id"]) if r["kind"] == "model_request")
-        assert any(x["source"]["source_path"] == "$.ocsf_json.metadata.notes" and x["reason"] == "field_size"
-                   for x in request["input_omission_details"])
-        assert "omission_details" not in data and len(gateway.requests[0]["messages"][1]["content"].encode()) <= 8192
+        assert items["$.ocsf_json.metadata.notes"]["value"] == "retained provenance " * 170
+        assert not any(x["source"]["source_path"] == "$.ocsf_json.metadata.notes"
+                       for x in request["input_omission_details"])
+        assert "omission_details" not in data and len(gateway.requests[0]["messages"][1]["content"].encode()) <= draft_limit()
 
     async def test_alert_separate_judgment_basis_rejects_labels_without_publication():
         aid, _ = await fixture(background=False)
@@ -403,7 +419,7 @@ async def run_checks(engine, record, only=None):
 
     async def test_alert_provider_error_receipt_preserves_previous_judgment():
         from test_socai2_model_errors import FailingGateway, ModelCallError
-        aid, _ = await fixture()
+        aid, _ = await fixture(background=False)
         await service.execute_alert(T, aid, uuid4(), gateway=Gateway())
         before = (await rows(A, A.c.id == aid))[0]
         gateway, op = FailingGateway(), uuid4()
@@ -428,14 +444,16 @@ async def run_checks(engine, record, only=None):
 
     async def test_alert_deepseek_wire_saved_after_union_expansion():
         from test_socai2_deepseek_union_schema import DeepSeekWireGateway
-        aid, _ = await fixture()
+        aid, _ = await fixture(background=False)
         gateway = DeepSeekWireGateway(Gateway())
         out = await service.execute_alert(T, aid, uuid4(), gateway=gateway)
         assert out["state"] == "completed" and len(gateway.requests) == 1
         artifacts = await rows(F, F.c.run_id == out["run_id"])
         request = next(a["content_json"] for a in artifacts if a["kind"] == "model_request")
         assert request["body"] == gateway.requests[0]
-        branch = request["body"]["text"]["format"]["schema"]["properties"]["decision_basis"]["anyOf"][0]
+        branches = request["body"]["text"]["format"]["schema"]["anyOf"]
+        assert len(branches) == 4 and branches[0]["properties"]["decision_basis"] == {"type": "null"}
+        branch = branches[1]["properties"]["decision_basis"]
         assert branch["type"] == "object" and branch["additionalProperties"] is False and "$ref" not in branch
         response = next(a["content_json"] for a in artifacts if a["kind"] == "model_response")
         assert response["raw"] == gateway.responses[0] and response["usage"]["usage_state"] == "reported"
@@ -445,7 +463,7 @@ async def run_checks(engine, record, only=None):
         from unittest.mock import patch
 
         from app.socai2.model_errors import ModelCallError
-        aid, _ = await fixture()
+        aid, _ = await fixture(background=False)
         gateway, op = Gateway(), uuid4()
         attempts = []
         async def reject_schema(*_):
@@ -460,6 +478,51 @@ async def run_checks(engine, record, only=None):
         assert model["state"] == "failed" and model["ended_at"] and model["usage"]["total_tokens"] is None
         assert not any(s["state"] in {"running", "planned", "unknown"} for s in steps)
         assert (await rows(A, A.c.id == aid))[0]["latest_triage_id"] is None
+
+    async def test_alert_partial_review_keeps_advice_and_never_adopts_bad_judgment():
+        from app.socai2.stage_reader import StageReadService
+        reader = StageReadService(service.sessions)
+        aid, _ = await fixture(background=False)
+        good = await service.execute_alert(T, aid, uuid4(), gateway=Gateway())
+        prior = (await rows(A, A.c.id == aid))[0]["latest_triage_id"]
+        def broken(core):
+            def transform(payload):
+                raw = json.loads(payload["choices"][0]["message"]["content"])
+                sid = raw["evidence_ids"][0]
+                raw["recommendations"] = [{"reason": "independent valid advice", "source_ids": [sid]},
+                    {"reason": "invalid advice", "source_ids": ["N99_S999"]}]
+                if core:
+                    raw["evidence_ids"] = ["N99_S999"]
+                payload["choices"][0]["message"]["content"] = json.dumps(raw)
+                return payload
+            return transform
+        gateway, op = Gateway(transform=broken(True)), uuid4()
+        failed = await service.execute_alert(T, aid, op, gateway=gateway)
+        assert failed["state"] == "failed" and gateway.calls == 1
+        assert (await rows(A, A.c.id == aid))[0]["latest_triage_id"] == prior
+        entry = await reader.read_entry(T, "alert_basic", aid, failed["run_id"])
+        assert not entry.valid_for_current_input and entry.result is None
+        assert entry.partial_analysis.available
+        kept = entry.partial_analysis.content["retained_analysis"]
+        assert kept["assessment"] is None and len(kept["recommendations"]) == 1
+        response = next(r["content_json"] for r in await rows(F, F.c.run_id == failed["run_id"]) if r["kind"] == "model_response")
+        assert response["raw"] == gateway.responses[0]
+        await service.execute_alert(T, aid, op, gateway=gateway)
+        assert gateway.calls == 1
+        gateway = Gateway(transform=broken(False))
+        partial = await service.execute_alert(T, aid, uuid4(), gateway=gateway)
+        assert partial["state"] == "completed" and gateway.calls == 1
+        entry = await reader.read_entry(T, "alert_basic", aid, partial["run_id"])
+        assert entry.valid_for_current_input and entry.result.verdict == "needs_review"
+        assert len(entry.result.recommendations) == 1 and entry.partial_analysis.content["conclusion_adoptable"]
+        assert entry.explanation.content["program_facts"] == model_data(gateway.requests[0]["messages"][1]["content"])["program_facts"]
+        from pathlib import Path
+
+        import jsonschema
+        schema = json.loads((Path(__file__).resolve().parents[1] / "app/socai2/contracts.schema.json").read_text())
+        jsonschema.validate(entry.explanation.content, {"$defs": schema["$defs"], "$ref": "#/$defs/alert_explanation"})
+        return {"prior_run": str(good["run_id"]), "failed_run": str(failed["run_id"]),
+            "partial_run": str(partial["run_id"]), "failed_judgment_adopted": False, "raw_preserved": True}
 
     checks = [v for k, v in locals().copy().items() if k.startswith("test_alert_")]
     for check in checks:

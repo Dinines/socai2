@@ -337,7 +337,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # We keep this narrowly scoped to the canonical ``"development"`` label
     # so demo / test / local don't quietly run ``create_all`` on top of a
     # real schema. The looser dev gate is used below for SQL migrations.
-    if (settings.ENVIRONMENT or "").strip().lower() == "development":
+    if settings.AISOC_STARTUP_SCHEMA_MIGRATIONS and (settings.ENVIRONMENT or "").strip().lower() == "development":
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
@@ -359,10 +359,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # release_command still yields a populated demo. Plain dev keeps the fast
     # synchronous path (local Postgres, no seed).
     demo_bootstrap_task: asyncio.Task | None = None
-    if settings.AISOC_DEMO_MODE:
+    if settings.AISOC_STARTUP_SCHEMA_MIGRATIONS and settings.AISOC_DEMO_MODE:
         demo_bootstrap_task = asyncio.create_task(_demo_self_heal_bootstrap(), name="demo_bootstrap")
         logger.info("demo self-heal bootstrap scheduled")
-    elif settings.is_dev:
+    elif settings.AISOC_STARTUP_SCHEMA_MIGRATIONS and settings.is_dev:
         try:
             from app.scripts.run_migrations import main as run_sql_migrations  # noqa: PLC0415
 

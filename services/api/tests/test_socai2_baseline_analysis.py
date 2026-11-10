@@ -15,6 +15,7 @@ from app.socai2.baseline_analysis_model import TenantChatGateway, usage
 from app.socai2.baseline_contracts import Actor, Limits, Publication, Start
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import RM, A, C, F, R, StoreError, digest
+from app.socai2.runtime_policy import active_policy, draft_limit
 from jsonschema import Draft202012Validator, FormatChecker
 from socai2_test_model_view import model_data, model_messages_data
 from sqlalchemy import insert, select, update
@@ -63,8 +64,12 @@ class SyntheticGateway:
         self.configures += 1
         return self.enabled
 
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
+
     async def complete(self, body, timeout):
-        assert timeout > 0 and body["max_tokens"] == 3000 and "tools" not in body
+        assert timeout > 0 and body["max_tokens"] == active_policy().model.output_tokens["C3"] and "tools" not in body
         self.calls += 1
         self.last_body = copy.deepcopy(body)
         if self.hook:
@@ -406,8 +411,8 @@ async def run_checks(engine, record, only=None):
             assert str(new_mid) != str(ref["id"])
         assert all(row["read_state"] == "read" for row in await rows(select(RM).where(RM.c.run_id == rid)))
         assert not await rows(select(c3.S).where(c3.S.c.run_id == rid, c3.S.c.stage_code == "C4.materials"))
-        assert len(gateway.last_body["messages"][1]["content"].encode()) <= 8192
-        assert len(json.dumps(gateway.last_body["messages"], ensure_ascii=False, separators=(",", ":")).encode()) <= 12288
+        assert len(gateway.last_body["messages"][1]["content"].encode()) <= draft_limit()
+        assert len(json.dumps(gateway.last_body["messages"], ensure_ascii=False, separators=(",", ":")).encode()) <= draft_limit()
         return {"visible_observation_count": len(direct), "frozen_materials_only": True, "model_substitute": True}
 
     checks = [test_c3_frozen_semantics_visible_before_followup,

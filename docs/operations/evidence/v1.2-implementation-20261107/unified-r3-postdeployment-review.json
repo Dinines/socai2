@@ -1,0 +1,146 @@
+{
+  "status": "ACCEPT",
+  "scope": "仅 v1.2-20261107-r3 五服务和按需入口的部署证据一致性；不代表整个 1.2 或真实调查整链验收通过。",
+  "reviewed_at": "2026-11-07T15:19:15.061694+00:00",
+  "reviewer": "independent_subagent_not_involved_in_implementation",
+  "workflow": "openspec/README.md 工作流第 5 项",
+  "must_fix": [],
+  "release": "v1.2-20261107-r3",
+  "manifest_sha256": "a222752c062aefaa2cda249e4387a03790eef4b2302ab8bcea48efd41fd9d9f9",
+  "independent_checks": {
+    "frozen_files_verified": 952,
+    "frozen_file_hash_mismatches": 0,
+    "current_workspace_source_mismatches": 0,
+    "pure_tests_passed": 28,
+    "pure_test_scope": [
+      "deploy/aisoc21/test_release_12.py",
+      "deploy/aisoc21/test_production_profile.py",
+      "services/api/tests/test_startup_schema_policy.py"
+    ],
+    "pure_test_basis": "独审于同一未变源码的发布前阶段实际运行；部署后未重复运行。",
+    "build_rollout_activate_verify_image_ids_match": true,
+    "processing_profile_policy_and_seven_implementation_hashes_match": true,
+    "published_summary_matches_saved_receipts": true,
+    "remote_independent_recheck": {
+      "status": "not_reached",
+      "attempted_operation": "只读 SSH 镜像、源码、配置和指针核对",
+      "failure": "ssh: connect to host 192.168.3.57 port 2221: Operation not permitted",
+      "remote_commands_executed": 0,
+      "basis": "本独审现场重测未到远端；运行事实来自主代理保存的实际 SSH 回执。"
+    }
+  },
+  "runtime_evidence": {
+    "verification_observed_at": "2026-11-07T15:15:51.362453+00:00",
+    "services": {
+      "api": {
+        "container": "socai2-api-1",
+        "image": "sha256:ecc56a78e839deb526e2de7273ab7aa496694c7472c6a40daa218fae12ea188a",
+        "health": "healthy",
+        "verified_bound_files": 1
+      },
+      "fusion": {
+        "container": "socai2-fusion-1",
+        "image": "sha256:a087bb1e6d34de06b5bc3a1348724c730f50617a22be79687d7caacf5a240392",
+        "health": "healthy"
+      },
+      "agents": {
+        "container": "socai2-agents-1",
+        "image": "sha256:882b05ecc4ccef423584e011e7e0a99d0048f536de572d8c83e3fc5582bcb374",
+        "health": "healthy"
+      },
+      "projection": {
+        "container": "socai2-investigation-projection",
+        "image": "sha256:5f347eff12dc86bfd0ff0388c25eafc2e959077f4c9b8651abee88cbedb5c596",
+        "health": "healthy",
+        "verified_bound_files": 2
+      },
+      "workbench": {
+        "container": "socai2-production-workbench",
+        "image": "sha256:5f347eff12dc86bfd0ff0388c25eafc2e959077f4c9b8651abee88cbedb5c596",
+        "health": "healthy",
+        "verified_bound_files": 952
+      }
+    },
+    "runtime_source_file_counts": {
+      "api": 567,
+      "fusion": 64,
+      "agents": 293
+    },
+    "current_pointer": "/opt/sting-aisoc-socai2/current-v1.2",
+    "processing_entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "pointer_verification_basis": "冻结 release_12.verify(check_pointer=True) 成功回执；activate 回执与 release.json 的目标一致。",
+    "prepared_configuration_verification_basis": "冻结校验器验证 prepared 文件 hash、完整运行环境和对应命令/端口/挂载/网络等受检配置；独审未再次读取远端私密配置。",
+    "existing_case": {
+      "case_id": "5942734d-1bea-5c0b-97fe-0d9ccde01858",
+      "case_list_http_status": 200,
+      "tables": 29,
+      "rows": 167,
+      "runs": 5,
+      "run_steps": 30,
+      "artifacts": 67,
+      "business_writes_by_readback": 0
+    },
+    "agents": {
+      "consumer_enabled": false,
+      "tenant_quota_unlimited": true,
+      "group": "socai2-agents-v1-prod-20261022",
+      "group_empty": true,
+      "before_committed_next": {
+        "2": 42,
+        "0": 34,
+        "1": 37
+      },
+      "after_committed_next": {
+        "2": 42,
+        "0": 34,
+        "1": 37
+      },
+      "offset_lag_total": 7,
+      "observer_group_id": null,
+      "observer_auto_commit": false
+    },
+    "processing_check": {
+      "database": "aisoc",
+      "database_writes": 0,
+      "model_calls": 0,
+      "single_model_timeout_seconds": 300,
+      "case_deadline_seconds": 1500,
+      "final_reserve_seconds": 300
+    }
+  },
+  "limitations": [
+    "主 API 18000 的 Case、analysis read、page read、stage execution 路由开关仍关闭；本次不能称这些 HTTP 路由已启用或已验收。",
+    "18010 investigation-api（20261101-r13）和 18020 next-api（20261104-n15）仍是历史独立入口，未切换或停止，不属于本次统一 1.2 入口。",
+    "Agents 仍暂停；34/37/42 位点与前次相同，7 为三分区 offset lag 合计，不证明 7 条告警均从未被人工 A/I 处理。",
+    "本轮只读 Case 记录与计数可读，不等于重新验证每个字段、正文和关系；既有失败/partial、模型语义与证据缺口没有被发布核销。",
+    "新的 Fusion 归并依据落库、真实模型/Tool/H 调查链和消费者恢复未由本次发布验证。",
+    "本次没有新生成、旧批重放或迁移的执行步骤；schema_migrations=0 为受检发布流程和门控范围结论，并非平台全时段数据库审计。",
+    "回退文件已保存，但未实际演练 rollback；不声称恢复已通过。",
+    "独审 SSH 在本地连接阶段被阻断，本结论是冻结源码、独立纯检查与已保存运行证据的一致性审查。"
+  ],
+  "evidence_sha256": {
+    "unified-v1.2-20261107-r3-activate.json": "7803dec489db0fe81680b67af3bc2bae5a9c4f8c96b9ec54f7379ea64c76db34",
+    "unified-v1.2-20261107-r3-build.json": "0b7b978d4d1277c14a5a4340dcf1e4fd15314a52df011af305fdbd703b98b913",
+    "unified-v1.2-20261107-r3-preflight.json": "baf02be54b77f34005731c6470ed5f727219edf1dcc51a24d3e39d23ea4ba73c",
+    "unified-v1.2-20261107-r3-prepare.json": "485778ca78076aaafb164b395e4c06f3db7efba0620a38e13beeec7eeeb546d9",
+    "unified-v1.2-20261107-r3-rollout-main-agents.json": "bb6ffc3b33bef264e4aba89c029963c793b70f11fc111dffbcbf38b39b83ec23",
+    "unified-v1.2-20261107-r3-rollout-main-api.json": "afe0a99ca4164366d3aa3098a9d396cdea571db5ddcd4b49b0aea108b7837770",
+    "unified-v1.2-20261107-r3-rollout-main-fusion.json": "7a2df77f21a9e03dc9c243775ecb39c9b210d369d6c226492a8de4f990a41ba7",
+    "unified-v1.2-20261107-r3-rollout-projection-projection.json": "20cb5d1fc9182260ddc51c64f5f53d1a2fb006aa0f510dccf8cdf91079926107",
+    "unified-v1.2-20261107-r3-rollout-workbench-workbench.json": "110e93603e7dd6c269d2bfc26f0478bd382e7bd13c15f2a41cc7294e1b6609d5",
+    "unified-v1.2-20261107-r3-upload.json": "f02558494c3afd7ce60c3f68eca7a1f1292f90814220a29ff73018054b542707",
+    "unified-v1.2-20261107-r3-verify.json": "623c16fa4b1ceace5f0fa2149071ae0ba25cd0a2a51cfad5223a00d90f3824f6",
+    "unified-health-socai2-agents-1.json": "3d71218d92cc42d9d70acdaf3f8fc8e46aed33c46535ff762a0b141d283f53d5",
+    "unified-health-socai2-api-1.json": "3d8e7dd115a0df9805b36360dd452a23fd05ef75ea32dca804a4ae1a2d48b8e0",
+    "unified-health-socai2-fusion-1.json": "4b9690e8365eb248530e9bcc89a18bbd7ca4aaa9bd964ecde1f8b4f7337e75eb",
+    "unified-health-socai2-investigation-projection.json": "86d7bb248e8d2b67ec27b9f93c4bc9fd5a95b081017601a73b311600b09289b7",
+    "unified-health-socai2-production-workbench.json": "c872491a7c997624126c6ae0d64e1b6d0bb1129427d69d77201ef81522b17d5d",
+    "unified-r3-readback.json": "c31d88c361ac97e8134e957c58feb898cd5f19c1d597609b1a44ebb0d5383cff",
+    "unified-r3-agents-kafka-readonly.json": "a48c99e96553b818e1a4408d8d8bc6e67daf8dfd2a68831f5d4d2c1eb2a67e52",
+    "agents-kafka-readonly-second.json": "a48c99e96553b818e1a4408d8d8bc6e67daf8dfd2a68831f5d4d2c1eb2a67e52"
+  },
+  "mutable_summary_reviewed": "unified-release-summary.json",
+  "reviewer_mutations": [
+    "仅新增本审查 JSON 回执；未修改业务源码、配置或既有证据。"
+  ]
+}

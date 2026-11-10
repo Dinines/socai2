@@ -1,0 +1,78 @@
+{
+  "id": "S6-candidate-r1",
+  "sample": "S6",
+  "variant": "candidate",
+  "round": 1,
+  "state": "response_received",
+  "http_seconds": 3.924721,
+  "usage": {
+    "input_tokens": 1259,
+    "output_tokens": 193,
+    "total_tokens": 1452,
+    "cached_input_tokens": null,
+    "reasoning_tokens": 0,
+    "cost": null,
+    "currency": null,
+    "price_version": null,
+    "usage_state": "reported",
+    "cost_state": "unpriced",
+    "request_id": "chatcmpl-8dfd8968fe958133"
+  },
+  "wire_schema_valid": true,
+  "accepted": true,
+  "parse_error": null,
+  "answer": {
+    "verdict": "benign",
+    "confidence": 0.95,
+    "rationale": "告警描述为'Whole customer table read'，但原始记录显示该操作具有明确的业务上下文：执行角色为'reporting_ro'（报表只读），目标为'read replica'（只读副本），且运行计划为'nightly 02:10'（夜间定时任务）。关键证据包括'180 prior runs'（历史 180 次成功运行）和'queryPlanMatchesBaseline: true'（查询计划符合基线），表明这是长期存在的正常报表加载任务，而非异常的大规模数据窃取。",
+    "evidence_ids": [
+      "N1_S5",
+      "N1_S2",
+      "N1_S1"
+    ],
+    "recommendations": []
+  },
+  "parsed_output": {
+    "verdict": "benign",
+    "rationale": "告警描述为'Whole customer table read'，但原始记录显示该操作具有明确的业务上下文：执行角色为'reporting_ro'（报表只读），目标为'read replica'（只读副本），且运行计划为'nightly 02:10'（夜间定时任务）。关键证据包括'180 prior runs'（历史 180 次成功运行）和'queryPlanMatchesBaseline: true'（查询计划符合基线），表明这是长期存在的正常报表加载任务，而非异常的大规模数据窃取。",
+    "confidence": 0.95,
+    "score_state": "available",
+    "explanation": "动作=\"vendor_record\"；日志活动时间=\"2026-11-08T03:06:00+00:00\"；{\"copyToProgramUsed\": false, \"destination\": \"warehouse loader on the internal network\", \"precedingErrorRate\": \"no failed statements in the preceding hour\", \"queryPlanMatchesBaseline\": true, \"role\": \"reporting_ro\", \"rowsRead\": 4100000, \"schedule\": \"nightly 02:10, 180 prior runs\", \"statement\": \"SELECT ... FROM customers\", \"target\": \"read replica\"}\n分析原文：告警描述为'Whole customer table read'，但原始记录显示该操作具有明确的业务上下文：执行角色为'reporting_ro'（报表只读），目标为'read replica'（只读副本），且运行计划为'nightly 02:10'（夜间定时任务）。关键证据包括'180 prior runs'（历史 180 次成功运行）和'queryPlanMatchesBaseline: true'（查询计划符合基线），表明这是长期存在的正常报表加载任务，而非异常的大规模数据窃取。",
+    "generation_method": "template",
+    "source_refs": [
+      {
+        "type": "alert_material",
+        "id": "5edfd534-804f-54e9-8dbe-172858801488",
+        "external": null,
+        "source_path": "$.raw_text",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "5edfd534-804f-54e9-8dbe-172858801488",
+        "external": null,
+        "source_path": "$.ocsf_json.time",
+        "row_keys": [],
+        "role": "observation"
+      },
+      {
+        "type": "alert_material",
+        "id": "5edfd534-804f-54e9-8dbe-172858801488",
+        "external": null,
+        "source_path": "$.ocsf_json.activity.action",
+        "row_keys": [],
+        "role": "observation"
+      }
+    ],
+    "recommendations": [],
+    "limitations": [
+      "basic_alert_analysis_not_full_case_investigation",
+      "structure_sources_checked_not_truth_proven",
+      "assets:skipped:synthetic_fixture_no_external_query",
+      "history:skipped:synthetic_fixture_no_external_query",
+      "threat_intel:skipped:synthetic_fixture_no_external_query"
+    ]
+  },
+  "parse_seconds": 0.00020429096184670925
+}

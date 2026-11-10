@@ -2,6 +2,7 @@
 import hashlib
 
 from sqlalchemy import String, and_, case, cast, func, literal, or_, select, text
+from sqlalchemy.exc import DBAPIError
 
 from app.models import socai2 as m
 
@@ -16,17 +17,19 @@ from .page_contracts import (
     SubjectPage,
     SubjectView,
 )
+from .program_facts import RANK
+from .read_sources import ReadSources, lookup_error
 from .stage_inputs import freshness_sql
 from .stage_reader import StageReader
 
 A, I, M, O, L, R, S, F = (x.__table__ for x in (m.Alerts, m.Incidents, m.AlertMaterials,
     m.AlertObjects, m.IncidentAlerts, m.Runs, m.RunSteps, m.Artifacts))
-MAX_CONTENT = 131072
+from .runtime_policy import retention_limit
+
 MAX_STEPS = 1000
 MAX_ARTIFACTS = 200
-RANK = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 REVERSE_RANK = {v: k for k, v in RANK.items()}
-SECTIONS = ("members", "incidents", "objects", "sources", "assets", "cases", "comments", "activities", "related_alerts", "responses")
+SECTIONS = ("members", "incidents", "objects", "sources", "source_artifacts", "assets", "cases", "comments", "activities", "related_alerts", "responses")
 
 
 def band(value):
@@ -39,11 +42,19 @@ def public(row, *extra):
 
 
 class PageReader:
-    def __init__(self, store, kind, identity=None):
+    def __init__(self, store, kind, identity=None, *, read_sources=None):
         if kind not in {"alerts", "incidents"}:
             raise StoreError("page_subject_invalid", 422)
         self.store, self.db, self.kind, self.identity = store, store.db, kind, identity
         self.table = A if kind == "alerts" else I
+        self.read_sources = read_sources
+
+    def lookup_relation(self, name):
+        # Existing business entry points keep their public schema contract.
+        # An explicitly selected read service supplies its file-backed adapter.
+        if self.read_sources is not None:
+            return self.read_sources.relation(name)
+        return "public.assets" if name == "assets" else "public.users"
 
     async def rows(self, query):
         return (await self.db.execute(query)).mappings().all()
@@ -68,7 +79,7 @@ class PageReader:
         model = AlertFacts if self.kind == "alerts" else IncidentFacts
         name = None
         if row["owner_id"]:
-            name = (await self.db.execute(text("SELECT to_jsonb(u)->>'username' FROM public.users u WHERE tenant_id=:tenant AND id=:id"),
+            name = (await self.db.execute(text(f"SELECT u.username FROM {self.lookup_relation('owners')} u WHERE u.tenant_id=:tenant AND u.id=:id"),
                 {"tenant": self.store.tenant_id, "id": row["owner_id"]})).scalar_one_or_none()
         owner_state = "unassigned" if row["assignment_state"] == "unassigned" else "resolved" if name else "unresolved"
         material, triage, feedback = None, None, None
@@ -201,6 +212,11 @@ class PageReader:
             ref = m.AlertSourceRefs.__table__
             query = select(ref).join(A, and_(A.c.tenant_id == ref.c.tenant_id, A.c.id == ref.c.alert_id,
                 A.c.latest_material_id == ref.c.material_id)).where(*self.store.where(ref, ref.c.alert_id.in_(self.member_ids())))
+        elif section == "source_artifacts":
+            key = "alert_id" if self.kind == "alerts" else "incident_id"
+            query = select(*ARTIFACT_FIELDS).where(*self.store.where(F,
+                F.c[key] == self.identity, F.c.run_id.is_(None)))
+            limitations.append("saved_source_versions_not_investigation_runs")
         elif section == "cases":
             c, ca, ci = m.Cases.__table__, m.CaseAlerts.__table__, m.CaseIncidents.__table__
             members = select(ca.c.case_id).where(*self.store.where(ca, ca.c.alert_id.in_(self.member_ids())))
@@ -236,6 +252,9 @@ class PageReader:
         total = (await self.db.execute(select(func.count()).select_from(sub))).scalar_one()
         rows = await self.rows(select(sub).order_by(sub.c.id).offset(offset).limit(limit))
         items = [public(r) for r in rows]
+        if section == "source_artifacts":
+            for item in items:
+                item["content_url"] = f"/api/v1/socai2/{self.kind}/{self.identity}/artifacts/{item['id']}"
         if section == "activities":
             targets = m.ActivityTargets.__table__
             for item in items:
@@ -250,7 +269,7 @@ class PageReader:
         # Same exact host/IP inventory rules as C2. This read never saves a match.
         predicate = "a.id=:id" if self.kind == "alerts" else "EXISTS(SELECT 1 FROM socai2.incident_alerts l WHERE l.tenant_id=a.tenant_id AND l.alert_id=a.id AND l.incident_id=:id)"
         base = f"""FROM socai2.alert_objects o JOIN socai2.alerts a ON a.tenant_id=o.tenant_id AND a.id=o.alert_id AND a.latest_material_id=o.material_id
-          JOIN public.assets v ON v.tenant_id=o.tenant_id AND ((o.object_type='host' AND
+          JOIN {self.lookup_relation('assets')} v ON v.tenant_id=o.tenant_id AND ((o.object_type='host' AND
           (lower(v.name)=lower(o.normalized_value) OR lower(v.fqdn)=lower(o.normalized_value)))
           OR (o.object_type='ip' AND o.normalized_value=ANY(v.ip_addresses)))
           WHERE o.tenant_id=:tenant AND {predicate}"""
@@ -276,7 +295,7 @@ class PageReader:
         if not row:
             raise StoreError("alert_material_not_found", 404)
         out = {"metadata": public(row), "availability": "content_exceeds_read_limit", "content_json": None, "content_text": None}
-        if row["content_bytes"] > MAX_CONTENT:
+        if row["content_bytes"] > retention_limit():
             return out
         body = await self.store.one(select(M.c.raw_json, M.c.raw_text, M.c.ocsf_json, M.c.enrichment).where(*filters))
         return {**out, "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"],
@@ -306,7 +325,8 @@ class PageReader:
     async def artifact_content(self, run_id, artifact_id):
         reader = StageReader(self.store, "alert_basic" if self.kind == "alerts" else "incident_diagnosis", self.identity)
         await reader.subject()
-        await reader.run(run_id)
+        if run_id is not None:
+            await reader.run(run_id)
         key = "alert_id" if self.kind == "alerts" else "incident_id"
         filters = self.store.where(F, F.c.run_id == run_id, F.c[key] == self.identity, F.c.id == artifact_id)
         row = await self.store.one(select(*ARTIFACT_FIELDS, F.c.blob_ref.is_not(None).label("external")).where(*filters))
@@ -315,7 +335,7 @@ class PageReader:
         out = {"metadata": public(row, "external"), "availability": "unavailable", "content_json": None, "content_text": None}
         if row["external"]:
             return {**out, "availability": "external_content_not_loaded"}
-        if row["size_bytes"] is None or row["size_bytes"] > MAX_CONTENT:
+        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
         value = body["content_json"]
@@ -326,9 +346,16 @@ class PageReader:
 
 
 class PageReadService(BaselineService):
+    def __init__(self, session_factory, *, read_sources=None):
+        super().__init__(session_factory)
+        self.read_sources = ReadSources.from_config(read_sources) if read_sources is not None else None
+
     async def read(self, tenant, kind, identity, method, **kwargs):
-        async with self.transaction(tenant, readonly=True) as store:
-            reader = PageReader(store, kind, identity)
-            if method == "view":
-                return await reader.view(await reader.subject())
-            return await getattr(reader, method)(**kwargs)
+        try:
+            async with self.transaction(tenant, readonly=True) as store:
+                reader = PageReader(store, kind, identity, read_sources=self.read_sources)
+                if method == "view":
+                    return await reader.view(await reader.subject())
+                return await getattr(reader, method)(**kwargs)
+        except DBAPIError as exc:
+            lookup_error(exc)

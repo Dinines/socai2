@@ -1,5 +1,6 @@
 """Shared model-step recording for Deep and post-evidence synthesis only."""
 import asyncio
+import copy
 import json
 from uuid import UUID, uuid4
 
@@ -7,14 +8,14 @@ from sqlalchemy import insert, null, select, update
 
 from . import baseline_analysis_contract as analysis
 from .baseline_analysis import budget_reason, reserved_calls
-from .baseline_analysis_model import MAX_OUTPUT_TOKENS, usage
+from .baseline_analysis_model import usage
 from .baseline_capacity import final_wire_reason, remaining_seconds, reservation_for
-from .baseline_context import MAX_CONTEXT_BYTES, reference
+from .baseline_context import reference, retention_limit
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_evidence import BaselineEvidence
 from .baseline_final_evidence import update_query_visibility
-from .baseline_model_view import MAX_FIELD_BYTES, MAX_MODEL_BYTES, SYSTEM, blocked
+from .baseline_model_view import SYSTEM, blocked, draft_limit, field_limit
 from .baseline_store import StoreError, digest, encoded
 from .model_errors import ModelCallError
 from .model_input_view import LIMITATIONS, compact, items, size, source_prefix
@@ -35,11 +36,11 @@ def bounded_input(data, candidates, instruction):
     for candidate in sorted(candidates, key=lambda c: not c.get("required", False)):
         why = "source_guard_blocked" if blocked(candidate["original"]) else None
         entry = {**candidate["entry"], "id": prefix + candidate["entry"]["id"]}
-        if why is None and len(encoded(entry["value"])) > MAX_FIELD_BYTES:
+        if why is None and len(encoded(entry["value"])) > field_limit():
             why = "whole_field_exceeds_budget"
         if why is None:
             data["items"].append(entry)
-            if size(data) > MAX_MODEL_BYTES - 256 or len(encoded(messages_for(data))) > 12288 - 256:
+            if size(data) > draft_limit() - 256 or len(encoded(messages_for(data))) > draft_limit() - 256:
                 data["items"].pop()
                 why = "model_view_budget_exhausted"
         if why:
@@ -54,8 +55,8 @@ def bounded_input(data, candidates, instruction):
             member["included"] = sum(aid in s["alert_ids"] for s in source_map.values())
     update_query_visibility(data, source_map)
     messages = messages_for(data)
-    reason = "required_model_input_unavailable" if required_failed else "mandatory_scope_exceeds_model_budget" if size(data) > MAX_MODEL_BYTES else None
-    if reason is None and len(encoded(messages)) > 12288:
+    reason = "required_model_input_unavailable" if required_failed else "mandatory_scope_exceeds_model_budget" if size(data) > draft_limit() else None
+    if reason is None and len(encoded(messages)) > draft_limit():
         reason = "mandatory_message_exceeds_budget"
     if reason is None and any(blocked(m["content"]) for m in messages):
         reason = "projected_message_guard_blocked"
@@ -117,7 +118,7 @@ class ModelSteps(BaselineEvidence):
         self.schema = schema
 
     async def save(self, store, run, step, payload, kind, refs=()):
-        if len(encoded(payload)) > MAX_CONTEXT_BYTES:
+        if len(encoded(payload)) > retention_limit():
             raise StoreError("reasoning_artifact_exceeds_retention_limit", 422)
         identity = uuid4()
         await store.save_input_artifact(run["case_id"], run["id"], identity, payload, kind=kind,
@@ -139,14 +140,37 @@ class ModelSteps(BaselineEvidence):
             await store.mark_unknown(case_id, run_id)
 
     async def call(self, tenant_id, case_id, run_id, stage_id, stage_code, prepared, gateway, parser, *, output_format,
-                   response_adapter=None):
+                   response_adapter=None, wire_transform=None, review=None, allow_correction=True):
         if not prepared["ready"]:
             return None, prepared["reason"], None, None
         if not await gateway.configure(self.service, tenant_id):
             return None, "model_not_configured", None, None
-        body = {"model": gateway.model, "messages": prepared["messages"], "max_tokens": MAX_OUTPUT_TOKENS, "temperature": 0,
+        from .runtime_policy import active_policy
+        meter_stage = "C3" if stage_code in {"C3", "C3.reanalysis"} else "C6" if stage_code == "C6" else "Deep"
+        body = {"model": gateway.model, "messages": prepared["messages"], "max_tokens": active_policy().model.output_tokens[meter_stage], "temperature": 0,
                 "response_format": output_format}
         body = prepare_request(gateway, body)
+        if wire_transform:
+            body = wire_transform(body)
+        # Count requests consume the same wall-clock allowance. In particular,
+        # pre-final counting cannot eat into the final 300 seconds.
+        async with self.service.transaction(tenant_id) as store:
+            run = await self.locked(store, case_id, run_id)
+            if run["state"] != "running":
+                raise StoreError("baseline_not_running")
+            limits, now = Limits.model_validate(run["limits"]), await store.now()
+            steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            reservation = await reservation_for(store, run, steps)
+            reason = budget_reason(steps, limits, len(encoded(body)), now,
+                reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None)
+            if reason != "token_measurement_missing":
+                return None, reason, None, None
+            meter_seconds = remaining_seconds(limits, now, reservation, stage_code)
+        try:
+            from .token_budget import measure_with_deadline
+            measurement = await measure_with_deadline(gateway, body, meter_stage, meter_seconds)
+        except StoreError as exc:
+            return None, exc.code, None, None
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running":
@@ -160,14 +184,10 @@ class ModelSteps(BaselineEvidence):
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
             reservation = await reservation_for(store, run, steps)
             reason = budget_reason(steps, limits, len(encoded(body)), now,
-                reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None)
-            if reason == "model_token_budget_insufficient" and stage_code == "C6":
-                used = sum(s["usage"]["total_tokens"] for s in steps
-                    if s["kind"] == "model" and s["state"] not in {"planned", "skipped"})
-                fit_final_request(body, prepared, limits.max_tokens - used - MAX_OUTPUT_TOKENS - 256)
-                reason = budget_reason(steps, limits, len(encoded(body)), now)
+                reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None,
+                measurement=measurement)
             if reason is None and stage_code == "C6":
-                reason = final_wire_reason(body, reservation)
+                reason = final_wire_reason(body, reservation, measurement)
             if reason:
                 return None, reason, None, None
             model_id = uuid4()
@@ -180,9 +200,16 @@ class ModelSteps(BaselineEvidence):
                 "direction": "request", "payload": {"body": body, "source_map": prepared["source_map"],
                     "binding_map": prepared.get("binding_map", {}), "input_artifact_ids": prepared["input_artifact_ids"],
                     "input_sha256": digest(prepared), "omissions": prepared["omissions"],
-                    "reserved_token_upper_bound": len(encoded(body)) + MAX_OUTPUT_TOKENS + 256,
-                    "final_reservation": reservation},
+                    "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement,
+                    "final_reservation": reservation, "correction": prepared.get("correction"),
+                    "input_view_id": prepared.get("input_view_id"),
+                    "unoffered_bindings": prepared.get("unoffered_bindings", [])},
                 "captured_at": now.isoformat(), "request_id": None, "usage": None}
+            if "case_boundary" in prepared:
+                request["payload"]["case_boundary"] = prepared["case_boundary"]
+                request["payload"]["tool_presentation"] = prepared.get("tool_presentation")
+            if "followup_boundary" in prepared:
+                request["payload"]["followup_boundary"] = prepared["followup_boundary"]
             refs = [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]]
             request_id = await self.save(store, run, model_id, request, "model_request", refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
@@ -209,11 +236,11 @@ class ModelSteps(BaselineEvidence):
             if exc.rejection_code:
                 return None, exc.rejection_code, model_id, response_id
             raise
-        recorded, parsed, reason, adaptation = usage(payload), None, None, None
+        recorded, parsed, reason, adaptation, content = usage(payload), None, None, None, None
         try:
             if recorded["usage_state"] != "reported":
                 raise analysis.AnalysisRejected("model_usage_unknown_or_inconsistent")
-            if recorded["total_tokens"] > len(encoded(body)) + MAX_OUTPUT_TOKENS + 256:
+            if recorded["total_tokens"] > measurement["reserved_total_tokens"]:
                 raise analysis.AnalysisRejected("provider_usage_exceeds_reservation")
             choices = response_choices(payload)
             if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
@@ -230,6 +257,18 @@ class ModelSteps(BaselineEvidence):
             parsed = parser(content)
         except analysis.AnalysisRejected as exc:
             reason = str(exc)
+        feedback = None
+        if reason and content is not None and review is not None and allow_correction:
+            try:
+                feedback = review.feedback(content)
+            except analysis.AnalysisRejected:
+                pass
+        if reason and content is not None and review is not None and not feedback:
+            try:
+                parsed = review.partial(content)
+                prepared["validation_review"] = review.details
+            except analysis.AnalysisRejected:
+                pass
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running":
@@ -240,9 +279,39 @@ class ModelSteps(BaselineEvidence):
                 "captured_at": now.isoformat(), "request_id": recorded["request_id"], "usage": recorded}
             if adaptation is not None:
                 response["payload"]["output_adapter"] = adaptation
+            if review and review.details:
+                response["payload"]["validation_review"] = review.details
+            if feedback:
+                response["payload"]["correction_feedback"] = feedback
             response_id = await self.save(store, run, model_id, response, "model_response",
                 [reference("artifact", request_id, "execution_receipt")])
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
                 state="completed" if parsed else "failed", ended_at=now, output_artifact_id=response_id,
                 usage=recorded, error=error(reason, now) if reason else null()))
+        if feedback:
+            corrected = copy.deepcopy(prepared)
+            corrected["correction"] = {**feedback, "original_response_artifact_id": str(response_id)}
+            corrected["input_artifact_ids"] = [*prepared["input_artifact_ids"], str(response_id)]
+            corrected["messages"] += [{"role": "assistant", "content": content},
+                {"role": "user", "content": encoded(feedback).decode()}]
+            result = await self.call(tenant_id, case_id, run_id, stage_id, stage_code, corrected, gateway, parser,
+                output_format=output_format, response_adapter=response_adapter, wire_transform=wire_transform,
+                review=review, allow_correction=False)
+            prepared["correction_result"] = {"original_response_artifact_id": str(response_id),
+                "correction_response_artifact_id": str(result[3]) if result[3] else None,
+                "reason": result[1], "dispatched": result[2] is not None}
+            if corrected.get("validation_review"):
+                prepared["validation_review"] = corrected["validation_review"]
+            if result[0] is not None or corrected.get("validation_review"):
+                return result
+            # A skipped correction has no new model answer. Preserve useful
+            # parts of the first reply, and record the concrete skip reason.
+            try:
+                parsed = review.partial(content)
+                review.details["retained_response_artifact_id"] = str(response_id)
+                prepared["validation_review"] = review.details
+            except analysis.AnalysisRejected:
+                pass
+            if result[2] is not None:
+                return parsed, result[1], model_id, response_id
         return parsed, reason, model_id, response_id

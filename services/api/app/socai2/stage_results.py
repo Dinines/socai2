@@ -4,7 +4,6 @@ The producer must claim before executing and publish its validated output. This
 module does not manufacture query receipts or infer that an engine was called.
 Lock order: Alert/Incident -> Run. Incident reads never lock member Alerts.
 """
-from datetime import timedelta
 from uuid import UUID, uuid4, uuid5
 
 from sqlalchemy import func, insert, select, text, update
@@ -14,6 +13,7 @@ from app.models import socai2 as m
 from .baseline_contracts import Limits
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest, encoded
+from .runtime_policy import retention_limit
 from .stage_inputs import SOURCE_SQL, VERSION, incident_source_sql
 from .stage_result_contracts import (
     ALERT_EXECUTOR_VERSION,
@@ -24,11 +24,10 @@ from .stage_result_contracts import (
 
 A, I, R, F, D, AS = (x.__table__ for x in (m.Alerts, m.Incidents, m.Runs, m.Artifacts,
                                           m.IncidentDiagnoses, m.AlertAssessments))
-MAX_BYTES = 1048576
 
 
-async def source_input(store, kind, identity, *, validated_triage=False):
-    sql = incident_source_sql() if kind == "incident_diagnosis" and validated_triage else SOURCE_SQL
+async def source_input(store, kind, identity, *, validated_triage=False, with_queries=False):
+    sql = incident_source_sql(with_queries=with_queries) if kind == "incident_diagnosis" and validated_triage else SOURCE_SQL
     return (await store.db.execute(text(sql), {"tenant": store.tenant_id,
         "id": identity, "kind": kind, "version": VERSION})).scalar_one()
 
@@ -43,7 +42,7 @@ def parent(kind):
 
 async def artifact(store, run, identity, kind, value, now, refs, *, step_id=None, schema_version=VERSION):
     body = encoded(value)
-    if len(body) > MAX_BYTES:
+    if len(body) > retention_limit():
         raise StoreError("stage_artifact_too_large", 422)
     sha = digest(value)
     _, key = parent(run["kind"])
@@ -161,14 +160,17 @@ class StageResultService(BaselineService):
                 if old["request_hash"] != intent:
                     raise StoreError("operation_key_conflict")
                 return {"run_id": rid, "input_artifact_id": old["input_artifact_id"], "newly_claimed": False}
-            source = await source_input(store, kind, identity, validated_triage=producer == INCIDENT_EXECUTOR_VERSION)
+            from .runtime_policy import active_policy
+            with_queries = kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION and active_policy().incident_io is not None
+            source = await source_input(store, kind, identity, validated_triage=producer == INCIDENT_EXECUTOR_VERSION,
+                with_queries=with_queries)
             if not source["members"]:
                 raise StoreError("stage_members_required", 422)
             now, input_id = await store.now(), uuid4()
             if limits is None:
-                limits = Limits(max_model_calls=1, max_tool_calls=3 if kind == "alert_basic" else 0, max_tokens=24000,
-                    max_rows_per_query=200 if kind == "alert_basic" else 0, deadline_at=now + timedelta(seconds=120),
-                    policy_version="socai2.alert-basic-limits.v1" if kind == "alert_basic" else "socai2.incident-diagnosis-limits.v1")
+                from .runtime_policy import active_policy
+                policy = active_policy()
+                limits = getattr(policy, kind).limits(now, policy.identity)
             run = {"id": rid, "kind": kind, key: identity}
             await artifact(store, run, input_id, "input_snapshot", source, now, [])
             await store.db.execute(insert(R).values(**run, tenant_id=tenant_id,
@@ -194,11 +196,14 @@ class StageResultService(BaselineService):
         source = (await store.db.execute(select(F.c.content_json).where(*store.where(F, F.c.id == run["input_artifact_id"])))).scalar_one()
         return run, target, source
 
-    async def finish(self, tenant_id, run_id, output: AlertOutput | IncidentOutput, *, execution_step_id=None):
+    async def finish(self, tenant_id, run_id, output: AlertOutput | IncidentOutput, *, execution_step_id=None,
+                     validated_members=None, alert_delivery_state=None):
         payload = output.model_dump(mode="json")
         async with self.transaction(tenant_id) as store:
             run, target, source = await self.locked(store, run_id)
             is_alert = run["kind"] == "alert_basic"
+            if alert_delivery_state is not None and (not is_alert or alert_delivery_state not in {"complete", "partial"}):
+                raise StoreError("alert_delivery_state_invalid", 422)
             if is_alert != isinstance(output, AlertOutput):
                 raise StoreError("stage_output_kind_mismatch", 422)
             receipt_id = uuid5(run_id, "publication")
@@ -209,7 +214,7 @@ class StageResultService(BaselineService):
                 return old["content_json"]["outcome"]
             if run["state"] != "running":
                 raise StoreError("stage_run_not_running")
-            tool_refs = {}
+            tool_refs, query_receipts = {}, []
             steps = m.RunSteps.__table__
             if run["executor_version"] == ALERT_EXECUTOR_VERSION:
                 from .baseline_enrichment import citation_roles
@@ -218,12 +223,17 @@ class StageResultService(BaselineService):
                     & (steps.c.id == F.c.step_id) & (steps.c.output_artifact_id == F.c.id)).where(
                     *store.where(F, F.c.run_id == run_id, F.c.alert_id == run["alert_id"],
                         F.c.kind == "tool_response", F.c.schema_version == ALERT_EXECUTOR_VERSION),
-                    steps.c.kind == "tool", steps.c.state == "completed"))).mappings().all()
+                    steps.c.kind == "tool").order_by(steps.c.seq))).mappings().all()
                 for row in rows:
                     body = row["content_json"]
                     if row["material_state"] != "complete" or digest(body) != row["sha256"] or len(encoded(body)) != row["size_bytes"]:
                         raise StoreError("stage_query_receipt_invalid", 422)
-                    tool_refs[str(row["id"])] = citation_roles(body)
+                    query_receipts.append((row["id"], body))
+                    if body.get("state") == "completed":
+                        tool_refs[str(row["id"])] = citation_roles(body)
+            if not is_alert and "query_receipts_version" in source:
+                from .incident_query_receipts import reference_roles
+                tool_refs = reference_roles(source)
             validate_refs(payload, source, run["input_artifact_id"], tool_refs)
             if execution_step_id is not None:
                 step = await store.one(select(steps).where(*store.where(steps, steps.c.run_id == run_id,
@@ -234,7 +244,8 @@ class StageResultService(BaselineService):
                     raise StoreError("stage_execution_not_ready")
             table, key = parent(run["kind"])
             fresh = digest(await source_input(store, run["kind"], run[key],
-                validated_triage="triage_validation_version" in source)) == digest(source)
+                validated_triage="triage_validation_version" in source,
+                with_queries="query_receipts_version" in source)) == digest(source)
             pointer = "latest_triage_id" if is_alert else "latest_diagnosis_id"
             result_table = AS if is_alert else D
             newer = False
@@ -244,10 +255,14 @@ class StageResultService(BaselineService):
                 newer = bool(prior and prior["started_at"] > run["started_at"])
             now, result_id = await store.now(), uuid5(run_id, "assessment" if is_alert else "diagnosis")
             refs = payload["source_refs"]
+            from .program_facts import stage_facts
+            facts = stage_facts(source, run["input_artifact_id"], run["started_at"].isoformat(),
+                queries=query_receipts if run["executor_version"] == ALERT_EXECUTOR_VERSION else None)
             if is_alert:
                 explanation = {"schema_version": VERSION, "body": output.explanation,
                     "generation_method": output.generation_method, "generated_at": now.isoformat(),
-                    "source_refs": refs, "recommendations": payload["recommendations"], "limitations": output.limitations}
+                    "source_refs": refs, "recommendations": payload["recommendations"], "limitations": output.limitations,
+                    "program_facts": facts}
                 explain_id = uuid5(run_id, "explanation")
                 await artifact(store, run, explain_id, "alert_explanation", explanation, now, refs)
                 await store.db.execute(insert(AS).values(id=result_id, tenant_id=tenant_id, alert_id=run[key], kind="triage",
@@ -257,8 +272,11 @@ class StageResultService(BaselineService):
                     actor={"type": "service", "user_id": None, "name_snapshot": None, "service_name": run["executor_version"],
                         "service_version": VERSION}, assessed_at=now, operation_key=str(run_id)))
             else:
+                from .incident_delivery import assess
+                delivery = assess(source, output=payload, members=validated_members)
                 diagnosis = {"conclusion": output.conclusion, "validation_state": "accepted", "findings": payload["findings"],
-                             "source_refs": refs, "limitations": output.limitations}
+                             "source_refs": refs, "limitations": output.limitations, "program_facts": facts,
+                             "delivery_assessment": delivery}
                 await store.db.execute(update(D).where(*store.where(D, D.c.id == result_id)).values(state="completed",
                     summary=output.summary, diagnosis=diagnosis, open_questions=payload["open_questions"], generated_at=now))
             adopted = fresh and not newer
@@ -279,9 +297,9 @@ class StageResultService(BaselineService):
             outcome = {"result_id": str(result_id), "adopted": adopted,
                 "reason": "current" if adopted else "input_changed" if not fresh else "newer_result_exists"}
             await artifact(store, run, receipt_id, "source_snapshot", {"output_hash": digest(payload),
-                "output": payload, "outcome": outcome}, now, refs)
+                "output": payload, "outcome": outcome, **({"delivery_assessment": delivery} if not is_alert else {})}, now, refs)
             await store.db.execute(update(R).where(*store.where(R, R.c.id == run_id)).values(state="completed", ended_at=now,
-                stop_reason="stage_output_saved", delivery_state="partial", row_version=R.c.row_version + 1))
+                stop_reason="stage_output_saved", delivery_state=(alert_delivery_state or "partial") if is_alert else delivery["state"], row_version=R.c.row_version + 1))
             if execution_step_id is not None:
                 await store.db.execute(update(steps).where(*store.where(steps, steps.c.id == execution_step_id)).values(
                     state="completed", ended_at=now, output_artifact_id=receipt_id))
@@ -321,4 +339,5 @@ class StageResultService(BaselineService):
             _, key = parent(run["kind"])
             source = (await store.db.execute(select(F.c.content_json).where(*store.where(F, F.c.id == run["input_artifact_id"])))).scalar_one()
             return digest(source) == digest(await source_input(store, run["kind"], run[key],
-                validated_triage="triage_validation_version" in source))
+                validated_triage="triage_validation_version" in source,
+                with_queries="query_receipts_version" in source))

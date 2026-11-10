@@ -1,0 +1,150 @@
+{
+  "batch": "alert-prompt-validation-20261108-01",
+  "status": "not_passed",
+  "method": "Read every frozen input, original answer and referenced source; no answer rewritten.",
+  "quality_is_not_schema_validity": true,
+  "samples": [
+    {
+      "sample": "A1",
+      "verdict": "needs_review",
+      "confidence": null,
+      "title": "账号登录",
+      "note": "待复核。本次三项查询均完成且返回0行，原答此处正确；仍依据账号名称猜测用途、复写查询状态，第二条建议的N1_S22只是connector_type=validation，不能证明情报查询。",
+      "issues": [
+        {
+          "kind": "unsupported_hypothesis",
+          "quote": "暗示可能是自动化监控或演练资产",
+          "basis": "账号/主机名称不是业务属性证明；作为待核假设呈现但占据主要理由。"
+        },
+        {
+          "kind": "semantic_reference_mismatch",
+          "quote": "由于上游情报匹配为空且内部威胁情报库无命中",
+          "basis": "建议引用N1_S10是上游detection，N1_S22是connector_type=validation；均非本次查询回执。实际查空事实正确，但引用不支持该主张。"
+        }
+      ]
+    },
+    {
+      "sample": "A2",
+      "verdict": "needs_review",
+      "confidence": 0.85,
+      "title": "PowerShell 启动",
+      "note": "待复核。只说启动命令，未声称命令完成；理由中的“无威胁情报命中”未注明是上游标签，本次TI实际未查询，仍存在来源混淆。",
+      "issues": [
+        {
+          "kind": "ambiguous_source_attribution",
+          "quote": "无威胁情报命中",
+          "basis": "本次TI为not_queried；N1_S12确有上游no TI match，因此不能一概认定为虚构本次查空，但原答未明确来源，易被读作本次查询结论。"
+        }
+      ]
+    },
+    {
+      "sample": "A3",
+      "verdict": "needs_review",
+      "confidence": 0.85,
+      "title": "网络连接",
+      "note": "待复核，但把明确给出的TCP/443写成HTTPS，违反提示中的协议边界；仍按observer名称猜用途。查空表述符合本次资产/TI回执，但重复查询事实。",
+      "issues": [
+        {
+          "kind": "unsupported_protocol",
+          "quote": "发起 HTTPS 连接",
+          "basis": "N1_S5仅给目的端口443，N1_S6明确TCP；没有HTTPS/TLS观测。系统指令已明确端口443不证明HTTPS。"
+        },
+        {
+          "kind": "unsupported_hypothesis",
+          "quote": "名称中的'observer'暗示可能为监控工具",
+          "basis": "名称不能证明业务用途。"
+        }
+      ]
+    },
+    {
+      "sample": "S1",
+      "verdict": "benign",
+      "confidence": 0.95,
+      "title": "已批准的云运维",
+      "note": "良性，0.95。批准工单、MFA、企业出口与执行窗口支持主要判定；“最高权限”是额外解释，材料未给权限清单。",
+      "issues": [
+        {
+          "kind": "overstated_privilege",
+          "quote": "最高权限角色",
+          "basis": "原材料给出Break-glass标签和roleArn，没有具体权限策略；不得据此断言权限为最高。主要良性依据来自批准工单和窗口，不依赖该措辞。"
+        }
+      ]
+    },
+    {
+      "sample": "S2",
+      "verdict": "needs_review",
+      "confidence": null,
+      "title": "连续 MFA 请求",
+      "note": "待复核。把新增认证方法推断为用户主动响应安全提示，并称关键事实矛盾；材料只记录操作发生，还明确no registration flow open，不能证明本人意愿。",
+      "issues": [
+        {
+          "kind": "unsupported_actor_intent",
+          "quote": "这通常意味着用户主动响应了安全提示并完成了身份验证流程",
+          "basis": "新增方法与登录成功只描述系统记录，不能证明本人主动或授权；原文同时有no registration flow open。没有给出互相矛盾的观测事实。"
+        }
+      ]
+    },
+    {
+      "sample": "S3",
+      "verdict": "needs_review",
+      "confidence": null,
+      "title": "管理代理清点软件",
+      "note": "待复核。正确区分CrowdStrike上报与设备管理服务执行，未见主要行为字段改写；仍未形成确定性判定。原样例的良性/误报标注口径问题保留。",
+      "issues": []
+    },
+    {
+      "sample": "S4",
+      "verdict": "needs_review",
+      "confidence": null,
+      "title": "离职员工大量上传",
+      "note": "待复核。建议把目的分类uncategorised file sharing当成“目标域名”，导致核实对象不准确；原始材料没有具体目的域名。",
+      "issues": [
+        {
+          "kind": "field_meaning_mismatch",
+          "quote": "目标域名（uncategorised file sharing）",
+          "basis": "该值来自destinationCategory，含义是目的分类；材料没有提供具体destinationDomain。建议对象不应把分类当域名。"
+        }
+      ]
+    },
+    {
+      "sample": "S5",
+      "verdict": "needs_review",
+      "confidence": null,
+      "title": "凭证窃取邮件",
+      "note": "待复核。读对了演练登记=false，却用无证据的内部测试/新业务假设把恶意线索称为矛盾，判断仍过度依赖人工确认；待复核不计良恶方向误判。",
+      "issues": [
+        {
+          "kind": "unsupported_counter_hypothesis",
+          "quote": "关键证据存在矛盾",
+          "basis": "DMARC失败、新域名、9次凭证提交、1200收件人、演练登记false并不互相矛盾。内部测试/新业务是模型假设，材料未证明。待复核允许，但推理应说明真正缺口，不虚构矛盾。"
+        }
+      ]
+    },
+    {
+      "sample": "S6",
+      "verdict": "benign",
+      "confidence": 0.95,
+      "title": "客户表批量读取",
+      "note": "良性，0.95，但把180 prior runs改写为“历史180次成功运行”。原材料仅说明此前一小时无失败语句。样例活动时间与计划时间未对齐，不能计为确定判对。",
+      "issues": [
+        {
+          "kind": "expanded_success_scope",
+          "quote": "历史 180 次成功运行",
+          "basis": "N1_S5 schedule只说180 prior runs；precedingErrorRate只覆盖此前一小时，不能扩展到180次全部成功。"
+        },
+        {
+          "kind": "fixture_limitation",
+          "quote": "长期存在的正常报表加载任务",
+          "basis": "活动时间03:06UTC与nightly 02:10未对齐、计划时区未知；既有测试材料限制，未在本批修材料。"
+        }
+      ]
+    }
+  ],
+  "source_map_gap": "A1-A3的本次查询程序事实没有独立execution_receipt短编号；该输入/映射缺口继承原冻结包，既有标签编号不能代替回执。",
+  "abstention_rule": "needs_review允许，单列待复核；不是方向误判，也不是确定判对。",
+  "limits": [
+    "每样例仅一轮，未检验稳定性。",
+    "已有A样例无独立良恶真值；S3标签口径、S6时间计划限制未消除；不报告准确率。",
+    "未开展句子级消融，不能断言某一句提示导致错误。"
+  ]
+}

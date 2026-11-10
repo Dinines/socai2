@@ -10,10 +10,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import func, insert, null, select, update
 
 from . import baseline_evidence_tools as tools
-from .baseline_context import MAX_CONTEXT_BYTES, reference
+from .baseline_context import reference, retention_limit
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
-from .baseline_model_view import MAX_MODEL_BYTES, SYSTEM, blocked
+from .baseline_model_view import SYSTEM, blocked, draft_limit
 from .baseline_optional_sources import SourceUnavailable
 from .baseline_semantics import material_projection
 from .baseline_store import RM, F, StoreError, digest, encoded
@@ -48,7 +48,7 @@ class BaselineEvidence:
 
     async def artifact(self, store, run, payload, *, kind="source_snapshot", step=None, refs=None):
         identity = uuid4()
-        if len(encoded(payload)) > MAX_CONTEXT_BYTES:
+        if len(encoded(payload)) > retention_limit():
             raise StoreError("evidence_artifact_exceeds_retention_limit", 422)
         await store.save_input_artifact(run["case_id"], run["id"], identity, payload,
             kind=kind, schema=SCHEMA, captured_at=await store.now(), refs=refs or [],
@@ -207,9 +207,9 @@ class BaselineEvidence:
                 if truncated:
                     omitted.append("row_limit")
                 rows = rows[:args["limit"]]
-                if len(encoded(rows)) > MAX_CONTEXT_BYTES // 2:
+                if len(encoded(rows)) > retention_limit() // 2:
                     omitted.append("retained_row_bytes_limit")
-                while rows and len(encoded(rows)) > MAX_CONTEXT_BYTES // 2:
+                while rows and len(encoded(rows)) > retention_limit() // 2:
                     rows.pop()
                     truncated = True
                 state = "completed"
@@ -232,7 +232,7 @@ class BaselineEvidence:
                 if binding["tool_name"] == "product_host_details":
                     projected["source_role"] = "source_label"
                 # Semantic projections are independently bounded; preserve raw rows.
-                while projected["rows"] and len(encoded(projected)) > MAX_CONTEXT_BYTES:
+                while projected["rows"] and len(encoded(projected)) > retention_limit():
                     projected["rows"].pop()
                     projected["truncated"] = True
                     if "semantic_projection_bytes_limit" not in projected["omissions"]:
@@ -305,7 +305,7 @@ class BaselineEvidence:
                     "record_key": "R" + str(group_index + 1), **item}
                 if why is None:
                     data["items"].append(entry)
-                    if len(encoded(data)) > MAX_MODEL_BYTES - 256:
+                    if len(encoded(data)) > draft_limit() - 256:
                         data["items"].pop()
                         why = "model_view_budget_exhausted"
                 if why:
@@ -319,8 +319,8 @@ class BaselineEvidence:
                         data["coverage"][aid]["model_fields"] += 1
             messages = [{"role": "system", "content": SYSTEM + " 原始字段是来源报告的观察。related_alert_ids仅为查询绑定，不能当成该行属于全部告警；同一原始来源不重复计证。"},
                         {"role": "user", "content": encoded(data).decode()}]
-            why = "mandatory_scope_exceeds_model_budget" if len(encoded(data)) > MAX_MODEL_BYTES else None
-            if why is None and (len(encoded(messages)) > 12288 or any(blocked(m["content"]) for m in messages)):
+            why = "mandatory_scope_exceeds_model_budget" if len(encoded(data)) > draft_limit() else None
+            if why is None and (len(encoded(messages)) > draft_limit() or any(blocked(m["content"]) for m in messages)):
                 why = "projected_message_guard_blocked"
             value = {"schema_version": SCHEMA, "type": "model_view", "question_id": question_id,
                 "ready": why is None, "reason": why, "messages": messages if why is None else [],

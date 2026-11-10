@@ -3,6 +3,7 @@ import hashlib
 import json
 from urllib.parse import quote
 
+from processing_audit_delivery import incident_fields
 from processing_audit_detail import STEP_NAMES, STYLE, beijing, esc, fields, raw
 from processing_audit_flow import SOURCES, STATES, TOOLS
 from read_processing_audit_20261106 import check_credentials
@@ -63,6 +64,9 @@ def run_history(rows):
         parts.append(f'<h3>{esc(beijing(r.get("started_at") or r.get("requested_at")))} · {esc(state(r.get("state")))}</h3>')
         parts.append(fields([("执行 ID", r["id"]), ("交付状态", state(r.get("delivery_state"))),
                              ("停止原因", r.get("stop_reason"))]))
+        if r["kind"] == "incident_diagnosis":
+            result = next((d for d in rows.get("incident_diagnoses", []) if d["source_run_id"] == r["id"]), None)
+            parts.append(fields(incident_fields(result)))
         parts.append("<ol>")
         for step in steps:
             name = step.get("name") or step.get("stage_code")
@@ -106,6 +110,8 @@ def render_subject(record, kind, subject, rows, neighbors):
         facts = [("判断", current.get("verdict")), ("理由", current.get("rationale"))] if is_alert else [
             ("诊断摘要", current.get("summary"))]
         parts.append(fields([*facts, ("来源执行 ID", current.get("source_run_id"))]))
+        if not is_alert:
+            parts.append(fields(incident_fields(current)))
     else:
         parts.append("<p>此快照没有已发布的记录。</p>" if not current_id else
                      f"<p>已发布记录 {esc(current_id)} 的原件未包含在此快照中。</p>")

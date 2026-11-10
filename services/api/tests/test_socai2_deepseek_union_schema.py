@@ -27,6 +27,10 @@ class DeepSeekWireGateway:
     async def configure(self, *args):
         return await self.delegate.configure(*args)
 
+    async def measure(self, body, stage):
+        from socai2_test_model_view import synthetic_measure
+        return await synthetic_measure(body, stage)
+
     async def complete(self, body, timeout):
         self.requests.append(deepcopy(body))
         assert "messages" not in body and body["text"]["format"]["strict"] is True

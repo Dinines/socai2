@@ -1,0 +1,43 @@
+{
+  "evidence": "docs/operations/evidence/alert-io-comparison-20261108-01",
+  "local_site": "deliverables/investigation-validation-20261106/processing-audit",
+  "template": "docs/operations/alert_io_comparison_page.html",
+  "receipt": "docs/operations/evidence/alert-io-comparison-20261108-01/workbench-publication.json",
+  "variants": [
+    {"id":"current","title":"现版 · 八字段","description":"现有结构化输入，模型输出八个字段。"},
+    {"id":"input_only","title":"精简输入 · 八字段","description":"结构去重、原文保留，输出要求保持八字段。"},
+    {"id":"input_output","title":"精简输入 · 五字段","description":"只返回判定、置信度、理由、证据和建议。"}
+  ],
+  "samples": {
+    "A1":{"title":"账号登录","note":"三组均待复核。五字段理由新增按名称猜监控用途，并截短账号/主机名；建议中保留完整名称。"},
+    "A2":{"title":"PowerShell 启动","note":"三组均待复核。现版把历史匹配说成查空，精简组改善；TI 未查写查空仍存在。五字段组新增临时会话猜测，历史与本次查询措辞仍含混。"},
+    "A3":{"title":"网络连接","note":"三组均待复核。现版用评分说明、精简版用历史判断支持本次 TI 查询，来源问题并非精简才新增。五字段组待复核置信度提高到 0.85。"},
+    "S1":{"title":"已批准的云运维","note":"三组原始判定均良性。前两组主要依据混入标签来源，核心被拒收；五字段组通过引用角色校验。"},
+    "S2":{"title":"连续 MFA 请求","note":"三组均待复核。合成作者标签为恶意；待复核可接受，但不算已经正确识别恶意。"},
+    "S3":{"title":"管理代理清点软件","note":"五字段组从待复核改为良性。作者标签为误报，与当前分类定义需先对齐；零网络连接也不能证明从未尝试外传。"},
+    "S4":{"title":"离职员工大量上传","note":"三组均待复核。精简输入改善了将离职状态当授权的推断。作者标恶意，但本批没有获得确定恶意判断。"},
+    "S5":{"title":"凭证窃取邮件","note":"三组原始判定均恶意；前两组依据角色不合要求而拒收。五字段组通过校验，但未给核实建议。"},
+    "S6":{"title":"客户表批量读取","note":"三组均良性，但都把 180 次历史运行扩大成全部成功。生成时间 03:06 UTC 与原计划 02:10（时区未知）未对齐，不能据此认定本次符合计划。"}
+  },
+  "deployment": {
+    "ssh_binary": "ssh",
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "command_timeout_seconds": 90,
+    "remote_python": "python3",
+    "docker": "docker",
+    "container": "socai2-production-workbench",
+    "project": "socai2-production-workbench",
+    "service": "workbench",
+    "expected_image": "sha256:441867a4a44b746e9f9077c75fb90da61a83984514726a608d68223808be511f",
+    "expected_base_release": "/opt/sting-aisoc-socai2/releases/v1.2-20261108-r1",
+    "expected_compose": "/opt/sting-aisoc-socai2/private/release-v1.2-20261108-r1/workbench-after.json",
+    "release": "/opt/sting-aisoc-socai2/releases/workbench-comparison-20261108-01",
+    "private": "/opt/sting-aisoc-socai2/private/workbench-comparison-20261108-01",
+    "site": "/opt/sting-aisoc-socai2/data/production-workbench/site",
+    "source_mount": "/opt/workbench",
+    "site_owner": [10001,10001],
+    "base_url": "http://127.0.0.1:4177",
+    "source_files": ["docs/operations/processing_audit_index.py","docs/operations/update_processing_audit.py"]
+  }
+}

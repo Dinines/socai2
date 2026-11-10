@@ -125,7 +125,7 @@ def case_model_data(data, context, tool_payloads):
         sid = f"{prefix}S{index}"
         owned = source_members(context, item["source"], tool_payloads)
         source_map[sid] = {"ref": item["source"], "alert_ids": owned,
-            "visible_value_sha256": digest(item["value"])}
+            "visible_value_sha256": digest(item["value"]), "required": item.get("required", False)}
         visible.append({"id": sid, "role": item["source"]["role"], "alert_ids": owned,
             "value": item["value"], "limitations": item["limitations"]})
     return compact({**{k: v for k, v in data.items() if k not in {"items", "frozen_source_groups"}},

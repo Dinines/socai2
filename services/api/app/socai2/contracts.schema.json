@@ -1348,7 +1348,8 @@
             "accepted",
             "rejected",
             "system_only",
-            "legacy_unverified"
+            "legacy_unverified",
+            "partial"
           ]
         },
         "findings": {
@@ -1362,16 +1363,163 @@
           "items": {
             "type": "string"
           }
+        },
+        "program_facts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/program_facts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "partial_review_artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "delivery_assessment": {
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": "socai2.incident-delivery.v1",
+              "type": "string"
+            },
+            "state": {
+              "enum": [
+                "complete",
+                "partial",
+                "none"
+              ],
+              "type": "string"
+            },
+            "reasons": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "member_coverage": {
+              "additionalProperties": false,
+              "properties": {
+                "expected_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "analyzed_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "not_reviewed_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "missing_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "expected_ids",
+                "analyzed_ids",
+                "not_reviewed_ids",
+                "missing_ids"
+              ],
+              "type": "object"
+            },
+            "review_items": {
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "enum": [
+                    "required",
+                    "none_listed",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                "unresolved_member_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "unresolved_finding_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "open_question_ids": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "state",
+                "unresolved_member_ids",
+                "unresolved_finding_ids",
+                "open_question_ids"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "schema_version",
+            "state",
+            "reasons",
+            "member_coverage",
+            "review_items"
+          ],
+          "type": "object"
         }
       },
       "required": [
         "conclusion",
         "validation_state",
         "findings",
-        "source_refs",
         "limitations"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "validation_state": {
+                "const": "partial"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "partial_review_artifact_id"
+            ],
+            "properties": {
+              "conclusion": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "source_refs"
+            ],
+            "properties": {
+              "partial_review_artifact_id": false
+            }
+          }
+        }
+      ]
     },
     "case_impact": {
       "type": "object",
@@ -2030,6 +2178,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "focus_scope": {
+          "$ref": "#/$defs/scope"
         }
       },
       "required": [
@@ -2247,6 +2398,16 @@
         },
         "case_impact": {
           "$ref": "#/$defs/case_impact"
+        },
+        "program_facts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/program_facts"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -2502,6 +2663,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "program_facts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/program_facts"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -2828,6 +2999,126 @@
       ],
       "title": "EvidenceIndex",
       "type": "object"
+    },
+    "program_facts": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "members"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "socai2.program-facts.v1.2"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "execution_started_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "execution_time_source": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "snapshot_captured_at": {
+          "type": "string"
+        },
+        "time_rule": {
+          "type": "string"
+        },
+        "incident_severity": {
+          "type": "object"
+        },
+        "incident_source": {
+          "$ref": "#/$defs/evidence_ref"
+        },
+        "case_severity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "case_source": {
+          "$ref": "#/$defs/evidence_ref"
+        },
+        "incident_severities": {
+          "type": "object"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source",
+              "state",
+              "outcome",
+              "reason",
+              "returned_rows",
+              "truncated",
+              "statement",
+              "receipt"
+            ],
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "state": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "outcome": {
+                "enum": [
+                  "not_queried",
+                  "failed",
+                  "unknown",
+                  "empty",
+                  "data"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned_rows": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "truncated": {
+                "type": "boolean"
+              },
+              "statement": {
+                "type": "string"
+              },
+              "receipt": {
+                "$ref": "#/$defs/evidence_ref"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

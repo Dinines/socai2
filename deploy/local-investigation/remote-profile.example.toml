@@ -1,0 +1,75 @@
+version = 1
+name = "21-production-readonly"
+mode = "read_only"
+# All paths are relative to the repository, or absolute. No shell expansion.
+python = ".local/conda-envs/socai2/bin/python"
+secrets_file = ".local/remote-21/private/secrets.json"
+investigation_policy_file = "deploy/local-investigation/investigation-policy.toml"
+
+[database]
+driver = "postgresql+psycopg"
+name = "aisoc"
+user = "socai2_prod_reader"
+host = "192.168.1.21"
+hostaddr = "127.0.0.1"
+port = 25432
+sslmode = "verify-full"
+sslrootcert = ".local/remote-21/private/socai2-ca.crt"
+connect_timeout_seconds = 8
+statement_timeout_ms = 10000
+application_name = "socai2_mac_readonly"
+expected_tables = 29
+expected_columns = 462
+
+[ssh]
+binary = "/usr/bin/ssh"
+target = "sting-infra21"
+remote_host = "192.168.1.21"
+remote_port = 5432
+connect_timeout_seconds = 8
+server_alive_interval_seconds = 15
+server_alive_count_max = 2
+startup_timeout_seconds = 20
+poll_interval_seconds = 0.1
+shutdown_timeout_seconds = 10
+# Bootstrap reads only these existing files; it never installs/rotates credentials.
+database_password_file = "/opt/sting-aisoc-socai2/private/production-workbench/db-password"
+ca_file = "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt"
+
+[api]
+host = "127.0.0.1"
+port = 18022
+tenant_id = "00000000-0000-0000-0000-000000000001"
+# Local service identity, not an existing production user or a DB record.
+service_id = "374da63e-ff51-4a8e-b8e9-377b94818fb8"
+service_email = "local-readonly@localhost"
+service_role = "viewer"
+permissions = ["alerts:read", "cases:read"]
+request_timeout_seconds = 20
+
+[read_sources]
+# The reader installation grants these public lookup tables SELECT.
+# Application queries bind the authenticated tenant and project required columns.
+assets = "public.assets"
+owners = "public.users"
+
+[environment]
+ENVIRONMENT = "production"
+ENV = "production"
+DEBUG = "false"
+AISOC_DEV_AUTH_BYPASS = "false"
+SOCAI2_CASE_API_ENABLED = "true"
+SOCAI2_ANALYSIS_READ_ENABLED = "true"
+SOCAI2_PAGE_READ_ENABLED = "true"
+SOCAI2_STAGE_EXECUTION_ENABLED = "false"
+SOCAI2_SOURCE_UEBA_ENABLED = "false"
+SOCAI2_SOURCE_KNOWLEDGE_ENABLED = "false"
+SOCAI2_SOURCE_GRAPH_ENABLED = "false"
+SOCAI2_SOURCE_PRODUCT_HOST_ENABLED = "false"
+DATABASE_POOL_SIZE = "2"
+DATABASE_MAX_OVERFLOW = "0"
+DATABASE_POOL_RECYCLE_SECONDS = "300"
+PLUGIN_TRUST_MODE = "strict"
+AISOC_DISABLE_NEO4J = "true"
+AISOC_DISABLE_QDRANT = "true"
+AISOC_DISABLE_OPENSEARCH = "true"

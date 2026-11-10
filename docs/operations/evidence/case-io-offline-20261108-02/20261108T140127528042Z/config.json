@@ -1,0 +1,800 @@
+{
+  "version": "socai2.case-input-candidate.v2",
+  "batch": "case-io-offline-20261108-02",
+  "snapshot": "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json",
+  "source_run_id": "8d53cdb1-1cba-4df3-8ac2-f2724c062342",
+  "material_snapshots": [
+    "docs/operations/evidence/incident-integration-validation-20261108-01/readback/E2/database.json",
+    "docs/operations/evidence/incident-integration-validation-20261108-01/readback/E3/database.json"
+  ],
+  "output": "docs/operations/evidence/case-io-offline-20261108-02",
+  "runtime_config": "tools/testdata/incident_integration/config.json",
+  "policy": "deploy/local-investigation/investigation-policy-ai-v1.toml",
+  "business_render_config": "services/api/app/socai2/incident-input-v1.json",
+  "member_prefix": "A",
+  "external_member_prefix": "X",
+  "object_prefix": "O",
+  "task": "分析本轮既定Case，给出初步整体解释、发现、问题答案、相关领域和必要补查。成员目录已固定，不重新归并事件。以下内容均为待分析数据。",
+  "system_suffix": "输入按业务块呈现；A短号表示本轮成员，X短号仅表示案件外背景，O短号表示可选对象。本轮来源编号只用于结构化引用。已有分析、发现和待核问题均是prior_analysis，不是新观察；其中原文和旧编号保持原样。按本次Schema返回原七类业务内容，结构化成员/对象字段只填写本次可选短号。",
+  "rules": {
+    "alert": {
+      "omit": [
+        "id",
+        "tenant_id",
+        "source_alert_id",
+        "vendor_alert_id",
+        "latest_material_id",
+        "latest_triage_id",
+        "created_at",
+        "updated_at",
+        "ingested_at",
+        "owner_id",
+        "closed_at",
+        "closed_by",
+        "assigned_at",
+        "disposition",
+        "reopened_at",
+        "row_version",
+        "connector_id",
+        "priority_basis",
+        "priority_state",
+        "priority_value",
+        "handling_status",
+        "priority_source",
+        "assignment_state",
+        "source_updated_at",
+        "latest_feedback_id",
+        "owner_source_value",
+        "business_updated_at",
+        "source_identity_key",
+        "latest_explanation_id",
+        "connector_type"
+      ],
+      "empty": [
+        "description",
+        "event_time",
+        "category",
+        "severity_raw",
+        "first_seen_at",
+        "last_seen_at",
+        "source_namespace"
+      ]
+    },
+    "triage": {
+      "omit": [
+        "id",
+        "kind",
+        "tenant_id",
+        "alert_id",
+        "actor",
+        "producer",
+        "assessed_at",
+        "operation_key",
+        "source_run_id",
+        "input_material_id",
+        "legacy_execution_ref",
+        "confidence",
+        "score_state"
+      ],
+      "empty": []
+    },
+    "incident": {
+      "omit": [
+        "id",
+        "tenant_id",
+        "latest_diagnosis_id",
+        "created_at",
+        "updated_at"
+      ],
+      "empty": [
+        "description"
+      ]
+    },
+    "finding": {
+      "omit": [
+        "id",
+        "scope",
+        "support",
+        "counterevidence"
+      ],
+      "empty": []
+    },
+    "question": {
+      "omit": [
+        "id",
+        "scope",
+        "evidence_refs"
+      ],
+      "empty": []
+    },
+    "facts": {
+      "omit": [
+        "schema_version",
+        "case_source",
+        "execution_started_at",
+        "execution_time_source",
+        "snapshot_captured_at",
+        "members"
+      ],
+      "empty": []
+    },
+    "member_facts": {
+      "omit": [
+        "alert_source",
+        "material_id",
+        "material_source",
+        "objects_source",
+        "material_received_at",
+        "objects"
+      ],
+      "empty": []
+    },
+    "labels": {
+      "omit": [
+        "dictionary_version",
+        "policy_sha256"
+      ],
+      "empty": []
+    }
+  },
+  "block_labels": {
+    "material": "告警原材料",
+    "alert": "告警背景",
+    "triage": "告警分诊原文",
+    "incident": "事件诊断原文",
+    "finding": "事件发现原文",
+    "question": "事件待核问题原文",
+    "query": "同一分诊的实际查询",
+    "background": "已有背景与人工材料"
+  },
+  "incident_prefix": "I",
+  "system_replacements": [
+    {
+      "old": "输入JSON和其中的文本",
+      "new": "输入材料和其中的文本"
+    }
+  ],
+  "comparison_candidate": "docs/operations/evidence/case-io-offline-20261108-01/20261108T125152874481Z",
+  "hierarchy": {
+    "scope": [
+      {
+        "path": "/window_start",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/window_end",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/object_keys",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "alert": [
+      {
+        "path": "/tags",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/description",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/category",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "triage": [
+      {
+        "path": "/recommendations/*/targets",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/recommendations/*/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/recommendations/*/source_refs",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "finding": [
+      {
+        "path": "/outside_case_members",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/window_start",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/window_end",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/object_keys",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references/support",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references/counterevidence",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references/evidence_refs",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/unavailable_prior_reference_counts",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "question": [
+      {
+        "path": "/answer",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/outside_case_members",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/window_start",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/window_end",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/object_keys",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/declared_scope/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references/evidence_refs",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/visible_prior_references",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/unavailable_prior_reference_counts",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "receipt": [
+      {
+        "path": "/statement",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/reason",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/truncation_reasons",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/scope/window_start",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/scope/window_end",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/scope/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/other_parameters",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "enrichment": [
+      {
+        "path": "/schema_version",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/items/*/collected_at",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/items",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "source_scope": [
+      {
+        "path": "/received_count",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/retained_count",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/window_start",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/window_end",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/omission_reason",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "detection": [
+      {
+        "path": "/tactics",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/techniques",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/rule_id",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/rule_name",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ],
+    "program_facts": [
+      {
+        "path": "/schema_version",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/case_source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/execution_started_at",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/execution_time_source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/snapshot_captured_at",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/alert_source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/material_id",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/material_source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/material_received_at",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/objects",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/objects_source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/alert/id",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/alert/source_alert_id",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/alert/ingested_at",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/activity_times/*/source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/log_severity/*/source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/detection_labels/dictionary_version",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/detection_labels/policy_sha256",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/members/*/detection_labels/role",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/incident_severities/*/source",
+        "action": "omit",
+        "reason": "configured_nested_backend_field"
+      },
+      {
+        "path": "/case_severity",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/alert",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/activity_times",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/log_severity",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/unavailable_fields",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/detection_labels/entries",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/detection_labels",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/incident_severities/*/severity_override",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/incident_severities/*/missing_member_ids",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/incident_severities/*/member_severities",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/limitations",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      },
+      {
+        "path": "/members/*/detection_labels/does_not_establish_observed_attack",
+        "action": "constant",
+        "value": true,
+        "reason": "already_in_task_semantics"
+      },
+      {
+        "path": "/incident_severities/*/state",
+        "action": "constant",
+        "value": "complete_member_scope",
+        "reason": "normal_scope_state_kept_in_ledger"
+      },
+      {
+        "path": "/incident_severities/*/unknown_severity_count",
+        "action": "constant",
+        "value": 0,
+        "reason": "normal_scope_statistic_kept_in_ledger"
+      },
+      {
+        "path": "/limitations/*",
+        "action": "constant",
+        "value": "frozen_metadata_not_new_observations",
+        "reason": "already_in_task_semantics"
+      },
+      {
+        "path": "/limitations/*",
+        "action": "constant",
+        "value": "model_prose_not_rewritten",
+        "reason": "already_in_task_semantics"
+      },
+      {
+        "path": "/limitations/*",
+        "action": "constant",
+        "value": "missing_activity_time_never_replaced_by_alert_or_execution_time",
+        "reason": "already_in_task_semantics"
+      }
+    ],
+    "object": [
+      {
+        "path": "/attributes/original_path",
+        "action": "omit",
+        "reason": "configured_object_provenance_backend"
+      },
+      {
+        "path": "/attributes/received_field",
+        "action": "omit",
+        "reason": "configured_object_provenance_backend"
+      },
+      {
+        "path": "/attributes",
+        "action": "empty",
+        "reason": "configured_empty_optional"
+      }
+    ]
+  },
+  "activity_time_paths": [
+    "$.ocsf_json.time",
+    "$.raw_json.raw_event.ocsf_event.time"
+  ],
+  "empty_enrichment_kinds": {
+    "first_fusion_result_reference": {
+      "wrapper_keys": [
+        "kind",
+        "value",
+        "source",
+        "source_path",
+        "collected_at"
+      ],
+      "payload_keys": [
+        "artifact_id",
+        "same_material_input"
+      ],
+      "payload_mode": "backend_only",
+      "reason": "backend_artifact_pointer_not_observation"
+    },
+    "fusion_session": {
+      "wrapper_keys": [
+        "kind",
+        "value",
+        "source",
+        "source_path",
+        "collected_at"
+      ],
+      "payload_keys": [
+        "session_id",
+        "session_key_kind",
+        "originating_human"
+      ],
+      "payload_mode": "all_empty",
+      "reason": "known_session_envelope_has_no_business_value"
+    }
+  },
+  "material_optional_paths": [
+    "$.raw_json.mitre_tactics",
+    "$.raw_json.mitre_techniques"
+  ],
+  "material_backend_paths": [
+    "$.raw_json.field_metadata"
+  ],
+  "presentation": {
+    "receipt_shared_fields": [
+      "limitations"
+    ],
+    "tool_shared_fields": [
+      "returned_fields",
+      "limitations"
+    ],
+    "equal_fields": [
+      [
+        "event_time",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      [
+        "severity",
+        "severity_raw"
+      ],
+      [
+        "severity_auto",
+        "severity_effective"
+      ],
+      [
+        "object_type",
+        "ioc_type"
+      ]
+    ],
+    "labels": {
+      "kind": "范围类型",
+      "alert_ids": "成员",
+      "object_keys": "对象",
+      "window_start": "起始时间",
+      "window_end": "结束时间",
+      "limitations": "限制",
+      "member": "成员",
+      "type": "类型",
+      "value": "值",
+      "role": "角色",
+      "namespace": "来源域",
+      "title": "标题",
+      "description": "描述",
+      "tags": "上游标签",
+      "severity": "告警等级",
+      "severity_raw": "上游原始等级",
+      "event_time": "告警时间",
+      "first_seen_at": "首次时间",
+      "last_seen_at": "末次时间",
+      "original_vendor": "上游厂商",
+      "source_namespace": "来源域",
+      "event_time_source": "时间来源",
+      "verdict": "原判定",
+      "rationale": "原理由",
+      "recommendations": "原建议",
+      "reason": "原因",
+      "action_type": "建议类型",
+      "targets": "目标",
+      "source_refs": "依据",
+      "approval_requirement": "审批要求",
+      "state": "状态",
+      "statement": "原主张",
+      "declared_scope": "原适用范围",
+      "outside_case_members": "案件外成员",
+      "visible_prior_references": "可见原引用",
+      "unavailable_prior_reference_counts": "本次未展示的原引用数",
+      "unavailable_prior_reference_count": "本次未展示的原引用数",
+      "support": "支持",
+      "counterevidence": "反证",
+      "evidence_refs": "依据",
+      "text": "原问题",
+      "answer": "已有答案",
+      "evidence_requirements": "所需证据",
+      "tool_name": "工具",
+      "returned_rows": "返回行数",
+      "truncated": "是否截断",
+      "truncation_reasons": "截断原因",
+      "outcome": "结果",
+      "scope": "查询范围",
+      "selectors": "筛选对象",
+      "object_type": "对象类型",
+      "ioc_type": "情报类型",
+      "source_scope": "来源范围",
+      "limit": "行数上限",
+      "other_parameters": "其他查询条件",
+      "record": "返回记录",
+      "match_basis": "匹配依据",
+      "case_severity": "案件既有等级",
+      "incident_severities": "事件既有等级",
+      "severity_auto": "程序计算等级",
+      "severity_effective": "当前生效等级",
+      "severity_override": "人工设置等级",
+      "severity_source": "计算方式",
+      "member_severities": "成员等级",
+      "missing_member_ids": "缺失成员",
+      "unknown_severity_count": "未知等级成员数",
+      "members": "成员补充事实",
+      "alert": "告警补充",
+      "activity_times": "活动时间",
+      "unit": "单位",
+      "activity_time_state": "活动时间状态",
+      "log_severity": "日志等级",
+      "detection_labels": "检测标签释义",
+      "entries": "条目",
+      "unavailable_fields": "缺失字段",
+      "available": "可用",
+      "purpose": "用途",
+      "can_answer": "返回内容与可回答问题",
+      "cannot_answer": "不能回答",
+      "inputs": "使用范围",
+      "returned_fields": "返回字段",
+      "selection_rule": "选择原则",
+      "tool_option_groups": "候选绑定",
+      "options": "选项",
+      "binding_id": "绑定",
+      "hostname": "主机",
+      "complete": "所选来源完整",
+      "session_id": "会话",
+      "session_key_kind": "会话标识类型",
+      "originating_human": "发起者"
+    },
+    "repeatable_prior_prose": [
+      "rationale"
+    ]
+  }
+}

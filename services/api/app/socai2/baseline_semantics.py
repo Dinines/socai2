@@ -7,11 +7,12 @@ titles, raw text, a storage preview, or an unrelated sibling object.
 import ipaddress
 import json
 import re
+from datetime import datetime
 
-from .baseline_model_view import MAX_FIELD_BYTES, blocked
+from .baseline_model_view import blocked, field_limit
 from .baseline_store import digest, encoded
 
-VERSION = "socai2.event-semantics.v1"
+VERSION = "socai2.event-semantics.v2"
 EVENT_KINDS = {1007: "process_activity", 4001: "network_activity", 3002: "authentication_activity"}
 # OCSF process and actor.process describe different actors. Keep them distinct.
 PATHS = {
@@ -42,6 +43,8 @@ ACTIVITY_FIELDS = {name for name, paths in PATHS.items() if paths[0].startswith(
 # process/authentication observation or infer zero from an absent counter.
 TRAFFIC_PATHS = {"network_" + name: ("traffic." + name,) for name in
     ("bytes", "bytes_in", "bytes_out", "packets", "packets_in", "packets_out")}
+TIME_PATHS = {"activity_time": ("time",), "activity_start_time": ("start_time",),
+              "activity_end_time": ("end_time",)}
 LIMITATIONS = ["selected_source_fields_only_not_full_raw_review",
     "source_reports_are_not_independent_corroboration", "parent_or_session_fields_do_not_prove_causality"]
 
@@ -80,10 +83,18 @@ def scalar_reason(name, value):
         return "unsupported_field_type"
     if blocked(value):
         return "source_guard_blocked"
-    if len(encoded(value)) > MAX_FIELD_BYTES:
+    if len(encoded(value)) > field_limit():
         return "whole_field_exceeds_budget"
     if type(value) is str and not value.strip():
         return "empty_source_value"
+    if name in TIME_PATHS:
+        if type(value) is int:
+            return None if 0 <= value <= 253402300799999 else "invalid_activity_time"
+        try:
+            stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return None if stamp.tzinfo is not None else "activity_timezone_unknown"
+        except ValueError:
+            return "invalid_activity_time"
     if name in TRAFFIC_PATHS:
         if type(value) is not int or not 0 <= value <= 2**63 - 1:
             return "invalid_traffic_counter"
@@ -137,7 +148,7 @@ def project(value, *, root="$.ocsf_json"):
             "source_path": root + ".class_uid", "transform": "explicit_class_mapping", "conflict": False})
     else:
         result["omissions"].append({"source_path": root + ".class_uid", "reason": "event_kind_unknown"})
-    selected_paths = {**PATHS, **{name: paths for name, paths in TRAFFIC_PATHS.items()
+    selected_paths = {**PATHS, **{name: paths for name, paths in {**TRAFFIC_PATHS, **TIME_PATHS}.items()
         if any(at(obj, path) is not None for path in paths)}}
     if any(name in TRAFFIC_PATHS for name in selected_paths):
         result["limitations"].append(
@@ -159,6 +170,9 @@ def project(value, *, root="$.ocsf_json"):
             else:
                 result["fields"].append({"name": name, "value": original, "source_path": root + "." + path,
                     "transform": "identity", "conflict": conflict})
+                if name in TIME_PATHS:
+                    result["fields"][-1]["unit"] = ("iso8601_with_offset" if isinstance(original, str)
+                        else "unix_milliseconds" if type(raw_kind) is int else "unspecified_numeric_time")
     hashes = []
     if "hash_sha256" in obj:
         hashes.append(("hash_sha256", obj["hash_sha256"]))
@@ -187,6 +201,13 @@ def project(value, *, root="$.ocsf_json"):
     result["fields"].extend({"name": "hash_sha256", "value": original, "source_path": root + "." + path,
         "transform": "identity", "conflict": conflict} for path, original in valid)
     return result
+
+
+def model_value(field):
+    value = {field["name"]: field["value"]}
+    if "unit" in field:
+        value["unit"] = field["unit"]
+    return value
 
 
 def material_projection(material):

@@ -16,6 +16,7 @@ from app.socai2 import baseline_semantics as semantics
 from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.baseline_service import BaselineService
 from app.socai2.baseline_store import RM, A, C, F, R, StoreError
+from app.socai2.runtime_policy import draft_limit
 from jsonschema import Draft202012Validator, FormatChecker
 from socai2_test_model_view import model_data
 from sqlalchemy import insert, select, update
@@ -177,7 +178,7 @@ async def run_checks(engine, record, only=None):
         assert {**out, "reused": True} == repeated
         assert gateway.calls == 1
         view = await service.prepare_evidence_view(T, cid, rid, q)
-        assert view["ready"] and view["bytes"] <= 8192
+        assert view["ready"] and view["bytes"] <= draft_limit()
         content = model_data(view["messages"][1]["content"])
         assert any(i["name"] == "process_pid" and i["value"] == 4209 for i in content["items"])
         assert {s["ref"]["id"] for s in view["source_map"].values()} >= {
@@ -343,7 +344,7 @@ async def run_checks(engine, record, only=None):
         assert not {f["name"] for f in fields} & {"src_port", "dst_port", "source_ip", "dest_ip"}
         assert {"action", "session_id"} <= {f["name"] for f in fields}
         view = await service.prepare_evidence_view(T, cid, rid, q)
-        assert view["ready"] and view["bytes"] <= 8192 and view["omissions"]
+        assert view["ready"] and view["bytes"] <= draft_limit() and view["omissions"]
         async with service.transaction(T) as store:
             run = await store.run(cid, rid)
             members = (await store.db.execute(select(RM).where(RM.c.run_id == rid))).mappings().all()

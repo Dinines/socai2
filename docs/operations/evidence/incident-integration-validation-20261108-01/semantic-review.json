@@ -1,0 +1,88 @@
+{
+  "basis": "actual frozen inputs and unchanged original responses; not an accuracy benchmark",
+  "model_calls": 3,
+  "results": [
+    {
+      "key": "E1",
+      "issues": [
+        {
+          "type": "model_scope_error",
+          "finding": "三个单成员评述混入其他成员来源；A3评述网络却引用A1时间及A2进程名。事件级发现覆盖多成员仍可引用同一批来源，不能把两类范围规则混为一谈。",
+          "refs": [
+            "N1_S98",
+            "N1_S52",
+            "N1_S2",
+            "N1_S53",
+            "N1_S99",
+            "N1_S3",
+            "N1_S56"
+          ]
+        },
+        {
+          "type": "model_factual_error",
+          "finding": "声称账号即主机名且都包含flow-observer，实际账号flow-observer-20261108-01与主机socai2-flow-20261108-01不同。"
+        },
+        {
+          "type": "model_inference_overreach",
+          "finding": "根据synthetic标签及名称强推合成验证解释；进程启动表述为执行本地用户查询，仍有行为效果扩大。"
+        },
+        {
+          "type": "model_receipt_semantics",
+          "finding": "将没有基本查询回执与没有处置/阻断执行证明混淆；本轮并未执行查询或处置。"
+        }
+      ]
+    },
+    {
+      "key": "E2",
+      "issues": [
+        {
+          "type": "program_false_rejection",
+          "finding": "正文业务术语S3被旧式证据编号正则误认，三处触发prose_source_unbound；实际结构化引用使用N1_S编号且范围有效。",
+          "resolution": "仅在候选I配置namespaced_v1中按实际编号语法识别；不加S3特例，不改原答，旧模式不变。"
+        },
+        {
+          "type": "model_unsupported_risk",
+          "finding": "原始正文和ticketState明确为角色使用前14分钟已审批，模型仍以无查询回执为由猜测审批滞后、会话劫持和协同攻击；待核不等于这些推测有据。",
+          "refs": [
+            "N1_S17",
+            "N1_S21"
+          ]
+        },
+        {
+          "type": "model_receipt_semantics",
+          "finding": "查询回执不能代替授权记录；有无本次基本查询不决定原始审批陈述是否存在。"
+        }
+      ],
+      "preserved_facts": [
+        "38/38存储桶和142秒原文保持",
+        "MFA=true、工单和审批先后原文保持",
+        "缺活动时间如实保留为未知，没有使用入库时间替代"
+      ],
+      "offline_after_fix": "同一请求文本、来源映射及原答通过解析，投影为complete/required；没有重跑、采用或改写原失败Run。"
+    },
+    {
+      "key": "E3",
+      "issues": [
+        {
+          "type": "model_scope_error",
+          "finding": "无材料A1的成员评述引用A2材料；发现和问题声明A1/A2但只给A2来源，未覆盖声明范围。"
+        },
+        {
+          "type": "model_receipt_semantics",
+          "finding": "A2已有原始邮件正文和结构字段，却因没有查询回执质疑原始日志是否存在或数据真实性；基本查询不是所有观察成立的前置。"
+        }
+      ],
+      "preserved_facts": [
+        "另一成员材料缺失如实呈现",
+        "9次凭证提交及campaignRecordedInTrainingSchedule=false保留",
+        "缺活动时间如实保留"
+      ]
+    }
+  ],
+  "limitations": [
+    "本轮非同样例旧版/新版对照，不能把新暴露的错误归因为输入精简。",
+    "无独立事件整体真值，不报准确率或良恶反向误判率。",
+    "结构校验通过不证明正文为真；未知不强行改为良性或恶意。",
+    "用户此前允许领域引用相关跨成员发现；本轮成员归属校验属于另一约束，未擅自放宽。"
+  ]
+}

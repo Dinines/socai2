@@ -767,6 +767,8 @@ class Settings(BaseSettings):
     AISOC_DISABLE_KAFKA: bool = False
     AISOC_DISABLE_CLICKHOUSE: bool = False
     AISOC_DISABLE_NEO4J: bool = False
+    # Managed deployments apply approved migrations separately from service restarts.
+    AISOC_STARTUP_SCHEMA_MIGRATIONS: bool = True
     AISOC_DISABLE_QDRANT: bool = False
     # AISOC_DISABLE_OPENSEARCH is deliberately absent. It sat here with zero
     # readers while three deploy configs set it and the env-var reference

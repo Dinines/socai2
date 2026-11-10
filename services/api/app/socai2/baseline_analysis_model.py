@@ -16,8 +16,6 @@ from .model_protocol import (
     complete_deepseek,
 )
 
-MAX_OUTPUT_TOKENS = 3000  # same output ceiling as the existing Case path
-
 
 class TenantChatGateway:
     provider = "chat_completions"
@@ -40,6 +38,8 @@ class TenantChatGateway:
         return bool(self.config.allowed and self.config.api_key)
 
     async def complete(self, body, timeout):
+        from .runtime_policy import active_policy
+        timeout = min(timeout, active_policy().single_model_timeout_seconds)
         if timeout <= 0:
             raise TimeoutError("baseline_analysis_deadline_elapsed")
         try:
@@ -53,6 +53,15 @@ class TenantChatGateway:
                 **({"temperature": body["temperature"]} if "temperature" in body else {}))
         except httpx.HTTPError as exc:
             raise ModelCallError(provider_error(exc, self.config.api_key)) from None
+
+    async def measure(self, body, stage):
+        from .baseline_store import StoreError
+        from .runtime_policy import active_policy
+        from .token_budget import BackendTokenMeter
+        policy = active_policy().model
+        if (self.provider, self.schema_profile) != (policy.protocol, policy.schema_profile):
+            raise StoreError("token_meter_protocol_profile_mismatch", 422)
+        return await BackendTokenMeter(policy).measure(body, stage)
 
 
 def usage(payload):

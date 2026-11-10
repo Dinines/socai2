@@ -66,6 +66,7 @@ class StageEntry(Contract):
     valid_for_current_input: bool
     result: TriageView | DiagnosisView | None
     explanation: ExplanationView | None
+    partial_analysis: ExplanationView | None = None
 
 
 class StagePage(Contract):

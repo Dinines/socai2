@@ -1,0 +1,74 @@
+{
+  "batch": "current-release-20261110-01",
+  "recorded_at": "2026-11-10T07:27:12.409156+00:00",
+  "reviewer": "/root/current_release_audit",
+  "independent_of_implementation": true,
+  "decision": "ACCEPT",
+  "remaining_must_fix": [],
+  "scope": "Current release deployment evidence, Case/H GET read gate, API read-only privilege verification, A/I/Case runtime policy verification, saved production database/GET mappings and current frontend/backend handoff documents.",
+  "direct_test_run": {
+    "command": "PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m pytest -q services/api/tests/test_socai2_case_read_gate.py deploy/aisoc21/test_release_12.py",
+    "cwd": "/Users/lychee/Documents/project/socai2",
+    "exit_code": 0,
+    "passed": 21,
+    "output": ".....................                                                    [100%]\n21 passed in 0.52s\n",
+    "note": "Actual command was executed during independent review; evidence serialization did not rerun it."
+  },
+  "evidence_review": {
+    "release": "v1.2-20261110-r2",
+    "activation_receipt": "docs/operations/evidence/current-release-20261110-01/unified-activate-20261110T070702690795Z.json",
+    "production_readback": "docs/operations/evidence/current-release-20261110-01/readback-03/summary.json",
+    "http_gets": 299,
+    "http_200": 291,
+    "expected_http_404": 8,
+    "original_readback_checks": 13098,
+    "catalog_before_after_equal": true,
+    "tables": 29,
+    "columns": 462,
+    "additional_offline_activities": "docs/operations/evidence/current-release-20261110-01/independent-activities.json",
+    "additional_activity_checks": 171
+  },
+  "findings_resolved_and_rechecked": [
+    {
+      "file": "docs/investigation/socai2-page-data-handoff-20261106.md",
+      "finding": "Artifact read size was documented as 131072 bytes, inconsistent with the deployed 1048576-byte policy.",
+      "resolution": "Document now uses model.max_artifact_bytes and the current 1048576-byte value."
+    },
+    {
+      "file": "FRONTEND_BACKEND_HANDOFF.md",
+      "finding": "Abbreviated A/I Run, Case Run/Result and task revision paths could be read as root-relative endpoints.",
+      "resolution": "Subject-qualified paths and explicit suffix handling now match the routes."
+    },
+    {
+      "file": "docs/design/socai2-field-dictionary-20261103.md",
+      "finding": "Execution summary still described 48000 / 4 model calls / 120 seconds and stated that current business writes had not switched.",
+      "resolution": "Limits now refer to the frozen Run and current policy; the description distinguishes active processing jobs from the disabled production Case HTTP write gate."
+    }
+  ],
+  "reviewed_file_sha256": {
+    "services/api/app/api/v1/endpoints/socai2_cases.py": "4f1a91023e3f2b7336d67d6e352e2482de0300b529451c062e22b9ebc752bf49",
+    "services/api/app/api/v1/endpoints/socai2_tasks.py": "2b473a40cf112418d957ccf1671eb0e7b5d6ace6d22f84de5ef9acb7f92797d5",
+    "services/api/app/socai2/case_reader.py": "9239c29ab68154959cf51c3064a36f53c4f2a1ec91f4ce94dd33f73a31bfbbb8",
+    "services/api/app/socai2/stage_reader.py": "02b7a33e4a4559f578fe43cdc60445587ad7e5fe602cd9f832d3bd0d026c95d1",
+    "services/api/app/socai2/stage_read_contracts.py": "02fec7c20d2868fa400d9723f2574eee20848934b48b6c7a7189e2ed46b34150",
+    "deploy/database/verify_aisoc21_processing_access.sql": "cc8a91bb0d172863d4d0b4fc9558178f861fbcabc96b760e73113b21bc169fc8",
+    "deploy/aisoc21/release_12.py": "075f5250083013bcfadf61fd3590ecc71b92bb00c37c493f046e0c1df0b9f3cd",
+    "deploy/aisoc21/release-v1.2.json": "1c97e12b723740aba56c3bfa1bcbc8a84da3cd2434d6ddadbd7bdc607de57f26",
+    "deploy/local-investigation/investigation-policy-case-v1.toml": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+    "docs/operations/verify_current_release.py": "01321459e40f846e7cefc04ece46b234673f00433ea2646b7b84a8f83d845c7c",
+    "FRONTEND_BACKEND_HANDOFF.md": "4c777c1ac56fa095bf7fa7fc9960893288d94e9e291a25fa27fe6a8d88dcdb29",
+    "docs/investigation/socai2-page-data-handoff-20261106.md": "3a23c006084c73f4805a43838e93e8ab8e7fa6924d1102553eddbb101fc95af6",
+    "docs/design/socai2-field-dictionary-20261103.md": "b3cfb7200fe7469afa8df73fdf4419cebc850f76dd9f0d1e7cf126b1beea0909",
+    "docs/investigation/current-issues.md": "7e1286eff3a74b5364ab92013542dfaaf3e9ca4228a1e27ce3ae980ce71ca6e7"
+  },
+  "not_verified": [
+    "No new SSH or live deployment execution by the reviewer",
+    "No new real model or browser acceptance",
+    "No overall model quality acceptance",
+    "No full H-to-next-C investigation acceptance",
+    "No acceptance of unresolved UI, knowledge consumption or automatic consumer items",
+    "Git and parent project publication remain the primary agent's subsequent actions"
+  ],
+  "business_files_modified_by_reviewer": false,
+  "audit_evidence_writes_authorized_by_parent": true
+}

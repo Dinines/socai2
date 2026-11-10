@@ -1,15 +1,17 @@
-# 调查处理模块与业务后端数据交接 V1
+# 调查处理模块与业务后端数据交接
 
 告警页以告警为主体，事件页以事件及其当前成员为主体，调查页要同时显示 Case、某次执行（Run）、正式结果（Result）和当前采用的判断。四者通过各自的 ID 关联。一次模型调用失败时，后端仍可交付已经保存的告警原件、事件诊断、执行回执和系统待核说明。
 
-适用范围为 PostgreSQL 16 的 `socai2` 命名空间，V1 共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。表设计调整须按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)登记并取得负责人明确人工确认。
+适用范围为 PostgreSQL 16 的 `socai2` 命名空间，共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。表设计调整须按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)登记并取得负责人明确人工确认。
+
+**当前正式库核验：** 2026-11-10 在 21 的 `aisoc.socai2` 完成两案 299 次 GET、13,098 项字段／正文／关联核对。291 次正常返回，8 次错误父归属按预期返回 404；29 表快照及结构指纹保持。Case/H GET、资产与用户关联、两项只读函数均可按已授权身份读取。[实际证据](../operations/evidence/current-release-20261110-01/readback-03/summary.json)
 
 ## 来源边界
 
 | 环节 | 负责什么 | 交接边界 |
 | --- | --- | --- |
 | 采集与 Fusion | 提供告警来源标识、原始材料、事件引用、对象与归并依据，保存告警及事件成员 | `source_event_id` 是来源命名空间内的标识，可能缺失或尚无湖记录。后端沿已保存的关系取数；不得用相似标题、主机或时间自行认定成员。 |
-| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 21 的 `processing-20261106-r3` 是按需作业，数据库为 `socai2_processing_handoff`；作业没有对外 HTTP 监听。三案来自受控合成输入，按实际主体执行，生产消费与页面服务需分别配置。[部署说明](../../deliverables/investigation-validation-20261106/processing-deployment.md) |
+| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 21 的 `processing-20261110-r2` 是按需作业，数据库为 `aisoc.socai2`；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。[部署说明](../../deploy/aisoc21/README.md) |
 | 业务后端 | 从已认证用户确定租户与读取权限，调用读取服务或使用授权的只读 PG 连接，组装列表、详情、关联入口与空态 | 同一响应尽量使用同一只读快照。`GET` 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。 |
 | 页面 | 按后端返回的字段、状态、计数与实体 ID 展示，按主体与版本打开详情 | 业务状态、模型判定、执行状态、交付完整性分别展示。模型响应中的建议、事实主张与外部实际行动分别标明来源。 |
 
@@ -52,13 +54,14 @@
 
 ## 查询形状与分页
 
-路径均相对于 `/api/v1/socai2`。告警、事件和 A/I 分析读取要求 `alerts:read`，其中 `records/cases` 还要求 `cases:read`；Case 与 H 读取要求 `cases:read`。A/I 执行与 Case 命令分别要求 `alerts:write`、`cases:write`。21 的三页核验通过处理环境里的读取服务执行，部署方另行提供 HTTP 站点地址、读身份和网络权限。[完整路径及参数](../design/socai2-independent-api-v2.openapi.json)
+路径均相对于 `/api/v1/socai2`。告警、事件和 A/I 分析读取要求 `alerts:read`，其中 `records/cases` 还要求 `cases:read`；Case 与 H 读取要求 `cases:read`。A/I 执行与 Case 命令分别要求 `alerts:write`、`cases:write`。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，Case HTTP 写入口关闭。前端写按钮须按实际开放状态处理。[完整路径及参数](../design/socai2-independent-api-v2.openapi.json)
 
 | 读取内容 | 路径 | 分页和返回边界 |
 | --- | --- | --- |
 | 告警、事件列表与详情 | `/alerts`、`/incidents`、相应 `/{id}` | 列表默认 20、上限 50。`next_before_id` 原样作为 `before_id`，告警按 `(ingested_at,id)`、事件按 `(created_at,id)` 倒序；读 `items, total, overall_stats, observed_at`。 |
-| 成员、对象、出处与记录 | `/{subject}/{id}/records/{section}`；告警正文 `/alerts/{id}/materials/{material_id}` | 依据详情返回的 `section_urls` 打开。记录默认 50、上限 200，按 `next_offset` 继续。正文单独读 `availability`；告警原件读出超过 131072 字节时保留元数据及不可展开原因。 |
+| 成员、对象、出处与记录 | `/{subject}/{id}/records/{section}`；告警正文 `/alerts/{id}/materials/{material_id}` | 依据详情返回的 `section_urls` 打开。记录默认 50、上限 200，按 `next_offset` 继续。正文单独读 `availability`；正文上限读取策略 `model.max_artifact_bytes`，当前为 1,048,576 字节；超过时保留元数据及不可展开原因。 |
 | A/I 分析与追踪 | `/alerts/{id}/analysis` 或 `/incidents/{id}/analysis`。在分析路径后接 `/runs/{run_id}` 取一次执行，再在该执行路径后接 `/trace` 或 `/artifacts/{artifact_id}` | 分析列表默认 20、上限 50，按 `(requested_at,id)` 倒序，`next_before_run_id` 回传为 `before_run_id`。追踪区分步骤总数、工件总数和截断标志。 |
+| 来源工件与活动 | `/alerts/{id}/artifacts/{artifact_id}`、`/incidents/{id}/artifacts/{artifact_id}`、`/cases/{id}/artifacts/{artifact_id}`；`/cases/{id}/activities` | 来源工件按真实归属读取；Case 活动包含本案、成员及显式事件目标，按活动去重并返回前后值。 |
 | Case 队列与资料 | `/cases`、`/cases/{id}`、`/cases/{id}/page-data` | 队列默认 20、上限 50，按 `(business_updated_at,id)` 倒序。`next_cursor` 原样用于同租户、同筛选条件的下一页；筛选后的 `total` 和全租户队列 `metrics` 分开。 |
 | 案件历史、Run、Result | `/cases/{id}/history`、`/cases/{id}/runs/{run_id}`、`/cases/{id}/results/{result_id}` | 历史默认 20、上限 100，回传 `next_cursor`。来源为本案基础 Run 和明确保存的 `ai_saved` 结果。要展示相关 A/I 尝试，另按成员告警、关联事件读取，再按 Run UUID 去重。 |
 | 资料与任务明细 | `/cases/{id}/runs/{run_id}/artifacts/{artifact_id}`、`/materials/{material_id}`（同一 Run 路径下）；`/cases/{id}/tasks` | Case Run 明细至多返回 200 个成员、1000 条步骤、200 个工件及 200 个结果 ID，各集合查看自己的总数与截断字段。任务/版本列表默认 20、上限 100，使用 offset。 |
@@ -67,12 +70,12 @@
 
 ## 只读联查示例
 
-下列 SQL 可在 **psql** 的同一连接顺序执行。`tenant_id`、`case_id`、`run_id` 分别为授权租户、案件和选中调查轮次的 UUID。示例选择 m01，对应结果列在下一节。业务后端应从认证上下文设置租户，并在事务结束后释放事务级配置。
+下列 SQL 可在 **psql** 的同一连接顺序执行。`tenant_id`、`case_id`、`run_id` 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。业务后端应从认证上下文设置租户，并在事务结束后释放事务级配置。
 
 ```sql
-\set tenant_id '6aff0ef7-c670-5a84-a2ee-83d73e25b964'
-\set case_id 'aa27a48f-10b7-53c8-bc80-d9ea022bcad3'
-\set run_id '0e85ecb5-db82-4dc4-8561-da5fce18c744'
+\set tenant_id '00000000-0000-0000-0000-000000000001'
+\set case_id '2b37f5b3-862b-52cc-84bd-86db50dd3ad4'
+\set run_id '8d53cdb1-1cba-4df3-8ac2-f2724c062342'
 BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
 SELECT set_config('app.current_tenant_id', :'tenant_id', true);
 
@@ -120,22 +123,17 @@ ORDER BY s.seq;
 ROLLBACK;
 ```
 
-在 m01 的基础调查中，第 9 步为材料整理，第 10、11 步为 C3 父步骤和模型尝试，第 12 步为 C6 系统收尾。展开输入、输出时按工件 ID 限定同租户同 Run，并补读该步下 `artifacts.step_id=run_steps.id` 的其他工件。展开 `reused_artifact_id` 时单独按租户、案件、工件 ID 核对所属关系，保留其实际来源 Run。写在 Run 上且 `step_id=NULL` 的材料单列。进一步核对当前判断来源与证据目录可使用[Case 资料与证据目录 SQL](socai2-page-data-readback-20261106.sql)。
+步骤顺序以该 Run 实际 `seq/stage_code` 为准。展开输入、输出时按工件 ID 限定同租户同 Run，并补读该步下 `artifacts.step_id=run_steps.id` 的其他工件。展开 `reused_artifact_id` 时单独按租户、案件、工件 ID 核对所属关系，保留其实际来源 Run。写在 Run 上且 `step_id=NULL` 的材料单列。进一步核对当前判断来源与证据目录可使用[Case 资料与证据目录 SQL](socai2-page-data-readback-20261106.sql)。
 
 ## 保存的样例与验证
 
-21 处理交接库的合成批次 `ie-audit-20261106-a1` 共 4 条告警、3 个事件、3 个 Case、10 个 Run、62 条步骤和 130 份工件。2026-11-06 15:36（北京时间）再次对同一租户做只读快照，三个案例范围内的 29 张表逐表与留存原件一致。另有 53 项页面读取与原件对照。[三案逐阶段审计](../../deliverables/investigation-validation-20261106/processing-functional-audit.md) · [核对记录](../operations/evidence/ie-audit-20261106-a1/page-cross-check.json)
-
-| 接手时可复查的场景 | 期望读数 |
+| 正式库 Case | 本次取数核验 |
 | --- | --- |
-| m01 · Web 证书替换；上节 SQL | 告警 `75827d24-8392-5797-84bf-31e9783ef223` 有材料 `52f5b089-8965-5a85-946b-d2a433203698`，分诊指针为空。事件 `b908e5ac-74b8-584c-9d53-35f70b1189fd` 有 1 个成员，诊断 `b277b121-8637-54fc-b73b-141f7cb703a7`。Case 的基础 Run `0e85ecb5-db82-4dc4-8561-da5fce18c744` 为 `unknown/none`；开始于 14:23:49，结束时刻为空，正式 Result 为 0，Case 当前判断为 `system/system_only`。C6 的系统收尾工件已经保存。 |
-| s02 · 登录审计设置与安全日志 | Case `4f74d23e-d277-561a-bcab-d60ce11a60cd` 关联 1 个事件和 2 条告警，二者各自的已发布 A 分诊均为 `needs_review`，可从各自的 `source_run_id` 查原答。基础调查的系统说明可与事件诊断同时展示。 |
-| 独立证据计数（隔离合同样例） | Case `80b07fe5-3493-4b4d-80e5-032e190b2ccd` 有 2 条证据、1 个威胁；`7dfdf1ed-1bfa-45f8-b8b5-a8b6c01b143c` 为 2/0；`a8f6bca9-fa1f-44ed-b14f-456dfc5a3d20` 为 null/null。此组专用于数据合同，无模型调用。[样例回执](../operations/evidence/page-data-20261106/summary.json) |
-| 已有事件、建案未发生（独立四案包 02） | 导出计划有候选 Case UUID；`database.json.cases=[]`。告警、事件及已有 A/I 尝试照常返回，Case、基础 Run、正式结果按实际记录展示。[四案字段与原件位置](../../deliverables/investigation-validation-20261106/page-field-samples.md) |
+| `2b37f5b3-862b-52cc-84bd-86db50dd3ad4` | 3 告警、1 事件、5 Run；基础 Run `8d53cdb1-1cba-4df3-8ac2-f2724c062342` 为 completed/partial。160 GET，7,128 检查；模型来源结果的保存与读取通过，正文质量未通过 |
+| `5942734d-1bea-5c0b-97fe-0d9ccde01858` | 3 告警、1 事件、5 Run；基础 Run `4c870247-444c-4083-b511-db9791c32a17` 为 failed/partial。139 GET，5,970 检查；系统收尾、错误和已有上游结果可读 |
 
-## 后续对接顺序
+两案均核对读取前后快照一致。材料原件、相关告警、活动、Run／Result、证据与判断按实际数据库逐字段比较。[逐请求及数据库原件](../operations/evidence/current-release-20261110-01/readback-03/summary.json)
 
-1. **接入只读数据。** 确认连接到目标库、使用受限读取身份，按已授权租户跑两组不同样例。每页至少核对一条有值记录、一条与之关联的子表记录和一种空态。
-2. **校验三页与运行明细。** 同时比对列表、详情、关联跳转和导出中的 ID；按游标读下一页。用 m01 验证执行失败仍有材料和系统说明，用 s02 验证同事件下的两条告警各有自己的分诊与来源。
-3. **按命令接写操作。** Case `PATCH /page-data` 同时提交可空的 `classification`、`due_at`、`operation_key`、`expected_row_version`、`source`、`source_note`。发布证据目录时校验同案来源、目录修订关系、当前工件指针与成员范围；详情打开不得隐式启动调查。H 任务版本、成员关联、手动启动分别走相应服务命令。保留幂等与过期版本冲突。Q 问答、保存问答结果及显式采用三个预留接口当前返回 501。
-4. **签收范围。** 可签收三页的数据保存、版本与只读取数。21 三案 C3 超时，成功的最终模型推断、受控处置执行、附件上传、协作表单及全局独立调查列表服务仍需各自验收。模型或工具的实现调整若不改变字段与取值语义，页面可以继续依此合同开发。
+事件交付读取 `diagnosis.delivery_assessment` 的原因、成员覆盖和 `review_items`。该 JSON 块可缺失，缺失不推断为完整或无需待核；执行状态、交付、待复核、采用和质量分别显示。[状态及空态](../../FRONTEND_BACKEND_HANDOFF.md#5-状态交付和空态)
+
+补充有值／空值样例见[字段样本](../../deliverables/investigation-validation-20261106/page-field-samples.md)，未开放业务和原页面显示差异见[问题清单](current-issues.md)。固定导出只代表采样时点，不修改其失败或 unknown 结果。

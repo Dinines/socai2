@@ -12,14 +12,14 @@ from . import baseline_evidence as evidence
 from . import baseline_graph_projection as graph_contract
 from .baseline_analysis import domain_block
 from .baseline_analysis_model import TenantChatGateway
-from .baseline_context import MAX_CONTEXT_BYTES, reference
+from .baseline_context import reference, retention_limit
 from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Scope
 from .baseline_delivery_compat import normalize as normalize_delivery
 from .baseline_delivery_projection import make_publication, markdown
 from .baseline_enrichment import S, error
 from .baseline_followup_projection import delivery_followups
 from .baseline_graph import BaselineGraph
-from .baseline_model_view import MAX_FIELD_BYTES, blocked
+from .baseline_model_view import blocked, field_limit
 from .baseline_reanalysis import BaselineReanalysis
 from .baseline_reasoning import ModelSteps
 from .baseline_store import RES, RM, F, StoreError, digest, encoded
@@ -75,7 +75,7 @@ class BaselineDelivery(ModelSteps):
         value = {k: prior[k] for k in ("conclusion", "conclusion_state", "conclusion_origin", "validation_state", "delivery_state")}
         value["comparison_result_id"] = rid
         if (prior["validation_state"] != "accepted" or prior["conclusion_state"] == "unavailable"
-                or not prior["conclusion"] or not (current & old) or blocked(value) or len(encoded(value)) > MAX_FIELD_BYTES):
+                or not prior["conclusion"] or not (current & old) or blocked(value) or len(encoded(value)) > field_limit()):
             meta["limitations"].append("prior_conclusion_not_valid_visible_or_overlapping")
             return meta, []
         meta["state"] = "eligible"
@@ -133,17 +133,26 @@ class BaselineDelivery(ModelSteps):
                        if previous is None else {}),
                     "followup_execution": execution}, lead_candidates=[*lead, *planned],
                 executed_plan_id=dispatch["initial_analysis_artifact_id"] if dispatch else None)
-            if prepared["ready"]:
+            if prepared["ready"] and "followup_boundary" not in prepared:
                 prepared["source_states"] = json.loads(prepared["messages"][1]["content"])["source_states"]
             if dispatch_step:
                 prepared["input_artifact_ids"] = list(dict.fromkeys([*prepared["input_artifact_ids"],
                     dispatch["initial_analysis_artifact_id"], str(dispatch_step["output_artifact_id"])]))
             prepared["followup_dispatch"] = dispatch
             parser = lambda content: contract.parse(content, prepared["source_map"], context, prepared["coverage"], comparison)
+            from .analysis_review import Review
+            review = Review("C6", prepared["source_map"], context, prepared["coverage"])
+            output_format = contract.delivery_format(prepared["source_map"], context, comparison)
+            if "followup_boundary" in prepared:
+                from .case_followup_output import FinalReview, final_format, parse_final
+                parser = lambda content: parse_final(content, prepared, context, comparison)
+                review = FinalReview(prepared, context, comparison)
+                output_format = final_format(prepared, context, comparison)
             value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                 stage_id, "C6", prepared, gateway, parser,
                 response_adapter=normalize_delivery,
-                output_format=contract.delivery_format(prepared["source_map"], context, comparison))
+                review=review,
+                output_format=output_format)
             return await self.finish(tenant_id, case_id, run_id, stage_id, context, bases, key, graph,
                 comparison, prepared, value, reason, model_id, response_id)
         except (Exception, asyncio.CancelledError):
@@ -166,6 +175,8 @@ class BaselineDelivery(ModelSteps):
             pub, limits = make_publication(value, context, members, prepared, comparison, graph,
                 uuid5(run_id, "socai2-C6-publication-v1"), reason)
             now = await store.now()
+            from .baseline_evidence_index import publish_directory
+            directory = await publish_directory(store, run, context, stage_id)
             # C6 always closes the round. A failed/unavailable model is recorded
             # separately; the system closing report is still a completed C6.
             stage_state = "completed"
@@ -175,9 +186,12 @@ class BaselineDelivery(ModelSteps):
             if prepared.get("followup_dispatch"):
                 refs.append(reference("artifact", prepared["input_artifact_ids"][-1], "execution_receipt"))
             domains = {}
-            if value:
-                for d in value.analysis.domains:
-                    block = domain_block(d, value.analysis, prepared["source_map"], context)
+            from .baseline_analysis_contract import Analysis
+            retained = (prepared.get("validation_review") or {}).get("retained_analysis")
+            visible_analysis = value.analysis if value else Analysis.model_validate(retained) if retained else None
+            if visible_analysis:
+                for d in visible_analysis.domains:
+                    block = domain_block(d, visible_analysis, prepared["source_map"], context)
                     block["schema_version"] = contract.SCHEMA
                     for finding in block["findings"]:
                         finding["scope"]["object_keys"] = []
@@ -202,13 +216,17 @@ class BaselineDelivery(ModelSteps):
                 "scope": context.scope.model_dump(mode="json"), "evidence_set_key": key,
                 "result": pub.model_dump(mode="json"), "delivery": value.model_dump(mode="json") if value else None,
                 "source_map": prepared.get("source_map", {}), "comparison": comparison,
+                "validation_review": prepared.get("validation_review"), "correction_result": prepared.get("correction_result"),
+                "evidence_directory": directory,
+                "program_facts": prepared.get("program_facts"),
                 "input_artifact_ids": prepared["input_artifact_ids"], "domain_artifact_ids": domains,
                 "execution": execution, "limitations": limits + ["structure_scope_sources_checked_not_truth_proven"],
                 "captured_at": now.isoformat()}
-            if len(encoded(report)) > MAX_CONTEXT_BYTES:
+            if len(encoded(report)) > retention_limit():
                 raise StoreError("delivery_artifact_exceeds_retention_limit", 422)
             detail_id = await self.save(store, run, stage_id, report, "source_snapshot", refs)
             report_core = {"schema_version": contract.SCHEMA, "result_id": str(result_id),
+                "program_facts": report["program_facts"],
                 **{k: report["result"][k] for k in ("title", "conclusion", "closing_note", "findings", "questions",
                     "recommendations", "case_impact")}}
             await store.save_input_artifact(case_id, run_id, report_id, report_core, kind="report_json", schema=contract.SCHEMA,
@@ -225,6 +243,7 @@ class BaselineDelivery(ModelSteps):
                 "state": stage_state, "reason": reason, "report_artifact_id": str(report_id),
                 "detail_artifact_id": str(detail_id),
                 "markdown_artifact_id": str(text_id), "domain_artifact_ids": domains,
+                "evidence_directory": directory,
                 "evidence_set_key": key, "delivery_state": pub.delivery_state, "outcome": outcome,
                 "captured_at": now.isoformat()}
             await store.save_input_artifact(case_id, run_id, summary_id, summary, kind="source_snapshot",
@@ -234,7 +253,7 @@ class BaselineDelivery(ModelSteps):
 
     async def save_markdown(self, store, run, step_id, text, report_id, detail_id):
         body = text.encode("utf-8")
-        if len(body) > MAX_CONTEXT_BYTES:
+        if len(body) > retention_limit():
             raise StoreError("delivery_markdown_exceeds_retention_limit", 422)
         identity, sha = uuid4(), hashlib.sha256(body).hexdigest()
         await store.db.execute(insert(F).values(id=identity, tenant_id=store.tenant_id,

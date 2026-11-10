@@ -1,0 +1,149 @@
+{
+  "batch": "case-model-comparison-20261108-01",
+  "review_method": "manual comparison of visible responses with frozen input/source ledger and tool catalog; no additional model calls",
+  "quality": "NOT_PASSED",
+  "shared_issues": [
+    {
+      "id": "S1",
+      "issue": "process_start expanded into completed command action",
+      "before_paths": [
+        "summary",
+        "findings.F1.statement"
+      ],
+      "after_paths": [
+        "summary",
+        "findings.F1.statement"
+      ],
+      "before_quote": "成功登录并执行了获取本地用户列表的命令",
+      "after_quote": "完成了登录、执行 PowerShell 命令和建立出站连接三个连续动作",
+      "basis": [
+        "N3_S31",
+        "N3_S32",
+        "N3_S33"
+      ],
+      "assessment": "Only process_start success and command line are observed; no command output or completion receipt. Neither response proves returned user list or completed execution."
+    },
+    {
+      "id": "S2",
+      "issue": "cloud applicability asserted without cloud-control or resource evidence",
+      "before_paths": [
+        "domains.cloud"
+      ],
+      "after_paths": [
+        "domains.cloud"
+      ],
+      "before_quote": "涉及主机配置与资源。",
+      "after_quote": "涉及主机配置、进程活动及网络连接，可能影响云资源安全。",
+      "assessment": "Host/process/network observations alone do not establish cloud context. Lack of cloud material supports undetermined rather than a factual cloud-impact claim."
+    },
+    {
+      "id": "S3",
+      "issue": "followups exceed offered tool capabilities or bindings",
+      "before_paths": [
+        "followups.0",
+        "followups.1"
+      ],
+      "after_paths": [
+        "followups.0",
+        "followups.1"
+      ],
+      "assessment": "Before asks B1 authentication logs for approvals and B2 network logs for reputation with invalid scope/objects. After uses query with null binding for approvals/contact and requests network payload/process output from B3 process activity; B3 members and objects also mismatch. No tool actually executed."
+    },
+    {
+      "id": "S4",
+      "issue": "coexisting observations or evidence gaps framed as conflicts",
+      "before_paths": [
+        "conflicts.C1"
+      ],
+      "after_paths": [
+        "conflicts.C1",
+        "conflicts.C2"
+      ],
+      "assessment": "Logon peer source IP and outbound host source IP can differ without contradiction. Behavior plus absent approval material also coexist; neither pair establishes conflicting facts."
+    }
+  ],
+  "new_in_after_this_pair": [
+    {
+      "id": "N1",
+      "issue": "prior_analysis promoted to observed",
+      "after_paths": [
+        "findings.F1"
+      ],
+      "source_ids": [
+        "N3_S1",
+        "N3_S27",
+        "N3_S55",
+        "N3_S87",
+        "N3_S93"
+      ],
+      "assessment": "Three time fields plus two prior_analysis sources used for observed action/host/user claims. Direct action/host/user observations were available in both inputs; strict parser rejects non_observation_promoted_to_observed. Three domains and two conflicts dependent on F1 are also excluded from the retained subset."
+    },
+    {
+      "id": "N2",
+      "issue": "nonempty history summarized as empty",
+      "after_paths": [
+        "questions.coverage.answer"
+      ],
+      "after_quote": "历史记录和资产库查询结果为空",
+      "basis": [
+        "N3_S100",
+        "N3_S103",
+        "N3_S112"
+      ],
+      "assessment": "History is A1=0, A2=2, A3=4. Same answer recognizes repeated returned alerts in A2/A3 limitations; coverage only cites A1 empty receipt and omits nonempty A2/A3 receipts. Before has ambiguous grouping but not this explicit all-case history-empty statement."
+    },
+    {
+      "id": "N3",
+      "issue": "shared timing inferred into a session or attack chain despite missing linkage",
+      "after_paths": [
+        "questions.member_relationships.answer",
+        "conflicts.C2.explanation"
+      ],
+      "after_quote": "仅能推断为同一会话或攻击链的一部分",
+      "assessment": "No session ID, process linkage or packet/process relation supplied. Before only says temporal proximity with no causal proof. New wording remains an unsupported inference even with limitations."
+    }
+  ],
+  "improvements_in_after_this_pair": [
+    {
+      "id": "I1",
+      "topic": "A2 threat intelligence not queried",
+      "after_path": "members.A2.limitations",
+      "quote": "威胁情报查询未执行 (N3_S108)，因无适用对象。",
+      "basis": [
+        "N3_S108"
+      ],
+      "assessment": "Correctly distinguishes not queried from empty, unlike the vague earlier grouping. This improvement does not repair after.coverage history error."
+    },
+    {
+      "id": "I2",
+      "topic": "authorization unknown versus absent",
+      "before_path": "members.A3.summary",
+      "before_quote": "无授权",
+      "after_paths": [
+        "questions.authorization",
+        "findings.F2.limitations"
+      ],
+      "assessment": "After avoids before A3 categorical no-authorization and explicitly notes missing approvals do not prove nonexistent approvals; some other wording remains imprecise."
+    },
+    {
+      "id": "I3",
+      "topic": "domain focus separated from finding scope",
+      "after_path": "domains.identity",
+      "assessment": "Identity focuses A1 while referencing F1 covering A1/A2/A3. Shared finding scope is retained and intersection rule accepts this relationship; F1 is removed for wrong evidence role, not for crossing members."
+    }
+  ],
+  "preserved_or_not_counted_as_error": [
+    "Neither answer gives an established malicious or benign verdict; all six questions are unresolved in both. Member analyzed -> unresolved is a structured state change, not proof of a risk reversal.",
+    "Both use correct host socai2-flow-20261108-01 and do not copy the prior A1 hostname typo.",
+    "Both retain known connection endpoint; after separately says exfiltration destination unproven. This alone is not scored as losing the known network endpoint.",
+    "No TLS/HTTPS conclusion inferred from port 443, no claimed completed remediation or actual exfiltration.",
+    "All 120 source original/logical values and scopes are unchanged; these observed regressions do not demonstrate required business facts were deleted.",
+    "One sample per arm cannot distinguish stable input-presentation effect from generation variability; do not label as an optimization-caused error rate."
+  ],
+  "next_work": [
+    "retain input-boundary design with fixed provenance; no claim of quality improvement",
+    "freeze paired A receipts and source roles in C1 version/freshness before C3 production integration",
+    "future output design: program restores binding-owned member/object scope; model selects supported investigation question/mode/binding",
+    "assess reduction of duplicate C3 narration/citations and explicit unresolved wording in later quality iteration; do not repair original answers or expand this batch"
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "schema_version": "socai2.production-flow-check.v1",
+  "batch_id": "ai-production-validation-20261108-01",
+  "status": "frozen_before_dispatch",
+  "execution_environment": "production21",
+  "input_kind": "synthetic",
+  "analysis_source": "existing_model_execution_only",
+  "target": {
+    "database": "aisoc",
+    "schema": "socai2",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+    "user_api_key_file": "/Users/lychee/Documents/project/socai2/.local/production-multialert-20261107-01/private/tj0001.json",
+    "user_api_key_json_path": "api_key"
+  },
+  "transport": {
+    "ssh_target": "sting-infra21",
+    "connect_timeout_seconds": 8,
+    "remote_python": "python3",
+    "api_base_url": "http://127.0.0.1:18000",
+    "ingress_path": "/api/v1/alert-ingress",
+    "processing_entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "workbench_url": "http://127.0.0.1:4177",
+    "http_timeout_seconds": 35,
+    "ssh_binary": "/usr/bin/ssh",
+    "remote_docker": "docker",
+    "pg_container": "spirithub-postgres-1",
+    "pg_client": "psql",
+    "pg_admin_role": "spirithub",
+    "pg_reader_role": "socai2_prod_reader",
+    "command_timeout_seconds": 45,
+    "job_timeout_seconds": 2100,
+    "local_api_port": 18022,
+    "local_preview_port": 4174,
+    "source_file": "docs/operations/evidence/ai-production-validation-20261108-01/plan.json",
+    "processing_profile_mode": "current_release",
+    "processing_profile_file": "/opt/sting-aisoc-socai2/current-v1.2/deploy/aisoc21/production-v1.2.toml"
+  },
+  "input": {
+    "source": "socai2-flow-acceptance",
+    "hostname": "socai2-ai-20261108-01",
+    "username": "ai-observer-20261108-01",
+    "rule": "Only source observations; no benign/malicious/authorization/attack-chain answers.",
+    "alerts": [
+      {
+        "key": "A1",
+        "upstream_alert_id": "29fea682-f298-476d-a328-cecec3c9bf73",
+        "event_id": "da6ef07e-6c9a-4746-8052-c6a84e7c8a2d",
+        "event_offset_seconds": 0,
+        "title": "Account logon observed",
+        "class_uid": 3002,
+        "action": "logon",
+        "outcome": "success"
+      },
+      {
+        "key": "A2",
+        "upstream_alert_id": "6888b3fd-a248-4690-8d4e-58dfa71c619f",
+        "event_id": "b8535a50-c11a-419c-a916-22672e98e17b",
+        "event_offset_seconds": 20,
+        "title": "Process start observed",
+        "class_uid": 1007,
+        "action": "process_start",
+        "outcome": "success",
+        "process_name": "powershell.exe",
+        "command_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+      },
+      {
+        "key": "A3",
+        "upstream_alert_id": "ae6322cd-bdb1-445a-a3aa-1cd2f43a9269",
+        "event_id": "a16d4278-5fa9-4160-a8e9-9a8788e7102d",
+        "event_offset_seconds": 40,
+        "title": "Outbound connection observed",
+        "class_uid": 4001,
+        "action": "network_connection",
+        "outcome": "success",
+        "destination_ip": "198.51.100.88",
+        "destination_port": 443,
+        "protocol": "TCP"
+      }
+    ],
+    "severity": "medium",
+    "source_ip": "192.0.2.88",
+    "authentication_source_ip": "203.0.113.88",
+    "event_time_base": "2026-11-08T11:00:48+00:00"
+  },
+  "operation_keys": {
+    "A1": "b7a667f9-668d-4d1c-8082-b5d325af910a",
+    "A2": "59960a8f-7345-4a89-a11e-9cc3be01a2ef",
+    "A3": "fca39d14-1e26-4c16-b91c-7d41c54849b2",
+    "I": "1d616d5b-d4c0-42ca-bcd0-ed075425ad18"
+  },
+  "execution_bounds": {
+    "alert_attempts": 3,
+    "incident_attempts": 1,
+    "case_baseline_runs": 0,
+    "manual_retries": 0,
+    "model_calls_max_by_policy": 4,
+    "no_additional_lake_events": true,
+    "no_asset_or_knowledge_seed": true
+  },
+  "page_acceptance": {
+    "checks": [
+      "original alert material and assessment fields",
+      "incident members and diagnosis",
+      "source references and actual query receipts",
+      "A/I delivery states and separate needs_review",
+      "4177 saved inputs outputs trace links"
+    ]
+  },
+  "dispatched_alerts": 0,
+  "case_runs_started": 0,
+  "model_calls": 0,
+  "account": {
+    "username": "tj0001",
+    "email": "tj0001@example.com",
+    "email_is_placeholder": true,
+    "base_role": "viewer",
+    "role_id": "bc9e481c-4617-402d-9806-9799110a4d6a",
+    "role_name": "tj0001_investigation",
+    "key_id": "060b169b-f230-45e3-a092-0d7c62340d14",
+    "key_name": "production-multialert-20261107-01",
+    "scopes": [
+      "alerts:read",
+      "alerts:write",
+      "cases:read",
+      "cases:write"
+    ],
+    "key_expires_at": "2026-11-08T06:34:27.343672+00:00",
+    "creation_authorized_by": "user",
+    "authorization_date": "2026-11-07",
+    "password_login": "generated_secret_saved_privately"
+  },
+  "provisioning": {
+    "statement_timeout_ms": 10000,
+    "lock_timeout_ms": 5000
+  },
+  "release": {
+    "id": "v1.2-20261108-r2",
+    "manifest_sha256": "c0874918d16f52c9967aa45eb591ea75943ac2adb36c9dc60e27cd77b8ffcf53"
+  },
+  "authorization": {
+    "user_requests": [
+      "把告警和事件的都部署上去",
+      "然后做一轮数据测试对比分析（不需要手动创建case）"
+    ],
+    "recorded_at": "2026-11-08T11:02:48.845736+00:00",
+    "scope": "new 3 alerts through existing ingress, existing Fusion correlation, three A and one I; no Case or retries"
+  },
+  "acceptance": {
+    "truth": "No independent ground truth; report factual and scope errors; do not claim accuracy",
+    "case_created": false,
+    "judgment_source": "unmodified actual model answers"
+  },
+  "historical_comparator": {
+    "database": "docs/operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json",
+    "kind": "historical_reference_not_controlled_ab",
+    "same_behavior_payloads": true,
+    "differences": [
+      "new identities",
+      "new event time",
+      "fresh queries",
+      "new A text and five-field prompt",
+      "new I text and four-block schema",
+      "new previous-stage outputs"
+    ]
+  },
+  "input_sha256": "80a77fc50c5939eddb33c15e9c186c57abc9344e80c4a256c046002c3a075339"
+}

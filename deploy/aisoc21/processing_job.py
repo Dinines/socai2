@@ -67,7 +67,8 @@ async def verify_target():
     actor = UUID(actor_value) if actor_value else None
     dsn = urlsplit(str(settings.DATABASE_URL))
     if production_profile():
-        require((db_name, role, dsn.hostname) == ("aisoc", "socai2_prod_processor", "192.168.1.21"),
+        require(dsn.hostname == os.environ["SOCAI2_PROCESSING_DB_HOST"]
+                and dsn.port == int(os.environ["SOCAI2_PROCESSING_DB_PORT"]),
                 "production_target_required")
     else:
         require(db_name.startswith("socai2_") and actor is not None, "isolated_target_required")
@@ -107,8 +108,8 @@ async def principal(tenant, actor, permission):
     from app.api.v1.deps import get_current_user
     from app.db.database import AsyncSessionLocal
     from fastapi.security import HTTPAuthorizationCredentials
-    from starlette.requests import Request
     from sqlalchemy import text
+    from starlette.requests import Request
 
     key = Path(os.environ["SOCAI2_PROCESSING_API_KEY_FILE"]).read_text(encoding="utf-8").strip()
     require(key.startswith("aisoc_") and not key.startswith("aisoc_wl_"), "user_api_key_required")
@@ -133,13 +134,15 @@ async def verify_sources(tenant):
     from app.services.llm_resolver import resolve_llm_config
     from app.socai2.baseline_optional_sources import lake_database
     from app.socai2.baseline_service import BaselineService
+    from app.socai2.runtime_policy import active_policy
     from sqlalchemy import text
-
-    require(os.environ.get("SOCAI2_MODEL_PROTOCOL") == "chat_completions"
-            and os.environ.get("SOCAI2_MODEL_SCHEMA_PROFILE") == "vllm_grammar_v1"
+    policy = active_policy()
+    if production_profile():
+        require(policy.sha256 == os.environ["SOCAI2_INVESTIGATION_POLICY_SHA256"], "investigation_policy_changed")
+    require(os.environ.get("SOCAI2_MODEL_PROTOCOL") == policy.model.protocol
+            and os.environ.get("SOCAI2_MODEL_SCHEMA_PROFILE") == policy.model.schema_profile
             and os.environ.get("AISOC_AIRGAPPED", "").lower() in {"1", "true"}
-            and json.loads(os.environ.get("AISOC_AIRGAP_ALLOWLIST", "[]")) == ["litellm"]
-            and (lake_database() == "aisoc" if production_profile() else lake_database().startswith("socai2_")),
+            and lake_database() == os.environ["CLICKHOUSE_DATABASE"],
             "processing_sources_required")
     async with BaselineService(AsyncSessionLocal).transaction(tenant, readonly=True) as store:
         if production_profile():
@@ -147,17 +150,24 @@ async def verify_sources(tenant):
                                                   "WHERE tenant_id=:tenant AND enabled)"), {"tenant": tenant})
             require(not override, "production_tenant_model_override_requires_review")
         config = await resolve_llm_config(store.db, tenant)
-    require(config.base_url.rstrip("/") == "http://litellm:4000/v1" and config.model == "aisoc-investigation",
+    require(config.base_url.rstrip("/") == os.environ["OPENAI_BASE_URL"].rstrip("/") and config.model == policy.model.alias,
             "local_model_target_mismatch")
+    allowlist = json.loads(os.environ["AISOC_AIRGAP_ALLOWLIST"])
+    require({urlsplit(config.base_url).hostname, urlsplit(policy.model.tokenizer["endpoint"]).hostname} <= set(allowlist),
+            "processing_source_endpoint_not_allowed")
     return config
 
 
 async def check_dependencies(config):
+    import hashlib
+
     import httpx
     from app.core.config import settings
     from app.db.clickhouse import close_clickhouse, execute_lake_query
     from app.models.socai2 import Cases
+    from app.socai2 import runtime_policy
     from app.socai2.baseline_optional_sources import lake_database
+    from app.socai2.runtime_policy import active_policy
 
     page_columns = ["classification", "due_at", "current_evidence_artifact_id"]
     require(all(name in Cases.__table__.c for name in page_columns), "processing_orm_missing_page_fields")
@@ -179,8 +189,17 @@ async def check_dependencies(config):
         require(not empty.rows and empty.columns == ["event_id", "tenant_id"], "lake_projection_unavailable")
     finally:
         await close_clickhouse()
+    policy = active_policy()
+    code = Path(runtime_policy.__file__).parent
     return {"orm_page_fields": page_columns, "catalog_alias": config.model,
-            "lake_table": lake + ".raw_events", "lake_log_rows_read": 0}
+            "lake_table": lake + ".raw_events", "lake_log_rows_read": 0,
+            "processing_profile_sha256": os.environ.get("SOCAI2_PROCESSING_PROFILE_SHA256"),
+            "investigation_policy_sha256": policy.sha256, "investigation_policy_version": policy.version,
+            "single_model_timeout_seconds": policy.single_model_timeout_seconds,
+            "case_deadline_seconds": policy.case.deadline_seconds, "final_reserve_seconds": policy.final_reserve_seconds,
+            "implementation_sha256": {name: hashlib.sha256((code / name).read_bytes()).hexdigest() for name in (
+                "runtime_policy.py", "token_budget.py", "stage_answer_review.py", "program_facts.py", "baseline_reasoning.py",
+                "baseline_delivery.py", "baseline_evidence_index.py")}}
 
 
 def case_start_receipt(record):
@@ -199,9 +218,11 @@ async def prepare_production_subjects(args, tenant):
         ids = [args.subject] if args.command == subject else getattr(args, subject + "_id", [])
         for uid in ids:
             params.extend(("--" + subject + "-id", str(uid)))
-    env = {"DATABASE_URL": os.environ["SOCAI2_INGRESS_URL"], "PYTHONPATH": "/opt/processor/smoke-fusion",
+    env = {"DATABASE_URL": os.environ["SOCAI2_INGRESS_URL"], "PYTHONPATH": os.environ["SOCAI2_PROCESSING_FUSION_PYTHONPATH"],
            "PYTHONDONTWRITEBYTECODE": "1", "PGSSLROOTCERT": os.environ["PGSSLROOTCERT"],
            "PGSSLMODE": os.environ["PGSSLMODE"], "SSL_CERT_FILE": os.environ["SSL_CERT_FILE"]}
+    for key in ("SOCAI2_SERVICE_DATABASE_NAME", "SOCAI2_PROCESSING_INGRESS_ROLE", "SOCAI2_PROCESSING_DB_HOST", "SOCAI2_PROCESSING_DB_PORT"):
+        env[key] = os.environ[key]
     proc = await asyncio.create_subprocess_exec(sys.executable, "-B", "/opt/processor/production_ingress.py",
         *params, env=env, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
     stdout, _ = await proc.communicate()

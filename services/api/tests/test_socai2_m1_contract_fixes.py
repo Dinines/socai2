@@ -57,6 +57,43 @@ def test_m1_time_context_and_domain_links_accepted_without_changing_answer():
     assert raw == before
 
 
+def test_domain_focus_can_reference_shared_finding_without_changing_either_scope():
+    from app.socai2 import baseline_delivery_contract as delivery
+    from app.socai2.baseline_analysis import domain_block
+
+    packets, results = frozen()
+    packet = packets["C3-current"]
+    raw = copy.deepcopy(results["C3-current-deepseek"]["answer"])
+    members = [m["alert_id"] for m in raw["members"]]
+    refs = list(dict.fromkeys(s for m in raw["members"] for s in m["evidence_ids"]))
+    finding = raw["findings"][0]
+    finding.update(state="inferred", statement="synthetic cross-member relationship, purpose uncertain",
+                   alert_ids=members, support_ids=refs, counter_ids=[])
+    domain = raw["domains"][0]
+    domain.update(alert_ids=[members[-1]], finding_ids=[finding["id"]])
+    before = copy.deepcopy(raw)
+    context = Context.model_validate(packet["context"])
+    parsed = analysis.parse(json.dumps(raw), packet["source_map"], context, packet["coverage"])
+    block = domain_block(parsed.domains[0], parsed, packet["source_map"], context)
+    assert block["focus_scope"]["alert_ids"] == [members[-1]]
+    assert block["findings"][0]["scope"]["alert_ids"] == members
+    schema = json.loads((ROOT / "services/api/app/socai2/contracts.schema.json").read_text())
+    validator = jsonschema.Draft202012Validator({"$ref": "#/$defs/analysis_block", "$defs": schema["$defs"]})
+    validator.validate(block)
+    # Historical blocks remain readable without inventing a focus scope.
+    legacy = {k: v for k, v in block.items() if k != "focus_scope"}
+    validator.validate(legacy)
+    final = {"analysis": raw, "conclusion": {"text": "synthetic unresolved judgment", "state": "uncertain",
+        "alert_ids": members, "support_ids": refs, "limitations": ["synthetic test"]},
+        "closing_note": "synthetic closing note", "comparison": {"kind": "initial", "summary": None, "support_ids": []},
+        "impact": {"summary": "unknown", "alert_ids": [], "support_ids": [], "supported_changes": [],
+            "cannot_generalize": ["synthetic incomplete observations"], "next_steps": []}, "recommendations": []}
+    delivered = delivery.parse(json.dumps(final), packet["source_map"], context, packet["coverage"],
+                               {"state": "initial", "result_id": None})
+    assert list(map(str, delivered.analysis.findings[0].alert_ids)) == members
+    assert raw == before
+
+
 @pytest.mark.parametrize("change,expected", [("time_only", "observed_requires_activity_source"),
     ("title", "non_observation_promoted_to_observed"), ("wrong_member_time", "source_member_mismatch"),
     ("duplicate_conflict", "duplicate_conflict_finding"), ("wrong_domain_scope", "domain_finding_scope_mismatch")])

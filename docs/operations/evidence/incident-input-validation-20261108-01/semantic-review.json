@@ -1,0 +1,77 @@
+{
+  "batch": "incident-input-validation-20261108-01",
+  "status": "structural_pass_semantic_not_passed",
+  "overall_judgment": "needs_review_in_model_prose",
+  "structured_incident_verdict_field": false,
+  "independent_truth_available": false,
+  "accuracy_or_directional_error_rate": null,
+  "issues": [
+    {
+      "id": "I01",
+      "kind": "unsupported_action_effect",
+      "paths": [
+        "diagnosis.summary",
+        "members.1.assessment",
+        "members.1.limitations.1"
+      ],
+      "actual": "随即启动 PowerShell 获取本地用户列表；并执行 Get-LocalUser 命令；后续是否利用获取的用户信息",
+      "evidence": "本轮原始记录明确是进程启动成功，未提供命令完成或用户列表输出。N1_S5/N1_S14/N1_S17及其同源副本仍完整可见。",
+      "origin": "原I已有executed Get-LocalUser扩大表述；本轮继续出现，且新增已获取用户信息的暗示。不是对应action字段被精简删除。"
+    },
+    {
+      "id": "I02",
+      "kind": "prior_analysis_promoted_to_query_fact",
+      "paths": [
+        "members.1.assessment",
+        "diagnosis.conclusion"
+      ],
+      "actual": "现有证据（查空的情报、无授权记录）",
+      "evidence": "A2旧分析N1_S23写情报查空；其实际同Run回执为threat_intel skipped/no_supported_frozen_objects/returned_rows=null。新旧I模型输入都未接入实际A回执。当前A2引用数组也未引用N1_S23，合法观察引用不支持情报查空。",
+      "origin": "旧A错误和原有A→I回执交接缺口，本轮仍传播；并非新版删掉了原来已传入的实际回执。"
+    },
+    {
+      "id": "I03",
+      "kind": "overstated_risk_interpretation",
+      "paths": [
+        "findings.0.statement",
+        "diagnosis.summary"
+      ],
+      "actual": "典型的‘侦察 - 行动’时间序列特征；符合潜在攻击链特征",
+      "evidence": "可以确认同账号同主机记录及40秒的时间顺序；未提供命令结果、因果关联、恶意载荷或数据外传证明。当前仍为unresolved/待复核，不是确定恶意判定。",
+      "origin": "较原I明确不证明攻击进展，当前风险措辞更强；这是本份新答观察到的变化，单次多因素测试不能归因于删某字段。"
+    },
+    {
+      "id": "I04",
+      "kind": "citation_redundancy",
+      "paths": [
+        "diagnosis.source_ids"
+      ],
+      "actual": "整体诊断引用53个来源编号，包含多个同源字段副本。",
+      "evidence": "60个来源可见，输入合并展示仍保留所有原编号，输出Schema未要求选择最小充分依据。所有引用合法不等于每项自然语言主张都有证据。",
+      "origin": "输出仍有缩减空间，本轮不修改模板或重试。"
+    },
+    {
+      "id": "I05",
+      "kind": "time_expression_imprecise",
+      "paths": [
+        "findings.0.statement"
+      ],
+      "actual": "约2分钟内",
+      "evidence": "实际首尾活动时间01:26:09至01:26:49，相差40秒。40秒确实小于2分钟，故只记表达不精确，不能记为时间算错2分钟。",
+      "origin": "本次新答表达变化，精确时间字段仍完整可见。"
+    }
+  ],
+  "positive_observations": [
+    "三成员均覆盖，成员短号恢复原UUID；3成员评述+1事件发现、2待核问题形成现有IncidentOutput。",
+    "登录成功、账号主机、目的IP及TCP/443读对；没有将443写HTTPS或断言外传已经发生。",
+    "未沿用A1旧分析中20261908的主机拼写错误。",
+    "保留授权、目的地址属性和流量用途这两个必要待核方向；未重新分组或声称已经处置。"
+  ],
+  "limits": [
+    "仅一个既有多告警事件的一次请求，非全类型质量验收。",
+    "没有并发旧版对照，不能分离输入精简、任务指令与输出合同的因果影响。",
+    "原I就未交接A实际工具回执；此次未新增材料。",
+    "未写入业务数据库或验证正式API持久化链路；程序装配属于本地适配验收。",
+    "原始答复未改写，未自动修复或再次调用。"
+  ]
+}

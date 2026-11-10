@@ -70,13 +70,10 @@ class BaselineService:
         """
         from .baseline_contracts import FULL_EXECUTOR_VERSION
         from .baseline_executor import BaselineExecutor
+        from .runtime_policy import active_policy
         async with self.transaction(tenant_id) as store:
             now = await store.now()
-            if (limits.max_model_calls is None or limits.max_model_calls > 4
-                    or limits.max_tool_calls is None or limits.max_tool_calls > 4
-                    or limits.max_tokens is None or limits.max_tokens > 48000
-                    or limits.max_rows_per_query is None or limits.max_rows_per_query > 200
-                    or limits.deadline_at is None or (limits.deadline_at - now).total_seconds() > 120):
+            if not active_policy().case.allows(limits, now):
                 raise StoreError("full_executor_limits_outside_policy", 422)
         return await self.start(tenant_id, case_id, run_id, request, actor=actor, limits=limits,
             executor_version=FULL_EXECUTOR_VERSION,
