@@ -31,4 +31,4 @@
 
 先处理 C3 成员范围、C6 发现关联及正文事实扩大，再以独立批次核修正后的真实输出；不能重派已结束 Run。需要单独取得知识实际查询及使用证据，随后按[执行顺序](openspec/changes/complete-socai2-investigation-chain/design.md#后续工作顺序)联调页面操作与 P01–P04，再验证自动流程。3.7、3.23、3.30 等整体任务保持未完成，不归档 change。
 
-读写权限和角色设计不作为独立前置，必要接线随功能处理；告警相关前后端字段合同保持稳定。问题、限制及验收落点统一记录在[问题清单](docs/investigation/current-issues.md)。本次 4177 实现、21 部署和交接已完成，[独立结束审计](docs/operations/evidence/workbench-node-inspector-20261110-01/independent-audit.json)为 ACCEPT，0 个未解决必须修正项；随后推送 `origin/V1.1` 及父项目 `server` 引用。不以内部查阅优化核销模型正文质量。
+读写权限和角色设计不作为独立前置，必要接线随功能处理；告警相关前后端字段合同保持稳定。问题、限制及验收落点统一记录在[问题清单](docs/investigation/current-issues.md)。本次 4177 实现、21 部署和交接已完成，[独立结束审计](docs/operations/evidence/workbench-node-inspector-20261110-01/independent-audit.json)为 ACCEPT，0 个未解决必须修正项。已推送 `origin/V1.1`，父项目 `add-server-submoudle` 仅更新 `server` 引用，本机父项目工作树保持；[发布回执](docs/operations/evidence/workbench-node-inspector-20261110-01/publication-initial.json)记录已验证的实现提交，收尾记录随同一分支同步父项目。不以内部查阅优化核销模型正文质量。
