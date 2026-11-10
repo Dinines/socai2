@@ -29,4 +29,4 @@
 
 先处理 C3 成员范围、C6 发现关联及正文事实扩大，再以独立批次核修正后的真实输出；不能重派已结束 Run。需要单独取得知识实际查询及使用证据，随后按[执行顺序](openspec/changes/complete-socai2-investigation-chain/design.md#后续工作顺序)联调页面操作与 P01–P04，再验证自动流程。3.7、3.23、3.30 等整体任务保持未完成，不归档 change。
 
-读写权限和角色设计不作为独立前置，必要接线随功能处理；告警相关前后端字段合同保持稳定。问题、限制及验收落点统一记录在[问题清单](docs/investigation/current-issues.md)。本批独立结束审计为 ACCEPT，无必须修正项；该结论限定实现、交接和证据，模型质量仍未通过。[审计回执](docs/operations/evidence/case-current-flow-20261110-01/independent-audit.json)。Git／父项目发布结果随交付回执记录。
+读写权限和角色设计不作为独立前置，必要接线随功能处理；告警相关前后端字段合同保持稳定。问题、限制及验收落点统一记录在[问题清单](docs/investigation/current-issues.md)。本批独立结束审计为 ACCEPT，无必须修正项；该结论限定实现、交接和证据，模型质量仍未通过。[审计回执](docs/operations/evidence/case-current-flow-20261110-01/independent-audit.json)。源码、文档与证据已推送 `origin/V1.1`，父项目 `add-server-submoudle` 的 `server` 引用已更新，其余路径及本机父项目工作树保持。[发布核验回执](docs/operations/evidence/case-current-flow-20261110-01/publication-initial.json)记录代码交付的已验证提交；收尾记录随同一分支同步父项目引用。

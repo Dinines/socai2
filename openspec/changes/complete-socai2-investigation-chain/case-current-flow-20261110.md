@@ -79,6 +79,6 @@ Case HTTP 写开关仍关闭，自动消费者暂停，迁移关闭。模型单�
 
 ## 结束边界与后续
 
-本批完成真实流程执行、H 传递、直接缺陷修正、部署、数据库／字段读回及交接更新。独立结束审计为限定实现与交接 ACCEPT、0 项必须修正，模型质量 NOT_PASSED；[审计回执](../../../docs/operations/evidence/case-current-flow-20261110-01/independent-audit.json)保留边界。Git／父项目发布随实际回执收口。3.7、3.23、3.30 的整体质量范围未完成，不归档 change。
+本批完成真实流程执行、H 传递、直接缺陷修正、部署、数据库／字段读回及交接更新。独立结束审计为限定实现与交接 ACCEPT、0 项必须修正，模型质量 NOT_PASSED；[审计回执](../../../docs/operations/evidence/case-current-flow-20261110-01/independent-audit.json)保留边界。源码、文档与证据已推送 `origin/V1.1`，父项目 `add-server-submoudle` 仅更新 `server` 引用，非强推且未修改本机父项目工作树。[发布回执](../../../docs/operations/evidence/case-current-flow-20261110-01/publication-initial.json)固定代码交付提交；收尾记录随后同步同一分支及父项目。3.7、3.23、3.30 的整体质量范围未完成，不归档 change。
 
 下一步先处理 C3 成员范围、C6 发现关联和正文事实扩大，用独立批次核真实效果；另取适用样本核知识实际查询与使用。页面写操作及 P01–P04、自动流程按既定顺序推进，权限设计不作为独立前置。[当前问题](../../../docs/investigation/current-issues.md)保留各项验收落点。

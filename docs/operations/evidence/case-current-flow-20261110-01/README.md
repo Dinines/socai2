@@ -12,3 +12,5 @@
 - `operator-sources` 保存本机批次编排脚本来源，含原批次私密配置路径但无凭据。脚本不是通用运行入口，不能从本目录直接重放已结束动作。运行维护使用仓库现有正式入口及新批配置。
 
 所有失败、原答和原批次来源保持。构建回执包含未激活的中间候选；实际部署以 `unified-activate-20261110T104633458561Z.json` 为准。
+
+Git 交付核验见 `publication-initial.json`；推送前的数据来源检查及自动审批处理见 `publication-provenance-final.json`、`publication-review.json`。最初逐字比较因 `observed_at` 读取时刻变化未通过的结果保留在 `publication-provenance-check.json`；最终仅排除该时间字段，名单内容全部一致。
