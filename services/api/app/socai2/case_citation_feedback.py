@@ -1,7 +1,9 @@
 """One diagnostic correction for complete Case replies, without changing them."""
 from .analysis_review import decode, empty_reference_feedback
+from .baseline_analysis_contract import time_context
+from .case_finding_schema import direct_observations
 
-POLICY = "socai2.case-citation-correction.v1"
+POLICY = "socai2.case-citation-correction.v2"
 
 
 def feedback(content, stage, sources, members, questions):
@@ -56,6 +58,32 @@ def feedback(content, stage, sources, members, questions):
         path = prefix + ["findings", i]
         refs(row, "support_ids", path, row["alert_ids"], row["state"] != "unresolved")
         refs(row, "counter_ids", path, row["alert_ids"])
+        overlap = sorted(set(row["support_ids"]) & set(row["counter_ids"]))
+        if overlap:
+            error(path + ["counter_ids"], "same_source_as_support_and_counterevidence", row["id"],
+                  source_ids=overlap)
+        if row["state"] == "observed":
+            known = {sid: sources[sid] for sid in row["support_ids"] if sid in sources}
+            observations = {sid: source for sid, source in known.items() if source["ref"]["role"] == "observation"}
+            for j, sid in enumerate(row["support_ids"]):
+                source = known.get(sid)
+                if source is None:
+                    continue
+                if source["ref"]["role"] != "observation" and not time_context(source["ref"]):
+                    error(path + ["support_ids", j], "non_observation_promoted_to_observed", row["id"],
+                          source_id=sid, actual_role=source["ref"]["role"])
+                if source.get("membership_basis") == "query_binding_only":
+                    error(path + ["support_ids", j], "direct_alert_membership_not_proven", row["id"],
+                          source_id=sid, query_alert_ids=source.get("query_alert_ids", []))
+            if not observations:
+                error(path + ["support_ids"], "observed_requires_activity_source", row["id"])
+            else:
+                direct = direct_observations(observations, row["alert_ids"])
+                covered = {aid for source in direct.values() for aid in source["alert_ids"]}
+                missing = sorted(set(row["alert_ids"]) - covered)
+                if missing:
+                    error(path + ["support_ids"], "observed_member_source_coverage_missing", row["id"],
+                          uncovered_members=missing)
     for i, row in enumerate(root["followups"]):
         refs(row, "source_ids", prefix + ["followups", i], row["alert_ids"])
     for key in ("domains", "conflicts"):
@@ -89,4 +117,5 @@ def feedback(content, stage, sources, members, questions):
                              **{k: source[k] for k in ("membership_basis", "query_alert_ids", "record_alert_ids") if k in source}}
                             for sid, source in sources.items()],
         "local_findings": [{"id": fid, "alert_ids": row["alert_ids"]} for fid, row in findings.items()],
-        "instruction": "仅纠正上一份完整 JSON 一次，保留独立有效内容。finding_ids 只引用本次同一 analysis.findings 中实际存在的 id，不能引用历史发现号、问题号或为过校验编造发现。按真实证据重新核对成员范围和引用；不得机械扩大范围、随意填号或把查询出处当记录主体。没有依据应明确未解决和缺口；冲突必须是两条真实发现的矛盾，缺证据不是冲突。返回完整 JSON 并接受全部校验。"}
+        "observed_support_ids": sorted(direct_observations(sources, members)),
+        "instruction": "仅纠正上一份完整 JSON 一次，保留独立有效内容。finding_ids 只引用本次同一 analysis.findings 中实际存在的 id，不能引用历史发现号、问题号或为过校验编造发现。按真实证据重新核对正文、状态、成员范围和引用；不得机械扩大范围、随意填号或把查询出处当记录主体。observed 只陈述直接观察支持的主张，每个涉及成员都有相应观察。标签、历史判断和人工陈述应明确归因，混合句须按主张分开表达；标签说明可留在带来源的成员摘要。不能只删除非法引用而保留超出证据的断言，也不能仅改为 inferred 掩盖无据事实。可用观察编号不表示它证明该主张，须核原字段含义。没有依据应明确未解决和缺口；同一来源不能兼作支持与反证，冲突必须是两条真实发现的矛盾，缺证据不是冲突。返回完整 JSON 并接受全部校验。"}

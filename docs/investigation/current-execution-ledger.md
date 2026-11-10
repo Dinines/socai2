@@ -18,6 +18,6 @@
 
 GET 使用授权租户的只读事务，不隐式启动处理或修改判断。Case、Run、Result、当前判断分别有稳定身份；历史材料不切换成当前材料。输入、输出、引用与数据库恢复的详细合同见[模型输入输出](model-input-output-current-20261109.md)及[数据交接](socai2-page-data-handoff-20261106.md)。
 
-本轮 Case 修复在本地完成 69 项定向检查、3 项真实 PostgreSQL 流程及 3 轮真实模型复核。C2 按配置及配对回执覆盖排序；C3／C6 对来源、成员和本次发现关系最多纠正一次；Deep 生成分支与接收一致。160 次本地 GET／9,819 项字段检查通过，模型质量仍为 NOT_PASSED；真实非空知识使用未核销。[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)与[问题清单](current-issues.md)记录边界。原生产两案及 H 后轮的记录保持，不改写原答或追认成功。
+本轮 Case Finding 角色约束在本地完成 86 项相关检查、两项真实 PostgreSQL 完整流程及一个真实模型 Run。生成按状态分支限制直接观察支持，一次反馈覆盖角色和成员依据，原接收兼容性保持。4 次真实调用、38,844 reported tokens；52 GET／3,225 字段检查通过。6 条 observed 支持合规，实际 completed/partial、C6 采用，正文质量仍 NOT_PASSED。[验收报告](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)与[问题清单](current-issues.md)区分流程缺口和模型问题。
 
-独审 ACCEPT 后统一发布 21 `v1.2-20261110-r5`，六项服务健康；只更新 API，五项继承服务容器保持。365 次生产 GET／16,820 项字段关联检查通过，读取前后数据不变；4177 已追加 6 份资料，共 26 份。发布阶段没有新生产模型调用或业务写入。[交付回执](../operations/evidence/case-scope-recovery-20261110-01/delivery-summary.json)
+本轮独审 ACCEPT 后统一发布 21 `v1.2-20261110-r6`，只更新 API，五项继承服务容器保持；365 GET／16,820 字段关联检查通过，生产原件与前批及读回前后保持一致。4177 追加三份至 29 份，233 文件／234 HTTP 验证通过。[交付回执](../operations/evidence/case-evidence-roles-20261110-01/delivery-summary.json)。真实非空知识、H 正确利用、产品写操作与自动消费均未由这次验收核销。

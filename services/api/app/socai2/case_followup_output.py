@@ -9,6 +9,7 @@ from . import baseline_deep_contract as deep
 from . import baseline_delivery_contract as delivery
 from .analysis_review import Review, decode
 from .case_citation_feedback import feedback
+from .case_finding_schema import constrain_findings
 from .structured_output import response_format
 
 
@@ -92,7 +93,7 @@ def final_format(prepared, context, comparison):
     if fixed_comparison(comparison):
         schema["properties"].pop("comparison")
         schema["required"].remove("comparison")
-    return fmt
+    return constrain_findings(fmt, prepared["source_map"], context.alerts)
 
 
 def restore_final(content, prepared, comparison):

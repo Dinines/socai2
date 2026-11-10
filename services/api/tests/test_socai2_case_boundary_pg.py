@@ -14,6 +14,7 @@ from app.socai2 import (
     case_model_boundary,
     runtime_policy,
 )
+from app.socai2.baseline_analysis_contract import time_context
 from app.socai2.baseline_contracts import (
     FULL_EXECUTOR_VERSION,
     Actor,
@@ -38,6 +39,24 @@ ACTOR = Actor(user_id=USER, name="Synthetic C1/C3 boundary reviewer")
 async def empty_query(service, tenant, name, args):
     async with service.transaction(tenant, readonly=True) as store:
         return [], await store.now()
+
+
+def role_finding(answer, prepared, stage, *, invalid=False):
+    analysis = answer["analysis"] if stage == "C6" else answer
+    aid, alias = next(iter(prepared["case_boundary"]["member_aliases"].items()))
+    sources = prepared["source_map"]
+    observation = next(sid for sid, s in sources.items() if aid in s["alert_ids"]
+                       and s["ref"]["role"] == "observation" and s.get("membership_basis") != "query_binding_only")
+    label = next(sid for sid, s in sources.items() if aid in s["alert_ids"]
+                 and s["ref"]["role"] == "source_label" and not time_context(s["ref"]))
+    analysis["findings"] = [{"id": "F1", "state": "observed", "statement": "Synthetic recorded observation.",
+        "alert_ids": [alias], "support_ids": [observation], "counter_ids": [], "alternatives": [], "limitations": []}]
+    member = next(m for m in analysis["members"] if m["alert_id"] == alias)
+    member["summary"] = "Synthetic source-label context is attributed separately from the observation."
+    member["evidence_ids"] = list(dict.fromkeys([*member["evidence_ids"], label]))
+    if invalid:
+        analysis["findings"][0]["statement"] = "Synthetic mixed observation and label context."
+        analysis["findings"][0]["support_ids"].append(label)
 
 
 class Gateway:
@@ -65,7 +84,7 @@ class Gateway:
             context = await store.read_context(self.cid, self.rid)
         assert request["body"] == body and request["case_boundary"] == frozen["case_boundary"]
         answer = answer_for(frozen, context)
-        if self.mode in {"followup", "scope_recovery"}:
+        if self.mode in {"followup", "scope_recovery", "role_recovery", "role_partial"}:
             answer["followups"] = [{"question_id": context.questions[0].id,
                 "alert_ids": [m["alert_id"] for m in answer["members"]], "mode": "deep", "objective": "Synthetic one-question check.",
                 "required_evidence": "Synthetic query evidence.", "source_ids": [m["evidence_ids"][0] for m in answer["members"]],
@@ -83,7 +102,15 @@ class Gateway:
             assert previous["members"][0]["alert_id"] == "A1"
             assert feedback["errors"][0]["subject_id"] == "A1"
             assert all(a.startswith("A") for s in feedback["allowed_sources"] for a in s["alert_ids"])
+        if self.mode in {"role_recovery", "role_partial"}:
+            role_finding(answer, frozen, "C3")
+            if self.calls == 2:
+                feedback = json.loads(body["messages"][-1]["content"])
+                assert any(e.get("code") == "non_observation_promoted_to_observed" for e in feedback["errors"])
         Draft202012Validator(body["response_format"]["json_schema"]["schema"]).validate(answer)
+        if self.mode == "role_partial" or self.mode == "role_recovery" and self.calls == 1:
+            # Explicit substitute fault: emulate a provider ignoring the schema.
+            role_finding(answer, frozen, "C3", invalid=True)
         if self.mode == "partial":
             answer["members"][0]["evidence_ids"] = ["invalid-source"]
         reply = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
@@ -263,7 +290,7 @@ async def run_checks(engine, record, only=None):
         sample = await fixture(full=True)
         cid, rid = sample["case_id"], sample["run_id"]
         gateway = Gateway(service, cid, rid, "rejected" if mode == "fallback" else
-                          "scope_recovery" if mode == "scope_recovery" else "followup")
+                          mode if mode in {"scope_recovery", "role_recovery", "role_partial"} else "followup")
         initial = await service.analyze(T, cid, rid, gateway=gateway, lake=SimpleNamespace(configured=lambda: True))
         assert bool(initial.get("analysis")) == (mode != "fallback"), initial
         return await scenario(service, sample, initial, mode)
@@ -282,6 +309,12 @@ async def run_checks(engine, record, only=None):
 
     async def test_case_boundary_scope_and_finding_correction_full_flow():
         return await followup_scenario("scope_recovery")
+
+    async def test_case_boundary_role_correction_full_flow():
+        return await followup_scenario("role_recovery")
+
+    async def test_case_boundary_role_repeated_error_partial_flow():
+        return await followup_scenario("role_partial")
 
     async def test_case_boundary_human_feedback_then_complete_next_flow():
         from app.socai2.case_contracts import PrepareBaseline

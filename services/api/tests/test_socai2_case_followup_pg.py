@@ -13,6 +13,7 @@ from jsonschema import Draft202012Validator
 from socai2_test_model_view import synthetic_measure
 from sqlalchemy import select
 from test_socai2_baseline_evidence import SyntheticLake
+from test_socai2_case_boundary_pg import role_finding
 from test_socai2_case_followup_boundary import final_answer
 
 T = UUID(int=1)
@@ -85,7 +86,14 @@ class Gateway:
                 assert any(e.get("code") == "unknown_local_finding" for e in feedback["errors"])
                 assert any(e["path"] == ["impact", "support_ids"] and e["uncovered_members"] for e in feedback["errors"])
                 assert feedback["local_findings"] == []
+            if self.mode in {"role_recovery", "role_partial"}:
+                role_finding(answer, request, "C6")
+                if self.final_calls == 2:
+                    feedback = json.loads(body["messages"][-1]["content"])
+                    assert any(e.get("code") == "non_observation_promoted_to_observed" for e in feedback["errors"])
         Draft202012Validator(body["response_format"]["json_schema"]["schema"]).validate(answer)
+        if stage == "C6" and (self.mode == "role_partial" or self.mode == "role_recovery" and self.final_calls == 1):
+            role_finding(answer, request, "C6", invalid=True)
         if stage == "C6" and self.mode == "partial":
             answer["analysis"]["members"][0]["evidence_ids"] = ["invalid-source"]
         reply = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
@@ -115,7 +123,7 @@ async def scenario(service, sample, initial, mode):
             "limitations": ["Synthetic integration only."]}, [reference("artifact", c3["output_artifact_id"], "execution_receipt")])
     out = await service.finalize(T, cid, rid, gateway=gateway)
     assert out["state"] == "completed", out
-    assert gateway.final_calls == (2 if mode in {"correction", "partial", "scope_recovery"} else 1), out
+    assert gateway.final_calls == (2 if mode in {"correction", "partial", "scope_recovery", "role_recovery", "role_partial"} else 1), out
     assert gateway.deep_calls == (0 if mode == "fallback" else 2), out
     assert lake.calls == (0 if mode == "fallback" else 1), out
     assert out == await service.finalize(T, cid, rid, gateway=gateway)
@@ -126,7 +134,7 @@ async def scenario(service, sample, initial, mode):
         result_table = Results.__table__
         result = (await store.db.execute(select(result_table).where(*store.where(result_table,
             result_table.c.source_run_id == rid)))).mappings().one()
-        if mode == "partial":
+        if mode in {"partial", "role_partial"}:
             assert run["state"] == "completed" and run["stop_reason"] == "partial_analysis_saved_conclusion_rejected"
             assert result["validation_state"] == "rejected" and result["delivery_state"] == "partial"
         else:
@@ -135,6 +143,16 @@ async def scenario(service, sample, initial, mode):
         requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
             F.c.run_id == rid, F.c.kind == "model_request")))).scalars().all()
         assert all(any(req["payload"]["body"] == sent["body"] for req in requests) for sent in gateway.requests)
+        if mode in {"role_recovery", "role_partial"}:
+            assert len(requests) == 6
+            responses = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == rid, F.c.kind == "model_response")))).scalars().all()
+            assert len(responses) == 6
+            assert all(any(r["payload"]["raw"] == original for r in responses) for original in gateway.responses)
+            role_errors = [r for r in responses if r["payload"].get("validation_error") == "non_observation_promoted_to_observed"]
+            assert len(role_errors) == (4 if mode == "role_partial" else 2)
+            if mode == "role_recovery":
+                assert result["validation_state"] == "accepted"
     return {**sample, "real_model_calls": 0, "substitute_deep_calls": gateway.deep_calls,
             "substitute_final_calls": gateway.final_calls, "substitute_lake_calls": lake.calls,
             "run_state": run["state"], "c6_idempotent_replay": True}

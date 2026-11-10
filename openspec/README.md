@@ -1,6 +1,6 @@
 # OpenSpec 实施说明
 
-本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case 程序修复的独立交付见[验收报告](changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)。
+本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case Finding 来源角色修复的独立交付见[验收报告](changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
 
 ## 文档职责
 

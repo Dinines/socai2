@@ -8,6 +8,7 @@ from . import baseline_analysis_contract as contract
 from .analysis_review import Review, decode
 from .baseline_execution_schema import execution_format
 from .case_citation_feedback import feedback
+from .case_finding_schema import constrain_findings
 from .structured_output import response_format
 
 
@@ -29,7 +30,7 @@ def output_format(prepared, context, bindings):
     aliased = {key: {**value, "alert_ids": [boundary["member_aliases"][aid] for aid in value["alert_ids"]],
         "objects": [{**obj, "object_key": boundary["object_aliases"][obj["object_key"]]} for obj in value["objects"]]}
         for key, value in (bindings or {}).items()}
-    return execution_format(result, aliased)
+    return constrain_findings(execution_format(result, aliased), prepared["source_map"], context.alerts)
 
 
 def restore(content, boundary):

@@ -21,7 +21,7 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261110-r5`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261110-r6`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
 | 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台组件 `workbench-20261110-r2`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
@@ -89,22 +89,10 @@
 
 ## 6 本次验证与交付边界
 
-本轮程序修复已完成本地验收、独审及 21 统一发布。Case 内部模型映射把查询出处和历史记录主体分开；来源 UUID／路径／角色／原文及告警交接字段保持。C3/C6 对来源、成员覆盖及本次发现关联错误最多反馈纠正一次，Deep 的 query／answer／handoff 生成分支与接收合同一致。失败、截断、unknown、无预算及纠正仍错分别保留，不能用程序补造依据。详见[本 change 验收](openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)。
+本轮已完成验收并部署的范围为 Case Finding 来源角色：C3/C6 生成按 observed／inferred／unresolved 分支约束；observed 支持仅用有成员依据的直接观察，标签／历史／人工说明保留归属，不能充当观察或业务授权。原接收合同及合法时间上下文保持兼容。一次纠正反馈增加角色、查询绑定及直接观察覆盖的具体路径，失败时保留有效局部，不改正文追认成功。详见[本 change 验收](openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
 
-69 项定向检查、3 项真实本地 PostgreSQL 完整流程通过，包括 H→下一轮、纠正成功与仍错时局部保留；模型／数据湖替身明确单列。三次另行真实模型调查使用原始演练材料的新本地身份，共 14 次调用、161,323 reported tokens，费用未知。160 个原 GET 处理函数与 9,819 项字段／原文／关联检查通过；这些是本地验收，不冒充生产作业。数据库设计仍为 29 表／462 列，没有告警字段变更。
+86 项相关检查、两项真实本地 PostgreSQL 完整流程通过，包括纠正成功与仍错时局部保留；模型／数据湖替身明确单列。一个独立真实模型 Run 使用原演练材料的新本地身份，共 4 次调用、38,844 reported tokens，费用未知。52 次原 GET 处理函数与 3,225 项字段／原文／关联核对通过；数据库设计仍为 29 表／462 列，无告警字段或 HTTP 返回变化。
 
-三轮均 completed/partial；其中一轮 C6 经一次纠正后采用，两轮拒收最终结论。最后一轮 Deep 完整生成通过，模型仍可能把标签或描述当作观察事实、扩大命令效果或混淆查询状态，质量为 NOT_PASSED。页面按 `current_assessment_id` 显示采用结果，为空时明确尚无当前判断；不能把最近 Result 或校验 accepted 当作业务正确结论。[逐轮证据](docs/operations/evidence/case-scope-recovery-20261110-01/execution-summary.json)
+该 Run completed/partial，C6 采用，6 条 observed 支持角色及成员依据合规，没有纠正调用。Deep 正文仍把缺口当反证、混淆验收描述和原行为环境，C6 仍有查询状态合并及缺本案依据的条件性外推，整体模型质量 NOT_PASSED。执行、交付、程序采用与正文质量须分别展示。[实际调用及读回](docs/operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)
 
-H 的原生产服务层验收及本地回归均保留正文、范围、来源和完成事实，后轮可读；助手代拟材料核查不代表业务人员授权。知识来源的配置排序与实际本地查询已验证，结果为空；真实非空知识使用、产品页面写操作、自动消费和模型质量继续单列，不随本 change 核销。[问题清单](docs/investigation/current-issues.md)
-
-21 发布后再次读取既有两案及 H 后轮：365 次 GET、16,820 项字段／原文／关联检查通过，8 次预期错误父主体 404 单列，读取前后数据不变；没有新建生产调查或改写原失败。[生产读回](docs/operations/evidence/case-scope-recovery-20261110-01/production-readback/summary.json)
-
-## 7 内部查阅与离线资料
-
-[4177 调查运行记录](http://127.0.0.1:4177/)用于核查 Run、步骤、实际输入输出、错误和原件。生产 Case 从正式库读取；隔离测试条目标明模型／工具替身。它与产品页面分别维护。[使用方法与固定样例](deliverables/investigation-validation-20261106/README.md#调查运行记录页)
-
-Case 查阅页左侧为流程，点击节点后右侧按“概览与原因、提示词、输入、输出、原始记录”查阅；窄屏上下排列。提示词按 system/developer 分开，输入保留消息顺序和输出约束，输出保留模型原答及校验错误。阶段可继续进入关联模型或查询，失败的 Deep 调用也有独立入口；切换模块／轮次清空上一选择。冻结输入归输入，零行、跳过、未记录及未分派分别说明，不推断执行或模型成功。展示使用既有 `runs → run_steps → artifacts`，没有增加或调整告警、API、数据库字段。
-
-离线快照只提供字段和失败样例，不能代替实时接口。各批原答、unknown 和失败保持；追溯材料见[历史目录](docs/handoff/history/2026-11-10-current-handoff-cleanup.json)。
-
-本轮已向 21 追加 6 份查阅记录，共 26 份；524 文件及 525 次 HTTP 核验通过，原资料和工作台容器保持。本地生成目录合计 55 份，与实际服务端集合分别记录。[静态发布回执](docs/operations/evidence/case-scope-recovery-20261110-01/static-publication.json)
+独审 ACCEPT 后统一发布 21 r6，只更新 API，其他五项服务容器保持；365 次生产 GET／16,820 项字段关联检查通过，8 次预期错误归属 404 单列。读取前后及前批生产快照数据一致。4177 追加三份记录，共 29 份，区分两份测试替身和一份真实模型；233 文件／234 HTTP 核验通过。[交付回执](docs/operations/evidence/case-evidence-roles-20261110-01/delivery-summary.json)。产品页面 P01–P04、实际 HTTP 写操作、真实非空知识使用及自动消费另行跟踪，不能以内部工作台或接口有数据核销。[问题清单](docs/investigation/current-issues.md)

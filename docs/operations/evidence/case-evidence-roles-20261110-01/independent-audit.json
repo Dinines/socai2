@@ -1,0 +1,309 @@
+{
+  "schema_version": "socai2.independent-audit.v1",
+  "change": "align-case-finding-evidence-roles",
+  "batch": "case-evidence-roles-20261110-01",
+  "audited_at_utc": "2026-11-10T15:21:13.734535+00:00",
+  "auditor": {
+    "agent": "/root/current_release_audit",
+    "independent_of_this_change_implementation": true,
+    "business_source_edits": false,
+    "new_model_calls": 0,
+    "database_queries_or_writes": 0,
+    "network_or_ssh_calls": 0,
+    "deployments": 0,
+    "git_mutations": 0,
+    "only_written_file": "docs/operations/evidence/case-evidence-roles-20261110-01/independent-audit.json"
+  },
+  "workspace": {
+    "branch": "V1.1",
+    "base_commit": "0dd4b101c34adb7f3b25b4876da79ec4ce01a655",
+    "reviewed_uncommitted_change": true,
+    "excluded_untracked_path": "tools/model-preflight/"
+  },
+  "decision": "ACCEPT",
+  "decision_scope": "本 change 的 C3/C6 Finding 生成角色约束、一次纠正诊断、本地流程及当前交接已完成，可进入一次统一发布。不能把合同合规、执行完成或当前判断采用解释为模型正文质量通过。",
+  "model_quality": "NOT_PASSED",
+  "unresolved_must_fix_findings": [],
+  "resolved_audit_findings": [
+    {
+      "id": "AUDIT-DOC-01",
+      "file": "openspec/changes/align-case-finding-evidence-roles/validation.md",
+      "section": "正文质量表 C3 seq 11 / findings F2",
+      "finding": "原文称该发现未引用 outcome，与保存原答和 source_map 不符：support_ids 为 N1_S38/N1_S39/N1_S41，N1_S39 是 activity.outcome。",
+      "resolution": "明确已有成功状态来源；只对建立会话、外部等具体定语保留需核范围，不凭错误的引用缺失制造质量结论。原答未改。",
+      "verified": true
+    },
+    {
+      "id": "AUDIT-DOC-02",
+      "file": "docs/investigation/model-input-output-current-20261109.md",
+      "lines_at_review": [
+        188,
+        261,
+        263,
+        265
+      ],
+      "finding": "Deep 与末段表格仍将前批 real-model-03、3轮14调用/161323tokens、3PG/160GET/生产365及前批修复范围称为本批。",
+      "resolution": "当前摘要改为 real01、两项PG/6服务读取、1Run/4调用/38844tokens、52GET/3225字段且待统一发布；H及依赖旧证据明确前批，末段链接当前 change。",
+      "verified": true
+    }
+  ],
+  "implementation_review": [
+    {
+      "area": "Finding generation",
+      "result": "PASS",
+      "detail": "仅 Case C3/C6 适配器调用共用 constrain_findings。observed/inferred/unresolved 各复制完整 Finding 必填项、additionalProperties 和长度限制；observed 支持枚举仅成员关联 observation 且非 query_binding_only；无合格观察时不提供 observed；inferred 至少支持一项，unresolved 至少限制一项。逐成员覆盖与正文判断仍归接收/质量审查。"
+    },
+    {
+      "area": "Role and direct-member diagnostics",
+      "result": "PASS",
+      "detail": "反馈 v2 给出角色错误的精确 support_ids 索引、实际角色、query_binding_only、缺观察、逐成员缺直接观察与支持/反证重叠。来源别名映射与接收器一致，复用 time_context 保持原合法 event_time 兼容。"
+    },
+    {
+      "area": "No automatic semantic repair",
+      "result": "PASS",
+      "detail": "新增代码只约束生成和报告诊断，不改原答的 statement/state/support_ids；提示要求重新核主张及依据，不能只删引用或换状态保留无据断言。语义仍可能错误且真实报告保留 NOT_PASSED。"
+    },
+    {
+      "area": "Existing acceptance and execution bounds",
+      "result": "PASS",
+      "detail": "接收解析器、ModelCalls、provider 适配及 C3 wire 压缩与 HEAD 逐字相同。沿既有最多一次纠正及完整重验/局部保留路径；unknown/截断不纠正，预算及 C6 预留未增。既有 provider uniqueItems 降级仍由原接收检查重复，不是本 change 放宽。"
+    },
+    {
+      "area": "Database and public contracts",
+      "result": "PASS",
+      "detail": "改动限内部生成 Schema、配置指令与响应诊断；无 ORM/迁移/告警合同/HTTP DTO 改动；所有旧原答及来源保留。"
+    }
+  ],
+  "independent_checks": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=services/api:services/api/tests:docs/operations:. .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider services/api/tests/test_socai2_case_evidence_roles.py",
+      "exit_code": 0,
+      "passed": 17,
+      "seconds": 1.68
+    },
+    {
+      "command": "openspec validate align-case-finding-evidence-roles --strict --no-interactive",
+      "exit_code": 0,
+      "result": "valid"
+    },
+    {
+      "method": "只读调用 tools.testdata.case_evidence_roles.replay.replay(Path(case-scope-recovery-20261110-01/real-model-03/export/database.json))，与 candidate-replay.json 完整比较",
+      "saved_replay_equal": true,
+      "original_file_unchanged": true,
+      "model_calls": 0,
+      "responses": [
+        {
+          "seq": 11,
+          "role_diagnostics": 1,
+          "mixed_finding_generation_accepted": false,
+          "receiver_rejection": "non_observation_promoted_to_observed"
+        },
+        {
+          "seq": 19,
+          "role_diagnostics": 6,
+          "mixed_finding_generation_accepted": false,
+          "receiver_rejection": "non_observation_promoted_to_observed"
+        },
+        {
+          "seq": 20,
+          "role_diagnostics": 6,
+          "mixed_finding_generation_accepted": false,
+          "receiver_rejection": "non_observation_promoted_to_observed"
+        }
+      ]
+    },
+    {
+      "method": "只读复核保存的 baseline-replay.json，区分 Finding 与完整答复结论；三个 Finding 原生成均接受，但 seq20 完整答复另有 conflicts[0].finding_ids uniqueItems 错误。未在当前代码中重建旧生成器。",
+      "baseline_findings_accepted": [
+        true,
+        true,
+        true
+      ],
+      "baseline_full_answer_acceptance_not_overclaimed": true
+    },
+    {
+      "method": "重放本轮保存的四个请求/原答：当前适配器生成 canonical Schema，按保存 schema_profile 走 prepare_request，C3 再 compact_execution_wire；重建 wire 与保存 body 逐值相等，canonical/wire Schema 与接收器均通过",
+      "calls": 4,
+      "wire_and_raw_receipt_pairs_equal": 4,
+      "canonical_wire_and_receiver_passed": 4,
+      "stages": [
+        {
+          "stage": "C3",
+          "seq": 11,
+          "observed": 3
+        },
+        {
+          "stage": "C4.deep",
+          "seq": 13,
+          "action": "handoff"
+        },
+        {
+          "stage": "C4.deep",
+          "seq": 15,
+          "action": "answer"
+        },
+        {
+          "stage": "C6",
+          "seq": 19,
+          "observed": 3
+        }
+      ]
+    },
+    {
+      "method": "将六条 observed 的成员别名还原为 UUID，逐个支持核 observation、非 query_binding_only、与声明成员相交；全部声明成员均在支持观察的联合范围内",
+      "observed_findings": 6,
+      "passed": 6
+    },
+    {
+      "method": "verify_database_handoff.audit(after,before,foreign_keys,responses) 离线重放；GET kind 从路径恢复，使用未变化的 V1 152 项外键定义；结果与保存 field-checks.json 完整 JSON 多重集比较",
+      "foreign_keys_source": "docs/operations/evidence/case-current-flow-20261110-01/readback-03/foreign-keys.json",
+      "get_responses": 52,
+      "field_checks": 3225,
+      "failed": 0,
+      "saved_check_multiset_equal": true,
+      "database_before_after_equal": true
+    },
+    {
+      "method": "real-model-01/plan.json 中全部源码/配置/材料指纹与当前本地文件比较",
+      "files": 98,
+      "mismatches": []
+    },
+    {
+      "method": "static-manifest.json 清单逐文件 SHA256 及 index audit-records ID 比较",
+      "static_files": 233,
+      "mismatches": [],
+      "new_records": 3,
+      "local_total_records": 58,
+      "all_new_ids_present": true
+    }
+  ],
+  "audit_attempt_notes": [
+    "首次独立 wire 对比直接比较 canonical Schema 与已适配的发送 Schema，触发断言；核对既有 ModelCalls 顺序后，按保存 provider schema_profile 和 C3 compact_execution_wire 重放，四个 body 均逐值一致。该次只是审计方法补全，未改源码/原件或对外调用。"
+  ],
+  "reused_evidence": {
+    "contract_tests": {
+      "path": "contract-tests-01.xml",
+      "tests": 86,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "independently_reran_all_86": false
+    },
+    "unknown_budget_tests": "复用本轮 86 项相关检查与未变 ModelCalls/预算代码；本审计仅另跑角色专项，不重复全套或真实数据库。",
+    "local_pg": {
+      "path": "local-pg-02/summary.json",
+      "scenarios": 2,
+      "service_reads": 6,
+      "real_model_calls": 0,
+      "case_substitute_calls_per_scenario": 6,
+      "schema_tables": 29,
+      "schema_columns": 462,
+      "schema_unchanged": true,
+      "observed_saved_state": [
+        {
+          "scenario": 1,
+          "role_errors": 2,
+          "current_assessment_present": true,
+          "state": "completed",
+          "delivery_state": "partial",
+          "stop_reason": "final_delivery_saved"
+        },
+        {
+          "scenario": 2,
+          "role_errors": 4,
+          "current_assessment_present": false,
+          "state": "completed",
+          "delivery_state": "partial",
+          "stop_reason": "partial_analysis_saved_conclusion_rejected"
+        }
+      ],
+      "independently_reran_pg": false
+    },
+    "original_failed_pg": {
+      "path": "local-pg-01/summary.json",
+      "failed_scenarios": [
+        "test_case_boundary_role_correction_full_flow",
+        "test_case_boundary_role_repeated_error_partial_flow"
+      ],
+      "preserved": true,
+      "reason": "原注入器选到合法 event_time 上下文，未触发预期角色错误；当前注入器明确排除 time_context，接收规则未改变。"
+    }
+  },
+  "real_model_evidence": {
+    "case_id": "349ddca1-f064-5659-9b82-663fadf24e56",
+    "run_id": "98dda2b8-5346-47d0-bbf0-d17857866cd6",
+    "model_calls": 4,
+    "reported_tokens": 38844,
+    "cost": null,
+    "corrections": 0,
+    "state": "completed",
+    "delivery_state": "partial",
+    "current_assessment_present": true,
+    "observed_role_and_member_scope_passed": 6,
+    "model_quality": "NOT_PASSED",
+    "not_controlled_ab": true,
+    "no_accuracy_claim": true
+  },
+  "handoff": {
+    "status": "PASS",
+    "current_batch_vs_prior_evidence_distinguished": true,
+    "human_feedback_not_business_authorization": true,
+    "model_quality_gaps_kept_open": true,
+    "master_investigation_tasks_not_closed": true,
+    "production_release_at_audit": "v1.2-20261110-r5",
+    "this_change_release": "not yet deployed",
+    "static_publication": "prepared locally, not a server publication receipt",
+    "git_and_parent_publication": "not yet performed"
+  },
+  "not_verified_or_not_covered": [
+    "没有新增真实模型、DB/SSH/网络或浏览器操作；本地 PG/真实模型运行由保存回执复核，不重派结束批次。",
+    "52 GET 使用本地 ASGI 及真实本地 PostgreSQL，认证依赖按测试租户覆盖；不是本轮生产网络/端到端认证验收。",
+    "模型正文仍有缺口当反证、验收描述当原行为环境、查询状态合并及缺个案依据的条件性外推；角色正确不证明主张真。",
+    "本批真实模型未触发纠正，纠正路径由 PG 替身/原失败回放直接验证；不据单 Run 证明所有场景稳定。",
+    "非空知识实际使用、H 正确利用/授权、产品 HTTP/页面 P01-P04、自动消费仍待主调查范围验证。",
+    "本 change 21 发布/运行源码和生产读回、静态追加、Git与父项目远端引用均需后续独立回执，当前 ACCEPT 不预报成功。"
+  ],
+  "unchanged_receiver_and_executor_files": {
+    "services/api/app/socai2/baseline_analysis_contract.py": "046fe35f43ad90c06789b60706106b1309fd8d934972a006efa4d0e1961c5146",
+    "services/api/app/socai2/baseline_delivery_contract.py": "791e3bde6efa7fa974ebc84dd97ad61259e229afb21381d0d23b5afd814000da",
+    "services/api/app/socai2/baseline_deep_contract.py": "768986d150ab10541670735b32f64be59c9eecd7368e22278e6a2406b955655b",
+    "services/api/app/socai2/baseline_reasoning.py": "e6f4cec797d47baa98d2906ad64c1fd822c97bb56d5593d989f23b02dd37b0ca",
+    "services/api/app/socai2/model_protocol.py": "0c5baf503dc584bfcd55cdaaca122baf14f57f00ea5d71fa66d3437a9579eb76",
+    "services/api/app/socai2/baseline_execution_schema.py": "201a31aa1e410cd84e71e90d4d99f790a6e0f1b4e95fdfde686843490f601527"
+  },
+  "reviewed_file_sha256": {
+    "PROGRESS.md": "73293c664cefe08d0b5d623dce645ec476592fdb0f11cf9dda764101588927bb",
+    "FRONTEND_BACKEND_HANDOFF.md": "11d924158293809b71d32474559d72eb75fbadad99f175e410a108e65bb27cc2",
+    "docs/investigation/current-issues.md": "850c029d93f36b5021c22023e9510b76333013333d08f2e82cf805effcae65c4",
+    "docs/investigation/current-execution-ledger.md": "7443f5040d052f8323e95980b7cd58cea6bcfdbcefdbfbbf51bc39acf9ff402e",
+    "docs/investigation/model-input-output-current-20261109.md": "26d6afa182124ccb610bd0dc3f90d401b48ba97d80e0f299c26b6050efd9278c",
+    "docs/investigation/socai2-page-data-handoff-20261106.md": "1b68d64608fd5170954980a6414ffc66e7a60734d2d480f69457197ae39937c1",
+    "deliverables/investigation-validation-20261106/README.md": "486613c4de8ddc7f404573f9166780810bc011dc363d1cdb916d5178eaa9a0d4",
+    "openspec/changes/align-case-finding-evidence-roles/proposal.md": "161f15f60fee2b898bc85cf0d22e4f48910df0ca01056f9627292da0b10b5907",
+    "openspec/changes/align-case-finding-evidence-roles/design.md": "281dca79e72b5449dd466513d236c425c94232bfe9004ffdeaeb35de229d92e8",
+    "openspec/changes/align-case-finding-evidence-roles/tasks.md": "8f28264156a7d44fe930daaa71b70eb9304bdb6c400a8b12c749e4969bbc3938",
+    "openspec/changes/align-case-finding-evidence-roles/validation.md": "2e36a8d84c21a25a1fdca16d9a543b69fbc8afd91e1f2fc66e0da2a48df84751",
+    "openspec/changes/align-case-finding-evidence-roles/specs/case-evidence-scope-recovery/spec.md": "d7d25e349987fd8e9c93963f1c34f67f14d3ee82ed42bdc67cc4b7ae782fadff",
+    "openspec/changes/align-case-finding-evidence-roles/audit.md": "ea091d2bb77bec5001009952b372a2851a210a606015cb74cf6756f5d9acdc08",
+    "services/api/app/socai2/case_finding_schema.py": "b68cc6a8651fc8210d76beeadab3517b9de5027ffc396502c8e896e6f0c66edc",
+    "services/api/app/socai2/case_citation_feedback.py": "9489552a4c8edbb1518efe26ae702711e5d6469677c10fafc0579db03558f16b",
+    "services/api/app/socai2/case_followup_output.py": "9f663a0b56bfae0872f117fea74d5c532c5e043a2b821be1c36fd094d24101cc",
+    "services/api/app/socai2/case_output_adapter.py": "db14838fff24bfde18a3ed5e78f95950224f43ee987047d7b25625f8c1fa2ded",
+    "services/api/app/socai2/case-input-v1.json": "d60aff683184539f19b69e61b3b91dd78bdf1c00d2d934206f97c0adfd8763e6",
+    "services/api/tests/test_socai2_case_evidence_roles.py": "d006b8fee6831cf1683f976ba55ba1c07a548b4ae4d433744908a17c744dd154",
+    "services/api/tests/test_socai2_case_boundary_pg.py": "00675bc6d215a5d320de57fb223ae53eb4f6a20003910c0145cae67d63fafd08",
+    "services/api/tests/test_socai2_case_followup_pg.py": "9dd7fe4d29f01b69ff145829554f483e5ca2205e0d9ed17417e6c85c535825b6",
+    "tools/testdata/case_evidence_roles/replay.py": "067cfe88b78bab5cfb0bf098e57ce8f429d481ff2b2d6b5875c9aae1d1273ab0"
+  },
+  "evidence_sha256": {
+    "docs/operations/evidence/case-evidence-roles-20261110-01/baseline-replay.json": "e696b7874b42032584068b30bbdd89513ba408db356022fbe8fefe3ed805bb37",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/candidate-replay.json": "0ee51448cfeb57eb5c710d3baccdacf1981a6809c9e6ed31c94f1418951acd4e",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-replay.json": "ca2f39b9daba59f18c7ea3664da85ffe5a50d069468c2007b3b5e7785551753b",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/execution-summary.json": "d5c120bd563d15daae4644169203bd6f1652af6e7898d7c2560fcc1cc451ace6",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/contract-tests-01.xml": "c19b786b414a9d9d178a7499bbb7177ff97040d9660cf9495a7c076329db81db",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/local-pg-01/summary.json": "c683687bf815e2cdfd598759d594eaff5d7b9471509e80fbff6c671fdf9812ee",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/local-pg-02/summary.json": "c9519f0ff568e15e1ccccd95b79b0421c16f99aac59fc4ef6b6a695caa1c7385",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/plan.json": "d28761e179bf72ee429d1399f3b189559f079a16d6864d79d2e662cbb284cb83",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/static-manifest.json": "c3dd85154b3162b09ded32b3ec8640dc5729c67f6636e4f68612f9ec5121ec76"
+  }
+}

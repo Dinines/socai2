@@ -1,6 +1,6 @@
 # 调查模块入口
 
-当前状态见 [PROGRESS](../../PROGRESS.md)，前后端接手以[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)为准。21 已部署 A/I 和 Case C1/C3/Deep/C6；当前流程、配置与验收见[流程实测与发布](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)。
+当前状态见 [PROGRESS](../../PROGRESS.md)，前后端接手以[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)为准。21 已部署 A/I 和 Case C1/C3/Deep/C6；当前流程、配置与验收见[流程实测与发布](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
 
 | 接手内容 | 资料 |
 | --- | --- |
@@ -9,6 +9,6 @@
 | 程序及模型职责 | [执行账本](current-execution-ledger.md)、[模型输入输出](model-input-output-current-20261109.md) |
 | 问题与后续验收 | [问题清单](current-issues.md)、[OpenSpec 任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 | 21 与本机接入 | [部署](../../deploy/aisoc21/README.md)、[SSH 转发](../operations/mac-ssh-relay-20261107.md) |
-| 运行原件及样例 | [工作台与离线材料](../../deliverables/investigation-validation-20261106/README.md)、[本批证据](../operations/evidence/case-current-flow-20261110-01/) |
+| 运行原件及样例 | [工作台与离线材料](../../deliverables/investigation-validation-20261106/README.md)、[本批证据](../operations/evidence/case-evidence-roles-20261110-01/) |
 
-原始需求、各批失败及模型原答均保留。实现、运行交付、数据读取、页面接线和模型质量分别验收；未完成任务继续保留在同一 OpenSpec change。
+原始需求、各批失败及模型原答均保留。实现、运行交付、数据读取、页面接线和模型质量分别验收；未完成主任务继续保留在主调查 OpenSpec；各独立交付按一个 change 完整验收后发布。
