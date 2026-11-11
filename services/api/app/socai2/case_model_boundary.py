@@ -54,6 +54,11 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     for identity, body, _ in enrichment:
         owners = sorted(set(body.get("actual_args", {}).get("scope", {}).get("alert_ids", [])) & set(context.alerts))
         for ref, original, projected, _ in query_items(None, {"id": str(identity), "content_json": body}, profile.business["render"]):
+            if body.get("tool_name") == "knowledge" and (ref.get("source_path") or "").startswith("$.rows."):
+                # Ranking and index identity remain in the original receipt/4177,
+                # not as apparent evidence strength in the model's business view.
+                for key in ("similarity", "content_sha256"):
+                    projected.pop(key, None)
             query_members = source_members(context, ref, tool_payloads) if ref["source_path"] else owners
             additional.append({"ref": ref, "original_value": original, "value": projected,
                 **query_scope(body, ref["source_path"], query_members, context.alerts),

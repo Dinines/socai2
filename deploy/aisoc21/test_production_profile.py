@@ -66,6 +66,21 @@ def test_required_profile_has_no_implicit_model_database_or_policy(tmp_path):
     assert "OPENAI_API_KEY" not in env and "DATABASE_URL" not in env
 
 
+def test_knowledge_profile_is_explicit_and_mount_matches_runtime(tmp_path):
+    path = profile_file(tmp_path)
+    data = path.read_text()
+    data = data.replace('[runtime]', '[runtime]\nSOCAI2_KNOWLEDGE_PROFILE = "/run/knowledge/profile.json"', 1)
+    data += '\n[knowledge]\nprofile_file = "/frozen/knowledge.json"\nprofile_mount = "/run/knowledge/profile.json"\n'
+    data += 'key_file = "/private/qdrant-key"\nkey_mount = "/run/knowledge/qdrant-key"\n'
+    path.write_text(data)
+    selected = load(path)
+    assert selected.knowledge.profile_file == "/frozen/knowledge.json"
+    assert runtime_values(selected)["SOCAI2_KNOWLEDGE_PROFILE"] == selected.knowledge.profile_mount
+    path.write_text(data.replace('profile_mount = "/run/knowledge/profile.json"', 'profile_mount = "/wrong/profile.json"'))
+    with pytest.raises(ProfileError, match="processing_knowledge_profile_mismatch"):
+        load(path)
+
+
 @pytest.mark.parametrize("before,after", [
     ('port = 25439', 'port = true'), ('tls_mode = "verify-full"', 'tls_mode = "disable"'),
     ('alias = "aisoc-investigation"', 'alias = "wrong-model"'),

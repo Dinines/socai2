@@ -50,7 +50,7 @@ def load(path):
     path = Path(path).resolve(strict=True)
     raw = path.read_bytes()
     data = tomllib.loads(raw.decode())
-    need(set(data) == {"version", "default_tenant", "runtime", *SECTIONS}, "processing_profile_incomplete")
+    need(set(data) - {"knowledge"} == {"version", "default_tenant", "runtime", *SECTIONS}, "processing_profile_incomplete")
     need(data["version"] == "socai2.production-profile.v1.2", "processing_profile_version_unsupported")
     for name, keys in SECTIONS.items():
         need(isinstance(data[name], dict) and set(data[name]) == keys, "processing_profile_section_invalid")
@@ -70,6 +70,11 @@ def load(path):
     need(type(data["docker"]["pids_limit"]) is int and data["docker"]["pids_limit"] > 0, "processing_profile_pid_limit_invalid")
     for value in data["paths"].values():
         need(isinstance(value, str) and Path(value).is_absolute() and "," not in value, "processing_profile_path_invalid")
+    knowledge = data.get("knowledge")
+    if knowledge is not None:
+        need(isinstance(knowledge, dict) and set(knowledge) == {"profile_file", "profile_mount", "key_file", "key_mount"}
+             and all(isinstance(v, str) and Path(v).is_absolute() and not any(c in v for c in ",\n\r\x00")
+                     for v in knowledge.values()), "processing_knowledge_mount_invalid")
     endpoint = urlsplit(data["model"]["base_url"])
     need(endpoint.scheme in {"http", "https"} and endpoint.hostname and not endpoint.username
          and not endpoint.query and not endpoint.fragment, "processing_profile_model_url_invalid")
@@ -77,6 +82,9 @@ def load(path):
     required = {"ENVIRONMENT", "ENV", "DEBUG", "AISOC_DEV_AUTH_BYPASS", "AISOC_AIRGAPPED", "AISOC_AIRGAP_ALLOWLIST",
         "SOCAI2_SOURCE_UEBA_ENABLED", "SOCAI2_SOURCE_KNOWLEDGE_ENABLED", "SOCAI2_SOURCE_GRAPH_ENABLED",
         "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED", "DATABASE_POOL_SIZE", "DATABASE_MAX_OVERFLOW"}
+    if knowledge is not None:
+        required.add("SOCAI2_KNOWLEDGE_PROFILE")
+        need(runtime.get("SOCAI2_KNOWLEDGE_PROFILE") == knowledge["profile_mount"], "processing_knowledge_profile_mismatch")
     need(isinstance(runtime, dict) and set(runtime) == required and all(isinstance(v, str) and
          not any(c in v for c in "\n\r\x00") for v in runtime.values()), "processing_profile_runtime_invalid")
     need(runtime["ENVIRONMENT"] == runtime["ENV"] == "production" and runtime["AISOC_DEV_AUTH_BYPASS"] == "false"
@@ -94,6 +102,7 @@ def load(path):
          "processing_profile_required_endpoints_not_allowed")
     return SimpleNamespace(path=path, sha256=hashlib.sha256(raw).hexdigest(),
         policy_sha256=hashlib.sha256(policy_raw).hexdigest(), policy=policy, runtime=runtime,
+        knowledge=SimpleNamespace(**knowledge) if knowledge is not None else None,
         default_tenant=UUID(data["default_tenant"]), **{key: SimpleNamespace(**data[key]) for key in SECTIONS})
 
 

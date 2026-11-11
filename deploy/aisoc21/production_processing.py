@@ -183,10 +183,14 @@ def run(tenant, actor, args):
             "-e", "SOCAI2_PROCESSING_TENANT_ID=" + str(tenant)]
     if actor:
         argv.extend(("-e", "SOCAI2_PROCESSING_ACTOR_ID=" + str(actor)))
-    for local, remote in ((HERE / "processing_job.py", "/opt/processor/production_job.py"),
+    mounts = [(HERE / "processing_job.py", "/opt/processor/production_job.py"),
                           (HERE / "production_ingress.py", "/opt/processor/production_ingress.py"),
                           (Path(PROFILE.paths.ca_file), PROFILE.paths.ca_mount),
-                          (Path(PROFILE.paths.policy_file), PROFILE.paths.policy_mount)):
+                          (Path(PROFILE.paths.policy_file), PROFILE.paths.policy_mount)]
+    if getattr(PROFILE, "knowledge", None) is not None:
+        mounts.extend([(Path(PROFILE.knowledge.profile_file), PROFILE.knowledge.profile_mount),
+                       (Path(PROFILE.knowledge.key_file), PROFILE.knowledge.key_mount)])
+    for local, remote in mounts:
         need(local.is_file(), "production_mount_missing")
         argv.extend(("--mount", "type=bind,src=" + str(local) + ",dst=" + remote + ",readonly"))
     argv.extend(("--entrypoint", "python", IMAGE, "-B", "/opt/processor/production_job.py", *args))

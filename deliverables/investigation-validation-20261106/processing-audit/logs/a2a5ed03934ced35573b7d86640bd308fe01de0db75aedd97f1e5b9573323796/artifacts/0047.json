@@ -1,0 +1,98 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-11T14:17:50.334571+00:00",
+  "case_id": "c171f011-ec81-5020-914f-0e83eb9fab0f",
+  "content_json": {
+    "captured_at": "2026-11-11T14:17:50.333633+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "{\n  \"summary\": \"案件涉及主机 socai2-flow-20261107-01 在 2026-11-07T06:33:27Z 至 06:44:07Z 期间，由用户 flow-observer 发起的三起关联事件：身份认证登录（A3）、进程启动 PowerShell 执行 Get-LocalUser（A1）及出站网络连接至 198.51.100.77（A2）。现有证据仅确认动作发生，未证实命令执行结果、数据读取或业务授权。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录显示用户 flow-observer 在主机 socai2-flow-20261107-01 上启动了 powershell.exe，命令为 Get-LocalUser。该动作成功启动，但无返回数据证明枚举完成或信息泄露。\",\n      \"evidence_ids\": [\"N1_S7\", \"N1_S8\", \"N1_S9\", \"N1_S10\", \"N1_S11\", \"N1_S12\", \"N1_S13\", \"N1_S19\", \"N1_S20\", \"N1_S21\", \"N1_S22\", \"N1_S23\", \"N1_S24\", \"N1_S25\", \"N1_S26\", \"N1_S27\", \"N1_S29\", \"N1_S30\", \"N1_S31\", \"N1_S32\", \"N1_S33\"],\n      \"limitations\": [\"进程启动成功不等于命令执行完成\", \"无返回内容证明数据已读取\", \"无授权记录\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录显示主机 socai2-flow-20261107-01 通过 TCP 443 端口向 IP 198.51.100.77 发起出站连接。连接成功建立，但未证实传输内容或业务目的。\",\n      \"evidence_ids\": [\"N1_S34\", \"N1_S35\", \"N1_S36\", \"N1_S37\", \"N1_S38\", \"N1_S40\", \"N1_S41\", \"N1_S42\", \"N1_S43\", \"N1_S48\", \"N1_S49\", \"N1_S50\", \"N1_S51\", \"N1_S52\", \"N1_S53\", \"N1_S54\", \"N1_S56\", \"N1_S57\", \"N1_S58\", \"N1_S59\", \"N1_S60\", \"N1_S61\", \"N1_S62\", \"N1_S63\", \"N1_S64\"],\n      \"limitations\": [\"连接成功不证明数据外传\", \"无流量载荷分析\", \"无业务授权\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"analyzed\",\n      \"summary\": \"记录显示用户 flow-observer 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01。登录动作完成，但会话状态及权限范围未知。\",\n      \"evidence_ids\": [\"N1_S65\", \"N1_S66\", \"N1_S67\", \"N1_S68\", \"N1_S69\", \"N1_S71\", \"N1_S76\", \"N1_S77\", \"N1_S78\", \"N1_S79\", \"N1_S80\", \"N1_S81\", \"N1_S82\", \"N1_S84\", \"N1_S85\", \"N1_S86\", \"N1_S87\", \"N1_S88\", \"N1_S89\"],\n      \"limitations\": [\"无会话持续时间\", \"无权限变更记录\", \"无业务授权\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S7\", \"N1_S34\", \"N1_S65\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"用户 flow-observer 可能为自动化运维脚本或合法管理员\", \"事件可能属于测试环境演练\"],\n      \"limitations\": [\"缺乏审批流证据\", \"缺乏用户行为基线对比\", \"缺乏命令执行结果日志\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"用户 flow-observer 在短时间内（约 40 秒）完成了登录、启动枚举命令及建立外联，行为序列具有连贯性，符合典型攻击链或自动化运维特征。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S7\", \"N1_S34\", \"N1_S65\", \"N1_S8\", \"N1_S35\", \"N1_S66\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"用户可能正在执行批量合规检查或故障排查\", \"系统可能存在配置错误导致自动触发\"],\n      \"limitations\": [\"时间邻近不等于因果\", \"未确认用户身份真实性\", \"未确认主机当前状态\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"unresolved\",\n      \"statement\": \"无法确定用户 flow-observer 是否拥有执行 Get-LocalUser 命令及访问目标 IP 的合法授权，亦无法确认是否发生敏感数据泄露。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S11\", \"N1_S40\", \"N1_S66\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"用户权限不足导致命令失败但未记录\", \"连接被防火墙拦截但未记录\", \"数据外传未触发 DLP 规则\"],\n      \"limitations\": [\"无 IAM 审计日志\", \"无网络流量深度包检测\", \"无人工确认\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"answered\",\n      \"answer\": \"原始记录支持以下行为：用户 flow-observer 在主机 socai2-flow-20261107-01 上成功登录（A3）；启动 PowerShell 进程执行 Get-LocalUser 命令（A1）；建立至 198.51.100.77 的 TCP 443 出站连接（A2）。\",\n      \"evidence_ids\": [\"N1_S7\", \"N1_S8\", \"N1_S9\", \"N1_S10\", \"N1_S11\", \"N1_S12\", \"N1_S13\", \"N1_S19\", \"N1_S20\", \"N1_S21\", \"N1_S22\", \"N1_S23\", \"N1_S24\", \"N1_S25\", \"N1_S26\", \"N1_S27\", \"N1_S29\", \"N1_S30\", \"N1_S31\", \"N1_S32\", \"N1_S33\", \"N1_S34\", \"N1_S35\", \"N1_S36\", \"N1_S37\", \"N1_S38\", \"N1_S40\", \"N1_S41\", \"N1_S42\", \"N1_S43\", \"N1_S48\", \"N1_S49\"]\n    ,\n      \"limitations\": [\"所有证据均为动作记录，无结果数据\", \"标签 synthetic 仅表示数据生成方式，不证明行为性质\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"answered\",\n      \"answer\": \"成员 A1、A2、A3 共享同一主机、同一用户及时间窗口，且行为顺序为登录->进程启动->网络连接，存在时间邻近关联。\",\n      \"evidence_ids\": [\"N1_S7\", \"N1_S34\", \"N1_S65\", \"N1_S8\", \"N1_S35\", \"N1_S66\", \"N1_S9\", \"N1_S36\", \"N1_S67\"]\n    ,\n      \"limitations\": [\"时间邻近不证明因果\", \"无跨成员直接行为证据（如 A3 的登录直接导致 A1 的进程）\", \"无法排除巧合或独立事件\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"恶意解释依据：MITRE ATT&CK T1087.001 技术匹配，行为序列符合侦察特征。正常解释依据：用户名为 flow-observer，可能为监控或运维角色。误操作依据：命令为常见枚举命令，可能用于故障排查。\",\n      \"evidence_ids\": [\"N1_S92\", \"N1_S93\", \"N1_S94\", \"N1_S95\", \"N1_S96\", \"N1_S97\", \"N1_S98\", \"N1_S99\", \"N1_S11\", \"N1_S40\", \"N1_S66\", \"N1_S5\"]\n    ,\n      \"limitations\": [\"标签 synthetic 和 production-multialert 不证明恶意\", \"无用户行为基线\", \"无审批记录\", \"无数据泄露证据\"]\n    },\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无明确授权材料。人工反馈未提供审批记录。系统日志未显示权限变更或授权令牌。\",\n      \"evidence_ids\": []\n    ,\n      \"limitations\": [\"未查询 IAM 审计日志\", \"未查询审批工作流\", \"未联系人工确认\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"观察到的动作：登录、进程启动、连接建立。已证实的作用：无（命令未返回结果，连接无载荷分析）。未知影响：是否读取了本地用户列表，是否向 198.51.100.77 传输了数据，是否建立了持久化会话。\",\n      \"evidence_ids\": [\"N1_S11\", \"N1_S40\", \"N1_S66\"]\n    ,\n      \"limitations\": [\"无法确认命令执行结果\", \"无法确认连接传输内容\", \"无法确认会话后续活动\"]\n    },\n    {\n      \"id\": \"coverage\",\n      \"state\": \"answered\",\n      \"answer\": \"已覆盖 A1、A2、A3 三起告警及关联对象。缺口：未查询威胁情报（N1_S100）、UEBA（N1_S101）、历史行为（N1_S102）及图分析（N1_S103）。工具状态：assets 查空，knowledge 返回技术解释，threat_intel/ueba/history/graph 未执行。\",\n      \"evidence_ids\": [\"N1_S90\", \"N1_S91\", \"N1_S100\", \"N1_S101\", \"N1_S102\", \"N1_S103\"]\n    ,\n      \"limitations\": [\"查空不构成反证\", \"未执行工具不代表无数据\", \"知识检索结果非案件事实\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户登录、认证活动及权限使用。\",\n      \"alert_ids\": [\"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"无会话详情\", \"无权限范围\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机资源、进程活动及网络连接。\",\n      \"alert_ids\": [\"A1\", \"A2\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"无配置变更\", \"无资源隔离状态\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件、链接或附件相关记录。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无相关数据\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户数据访问及潜在外传行为。\",\n      \"alert_ids\": [\"A1\", \"A2\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"无数据访问日志\", \"无外传确认\"]\n    }\n  ],\n  \"conflicts\": [],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"查询 IAM 审计日志及审批记录，确认用户 flow-observer 的权限及操作授权。\",\n      \"required_evidence\": \"审批记录、权限变更日志、用户角色定义。\",\n      \"source_ids\": []\n    ,\n      \"object_keys\": [\"O1\", \"O5\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"impact\",\n      \"alert_ids\": [\"A1\", \"A2\"],\n      \"mode\": \"deep\",\n      \"objective\": \"查询进程执行结果日志及网络流量载荷，确认是否读取本地用户列表及传输数据。\",\n      \"required_evidence\": \"命令输出、文件读取记录、网络数据包内容。\",\n      \"source_ids\": []\n    ,\n      \"object_keys\": [\"O1\", \"O2\", \"O3\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"decision_critical\"\n    }\n  ]\n}",
+              "provider_specific_fields": {
+                "reasoning": null,
+                "refusal": null
+              },
+              "role": "assistant"
+            },
+            "provider_specific_fields": {
+              "routed_experts": null,
+              "stop_reason": null,
+              "token_ids": null
+            }
+          }
+        ],
+        "created": 1794406601,
+        "id": "chatcmpl-843041d8a630b3a7",
+        "model": "aisoc-investigation",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 3373,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 11331,
+          "total_tokens": 14704
+        }
+      },
+      "validation_error": null
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-843041d8a630b3a7",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 11331,
+      "output_tokens": 3373,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-843041d8a630b3a7",
+      "total_tokens": 14704,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "e870f1c5-1ae3-49e4-b2a9-e23a82c815d4",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "9a57002a88366cc07c33b19b010bea0463a05b63c4692bbe1c6276d3b3c1836b",
+    "original_size_bytes": 11484,
+    "reason": null,
+    "retained_sha256": "9a57002a88366cc07c33b19b010bea0463a05b63c4692bbe1c6276d3b3c1836b",
+    "retained_size_bytes": 11484,
+    "truncated": false
+  },
+  "run_id": "e1229e23-3fce-43ea-951a-aa8d74c48bbb",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "9a57002a88366cc07c33b19b010bea0463a05b63c4692bbe1c6276d3b3c1836b",
+  "size_bytes": 11484,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "6e71efcf-61f8-4489-9245-c845ac7b8191",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "83b83fb8-282c-49c8-ad07-2cac05f55dcc",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

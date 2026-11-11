@@ -62,9 +62,11 @@ def selection_config(context):
     return selected_profile(context).config["enrichment"]
 
 
-def selection_plan(context):
+def selection_plan(context, knowledge_keys=None):
     """Rank frozen object relevance, without an LLM call or inferred verdict."""
     keys = {source: selectors(context, source) for source in SOURCES}
+    if knowledge_keys is not None:
+        keys["knowledge"] = knowledge_keys
     has_host = any(k["object_type"] == "host" for k in keys["assets"])
     has_specific = bool(keys["threat_intel"] or keys["ueba"] or has_host)
     ranking = {
@@ -170,6 +172,11 @@ async def query(service, tenant_id, source, args):
     """One bounded SELECT per call, with explicit tenant filters even without RLS."""
     if source == "graph":
         return await optional.graph_query({**args, "tenant_id": str(tenant_id)})
+    if source == "knowledge":
+        from .knowledge_config import configured
+        if configured():
+            from .knowledge_source import query as knowledge_query
+            return await knowledge_query(service, tenant_id, args)
     async with service.transaction(tenant_id, readonly=True) as store:
         observed = await store.now()
         params = {"tenant": tenant_id, "keys": json.dumps(args["parameters"]["selectors"]),

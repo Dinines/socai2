@@ -88,6 +88,22 @@ class KBDocResponse(BaseModel):
     created_by: str | None
 
 
+class IndexRequest(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1)
+
+
+@router.post("/index", summary="Index selected stored knowledge chunks for investigation")
+async def index_documents(
+    body: IndexRequest, db: DBSession, user: Annotated[AuthUser, Depends(require_permission("settings:write"))]
+) -> dict:
+    from app.socai2.baseline_optional_sources import SourceUnavailable
+    from app.socai2.knowledge_source import index
+    try:
+        return await index(db, user.tenant_id, body.document_ids)
+    except SourceUnavailable as exc:
+        raise HTTPException(status_code=503, detail={"code": str(exc), "document_storage_unchanged": True}) from None
+
+
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=3)
     doc_kinds: list[DocKind] = Field(default_factory=list)

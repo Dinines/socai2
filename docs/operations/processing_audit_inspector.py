@@ -105,6 +105,107 @@ function responsePayload(artifact) {
     const body = bodyOf(artifact) || {};
     return body.payload || body;
 }
+function knowledgeReceipts(runId) {
+    const values = [];
+    for (const [id, el] of artifactElements) {
+        if (el.dataset.runId !== runId) continue;
+        const artifact = linkedArtifact(id), body = bodyOf(artifact);
+        if (artifact?.kind !== 'tool_response' || body?.tool_name !== 'knowledge') continue;
+        let metadata = body.source_metadata || {};
+        for (const [sid, summaryEl] of artifactElements) {
+            if (summaryEl.dataset.runId !== runId) continue;
+            const summary = bodyOf(linkedArtifact(sid));
+            const source = Array.isArray(summary?.sources) && summary.sources.find(s => s.artifact_id === id);
+            if (source?.source_metadata) { metadata = source.source_metadata; break; }
+        }
+        values.push({artifact, body, metadata});
+    }
+    return values;
+}
+function showKnowledge(view, row, artifacts) {
+    const entry = knowledgeReceipts(row.run_id).find(r => r.artifact.step_id === row.id || r.artifact.id === row.id);
+    if (!entry || view === 'raw' || view === 'prompt') return false;
+    const {body, metadata} = entry;
+    const keys = body.actual_args?.parameters?.selectors || [];
+    const purposeKeys = keys.filter(k => k.purpose);
+    inspectorContent.append(element('p', '知识用于技术解释和取证指导；相关度不代表本案事实置信度。', 'quiet'));
+    if (!purposeKeys.length) {
+        empty('本记录未保存按目标的检索详情。原有参数和结果可在“原始记录”查看。');
+        block('实际状态', {state: body.state, error: body.error});
+        return true;
+    }
+    if (view === 'overview') {
+        block('本地嵌入与检索', {model: metadata.model, dimension: metadata.dimension,
+            method: metadata.retrieval_method, collection: metadata.collection, profile_sha256: metadata.profile_sha256});
+        block('实际调用记录', metadata.calls);
+        block('错误或未查询原因', metadata.error || metadata.unavailable_reason || body.error);
+    }
+    for (const key of purposeKeys) {
+        const receipt = (metadata.queries || []).find(q => q.object_key === key.object_key);
+        inspectorContent.append(element('h4', key.purpose_label || key.purpose));
+        if (view === 'overview') {
+            block('执行情况', receipt || {state: body.state === 'skipped' ? '未查询' : '未记录目标回执', error: body.error});
+            block('用途', key.use);
+        } else if (view === 'input') {
+            block('实际检索文本', key.value);
+            block('材料来源', key.source_paths);
+            block('筛选与限制', {filters: key.filters, limit: key.limit, score_threshold: key.score_threshold});
+        } else if (view === 'output') {
+            const hits = (body.rows || []).filter(r => r.object_key === key.object_key);
+            if (!hits.length) empty(receipt?.state === 'completed' && receipt.returned_rows === 0 ?
+                '该目标查询完成，无符合条件的片段。' : '没有保存命中片段，请结合实际状态查看。');
+            for (const hit of hits) {
+                block(hit.record?.title || '知识片段', {purpose: hit.purpose_label, use: hit.use,
+                    similarity: hit.similarity, document: hit.record, content_sha256: hit.content_sha256,
+                    limitations: hit.limitations});
+            }
+            block('返回范围', receipt);
+        }
+    }
+    sourceLink(artifactElements.get(entry.artifact.id));
+    return true;
+}
+function citationValues(value, path = '$', found = []) {
+    if (!value || typeof value !== 'object') return found;
+    for (const [key, child] of Object.entries(value)) {
+        if (['source_ids','evidence_ids','support_ids','counter_ids'].includes(key) && Array.isArray(child)) {
+            for (const id of child) if (typeof id === 'string') found.push({id, path: path + '.' + key});
+        } else if (child && typeof child === 'object') citationValues(child, path + '.' + key, found);
+    }
+    return found;
+}
+function showKnowledgeUsage(row, requests, responses) {
+    if (!requests.length) return;
+    const receipts = knowledgeReceipts(row.run_id);
+    if (!receipts.length) return;
+    const used = [], citations = [];
+    let parsed = false;
+    for (const response of responses) {
+        const raw = responsePayload(response)?.raw;
+        for (const choice of raw?.choices || []) {
+            try { citations.push(...citationValues(JSON.parse(choice.message.content))); parsed = true; } catch (_) { /* Preserve original output below. */ }
+        }
+    }
+    for (const request of requests) {
+        const saved = bodyOf(request), payload = saved?.payload || saved;
+        for (const [alias, source] of Object.entries(payload?.source_map || {})) {
+            const receipt = receipts.find(r => r.artifact.id === source.ref?.id);
+            const match = /^\$\.rows\.(\d+)$/.exec(source.ref?.source_path || '');
+            if (!receipt || !match) continue;
+            const hit = receipt.body.rows?.[Number(match[1])];
+            if (!hit) continue;
+            used.push({source_id: alias, purpose: hit.purpose_label || hit.purpose || '未记录目标',
+                title: hit.record?.title, document_id: hit.record_id, content_sha256: hit.content_sha256,
+                retrieved: '已检索到', input: '已进入本次输入', output: citations.some(c => c.id === alias) ?
+                    '原答有可定位引用' : parsed ? '未见引用' : '未记录或原答未能解析',
+                citation_paths: citations.filter(c => c.id === alias).map(c => c.path),
+                artifact_id: receipt.artifact.id, source_path: source.ref.source_path});
+        }
+    }
+    if (used.length) block('本次模型的知识使用关联', used);
+    else empty('本轮有知识查询记录，但本次模型输入未找到可定位的知识片段引用。');
+    inspectorContent.append(element('p', '引用关系不代表校验接受或知识使用合理，需结合原答、校验和实际证据判断。', 'quiet'));
+}
 function relatedArtifacts(row, el) {
     if (el.dataset.recordKind === 'artifact') return [row];
     const ids = new Set([row.input_artifact_id, row.output_artifact_id, row.reused_artifact_id].filter(Boolean));
@@ -181,6 +282,8 @@ function showInspectorView(view) {
     const {el, row, artifacts, errors} = selection;
     const requests = artifacts.filter(a => a.kind === 'model_request');
     const responses = artifacts.filter(a => a.kind === 'model_response');
+    if (showKnowledge(view, row, artifacts)) return;
+    if (['overview', 'input', 'output'].includes(view)) showKnowledgeUsage(row, requests, responses);
     if (view === 'overview') {
         const facts = element('dl');
         const labels = {id:'记录 ID', stage_code:'流程编号', kind:'类型', state:'执行状态', delivery_state:'交付状态',

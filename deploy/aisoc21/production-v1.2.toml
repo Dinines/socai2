@@ -6,13 +6,13 @@ private_dir = "/opt/sting-aisoc-socai2/private/processing-production"
 transport_env_file = "/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env"
 ca_file = "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt"
 ca_mount = "/run/certs/ca.crt"
-policy_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r2/deploy/local-investigation/investigation-policy-case-v1.toml"
+policy_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r3/deploy/local-investigation/investigation-policy-case-v1.toml"
 policy_mount = "/run/processor/investigation-policy.toml"
 
 [image]
 # Image identity from the verified processing build receipt.
-tag = "socai2-processing:processing-20261111-r1"
-id = "sha256:e1f2cf9e4de3049f9f22f5cf503f6a3c9fc3093b07f588ec76a1bb5a3b259c66"
+tag = "socai2-processing:processing-20261111-r3"
+id = "sha256:e041fc0065d4fa91482aa8199b40eae99b047bbfadf3bf3ae277aae4f90eaa76"
 user = "10001:10001"
 
 [postgres]
@@ -52,10 +52,17 @@ ENV = "production"
 DEBUG = "false"
 AISOC_DEV_AUTH_BYPASS = "false"
 AISOC_AIRGAPPED = "true"
-AISOC_AIRGAP_ALLOWLIST = '["litellm", "192.168.1.43"]'
+AISOC_AIRGAP_ALLOWLIST = '["litellm", "192.168.1.43", "ollama-embedding", "192.168.1.21"]'
 SOCAI2_SOURCE_UEBA_ENABLED = "true"
 SOCAI2_SOURCE_KNOWLEDGE_ENABLED = "true"
+SOCAI2_KNOWLEDGE_PROFILE = "/run/knowledge/profile.json"
 SOCAI2_SOURCE_GRAPH_ENABLED = "false"
 SOCAI2_SOURCE_PRODUCT_HOST_ENABLED = "false"
 DATABASE_POOL_SIZE = "2"
 DATABASE_MAX_OVERFLOW = "1"
+
+[knowledge]
+profile_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r3/deploy/local-investigation/knowledge-profile.json"
+profile_mount = "/run/knowledge/profile.json"
+key_file = "/opt/sting-aisoc-socai2/private/processing-production/knowledge-qdrant-key"
+key_mount = "/run/knowledge/qdrant-key"

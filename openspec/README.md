@@ -4,7 +4,7 @@
 
 已有[独立流程审查](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)及[有据结论程序修正](changes/archive/2026-11-11-ground-case-conclusions/validation.md)继续作为证据。持续模型问题按负责人决定后置并保持 NOT_PASSED，不重复采样追求通过。
 
-下一项按主调查[功能路线](changes/complete-socai2-investigation-chain/design.md#后续工作顺序)推进非空知识的检索→输入→合理引用。只补该功能缺口并走一条代表性流程，不新增权限专项、复杂测试或可用性框架。
+[按目标的 Case 知识与 4177](changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)已完成本地功能、限定独审、一次 21 r3 发布和补核归档：C2 两目的检索、后续输入/引用、保存及页面查看成立，模型质量 NOT_PASSED 保持。下一项按主调查推进产品页面 P01–P04，再接自动处理；不新增权限专项或复杂可用性测试。
 
 ## 文档职责
 

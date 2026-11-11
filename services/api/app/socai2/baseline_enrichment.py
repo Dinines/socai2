@@ -100,10 +100,20 @@ class BaselineEnrichment:
         # Claim is committed before any source read. Replays cannot re-dispatch.
         outputs = []
         try:
-            plan = sources.selection_plan(context)
+            from .knowledge_config import configured
+            knowledge_keys = None
+            if configured() and sources.connected("knowledge"):
+                from .knowledge_source import prepare
+                try:
+                    async with self.service.transaction(tenant_id, readonly=True) as store:
+                        knowledge_keys = await prepare(store, context, case_id, run_id)
+                except SourceUnavailable as exc:
+                    knowledge_keys = [{"object_key": "knowledge:unavailable", "namespace": "",
+                        "value": "", "alert_ids": sorted(context.alerts), "preparation_error": str(exc)}]
+            plan = sources.selection_plan(context, knowledge_keys)
             for choice in plan:
                 outputs.append(await self.source(tenant_id, case_id, run_id, stage_id,
-                    choice["source"], context, refs, selection=choice))
+                    choice["source"], context, refs, selection=choice, knowledge_keys=knowledge_keys))
             async with self.service.transaction(tenant_id) as store:
                 run = await self.locked(store, case_id, run_id)
                 if run["state"] != "running":
@@ -129,8 +139,8 @@ class BaselineEnrichment:
                 await store.mark_unknown(case_id, run_id)
             raise
 
-    async def source(self, tenant_id, case_id, run_id, stage_id, source, context, refs, *, selection=None):
-        keys = sources.selectors(context, source)
+    async def source(self, tenant_id, case_id, run_id, stage_id, source, context, refs, *, selection=None, knowledge_keys=None):
+        keys = knowledge_keys if source == "knowledge" and knowledge_keys is not None else sources.selectors(context, source)
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running":
@@ -182,7 +192,8 @@ class BaselineEnrichment:
             await store.db.execute(insert(S).values(id=step_id, tenant_id=tenant_id, run_id=run_id,
                 seq=await self.sequence(store, run_id), parent_step_id=stage_id, kind="tool", stage_code="C2",
                 state="running" if reason is None else "planned", name=source,
-                provider=("neo4j_identity" if source == "graph" else "postgresql") if sources.connected(source) else None,
+                provider=("local_embedding_qdrant" if source == "knowledge" and knowledge_keys is not None else
+                          "neo4j_identity" if source == "graph" else "postgresql") if sources.connected(source) else None,
                 implementation_version=sources.VERSION, started_at=now if reason is None else None,
                 actual_args=args))
             request_id = await self.artifact(store, run, step_id, args, "tool_request", refs)
@@ -215,7 +226,7 @@ class BaselineEnrichment:
                 state, reason, rows = "timeout", "source_deadline_exceeded", None
             except SourceUnavailable as exc:
                 state, reason, rows = "failed", "source_unavailable", None
-                source_metadata = {"unavailable_reason": str(exc)}
+                source_metadata = {**getattr(exc, "metadata", {}), "unavailable_reason": str(exc)}
             except DBAPIError as exc:
                 code = getattr(exc.orig, "sqlstate", None)
                 state, rows = "failed", None
@@ -250,5 +261,5 @@ class BaselineEnrichment:
             "truncated": truncated, "planned_object_keys": sorted({k["object_key"] for k in keys}),
             "queried_object_keys": sorted({k["object_key"] for k in keys}) if state != "skipped" else [],
             "queried_alert_ids": sorted({aid for k in keys for aid in k["alert_ids"]}) if state != "skipped" else [],
-            "limitations": sources.LIMITATIONS.get(source, ["adapter_not_connected"]),
+            "limitations": source_metadata.get("limitations", sources.LIMITATIONS.get(source, ["adapter_not_connected"])),
             "citation_roles": citation_roles(result)}

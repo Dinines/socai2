@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="20" time="0.254" timestamp="2026-11-11T22:38:04.416904+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_case_purpose_knowledge.TopicTests" name="test_original_metadata_change_invalidates_index_identity" time="0.000" /><testcase classname="tests.test_case_purpose_knowledge.TopicTests" name="test_purposes_have_distinct_queries_filters_and_source_roles" time="0.001" /><testcase classname="tests.test_case_purpose_knowledge.RetrievalTests" name="test_failure_and_stale_document_are_not_successful_empty_results" time="0.006" /><testcase classname="tests.test_case_purpose_knowledge.RetrievalTests" name="test_index_refuses_missing_document_or_unclassified_content" time="0.001" /><testcase classname="tests.test_case_purpose_knowledge.RetrievalTests" name="test_native_vector_dimension_is_enforced" time="0.002" /><testcase classname="tests.test_case_purpose_knowledge.RetrievalTests" name="test_two_purposes_and_empty_are_saved_without_observation_role" time="0.001" /><testcase classname="" name="test_profile_option_cannot_be_overridden_by_abbreviation" time="0.001" /><testcase classname="" name="test_required_profile_has_no_implicit_model_database_or_policy" time="0.004" /><testcase classname="" name="test_knowledge_profile_is_explicit_and_mount_matches_runtime" time="0.001"><failure message="tomllib.TOMLDecodeError: Cannot overwrite a value (at line 65, column 57)">tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-119/test_knowledge_profile_is_expl0')
+
+    def test_knowledge_profile_is_explicit_and_mount_matches_runtime(tmp_path):
+        path = profile_file(tmp_path)
+        data = path.read_text()
+        data = data.replace('[runtime]', '[runtime]\nSOCAI2_KNOWLEDGE_PROFILE = "/run/knowledge/profile.json"')
+        data += '\n[knowledge]\nprofile_file = "/frozen/knowledge.json"\nprofile_mount = "/run/knowledge/profile.json"\n'
+        data += 'key_file = "/private/qdrant-key"\nkey_mount = "/run/knowledge/qdrant-key"\n'
+        path.write_text(data)
+&gt;       selected = load(path)
+                   ^^^^^^^^^^
+
+deploy/aisoc21/test_production_profile.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+deploy/aisoc21/production_profile.py:52: in load
+    data = tomllib.loads(raw.decode())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/tomllib/_parser.py:110: in loads
+    pos = key_value_rule(src, pos, out, header, parse_float)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+src = 'version = "socai2.production-profile.v1.2"\ndefault_tenant = "00000000-0000-0000-0000-000000000001"\n\n[paths]\npriva...ile_mount = "/run/knowledge/profile.json"\nkey_file = "/private/qdrant-key"\nkey_mount = "/run/knowledge/qdrant-key"\n'
+pos = 2359
+out = Output(data=&lt;tomllib._parser.NestedDict object at 0x1083d2420&gt;, flags=&lt;tomllib._parser.Flags object at 0x1083d2b10&gt;)
+header = ('runtime',), parse_float = &lt;class 'float'&gt;
+
+    def key_value_rule(
+        src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+    ) -&gt; Pos:
+        pos, key, value = parse_key_value_pair(src, pos, parse_float)
+        key_parent, key_stem = key[:-1], key[-1]
+        abs_key_parent = header + key_parent
+    
+        relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
+        for cont_key in relative_path_cont_keys:
+            # Check that dotted key syntax does not redefine an existing table
+            if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
+                raise suffixed_err(src, pos, f"Cannot redefine namespace {cont_key}")
+            # Containers in the relative path can't be opened with the table syntax or
+            # dotted key/value syntax in following table sections.
+            out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+    
+        if out.flags.is_(abs_key_parent, Flags.FROZEN):
+            raise suffixed_err(
+                src, pos, f"Cannot mutate immutable namespace {abs_key_parent}"
+            )
+    
+        try:
+            nest = out.data.get_or_create_nest(abs_key_parent)
+        except KeyError:
+            raise suffixed_err(src, pos, "Cannot overwrite a value") from None
+        if key_stem in nest:
+&gt;           raise suffixed_err(src, pos, "Cannot overwrite a value")
+E           tomllib.TOMLDecodeError: Cannot overwrite a value (at line 65, column 57)
+
+.local/conda-envs/socai2/lib/python3.12/tomllib/_parser.py:357: TOMLDecodeError</failure></testcase><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[port = 25439-port = true]" time="0.001" /><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[tls_mode = &quot;verify-full&quot;-tls_mode = &quot;disable&quot;]" time="0.001" /><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[alias = &quot;aisoc-investigation&quot;-alias = &quot;wrong-model&quot;]" time="0.003" /><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[[&quot;litellm&quot;, &quot;192.168.1.43&quot;]-[&quot;litellm&quot;]]" time="0.003" /><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[processor_role = &quot;synthetic_processor&quot;-processor_role = &quot;invalid;role&quot;]" time="0.001" /><testcase classname="" name="test_missing_or_inconsistent_profile_fails_before_actions[DATABASE_POOL_SIZE = &quot;2&quot;-DATABASE_POOL_SIZE = &quot;2&quot;\nUNDECLARED_SETTING = &quot;value&quot;]" time="0.001" /><testcase classname="" name="test_installer_and_job_use_same_profile_and_readonly_policy_mount" time="0.006" /><testcase classname="" name="test_configured_image_digest_checked_before_execution" time="0.003" /><testcase classname="" name="test_ingress_uses_configured_identity_and_rejects_mismatched_host" time="0.021" /><testcase classname="" name="test_job_probe_requires_profile_before_transport" time="0.000" /><testcase classname="" name="test_invalid_policy_rejected_before_any_install_action" time="0.003" /></testsuite></testsuites>

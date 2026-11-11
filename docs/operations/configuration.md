@@ -263,3 +263,7 @@ API与Agents通过当前第29层 `compose.integrity.yml` 加载21私有 `private
 
 
 2026-10-21本批收尾：A/B两操作key及C六短期key已全部停用，逐枚真实HTTP401；旧十枚reader仍active/未过期，五类目的映射与原发行意图一致，永久七权限只读服务身份保持。脚本前审及撤后只读独审通过，见[净化回执](../handoff/integrity-final-key-revocation.json)。C旧意图/文件及失败材料仅作取证保留，不可作为可用凭据或重放许可。
+
+## C2 按目标本地嵌入检索
+
+`SOCAI2_KNOWLEDGE_PROFILE` 显式选择 [knowledge-profile.json](../../deploy/local-investigation/knowledge-profile.json)，定义两个目的的模板/过滤/限额、本地嵌入模型/原生维度、集合及连接时限。API 和处理入口挂载同一 profile 与受控 key；部署 allowlist 包含实际嵌入/向量主机。配置后失败不静默回退。安装、索引 HTTP、字段及验证范围见[知识交接](../investigation/case-knowledge-handoff.md)，实际部署状态以 [PROGRESS](../../PROGRESS.md) 为准。知识独立集合不替代既有情报和组织记忆集合。

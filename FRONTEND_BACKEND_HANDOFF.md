@@ -21,10 +21,10 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261111-r2`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261111-r3`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
-| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台组件 `workbench-20261110-r2`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
+| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台源码随 `v1.2-20261111-r3`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
 | Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=true`，私密 SOCAI2_CASE_DATABASE_URL 已指向现有处理连接；建案与 H 写读已实际通过，产品页面接线仍需承接 |
@@ -95,10 +95,12 @@
 
 本地完整路径及 21 正常登录后的独立验收 Case/H 写读已通过；产品页面交互仍需对应前端承接，4177 只用于查看记录。[配置示例](deploy/aisoc21/case-http.env.example)说明功能写入连接，普通 API 的 DATABASE_URL 保持；不增加权限设计或确认环节。
 
-## 7 本次验证与交付边界
+## 7 C2 知识与本次验证边界
 
-当前 change 为 [enable-case-human-http-flow](openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md)。13 次本地实际 HTTP 操作走通建案、两轮调查、其间一次人工完成/修订和读回；第 2 修订进入后轮冻结及 4 份实际模型请求 body，原修订保留。两份 Result 六项关键字段与数据库一致。原告警材料保持，数据库仍 29 表、462 列。
+[知识检索/消费交接](docs/investigation/case-knowledge-handoff.md)给出 C2 两个目的、实际输入输出、文档/向量/工件字段及 4177 的关联。新增显式 `/api/v1/kb/index`，原知识导入、查询及告警接口合同保持。C3/Deep/C6 使用本轮冻结片段，不新增模型调用环节。知识功能已本地验证并统一发布 r3；原 HTTP 导入/索引/GET 及生产 C2 两目的检索已读回。
 
-本地认证为明确测试主体，模型沿现有 SSH 通道真实调用；业务路由/依赖、执行器和 PostgreSQL 均实际使用。两轮共 9 次模型调用、117,175 reported tokens，费用未知；均 completed/partial。首轮 C6 引用非法维持 rejected，后轮 accepted 并承认人工不是业务授权，不能据此核销模型质量。
+一个本地 Case 实际完成 2 份资料导入、4 块索引、6 条目的查询、8 条命中、C3/两项 Deep/C6 及保存读回；8 次业务 HTTP 成功，Result 六字段一致。5 次真实模型调用、90,292 reported tokens，费用未知；C6 重复引用拒收，conclusion=null，模型质量 NOT_PASSED。C3/C6 有知识引用，不能据此宣称取证方法采用或准确率改善。[本次验收](openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
 
-模型 M01-A/M01-B 按负责人决定保持已知未修复，质量 NOT_PASSED，不通过重复采样阻塞当前功能。F01 的完整语义质量、真实非空知识、产品页面 P01–P04、自动处理均继续保留。本地静态资料 64 份，21 已追加到 35 份；独审限定 ACCEPT，API 统一更新一次，其他五容器保持。生产 8 次业务 HTTP 操作和任务 8 项字段比对通过，无新生产模型调用。[交付回执](docs/operations/evidence/case-human-http-20261111-01/delivery-summary.json)。[问题清单](docs/investigation/current-issues.md)
+Case/H 的两轮和人工第 2 修订传递已在[前次交付](docs/operations/evidence/case-human-http-20261111-01/delivery-summary.json)核实，产品页面仍待承接。M01-A/M01-B 按负责人决定保持已知未修复，不重复采样；F01 完整语义质量、知识召回/使用质量、产品页面 P01–P04 和自动消费继续记录。[问题清单](docs/investigation/current-issues.md)
+
+本次 21 知识验收用临时 scope key，已撤销并核 401，账号角色保持；7 次业务 HTTP、2 目的检索/4 块原文匹配通过，无生产分析模型调用。4177 已追加至 36 份并实际查看，四项无关容器保持。[交付回执](docs/operations/evidence/case-knowledge-20261111-01/delivery-summary.json)

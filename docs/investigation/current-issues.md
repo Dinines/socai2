@@ -11,9 +11,9 @@
 | M01 | 模型扩大正文事实，结构合法不保证主张有据 | 质量 NOT_PASSED。程序覆盖和观察原值装配已直接验证；第五批命令结果边界改善；Deep 仍凭 synthetic 标签断言非生产环境，C6 替代解释将四项未查询也说成查空，两项已保存读回。另有时间间隔计算错误；固定 coverage 正确不代表其他正文正确；见[当前验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md) |
 | M01-A | 模型将 synthetic 等来源标签推成业务环境/良恶性事实 | **已知、后置，未修复**。第五批 Deep 原答及保存 GET 可复现；只应据对应业务材料或明确归属的人工陈述判断环境。按负责人决定不阻塞发布/后续功能，原质量结论保持 |
 | M01-B | 模型自由正文将未查询写成查空 | **已知、后置，未修复**。第五批 C6 F1 替代解释与程序 coverage 的 2 查空/4 未查矛盾；原字段/原答保留，真实状态以程序回执为据。后续实际触及该输出时定向处理，不重复采样 |
-| M02 | 角色引用合规与正文有据需分开持续验收 | r6 参照批次 Finding 生成／反馈缺口已按 F06 修正，该批独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由该 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。当前程序原值装配及原批次拒收分别保留。本轮 HTTP 首轮 C6 两次均因 delivery_source_not_visible_or_duplicate 被拒收，Result 保持 rejected/null；后轮 accepted，不据此宣称引用稳定，见 [本轮验收](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md) |
+| M02 | 角色引用合规与正文有据需分开持续验收 | r6 参照批次 Finding 生成／反馈缺口已按 F06 修正，该批独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由该 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。当前程序原值装配及原批次拒收分别保留。本轮知识 C6 原答及一次纠正均 duplicate_source，Result rejected/null；按模型质量开放记录、不重复采样。前次 HTTP 首轮 C6 两次均因 delivery_source_not_visible_or_duplicate 被拒收，Result 保持 rejected/null；后轮 accepted，不据此宣称引用稳定，见 [本轮验收](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md) |
 | F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 本轮真实 HTTP 的第 2 修订进入后轮冻结及 4 份实际请求 body，后轮承认人工不是业务授权、命令结果未知；只证明本批部分利用，完整语义质量未通过。前批修订及错误原答保留，不核销 3.7 |
-| F02 | 真实非空知识使用和背景取证覆盖仍待验证 | 配置排序、有效 A 配对回执覆盖及工具预留已实现；本轮真实 assets／knowledge 完成零行，其余按实际跳过／未接入保存。每 Run 4 工具、预留 2 不增额。下一适用批次核非空知识及按问题使用；graph 单列 |
+| F02 | 知识非空传递已验证，召回相关性、方法使用效果及背景取证覆盖仍不足 | 本地 C2 两目的 6 查询、8 命中/4 唯一块，5 份模型输入可见；C3/C6 有引用，两个 Deep 无引用。登录/网络主题也命中枚举资料，未证明方法知识推动取证或提高准确率；21 r3 已核原 HTTP 导入/索引/GET 及只读两目的检索（4 块），不等于生产完整调查。graph 单列，见[知识验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md) |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
 | W01 | Case/H 产品页面操作仍需接线验收 | 本地 13 次原 HTTP 请求及后轮版本/结果比对通过；21 r2 写入口已开放，正常登录后 8 次业务请求及任务字段匹配通过。服务端范围见 R08，产品页面操作仍未验收，不用 4177 代替 |
 | P01 | 事件概览缺本次诊断入口 | 对应 J04；由成员主体及 Run UUID 打开实际诊断尝试，失败也可查 |

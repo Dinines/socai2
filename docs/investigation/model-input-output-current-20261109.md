@@ -267,7 +267,11 @@ C1 冻结材料、C2 按策略查询背景、C4 直接执行已选 binding、C5 
 | 只保必要信息，业务未知值不误删 | Deep/C6 共享结构规则、消除同值重复投影；补齐必要资料后输入仍变大 |
 | 模型只输出需要判断的业务内容 | Deep 去问题号；C6 去建议编号和固定首次比较。必要范围选择与发现关联仍保留 |
 | 程序管理身份、查询事实、状态和保存 | 当前第五批 54 GET 成功，Result 六项字段及两份 Deep 工件与真实本地 PG 一致；21 r1 发布后三次 GET/六项字段相符、快照不变。r6 的两项 PG、52 GET/3,225 字段及发布后 365 GET/16,820 检查保留为参照，不计本批 |
-| 前序结论与证据完整交接 | 前批离线 Deep 4/4、C6 84/84 处依赖可见，H 后轮交接已有 PG 证据；本轮没有新 H 或非空知识验收，模型正确理解与使用仍未通过 |
+| 前序结论与证据完整交接 | 前批离线 Deep 4/4、C6 84/84 处依赖可见，H 后轮交接已有 PG 证据；H 后轮传递已有真实 HTTP 证据；本轮 C2 非空知识进入 C3/Deep/C6 实际输入，C3/C6 有引用、两个 Deep 无引用，方法使用质量仍未通过 |
 | 改动后质量与效率有数据 | 当前第五批 5 调用、60,968 reported tokens，completed/partial，含一次 C3 纠正，C6 采用；质量 NOT_PASSED、费用未知。r6 参照为 4 调用/38,844 tokens。各批不是受控 A/B，不重复采样 |
 
 本次修复涉及补查上限、冲突支持、程序所有观察原值/coverage、材料回执与输入边界；数据库字段、持久化和读取合同、告警交接字段保持。[本批验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)和[发布回执](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)记录实际调用、质量和交付边界；r6 的[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)及 [Deep/C6 接入报告](../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)按原批次保留。
+
+## C2 知识检索与后续模型输入
+
+C2 由程序从冻结材料生成技术解释/取证指导两类查询，经本地嵌入与专用集合获取原文块，按 PG 身份/hash 回读冻结；不要求模型生成检索执行事实。C3/Deep/C6 仍沿 source_map 使用本轮知识的非观察角色、目的及适用限制。字段/4177 对应和真实验收见[知识交接](case-knowledge-handoff.md)。本轮 8 条命中有跨查询重复，不能视为 8 个独立来源；原答引用不代表方法采用或结论通过。

@@ -1,0 +1,45 @@
+{
+  "version": "socai2.case-knowledge.v1",
+  "embedding": {
+    "url": "http://ollama-embedding:11434/api/embed",
+    "model": "qwen3-embedding:0.6b",
+    "dimension": 1024,
+    "timeout_seconds": 90,
+    "options": {"num_gpu": 0, "num_thread": 16, "num_ctx": 32768}
+  },
+  "vector": {
+    "url": "http://192.168.1.21:6333",
+    "collection": "socai2_knowledge_qwen06b_1024",
+    "api_key_file": "/run/knowledge/qdrant-key",
+    "timeout_seconds": 20
+  },
+  "purposes": {
+    "technical_explanation": {
+      "label": "技术解释",
+      "template": "检索以下记录涉及的技术行为/命令的功能、适用条件与解释边界。检测标签仅是检索线索，不是本案事实。\n{topic}",
+      "doc_kinds": ["wiki", "other", "runbook"],
+      "tag": "knowledge:technical_explanation",
+      "limit": 2,
+      "score_threshold": 0.45,
+      "use": "用于形成待核解释；知识描述常见能力，不证明本案完成、恶意或授权。"
+    },
+    "investigation_guidance": {
+      "label": "取证指导",
+      "template": "检索调查以下行为所需的日志来源、字段、上下文和验证方法，以区分可能解释和确认实际结果。\n{topic}",
+      "doc_kinds": ["runbook", "playbook", "sop", "other"],
+      "tag": "knowledge:investigation_guidance",
+      "limit": 2,
+      "score_threshold": 0.45,
+      "use": "用于提出取证需求、解释已有结果；仅在当前合法候选中派发，未接入能力记录待核。"
+    }
+  },
+  "topics": {
+    "material_paths": ["$.ocsf_json.process.cmd_line", "$.ocsf_json.process.name", "$.ocsf_json.activity.action", "$.raw_json.command_line"],
+    "label_paths": ["$.alert.title", "$.material.detection.rule_name"],
+    "max_value_characters": 512,
+    "max_query_characters": 4096,
+    "max_queries": 12
+  },
+  "max_index_chunks": 24,
+  "max_chunk_characters": 1600
+}
