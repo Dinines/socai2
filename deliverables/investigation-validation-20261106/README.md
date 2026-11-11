@@ -7,18 +7,19 @@
 | 页面功能与跳转 | [F01–F28／J01–J14](frontend-feature-list.md) |
 | 表、关联键和读取 | [服务端数据交接](../../docs/investigation/socai2-page-data-handoff-20261106.md) |
 | 字段及空态 | [字段取数样例](page-field-samples.md) |
-| 当前两案生产读取 | [365 次 GET 与 16,820 项核对](../../docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json) |
+| 两案生产读取参照 | [365 次 GET 与 16,820 项核对](../../docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json) |
+| 本次 Case/H HTTP | [两轮调查与人工修订、一次生产写读](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md) |
 | 待完成功能 | [问题清单](../../docs/investigation/current-issues.md) |
 
 ## 调查运行记录页
 
-[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 的工作台组件为 `workbench-20261110-r2`，服务端主发布为 `v1.2-20261110-r6`；工作台只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
+[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 的工作台组件为 `workbench-20261110-r2`，服务端主发布为 `v1.2-20261111-r2`；工作台只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
 
 ```sh
 ssh -N -L 127.0.0.1:4177:127.0.0.1:4177 sting-infra21
 ```
 
-生产模式从 `aisoc.socai2` 按授权租户读取最近 Case，每批五案，详情每 15 秒检查已提交变化。生产缓存位于 21 的 `/opt/sting-aisoc-socai2/data/production-workbench/`，展示源码更新后会重新生成页面。独立静态条目保留测试来源；21 登记 20 份（含两案在线缓存），本机保留 49 份，两者不混计。当前两案导出含两个首轮及一案 H 后调查，模型原答与拒收均可查；演练材料和助手代拟核查均明确标注。既有隔离 PG 条目的模型／工具替身标签保持。静态发布 199 个文件及 200 次 HTTP 核对通过。[发布回执](../../docs/operations/evidence/workbench-node-inspector-20261110-01/static-publication-02.json)
+生产模式从 `aisoc.socai2` 按授权租户读取最近 Case，每批五案，详情每 15 秒检查已提交变化。生产缓存位于 21 的 `/opt/sting-aisoc-socai2/data/production-workbench/`，展示源码更新后会重新生成页面。独立静态条目保留测试来源；本批发布核实时 21 为 35 份，本地 64 份，两者不混计。本轮追加一份 Case/H HTTP 两轮资料，提示、人工修订、原答和失败均可查；演练材料和助手代拟核查明确标注。既有隔离 PG 条目的模型/工具替身标签保持。追加的 143 个文件和 144 次静态 HTTP 读取核验通过，原记录保持。[发布回执](../../docs/operations/evidence/case-human-http-20261111-01/static-publication.json)
 
 流程在左侧，节点详情在右侧；窄屏上下排列。点击阶段、模型或查询，使用“概览与原因／提示词／输入／输出／原始记录”切换内容；模型输入包含实际消息和 Schema，原答保留原文。阶段的“关联步骤”可进入每次实际模型调用；Deep 失败且没有动作结果时也可查看调用。切换轮次会清空旧选择，缺少记录明确显示空态。“定位到完整原件”仍可打开下方保存记录。页面读取和节点选择不触发模型或业务写入。
 

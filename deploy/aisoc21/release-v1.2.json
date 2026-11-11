@@ -1,16 +1,16 @@
 {
   "version": "socai2.release.v1.2",
-  "release": "v1.2-20261111-r1",
+  "release": "v1.2-20261111-r2",
   "architecture": "amd64",
   "build_timeout_seconds": 180,
   "deploy_timeout_seconds": 90,
-  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r1",
+  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r2",
   "agents_container": "socai2-agents-1",
   "build": {
     "api": {
       "source": "services/api/app",
       "base_id": "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9",
-      "tag": "socai2-api:v1.2-20261111-r1",
+      "tag": "socai2-api:v1.2-20261111-r2",
       "user": "10001:10001"
     }
   },
@@ -72,29 +72,30 @@
     "deploy/aisoc21/current-rollout.json",
     "deploy/database/install_aisoc21_v1.py",
     "deploy/database/verify_aisoc21_processing_access.sql",
-    "deploy/database/aisoc21_processing_access.sql"
+    "deploy/database/aisoc21_processing_access.sql",
+    "deploy/aisoc21/case-http.env.example"
   ],
   "projects": {
     "main": {
       "name": "socai2",
       "directory": "/opt/sting-aisoc-socai2",
       "files": [
-        "/opt/sting-aisoc-socai2/private/release-v1.2-20261110-r6/main-after.json"
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r1/main-after.json"
       ],
       "services": {
         "api": {
           "container": "socai2-api-1",
-          "expected_image": "sha256:25bcfa5fa63ce22bb7cce7f994fa2b74d7dba7345571b5fe7e5ee03d1d1c88b6",
+          "expected_image": "sha256:eccbea5f968440dc4faceeab4edd069b369b2e13de63346414f6f97a534d0169",
           "build": "api",
           "override": {
             "env_file": [
               {
-                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r1/api-model.env",
+                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r2/api-model.env",
                 "format": "raw"
               }
             ],
             "volumes": [
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r1/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro"
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r2/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro"
             ],
             "environment": {
               "AISOC_STARTUP_SCHEMA_MIGRATIONS": "false",
@@ -102,7 +103,8 @@
               "ENV": "production",
               "AISOC_DEMO_MODE": "false",
               "SOCAI2_PAGE_READ_ENABLED": "true",
-              "SOCAI2_ANALYSIS_READ_ENABLED": "true"
+              "SOCAI2_ANALYSIS_READ_ENABLED": "true",
+              "SOCAI2_CASE_API_ENABLED": "true"
             }
           },
           "allowed_env_changes": [
@@ -114,7 +116,13 @@
             "SOCAI2_INVESTIGATION_POLICY",
             "SOCAI2_INVESTIGATION_POLICY_SHA256",
             "SOCAI2_PROCESSING_PROFILE_SHA256",
-            "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS"
+            "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS",
+            "SOCAI2_CASE_DATABASE_URL",
+            "SOCAI2_SOURCE_UEBA_ENABLED",
+            "SOCAI2_SOURCE_KNOWLEDGE_ENABLED",
+            "SOCAI2_SOURCE_GRAPH_ENABLED",
+            "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED",
+            "SOCAI2_LAKE_DATABASE"
           ],
           "use_processing_environment": true
         },
@@ -186,7 +194,7 @@
     }
   },
   "processing": {
-    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r1/deploy/aisoc21/production-v1.2.toml",
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r2/deploy/aisoc21/production-v1.2.toml",
     "entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
     "image": "sha256:e1f2cf9e4de3049f9f22f5cf503f6a3c9fc3093b07f588ec76a1bb5a3b259c66",
     "required_existing_secrets": [
@@ -197,7 +205,7 @@
       "runtime.env",
       "ingress.env"
     ],
-    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r1/api-model.env",
+    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261111-r2/api-model.env",
     "api_model_keys": [
       "OPENAI_API_KEY",
       "OPENAI_BASE_URL",
@@ -207,10 +215,19 @@
       "SOCAI2_INVESTIGATION_POLICY",
       "SOCAI2_INVESTIGATION_POLICY_SHA256",
       "SOCAI2_PROCESSING_PROFILE_SHA256",
-      "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS"
+      "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS",
+      "SOCAI2_CASE_DATABASE_URL",
+      "SOCAI2_SOURCE_UEBA_ENABLED",
+      "SOCAI2_SOURCE_KNOWLEDGE_ENABLED",
+      "SOCAI2_SOURCE_GRAPH_ENABLED",
+      "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED",
+      "SOCAI2_LAKE_DATABASE"
     ],
     "image_tag": "socai2-processing:processing-20261111-r1",
-    "manifest_sha256": "57169aecec6d6645a75734df53fcadc310a54e092bbe3af4d1e69d005ef0aeaa"
+    "manifest_sha256": "57169aecec6d6645a75734df53fcadc310a54e092bbe3af4d1e69d005ef0aeaa",
+    "api_environment_sources": {
+      "SOCAI2_CASE_DATABASE_URL": "DATABASE_URL"
+    }
   },
   "current_pointer": "/opt/sting-aisoc-socai2/current-v1.2",
   "required_environment": {
@@ -231,7 +248,7 @@
     "workbench",
     "litellm"
   ],
-  "scope": "One change: C3 frozen followup bound, original observation/coverage assembly, conflict evidence dependencies and input boundaries; known narrative quality issues deferred by owner; no DDL/alert/HTTP contract change; inherited services and consumers preserved",
+  "scope": "Case/H HTTP writes using existing configured processing connection; local create/run/revised human feedback/next run/readback; no DDL or alert DTO changes, no permission project, no production model run or consumer restart; five inherited services preserved",
   "processing_policy_check": {
     "container": "socai2-api-1",
     "profiles": {
@@ -245,6 +262,11 @@
     }
   },
   "api_reader_check": {
-    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r1/deploy/database/api-reader-21.toml"
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261111-r2/deploy/database/api-reader-21.toml"
+  },
+  "case_http_check": {
+    "container": "socai2-api-1",
+    "database": "aisoc",
+    "role": "socai2_prod_processor"
   }
 }

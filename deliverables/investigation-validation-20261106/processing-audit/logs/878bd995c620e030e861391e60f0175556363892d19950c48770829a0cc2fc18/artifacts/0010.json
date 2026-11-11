@@ -1,0 +1,547 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-11T12:38:06.56897+00:00",
+  "case_id": "dac58811-c58d-5a75-9e7e-d0daf2f0740b",
+  "content_json": {
+    "captured_at": "2026-11-11T12:38:06.568385+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "{\n  \"analysis\": {\n    \"summary\": \"本轮复核确认案件由三个连续告警（A1 登录、A2 进程启动、A3 网络连接）组成，涉及用户 flow-observer 在主机 socai2-flow-20261107-01 上的活动。所有关键背景查询（资产、知识、威胁情报、用户基线、历史行为、图关系）均返回空或未执行。现有材料仅能证实动作的‘发生’（启动、连接建立），无法证实动作的‘结果’（数据读取、外传）或‘性质’（授权、恶意）。前序判断中关于‘侦察/外传特征’的推断因缺乏执行结果证据，需降级为‘待核行为序列’。\",\n    \"members\": [\n      {\n        \"alert_id\": \"A1\",\n        \"state\": \"analyzed\",\n        \"summary\": \"记录用户 flow-observer 于 06:38:27Z 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01。\",\n        \"evidence_ids\": [\"N4_S7\", \"N4_S8\", \"N4_S9\", \"N4_S10\", \"N4_S11\", \"N4_S13\", \"N4_S18\", \"N4_S19\", \"N4_S20\", \"N4_S21\", \"N4_S22\", \"N4_S23\", \"N4_S24\", \"N4_S26\", \"N4_S27\", \"N4_S28\", \"N4_S29\", \"N4_S30\", \"N4_S31\"],\n        \"limitations\": [\"未验证登录来源 IP 合法性\", \"未验证用户身份真实性\", \"未验证会话令牌安全性\", \"未确认授权状态\"]\n      },\n      {\n        \"alert_id\": \"A2\",\n        \"state\": \"analyzed\",\n        \"summary\": \"记录用户 flow-observer 于 06:38:47Z 在主机 socai2-flow-20261107-01 上成功启动 powershell.exe 并执行 Get-LocalUser 命令文本。\",\n        \"evidence_ids\": [\"N4_S32\", \"N4_S33\", \"N4_S34\", \"N4_S35\", \"N4_S36\", \"N4_S37\", \"N4_S38\", \"N4_S44\", \"N4_S45\", \"N4_S46\", \"N4_S47\", \"N4_S48\", \"N4_S49\", \"N4_S50\", \"N4_S51\", \"N4_S52\", \"N4_S53\", \"N4_S54\", \"N4_S55\", \"N4_S56\", \"N4_S57\", \"N4_S58\"],\n        \"limitations\": [\"未提供命令执行结果或返回数据\", \"未提供业务授权审批\", \"未查询威胁情报确认进程哈希\", \"未确认是否实际读取了用户列表\"]\n      },\n      {\n        \"alert_id\": \"A3\",\n        \"state\": \"analyzed\",\n        \"summary\": \"记录主机 socai2-flow-20261107-01 于 06:39:07Z 成功建立指向 198.51.100.77:443 的 TCP 连接。\",\n        \"evidence_ids\": [\"N4_S59\", \"N4_S60\", \"N4_S61\", \"N4_S62\", \"N4_S63\", \"N4_S65\", \"N4_S66\", \"N4_S67\", \"N4_S68\", \"N4_S73\", \"N4_S74\", \"N4_S75\", \"N4_S76\", \"N4_S77\", \"N4_S78\", \"N4_S79\", \"N4_S80\", \"N4_S81\", \"N4_S82\", \"N4_S83\", \"N4_S84\", \"N4_S85\", \"N4_S86\", \"N4_S87\", \"N4_S88\", \"N4_S89\"],\n        \"limitations\": [\"未提供数据外传证据\", \"未提供业务授权审批\", \"未查询威胁情报确认目的 IP 信誉\", \"未确认连接是否传输了数据\"]\n      }\n    ],\n    \"findings\": [\n      {\n        \"id\": \"F1\",\n        \"state\": \"observed\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S10\", \"N4_S37\", \"N4_S62\"],\n        \"counter_ids\": [],\n        \"alternatives\": [],\n        \"limitations\": [\"仅记录动作启动，未记录动作结果\", \"未观察到数据读取或传输内容\", \"未确认授权状态\"]\n      },\n      {\n        \"id\": \"F2\",\n        \"state\": \"inferred\",\n        \"statement\": \"用户 flow-observer 在登录主机后，短时间内启动了信息收集命令并建立了外部网络连接，行为序列在时间上具有连续性。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S36\", \"N4_S65\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"该序列可能是合法的合规性检查或故障排查流程\", \"用户 flow-observer 可能为自动化运维账户\"],\n        \"limitations\": [\"时间邻近不证明因果\", \"未观察到进程树父子关系\", \"未观察到会话关联\", \"未确认目的 IP 的威胁等级\"]\n      },\n      {\n        \"id\": \"F3\",\n        \"state\": \"unresolved\",\n        \"statement\": \"无法确定上述操作是否获得业务授权，也无法确认是否造成实际损害（如数据泄露或配置变更）。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [],\n        \"counter_ids\": [],\n        \"alternatives\": [\"存在未记录的审批流程\", \"操作完全在授权范围内\", \"标签 synthetic 可能表示模拟测试\"],\n        \"limitations\": [\"所有相关查询工具返回空或未执行\", \"无人工反馈确认授权状态\", \"缺乏命令输出和网络载荷证据\"]\n      }\n    ],\n    \"questions\": [\n      {\n        \"id\": \"detection_facts\",\n        \"state\": \"answered\",\n        \"answer\": \"原始记录支持以下行为：用户 flow-observer 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01 (A1)；在主机上成功启动 powershell.exe 并执行 Get-LocalUser 命令文本 (A2)；从主机成功建立指向 198.51.100.77:443 的 TCP 连接 (A3)。\",\n        \"evidence_ids\": [\"N4_S7\", \"N4_S8\", \"N4_S9\", \"N4_S10\", \"N4_S11\", \"N4_S13\", \"N4_S18\", \"N4_S19\", \"N4_S20\", \"N4_S21\", \"N4_S22\", \"N4_S23\", \"N4_S24\", \"N4_S26\", \"N4_S27\", \"N4_S32\", \"N4_S33\", \"N4_S34\", \"N4_S35\", \"N4_S36\", \"N4_S37\", \"N4_S38\", \"N4_S44\", \"N4_S45\", \"N4_S46\", \"N4_S47\", \"N4_S48\", \"N4_S49\", \"N4_S50\", \"N4_S51\", \"N4_S52\", \"N4_S53\"],\n        \"limitations\": [\"未提供命令执行结果\", \"未提供数据读取内容\", \"未提供连接传输数据\"]\n      },\n      {\n        \"id\": \"member_relationships\",\n        \"state\": \"answered\",\n        \"answer\": \"成员 A1、A2、A3 在时间上紧密相连（间隔约 2 分钟），且共享同一主机 (O1) 和同一用户 (O5)。A1 的登录是 A2 进程启动的前提，A2 的进程启动是 A3 网络连接的可能发起者。\",\n        \"evidence_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S9\", \"N4_S33\", \"N4_S60\", \"N4_S18\", \"N4_S44\", \"N4_S73\", \"N4_S19\", \"N4_S45\", \"N4_S74\"],\n        \"limitations\": [\"时间邻近不证明因果\", \"未观察到进程树父子关系\", \"未观察到会话关联\"]\n      },\n      {\n        \"id\": \"behavior_nature\",\n        \"state\": \"unresolved\",\n        \"answer\": \"恶意解释依据：行为序列（登录->信息收集->外连）符合侦察模式，但缺乏实际数据外传证据。正常解释依据：标签 synthetic 可能表示模拟测试，用户名为 flow-observer 暗示监控角色。误操作解释依据：用户可能误以为操作安全。\",\n        \"evidence_ids\": [\"N4_S14\", \"N4_S15\", \"N4_S36\", \"N4_S65\", \"N4_S71\"],\n        \"limitations\": [\"标签 synthetic 不证明是演练\", \"未提供演练计划或审批\", \"未提供用户操作日志或基线\", \"未确认目的 IP 的威胁等级\"]\n      },\n      {\n        \"id\": \"authorization\",\n        \"state\": \"unresolved\",\n        \"answer\": \"当前无证据表明任何行为获得授权。未提供审批记录、工单或人工确认。\",\n        \"evidence_ids\": [\"N4_S90\", \"N4_S91\", \"N4_S92\", \"N4_S93\", \"N4_S94\", \"N4_S95\"],\n        \"limitations\": [\"查询结果为空或未执行\", \"未提供人工反馈\", \"未提供业务系统审批流记录\", \"未提供用户权限配置\"]\n      },\n      {\n        \"id\": \"impact\",\n        \"state\": \"unresolved\",\n        \"answer\": \"已观察到动作：登录、进程启动、连接建立。未观察到影响：未确认是否读取了本地用户列表，未确认是否向 198.51.100.77 传输了数据，未确认是否造成系统配置变更或数据泄露。\",\n        \"evidence_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S36\", \"N4_S65\"],\n        \"limitations\": [\"命令执行结果未知\", \"网络连接数据载荷未知\", \"业务系统状态未知\", \"未确认操作是否经过业务授权\"]\n      }\n    ],\n    \"domains\": [\n      {\n        \"name\": \"identity\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及用户登录、认证活动及会话管理。\",\n        \"alert_ids\": [\"A1\"],\n        \"finding_ids\": [\"F1\", \"F3\"],\n        \"limitations\": [\"未验证用户身份真实性\", \"未验证登录来源 IP 合法性\", \"未验证会话令牌安全性\"]\n      },\n      {\n        \"name\": \"cloud\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及主机资源使用、进程活动及网络连接。\",\n        \"alert_ids\": [\"A2\", \"A3\"],\n        \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n        \"limitations\": [\"未确认主机配置合规性\", \"未确认进程哈希信誉\", \"未确认网络连接目的 IP 信誉\"]\n      },\n      {\n        \"name\": \"phishing\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"无邮件、链接或附件相关告警。\",\n        \"alert_ids\": [],\n        \"finding_ids\": [],\n        \"limitations\": [\"无相关数据\"]\n      },\n      {\n        \"name\": \"insider\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及内部用户 (flow-observer) 的数据访问及潜在外传行为。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"finding_ids\": [\"F2\", \"F3\"],\n        \"limitations\": [\"未确认用户角色权限\", \"未确认数据访问范围\", \"未确认外传目的地\"]\n      }\n    ],\n    \"conflicts\": [],\n    \"followups\": [\n      {\n        \"question_id\": \"authorization\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"mode\": \"deep\",\n        \"objective\": \"查询用户 flow-observer 的权限配置、审批记录及历史行为基线，以确认操作是否授权。\",\n        \"required_evidence\": \"审批工单、权限列表、历史行为对比\"\n      ,\n        \"source_ids\": [\"N4_S93\", \"N4_S94\"]\n      ,\n        \"object_keys\": [\"O5\"]\n      },\n      {\n        \"question_id\": \"impact\",\n        \"alert_ids\": [\"A2\", \"A3\"],\n        \"mode\": \"deep\",\n        \"objective\": \"查询进程执行结果及网络连接数据载荷，确认是否发生数据读取或外传。\",\n        \"required_evidence\": \"命令输出、网络流量内容、文件变化\"\n      ,\n        \"source_ids\": [\"N4_S36\", \"N4_S65\"]\n      ,\n        \"object_keys\": [\"O2\", \"O3\"]\n      }\n    ]\n  },\n  \"conclusion\": {\n    \"text\": \"案件目前处于‘行为已发生，影响未确认，授权未证实’的状态。现有证据仅能确认用户 flow-observer 执行了登录、启动 PowerShell 命令和建立网络连接的动作。由于缺乏命令执行结果、网络数据载荷以及业务授权记录，无法判定该行为是恶意攻击、正常运维还是误操作，也无法确认是否造成了实际的数据泄露或系统损害。所有关键背景查询均未返回有效数据，导致案件定性依据不足。\",\n    \"state\": \"uncertain\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\"]\n  ,\n    \"support_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S9\", \"N4_S33\", \"N4_S60\", \"N4_S10\", \"N4_S37\", \"N4_S62\", \"N4_S36\", \"N4_S65\"]\n  ,\n    \"limitations\": [\"未提供命令执行结果\", \"未提供数据读取内容\", \"未提供连接传输数据\", \"未提供审批记录\", \"未提供用户权限配置\", \"未提供威胁情报\"]\n  }\n  ,\n  \"closing_note\": \"本轮复核确认所有背景查询（资产、知识、威胁情报、用户基线、历史、图关系）均未返回有效数据或未被执行。现有材料仅包含动作日志（登录、启动、连接），缺乏结果日志（读取、传输）和上下文日志（审批、权限）。前序判断中关于‘侦察/外传’的推断因缺乏结果证据，需降级为‘待核行为序列’。案件定性（恶意/正常/误操作）及影响评估（数据泄露/无影响）均无法在当前材料下得出结论，必须依赖后续对执行结果和授权状态的补充调查。\",\n  \"impact\": {\n    \"summary\": \"已观察到动作：用户 flow-observer 成功登录主机、启动 PowerShell 进程、建立 TCP 连接。尚未确认影响：未确认是否读取了本地用户列表，未确认是否向 198.51.100.77 传输了数据，未确认是否造成系统配置变更或数据泄露。\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n    \"support_ids\": [\"N4_S7\", \"N4_S32\", \"N4_S59\", \"N4_S36\", \"N4_S65\"],\n    \"supported_changes\": []\n  ,\n    \"cannot_generalize\": [\"无法确认是否发生数据泄露\", \"无法确认是否发生配置变更\", \"无法确认操作是否授权\"]\n  ,\n    \"next_steps\": [\"查询命令执行结果\", \"查询网络连接载荷\", \"查询用户授权记录\"]\n  }\n  ,\n  \"recommendations\": [\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O5\"],\n      \"reason\": \"需确认用户 flow-observer 的权限配置、审批记录及历史行为基线，以判断操作是否授权。\",\n      \"source_ids\": [\"N4_S9\", \"N4_S33\", \"N4_S60\", \"N4_S9\", \"N4_S33\", \"N4_S60\", \"N4_S9\", \"N4_S33\", \"N4_S60\"]\n    ,\n      \"limitations\": [\"需人工介入或访问 HR/IT 系统\", \"需查询历史行为基线\"]\n    },\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O2\", \"O3\"],\n      \"reason\": \"需查询进程执行结果及网络连接数据载荷，确认是否发生数据读取或外传。\",\n      \"source_ids\": [\"N4_S35\", \"N4_S49\", \"N4_S65\", \"N4_S81\", \"N4_S35\", \"N4_S49\", \"N4_S65\", \"N4_S81\", \"N4_S35\", \"N4_S49\", \"N4_S65\", \"N4_S81\"]\n    ,\n      \"limitations\": [\"需访问应用日志或网络流量分析系统\", \"需确认数据载荷内容\"]\n    }\n  ]\n  }",
+              "provider_specific_fields": {
+                "reasoning": null,
+                "refusal": null
+              },
+              "role": "assistant"
+            },
+            "provider_specific_fields": {
+              "routed_experts": null,
+              "stop_reason": null,
+              "token_ids": null
+            }
+          }
+        ],
+        "created": 1794400600,
+        "id": "chatcmpl-a5014766bfeb5137",
+        "model": "aisoc-investigation",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 4212,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 21932,
+          "total_tokens": 26144
+        }
+      },
+      "validation_error": "delivery_source_not_visible_or_duplicate",
+      "validation_review": {
+        "conclusion_adoptable": false,
+        "diagnostics": [],
+        "limitations": [
+          "source_identity_and_scope_checks_do_not_prove_prose_true",
+          "free_text_summary_dependencies_unknown_summary_not_reused",
+          "invalid_final_delivery_never_adopts_overall_conclusion"
+        ],
+        "policy": "socai2.analysis-review.v1.2",
+        "reason": "invalid_units_or_final_conclusion_excluded",
+        "retained_analysis": {
+          "conflicts": [],
+          "domains": [
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F1",
+                "F3"
+              ],
+              "limitations": [
+                "未验证用户身份真实性",
+                "未验证登录来源 IP 合法性",
+                "未验证会话令牌安全性"
+              ],
+              "name": "identity",
+              "reason": "涉及用户登录、认证活动及会话管理。"
+            },
+            {
+              "alert_ids": [
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F1",
+                "F2",
+                "F3"
+              ],
+              "limitations": [
+                "未确认主机配置合规性",
+                "未确认进程哈希信誉",
+                "未确认网络连接目的 IP 信誉"
+              ],
+              "name": "cloud",
+              "reason": "涉及主机资源使用、进程活动及网络连接。"
+            },
+            {
+              "alert_ids": [],
+              "applicability": "not_applicable",
+              "finding_ids": [],
+              "limitations": [
+                "无相关数据"
+              ],
+              "name": "phishing",
+              "reason": "无邮件、链接或附件相关告警。"
+            },
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "applicability": "applicable",
+              "finding_ids": [
+                "F2",
+                "F3"
+              ],
+              "limitations": [
+                "未确认用户角色权限",
+                "未确认数据访问范围",
+                "未确认外传目的地"
+              ],
+              "name": "insider",
+              "reason": "涉及内部用户 (flow-observer) 的数据访问及潜在外传行为。"
+            }
+          ],
+          "findings": [
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "alternatives": [],
+              "counter_ids": [],
+              "id": "F1",
+              "limitations": [
+                "仅记录动作启动，未记录动作结果",
+                "未观察到数据读取或传输内容",
+                "未确认授权状态"
+              ],
+              "state": "observed",
+              "statement": "[A1/原记录1｜N4_S7] $.ocsf_json.time=\"2026-11-07T06:38:27+00:00\"\n[A2/原记录2｜N4_S32] $.ocsf_json.time=\"2026-11-07T06:38:47+00:00\"\n[A3/原记录3｜N4_S59] $.ocsf_json.time=\"2026-11-07T06:39:07+00:00\"\n[A1/原记录1｜N4_S10] $.ocsf_json.activity.action=\"logon\"\n[A2/原记录2｜N4_S37] $.ocsf_json.activity.action=\"process_start\"\n[A3/原记录3｜N4_S62] $.ocsf_json.activity.action=\"network_connection\"",
+              "support_ids": [
+                "N4_S7",
+                "N4_S32",
+                "N4_S59",
+                "N4_S10",
+                "N4_S37",
+                "N4_S62"
+              ]
+            },
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "alternatives": [
+                "该序列可能是合法的合规性检查或故障排查流程",
+                "用户 flow-observer 可能为自动化运维账户"
+              ],
+              "counter_ids": [],
+              "id": "F2",
+              "limitations": [
+                "时间邻近不证明因果",
+                "未观察到进程树父子关系",
+                "未观察到会话关联",
+                "未确认目的 IP 的威胁等级"
+              ],
+              "state": "inferred",
+              "statement": "用户 flow-observer 在登录主机后，短时间内启动了信息收集命令并建立了外部网络连接，行为序列在时间上具有连续性。",
+              "support_ids": [
+                "N4_S7",
+                "N4_S32",
+                "N4_S59",
+                "N4_S36",
+                "N4_S65"
+              ]
+            },
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "alternatives": [
+                "存在未记录的审批流程",
+                "操作完全在授权范围内",
+                "标签 synthetic 可能表示模拟测试"
+              ],
+              "counter_ids": [],
+              "id": "F3",
+              "limitations": [
+                "所有相关查询工具返回空或未执行",
+                "无人工反馈确认授权状态",
+                "缺乏命令输出和网络载荷证据"
+              ],
+              "state": "unresolved",
+              "statement": "无法确定上述操作是否获得业务授权，也无法确认是否造成实际损害（如数据泄露或配置变更）。",
+              "support_ids": []
+            }
+          ],
+          "followups": [
+            {
+              "alert_ids": [
+                "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "mode": "deep",
+              "object_keys": [
+                "[\"user\",\"flow-observer\"]"
+              ],
+              "objective": "查询用户 flow-observer 的权限配置、审批记录及历史行为基线，以确认操作是否授权。",
+              "question_id": "authorization",
+              "required_evidence": "审批工单、权限列表、历史行为对比",
+              "source_ids": [
+                "N4_S93",
+                "N4_S94"
+              ]
+            },
+            {
+              "alert_ids": [
+                "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+                "f26e0b0d-b288-5283-9db1-a10c491e801c"
+              ],
+              "mode": "deep",
+              "object_keys": [
+                "[\"ip\",\"192.0.2.77\"]",
+                "[\"ip\",\"198.51.100.77\"]"
+              ],
+              "objective": "查询进程执行结果及网络连接数据载荷，确认是否发生数据读取或外传。",
+              "question_id": "impact",
+              "required_evidence": "命令输出、网络流量内容、文件变化",
+              "source_ids": [
+                "N4_S36",
+                "N4_S65"
+              ]
+            }
+          ],
+          "members": [
+            {
+              "alert_id": "805a9aea-a8e1-5f72-9202-48b4c5d8f06b",
+              "evidence_ids": [
+                "N4_S7",
+                "N4_S8",
+                "N4_S9",
+                "N4_S10",
+                "N4_S11",
+                "N4_S13",
+                "N4_S18",
+                "N4_S19",
+                "N4_S20",
+                "N4_S21",
+                "N4_S22",
+                "N4_S23",
+                "N4_S24",
+                "N4_S26",
+                "N4_S27",
+                "N4_S28",
+                "N4_S29",
+                "N4_S30",
+                "N4_S31"
+              ],
+              "limitations": [
+                "未验证登录来源 IP 合法性",
+                "未验证用户身份真实性",
+                "未验证会话令牌安全性",
+                "未确认授权状态"
+              ],
+              "state": "analyzed",
+              "summary": "记录用户 flow-observer 于 06:38:27Z 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01。"
+            },
+            {
+              "alert_id": "d9f50241-bf9e-5100-a81f-cd8e3ba6fd39",
+              "evidence_ids": [
+                "N4_S32",
+                "N4_S33",
+                "N4_S34",
+                "N4_S35",
+                "N4_S36",
+                "N4_S37",
+                "N4_S38",
+                "N4_S44",
+                "N4_S45",
+                "N4_S46",
+                "N4_S47",
+                "N4_S48",
+                "N4_S49",
+                "N4_S50",
+                "N4_S51",
+                "N4_S52",
+                "N4_S53",
+                "N4_S54",
+                "N4_S55",
+                "N4_S56",
+                "N4_S57",
+                "N4_S58"
+              ],
+              "limitations": [
+                "未提供命令执行结果或返回数据",
+                "未提供业务授权审批",
+                "未查询威胁情报确认进程哈希",
+                "未确认是否实际读取了用户列表"
+              ],
+              "state": "analyzed",
+              "summary": "记录用户 flow-observer 于 06:38:47Z 在主机 socai2-flow-20261107-01 上成功启动 powershell.exe 并执行 Get-LocalUser 命令文本。"
+            },
+            {
+              "alert_id": "f26e0b0d-b288-5283-9db1-a10c491e801c",
+              "evidence_ids": [
+                "N4_S59",
+                "N4_S60",
+                "N4_S61",
+                "N4_S62",
+                "N4_S63",
+                "N4_S65",
+                "N4_S66",
+                "N4_S67",
+                "N4_S68",
+                "N4_S73",
+                "N4_S74",
+                "N4_S75",
+                "N4_S76",
+                "N4_S77",
+                "N4_S78",
+                "N4_S79",
+                "N4_S80",
+                "N4_S81",
+                "N4_S82",
+                "N4_S83",
+                "N4_S84",
+                "N4_S85",
+                "N4_S86",
+                "N4_S87",
+                "N4_S88",
+                "N4_S89"
+              ],
+              "limitations": [
+                "未提供数据外传证据",
+                "未提供业务授权审批",
+                "未查询威胁情报确认目的 IP 信誉",
+                "未确认连接是否传输了数据"
+              ],
+              "state": "analyzed",
+              "summary": "记录主机 socai2-flow-20261107-01 于 06:39:07Z 成功建立指向 198.51.100.77:443 的 TCP 连接。"
+            }
+          ],
+          "questions": [
+            {
+              "answer": "原始记录支持以下行为：用户 flow-observer 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01 (A1)；在主机上成功启动 powershell.exe 并执行 Get-LocalUser 命令文本 (A2)；从主机成功建立指向 198.51.100.77:443 的 TCP 连接 (A3)。",
+              "evidence_ids": [
+                "N4_S7",
+                "N4_S8",
+                "N4_S9",
+                "N4_S10",
+                "N4_S11",
+                "N4_S13",
+                "N4_S18",
+                "N4_S19",
+                "N4_S20",
+                "N4_S21",
+                "N4_S22",
+                "N4_S23",
+                "N4_S24",
+                "N4_S26",
+                "N4_S27",
+                "N4_S32",
+                "N4_S33",
+                "N4_S34",
+                "N4_S35",
+                "N4_S36",
+                "N4_S37",
+                "N4_S38",
+                "N4_S44",
+                "N4_S45",
+                "N4_S46",
+                "N4_S47",
+                "N4_S48",
+                "N4_S49",
+                "N4_S50",
+                "N4_S51",
+                "N4_S52",
+                "N4_S53"
+              ],
+              "id": "detection_facts",
+              "limitations": [
+                "未提供命令执行结果",
+                "未提供数据读取内容",
+                "未提供连接传输数据"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "成员 A1、A2、A3 在时间上紧密相连（间隔约 2 分钟），且共享同一主机 (O1) 和同一用户 (O5)。A1 的登录是 A2 进程启动的前提，A2 的进程启动是 A3 网络连接的可能发起者。",
+              "evidence_ids": [
+                "N4_S7",
+                "N4_S32",
+                "N4_S59",
+                "N4_S9",
+                "N4_S33",
+                "N4_S60",
+                "N4_S18",
+                "N4_S44",
+                "N4_S73",
+                "N4_S19",
+                "N4_S45",
+                "N4_S74"
+              ],
+              "id": "member_relationships",
+              "limitations": [
+                "时间邻近不证明因果",
+                "未观察到进程树父子关系",
+                "未观察到会话关联"
+              ],
+              "state": "answered"
+            },
+            {
+              "answer": "恶意解释依据：行为序列（登录->信息收集->外连）符合侦察模式，但缺乏实际数据外传证据。正常解释依据：标签 synthetic 可能表示模拟测试，用户名为 flow-observer 暗示监控角色。误操作解释依据：用户可能误以为操作安全。",
+              "evidence_ids": [
+                "N4_S14",
+                "N4_S15",
+                "N4_S36",
+                "N4_S65",
+                "N4_S71"
+              ],
+              "id": "behavior_nature",
+              "limitations": [
+                "标签 synthetic 不证明是演练",
+                "未提供演练计划或审批",
+                "未提供用户操作日志或基线",
+                "未确认目的 IP 的威胁等级"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "当前无证据表明任何行为获得授权。未提供审批记录、工单或人工确认。",
+              "evidence_ids": [
+                "N4_S90",
+                "N4_S91",
+                "N4_S92",
+                "N4_S93",
+                "N4_S94",
+                "N4_S95"
+              ],
+              "id": "authorization",
+              "limitations": [
+                "查询结果为空或未执行",
+                "未提供人工反馈",
+                "未提供业务系统审批流记录",
+                "未提供用户权限配置"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "已观察到动作：登录、进程启动、连接建立。未观察到影响：未确认是否读取了本地用户列表，未确认是否向 198.51.100.77 传输了数据，未确认是否造成系统配置变更或数据泄露。",
+              "evidence_ids": [
+                "N4_S7",
+                "N4_S32",
+                "N4_S59",
+                "N4_S36",
+                "N4_S65"
+              ],
+              "id": "impact",
+              "limitations": [
+                "命令执行结果未知",
+                "网络连接数据载荷未知",
+                "业务系统状态未知",
+                "未确认操作是否经过业务授权"
+              ],
+              "state": "unresolved"
+            },
+            {
+              "answer": "程序记录：材料视图涉及3/3个成员，省略项358。\n材料读取回执：available=3（available 仅为所选字段可读取；无回执为 unrecorded；逐成员限制与遗漏见所引材料回执）。\n模型分析状态：analyzed=3，unresolved=0，not_analyzed=0。\n其余业务问题未决3项；矛盾条目0项；后续需求2项（内容见对应条目）。\ntool_name=\"assets\"；state=\"completed\"；outcome=\"empty\"；returned_rows=0；truncated=false\ntool_name=\"knowledge\"；state=\"completed\"；outcome=\"empty\"；returned_rows=0；truncated=false\ntool_name=\"threat_intel\"；state=\"skipped\"；outcome=\"not_queried\"；returned_rows=null；truncated=false\ntool_name=\"ueba\"；state=\"skipped\"；outcome=\"not_queried\"；returned_rows=null；truncated=false\ntool_name=\"history\"；state=\"skipped\"；outcome=\"not_queried\"；returned_rows=null；truncated=false\ntool_name=\"graph\"；state=\"skipped\"；outcome=\"not_queried\"；returned_rows=null；truncated=false\n补查执行记录：{\"completed\":2}",
+              "evidence_ids": [
+                "N4_S96",
+                "N4_S90",
+                "N4_S91",
+                "N4_S92",
+                "N4_S93",
+                "N4_S94",
+                "N4_S95"
+              ],
+              "id": "coverage",
+              "limitations": [
+                "以上是输入覆盖与所保存分析状态，不代表已读原件全文、正文已核实或调查已完成。",
+                "业务未知仍见相应问题、成员、矛盾和后续条目；查空不证明安全，未查/失败/未知不作查空。"
+              ],
+              "state": "answered"
+            }
+          ],
+          "summary": "本轮复核确认案件由三个连续告警（A1 登录、A2 进程启动、A3 网络连接）组成，涉及用户 flow-observer 在主机 socai2-flow-20261107-01 上的活动。所有关键背景查询（资产、知识、威胁情报、用户基线、历史行为、图关系）均返回空或未执行。现有材料仅能证实动作的‘发生’（启动、连接建立），无法证实动作的‘结果’（数据读取、外传）或‘性质’（授权、恶意）。前序判断中关于‘侦察/外传特征’的推断因缺乏执行结果证据，需降级为‘待核行为序列’。"
+        },
+        "state": "partial"
+      }
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-a5014766bfeb5137",
+    "schema_version": "socai2.baseline-delivery.v1",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 21932,
+      "output_tokens": 4212,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-a5014766bfeb5137",
+      "total_tokens": 26144,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "27d575d3-950d-4988-8389-c0e3df6d6142",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "fd4826dc369c8dbfd06d0f988d7b741dfe9ec3153fbe9b28c722d52ecee485a1",
+    "original_size_bytes": 26281,
+    "reason": null,
+    "retained_sha256": "fd4826dc369c8dbfd06d0f988d7b741dfe9ec3153fbe9b28c722d52ecee485a1",
+    "retained_size_bytes": 26281,
+    "truncated": false
+  },
+  "run_id": "d938c1a4-a5b9-4a68-9606-05f4f9c91b6f",
+  "schema_version": "socai2.baseline-delivery.v1",
+  "sha256": "fd4826dc369c8dbfd06d0f988d7b741dfe9ec3153fbe9b28c722d52ecee485a1",
+  "size_bytes": 26281,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "cab2f353-b643-474b-9889-4dd700d8d33f",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "782b880d-d2e3-4898-81ac-081f0a033adf",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

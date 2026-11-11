@@ -63,6 +63,26 @@ def test_api_reader_release_check_is_readonly_and_fails_closed(tmp_path):
         r.verify_api_reader(tmp_path, cfg)
 
 
+def test_case_database_mapping_does_not_replace_general_api_database():
+    processing = {"api_model_keys": ["OPENAI_MODEL", "SOCAI2_CASE_DATABASE_URL"],
+        "api_environment_sources": {"SOCAI2_CASE_DATABASE_URL": "DATABASE_URL"}}
+    values = {"OPENAI_MODEL": "model", "DATABASE_URL": "private-processor-dsn", "UNSELECTED_SECRET": "omit"}
+    selected = r.select_api_environment(values, processing)
+    assert selected == {"OPENAI_MODEL": "model", "SOCAI2_CASE_DATABASE_URL": "private-processor-dsn"}
+    assert {"DATABASE_URL": "original-reader-dsn", **selected}["DATABASE_URL"] == "original-reader-dsn"
+    with pytest.raises(ValueError, match="api_environment_source_invalid"):
+        r.select_api_environment({}, processing)
+
+
+def test_case_http_release_check_requires_actual_writer_identity():
+    cfg = {"case_http_check": {"container": "api", "database": "selected", "role": "writer"}}
+    with patch.object(r, "command", return_value=json.dumps({"enabled": True, "database": "selected", "role": "writer"})):
+        assert r.verify_case_http(cfg) == {"enabled": True, "database": "selected", "role": "writer", "writes": 0}
+    with patch.object(r, "command", return_value=json.dumps({"enabled": True, "database": "selected", "role": "reader"})), \
+            pytest.raises(ValueError, match="case_http_database_identity_mismatch"):
+        r.verify_case_http(cfg)
+
+
 def test_runtime_policy_check_rejects_old_boundary_even_with_healthy_container(tmp_path):
     policy = tmp_path / 'policy.toml'
     policy.write_text('candidate')

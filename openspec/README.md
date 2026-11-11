@@ -1,10 +1,10 @@
 # OpenSpec 实施说明
 
-本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case 程序事实与补查约束的独立交付见[验收报告](changes/archive/2026-11-11-ground-case-conclusions/validation.md)，模型正文问题按负责人决定后置并保持未通过。
+本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署见 [PROGRESS](../PROGRESS.md)。当前 [Case/H HTTP 操作交付](changes/archive/2026-11-11-enable-case-human-http-flow/validation.md)已完成本地功能、限定独审和一次 21 r2 发布，并已归档；主调查整体仍 31/41，模型质量、产品页面和未验范围不由局部功能核销。
 
-当前实现的独立[流程审查与证据](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)已完成并归档；只交付审查，不代表已修复发现或模型质量通过。
+已有[独立流程审查](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)及[有据结论程序修正](changes/archive/2026-11-11-ground-case-conclusions/validation.md)继续作为证据。持续模型问题按负责人决定后置并保持 NOT_PASSED，不重复采样追求通过。
 
-后续按主调查[功能路线](changes/complete-socai2-investigation-chain/design.md#后续工作顺序)推进；下一项为 Case/H 正常 HTTP 操作及人工反馈后调查。复用已有审计，每项只做改动相关检查和一条代表性完整路径，不重复全面审查或可用性矩阵。
+下一项按主调查[功能路线](changes/complete-socai2-investigation-chain/design.md#后续工作顺序)推进非空知识的检索→输入→合理引用。只补该功能缺口并走一条代表性流程，不新增权限专项、复杂测试或可用性框架。
 
 ## 文档职责
 

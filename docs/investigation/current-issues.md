@@ -11,17 +11,17 @@
 | M01 | 模型扩大正文事实，结构合法不保证主张有据 | 质量 NOT_PASSED。程序覆盖和观察原值装配已直接验证；第五批命令结果边界改善；Deep 仍凭 synthetic 标签断言非生产环境，C6 替代解释将四项未查询也说成查空，两项已保存读回。另有时间间隔计算错误；固定 coverage 正确不代表其他正文正确；见[当前验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md) |
 | M01-A | 模型将 synthetic 等来源标签推成业务环境/良恶性事实 | **已知、后置，未修复**。第五批 Deep 原答及保存 GET 可复现；只应据对应业务材料或明确归属的人工陈述判断环境。按负责人决定不阻塞发布/后续功能，原质量结论保持 |
 | M01-B | 模型自由正文将未查询写成查空 | **已知、后置，未修复**。第五批 C6 F1 替代解释与程序 coverage 的 2 查空/4 未查矛盾；原字段/原答保留，真实状态以程序回执为据。后续实际触及该输出时定向处理，不重复采样 |
-| M02 | 角色引用合规与正文有据需分开持续验收 | r6 参照批次 Finding 生成／反馈缺口已按 F06 修正，该批独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由该 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。当前程序原值装配及原批次拒收分别保留 |
-| F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 用户授权助手代拟材料核查，3 个修订和后轮 C3/Deep/C6 输入均可追溯；仅管理字段变化不造成虚假过期。模型仍重复部分已指出的错误，可见性不核销 3.7，也不代表业务授权确认 |
+| M02 | 角色引用合规与正文有据需分开持续验收 | r6 参照批次 Finding 生成／反馈缺口已按 F06 修正，该批独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由该 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。当前程序原值装配及原批次拒收分别保留。本轮 HTTP 首轮 C6 两次均因 delivery_source_not_visible_or_duplicate 被拒收，Result 保持 rejected/null；后轮 accepted，不据此宣称引用稳定，见 [本轮验收](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md) |
+| F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 本轮真实 HTTP 的第 2 修订进入后轮冻结及 4 份实际请求 body，后轮承认人工不是业务授权、命令结果未知；只证明本批部分利用，完整语义质量未通过。前批修订及错误原答保留，不核销 3.7 |
 | F02 | 真实非空知识使用和背景取证覆盖仍待验证 | 配置排序、有效 A 配对回执覆盖及工具预留已实现；本轮真实 assets／knowledge 完成零行，其余按实际跳过／未接入保存。每 Run 4 工具、预留 2 不增额。下一适用批次核非空知识及按问题使用；graph 单列 |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
-| W01 | Case/H 的实际写入与前端操作尚需接通验证 | 当前 `SOCAI2_CASE_API_ENABLED=false`；按需作业真实建案／准备／启动及 H 服务层创建／完成／修订已验证。服务层验收适配器不等于 HTTP 写操作开放；必要接线与配置随功能处理，读写权限不作为独立前置 |
+| W01 | Case/H 产品页面操作仍需接线验收 | 本地 13 次原 HTTP 请求及后轮版本/结果比对通过；21 r2 写入口已开放，正常登录后 8 次业务请求及任务字段匹配通过。服务端范围见 R08，产品页面操作仍未验收，不用 4177 代替 |
 | P01 | 事件概览缺本次诊断入口 | 对应 J04；由成员主体及 Run UUID 打开实际诊断尝试，失败也可查 |
 | P02 | 原页面 `severity_effective=medium` 显示错误 | 对应 F06；应显示“中”，保留来源为人工覆盖或成员最高值 |
 | P03 | 原运行页把 `delivery_state=none` 与字段缺失混为一类 | 对应 F15；已记录 none 显示未交付，缺失按未知处理 |
 | P04 | 无效告警 ID 缺明确未找到及返回入口 | 对应 J01；404 应终止下钻并允许返回 |
 | P05 | Case 评论附件、探索保存、案件故事组合、完整管理／真实响应缺页面或服务接线 | F20/F24/F25/F27；已有表或模型建议不能宣称业务已开放。响应只以真实审批／动作／回执为据 |
-| Q01 | 问答、保存回答、采用回答为预留业务 | 服务预留返回 501；生产关闭 Case 开关时先返回 503。前端标明未开放，不能把演示回答写成服务结果 |
+| Q01 | 问答、保存回答、采用回答为预留业务 | 服务预留返回 501；21 r2 写开关开启后这些预留业务仍返回 501。前端标明未开放，不能把演示回答写成服务结果 |
 
 四项 P01–P04 是已保存的产品页面核对结论；4177 内部工作台的节点详情优化不核销这些产品页面事项。[功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [原始页面证据](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)
 
@@ -42,6 +42,7 @@
 
 | 编号 | 发现与修正 | 证据 |
 | --- | --- | --- |
+| R08 | Case/H HTTP 共用只读连接，正常写入未接通 | 本轮显式写连接及来源配置已上线 r2，原 GET 保持；本地正常两轮/H 修订传递与生产正常登录写读通过，无表列或告警字段变更。[交付回执](../operations/evidence/case-human-http-20261111-01/delivery-summary.json)；产品页面仍列 W01 |
 | A02 | C3 提示最多两项补查，但生成/接收曾允许 12 项 | 当前冻结配置、生成/接收/partial 均限 2，三项明确拒收且零派发，历史读取和 C6 建议兼容；直接检查通过，21 r1 实际加载上限 2，发布读回通过。[本次交付](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。原审计反例保持 |
 | R01 | Case/H GET 共用关闭的写开关而 503；GET 现在接受页面读取开关，写操作仍受原开关约束 | 当前两案 365 GET、16,820 检查；读取开关／租户／权限与写入拒绝定向测试 |
 | R02 | 安装核验器拒绝已经人工授权的 `aisoc_app` schema USAGE | 改为核实获准 SELECT、无调查写权限及无管理权限；实际 verify 通过，未执行 GRANT 或 DDL |
@@ -55,4 +56,4 @@
 | F05 | Deep handoff 生成允许空答复、网关分支丢公共必填项，与接收合同不一致 | 每个 action／Answer 分支展开完整结构与限制；真实第三轮 handoff／answer 均完整通过，前两轮原失败保留；[69 项直接检查](../operations/evidence/case-scope-recovery-20261110-01/final-contract-tests.xml) |
 | F06 | C3/C6 Finding 生成与接收的角色约束不一致，有限反馈遗漏角色错误 | 已统一部署并核来源：完整状态分支限制直接观察、v2 反馈给角色与逐成员缺口；86 项检查、两项 PG 流程和一轮真实生成通过该范围，原接收兼容性及历史原件保持。[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)；独审 ACCEPT，21 r6 生产读回通过 |
 
-本次结果见[程序功能验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)及[交付回执](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。r6 参照批次见[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)与[逐调用汇总](../operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)。前批来源范围及纠正修复见[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)；原[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)和生产原答继续保留。
+本次 Case/H 结果见 [HTTP 功能验收](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md)；前序结果见[程序功能验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)及[交付回执](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。r6 参照批次见[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)与[逐调用汇总](../operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)。前批来源范围及纠正修复见[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)；原[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)和生产原答继续保留。

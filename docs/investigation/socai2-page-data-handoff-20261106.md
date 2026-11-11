@@ -52,11 +52,13 @@
 
 证据计数使用当前版本中 `state=active` 且全部关联告警仍在案件范围的条目。威胁数仅取其中 `malicious / suspicious` 且有明确威胁身份的条目，按 `(namespace,key)` 去重。`not_recorded / unavailable / invalid_reference` 的计数为 `null`；有效空目录或全撤回为 `0`；`partial` 返回已知计数、未覆盖成员及限制。证据的来源行、JSON Pointer、角色和范围均可核对。来源标签、模型判断和人工陈述应保留各自身份。[证据合同](../../services/api/app/socai2/case_evidence.schema.json) · [证据读取和验证](../../services/api/app/socai2/case_data.py)
 
+Case/H 写入沿用原合同：建案返回 pending_run_id，任务修订追加 task_revisions 并更新 current_revision_id，后轮 C1 固定所选版本及 human_statement 来源。人工保存不自动启动 Run；操作顺序及本轮证据见 [Case/H 交接](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md)。本 change 不增加表列、枚举或告警交接字段。
+
 Case 模型请求工件中的 `payload.source_map` 分别给查询范围、历史返回主体、允许的本案成员及其依据（`query_alert_ids / record_alert_ids / alert_ids / membership_basis`）。它们属于内部工件内容，数据库仍使用原 `artifacts.content_json`；告警及 Case HTTP 字段没有调整。按 `ref.id / source_path / role` 回查原件，不能把发起查询的成员当返回行主体。模型原答、`correction_feedback` 和 `validation_review` 分别留在响应工件；一次纠正前后的模型 Step 都应可查。 C3/C6 内部 Finding 的 observed 支持仅使用有成员依据的直接观察；inferred 需支持，unresolved 需限制。`socai2.case-citation-correction.v2` 额外给出角色和逐成员直接观察缺口，历史合法时间上下文仍兼容。此约束不新增列或 API 字段，也不代表正文质量通过。
 
 ## 查询形状与分页
 
-路径均相对于 `/api/v1/socai2`。告警、事件和 A/I 分析读取要求 `alerts:read`，其中 `records/cases` 还要求 `cases:read`；Case 与 H 读取要求 `cases:read`。A/I 执行与 Case 命令分别要求 `alerts:write`、`cases:write`。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，Case HTTP 写入口关闭。前端写按钮须按实际开放状态处理。[完整路径及参数](../design/socai2-independent-api-v2.openapi.json)
+路径均相对于 `/api/v1/socai2`。告警、事件和 A/I 分析读取要求 `alerts:read`，其中 `records/cases` 还要求 `cases:read`；Case 与 H 读取要求 `cases:read`。A/I 执行与 Case 命令分别要求 `alerts:write`、`cases:write`。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，21 r2 的 Case/H HTTP 写入口已开放并经正常登录写读验证；产品页面按已保存回执与版本刷新。[完整路径及参数](../design/socai2-independent-api-v2.openapi.json)
 
 | 读取内容 | 路径 | 分页和返回边界 |
 | --- | --- | --- |

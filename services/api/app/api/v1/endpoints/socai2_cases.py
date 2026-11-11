@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.core.config import settings
+from app.db.case_database import get_case_write_sessions
 from app.db.database import AsyncSessionLocal
 from app.socai2.baseline_contracts import Actor, Start
 from app.socai2.baseline_store import StoreError
@@ -40,11 +41,15 @@ from app.socai2.enums import AssignmentState, Severity, WorkStatus
 from app.socai2.page_contracts import RecordPage
 
 
-def get_service(request: Request):
+async def get_service(request: Request):
     if not (settings.SOCAI2_CASE_API_ENABLED
             or request.method == "GET" and settings.SOCAI2_PAGE_READ_ENABLED):
         raise HTTPException(503, "socai2_case_api_not_enabled")
-    return CaseService(AsyncSessionLocal)
+    try:
+        sessions = AsyncSessionLocal if request.method == "GET" else get_case_write_sessions()
+    except StoreError as exc:
+        raise HTTPException(exc.status, exc.code) from None
+    return CaseService(sessions)
 
 
 ReadUser = Annotated[CurrentUser, Depends(require_permission("cases:read"))]

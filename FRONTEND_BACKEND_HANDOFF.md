@@ -21,13 +21,13 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261111-r1`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261111-r2`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
 | 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台组件 `workbench-20261110-r2`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
-| Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=false`；页面不得将未开放写操作显示为已保存。按需处理作业使用专用身份和调用者权限 |
+| Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=true`，私密 SOCAI2_CASE_DATABASE_URL 已指向现有处理连接；建案与 H 写读已实际通过，产品页面接线仍需承接 |
 | 自动消费 | Agents 暂停；没有自动启动 Case 或恢复消息消费的验收结论 |
 | 配置 | [生产 profile](deploy/aisoc21/production-v1.2.toml)选取 [A/I/Case 策略](deploy/local-investigation/investigation-policy-case-v1.toml)；凭据留在受控私有文件 |
 
@@ -87,16 +87,18 @@
 
 `null` 表示未记录或不可得；空数组表示对应集合为空；`0/false` 是有效值。未查、失败、成功查空分别显示，查空不证明安全。费用和 token 未知不能填零。已保存证据目录的条目数、威胁数与没有目录分别处理；威胁数为零不等于“已证明无威胁”。报告建议不得显示为已执行响应。
 
-## 6 本次验证与交付边界
+## 6 Case 与人工反馈操作
 
-当前交付 [ground-case-conclusions](openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)。C3 `followups` 上限 2 从冻结 profile 同时约束生成、接收及 partial；超限拒收，不能截断派发。冲突逐 finding/成员核直接原始支持；合法引用不代表正文互斥。历史工件可读，C6 建议不受 C3 派发上限影响。
+既有操作路径、入参及存储关系见 [Case/H 操作交接](openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md)。按创建 Case 返回的 pending_run_id 显式启动首轮；人工任务通过 POST 创建、PUT 修订，使用返回的 row_version 和 current_revision_id；再次调查先 prepare 再 start。保存反馈不会自动启动调查。
 
-当前模型边界中，C3/C6 的 observed finding 只选择原始观察字段，`statement` 由程序按原记录路径和值装配；inferred/unresolved 的文字由模型表达。C6 模型生成五个业务问题，程序依据材料读取、查询回执和保留分析补齐 coverage，对外仍保存六问。逐成员读取状态/限制/遗漏保存在冻结材料回执；available 仅指所选字段可读取，未记录明确 unrecorded。C4 整份回执以 execution_receipt、source_path=null 引用，零行、false 和未知值保留。
+人工结果来自 `tasks.current_revision_id → task_revisions`。每轮领取时冻结所选修订到输入工件 `task_revisions/source_materials`，正文、范围和 human_statement 归属保持，旧修订及历史输入不被覆盖。Result 的六项结论/校验/发现/问题/建议仍使用原字段合同。本次没有表列、枚举、告警交接字段或 HTTP DTO 变化。
 
-Case 登记 title/description 在原件中保留，从业务模型视图按配置排除，历史引用恢复也不能带回这两字段。命令/action/outcome 旁说明字段含义，影响问题区分观察动作、有据结果和未知影响。独立人工正文、任务目的及原始材料保持。程序不得替模型改写错误主张使之通过。
+本地完整路径及 21 正常登录后的独立验收 Case/H 写读已通过；产品页面交互仍需对应前端承接，4177 只用于查看记录。[配置示例](deploy/aisoc21/case-http.env.example)说明功能写入连接，普通 API 的 DATABASE_URL 保持；不增加权限设计或确认环节。
 
-本次没有数据库 DDL、告警交接字段或 HTTP DTO 变化。`case_boundary` 的职责标记/原值表/coverage_facts 和 `followup_boundary` 是内部模型请求工件，业务页面继续按第 5 节分别表达执行、交付、采用与质量；现有 Result、报告和 4177 输入/原答/错误的读取路径保持。
+## 7 本次验证与交付边界
 
-直接检查通过，五批真实本地流程已保存读回，但正文仍未通过。第五批 5 调用、54 次 GET 成功，命令结果未知与程序覆盖正确；Deep 仍凭标签判断非生产环境，C6 替代解释仍误写全部查空，两项均已保存。C6 accepted/uncertain 仅表示合同接收。负责人已明确将持续模型问题登记后置，独审对程序交付范围补充 ACCEPT；模型质量仍 NOT_PASSED，原答与失败保留，不继续同类采样。
+当前 change 为 [enable-case-human-http-flow](openspec/changes/archive/2026-11-11-enable-case-human-http-flow/validation.md)。13 次本地实际 HTTP 操作走通建案、两轮调查、其间一次人工完成/修订和读回；第 2 修订进入后轮冻结及 4 份实际模型请求 body，原修订保留。两份 Result 六项关键字段与数据库一致。原告警材料保持，数据库仍 29 表、462 列。
 
-21 已统一发布 r1，实际加载的 Case profile 与本次来源一致；Case/Run/Result 三次 GET 成功，六项关键结果字段与正式库一致，读取前后快照不变。[交付回执](docs/operations/evidence/case-grounding-20261111-01/delivery-summary.json)列明一次 API 更新、其余容器保持、无生产模型作业/调查数据写入。本地静态资料 63 份，21 为 34 份（追加 5 份，原记录保持）。模型质量问题不冒称修复；产品页面 P01–P04、实际 HTTP 写操作、非空知识和自动消费按[问题清单](docs/investigation/current-issues.md)后续推进。
+本地认证为明确测试主体，模型沿现有 SSH 通道真实调用；业务路由/依赖、执行器和 PostgreSQL 均实际使用。两轮共 9 次模型调用、117,175 reported tokens，费用未知；均 completed/partial。首轮 C6 引用非法维持 rejected，后轮 accepted 并承认人工不是业务授权，不能据此核销模型质量。
+
+模型 M01-A/M01-B 按负责人决定保持已知未修复，质量 NOT_PASSED，不通过重复采样阻塞当前功能。F01 的完整语义质量、真实非空知识、产品页面 P01–P04、自动处理均继续保留。本地静态资料 64 份，21 已追加到 35 份；独审限定 ACCEPT，API 统一更新一次，其他五容器保持。生产 8 次业务 HTTP 操作和任务 8 项字段比对通过，无新生产模型调用。[交付回执](docs/operations/evidence/case-human-http-20261111-01/delivery-summary.json)。[问题清单](docs/investigation/current-issues.md)

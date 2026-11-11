@@ -243,6 +243,43 @@ def verify_api_reader(folder, cfg):
     return {"profile": selected["profile"], "verified": True, "writes": 0}
 
 
+def verify_case_http(cfg):
+    selected = cfg.get("case_http_check")
+    if not selected:
+        return None
+    code = '''import asyncio,json
+from sqlalchemy import text
+from app.core.config import settings
+from app.db.case_database import get_case_write_sessions,close_case_database
+async def inspect():
+ try:
+  sessions=get_case_write_sessions()
+  async with sessions() as db, db.begin():
+   await db.execute(text("SET TRANSACTION READ ONLY"))
+   row=(await db.execute(text("SELECT current_database(),current_user"))).one()
+  print(json.dumps({"enabled":settings.SOCAI2_CASE_API_ENABLED,"database":row[0],"role":row[1]}))
+ except Exception:
+  raise RuntimeError("case_http_database_check_failed") from None
+ finally:
+  await close_case_database()
+asyncio.run(inspect())
+'''
+    actual = json.loads(command(["docker", "exec", selected["container"], "python", "-B", "-c", code]))
+    need(actual == {"enabled": True, "database": selected["database"], "role": selected["role"]},
+         "case_http_database_identity_mismatch")
+    return {**actual, "writes": 0}
+
+
+def select_api_environment(values, processing):
+    keys = processing["api_model_keys"]
+    mapping = processing.get("api_environment_sources", {})
+    need(isinstance(mapping, dict) and set(mapping) <= set(keys)
+         and all(isinstance(v, str) and v in values for v in mapping.values()),
+         "api_environment_source_invalid")
+    need(all(mapping.get(key, key) in values for key in keys), "api_environment_source_missing")
+    return {key: values[mapping.get(key, key)] for key in keys}
+
+
 def configure_processing(folder, cfg, state):
     selected = tomllib.loads(Path(cfg["processing"]["profile"]).read_text())
     private = Path(selected["paths"]["private_dir"])
@@ -262,7 +299,8 @@ def configure_processing(folder, cfg, state):
     values = dict(line.split("=", 1) for line in (private / "runtime.env").read_text().splitlines() if "=" in line)
     api_env = Path(cfg["processing"]["api_model_env"])
     need(not api_env.exists(), "api_model_environment_already_exists")
-    api_env.write_text("".join(k + "=" + values[k] + "\n" for k in cfg["processing"]["api_model_keys"]))
+    api_values = select_api_environment(values, cfg["processing"])
+    api_env.write_text("".join(k + "=" + value + "\n" for k, value in api_values.items()))
     api_env.chmod(0o600)
     write(state / "processing-check.json", check)
 
@@ -421,6 +459,7 @@ def verify(folder, *, check_pointer=True):
     policy = verify_processing_policy(cfg)
     return {"release": cfg["release"], "manifest_sha256": sha, "services": result,
             "processing_policy": policy, "api_reader": verify_api_reader(folder, cfg),
+            "case_http": verify_case_http(cfg),
             "consumer_enabled": False, "tenant_quota_unlimited": True}
 
 

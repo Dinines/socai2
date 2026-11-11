@@ -11,7 +11,15 @@ import warnings
 from functools import lru_cache
 from typing import Any, Final
 
-from pydantic import AliasChoices, Field, PostgresDsn, RedisDsn, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PostgresDsn,
+    RedisDsn,
+    SecretStr,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default placeholders shipped in source. Anything matching these in a
@@ -231,6 +239,8 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api/v1"
     # Enable only after the explicit socai2 migration and new data writers are installed.
     SOCAI2_CASE_API_ENABLED: bool = False
+    # Explicit Case/H writer connection; general authentication/GET keep DATABASE_URL.
+    SOCAI2_CASE_DATABASE_URL: SecretStr = Field(default=SecretStr(""), repr=False)
     SOCAI2_ANALYSIS_READ_ENABLED: bool = False
     SOCAI2_PAGE_READ_ENABLED: bool = False
     SOCAI2_STAGE_EXECUTION_ENABLED: bool = False

@@ -1,0 +1,98 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-11T12:39:13.201454+00:00",
+  "case_id": "dac58811-c58d-5a75-9e7e-d0daf2f0740b",
+  "content_json": {
+    "captured_at": "2026-11-11T12:39:13.200790+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "{\n  \"summary\": \"案件涉及主机 socai2-flow-20261107-01 在 2026-11-07T06:33:27Z 至 06:44:07Z 期间，由用户 flow-observer 发起的三起关联告警：登录成功、PowerShell 启动及外联连接。现有材料明确为验收流程中的完整性核查，非业务授权确认。查询工具因无可用 binding_id 无法执行，且人工陈述已确认命令仅记录启动未证实执行结果，连接未证实数据外传。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录用户 flow-observer 于 06:38:27Z 成功登录主机 socai2-flow-20261107-01，源 IP 为 203.0.113.77。标签 synthetic 表明为测试/演练数据，但登录行为本身需核实是否为授权操作。\",\n      \"evidence_ids\": [\"N1_S8\", \"N1_S9\", \"N1_S10\", \"N1_S11\", \"N1_S12\", \"N1_S14\", \"N1_S19\", \"N1_S20\", \"N1_S21\", \"N1_S22\", \"N1_S23\", \"N1_S24\", \"N1_S25\", \"N1_S27\", \"N1_S28\", \"N1_S29\", \"N1_S30\", \"N1_S31\", \"N1_S32\"],\n      \"limitations\": [\"无当前分诊，无法确认业务授权\", \"未提供查询回执，无法确认登录后的会话状态\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录用户 flow-observer 于 06:38:47Z 成功启动 powershell.exe 进程，命令行为 Get-LocalUser。人工反馈确认仅记录启动，未证明命令执行完成或获取了账户列表。\",\n      \"evidence_ids\": [\"N1_S33\", \"N1_S34\", \"N1_S35\", \"N1_S36\", \"N1_S37\", \"N1_S38\", \"N1_S39\", \"N1_S40\", \"N1_S41\", \"N1_S43\", \"N1_S44\", \"N1_S45\", \"N1_S46\", \"N1_S47\", \"N1_S48\", \"N1_S49\", \"N1_S50\", \"N1_S51\", \"N1_S52\", \"N1_S53\", \"N1_S54\", \"N1_S55\", \"N1_S56\", \"N1_S57\", \"N1_S58\", \"N1_S59\"],\n      \"limitations\": [\"无法确认命令执行结果\", \"无法确认是否读取了本地用户信息\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录主机 socai2-flow-20261107-01 于 06:39:07Z 建立 TCP 443 连接至 198.51.100.77。源 IP 显示为 192.0.2.77。人工反馈确认未记录传输内容或字节数，无法证实数据外传。\",\n      \"evidence_ids\": [\"N1_S60\", \"N1_S61\", \"N1_S62\", \"N1_S63\", \"N1_S64\", \"N1_S66\", \"N1_S67\", \"N1_S68\", \"N1_S69\", \"N1_S74\", \"N1_S75\", \"N1_S76\", \"N1_S77\", \"N1_S78\", \"N1_S79\", \"N1_S80\", \"N1_S81\", \"N1_S82\", \"N1_S83\", \"N1_S84\", \"N1_S85\", \"N1_S86\", \"N1_S87\", \"N1_S88\", \"N1_S89\", \"N1_S90\"],\n      \"limitations\": [\"无法确认传输内容\", \"无法确认连接业务目的\", \"无法确认是否外传敏感数据\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S8\", \"N1_S33\", \"N1_S60\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"synthetic 标签暗示可能是演练环境，需核实环境真实性\"],\n      \"limitations\": [\"无授权证据\", \"无执行结果证据\", \"无数据外传证据\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"三起告警在时间上紧密相连（间隔 20 秒内），且涉及同一主机、同一用户及同一源 IP 段，存在逻辑上的行为序列关联。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S8\", \"N1_S33\", \"N1_S60\", \"N1_S19\", \"N1_S45\", \"N1_S74\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"可能是独立事件巧合，但时间窗口过短\"],\n      \"limitations\": [\"时间邻近不等于因果\", \"未证实同一会话\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"observed\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N1_S46\", \"N1_S75\", \"N1_S20\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"用户 flow-observer 可能为自动化账户或测试账户\"],\n      \"limitations\": [\"用户身份背景未知\", \"无权限基线\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"answered\",\n      \"answer\": \"检测到用户 flow-observer 在主机 socai2-flow-20261107-01 上成功登录，随后启动了 PowerShell 进程（命令为 Get-LocalUser），并建立了指向 198.51.100.77 的 TCP 443 连接。\",\n      \"evidence_ids\": [\"N1_S8\", \"N1_S9\", \"N1_S10\", \"N1_S11\", \"N1_S12\", \"N1_S14\", \"N1_S19\", \"N1_S20\", \"N1_S21\", \"N1_S22\", \"N1_S23\", \"N1_S24\", \"N1_S25\", \"N1_S27\", \"N1_S28\", \"N1_S33\", \"N1_S34\", \"N1_S35\", \"N1_S36\", \"N1_S37\", \"N1_S38\", \"N1_S39\", \"N1_S40\", \"N1_S41\", \"N1_S43\", \"N1_S44\", \"N1_S45\", \"N1_S46\", \"N1_S47\", \"N1_S48\", \"N1_S49\", \"N1_S50\"]\n    ,\n      \"limitations\": [\"无法确认命令执行结果\", \"无法确认连接传输内容\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"answered\",\n      \"answer\": \"A1、A2、A3 在时间上连续发生，涉及同一主机和用户，构成潜在的行为链。A2 的 PowerShell 启动紧随 A1 登录之后，A3 的外联紧随进程启动之后。\",\n      \"evidence_ids\": [\"N1_S8\", \"N1_S33\", \"N1_S60\", \"N1_S19\", \"N1_S45\", \"N1_S74\"]\n    ,\n      \"limitations\": [\"时间邻近不证明因果\", \"未证实同一会话\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"行为性质无法定性。标签 synthetic 和人工陈述表明可能是验收测试，但缺乏明确的业务授权记录。若为真实环境，Get-LocalUser 结合外联可能涉及凭证窃取或数据外传，但无执行结果证据。\",\n      \"evidence_ids\": [\"N1_S4\", \"N1_S15\", \"N1_S70\"]\n    ,\n      \"limitations\": [\"无授权材料\", \"无执行结果\", \"无业务上下文\"]\n    },\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无明确授权证据。人工陈述明确指出当前材料为完整性核查，非业务授权确认。未提供审批记录或人工确认。\",\n      \"evidence_ids\": [\"N1_S4\"]\n    ,\n      \"limitations\": [\"未提供审批\", \"未提供人工确认\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"观察到的动作包括登录、进程启动和连接建立。命令执行结果、数据读取情况及外传内容均未确认。潜在影响包括账户信息泄露或数据外传，但仅为推测。\",\n      \"evidence_ids\": [\"N1_S37\", \"N1_S64\", \"N1_S67\"]\n    ,\n      \"limitations\": [\"无返回内容\", \"无传输计数\", \"无业务确认\"]\n    },\n    {\n      \"id\": \"coverage\",\n      \"state\": \"answered\",\n      \"answer\": \"已覆盖 A1、A2、A3 三起告警及关联对象。工具查询因无 binding_id 未执行。主要缺口在于无法通过工具获取执行结果、传输内容和历史上下文。\",\n      \"evidence_ids\": [\"N1_S91\", \"N1_S92\", \"N1_S93\", \"N1_S94\", \"N1_S95\", \"N1_S96\"]\n    ,\n      \"limitations\": [\"工具未执行\", \"查空不构成反证\", \"无历史数据\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户登录、认证及会话管理。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"无 MFA 信息\", \"无会话状态\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机资源、进程活动及网络连接。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"无配置变更\", \"无资源隔离状态\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件投递、链接或附件相关记录。\",\n      \"alert_ids\": [],\n      \"finding_ids\": []\n    ,\n      \"limitations\": [\"无邮件头信息\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及数据访问（Get-LocalUser）及外联（TCP 443），需评估行为基线。\",\n      \"alert_ids\": [\"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"无数据访问记录\", \"无外传内容\", \"无行为基线\"]\n    }\n  ],\n  \"conflicts\": [],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"核实用户 flow-observer 的权限及本次操作的授权依据。\",\n      \"required_evidence\": \"审批记录、人工确认或业务上下文说明。\",\n      \"source_ids\": [\"N1_S4\"]\n    ,\n      \"object_keys\": [\"O5\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"impact\",\n      \"alert_ids\": [\"A2\", \"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"确认 PowerShell 命令执行结果及网络连接的数据传输情况。\",\n      \"required_evidence\": \"命令输出、文件哈希、传输字节数或业务日志。\",\n      \"source_ids\": [\"N1_S37\", \"N1_S64\", \"N1_S67\"]\n    ,\n      \"object_keys\": [\"O2\", \"O3\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"supporting\"\n    }\n  ]\n}",
+              "provider_specific_fields": {
+                "reasoning": null,
+                "refusal": null
+              },
+              "role": "assistant"
+            },
+            "provider_specific_fields": {
+              "routed_experts": null,
+              "stop_reason": null,
+              "token_ids": null
+            }
+          }
+        ],
+        "created": 1794400689,
+        "id": "chatcmpl-b6ac72957fb6b200",
+        "model": "aisoc-investigation",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 3172,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 7590,
+          "total_tokens": 10762
+        }
+      },
+      "validation_error": null
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-b6ac72957fb6b200",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 7590,
+      "output_tokens": 3172,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-b6ac72957fb6b200",
+      "total_tokens": 10762,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "e189621c-8f51-4ddc-b182-7fd446a583aa",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "152c5f3904cd5a7af3674fe0f97a434050e9c46e7e3c76d9e87aec5177eadcb9",
+    "original_size_bytes": 10690,
+    "reason": null,
+    "retained_sha256": "152c5f3904cd5a7af3674fe0f97a434050e9c46e7e3c76d9e87aec5177eadcb9",
+    "retained_size_bytes": 10690,
+    "truncated": false
+  },
+  "run_id": "02412f50-3384-4c35-aa79-672b6a1939e7",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "152c5f3904cd5a7af3674fe0f97a434050e9c46e7e3c76d9e87aec5177eadcb9",
+  "size_bytes": 10690,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "7837085a-713e-42cf-98ad-3faa9905cd1c",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "95c28d96-4b8d-4318-bf71-96e9f6e47468",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

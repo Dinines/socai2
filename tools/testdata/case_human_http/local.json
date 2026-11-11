@@ -1,0 +1,51 @@
+{
+  "batch": "case-human-http-20261111-01",
+  "output": "docs/operations/evidence/case-human-http-20261111-01/real-http",
+  "snapshot": "docs/operations/evidence/case-current-flow-20261110-01/published/C02/database.json",
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/case-human-http-20261111-01/environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "actor_name": "local-material-review@example.invalid",
+  "title": "Case/H HTTP 功能验收：人工核查修订与后轮调查",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "window_padding_seconds": 300,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false"
+  },
+  "transport_config": "tools/testdata/alert_io_eval/config.json",
+  "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/case-human-http-20261111-01",
+  "preflight_timeout_seconds": 30,
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ],
+  "limitations": [
+    "Recorded C02 synthetic materials are copied unchanged into new local identities; earlier A/I judgments and tool receipts are not replayed.",
+    "Real local PostgreSQL, original HTTP routers/dependencies, Case/H services, executor, storage and GET responses are used.",
+    "Only get_current_user is replaced by an explicit test principal; this is not local login or end-user UI acceptance.",
+    "The model gateway factory uses the existing SSH transport and real model/tokenizer; local default model credential lookup is not exercised.",
+    "No vendor or ClickHouse connection is configured. Missing, failed and empty tool results retain their actual meanings.",
+    "Two Runs belong to one functional H revision chain with the existing per-Run limits; no repeated quality samples or unknown retries.",
+    "Human text is material-completeness review, not fabricated business authorization. Known model narrative issues remain NOT_PASSED."
+  ],
+  "http_base_url": "http://local.validation",
+  "http_timeout_seconds": 1600,
+  "human_title": "验收材料完整性核查（不作业务授权）",
+  "human_initial": "本条为验收过程中的材料完整性核查：现有原始材料包含登录、PowerShell 进程启动和外联三条记录。尚无业务人员授权确认，不能据标签判断真实环境性质。",
+  "human_revised": "本条为验收过程中的材料完整性核查，不是业务人员授权确认。核对进程启动原件后，命令行为 powershell.exe -NoProfile -Command Get-LocalUser；这只证明记录了启动，不证明命令完成或返回账户列表。现有外联原件记录 TCP 443 连接，不包含传输内容或字节数。未执行的查询不能记为查空；业务授权、主机实际环境及外联用途仍未知。"
+}

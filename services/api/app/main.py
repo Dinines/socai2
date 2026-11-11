@@ -775,6 +775,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.debug("demo bootstrap cancelled during shutdown")
         except Exception as exc:
             logger.warning("demo bootstrap shutdown error", error=type(exc).__name__)
+    from app.db.case_database import close_case_database
+    await close_case_database()
     await engine.dispose()
     await close_neo4j()
     # Close the ClickHouse warm-tier client. We don't pre-init it on
