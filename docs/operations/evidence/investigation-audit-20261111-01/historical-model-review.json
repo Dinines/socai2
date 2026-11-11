@@ -1,0 +1,201 @@
+{
+  "review_date": "2026-11-11",
+  "basis": "Historical real model and local PostgreSQL run on 2026-11-10, inspected read-only; no new generation or database connection.",
+  "root": "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01",
+  "run_id": "98dda2b8-5346-47d0-bbf0-d17857866cd6",
+  "source_match": {
+    "checked": 98,
+    "mismatches": [],
+    "missing": []
+  },
+  "model_calls": [
+    {
+      "call": 1,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3227,
+        "prompt_tokens": 6821,
+        "total_tokens": 10048,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "call": 2,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 262,
+        "prompt_tokens": 6654,
+        "total_tokens": 6916,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "call": 3,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 455,
+        "prompt_tokens": 6732,
+        "total_tokens": 7187,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    },
+    {
+      "call": 4,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3959,
+        "prompt_tokens": 10734,
+        "total_tokens": 14693,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    }
+  ],
+  "raw_claims": {
+    "call_3_answer_text": "行为性质无法直接定性为恶意、正常或误操作，主要依据如下：1. 支持演练（正常）：所有告警（A1, A2, A3）均被标记为 synthetic（N3_S16, N3_S42, N3_S70），且 N3_S4 描述为独立本地调查，暗示非生产环境操作。2. 支持非演练（恶意/误操作）：缺乏明确的演练计划文档、环境配置记录或审批证据（N3_S97 limitations）；行为包含多阶段（登录 N3_S38、执行 Get-LocalUser N3_S12、出站连接 N3_S63），若 synthetic 标签失效，则存在潜在风险。3. 限制：现有证据无法证明 synthetic 标签的真实性，也无法确认操作是否获得业务授权。",
+    "call_4_conclusion": {
+      "text": "案件状态为未决（Unresolved）。现有证据链完整记录了用户 flow-observer 的登录、命令执行及网络连接行为，且所有告警均带有 'synthetic' 标签。然而，由于缺乏独立的演练元数据、审批记录以及工具查询的补充信息，无法确认该行为是授权的测试活动还是未授权的恶意/误操作。Get-LocalUser 命令结合外部登录和出站连接构成了潜在风险模式，但在无授权证明的情况下，不能直接定性为恶意。",
+      "state": "uncertain",
+      "alert_ids": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "support_ids": [
+        "N4_S16",
+        "N4_S42",
+        "N4_S70",
+        "N4_S4",
+        "N4_S97",
+        "N4_S100",
+        "N4_S101"
+      ],
+      "limitations": [
+        "无审批记录",
+        "工具查询查空",
+        "标签 synthetic 未证实"
+      ]
+    },
+    "call_4_impact": {
+      "summary": "潜在影响包括数据泄露（若出站连接传输敏感数据）或系统配置变更（若 Get-LocalUser 被用于提权或信息收集）。",
+      "alert_ids": [
+        "A1",
+        "A3"
+      ],
+      "support_ids": [
+        "N4_S12",
+        "N4_S63",
+        "N4_S64"
+      ],
+      "supported_changes": [],
+      "cannot_generalize": [
+        "连接成功不等于数据外传",
+        "命令执行不等于配置变更",
+        "无数据内容日志"
+      ],
+      "next_steps": [
+        "确认授权",
+        "验证环境"
+      ]
+    },
+    "call_4_relationship_answer": {
+      "id": "member_relationships",
+      "state": "answered",
+      "answer": "A2（登录）、A1（进程）、A3（网络）共享同一用户、主机和来源域，时间间隔约 2 分钟，构成同一会话序列。",
+      "evidence_ids": [
+        "N4_S35",
+        "N4_S8",
+        "N4_S60"
+      ],
+      "limitations": [
+        "时间邻近不等于因果"
+      ]
+    }
+  },
+  "input_evidence": {
+    "call_3_N3_S4": [
+      "[N3_S4] 标题=Case 来源角色验收：已有演练材料的独立本地调查；描述=Recorded C02 alert fields, original materials and object values are copied unchanged into new local identities."
+    ],
+    "call_4_query_receipts": [
+      "[N4_S91] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=completed；结果=empty；筛选对象=[值=socai2-flow-20261107-01；情报类型/对象类型=host | 值=192.0.2.77；情报类型/对象类型=ip | 值=198.51.100.77；情报类型/对象类型=ip | 值=203.0.113.77；情报类型/对象类型=ip]；工具=assets；是否截断=false；来源范围=tenant_only；返回行数=0；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"assets\",\"priority\":100,\"connected\":true,\"selector_count\":4,\"eligible_members\":[\"1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b\",\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=current_record_snapshot；reserved_tool_calls_for_evidence=2)",
+      "[N4_S92] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=completed；结果=empty；筛选对象=[值=Process start observed；情报类型=null；对象类型=detection | 值=Account logon observed；情报类型=null；对象类型=detection | 值=Outbound connection observed；情报类型=null；对象类型=detection]；工具=knowledge；是否截断=false；来源范围=tenant_only；返回行数=0；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"knowledge\",\"priority\":90,\"connected\":true,\"selector_count\":3,\"eligible_members\":[\"1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b\",\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=current_record_snapshot；reserved_tool_calls_for_evidence=2)",
+      "[N4_S93] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=skipped；结果=not_queried；筛选对象=[值=192.0.2.77；情报类型/对象类型=ip | 值=198.51.100.77；情报类型/对象类型=ip | 值=203.0.113.77；情报类型/对象类型=ip]；工具=threat_intel；是否截断=false；来源范围=tenant_only；返回行数=null；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"threat_intel\",\"priority\":80,\"connected\":true,\"selector_count\":3,\"eligible_members\":[\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=current_record_snapshot；reserved_tool_calls_for_evidence=2)",
+      "[N4_S94] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=skipped；结果=not_queried；筛选对象=[值=flow-observer；情报类型/对象类型=user]；工具=ueba；是否截断=false；来源范围=tenant_only；返回行数=null；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"ueba\",\"priority\":70,\"connected\":true,\"selector_count\":1,\"eligible_members\":[\"1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b\",\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=current_record_snapshot；reserved_tool_calls_for_evidence=2)",
+      "[N4_S95] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=skipped；结果=not_queried；筛选对象=[值=socai2-flow-20261107-01；情报类型/对象类型=host | 值=192.0.2.77；情报类型/对象类型=ip | 值=198.51.100.77；情报类型/对象类型=ip | 值=203.0.113.77；情报类型/对象类型=ip | 值=flow-observer；情报类型/对象类型=user]；工具=history；是否截断=false；来源范围=tenant_only；返回行数=null；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"history\",\"priority\":60,\"connected\":true,\"selector_count\":5,\"eligible_members\":[\"1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b\",\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=event_window；reserved_tool_calls_for_evidence=2)",
+      "[N4_S96] 查询范围=A1、A2、A3；仅说明执行状态。 行数上限=200；查询范围=(结束时间=2026-11-07T06:44:07Z；起始时间=2026-11-07T06:33:27Z)；状态=skipped；结果=not_queried；筛选对象=[值=flow-observer；情报类型/对象类型=user]；工具=graph；是否截断=false；来源范围=tenant_only；返回行数=null；其他查询条件=(selection=({\"reason\":\"missing_paired_background\",\"source\":\"graph\",\"priority\":-101,\"connected\":false,\"selector_count\":1,\"eligible_members\":[\"1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b\",\"1d0f6629-5780-57e3-b3d8-70917b117425\",\"bb5f01c3-ef68-533d-8cfd-8d40c3909df0\"],\"selection_policy\":\"socai2.case-background-coverage.v1\",\"paired_query_members\":[]})；time_mode=current_record_snapshot；reserved_tool_calls_for_evidence=2)"
+    ]
+  },
+  "persisted": {
+    "run": {
+      "id": "98dda2b8-5346-47d0-bbf0-d17857866cd6",
+      "state": "completed",
+      "delivery_state": "partial",
+      "executor_version": "socai2.baseline-executor.v2"
+    },
+    "result": {
+      "id": "6313e4ba-5691-475e-a372-6cda8cb8b65c",
+      "source_run_id": "98dda2b8-5346-47d0-bbf0-d17857866cd6",
+      "validation_state": "accepted",
+      "conclusion_origin": "model",
+      "conclusion_state": "uncertain",
+      "delivery_state": "partial",
+      "conclusion": "案件状态为未决（Unresolved）。现有证据链完整记录了用户 flow-observer 的登录、命令执行及网络连接行为，且所有告警均带有 'synthetic' 标签。然而，由于缺乏独立的演练元数据、审批记录以及工具查询的补充信息，无法确认该行为是授权的测试活动还是未授权的恶意/误操作。Get-LocalUser 命令结合外部登录和出站连接构成了潜在风险模式，但在无授权证明的情况下，不能直接定性为恶意。",
+      "case_impact": {
+        "summary": "潜在影响包括数据泄露（若出站连接传输敏感数据）或系统配置变更（若 Get-LocalUser 被用于提权或信息收集）。",
+        "next_steps": [
+          "确认授权",
+          "验证环境"
+        ],
+        "affected_scope": {
+          "kind": "selected_alerts",
+          "alert_ids": [
+            "1bb4da61-cb93-558c-8dfe-8bf7ffd02a4b",
+            "bb5f01c3-ef68-533d-8cfd-8d40c3909df0"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "limitations": [],
+          "object_keys": [],
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "cannot_generalize": [
+          "连接成功不等于数据外传",
+          "命令执行不等于配置变更",
+          "无数据内容日志"
+        ],
+        "supported_changes": []
+      }
+    },
+    "case_current_assessment_id": "80e68244-38d1-4f9c-a85a-32a12c00cbb3",
+    "assessment_sources": [
+      {
+        "id": "4f339f93-07ed-46f5-86c5-6e9622385bae",
+        "case_id": "349ddca1-f064-5659-9b82-663fadf24e56",
+        "result_id": "6313e4ba-5691-475e-a372-6cda8cb8b65c",
+        "tenant_id": "00000000-0000-0000-0000-000000000001",
+        "artifact_id": null,
+        "source_note": null,
+        "assessment_id": "80e68244-38d1-4f9c-a85a-32a12c00cbb3",
+        "task_revision_id": null
+      }
+    ]
+  },
+  "hashes": {
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/plan.json": "d28761e179bf72ee429d1399f3b189559f079a16d6864d79d2e662cbb284cb83",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/calls/call-3-intent.json": "922f0e757ce14319d18dff4cf80e3b5f535866a8e3049d7bee81b250665ea94d",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/calls/call-3-receipt.json": "e95609cb82413ebe61f1d1b8bfa221e4df35c12a7f9d1e7117019a3125f9450d",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/calls/call-4-intent.json": "0c161902b34e4dceabd4df09cb4867d143a8ee94b869deda4c5565f85e87b627",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/calls/call-4-receipt.json": "8b13ef6ee9577faa9d98aa0ade460433bd6c222341c36e3cd25d943ac356de1e",
+    "docs/operations/evidence/case-evidence-roles-20261110-01/real-model-01/export/database.json": "30f2f69a57111bd79a7a067e760a1ccc8ec201767d88c2c33695901c5dfe30d8"
+  }
+}

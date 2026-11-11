@@ -1,0 +1,103 @@
+..F.....F                                                                [100%]
+=================================== FAILURES ===================================
+______ test_historical_three_followups_and_c6_suggestions_remain_readable ______
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+configured = InvestigationPolicy(version='socai2.investigation-policy.v1.2', sha256='ea886f6aba7858d7a894efb2659d78d11299e2e30ca409...xe4\xbf\x9d\xe8\xaf\x81\xe6\xad\xa3\xe6\x96\x87\xe4\xb8\xbb\xe5\xbc\xa0\xe4\xb8\xba\xe7\x9c\x9f\xe3\x80\x82\\n"\n}\n'))
+
+    def test_historical_three_followups_and_c6_suggestions_remain_readable(sample, configured):
+        context, prepared, bindings, answer = request(sample, configured)
+        old_boundary = {k: v for k, v in prepared["case_boundary"].items() if k != "max_followups"}
+        restored = adapter.restore(json.dumps(answer), old_boundary)
+        historical = contract.parse(restored, prepared["source_map"], context, prepared["coverage"], bindings=bindings)
+        assert len(historical.followups) == 3
+        comparison = {"state": "initial", "result_id": None}
+        final = inputs.build("C6", context, prepared, {}, extra={"comparison": comparison})
+        result = followup.final_answer(final, context, comparison)
+        result["analysis"]["followups"] = [{k: v for k, v in row.items() if k not in {"priority", "binding_id"}}
+            for row in answer["followups"]]
+>       Draft202012Validator(outputs.final_format(final, context, comparison)["json_schema"]["schema"]).validate(result)
+
+services/api/tests/test_socai2_case_grounding.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Draft202012Validator(schema={'$defs': {'AlertId': {'enum': ['A1', 'A2', 'A3'], 'type': 'string'}, 'Analysis': {'additi..., ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'impact', 'recommendations'], ...}, format_checker=None)
+args = ({'analysis': {'summary': 'Synthetic unresolved analysis.', 'members': [{'alert_id': 'A1', 'state': 'unresolved', 'sum...'impact': {'summary': 'No confirmed impact.', 'alert_ids': [], 'support_ids': [], 'supported_changes': [], ...}, ...},)
+kwargs = {}
+
+    def validate(self, *args, **kwargs):
+        for error in self.iter_errors(*args, **kwargs):
+>           raise error
+E           jsonschema.exceptions.ValidationError: 'coverage' is not one of ['detection_facts', 'member_relationships', 'behavior_nature', 'authorization', 'impact']
+E           
+E           Failed validating 'enum' in schema['properties']['analysis']['properties']['questions']['items']['properties']['id']:
+E               {'type': 'string',
+E                'enum': ['detection_facts',
+E                         'member_relationships',
+E                         'behavior_nature',
+E                         'authorization',
+E                         'impact']}
+E           
+E           On instance['analysis']['questions'][5]['id']:
+E               'coverage'
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/jsonschema/validators.py:450: ValidationError
+_ test_conflict_requires_each_findings_original_support_including_partial[C6] __
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'C6'
+
+    @pytest.mark.parametrize("stage", ["C3", "C6"])
+    def test_conflict_requires_each_findings_original_support_including_partial(sample, stage):
+        context, prepared = base.prepared_sample(sample)
+        comparison = {"state": "initial", "result_id": None}
+        if stage == "C6":
+            prepared = inputs.build(stage, context, prepared, {}, extra={"comparison": comparison})
+        analysis = base.answer_for(prepared, context)
+        findings = [{"id": f"F{i}", "state": "inferred", "statement": "Synthetic claim; this test checks sources only.",
+            "alert_ids": [row["alert_id"]], "support_ids": row["evidence_ids"], "counter_ids": [],
+            "alternatives": [], "limitations": []} for i, row in enumerate(analysis["members"][:2], 1)]
+        analysis.update(findings=findings, conflicts=[{"id": "C1", "finding_ids": [f["id"] for f in findings],
+            "state": "unresolved", "explanation": "Synthetic candidate; semantic contradiction is not verified here.",
+            "evidence_ids": [f["support_ids"][0] for f in findings]}])
+        if stage == "C3":
+            answer, fmt = analysis, adapter.output_format(prepared, context, {})
+            receive = lambda text: adapter.parse(text, prepared, context, {})
+            review = adapter.CaseReview(prepared, context, {})
+        else:
+            answer = followup.final_answer(prepared, context, comparison)
+            answer["analysis"] = analysis
+            fmt = outputs.final_format(prepared, context, comparison)
+            receive = lambda text: outputs.parse_final(text, prepared, context, comparison)
+            review = outputs.FinalReview(prepared, context, comparison)
+        validator = Draft202012Validator(fmt["json_schema"]["schema"])
+>       validator.validate(answer)
+
+services/api/tests/test_socai2_case_grounding.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Draft202012Validator(schema={'$defs': {'AlertId': {'enum': ['A1', 'A2', 'A3'], 'type': 'string'}, 'Analysis': {'additi..., ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'impact', 'recommendations'], ...}, format_checker=None)
+args = ({'analysis': {'summary': 'Synthetic unresolved analysis.', 'members': [{'alert_id': 'A1', 'state': 'unresolved', 'sum...'impact': {'summary': 'No confirmed impact.', 'alert_ids': [], 'support_ids': [], 'supported_changes': [], ...}, ...},)
+kwargs = {}
+
+    def validate(self, *args, **kwargs):
+        for error in self.iter_errors(*args, **kwargs):
+>           raise error
+E           jsonschema.exceptions.ValidationError: 'coverage' is not one of ['detection_facts', 'member_relationships', 'behavior_nature', 'authorization', 'impact']
+E           
+E           Failed validating 'enum' in schema['properties']['analysis']['properties']['questions']['items']['properties']['id']:
+E               {'type': 'string',
+E                'enum': ['detection_facts',
+E                         'member_relationships',
+E                         'behavior_nature',
+E                         'authorization',
+E                         'impact']}
+E           
+E           On instance['analysis']['questions'][5]['id']:
+E               'coverage'
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/jsonschema/validators.py:450: ValidationError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_grounding.py::test_historical_three_followups_and_c6_suggestions_remain_readable
+FAILED services/api/tests/test_socai2_case_grounding.py::test_conflict_requires_each_findings_original_support_including_partial[C6]
+2 failed, 7 passed in 1.52s

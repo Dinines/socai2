@@ -12,6 +12,6 @@
 | 当前问题 | [问题清单](investigation/current-issues.md)、[实施任务](../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 | 需求原件 | [AI SOC2](requirements/AI%20SOC2.docx)，保持原件 |
 | 变更流程 | [OpenSpec](../openspec/README.md) |
-| 追溯材料 | [历史索引](handoff/history/2026-11-08-root-docs-cleanup.md)、[交接整理快照](handoff/history/2026-11-10-current-handoff-cleanup.json) |
+| 追溯材料 | [历史索引](handoff/history/README.md)、[代码与数据保留清单](handoff/retention-map.md) |
 
 正式设计与非私密证据保存在仓库；私密配置、运行凭据和本机临时材料留在 `.local`。CLI、HTTP 或格式通过仅证明对应检查，不代替业务判断与模型质量验收。

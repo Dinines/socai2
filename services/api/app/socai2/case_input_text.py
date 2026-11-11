@@ -2,6 +2,7 @@
 import copy
 import json
 from collections import Counter
+from fnmatch import fnmatchcase
 
 from .alert_basic_contract import raw_field_role
 from .baseline_context import reference
@@ -39,6 +40,18 @@ def select(value, rule, omissions, path):
             old = result.pop(key)
             omissions.append({"path": path + "." + key, "reason": "empty_optional", "value_sha256": digest(old)})
     return result
+
+
+def project_context(ref, value, config, omissions):
+    rule = config["context_projection"].get(ref.get("source_path")) if ref["type"] == "artifact" else None
+    return select(value, rule, omissions, ref["source_path"]) if rule else value
+
+
+def field_hint(ref, config):
+    if ref["role"] != "observation":
+        return ""
+    return "；".join(rule["meaning"] for rule in config["field_meanings"]
+                    if any(fnmatchcase(ref.get("source_path") or "", p) for p in rule["paths"]))
 
 
 def material_entries(aid, material, config, omissions, candidate=None):
@@ -139,7 +152,10 @@ def prepare(sample, config, business):
                                   or path.startswith("$.incidents.") and path.endswith(".diagnosis")):
             continue
         source = next(v for v in sample["request"]["source_map"].values() if v["ref"] == ref)
-        entries.append({"ref": copy.deepcopy(ref), "alert_ids": source["alert_ids"], "value": item["value"],
+        value = project_context(ref, item["value"], config, omissions)
+        if value == {} and path in config["context_projection"]:
+            continue
+        entries.append({"ref": copy.deepcopy(ref), "alert_ids": source["alert_ids"], "value": value,
                         "original_value": item["value"], "block": "background"})
 
     for aid, row in sorted(context["alerts"].items()):
@@ -293,6 +309,8 @@ def prepare(sample, config, business):
     scope = project(alias_scope(context["scope"]), "scope", config, omissions, "context.scope")
     blocks = [config["task"], "调查范围：" + render(scope, config), "[本轮要回答的问题]"]
     blocks += [q["id"] + "：" + q["text"] + "；依据要求：" + "；".join(q["evidence_requirements"]) for q in context["questions"]]
+    blocks += ["[" + q["id"] + " 的回答边界] " + config["question_instructions"][q["id"]]
+               for q in context["questions"] if q["id"] in config["question_instructions"]]
     if object_aliases:
         objects = {key: [] for key in object_aliases}
         for aid, member in context["alerts"].items():
@@ -387,6 +405,9 @@ def prepare(sample, config, business):
         provenance = describe(row, owner_alias)
         if provenance:
             shown = provenance + " " + shown
+        meaning = field_hint(row["ref"], config)
+        if meaning:
+            shown += "（字段含义：" + meaning + "）"
         blocks.append("[" + ",".join(group["ids"]) + "] " + shown)
     facts = fact_projection(sample["data"].get("program_facts", {}), rows, aliases, incident_aliases, config, omissions)
     if facts:

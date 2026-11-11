@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="14" time="0.990" timestamp="2026-11-11T15:03:51.131074+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_alert_model_boundary" name="test_five_fields_restore_original_contract_without_rejudging" time="0.010"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'alert_basic', 'parent': None, 'members': [{'alert': {'id': '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf', 'tags': ...\x86\x85\xe5\xae\xb9\xe3\x80\x82\\n",\n  "output_validation": {\n    "prose_alias_format": "namespaced_v1"\n  }\n}\n'))
+
+    def test_five_fields_restore_original_contract_without_rejudging(sample):
+&gt;       prepared = build(sample); body = answer(prepared)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_alert_model_boundary.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_alert_model_boundary.py:28: in build
+    return alert_model_boundary.build(*sample)[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_alert_model_boundary" name="test_invalid_core_is_failed_not_unknown_or_rewritten[changes0]" time="0.009"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'alert_basic', 'parent': None, 'members': [{'alert': {'id': '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf', 'tags': ...\x86\x85\xe5\xae\xb9\xe3\x80\x82\\n",\n  "output_validation": {\n    "prose_alias_format": "namespaced_v1"\n  }\n}\n'))
+changes = {'evidence_ids': []}
+
+    @pytest.mark.parametrize('changes', [{'evidence_ids': []}, {'evidence_ids': ['N999_S999']},
+                                        {'confidence': 2}, {'tenant_id': 'extra'}])
+    def test_invalid_core_is_failed_not_unknown_or_rewritten(sample, changes):
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_alert_model_boundary.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_alert_model_boundary.py:28: in build
+    return alert_model_boundary.build(*sample)[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_alert_model_boundary" name="test_invalid_core_is_failed_not_unknown_or_rewritten[changes1]" time="0.010"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'alert_basic', 'parent': None, 'members': [{'alert': {'id': '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf', 'tags': ...\x86\x85\xe5\xae\xb9\xe3\x80\x82\\n",\n  "output_validation": {\n    "prose_alias_format": "namespaced_v1"\n  }\n}\n'))
+changes = {'evidence_ids': ['N999_S999']}
+
+    @pytest.mark.parametrize('changes', [{'evidence_ids': []}, {'evidence_ids': ['N999_S999']},
+                                        {'confidence': 2}, {'tenant_id': 'extra'}])
+    def test_invalid_core_is_failed_not_unknown_or_rewritten(sample, changes):
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_alert_model_boundary.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_alert_model_boundary.py:28: in build
+    return alert_model_boundary.build(*sample)[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_alert_model_boundary" name="test_invalid_core_is_failed_not_unknown_or_rewritten[changes2]" time="0.009"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'alert_basic', 'parent': None, 'members': [{'alert': {'id': '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf', 'tags': ...\x86\x85\xe5\xae\xb9\xe3\x80\x82\\n",\n  "output_validation": {\n    "prose_alias_format": "namespaced_v1"\n  }\n}\n'))
+changes = {'confidence': 2}
+
+    @pytest.mark.parametrize('changes', [{'evidence_ids': []}, {'evidence_ids': ['N999_S999']},
+                                        {'confidence': 2}, {'tenant_id': 'extra'}])
+    def test_invalid_core_is_failed_not_unknown_or_rewritten(sample, changes):
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_alert_model_boundary.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_alert_model_boundary.py:28: in build
+    return alert_model_boundary.build(*sample)[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_alert_model_boundary" name="test_invalid_core_is_failed_not_unknown_or_rewritten[changes3]" time="0.008"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'alert_basic', 'parent': None, 'members': [{'alert': {'id': '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf', 'tags': ...\x86\x85\xe5\xae\xb9\xe3\x80\x82\\n",\n  "output_validation": {\n    "prose_alias_format": "namespaced_v1"\n  }\n}\n'))
+changes = {'tenant_id': 'extra'}
+
+    @pytest.mark.parametrize('changes', [{'evidence_ids': []}, {'evidence_ids': ['N999_S999']},
+                                        {'confidence': 2}, {'tenant_id': 'extra'}])
+    def test_invalid_core_is_failed_not_unknown_or_rewritten(sample, changes):
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_alert_model_boundary.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_alert_model_boundary.py:28: in build
+    return alert_model_boundary.build(*sample)[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_incident_model_boundary" name="test_output_restores_original_ids_fields_and_exact_sources" time="0.009"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'incident_diagnosis', 'parent': {'id': '06f82d36-1964-4186-aed3-4c7b9ab1a375', 'tags': [], 'title': '关联事件 · ...ce', ...}], 'feedback': None, ...}], 'version': 'socai2.stage-result.v1', ...}, '2e4ccfbe-a3ac-4bfb-a92b-f0cb84b603bf')
+
+    def test_output_restores_original_ids_fields_and_exact_sources(sample):
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_incident_model_boundary.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_incident_model_boundary.py:46: in build
+    return boundary.build(source, identity, load_profile({"profile": "incident-input-v1.json"}))[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/incident_model_boundary.py:120: in build
+    "program_facts": stage_facts(source, input_id, execution_time)}
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[tenant_id]" time="0.008" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[alert_id]" time="0.007" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[run_id]" time="0.008" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[sha256]" time="0.009" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[size_bytes]" time="0.009" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[scope]" time="0.008" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_bad_receipt_pairing_integrity_or_scope_fails_before_model[count]" time="0.007" /><testcase classname="tests.test_socai2_incident_model_boundary" name="test_stale_triage_and_its_receipts_cannot_be_used_as_current" time="0.011"><failure message="app.socai2.baseline_store.StoreError: investigation_policy_file_required">sample = ({'kind': 'incident_diagnosis', 'parent': {'id': '06f82d36-1964-4186-aed3-4c7b9ab1a375', 'tags': [], 'title': '关联事件 · ...ce', ...}], 'feedback': None, ...}], 'version': 'socai2.stage-result.v1', ...}, '2e4ccfbe-a3ac-4bfb-a92b-f0cb84b603bf')
+
+    def test_stale_triage_and_its_receipts_cannot_be_used_as_current(sample):
+        source = sample[0]
+        aid = source["members"][0]["alert"]["id"]
+        source["triage_validation"][aid].update(usable=False, freshness="stale")
+        with pytest.raises(StoreError, match="incident_query_pairing_invalid"):
+            build(sample)
+        del source["triage_queries"][aid]
+&gt;       prepared = build(sample)
+                   ^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_incident_model_boundary.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/tests/test_socai2_incident_model_boundary.py:46: in build
+    return boundary.build(source, identity, load_profile({"profile": "incident-input-v1.json"}))[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/incident_model_boundary.py:120: in build
+    "program_facts": stage_facts(source, input_id, execution_time)}
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:114: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+&gt;           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:253: StoreError</failure></testcase></testsuite></testsuites>

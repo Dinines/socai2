@@ -72,7 +72,9 @@ def answer_for(prepared, context):
         "members": [{"alert_id": alias, "state": "unresolved", "summary": "Synthetic observation needs context.",
                      "evidence_ids": [own[aid]], "limitations": ["Synthetic only."]} for aid, alias in aliases.items()],
         "questions": [{"id": q.id, "state": "unresolved", "answer": "Needs evidence.",
-                       "evidence_ids": [], "limitations": ["Synthetic only."]} for q in context.questions],
+                       "evidence_ids": [], "limitations": ["Synthetic only."]} for q in context.questions
+                      if not (prepared["case_boundary"].get("program_output")
+                              and prepared["case_boundary"].get("stage") == "C6" and q.id == "coverage")],
         "findings": [], "domains": [{"name": name, "applicability": "undetermined", "reason": "Needs evidence.",
                                      "alert_ids": [], "finding_ids": [], "limitations": ["Synthetic only."]}
                                     for name in contract.DOMAINS], "conflicts": [], "followups": []}

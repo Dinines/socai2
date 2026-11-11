@@ -1,0 +1,1278 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-11T09:28:56.028205+00:00",
+  "case_id": "29826c34-c3e0-55f1-a8e3-5c422521bd33",
+  "content_json": {
+    "case_impact": {
+      "affected_scope": {
+        "alert_ids": [
+          "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+          "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+          "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+        ],
+        "kind": "selected_alerts",
+        "limitations": [],
+        "object_keys": [],
+        "window_end": "2026-11-07T06:44:07Z",
+        "window_start": "2026-11-07T06:33:27Z"
+      },
+      "cannot_generalize": [
+        "无法推广至生产环境风险，因 synthetic 标签可能暗示非生产数据或受控环境",
+        "无法推广为已证实的攻击，因缺乏授权和意图证据"
+      ],
+      "next_steps": [
+        "需人工确认授权状态",
+        "需补充威胁情报和 UEBA 查询"
+      ],
+      "summary": "已观察到进程启动和网络连接成功，但未观察到数据外传、系统配置变更或业务中断。Get-LocalUser 命令的结果未知，网络连接的目的和内容未知。",
+      "supported_changes": []
+    },
+    "closing_note": "本轮调查确认了事件的时间线和对象关联，但受限于 'synthetic' 标签的具体含义不明以及关键背景查询（威胁情报、UEBA、历史行为）的缺失，无法对事件性质和授权状态做出最终判断。需人工介入确认演练计划或审批记录，并补充执行未完成的背景查询以排除真实攻击风险。",
+    "conclusion": "案件涉及用户 flow-observer 在主机 socai2-flow-20261107-01 上的一系列操作（登录、执行 PowerShell 命令、建立网络连接）。所有告警标记为 'synthetic'，但关键背景查询未执行或查空，导致无法确认这是受控演练、自动化测试还是真实攻击。授权状态未知，行为性质（恶意/正常/误操作）无法定性。",
+    "findings": [
+      {
+        "counterevidence": [],
+        "id": "F1",
+        "limitations": [
+          "无审批记录证明授权",
+          "无历史基线证明行为正常"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "selected_alerts",
+          "limitations": [],
+          "object_keys": [],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "observed",
+        "statement": "主机 socai2-flow-20261107-01 在案件时间窗口内记录了由用户 flow-observer 发起的完整活动序列：从 IP 203.0.113.77 登录（A2），启动 PowerShell 执行 Get-LocalUser 命令（A1），以及从 192.0.2.77 连接至 198.51.100.77:443（A3）。",
+        "support": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          }
+        ]
+      },
+      {
+        "counterevidence": [],
+        "id": "F2",
+        "limitations": [
+          "标签不证明行为发生",
+          "未执行的工具无法提供否定证据",
+          "替代解释：synthetic 标签可能仅表示数据生成方式，不代表事件性质",
+          "替代解释：synthetic 标签可能暗示受控演练"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "selected_alerts",
+          "limitations": [],
+          "object_keys": [],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "inferred",
+        "statement": "所有相关告警均带有 'synthetic' 标签（N4_S16, N4_S42, N4_S70），且关键背景查询（assets, knowledge, threat_intel, ueba, history, graph）均返回查空或未执行（N4_S91-N4_S96），表明当前缺乏足够的上下文来区分这是真实的攻击事件、误报还是受控的演练数据。",
+        "support": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "ef057533-1c47-4824-961c-8298ea78a651",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "3c580a4d-5b25-41e5-9242-e2f9314e3ace",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "7b6b9149-dd36-4d3c-8b0a-c573e0ef570d",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "710cb767-70a0-4783-a091-4eac26297c9e",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "8d0612a6-7812-4e22-bb3f-6b07bf8ed849",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "3e7a66f9-0de0-497d-bffb-ea2e025f8a66",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          }
+        ]
+      },
+      {
+        "counterevidence": [],
+        "id": "F3",
+        "limitations": [
+          "无审批记录",
+          "无数据外传证据",
+          "无业务上下文",
+          "替代解释：用户可能拥有合法权限执行此操作",
+          "替代解释：操作可能是受控的演练"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "selected_alerts",
+          "limitations": [],
+          "object_keys": [],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "unresolved",
+        "statement": "无法确定用户 flow-observer 的操作是否经过授权，也无法确认 Get-LocalUser 命令的执行结果是否导致了敏感信息泄露或系统配置变更。",
+        "support": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          }
+        ]
+      }
+    ],
+    "program_facts": {
+      "case_severity": null,
+      "case_source": {
+        "external": null,
+        "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+        "role": "source_label",
+        "row_keys": [],
+        "source_path": "$.case",
+        "type": "artifact"
+      },
+      "execution_started_at": "2026-11-11T09:25:44.707435+00:00",
+      "execution_time_source": {
+        "field": "started_at",
+        "id": "394f505b-b58e-4f98-a33d-ce6ed1212b81",
+        "table": "socai2.runs"
+      },
+      "incident_severities": {},
+      "limitations": [
+        "frozen_metadata_not_new_observations",
+        "model_prose_not_rewritten",
+        "missing_activity_time_never_replaced_by_alert_or_execution_time"
+      ],
+      "members": [
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:38:47+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:38:47+00:00",
+            "event_time_source": "source",
+            "id": "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "ingested_at": "2026-11-11T09:25:43.839972+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Process start observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.3349de9b-41a3-5ae8-81b2-f1bbe81d29f7.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+          "material_received_at": "2026-11-11T09:25:43.839972+00:00",
+          "material_source": {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.3349de9b-41a3-5ae8-81b2-f1bbe81d29f7.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        },
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:38:27+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:38:27+00:00",
+            "event_time_source": "source",
+            "id": "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "ingested_at": "2026-11-11T09:25:43.839972+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Account logon observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.7c19692c-4018-5b6d-8fb3-ddfeb38daaee.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+          "material_received_at": "2026-11-11T09:25:43.839972+00:00",
+          "material_source": {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "203.0.113.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "203.0.113.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.7c19692c-4018-5b6d-8fb3-ddfeb38daaee.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        },
+        {
+          "activity_time_state": "available",
+          "activity_times": [
+            {
+              "kind": "activity_time",
+              "source": {
+                "external": null,
+                "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+                "role": "observation",
+                "row_keys": [],
+                "source_path": "$.ocsf_json.time",
+                "type": "alert_material"
+              },
+              "unit": "iso8601_with_offset",
+              "value": "2026-11-07T06:39:07+00:00"
+            }
+          ],
+          "alert": {
+            "event_time": "2026-11-07T06:39:07+00:00",
+            "event_time_source": "source",
+            "id": "84f33362-af3e-5ba5-860d-e5d5c141b44e",
+            "ingested_at": "2026-11-11T09:25:43.839972+00:00",
+            "original_vendor": "LabTelemetry",
+            "severity": "medium",
+            "source_alert_id": null,
+            "title": "Outbound connection observed"
+          },
+          "alert_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.84f33362-af3e-5ba5-860d-e5d5c141b44e.alert",
+            "type": "artifact"
+          },
+          "detection_labels": {
+            "dictionary_version": "socai2.attack-labels.20261107",
+            "does_not_establish_observed_attack": true,
+            "entries": [],
+            "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+            "role": "source_label"
+          },
+          "log_severity": [],
+          "material_id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+          "material_received_at": "2026-11-11T09:25:43.839972+00:00",
+          "material_source": {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": null,
+            "type": "alert_material"
+          },
+          "objects": [
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "socai2-flow-20261107-01",
+              "object_role": "entity",
+              "object_type": "host",
+              "raw_value": "socai2-flow-20261107-01"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "192.0.2.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "192.0.2.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "198.51.100.77",
+              "object_role": "both",
+              "object_type": "ip",
+              "raw_value": "198.51.100.77"
+            },
+            {
+              "asset_match_state": "not_checked",
+              "namespace": "source:socai2-flow-acceptance",
+              "normalized_value": "flow-observer",
+              "object_role": "entity",
+              "object_type": "user",
+              "raw_value": "flow-observer"
+            }
+          ],
+          "objects_source": {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.84f33362-af3e-5ba5-860d-e5d5c141b44e.objects",
+            "type": "artifact"
+          },
+          "unavailable_fields": []
+        }
+      ],
+      "schema_version": "socai2.program-facts.v1.2",
+      "snapshot_captured_at": "2026-11-11T09:25:44.707435+00:00"
+    },
+    "questions": [
+      {
+        "answer": "原始记录支持以下行为：用户 flow-observer 在 2026-11-07T06:38:27Z 登录主机 socai2-flow-20261107-01（来源 A2）；在 2026-11-07T06:38:47Z 启动 powershell.exe 并执行 Get-LocalUser（来源 A1）；在 2026-11-07T06:39:07Z 从 192.0.2.77 连接至 198.51.100.77:443（来源 A3）。涉及对象包括主机 socai2-flow-20261107-01、用户 flow-observer 及 IP 地址 192.0.2.77、198.51.100.77、203.0.113.77。",
+        "evidence_refs": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.ip",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.ip",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.dst_endpoint.port",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.src_endpoint.ip",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.connection_info.protocol_name",
+            "type": "alert_material"
+          }
+        ],
+        "evidence_requirements": [
+          "原始材料和具体来源；检测标签本身不是攻击事实"
+        ],
+        "id": "detection_facts",
+        "limitations": [
+          "标签 synthetic 需人工核实",
+          "无审批记录"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "answered",
+        "text": "原始记录支持哪些行为和对象？"
+      },
+      {
+        "answer": "成员 A1、A2、A3 通过共同对象（主机 socai2-flow-20261107-01、用户 flow-observer）和时间邻近性（间隔约 2 分钟）形成逻辑关联。A2 的登录是 A1 进程启动和 A3 网络连接的前提条件，但现有材料未提供因果证据（如会话 ID 或进程树）证明 A1 和 A3 直接由 A2 的登录会话触发。",
+        "evidence_refs": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name",
+            "type": "alert_material"
+          }
+        ],
+        "evidence_requirements": [
+          "同对象、时间邻近与有证据的行为连接分开"
+        ],
+        "id": "member_relationships",
+        "limitations": [
+          "无会话 ID 关联",
+          "无进程树证明父子关系"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "answered",
+        "text": "成员告警之间有哪些已证实的行为联系？"
+      },
+      {
+        "answer": "恶意解释依据不足，仅凭 Get-LocalUser 命令无法定性为攻击，且 synthetic 标签可能暗示非恶意。正常解释缺乏基线数据支持，无法确认 flow-observer 的常规行为模式。误操作可能性存在，但无证据排除。",
+        "evidence_refs": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          }
+        ],
+        "evidence_requirements": [
+          "可追溯行为证据与替代解释；不以单个标签或分数定性"
+        ],
+        "id": "behavior_nature",
+        "limitations": [
+          "无历史基线",
+          "无审批记录",
+          "synthetic 标签含义不明"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "unresolved",
+        "text": "恶意、正常或误操作等解释分别有哪些依据和反证？"
+      },
+      {
+        "answer": "无明确授权材料。告警记录中未包含审批信息，人工反馈未提供授权确认，且查询工具未返回相关审批记录。",
+        "evidence_refs": [],
+        "evidence_requirements": [
+          "明确授权材料或人工反馈及适用范围；未提供不等于不存在"
+        ],
+        "id": "authorization",
+        "limitations": [
+          "无审批记录",
+          "无人工确认",
+          "source_analysis_question_not_applicable"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "answered",
+        "text": "谁确认了哪些行为、对象和时间的授权？"
+      },
+      {
+        "answer": "已观察到进程启动和网络连接成功，但未观察到数据外传、系统配置变更或业务中断。Get-LocalUser 命令的结果未知，网络连接的目的和内容未知。",
+        "evidence_refs": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "observation",
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome",
+            "type": "alert_material"
+          }
+        ],
+        "evidence_requirements": [
+          "影响对象、行为与证据；图可达不等于受影响"
+        ],
+        "id": "impact",
+        "limitations": [
+          "无数据流分析",
+          "无文件操作记录",
+          "无业务影响评估"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "unresolved",
+        "text": "哪些影响已经观察到，哪些只是待核的可能影响？"
+      },
+      {
+        "answer": "已覆盖所有成员 A1、A2、A3 的原始告警材料。缺口在于：威胁情报（threat_intel）、用户行为分析（ueba）、历史记录（history）和图分析（graph）均未执行或查空，且资产和知识背景查询无结果。",
+        "evidence_refs": [
+          {
+            "external": null,
+            "id": "ef057533-1c47-4824-961c-8298ea78a651",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "3c580a4d-5b25-41e5-9242-e2f9314e3ace",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "7b6b9149-dd36-4d3c-8b0a-c573e0ef570d",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "710cb767-70a0-4783-a091-4eac26297c9e",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "8d0612a6-7812-4e22-bb3f-6b07bf8ed849",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "3e7a66f9-0de0-497d-bffb-ea2e025f8a66",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          }
+        ],
+        "evidence_requirements": [
+          "全部成员的读取/分析覆盖、工具状态与明确限制"
+        ],
+        "id": "coverage",
+        "limitations": [
+          "工具未执行",
+          "查空结果不构成反证"
+        ],
+        "scope": {
+          "alert_ids": [
+            "3349de9b-41a3-5ae8-81b2-f1bbe81d29f7",
+            "7c19692c-4018-5b6d-8fb3-ddfeb38daaee",
+            "84f33362-af3e-5ba5-860d-e5d5c141b44e"
+          ],
+          "kind": "whole_case",
+          "limitations": [],
+          "object_keys": [
+            "[\"host\",\"socai2-flow-20261107-01\"]",
+            "[\"ip\",\"192.0.2.77\"]",
+            "[\"ip\",\"198.51.100.77\"]",
+            "[\"ip\",\"203.0.113.77\"]",
+            "[\"user\",\"flow-observer\"]"
+          ],
+          "window_end": "2026-11-07T06:44:07Z",
+          "window_start": "2026-11-07T06:33:27Z"
+        },
+        "state": "answered",
+        "text": "还有哪些未处理成员、来源缺口、矛盾和后续事项？"
+      }
+    ],
+    "recommendations": [
+      {
+        "action_type": "investigate",
+        "approval_requirement": "unknown",
+        "id": "R1",
+        "limitations": [
+          "无审批记录",
+          "无人工确认",
+          "recommendation_only_no_approval_or_execution"
+        ],
+        "reason": "需人工确认用户 flow-observer 的操作是否经过业务审批或授权。",
+        "source_refs": [
+          {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.3349de9b-41a3-5ae8-81b2-f1bbe81d29f7.alert.event_time",
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.7c19692c-4018-5b6d-8fb3-ddfeb38daaee.alert.event_time",
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.alerts.84f33362-af3e-5ba5-860d-e5d5c141b44e.alert.event_time",
+            "type": "artifact"
+          },
+          {
+            "external": null,
+            "id": "0e5de0f7-a317-4626-bb6b-7fa883c8a4ee",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.case",
+            "type": "artifact"
+          }
+        ],
+        "targets": [
+          {
+            "display_name": "[\"user\",\"flow-observer\"]",
+            "object_key": "[\"user\",\"flow-observer\"]"
+          }
+        ]
+      },
+      {
+        "action_type": "investigate",
+        "approval_requirement": "unknown",
+        "id": "R2",
+        "limitations": [
+          "无历史基线",
+          "synthetic 标签含义不明",
+          "recommendation_only_no_approval_or_execution"
+        ],
+        "reason": "需核实 synthetic 标签是否代表受控演练，并获取用户 flow-observer 的历史行为基线以判断 Get-LocalUser 命令的异常性。",
+        "source_refs": [
+          {
+            "external": null,
+            "id": "3b23d3a1-761f-5e7d-96d7-588ecd20bdad",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "16c9c10b-588e-59bf-96c3-9b0dfd0b5b49",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "fdda8bca-0416-5983-b168-b5a0f90244f1",
+            "role": "source_label",
+            "row_keys": [],
+            "source_path": "$.raw_json.tags.0",
+            "type": "alert_material"
+          },
+          {
+            "external": null,
+            "id": "83c412ae-4bb4-498b-80fb-2cae36cf63cf",
+            "role": "prior_analysis",
+            "row_keys": [],
+            "source_path": "$.analysis",
+            "type": "artifact"
+          }
+        ],
+        "targets": [
+          {
+            "display_name": "[\"host\",\"socai2-flow-20261107-01\"]",
+            "object_key": "[\"host\",\"socai2-flow-20261107-01\"]"
+          },
+          {
+            "display_name": "[\"ip\",\"192.0.2.77\"]",
+            "object_key": "[\"ip\",\"192.0.2.77\"]"
+          },
+          {
+            "display_name": "[\"ip\",\"198.51.100.77\"]",
+            "object_key": "[\"ip\",\"198.51.100.77\"]"
+          },
+          {
+            "display_name": "[\"ip\",\"203.0.113.77\"]",
+            "object_key": "[\"ip\",\"203.0.113.77\"]"
+          },
+          {
+            "display_name": "[\"user\",\"flow-observer\"]",
+            "object_key": "[\"user\",\"flow-observer\"]"
+          }
+        ]
+      }
+    ],
+    "result_id": "fe5c6dfb-d9f9-4f6f-a8cc-a0d17d20789a",
+    "schema_version": "socai2.baseline-delivery.v1",
+    "title": "基础调查结果"
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "4a0fba5e-3d1a-46b4-9202-ed455c313681",
+  "incident_id": null,
+  "kind": "report_json",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "724634e0c37ca68354417c404ada06f4db22a6899079d518cf7c883a5f6fa9fa",
+    "original_size_bytes": 29012,
+    "reason": null,
+    "retained_sha256": "724634e0c37ca68354417c404ada06f4db22a6899079d518cf7c883a5f6fa9fa",
+    "retained_size_bytes": 29012,
+    "truncated": false
+  },
+  "run_id": "394f505b-b58e-4f98-a33d-ce6ed1212b81",
+  "schema_version": "socai2.baseline-delivery.v1",
+  "sha256": "724634e0c37ca68354417c404ada06f4db22a6899079d518cf7c883a5f6fa9fa",
+  "size_bytes": 29012,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "4f38128d-235e-4795-8324-df976aeee5dc",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "7baaf652-3a00-4ee0-9cc8-04dbcd325473",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "9cab6f22-a935-405d-ba87-41c6fb31fd81",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "bfa22797-c153-40a8-9db9-d50f842c2529",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "01dee573-0a5d-48da-ac2b-d5fa28d75130",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    },
+    {
+      "external": null,
+      "id": "7f77088d-9d30-43c6-a0c9-44d2d4e9f104",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "21ffe0ba-de2e-44fa-811d-f6392b86917e",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

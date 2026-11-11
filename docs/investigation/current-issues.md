@@ -1,13 +1,17 @@
 # 调查流程与交接问题清单
 
-更新于 2026-11-10。当前发布和字段合同见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。下列未完项独立于本批的部署、读取和字段对应验收；登记不代表修复或取消需求。
+更新于 2026-11-11。当前发布和字段合同见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。下列未完项独立于部署、读取和字段对应验收；登记不代表修复或取消需求。本轮[独立流程审查](investigation-flow-review-20261111.md)仅检查实现与证据，未修改业务。
+
+按负责人 2026-11-11 的[后置决定](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/scope-decision.md)，持续模型问题记录开放，允许已验证程序功能交付和后续 Case/H 正常操作推进；不再以重复模型采样作为前置。模型质量 NOT_PASSED 保持，不等于问题已修复。
 
 ## 待完成事项
 
 | 编号 | 问题及影响 | 当前处理与验收落点 |
 | --- | --- | --- |
-| M01 | 模型扩大正文事实，结构合法不保证主张有据 | 质量 NOT_PASSED。本轮 Deep 把缺演练／审批材料当反证、把验收描述推断为原业务环境；C6 合并查空／未查，并作缺本案依据的条件性影响外推。命令行与执行效果、单条发现的事实引用覆盖仍需精确区分。原答及限制保持，见[本轮报告](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md) |
-| M02 | 角色引用合规与正文有据需分开持续验收 | 本轮 Finding 生成／反馈缺口已按 F06 修正，独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由单 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。前批拒收原件保持 |
+| M01 | 模型扩大正文事实，结构合法不保证主张有据 | 质量 NOT_PASSED。程序覆盖和观察原值装配已直接验证；第五批命令结果边界改善；Deep 仍凭 synthetic 标签断言非生产环境，C6 替代解释将四项未查询也说成查空，两项已保存读回。另有时间间隔计算错误；固定 coverage 正确不代表其他正文正确；见[当前验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md) |
+| M01-A | 模型将 synthetic 等来源标签推成业务环境/良恶性事实 | **已知、后置，未修复**。第五批 Deep 原答及保存 GET 可复现；只应据对应业务材料或明确归属的人工陈述判断环境。按负责人决定不阻塞发布/后续功能，原质量结论保持 |
+| M01-B | 模型自由正文将未查询写成查空 | **已知、后置，未修复**。第五批 C6 F1 替代解释与程序 coverage 的 2 查空/4 未查矛盾；原字段/原答保留，真实状态以程序回执为据。后续实际触及该输出时定向处理，不重复采样 |
+| M02 | 角色引用合规与正文有据需分开持续验收 | r6 参照批次 Finding 生成／反馈缺口已按 F06 修正，该批独立真实 Run 的 6 条 observed 支持合规，0 纠正；不能由该 Run 推断所有模型场景稳定，也不能用角色合规核销 M01。当前程序原值装配及原批次拒收分别保留 |
 | F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 用户授权助手代拟材料核查，3 个修订和后轮 C3/Deep/C6 输入均可追溯；仅管理字段变化不造成虚假过期。模型仍重复部分已指出的错误，可见性不核销 3.7，也不代表业务授权确认 |
 | F02 | 真实非空知识使用和背景取证覆盖仍待验证 | 配置排序、有效 A 配对回执覆盖及工具预留已实现；本轮真实 assets／knowledge 完成零行，其余按实际跳过／未接入保存。每 Run 4 工具、预留 2 不增额。下一适用批次核非空知识及按问题使用；graph 单列 |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
@@ -21,10 +25,24 @@
 
 四项 P01–P04 是已保存的产品页面核对结论；4177 内部工作台的节点详情优化不核销这些产品页面事项。[功能与跳转清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [原始页面证据](investigation-test-handoff-20261106.md#下一阶段的前后端交接验收)
 
+审计基线、各批原答、校验、采用和读回关系分别保留。第五批执行 completed/交付 partial、C6 uncertain/accepted 并采用，不等于正文已经核实：原正文独审为 REVISE；负责人后置决定后的程序交付补充审查为 ACCEPT。第四批 rejected 原件保持，不改写采用/失败历史。
+
+## 保留模块启用前的问题
+
+以下属于 `services/agents` 的 Hunt，不是当前 `socai2` A/I/C/H 的执行链；生产暴露和真实多租户数据未在本轮验证。按该模块启用范围处理，不单开主线权限专项。
+
+| 编号 | 问题及影响 | 修复与验收 |
+| --- | --- | --- |
+| A03 | Hunt 路由只执行认证，不消费 principal 的租户，读取与手动调度落到 default | 隔离真实 ASGI 复现两租户均用 default；从认证结果显式绑定目标并传入读写/执行，不能缺失回退；验收两个租户的下游目标匹配 |
+| A04 | Hunt 数据湖失败变空列表，返回 ok=true，生成 completed/零行/error=null 的落库参数 | 隔离真实 loader→scheduler→engine→store 复现；保留采集失败/错误到接口和 Run，用正常零行与超时各一例直接验收 |
+
+详细行号、触发、证据及限制见[独立流程审查](investigation-flow-review-20261111.md)。Swarm/Debate 的确定性评分与模拟 token 未证实接入目标路径，按保留模块说明，不认定主线模拟冒充真实。
+
 ## 已修正并复验
 
 | 编号 | 发现与修正 | 证据 |
 | --- | --- | --- |
+| A02 | C3 提示最多两项补查，但生成/接收曾允许 12 项 | 当前冻结配置、生成/接收/partial 均限 2，三项明确拒收且零派发，历史读取和 C6 建议兼容；直接检查通过，21 r1 实际加载上限 2，发布读回通过。[本次交付](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。原审计反例保持 |
 | R01 | Case/H GET 共用关闭的写开关而 503；GET 现在接受页面读取开关，写操作仍受原开关约束 | 当前两案 365 GET、16,820 检查；读取开关／租户／权限与写入拒绝定向测试 |
 | R02 | 安装核验器拒绝已经人工授权的 `aisoc_app` schema USAGE | 改为核实获准 SELECT、无调查写权限及无管理权限；实际 verify 通过，未执行 GRANT 或 DDL |
 | R03 | 对账脚本只在本 Case 计算相关告警，遗漏同租户跨 Case 的合法结果 | 从同一只读快照读取匹配对象及当前材料，按类型／命名空间／对象键核对关联，复验零偏差 |
@@ -37,4 +55,4 @@
 | F05 | Deep handoff 生成允许空答复、网关分支丢公共必填项，与接收合同不一致 | 每个 action／Answer 分支展开完整结构与限制；真实第三轮 handoff／answer 均完整通过，前两轮原失败保留；[69 项直接检查](../operations/evidence/case-scope-recovery-20261110-01/final-contract-tests.xml) |
 | F06 | C3/C6 Finding 生成与接收的角色约束不一致，有限反馈遗漏角色错误 | 已统一部署并核来源：完整状态分支限制直接观察、v2 反馈给角色与逐成员缺口；86 项检查、两项 PG 流程和一轮真实生成通过该范围，原接收兼容性及历史原件保持。[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)；独审 ACCEPT，21 r6 生产读回通过 |
 
-本轮结果见[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)与[逐调用汇总](../operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)。前批来源范围及纠正修复见[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)；原[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)和生产原答继续保留。
+本次结果见[程序功能验收](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)及[交付回执](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。r6 参照批次见[角色验收](../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)与[逐调用汇总](../operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)。前批来源范围及纠正修复见[验收报告](../../openspec/changes/archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)；原[Case 流程实测](../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)和生产原答继续保留。

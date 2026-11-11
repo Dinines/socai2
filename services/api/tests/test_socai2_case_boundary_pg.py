@@ -57,6 +57,8 @@ def role_finding(answer, prepared, stage, *, invalid=False):
     if invalid:
         analysis["findings"][0]["statement"] = "Synthetic mixed observation and label context."
         analysis["findings"][0]["support_ids"].append(label)
+    if prepared["case_boundary"].get("program_output"):
+        analysis["findings"][0].pop("statement")
 
 
 class Gateway:

@@ -80,11 +80,15 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     prepared["omissions"].extend(rejected)
     if rejected:
         prepared["user"] += "\n部分背景原文被输入检查排除；不能视作完整材料。"
+    output = profile.config["c3_output"]
+    from .case_program_output import observation_literals
     system = legacy.SYSTEM + "\n" + "\n".join(line for line in contract.PROMPT.splitlines()
-        if not line.startswith("followups只提需求")) + "\n" + contract.EXECUTION_PROMPT + "\n" + profile.config["system_suffix"]
+        if not line.startswith(("followups只提需求", "仅返回符合response_format"))) + "\n" + contract.EXECUTION_PROMPT + "\n" + profile.config["system_suffix"]
     for replacement in profile.config["system_replacements"]:
         system = system.replace(replacement["old"], replacement["new"])
     system += "\n" + profile.config["citation_instruction"]
+    system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"]))
+    system += "\n" + profile.config["program_output"]["instruction"]
     messages = [{"role": "system", "content": system}, {"role": "user", "content": prepared["user"]}]
     reason = ("required_model_input_unavailable" if any(r["required"] for r in rejected) else
               "case_input_exceeds_prepared_limit" if len(encoded(messages)) > draft_limit() else
@@ -93,7 +97,9 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     return {"schema_version": SCHEMA, "ready": reason is None, "reason": reason,
         "messages": messages if reason is None else [], "source_map": prepared["source_map"],
         "coverage": prepared["coverage"], "omissions": prepared["omissions"],
-        "source_state_ledger": states, "case_boundary": {"profile": profile.identity,
+        "source_state_ledger": states, "case_boundary": {"profile": profile.identity, "max_followups": output["max_followups"],
+            "program_output": profile.config["program_output"]["version"],
+            "observation_literals": observation_literals(prepared["records"], prepared["member_aliases"]),
             "member_aliases": prepared["member_aliases"], "object_aliases": prepared["object_aliases"]},
         "input_ledger": prepared, "bytes": len(encoded(messages)),
         "limitations": ["structured_sources_and_frozen_query_copies_not_a_full_raw_review",

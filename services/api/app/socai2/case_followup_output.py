@@ -7,9 +7,10 @@ from pydantic import ValidationError
 from . import baseline_analysis_contract as analysis
 from . import baseline_deep_contract as deep
 from . import baseline_delivery_contract as delivery
+from . import case_program_output as program
 from .analysis_review import Review, decode
 from .case_citation_feedback import feedback
-from .case_finding_schema import constrain_findings
+from .case_finding_schema import constrain_findings, validate_conflicts
 from .structured_output import response_format
 
 
@@ -93,7 +94,14 @@ def final_format(prepared, context, comparison):
     if fixed_comparison(comparison):
         schema["properties"].pop("comparison")
         schema["required"].remove("comparison")
-    return constrain_findings(fmt, prepared["source_map"], context.alerts)
+    if program.enabled(boundary):
+        schema["$defs"]["Answer"]["properties"]["id"] = {"type": "string", "enum": [q.id for q in context.questions if q.id != "coverage"]}
+        questions = schema["$defs"]["Analysis"]["properties"]["questions"]
+        while "$ref" in questions:
+            questions = schema["$defs"][questions["$ref"].removeprefix("#/$defs/")]
+        schema["$defs"]["Analysis"]["properties"]["questions"] = {**copy.deepcopy(questions),
+            "minItems": len(context.questions) - 1, "maxItems": len(context.questions) - 1}
+    return constrain_findings(fmt, prepared["source_map"], context.alerts, program_owned=program.enabled(boundary))
 
 
 def restore_final(content, prepared, comparison):
@@ -103,6 +111,8 @@ def restore_final(content, prepared, comparison):
     objects = {v: k for k, v in boundary["object_aliases"].items()}
     try:
         root = value["analysis"]
+        program.restore_observed(root, boundary)
+        program.restore_coverage(root, boundary)
         for row in root["members"]:
             row["alert_id"] = members[row["alert_id"]]
         for key in ("findings", "domains", "followups"):
@@ -128,13 +138,18 @@ def restore_final(content, prepared, comparison):
 
 
 def parse_final(content, prepared, context, comparison):
-    return delivery.parse(restore_final(content, prepared, comparison),
-                          prepared["source_map"], context, prepared["coverage"], comparison)
+    value = delivery.parse(restore_final(content, prepared, comparison),
+                           prepared["source_map"], context, prepared["coverage"], comparison)
+    validate_conflicts(value.analysis.model_dump(mode="json"), prepared["source_map"])
+    program.validate_program(value.analysis.model_dump(mode="json"), prepared["case_boundary"])
+    return value
 
 
 class FinalReview(Review):
     def __init__(self, prepared, context, comparison):
-        super().__init__("C6", prepared["source_map"], context, prepared["coverage"])
+        super().__init__("C6", prepared["source_map"], context, prepared["coverage"],
+                         validator=lambda value: (validate_conflicts(value, prepared["source_map"]),
+                                                  program.validate_program(value, prepared["case_boundary"])))
         self.prepared, self.comparison = prepared, comparison
 
     def feedback(self, content):
@@ -145,7 +160,16 @@ class FinalReview(Review):
                 if key in row:
                     row[key] = [self.prepared["case_boundary"]["member_aliases"].get(a, "案件外成员") for a in row[key]]
         aliases = self.prepared["case_boundary"]["member_aliases"]
-        return feedback(content, "C6", sources, [aliases[a] for a in self.context.alerts], [q.id for q in self.context.questions])
+        owned = program.enabled(self.prepared["case_boundary"])
+        return feedback(content, "C6", sources, [aliases[a] for a in self.context.alerts],
+            [q.id for q in self.context.questions if not owned or q.id != "coverage"],
+            extra_errors=program.program_errors(decode(content)["analysis"], self.prepared["case_boundary"]))
 
     def partial(self, content):
-        return super().partial(restore_final(content, self.prepared, self.comparison))
+        result = super().partial(restore_final(content, self.prepared, self.comparison))
+        if program.enabled(self.prepared["case_boundary"]):
+            retained = self.details["retained_analysis"]
+            retained["questions"] = [row for row in retained["questions"] if row["id"] != "coverage"]
+            retained["questions"].append(program.coverage_question(retained, self.prepared["case_boundary"]))
+            analysis.parse(json.dumps(retained), self.sources, self.context, self.coverage)
+        return result

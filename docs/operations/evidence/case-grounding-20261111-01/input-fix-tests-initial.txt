@@ -1,0 +1,66 @@
+FF..                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_background_summary_uses_receipts_even_when_prior_text_disagrees[Deep] __
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'Deep'
+
+    @pytest.mark.parametrize("stage", ["Deep", "C6"])
+    def test_background_summary_uses_receipts_even_when_prior_text_disagrees(sample, stage):
+        context, prepared, prior = followup.fixture(sample)
+        prior["analysis"]["summary"] = "Synthetic wrong prior: assets skipped; history returned zero."
+        receipts = [{"tool_name": "assets", "state": "completed", "outcome": "empty", "returned_rows": 0, "truncated": False},
+                    {"tool_name": "history", "state": "skipped", "outcome": "not_queried", "returned_rows": None, "truncated": False}]
+        for i, value in enumerate(receipts):
+            prepared["input_ledger"]["records"].append({"id": f"receipt-{i}", "block": "background_query",
+                "value": value, "alert_ids": list(context.alerts),
+                "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
+                        "source_path": None, "external": None, "row_keys": []}})
+        before = copy.deepcopy((prepared, prior))
+        result = inputs.build(stage, context, prepared, {}, previous=prior, prior_id=uuid4(),
+                              question_id=context.questions[0].id if stage == "Deep" else None)
+        assert result["ready"], result["reason"]
+        status = result["followup_boundary"]["background_status"]
+        assert [{k: v for k, v in row.items() if k != "source_id"} for row in status] == receipts
+        for row in status:
+            assert result["source_map"][row["source_id"]]["ref"]["role"] == "execution_receipt"
+        text = result["messages"][1]["content"]
+        assert text.index("本轮背景查询的程序摘要") > text.index("前序C3判断原文")
+>       assert "returned_rows=0" in text and "not_queried" in text
+E       AssertionError: assert ('returned_rows=0' in '[本次任务]\n原始记录支持哪些行为和对象？\n调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:09Z；...cope_statistic_kept_in_ledger=1；normal_scope_state_kept_in_ledger=1；no_additional_member_fact=3；省略或不可见不表示不存在，不能视作已读全文。')
+
+services/api/tests/test_socai2_case_grounding.py:129: AssertionError
+___ test_background_summary_uses_receipts_even_when_prior_text_disagrees[C6] ___
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'C6'
+
+    @pytest.mark.parametrize("stage", ["Deep", "C6"])
+    def test_background_summary_uses_receipts_even_when_prior_text_disagrees(sample, stage):
+        context, prepared, prior = followup.fixture(sample)
+        prior["analysis"]["summary"] = "Synthetic wrong prior: assets skipped; history returned zero."
+        receipts = [{"tool_name": "assets", "state": "completed", "outcome": "empty", "returned_rows": 0, "truncated": False},
+                    {"tool_name": "history", "state": "skipped", "outcome": "not_queried", "returned_rows": None, "truncated": False}]
+        for i, value in enumerate(receipts):
+            prepared["input_ledger"]["records"].append({"id": f"receipt-{i}", "block": "background_query",
+                "value": value, "alert_ids": list(context.alerts),
+                "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
+                        "source_path": None, "external": None, "row_keys": []}})
+        before = copy.deepcopy((prepared, prior))
+        result = inputs.build(stage, context, prepared, {}, previous=prior, prior_id=uuid4(),
+                              question_id=context.questions[0].id if stage == "Deep" else None)
+        assert result["ready"], result["reason"]
+        status = result["followup_boundary"]["background_status"]
+        assert [{k: v for k, v in row.items() if k != "source_id"} for row in status] == receipts
+        for row in status:
+            assert result["source_map"][row["source_id"]]["ref"]["role"] == "execution_receipt"
+        text = result["messages"][1]["content"]
+        assert text.index("本轮背景查询的程序摘要") > text.index("前序C3判断原文")
+>       assert "returned_rows=0" in text and "not_queried" in text
+E       AssertionError: assert ('returned_rows=0' in '[本次任务]\n根据本轮实际材料作出最终案件判断。\n调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:0...cope_statistic_kept_in_ledger=1；normal_scope_state_kept_in_ledger=1；no_additional_member_fact=3；省略或不可见不表示不存在，不能视作已读全文。')
+
+services/api/tests/test_socai2_case_grounding.py:129: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_grounding.py::test_background_summary_uses_receipts_even_when_prior_text_disagrees[Deep]
+FAILED services/api/tests/test_socai2_case_grounding.py::test_background_summary_uses_receipts_even_when_prior_text_disagrees[C6]
+2 failed, 2 passed in 1.21s

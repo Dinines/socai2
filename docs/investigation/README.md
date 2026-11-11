@@ -8,7 +8,10 @@
 | 数据及接口 | [数据交接](socai2-page-data-handoff-20261106.md)、[字段字典](../design/socai2-field-dictionary-20261103.md)、[OpenAPI](../design/socai2-independent-api-v2.openapi.json) |
 | 程序及模型职责 | [执行账本](current-execution-ledger.md)、[模型输入输出](model-input-output-current-20261109.md) |
 | 问题与后续验收 | [问题清单](current-issues.md)、[OpenSpec 任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
+| 实际实现审查 | [调查流程独立审查](investigation-flow-review-20261111.md)：入口、设计合理性、合同偏差、实现真实性及证据限制 |
+| 当前交付与下一项 | [Case 程序事实与补查约束](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/tasks.md)已完成限定程序交付，模型问题后置；接着按[主路线](../../openspec/changes/complete-socai2-investigation-chain/design.md#下一项具体落点)推进 Case/H 正常操作 |
 | 21 与本机接入 | [部署](../../deploy/aisoc21/README.md)、[SSH 转发](../operations/mac-ssh-relay-20261107.md) |
+| 资料归档与保留 | [历史索引](../handoff/history/README.md)、[代码与数据保留清单](../handoff/retention-map.md) |
 | 运行原件及样例 | [工作台与离线材料](../../deliverables/investigation-validation-20261106/README.md)、[本批证据](../operations/evidence/case-evidence-roles-20261110-01/) |
 
 原始需求、各批失败及模型原答均保留。实现、运行交付、数据读取、页面接线和模型质量分别验收；未完成主任务继续保留在主调查 OpenSpec；各独立交付按一个 change 完整验收后发布。

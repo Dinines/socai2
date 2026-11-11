@@ -1,12 +1,12 @@
 """One diagnostic correction for complete Case replies, without changing them."""
 from .analysis_review import decode, empty_reference_feedback
 from .baseline_analysis_contract import time_context
-from .case_finding_schema import direct_observations
+from .case_finding_schema import conflict_errors, direct_observations
 
-POLICY = "socai2.case-citation-correction.v2"
+POLICY = "socai2.case-citation-correction.v3"
 
 
-def feedback(content, stage, sources, members, questions):
+def feedback(content, stage, sources, members, questions, *, extra_errors=()):
     raw = decode(content)
     root = raw["analysis"] if stage == "C6" else raw
     # Shape/alias validation is performed by the configured output adapter.
@@ -23,6 +23,8 @@ def feedback(content, stage, sources, members, questions):
     prior = empty_reference_feedback(content, stage, sources)
     errors = prior["errors"] if prior else []
     prefix = ["analysis"] if stage == "C6" else []
+    errors += [{**item, "path": prefix + item["path"]} for item in extra_errors]
+    errors += [{**item, "path": prefix + item["path"]} for item in conflict_errors(root, sources)]
 
     def error(path, code, subject=None, **details):
         errors.append({"path": path, "code": code, "subject_id": subject, **details})
@@ -116,6 +118,7 @@ def feedback(content, stage, sources, members, questions):
         "allowed_sources": [{"id": sid, "role": source["ref"]["role"], "alert_ids": source["alert_ids"],
                              **{k: source[k] for k in ("membership_basis", "query_alert_ids", "record_alert_ids") if k in source}}
                             for sid, source in sources.items()],
-        "local_findings": [{"id": fid, "alert_ids": row["alert_ids"]} for fid, row in findings.items()],
+        "local_findings": [{"id": fid, "alert_ids": row["alert_ids"], "direct_support_ids": sorted(direct_observations(
+            {sid: sources[sid] for sid in row["support_ids"] if sid in sources}, row["alert_ids"]))} for fid, row in findings.items()],
         "observed_support_ids": sorted(direct_observations(sources, members)),
-        "instruction": "仅纠正上一份完整 JSON 一次，保留独立有效内容。finding_ids 只引用本次同一 analysis.findings 中实际存在的 id，不能引用历史发现号、问题号或为过校验编造发现。按真实证据重新核对正文、状态、成员范围和引用；不得机械扩大范围、随意填号或把查询出处当记录主体。observed 只陈述直接观察支持的主张，每个涉及成员都有相应观察。标签、历史判断和人工陈述应明确归因，混合句须按主张分开表达；标签说明可留在带来源的成员摘要。不能只删除非法引用而保留超出证据的断言，也不能仅改为 inferred 掩盖无据事实。可用观察编号不表示它证明该主张，须核原字段含义。没有依据应明确未解决和缺口；同一来源不能兼作支持与反证，冲突必须是两条真实发现的矛盾，缺证据不是冲突。返回完整 JSON 并接受全部校验。"}
+        "instruction": "仅纠正上一份完整 JSON 一次，保留独立有效内容。finding_ids 只引用本次同一 analysis.findings 中实际存在的 id，不能引用历史发现号、问题号或为过校验编造发现。按真实证据重新核对正文、状态、成员范围和引用；不得机械扩大范围、随意填号或把查询出处当记录主体。observed 只陈述直接观察支持的主张，每个涉及成员都有相应观察。标签、历史判断和人工陈述应明确归因，混合句须按主张分开表达；标签说明可留在带来源的成员摘要。不能只删除非法引用而保留超出证据的断言，也不能仅改为 inferred 掩盖无据事实。可用观察编号不表示它证明该主张，须核原字段含义。没有依据应明确未解决和缺口；同一来源不能兼作支持与反证，冲突必须是两条真实发现的矛盾，缺证据不是冲突。冲突每个参与发现须有对应成员的直接 observation 支持，evidence_ids 逐 finding 覆盖这些支持且至少两个不同来源；只有回执、标签或缺口的发现不能作冲突一方。不要补凑观察编号或编造发现，缺口放限制/问题，解释差异放 alternatives，无有据矛盾用 conflicts=[]。返回完整 JSON 并接受全部校验。"}

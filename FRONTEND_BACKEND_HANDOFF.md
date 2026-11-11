@@ -1,6 +1,6 @@
 # 告警、事件与 Case 前后端交接
 
-更新于 2026-11-10。本文是功能、数据库、字段和接口的共同入口，以 21 当前部署和实际读回为准。告警分诊、事件诊断、Case C1/C3/Deep/C6 输入输出已部署；数据读取验收通过，模型正文质量继续单列验收。
+更新于 2026-11-11。本文是功能、数据库、字段和接口的共同入口，以 21 当前部署和实际读回为准。告警分诊、事件诊断、Case C1/C3/Deep/C6 输入输出已部署；数据读取验收通过，模型正文质量继续单列验收。
 
 后续按功能流程推进，必要读写接线与配置随功能处理。告警相关的前后端字段合同保持稳定；字段名、类型、含义、关联和接口返回确需调整时先列明影响并确认。下表保留已核验的运行配置，配置当前值不构成后续功能开发的权限前置。
 
@@ -21,7 +21,7 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261110-r6`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261111-r1`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
 | 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台组件 `workbench-20261110-r2`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
@@ -89,10 +89,14 @@
 
 ## 6 本次验证与交付边界
 
-本轮已完成验收并部署的范围为 Case Finding 来源角色：C3/C6 生成按 observed／inferred／unresolved 分支约束；observed 支持仅用有成员依据的直接观察，标签／历史／人工说明保留归属，不能充当观察或业务授权。原接收合同及合法时间上下文保持兼容。一次纠正反馈增加角色、查询绑定及直接观察覆盖的具体路径，失败时保留有效局部，不改正文追认成功。详见[本 change 验收](openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
+当前交付 [ground-case-conclusions](openspec/changes/archive/2026-11-11-ground-case-conclusions/validation.md)。C3 `followups` 上限 2 从冻结 profile 同时约束生成、接收及 partial；超限拒收，不能截断派发。冲突逐 finding/成员核直接原始支持；合法引用不代表正文互斥。历史工件可读，C6 建议不受 C3 派发上限影响。
 
-86 项相关检查、两项真实本地 PostgreSQL 完整流程通过，包括纠正成功与仍错时局部保留；模型／数据湖替身明确单列。一个独立真实模型 Run 使用原演练材料的新本地身份，共 4 次调用、38,844 reported tokens，费用未知。52 次原 GET 处理函数与 3,225 项字段／原文／关联核对通过；数据库设计仍为 29 表／462 列，无告警字段或 HTTP 返回变化。
+当前模型边界中，C3/C6 的 observed finding 只选择原始观察字段，`statement` 由程序按原记录路径和值装配；inferred/unresolved 的文字由模型表达。C6 模型生成五个业务问题，程序依据材料读取、查询回执和保留分析补齐 coverage，对外仍保存六问。逐成员读取状态/限制/遗漏保存在冻结材料回执；available 仅指所选字段可读取，未记录明确 unrecorded。C4 整份回执以 execution_receipt、source_path=null 引用，零行、false 和未知值保留。
 
-该 Run completed/partial，C6 采用，6 条 observed 支持角色及成员依据合规，没有纠正调用。Deep 正文仍把缺口当反证、混淆验收描述和原行为环境，C6 仍有查询状态合并及缺本案依据的条件性外推，整体模型质量 NOT_PASSED。执行、交付、程序采用与正文质量须分别展示。[实际调用及读回](docs/operations/evidence/case-evidence-roles-20261110-01/execution-summary.json)
+Case 登记 title/description 在原件中保留，从业务模型视图按配置排除，历史引用恢复也不能带回这两字段。命令/action/outcome 旁说明字段含义，影响问题区分观察动作、有据结果和未知影响。独立人工正文、任务目的及原始材料保持。程序不得替模型改写错误主张使之通过。
 
-独审 ACCEPT 后统一发布 21 r6，只更新 API，其他五项服务容器保持；365 次生产 GET／16,820 项字段关联检查通过，8 次预期错误归属 404 单列。读取前后及前批生产快照数据一致。4177 追加三份记录，共 29 份，区分两份测试替身和一份真实模型；233 文件／234 HTTP 核验通过。[交付回执](docs/operations/evidence/case-evidence-roles-20261110-01/delivery-summary.json)。产品页面 P01–P04、实际 HTTP 写操作、真实非空知识使用及自动消费另行跟踪，不能以内部工作台或接口有数据核销。[问题清单](docs/investigation/current-issues.md)
+本次没有数据库 DDL、告警交接字段或 HTTP DTO 变化。`case_boundary` 的职责标记/原值表/coverage_facts 和 `followup_boundary` 是内部模型请求工件，业务页面继续按第 5 节分别表达执行、交付、采用与质量；现有 Result、报告和 4177 输入/原答/错误的读取路径保持。
+
+直接检查通过，五批真实本地流程已保存读回，但正文仍未通过。第五批 5 调用、54 次 GET 成功，命令结果未知与程序覆盖正确；Deep 仍凭标签判断非生产环境，C6 替代解释仍误写全部查空，两项均已保存。C6 accepted/uncertain 仅表示合同接收。负责人已明确将持续模型问题登记后置，独审对程序交付范围补充 ACCEPT；模型质量仍 NOT_PASSED，原答与失败保留，不继续同类采样。
+
+21 已统一发布 r1，实际加载的 Case profile 与本次来源一致；Case/Run/Result 三次 GET 成功，六项关键结果字段与正式库一致，读取前后快照不变。[交付回执](docs/operations/evidence/case-grounding-20261111-01/delivery-summary.json)列明一次 API 更新、其余容器保持、无生产模型作业/调查数据写入。本地静态资料 63 份，21 为 34 份（追加 5 份，原记录保持）。模型质量问题不冒称修复；产品页面 P01–P04、实际 HTTP 写操作、非空知识和自动消费按[问题清单](docs/investigation/current-issues.md)后续推进。

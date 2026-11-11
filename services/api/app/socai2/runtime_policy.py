@@ -84,6 +84,28 @@ def load_case_profile(selection):
     if (not isinstance(data, dict) or data.get("version") != "socai2.case-boundary.v1"
             or not isinstance(data.get("rules"), dict) or not isinstance(data.get("hierarchy"), dict)):
         raise ValueError("case_profile_contract_invalid")
+    projections, meanings, questions = data.get("context_projection"), data.get("field_meanings"), data.get("question_instructions")
+    if (not isinstance(projections, dict) or any(not isinstance(path, str) or not path.startswith("$.")
+            or not isinstance(rule, dict) or set(rule) != {"omit", "empty"}
+            or any(not isinstance(rule[k], list) or any(not isinstance(f, str) for f in rule[k]) for k in ("omit", "empty"))
+            for path, rule in projections.items())
+            or not isinstance(meanings, list) or any(not isinstance(rule, dict) or set(rule) != {"paths", "meaning"}
+                or not isinstance(rule["paths"], list) or not rule["paths"] or any(not isinstance(p, str) for p in rule["paths"])
+                or not isinstance(rule["meaning"], str) or not rule["meaning"].strip() for rule in meanings)
+            or not isinstance(questions, dict) or any(not isinstance(k, str) or not isinstance(v, str) or not v.strip()
+                                                     for k, v in questions.items())):
+        raise ValueError("case_context_meaning_policy_invalid")
+    output = data.get("c3_output")
+    if (not isinstance(output, dict) or set(output) != {"max_followups", "instruction"}
+            or type(output["max_followups"]) is not int or not 0 <= output["max_followups"] <= 12
+            or not isinstance(output["instruction"], str) or "{max_followups}" not in output["instruction"]):
+        # 12 is the existing storage contract's capacity, not a runtime default.
+        raise ValueError("case_c3_output_policy_invalid")
+    program = data.get("program_output")
+    if (not isinstance(program, dict) or set(program) != {"version", "instruction"}
+            or program["version"] != "socai2.case-program-output.v1"
+            or not isinstance(program["instruction"], str) or not program["instruction"].strip()):
+        raise ValueError("case_program_output_policy_invalid")
     enrichment = data.get("enrichment")
     if (not isinstance(enrichment, dict) or set(enrichment) != {
             "version", "reserved_tool_calls", "paired_source_penalty", "priorities"}
@@ -102,7 +124,7 @@ def load_case_profile(selection):
                    for k in ("query_omit", "execution_omit", "comparison_omit", "comparison_source_omit", "prior_followup_omit"))
             or not isinstance(followup.get("parent_dependencies"), list)
             or not isinstance(followup.get("labels"), dict)
-            or not {"base", "C3", "Deep", "query", "plan", "comparison", "graph", "dependency"} <= set(followup["labels"])):
+            or not {"base", "case_record", "query_receipt", "background_status", "C3", "Deep", "query", "plan", "comparison", "graph", "dependency"} <= set(followup["labels"])):
         raise ValueError("case_followup_profile_contract_invalid")
     business = load_incident_profile({"profile": data["business_profile"]})
     return CaseProfile(data["version"], hashlib.sha256(raw).hexdigest(), raw, business.raw)

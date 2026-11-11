@@ -1,0 +1,785 @@
+{
+  "config": {
+    "batch": "case-grounding-20261111-real-02",
+    "output": "docs/operations/evidence/case-grounding-20261111-01/real-model-02",
+    "snapshot": "docs/operations/evidence/case-current-flow-20261110-01/published/C02/database.json",
+    "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+    "environment_file": ".local/v1.2-reader-validation/app-test-environment.json",
+    "expected_database": "v12_upgrade_dev",
+    "sslmode": "disable",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "00000000-0000-0000-0000-000000000003",
+    "actor_name": "Local Case grounding validation",
+    "title": "Case 有据结论验收：已有演练材料的独立本地调查",
+    "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+    "window_padding_seconds": 300,
+    "runtime_overrides": {
+      "AISOC_DISABLE_CLICKHOUSE": "true",
+      "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+      "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+      "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+      "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false"
+    },
+    "transport_config": "tools/testdata/alert_io_eval/config.json",
+    "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/case-grounding-20261111-real-02",
+    "preflight_timeout_seconds": 30,
+    "expected_route": {
+      "model": "aisoc-investigation",
+      "upstream_model": "openai/aisoc-test-investigation",
+      "upstream_base": "http://192.168.1.43:8000/v1"
+    },
+    "hidden_message_fields": [
+      "reasoning_content",
+      "reasoning",
+      "thinking",
+      "analysis",
+      "reasoning_details"
+    ],
+    "limitations": [
+      "Recorded C02 alert fields, original materials and object values are copied unchanged into new local identities.",
+      "Prior A/I judgments and tool receipts are not presented as newly executed; this is not a controlled A/B comparison.",
+      "Real local PostgreSQL and real model; no ClickHouse or vendor access is configured. Unavailable tools remain unavailable.",
+      "No production business data or running service is changed. SSH is only a transport to the existing model gateway.",
+      "One new Run uses the existing policy, including its finite correction and C6 reservation. Unknown calls are not retried."
+    ],
+    "transport": {
+      "ssh_binary": "ssh",
+      "ssh_target": "sting-infra21",
+      "remote_python": "python3",
+      "connect_timeout_seconds": 8,
+      "command_timeout_seconds": 340,
+      "gateway_base_url": "http://127.0.0.1:14000/v1",
+      "runtime_env_file": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+      "key_variable": "OPENAI_API_KEY",
+      "model_variable": "OPENAI_MODEL",
+      "expected_model": "aisoc-investigation",
+      "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/case-grounding-20261111-real-02"
+    }
+  },
+  "members": [
+    {
+      "source_alert_id": "51382dcd-deac-54f5-9fa5-e7724f935402",
+      "alert_id": "125dea4a-8f43-5bd1-b54f-de9b97c51fd5",
+      "material_id": "6978189a-4c29-5d0a-99ac-d805a99bb94e",
+      "alert": {
+        "title": "Account logon observed",
+        "description": null,
+        "event_time": "2026-11-07T06:38:27+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "51382dcd-deac-54f5-9fa5-e7724f935402",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Account logon observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "8486fd46-f6d3-4574-86a0-f885b8a82c3d",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:38:27+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "activity": {
+                "action": "logon",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+              "class_uid": 3002,
+              "src_endpoint": {
+                "ip": "203.0.113.77"
+              }
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:38:27Z",
+          "event_time": "2026-11-07T06:38:27Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 3002,
+          "identity_origin": null,
+          "source_alert_id": "38689fff-ce4d-4923-b4e9-b90ea6a89b86",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "8486fd46-f6d3-4574-86a0-f885b8a82c3d",
+            "38689fff-ce4d-4923-b4e9-b90ea6a89b86"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:38:27+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "activity": {
+            "action": "logon",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+          "class_uid": 3002,
+          "src_endpoint": {
+            "ip": "203.0.113.77"
+          }
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 3002,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "2dc0dae5-3b41-55df-bbd2-d939557949d9",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "e7e13fc40554f0bf435c19a9c1238647c02f2f45395fb313c6c83c797eb94ca8",
+          "retained_sha256": "e7e13fc40554f0bf435c19a9c1238647c02f2f45395fb313c6c83c797eb94ca8",
+          "original_size_bytes": 3294,
+          "retained_size_bytes": 3294
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"203.0.113.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "203.0.113.77",
+          "normalized_value": "203.0.113.77",
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "attributes": {
+            "original_path": "src_endpoint.ip"
+          }
+        },
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        }
+      ]
+    },
+    {
+      "source_alert_id": "7211654f-4b65-5efc-8f10-b8464f2560b2",
+      "alert_id": "1dcfbb44-161a-562f-912a-cb5b48f19c23",
+      "material_id": "f09b2379-beac-5c09-9127-45f220b4869c",
+      "alert": {
+        "title": "Outbound connection observed",
+        "description": null,
+        "event_time": "2026-11-07T06:39:07+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "7211654f-4b65-5efc-8f10-b8464f2560b2",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Outbound connection observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "888fcea7-ce97-45d7-b577-6ea70d5e7ea8",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:39:07+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "activity": {
+                "action": "network_connection",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+              "class_uid": 4001,
+              "dst_endpoint": {
+                "ip": "198.51.100.77",
+                "port": 443
+              },
+              "src_endpoint": {
+                "ip": "192.0.2.77"
+              },
+              "connection_info": {
+                "protocol_name": "TCP"
+              }
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:39:07Z",
+          "event_time": "2026-11-07T06:39:07Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 4001,
+          "identity_origin": null,
+          "source_alert_id": "0442dd3a-13e7-4f91-97c2-c49488e7ec30",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "888fcea7-ce97-45d7-b577-6ea70d5e7ea8",
+            "0442dd3a-13e7-4f91-97c2-c49488e7ec30"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:39:07+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "activity": {
+            "action": "network_connection",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+          "class_uid": 4001,
+          "dst_endpoint": {
+            "ip": "198.51.100.77",
+            "port": 443
+          },
+          "src_endpoint": {
+            "ip": "192.0.2.77"
+          },
+          "connection_info": {
+            "protocol_name": "TCP"
+          }
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 4001,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "e0ae0c68-29ae-5a18-a7b9-cd8b339680c0",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "3415659b603030c00939369644332d61e995a455d20b92c2c1f9b429f7ced37b",
+          "retained_sha256": "3415659b603030c00939369644332d61e995a455d20b92c2c1f9b429f7ced37b",
+          "original_size_bytes": 3852,
+          "retained_size_bytes": 3852
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        },
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"198.51.100.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "198.51.100.77",
+          "normalized_value": "198.51.100.77",
+          "source_path": "$.ocsf_json.dst_endpoint.ip",
+          "attributes": {
+            "original_path": "dst_endpoint.ip"
+          }
+        },
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"192.0.2.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "192.0.2.77",
+          "normalized_value": "192.0.2.77",
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "attributes": {
+            "original_path": "src_endpoint.ip"
+          }
+        }
+      ]
+    },
+    {
+      "source_alert_id": "f8513c4d-5f58-55d2-bda1-983f60b83bb0",
+      "alert_id": "7ffe8b47-18ce-5869-b544-70a9ce2d7c38",
+      "material_id": "6357ae76-fd4a-5958-9646-9de6402d0cde",
+      "alert": {
+        "title": "Process start observed",
+        "description": null,
+        "event_time": "2026-11-07T06:38:47+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "f8513c4d-5f58-55d2-bda1-983f60b83bb0",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Process start observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "da81fda2-5305-474d-87af-391360e19eed",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:38:47+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "process": {
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+              "class_uid": 1007
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:38:47Z",
+          "event_time": "2026-11-07T06:38:47Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 1007,
+          "identity_origin": null,
+          "source_alert_id": "8657ba9c-f6dd-4853-9733-633964da64a9",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "da81fda2-5305-474d-87af-391360e19eed",
+            "8657ba9c-f6dd-4853-9733-633964da64a9"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:38:47+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "process": {
+            "name": "powershell.exe",
+            "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+          },
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+          "class_uid": 1007
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 1007,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "adabdb03-71cf-5aab-8792-73dc65cd6f4e",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062",
+          "retained_sha256": "f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062",
+          "original_size_bytes": 3651,
+          "retained_size_bytes": 3651
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        }
+      ]
+    }
+  ],
+  "operation_key": "c3623152-6423-5e29-b973-d5cfc3e7740f",
+  "max_model_calls": 6,
+  "source_sha256": {
+    "tools/testdata/case_grounding/real-model-02.json": "2cf081865830d716cd5e8be5f6f7d9f7b60b546f1e962553e063045493d3cade",
+    "docs/operations/evidence/case-current-flow-20261110-01/published/C02/database.json": "4279c2c2be6baacf20e09be56f5470a0e752e46de3336fd6e8e0a0f42ac9e787",
+    "deploy/local-investigation/investigation-policy-case-v1.toml": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+    "tools/testdata/case_scope_recovery/real_model.py": "634b833e1cb28f6c3699228f44d39b3ee0499be697aede0ce3f8eeefbeb7f930",
+    "services/api/app/socai2/baseline_deep.py": "1eb5df08fc0fe5162253629551c18ab13436e67b3cae1e9d6e3a4c3792ce1d57",
+    "services/api/app/socai2/structured_output.py": "0fbc461d263047bd3334877642cd44aeb71e6b678a5d87bad0010231648943c8",
+    "services/api/app/socai2/read_sources.py": "3e1ea79061aecec216e66c5f6f405abe15c50934809a34b14dba0f24bf9d693f",
+    "services/api/app/socai2/case_output_adapter.py": "4873ed83c4c4b88e55310b2f27668067e9452439929537fa2abc39c5c499fe8b",
+    "services/api/app/socai2/baseline_delivery_projection.py": "f1c23598d8fcfb56d357e3516f7811493befbdc21925d4b3e3c541ef9c23eb77",
+    "services/api/app/socai2/baseline_analysis_contract.py": "046fe35f43ad90c06789b60706106b1309fd8d934972a006efa4d0e1961c5146",
+    "services/api/app/socai2/baseline_deep.schema.json": "38142132085e9c65bef2fc70cd5ef67aacef67d8195299bf0b3b4015ebcd69b4",
+    "services/api/app/socai2/baseline_context.py": "ada7df2cc87a328f00ffc72128998fa592dce663f9a42e5d9bc271055f4212fb",
+    "services/api/app/socai2/stage_reader.py": "02b7a33e4a4559f578fe43cdc60445587ad7e5fe602cd9f832d3bd0d026c95d1",
+    "services/api/app/socai2/incident_output_adapter.py": "3020629e529acdb2ba44512318cb60d981a83c20dd95f6cf04fe9e045cdd03b5",
+    "services/api/app/socai2/baseline_graph_projection.py": "5729152ffe6a4c6ae03c5b0d9f21013a77feff27415ba83589a091cc57a6e643",
+    "services/api/app/socai2/case_input_text.py": "0bfc4fb6835f8d50f3f075e1a1f817d156047e0c6352fc6295658597a5cc005d",
+    "services/api/app/socai2/program_facts.py": "67dd9d4db4b56a25db5e86460dfb61fd42d5a081a2bb6b1766d3bb42011d31cd",
+    "services/api/app/socai2/case_model_boundary.py": "1e187a2908a3fb7da053d94be126b66520b8f88a5707a2f379709afc677fe6aa",
+    "services/api/app/socai2/stage_inputs.py": "3389e63d7886e0b278836b452564bc9ff14e8478db35e78f7598f5ad39d4c4db",
+    "services/api/app/socai2/incident_model_boundary.py": "6a5c5615bbe9177a77892560dc7ec841feef0e6b08834431e3a5fef1fc7ed405",
+    "services/api/app/socai2/case_finding_schema.py": "b68cc6a8651fc8210d76beeadab3517b9de5027ffc396502c8e896e6f0c66edc",
+    "services/api/app/socai2/enums.py": "552b4e6c7945737d277cac28d4b21047b15dfb854400dc4849a6e5f83c178ce4",
+    "services/api/app/socai2/case_data.py": "f8cf1a2b8c83e938d81ed2a9c7cf1bd4d1d3a00236c6ed35f51a4939fbdd5c56",
+    "services/api/app/socai2/baseline_followup_projection.py": "1a0d0ed80bf514e70b07475a31880b68c4b7cb784f6e409e0d21fc63856cc676",
+    "services/api/app/socai2/baseline_tool_catalog.py": "da8ba5003b8cf2027997ee405951c8b500f1e3a09fbbd5ab41c4102b01349e1c",
+    "services/api/app/socai2/baseline_graph.py": "199baa715abcb9bcf76b7c2eb4220d525c13ba6df3d341eca7f4c7ac1bebfa6d",
+    "services/api/app/socai2/token_budget.py": "2d0c73c52221e9782b8a02b4c3f7f85e1e812f66a7e641b81a01d4b5424e91bc",
+    "services/api/app/socai2/incident_input_text.py": "5efff213e46e898bd437c3ace98db14b7a9428af92a725fa1279906fad15cb83",
+    "services/api/app/socai2/baseline_delivery_contract.py": "791e3bde6efa7fa974ebc84dd97ad61259e229afb21381d0d23b5afd814000da",
+    "services/api/app/socai2/baseline_dispatch.py": "29b71cb8fa68f0a9512904484f36bd552f26590e64d44b6294feb6e9a3c74bb2",
+    "services/api/app/socai2/case_source_scope.py": "955cd15217fa653027a0e1fdf4fdc729be89c36024e83e3f3aadd3efa51cdf0c",
+    "services/api/app/socai2/baseline_reanalysis.py": "efc639e310315d81d11692071dc11ee002d7102cdce95b4b1e0c5e2a9330947e",
+    "services/api/app/socai2/case_contracts.py": "3072a329dae65bcc6baa2f3abc97a79f3de3d35e8783bfa8f5be258d677deb41",
+    "services/api/app/socai2/baseline_enrichment_sources.py": "3accc03b702a66b07ac2eaefc46931037a36b5132430e83616865c9c152aa162",
+    "services/api/app/socai2/incident_delivery.py": "fcf9c698258388b145201800f616cac78e26040302bc1b70bde1a6cc634262bb",
+    "services/api/app/socai2/baseline_analysis_model.py": "d9ef5a3601e3175dc162a6d36f794e7f0d58a4b0937426875916e13ee19d7229",
+    "services/api/app/socai2/case_data_contracts.py": "12e077052a0502fbac890589a8171305e3977c1768cdef00d6f745bf9212f005",
+    "services/api/app/socai2/runtime_policy.py": "9262eb8eb46f8499aaab3fe82198fb3ed36dc61d75eee51fdb381e33942497b6",
+    "services/api/app/socai2/baseline_delivery.schema.json": "998ce709ade453b6bb2f6b35ba61c2b40dabee504df68efffbb463dd542cb448",
+    "services/api/app/socai2/case_citation_feedback.py": "9489552a4c8edbb1518efe26ae702711e5d6469677c10fafc0579db03558f16b",
+    "services/api/app/socai2/case_input_hierarchy.py": "6e9d863be86a2e0585232099ee379f6aa1faafbc39f414358b2dfe7bf0b5cc8a",
+    "services/api/app/socai2/baseline_analysis.py": "a033526a611a66d816d73215bef524c05a84999f3ab4f6d3f6e3a0f4d5ef5a5f",
+    "services/api/app/socai2/stage_answer_review.py": "e426e11c9e33c1e309a3006daebe7eaed310384c7a8f67478c759b255c0e6190",
+    "services/api/app/socai2/baseline_delivery_compat.py": "62e5adf16700beeb2534ea6a0e262aa967499da10bdac645ab849d5046f416da",
+    "services/api/app/socai2/baseline_context.schema.json": "9bc48df6c3e0bb2654b9cb188ceb18161800a3842cea46acddcec8f65f6882f8",
+    "services/api/app/socai2/baseline_deep_contract.py": "768986d150ab10541670735b32f64be59c9eecd7368e22278e6a2406b955655b",
+    "services/api/app/socai2/baseline_analysis.schema.json": "68e0b6dbddc64b32093b781375311306839d6d088e4655eac5c31fc4d62d764a",
+    "services/api/app/socai2/__init__.py": "be2d94f704e700c50cb5408ac582c0426fa36043d48662e429820f2b49798acf",
+    "services/api/app/socai2/case_query_snapshot.py": "a9f196be7ed44087d836b63dd41f01323592edf3c56402a6e0877d1d764922ac",
+    "services/api/app/socai2/baseline_capacity.py": "eafffb04e12546efe28763242ef21ee135c406cbef5d782495149cbdb40cb9cc",
+    "services/api/app/socai2/case_service.py": "52b938845c98815b519672a90b08dd5e0c9fae67d7abaa8bac592a099fff4a58",
+    "services/api/app/socai2/alert_input_text.py": "bee5cf3640aa5d268cbf0bd0a60c96d4689f9ec477535ac2f709cf2952407bc8",
+    "services/api/app/socai2/baseline_store.py": "6c1490ac39b516ef298b27777b653f7cda69b737fc0dd32500f1c9ed63426447",
+    "services/api/app/socai2/baseline_semantics.py": "a13c22c526f7744845c9ad083fc2b96dd7a8916fba2e9ef9f17bbe250d53b2fc",
+    "services/api/app/socai2/baseline_delivery.py": "6c53aa4d39646c65aebd8a8c20c79f733bf01fbbb289a1a91aa0ac4a5cd34b24",
+    "services/api/app/socai2/contracts.schema.json": "43ad06df1ba858331a784a9ca5295010465c013247ee759539b8ccb599290260",
+    "services/api/app/socai2/baseline_model_view.py": "006411c7790460c1810cef3f6b5993f1d73c972e17f89f72f1bd957b2fc89572",
+    "services/api/app/socai2/baseline_executor.py": "0a1c2be89ea41993ddf82d7a10fec462b74a746d889eeb55be384d65e9da6a32",
+    "services/api/app/socai2/baseline_service.py": "321cff69376f61bfaa7224191f7437fa78e773dc139ea49f38e12a3d26828c4b",
+    "services/api/app/socai2/page_reader.py": "7297a94fc9de8f14799452f13c5244e6ede5a0683f8579d8c6fd170beb0a240e",
+    "services/api/app/socai2/baseline_reasoning.py": "e6f4cec797d47baa98d2906ad64c1fd822c97bb56d5593d989f23b02dd37b0ca",
+    "services/api/app/socai2/baseline_optional_sources.py": "f18f82cdc80c678df0e0b3f7ba5fa7d7ff74f957859ba0b189e091d9c1a18e3a",
+    "services/api/app/socai2/baseline_evidence_index.py": "840b7a4be1d6deb7f4e592a0ca16d6428bcea3128fd36145f7f30b35a12f7ecd",
+    "services/api/app/socai2/baseline_contracts.py": "4336ab263ef455b44770ba3f19ad7f1153bfc47e68f00353e77982889124b728",
+    "services/api/app/socai2/baseline_enrichment.py": "3568d6dfd7a91a91fb9c85e322fb6fe159bc3fd9ef08616f5510beaad0d38615",
+    "services/api/app/socai2/alert_model_boundary.py": "ede71cc95ec3af354dcce1dfddebddacf51b5794ef8eedbee5459691aca7861c",
+    "services/api/app/socai2/case_ai_contracts.py": "086d1b626ac5ab60618d4de7891b55acc9b983a7146e9d72863ca5401a4a46c4",
+    "services/api/app/socai2/baseline_evidence.py": "1d3c5fd5ba8f124fa225f69ce56f6adb64bdca1133bf5c004b141865898e99a2",
+    "services/api/app/socai2/analysis_review.py": "c41d29b18a6afe1a0769dc7d2b23d8d456c88b4876b164f993625075a0d18c12",
+    "services/api/app/socai2/alert_output_adapter.py": "3720d9cc2e70c769ca7454b62b832d85f0ca858f8ae244039514dce8746fb6d6",
+    "services/api/app/socai2/case_followup_input.py": "8a80a6c4fb75b30d259dd5df36f6e862290b0902528b8153c79c015ad9964cfb",
+    "services/api/app/socai2/page_contracts.py": "2d82f3416df17b8d32c268d2ed40ebee6e9b2bd9da58e0a181ec6a3b61d4c1eb",
+    "services/api/app/socai2/alert_basic_executor.py": "e90c3f89c5f7a92dbf6b5e0aa7585dc6cd9b2c82ca6690d9d91a1b066c026b1b",
+    "services/api/app/socai2/case_reader.py": "9239c29ab68154959cf51c3064a36f53c4f2a1ec91f4ce94dd33f73a31bfbbb8",
+    "services/api/app/socai2/case_evidence.schema.json": "9e9ce6f94a163be068aedc812fe4839e7328dcf1872ee8eae253b669f83c7007",
+    "services/api/app/socai2/case_followup_output.py": "9f663a0b56bfae0872f117fea74d5c532c5e043a2b821be1c36fd094d24101cc",
+    "services/api/app/socai2/human_task_service.py": "a24d3e7b186b71e68021ff4d13f1f82532f8250aad615c54b5832f357b9036cd",
+    "services/api/app/socai2/human_task_contracts.py": "5bd389f2f61948172e26fd4f7056a9f4b30ba4832ee62aeb01fb2d02a188f9b3",
+    "services/api/app/socai2/answer_validation.py": "c954a1ccd2933245221c9eea2f0a9f0c87c3e347fc9e6ff4a40b3c02d5a02783",
+    "services/api/app/socai2/alert_basic_contract.py": "8e6137a40114faaaef55d52a10e24b28df1ad49fd91fca8c7cd8a3897d0776d7",
+    "services/api/app/socai2/alert-input-v1.json": "8cb2fcc6c8efbbce8fc3832607ee202557ab36cfa702071527c113dc466c961f",
+    "services/api/app/socai2/incident_query_receipts.py": "ed3bec3fbf28f533e39c354dc0c8c63f2c716870bcc320dbc7a53c96d4dced45",
+    "services/api/app/socai2/stage_read_contracts.py": "02fec7c20d2868fa400d9723f2574eee20848934b48b6c7a7189e2ed46b34150",
+    "services/api/app/socai2/incident_diagnosis_contract.py": "45c4f07d4eacecb53a152e630ef3e47af97f781c4faba2f2a4ae47f0732a93e2",
+    "services/api/app/socai2/baseline_final_evidence.py": "b4cfcf1150030d894626ac7d8d20f543fce796c265b71ad351fc7a4d90b882da",
+    "services/api/app/socai2/case-input-v1.json": "5e28b881a361174be18563fbca3acd2366c3b3fb3f207b4952bab47e95cb899d",
+    "services/api/app/socai2/baseline_closing.py": "5594d70d34eec7af6f8046fe9817f732a2e00aa28c6ee557839d52e26f0f0320",
+    "services/api/app/socai2/case_relations.py": "3da26e2d221d16405cb899e4ae2f19082d9bb60216878befd374e142a07fe69e",
+    "services/api/app/socai2/model_errors.py": "7862e990b1a0ed6b59ef61b7e2e8545be158bf30a9508a06b1346b606d02cd07",
+    "services/api/app/socai2/baseline_execution_schema.py": "201a31aa1e410cd84e71e90d4d99f790a6e0f1b4e95fdfde686843490f601527",
+    "services/api/app/socai2/baseline_evidence_tools.py": "0c9ac079da9c387fec23fde68018287b8ffca2eb73bc28ed868668410b82c41e",
+    "services/api/app/socai2/stage_results.py": "525344e02f4322ac095ab4689d28672a52145baa0ed38babf927b4d48eae6f87",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "7aff6628da1d6eb7b534feb7ac27519961dfaf83b79c0b79a57ce7f98b2e4a15",
+    "services/api/app/socai2/model_protocol.py": "0c5baf503dc584bfcd55cdaaca122baf14f57f00ea5d71fa66d3437a9579eb76",
+    "services/api/app/socai2/case_followup_loader.py": "40eddb19a90a6ded34dc6ca3699f7a6824d534f3561df4e8da76db2d114e3c3a",
+    "services/api/app/socai2/incident-input-v1.json": "3e7860fdab83ee738acdadd53cf440cb9250e17a2d909803e39154a76dfa5c49",
+    "services/api/app/socai2/model_input_view.py": "e06ff39d9cab6985d6babdd9ba2432928cb0e708d980bc79691c4a500c7b35b3",
+    "services/api/app/socai2/stage_result_contracts.py": "59d20b362c8f2f61b0b0de0673fb00f667e0b9905e457d8ba9a340a18b971a52"
+  }
+}

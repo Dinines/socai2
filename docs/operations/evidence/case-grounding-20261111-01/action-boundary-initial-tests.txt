@@ -1,0 +1,60 @@
+...FF..........                                                          [100%]
+=================================== FAILURES ===================================
+_ test_case_registration_is_excluded_without_rewriting_or_dependency_reentry[Deep] _
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'Deep'
+
+    @pytest.mark.parametrize("stage", ["Deep", "C6"])
+    def test_case_registration_is_excluded_without_rewriting_or_dependency_reentry(sample, stage):
+        context, prepared, prior = followup.fixture(sample)
+        before = copy.deepcopy((context.model_dump(), prepared, prior))
+        result = inputs.build(stage, context, prepared, {}, previous=prior, prior_id=uuid4(),
+                              question_id="impact" if stage == "Deep" else None)
+        assert result["ready"], result["reason"]
+        records = [r for r in result["followup_boundary"]["records"] if r["ref"]["source_path"] == "$.case"]
+        assert not records
+        assert not any(r["ref"]["source_path"] == "$.case" for r in prepared["input_ledger"]["records"])
+        assert {r.get("path") for r in prepared["omissions"]} >= {"$.case.title", "$.case.description"}
+        context_id = str(sample["context_id"])
+        artifacts = {context_id: {"schema_version": "socai2.baseline-context.v1", "content_json": context.model_dump(mode="json")}}
+        registry = inputs.Sources(context, prepared, artifacts, [])
+        source = {"ref": {"type": "artifact", "id": context_id, "role": context.citation_roles["$.case"],
+            "source_path": "$.case", "external": None, "row_keys": []}, "alert_ids": list(context.alerts)}
+>       assert registry.resolve(source) is None
+E       AssertionError: assert 'N3_S1' is None
+E        +  where 'N3_S1' = resolve({'ref': {'type': 'artifact', 'id': 'caf24824-0f93-4941-ab4d-b5dd7f029435', 'role': 'source_label', 'source_path': '$.c...09e91978-d201-5435-901e-b6a40368b921', '3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3', '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf']})
+E        +    where resolve = <app.socai2.case_followup_input.Sources object at 0x10dcee5d0>.resolve
+
+services/api/tests/test_socai2_case_grounding.py:111: AssertionError
+_ test_case_registration_is_excluded_without_rewriting_or_dependency_reentry[C6] _
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'C6'
+
+    @pytest.mark.parametrize("stage", ["Deep", "C6"])
+    def test_case_registration_is_excluded_without_rewriting_or_dependency_reentry(sample, stage):
+        context, prepared, prior = followup.fixture(sample)
+        before = copy.deepcopy((context.model_dump(), prepared, prior))
+        result = inputs.build(stage, context, prepared, {}, previous=prior, prior_id=uuid4(),
+                              question_id="impact" if stage == "Deep" else None)
+        assert result["ready"], result["reason"]
+        records = [r for r in result["followup_boundary"]["records"] if r["ref"]["source_path"] == "$.case"]
+        assert not records
+        assert not any(r["ref"]["source_path"] == "$.case" for r in prepared["input_ledger"]["records"])
+        assert {r.get("path") for r in prepared["omissions"]} >= {"$.case.title", "$.case.description"}
+        context_id = str(sample["context_id"])
+        artifacts = {context_id: {"schema_version": "socai2.baseline-context.v1", "content_json": context.model_dump(mode="json")}}
+        registry = inputs.Sources(context, prepared, artifacts, [])
+        source = {"ref": {"type": "artifact", "id": context_id, "role": context.citation_roles["$.case"],
+            "source_path": "$.case", "external": None, "row_keys": []}, "alert_ids": list(context.alerts)}
+>       assert registry.resolve(source) is None
+E       AssertionError: assert 'N3_S1' is None
+E        +  where 'N3_S1' = resolve({'ref': {'type': 'artifact', 'id': 'caf24824-0f93-4941-ab4d-b5dd7f029435', 'role': 'source_label', 'source_path': '$.c...09e91978-d201-5435-901e-b6a40368b921', '3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3', '65e2a5f9-3b00-5def-9547-c21f1b9cc4bf']})
+E        +    where resolve = <app.socai2.case_followup_input.Sources object at 0x10e03b830>.resolve
+
+services/api/tests/test_socai2_case_grounding.py:111: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_grounding.py::test_case_registration_is_excluded_without_rewriting_or_dependency_reentry[Deep]
+FAILED services/api/tests/test_socai2_case_grounding.py::test_case_registration_is_excluded_without_rewriting_or_dependency_reentry[C6]
+2 failed, 13 passed in 2.09s

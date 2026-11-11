@@ -9,13 +9,26 @@ from .baseline_final_evidence import query_candidates
 from .baseline_model_view import blocked, draft_limit
 from .baseline_store import StoreError, digest, encoded
 from .case_input_hierarchy import project, render, render_tools
+from .case_input_text import field_hint, project_context
 from .case_model_boundary import selected_profile
+from .case_program_output import enabled, observation_literals
 from .case_source_scope import describe, frozen_query_scope
 from .case_source_scope import metadata as scope_metadata
 from .model_input_view import source_prefix
 
 SCHEMA = "socai2.case-followup-input.v1"
 REFERENCES = {"evidence_ids", "source_ids", "support_ids", "counter_ids"}
+
+
+def execution_receipt(payload):
+    """Project recorded execution fields without upgrading them to observations."""
+    if payload.get("type") == "query_projection":
+        return {k: payload[k] for k in ("state", "question_id", "observed_rows_in_bounded_fetch", "truncated", "reason") if k in payload}
+    if payload.get("type") == "materials":
+        return {"members": {aid: {k: row[k] for k in
+            ("state", "material_state", "material_id", "limitations", "omissions") if k in row}
+            for aid, row in payload["members"].items()}}
+    return None
 
 
 def path_value(value, path):
@@ -67,6 +80,10 @@ class Sources:
 
     def add(self, ref, value, owners, block, *, original=None, **extra):
         ref, owners = copy.deepcopy(ref), list(map(str, owners))
+        config = selected_profile(self.context).config
+        value = project_context(ref, value, config, self.omissions)
+        if value == {} and ref.get("source_path") in config["context_projection"]:
+            return None
         key = encoded(ref)
         if key in self.by_ref:
             row = self.by_ref[key]
@@ -130,6 +147,11 @@ class Sources:
             return self.add(ref, projected, source["alert_ids"], "dependency", original=value)
         if artifact.get("schema_version") != EVIDENCE_SCHEMA:
             return None
+        if path is None and ref["role"] == "execution_receipt":
+            value = execution_receipt(payload)
+            if value is not None:
+                owners = payload["alert_ids"] if payload["type"] == "query_projection" else sorted(payload["members"])
+                return self.add(ref, value, owners, "query_receipt")
         if citation_roles(payload).get(path) != ref["role"]:
             return None
         value = path_value(payload, path)
@@ -234,6 +256,9 @@ def query_records(registry, material, projections, *, final):
                            membership_basis="query_binding_only", record_key=source["record_key"])
         required_missing |= bool(final and item.get("required") and sid is None)
     for row in facts:
+        payload = next(p["content_json"] for p in projections if str(p["id"]) == row["artifact_id"])
+        row["receipt_source_id"] = registry.add(reference("artifact", row["artifact_id"], "execution_receipt"),
+            execution_receipt(payload), row["related_alert_ids"], "query_receipt")
         row["visible_fields"] = sum(r["block"] == "query" and r["ref"]["id"] == row["artifact_id"] for r in registry.rows)
         if row["visible_fields"] < row["projected_fields"]:
             row["limitations"] = [*row["limitations"], "部分查询返回字段被输入检查排除，不能视作已读全部返回内容。"]
@@ -271,6 +296,12 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
                       original=row.get("original_value"), business_block=row["block"], **scope_metadata(row))
         reg.base_ids[row["id"]] = sid
     queries, query_missing = query_records(reg, material, projections, final=stage == "C6") if projections else ([], False)
+    material_source = None
+    if stage == "C6" and enabled(boundary) and material is not None:
+        material_artifact = next((aid for aid, row in artifacts.items() if row.get("content_json") == material), None)
+        if material_artifact:
+            material_source = reg.add(reference("artifact", material_artifact, "execution_receipt"),
+                execution_receipt(material), sorted(material["members"]), "query_receipt")
     if previous and previous.get("analysis"):
         if previous.get("validation") != "structure_scope_sources_checked":
             raise StoreError("unaccepted_prior_analysis", 422)
@@ -334,7 +365,11 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     if question:
         blocks.append("依据要求：" + "；".join(question.evidence_requirements))
     else:
-        blocks += ["[要复核的问题]", *[q.id + "：" + q.text for q in context.questions]]
+        blocks += ["[要复核的业务问题]", *[q.id + "：" + q.text for q in context.questions
+                                        if not enabled(boundary) or q.id != "coverage"]]
+    for q in ([question] if question else context.questions):
+        if q.id in cfg["question_instructions"]:
+            blocks.append("[" + q.id + " 的回答边界] " + cfg["question_instructions"][q.id])
     blocks += ["[对象短号]", *[alias + "=" + key for key, alias in boundary["object_aliases"].items()]]
     if ledger.get("presented_program_facts"):
         blocks += ["[必要程序事实]", render(ledger["presented_program_facts"], cfg)]
@@ -354,20 +389,50 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     last = None
     for row in reg.rows:
         members = "、".join(boundary["member_aliases"].get(a, "案件外成员") for a in row["alert_ids"]) or "共同背景/范围不明"
-        heading = row["block"], members, row["ref"]["role"], row.get("membership_basis")
+        block = ("case_record" if row["ref"]["type"] == "artifact" and row["ref"]["source_path"] == "$.case"
+                 else "query_receipt" if row["ref"]["role"] == "execution_receipt" else row["block"])
+        heading = block, members, row["ref"]["role"], row.get("membership_basis")
         if heading != last:
-            blocks.append(f"[{policy['labels'][row['block']]}｜原范围={members}｜{row['ref']['role']}"
+            blocks.append(f"[{policy['labels'][block]}｜原范围={members}｜{row['ref']['role']}"
                           + ("｜仅查询绑定，非逐行归属" if row.get("membership_basis") == "query_binding_only" else "") + "]")
             last = heading
         path = row["ref"]["source_path"] or ""
         caption = path.removeprefix("$.ocsf_json.").removeprefix("$.raw_json.") if row.get("business_block") == "material" else ""
         provenance = describe(row, lambda aid: boundary["member_aliases"].get(aid, "案件外成员"))
+        meaning = field_hint(row["ref"], cfg)
         blocks.append("[" + row["id"] + "] " + (provenance + " " if provenance else "")
-                      + (caption + "=" if caption else "") + render(row["value"], cfg))
+                      + (caption + "=" if caption else "") + render(row["value"], cfg)
+                      + ("（字段含义：" + meaning + "）" if meaning else ""))
+    # Keep the original receipts and source IDs; this is a direct field projection,
+    # not a model summary or a reconstruction from prior analysis prose.
+    background = [{"source_id": row["id"], **{k: row["value"][k] for k in
+        ("tool_name", "state", "outcome", "returned_rows", "truncated") if k in row["value"]}}
+        for row in reg.rows if row.get("business_block") == "background_query"
+        and row["ref"]["role"] == "execution_receipt" and isinstance(row["value"], dict)]
+    if background:
+        blocks += ["[" + policy["labels"]["background_status"] + "]", *[render(row, cfg) for row in background]]
     if omissions:
         blocks.append("[材料限制] " + render(dict(Counter(r["reason"] for r in omissions)), cfg)
                       + "；省略或不可见不表示不存在，不能视作已读全文。")
+    if enabled(boundary):
+        boundary["observation_literals"] = observation_literals(reg.rows, boundary["member_aliases"])
+        if stage == "C6":
+            states = [{"tool_name": row["tool_name"], "state": row["state"], "outcome": row.get("outcome"),
+                       "returned_rows": row.get("returned_rows"), "truncated": row.get("truncated"),
+                       "source_ids": [row["source_id"]]} for row in background]
+            states += [{"tool_name": row["tool_name"], "state": row["state"],
+                        "observed_rows_in_bounded_fetch": row["observed_rows_in_bounded_fetch"],
+                        "truncated": row["truncated"], "source_ids": [row["receipt_source_id"]] if row["receipt_source_id"] else []}
+                       for row in queries]
+            reads = (execution_receipt(material) or {}).get("members", {}) if material else {}
+            boundary["coverage_facts"] = {"visible_members": sum(row["included"] > 0 for row in base["coverage"].values()),
+                "total_members": len(context.alerts), "omission_count": len(omissions), "queries": states,
+                "material_reads": {boundary["member_aliases"][aid]: copy.deepcopy(reads.get(aid, {"state": "unrecorded"}))
+                                   for aid in context.alerts},
+                "material_source_ids": [material_source] if material_source else [],
+                "execution_states": dict(Counter(row["state"] for row in (execution or {}).get("routes", [])))}
     messages = [{"role": "system", "content": policy[stage] + "\n" + policy["common"]
+                + ("\n" + cfg["program_output"]["instruction"] if stage == "C6" else "")
                 + ("\n" + cfg["citation_instruction"] if stage == "C6" else "")},
                 {"role": "user", "content": "\n".join(blocks)}]
     presentation = None
@@ -393,7 +458,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         "source_map": sources, "coverage": coverage, "omissions": omissions,
         "case_boundary": {**boundary, "stage": stage, "question_id": question_id},
         "followup_boundary": {"version": policy["version"], "records": reg.rows, "dependencies": reg.dependencies,
-                              "query_facts": queries, "program_metadata": metadata},
+                              "query_facts": queries, "background_status": background, "program_metadata": metadata},
         "binding_map": binding_map or {}, "tool_presentation": presentation,
         "source_states": base.get("source_state_ledger", []), "program_facts": ledger.get("program_facts"),
         "bytes": len(encoded(messages))}

@@ -38,7 +38,7 @@ def decode(content):
     return value
 
 
-def partial_analysis(content, sources, context, coverage, *, bindings=None):
+def partial_analysis(content, sources, context, coverage, *, bindings=None, validator=None):
     raw = decode(content)
     model = contract.Analysis if bindings is None else contract.ExecutionAnalysis
     try:
@@ -54,7 +54,10 @@ def partial_analysis(content, sources, context, coverage, *, bindings=None):
     if len({f["id"] for f in raw["findings"]}) != len(raw["findings"]):
         raise contract.AnalysisRejected("duplicate_finding")
     def checked(value):
-        return contract.parse(json.dumps(value, ensure_ascii=False), sources, context, coverage, bindings=bindings)
+        parsed = contract.parse(json.dumps(value, ensure_ascii=False), sources, context, coverage, bindings=bindings)
+        if validator is not None:
+            validator(value)
+        return parsed
     try:
         return checked(raw), []
     except contract.AnalysisRejected:
@@ -120,9 +123,10 @@ def empty_reference_feedback(content, stage, sources):
 
 
 class Review:
-    def __init__(self, stage, sources, context, coverage, *, bindings=None):
+    def __init__(self, stage, sources, context, coverage, *, bindings=None, validator=None):
         self.stage, self.sources, self.context, self.coverage, self.bindings = stage, sources, context, coverage, bindings
         self.details = None
+        self.validator = validator
 
     def feedback(self, content):
         return empty_reference_feedback(content, self.stage, self.sources)
@@ -130,7 +134,8 @@ class Review:
     def partial(self, content):
         raw = decode(content)
         root = raw.get("analysis") if self.stage == "C6" else raw
-        value, diagnostics = partial_analysis(json.dumps(root), self.sources, self.context, self.coverage, bindings=self.bindings)
+        value, diagnostics = partial_analysis(json.dumps(root), self.sources, self.context, self.coverage,
+                                              bindings=self.bindings, validator=self.validator)
         self.details = {"policy": POLICY, "state": "partial", "diagnostics": diagnostics,
             "retained_analysis": value.model_dump(mode="json"),
             "conclusion_adoptable": False, "reason": "invalid_units_or_final_conclusion_excluded",

@@ -1,12 +1,16 @@
 # OpenSpec 实施说明
 
-本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case Finding 来源角色修复的独立交付见[验收报告](changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
+本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署和任务状态见 [PROGRESS](../PROGRESS.md)。本次 Case 程序事实与补查约束的独立交付见[验收报告](changes/archive/2026-11-11-ground-case-conclusions/validation.md)，模型正文问题按负责人决定后置并保持未通过。
+
+当前实现的独立[流程审查与证据](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)已完成并归档；只交付审查，不代表已修复发现或模型质量通过。
+
+后续按主调查[功能路线](changes/complete-socai2-investigation-chain/design.md#后续工作顺序)推进；下一项为 Case/H 正常 HTTP 操作及人工反馈后调查。复用已有审计，每项只做改动相关检查和一条代表性完整路径，不重复全面审查或可用性矩阵。
 
 ## 文档职责
 
 | 内容 | 维护位置 |
 | --- | --- |
-| 服务端职责、阶段退出、路线依赖 | [范围](../docs/operations/alert-processing-scope.md)、[路线](../docs/operations/service-roadmap.md)、[完成计划](../docs/operations/completion-plan.md) |
+| 服务端职责与功能顺序 | [范围](../docs/operations/alert-processing-scope.md)、[当前调查设计](changes/complete-socai2-investigation-chain/design.md#后续工作顺序)、[历史迁移计划](../docs/handoff/history/2026-11-11-local-cleanup/operations/) |
 | 实际完成、下一项 | [PROGRESS](../PROGRESS.md) |
 | 固定输入、判据、原始结果、失败、来源 | 原批次计划/冻结回执及 `docs/handoff/` 清单 |
 | 当前增量的需求/场景、设计、任务、审计追踪 | `changes/<change>/` |
@@ -16,6 +20,8 @@
 不导入旧SOCAI的change，不把历史回执改写成新任务完成证明。既有验收记录继续有效于原范围；当前未建立全产品规格库，不声称OpenSpec已覆盖全部已迁功能。首次接入是纯工具/文档change，使用 `skip_specs: true`，不虚构产品能力。未来规格按实际change逐批建立或补齐。
 
 交付按一个 change 走一次完整流程：先在本地完成设计、实施、完整流程测试、交接文档和独立结束审计，再统一发布到获准环境；核实部署与读回、补齐回执后，统一推送最终 Git 内容并同步父项目引用。同一 change 不随每次小修反复更新 21 或推送远端，除非用户明确要求分阶段发布。具体长期规则见根 AGENTS；发布节奏不替代验收，也不扩大既有授权。
+
+这里的完整流程指本次功能从输入、处理到保存、读取的业务闭环。验收复用已有证据，只补正常路径及直接受影响的结果；不以测试数量、全量字段对账、多轮模型比较或可用性专项作为功能交付前置。每次只展开下一项功能，不为后续全部模块提前建立测试工程。
 
 ## 工作流
 
