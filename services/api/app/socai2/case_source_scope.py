@@ -23,7 +23,8 @@ def query_scope(body, path, query_members, case_members):
     if len(parts) < 3 or parts[:2] != ["$", "rows"]:
         return result
     result["membership_basis"] = "query_binding_only"
-    if body.get("tool_name") != "history":
+    historical_knowledge = body.get("tool_name") == "knowledge"
+    if body.get("tool_name") != "history" and not historical_knowledge:
         return result
     # Only the server's history record contract supplies an alert identity.
     # Names, host matches, and arbitrary IDs in other tools do not establish it.
@@ -35,8 +36,14 @@ def query_scope(body, path, query_members, case_members):
         return result
     if not isinstance(record, dict):
         return result
-    aid = identity(record.get("id"))
-    if aid is None or identity(row.get("record_id")) != aid:
+    if historical_knowledge:
+        if row.get("purpose") != "historical_case_reference":
+            result.update(alert_ids=sorted(set(query_members) & set(case_members)), membership_basis="query_binding_only")
+            return result
+        aid = identity(record.get("history", {}).get("source", {}).get("alert_id"))
+    else:
+        aid = identity(record.get("id"))
+    if aid is None or (not historical_knowledge and identity(row.get("record_id")) != aid):
         return result
     for key in ("triage", "feedback"):
         child = record.get(key)

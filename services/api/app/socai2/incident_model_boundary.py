@@ -63,9 +63,14 @@ def query_items(aid, row, cfg):
             if isinstance(record, dict):
                 for key in cfg["query_record_backend_fields"]:
                     record.pop(key, None)
-                if body["tool_name"] == "history":
+                historical_knowledge = body["tool_name"] == "knowledge" and projected.get("purpose") == "historical_case_reference"
+                if body["tool_name"] == "history" or historical_knowledge:
                     record.pop("triage", None)
                     record.pop("feedback", None)
+                if historical_knowledge:
+                    # The structured card is the model view; keep serialized
+                    # content only in the saved original, not duplicated as prose.
+                    record.pop("content", None)
         elif path.endswith(".record.triage"):
             for key in cfg["container_rules"]["$.members.*.triage"]["omit"]:
                 projected.pop(key, None)

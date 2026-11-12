@@ -36,7 +36,8 @@ def citation_roles(payload):
             roles[base] = "source_label"
             if payload["tool_name"] == "ueba":
                 roles[base] = "prior_analysis"
-            if payload["tool_name"] == "history":
+            if payload["tool_name"] == "history" or (payload["tool_name"] == "knowledge"
+                    and row.get("purpose") == "historical_case_reference"):
                 if row["record"].get("triage"):
                     roles[base + ".record.triage"] = "prior_analysis"
                 if row["record"].get("feedback"):

@@ -21,6 +21,9 @@ TENANT, DOC = UUID(int=1), UUID(int=4)
 
 def profile():
     value = json.loads(PROFILE.read_text())
+    # Keep the two-purpose compatibility checks independent of optional history.
+    value["purposes"].pop("historical_case_reference", None)
+    value.pop("history", None)
     value["vector"]["api_key_file"] = None
     return Profile.model_validate(value)
 

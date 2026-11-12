@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from . import knowledge_history as history
 from .baseline_optional_sources import SourceUnavailable
 from .knowledge_config import content_hash, load, selectors
 from .knowledge_vectors import Vectors
@@ -32,17 +33,22 @@ async def index(db, tenant, ids, *, vectors=None):
     docs = list((await db.execute(text(DOCUMENTS), {"tenant": tenant, "ids": list(map(str, ids))})).mappings())
     if {str(row["id"]) for row in docs} != set(map(str, ids)):
         raise SourceUnavailable("knowledge_index_document_missing")
-    if any(not row["content"].strip() or len(row["content"]) > profile.max_chunk_characters for row in docs):
-        raise SourceUnavailable("knowledge_index_content_limit")
     payloads = []
     for row in docs:
         purposes = [name for name, p in profile.purposes.items()
                     if row["doc_kind"] in p.doc_kinds and p.tag in (row["tags"] or [])]
         if not purposes:
             raise SourceUnavailable("knowledge_document_purpose_missing")
+        historical = history.PURPOSE in purposes
+        maximum = profile.history.max_card_characters if historical else profile.max_chunk_characters
+        if not row["content"].strip() or len(row["content"]) > maximum:
+            raise SourceUnavailable("knowledge_index_content_limit")
+        extra = await history.index_payload(db, tenant, row, profile) if historical else {}
+        if historical and purposes != [history.PURPOSE]:
+            raise SourceUnavailable("history_card_purpose_mixed")
         payloads.append({"tenant_id": str(tenant), "doc_id": str(row["id"]), "content_sha256": content_hash(row),
             "doc_kind": row["doc_kind"], "purposes": purposes, "embedding_model": profile.embedding.model,
-            "dimension": profile.embedding.dimension})
+            "dimension": profile.embedding.dimension, **extra})
     vectors = vectors or Vectors(profile)
     await vectors.check(create=True)
     embedded = await vectors.embed([row["title"] + "\n" + row["content"] for row in docs])
@@ -65,6 +71,9 @@ async def query(service, tenant, args, *, vectors=None):
         "dimension": profile.embedding.dimension, "collection": profile.vector.collection,
         "retrieval_method": "local_embedding_cosine", "queries": [], "calls": vectors.calls,
         "limitations": LIMITATIONS}
+    if history.PURPOSE in profile.purposes and not any(k.get("purpose") == history.PURPOSE for k in keys):
+        metadata["not_queried_purposes"] = [{"purpose": history.PURPOSE,
+            "reason": "history_window_or_topic_missing"}]
     try:
         await vectors.check()
         embedded = await vectors.embed([k["value"] for k in keys])
@@ -86,12 +95,19 @@ async def query(service, tenant, args, *, vectors=None):
                         or payload.get("embedding_model") != profile.embedding.model
                         or key["purpose"] not in payload.get("purposes", [])):
                     raise SourceUnavailable("knowledge_index_document_stale_or_missing")
+                record = {k: (str(v) if isinstance(v, (UUID, datetime)) else v)
+                          for k, v in doc.items() if k != "tenant_id"}
+                limitations = LIMITATIONS
+                if key["purpose"] == history.PURPOSE:
+                    async with service.transaction(tenant, readonly=True) as store:
+                        card = await history.retrieval_record(store.db, tenant, doc, profile, key["filters"])
+                    record.update(history=card, triage=card.pop("triage"), feedback=card.pop("feedback"))
+                    limitations = LIMITATIONS + history.LIMITATIONS
                 retained.append({"object_key": key["object_key"], "namespace": key["namespace"],
                     "record_id": str(doc["id"]), "match_basis": "local_embedding_cosine",
                     "purpose": key["purpose"], "purpose_label": key["purpose_label"], "use": key["use"],
                     "similarity": hit["score"], "content_sha256": payload["content_sha256"],
-                    "limitations": LIMITATIONS, "record": {k: (str(v) if isinstance(v, (UUID, datetime)) else v)
-                        for k, v in doc.items() if k != "tenant_id"}})
+                    "limitations": limitations, "record": record})
             receipt.update(state="completed", outcome="data" if hits else "empty",
                 returned_rows=min(len(hits), key["limit"]), truncated=len(hits) > key["limit"],
                 document_ids=[r["record_id"] for r in retained[:key["limit"]]])

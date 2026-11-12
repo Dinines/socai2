@@ -2,7 +2,7 @@
 
 ## Context
 
-当前服务端交付为 A/I/Case 的输入、执行、保存与读取，最近已核验的发布为 `v1.2-20261111-r3`。Case 来源范围、Finding 角色生成及有限纠正、正常 Case/H HTTP 操作已交付；真实知识使用、产品页面与自动消费仍按任务推进。模型正文质量仍未通过，读取通过不能替代质量结论。
+当前服务端交付为 A/I/Case 的输入、执行、保存与读取，最近已核验的发布为 `v1.2-20261112-r1`。Case 来源范围、Finding 角色生成及有限纠正、正常 Case/H HTTP 操作和 C2 三目的知识传递已交付；知识合理使用、产品页面与自动消费仍按任务推进。模型正文质量仍未通过，读取通过不能替代质量结论。
 
 结构为 29 表、462 列；当前合同与配置从[前后端交接](../../../FRONTEND_BACKEND_HANDOFF.md)、[执行账本](../../../docs/investigation/current-execution-ledger.md)、[模型输入输出](../../../docs/investigation/model-input-output-current-20261109.md)查阅。发布及本机转发事实以 [PROGRESS](../../../PROGRESS.md)最近核验记录为准；已完成审计及本次程序交付共同作为后续依据。
 

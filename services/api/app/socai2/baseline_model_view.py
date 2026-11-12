@@ -131,6 +131,8 @@ def candidates(context, context_id, enrichment, materials=None):
             path = f"$.rows.{i}"
             record = dict(row["record"])
             triage, feedback = record.pop("triage", None), record.pop("feedback", None)
+            if row.get("purpose") == "historical_case_reference":
+                record.pop("content", None)
             yield item(path, row, {**row, "record": record}, identity=artifact_id, role=roles[path])
             for name, value in (("triage", triage), ("feedback", feedback)):
                 if value:

@@ -47,6 +47,13 @@ class Topics(Config):
     max_queries: int = Field(gt=0)
 
 
+class History(Config):
+    lookback_days: int = Field(gt=0)
+    max_import_alerts: int = Field(gt=0)
+    max_card_characters: int = Field(gt=0)
+    observation_paths: list[str] = Field(min_length=1)
+
+
 class Profile(Config):
     version: Literal["socai2.case-knowledge.v1"]
     embedding: Embedding
@@ -55,6 +62,7 @@ class Profile(Config):
     topics: Topics
     max_index_chunks: int = Field(gt=0)
     max_chunk_characters: int = Field(gt=0)
+    history: History | None = None
 
 
 def configured():
@@ -65,7 +73,10 @@ def load():
     try:
         raw = Path(os.environ["SOCAI2_KNOWLEDGE_PROFILE"]).read_bytes()
         profile = Profile.model_validate_json(raw)
-        if set(profile.purposes) != {"technical_explanation", "investigation_guidance"}:
+        required = {"technical_explanation", "investigation_guidance"}
+        if not required <= set(profile.purposes) <= required | {"historical_case_reference"}:
+            raise ValueError
+        if ("historical_case_reference" in profile.purposes) != (profile.history is not None):
             raise ValueError
         if any(p.template.count("{topic}") != 1 for p in profile.purposes.values()):
             raise ValueError
@@ -110,10 +121,19 @@ def selectors(context, materials, profile):
         if not terms:
             continue
         for name, purpose in profile.purposes.items():
+            history_filter = {}
+            if name == "historical_case_reference":
+                from datetime import datetime, timedelta
+                start = getattr(getattr(context, "scope", None), "window_start", None)
+                if start is None:
+                    continue
+                start = datetime.fromisoformat(start) if isinstance(start, str) else start
+                history_filter = {"event_start": (start - timedelta(days=profile.history.lookback_days)).isoformat(),
+                    "event_before": start.isoformat(), "exclude_alert_ids": sorted(context.alerts)}
             query = purpose.template.replace("{topic}", "\n".join(terms))
             found.append({"object_key": f"knowledge:{aid}:{name}", "namespace": alert.alert["source_namespace"],
                 "object_type": "knowledge_topic", "value": query, "ioc_type": None, "alert_ids": [aid],
                 "source_paths": paths, "purpose": name, "purpose_label": purpose.label,
-                "filters": {"doc_kinds": purpose.doc_kinds, "tag": purpose.tag},
+                "filters": {"doc_kinds": purpose.doc_kinds, "tag": purpose.tag, **history_filter},
                 "limit": purpose.limit, "score_threshold": purpose.score_threshold, "use": purpose.use})
     return found

@@ -1,0 +1,42 @@
+{
+  "state": "response_received",
+  "http_status": 200,
+  "raw": {
+    "id": "chatcmpl-a7988459e94e8f1f",
+    "created": 1794443028,
+    "model": "aisoc-investigation",
+    "object": "chat.completion",
+    "system_fingerprint": "vllm-0.30.0-76652a79",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "{\n  \"action\": \"handoff\",\n  \"binding_id\": null,\n  \"reason\": \"当前材料仅能确认三个告警（出站连接、登录、PowerShell 启动）的基本事实及时间线，但缺乏区分行为性质的关键证据：1. 命令执行结果（Get-LocalUser 是否实际返回了用户列表）；2. 网络连接的具体载荷（是否传输了敏感数据）；3. 业务授权记录（flow-observer 用户是否有权限执行此操作）。现有 MITRE 知识库和标签（synthetic）仅作为参考，不能替代本案事实。需人工介入确认命令输出、业务用途及授权状态以完成定性。\",\n  \"answer\": {\n    \"state\": \"unresolved\",\n    \"text\": \"行为性质目前无法定性。现有证据仅显示：用户 flow-observer 在主机 socai2-flow-20261107-01 上启动了 PowerShell 并执行了 Get-LocalUser 命令（N2_S67），随后建立了出站 TCP 连接（N2_S10）。虽然 Get-LocalUser 常用于账户枚举（恶意），但也可能是管理员进行常规审计（正常）。关键缺口在于：未获取到命令的实际输出结果、网络连接的数据载荷以及该操作的业务授权记录。\",\n    \"support_ids\": [],\n    \"counter_ids\": [],\n    \"alternatives\": [\n      \"恶意：利用 PowerShell 枚举本地账户以进行横向移动或凭证窃取。\",\n      \"正常：管理员执行常规的用户账户审计或故障排查。\",\n      \"误操作：用户误执行了枚举命令。\"\n    ],\n    \"limitations\": [\n      \"缺乏命令执行结果（stdout/stderr）以确认是否获取了用户列表。\",\n      \"缺乏网络连接的数据流分析（DPI）以确认是否外传了数据。\",\n      \"缺乏审批记录或业务上下文以确认操作是否授权。\",\n      \"标签 synthetic 仅表示数据为合成或测试性质，不足以直接定性为恶意或正常。\"\n    ]\n  }\n}",
+          "role": "assistant",
+          "provider_specific_fields": {
+            "refusal": null,
+            "reasoning": null
+          }
+        },
+        "provider_specific_fields": {
+          "token_ids": null,
+          "routed_experts": null,
+          "stop_reason": null
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 453,
+      "prompt_tokens": 15222,
+      "total_tokens": 15675,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "provider_response_sha256": "3eed5183f25614e47038b386e61b006ed85061d3f22501fdc5d1ef41752bb4bb",
+  "hidden_message_fields_omitted": [],
+  "http_seconds": 10.847199,
+  "transport_seconds": 11.539076
+}

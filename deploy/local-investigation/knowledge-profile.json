@@ -5,7 +5,11 @@
     "model": "qwen3-embedding:0.6b",
     "dimension": 1024,
     "timeout_seconds": 90,
-    "options": {"num_gpu": 0, "num_thread": 16, "num_ctx": 32768}
+    "options": {
+      "num_gpu": 0,
+      "num_thread": 16,
+      "num_ctx": 32768
+    }
   },
   "vector": {
     "url": "http://192.168.1.21:6333",
@@ -17,7 +21,11 @@
     "technical_explanation": {
       "label": "技术解释",
       "template": "检索以下记录涉及的技术行为/命令的功能、适用条件与解释边界。检测标签仅是检索线索，不是本案事实。\n{topic}",
-      "doc_kinds": ["wiki", "other", "runbook"],
+      "doc_kinds": [
+        "wiki",
+        "other",
+        "runbook"
+      ],
       "tag": "knowledge:technical_explanation",
       "limit": 2,
       "score_threshold": 0.45,
@@ -26,20 +34,57 @@
     "investigation_guidance": {
       "label": "取证指导",
       "template": "检索调查以下行为所需的日志来源、字段、上下文和验证方法，以区分可能解释和确认实际结果。\n{topic}",
-      "doc_kinds": ["runbook", "playbook", "sop", "other"],
+      "doc_kinds": [
+        "runbook",
+        "playbook",
+        "sop",
+        "other"
+      ],
       "tag": "knowledge:investigation_guidance",
       "limit": 2,
       "score_threshold": 0.45,
       "use": "用于提出取证需求、解释已有结果；仅在当前合法候选中派发，未接入能力记录待核。"
+    },
+    "historical_case_reference": {
+      "label": "历史案例参考",
+      "template": "检索可比较的历史告警原观察、已有判断和人工反馈，用于辨别相似条件、差异与待核方法。不要继承历史结论或授权。\n{topic}",
+      "doc_kinds": [
+        "other"
+      ],
+      "tag": "knowledge:historical_case_reference",
+      "limit": 1,
+      "score_threshold": 0.45,
+      "use": "C3 比较历史解释与本案缺少的条件；Deep 参考验证方法；C6 说明差异与未验证条件。历史观察不属于本案，既往分诊/人工反馈不证明本案良恶、授权或处置已执行。"
     }
   },
   "topics": {
-    "material_paths": ["$.ocsf_json.process.cmd_line", "$.ocsf_json.process.name", "$.ocsf_json.activity.action", "$.raw_json.command_line"],
-    "label_paths": ["$.alert.title", "$.material.detection.rule_name"],
+    "material_paths": [
+      "$.ocsf_json.process.cmd_line",
+      "$.ocsf_json.process.name",
+      "$.ocsf_json.activity.action",
+      "$.raw_json.command_line"
+    ],
+    "label_paths": [
+      "$.alert.title",
+      "$.material.detection.rule_name"
+    ],
     "max_value_characters": 512,
     "max_query_characters": 4096,
     "max_queries": 12
   },
   "max_index_chunks": 24,
-  "max_chunk_characters": 1600
+  "max_chunk_characters": 1600,
+  "history": {
+    "lookback_days": 90,
+    "max_import_alerts": 8,
+    "max_card_characters": 16000,
+    "observation_paths": [
+      "$.ocsf_json.process",
+      "$.ocsf_json.activity",
+      "$.ocsf_json.actor",
+      "$.ocsf_json.src_endpoint",
+      "$.ocsf_json.dst_endpoint",
+      "$.raw_json.command_line"
+    ]
+  }
 }

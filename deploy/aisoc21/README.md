@@ -1,6 +1,6 @@
 # 21 调查服务部署
 
-当前主发布为 `v1.2-20261111-r3`，C2 知识本地流程、限定独审与生产导入/索引/检索读回已完成；处理镜像 `processing-20261111-r3`，4177 源码随统一 r3。API 与工作台各切换一次，其余四项服务保持；自动消费者暂停。实际来源见 [PROGRESS](../../PROGRESS.md)及[交付回执](../../docs/operations/evidence/case-knowledge-20261111-01/delivery-summary.json)。
+当前主发布为 `v1.2-20261112-r1`，历史告警卡片入库、索引、C2 三目的配置及历史检索已读回；处理镜像 `processing-20261112-r1`，4177 源码随统一发布。API 与工作台各切换一次，其余四项容器身份保持；自动消费者暂停。实际来源见 [PROGRESS](../../PROGRESS.md)及[交付回执](../../docs/operations/evidence/historical-knowledge-20261112-01/delivery-summary.json)。
 
 ## 发布来源与步骤
 
@@ -25,10 +25,10 @@ Case/H 非 GET 使用现有处理连接，GET 保持原读取连接；缺写入�
 
 ## C2 知识与工作台
 
-知识功能本地实现、直接验收和统一 r3 发布已完成。生产配置在 API 与处理入口挂载相同的 [knowledge-profile.json](../local-investigation/knowledge-profile.json)，使用已有 Ollama 本地 qwen3-embedding:0.6b/1024 和独立 Qdrant 集合，原情报/组织记忆集合保留。受控 key 来自既有 vector-1d 私密配置，只通过 knowledge 配置指定的文件挂载，不进镜像/Git。新装/升级步骤与字段见[知识交接](../../docs/investigation/case-knowledge-handoff.md)。原 Case/H 写连接保持，告警合同与 V1 表结构不变。
+知识功能已接通技术解释、取证指导与历史案例参考。生产配置在 API 与处理入口挂载相同的 [knowledge-profile.json](../local-investigation/knowledge-profile.json)，使用已有 Ollama 本地 qwen3-embedding:0.6b/1024 和独立 Qdrant 集合，原情报/组织记忆集合保留。受控 key 来自既有 vector-1d 私密配置，只通过 knowledge 配置指定的文件挂载，不进镜像/Git。新装/升级步骤与字段见[知识交接](../../docs/investigation/case-knowledge-handoff.md)及[历史卡片交接](../../docs/investigation/historical-alert-knowledge-handoff.md)。原 Case/H 写连接保持，告警合同与 V1 表结构不变。历史卡片只由显式入口入库和索引，未启用自动沉淀。
 
 4177 沿 [Mac SSH 接入](../../docs/operations/mac-ssh-relay-20261107.md)访问。知识 change 的工作台源码随统一 API/处理发布切换，根源码挂载与两个既有单文件挂载同步指向同一 release。通过[静态配置](workbench-current.json)追加已保存案例并读回；不额外调用独立 runtime 发布入口或再次重启。`workbench-runtime-current.json` 是前次独立发布回执的配置，当前统一发布以 release-v1.2.json 为入口。
 
-本地实际 6 条知识查询/8 条命中、5 次模型请求及保存读回；C6 duplicate_source 仍失败。20 项直接检查与一次浏览器功能查看通过，质量 NOT_PASSED，未做复杂测试或新生产调查。生产验收工具 [production.py](../../tools/testdata/case_knowledge/production.py)以本次临时 scope key 导入/索引两份有来源资料，读回块元数据，再使用已保存查询文本做只读 C2 adapter 检索；不建 Case、不写 Run、不调用分析模型。与本地完整链路证据合并说明接线边界，不把探针当成生产完整调查。[本次验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
+前批技术解释/取证指导的本地实际 6 条知识查询/8 条命中、5 次模型请求及保存读回；C6 duplicate_source 仍失败。20 项直接检查与一次浏览器功能查看通过，质量 NOT_PASSED，未做复杂测试或新生产调查。生产验收工具 [production.py](../../tools/testdata/case_knowledge/production.py)以该批临时 scope key 导入/索引两份有来源资料，读回块元数据，再使用已保存查询文本做只读 C2 adapter 检索；不建 Case、不写 Run、不调用分析模型。与本地完整链路证据合并说明接线边界，不把探针当成生产完整调查。[前批验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
 
-生产 7 次业务 HTTP 和只读 C2 目的查询通过，返回 4 块与 PG 原文/hash 一致；本次临时导入 key 已撤销并核 401，不改用户角色。4177 保留原记录并追加到 36 份，76 文件/77 静态 HTTP 读回及浏览器查看通过。
+上述两目的前批生产 7 次业务 HTTP 和只读 C2 查询通过，返回 4 块与 PG 原文/hash 一致；该批临时 key 已撤销，4177 当时为 36 份。本轮历史卡片生产 3 次业务 HTTP、一次只读历史查询返回 1 卡，临时 key 撤销并核 401，0 生产分析模型/Run；4177 从实际 37 份追加至 38 份，76 文件/77 静态 HTTP 内容读回，未重启服务。历史原答及模型质量 NOT_PASSED 保留。

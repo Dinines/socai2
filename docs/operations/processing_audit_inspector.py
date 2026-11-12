@@ -128,7 +128,8 @@ function showKnowledge(view, row, artifacts) {
     const {body, metadata} = entry;
     const keys = body.actual_args?.parameters?.selectors || [];
     const purposeKeys = keys.filter(k => k.purpose);
-    inspectorContent.append(element('p', '知识用于技术解释和取证指导；相关度不代表本案事实置信度。', 'quiet'));
+    inspectorContent.append(element('p', '知识用于技术解释、取证指导和历史案例参考；相关度不代表本案事实置信度。', 'quiet'));
+    block('未查询的目标', metadata.not_queried_purposes);
     if (!purposeKeys.length) {
         empty('本记录未保存按目标的检索详情。原有参数和结果可在“原始记录”查看。');
         block('实际状态', {state: body.state, error: body.error});
@@ -155,8 +156,15 @@ function showKnowledge(view, row, artifacts) {
             if (!hits.length) empty(receipt?.state === 'completed' && receipt.returned_rows === 0 ?
                 '该目标查询完成，无符合条件的片段。' : '没有保存命中片段，请结合实际状态查看。');
             for (const hit of hits) {
+                if (hit.purpose === 'historical_case_reference') {
+                    block('历史来源与版本', hit.record?.history);
+                    block('历史分诊（已有判断）', hit.record?.triage);
+                    block('历史人工反馈（人工陈述）', hit.record?.feedback);
+                }
                 block(hit.record?.title || '知识片段', {purpose: hit.purpose_label, use: hit.use,
-                    similarity: hit.similarity, document: hit.record, content_sha256: hit.content_sha256,
+                    similarity: hit.similarity, document: hit.purpose === 'historical_case_reference' ?
+                        {id: hit.record?.id, title: hit.record?.title, source_url: hit.record?.source_url} : hit.record,
+                    content_sha256: hit.content_sha256,
                     limitations: hit.limitations});
             }
             block('返回范围', receipt);
@@ -190,21 +198,23 @@ function showKnowledgeUsage(row, requests, responses) {
         const saved = bodyOf(request), payload = saved?.payload || saved;
         for (const [alias, source] of Object.entries(payload?.source_map || {})) {
             const receipt = receipts.find(r => r.artifact.id === source.ref?.id);
-            const match = /^\$\.rows\.(\d+)$/.exec(source.ref?.source_path || '');
+            const match = /^\$\.rows\.(\d+)(?:\.record\.(triage|feedback))?$/.exec(source.ref?.source_path || '');
             if (!receipt || !match) continue;
             const hit = receipt.body.rows?.[Number(match[1])];
             if (!hit) continue;
             used.push({source_id: alias, purpose: hit.purpose_label || hit.purpose || '未记录目标',
                 title: hit.record?.title, document_id: hit.record_id, content_sha256: hit.content_sha256,
+                historical_source: hit.record?.history?.source, source_role: source.ref?.role,
+                referenced_part: match[2] || '完整知识片段',
                 retrieved: '已检索到', input: '已进入本次输入', output: citations.some(c => c.id === alias) ?
-                    '原答有可定位引用' : parsed ? '未见引用' : '未记录或原答未能解析',
+                    '原答有结构化引用' : parsed ? '未见结构化引用' : '未记录或原答未能解析',
                 citation_paths: citations.filter(c => c.id === alias).map(c => c.path),
                 artifact_id: receipt.artifact.id, source_path: source.ref.source_path});
         }
     }
     if (used.length) block('本次模型的知识使用关联', used);
     else empty('本轮有知识查询记录，但本次模型输入未找到可定位的知识片段引用。');
-    inspectorContent.append(element('p', '引用关系不代表校验接受或知识使用合理，需结合原答、校验和实际证据判断。', 'quiet'));
+    inspectorContent.append(element('p', '此处仅统计 source_ids/evidence_ids/support_ids/counter_ids 数组；正文可能提及来源编号，请结合原答查看。结构化引用不代表校验接受或知识使用合理。', 'quiet'));
 }
 function relatedArtifacts(row, el) {
     if (el.dataset.recordKind === 'artifact') return [row];

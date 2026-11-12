@@ -92,6 +92,45 @@ class IndexRequest(BaseModel):
     document_ids: list[uuid.UUID] = Field(min_length=1)
 
 
+class AlertExperienceRequest(BaseModel):
+    alert_ids: list[uuid.UUID] = Field(min_length=1)
+
+
+@router.post("/alert-experiences", summary="Store source-bound historical alert cards")
+async def import_alert_experiences(
+    body: AlertExperienceRequest, db: DBSession,
+    user: Annotated[AuthUser, Depends(require_permission("settings:write"))],
+) -> dict:
+    from app.socai2.baseline_optional_sources import SourceUnavailable
+    from app.socai2.knowledge_config import load
+    from app.socai2.knowledge_history import import_cards
+    try:
+        profile, _ = load()
+        await set_rls_context(db, user.tenant_id)
+        return await import_cards(db, user.tenant_id, body.alert_ids, user.email, profile)
+    except SourceUnavailable as exc:
+        raise HTTPException(status_code=503, detail={"code": str(exc)}) from None
+
+
+@router.get("/alert-experiences/{document_id}", summary="Read a stored historical alert card")
+async def get_alert_experience(
+    document_id: uuid.UUID, db: DBSession,
+    user: Annotated[AuthUser, Depends(require_permission("knowledge_base:read"))],
+) -> dict:
+    from app.socai2.baseline_optional_sources import SourceUnavailable
+    from app.socai2.knowledge_config import load
+    from app.socai2.knowledge_history import PURPOSE, parse
+    from app.socai2.knowledge_source import DOCUMENTS
+    try:
+        profile, _ = load()
+        rows = list((await db.execute(text(DOCUMENTS), {"tenant": user.tenant_id, "ids": [str(document_id)]})).mappings())
+        if not rows or PURPOSE not in profile.purposes or profile.purposes[PURPOSE].tag not in rows[0]["tags"]:
+            raise HTTPException(status_code=404, detail="Historical alert card not found.")
+        return {"document_id": str(document_id), "card": parse(rows[0], profile)}
+    except SourceUnavailable as exc:
+        raise HTTPException(status_code=503, detail={"code": str(exc)}) from None
+
+
 @router.post("/index", summary="Index selected stored knowledge chunks for investigation")
 async def index_documents(
     body: IndexRequest, db: DBSession, user: Annotated[AuthUser, Depends(require_permission("settings:write"))]
@@ -99,6 +138,7 @@ async def index_documents(
     from app.socai2.baseline_optional_sources import SourceUnavailable
     from app.socai2.knowledge_source import index
     try:
+        await set_rls_context(db, user.tenant_id)
         return await index(db, user.tenant_id, body.document_ids)
     except SourceUnavailable as exc:
         raise HTTPException(status_code=503, detail={"code": str(exc), "document_storage_unchanged": True}) from None

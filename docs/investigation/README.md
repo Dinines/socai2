@@ -17,3 +17,5 @@
 原始需求、各批失败及模型原答均保留。实现、运行交付、数据读取、页面接线和模型质量分别验收；未完成主任务继续保留在主调查 OpenSpec；各独立交付按一个 change 完整验收后发布。
 
 按目标知识的执行位置、字段/索引/配置与 4177 展示见 [Case 知识交接](case-knowledge-handoff.md)。
+
+- [历史告警知识与模型交接](historical-alert-knowledge-handoff.md)：显式卡片入库、C2 历史目标、模型角色与 4177，交付状态以 PROGRESS 为准。

@@ -3,6 +3,7 @@ import hashlib
 import json
 import math
 import time
+from datetime import datetime
 from pathlib import Path
 
 import httpx
@@ -88,8 +89,15 @@ class Vectors:
                       "dimension": self.profile.embedding.dimension, "purposes": selector["purpose"]}
         must = [{"key": key, "match": {"value": value}} for key, value in conditions.items()]
         must.append({"key": "doc_kind", "match": {"any": selector["filters"]["doc_kinds"]}})
+        filters = {"must": must}
+        if selector["purpose"] == "historical_case_reference":
+            bounds = selector["filters"]
+            must.append({"key": "event_epoch", "range": {
+                "gte": datetime.fromisoformat(bounds["event_start"]).timestamp(),
+                "lt": datetime.fromisoformat(bounds["event_before"]).timestamp()}})
+            filters["must_not"] = [{"key": "source_alert_id", "match": {"any": bounds["exclude_alert_ids"]}}]
         result = await self.request("vector", "POST", self.collection + "/points/search", {
-            "vector": vector, "filter": {"must": must}, "limit": selector["limit"] + 1,
+            "vector": vector, "filter": filters, "limit": selector["limit"] + 1,
             "score_threshold": selector["score_threshold"], "with_payload": True, "with_vector": False})
         if not isinstance(result.get("result"), list):
             raise SourceUnavailable("knowledge_vector_response_invalid")
