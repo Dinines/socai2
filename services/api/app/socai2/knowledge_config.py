@@ -5,7 +5,14 @@ import os
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    ValidationError,
+    model_validator,
+)
 
 from .baseline_optional_sources import SourceUnavailable
 
@@ -53,6 +60,14 @@ class History(Config):
     max_import_alerts: int = Field(gt=0)
     max_card_characters: int = Field(gt=0)
     observation_paths: list[str] = Field(min_length=1)
+    sync_after_adopted_triage: bool = False
+    sync_timeout_seconds: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def synchronization_limit(self):
+        if self.sync_after_adopted_triage and self.sync_timeout_seconds is None:
+            raise ValueError("history_sync_timeout_required")
+        return self
 
 
 class Facet(Config):

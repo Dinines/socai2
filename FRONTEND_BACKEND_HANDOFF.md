@@ -4,6 +4,8 @@
 
 后续按功能流程推进，必要读写接线与配置随功能处理。告警相关的前后端字段合同保持稳定；字段名、类型、含义、关联和接口返回确需调整时先列明影响并确认。下表保留已核验的运行配置，配置当前值不构成后续功能开发的权限前置。
 
+本项[分诊后历史知识同步](openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)已完成本地直接流程、独审及 21 r5 发布读回；采用原 Run trace／工件读取表达同步状态，不新增告警 DTO 字段。历史卡片及同步字段见[知识交接](docs/investigation/historical-alert-knowledge-handoff.md)。
+
 ## 1 接手入口
 
 | 内容 | 权威资料 |
@@ -21,10 +23,10 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261112-r3`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261112-r5`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
-| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台源码随 `v1.2-20261112-r3`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
+| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台源码随 `v1.2-20261112-r5`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
 | Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=true`，私密 SOCAI2_CASE_DATABASE_URL 已指向现有处理连接；建案与 H 写读已实际通过，产品页面接线仍需承接 |
@@ -97,9 +99,11 @@
 
 ## 7 C2 知识与本次验证边界
 
-三目的知识、历史卡片及用途筛选已完成本地验收和 21 `v1.2-20261112-r3` 统一发布读回，入口、字段来源与角色见[历史知识交接](docs/investigation/historical-alert-knowledge-handoff.md)及[知识交接](docs/investigation/case-knowledge-handoff.md)。本轮生产 7 次业务 HTTP、3 个目的只读检索通过，4177 追加至 39 份并实际查看筛除／合并来源；临时 key 撤销并核 401，无生产分析 Run。本地一 Run 9 查询／5 行（3 唯一块），6 模型调用；C6 拒收、模型质量 NOT_PASSED 保留。[本轮回执](docs/operations/evidence/knowledge-selection-20261112-01/delivery-summary.json)。下述技术解释／取证指导为前批有效证据。
+本项分诊保存后同步已发布 21 `v1.2-20261112-r5`：实际加载开启／120 秒配置、处理连接 KB SELECT/INSERT 和相关源码已读回，4177 从 39→40 份，旧批保持。自动触发端到端由一次本地模板分诊的保存→索引→历史检索→5 GET 证明，生产本轮没有新增 A／Case Run、知识写入、嵌入或分析模型；消费者关闭。[本轮回执](docs/operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)。入口、字段来源与角色见[历史知识交接](docs/investigation/historical-alert-knowledge-handoff.md)及[知识交接](docs/investigation/case-knowledge-handoff.md)。
 
-[知识检索/消费交接](docs/investigation/case-knowledge-handoff.md)给出 C2 两个目的、实际输入输出、文档/向量/工件字段及 4177 的关联。新增显式 `/api/v1/kb/index`，原知识导入、查询及告警接口合同保持。C3/Deep/C6 使用本轮冻结片段，不新增模型调用环节。知识功能已本地验证并统一发布 r3；原 HTTP 导入/索引/GET 及生产 C2 两目的检索已读回。
+前序用途筛选批次在 `v1.2-20261112-r3` 完成生产 7 次业务 HTTP、3 个目的只读检索，4177 当时追加至 39 份并查看筛除／合并来源；临时 key 已撤销并核 401，无生产分析 Run。该批本地一 Run 9 查询／5 行（3 唯一块）、6 模型调用，C6 拒收和模型质量 NOT_PASSED 保留。[前序回执](docs/operations/evidence/knowledge-selection-20261112-01/delivery-summary.json)。下述技术解释／取证指导为更早批次的有效证据。
+
+[知识检索/消费交接](docs/investigation/case-knowledge-handoff.md)给出 C2 两个目的、实际输入输出、文档/向量/工件字段及 4177 的关联。显式 `/api/v1/kb/index` 与原知识导入、查询及告警接口合同保持。C3/Deep/C6 使用对应 Run 的冻结片段，不新增模型调用环节；以下为早期两目的知识功能验收。
 
 前批一个本地 Case 实际完成 2 份资料导入、4 块索引、6 条目的查询、8 条命中、C3/两项 Deep/C6 及保存读回；8 次业务 HTTP 成功，Result 六字段一致。5 次真实模型调用、90,292 reported tokens，费用未知；C6 重复引用拒收，conclusion=null，模型质量 NOT_PASSED。C3/C6 有知识引用，不能据此宣称取证方法采用或准确率改善。[前批验收](openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
 

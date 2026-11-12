@@ -1,16 +1,16 @@
 {
   "version": "socai2.release.v1.2",
-  "release": "v1.2-20261112-r3",
+  "release": "v1.2-20261112-r5",
   "architecture": "amd64",
   "build_timeout_seconds": 180,
   "deploy_timeout_seconds": 90,
-  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r3",
+  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r5",
   "agents_container": "socai2-agents-1",
   "build": {
     "api": {
       "source": "services/api/app",
       "base_id": "sha256:5a1e1fd8cf08349438e7d1346a25c9599bff7937df5d22ea94426e77b33f2aa9",
-      "tag": "socai2-api:v1.2-20261112-r3",
+      "tag": "socai2-api:v1.2-20261112-r5",
       "user": "10001:10001"
     }
   },
@@ -75,30 +75,31 @@
     "deploy/database/aisoc21_processing_access.sql",
     "deploy/aisoc21/case-http.env.example",
     "deploy/local-investigation/knowledge-profile.json",
-    "deploy/aisoc21/production-profile.example.toml"
+    "deploy/aisoc21/production-profile.example.toml",
+    "deploy/database/knowledge_history_write_access.sql"
   ],
   "projects": {
     "main": {
       "name": "socai2",
       "directory": "/opt/sting-aisoc-socai2",
       "files": [
-        "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r1/main-after.json"
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r3/main-after.json"
       ],
       "services": {
         "api": {
           "container": "socai2-api-1",
-          "expected_image": "sha256:7546def9d9f477b326e7deb38552ab1904959ffca61d2be3e0d5e920c3e458be",
+          "expected_image": "sha256:d656028597cbc4ae8258a0472dfd530e9515f123a2a7ef786c271f0166685b4c",
           "build": "api",
           "override": {
             "env_file": [
               {
-                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r3/api-model.env",
+                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r5/api-model.env",
                 "format": "raw"
               }
             ],
             "volumes": [
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro",
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/deploy/local-investigation/knowledge-profile.json:/run/knowledge/profile.json:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/local-investigation/knowledge-profile.json:/run/knowledge/profile.json:ro",
               "/opt/sting-aisoc-socai2/private/processing-production/knowledge-qdrant-key:/run/knowledge/qdrant-key:ro"
             ],
             "environment": {
@@ -169,7 +170,7 @@
       "name": "socai2-production-workbench",
       "directory": "/opt/sting-aisoc-socai2/private/production-workbench",
       "files": [
-        "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r1/workbench-after.json"
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r3/workbench-after.json"
       ],
       "services": {
         "workbench": {
@@ -178,9 +179,9 @@
           "image": "sha256:c68c72a9cfe6fa04f6963582d65ce49d73cbf5355c0d72dcf1905d3ecb84776c",
           "override": {
             "volumes": [
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3:/opt/workbench:ro",
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/docs/operations/processing_audit_index.py:/opt/workbench/docs/operations/processing_audit_index.py:ro",
-              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/docs/operations/update_processing_audit.py:/opt/workbench/docs/operations/update_processing_audit.py:ro"
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5:/opt/workbench:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/docs/operations/processing_audit_index.py:/opt/workbench/docs/operations/processing_audit_index.py:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/docs/operations/update_processing_audit.py:/opt/workbench/docs/operations/update_processing_audit.py:ro"
             ]
           }
         }
@@ -207,9 +208,9 @@
     }
   },
   "processing": {
-    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/deploy/aisoc21/production-v1.2.toml",
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/aisoc21/production-v1.2.toml",
     "entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
-    "image": "sha256:fc646d523577e884696eb5ddc85d064b0d2afef3d5d7f8950cb8df8b0adeccfd",
+    "image": "sha256:51d94e50fcf5861c556ec2c59268185fb58a1e849f96cc75f64c02727749880d",
     "required_existing_secrets": [
       "db-password",
       "ingress-password",
@@ -218,7 +219,7 @@
       "runtime.env",
       "ingress.env"
     ],
-    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r3/api-model.env",
+    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r5/api-model.env",
     "api_model_keys": [
       "OPENAI_API_KEY",
       "OPENAI_BASE_URL",
@@ -238,8 +239,8 @@
       "SOCAI2_KNOWLEDGE_PROFILE",
       "AISOC_AIRGAP_ALLOWLIST"
     ],
-    "image_tag": "socai2-processing:processing-20261112-r2",
-    "manifest_sha256": "b331d57a459bcd3bad7584ab60ea2eb39769eb15bb417f0881a357b21cdbaa2b",
+    "image_tag": "socai2-processing:processing-20261112-r3",
+    "manifest_sha256": "346642c30e5307ffc494df40b2f5820502d25e57b0be70408c93fad33eaf9516",
     "api_environment_sources": {
       "SOCAI2_CASE_DATABASE_URL": "DATABASE_URL"
     }
@@ -262,7 +263,7 @@
     "projection",
     "litellm"
   ],
-  "scope": "Historical alert cards and purpose-aware C2 retrieval, frozen separate model roles and 4177 views; one API/workbench switch, inherited services unchanged; preserve alert contracts, no DDL or production analysis Run",
+  "scope": "Post-commit adopted A history-card sync, independent immutable receipts, existing trace/artifact reads; one API/workbench switch; no investigation DDL, analysis-model rerun or consumer enablement",
   "processing_policy_check": {
     "container": "socai2-api-1",
     "profiles": {
@@ -276,7 +277,7 @@
     }
   },
   "api_reader_check": {
-    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r3/deploy/database/api-reader-21.toml"
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/database/api-reader-21.toml"
   },
   "case_http_check": {
     "container": "socai2-api-1",

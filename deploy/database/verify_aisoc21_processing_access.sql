@@ -7,6 +7,9 @@ DECLARE
     'case_assessments','case_assessment_sources','case_assessment_members','artifacts','results','result_members',
     'task_revisions','activities','activity_targets','response_links'];
 BEGIN
+  IF NOT has_table_privilege('socai2_prod_processor','public.aisoc_kb_documents','SELECT')
+    OR NOT has_table_privilege('socai2_prod_processor','public.aisoc_kb_documents','INSERT')
+  THEN RAISE EXCEPTION 'Processing history-card storage requires SELECT and INSERT'; END IF;
   IF (SELECT count(*) FROM pg_roles WHERE rolname IN ('socai2_prod_reader','socai2_prod_processor',
     'socai2_prod_ingress') AND rolcanlogin AND NOT (rolsuper OR rolinherit OR rolcreatedb OR rolcreaterole
     OR rolreplication OR rolbypassrls) AND shobj_description(oid,'pg_authid')='socai2:production:v1') <> 3

@@ -17,6 +17,7 @@ GRANT SELECT ON public.tenants,public.users,public.api_keys,public.connectors,pu
     public.assets,public.threat_intel_iocs,public.user_risk_profiles,public.insider_indicators,
     public.roles,public.permissions,public.role_permissions,public.user_roles,public.privilege_grants,
     public.permission_conditions,public.aisoc_kb_documents TO socai2_prod_processor;
+GRANT INSERT ON public.aisoc_kb_documents TO socai2_prod_processor;
 GRANT UPDATE(last_used_at) ON public.api_keys TO socai2_prod_processor;
 GRANT SELECT(id,tenant_id) ON public.connectors TO socai2_prod_ingress;
 GRANT SELECT,INSERT ON socai2.alerts,socai2.alert_materials,socai2.alert_source_refs,socai2.alert_objects,

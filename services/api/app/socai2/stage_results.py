@@ -303,6 +303,9 @@ class StageResultService(BaselineService):
             if execution_step_id is not None:
                 await store.db.execute(update(steps).where(*store.where(steps, steps.c.id == execution_step_id)).values(
                     state="completed", ended_at=now, output_artifact_id=receipt_id))
+        # The publication has committed. Knowledge maintenance cannot alter it.
+        from .knowledge_sync import after_triage
+        await after_triage(self, tenant_id, run, outcome)
         return outcome
 
     async def execute_alert(self, tenant_id, alert_id, operation_key: UUID, *, gateway=None, query=None, requested_by=None):

@@ -266,4 +266,4 @@ API与Agents通过当前第29层 `compose.integrity.yml` 加载21私有 `private
 
 ## C2 按目标本地嵌入检索
 
-`SOCAI2_KNOWLEDGE_PROFILE` 显式选择 [knowledge-profile.json](../../deploy/local-investigation/knowledge-profile.json)，定义技术解释、取证指导及可选历史案例参考的模板/过滤/限额、本地嵌入模型/原生维度、集合及连接时限。历史目的需配置 history 的回看天数、显式导入数量、整卡大小和材料路径，缺时间范围不生成历史查询。API 和处理入口挂载同一 profile 与受控 key；部署 allowlist 包含实际嵌入/向量主机。配置后失败不静默回退。安装、索引 HTTP、字段及验证范围见[知识交接](../investigation/case-knowledge-handoff.md)，实际部署状态以 [PROGRESS](../../PROGRESS.md) 为准。知识独立集合不替代既有情报和组织记忆集合。
+`SOCAI2_KNOWLEDGE_PROFILE` 显式选择 [knowledge-profile.json](../../deploy/local-investigation/knowledge-profile.json)，定义技术解释、取证指导及可选历史案例参考的模板/过滤/限额、本地嵌入模型/原生维度、集合及连接时限。历史目的需配置 history 的回看天数、显式导入数量、整卡大小和材料路径，缺时间范围不生成历史查询。`history.sync_after_adopted_triage` 类型缺省关闭；开启时必填 `history.sync_timeout_seconds`，只影响新提交且采用的 A 分诊，不回填旧 Run，不启消费者。21 r5 实际加载为开启／120 秒，处理连接 KB SELECT/INSERT 已读回；消费者保持关闭。API 和处理入口挂载同一 profile 与受控 key；部署 allowlist 包含实际嵌入/向量主机。配置后失败不静默回退。安装、索引 HTTP、字段及验证范围见[知识交接](../investigation/case-knowledge-handoff.md)，实际部署状态以 [PROGRESS](../../PROGRESS.md) 为准。知识独立集合不替代既有情报和组织记忆集合。

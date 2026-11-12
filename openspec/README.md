@@ -6,6 +6,8 @@
 
 [按目标的 Case 知识与 4177](changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)及[历史告警知识与模型消费](changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)均已完成限定功能、独审、发布读回和归档；历史知识已完成 Git／父项目同步。后续 [refine-purpose-aware-knowledge-use](changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已完成用途／条件筛选、模型去重／任务选择及显式历史版本更新，经一次本地直接流程和独审后发布 `v1.2-20261112-r3`，实际配置、知识写读及 4177 已核验并归档，封后状态见任务和审计。模型质量 NOT_PASSED、产品页面 P01–P04及自动处理继续保留；只做最少直接验证，不新增权限专项或复杂可用性测试。
 
+[sync-saved-alert-knowledge](changes/archive/2026-11-12-sync-saved-alert-knowledge/tasks.md)已完成新采用 A 分诊提交后同步、本地一次直接流程、独审及 21 r5 实际加载读回；知识回执独立，旧请求不重派。生产未新增分析 Run，消费者保持关闭；发布审计及归档已完成，主调查完成数不变。
+
 ## 文档职责
 
 | 内容 | 维护位置 |

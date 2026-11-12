@@ -1,0 +1,1023 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>告警 · Process start observed</title><style>
+*{box-sizing:border-box}html{color-scheme:light}body{margin:0;color:#17372e;background:white;
+font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1000px;margin:auto;padding:24px clamp(12px,3vw,32px)}
+h1{line-height:1.25;font-size:clamp(22px,4vw,32px);margin:.2em 0}h2{font-size:20px;margin:0 0 10px}
+h3{font-size:16px;margin:16px 0 4px}h4{margin:.7em 0 .2em}section{border-top:1px solid #d9e5dd;margin-top:22px;padding-top:16px}
+p{margin:.4em 0}.quiet,dt{color:#50645d}.missing{color:#8a5423}a{color:#0a6652;text-underline-offset:3px}
+summary{cursor:pointer;padding:.25em 0;color:#184e3f}details{margin:.28em 0;overflow-wrap:anywhere}
+details[open]>summary{font-weight:650}details.run,details.step{border:1px solid #d6e2da;padding:7px 12px;border-radius:5px}
+details.run{margin:8px 0}details.step{margin:6px 0;background:#fcfdfc}code{font-size:.85em;color:#315c4e}
+dl{display:grid;grid-template-columns:minmax(6em,10em) minmax(0,1fr);gap:2px 10px;margin:.4em 0 1em}
+dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}pre{background:#f2f6f3;border-radius:4px;padding:10px;
+white-space:pre-wrap;overflow-wrap:anywhere;max-height:32em;overflow:auto;font:12px/1.55 Consolas,monospace}
+.record:target{outline:2px solid #439079;outline-offset:1px}.record{padding:2px 6px}
+.files-head,.subject-links,.recent-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 14px}
+.files-head{justify-content:space-between}.files-head h2{margin:0}.recent-line{padding:4px 0}
+.recent-line time,.subject-links{font-size:13px;color:#50645d}
+.recent-line time{font-variant-numeric:tabular-nums}.recent-line a,.subject-links a{overflow-wrap:anywhere}
+details.run:target,details.step:target{outline:2px solid #39836f;outline-offset:2px}
+.source-note{margin-top:.85em}.flow-modules{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0}
+.flow-modules button,.flow-choice select{font:inherit;color:#23473d;background:white;border:1px solid #a4b8ad;border-radius:5px;padding:5px 9px}
+.flow-modules button{cursor:pointer}.flow-modules button[aria-pressed=true]{background:#234f42;color:white;border-color:#234f42}
+.flow-choice{color:#425a51;font-size:13px}.flow-choice select{max-width:100%;font-size:13px;padding:3px}
+.flow-legend{display:flex;gap:6px 13px;flex-wrap:wrap;color:#43564f;font-size:12px;margin:10px 0}
+.flow-legend span::before{content:"";display:inline-block;width:.72em;height:.72em;background:var(--fill);border:1px solid var(--stroke);border-radius:2px;margin-right:4px}
+.is-success{--fill:#def3e7;--stroke:#77b492;--ink:#17472e}
+.is-failed{--fill:#fbe1df;--stroke:#cf8986;--ink:#792b29}
+.is-unknown,.is-active{--fill:#fff1d6;--stroke:#c7a563;--ink:#674911}
+.is-idle{--fill:#fff;--stroke:#c8d2ce;--ink:#55635b}
+.flow-lanes{list-style:none;margin:0;padding:0;--spine:#afc6ba}
+.flow-lane{position:relative;display:grid;grid-template-columns:minmax(135px,36%) minmax(0,1fr);align-items:center;padding:5px 0;gap:16px}
+.flow-lane:not(:last-child)::after{content:"";position:absolute;left:18%;width:2px;top:50%;bottom:-50%;background:var(--spine);pointer-events:none}
+.flow-main,.flow-branches{z-index:1;display:flex;flex-wrap:wrap;gap:4px}.flow-main{flex-direction:column}
+.flow-branches{position:relative;padding:3px 0 3px 9px;border-left:1px solid var(--spine)}
+.flow-deep-actions{display:flex;flex:1 1 100%;flex-wrap:wrap;gap:4px}
+.flow-branches::before{content:"";position:absolute;left:-17px;top:50%;width:16px;height:1px;background:var(--spine)}
+.flow-node{display:inline-block;max-width:100%;padding:4px 8px;border:1px solid var(--stroke);border-radius:5px;background:var(--fill);color:var(--ink);font-size:13px;line-height:1.5;overflow-wrap:anywhere;text-decoration:none}
+.flow-main .flow-node{padding:6px 8px}.flow-node:is(.is-failed,.is-success,.is-active,.is-unknown){font-weight:650}
+a.flow-node:hover,a.flow-node:focus-visible{text-decoration:underline;outline:2px solid var(--ink);outline-offset:1px}
+[hidden]{display:none!important}.flow-panel{margin:8px 0 0}.flow-panel:focus-visible{outline:2px solid #396e60}
+@media(max-width:520px){.flow-lane{grid-template-columns:minmax(95px,37%) minmax(0,1fr);gap:10px}.flow-node{font-size:12px;padding:3px 5px}.flow-branches{padding-left:6px}.flow-branches::before{left:-11px;width:10px}}
+@media(max-width:440px){main{padding:13px 9px}dl{grid-template-columns:5.5em minmax(0,1fr)}details.run,details.step{padding:5px 7px}}
+</style></head><body><main><header><p class="quiet">告警 · knowledge-sync-20261112-01 / A01</p><h1>Process start observed</h1></header><dl><dt>告警 ID</dt><dd>33e34ce6-6419-5505-a9ac-f0e63f03813a</dd><dt>来源系统 ID</dt><dd>未记录</dd><dt>处理状态</dt><dd>new</dd><dt>严重性</dt><dd>medium</dd><dt>类别</dt><dd>未记录</dd><dt>发生时间（北京）</dt><dd>2026-11-07 14:38:47</dd></dl><p></p><section><h2>当前已发布分诊</h2><dl><dt>判断</dt><dd>needs_review</dd><dt>理由</dt><dd>同步接线验证用模板判断；记录进程启动，业务合理性尚未核实。</dd><dt>来源执行 ID</dt><dd>13bc7764-3ce8-597a-9b3c-fa91e49a9c14</dd></dl></section><section><h2>所属事件</h2><p>此快照没有成员关系。</p></section><section><h2>执行记录</h2><h3>2026-11-12 10:49:23.08553 · 已完成</h3><dl><dt>执行 ID</dt><dd>13bc7764-3ce8-597a-9b3c-fa91e49a9c14</dd><dt>交付状态</dt><dd>完整交付</dd><dt>停止原因</dt><dd>stage_output_saved</dd></dl><ol></ol><p>此轮没有记录步骤。</p></section><section><h2>数据库原始记录</h2><details><summary>告警基本信息 · alerts（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;source_namespace&quot;: &quot;knowledge-sync-20261112-01&quot;,
+    &quot;source_alert_id&quot;: null,
+    &quot;vendor_alert_id&quot;: null,
+    &quot;connector_id&quot;: null,
+    &quot;connector_type&quot;: null,
+    &quot;original_vendor&quot;: &quot;LabTelemetry&quot;,
+    &quot;source_identity_key&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;title&quot;: &quot;Process start observed&quot;,
+    &quot;description&quot;: null,
+    &quot;category&quot;: null,
+    &quot;severity&quot;: &quot;medium&quot;,
+    &quot;severity_raw&quot;: null,
+    &quot;event_time&quot;: &quot;2026-11-07 06:38:47+00:00&quot;,
+    &quot;event_time_source&quot;: &quot;source&quot;,
+    &quot;first_seen_at&quot;: null,
+    &quot;last_seen_at&quot;: null,
+    &quot;ingested_at&quot;: &quot;2026-11-12 02:49:23.035971+00:00&quot;,
+    &quot;source_updated_at&quot;: &quot;2026-11-12 02:49:23.035971+00:00&quot;,
+    &quot;business_updated_at&quot;: &quot;2026-11-12 02:49:23.097893+00:00&quot;,
+    &quot;handling_status&quot;: &quot;new&quot;,
+    &quot;disposition&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;closed_at&quot;: null,
+    &quot;closed_by&quot;: null,
+    &quot;reopened_at&quot;: null,
+    &quot;latest_material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+    &quot;latest_triage_id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;,
+    &quot;latest_feedback_id&quot;: null,
+    &quot;row_version&quot;: 2,
+    &quot;latest_explanation_id&quot;: &quot;bcdbf731-4cf9-5004-90ea-a8f0c534a805&quot;
+  }
+]</pre></details><details><summary>各版告警材料 · alert_materials（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;revision&quot;: 1,
+    &quot;received_at&quot;: &quot;2026-11-12 02:49:23.035971+00:00&quot;,
+    &quot;source_version&quot;: null,
+    &quot;raw_text&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+    &quot;raw_json&quot;: {
+      &quot;id&quot;: &quot;f8513c4d-5f58-55d2-bda1-983f60b83bb0&quot;,
+      &quot;url&quot;: null,
+      &quot;tags&quot;: [
+        &quot;synthetic&quot;,
+        &quot;production-multialert-20261107-01&quot;
+      ],
+      &quot;title&quot;: &quot;Process start observed&quot;,
+      &quot;domain&quot;: null,
+      &quot;dst_ip&quot;: null,
+      &quot;source&quot;: &quot;socai2-flow-acceptance&quot;,
+      &quot;src_ip&quot;: null,
+      &quot;status&quot;: &quot;new&quot;,
+      &quot;rule_id&quot;: null,
+      &quot;hostname&quot;: &quot;socai2-flow-20261107-01&quot;,
+      &quot;severity&quot;: &quot;medium&quot;,
+      &quot;username&quot;: &quot;flow-observer&quot;,
+      &quot;file_hash&quot;: null,
+      &quot;raw_event&quot;: {
+        &quot;event_id&quot;: &quot;da81fda2-5305-474d-87af-391360e19eed&quot;,
+        &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+        &quot;ocsf_event&quot;: {
+          &quot;time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+          &quot;actor&quot;: {
+            &quot;user&quot;: {
+              &quot;name&quot;: &quot;flow-observer&quot;
+            }
+          },
+          &quot;device&quot;: {
+            &quot;name&quot;: &quot;socai2-flow-20261107-01&quot;
+          },
+          &quot;process&quot;: {
+            &quot;name&quot;: &quot;powershell.exe&quot;,
+            &quot;cmd_line&quot;: &quot;powershell.exe -NoProfile -Command Get-LocalUser&quot;
+          },
+          &quot;activity&quot;: {
+            &quot;action&quot;: &quot;process_start&quot;,
+            &quot;outcome&quot;: &quot;success&quot;
+          },
+          &quot;raw_data&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+          &quot;class_uid&quot;: 1007
+        },
+        &quot;connector_type&quot;: &quot;validation&quot;,
+        &quot;schema_version&quot;: &quot;v1&quot;,
+        &quot;original_vendor&quot;: &quot;LabTelemetry&quot;
+      },
+      &quot;rule_name&quot;: null,
+      &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+      &quot;created_at&quot;: &quot;2026-11-07T06:38:47Z&quot;,
+      &quot;event_time&quot;: &quot;2026-11-07T06:38:47Z&quot;,
+      &quot;risk_score&quot;: null,
+      &quot;description&quot;: &quot;&quot;,
+      &quot;external_id&quot;: null,
+      &quot;connector_id&quot;: null,
+      &quot;mitre_tactics&quot;: [],
+      &quot;connector_type&quot;: &quot;validation&quot;,
+      &quot;field_metadata&quot;: {},
+      &quot;ocsf_class_uid&quot;: 1007,
+      &quot;identity_origin&quot;: null,
+      &quot;source_alert_id&quot;: &quot;8657ba9c-f6dd-4853-9733-633964da64a9&quot;,
+      &quot;identity_version&quot;: &quot;source-v1&quot;,
+      &quot;mitre_techniques&quot;: [],
+      &quot;source_event_ids&quot;: [
+        &quot;da81fda2-5305-474d-87af-391360e19eed&quot;,
+        &quot;8657ba9c-f6dd-4853-9733-633964da64a9&quot;
+      ],
+      &quot;identity_event_id&quot;: null
+    },
+    &quot;ocsf_json&quot;: {
+      &quot;time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+      &quot;actor&quot;: {
+        &quot;user&quot;: {
+          &quot;name&quot;: &quot;flow-observer&quot;
+        }
+      },
+      &quot;device&quot;: {
+        &quot;name&quot;: &quot;socai2-flow-20261107-01&quot;
+      },
+      &quot;process&quot;: {
+        &quot;name&quot;: &quot;powershell.exe&quot;,
+        &quot;cmd_line&quot;: &quot;powershell.exe -NoProfile -Command Get-LocalUser&quot;
+      },
+      &quot;activity&quot;: {
+        &quot;action&quot;: &quot;process_start&quot;,
+        &quot;outcome&quot;: &quot;success&quot;
+      },
+      &quot;raw_data&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+      &quot;class_uid&quot;: 1007
+    },
+    &quot;detection&quot;: {
+      &quot;rule_id&quot;: null,
+      &quot;tactics&quot;: [],
+      &quot;rule_name&quot;: null,
+      &quot;techniques&quot;: [],
+      &quot;score_source&quot;: &quot;fusion&quot;,
+      &quot;ocsf_class_uid&quot;: 1007,
+      &quot;labels_provided&quot;: false,
+      &quot;confidence_label&quot;: null,
+      &quot;confidence_state&quot;: &quot;not_computed&quot;,
+      &quot;confidence_value&quot;: null,
+      &quot;confidence_rationale&quot;: null
+    },
+    &quot;enrichment&quot;: {
+      &quot;items&quot;: [
+        {
+          &quot;kind&quot;: &quot;first_fusion_result_reference&quot;,
+          &quot;value&quot;: {
+            &quot;artifact_id&quot;: &quot;adabdb03-71cf-5aab-8792-73dc65cd6f4e&quot;,
+            &quot;same_material_input&quot;: true
+          },
+          &quot;source&quot;: &quot;fusion&quot;,
+          &quot;source_path&quot;: &quot;$.fused&quot;,
+          &quot;collected_at&quot;: null
+        },
+        {
+          &quot;kind&quot;: &quot;fusion_session&quot;,
+          &quot;value&quot;: {
+            &quot;session_id&quot;: null,
+            &quot;session_key_kind&quot;: null,
+            &quot;originating_human&quot;: null
+          },
+          &quot;source&quot;: &quot;fusion&quot;,
+          &quot;source_path&quot;: &quot;$.fused&quot;,
+          &quot;collected_at&quot;: null
+        }
+      ],
+      &quot;schema_version&quot;: &quot;socai2.fusion-material.v1&quot;
+    },
+    &quot;source_scope&quot;: {
+      &quot;kind&quot;: &quot;explicit_sources&quot;,
+      &quot;complete&quot;: true,
+      &quot;truncated&quot;: false,
+      &quot;window_end&quot;: null,
+      &quot;window_start&quot;: null,
+      &quot;received_count&quot;: 2,
+      &quot;retained_count&quot;: 2,
+      &quot;omission_reason&quot;: null
+    },
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;sha256&quot;: null,
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062&quot;,
+      &quot;retained_sha256&quot;: &quot;f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062&quot;,
+      &quot;original_size_bytes&quot;: 3651,
+      &quot;retained_size_bytes&quot;: 3651
+    }
+  }
+]</pre></details><details><summary>来源引用 · alert_source_refs（0 条）</summary><pre>[]</pre></details><details><summary>关联对象 · alert_objects（2 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;a485bdab-81dc-55f0-aadb-fc851046a324&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+    &quot;object_key&quot;: &quot;[\&quot;host\&quot;,\&quot;socai2-flow-20261107-01\&quot;]&quot;,
+    &quot;object_type&quot;: &quot;host&quot;,
+    &quot;source_type&quot;: null,
+    &quot;object_role&quot;: &quot;entity&quot;,
+    &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+    &quot;raw_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+    &quot;normalized_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+    &quot;source_path&quot;: &quot;$.raw_json.hostname&quot;,
+    &quot;attributes&quot;: {
+      &quot;original_path&quot;: null,
+      &quot;received_field&quot;: &quot;hostname&quot;
+    },
+    &quot;asset_match_state&quot;: &quot;not_checked&quot;,
+    &quot;asset_ref&quot;: null,
+    &quot;match_basis&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;41ca8262-172a-5351-a8cc-667d602ff528&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+    &quot;object_key&quot;: &quot;[\&quot;user\&quot;,\&quot;flow-observer\&quot;]&quot;,
+    &quot;object_type&quot;: &quot;user&quot;,
+    &quot;source_type&quot;: null,
+    &quot;object_role&quot;: &quot;entity&quot;,
+    &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+    &quot;raw_value&quot;: &quot;flow-observer&quot;,
+    &quot;normalized_value&quot;: &quot;flow-observer&quot;,
+    &quot;source_path&quot;: &quot;$.raw_json.username&quot;,
+    &quot;attributes&quot;: {
+      &quot;original_path&quot;: null,
+      &quot;received_field&quot;: &quot;username&quot;
+    },
+    &quot;asset_match_state&quot;: &quot;not_checked&quot;,
+    &quot;asset_ref&quot;: null,
+    &quot;match_basis&quot;: null
+  }
+]</pre></details><details><summary>分诊与人工反馈 · alert_assessments（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;kind&quot;: &quot;triage&quot;,
+    &quot;input_material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+    &quot;source_run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;legacy_execution_ref&quot;: null,
+    &quot;verdict&quot;: &quot;needs_review&quot;,
+    &quot;rationale&quot;: &quot;同步接线验证用模板判断；记录进程启动，业务合理性尚未核实。&quot;,
+    &quot;confidence&quot;: null,
+    &quot;score_state&quot;: &quot;not_computed&quot;,
+    &quot;recommendations&quot;: [],
+    &quot;producer&quot;: &quot;knowledge-sync-validation-fixture.v1&quot;,
+    &quot;actor&quot;: {
+      &quot;type&quot;: &quot;service&quot;,
+      &quot;user_id&quot;: null,
+      &quot;service_name&quot;: &quot;knowledge-sync-validation-fixture.v1&quot;,
+      &quot;name_snapshot&quot;: null,
+      &quot;service_version&quot;: &quot;socai2.stage-result.v1&quot;
+    },
+    &quot;assessed_at&quot;: &quot;2026-11-12 02:49:23.097893+00:00&quot;,
+    &quot;operation_key&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;
+  }
+]</pre></details><details><summary>事件成员关系 · incident_alerts（0 条）</summary><pre>[]</pre></details><details><summary>Case 成员关系 · case_alerts（0 条）</summary><pre>[]</pre></details><details><summary>执行轮次 · runs（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;kind&quot;: &quot;alert_basic&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;title&quot;: &quot;告警基本分析&quot;,
+    &quot;purpose&quot;: &quot;source-scoped analysis&quot;,
+    &quot;trigger&quot;: &quot;refresh&quot;,
+    &quot;scope_revision&quot;: null,
+    &quot;scope_updated_at&quot;: null,
+    &quot;scope_kind&quot;: null,
+    &quot;window_start&quot;: null,
+    &quot;window_end&quot;: null,
+    &quot;state&quot;: &quot;completed&quot;,
+    &quot;operation_key&quot;: &quot;2dd4574e-c3ea-5379-92c1-7e5446b22f8c&quot;,
+    &quot;request_hash&quot;: &quot;681640867172f860bb4dddd6be4bace6408651af4dd0b5dcc1aa1239e6edbe35&quot;,
+    &quot;retry_of_run_id&quot;: null,
+    &quot;comparison_result_id&quot;: null,
+    &quot;input_artifact_id&quot;: &quot;cc0bc0f8-f4e3-450e-ab80-e8b8b96d2776&quot;,
+    &quot;executor_version&quot;: &quot;knowledge-sync-validation-fixture.v1&quot;,
+    &quot;requested_at&quot;: &quot;2026-11-12 02:49:23.085530+00:00&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: &quot;2026-11-12 02:49:23.085530+00:00&quot;,
+    &quot;ended_at&quot;: &quot;2026-11-12 02:49:23.097893+00:00&quot;,
+    &quot;stop_reason&quot;: &quot;stage_output_saved&quot;,
+    &quot;stop_detail&quot;: null,
+    &quot;delivery_state&quot;: &quot;complete&quot;,
+    &quot;limits&quot;: {
+      &quot;max_tokens&quot;: 0,
+      &quot;deadline_at&quot;: null,
+      &quot;max_tool_calls&quot;: 0,
+      &quot;policy_version&quot;: &quot;synthetic.storage-only&quot;,
+      &quot;max_model_calls&quot;: 0,
+      &quot;max_rows_per_query&quot;: 0
+    },
+    &quot;row_version&quot;: 2
+  }
+]</pre></details><details><summary>执行步骤 · run_steps（0 条）</summary><pre>[]</pre></details><details><summary>输入、输出和工件 · artifacts（5 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;09f3bb2e-4f58-5f35-9889-777f8bf7818e&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;step_id&quot;: null,
+    &quot;kind&quot;: &quot;source_snapshot&quot;,
+    &quot;schema_version&quot;: &quot;socai2.stage-result.v1&quot;,
+    &quot;content_json&quot;: {
+      &quot;output&quot;: {
+        &quot;verdict&quot;: &quot;needs_review&quot;,
+        &quot;rationale&quot;: &quot;同步接线验证用模板判断；记录进程启动，业务合理性尚未核实。&quot;,
+        &quot;confidence&quot;: null,
+        &quot;explanation&quot;: &quot;明确的合成存储输入；没有执行分析模型，不代表独立真值。&quot;,
+        &quot;limitations&quot;: [
+          &quot;Synthetic stored judgment for the post-commit synchronization path; no analysis model or independent truth.&quot;,
+          &quot;New local Alert/Run; recorded C02 material copied unchanged. Existing records retained.&quot;,
+          &quot;Real isolated local PostgreSQL and Qdrant; real existing embedding service via SSH. Historical retrieval is a read-only probe, not a Case Run.&quot;,
+          &quot;Original HTTP GET routes with local authentication adapter and explicit developer DB role; no production-role claim.&quot;
+        ],
+        &quot;score_state&quot;: &quot;not_computed&quot;,
+        &quot;source_refs&quot;: [
+          {
+            &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+            &quot;role&quot;: &quot;observation&quot;,
+            &quot;type&quot;: &quot;alert_material&quot;,
+            &quot;external&quot;: null,
+            &quot;row_keys&quot;: [],
+            &quot;source_path&quot;: &quot;$.ocsf_json.process.name&quot;
+          }
+        ],
+        &quot;recommendations&quot;: [],
+        &quot;generation_method&quot;: &quot;template&quot;
+      },
+      &quot;outcome&quot;: {
+        &quot;reason&quot;: &quot;current&quot;,
+        &quot;adopted&quot;: true,
+        &quot;result_id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;
+      },
+      &quot;output_hash&quot;: &quot;bb2e49300656dcd4bc2b3fcf1e050317752f703d48ee9ccd6d71f40d9adff32a&quot;
+    },
+    &quot;content_text&quot;: null,
+    &quot;blob_ref&quot;: null,
+    &quot;mime_type&quot;: &quot;application/json&quot;,
+    &quot;file_name&quot;: null,
+    &quot;sha256&quot;: &quot;7f06f49b363513a77c125c7a63e031be8df61a092fff000623d40cf73e0e3955&quot;,
+    &quot;size_bytes&quot;: 1172,
+    &quot;captured_at&quot;: &quot;2026-11-12 02:49:23.097893+00:00&quot;,
+    &quot;event_time&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;source_refs&quot;: [
+      {
+        &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+        &quot;role&quot;: &quot;observation&quot;,
+        &quot;type&quot;: &quot;alert_material&quot;,
+        &quot;external&quot;: null,
+        &quot;row_keys&quot;: [],
+        &quot;source_path&quot;: &quot;$.ocsf_json.process.name&quot;
+      }
+    ],
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;7f06f49b363513a77c125c7a63e031be8df61a092fff000623d40cf73e0e3955&quot;,
+      &quot;retained_sha256&quot;: &quot;7f06f49b363513a77c125c7a63e031be8df61a092fff000623d40cf73e0e3955&quot;,
+      &quot;original_size_bytes&quot;: 1172,
+      &quot;retained_size_bytes&quot;: 1172
+    },
+    &quot;created_by&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;2f80d0a9-2d56-59f2-bb90-f6587ac4de15&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;step_id&quot;: null,
+    &quot;kind&quot;: &quot;source_snapshot&quot;,
+    &quot;schema_version&quot;: &quot;socai2.history-sync.v1&quot;,
+    &quot;content_json&quot;: {
+      &quot;calls&quot;: [],
+      &quot;phase&quot;: &quot;intent&quot;,
+      &quot;state&quot;: &quot;started&quot;,
+      &quot;reason&quot;: null,
+      &quot;source&quot;: null,
+      &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+      &quot;triage_id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;,
+      &quot;document_id&quot;: null,
+      &quot;index_state&quot;: &quot;not_attempted&quot;,
+      &quot;storage_state&quot;: &quot;not_attempted&quot;,
+      &quot;content_sha256&quot;: null,
+      &quot;profile_sha256&quot;: &quot;712791a76a024a96f4d6ad69f3b36b56fa7070d025536c0f1996711e670cf047&quot;,
+      &quot;schema_version&quot;: &quot;socai2.history-sync.v1&quot;,
+      &quot;source_current&quot;: null,
+      &quot;trigger_run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;
+    },
+    &quot;content_text&quot;: null,
+    &quot;blob_ref&quot;: null,
+    &quot;mime_type&quot;: &quot;application/json&quot;,
+    &quot;file_name&quot;: null,
+    &quot;sha256&quot;: &quot;99591e52c7a95867a4a02b7f32a145859af552862ff5237fbceb5b0df270c18e&quot;,
+    &quot;size_bytes&quot;: 483,
+    &quot;captured_at&quot;: &quot;2026-11-12 02:49:23.110965+00:00&quot;,
+    &quot;event_time&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;source_refs&quot;: [
+      {
+        &quot;id&quot;: &quot;09f3bb2e-4f58-5f35-9889-777f8bf7818e&quot;,
+        &quot;role&quot;: &quot;execution_receipt&quot;,
+        &quot;type&quot;: &quot;artifact&quot;,
+        &quot;external&quot;: null,
+        &quot;row_keys&quot;: [],
+        &quot;source_path&quot;: null
+      }
+    ],
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;99591e52c7a95867a4a02b7f32a145859af552862ff5237fbceb5b0df270c18e&quot;,
+      &quot;retained_sha256&quot;: &quot;99591e52c7a95867a4a02b7f32a145859af552862ff5237fbceb5b0df270c18e&quot;,
+      &quot;original_size_bytes&quot;: 483,
+      &quot;retained_size_bytes&quot;: 483
+    },
+    &quot;created_by&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;705f7326-f4f4-55d7-8bda-2b7468c0ddc3&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;step_id&quot;: null,
+    &quot;kind&quot;: &quot;source_snapshot&quot;,
+    &quot;schema_version&quot;: &quot;socai2.history-sync.v1&quot;,
+    &quot;content_json&quot;: {
+      &quot;calls&quot;: [
+        {
+          &quot;path&quot;: &quot;/collections/socai2_knowledge_sync_20261112&quot;,
+          &quot;state&quot;: &quot;absent&quot;,
+          &quot;method&quot;: &quot;GET&quot;,
+          &quot;backend&quot;: &quot;vector&quot;,
+          &quot;http_status&quot;: 404,
+          &quot;elapsed_seconds&quot;: 0.1232
+        },
+        {
+          &quot;path&quot;: &quot;/collections/socai2_knowledge_sync_20261112&quot;,
+          &quot;state&quot;: &quot;completed&quot;,
+          &quot;method&quot;: &quot;PUT&quot;,
+          &quot;backend&quot;: &quot;vector&quot;,
+          &quot;http_status&quot;: 200,
+          &quot;elapsed_seconds&quot;: 0.3166
+        },
+        {
+          &quot;path&quot;: &quot;&quot;,
+          &quot;model&quot;: &quot;qwen3-embedding:0.6b&quot;,
+          &quot;state&quot;: &quot;completed&quot;,
+          &quot;method&quot;: &quot;POST&quot;,
+          &quot;backend&quot;: &quot;embedding&quot;,
+          &quot;dimension&quot;: 1024,
+          &quot;http_status&quot;: 200,
+          &quot;input_count&quot;: 1,
+          &quot;input_sha256&quot;: [
+            &quot;747356a1e22d22ef3b6bbb3247f9817445a94b9e805a44d14ae2269a1dcec80b&quot;
+          ],
+          &quot;prompt_tokens&quot;: 884,
+          &quot;vector_sha256&quot;: [
+            &quot;bebbfcdb47b56be0a7a105a542c417f55641cf5490f2d330963b2648133c942a&quot;
+          ],
+          &quot;elapsed_seconds&quot;: 8.199
+        },
+        {
+          &quot;path&quot;: &quot;/collections/socai2_knowledge_sync_20261112/points?wait=true&quot;,
+          &quot;state&quot;: &quot;completed&quot;,
+          &quot;method&quot;: &quot;PUT&quot;,
+          &quot;backend&quot;: &quot;vector&quot;,
+          &quot;http_status&quot;: 200,
+          &quot;elapsed_seconds&quot;: 0.1512
+        }
+      ],
+      &quot;phase&quot;: &quot;result&quot;,
+      &quot;state&quot;: &quot;completed&quot;,
+      &quot;reason&quot;: null,
+      &quot;source&quot;: {
+        &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+        &quot;triage_id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;,
+        &quot;feedback_id&quot;: null,
+        &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+        &quot;material_sha256&quot;: null,
+        &quot;material_revision&quot;: 1
+      },
+      &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+      &quot;triage_id&quot;: &quot;6150ca41-2e3a-5359-b178-f803b214fefd&quot;,
+      &quot;document_id&quot;: &quot;a3c8e5ce-6005-53a5-9343-220bd6c9d297&quot;,
+      &quot;index_state&quot;: &quot;completed&quot;,
+      &quot;storage_state&quot;: &quot;stored&quot;,
+      &quot;content_sha256&quot;: &quot;6bcfe5edaf609765187340effe1804a2d639b607d299dfa051db9485dd2552ff&quot;,
+      &quot;profile_sha256&quot;: &quot;712791a76a024a96f4d6ad69f3b36b56fa7070d025536c0f1996711e670cf047&quot;,
+      &quot;schema_version&quot;: &quot;socai2.history-sync.v1&quot;,
+      &quot;source_current&quot;: true,
+      &quot;trigger_run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;
+    },
+    &quot;content_text&quot;: null,
+    &quot;blob_ref&quot;: null,
+    &quot;mime_type&quot;: &quot;application/json&quot;,
+    &quot;file_name&quot;: null,
+    &quot;sha256&quot;: &quot;a3a6268896509cdba669a07ff3310d12874a5fad9fed9ce3c8a700a90200b7d2&quot;,
+    &quot;size_bytes&quot;: 1619,
+    &quot;captured_at&quot;: &quot;2026-11-12 02:49:31.939211+00:00&quot;,
+    &quot;event_time&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;source_refs&quot;: [
+      {
+        &quot;id&quot;: &quot;09f3bb2e-4f58-5f35-9889-777f8bf7818e&quot;,
+        &quot;role&quot;: &quot;execution_receipt&quot;,
+        &quot;type&quot;: &quot;artifact&quot;,
+        &quot;external&quot;: null,
+        &quot;row_keys&quot;: [],
+        &quot;source_path&quot;: null
+      }
+    ],
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;a3a6268896509cdba669a07ff3310d12874a5fad9fed9ce3c8a700a90200b7d2&quot;,
+      &quot;retained_sha256&quot;: &quot;a3a6268896509cdba669a07ff3310d12874a5fad9fed9ce3c8a700a90200b7d2&quot;,
+      &quot;original_size_bytes&quot;: 1619,
+      &quot;retained_size_bytes&quot;: 1619
+    },
+    &quot;created_by&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;bcdbf731-4cf9-5004-90ea-a8f0c534a805&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;step_id&quot;: null,
+    &quot;kind&quot;: &quot;alert_explanation&quot;,
+    &quot;schema_version&quot;: &quot;socai2.stage-result.v1&quot;,
+    &quot;content_json&quot;: {
+      &quot;body&quot;: &quot;明确的合成存储输入；没有执行分析模型，不代表独立真值。&quot;,
+      &quot;limitations&quot;: [
+        &quot;Synthetic stored judgment for the post-commit synchronization path; no analysis model or independent truth.&quot;,
+        &quot;New local Alert/Run; recorded C02 material copied unchanged. Existing records retained.&quot;,
+        &quot;Real isolated local PostgreSQL and Qdrant; real existing embedding service via SSH. Historical retrieval is a read-only probe, not a Case Run.&quot;,
+        &quot;Original HTTP GET routes with local authentication adapter and explicit developer DB role; no production-role claim.&quot;
+      ],
+      &quot;source_refs&quot;: [
+        {
+          &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+          &quot;role&quot;: &quot;observation&quot;,
+          &quot;type&quot;: &quot;alert_material&quot;,
+          &quot;external&quot;: null,
+          &quot;row_keys&quot;: [],
+          &quot;source_path&quot;: &quot;$.ocsf_json.process.name&quot;
+        }
+      ],
+      &quot;generated_at&quot;: &quot;2026-11-12T02:49:23.097893+00:00&quot;,
+      &quot;program_facts&quot;: {
+        &quot;members&quot;: [
+          {
+            &quot;alert&quot;: {
+              &quot;id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+              &quot;title&quot;: &quot;Process start observed&quot;,
+              &quot;severity&quot;: &quot;medium&quot;,
+              &quot;event_time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+              &quot;ingested_at&quot;: &quot;2026-11-12T02:49:23.035971+00:00&quot;,
+              &quot;original_vendor&quot;: &quot;LabTelemetry&quot;,
+              &quot;source_alert_id&quot;: null,
+              &quot;event_time_source&quot;: &quot;source&quot;
+            },
+            &quot;objects&quot;: [
+              {
+                &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+                &quot;raw_value&quot;: &quot;flow-observer&quot;,
+                &quot;object_role&quot;: &quot;entity&quot;,
+                &quot;object_type&quot;: &quot;user&quot;,
+                &quot;normalized_value&quot;: &quot;flow-observer&quot;,
+                &quot;asset_match_state&quot;: &quot;not_checked&quot;
+              },
+              {
+                &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+                &quot;raw_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+                &quot;object_role&quot;: &quot;entity&quot;,
+                &quot;object_type&quot;: &quot;host&quot;,
+                &quot;normalized_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+                &quot;asset_match_state&quot;: &quot;not_checked&quot;
+              }
+            ],
+            &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+            &quot;alert_source&quot;: {
+              &quot;id&quot;: &quot;cc0bc0f8-f4e3-450e-ab80-e8b8b96d2776&quot;,
+              &quot;role&quot;: &quot;source_label&quot;,
+              &quot;type&quot;: &quot;artifact&quot;,
+              &quot;external&quot;: null,
+              &quot;row_keys&quot;: [],
+              &quot;source_path&quot;: &quot;$.members.0.alert&quot;
+            },
+            &quot;log_severity&quot;: [],
+            &quot;activity_times&quot;: [
+              {
+                &quot;kind&quot;: &quot;activity_time&quot;,
+                &quot;unit&quot;: &quot;iso8601_with_offset&quot;,
+                &quot;value&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+                &quot;source&quot;: {
+                  &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+                  &quot;role&quot;: &quot;observation&quot;,
+                  &quot;type&quot;: &quot;alert_material&quot;,
+                  &quot;external&quot;: null,
+                  &quot;row_keys&quot;: [],
+                  &quot;source_path&quot;: &quot;$.ocsf_json.time&quot;
+                }
+              }
+            ],
+            &quot;objects_source&quot;: {
+              &quot;id&quot;: &quot;cc0bc0f8-f4e3-450e-ab80-e8b8b96d2776&quot;,
+              &quot;role&quot;: &quot;source_label&quot;,
+              &quot;type&quot;: &quot;artifact&quot;,
+              &quot;external&quot;: null,
+              &quot;row_keys&quot;: [],
+              &quot;source_path&quot;: &quot;$.members.0.objects&quot;
+            },
+            &quot;material_source&quot;: {
+              &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+              &quot;role&quot;: &quot;source_label&quot;,
+              &quot;type&quot;: &quot;alert_material&quot;,
+              &quot;external&quot;: null,
+              &quot;row_keys&quot;: [],
+              &quot;source_path&quot;: null
+            },
+            &quot;detection_labels&quot;: {
+              &quot;role&quot;: &quot;source_label&quot;,
+              &quot;entries&quot;: [],
+              &quot;policy_sha256&quot;: &quot;ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130&quot;,
+              &quot;dictionary_version&quot;: &quot;socai2.attack-labels.20261107&quot;,
+              &quot;does_not_establish_observed_attack&quot;: true
+            },
+            &quot;unavailable_fields&quot;: [],
+            &quot;activity_time_state&quot;: &quot;available&quot;,
+            &quot;material_received_at&quot;: &quot;2026-11-12T02:49:23.035971+00:00&quot;
+          }
+        ],
+        &quot;time_rule&quot;: &quot;activity_time != alert.event_time != ingested_at != execution_started_at&quot;,
+        &quot;schema_version&quot;: &quot;socai2.program-facts.v1.2&quot;,
+        &quot;execution_started_at&quot;: &quot;2026-11-12T02:49:23.085530+00:00&quot;
+      },
+      &quot;schema_version&quot;: &quot;socai2.stage-result.v1&quot;,
+      &quot;recommendations&quot;: [],
+      &quot;generation_method&quot;: &quot;template&quot;
+    },
+    &quot;content_text&quot;: null,
+    &quot;blob_ref&quot;: null,
+    &quot;mime_type&quot;: &quot;application/json&quot;,
+    &quot;file_name&quot;: null,
+    &quot;sha256&quot;: &quot;3085eabb73d023b113c72ba7642f1a20da9480f98336da02ea2e57c402cf2e11&quot;,
+    &quot;size_bytes&quot;: 2990,
+    &quot;captured_at&quot;: &quot;2026-11-12 02:49:23.097893+00:00&quot;,
+    &quot;event_time&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;source_refs&quot;: [
+      {
+        &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+        &quot;role&quot;: &quot;observation&quot;,
+        &quot;type&quot;: &quot;alert_material&quot;,
+        &quot;external&quot;: null,
+        &quot;row_keys&quot;: [],
+        &quot;source_path&quot;: &quot;$.ocsf_json.process.name&quot;
+      }
+    ],
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;3085eabb73d023b113c72ba7642f1a20da9480f98336da02ea2e57c402cf2e11&quot;,
+      &quot;retained_sha256&quot;: &quot;3085eabb73d023b113c72ba7642f1a20da9480f98336da02ea2e57c402cf2e11&quot;,
+      &quot;original_size_bytes&quot;: 2990,
+      &quot;retained_size_bytes&quot;: 2990
+    },
+    &quot;created_by&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;cc0bc0f8-f4e3-450e-ab80-e8b8b96d2776&quot;,
+    &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+    &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+    &quot;incident_id&quot;: null,
+    &quot;case_id&quot;: null,
+    &quot;run_id&quot;: &quot;13bc7764-3ce8-597a-9b3c-fa91e49a9c14&quot;,
+    &quot;step_id&quot;: null,
+    &quot;kind&quot;: &quot;input_snapshot&quot;,
+    &quot;schema_version&quot;: &quot;socai2.stage-result.v1&quot;,
+    &quot;content_json&quot;: {
+      &quot;kind&quot;: &quot;alert_basic&quot;,
+      &quot;parent&quot;: null,
+      &quot;members&quot;: [
+        {
+          &quot;alert&quot;: {
+            &quot;id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+            &quot;tags&quot;: [],
+            &quot;title&quot;: &quot;Process start observed&quot;,
+            &quot;category&quot;: null,
+            &quot;owner_id&quot;: null,
+            &quot;severity&quot;: &quot;medium&quot;,
+            &quot;closed_at&quot;: null,
+            &quot;closed_by&quot;: null,
+            &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+            &quot;event_time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+            &quot;assigned_at&quot;: null,
+            &quot;description&quot;: null,
+            &quot;disposition&quot;: null,
+            &quot;ingested_at&quot;: &quot;2026-11-12T02:49:23.035971+00:00&quot;,
+            &quot;reopened_at&quot;: null,
+            &quot;connector_id&quot;: null,
+            &quot;last_seen_at&quot;: null,
+            &quot;severity_raw&quot;: null,
+            &quot;first_seen_at&quot;: null,
+            &quot;connector_type&quot;: null,
+            &quot;priority_basis&quot;: null,
+            &quot;priority_state&quot;: &quot;not_provided&quot;,
+            &quot;priority_value&quot;: null,
+            &quot;handling_status&quot;: &quot;new&quot;,
+            &quot;original_vendor&quot;: &quot;LabTelemetry&quot;,
+            &quot;priority_source&quot;: null,
+            &quot;source_alert_id&quot;: null,
+            &quot;vendor_alert_id&quot;: null,
+            &quot;assignment_state&quot;: &quot;unassigned&quot;,
+            &quot;source_namespace&quot;: &quot;knowledge-sync-20261112-01&quot;,
+            &quot;event_time_source&quot;: &quot;source&quot;,
+            &quot;latest_feedback_id&quot;: null,
+            &quot;latest_material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+            &quot;owner_source_value&quot;: null,
+            &quot;source_identity_key&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;
+          },
+          &quot;triage&quot;: null,
+          &quot;objects&quot;: [
+            {
+              &quot;id&quot;: &quot;41ca8262-172a-5351-a8cc-667d602ff528&quot;,
+              &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+              &quot;asset_ref&quot;: null,
+              &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+              &quot;raw_value&quot;: &quot;flow-observer&quot;,
+              &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+              &quot;attributes&quot;: {
+                &quot;original_path&quot;: null,
+                &quot;received_field&quot;: &quot;username&quot;
+              },
+              &quot;object_key&quot;: &quot;[\&quot;user\&quot;,\&quot;flow-observer\&quot;]&quot;,
+              &quot;match_basis&quot;: null,
+              &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+              &quot;object_role&quot;: &quot;entity&quot;,
+              &quot;object_type&quot;: &quot;user&quot;,
+              &quot;source_path&quot;: &quot;$.raw_json.username&quot;,
+              &quot;source_type&quot;: null,
+              &quot;normalized_value&quot;: &quot;flow-observer&quot;,
+              &quot;asset_match_state&quot;: &quot;not_checked&quot;
+            },
+            {
+              &quot;id&quot;: &quot;a485bdab-81dc-55f0-aadb-fc851046a324&quot;,
+              &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+              &quot;asset_ref&quot;: null,
+              &quot;namespace&quot;: &quot;source:socai2-flow-acceptance&quot;,
+              &quot;raw_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+              &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+              &quot;attributes&quot;: {
+                &quot;original_path&quot;: null,
+                &quot;received_field&quot;: &quot;hostname&quot;
+              },
+              &quot;object_key&quot;: &quot;[\&quot;host\&quot;,\&quot;socai2-flow-20261107-01\&quot;]&quot;,
+              &quot;match_basis&quot;: null,
+              &quot;material_id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+              &quot;object_role&quot;: &quot;entity&quot;,
+              &quot;object_type&quot;: &quot;host&quot;,
+              &quot;source_path&quot;: &quot;$.raw_json.hostname&quot;,
+              &quot;source_type&quot;: null,
+              &quot;normalized_value&quot;: &quot;socai2-flow-20261107-01&quot;,
+              &quot;asset_match_state&quot;: &quot;not_checked&quot;
+            }
+          ],
+          &quot;feedback&quot;: null,
+          &quot;material&quot;: {
+            &quot;id&quot;: &quot;1318f298-1ba7-569c-96ef-d3cc9e28a1be&quot;,
+            &quot;sha256&quot;: null,
+            &quot;alert_id&quot;: &quot;33e34ce6-6419-5505-a9ac-f0e63f03813a&quot;,
+            &quot;raw_json&quot;: {
+              &quot;id&quot;: &quot;f8513c4d-5f58-55d2-bda1-983f60b83bb0&quot;,
+              &quot;url&quot;: null,
+              &quot;tags&quot;: [
+                &quot;synthetic&quot;,
+                &quot;production-multialert-20261107-01&quot;
+              ],
+              &quot;title&quot;: &quot;Process start observed&quot;,
+              &quot;domain&quot;: null,
+              &quot;dst_ip&quot;: null,
+              &quot;source&quot;: &quot;socai2-flow-acceptance&quot;,
+              &quot;src_ip&quot;: null,
+              &quot;status&quot;: &quot;new&quot;,
+              &quot;rule_id&quot;: null,
+              &quot;hostname&quot;: &quot;socai2-flow-20261107-01&quot;,
+              &quot;severity&quot;: &quot;medium&quot;,
+              &quot;username&quot;: &quot;flow-observer&quot;,
+              &quot;file_hash&quot;: null,
+              &quot;raw_event&quot;: {
+                &quot;event_id&quot;: &quot;da81fda2-5305-474d-87af-391360e19eed&quot;,
+                &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+                &quot;ocsf_event&quot;: {
+                  &quot;time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+                  &quot;actor&quot;: {
+                    &quot;user&quot;: {
+                      &quot;name&quot;: &quot;flow-observer&quot;
+                    }
+                  },
+                  &quot;device&quot;: {
+                    &quot;name&quot;: &quot;socai2-flow-20261107-01&quot;
+                  },
+                  &quot;process&quot;: {
+                    &quot;name&quot;: &quot;powershell.exe&quot;,
+                    &quot;cmd_line&quot;: &quot;powershell.exe -NoProfile -Command Get-LocalUser&quot;
+                  },
+                  &quot;activity&quot;: {
+                    &quot;action&quot;: &quot;process_start&quot;,
+                    &quot;outcome&quot;: &quot;success&quot;
+                  },
+                  &quot;raw_data&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+                  &quot;class_uid&quot;: 1007
+                },
+                &quot;connector_type&quot;: &quot;validation&quot;,
+                &quot;schema_version&quot;: &quot;v1&quot;,
+                &quot;original_vendor&quot;: &quot;LabTelemetry&quot;
+              },
+              &quot;rule_name&quot;: null,
+              &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+              &quot;created_at&quot;: &quot;2026-11-07T06:38:47Z&quot;,
+              &quot;event_time&quot;: &quot;2026-11-07T06:38:47Z&quot;,
+              &quot;risk_score&quot;: null,
+              &quot;description&quot;: &quot;&quot;,
+              &quot;external_id&quot;: null,
+              &quot;connector_id&quot;: null,
+              &quot;mitre_tactics&quot;: [],
+              &quot;connector_type&quot;: &quot;validation&quot;,
+              &quot;field_metadata&quot;: {},
+              &quot;ocsf_class_uid&quot;: 1007,
+              &quot;identity_origin&quot;: null,
+              &quot;source_alert_id&quot;: &quot;8657ba9c-f6dd-4853-9733-633964da64a9&quot;,
+              &quot;identity_version&quot;: &quot;source-v1&quot;,
+              &quot;mitre_techniques&quot;: [],
+              &quot;source_event_ids&quot;: [
+                &quot;da81fda2-5305-474d-87af-391360e19eed&quot;,
+                &quot;8657ba9c-f6dd-4853-9733-633964da64a9&quot;
+              ],
+              &quot;identity_event_id&quot;: null
+            },
+            &quot;raw_text&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+            &quot;revision&quot;: 1,
+            &quot;detection&quot;: {
+              &quot;rule_id&quot;: null,
+              &quot;tactics&quot;: [],
+              &quot;rule_name&quot;: null,
+              &quot;techniques&quot;: [],
+              &quot;score_source&quot;: &quot;fusion&quot;,
+              &quot;ocsf_class_uid&quot;: 1007,
+              &quot;labels_provided&quot;: false,
+              &quot;confidence_label&quot;: null,
+              &quot;confidence_state&quot;: &quot;not_computed&quot;,
+              &quot;confidence_value&quot;: null,
+              &quot;confidence_rationale&quot;: null
+            },
+            &quot;ocsf_json&quot;: {
+              &quot;time&quot;: &quot;2026-11-07T06:38:47+00:00&quot;,
+              &quot;actor&quot;: {
+                &quot;user&quot;: {
+                  &quot;name&quot;: &quot;flow-observer&quot;
+                }
+              },
+              &quot;device&quot;: {
+                &quot;name&quot;: &quot;socai2-flow-20261107-01&quot;
+              },
+              &quot;process&quot;: {
+                &quot;name&quot;: &quot;powershell.exe&quot;,
+                &quot;cmd_line&quot;: &quot;powershell.exe -NoProfile -Command Get-LocalUser&quot;
+              },
+              &quot;activity&quot;: {
+                &quot;action&quot;: &quot;process_start&quot;,
+                &quot;outcome&quot;: &quot;success&quot;
+              },
+              &quot;raw_data&quot;: &quot;{\&quot;time\&quot;:\&quot;2026-11-07T06:38:47+00:00\&quot;,\&quot;class_uid\&quot;:1007,\&quot;activity\&quot;:{\&quot;action\&quot;:\&quot;process_start\&quot;,\&quot;outcome\&quot;:\&quot;success\&quot;},\&quot;actor\&quot;:{\&quot;user\&quot;:{\&quot;name\&quot;:\&quot;flow-observer\&quot;}},\&quot;device\&quot;:{\&quot;name\&quot;:\&quot;socai2-flow-20261107-01\&quot;},\&quot;process\&quot;:{\&quot;name\&quot;:\&quot;powershell.exe\&quot;,\&quot;cmd_line\&quot;:\&quot;powershell.exe -NoProfile -Command Get-LocalUser\&quot;}}&quot;,
+              &quot;class_uid&quot;: 1007
+            },
+            &quot;retention&quot;: {
+              &quot;reason&quot;: null,
+              &quot;truncated&quot;: false,
+              &quot;omitted_paths&quot;: [],
+              &quot;original_sha256&quot;: &quot;f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062&quot;,
+              &quot;retained_sha256&quot;: &quot;f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062&quot;,
+              &quot;original_size_bytes&quot;: 3651,
+              &quot;retained_size_bytes&quot;: 3651
+            },
+            &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+            &quot;enrichment&quot;: {
+              &quot;items&quot;: [
+                {
+                  &quot;kind&quot;: &quot;first_fusion_result_reference&quot;,
+                  &quot;value&quot;: {
+                    &quot;artifact_id&quot;: &quot;adabdb03-71cf-5aab-8792-73dc65cd6f4e&quot;,
+                    &quot;same_material_input&quot;: true
+                  },
+                  &quot;source&quot;: &quot;fusion&quot;,
+                  &quot;source_path&quot;: &quot;$.fused&quot;,
+                  &quot;collected_at&quot;: null
+                },
+                {
+                  &quot;kind&quot;: &quot;fusion_session&quot;,
+                  &quot;value&quot;: {
+                    &quot;session_id&quot;: null,
+                    &quot;session_key_kind&quot;: null,
+                    &quot;originating_human&quot;: null
+                  },
+                  &quot;source&quot;: &quot;fusion&quot;,
+                  &quot;source_path&quot;: &quot;$.fused&quot;,
+                  &quot;collected_at&quot;: null
+                }
+              ],
+              &quot;schema_version&quot;: &quot;socai2.fusion-material.v1&quot;
+            },
+            &quot;received_at&quot;: &quot;2026-11-12T02:49:23.035971+00:00&quot;,
+            &quot;source_scope&quot;: {
+              &quot;kind&quot;: &quot;explicit_sources&quot;,
+              &quot;complete&quot;: true,
+              &quot;truncated&quot;: false,
+              &quot;window_end&quot;: null,
+              &quot;window_start&quot;: null,
+              &quot;received_count&quot;: 2,
+              &quot;retained_count&quot;: 2,
+              &quot;omission_reason&quot;: null
+            },
+            &quot;material_state&quot;: &quot;complete&quot;,
+            &quot;source_version&quot;: null
+          },
+          &quot;membership&quot;: null
+        }
+      ],
+      &quot;version&quot;: &quot;socai2.stage-result.v1&quot;
+    },
+    &quot;content_text&quot;: null,
+    &quot;blob_ref&quot;: null,
+    &quot;mime_type&quot;: &quot;application/json&quot;,
+    &quot;file_name&quot;: null,
+    &quot;sha256&quot;: &quot;a9a6f6f1b15a117f410aaa097dc2689af9d348c71cf8c3be33ba3749ff991e72&quot;,
+    &quot;size_bytes&quot;: 6553,
+    &quot;captured_at&quot;: &quot;2026-11-12 02:49:23.085530+00:00&quot;,
+    &quot;event_time&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;source_refs&quot;: [],
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;a9a6f6f1b15a117f410aaa097dc2689af9d348c71cf8c3be33ba3749ff991e72&quot;,
+      &quot;retained_sha256&quot;: &quot;a9a6f6f1b15a117f410aaa097dc2689af9d348c71cf8c3be33ba3749ff991e72&quot;,
+      &quot;original_size_bytes&quot;: 6553,
+      &quot;retained_size_bytes&quot;: 6553
+    },
+    &quot;created_by&quot;: null
+  }
+]</pre></details><details><summary>操作记录 · activities（0 条）</summary><pre>[]</pre></details><details><summary>操作影响 · activity_targets（0 条）</summary><pre>[]</pre></details><details><summary>评论 · comments（0 条）</summary><pre>[]</pre></details><details><summary>处置关联 · response_links（0 条）</summary><pre>[]</pre></details></section></main></body></html>

@@ -2,7 +2,7 @@
 
 ## Context
 
-当前服务端交付为 A/I/Case 的输入、执行、保存与读取，最近已核验的发布为 `v1.2-20261112-r3`。Case 来源范围、Finding 角色生成及有限纠正、正常 Case/H HTTP 操作和 C2 三目的知识传递已交付；知识合理使用、产品页面与自动消费仍按任务推进。模型正文质量仍未通过，读取通过不能替代质量结论。
+当前服务端交付为 A/I/Case 的输入、执行、保存与读取，最近已核验的发布为 `v1.2-20261112-r5`。Case 来源范围、Finding 角色生成及有限纠正、正常 Case/H HTTP 操作、C2 三目的知识传递及新采用 A 分诊后的知识同步已交付；知识合理使用、产品页面与自动消费仍按任务推进。模型正文质量仍未通过，读取通过不能替代质量结论。
 
 结构为 29 表、462 列；当前合同与配置从[前后端交接](../../../FRONTEND_BACKEND_HANDOFF.md)、[执行账本](../../../docs/investigation/current-execution-ledger.md)、[模型输入输出](../../../docs/investigation/model-input-output-current-20261109.md)查阅。发布及本机转发事实以 [PROGRESS](../../../PROGRESS.md)最近核验记录为准；已完成审计及本次程序交付共同作为后续依据。
 
@@ -61,7 +61,7 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 
 按项目负责人已明确的要求，后续以功能完成和正常结果正确为中心，只做必要直接验收；复杂测试与可用性专项开发后置。读写接线和配置随功能处理，权限设计不单列前置。告警相关的前后端交接字段合同保持稳定，确需调整时先列影响并确认。
 
-当前基线是最近核验的 21 r2：A/I/Case 已接入，Case 来源主体、Finding 角色生成及有限纠正、补查上限、程序所有字段与 Case/H HTTP 操作已交付，数据库与页面读取证据可复用。2026-11-11 的[独立审查](../../../docs/investigation/investigation-flow-review-20261111.md)及限定复核直接作为推进依据；不重新做全面审计或把原 56 项检查变成每个 change 的必跑清单。模型整体质量仍为 NOT_PASSED；负责人已明确后置 M01-A/M01-B，一项程序功能完成不代表全部质量通过。
+当前基线是最近核验的 21 `v1.2-20261112-r3`：A/I/Case 已接入，Case 来源主体、Finding 角色生成及有限纠正、补查上限、程序所有字段与 Case/H HTTP 操作已交付，数据库与页面读取证据可复用。2026-11-11 的[独立审查](../../../docs/investigation/investigation-flow-review-20261111.md)及限定复核直接作为推进依据；不重新做全面审计或把原 56 项检查变成每个 change 的必跑清单。模型整体质量仍为 NOT_PASSED；负责人已明确后置 M01-A/M01-B，一项程序功能完成不代表全部质量通过。
 
 | 顺序与功能交付 | 具体实施内容 | 最小直接验收 | 现有任务／问题 |
 | --- | --- | --- | --- |
@@ -71,7 +71,7 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 | 4 页面功能与现有数据对应 | P01–P04 的诊断入口、medium、none/缺失和无效 ID；本仓库负责数据/接口，页面由对应前端工程承接。第 2/3 项已涉及的同一页面缺口随功能修，不留到此处再改一次 | 使用第 2/3 项已保存的真实结果操作受影响入口，核目标/显示/刷新/空态；不为页面展示再调用模型，不重验全部页面或表列。4177 与产品页面分别说明范围 | 3.12；P01–P04/W01 |
 | 5 自动处理主链 | 手动功能可用后，沿现有触发规则补入站→A/I→应触发的 Case；核消费者/writer 确实进入当前 socai2，不能把保留 Agents 调查完成当作当前链已自动贯通 | 一小批新输入产生对应实际 Run 和保存结果；保留原位点、幂等和 unknown。只验证正常消费到结果，不做压力、故障、恢复矩阵或新恢复框架 | 3.21 及自动处理对应任务；O01 |
 
-上述是主调查剩余事项的实施顺序，不另建一套完成计数。第 1 项程序范围与第 2 项 Case/H 服务端 HTTP 操作已交付；F01 完整语义质量和 W01 产品页面仍保留，接着推进第 3 项非空知识；后续各项到开始时细化，不预建重复任务树。已有未完范围继续保留：A 的 3.23 与 A/I 正文残余问题按实际触及范围定向处理，不重审所有环节来阻塞 Case；Q、评论附件、探索保存、更多管理与外部响应留在待办。
+上述是主调查剩余事项的实施顺序，不另建一套完成计数。第 1 项程序范围与第 2 项 Case/H 服务端 HTTP 操作已交付；F01 完整语义质量和 W01 产品页面仍保留，第 3 项的三目的检索、模型传递和用途筛选已交付，合理采用质量继续开放；当前仅细化该范围内的分诊后知识维护，不预建其余模块任务树。已有未完范围继续保留：A 的 3.23 与 A/I 正文残余问题按实际触及范围定向处理，不重审所有环节来阻塞 Case；Q、评论附件、探索保存、更多管理与外部响应留在待办。
 
 **条件任务：** 保留 Agents/Hunt 的 A03（目标租户传递）/A04（数据源失败误报成功）只在该模块启用前合并修正，用“两租户目标匹配、成功零行/超时有不同状态”直接验证。当前不扩入 A/I/C/H 主线，不新设权限或可用性专项。Swarm/Debate 不作为本阶段开发前置。
 
@@ -81,7 +81,9 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 
 技术解释／取证指导和[历史案例参考](../archive/2026-11-12-use-historical-alert-knowledge/tasks.md)均已完成限定功能交付。按用户最新顺序，上一项已先收尾、归档并推送；后续 [refine-purpose-aware-knowledge-use](../archive/2026-11-12-refine-purpose-aware-knowledge-use/design.md)已交付：复用三目的和现有存储，补适用条件筛选、知识去重与 C3／Deep／C6 按任务选择，明确有效判断保存后的历史显式选入和修订更新。本地一次直接流程、独审及 21 r3 发布写读已完成，模型质量仍 NOT_PASSED；没有启用自动入库。
 
-沿既有接口、存储和来源配置实施；只补受影响检查及一条代表性实际路径，不扩建知识平台、权限框架或可用性测试。以后达到本 change 实施与验收范围再统一交付；知识传递和非空检索不核销 F02、3.7/3.10/3.14 等合理使用范围。
+[sync-saved-alert-knowledge](../archive/2026-11-12-sync-saved-alert-knowledge/design.md)已完成本地直接流程、独审及 21 r5 加载读回：在 `StageResultService.finish` 已提交且采用 A 分诊后，配置控制一次当前卡片入库／索引，回执与原判断分开。复用原资格、稳定身份、现有工件与读取；不加队列、全库回填或分析模型调用。正式告警级人工反馈写服务当前未见接线，Case H 不是同一数据，仍走显式历史维护；该缺口不通过扩大告警 DTO 解决。
+
+实施只补触发与独立结果的直接断言，再走一条保存→索引→历史检索→读取路径；不新增 Case／A 模型采样。达到该 change 本地功能及独审范围后再统一交付。知识维护接通不核销 F02、3.7/3.10/3.14 的合理使用质量，也不代表 3.21 自动消费启用。
 
 ### 知识库使用位置与本地嵌入
 
@@ -96,14 +98,14 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 | **C6 最终交付** | 解释适用依据、给出有来源的调查或处置建议 | **消费同 Run 已使用的知识及来源**，默认不再独立检索。知识引用与本案证据引用分别说明用途，不因常见攻击模式、建议或相似案例就确认本案恶意、授权或动作已执行 |
 | C1 冻结、C5 关系图、H 保存及程序派发/保存/读取 | 身份、关联、版本、实际执行状态 | 这些程序职责无需知识检索。H 后轮有新增调查主题时，由该轮 C2 处理；处置 SOP 可以用于建议，实际处置执行仍属既有后置范围 |
 
-#### 代码依据及实际缺口
+#### 当前代码与未接入范围
 
 - 当前 A 在 [`AlertBasicExecutor.execute`](../../../services/api/app/socai2/alert_basic_executor.py)只查 assets/history/threat_intel；I 在 [`IncidentDiagnosisExecutor.execute`](../../../services/api/app/socai2/incident_diagnosis_executor.py)消费冻结成员及已有查询，没有单独知识查询。保留 Agents 中的 KB 模块不能作为这两个入口已使用知识的证明。
-- Case [`BaselineExecutor.execute`](../../../services/api/app/socai2/baseline_executor.py)按 enrich → prepare_evidence → analyze → followups → deliver 执行。未配置向量 profile 的 C2 [`selectors`](../../../services/api/app/socai2/baseline_enrichment_sources.py)只取告警标题前 256 字符；[`optional.QUERIES`](../../../services/api/app/socai2/baseline_optional_sources.py)仅对 PG 的 runbook/playbook/sop 使用英文全文匹配。知识已有入口，但尚未按实际调查主题召回，也没有使用本地嵌入。
+- Case [`BaselineExecutor.execute`](../../../services/api/app/socai2/baseline_executor.py)按 enrich → prepare_evidence → analyze → followups → deliver 执行。当前显式知识 profile 已接通 [`knowledge_config.selectors`](../../../services/api/app/socai2/knowledge_config.py) 和 [`knowledge_source`](../../../services/api/app/socai2/knowledge_source.py)，使用冻结主题、本地嵌入、三目的及适用条件筛选。未配置 profile 的旧全文路径仍存在，不能与当前部署混淆；实际合理采用质量保持开放。
 - [`case_model_boundary.build`](../../../services/api/app/socai2/case_model_boundary.py)将 C2 回执加入主分析输入；[`case_followup_loader`](../../../services/api/app/socai2/case_followup_loader.py)为 Deep/C6 读取本 Run 保存材料。这些接线可复用，仍需核验相关片段完整进入实际请求和被合理使用。C2 查询受既有工具预算和来源排序影响，应记录是否实际查询，不用强制命中或提高总额度掩盖缺口。
-- [`POST /kb/ingest`](../../../services/api/app/api/v1/endpoints/knowledge_base.py)当前只分块写 PG。向量召回需要补上相应索引接线，不能只改检索开关便宣称已使用嵌入；既有组织记忆召回与文档 KB 是不同存储/用途。
+- [`knowledge_base.py`](../../../services/api/app/api/v1/endpoints/knowledge_base.py)已有显式资料／历史卡入库、`POST /kb/index` 及 GET，索引与检索均有实际回执。当前缺口是新分诊保存后没有自动同步当前卡；下一项只补这个提交后调用。既有组织记忆与文档 KB 仍是不同用途。
 
-#### 第一项功能的最小设计
+#### 已交付知识路径的设计依据
 
 1. **先选知识用途及资料。** 优先现有技术文档、调查 SOP/runbook；ATT&CK 或相似案例用于提出解释和核验方向。组织业务基线仅在有实际维护来源、适用对象和有效期时使用。不同资料保留类型及适用条件，不把任意报告改标 SOP 来满足当前查询过滤。
 2. **查询围绕材料中的技术主题。** 从冻结的命令、产品/事件类型等已存在字段形成可追溯主题；检测标题、规则/TTP 标签可作检索线索，但保留标签身份。主机名、IP、来源命名空间不自动转为业务环境知识。避免只有长标题英文全文匹配；检索主题及来源路径与回执一起保存。

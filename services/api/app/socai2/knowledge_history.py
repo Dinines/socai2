@@ -113,7 +113,7 @@ async def source_row(db, tenant, aid):
     return rows[0] if rows else None
 
 
-async def import_cards(db, tenant, ids, actor, profile):
+async def import_cards(db, tenant, ids, actor, profile, *, expected_hashes=None):
     if not profile.history or PURPOSE not in profile.purposes:
         raise SourceUnavailable("history_knowledge_not_configured")
     if len(ids) > profile.history.max_import_alerts:
@@ -125,6 +125,8 @@ async def import_cards(db, tenant, ids, actor, profile):
             if row is None:
                 raise SourceUnavailable("history_alert_not_found")
             card = card_from(row, profile)
+            if expected_hashes is not None and expected_hashes.get(str(aid)) != digest(card):
+                raise SourceUnavailable("history_sync_source_changed")
         except SourceUnavailable as exc:
             results.append({"alert_id": str(aid), "state": "not_imported", "reason": str(exc)})
             continue

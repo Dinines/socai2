@@ -44,7 +44,7 @@ python deploy/database/install_reader.py verify --profile '<读取安装配置>'
 
 ## 当前模型处理策略
 
-**当前处理策略：** 显式选择 [investigation-policy-case-v1.toml](investigation-policy-case-v1.toml)，其中 `[case_io] profile = "case-input-v1.json"` 启用 C1 冻结、C3/Deep/C6 结构文本和输出恢复。C1 保存 profile 与字段映射指纹，同一冻结 Run 不静默换规则。Deep 由程序恢复问题号；C6 恢复身份、生成建议编号和首次固定比较。未配置 `case_io` 的 Run 按其冻结 JSON 合同执行；可选 C3.reanalysis 使用独立装配。构建文件 [processing-build-case-v1.toml](../aisoc21/processing-build-case-v1.toml)对应 `processing-20261112-r2`，已随 `v1.2-20261112-r3` 部署 21。当前知识选择按阶段目的／范围／字符预算提供可选内容，并优先恢复前序引用依赖；本批一次本地流程保留模型质量 NOT_PASSED，生产仅知识写读与只读检索，无分析模型。[本轮核验](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)。
+**当前处理策略：** 显式选择 [investigation-policy-case-v1.toml](investigation-policy-case-v1.toml)，其中 `[case_io] profile = "case-input-v1.json"` 启用 C1 冻结、C3/Deep/C6 结构文本和输出恢复。C1 保存 profile 与字段映射指纹，同一冻结 Run 不静默换规则。Deep 由程序恢复问题号；C6 恢复身份、生成建议编号和首次固定比较。未配置 `case_io` 的 Run 按其冻结 JSON 合同执行；可选 C3.reanalysis 使用独立装配。构建文件 [processing-build-case-v1.toml](../aisoc21/processing-build-case-v1.toml)对应 `processing-20261112-r3`，已随 `v1.2-20261112-r5` 部署 21。当前知识选择按阶段目的／范围／字符预算提供可选内容，并优先恢复前序引用依赖；前序模型质量 NOT_PASSED 保留；本轮新分诊提交后同步仅一次本地模板判断流程，生产核加载与处理连接，无新模型或 Run。[同步验收](../../openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)。[本轮核验](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)。
 
 执行隔离调查时使用明确策略：
 

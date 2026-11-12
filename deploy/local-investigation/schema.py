@@ -45,6 +45,7 @@ def grants_schema():
             f"GRANT USAGE ON SCHEMA public,socai2 TO {role};",
             f"GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA socai2 TO {role};"])
     statements.extend([f"GRANT SELECT ON ALL TABLES IN SCHEMA public TO {API_ROLE};",
+        f"GRANT INSERT ON public.aisoc_kb_documents TO {API_ROLE};",
         f"GRANT UPDATE(last_used_at) ON public.api_keys TO {API_ROLE};",
         f"GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA socai2 TO {API_ROLE};"])
     for name in sorted(HISTORY_TABLES):

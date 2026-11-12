@@ -9,7 +9,7 @@
 | 程序及模型职责 | [执行账本](current-execution-ledger.md)、[模型输入输出](model-input-output-current-20261109.md) |
 | 问题与后续验收 | [问题清单](current-issues.md)、[OpenSpec 任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 | 实际实现审查 | [调查流程独立审查](investigation-flow-review-20261111.md)：入口、设计合理性、合同偏差、实现真实性及证据限制 |
-| 当前交付与下一项 | [Case 程序事实与补查约束](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/tasks.md)已完成限定程序交付，模型问题后置；接着按[主路线](../../openspec/changes/complete-socai2-investigation-chain/design.md#下一项具体落点)推进 Case/H 正常操作 |
+| 当前交付与下一项 | [Case 程序事实与补查约束](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/tasks.md)已完成限定程序交付，模型问题后置；Case/H 服务端及三目的知识链已交付；下一项按[主路线](../../openspec/changes/complete-socai2-investigation-chain/design.md#下一项具体落点)规划分诊后知识同步 |
 | 21 与本机接入 | [部署](../../deploy/aisoc21/README.md)、[SSH 转发](../operations/mac-ssh-relay-20261107.md) |
 | 资料归档与保留 | [历史索引](../handoff/history/README.md)、[代码与数据保留清单](../handoff/retention-map.md) |
 | 运行原件及样例 | [工作台与离线材料](../../deliverables/investigation-validation-20261106/README.md)、[本批证据](../operations/evidence/case-evidence-roles-20261110-01/) |
@@ -20,3 +20,5 @@
 
 - [历史告警知识与模型交接](historical-alert-knowledge-handoff.md)：显式卡片入库、C2 历史目标、模型角色与 4177，交付状态以 PROGRESS 为准。
 - [知识检索与入库设计](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/design.md)：用途筛选、按阶段提供去重内容及历史选入／修订时机；一次直接流程及独审后已发布 21 r3，写读与 4177 回执见验收，模型质量保持 NOT_PASSED。
+
+- [分诊保存后同步历史知识](../../openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/proposal.md)：已完成本地直接流程、独审及 21 r5 加载读回；新 A 分诊提交并采用后按配置维护卡片／索引，不启用全链消费者，人工反馈保持显式入口。

@@ -1,6 +1,6 @@
 # 21 调查服务部署
 
-当前主发布为 `v1.2-20261112-r3`，C2 三目的适用条件筛选、模型知识去重／任务选择及历史当前版本资格配置已实际加载；处理镜像 `processing-20261112-r2`，4177 源码随统一发布。API 与工作台各切换一次，其余四项容器身份保持；自动消费者暂停。实际来源见 [PROGRESS](../../PROGRESS.md)及[交付回执](../../docs/operations/evidence/knowledge-selection-20261112-01/delivery-summary.json)。首次 r2 冻结在 preflight 因旧基线失败、未执行 rollout；核实基线后重新冻结 r3，保留原失败和冻结目录。
+当前主发布为 `v1.2-20261112-r5`，处理镜像 `processing-20261112-r3`；已加载新采用 A 分诊提交后的历史知识同步，开启／120 秒，原 C2 三目的筛选和模型知识视图保持。API／工作台各切换一次，其余四项容器身份及关闭的消费者保持。[交付回执](../../docs/operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)区分本地端到端与生产加载；本轮没有生产新 Run／嵌入／模型。r4 因 Compose 基线路径错误在 preflight 被拒，未 rollout；按实际路径修正后冻结 r5，原失败保留。
 
 ## 发布来源与步骤
 
@@ -15,7 +15,7 @@
 
 ## Case/H 功能配置
 
-正式库为 `aisoc.socai2`，29 表、462 列。新装沿[建表及安装入口](../database/install_aisoc21_v1.py)完成既有库和处理 profile 后，升级沿既有 profile 复用连接；本 change 无额外迁移、角色或 GRANT。
+正式库为 `aisoc.socai2`，29 表、462 列。新装沿[建表及安装入口](../database/install_aisoc21_v1.py)完成既有库和处理 profile 后，升级沿既有 profile 复用连接；本轮无额外迁移或角色；知识维护仅对既有处理身份增加 KB INSERT，见下节。
 
 统一清单明确启用 `SOCAI2_CASE_API_ENABLED=true`，把处理 runtime.env 的 `DATABASE_URL` 映射为 API 的 `SOCAI2_CASE_DATABASE_URL`。同时传入该 profile 的四项可选来源开关及 SOCAI2_LAKE_DATABASE；只复制已列出的键，通用 API DATABASE_URL 和已有湖连接保持；原 TLS 证书挂载直接复用。运行值存入 21 private 的 api-model.env 和有效 Compose，仓库仅保留映射。[配置示例](case-http.env.example)也适用于本地显式配置。
 
@@ -25,10 +25,10 @@ Case/H 非 GET 使用现有处理连接，GET 保持原读取连接；缺写入�
 
 ## C2 知识与工作台
 
-知识功能已接通技术解释、取证指导与历史案例参考。生产配置在 API 与处理入口挂载相同的 [knowledge-profile.json](../local-investigation/knowledge-profile.json)，使用已有 Ollama 本地 qwen3-embedding:0.6b/1024 和独立 Qdrant 集合，原情报/组织记忆集合保留。受控 key 来自既有 vector-1d 私密配置，只通过 knowledge 配置指定的文件挂载，不进镜像/Git。新装/升级步骤与字段见[知识交接](../../docs/investigation/case-knowledge-handoff.md)及[历史卡片交接](../../docs/investigation/historical-alert-knowledge-handoff.md)。原 Case/H 写连接保持，告警合同与 V1 表结构不变。历史卡片只由显式入口入库和索引，未启用自动沉淀。
+知识功能已接通技术解释、取证指导与历史案例参考。生产配置在 API 与处理入口挂载相同的 [knowledge-profile.json](../local-investigation/knowledge-profile.json)，使用已有 Ollama 本地 qwen3-embedding:0.6b/1024 和独立 Qdrant 集合，原情报/组织记忆集合保留。受控 key 来自既有 vector-1d 私密配置，只通过 knowledge 配置指定的文件挂载，不进镜像/Git。新装/升级步骤与字段见[知识交接](../../docs/investigation/case-knowledge-handoff.md)及[历史卡片交接](../../docs/investigation/historical-alert-knowledge-handoff.md)。原 Case/H 写连接保持，告警合同与 V1 表结构不变。分诊保存后同步已完成本地验收、独审及实际加载读回；开启 profile 后仅新提交且采用的 A 结果触发，原显式维护仍可用。新装知识表 INSERT 已并入既有脚本，现有安装执行 `knowledge_history_write_access.sql`，参数由生产 profile 提供；保持消费者关闭。
 
 4177 沿 [Mac SSH 接入](../../docs/operations/mac-ssh-relay-20261107.md)访问。知识 change 的工作台源码随统一 API/处理发布切换，根源码挂载与两个既有单文件挂载同步指向同一 release。通过[静态配置](workbench-current.json)追加已保存案例并读回；不额外调用独立 runtime 发布入口或再次重启。`workbench-runtime-current.json` 是前次独立发布回执的配置，当前统一发布以 release-v1.2.json 为入口。
 
 前批技术解释/取证指导的本地实际 6 条知识查询/8 条命中、5 次模型请求及保存读回；C6 duplicate_source 仍失败。20 项直接检查与一次浏览器功能查看通过，质量 NOT_PASSED，未做复杂测试或新生产调查。生产验收工具 [production.py](../../tools/testdata/case_knowledge/production.py)以该批临时 scope key 导入/索引两份有来源资料，读回块元数据，再使用已保存查询文本做只读 C2 adapter 检索；不建 Case、不写 Run、不调用分析模型。与本地完整链路证据合并说明接线边界，不把探针当成生产完整调查。[前批验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
 
-前批两目的知识与历史卡片的生产回执保留在各自归档中。本轮历史已有卡 3 次业务 HTTP、方法资料 4 次业务 HTTP，通过显式入库／索引／GET；3 个只读目的查询返回 5 行（历史 1 卡、两个目的各 2 个方法块）。验收入口 [production.py](../../tools/testdata/knowledge_selection/production.py)及[配置](../../tools/testdata/knowledge_selection/production.json)复用既有路径；没有生产 Case／Run／分析模型，临时 key 撤销并核 401。4177 从实际 38→39 份，79 文件／80 静态 HTTP 读回，静态发布不重启服务。浏览器查看候选筛除及合并出处通过；原答及模型质量 NOT_PASSED 保留。
+前批两目的知识与历史卡片的生产回执保留在各自归档中。前序用途筛选批次的历史已有卡 3 次业务 HTTP、方法资料 4 次业务 HTTP，通过显式入库／索引／GET；3 个只读目的查询返回 5 行（历史 1 卡、两个目的各 2 个方法块）。验收入口 [production.py](../../tools/testdata/knowledge_selection/production.py)及[配置](../../tools/testdata/knowledge_selection/production.json)复用既有路径；没有生产 Case／Run／分析模型，临时 key 撤销并核 401。4177 从实际 38→39 份，79 文件／80 静态 HTTP 读回，静态发布不重启服务。浏览器查看候选筛除及合并出处通过；原答及模型质量 NOT_PASSED 保留。

@@ -138,6 +138,9 @@ class HistoryIO(IsolatedAsyncioTestCase):
         one = await import_cards(db, TENANT, [AID], "test", p)
         two = await import_cards(db, TENANT, [AID], "test", p)
         self.assertEqual(one, two)
+        blocked = await import_cards(db, TENANT, [AID], "test", p, expected_hashes={str(AID): "changed"})
+        self.assertEqual(blocked["cards"][0]["reason"], "history_sync_source_changed")
+        self.assertEqual(len(writes), 2)
         doc = {"id": writes[0]["id"], "tenant_id": TENANT, "content": writes[0]["content"], "chunk_total": 1, "chunk_index": 0}
         indexed = await index_payload(db, TENANT, doc, p)
         self.assertEqual(indexed["source_alert_id"], str(AID))

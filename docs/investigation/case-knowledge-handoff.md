@@ -1,8 +1,8 @@
 # Case 知识检索与使用交接
 
-更新于 2026-11-12。本功能由 C2 执行检索；C3、Deep、C6 消费本轮冻结片段。用途／条件筛选、模型去重和按任务选取已随 21 `v1.2-20261112-r3` 发布并读回，见[本轮验收](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)及 [PROGRESS](../../PROGRESS.md)。
+更新于 2026-11-12。本功能由 C2 执行检索；C3、Deep、C6 消费对应 Run 的冻结片段。用途／条件筛选、模型去重和按任务选取已随 21 `v1.2-20261112-r3` 发布并读回，见[前批用途筛选验收](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)及 [PROGRESS](../../PROGRESS.md)。
 
-历史案例参考由[历史知识交接](historical-alert-knowledge-handoff.md)补充，与技术解释／取证指导共用存储，通过目的标签及适用条件隔离选择；不需要为每个用途新建物理知识库。
+当前 r5 的分诊后同步及本地／生产证据边界由[历史知识交接](historical-alert-knowledge-handoff.md)补充，与技术解释／取证指导共用存储，通过目的标签及适用条件隔离选择；不需要为每个用途新建物理知识库。
 
 ## 输入、检索与消费
 
@@ -42,11 +42,11 @@ C3／Deep／C6 按块身份和内容版本去重，原检索行保持；`source_
 - 原 `POST /api/v1/kb/ingest` 返回各块 ID；`GET /api/v1/kb/documents/{id}` 读回基本字段。既有 `/kb/query` 保持文本检索路径，不作为本次 C2 向量检索证明。
 - 新 `POST /api/v1/kb/index` 请求 `{"document_ids":["块 UUID"]}`，用原认证及 settings:write 接线。成功返回 `state/profile_sha256/collection/documents/calls`；失败返回 503 与 `detail.code/document_storage_unchanged=true`，正文保存与索引成败分开。
 - `SOCAI2_KNOWLEDGE_PROFILE` 指向[配置](../../deploy/local-investigation/knowledge-profile.json)。当前使用本地 `qwen3-embedding:0.6b` 原生 1024 维；不补零或截断到其他空间。配置后的源失败不会回退为文本检索成功。
-- 安装/升级：确认已有嵌入服务、专用集合名及原生维度；API 和处理入口挂载同一 profile 和受控 Qdrant key，并配置所需主机 allowlist。经原导入入口保存适用资料，按返回块 ID 索引，再核真实 C2 回执。不重建既有情报/组织记忆集合，不清库。
+- 安装/升级：确认已有嵌入服务、专用集合名及原生维度；API 和处理入口挂载同一 profile 和受控 Qdrant key，并配置所需主机 allowlist。经原导入入口保存适用资料，按返回块 ID 索引，再核真实 C2 回执。启用分诊后历史同步时，处理身份需知识表 SELECT/INSERT，按[历史卡片交接](historical-alert-knowledge-handoff.md)执行配置及增量脚本。不重建既有情报/组织记忆集合，不清库。
 - 凭据只在受控文件，不写入文档、索引 payload、模型请求和页面。[生产 profile](../../deploy/aisoc21/production-v1.2.toml)的 knowledge 段定义挂载；[配置示例](../../deploy/aisoc21/production-profile.example.toml)保留显式启用说明。未配置环境保持其既有文本来源，不能据此宣称目的向量检索已启用。
 
 ## 4177
 
 左侧 C2 的“知识库”节点，右侧按目的查看查询、来源路径、候选选入／排除、命中原文、hash、相关度、实际调用与错误；全部筛除单独说明，历史无目的回执显示未记录。模型节点可查看实际提示词、Schema、输入、原答、校验与错误；另列“已检索到 → 已进入本次输入 → 原答有结构化引用/未见结构化引用”、知识合并出处及未送入原因。查看页面不触发检索或模型调用。
 
-本轮本地一次流程有 9 条查询／5 行（3 唯一块），排除 6 次条件冲突和 2 次过期卡候选，跨目的正文合并 2 次。6 次模型调用的原答保存；C6 纠正仍拒收，Result partial/rejected、conclusion=null，模型质量 NOT_PASSED。前序已接受结果未引用知识、两个 Deep 为全案问题，因此知识依赖恢复及缩小问题范围只由直接检查支持，不能扩大实际链路结论。生产 7 次业务 HTTP 与 3 个只读目的查询通过，4177 39 份记录，浏览器实际显示筛除与合并关联。前批失败及回执保留，不据条件过滤宣称合理使用质量通过。A/I 新检索、Deep 动态再检索、独立处置检索及自动消费不在本次交付范围。
+前批用途筛选的本地一次流程有 9 条查询／5 行（3 唯一块），排除 6 次条件冲突和 2 次过期卡候选，跨目的正文合并 2 次。6 次模型调用的原答保存；C6 纠正仍拒收，Result partial/rejected、conclusion=null，模型质量 NOT_PASSED。前序已接受结果未引用知识、两个 Deep 为全案问题，因此知识依赖恢复及缩小问题范围只由直接检查支持，不能扩大实际链路结论。该批生产 7 次业务 HTTP 与 3 个只读目的查询通过，4177 当时 39 份记录，浏览器实际显示筛除与合并关联。前批失败及回执保留，不据条件过滤宣称合理使用质量通过。A/I 新检索、Deep 动态再检索、独立处置检索及自动消费不在本次交付范围。

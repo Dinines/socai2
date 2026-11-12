@@ -1,6 +1,6 @@
 # 调查流程与交接问题清单
 
-更新于 2026-11-11。当前发布和字段合同见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。下列未完项独立于部署、读取和字段对应验收；登记不代表修复或取消需求。本轮[独立流程审查](investigation-flow-review-20261111.md)仅检查实现与证据，未修改业务。
+更新于 2026-11-12。当前发布和字段合同见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)。下列未完项独立于部署、读取和字段对应验收；登记不代表修复或取消需求。本轮[独立流程审查](investigation-flow-review-20261111.md)仅检查实现与证据，未修改业务。
 
 按负责人 2026-11-11 的[后置决定](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/scope-decision.md)，持续模型问题记录开放，允许已验证程序功能交付和后续 Case/H 正常操作推进；不再以重复模型采样作为前置。模型质量 NOT_PASSED 保持，不等于问题已修复。
 
@@ -42,6 +42,7 @@
 
 | 编号 | 发现与修正 | 证据 |
 | --- | --- | --- |
+| K01 | 新分诊保存后未接知识维护 | [分诊后同步](../../openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)已完成本地 finish→索引→检索→GET、独审及 r5 实际加载，原判断／同步回执分开；生产无新增 Run。人工反馈自动触发和历史回填未纳入，消费者保持关闭 |
 | R08 | Case/H HTTP 共用只读连接，正常写入未接通 | 本轮显式写连接及来源配置已上线 r2，原 GET 保持；本地正常两轮/H 修订传递与生产正常登录写读通过，无表列或告警字段变更。[交付回执](../operations/evidence/case-human-http-20261111-01/delivery-summary.json)；产品页面仍列 W01 |
 | A02 | C3 提示最多两项补查，但生成/接收曾允许 12 项 | 当前冻结配置、生成/接收/partial 均限 2，三项明确拒收且零派发，历史读取和 C6 建议兼容；直接检查通过，21 r1 实际加载上限 2，发布读回通过。[本次交付](../operations/evidence/case-grounding-20261111-01/delivery-summary.json)。原审计反例保持 |
 | R01 | Case/H GET 共用关闭的写开关而 503；GET 现在接受页面读取开关，写操作仍受原开关约束 | 当前两案 365 GET、16,820 检查；读取开关／租户／权限与写入拒绝定向测试 |

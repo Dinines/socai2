@@ -27,8 +27,10 @@ async def prepare(store, context, case_id, run_id):
     return keys
 
 
-async def index(db, tenant, ids, *, vectors=None):
+async def index(db, tenant, ids, *, vectors=None, expected_profile_sha256=None):
     profile, fingerprint = load()
+    if expected_profile_sha256 is not None and fingerprint != expected_profile_sha256:
+        raise SourceUnavailable("knowledge_profile_changed")
     if not ids or len(ids) > profile.max_index_chunks:
         raise SourceUnavailable("knowledge_index_chunk_limit")
     docs = list((await db.execute(text(DOCUMENTS), {"tenant": tenant, "ids": list(map(str, ids))})).mappings())
