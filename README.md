@@ -1,17 +1,24 @@
 # socai2 · stingAISOC
 
-[前后端交接指南](FRONTEND_BACKEND_HANDOFF.md)是功能、数据库、字段对应与接口的统一入口。当前服务端流程包括告警分诊、事件诊断、Case 调查及其保存和读取；21 已部署当前 A/I/Case 输入输出与读取代码。
+本仓库提供告警分诊、事件诊断、Case 调查，以及对应的管理、保存和查询服务。前后端从[交接指南](FRONTEND_BACKEND_HANDOFF.md)开始，通过 HTTP 对接。
 
-调查数据库为 `aisoc.socai2`，29 表、462 列。字段和实际读取核验通过，模型正文质量仍未通过；生产 Case HTTP 写开关关闭，自动消费者暂停。实际部署、证据和下一步见 [PROGRESS.md](PROGRESS.md)。
+21 的后端接口为 **`http://192.168.1.21:18024`**，业务路径前缀为 `/api/v1/socai2`；[Swagger](http://192.168.1.21:18080/)按**告警、事件、调查**分类，包含用途、参数、输入输出示例、错误和实现状态。当前列出 47 个 HTTP 操作：44 个已实现，3 个问答操作预留并返回 `501`。Case 基本管理、关闭和重开已实现并部署。
 
 | 内容 | 入口 |
 | --- | --- |
-| 工作规则及变更 | [AGENTS](AGENTS.md)、[OpenSpec](openspec/README.md)、[当前任务](openspec/changes/complete-socai2-investigation-chain/tasks.md) |
-| 功能与字段 | [产品需求](docs/design/alert-incident-case-product-requirements.md)、[功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)、[字段字典](docs/design/socai2-field-dictionary-20261103.md) |
-| 流程和问题 | [调查入口](docs/investigation/README.md)、[执行账本](docs/investigation/current-execution-ledger.md)、[问题清单](docs/investigation/current-issues.md) |
-| 运行与查阅 | [21 部署](deploy/aisoc21/README.md)、[SSH 接入](docs/operations/mac-ssh-relay-20261107.md)、[4177 运行记录](deliverables/investigation-validation-20261106/README.md#调查运行记录页) |
-| 资料与证据 | [文档导航](docs/README.md)、[本批流程实测](openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)、[归档索引](docs/handoff/history/README.md)、[代码与数据保留清单](docs/handoff/retention-map.md) |
+| 对接总入口 | [前后端交接指南](FRONTEND_BACKEND_HANDOFF.md) |
+| 页面功能与产品规则 | [125 项功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)：告警 22 项、事件 15 项、调查 88 项，包含目的、结果、后端实现状态和接口；[产品说明](docs/design/alert-incident-case-product-requirements.md)、[已确认的七类规则](docs/design/investigation-product-decisions.md) |
+| HTTP 接口与字段 | [接口交接包](deliverables/investigation-validation-20261106/http-handoff/README.md)、[逐接口说明](deliverables/investigation-validation-20261106/http-handoff/endpoints.md)、[页面字段与跳转](deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
+| Swagger 本地配置 | [Docker 安装与配置](deploy/api-docs/README.md)：本机 ARM64、21 AMD64、服务地址选择与离线安装；[本机已部署 Swagger](http://127.0.0.1:18080/) |
+| Kafka 与其他组件 | [当前组件对接说明](docs/integration/component-handoff-current.md)：Topic、生产者/消费者、消息示例、数据库、模型与知识服务 |
+| 测试数据与操作 | [后端测试指南](docs/integration/backend-test-guide.md)、[21 测试记录 ID](docs/integration/examples/current/live-21-fixtures.json)、[4173 测试页用法](docs/integration/test-page-4173.md) |
+| 调查数据 | [表职责与写入范围](docs/investigation/investigation-table-scope.md)、[当前字段字典](docs/design/socai2-data-contract-current.json)、[数据库安装入口](deploy/database/CURRENT.md) |
+| 服务配置与部署 | [独立 HTTP 服务](deploy/http-service/README.md)、[21 部署](deploy/aisoc21/README.md)、[SSH 接入](docs/operations/mac-ssh-relay-20261107.md) |
+| 当前进度与待办 | [PROGRESS](PROGRESS.md)、[未实现功能计划](docs/investigation/http-implementation-plan-20261112.md)、[问题清单](docs/investigation/current-issues.md) |
+| 开发约定 | [AGENTS](AGENTS.md)、[OpenSpec](openspec/README.md)、[当前调查任务](openspec/changes/complete-socai2-investigation-chain/tasks.md)、[文档导航](docs/README.md) |
 
-告警相关的前后端交接字段保持稳定，确需调整时先列明影响并确认；必要读写接线与配置随功能处理。数据库迁移保留冻结建表原件及既有数据。所有可变运行配置由显式 profile 提供，凭据留在受控且忽略提交的文件。
+告警接收、Fusion 处理和调查数据整理自动运行；告警分诊、事件诊断与 Case 调查由调用方显式启动，启动后程序完成该次处理和保存。Agents 自动分析消费者目前关闭，未交付“新告警自动串起整条调查流程”。HTTP 功能验证与模型结论质量分开记录：完整调查的真实模型质量仍未通过，本轮模型输入修改尚未部署；实际版本和证据见 [PROGRESS](PROGRESS.md)。
 
-参考工程为 `beenuar/AiSOC` 固定 revision `34ca18c57dd4175539e5c6dd3d04a72dc057306b`，本机参考目录保持只读。当前任务不自动扩展到采集、原始检测或整个平台。
+调查库当前为 `aisoc.socai2`，28 表、450 列。业务后端通过 HTTP 对接，资产库存由业务后端维护，调查服务只读取匹配结果。未解决问题随调查结论展示；用户需要人工核实时创建任务。4173 页面用于测试，具体后端功能以接口文档的实现状态为准。
+
+范围以已确认的告警、事件、调查功能清单为准。告警交接字段保持稳定，配置从显式 profile 读取，凭据保存在忽略提交的受控文件中。
