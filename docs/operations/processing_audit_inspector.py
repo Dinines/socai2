@@ -150,9 +150,12 @@ function showKnowledge(view, row, artifacts) {
         } else if (view === 'input') {
             block('实际检索文本', key.value);
             block('材料来源', key.source_paths);
-            block('筛选与限制', {filters: key.filters, limit: key.limit, score_threshold: key.score_threshold});
+            block('筛选与限制', {filters: key.filters, facets: key.facets, candidate_limit: key.candidate_limit,
+                limit: key.limit, score_threshold: key.score_threshold, query_alert_ids: key.alert_ids});
         } else if (view === 'output') {
             const hits = (body.rows || []).filter(r => r.object_key === key.object_key);
+            block('候选筛选（相似不等于适用）', receipt?.candidates);
+            if (receipt?.outcome === 'filtered') empty('检索有候选，但均因适用条件或来源版本被排除；未继续补搜。');
             if (!hits.length) empty(receipt?.state === 'completed' && receipt.returned_rows === 0 ?
                 '该目标查询完成，无符合条件的片段。' : '没有保存命中片段，请结合实际状态查看。');
             for (const hit of hits) {
@@ -165,6 +168,7 @@ function showKnowledge(view, row, artifacts) {
                     similarity: hit.similarity, document: hit.purpose === 'historical_case_reference' ?
                         {id: hit.record?.id, title: hit.record?.title, source_url: hit.record?.source_url} : hit.record,
                     content_sha256: hit.content_sha256,
+                    applicability: hit.applicability,
                     limitations: hit.limitations});
             }
             block('返回范围', receipt);
@@ -196,6 +200,8 @@ function showKnowledgeUsage(row, requests, responses) {
     }
     for (const request of requests) {
         const saved = bodyOf(request), payload = saved?.payload || saved;
+        block('本次知识未送入／合并原因', (payload?.omissions || []).filter(o =>
+            o.knowledge_identity || o.reason === 'duplicate_knowledge_version'));
         for (const [alias, source] of Object.entries(payload?.source_map || {})) {
             const receipt = receipts.find(r => r.artifact.id === source.ref?.id);
             const match = /^\$\.rows\.(\d+)(?:\.record\.(triage|feedback))?$/.exec(source.ref?.source_path || '');
@@ -205,6 +211,7 @@ function showKnowledgeUsage(row, requests, responses) {
             used.push({source_id: alias, purpose: hit.purpose_label || hit.purpose || '未记录目标',
                 title: hit.record?.title, document_id: hit.record_id, content_sha256: hit.content_sha256,
                 historical_source: hit.record?.history?.source, source_role: source.ref?.role,
+                merged_query_origins: source.knowledge?.origins,
                 referenced_part: match[2] || '完整知识片段',
                 retrieved: '已检索到', input: '已进入本次输入', output: citations.some(c => c.id === alias) ?
                     '原答有结构化引用' : parsed ? '未见结构化引用' : '未记录或原答未能解析',

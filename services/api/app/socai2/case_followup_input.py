@@ -2,6 +2,7 @@
 import copy
 from collections import Counter
 
+from . import knowledge_model_input as knowledge
 from .baseline_context import reference
 from .baseline_evidence import SCHEMA as EVIDENCE_SCHEMA
 from .baseline_evidence import citation_roles
@@ -77,6 +78,9 @@ class Sources:
         self.boundary = copy.deepcopy(base["case_boundary"])
         self.base_ids = {}
         self.base_records = {encoded(r["ref"]): r for r in base["input_ledger"]["records"]}
+        for row in base["input_ledger"]["records"]:
+            for origin in row.get("knowledge", {}).get("origins", []):
+                self.base_records[encoded(origin["ref"])] = row
 
     def add(self, ref, value, owners, block, *, original=None, **extra):
         ref, owners = copy.deepcopy(ref), list(map(str, owners))
@@ -107,6 +111,14 @@ class Sources:
             return row["id"]
         original = self.base_records.get(encoded(ref))
         if original:
+            if original.get("knowledge"):
+                # A cited historical judgment needs its whole card and conditions;
+                # restore roles separately, all from this Run's frozen rows.
+                for item in self.base_records.values():
+                    if item.get("knowledge", {}).get("identity") == original["knowledge"]["identity"]:
+                        self.add(item["ref"], item["value"], item["alert_ids"], "dependency",
+                                 original=item.get("original_value"), **scope_metadata(item))
+                return self.by_ref[encoded(original["ref"])]["id"]
             return self.add(ref, original["value"], original["alert_ids"], "dependency",
                             original=original.get("original_value"), **scope_metadata(original))
         # Exact references to frozen C4 projections remain valid dependencies.
@@ -269,7 +281,7 @@ def query_records(registry, material, projections, *, final):
 
 
 def build(stage, context, base, artifacts, *, previous=None, prior_id=None, question_id=None,
-          material=None, projections=(), options=(), binding_map=None, extra=None, lead=(), graphs=()):
+          material=None, projections=(), options=(), binding_map=None, extra=None, lead=(), graphs=(), _excluded_knowledge=()):
     profile = selected_profile(context)
     cfg, policy = profile.config, profile.config["followup"]
     if base["case_boundary"]["profile"] != profile.identity:
@@ -289,6 +301,8 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     # Retain cross-member/common/unknown-scope and all human material. The
     # current frozen questions usually cover the whole Case; no pretend filter.
     for row in ledger["records"]:
+        if row.get("knowledge"):
+            continue  # Restore prior dependencies first, then select optional knowledge.
         if row["alert_ids"] and not allowed.intersection(row["alert_ids"]) and row["ref"]["role"] != "human_statement":
             reg.omissions.append({"ref": row["ref"], "reason": "outside_frozen_question_scope"})
             continue
@@ -348,6 +362,26 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
             reg.add(row["source"]["ref"], row["entry"]["value"], row["source"]["alert_ids"], "graph", original=row["original"],
                     membership_basis=row["source"].get("membership_basis", "source_label"))
     reg.rebind_base(base)
+    dependencies = {r["knowledge"]["identity"] for r in reg.rows if r.get("knowledge")}
+    knowledge_scope = allowed
+    if stage == "C6":
+        answered = {q["id"] for q in ((previous or {}).get("analysis") or {}).get("questions", [])
+                    if q["state"] in {"answered", "not_applicable"}}
+        answered.update(row["content_json"]["question_id"] for row in artifacts.values()
+                        if row.get("content_json", {}).get("type") == "deep_summary"
+                        and (row["content_json"].get("answer") or {}).get("state") == "supported")
+        knowledge_scope = {str(a) for q in context.questions if q.id not in answered and q.id != "coverage"
+                           for a in q.scope.alert_ids}
+    elif question.id == "coverage":
+        knowledge_scope = set()
+    selected, knowledge_omissions = knowledge.choose([r for r in ledger["records"] if r.get("knowledge")],
+        stage, knowledge_scope, cfg["knowledge_selection"], dependencies=dependencies, excluded=_excluded_knowledge)
+    reg.omissions.extend(knowledge_omissions)
+    for row in selected:
+        if row["knowledge"]["identity"] in dependencies:
+            continue
+        reg.add(row["ref"], row["value"], row["alert_ids"], "base", original=row.get("original_value"),
+                business_block=row["block"], **scope_metadata(row))
     omissions = [r for r in reg.omissions if r["reason"] != "outside_frozen_question_scope" or encoded(r["ref"]) not in reg.by_ref]
     metadata = copy.deepcopy(extra or {})
     comparison = metadata.get("comparison")
@@ -446,6 +480,12 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     for aid, row in coverage.items():
         row["included"] = sum(aid in r["alert_ids"] for r in reg.rows)
     why = "case_followup_input_exceeds_prepared_limit" if len(encoded(messages)) > draft_limit() else None
+    optional = [r["knowledge"]["identity"] for r in reg.rows if r.get("knowledge")
+                and r["knowledge"]["identity"] not in dependencies]
+    if why and optional:
+        return build(stage, context, base, artifacts, previous=previous, prior_id=prior_id, question_id=question_id,
+            material=material, projections=projections, options=options, binding_map=binding_map, extra=extra,
+            lead=lead, graphs=graphs, _excluded_knowledge=(*_excluded_knowledge, optional[-1]))
     if any(blocked(m["content"]) for m in messages):
         why = "case_followup_input_guard"
     if not base["ready"]:

@@ -2,7 +2,7 @@
 
 主调查 **31/41**，保留全部编号与原勾选状态。当前程序功能交付不代表主调查整体验收；交付及问题分别见 [PROGRESS](../../../PROGRESS.md)、[问题清单](../../../docs/investigation/current-issues.md)。
 
-按[后续工作顺序](design.md#后续工作顺序)推进：有据结论程序范围与 [Case/H 正常 HTTP 操作](../archive/2026-11-11-enable-case-human-http-flow/tasks.md)已统一发布，M01-A/M01-B 按负责人决定后置、质量 NOT_PASSED 保持。当前按[知识使用位置](design.md#知识库使用位置与本地嵌入)完成本地 C2 检索→C3 输入/引用→Deep/C6 复用，21 r3 已统一发布并读回；知识合理使用质量仍单列；A/I 与动态补检索不扩入首项。[历史告警知识](../archive/2026-11-12-use-historical-alert-knowledge/tasks.md)已补齐 C2 历史参考及模型传递，并完成 21 发布读回；先收尾该 change，再独立规划知识检索和历史入库优化。页面数据对应、自动处理继续保留。每项只做改动相关检查和一条代表性完整路径，证据跨关联主任务复用；不重复 56 项审查或开展可用性矩阵，一个 change 统一发布/推送。
+按[后续工作顺序](design.md#后续工作顺序)推进：有据结论程序范围与 [Case/H 正常 HTTP 操作](../archive/2026-11-11-enable-case-human-http-flow/tasks.md)已统一发布，M01-A/M01-B 按负责人决定后置、质量 NOT_PASSED 保持。当前按[知识使用位置](design.md#知识库使用位置与本地嵌入)完成本地 C2 检索→C3 输入/引用→Deep/C6 复用，21 r3 已统一发布并读回；知识合理使用质量仍单列；A/I 与动态补检索不扩入首项。[历史告警知识](../archive/2026-11-12-use-historical-alert-knowledge/tasks.md)已补齐 C2 历史参考及模型传递，并完成 21 发布读回；该 change 已归档并推送；后续 [refine-purpose-aware-knowledge-use](../archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已交付用途筛选、模型去重／选择及历史选入更新，经一次直接流程和独审后发布 `v1.2-20261112-r3`，知识写读及 4177 已核验，质量仍未通过。页面数据对应、自动处理继续保留。每项只做改动相关检查和一条代表性完整路径，证据跨关联主任务复用；不重复 56 项审查或开展可用性矩阵，一个 change 统一发布/推送。
 
 ## 尚未完成
 

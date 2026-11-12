@@ -5,6 +5,7 @@ from pydantic_core import to_jsonable_python
 
 from . import baseline_analysis_contract as contract
 from . import baseline_model_view as legacy
+from . import knowledge_model_input as knowledge
 from .baseline_context import reference
 from .baseline_store import StoreError, encoded
 from .case_input_hierarchy import render_tools
@@ -26,7 +27,7 @@ def selected_profile(context):
     return profile
 
 
-def build(context, context_id, enrichment, states, materials, *, execution_time=None, run_id=None):
+def build(context, context_id, enrichment, states, materials, *, execution_time=None, run_id=None, _excluded_knowledge=()):
     profile = selected_profile(context)
     frozen = context.model_dump(mode="json")
     paired = query_source(frozen)
@@ -62,7 +63,12 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
             query_members = source_members(context, ref, tool_payloads) if ref["source_path"] else owners
             additional.append({"ref": ref, "original_value": original, "value": projected,
                 **query_scope(body, ref["source_path"], query_members, context.alerts),
+                **knowledge.metadata(body, ref),
                 "block": "background_query"})
+    additional, knowledge_omissions = knowledge.coalesce(additional)
+    additional, excluded = knowledge.choose(additional, "C3", context.alerts, profile.config["knowledge_selection"],
+                                            excluded=_excluded_knowledge)
+    knowledge_omissions.extend(excluded)
     sample = {"context": frozen, "context_id": context_id, "materials": material_values,
         "data": data, "request": {"source_map": source_map}, "query_source": paired,
         "additional_queries": additional}
@@ -82,7 +88,7 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
                 and context.citation_roles.get(row["ref"]["source_path"]) != row["ref"]["role"]):
             raise StoreError("case_input_source_role_unregistered", 422)
     prepared["query_supplement_was_in_original_c1"] = True
-    prepared["omissions"].extend(rejected)
+    prepared["omissions"].extend(rejected + knowledge_omissions)
     if rejected:
         prepared["user"] += "\n部分背景原文被输入检查排除；不能视作完整材料。"
     output = profile.config["c3_output"]
@@ -95,6 +101,10 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"]))
     system += "\n" + profile.config["program_output"]["instruction"]
     messages = [{"role": "system", "content": system}, {"role": "user", "content": prepared["user"]}]
+    optional = [r["knowledge"]["identity"] for r in prepared["records"] if r.get("knowledge")]
+    if len(encoded(messages)) > draft_limit() and optional:
+        return build(context, context_id, enrichment, states, materials, execution_time=execution_time, run_id=run_id,
+                     _excluded_knowledge=(*_excluded_knowledge, optional[-1]))
     reason = ("required_model_input_unavailable" if any(r["required"] for r in rejected) else
               "case_input_exceeds_prepared_limit" if len(encoded(messages)) > draft_limit() else
               "projected_message_guard_blocked" if any(legacy.blocked(m["content"]) for m in messages) else None)

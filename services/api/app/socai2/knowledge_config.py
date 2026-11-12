@@ -35,6 +35,7 @@ class Purpose(Config):
     doc_kinds: list[str] = Field(min_length=1)
     tag: str
     limit: int = Field(gt=0)
+    candidate_limit: int = Field(gt=0)
     score_threshold: float = Field(ge=-1, le=1)
     use: str
 
@@ -54,6 +55,18 @@ class History(Config):
     observation_paths: list[str] = Field(min_length=1)
 
 
+class Facet(Config):
+    paths: list[str] = Field(min_length=1)
+    normalization: Literal["exact", "casefold", "basename_casefold"]
+    topic: bool
+
+
+class Applicability(Config):
+    tag_prefix: str = Field(min_length=1)
+    generic_tag: str = Field(min_length=1)
+    facets: dict[str, Facet] = Field(min_length=1)
+
+
 class Profile(Config):
     version: Literal["socai2.case-knowledge.v1"]
     embedding: Embedding
@@ -63,6 +76,7 @@ class Profile(Config):
     max_index_chunks: int = Field(gt=0)
     max_chunk_characters: int = Field(gt=0)
     history: History | None = None
+    applicability: Applicability
 
 
 def configured():
@@ -79,6 +93,8 @@ def load():
         if ("historical_case_reference" in profile.purposes) != (profile.history is not None):
             raise ValueError
         if any(p.template.count("{topic}") != 1 for p in profile.purposes.values()):
+            raise ValueError
+        if any(p.candidate_limit < p.limit for p in profile.purposes.values()):
             raise ValueError
         return profile, hashlib.sha256(raw).hexdigest()
     except (KeyError, OSError, ValueError, ValidationError):
@@ -101,6 +117,7 @@ def at(value, path):
 
 
 def selectors(context, materials, profile):
+    from .knowledge_applicability import material_facets
     found = []
     for aid, alert in sorted(context.alerts.items()):
         material = materials.get(aid) or {}
@@ -120,12 +137,13 @@ def selectors(context, materials, profile):
                     "role": role, "original_characters": len(original), "query_text_truncated": term != original})
         if not terms:
             continue
+        facets = material_facets(material, profile)
         for name, purpose in profile.purposes.items():
             history_filter = {}
             if name == "historical_case_reference":
                 from datetime import datetime, timedelta
                 start = getattr(getattr(context, "scope", None), "window_start", None)
-                if start is None:
+                if start is None or not any(facets.get(k) for k, f in profile.applicability.facets.items() if f.topic):
                     continue
                 start = datetime.fromisoformat(start) if isinstance(start, str) else start
                 history_filter = {"event_start": (start - timedelta(days=profile.history.lookback_days)).isoformat(),
@@ -133,7 +151,16 @@ def selectors(context, materials, profile):
             query = purpose.template.replace("{topic}", "\n".join(terms))
             found.append({"object_key": f"knowledge:{aid}:{name}", "namespace": alert.alert["source_namespace"],
                 "object_type": "knowledge_topic", "value": query, "ioc_type": None, "alert_ids": [aid],
-                "source_paths": paths, "purpose": name, "purpose_label": purpose.label,
+                "source_paths": list(paths), "purpose": name, "purpose_label": purpose.label,
                 "filters": {"doc_kinds": purpose.doc_kinds, "tag": purpose.tag, **history_filter},
+                "facets": facets, "candidate_limit": purpose.candidate_limit,
                 "limit": purpose.limit, "score_threshold": purpose.score_threshold, "use": purpose.use})
-    return found
+    merged = {}
+    for key in found:
+        signature = json.dumps({k: key[k] for k in ("purpose", "value", "namespace", "filters", "facets")}, sort_keys=True)
+        if signature not in merged:
+            merged[signature] = key
+        else:
+            merged[signature]["alert_ids"].extend(key["alert_ids"])
+            merged[signature]["source_paths"].extend(key["source_paths"])
+    return list(merged.values())

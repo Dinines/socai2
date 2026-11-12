@@ -21,10 +21,10 @@
 | 项目 | 当前值与用途 |
 | --- | --- |
 | 目标 | 21，SSH 别名 `sting-infra21` |
-| 发布 | `v1.2-20261112-r1`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
+| 发布 | `v1.2-20261112-r3`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
 | HTTP | 21 回环 `127.0.0.1:18000`，业务前缀 `/api/v1/socai2` |
-| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台源码随 `v1.2-20261112-r1`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
+| 开发查阅 | 21 回环 `127.0.0.1:4177`，工作台源码随 `v1.2-20261112-r3`；本机沿[SSH 转发](docs/operations/mac-ssh-relay-20261107.md)访问 |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
 | Case HTTP 写入 | `SOCAI2_CASE_API_ENABLED=true`，私密 SOCAI2_CASE_DATABASE_URL 已指向现有处理连接；建案与 H 写读已实际通过，产品页面接线仍需承接 |
@@ -97,7 +97,7 @@
 
 ## 7 C2 知识与本次验证边界
 
-历史告警卡片与模型消费已完成本地验收及 21 统一发布读回，新增入口、字段来源、角色和 4177 说明见[历史知识交接](docs/investigation/historical-alert-knowledge-handoff.md)。生产 3 次业务 HTTP 与一次历史目的检索通过，4177 追加至 38 份，临时 key 撤销并核 401；无生产分析 Run。本地 C6 拒收、模型质量 NOT_PASSED 保留。[本轮回执](docs/operations/evidence/historical-knowledge-20261112-01/delivery-summary.json)。下述技术解释/取证指导为前批有效证据。
+三目的知识、历史卡片及用途筛选已完成本地验收和 21 `v1.2-20261112-r3` 统一发布读回，入口、字段来源与角色见[历史知识交接](docs/investigation/historical-alert-knowledge-handoff.md)及[知识交接](docs/investigation/case-knowledge-handoff.md)。本轮生产 7 次业务 HTTP、3 个目的只读检索通过，4177 追加至 39 份并实际查看筛除／合并来源；临时 key 撤销并核 401，无生产分析 Run。本地一 Run 9 查询／5 行（3 唯一块），6 模型调用；C6 拒收、模型质量 NOT_PASSED 保留。[本轮回执](docs/operations/evidence/knowledge-selection-20261112-01/delivery-summary.json)。下述技术解释／取证指导为前批有效证据。
 
 [知识检索/消费交接](docs/investigation/case-knowledge-handoff.md)给出 C2 两个目的、实际输入输出、文档/向量/工件字段及 4177 的关联。新增显式 `/api/v1/kb/index`，原知识导入、查询及告警接口合同保持。C3/Deep/C6 使用本轮冻结片段，不新增模型调用环节。知识功能已本地验证并统一发布 r3；原 HTTP 导入/索引/GET 及生产 C2 两目的检索已读回。
 

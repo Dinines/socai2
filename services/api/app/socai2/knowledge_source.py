@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from . import knowledge_history as history
 from .baseline_optional_sources import SourceUnavailable
+from .knowledge_applicability import check as applicability
 from .knowledge_config import content_hash, load, selectors
 from .knowledge_vectors import Vectors
 
@@ -80,7 +81,7 @@ async def query(service, tenant, args, *, vectors=None):
         rows = []
         for key, vector in zip(keys, embedded, strict=True):
             receipt = {"object_key": key["object_key"], "purpose": key["purpose"], "state": "running",
-                       "query": key["value"], "returned_rows": None}
+                       "query": key["value"], "returned_rows": None, "candidates": []}
             metadata["queries"].append(receipt)
             hits = await vectors.search(tenant, key, vector)
             async with service.transaction(tenant, readonly=True) as store:
@@ -98,20 +99,41 @@ async def query(service, tenant, args, *, vectors=None):
                 record = {k: (str(v) if isinstance(v, (UUID, datetime)) else v)
                           for k, v in doc.items() if k != "tenant_id"}
                 limitations = LIMITATIONS
+                candidate = {"document_id": str(doc["id"]), "content_sha256": payload["content_sha256"],
+                             "similarity": hit["score"], "state": "excluded"}
+                receipt["candidates"].append(candidate)
+                card = None
                 if key["purpose"] == history.PURPOSE:
                     async with service.transaction(tenant, readonly=True) as store:
                         card = await history.retrieval_record(store.db, tenant, doc, profile, key["filters"])
+                    if card["source_version_state"] != "current":
+                        state = card["source_version_state"]
+                        candidate["reason"] = state if state.startswith("history_") else "history_" + state
+                        continue
+                conditions = applicability(key, doc, profile, card)
+                candidate["applicability"] = conditions
+                if conditions["state"] == "excluded":
+                    candidate["reason"] = conditions["reason"]
+                    continue
+                if len(retained) >= key["limit"]:
+                    candidate["reason"] = "purpose_result_limit"
+                    continue
+                candidate.update(state="selected", reason=None)
+                if card is not None:
                     record.update(history=card, triage=card.pop("triage"), feedback=card.pop("feedback"))
                     limitations = LIMITATIONS + history.LIMITATIONS
                 retained.append({"object_key": key["object_key"], "namespace": key["namespace"],
                     "record_id": str(doc["id"]), "match_basis": "local_embedding_cosine",
                     "purpose": key["purpose"], "purpose_label": key["purpose_label"], "use": key["use"],
                     "similarity": hit["score"], "content_sha256": payload["content_sha256"],
+                    "applicability": conditions, "query_alert_ids": key["alert_ids"],
+                    "query_source_paths": key["source_paths"],
                     "limitations": limitations, "record": record})
-            receipt.update(state="completed", outcome="data" if hits else "empty",
-                returned_rows=min(len(hits), key["limit"]), truncated=len(hits) > key["limit"],
-                document_ids=[r["record_id"] for r in retained[:key["limit"]]])
-            rows.extend(retained[:key["limit"]])
+            receipt.update(state="completed", outcome="data" if retained else "filtered" if hits else "empty",
+                returned_rows=len(retained), candidate_count=len(hits),
+                truncated=len(hits) >= key["candidate_limit"] or any(c.get("reason") == "purpose_result_limit" for c in receipt["candidates"]),
+                document_ids=[r["record_id"] for r in retained])
+            rows.extend(retained)
         metadata["source_truncated_count"] = sum(q["truncated"] for q in metadata["queries"])
         return rows, datetime.now(UTC), metadata
     except SourceUnavailable as exc:

@@ -4,7 +4,7 @@
 
 已有[独立流程审查](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)及[有据结论程序修正](changes/archive/2026-11-11-ground-case-conclusions/validation.md)继续作为证据。持续模型问题按负责人决定后置并保持 NOT_PASSED，不重复采样追求通过。
 
-[按目标的 Case 知识与 4177](changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)已完成本地功能、限定独审、一次 21 r3 发布和补核归档。[历史告警知识与模型消费](changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)已完成本地功能、一次 21 发布读回及独立发布补审，现已归档。模型质量 NOT_PASSED 保持。按用户最新顺序，先收尾此 change，再独立提出知识检索与历史入库优化规划；产品页面 P01–P04、自动处理继续保留，不新增权限专项或复杂可用性测试。
+[按目标的 Case 知识与 4177](changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)及[历史告警知识与模型消费](changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)均已完成限定功能、独审、发布读回和归档；历史知识已完成 Git／父项目同步。后续 [refine-purpose-aware-knowledge-use](changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已完成用途／条件筛选、模型去重／任务选择及显式历史版本更新，经一次本地直接流程和独审后发布 `v1.2-20261112-r3`，实际配置、知识写读及 4177 已核验并归档，封后状态见任务和审计。模型质量 NOT_PASSED、产品页面 P01–P04及自动处理继续保留；只做最少直接验证，不新增权限专项或复杂可用性测试。
 
 ## 文档职责
 

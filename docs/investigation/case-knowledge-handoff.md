@@ -1,8 +1,8 @@
 # Case 知识检索与使用交接
 
-更新于 2026-11-11。本功能由 C2 执行检索；C3、Deep、C6 消费本轮冻结片段。本地功能与 21 r3 接线证据见[验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)，实际发布以 [PROGRESS](../../PROGRESS.md) 为准。
+更新于 2026-11-12。本功能由 C2 执行检索；C3、Deep、C6 消费本轮冻结片段。用途／条件筛选、模型去重和按任务选取已随 21 `v1.2-20261112-r3` 发布并读回，见[本轮验收](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)及 [PROGRESS](../../PROGRESS.md)。
 
-历史案例参考由[历史知识交接](historical-alert-knowledge-handoff.md)补充，已完成本地功能及 21 发布读回；本页下述 r3 证据适用于技术解释/取证指导，实际当前部署以根 PROGRESS 为准。
+历史案例参考由[历史知识交接](historical-alert-knowledge-handoff.md)补充，与技术解释／取证指导共用存储，通过目的标签及适用条件隔离选择；不需要为每个用途新建物理知识库。
 
 ## 输入、检索与消费
 
@@ -14,7 +14,11 @@
 | Deep | 当前问题与依赖可见的本轮片段 | 回答、交接或合法候选选择；本次不新增动态再检索 |
 | C6 | 本轮材料、知识用途、前序结果及真实执行回执 | 结论/建议和引用；失败结论保持未采用，知识不成为独立案件观察 |
 
-当前配置每个有主题的成员两个目的，最多 12 条查询；每目的返回最多 2 块、最低余弦相似度 0.45。实际阈值是配置，不是准确率保证。C2 复用原工具额度与来源排序，按工具预算可能跳过；无主题、未接入、未查、查空、失败保持区别。地址、模型、维度、集合、模板、类型、时限、限额全部从显式 profile 读取。
+已部署的[用途筛选与任务选取](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)：每个有主题的成员三个目的，相同目的／文本／命名空间／过滤范围与适用字段合并，最多 12 条查询；每次最多获取 8 个候选，技术／方法最多各 2 块，历史最多 1 卡，余弦阈值保持 0.45。相似度只排序候选，不能绕过适用条件。C2 复用原工具额度与来源排序，不循环补搜；无主题、未接入、未查、原始查空、全部筛除、失败分别记录。
+
+文档沿原入口使用 `knowledge:<目的>` 与 `applies:<字段语义键>=<值>` 标签。例如 `applies:ocsf.process.name=powershell.exe`，路径与规范化由 profile 定义。至少一个主题条件匹配且无冲突；声明条件缺失时排除，明确带 `applicability:generic` 的技术／方法资料可保留未知条件，但仍须主题匹配且无冲突。旧文档不自动改标，仍可直接读回。
+
+C3／Deep／C6 按块身份和内容版本去重，原检索行保持；`source_map[].knowledge.origins` 记录所有原路径和用途。Deep 的可选目的为取证指导／历史参考，按问题成员与原查询主题映射选取，历史空成员范围不代表全案通用；前序引用的卡片及其分诊／反馈原角色优先恢复。C6 只补未决问题的可选知识。知识上限分别为 12,000／8,000／8,000 字符，预算不足省略整条可选内容，不裁正文；必要依赖仍受现有整体输入上限约束。
 
 ## 数据与字段对应
 
@@ -27,6 +31,7 @@
 | C2 实际请求 | `run_steps.actual_args` 及 `tool_request/tool_response.actual_args.parameters.selectors[]`：`purpose/purpose_label/value/source_paths/filters/limit/score_threshold/use/profile_sha256`，仍保留成员与 object_key |
 | C2 命中 | `tool_response.rows[]`：`record_id/object_key/namespace/purpose/purpose_label/use/similarity/content_sha256/limitations/record`；record 为当时 PG 回读原文，模型视图不使用 similarity/hash 作为业务依据 |
 | 目标回执 | C2 `source_snapshot.sources[]` 按 `artifact_id` 关联知识工件，`source_metadata` 内保存模型/维度/集合/profile hash、`queries[]` 状态/数量/截断及 `calls[]` 请求回执；不扩展冻结 tool_exchange 顶层合同 |
+| 选入依据 | selector 的 `facets/candidate_limit`；命中行的 `applicability/query_alert_ids/query_source_paths`；`source_metadata.queries[].candidates` 保存身份/hash、相似度、选入／筛除原因及匹配／冲突／未知条件，全部筛除为 `outcome=filtered` |
 | 模型输入映射 | `model_request.payload.source_map` → 同 Run 知识工件 `$.rows.N`，沿用非观察 `source_label` 角色；实际请求 body 保存片段 |
 | 输出使用关系 | 解析对应 `model_response` 原答中的 source/evidence/support/counter IDs；不能以输入出现代替输出引用，更不能以引用代替校验接受或质量通过 |
 
@@ -42,6 +47,6 @@
 
 ## 4177
 
-左侧 C2 的“知识库”节点，右侧按目的查看查询、来源路径、筛选、命中原文、hash、相关度、实际调用与错误；查空显示“查询完成，无符合条件的片段”，历史无目的回执显示未记录。模型节点仍可查看实际提示词、Schema、输入、原答、校验与错误；另列“已检索到 → 已进入本次输入 → 原答有结构化引用/未见结构化引用”。查看页面不触发检索或模型调用。
+左侧 C2 的“知识库”节点，右侧按目的查看查询、来源路径、候选选入／排除、命中原文、hash、相关度、实际调用与错误；全部筛除单独说明，历史无目的回执显示未记录。模型节点可查看实际提示词、Schema、输入、原答、校验与错误；另列“已检索到 → 已进入本次输入 → 原答有结构化引用/未见结构化引用”、知识合并出处及未送入原因。查看页面不触发检索或模型调用。
 
-本地实测 6 条目的查询产生 8 条命中（4 个唯一块，有跨查询复用）；5 次模型输入均可定位知识，C3/C6 有引用，两个 Deep 无引用。8 条不能当成 8 个独立来源。召回中登录/网络主题也命中枚举方法，相关性质量和方法采用效果仍未证明；模型最终重复引用失败保留。A/I 新检索、Deep 动态再检索、独立处置检索及自动消费不在本次交付范围。
+本轮本地一次流程有 9 条查询／5 行（3 唯一块），排除 6 次条件冲突和 2 次过期卡候选，跨目的正文合并 2 次。6 次模型调用的原答保存；C6 纠正仍拒收，Result partial/rejected、conclusion=null，模型质量 NOT_PASSED。前序已接受结果未引用知识、两个 Deep 为全案问题，因此知识依赖恢复及缩小问题范围只由直接检查支持，不能扩大实际链路结论。生产 7 次业务 HTTP 与 3 个只读目的查询通过，4177 39 份记录，浏览器实际显示筛除与合并关联。前批失败及回执保留，不据条件过滤宣称合理使用质量通过。A/I 新检索、Deep 动态再检索、独立处置检索及自动消费不在本次交付范围。

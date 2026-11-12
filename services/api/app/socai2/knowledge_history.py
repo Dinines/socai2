@@ -16,6 +16,8 @@ LIMITATIONS = ["historical_reference_not_current_case_observation", "not_indepen
               "recommendation_not_executed_response", "selected_material_fields_not_complete_activity_history"]
 READ = """SELECT to_jsonb(a) AS alert, to_jsonb(m) AS material,
  to_jsonb(t) AS triage, to_jsonb(f) AS feedback,
+ (SELECT r.state FROM socai2.runs r WHERE r.tenant_id=a.tenant_id
+  AND r.id=t.source_run_id AND r.alert_id=a.id) AS triage_run_state,
  COALESCE((SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) FROM socai2.alert_objects o
  WHERE o.tenant_id=a.tenant_id AND o.alert_id=a.id AND o.material_id=m.id),'[]'::jsonb) AS objects
  FROM socai2.alerts a
@@ -35,6 +37,18 @@ def selected(value, keys):
     return {key: value.get(key) for key in keys}
 
 
+def assessment_usability(row):
+    states = {}
+    for key in ("triage", "feedback"):
+        value = row[key]
+        states[key] = ("not_recorded" if not value else
+            "assessment_body_missing" if not value.get("verdict") or not (value.get("rationale") or "").strip() else
+            "different_or_unknown_material" if value.get("input_material_id") != row["material"]["id"] else
+            "source_run_not_completed" if key == "triage" and value.get("source_run_id")
+                and row.get("triage_run_state") != "completed" else "usable_saved_judgment")
+    return states
+
+
 def card_from(row, profile):
     alert, material = row["alert"], row["material"]
     if material is None or material.get("material_state") != "complete":
@@ -43,6 +57,8 @@ def card_from(row, profile):
         raise SourceUnavailable("history_event_time_missing")
     if not row["triage"] and not row["feedback"]:
         raise SourceUnavailable("history_assessment_missing")
+    if "usable_saved_judgment" not in assessment_usability(row).values():
+        raise SourceUnavailable("history_aligned_usable_assessment_missing")
     assessment_fields = ("id", "alert_id", "input_material_id", "source_run_id", "kind", "verdict", "rationale",
                          "recommendations", "confidence", "score_state", "producer", "actor", "assessed_at")
     observations = []
@@ -146,6 +162,14 @@ async def retrieval_record(db, tenant, doc, profile, filters):
         raise SourceUnavailable("history_hit_outside_scope")
     row = await source_row(db, tenant, card["source"]["alert_id"])
     pointers = {"material_id": "latest_material_id", "triage_id": "latest_triage_id", "feedback_id": "latest_feedback_id"}
-    state = ("source_missing" if row is None else "current" if all(
-        card["source"][key] == row["alert"].get(pointer) for key, pointer in pointers.items()) else "superseded")
-    return {**card, "source_version_state": state}
+    state = "source_missing" if row is None else "superseded"
+    usability = None
+    if row is not None:
+        try:
+            current = card_from(row, profile)
+            usability = assessment_usability(row)
+            if all(card["source"][key] == row["alert"].get(pointer) for key, pointer in pointers.items()) and current == card:
+                state = "current"
+        except SourceUnavailable as exc:
+            state = str(exc)
+    return {**card, "source_version_state": state, "assessment_usability": usability}

@@ -19,3 +19,4 @@
 按目标知识的执行位置、字段/索引/配置与 4177 展示见 [Case 知识交接](case-knowledge-handoff.md)。
 
 - [历史告警知识与模型交接](historical-alert-knowledge-handoff.md)：显式卡片入库、C2 历史目标、模型角色与 4177，交付状态以 PROGRESS 为准。
+- [知识检索与入库设计](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/design.md)：用途筛选、按阶段提供去重内容及历史选入／修订时机；一次直接流程及独审后已发布 21 r3，写读与 4177 回执见验收，模型质量保持 NOT_PASSED。

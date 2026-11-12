@@ -257,6 +257,48 @@ def test_deep_narrow_scope_restores_required_cross_member_source_without_relabel
     assert prepared["source_map"][sid]["ref"] == base["source_map"][source]["ref"]
 
 
+def test_knowledge_deduplication_task_selection_and_prior_dependency(sample):
+    from app.socai2.baseline_context import Context
+    from app.socai2.case_model_boundary import build
+    from app.socai2.knowledge_model_input import choose
+
+    context = Context.model_validate(sample["context"])
+    aid, other = list(context.alerts)[:2]
+    ident = str(uuid4())
+    row = {"record_id": "doc", "object_key": "knowledge:test", "namespace": "test", "content_sha256": "version1", "purpose": "technical_explanation",
+           "purpose_label": "技术解释", "use": "解释而非证据", "query_alert_ids": [other],
+           "record": {"id": "doc", "content": "Original optional reference."}}
+    body = {"tool_name": "knowledge", "state": "completed", "rows": [row, copy.deepcopy(row)],
+            "returned_rows": 2, "truncated": False, "actual_args": {"scope": {"alert_ids": [aid, other]},
+                "parameters": {"selectors": [{"object_key": "knowledge:test", "namespace": "test", "alert_ids": [other]}]}}}
+    base = build(context, sample["context_id"], [(ident, body, None)], [], sample["materials"])
+    knowledge = [r for r in base["input_ledger"]["records"] if r.get("knowledge")]
+    assert len(knowledge) == 1
+    assert len(knowledge[0]["knowledge"]["origins"]) == 2
+    assert body["rows"][0] == row  # saved retrieval is unchanged
+    assert any(o["reason"] == "duplicate_knowledge_version" for o in base["omissions"])
+    question = next(q for q in context.questions if q.id != "coverage")
+    question = question.model_copy(update={"scope": question.scope.model_copy(update={"alert_ids": [UUID(aid)]})})
+    context = context.model_copy(update={"questions": [question if q.id == question.id else q for q in context.questions]})
+    excluded = inputs.build("Deep", context, base, {}, question_id=question.id)
+    assert not any(r.get("knowledge") for r in excluded["followup_boundary"]["records"])
+    answer = answer_for(base, context)
+    answer["questions"][0]["evidence_ids"] = [knowledge[0]["id"]]
+    prior = {"analysis": json.loads(case_output_adapter.restore(json.dumps(answer), base["case_boundary"])),
+             "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
+    restored = inputs.build("Deep", context, base, {}, previous=prior, prior_id=uuid4(), question_id=question.id)
+    refs = [r for r in restored["followup_boundary"]["records"] if r.get("knowledge")]
+    assert len(refs) == 1 and refs[0]["block"] == "dependency"
+    assert refs[0]["ref"] == knowledge[0]["ref"]
+    assert refs[0]["value"] == knowledge[0]["value"]
+    policy = {"stage_max_characters": {"C3": 1, "Deep": 10000},
+              "stage_purposes": {"C3": ["technical_explanation"], "Deep": ["investigation_guidance", "historical_case_reference"]}}
+    selected, omissions = choose(knowledge, "C3", [other], policy)
+    assert not selected and omissions[0]["reason"] == "knowledge_optional_budget"
+    selected, omissions = choose(knowledge, "Deep", [other], policy)
+    assert not selected and omissions[0]["reason"] == "knowledge_purpose_not_for_stage"
+
+
 def test_frozen_material_identity_projection_deduplicates_but_changed_value_does_not(sample):
     context, base, prior = fixture(sample)
     field = next(r for r in base["input_ledger"]["records"] if r["ref"]["type"] == "alert_material" and r["ref"]["source_path"].endswith(".outcome"))

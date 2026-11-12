@@ -118,6 +118,15 @@ def load_case_profile(selection):
             or not isinstance(data.get("citation_instruction"), str) or not data["citation_instruction"].strip()):
         raise ValueError("case_profile_enrichment_or_citation_invalid")
     followup = data.get("followup")
+    knowledge = data.get("knowledge_selection", {}).get("stage_max_characters")
+    if (not isinstance(knowledge, dict) or set(knowledge) != {"C3", "Deep", "C6"}
+            or any(type(v) is not int or v < 0 for v in knowledge.values())):
+        raise ValueError("case_knowledge_selection_invalid")
+    purposes = data["knowledge_selection"].get("stage_purposes")
+    if (not isinstance(purposes, dict) or set(purposes) != {"C3", "Deep", "C6"}
+            or any(not isinstance(v, list) or not v or not set(v) <= {
+                "technical_explanation", "investigation_guidance", "historical_case_reference"} for v in purposes.values())):
+        raise ValueError("case_knowledge_stage_purposes_invalid")
     if (not isinstance(followup, dict) or followup.get("version") != "socai2.case-followup.v1"
             or any(not isinstance(followup.get(k), str) or not followup[k].strip() for k in ("Deep", "C6", "common"))
             or any(not isinstance(followup.get(k), list) or any(not isinstance(v, str) for v in followup[k])

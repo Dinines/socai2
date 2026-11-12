@@ -97,7 +97,7 @@ class Vectors:
                 "lt": datetime.fromisoformat(bounds["event_before"]).timestamp()}})
             filters["must_not"] = [{"key": "source_alert_id", "match": {"any": bounds["exclude_alert_ids"]}}]
         result = await self.request("vector", "POST", self.collection + "/points/search", {
-            "vector": vector, "filter": filters, "limit": selector["limit"] + 1,
+            "vector": vector, "filter": filters, "limit": selector["candidate_limit"],
             "score_threshold": selector["score_threshold"], "with_payload": True, "with_vector": False})
         if not isinstance(result.get("result"), list):
             raise SourceUnavailable("knowledge_vector_response_invalid")

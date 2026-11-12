@@ -22,6 +22,7 @@ from app.socai2.knowledge_history import (
     import_cards,
     in_scope,
     index_payload,
+    retrieval_record,
     serialize,
 )
 from app.socai2.knowledge_vectors import Vectors
@@ -50,10 +51,28 @@ def source():
 def history_key(p):
     context = SimpleNamespace(alerts={str(UUID(int=20)): SimpleNamespace(alert={"title": "process", "source_namespace": "lab"})},
                               scope=SimpleNamespace(window_start=datetime(2026, 11, 10, tzinfo=UTC)))
-    return next(k for k in selectors(context, {}, p) if k["purpose"] == PURPOSE)
+    materials = {aid: {"ocsf_json": {"process": {"name": "example"}}} for aid in context.alerts}
+    return next(k for k in selectors(context, materials, p) if k["purpose"] == PURPOSE)
 
 
 class Cards(TestCase):
+    def test_only_aligned_saved_judgment_is_eligible_without_rewriting_other_statements(self):
+        row, p = source(), profile()
+        row["triage"]["input_material_id"] = str(UUID(int=99))
+        card = card_from(row, p)
+        self.assertEqual(card["triage"]["rationale"], row["triage"]["rationale"])
+        self.assertEqual(card["material_alignment"]["triage"], "different_material")
+        row["feedback"] = None
+        with self.assertRaisesRegex(SourceUnavailable, "history_aligned_usable_assessment_missing"):
+            card_from(row, p)
+        row["triage"].update(input_material_id=str(MID), rationale=None)
+        with self.assertRaisesRegex(SourceUnavailable, "history_aligned_usable_assessment_missing"):
+            card_from(row, p)
+        row["triage"].update(input_material_id=str(MID), rationale="saved judgment", source_run_id=str(UUID(int=88)))
+        row["triage_run_state"] = "failed"
+        with self.assertRaisesRegex(SourceUnavailable, "history_aligned_usable_assessment_missing"):
+            card_from(row, p)
+
     def test_card_preserves_original_roles_values_and_source_versions(self):
         row, p = source(), profile()
         card = card_from(row, p)
@@ -122,7 +141,11 @@ class HistoryIO(IsolatedAsyncioTestCase):
         doc = {"id": writes[0]["id"], "tenant_id": TENANT, "content": writes[0]["content"], "chunk_total": 1, "chunk_index": 0}
         indexed = await index_payload(db, TENANT, doc, p)
         self.assertEqual(indexed["source_alert_id"], str(AID))
+        current = await retrieval_record(db, TENANT, doc, p, history_key(p)["filters"])
+        self.assertEqual(current["source_version_state"], "current")
         row["triage"]["rationale"] = "changed"
+        superseded = await retrieval_record(db, TENANT, doc, p, history_key(p)["filters"])
+        self.assertEqual(superseded["source_version_state"], "superseded")
         with self.assertRaisesRegex(SourceUnavailable, "history_card_source_changed_or_mismatched"):
             await index_payload(db, TENANT, doc, p)
 

@@ -1,7 +1,7 @@
 """Case-only query provenance; a query binding is not a returned row's subject."""
 from uuid import UUID
 
-FIELDS = ("query_alert_ids", "record_alert_ids", "membership_basis")
+FIELDS = ("query_alert_ids", "record_alert_ids", "membership_basis", "knowledge")
 
 
 def metadata(source):

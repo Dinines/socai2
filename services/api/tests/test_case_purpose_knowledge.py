@@ -10,6 +10,7 @@ from uuid import UUID
 
 import httpx
 from app.socai2.baseline_optional_sources import SourceUnavailable
+from app.socai2.knowledge_applicability import check as applicability
 from app.socai2.knowledge_config import Profile, content_hash, selectors
 from app.socai2.knowledge_source import index, query
 from app.socai2.knowledge_vectors import Vectors
@@ -38,7 +39,7 @@ def keys(p):
 def document():
     return {"id": DOC, "tenant_id": TENANT, "title": "Technical reference", "content": "Command explanation.",
         "doc_kind": "other", "source_url": "https://example.invalid/reference", "chunk_index": 0, "chunk_total": 1,
-        "tags": ["knowledge:technical_explanation", "knowledge:investigation_guidance"],
+        "tags": ["knowledge:technical_explanation", "knowledge:investigation_guidance", "applies:ocsf.process.name=example"],
         "created_at": None, "updated_at": None}
 
 
@@ -80,6 +81,19 @@ class FakeVectors:
 
 
 class TopicTests(TestCase):
+    def test_same_topic_queries_merge_origins_and_conflicting_conditions_are_excluded(self):
+        p = profile()
+        alert = SimpleNamespace(alert={"title": "process", "source_namespace": "lab"})
+        material = {"id": DOC, "ocsf_json": {"process": {"name": "example"}}}
+        merged = selectors(SimpleNamespace(alerts={"a": alert, "b": alert}), {"a": material, "b": material}, p)
+        self.assertEqual(len(merged), 2)
+        self.assertEqual(merged[0]["alert_ids"], ["a", "b"])
+        self.assertEqual(applicability(merged[0], document(), p)["state"], "applicable")
+        wrong = {**document(), "tags": ["applies:ocsf.process.name=different"]}
+        self.assertEqual(applicability(merged[0], wrong, p)["reason"], "applicability_conflict")
+        missing = {**document(), "tags": document()["tags"] + ["applies:ocsf.device.os.name=windows"]}
+        self.assertEqual(applicability(merged[0], missing, p)["reason"], "required_condition_unknown")
+
     def test_purposes_have_distinct_queries_filters_and_source_roles(self):
         p = profile()
         a, b = keys(p)
@@ -110,6 +124,11 @@ class RetrievalTests(IsolatedAsyncioTestCase):
             rows, _, meta = await query(Service([]), TENANT, {"parameters": {"selectors": keys(p)}}, vectors=FakeVectors([]))
             self.assertEqual(rows, [])
             self.assertTrue(all(q["state"] == "completed" and q["outcome"] == "empty" for q in meta["queries"]))
+            wrong = {**doc, "tags": ["applies:ocsf.process.name=different"]}
+            hit["payload"]["content_sha256"] = content_hash(wrong)
+            rows, _, meta = await query(Service([wrong]), TENANT, {"parameters": {"selectors": keys(p)}}, vectors=FakeVectors([hit]))
+            self.assertEqual(rows, [])
+            self.assertTrue(all(q["outcome"] == "filtered" for q in meta["queries"]))
 
     async def test_failure_and_stale_document_are_not_successful_empty_results(self):
         p = profile()

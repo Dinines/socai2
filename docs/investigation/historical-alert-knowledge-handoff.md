@@ -1,8 +1,8 @@
 # 历史告警知识与模型交接
 
-本功能的设计、实施和验收状态见 [OpenSpec](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)，当前部署以 [PROGRESS](../../PROGRESS.md) 为准。技术解释/取证指导共用配置和来源链见[知识交接](case-knowledge-handoff.md)。本轮补齐历史案例参考，不改变原 C2 `history` 的同对象/事件窗口查询。
+本功能由[历史卡片 OpenSpec](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)交付，并由[用途筛选与当前版本选择](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)补齐资格与模型选取，当前部署以 [PROGRESS](../../PROGRESS.md) 为准。技术解释／取证指导共用配置和来源链见[知识交接](case-knowledge-handoff.md)。历史案例参考不改变原 C2 `history` 的同对象／事件窗口查询。
 
-21 `v1.2-20261112-r1` 已实际发布并读回：一张已有演练告警卡完成 3 次 HTTP 入库/索引/GET和一次历史目的只读检索，4177 从实际 37 份追加至 38 份。没有生产分析 Run、自动入库或自动消费，临时 key 已撤销并核 401。本地模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/historical-knowledge-20261112-01/delivery-summary.json)。
+21 `v1.2-20261112-r3` 已实际发布并读回：已有演练告警卡再次显式入库／索引／GET 保持原身份，历史目的只读检索返回当前卡；与方法资料合计 7 次业务 HTTP、3 个目的查询。4177 从 38→39 份，浏览器已核筛除／合并展示。没有生产分析 Run、自动入库或自动消费，临时 key 已撤销并核 401。本地模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/knowledge-selection-20261112-01/delivery-summary.json)。
 
 ## 功能与接口
 
@@ -15,6 +15,10 @@
 | 内部查看 | 4177 C2 知识节点按目标显示原查询和结果，模型节点关联卡片与分诊/人工字段引用 |
 
 使用原 KB 读写接线，不新增角色/审批流程。每次指定明确告警，服务端按认证租户读取；本功能未启用自动入库或自动知识消费。没有材料、事件时间、历史判断、或超过配置大小时返回未入库原因。快照不可拆散，不静默截断理由或人工正文。相同内容对应同一个文档 ID，新的来源内容形成另一快照。
+
+当前已部署资格要求：至少一份已保存的判断正文／verdict 对应所选材料；带来源 Run 的分诊还需 Run completed。只有不对应材料或失败 Run 的判断时返回 `history_aligned_usable_assessment_missing`。一份独立有效判断可支持参考卡保留，另一份原文及其不适用状态照实保留；检索视图的 `assessment_usability` 与 `material_alignment` 共同说明边界。
+
+导入时机是有效分诊或人工反馈提交成功后，按告警 ID 显式调用入库，再按返回文档 ID 索引。材料／判断修订后重复同一流程；未索引的新版本不能由旧卡兜底。自动监听、自动调度未启用，新到告警仍只保存业务原件；Case 关闭和人工良性判断不自动生成已核实误报规则。
 
 ## 数据及字段对应
 
@@ -37,7 +41,7 @@
 
 C2 请求仍在 `actual_args.parameters.selectors[]`；历史目的的 `filters` 包含 `event_start/event_before/exclude_alert_ids`。默认回看 90 天、每主题 1 卡、相关度阈值 0.45，具体以 profile 为准。区间为 `[Case.window_start−90 天, Case.window_start)`，排除本轮全部成员。缺时间边界不生成历史查询，已有两个目的保持各自条件。
 
-命中保存到原 `tool_response.rows[].record`：`history` 保存卡片的来源/观察/版本状态，`triage/feedback` 单独保存；原 `content` 仍保留序列化原件。`history.source_version_state` 区分 current/superseded/source_missing；旧快照不冒充新判断。元数据位于 C2 summary 的 `source_metadata`，没有新增 tool_response 顶层字段。
+命中保存到原 `tool_response.rows[].record`：`history` 保存卡片的来源/观察/版本状态，`triage/feedback` 单独保存；原 `content` 仍保留序列化原件。新检索仅选 `source_version_state=current` 且指针、正文对应的可用快照；过期、来源缺失或不再合格的候选在 C2 summary 的 `source_metadata.queries[].candidates` 留下排除原因，不送模型。旧卡 GET 和已冻结 Run 原件保持，没有新增 tool_response 顶层字段。
 
 ## 给模型的内容与任务
 

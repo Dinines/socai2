@@ -29,7 +29,8 @@
       "tag": "knowledge:technical_explanation",
       "limit": 2,
       "score_threshold": 0.45,
-      "use": "用于形成待核解释；知识描述常见能力，不证明本案完成、恶意或授权。"
+      "use": "用于形成待核解释；知识描述常见能力，不证明本案完成、恶意或授权。",
+      "candidate_limit": 8
     },
     "investigation_guidance": {
       "label": "取证指导",
@@ -43,7 +44,8 @@
       "tag": "knowledge:investigation_guidance",
       "limit": 2,
       "score_threshold": 0.45,
-      "use": "用于提出取证需求、解释已有结果；仅在当前合法候选中派发，未接入能力记录待核。"
+      "use": "用于提出取证需求、解释已有结果；仅在当前合法候选中派发，未接入能力记录待核。",
+      "candidate_limit": 8
     },
     "historical_case_reference": {
       "label": "历史案例参考",
@@ -54,7 +56,8 @@
       "tag": "knowledge:historical_case_reference",
       "limit": 1,
       "score_threshold": 0.45,
-      "use": "C3 比较历史解释与本案缺少的条件；Deep 参考验证方法；C6 说明差异与未验证条件。历史观察不属于本案，既往分诊/人工反馈不证明本案良恶、授权或处置已执行。"
+      "use": "C3 比较历史解释与本案缺少的条件；Deep 参考验证方法；C6 说明差异与未验证条件。历史观察不属于本案，既往分诊/人工反馈不证明本案良恶、授权或处置已执行。",
+      "candidate_limit": 8
     }
   },
   "topics": {
@@ -86,5 +89,46 @@
       "$.ocsf_json.dst_endpoint",
       "$.raw_json.command_line"
     ]
+  },
+  "applicability": {
+    "tag_prefix": "applies:",
+    "generic_tag": "applicability:generic",
+    "facets": {
+      "ocsf.process.name": {
+        "paths": [
+          "$.ocsf_json.process.name"
+        ],
+        "normalization": "basename_casefold",
+        "topic": true
+      },
+      "ocsf.activity.action": {
+        "paths": [
+          "$.ocsf_json.activity.action"
+        ],
+        "normalization": "casefold",
+        "topic": true
+      },
+      "ocsf.class_uid": {
+        "paths": [
+          "$.ocsf_json.class_uid"
+        ],
+        "normalization": "exact",
+        "topic": true
+      },
+      "ocsf.device.os.name": {
+        "paths": [
+          "$.ocsf_json.device.os.name"
+        ],
+        "normalization": "casefold",
+        "topic": false
+      },
+      "ocsf.metadata.product.name": {
+        "paths": [
+          "$.ocsf_json.metadata.product.name"
+        ],
+        "normalization": "casefold",
+        "topic": false
+      }
+    }
   }
 }
