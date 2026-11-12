@@ -98,7 +98,7 @@ def scoped_table_query(table, *, revision_only=False):
 async def capture(connection, tenant, case):
     async with connection.transaction(isolation="repeatable_read", readonly=True):
         await connection.execute("SELECT set_config('app.current_tenant_id',$1,true)", str(tenant))
-        require(await connection.fetchval(RLS, tenant, list(TABLES)), "read-only tenant RLS is required on all 29 tables")
+        require(await connection.fetchval(RLS, tenant, list(TABLES)), "read-only tenant RLS is required on all configured investigation tables")
         scope = await connection.fetchrow(SCOPE, tenant, case)
         require(scope is not None, "Case absent or not visible to this tenant")
         args = (tenant, scope["alerts"], scope["incidents"], case, scope["stages"])
@@ -225,7 +225,7 @@ def main():
         return 0
     except ValueError as exc:
         # asyncpg URL parsing errors may contain connection arguments. Only surface our own known guards.
-        messages = {"SOCAI2_AUDIT_DATABASE_URL must be a PostgreSQL URL", "read-only tenant RLS is required on all 29 tables",
+        messages = {"SOCAI2_AUDIT_DATABASE_URL must be a PostgreSQL URL", "read-only tenant RLS is required on all configured investigation tables",
                     "Case absent or not visible to this tenant", "folder belongs to a different capture",
                     "first capture requires an empty dedicated folder", "keep the published site separate from the source folder"}
         print(str(exc) if str(exc) in messages else "Capture rejected; verify the connection, scope and snapshot.", file=sys.stderr)

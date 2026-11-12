@@ -70,23 +70,23 @@ class CaseCaptureTest(unittest.TestCase):
         at, data = asyncio.run(live.capture(conn, self.tenant, self.case))
         self.assertEqual((at, data), (self.at, self.data))
         self.assertEqual(conn.settings, {"isolation": "repeatable_read", "readonly": True})
-        self.assertEqual(len(conn.queries), 29)
+        self.assertEqual(len(conn.queries), 28)
         conn.rls = False
         with self.assertRaisesRegex(ValueError, "read-only tenant RLS"):
             asyncio.run(live.capture(conn, self.tenant, self.case))
-        self.assertEqual(len(conn.queries), 29)
+        self.assertEqual(len(conn.queries), 28)
 
-    def test_pilot_driver_retains_verified_file_and_queries(self):
+    def test_current_driver_and_retained_queries(self):
         driver = ROOT / "deploy/local-investigation/flow_export.py"
-        # 21's deployed_matrix_host verifies the raw helper bytes before loading it.
-        self.assertEqual(hashlib.sha256(driver.read_bytes()).hexdigest(),
-                         "320e6d19dd384ee66b013629e80fc875fb6ea8fdb48c796d7b997c0519b65e0e")
+        # Frozen historical pilot helpers are unchanged; this is the current reader.
+        self.assertEqual(hashlib.sha256(driver.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+                         "4f33ece488c60545c9be9f4e94e880ce0b32176bb391f24530f45403f9e2077a")
         original = hashlib.sha256(b"\0".join(query_for(t).encode() for t in live.TABLES))
-        self.assertEqual(original.hexdigest(), "58e783fb4a12e6d6bc4691aa89582987a56ad9a277c6644d6cf57a30eccd3569")
+        self.assertEqual(original.hexdigest(), "c1b12378d4a702cdf66859f57a46d519ffa7219bba44c5df400fe2ec45bbb813")
 
     def test_case_selectors_support_multiple_incidents(self):
         queries = hashlib.sha256(b"\0".join(live.case_query(t).encode() for t in live.TABLES))
-        self.assertEqual(queries.hexdigest(), "b0565c622a1b31748b53fa2ca21a728967b05598c49dc735f9ec16e6ed2f5d62")
+        self.assertEqual(queries.hexdigest(), "57de7f8ac4cae5069c23046f5c24b5c90287cdcd17c0f36c6acb45ac756c0bd0")
         for t in ("incidents", "incident_alerts", "incident_diagnoses", "artifacts", "activities", "activity_targets",
                   "comments", "response_links"):
             sql = live.case_query(t)

@@ -8,6 +8,7 @@ def direct_observations(sources, members):
     members = set(members)
     return {sid: source for sid, source in sources.items()
         if source["ref"]["role"] == "observation"
+        and not source.get("knowledge")
         and source.get("membership_basis") != "query_binding_only"
         and members.intersection(source["alert_ids"])}
 

@@ -4,7 +4,10 @@
 
 | 接手内容 | 资料 |
 | --- | --- |
-| 页面功能和跳转 | [产品需求](../design/alert-incident-case-product-requirements.md)、[功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) |
+| 当前调查表范围 | [28 表职责／24 表实际写入](investigation-table-scope.md)、[当前机器字典](../design/socai2-data-contract-current.json)；外部资产等基础数据由业务后端实现 |
+| 页面功能与规则 | [逐页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)、[规则确认记录](../design/investigation-product-decisions.md)、[产品需求](../design/alert-incident-case-product-requirements.md) |
+| 页面字段和跳转 | [F 字段分组／J 跳转附录](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
+| HTTP对接主入口 | [125项功能对应接口、输入输出与错误](../../deliverables/investigation-validation-20261106/http-handoff/README.md)；[本机/21 Swagger](../../deploy/api-docs/README.md) |
 | 数据及接口 | [数据交接](socai2-page-data-handoff-20261106.md)、[字段字典](../design/socai2-field-dictionary-20261103.md)、[OpenAPI](../design/socai2-independent-api-v2.openapi.json) |
 | 程序及模型职责 | [执行账本](current-execution-ledger.md)、[模型输入输出](model-input-output-current-20261109.md) |
 | 问题与后续验收 | [问题清单](current-issues.md)、[OpenSpec 任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |

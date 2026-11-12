@@ -101,7 +101,8 @@ def final_format(prepared, context, comparison):
             questions = schema["$defs"][questions["$ref"].removeprefix("#/$defs/")]
         schema["$defs"]["Analysis"]["properties"]["questions"] = {**copy.deepcopy(questions),
             "minItems": len(context.questions) - 1, "maxItems": len(context.questions) - 1}
-    return constrain_findings(fmt, prepared["source_map"], context.alerts, program_owned=program.enabled(boundary))
+    return constrain_findings(delivery.constrain_recommendations(fmt), prepared["source_map"], context.alerts,
+                              program_owned=program.enabled(boundary))
 
 
 def restore_final(content, prepared, comparison):

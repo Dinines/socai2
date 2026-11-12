@@ -250,7 +250,8 @@ async def run_checks(engine, record, only=None):
             assert (await client.get(path)).status_code == 404
             principal = CurrentUser(USER, TENANT, "admin", ACTOR.name, scopes=["cases:read", "cases:write"])
             app.dependency_overrides.pop(api.get_service)
-            with patch.object(api.settings, "SOCAI2_CASE_API_ENABLED", False):
+            with patch.object(api.settings, "SOCAI2_CASE_API_ENABLED", False), \
+                 patch.object(api.settings, "SOCAI2_PAGE_READ_ENABLED", False):
                 assert (await client.get(path)).status_code == 503
 
     checks = [test_human_create_idempotent_without_machine_effects, test_human_metadata_edits_and_feedback_reattest,

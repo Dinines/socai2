@@ -1,4 +1,4 @@
-"""Batch-scoped 29-table readback and separate, unmodified API observations."""
+"""Batch-scoped current-table readback and separate, unmodified API observations."""
 import json
 from datetime import UTC, datetime
 from uuid import UUID, uuid5
@@ -10,7 +10,7 @@ TABLES = ("alerts", "alert_materials", "alert_source_refs", "alert_objects", "al
     "incidents", "incident_alerts", "incident_diagnoses", "cases", "case_alerts", "case_incidents",
     "case_assessments", "case_assessment_sources", "case_assessment_members", "runs", "run_members", "run_steps",
     "artifacts", "results", "result_members", "tasks", "task_revisions", "conversations", "messages",
-    "graph_explorations", "activities", "activity_targets", "comments", "response_links")
+    "activities", "activity_targets", "comments", "response_links")
 
 
 def query_for(table):

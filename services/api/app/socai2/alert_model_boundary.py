@@ -6,7 +6,8 @@ from .baseline_store import StoreError, digest, encoded
 
 
 def build(source, input_id, queries, profile, *, execution_time=None):
-    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time, complete_material=True)
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time,
+                                     complete_material=True, render_messages=False)
     cfg = profile.config
     raw = (source["members"][0].get("material") or {}).get("raw_json")
     data["raw_alert_envelope"] = isinstance(raw, dict) and all(

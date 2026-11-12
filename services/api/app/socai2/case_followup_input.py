@@ -2,23 +2,33 @@
 import copy
 from collections import Counter
 
+from . import case_followup_selection as selection
 from . import knowledge_model_input as knowledge
 from .baseline_context import reference
 from .baseline_evidence import SCHEMA as EVIDENCE_SCHEMA
 from .baseline_evidence import citation_roles
 from .baseline_final_evidence import query_candidates
-from .baseline_model_view import blocked, draft_limit
+from .baseline_model_view import blocked, blocked_message, draft_limit
 from .baseline_store import StoreError, digest, encoded
-from .case_input_hierarchy import project, render, render_tools
+from .case_c3_input_selection import describe as business_provenance
+from .case_c3_input_selection import semantic as material_semantic
+from .case_input_hierarchy import project, render, render_tools, shared_fields
 from .case_input_text import field_hint, project_context
 from .case_model_boundary import selected_profile
 from .case_program_output import enabled, observation_literals
 from .case_source_scope import describe, frozen_query_scope
-from .case_source_scope import metadata as scope_metadata
+from .case_source_scope import metadata as query_metadata
+from .knowledge_content import project_content
 from .model_input_view import source_prefix
+from .program_facts import query_result_text
 
 SCHEMA = "socai2.case-followup-input.v1"
 REFERENCES = {"evidence_ids", "source_ids", "support_ids", "counter_ids"}
+
+
+def scope_metadata(row):
+    return {**query_metadata(row), **({"original_scope": copy.deepcopy(row["original_scope"])}
+                                   if "original_scope" in row else {})}
 
 
 def execution_receipt(payload):
@@ -71,16 +81,23 @@ def identities(value, boundary):
 
 
 class Sources:
-    def __init__(self, context, base, artifacts, extra):
+    def __init__(self, context, base, artifacts, extra, records=None, field_selection=False):
         self.artifacts, self.context = artifacts, context
+        self.field_selection = field_selection
         self.rows, self.by_ref, self.dependencies, self.omissions = [], {}, [], copy.deepcopy(base["omissions"])
         self.prefix = source_prefix([context.model_dump(mode="json"), base, artifacts, extra])
         self.boundary = copy.deepcopy(base["case_boundary"])
         self.base_ids = {}
-        self.base_records = {encoded(r["ref"]): r for r in base["input_ledger"]["records"]}
-        for row in base["input_ledger"]["records"]:
+        self.query_numbers = {}
+        records = base["input_ledger"]["records"] if records is None else records
+        self.base_records = {encoded(r["ref"]): r for r in records}
+        for row in records:
             for origin in row.get("knowledge", {}).get("origins", []):
                 self.base_records[encoded(origin["ref"])] = row
+
+    def query_record_key(self, ref):
+        number = self.query_numbers.setdefault(str(ref["id"]), len(self.query_numbers) + 1)
+        return f"Q{number}R{ref['source_path'].split('.')[2]}"
 
     def add(self, ref, value, owners, block, *, original=None, **extra):
         ref, owners = copy.deepcopy(ref), list(map(str, owners))
@@ -88,18 +105,26 @@ class Sources:
         value = project_context(ref, value, config, self.omissions)
         if value == {} and ref.get("source_path") in config["context_projection"]:
             return None
+        if blocked(value if original is None else original):
+            self.omissions.append({"ref": ref, "reason": "input_guard", "value_sha256": digest(value)})
+            return None
+        if extra.get("knowledge", {}).get("part") == "card":
+            value = project_content(value, config, self.omissions, ref)
+        artifact = self.artifacts.get(str(ref["id"]), {})
+        if (self.field_selection and (block == "query" or artifact.get("schema_version") == EVIDENCE_SCHEMA)
+                and isinstance(value, dict) and {"name", "value"} <= set(value)):
+            value = project(value, "query_field", config["followup_input_selection"], self.omissions, ref)
         key = encoded(ref)
         if key in self.by_ref:
             row = self.by_ref[key]
             if row["alert_ids"] != owners or digest(row["value"]) != digest(value):
                 raise StoreError("followup_source_projection_conflict", 422)
             return row["id"]
-        if blocked(value if original is None else original):
-            self.omissions.append({"ref": ref, "reason": "input_guard", "value_sha256": digest(value)})
-            return None
         sid = self.prefix + "S" + str(len(self.rows) + 1)
         row = {"id": sid, "ref": ref, "alert_ids": owners, "value": copy.deepcopy(value),
                "block": block, **extra}
+        if extra.get("record_alert_ids"):
+            identities({"alert_ids": extra["record_alert_ids"]}, self.boundary)
         self.rows.append(row)
         self.by_ref[key] = row
         return sid
@@ -181,6 +206,9 @@ class Sources:
                 return self.resolve({"ref": raw_ref, "alert_ids": owners})
         elif payload.get("type") == "query_projection":
             owners, basis = payload["alert_ids"], "query_binding_only"
+            record_key = self.query_record_key(ref)
+            return self.add(ref, {"record_key": record_key, **value}, owners, "dependency",
+                            membership_basis=basis, record_key=record_key)
         else:
             return None
         return self.add(ref, value, owners, "dependency", membership_basis=basis)
@@ -241,17 +269,29 @@ class Sources:
                         counts = value.setdefault("unavailable_prior_reference_counts", {})
                         counts[key] = counts.get(key, 0) + resolved.count(None)
             if original["block"] == "triage":
+                if "source_refs" in value:
+                    resolved = [current(s) for s in value["source_refs"]]
+                    value["source_refs"] = [s for s in resolved if s]
+                    if None in resolved:
+                        value["unavailable_prior_reference_count"] = value.get("unavailable_prior_reference_count", 0) + resolved.count(None)
                 for rec in value.get("recommendations", []):
                     if "source_refs" in rec:
                         resolved = [current(s) for s in rec["source_refs"]]
                         rec["source_refs"] = [s for s in resolved if s]
                         if None in resolved:
                             rec["unavailable_prior_reference_count"] = rec.get("unavailable_prior_reference_count", 0) + resolved.count(None)
+            if original["block"] == "incident" and original.get("prior_reference_resolution"):
+                prior = original["prior_reference_resolution"]
+                resolved = [current(s) for s in prior["visible"]]
+                row["prior_reference_resolution"] = {"visible": [s for s in resolved if s],
+                    "unavailable_count": len(prior["not_visible"]) + resolved.count(None)}
 
 
-def query_records(registry, material, projections, *, final):
+def query_records(registry, material, projections, *, final, excluded_fields=(), required_refs=()):
     facts = []
+    required_refs = {encoded(ref) for ref in required_refs}
     for row in projections:
+        registry.query_numbers.setdefault(str(row["id"]), len(registry.query_numbers) + 1)
         payload = row["content_json"]
         binding = material["catalog"]["bindings"][payload["binding_id"]]
         facts.append({"artifact_id": str(row["id"]), "state": payload["state"], "reason": payload["reason"],
@@ -264,8 +304,15 @@ def query_records(registry, material, projections, *, final):
     required_missing = bool(missing) if final else False
     for item in candidates:
         source = item["source"]
-        sid = registry.add(source["ref"], item["entry"]["value"], source["alert_ids"], "query",
-                           membership_basis="query_binding_only", record_key=source["record_key"])
+        value = item["entry"]["value"]
+        if (value["name"] in excluded_fields and not item.get("required")
+                and encoded(source["ref"]) not in required_refs):
+            registry.omissions.append({"ref": source["ref"], "reason": "query_identity_kept_in_backend",
+                                       "value_sha256": digest(value)})
+            continue
+        record_key = registry.query_record_key(source["ref"])
+        sid = registry.add(source["ref"], {**value, "record_key": record_key}, source["alert_ids"], "query",
+                           membership_basis="query_binding_only", record_key=record_key)
         required_missing |= bool(final and item.get("required") and sid is None)
     for row in facts:
         payload = next(p["content_json"] for p in projections if str(p["id"]) == row["artifact_id"])
@@ -273,7 +320,7 @@ def query_records(registry, material, projections, *, final):
             execution_receipt(payload), row["related_alert_ids"], "query_receipt")
         row["visible_fields"] = sum(r["block"] == "query" and r["ref"]["id"] == row["artifact_id"] for r in registry.rows)
         if row["visible_fields"] < row["projected_fields"]:
-            row["limitations"] = [*row["limitations"], "部分查询返回字段被输入检查排除，不能视作已读全部返回内容。"]
+            row["limitations"] = [*row["limitations"], "部分查询返回字段未进入模型输入，不能视作已读全部返回内容。"]
         else:
             row["view_state"] = "all_projected_fields"
     registry.omissions.extend(missing)
@@ -286,7 +333,35 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     cfg, policy = profile.config, profile.config["followup"]
     if base["case_boundary"]["profile"] != profile.identity:
         raise StoreError("case_input_profile_changed", 422)
-    reg = Sources(context, base, artifacts, [previous, extra, lead, graphs])
+    if previous and previous.get("analysis") and previous.get("validation") != "structure_scope_sources_checked":
+        raise StoreError("unaccepted_prior_analysis", 422)
+    task_selection = stage in cfg.get("followup_input_selection", {}).get("stages", [])
+    question = next((q for q in context.questions if q.id == question_id), None) if stage == "Deep" else None
+    if stage == "Deep" and question is None:
+        raise StoreError("question_outside_frozen_scope", 422)
+    selected_analysis, selection_omissions = None, []
+    selected_records = base["input_ledger"]["records"]
+    required = []
+    if task_selection:
+        cfg = copy.deepcopy(cfg)
+        cfg["presentation"]["labels"].update(cfg["c3_input_selection"]["labels"])
+        cfg["presentation"]["labels"].update(cfg["followup_input_selection"]["labels"])
+        if previous and previous.get("analysis"):
+            selected_analysis = selection.prior(previous["analysis"], question, lead, prior_id, cfg,
+                selection_omissions, program_owned=enabled(base["case_boundary"]))
+            required.extend(selection.references(selected_analysis, previous["source_map"]))
+        if stage == "C6":
+            for artifact in artifacts.values():
+                payload = artifact.get("content_json") or {}
+                if payload.get("type") == "deep_summary" and payload.get("answer"):
+                    required.extend(selection.references(payload["answer"], payload["source_map"]))
+            for row in lead:
+                plan = artifacts.get(str(row["source"]["ref"]["id"]), {}).get("content_json", {})
+                required.extend(selection.references(row["original"], plan.get("source_map", {})))
+        selected_records = selection.records(base, context, cfg, profile.business, required, selection_omissions)
+    reg = Sources(context, base, artifacts, [previous, extra, lead, graphs], records=selected_records,
+                  field_selection=task_selection)
+    reg.omissions.extend(selection_omissions)
     boundary, ledger = reg.boundary, base["input_ledger"]
     required_missing = False
     prior_visible = None
@@ -294,22 +369,27 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     external = sorted({str(a) for row in lead for a in row["source"]["alert_ids"]} - set(boundary["member_aliases"]))
     for aid in external:
         boundary["member_aliases"][aid] = "X" + str(len([v for v in boundary["member_aliases"].values() if v.startswith("X")]) + 1)
-    question = next((q for q in context.questions if q.id == question_id), None) if stage == "Deep" else None
-    if stage == "Deep" and question is None:
-        raise StoreError("question_outside_frozen_scope", 422)
     allowed = set(map(str, question.scope.alert_ids)) if question else set(context.alerts)
     # Retain cross-member/common/unknown-scope and all human material. The
     # current frozen questions usually cover the whole Case; no pretend filter.
-    for row in ledger["records"]:
+    for row in selected_records:
         if row.get("knowledge"):
             continue  # Restore prior dependencies first, then select optional knowledge.
-        if row["alert_ids"] and not allowed.intersection(row["alert_ids"]) and row["ref"]["role"] != "human_statement":
+        owners = row["alert_ids"] or row.get("query_alert_ids", [])
+        if owners and not allowed.intersection(owners) and (task_selection or row["ref"]["role"] != "human_statement"):
             reg.omissions.append({"ref": row["ref"], "reason": "outside_frozen_question_scope"})
             continue
         sid = reg.add(row["ref"], row["value"], row["alert_ids"], "base",
                       original=row.get("original_value"), business_block=row["block"], **scope_metadata(row))
         reg.base_ids[row["id"]] = sid
-    queries, query_missing = query_records(reg, material, projections, final=stage == "C6") if projections else ([], False)
+    if task_selection and question:
+        projections = [r for r in projections if not r["content_json"].get("alert_ids")
+                       or allowed.intersection(map(str, r["content_json"]["alert_ids"]))]
+        options = [r for r in options if not r.get("alert_ids") or allowed.intersection(map(str, r["alert_ids"]))]
+        binding_map = {k: v for k, v in (binding_map or {}).items() if any(o["binding_id"] == k for o in options)}
+    queries, query_missing = query_records(reg, material, projections, final=stage == "C6",
+        excluded_fields=cfg["followup_input_selection"].get("query_backend_fields", ()) if task_selection else (),
+        required_refs=required) if projections else ([], False)
     material_source = None
     if stage == "C6" and enabled(boundary) and material is not None:
         material_artifact = next((aid for aid, row in artifacts.items() if row.get("content_json") == material), None)
@@ -317,23 +397,22 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
             material_source = reg.add(reference("artifact", material_artifact, "execution_receipt"),
                 execution_receipt(material), sorted(material["members"]), "query_receipt")
     if previous and previous.get("analysis"):
-        if previous.get("validation") != "structure_scope_sources_checked":
-            raise StoreError("unaccepted_prior_analysis", 422)
-        analysis = copy.deepcopy(previous["analysis"])
-        for followup in analysis["followups"]:
+        analysis = copy.deepcopy(selected_analysis if selected_analysis is not None else previous["analysis"])
+        for followup in analysis.get("followups", []):
             for key in policy["prior_followup_omit"]:
                 if key in followup:
                     reg.omissions.append({"reason": "prior_binding_is_not_current_tool_choice", "field": key,
                                           "value_sha256": digest(followup.pop(key))})
-        if question:
+        if question and not task_selection:
             analysis = {"question": next(q for q in analysis["questions"] if q["id"] == question_id),
                         "followups": [f for f in analysis["followups"] if f["question_id"] == question_id]}
         value = reg.rebind(analysis, previous["source_map"], str(prior_id))
         prior_visible = reg.add(reference("artifact", prior_id, "prior_analysis", "$.analysis"), value,
-                                sorted(context.alerts), "C3", original=analysis)
+                                sorted(context.alerts), "C3", original=previous["analysis"])
     for row in lead:
         value = copy.deepcopy(row["entry"]["value"])
-        if "execution_plan_index" in value:
+        is_plan = "execution_plan_index" in value
+        if is_plan:
             plan = artifacts[str(row["source"]["ref"]["id"])]["content_json"]
             if plan.get("validation") != "structure_scope_sources_checked":
                 raise StoreError("unaccepted_prior_plan", 422)
@@ -344,8 +423,10 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         else:
             value = {k: v for k, v in value.items() if k not in policy["comparison_source_omit"]}
             value = identities(value, boundary)
+        if task_selection and is_plan:
+            value = project(value, "plan", cfg["followup_input_selection"], reg.omissions, row["source"]["ref"])
         visible = reg.add(row["source"]["ref"], value, row["source"]["alert_ids"],
-                          "plan" if "execution_plan_index" in value else "comparison", original=row["original"])
+                          "plan" if is_plan else "comparison", original=row["original"])
         required_missing |= bool(row.get("required") and visible is None)
     if stage == "C6":
         for aid, row in artifacts.items():
@@ -374,7 +455,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
                            for a in q.scope.alert_ids}
     elif question.id == "coverage":
         knowledge_scope = set()
-    selected, knowledge_omissions = knowledge.choose([r for r in ledger["records"] if r.get("knowledge")],
+    selected, knowledge_omissions = knowledge.choose([r for r in selected_records if r.get("knowledge")],
         stage, knowledge_scope, cfg["knowledge_selection"], dependencies=dependencies, excluded=_excluded_knowledge)
     reg.omissions.extend(knowledge_omissions)
     for row in selected:
@@ -386,7 +467,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     metadata = copy.deepcopy(extra or {})
     comparison = metadata.get("comparison")
     visible_comparison = None
-    if comparison:
+    if comparison and not (task_selection and comparison.get("state") == "initial" and comparison.get("result_id") is None):
         visible_comparison = identities({k: v for k, v in comparison.items() if k not in policy["comparison_omit"]}, boundary)
         if visible_comparison.get("prior_scope"):
             visible_comparison["prior_scope"] = project(visible_comparison["prior_scope"], "scope", cfg, omissions, "prior_scope")
@@ -405,23 +486,55 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         if q.id in cfg["question_instructions"]:
             blocks.append("[" + q.id + " 的回答边界] " + cfg["question_instructions"][q.id])
     blocks += ["[对象短号]", *[alias + "=" + key for key, alias in boundary["object_aliases"].items()]]
-    if ledger.get("presented_program_facts"):
+    if ledger.get("presented_program_facts") and not (task_selection and question):
         blocks += ["[必要程序事实]", render(ledger["presented_program_facts"], cfg)]
-    if queries:
-        blocks += ["[实际补查回执｜查询完成不代表问题解决]", *[
-            render(identities({k: v for k, v in row.items() if k not in policy["query_omit"]}, boundary), cfg) for row in queries]]
+    query_names = {row["artifact_id"]: row["tool_name"] for row in queries}
+    tool_labels = {**profile.business["render"]["query_names"], **cfg["c3_input_selection"]["query_names"]}
     execution = metadata.get("followup_execution")
-    if execution:
+    if execution and not task_selection:
         visible = {"routes": [{k: v for k, v in row.items() if k not in policy["execution_omit"]} for row in execution["routes"]]}
         blocks += ["[原计划执行情况｜按 execution_plan_index 对应]", render(visible, cfg)]
     if visible_comparison:
         blocks += ["[本次比较条件]", render(visible_comparison, cfg)]
     if metadata.get("graph_state") in {"not_built", "stale"}:
-        blocks.append("[图谱限制] " + metadata["graph_state"] + "；未提供可用的当前派生图，不表示没有关联。")
+        blocks.append(cfg["followup_input_selection"]["graph_unavailable_text"] if task_selection else
+                      "[图谱限制] " + metadata["graph_state"] + "；未提供可用的当前派生图，不表示没有关联。")
     if prior_visible is None:
         blocks.append("没有可用的C3判断；需根据现有材料独立分析，不能假装已承接初步结论。")
-    last = None
+    presentation = []
+    shared, shared_omits = shared_fields(
+        [(r["id"], r["value"]) for r in reg.rows if r["block"] == "graph"],
+        cfg["presentation"]["receipt_shared_fields"], presentation)
+    if shared:
+        blocks.append("[共同限制｜仅适用于所列来源]")
+        blocks += [",".join(item["applies_to"]) + "：" + render({item["field"]: item["value"]}, cfg) for item in shared]
+    groups, seen = [], {}
     for row in reg.rows:
+        key = (row["ref"]["id"], tuple(row["query_record_identity"]), row["block"], row["ref"]["role"],
+               tuple(row["alert_ids"]), digest(scope_metadata(row)), digest(row["value"])) if row.get("query_record_identity") else None
+        if task_selection and row.get("query_record_identity"):
+            key = ("history", tuple(row["query_record_identity"]), row["ref"]["role"], tuple(row["alert_ids"]),
+                   tuple(row.get("record_alert_ids", [])), row.get("membership_basis"), digest(row["value"]))
+        path = row["ref"]["source_path"] or ""
+        semantic = next((path[len(root):] for root in profile.business["render"]["event_roots"] if path.startswith(root)), None)
+        if task_selection:
+            semantic = material_semantic(reg.base_records.get(encoded(row["ref"]), row), profile.business["render"], cfg)
+        if row["ref"]["type"] == "alert_material" and semantic:
+            key = ("material", row["ref"]["id"], row["ref"]["role"], tuple(row["alert_ids"]), semantic, digest(row["value"]))
+        if task_selection and row.get("record_key") and not row["value"].get("conflict"):
+            key = ("query_field", row["ref"]["id"], row["ref"]["role"], tuple(row["alert_ids"]),
+                   digest(scope_metadata(row)), digest({k: v for k, v in row["value"].items() if k != "record_key"}))
+        if key is not None and key in seen:
+            seen[key]["ids"].append(row["id"])
+            seen[key]["rows"].append(row)
+            continue
+        group = {"row": row, "ids": [row["id"]], "rows": [row]}
+        groups.append(group)
+        if key is not None:
+            seen[key] = group
+    last = None
+    for group in groups:
+        row = group["row"]
         members = "、".join(boundary["member_aliases"].get(a, "案件外成员") for a in row["alert_ids"]) or "共同背景/范围不明"
         block = ("case_record" if row["ref"]["type"] == "artifact" and row["ref"]["source_path"] == "$.case"
                  else "query_receipt" if row["ref"]["role"] == "execution_receipt" else row["block"])
@@ -432,20 +545,48 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
             last = heading
         path = row["ref"]["source_path"] or ""
         caption = path.removeprefix("$.ocsf_json.").removeprefix("$.raw_json.") if row.get("business_block") == "material" else ""
-        provenance = describe(row, lambda aid: boundary["member_aliases"].get(aid, "案件外成员"))
+        provenance = ("" if row["ref"]["role"] == "execution_receipt"
+                      else (business_provenance if task_selection else describe)(row, lambda aid: boundary["member_aliases"].get(aid, "案件外成员")))
         meaning = field_hint(row["ref"], cfg)
-        blocks.append("[" + row["id"] + "] " + (provenance + " " if provenance else "")
-                      + (caption + "=" if caption else "") + render(row["value"], cfg)
+        shown = ({k: v for k, v in row["value"].items() if k not in shared_omits.get(row["id"], set())}
+                 if isinstance(row["value"], dict) else row["value"])
+        citations = "[" + ",".join(group["ids"]) + "]"
+        if task_selection and row.get("record_key"):
+            citations = "、".join(f"[{r['id']}] {r['record_key']}" for r in group["rows"])
+            provenance = ""  # The section heading already states query binding, not row membership.
+            caption = shown["name"]
+            shown = {k: v for k, v in shown.items() if k not in {"record_key", "name"}}
+            if set(shown) == {"value"}:
+                shown = shown["value"]
+        if row["ref"]["role"] == "execution_receipt":
+            if "members" in row["value"]:
+                shown = "；".join(boundary["member_aliases"].get(aid, "案件外成员") + "：材料"
+                    + {"available": "可用", "unavailable": "不可用"}.get(member.get("state"), "状态未知")
+                    for aid, member in row["value"]["members"].items())
+            else:
+                shown = query_result_text(row["value"], tool_labels,
+                                          tool_name=query_names.get(row["ref"]["id"]))
+        blocks.append(citations + " " + (provenance + " " if provenance else "")
+                      + (caption + "=" if caption else "") + render(shown, cfg)
                       + ("（字段含义：" + meaning + "）" if meaning else ""))
+        if row.get("prior_reference_resolution"):
+            resolution = row["prior_reference_resolution"]
+            if resolution["visible"]:
+                blocks[-1] += "；依据=" + render(resolution["visible"], cfg)
+            if resolution["unavailable_count"]:
+                blocks[-1] += f"；{resolution['unavailable_count']}条原依据当前不可见"
     # Keep the original receipts and source IDs; this is a direct field projection,
     # not a model summary or a reconstruction from prior analysis prose.
     background = [{"source_id": row["id"], **{k: row["value"][k] for k in
         ("tool_name", "state", "outcome", "returned_rows", "truncated") if k in row["value"]}}
         for row in reg.rows if row.get("business_block") == "background_query"
         and row["ref"]["role"] == "execution_receipt" and isinstance(row["value"], dict)]
-    if background:
-        blocks += ["[" + policy["labels"]["background_status"] + "]", *[render(row, cfg) for row in background]]
-    if omissions:
+    # The result was displayed with its source above. Keep this complete
+    # background ledger for program-owned coverage, without displaying it again.
+    if task_selection:
+        if any(r["reason"] == "input_guard" for r in omissions):
+            blocks.append(cfg["followup_input_selection"]["unavailable_text"])
+    elif omissions:
         blocks.append("[材料限制] " + render(dict(Counter(r["reason"] for r in omissions)), cfg)
                       + "；省略或不可见不表示不存在，不能视作已读全文。")
     if enabled(boundary):
@@ -472,7 +613,10 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
     presentation = None
     if stage == "Deep":
         from .baseline_tool_catalog import data
-        presentation = render_tools(identities(data(options), boundary), cfg)
+        catalog = identities(data(options), boundary)
+        presentation = render_tools(selection.available_tools(catalog) if task_selection else catalog, cfg)
+        if task_selection and not options:
+            presentation["text"] = cfg["followup_input_selection"]["no_tools_text"]
         messages.append({"role": "user", "content": presentation["text"]})
     sources = {r["id"]: {"ref": r["ref"], "alert_ids": r["alert_ids"], "visible_value_sha256": digest(r["value"]),
                             **scope_metadata(r), **{k: r[k] for k in ("record_key",) if k in r}} for r in reg.rows}
@@ -486,7 +630,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         return build(stage, context, base, artifacts, previous=previous, prior_id=prior_id, question_id=question_id,
             material=material, projections=projections, options=options, binding_map=binding_map, extra=extra,
             lead=lead, graphs=graphs, _excluded_knowledge=(*_excluded_knowledge, optional[-1]))
-    if any(blocked(m["content"]) for m in messages):
+    if any(blocked_message(m["content"]) for m in messages):
         why = "case_followup_input_guard"
     if not base["ready"]:
         why = base["reason"]
@@ -498,7 +642,8 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
         "source_map": sources, "coverage": coverage, "omissions": omissions,
         "case_boundary": {**boundary, "stage": stage, "question_id": question_id},
         "followup_boundary": {"version": policy["version"], "records": reg.rows, "dependencies": reg.dependencies,
-                              "query_facts": queries, "background_status": background, "program_metadata": metadata},
+                              "query_facts": queries, "background_status": background, "program_metadata": metadata,
+                              "presentation": {"groups": [g["ids"] for g in groups], "shared_fields": shared, "ledger": presentation}},
         "binding_map": binding_map or {}, "tool_presentation": presentation,
         "source_states": base.get("source_state_ledger", []), "program_facts": ledger.get("program_facts"),
         "bytes": len(encoded(messages))}

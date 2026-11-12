@@ -80,6 +80,18 @@ def query_items(aid, row, cfg):
         yield reference("artifact", row["id"], role, path), cursor, projected, [aid]
 
 
+def query_record_identity(body, path):
+    """Display identity only: one exact history version in one frozen receipt."""
+    parts = (path or "").split(".")
+    if body.get("tool_name") != "history" or len(parts) < 3 or parts[:2] != ["$", "rows"]:
+        return None
+    row = body["rows"][int(parts[2])]
+    record = row.get("record")
+    if not isinstance(record, dict) or not row.get("record_id") or record.get("id") != row["record_id"]:
+        return None
+    return str(row["record_id"]), digest(record), ".".join(parts[3:])
+
+
 def build(source, input_id, profile, *, execution_time=None):
     if len(source["members"]) > 200:
         raise StoreError("incident_member_directory_too_large", 422)
@@ -87,6 +99,7 @@ def build(source, input_id, profile, *, execution_time=None):
     if validation is None:
         raise StoreError("incident_triage_validation_missing", 422)
     verified = receipts(source)
+    query_bodies = {row["id"]: row["content_json"] for _, row in verified}
     cfg = profile.config
     candidates = [(reference("artifact", input_id, "source_label", "$.parent"),
                    source["parent"], source["parent"], [])]
@@ -127,6 +140,19 @@ def build(source, input_id, profile, *, execution_time=None):
     data["raw_alert_envelopes"] = [m["alert"]["id"] for m in source["members"]
         if isinstance((m.get("material") or {}).get("raw_json"), dict)
         and all(type(m["material"]["raw_json"].get(k)).__name__ == typ for k, typ in envelope["required_fields"].items())]
+    # Preserve explicitly cited history even when it is only catalog context.
+    # Old source numbers inside prose are not resolvable evidence references.
+    data["required_history_rows"] = []
+    paired_queries = {(aid, row["id"]) for aid, row in verified}
+    for member in source["members"]:
+        aid, triage = member["alert"]["id"], member.get("triage")
+        if not coverage[aid]["triage_eligible"]:
+            continue
+        for item in [triage, *(triage.get("recommendations") or [])]:
+            for ref in item.get("source_refs", []):
+                path = ref.get("source_path") or ""
+                if ref.get("type") == "artifact" and (aid, ref.get("id")) in paired_queries and path.startswith("$.rows."):
+                    data["required_history_rows"].append([ref["id"], ".".join(path.split(".")[:3])])
     source_map, omissions, counts = {}, [], Counter()
     prefix = source_prefix(source)
     for ref, original, value, owners in candidates:
@@ -138,6 +164,12 @@ def build(source, input_id, profile, *, execution_time=None):
             continue
         sid = f"{prefix}S{len(source_map) + 1}"
         source_map[sid] = {"ref": ref, "alert_ids": owners, "visible_value_sha256": digest(value)}
+        if ref["role"] == "prior_analysis" and isinstance(original, dict) and original.get("id"):
+            source_map[sid]["analysis_identity"] = [str(original["id"]), digest(original)]
+        if ref["id"] in query_bodies:
+            identity = query_record_identity(query_bodies[ref["id"]], ref["source_path"])
+            if identity:
+                source_map[sid]["query_record_identity"] = identity
         data["items"].append({"id": sid, "alert_ids": owners, "role": ref["role"], "field": ref["source_path"], "value": value})
     data["omissions"] = dict(counts)
     for aid, member in coverage.items():

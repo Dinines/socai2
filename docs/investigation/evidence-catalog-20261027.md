@@ -82,7 +82,7 @@
 | 最新Case测试源码 | [test_case_analysis_api.py](../../services/api/tests/test_case_analysis_api.py)，含必需Tool、复用及不可用/跳过场景 |
 | 最新修复规格与状态 | [proposal](../../openspec/changes/fix-case-followup-gaps/proposal.md)、[design](../../openspec/changes/fix-case-followup-gaps/design.md)、[spec](../../openspec/changes/fix-case-followup-gaps/specs/case-followup/spec.md)、[tasks](../../openspec/changes/fix-case-followup-gaps/tasks.md) |
 | 四案例测试任务状态 | [tasks](../../openspec/changes/exercise-investigation-http-cases/tasks.md)，记录测试工作完成，不表示全功能验收 |
-| 常驻部署任务状态 | [tasks](../../openspec/changes/serve-investigation-api/tasks.md)，实际版本仍按部署回执解释 |
+| 常驻部署任务状态 | [tasks](../../openspec/changes/archive/2026-11-12-serve-investigation-api/tasks.md)，实际版本仍按部署回执解释 |
 
 每个案例页面分别链接该案例全部请求/响应、步骤、证据及报告；完整原件位于docs/operations/evidence/INVHTTP-20261028-01，历史运行的哈希应与该目录冻结文件核对。
 

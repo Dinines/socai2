@@ -4,6 +4,8 @@ import hashlib
 import json
 import re
 
+from .program_facts import query_result_text
+
 
 def encoded(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
@@ -31,25 +33,34 @@ def empty(value):
 
 def prepare(data, source_map, config):
     cfg, items = config["render"], rows(data)
+    local = cfg["incident_only"]
+    container_rules = copy.deepcopy(cfg["container_rules"])
+    for pattern, names in local["container_omit"].items():
+        container_rules[pattern]["omit"].extend(names)
+    roles = {**cfg["roles"], **local["roles"]}
     aids = [m["alert_id"] for m in data["members"]]
     if len(aids) != len(set(aids)):
         raise ValueError("duplicate_input_member")
     aliases = {aid: cfg["member_prefix"] + str(i) for i, aid in enumerate(aids, 1)}
     omissions, visible, records, grouped = [], {}, [], {}
-    query_names = {source_map[item["id"]]["ref"]["id"]: cfg["query_names"].get(item["value"].get("tool_name"), item["value"].get("tool_name"))
+    query_tools = {source_map[item["id"]]["ref"]["id"]: item["value"].get("tool_name")
                    for item in items if item["role"] == "execution_receipt" and item["id"] in source_map}
+    query_names = {identity: cfg["query_names"].get(tool, tool) for identity, tool in query_tools.items()}
 
     def omit(path, value, reason):
         omissions.append({"path": path, "original": copy.deepcopy(value), "reason": reason})
 
-    def semantic(path):
+    def semantic(path, owners):
         if path == "$.raw_text":
             return "raw_text"
         if path is None:
             return None
-        return next((path[len(root):] for root in cfg["event_roots"] if path.startswith(root)), None)
+        field = next((path[len(root):] for root in cfg["event_roots"] if path.startswith(root)), None)
+        if not field and owners and all(aid in data.get("raw_alert_envelopes", []) for aid in owners):
+            field = cfg["raw_field_aliases"].get(path)
+        return field
 
-    seen, observed, classes, materials = set(), set(), set(), {}
+    seen, observed, classes, materials, material_values = set(), set(), set(), {}, {}
     for item in items:
         sid, path, owners = item["id"], item["field"], item.get("alert_ids", [])
         if sid in seen or sid not in source_map:
@@ -59,8 +70,9 @@ def prepare(data, source_map, config):
         if (owners != source.get("alert_ids", []) or any(aid not in aliases for aid in owners)
                 or item["role"] != source["ref"]["role"] or path != source["ref"]["source_path"]):
             raise ValueError("source_ownership_or_path_mismatch")
-        ep = semantic(path)
+        ep = semantic(path, owners)
         if ep and source["ref"]["type"] == "alert_material":
+            material_values.setdefault(source["ref"]["id"], set()).add((ep, encoded(item["value"])))
             for aid in owners:
                 materials.setdefault(aid, set()).add(source["ref"]["id"])
                 if item["role"] == "observation":
@@ -101,7 +113,7 @@ def prepare(data, source_map, config):
                 else:
                     kept.append(item)
             selected["items"] = kept
-        for pattern, rule in cfg["container_rules"].items():
+        for pattern, rule in container_rules.items():
             if matches(pattern, path):
                 for key in rule["omit"]:
                     if key in selected:
@@ -118,38 +130,117 @@ def prepare(data, source_map, config):
                         and item["value"] == selected["event_time"] for item in items)):
             omit(path + ".event_time", selected.pop("event_time"), "same_alert_time_already_present")
         selected = {key: select(child, path + "." + key, owners) for key, child in selected.items()}
-        for pattern, rule in cfg["container_rules"].items():
+        for pattern, rule in container_rules.items():
             if matches(pattern, path):
                 for key in rule["empty_optional"]:
                     if key in selected and empty(selected[key]):
                         omit(path + "." + key, selected.pop(key), "empty_after_projection")
         return selected
 
+    def serialized_fields(value, source):
+        if not isinstance(value, str):
+            return value
+        def unique(pairs):
+            result = {}
+            for key, child in pairs:
+                if key in result:
+                    raise ValueError("duplicate_source_key")
+                result[key] = child
+            return result
+        try:
+            parsed = json.loads(value, object_pairs_hook=unique)
+            encoded(parsed)
+        except (ValueError, TypeError):
+            return value
+        if not isinstance(parsed, (dict, list)):
+            return value
+        from .incident_model_boundary import fields
+        selected = {path.removeprefix("$."): child for path, child in fields(parsed, "$")
+                    if (path.removeprefix("$."), encoded(child)) not in material_values.get(source["ref"]["id"], set())}
+        omit(source["ref"]["source_path"], value, "serialized_material_business_fields")
+        return selected
+
+    # Decide history selection per original row, including its separately typed
+    # judgment and feedback. A full record digest prevents merging versions.
+    history_rows, history_values, history_keys = {}, {}, {}
+    for item in items:
+        src = source_map[item["id"]]
+        path = item["field"] or ""
+        if query_tools.get(src["ref"]["id"]) != "history" or not path.startswith("$.rows."):
+            continue
+        row = (src["ref"]["id"], ".".join(path.split(".")[:3]))
+        history_rows.setdefault(row, []).append(item)
+        history_values[item["id"]] = select(item["value"], path, item.get("alert_ids", []))
+        identity = src.get("query_record_identity")
+        history_keys[row] = tuple(identity[:2]) if identity else row
+    required = {tuple(row) for row in data.get("required_history_rows", [])}
+    useful_history = set()
+    for row, entries in history_rows.items():
+        useful = row in required
+        for item in entries:
+            value = history_values[item["id"]]
+            if item["role"] in {"prior_analysis", "human_statement"}:
+                useful |= not empty(value)
+            elif isinstance(value, dict):
+                record = value.get("record", {})
+                useful |= any(key not in cfg["history_catalog_fields"] and child is not None and child != ""
+                              for key, child in record.items())
+                useful |= any(key != "record" and child is not None and child != "" for key, child in value.items())
+        if useful:
+            useful_history.add(history_keys[row])
+    history_labels = {}
+    alert_values = {tuple(item.get("alert_ids", [])): item["value"] for item in items
+                    if item["field"] and matches("$.members.*.alert", item["field"])}
+    prior_targets = {}
+    for item in items:
+        identity = source_map[item["id"]].get("analysis_identity")
+        if identity and item["field"] and matches("$.members.*.triage", item["field"]):
+            value = select(item["value"], item["field"], item["alert_ids"])
+            prior_targets[(tuple(identity), encoded(value))] = [aliases[aid] for aid in item["alert_ids"]]
+
     for item in items:
         sid, path, original = item["id"], item["field"], item["value"]
         source, owners = source_map[sid], item.get("alert_ids", [])
+        history_label = None
+        if sid in history_values:
+            key = history_keys[(source["ref"]["id"], ".".join(path.split(".")[:3]))]
+            if key not in useful_history:
+                omit(path, original, "history_catalog_only")
+                omissions[-1]["source_id"] = sid
+                continue
+            history_label = history_labels.setdefault(key, cfg["history_prefix"] + str(len(history_labels) + 1))
         envelope = cfg["raw_alert_envelope"]
         if path and owners and all(aid in data.get("raw_alert_envelopes", []) for aid in owners):
             removed = any(path == "$.raw_json." + key or path.startswith("$.raw_json." + key + ".")
-                          for key in envelope["backend_fields"])
+                          for key in [*envelope["backend_fields"], *local["raw_alert_backend_fields"]])
             absent = path in ["$.raw_json." + key for key in envelope["empty_optional"]] and empty(original)
             if removed or absent:
                 omit(path, original, "raw_alert_backend_field" if removed else "empty_optional")
+                omissions[-1]["source_id"] = sid
+                continue
+            mirror = cfg["raw_alert_mirrors"].get(path)
+            if mirror and alert_values.get(tuple(owners), {}).get(mirror) == original:
+                omit(path, original, "same_frozen_alert_field")
                 omissions[-1]["source_id"] = sid
                 continue
         if path is not None and (path in cfg["metadata_paths"] or any(matches(p, path) for p in cfg["out_of_task_paths"])):
             omit(path, original, "out_of_task" if path not in cfg["metadata_paths"] else "program_metadata")
             omissions[-1]["source_id"] = sid
             continue
-        value = select(original, path, owners) if path is not None else original
-        known = path is not None and (any(matches(p, path) for p in cfg["container_rules"]) or matches("$.members.*.objects", path))
+        value = history_values[sid] if sid in history_values else select(original, path, owners) if path is not None else original
+        known = path is not None and (any(matches(p, path) for p in container_rules) or matches("$.members.*.objects", path))
+        if path in cfg["serialized_material_paths"]:
+            value = serialized_fields(value, source)
+            known |= isinstance(value, (dict, list))
         if known and empty(value):
             omit(path, original, "no_additional_business_content")
             omissions[-1]["source_id"] = sid
             continue
-        ep = semantic(path)
+        ep = semantic(path, owners)
         header = (tuple(aliases[aid] for aid in owners), item["role"])
         identity = (header, source["ref"]["type"], source["ref"]["id"], ep, encoded(value)) if ep and not isinstance(value, (dict, list)) else None
+        if source.get("query_record_identity"):
+            identity = (item["role"], tuple(source["query_record_identity"]), encoded(value))
         record = grouped.get(identity) if identity else None
         if record is None:
             field = cfg["field_labels"].get(ep, ep or path)
@@ -160,10 +251,15 @@ def prepare(data, source_map, config):
             if path and path.startswith("$.rows.") and source["ref"]["id"] in query_names:
                 field = query_names[source["ref"]["id"]] + cfg["query_row_labels"][item["role"]]
             record = {"source_ids": [], "header": header, "field": field, "semantic_field": ep,
-                      "container_known": known, "value": value, "source_paths": []}
+                      "container_known": known, "value": value, "source_paths": [], "history": history_label}
+            if history_label and source.get("analysis_identity"):
+                record["shared_analysis"] = prior_targets.get((tuple(source["analysis_identity"]), encoded(value)))
             records.append(record)
             if identity:
                 grouped[identity] = record
+        elif history_label:
+            # Share text only. Each visible source keeps its original owners.
+            record["header"] = (tuple(alias for alias in aliases.values() if alias in {*record["header"][0], *header[0]}), item["role"])
         record["source_ids"].append(sid)
         record["source_paths"].append(path)
         visible[sid] = {**copy.deepcopy(source), "visible_value_sha256": digest(value)}
@@ -246,7 +342,8 @@ def prepare(data, source_map, config):
         context.append("其他已提供资料：" + encoded(extra))
 
     order = {alias: i for i, alias in enumerate(aliases.values())}
-    records.sort(key=lambda r: (tuple(order[a] for a in r["header"][0]) or (-1,),
+    records.sort(key=lambda r: (int(bool(r["history"])), int(r["history"][len(cfg["history_prefix"]):]) if r["history"] else 0,
+                               tuple(order[a] for a in r["header"][0]) or (-1,),
                                cfg["role_order"].index(r["header"][1])))
     blocks = [cfg["task"], "本轮成员：" + "、".join(aliases.values()) + "。"]
     if notices:
@@ -255,17 +352,22 @@ def prepare(data, source_map, config):
     last = None
     for record in records:
         owners, role = record["header"]
-        if record["header"] != last:
-            blocks.append("[" + ("、".join(owners) or "事件背景") + "｜" + cfg["roles"][role] + "]")
-            last = record["header"]
-        label = "[" + ",".join(record["source_ids"]) + "] "
+        section = (record["history"], record["header"])
+        if section != last:
+            heading = record["history"] + " 历史参考；用于 " + "、".join(owners) if record["history"] else "、".join(owners) or "事件背景"
+            blocks.append("[" + heading + "｜" + roles[role] + "]")
+            last = section
+        if record["history"] and len(owners) > 1:
+            label = "[" + "；".join(alias + ":" + ",".join(sid for sid in record["source_ids"]
+                if any(aliases[aid] == alias for aid in visible[sid]["alert_ids"])) for alias in owners) + "] "
+        else:
+            label = "[" + ",".join(record["source_ids"]) + "] "
         if role == "execution_receipt":
-            value = record["value"]
-            parts = [record["field"] + "：" + value["statement"]]
-            for key in cfg["query_text_fields"]:
-                if key in value and not empty(value[key]):
-                    parts.append(cfg["query_text_fields"][key] + "：" + atom(value[key]))
-            text = "；".join(parts)
+            text = query_result_text(record["value"], cfg["query_names"])
+        elif record.get("shared_analysis"):
+            text = "同一份已有判定及理由：见 " + "、".join(record["shared_analysis"]) + " 的 A 分诊原文。"
+        elif record["history"] and isinstance(record["value"], dict):
+            text = container(record["value"]["record"] if set(record["value"]) == {"record"} else record["value"])
         elif isinstance(record["value"], dict) and record["container_known"]:
             text = container(record["value"])
         else:

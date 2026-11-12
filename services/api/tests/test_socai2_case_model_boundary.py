@@ -100,6 +100,15 @@ def test_c1_copy_references_resolve_exact_roles_without_mutating_sources(sample)
     assert prepared["input_ledger"]["record_counts"]["finding"] == 8
     assert prepared["input_ledger"]["record_counts"]["question"] == 2
     assert prepared["input_ledger"]["query_supplement_was_in_original_c1"] is True
+    for item in sample["context"]["incidents"].values():
+        if not item["diagnosis_usable"]:
+            continue
+        refs = item["diagnosis"]["diagnosis"].get("source_refs", [])
+        summary = next(r for r in prepared["input_ledger"]["records"]
+                       if r["block"] == "incident" and r["original_value"] == item["diagnosis"]["summary"])
+        assert summary["incident_source_refs"] == refs
+        resolved = summary["prior_reference_resolution"]
+        assert len(resolved["visible"]) + len(resolved["not_visible"]) == len(refs)
 
 
 @pytest.mark.parametrize("field,value", [("output_artifact_id", "wrong"), ("source_run_state", "failed"),
@@ -164,6 +173,8 @@ def test_correction_feedback_and_conditional_tool_schema_use_same_short_namespac
     context, prepared = prepared_sample(sample)
     messages, sources = boundary.messages(prepared, context, [])
     assert messages[-1]["content"].startswith("[可用调查工具｜程序提供]")
+    assert messages[-1]["content"].endswith("本轮无可用查询候选。")
+    assert all(not c["available"] for c in prepared["tool_presentation"]["original_catalog"]["capabilities"])
     assert sources == prepared["source_map"]
     assert prepared["tool_presentation"]["text"] == messages[-1]["content"]
     answer = answer_for(prepared, context)
@@ -184,3 +195,73 @@ def test_correction_feedback_and_conditional_tool_schema_use_same_short_namespac
     answer["followups"][0]["binding_id"] = None
     with pytest.raises(SchemaError):
         validator.validate(answer)
+
+
+def test_c3_history_selection_keeps_cited_catalog_and_opposing_feedback(configured):
+    from app.socai2.baseline_context import reference
+    from app.socai2.case_c3_input_selection import select_rows
+
+    def row(sid, path, value, role="source_label", version="v1"):
+        return {"id": sid, "ref": reference("artifact", "history-receipt", role, path),
+                "value": copy.deepcopy(value), "original_value": copy.deepcopy(value), "block": "query",
+                "alert_ids": [], "query_alert_ids": ["member"], "record_alert_ids": ["external"],
+                "membership_basis": "history_record_outside_case", "query_record_identity": [sid, version, ""]}
+
+    receipt = row("receipt", None, {"tool_name": "history"}, "execution_receipt")
+    catalog = {"record": {"title": "Catalog only", "severity": "medium"}, "match_basis": "internal"}
+    rows = [receipt, row("drop", "$.rows.0", catalog), row("support", "$.rows.1", catalog),
+            row("counter", "$.rows.2", catalog),
+            row("human", "$.rows.3.record.feedback", {"actor": {"user_id": "internal", "name_snapshot": "值班分析员"},
+                "rationale": "This was not authorized.", "approved": False, "attempts": 0, "exceptions": []}, "human_statement"),
+            row("business", "$.rows.4", {"record": {"title": "Extension", "approved": False, "attempts": 0, "exceptions": []}})]
+    finding = row("finding", "$.finding", {"support": [rows[2]["ref"]], "counterevidence": [rows[3]["ref"]]}, "prior_analysis")
+    finding["block"] = "finding"
+    rows.append(finding)
+    # The overall I conclusion may cite a catalog independently of findings/questions.
+    overall_catalog = row("overall", "$.rows.5", catalog)
+    overall = row("incident", "$.incident.summary", "Original overall conclusion.", "prior_analysis")
+    overall.update(block="incident", incident_source_refs=[overall_catalog["ref"]])
+    rows.extend([overall_catalog, overall])
+    # Same record identity, different full version must not retain a catalog-only version.
+    rows[1]["query_record_identity"][:2] = ["same-alert", "catalog-version"]
+    rows[4]["query_record_identity"][:2] = ["same-alert", "feedback-version"]
+    original = copy.deepcopy(rows)
+    omissions = []
+    selected = select_rows(rows, {"alerts": {}}, configured.case_io.config,
+                           configured.case_io.business["render"], omissions)
+    assert {r["id"] for r in selected} == {"receipt", "support", "counter", "human", "business", "finding", "overall", "incident"}
+    human = next(r for r in selected if r["id"] == "human")
+    assert human["value"] == {"actor": {"name_snapshot": "值班分析员"}, "rationale": "This was not authorized.",
+                              "approved": False, "attempts": 0, "exceptions": []}
+    for current in selected:
+        old = next(r for r in original if r["id"] == current["id"])
+        assert all(current[k] == old[k] for k in ("ref", "original_value", "alert_ids", "query_alert_ids", "record_alert_ids"))
+    assert [o["source_id"] for o in omissions if o["reason"] == "history_catalog_only"] == ["drop"]
+
+
+def test_c3_knowledge_and_material_projection_keeps_business_values(configured):
+    from app.socai2.baseline_context import reference
+    from app.socai2.case_c3_input_selection import select_rows
+
+    content = "Compare parent process and command output; a start event alone is insufficient."
+    card = {"record": {"id": "internal", "title": "Technical guidance", "content": content,
+                       "tags": ["index-tag"], "chunk_index": 0, "chunk_total": 1},
+            "applicability": {"state": "applicable", "matched": ["process"], "query_facets": {"internal": True},
+                              "conditions": {"process": ["shell"], "enabled": False}},
+            "purposes": [{"purpose": "technical_explanation", "purpose_label": "技术解释", "use": "internal instruction"}],
+            "match_basis": "cosine", "limitations": ["internal"], "extensions": {"count": 0, "enabled": False, "items": []}}
+
+    def row(sid, value, path, role="source_label", material=False):
+        return {"id": sid, "ref": reference("alert_material" if material else "artifact", "material" if material else "query", role, path),
+                "value": copy.deepcopy(value), "original_value": copy.deepcopy(value), "alert_ids": ["member"],
+                "block": "material" if material else "background_query", **({} if material else {"knowledge": {"part": "card"}})}
+
+    rows = [row("knowledge", card, "$.rows.0"), row("fact", "shell", "$.ocsf_json.process.name", "observation", True),
+            row("text", '{"process":{"name":"shell"},"count":0,"enabled":false,"items":[]}', "$.raw_text", "observation", True)]
+    original = copy.deepcopy(rows)
+    selected = select_rows(rows, {"alerts": {}}, configured.case_io.config, configured.case_io.business["render"], [])
+    assert selected[0]["value"] == {"record": {"title": "Technical guidance", "content": content},
+        "applicability": {"conditions": {"process": ["shell"], "enabled": False}},
+        "purposes": [{"purpose_label": "技术解释"}], "extensions": {"count": 0, "enabled": False, "items": []}}
+    assert selected[2]["value"] == {"count": 0, "enabled": False, "items": []}
+    assert [r["original_value"] for r in selected] == [r["original_value"] for r in original]

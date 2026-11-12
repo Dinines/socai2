@@ -2,17 +2,17 @@
 
 告警页以告警为主体，事件页以事件及其当前成员为主体，调查页要同时显示 Case、某次执行（Run）、正式结果（Result）和当前采用的判断。四者通过各自的 ID 关联。一次模型调用失败时，后端仍可交付已经保存的告警原件、事件诊断、执行回执和系统待核说明。
 
-适用范围为 PostgreSQL 16 的 `socai2` 命名空间，共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。告警相关的前后端字段合同保持稳定；确需调整时按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)列出影响并取得明确确认，必要读写接线和配置随功能处理。
+适用范围为 PostgreSQL 16 的 `socai2` 命名空间，当前共 28 表、450 列，基准迁移 123–126 后增加 127（仅清理未用探索表）。[当前表职责](investigation-table-scope.md)及[当前机器字典](../design/socai2-data-contract-current.json)为现行目录；旧字段字典保留 V1 基线。页面功能及产品验收见[逐页功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../design/socai2-field-dictionary-20261103.md)。告警相关的前后端字段合同保持稳定；确需调整时按[项目变更规则](../../AGENTS.md#调查数据库-v1-与人工确认)列出影响并取得明确确认，必要读写接线和配置随功能处理。
 
-**当前正式库核验：** 2026-11-10 在 21 的 `aisoc.socai2` 完成两案 365 次 GET、16,820 项字段／正文／关联核对。357 次正常返回，8 次错误父归属返回预期 404；读取前后快照一致。覆盖空当前判断、H 全部修订及同租户跨 Case 关系／活动。既有 29 表结构保持，Case/H GET、资产与用户关联、两项只读函数均可按现有身份读取。[实际证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)
+**前次完整读取核验（清理前）：** 2026-11-10 在 21 的 `aisoc.socai2` 完成两案 365 次 GET、16,820 项字段／正文／关联核对。357 次正常返回，8 次错误父归属返回预期 404；读取前后快照一致。覆盖空当前判断、H 全部修订及同租户跨 Case 关系／活动。既有 29 表结构保持，Case/H GET、资产与用户关联、两项只读函数均可按现有身份读取。[实际证据](../operations/evidence/case-current-flow-20261110-01/readback-03/summary.json)
 
 ## 来源边界
 
 | 环节 | 负责什么 | 交接边界 |
 | --- | --- | --- |
 | 采集与 Fusion | 提供告警来源标识、原始材料、事件引用、对象与归并依据，保存告警及事件成员 | `source_event_id` 是来源命名空间内的标识，可能缺失或尚无湖记录。后端沿已保存的关系取数；不得用相似标题、主机或时间自行认定成员。 |
-| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 21 的 `processing-20261110-r4` 是按需作业，数据库为 `aisoc.socai2`；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。[部署说明](../../deploy/aisoc21/README.md) |
-| 业务后端 | 从已认证用户确定租户与读取权限，调用读取服务或使用授权的只读 PG 连接，组装列表、详情、关联入口与空态 | 同一响应尽量使用同一只读快照。`GET` 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。 |
+| 调查处理模块 | A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录 | 处理模块按需执行，当前版本以[交接指南](../../FRONTEND_BACKEND_HANDOFF.md#2-当前运行环境)为准，数据库为 `aisoc.socai2`；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。[部署说明](../../deploy/aisoc21/README.md) |
+| 业务后端 | 从已认证用户确定租户与读取权限，通过 HTTP 调用调查服务，组装列表、详情、关联入口与空态；不要求直连 PG | 同一响应尽量使用同一只读快照。`GET` 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。 |
 | 页面 | 按后端返回的字段、状态、计数与实体 ID 展示，按主体与版本打开详情 | 业务状态、模型判定、执行状态、交付完整性分别展示。模型响应中的建议、事实主张与外部实际行动分别标明来源。 |
 
 ## 字段—保存—读取
@@ -48,7 +48,7 @@
 | 正式结果、报告与图谱 | `results.source_run_id` 关联实际 Run，`result_members` 给 `conclusion_covered` 及依据。`report_artifact_id / graph_artifact_id` 指向同案同轮工件 | 分别展示 `runs.state`、`delivery_state`、结果的 `conclusion_state / conclusion_origin / validation_state` 和已采用判断。C6 回执中 `content_json.outcome.result_id` 可空。有报告及系统说明时，正式 Result 仍允许为零。 |
 | 证据目录、判断依据和威胁数 | `cases.current_evidence_artifact_id → artifacts`，匹配同租户同 Case、`kind=case_evidence_index`、`schema_version=socai2.case-evidence.v1` | 读取 `entries[]` 的证据 ID、关联成员和对象、`source_refs`、`verdict_sources`、`verdict`、威胁身份和状态。计数及范围优先复用 `CasePageData.evidence`。 |
 | 人工协作与处置 | `tasks.current_revision_id → task_revisions`。活动从 `activities.actor` 取操作者快照，从 `activity_targets` 取各目标的前后值。`response_links.receipt_artifact_id` 指向处置回执 | 区别人工任务、模型提出的后续行动、实际回执。存在 `recommendations` 时只显示建议。每条活动可能有多个目标，活动数按活动 ID 计。 |
-| 评论、探索画布、问答 | `comments` 按互斥的 `alert_id / incident_id / case_id` 确定评论对象。`graph_explorations` 按 `case_id` 及基底工件取已保存的用户画布。`conversations.case_id` 关联案件，`messages.conversation_id` 关联会话，按 `sequence` 排序 | 评论、用户探索状态和正式结果图分别展示。问答表预留存储位置，当前命令可用性见下文。 |
+| 评论、探索画布、问答 | `comments` 按互斥的 `alert_id / incident_id / case_id` 确定评论对象。未使用的 `graph_explorations` 空表已清理，正式探索保存服务未实现；不能按旧表设计读取画布。`conversations.case_id` 关联案件，`messages.conversation_id` 关联会话，按 `sequence` 排序 | 评论、用户探索状态和正式结果图分别展示。问答表预留存储位置，当前命令可用性见下文。 |
 
 证据计数使用当前版本中 `state=active` 且全部关联告警仍在案件范围的条目。威胁数仅取其中 `malicious / suspicious` 且有明确威胁身份的条目，按 `(namespace,key)` 去重。`not_recorded / unavailable / invalid_reference` 的计数为 `null`；有效空目录或全撤回为 `0`；`partial` 返回已知计数、未覆盖成员及限制。证据的来源行、JSON Pointer、角色和范围均可核对。来源标签、模型判断和人工陈述应保留各自身份。[证据合同](../../services/api/app/socai2/case_evidence.schema.json) · [证据读取和验证](../../services/api/app/socai2/case_data.py)
 
@@ -72,9 +72,19 @@ Case 模型请求工件中的 `payload.source_map` 分别给查询范围、历�
 
 字段缺失、`null`、空数组和有值零要分别传递。读到 `null` 的负责人、严重度或耗时，应显示相应缺值。HTTP 错误、正文超限、某一来源没有记录也分别返回状态。原件中 decimal 可能为数值字符串，对账前按字段类型规范化；时刻用带时区的值比较，可统一以北京时间展示。[主体读实现](../../services/api/app/socai2/page_reader.py) · [A/I 记录](../../services/api/app/socai2/stage_reader.py) · [Case 与 Run 读取](../../services/api/app/socai2/case_reader.py)
 
+## HTTP投影与字段审计补充
+
+逐项用途、输入、输出见[43操作审计](../../deliverables/investigation-validation-20261106/http-handoff-audit/interfaces.md)，[固定输出字段](../../deliverables/investigation-validation-20261106/http-handoff-audit/response-fields.md)和[28组动态结构](../../deliverables/investigation-validation-20261106/http-handoff-audit/dynamic-fields.md)补充原OpenAPI中仅写dict/任意对象的部分。此处的表来源用于说明，不要求业务后端直连数据库。
+
+Case队列metrics不受列表筛选影响，但awaiting_assignment/high_severity/awaiting_human仅计new或in_progress；待分配还需assignment_state=unassigned且owner_id为空，高等级只计high。Case活动GET保留operation_id，A/I records/activities剔除该字段。
+
+Case详情的current_assessment.sources通过without_internal剔除tenant_id等字段，而page_data.assessment.sources当前直接返回来源行、包含tenant_id；不要假定两种投影完全相同。Case工件完整性失败为409，A/I工件同类失败是200加availability=content_integrity_mismatch。冻结材料GET直接返回原行，保留material_state/retention，没有统一availability包装。
+
+Case Run内部集合截断后当前没有继续分页的接口；读取方必须展示截断。当前判断覆盖比较遇到成员/覆盖集合不完整时返回null，不能擅自视为全部覆盖或没有未覆盖成员。questions[].state仅记录当轮回答状况，按D07随结论展示，不建立独立问题管理。
+
 ## 只读联查示例
 
-下列 SQL 可在 **psql** 的同一连接顺序执行。`tenant_id`、`case_id`、`run_id` 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。业务后端应从认证上下文设置租户，并在事务结束后释放事务级配置。
+下列 SQL 仅用于调查服务内部维护和取数解释，**不是业务后端对接要求**。对接请使用[HTTP交接包](../../deliverables/investigation-validation-20261106/http-handoff/README.md)。内部维护时可在 **psql** 的同一连接顺序执行。`tenant_id`、`case_id`、`run_id` 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。内部数据库读取应设置正确租户，并在事务结束后释放事务级配置；业务后端通过 HTTP 认证上下文确定租户。
 
 ```sql
 \set tenant_id '00000000-0000-0000-0000-000000000001'

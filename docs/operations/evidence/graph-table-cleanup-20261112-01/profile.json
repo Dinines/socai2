@@ -1,0 +1,58 @@
+{
+  "timeout_seconds": 45,
+  "lock_timeout_seconds": 3,
+  "statement_timeout_seconds": 30,
+  "targets": {
+    "local-current": {
+      "database": "v12_upgrade_dev",
+      "command": [
+        "docker",
+        "exec",
+        "-i",
+        "socai2-v12-reader-validation-20261107",
+        "psql",
+        "-wXAtq",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "postgres",
+        "-d",
+        "v12_upgrade_dev"
+      ]
+    },
+    "local-original": {
+      "database": "socai2_local_20261105",
+      "command": [
+        "docker",
+        "exec",
+        "-i",
+        "socai2-local-investigation-postgres-1",
+        "psql",
+        "-wXAtq",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-U",
+        "postgres",
+        "-d",
+        "socai2_local_20261105"
+      ]
+    },
+    "production": {
+      "database": "aisoc",
+      "command": [
+        "ssh",
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=12",
+        "sting-infra21",
+        "docker exec -i spirithub-postgres-1 psql -wXAtq -v ON_ERROR_STOP=1 -U spirithub -d aisoc"
+      ]
+    }
+  },
+  "validation": {
+    "database": "socai2_graph_cleanup_check_20261112",
+    "role": "socai2_graph_cleanup_probe"
+  }
+}

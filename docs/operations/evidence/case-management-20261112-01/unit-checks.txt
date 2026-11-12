@@ -1,0 +1,85 @@
+.F.F.............                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_invalid_management_inputs[fields1] ____________________
+
+x = None, min_length = 1
+
+    def min_length_validator(x: Any, min_length: Any) -> Any:
+        try:
+>           if not (len(x) >= min_length):
+                    ^^^^^^
+E           TypeError: object of type 'NoneType' has no len()
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/_internal/_validators.py:311: TypeError
+
+During handling of the above exception, another exception occurred:
+
+fields = {'title': None}
+
+    @pytest.mark.parametrize('fields', [{}, {'title':None}, {'title':'  '}, {'tags':None},
+        {'tags':['a','a']}, {'tags':[' ']}, {'handling_status':'resolved'}])
+    def test_invalid_management_inputs(fields):
+        with pytest.raises(ValidationError):
+>           CaseManagementUpdate(operation_key=uuid4(),expected_row_version=1,**fields)
+
+services/api/tests/test_socai2_case_management_contracts.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+x = None, min_length = 1
+
+    def min_length_validator(x: Any, min_length: Any) -> Any:
+        try:
+            if not (len(x) >= min_length):
+                raise PydanticKnownError(
+                    'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)}
+                )
+            return x
+        except TypeError:
+>           raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
+E           TypeError: Unable to apply constraint 'min_length' to supplied value None
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/_internal/_validators.py:317: TypeError
+___________________ test_invalid_management_inputs[fields3] ____________________
+
+x = None, max_length = 50
+
+    def max_length_validator(x: Any, max_length: Any) -> Any:
+        try:
+>           if len(x) > max_length:
+               ^^^^^^
+E           TypeError: object of type 'NoneType' has no len()
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/_internal/_validators.py:322: TypeError
+
+During handling of the above exception, another exception occurred:
+
+fields = {'tags': None}
+
+    @pytest.mark.parametrize('fields', [{}, {'title':None}, {'title':'  '}, {'tags':None},
+        {'tags':['a','a']}, {'tags':[' ']}, {'handling_status':'resolved'}])
+    def test_invalid_management_inputs(fields):
+        with pytest.raises(ValidationError):
+>           CaseManagementUpdate(operation_key=uuid4(),expected_row_version=1,**fields)
+
+services/api/tests/test_socai2_case_management_contracts.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+x = None, max_length = 50
+
+    def max_length_validator(x: Any, max_length: Any) -> Any:
+        try:
+            if len(x) > max_length:
+                raise PydanticKnownError(
+                    'too_long',
+                    {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+                )
+            return x
+        except TypeError:
+>           raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
+E           TypeError: Unable to apply constraint 'max_length' to supplied value None
+
+.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/_internal/_validators.py:329: TypeError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_management_contracts.py::test_invalid_management_inputs[fields1]
+FAILED services/api/tests/test_socai2_case_management_contracts.py::test_invalid_management_inputs[fields3]
+2 failed, 15 passed in 0.73s

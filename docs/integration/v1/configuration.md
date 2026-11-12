@@ -1,5 +1,7 @@
 # v1 连接与配置交接
 
+> 这是2026-10-22的历史运行快照。当前后端业务入口为21:18024，当前组件及消费者状态见[组件交接](../component-handoff-current.md)，不要用下文旧开启开关覆盖现有配置。
+
 [返回入口](README.md)。2026-10-22。基础设施地址由16:02白名单核对，v1.0.0发布后16:48再次采集[实际配置快照](service-runtime-snapshot.json)。15个选定容器running，7个业务服务healthy；仅API/Agents镜像改变，其他13个选定容器配置与镜像保持。业务验证、生产tenant/凭据/预算和切换offset见[生产接入](production.md)。[发布前快照](runtime-snapshot.json)及最初SSH超时保留为历史。
 
 ## 1. 基础设施连接表

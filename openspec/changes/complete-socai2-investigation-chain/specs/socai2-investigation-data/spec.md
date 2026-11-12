@@ -1,5 +1,173 @@
 ## ADDED Requirements
 
+### Requirement: Model inputs select business information for the stage goal
+
+每个模型环节 SHALL 先明确使用模型的原因、待完成的业务判断和输出用途，再按字段选择有助于该目标的材料。程序 MUST NOT 将原始记录、数据库对象、工具回执或上游请求整包序列化透传；只换格式、去重或未超限不构成完成。完整原件、身份、范围、版本和执行台账保持后台可回查；所选业务事实与正文保留原值/原文和角色，必要依据及反证不得因未被前序模型引用而丢弃。
+
+#### Scenario: A model input contains an internal object index
+- **WHEN** 原对象索引同时含 raw_value、normalized_value、内部索引角色和资产匹配状态，当前业务字段/对象目录已经提供同一对象
+- **THEN** 按本步目标选择业务对象与必要属性，省去重复登记和内部匹配字段；原身份与来源映射后台保留，不把这份结构原样传入模型
+
+### Requirement: Analysis models receive query results instead of execution ledgers
+
+配置 A/I/C3/Deep/C6 输入 SHALL 只展示工具名称和程序确定的查询结果，并按业务字段提供返回记录。未查询、失败、结果未知、无结果和有结果必须区别；原因、执行说明、参数、查询时间窗、来源范围、上限、统计/截断标志和回执限制 SHALL 留在后台，不逐项打印或改写成解释性段落。引用编号及原角色保持，查询绑定和返回记录主体由程序继续校验；材料读取只提供可用状态，原缺失字段清单留后台。
+
+#### Scenario: Intelligence was not queried
+- **WHEN** 配对的威胁情报回执为 skipped，原因是无支持的冻结对象
+- **THEN** 在既定成员块内只显示引用短号及“威胁情报：未查询”，不显示原因、时间窗、来源范围、上限、截断和限制说明；原回执与原失败保持可查
+
+#### Scenario: Query has data or its result is unknown
+- **WHEN** 查询有返回、失败或无法确定结果
+- **THEN** 程序提供对应状态；有返回时另给按目标选择的业务记录，不用工具执行统计代替业务内容，不将失败、缺失或截断的零条结果写成查空
+
+#### Scenario: Followup stages reuse earlier query results
+- **WHEN** C3/Deep/C6 承接 A/C2 或补查结果
+- **THEN** 每份回执只展示一次简短结果，不再次追加完整回执、共享查询限制或重复背景状态摘要；后台 source_map、原记录及结果恢复所需执行事实保持
+
+### Requirement: Alert triage selects business fields before rendering its input
+
+配置 A 模板 SHALL 根据单告警性质判断的目标选取业务字段。已识别的对象登记、接入外壳、来源范围统计和融合执行引用留后台；同材料、同含义且同值的重复对象/字段及可解析结构化文本副本不重复展示。存在不同值或独有业务属性时 SHALL 保留，不按样例值删除未知业务信息或有意义的零、false、空列表。所选字段沿原来源恢复身份和引用，原材料与公开分诊合同不变。
+
+#### Scenario: Historical matches contain only catalog metadata
+- **WHEN** A 的历史查询按对象多次匹配同一历史记录，记录仅含标题、等级、时间和厂商，且没有业务扩展、历史判断或人工正文
+- **THEN** 此目录记录及匹配参数后台保留，不作为该告警的判断材料逐行上送；有独立业务字段或判断/人工正文的记录仍按原角色选入，不按良恶结论筛选
+
+#### Scenario: Historical judgments and human statements have administrative envelopes
+- **WHEN** A 选入历史分诊或人工信息
+- **THEN** 程序按相应结构剔除执行身份、UUID及后台键，保留所选原文及记录背景；同回执同身份版本的重复匹配可共享正文，不同版本、角色或内容不合并
+
+#### Scenario: A serialized material duplicates structured business fields
+- **WHEN** raw_text/raw_data 是可解析对象，部分字段已在同材料结构字段中以相同值提供
+- **THEN** 程序仅选入有独立业务内容的剩余字段，并保留其原文本来源；非结构化正文不语义改写，未知业务字段与真实零值等仍可见，原文本留后台不整包透传
+
+### Requirement: Incident input selects member facts and useful prior context
+
+配置 I 模板 SHALL 围绕既定事件的整体行为、成员意义和待核事项，提供各成员业务事实、已核验有效的 A 判断及必要背景。已识别接入外壳、来源范围台账、重复字段及无业务内容的历史目录 SHALL 留后台。筛选 SHALL 保留有业务扩展、历史判断、人工反馈或被有效 A 的结构化引用指向的历史记录，不按良恶结论或模型是否引用筛掉其他有用材料；不从旧正文猜测引用，不重写判断和人工原文。
+
+#### Scenario: A history receipt contains repeated catalogs and useful context
+- **WHEN** 多个成员冻结的历史查询包含纯标题/时间/等级目录及带判断、人工陈述或业务字段的记录
+- **THEN** 无独立内容且未被有效 A 明确引用的目录不上送；其余记录保留原角色及背景，同一历史身份和完整版本的正文可在独立历史区展示一次，但每个引用仍标明原成员和原回执路径，不扩大来源范围
+
+#### Scenario: Member evidence contains copies and administrative fields
+- **WHEN** 同一成员材料的结构字段、已识别接入外壳或结构化文本副本重复表达相同值
+- **THEN** 程序按同材料和语义字段合并展示，保留有独立内容的业务字段及0/false/有效空列表；不同成员事实不按值相同合并，普通正文原样保留；失效或缺失 A 不作为有效前序判断
+
+### Requirement: C3 selects facts and knowledge for the initial investigation
+
+配置 C3 输入 SHALL 服务于首轮调查解释和必要补查，保留成员业务事实、有效 A/I 原文及其支持/反证、相关人工信息和按已配置用途选择的知识。程序 SHALL 按已识别结构剔除重复对象/时间、接入外壳、纯目录历史及知识检索/索引台账，不能整包透传或语义改写所选正文。原件、角色、记录主体、成员范围和来源映射保持，输出及存储合同不变。
+
+#### Scenario: Catalog history and duplicate object registries crowd the prompt
+- **WHEN** C3 同时收到对象目录、重复索引行和历史查询目录
+- **THEN** 已表达且无额外业务属性的登记/时间副本省去；未被前序有效引用且无业务内容的历史目录留后台；有内容、人工意见和必要支持/反证保留，同身份完整版本可共享正文但不合并引用范围
+
+#### Scenario: Retrieved knowledge includes internal matching and source records
+- **WHEN** 已按 C3 用途选入的知识含适用性计算、文档块索引或历史同步外壳
+- **THEN** 只向模型提供正文、实际业务条件、必要来源名称和用途；历史事件/行为与历史判断/人工陈述分别表达，原值与有意义的0/false/空列表保持，不把相似度、同步状态或历史结论当本案事实
+
+#### Scenario: C3 has no available tool binding
+- **WHEN** 当前工具目录没有可用查询候选
+- **THEN** 输入只说明无可用查询候选，不列全套不可执行能力/参数；有候选时提供选择所需业务描述及原绑定，后台目录和输出约束不变
+
+### Requirement: Structured knowledge reaches the model as selected intact business fields
+
+系统 SHALL 对新导入的完整 JSON 对象/数组保留完整原文块，不以字符边界切断结构；普通文档继续已有分段。调查知识索引 SHALL 继续应用已配置内容上限，超限明确拒绝，不提高预算或删除原文来适配。C3/Deep/C6 SHALL 在原件检查后按已识别结构选择技术说明、适用条件和调查方法，移除内部引用/索引字段，保留原业务值与正文、未知业务扩展、0/false/有效空列表。HTTP 字段合同、数据库表、原知识记录和历史 Run 保持。
+
+#### Scenario: A complete JSON knowledge document exceeds the ordinary text chunk boundary
+- **WHEN** 新导入 JSON 的完整对象/数组超过普通段落长度，但仍满足调查索引配置上限
+- **THEN** 保存一个完整原文块并可由既有索引/读取使用；模型输入按结构字段投影，不能传入截断的半个对象
+
+#### Scenario: An earlier frozen Run contains partial JSON chunks
+- **WHEN** 旧知识记录或 Run 已保存截断片段，缺少可验证的完整文档身份
+- **THEN** 不自动拼接、覆盖或重新派发；新导入资料形成新记录，离线示例与旧实际输入明确区分，不能以新示例追认旧 Run 成功
+
+### Requirement: Deep and C6 select inputs for their separate decisions
+
+Deep SHALL select frozen business facts for its bound question and member scope, the applicable prior answer/findings and evidence needs, relevant human material and knowledge, and their explicit support/counter dependencies. C6 SHALL select whole-case facts, effective C3/Deep business conclusions with their necessary evidence, new query results and relevant human/knowledge context. Both SHALL preserve original prose, values, roles and source scope, apply structural field selection before rendering, and leave duplicate registration, catalog-only history, execution ledgers and omission statistics backstage. HTTP/storage contracts and historical artifacts SHALL remain unchanged.
+
+#### Scenario: A question concerns fewer members than the Case
+- **WHEN** Deep is bound to a subset of members
+- **THEN** unrelated member facts and other question answers are not included by default; common or unknown-scope useful context remains, and explicit cross-member supports/counters are restored with their original scope rather than relabelled as local evidence
+
+#### Scenario: Final synthesis consumes previous answers and original plans
+- **WHEN** C6 consumes accepted C3 and Deep results
+- **THEN** business conclusions, alternatives, gaps, necessary sources and selected historical comparison remain visible; program-owned coverage answers and execution parameters are omitted, and a duplicate original plan is presented once as business evidence needs rather than repeated execution instructions
+
+#### Scenario: Structural input selection is applied to old frozen material
+- **WHEN** an offline preview rebuilds earlier materials using the new selectors
+- **THEN** the preview identifies its offline configuration binding, preserves the originals and verifies retained references and dependencies; new inputs are not presented as a new model execution or a successful saved conclusion
+
+### Requirement: Bounded tool results retain record associations in compact business views
+
+Deep/C6 SHALL select business fields from bounded frozen query results before rendering. Configured internal identity fields SHALL stay backstage unless required by an explicit prior dependency. Identical business fields within the same frozen query, role and member scope MAY share presentation only while every original record key and citation remains visible and individually resolvable. Different values, conflicts, roles or queries SHALL NOT be merged. Unknown business extensions, zero, false and meaningful empty lists remain available. Existing row/storage/request limits stay in force; exceeding mandatory input capacity SHALL stop dispatch rather than truncate prose or invent a successful analysis.
+
+#### Scenario: Several returned records repeat host and process information
+- **WHEN** one frozen query returns records with identical business fields and other fields that differ
+- **THEN** the common values can be shown once with every associated record and source number, while differing times, actions, results and contradictions remain separate; stored records and their original scopes are unchanged
+
+#### Scenario: An internal identifier is cited by an earlier accepted answer
+- **WHEN** a prior answer explicitly cites a query field normally excluded as internal identity
+- **THEN** the exact frozen dependency remains visible with its original role and record association instead of silently dropping or relabelling the citation
+
+### Requirement: Identical frozen history rows share presentation without losing citations
+
+I/C3/Deep/C6 SHALL 合并同一冻结查询回执内、同一历史记录版本、同角色与适用范围、展示值逐值相同的重复行正文，并列保留各原始来源编号及其路径。完整回执、数量、原文和前序依赖 MUST 保持可回查；不同身份、版本、角色或内容不得合并，不得合并来源适用范围。I/C3 的独立历史区可共享同一身份/完整版本的正文，保留每份原引用及其成员范围/记录主体；这不改变各来源的归属。此变化仅去除重复展示，不提高输入或 Run 预算、不裁正文，也不将相似记录当成同一事实。
+
+#### Scenario: Matching the same historical alert by host and user repeats its row
+- **WHEN** 同一回执的两行拥有相同 record_id、完整 record 和展示值，且角色与范围相同
+- **THEN** 模型看到一次正文及两个来源编号，两编号仍分别解析到各自原行，前序依赖均可恢复；查询返回行数保持原值
+
+#### Scenario: Final input repeats material fields and selected business limitations
+- **WHEN** Deep/C6 的同材料、同语义字段、同角色/范围的值重复，或按目标选入的非查询回执来源有逐值相同的业务 limitations
+- **THEN** 材料正文并列保留各来源编号，必要的业务限制可共享展示；查询执行限制只在后台留存，不经共享段落重新上送。原记录、引用映射与前序结论不改写，不合并不同字段/值/来源范围
+
+### Requirement: Fixed A and I citation rejection has one bounded correction
+
+配置 A/I 模板时，对完整、可解析且仅包含已知来源/角色/成员范围错误的回复，系统 SHALL 在同一 Run 内最多反馈一次具体错误，并使用相同冻结输入、来源编号和 Schema 重新接收完整回复。原答、错误及纠正请求/原答分别保存，第二次仍执行完整校验；MUST NOT 靠程序去重、补引用、改判或放宽成员范围使原答通过。每次调用均重新核对已冻结的调用数、总 token 和 deadline，未知执行、截断、协议/形状/安全失败不重派。
+
+#### Scenario: A repeats a visible source and I cites a different member
+- **WHEN** 配置 A 返回重复引用，或 I 的问题/成员引用了声明范围外的来源，且本 Run 尚有预算
+- **THEN** 反馈使用模型实际看到的字段路径、短号及来源角色/成员映射；最多一次纠正，纠正通过后按原保存/采用合同交付，失败仍保留原局部结果与错误
+
+#### Scenario: Correction has no remaining budget or its execution is uncertain
+- **WHEN** 已达到一次纠正上限、调用/token/deadline 不足，或发生未知/不完整执行
+- **THEN** 停止额外派发并如实记录原因，原判断与原件保留，不另建 Run 重采样
+
+### Requirement: Case citation feedback covers required empty references
+
+C3/C6 的有界反馈 SHALL 与接收器一致识别已分析或未决成员的依据缺失，以及 C6 建议空引用。生成约束、校验拒收和局部保留仍各自生效；MUST NOT 因某错误漏报而跳过可用的一次纠正，也不得因此新增纠正次数或捏造来源。
+
+#### Scenario: A final recommendation lacks evidence
+- **WHEN** C6 完整原答中建议的引用为空，或 unresolved 成员没有所需本案依据
+- **THEN** 在原一次纠错中指明具体路径；没有充分依据时模型可删除无据建议或明确未分析，但程序不改写原答。预算不足或仍失败按原局部结果/拒收规则保存读取
+
+### Requirement: Configured alert input validates the actual rendered messages
+
+配置 A 模板时，来源构造 SHALL 保留原件字段检查与准备上限，随后校验本次实际发送的完整模板消息。未使用的旧 JSON 消息 MUST NOT 因自身序列化长度阻断符合配置模板限制的输入；旧模式仍按原消息检查。不得放宽安全判定、提高阈值、截断原文或重派已失败 Run 来代替修复。
+
+#### Scenario: Unused legacy serialization exceeds its message cap
+- **WHEN** 同一合法来源的旧 JSON 消息超过消息上限，但实际模板文本、来源和预算检查均满足
+- **THEN** 配置路径生成并检查实际模板；旧模式仍拒绝超限消息，任何原件或实际模板的非法内容仍按原规则拒绝
+
+#### Scenario: A configured Case message fits but JSON quoting exceeds the cap
+- **WHEN** 配置 C3/Deep/C6 的实际消息字符串满足原长度与内容检查，但额外 JSON 引号及转义使检查副本超过长度上限
+- **THEN** 检查实际消息字符串及重叠窗口，原件检查保持；不得降低敏感内容检查或提高长度阈值，真正超限的消息仍拒收
+
+### Requirement: Fixed investigation knowledge references remain contextual without covering current members
+
+固定 C3/C6 SHALL 允许本轮已选知识作为其查询适用成员的辅助解释、非 observed 推理及补查参考，保留原历史主体、版本及来源角色；这些引用 MUST NOT 被映射成本案观察，也不得计入成员或最终结论/影响的依据覆盖。知识与本步的目的和成员关联 SHALL 同时来自同一检索出处；程序接收、局部保留及有界纠错诊断使用一致规则。原始材料、人工陈述和前序判断的既有角色/范围校验保持，历史原答和失败不回写。
+
+#### Scenario: A member explanation compares current observations with a historical card
+- **WHEN** 模型为 A3 同时引用本案材料及本轮按 A3 主题检索的历史卡，原历史成员不属于本案
+- **THEN** 保留两种来源的不同身份并允许辅助比较；只有非知识的本案来源计入 A3 覆盖，历史记录不被改成 A3 的观察
+
+#### Scenario: A conclusion relies only on historical or technical knowledge
+- **WHEN** 已分析成员或结论/实际影响声明覆盖某成员，但该成员的引用只有知识
+- **THEN** 拒绝缺少本案依据的覆盖并给出同一缺口诊断；不得补引用、缩小原答范围或追认旧失败为成功
+
+#### Scenario: Deduplicated origins have different purposes and members
+- **WHEN** 同一知识块分别被 A1 的技术解释查询和 A2 的取证指导查询命中，当前 Deep 只针对 A1
+- **THEN** 不把两个出处的条件拼接成适用于 A1 的取证指导；必要前序引用依赖仍按原规则保留且注明其角色
+
 ### Requirement: Configured Case followup model boundary
 The system SHALL provide configured Deep and final-delivery calls with frozen business materials, effective prior judgments, and their explicit evidence dependencies, while restoring program-owned output fields without changing the stored Case contract.
 
@@ -18,6 +186,10 @@ The system SHALL provide configured Deep and final-delivery calls with frozen bu
 #### Scenario: Final conclusions use substantive references while analysis retains execution context
 - **WHEN** a configured C6 request includes execution receipts
 - **THEN** conclusion, comparison, impact and recommendation reference slots exclude those receipt IDs as required by their existing parser, without narrowing the analysis slots that may describe query coverage or removing receipts from the input
+
+#### Scenario: Final recommendations cannot be generated with an empty evidence array
+- **WHEN** C6 emits a recommendation
+- **THEN** its generation schema and receiver both require at least one visible substantive source; no extra model call, invented reference, or rewrite of an old rejected answer is used to satisfy the rule
 
 #### Scenario: Old execution remains readable
 - **WHEN** a Run has no configured Case boundary or a previous stored result is read

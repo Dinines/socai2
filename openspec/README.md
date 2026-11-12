@@ -8,7 +8,13 @@
 
 [sync-saved-alert-knowledge](changes/archive/2026-11-12-sync-saved-alert-knowledge/tasks.md)已完成新采用 A 分诊提交后同步、本地一次直接流程、独审及 21 r5 实际加载读回；知识回执独立，旧请求不重派。生产未新增分析 Run，消费者保持关闭；发布审计及归档已完成，主调查完成数不变。
 
+[独立HTTP入口](changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已统一21:18024的43操作和正式数据目标，Case/H真实TCP及SQL读回通过、docs5同步两端；仅发布入口/写连接两文件，不包含并行模型修改。后续业务按[HTTP实施计划](../docs/investigation/http-implementation-plan-20261112.md)逐项推进，主调查31/41保持。
+
+[Case基本管理](changes/archive/2026-11-12-manage-investigation-cases/validation.md)已完成E44–E47、两端各20次HTTP及SQL、限定独审和一次服务/Swagger发布；当前47操作、docs6，主调查31/41保持。
+
 ## 文档职责
+
+当前优先级为[固定范围调查收口](changes/complete-socai2-investigation-chain/fixed-flow-plan.md)；[schedule-streaming-investigation-updates](changes/schedule-streaming-investigation-updates/proposal.md)已规划更新触发、队列合并、反馈复核和知识使用，按负责人最新指令在固定流程完成后实施，尚未改变运行行为。
 
 | 内容 | 维护位置 |
 | --- | --- |

@@ -2,6 +2,8 @@
 
 当前调查配置以[生产 profile](../../deploy/aisoc21/production-v1.2.toml)、[统一发布清单](../../deploy/aisoc21/release-v1.2.json)和[21 部署说明](../../deploy/aisoc21/README.md)为准：目标 `sting-infra21`，正式数据 `aisoc.socai2`，A/I/Case 策略由 profile 显式选择。功能及开放状态见[交接指南](../../FRONTEND_BACKEND_HANDOFF.md)，凭据只从受控私密文件加载。
 
+仓库待发布的 `investigation-policy-ai-v1.toml` 和 `investigation-policy-case-v1.toml` 将 A/I `max_model_calls` 设为 2，用于首答及最多一次引用纠正；`max_total_tokens=24000`、`deadline_seconds=300` 保持，预算不足不纠正。基础/incident-v1 profile 保持原限制。该配置已用于本机固定批次，21 仍按原发布运行，不能把仓库新值当成生产已加载值；构建/升级继续沿原 profile 打包同一文件。
+
 ## Case/H 功能连接
 
 `SOCAI2_CASE_API_ENABLED=true` 配合私密 `SOCAI2_CASE_DATABASE_URL` 接通既有 Case/H 写接口；GET 和普通 API 保持现有 DATABASE_URL。21 统一发布通过 `processing.api_environment_sources` 把已有处理连接映射到 Case 键，凭据由原 private 文件生成，示例见 [case-http.env.example](../../deploy/aisoc21/case-http.env.example)。新装及升级沿用同一配置入口，不新增表列、角色或审批；缺少连接时明确报配置不可用。当前是否已上线见根交接指南。

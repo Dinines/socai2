@@ -13,8 +13,8 @@ from uuid import UUID, uuid5
 
 from read_processing_audit_20261106 import (
     DB,
+    EXPORT_TABLE_SETS,
     ROLE,
-    TABLES,
     TENANT,
     check_credentials,
     digest,
@@ -95,7 +95,7 @@ def sql_for(plan):
 
 
 def validate_data(card, data, batch):
-    require(set(data) == set(TABLES) and all(isinstance(rows, list) for rows in data.values()), "incomplete database export")
+    require(set(data) in EXPORT_TABLE_SETS and all(isinstance(rows, list) for rows in data.values()), "incomplete database export")
     require(all(r.get("tenant_id") == TENANT for rows in data.values() for r in rows), "row outside processing tenant")
     aids = set(card["alert_ids"])
     require({a["id"] for a in data["alerts"]} == aids, "missing or unexpected alert")
@@ -123,8 +123,12 @@ def validate_data(card, data, batch):
                  "run_members": ("run_id", run_ids), "run_steps": ("run_id", run_ids),
                  "activity_targets": ("activity_id", activity_ids)}
     for table in ("case_assessments", "case_assessment_sources", "case_assessment_members", "results",
-                  "result_members", "tasks", "task_revisions", "conversations", "messages", "graph_explorations"):
+                  "result_members", "tasks", "task_revisions", "conversations", "messages"):
         relations[table] = ("case_id", cids)
+    # Archived V1 exports can still carry the retired table. Preserve and check
+    # those files; current captures no longer query or manufacture this collection.
+    if "graph_explorations" in data:
+        relations["graph_explorations"] = ("case_id", cids)
     for table, (field, allowed) in relations.items():
         require(all(r[field] in allowed for r in data[table]), f"{table} row outside registered subjects")
     require(all(r.get("run_id") in run_ids if r.get("run_id") is not None else

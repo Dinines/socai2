@@ -4,10 +4,16 @@ Imports the real implementation from ``app.services.kb_chunking`` so these
 tests guard the code that actually ships, not a copy.
 """
 
+import json
 import random
 import string
 
-from app.services.kb_chunking import CHUNK_OVERLAP, CHUNK_SIZE, chunk_text
+from app.services.kb_chunking import (
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
+    chunk_text,
+    structured_document,
+)
 
 
 def _chunk_old(content, chunk_size=CHUNK_SIZE):
@@ -36,6 +42,21 @@ def test_empty():
 def test_short_single_chunk():
     t = "Short runbook entry."
     assert chunk_text(t) == [t]
+
+
+def test_complete_structured_document_is_saved_intact_not_split_inside_a_value():
+    value = {"description": "A complete explanation. " * 40,
+             "conditions": {"count": 0, "enabled": False, "exceptions": []}}
+    original = json.dumps(value, ensure_ascii=False, indent=2)
+    assert len(original) > CHUNK_SIZE
+    assert chunk_text(original) == [original]
+    assert structured_document(chunk_text(original)[0]) == value
+    assert chunk_text(json.dumps([value])) == [json.dumps([value])]
+    assert structured_document('{"description": "unfinished') is None
+    assert structured_document('{"count": 0, "count": 1}') is None
+    assert structured_document('{"value":1e400}') is None
+    assert structured_document('{"value":1e-400}') is None
+    assert structured_document('{"value":0.25}') == {"value": 0.25}
 
 
 def test_exact_size_single_chunk():

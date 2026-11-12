@@ -4,6 +4,8 @@
 
 按负责人 2026-11-11 的[后置决定](../../openspec/changes/archive/2026-11-11-ground-case-conclusions/scope-decision.md)，持续模型问题记录开放，允许已验证程序功能交付和后续 Case/H 正常操作推进；不再以重复模型采样作为前置。模型质量 NOT_PASSED 保持，不等于问题已修复。
 
+当前固定输入另有明确的材料选择缺口：原始日志很小，历史和执行台账却层层累积，04批C6在63,262字符超限前未派发。按负责人要求，先定义模型目标、禁止原始结构整包透传；[字段梳理](../../openspec/changes/complete-socai2-investigation-chain/model-input-field-review-20261112.md)已完成，查询只给结果及 A/I/C3 字段筛选已本地修改并离线核验；I 当前3,047字符，原冻结 C3 仍7,680字符，成员归属/原文/原引用保持。C3 的有效 I 整体结论引用保留遗漏已按独审补齐并定向复验。完整 JSON 的新导入切片及 C3/Deep/C6 已识别知识正文投影已本地修复，[新导入离线预览](../operations/evidence/model-input-selection-20261112-05/README.md)6,930字符；没有实际导入、索引或模型调用，旧两段仍保留，不能当旧 Run 已修复。未知结构保持；[Deep/C6 整理](../operations/evidence/model-input-selection-20261112-06/README.md)已本地按指定问题/全案结论筛选，正文8,768/14,080字符，必要前序支持/反证保持。旧知识切片仍在本批冻结输入中，未手工拼接；离线重建不代表真实 C6 超限或模型质量已经通过。HTTP 字段/数据库表不变，不手工拼文档；输入变短不证明M01/F02已修复，不继续采样追求通过。
+
 ## 待完成事项
 
 | 编号 | 问题及影响 | 当前处理与验收落点 |
@@ -13,7 +15,7 @@
 | M01-B | 模型自由正文将未查询写成查空 | **已知、后置，未修复**。第五批 C6 F1 替代解释与程序 coverage 的 2 查空/4 未查矛盾；原字段/原答保留，真实状态以程序回执为据。后续实际触及该输出时定向处理，不重复采样 |
 | M02 | 角色引用合规与正文有据需分开持续验收 | 历史知识批次 C3 首次 source_member_mismatch 经既有一次纠正后接受，C6 recommendation_needs_sources 拒收，Result partial/rejected/null，未重采样。前批 duplicate_source、HTTP 首轮 delivery_source_not_visible_or_duplicate 及后轮接受各保留原回执；一次接受不证明稳定。当前模型质量 NOT_PASSED。[本轮验收](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/validation.md) |
 | F01 | H 后再次调查的传递已验证，正确利用反馈及有据结论仍未通过 | 本轮真实 HTTP 的第 2 修订进入后轮冻结及 4 份实际请求 body，后轮承认人工不是业务授权、命令结果未知；只证明本批部分利用，完整语义质量未通过。前批修订及错误原答保留，不核销 3.7 |
-| F02 | 知识传递已验证，召回相关性及合理使用效果未通过 | 历史知识本地 C2 9 查询/10 行，历史卡 2 命中/1 唯一卡，5 份请求可见原分诊/人工正文及独立角色；结构化引用数组未引用历史，部分正文有提及，登录主题也命中进程卡，合理使用未证明。技术解释/方法前批证据保留；生产实际接线见根 PROGRESS。graph、自动消费和方法推动取证仍未验。[知识筛选改进](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已实施并发布 21 r3；新批次 9 查询／5 行（3 唯一块），排除 6 次条件冲突和 2 次过期卡候选，合并 2 次跨目的正文。6 模型后 C6 仍拒收；被接受结果未结构化引用知识，合理使用质量仍未通过，不核销本项。[历史知识验收](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/validation.md) |
+| F02 | 知识传递已验证，召回相关性及合理使用效果未通过 | 历史知识本地 C2 9 查询/10 行，历史卡 2 命中/1 唯一卡，5 份请求可见原分诊/人工正文及独立角色；结构化引用数组未引用历史，部分正文有提及，登录主题也命中进程卡，合理使用未证明。技术解释/方法前批证据保留；生产实际接线见根 PROGRESS。graph、自动消费和方法推动取证仍未验。[知识筛选改进](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已实施并发布 21 r3；新批次 9 查询／5 行（3 唯一块），排除 6 次条件冲突和 2 次过期卡候选，合并 2 次跨目的正文。6 模型后 C6 仍拒收；被接受结果未结构化引用知识，合理使用质量仍未通过，不核销本项。[历史知识验收](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/validation.md) 本地固定流程进一步修正辅助知识范围/覆盖与同出处选取，已有历史引用保存读回；C6 建议空引用拒收，Schema 随后补齐，不追认原答。见[本批验证](../../openspec/changes/complete-socai2-investigation-chain/fixed-flow-validation-20261112.md)。 |
 | O01 | 自动消费者暂停；恢复后的实际消费、自动分诊和建案未验收 | 本批不启动消费者；按已有服务范围单独核验，健康探针不证明处理成功 |
 | W01 | Case/H 产品页面操作仍需接线验收 | 本地 13 次原 HTTP 请求及后轮版本/结果比对通过；21 r2 写入口已开放，正常登录后 8 次业务请求及任务字段匹配通过。服务端范围见 R08，产品页面操作仍未验收，不用 4177 代替 |
 | P01 | 事件概览缺本次诊断入口 | 对应 J04；由成员主体及 Run UUID 打开实际诊断尝试，失败也可查 |

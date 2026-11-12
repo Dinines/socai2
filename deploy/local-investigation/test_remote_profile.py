@@ -107,14 +107,14 @@ from fastapi import Depends
 from fastapi.testclient import TestClient
 from app.api.v1.deps import get_current_user
 import remote_readonly_api as module
-from app.socai2_main import isolated_database_name
+from app.socai2_main import configured_database_name
 os.environ['SOCAI2_SERVICE_DATABASE_NAME'] = 'aisoc'
 try:
-    isolated_database_name()
+    configured_database_name()
 except RuntimeError:
     pass
 else:
-    raise AssertionError('independent API production guard was removed')
+    raise AssertionError('standalone writer target must be explicitly configured')
 def unexpected_connection(*args, **kwargs):
     raise AssertionError('authentication or mutation reached the database')
 type(module.engine).connect = unexpected_connection

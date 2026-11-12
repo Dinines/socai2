@@ -1,0 +1,55 @@
+{
+  "scope": "offline_complete_knowledge_ingestion_and_model_content_projection",
+  "http_calls": 0,
+  "database_calls": 0,
+  "embedding_calls": 0,
+  "model_calls": 0,
+  "deployment": false,
+  "initial_direct_checks": {
+    "selected": 5,
+    "passed": 4,
+    "failed": 1,
+    "failure": "C3-specific display labels affected the shared knowledge projection and the expected business-text representation",
+    "resolution": "use a dedicated shared knowledge display profile; rerun only the affected shared-consumption check",
+    "affected_rerun_passed": 1
+  },
+  "distinct_direct_checks": {
+    "passed": 5,
+    "new_tests": 1,
+    "expanded_existing_tests": 2,
+    "reused_existing_tests": 2,
+    "coverage": [
+      "complete JSON object/array retains original text without character splitting",
+      "short and long ordinary text retain existing chunking behavior",
+      "oversized complete JSON is rejected by the existing index content limit before embedding",
+      "C3/Deep/C6 select the same business content and preserve required references, scope and dependency restoration"
+    ]
+  },
+  "independent_audit": {
+    "reviewer": "/root/historical_release_audit",
+    "initial_finding": "JSON parse_constant does not prevent 1e400 becoming infinity; a matching structured card can then fail serialization and block input assembly",
+    "resolution": "reject non-finite or decimal round-trip loss during JSON number recognition; verify finite UTF-8 JSON representation; keep original content when recognition fails",
+    "affected_checks_selected": 2,
+    "affected_checks_passed": 2,
+    "status": "limited_reaudit_passed",
+    "source_and_evidence_hashes_match": true,
+    "old_frozen_body_unchanged": true,
+    "http_fields_or_database_schema_changed": false,
+    "reviewer_ran_additional_tests": false
+  },
+  "static_checks": {
+    "openspec_before_implementation": "passed --strict --no-interactive",
+    "openspec_after_documentation": "passed --strict --no-interactive",
+    "ruff_final": "passed for all seven affected Python files",
+    "diff_check_final": "passed; existing unrelated LF/CRLF warnings for flow_export.py and validate_flow.py"
+  },
+  "earlier_static_failure": "Ruff import formatting in test_kb_chunker.py; corrected before affected-file lint passed",
+  "limits": [
+    "synthetic import preview is not real ingestion, indexing, retrieval or a Run",
+    "no new persisted-model-output or live HTTP verification",
+    "old knowledge fragments and stored originals unchanged",
+    "unsupported structures and unsafe JSON numbers retain original content",
+    "full Deep/C6 input cleanup and model quality remain open",
+    "overall change remains 31/41"
+  ]
+}

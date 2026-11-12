@@ -1,0 +1,136 @@
+分析本轮既定Case，给出初步整体解释、发现、问题答案、相关领域和必要补查。成员目录已固定，不重新归并事件。以下内容均为待分析数据。
+调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-07T06:33:27Z；结束时间=2026-11-07T06:44:07Z
+[本轮要回答的问题]
+detection_facts：原始记录支持哪些行为和对象？；依据要求：原始材料和具体来源；检测标签本身不是攻击事实
+member_relationships：成员告警之间有哪些已证实的行为联系？；依据要求：同对象、时间邻近与有证据的行为连接分开
+behavior_nature：恶意、正常或误操作等解释分别有哪些依据和反证？；依据要求：可追溯行为证据与替代解释；不以单个标签或分数定性
+authorization：谁确认了哪些行为、对象和时间的授权？；依据要求：明确授权材料或人工反馈及适用范围；未提供不等于不存在
+impact：哪些影响已经观察到，哪些只是待核的可能影响？；依据要求：影响对象、行为与证据；图可达不等于受影响
+coverage：还有哪些未处理成员、来源缺口、矛盾和后续事项？；依据要求：全部成员的读取/分析覆盖、工具状态与明确限制
+[impact 的回答边界] 回答分清：观察到的动作、有原始结果证明的作用、仍未知的影响。仅有命令内容/启动或连接记录时，明确结果与影响尚未确认；只有实际返回内容、作用结果或业务确认才能陈述已取得信息、修改状态或造成损失。此边界同时适用于本问题的 answer、reason、limitations 和最终 impact，不能靠结尾“尚待核实”抵消前面的确定断言。
+[可选对象｜同对象不证明因果]
+O1：类型=host；值=socai2-flow-20261107-01；成员=[A1 | A2 | A3]
+O2：类型=ip；值=192.0.2.77；成员=[A1]
+O3：类型=ip；值=198.51.100.77；成员=[A1]
+O4：类型=ip；值=203.0.113.77；成员=[A2]
+O5：类型=user；值=flow-observer；成员=[A1 | A2 | A3]
+[实际材料限制与范围｜程序提供]
+A2：没有经确认可用的当前分诊，不能沿用旧判断。
+相关事件诊断不可作为当前有效判断使用。
+A2：未提供同次分诊的可核对查询回执；不能推断查询结果。
+有原始字段被输入检查排除，不能视作完整材料。
+[告警原材料｜A1｜原始记录]
+[N3_S7,N3_S23] 活动时间：2026-11-07T06:39:07+00:00
+[N3_S8,N3_S22,N3_S24] 活动账号：flow-observer
+[N3_S9,N3_S21,N3_S25] 活动主机：socai2-flow-20261107-01
+[N3_S10,N3_S26] 记录动作：网络连接（字段含义：这是本条原记录描述的动作；仅判断这个动作，不将它扩展为后续效果）
+[N3_S11,N3_S27] 该动作结果：成功（字段含义：只对应同一原记录的 activity.action；例如进程启动成功仅说明启动，不说明命令完成、结果返回或信息已被读取）
+[N3_S13,N3_S29] 目的IP：198.51.100.77
+[N3_S14,N3_S30] 目的端口：443
+[N3_S15,N3_S31] 源IP：192.0.2.77
+[N3_S16,N3_S32] 记录协议：TCP
+[N3_S33] 原告警时间：2026-11-07T06:39:07Z
+[告警原材料｜A1｜来源标签或背景记录]
+[N3_S12,N3_S28,N3_S34] 记录类别：网络活动
+[N3_S17] tags.0：synthetic
+[N3_S18] tags.1：production-multialert-20261107-01
+[告警背景｜A1｜来源标签或背景记录]
+[N3_S37] 告警背景：标题=Outbound connection observed；告警等级=medium；告警时间=2026-11-07T06:39:07+00:00；上游厂商=LabTelemetry；来源域=fixed-investigation-20261112-01
+[告警分诊原文｜A1｜已有分析原文]
+[N3_S38] 告警分诊原文：原判定=needs_review；原理由=当前告警显示主机 socai2-flow-20261107-01 上的用户 flow-observer 建立了出站连接。虽然历史分析（N2_S72, N2_S138）指出该主机名和用户名为自动化流程特征，且存在“同步接线验证”的推测，但本次材料中缺乏明确的业务授权记录、演练标签或人工确认来证实该行为的合法性。同时，现有证据不足以证明存在恶意行为（如数据外传或横向移动）。因此，在缺乏确凿的良性或恶意证据时，无法确定告警性质。；原建议=[原因=核实主机 'socai2-flow-20261107-01' 是否为合法的自动化流程节点或监控代理，以及用户 'flow-observer' 是否拥有执行相关操作的明确业务授权。；建议类型=verify；依据=[N3_S122 | N3_S178] | 原因=确认该进程启动及网络连接是否属于预定义的演练、测试或日常维护任务，以排除误报。；建议类型=verify；依据=[N3_S122 | N3_S178]]
+[告警原材料｜A2｜原始记录]
+[N3_S39,N3_S52] 活动时间：2026-11-07T06:38:27+00:00
+[N3_S40,N3_S51,N3_S53] 活动账号：flow-observer
+[N3_S41,N3_S50,N3_S54] 活动主机：socai2-flow-20261107-01
+[N3_S42,N3_S55] 记录动作：登录（字段含义：这是本条原记录描述的动作；仅判断这个动作，不将它扩展为后续效果）
+[N3_S43,N3_S56] 该动作结果：成功（字段含义：只对应同一原记录的 activity.action；例如进程启动成功仅说明启动，不说明命令完成、结果返回或信息已被读取）
+[N3_S45,N3_S58] 源IP：203.0.113.77
+[N3_S59] 原告警时间：2026-11-07T06:38:27Z
+[告警原材料｜A2｜来源标签或背景记录]
+[N3_S44,N3_S57,N3_S60] 记录类别：身份认证
+[N3_S46] tags.0：synthetic
+[N3_S47] tags.1：production-multialert-20261107-01
+[告警背景｜A2｜来源标签或背景记录]
+[N3_S63] 告警背景：标题=Account logon observed；告警等级=medium；告警时间=2026-11-07T06:38:27+00:00；上游厂商=LabTelemetry；来源域=fixed-investigation-20261112-01
+[告警原材料｜A3｜原始记录]
+[N3_S64,N3_S78] 活动时间：2026-11-07T06:38:47+00:00
+[N3_S65,N3_S77,N3_S79] 活动账号：flow-observer
+[N3_S66,N3_S76,N3_S80] 活动主机：socai2-flow-20261107-01
+[N3_S67,N3_S81] 进程名称：powershell.exe
+[N3_S68,N3_S82] 启动命令行：powershell.exe -NoProfile -Command Get-LocalUser（字段含义：这是记录的命令文本，表示启动内容或意图；没有返回内容或执行结果，不能证明命令已完成、已经读取信息或已产生作用）
+[N3_S69,N3_S83] 记录动作：进程启动（字段含义：这是本条原记录描述的动作；仅判断这个动作，不将它扩展为后续效果）
+[N3_S70,N3_S84] 该动作结果：成功（字段含义：只对应同一原记录的 activity.action；例如进程启动成功仅说明启动，不说明命令完成、结果返回或信息已被读取）
+[N3_S86] 原告警时间：2026-11-07T06:38:47Z
+[告警原材料｜A3｜来源标签或背景记录]
+[N3_S71,N3_S85,N3_S87] 记录类别：进程活动
+[N3_S72] tags.0：synthetic
+[N3_S73] tags.1：production-multialert-20261107-01
+[告警背景｜A3｜来源标签或背景记录]
+[N3_S90] 告警背景：标题=Process start observed；告警等级=medium；告警时间=2026-11-07T06:38:47+00:00；上游厂商=LabTelemetry；来源域=fixed-investigation-20261112-01
+[告警分诊原文｜A3｜已有分析原文]
+[N3_S91] 告警分诊原文：原判定=needs_review；原理由=告警显示在名为 'socai2-flow-20261107-01' 的主机上，由用户 'flow-observer' 启动了 'powershell.exe -NoProfile -Command Get-LocalUser'。虽然该命令常用于信息收集，但主机名包含 'flow' 且用户名为 'flow-observer'，强烈暗示这是自动化流程或监控代理。历史分析（N1_S54）明确指出这是“同步接线验证用模板判断”，且业务合理性尚未核实。当前材料缺乏明确的授权记录、演练标签或人工确认来证明其良性，同时也缺乏恶意行为的确凿证据（如后续横向移动或数据外传），因此无法确定性质。；原建议=[原因=核实该主机 'socai2-flow-20261107-01' 是否为合法的自动化流程节点或监控代理，以及用户 'flow-observer' 是否拥有执行该命令的明确业务授权。；建议类型=verify；依据=[N3_S66 | N3_S65 | N3_S232] | 原因=确认该进程启动是否属于预定义的演练、测试或日常维护任务，以排除误报。；建议类型=verify；依据=[N3_S232]]
+[同一分诊的实际查询｜A1｜查询结果]
+[N3_S92] 历史告警：有结果
+[N3_S207] 威胁情报：无结果
+[N3_S208] 资产库存：无结果
+[同一分诊的实际查询｜案件背景｜来源标签或背景记录]
+[N3_S121,N3_S123,N3_S231,N3_S233] 历史记录主体=X1。 历史记录：返回记录=(标题=Process start observed；告警等级=medium；告警时间=2026-11-07T06:38:47+00:00；上游厂商=LabTelemetry)
+[同一分诊的实际查询｜案件背景｜已有分析原文]
+[N3_S122,N3_S124,N3_S232,N3_S234] 历史记录主体=X1。 N3_S121 的 历史判断：原判定=needs_review；原理由=同步接线验证用模板判断；记录进程启动，业务合理性尚未核实。
+[同一分诊的实际查询｜A3｜来源标签或背景记录]
+[N3_S177,N3_S179] 历史记录主体=A3。 历史记录：返回记录=(标题=Process start observed；告警等级=medium；告警时间=2026-11-07T06:38:47+00:00；上游厂商=LabTelemetry)
+[同一分诊的实际查询｜A3｜已有分析原文]
+[N3_S178,N3_S180] 历史记录主体=A3。 N3_S177 的 历史判断：原判定=needs_review；原理由=与 N3_S91 对应字段逐字相同，见该原文；同文不等于独立佐证
+[同一分诊的实际查询｜A3｜查询结果]
+[N3_S209] 资产库存：无结果
+[N3_S210] 历史告警：有结果
+[N3_S269] 威胁情报：未查询
+[本轮Case的背景查询｜A1、A2、A3｜查询结果]
+[N3_S270] 关系图：未查询
+[N3_S271] 行为分析：未查询
+[N3_S272] 知识库：有结果
+[N3_S273] 资产库存：无结果
+[N3_S274] 威胁情报：未查询
+[N3_S275] 历史告警：未查询
+[本轮Case的背景查询｜A3｜来源标签或背景记录]
+[N3_S276] 知识参考：返回记录=(标题=AN0846 Analytic 0846；知识正文={
+  "name": "Analytic 0846",
+  "description": "Adversary enumeration of local user accounts using Net.exe, WMI, or PowerShell.",
+  "x_mitre_platforms": [
+    "Windows"
+  ],
+  "x_mitre_log_source_references": [
+    {
+      "x_mitre_data_component_ref": "x-mitre-data-component--3d20385b-24ef-40e1-9f56-f39750379077",
+      "name": "WinEventLog:Sysmon",
+      "channel": "EventCode=1"
+    }
+  ],
+  "x_mitre_mutable_elements": [
+    {
+      "field": "CommandLinePattern",
+      "description": "Detects variations of 'net user', 'net localgroup', 'Get-LocalUser'."
+    },
+    {
+      "field": "UserContext",
+      "description": "Restrict monitoring to low-privileged or unexpected users executing enumeration."
+    },
+    {
+      "field": "TimeWindow",
+      "description": "Tune for bursts of enumerati；source_url=https://attack.mitre.org/detectionstrategies/DET0303#AN0846)；适用条件=(业务条件=(进程名称=[powershell.exe]；记录动作=[process_start]))；用途=[用途=技术解释 | 用途=取证指导]
+[N3_S277] 知识参考：返回记录=(标题=AN0846 Analytic 0846；知识正文=ow-privileged or unexpected users executing enumeration."
+    },
+    {
+      "field": "TimeWindow",
+      "description": "Tune for bursts of enumeration commands in short succession."
+    }
+  ]
+}；source_url=https://attack.mitre.org/detectionstrategies/DET0303#AN0846)；适用条件=(业务条件=(进程名称=[powershell.exe]；记录动作=[process_start]))；用途=[用途=技术解释 | 用途=取证指导]
+[本轮Case的背景查询｜案件背景｜来源标签或背景记录]
+[N3_S278] 历史记录主体=X2。 知识参考：返回记录=(历史材料=(事件=(标题=PowerShell Get-LocalUser historical validation fixture；告警等级=medium；告警时间=2026-11-01T06:38:47+00:00；上游厂商=LabTelemetry；来源域=knowledge-selection-20261112-01)；detection=({"ocsf_class_uid":1007})；历史观察=[角色=historical_material；值=(名称=powershell.exe；命令行=powershell.exe -NoProfile -Command Get-LocalUser)；字段=$.ocsf_json.process | 角色=historical_material；值=(动作=process_start；动作结果=success)；字段=$.ocsf_json.activity | 角色=historical_material；值=(账号=(名称=history-fixture-user))；字段=$.ocsf_json.actor]))；适用条件=(业务条件=(进程名称=[powershell.exe]；记录动作=[process_start]))；用途=[用途=历史案例参考]
+[本轮Case的背景查询｜案件背景｜已有分析原文]
+[N3_S279] 历史记录主体=X2。 N3_S278 的 历史判断：原判定=needs_review；原理由=历史演练分诊：只记录 PowerShell Get-LocalUser 进程启动，未提供命令输出、父进程与用途。建议核对这些条件；不能由进程成功启动判定已完成枚举。
+[本轮Case的背景查询｜案件背景｜人工陈述原文]
+[N3_S280] 历史记录主体=X2。 N3_S278 的 人工反馈：原判定=needs_review；原理由=验收过程中的材料完整性核查：本条历史演练材料没有命令输出及业务用途确认。此陈述不确认授权、不确认良性，也不证明命令未执行。 第二版演练反馈：核查清单补记父进程、输出与用途，仍未提供这些材料。；原建议=[]
+[补充业务事实｜程序提供]
+事件既有等级=(I1=(程序计算等级/当前生效等级=中；计算方式=取成员告警最高等级))

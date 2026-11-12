@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import Field, StrictStr, ValidationError
 
 from .baseline_contracts import Contract
+from .case_source_scope import knowledge_context
 
 SCHEMA = "socai2.baseline-analysis.v1"
 EXECUTION_SCHEMA = "socai2.baseline-analysis.v2"
@@ -151,8 +152,9 @@ def parse(content, source_map, context, coverage, *, bindings=None):
             fail("source_not_in_model_input")
         available = set()
         for sid in ids:
-            owned = set(source_map[sid]["alert_ids"])
-            if members and not (owned & members):
+            source = source_map[sid]
+            owned = set(source["alert_ids"]) if not source.get("knowledge") else set()
+            if members and not (owned & members) and not knowledge_context(source, members):
                 fail("source_member_mismatch")
             available.update(owned)
         if require_coverage and members and not members <= available:

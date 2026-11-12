@@ -1,0 +1,407 @@
+{
+  "path": "/api/v1/socai2/alerts/be8f0fbb-15b6-5a18-a900-b6c46c2e9e91/analysis/runs/5af4233b-67de-5392-aade-032bd07f72fb",
+  "status": 200,
+  "body": {
+    "run": {
+      "id": "5af4233b-67de-5392-aade-032bd07f72fb",
+      "kind": "alert_basic",
+      "state": "completed",
+      "requested_at": "2026-11-12T05:30:58.447632Z",
+      "requested_by": "00000000-0000-0000-0000-000000000003",
+      "started_at": "2026-11-12T05:30:58.447632Z",
+      "ended_at": "2026-11-12T05:31:09.720362Z",
+      "executor_version": "socai2.alert-basic-executor.v3",
+      "input_artifact_id": "73e98842-8037-4796-bacf-286b96c4ed55",
+      "stop_reason": "stage_output_saved",
+      "delivery_state": "complete"
+    },
+    "freshness": "current",
+    "is_current_pointer": true,
+    "valid_for_current_input": true,
+    "result": {
+      "id": "c806e695-e121-5b06-8c73-d2fa2a4310a9",
+      "input_material_id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+      "source_run_id": "5af4233b-67de-5392-aade-032bd07f72fb",
+      "verdict": "needs_review",
+      "rationale": "告警显示在名为 'socai2-flow-20261107-01' 的主机上，由用户 'flow-observer' 启动了 'powershell.exe -NoProfile -Command Get-LocalUser'。虽然该命令常用于信息收集，但主机名包含 'flow' 且用户名为 'flow-observer'，强烈暗示这是自动化流程或监控代理。历史分析（N1_S54）明确指出这是“同步接线验证用模板判断”，且业务合理性尚未核实。当前材料缺乏明确的授权记录、演练标签或人工确认来证明其良性，同时也缺乏恶意行为的确凿证据（如后续横向移动或数据外传），因此无法确定性质。",
+      "confidence": null,
+      "score_state": "not_computed",
+      "recommendations": [
+        {
+          "id": "R1",
+          "reason": "核实该主机 'socai2-flow-20261107-01' 是否为合法的自动化流程节点或监控代理，以及用户 'flow-observer' 是否拥有执行该命令的明确业务授权。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            },
+            {
+              "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+              "role": "prior_analysis",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.rows.20.record.triage"
+            }
+          ],
+          "approval_requirement": "unknown"
+        },
+        {
+          "id": "R2",
+          "reason": "确认该进程启动是否属于预定义的演练、测试或日常维护任务，以排除误报。",
+          "targets": [],
+          "action_type": "verify",
+          "limitations": [
+            "recommendation_only_not_executed"
+          ],
+          "source_refs": [
+            {
+              "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+              "role": "prior_analysis",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.rows.20.record.triage"
+            }
+          ],
+          "approval_requirement": "unknown"
+        }
+      ],
+      "producer": "socai2.alert-basic-executor.v3",
+      "actor": {
+        "type": "service",
+        "user_id": null,
+        "service_name": "socai2.alert-basic-executor.v3",
+        "name_snapshot": null,
+        "service_version": "socai2.stage-result.v1"
+      },
+      "assessed_at": "2026-11-12T05:31:09.720362Z"
+    },
+    "explanation": {
+      "artifact_id": "c27a207f-1337-53fc-9aa6-2c0e31e4b26b",
+      "available": true,
+      "reason": null,
+      "content": {
+        "body": "进程=\"powershell.exe\"；完整命令行=\"powershell.exe -NoProfile -Command Get-LocalUser\"；活动账号=\"flow-observer\"；活动主机=\"socai2-flow-20261107-01\"；动作=进程启动（process_start）；该动作的结果=成功（success）；日志活动时间=\"2026-11-07T06:38:47+00:00\"；socai2-flow-20261107-01；flow-observer；2026-11-07T06:38:47Z\n分析原文：告警显示在名为 'socai2-flow-20261107-01' 的主机上，由用户 'flow-observer' 启动了 'powershell.exe -NoProfile -Command Get-LocalUser'。虽然该命令常用于信息收集，但主机名包含 'flow' 且用户名为 'flow-observer'，强烈暗示这是自动化流程或监控代理。历史分析（N1_S54）明确指出这是“同步接线验证用模板判断”，且业务合理性尚未核实。当前材料缺乏明确的授权记录、演练标签或人工确认来证明其良性，同时也缺乏恶意行为的确凿证据（如后续横向移动或数据外传），因此无法确定性质。",
+        "limitations": [
+          "basic_alert_analysis_not_full_case_investigation",
+          "structure_sources_checked_not_truth_proven",
+          "model_view_has_omitted_fields",
+          "assets:completed:returned",
+          "history:completed:returned",
+          "threat_intel:skipped:no_supported_frozen_objects"
+        ],
+        "source_refs": [
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.name"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.process.cmd_line"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.actor.user.name"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.device.name"
+          },
+          {
+            "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+            "role": "prior_analysis",
+            "type": "artifact",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.rows.20.record.triage"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.action"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.activity.outcome"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.ocsf_json.time"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.hostname"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.username"
+          },
+          {
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+            "role": "observation",
+            "type": "alert_material",
+            "external": null,
+            "row_keys": [],
+            "source_path": "$.raw_json.event_time"
+          }
+        ],
+        "generated_at": "2026-11-12T05:31:09.720362+00:00",
+        "program_facts": {
+          "members": [
+            {
+              "alert": {
+                "id": "be8f0fbb-15b6-5a18-a900-b6c46c2e9e91",
+                "title": "Process start observed",
+                "severity": "medium",
+                "event_time": "2026-11-07T06:38:47+00:00",
+                "ingested_at": "2026-11-12T05:30:49.322472+00:00",
+                "original_vendor": "LabTelemetry",
+                "source_alert_id": null,
+                "event_time_source": "source"
+              },
+              "objects": [
+                {
+                  "namespace": "source:socai2-flow-acceptance",
+                  "raw_value": "flow-observer",
+                  "object_role": "entity",
+                  "object_type": "user",
+                  "normalized_value": "flow-observer",
+                  "asset_match_state": "not_checked"
+                },
+                {
+                  "namespace": "source:socai2-flow-acceptance",
+                  "raw_value": "socai2-flow-20261107-01",
+                  "object_role": "entity",
+                  "object_type": "host",
+                  "normalized_value": "socai2-flow-20261107-01",
+                  "asset_match_state": "not_checked"
+                }
+              ],
+              "material_id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+              "alert_source": {
+                "id": "73e98842-8037-4796-bacf-286b96c4ed55",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.members.0.alert"
+              },
+              "log_severity": [],
+              "activity_times": [
+                {
+                  "kind": "activity_time",
+                  "unit": "iso8601_with_offset",
+                  "value": "2026-11-07T06:38:47+00:00",
+                  "source": {
+                    "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+                    "role": "observation",
+                    "type": "alert_material",
+                    "external": null,
+                    "row_keys": [],
+                    "source_path": "$.ocsf_json.time"
+                  }
+                }
+              ],
+              "objects_source": {
+                "id": "73e98842-8037-4796-bacf-286b96c4ed55",
+                "role": "source_label",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.members.0.objects"
+              },
+              "material_source": {
+                "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+                "role": "source_label",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": null
+              },
+              "detection_labels": {
+                "role": "source_label",
+                "entries": [],
+                "policy_sha256": "ea886f6aba7858d7a894efb2659d78d11299e2e30ca40956fcbd80ef0b2f2130",
+                "dictionary_version": "socai2.attack-labels.20261107",
+                "does_not_establish_observed_attack": true
+              },
+              "unavailable_fields": [],
+              "activity_time_state": "available",
+              "material_received_at": "2026-11-12T05:30:49.322472+00:00"
+            }
+          ],
+          "time_rule": "activity_time != alert.event_time != ingested_at != execution_started_at",
+          "query_statuses": [
+            {
+              "state": "completed",
+              "reason": null,
+              "source": "assets",
+              "outcome": "empty",
+              "receipt": {
+                "id": "ca498d5b-be00-4598-b20b-998e0c705999",
+                "role": "execution_receipt",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": null
+              },
+              "statement": "本次查询成功，在该查询范围内返回0行；不能据此证明行为安全或检测错误。",
+              "truncated": false,
+              "returned_rows": 0
+            },
+            {
+              "state": "completed",
+              "reason": null,
+              "source": "history",
+              "outcome": "data",
+              "receipt": {
+                "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+                "role": "execution_receipt",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": null
+              },
+              "statement": "本次查询保留56行；仅适用于回执中的对象、时间和来源范围。",
+              "truncated": false,
+              "returned_rows": 56
+            },
+            {
+              "state": "skipped",
+              "reason": "no_supported_frozen_objects",
+              "source": "threat_intel",
+              "outcome": "not_queried",
+              "receipt": {
+                "id": "d8620dd0-7b89-405e-851b-6a64c905db1d",
+                "role": "execution_receipt",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": null
+              },
+              "statement": "本次未执行查询，不能称为无命中或无记录。",
+              "truncated": false,
+              "returned_rows": null
+            }
+          ],
+          "schema_version": "socai2.program-facts.v1.2",
+          "execution_started_at": "2026-11-12T05:30:58.447632+00:00"
+        },
+        "schema_version": "socai2.stage-result.v1",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "核实该主机 'socai2-flow-20261107-01' 是否为合法的自动化流程节点或监控代理，以及用户 'flow-observer' 是否拥有执行该命令的明确业务授权。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.device.name"
+              },
+              {
+                "id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.actor.user.name"
+              },
+              {
+                "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+                "role": "prior_analysis",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.rows.20.record.triage"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "确认该进程启动是否属于预定义的演练、测试或日常维护任务，以排除误报。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "6724a46c-0e2a-4062-be56-dccfcc22fe1e",
+                "role": "prior_analysis",
+                "type": "artifact",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.rows.20.record.triage"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "generation_method": "template"
+      }
+    },
+    "partial_analysis": null
+  }
+}

@@ -306,6 +306,9 @@ async def run_checks(engine, record, only=None):
     async def test_case_boundary_followups_final_correction():
         return await followup_scenario("correction")
 
+    async def test_case_boundary_final_recommendation_correction_and_gets():
+        return await followup_scenario("recommendation_correction")
+
     async def test_case_boundary_followups_without_c3():
         return await followup_scenario("fallback")
 

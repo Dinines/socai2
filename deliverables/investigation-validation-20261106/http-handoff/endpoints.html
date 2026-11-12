@@ -1,0 +1,3186 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><header><h1>调查服务 HTTP API</h1><p>告警 · 事件 · 调查</p><nav><a href="/">Swagger接口</a><a href="openapi.json">下载OpenAPI</a><a href="endpoints.html">参数与输入输出</a><a href="schemas.html">字段字典</a><a href="guide.html">接入说明</a></nav></header><h1 id="调查http接口目录47项">调查HTTP接口目录（47项）</h1>
+<p><a href="guide.html">共同约定与调用流程</a> · <a href="schemas.html">嵌套Schema</a> · <a href="examples.json">合成示例JSON</a></p>
+<p>参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。</p>
+<a id="e01"></a>
+<h2 id="e01-新建-case">E01 新建 Case</h2>
+<p><code>POST /api/v1/socai2/cases</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 新建 Case。</p>
+<p><b>输入：</b> JSON请求体：<code>CaseCreate</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>AssociationReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 创建Case并保存所选告警/事件关系，返回案件ID、范围版本和待启动Run ID；创建本身不执行调查。</p>
+<p><b>规则与限制：</b> 至少选择一个告警或事件；事件展开为成员并保留显式事件关系，合并后最多 200 条。保存后返回 pending_run_id；不自动执行。后续 E12→E13。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e01">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<p>无路径/查询参数。</p>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>severity</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>alert_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+<tr><td>incident_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>显式关联事件UUID集合，服务展开成员。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#associationreceipt">AssociationReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {},
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;title&quot;: &quot;核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;severity&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;alert_ids&quot;: [
+      &quot;00000000-0000-4000-8000-000000000002&quot;
+    ],
+    &quot;incident_ids&quot;: []
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;scope_revision&quot;: 1,
+  &quot;pending_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+  &quot;changed&quot;: true,
+  &quot;added_alert_ids&quot;: [
+    &quot;00000000-0000-4000-8000-000000000002&quot;
+  ],
+  &quot;linked_incident_ids&quot;: []
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_member_limit_exceeded</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_incident_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_source_namespace_mismatch</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_source_scope_unverified</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E01.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e02"></a>
+<h2 id="e02-case-队列与指标">E02 Case 队列与指标</h2>
+<p><code>GET /api/v1/socai2/cases</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case 队列与指标。</p>
+<p><b>输入：</b> 查询参数：<code>limit</code>, <code>cursor</code>, <code>q</code>, <code>handling_status</code>, <code>severity</code>, <code>owner_id</code>, <code>assignment_state</code>, <code>metric</code>, <code>classification</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseQueuePage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回符合条件的案件列表、下一页游标，以及不受列表筛选影响的租户案件指标。</p>
+<p><b>规则与限制：</b> q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e02">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>cursor</td><td>False</td><td>string; maxLength=1024 / null</td><td>null</td><td>使用服务上一页 next_cursor；改变筛选条件后清空。</td></tr>
+<tr><td>query</td><td>q</td><td>False</td><td>string; maxLength=200 / null</td><td>null</td><td>Case标题或完整ID搜索；告警/事件列表不支持此参数。</td></tr>
+<tr><td>query</td><td>handling_status</td><td>False</td><td><a href="schemas.html#workstatus">WorkStatus</a> / null</td><td>null</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>query</td><td>severity</td><td>False</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>null</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>query</td><td>owner_id</td><td>False</td><td>string (uuid) / null</td><td>null</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>query</td><td>assignment_state</td><td>False</td><td><a href="schemas.html#assignmentstate">AssignmentState</a> / null</td><td>null</td><td>分配状态，unresolved不等于unassigned。</td></tr>
+<tr><td>query</td><td>metric</td><td>False</td><td>string awaiting_assignment, in_progress, high_severity, awaiting_human / null</td><td>null</td><td>Case整体指标快捷过滤条件。</td></tr>
+<tr><td>query</td><td>classification</td><td>False</td><td>string true_positive, informational, false_positive / string = not_set / null</td><td>null</td><td>案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#casequeuepage">CaseQueuePage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_cursor&quot;: null,
+  &quot;metrics&quot;: {
+    &quot;awaiting_assignment&quot;: 0,
+    &quot;in_progress&quot;: 0,
+    &quot;high_severity&quot;: 0,
+    &quot;awaiting_human&quot;: 0
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_case_cursor</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_cursor_filters_changed</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E02.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e03"></a>
+<h2 id="e03-case-详情与当前判断">E03 Case 详情与当前判断</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case 详情与当前判断。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseDetail</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定案件的资料、当前成员、关联事件、已采用判断和调查记录引用。</p>
+<p><b>规则与限制：</b> 读取成员、显式事件、当前采用判断、baseline_records 和资料。检查集合总数与截断标记。current_assessment 为 null 时不得挑最新 Run 当成已采用判断。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e03">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#casedetail">CaseDetail</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;source_namespace&quot;: null,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;handling_status&quot;: &quot;new&quot;,
+    &quot;severity&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;scope_revision&quot;: 1,
+    &quot;current_assessment_id&quot;: null,
+    &quot;classification&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;current_evidence_artifact_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_at&quot;: null,
+    &quot;resolved_by&quot;: null,
+    &quot;resolution_note&quot;: null,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 1
+  },
+  &quot;members&quot;: [],
+  &quot;member_count&quot;: 0,
+  &quot;members_truncated&quot;: false,
+  &quot;linked_incidents&quot;: [],
+  &quot;linked_incident_count&quot;: 0,
+  &quot;linked_incidents_truncated&quot;: false,
+  &quot;current_assessment&quot;: null,
+  &quot;baseline_records&quot;: [],
+  &quot;page_data&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>current_assessment_reference_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E03.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e04"></a>
+<h2 id="e04-更新分类和截止时间">E04 更新分类和截止时间</h2>
+<p><code>PATCH /api/v1/socai2/cases/{case_id}/page-data</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 更新分类和截止时间。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>CaseDataUpdate</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseDataReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 保存分类和截止时间，返回案件ID、行版本、是否变更及当前证据目录ID；资料正文需随后GET E03/E05读取。传null会清空对应值。</p>
+<p><b>规则与限制：</b> 先 E03 读 row_version。PATCH 必须同时传 classification、due_at，null 表示清空；source=manual/import，source_note 非空。不支持负责人、标题或关闭/重开。成功 E03/E05 刷新。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e04">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>classification</td><td>是</td><td>string true_positive, informational, false_positive / null</td><td>无（可空不等于可省略）</td><td>案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。</td></tr>
+<tr><td>due_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>source</td><td>是</td><td>string manual, import</td><td>无（可空不等于可省略）</td><td>本次资料变更来源 manual 或 import。</td></tr>
+<tr><td>source_note</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>资料修改原因/来源说明，非空。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#casedatareceipt">CaseDataReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_row_version&quot;: 1,
+    &quot;classification&quot;: &quot;informational&quot;,
+    &quot;due_at&quot;: null,
+    &quot;source&quot;: &quot;manual&quot;,
+    &quot;source_note&quot;: &quot;业务负责人确认该案用于跟踪已知活动&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;row_version&quot;: 2,
+  &quot;changed&quot;: true,
+  &quot;current_evidence_artifact_id&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E04.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e05"></a>
+<h2 id="e05-case-资料与证据目录">E05 Case 资料与证据目录</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/page-data</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case 资料与证据目录。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>CasePageData</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回案件分类、期限、已采用判断摘要和当前证据目录。</p>
+<p><b>规则与限制：</b> 读取 classification、due_at、determination、assessment、evidence。not_recorded 与 evidence_count=null 不等于没有威胁；questions 沿采用来源结果读取。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e05">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#casepagedata">CasePageData</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;schema_version&quot;: &quot;socai2.case-page-data.v1&quot;,
+  &quot;classification&quot;: null,
+  &quot;due_at&quot;: null,
+  &quot;determination&quot;: null,
+  &quot;assessment&quot;: null,
+  &quot;evidence&quot;: {
+    &quot;artifact_id&quot;: null,
+    &quot;state&quot;: &quot;not_recorded&quot;,
+    &quot;evidence_count&quot;: null,
+    &quot;threat_count&quot;: null,
+    &quot;covered_alert_ids&quot;: [],
+    &quot;uncovered_alert_ids&quot;: [],
+    &quot;excluded_evidence_ids&quot;: [],
+    &quot;limitations&quot;: [],
+    &quot;entries&quot;: [],
+    &quot;index&quot;: null
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>current_assessment_reference_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E05.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e06"></a>
+<h2 id="e06-发布证据目录">E06 发布证据目录</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/evidence-index</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 发布证据目录。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>EvidencePublish</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseDataReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 保存并发布提交的证据目录版本，返回当前目录工件ID；此操作不生成新证据。</p>
+<p><b>规则与限制：</b> 发布已整理的引用目录，不会生成新证据或执行模型。先 E03/E05 获取行版本和旧 artifact_id；index.supersedes_artifact_id 对应旧版本，范围需匹配当前成员。partial/unavailable 必须写 limitations；unavailable 的 entries 必须为空。对象、来源路径、hash、角色均以实际原件为准。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e06">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>expected_current_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>当前证据目录工件 ID；首次为null。必须显式传入，和实际旧版本比较。</td></tr>
+<tr><td>index</td><td>是</td><td><a href="schemas.html#evidenceindex">EvidenceIndex</a></td><td>无（可空不等于可省略）</td><td>证据目录版本正文，不是自动生成证据的命令。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#casedatareceipt">CaseDataReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_row_version&quot;: 1,
+    &quot;expected_current_artifact_id&quot;: null,
+    &quot;index&quot;: {
+      &quot;schema_version&quot;: &quot;socai2.case-evidence.v1&quot;,
+      &quot;scope_revision&quot;: 1,
+      &quot;alert_ids&quot;: [
+        &quot;00000000-0000-4000-8000-000000000002&quot;
+      ],
+      &quot;supersedes_artifact_id&quot;: null,
+      &quot;availability_state&quot;: &quot;unavailable&quot;,
+      &quot;limitations&quot;: [
+        &quot;尚未整理可发布的证据目录&quot;
+      ],
+      &quot;entries&quot;: []
+    }
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;row_version&quot;: 2,
+  &quot;changed&quot;: true,
+  &quot;current_evidence_artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>evidence_index_scope_invalid</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>evidence_source_not_found</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>evidence_source_path_not_found</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>evidence_index_digest_invalid</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>evidence_sources_do_not_cover_entry</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>409</td><td>case_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_evidence_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E06.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e07"></a>
+<h2 id="e07-替换完整-case-成员">E07 替换完整 Case 成员</h2>
+<p><code>PUT /api/v1/socai2/cases/{case_id}/members</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 替换完整 Case 成员。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>MemberChange</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>MutationReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 用提交的完整告警集合替换当前成员范围，返回新的范围版本及待启动调查引用。</p>
+<p><b>规则与限制：</b> alert_ids 是替换后的完整集合，不能只传想删除的条目。可为空但空范围不能启动调查。保存产生范围版本及 pending 记录，不覆盖历史冻结输入。普通添加用 E08。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e07">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#mutationreceipt">MutationReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1,
+    &quot;alert_ids&quot;: [
+      &quot;00000000-0000-4000-8000-000000000002&quot;
+    ]
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;scope_revision&quot;: 1,
+  &quot;pending_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>member_alert_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>resolved_case_scope_policy_not_enabled</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E07.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e08"></a>
+<h2 id="e08-关联告警或事件">E08 关联告警或事件</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/associations</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 关联告警或事件。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>AssociationRequest</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>AssociationReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 将所选告警或事件关联到案件，返回实际新增成员、事件关系和范围版本。</p>
+<p><b>规则与限制：</b> 先 E03 获取 expected_scope_revision。至少选择一个告警/事件；只添加关联，不从别的 Case 移除，也不自动启动。事件展开成员；返回实际新增与显式关联列表。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e08">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>alert_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+<tr><td>incident_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>显式关联事件UUID集合，服务展开成员。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#associationreceipt">AssociationReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1,
+    &quot;alert_ids&quot;: [
+      &quot;00000000-0000-4000-8000-000000000002&quot;
+    ],
+    &quot;incident_ids&quot;: []
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;scope_revision&quot;: 1,
+  &quot;pending_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+  &quot;changed&quot;: true,
+  &quot;added_alert_ids&quot;: [
+    &quot;00000000-0000-4000-8000-000000000002&quot;
+  ],
+  &quot;linked_incident_ids&quot;: []
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_member_limit_exceeded</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_source_namespace_mismatch</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>resolved_case_scope_policy_not_enabled</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>404</td><td>case_incident_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E08.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e09"></a>
+<h2 id="e09-在两个-case-间移动告警成员">E09 在两个 Case 间移动告警成员</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/members/move</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 在两个 Case 间移动告警成员。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>MoveMembers</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>MoveReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 将所选告警从源案件移至目标案件，返回两案变更回执；历史调查范围保持不变。</p>
+<p><b>规则与限制：</b> 先分别 E03 读取两案 scope_revision。源/目标不同；一次事务更新两案，返回 source/target 回执；不移动显式事件关系，不改历史 Run。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e09">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>target_case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>移动目标Case；不得等于路径源Case。</td></tr>
+<tr><td>expected_source_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>源 Case 当前范围版本。</td></tr>
+<tr><td>expected_target_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>目标 Case 当前范围版本。</td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; minItems=1; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#movereceipt">MoveReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;target_case_id&quot;: &quot;00000000-0000-4000-8000-000000000014&quot;,
+    &quot;expected_source_scope_revision&quot;: 1,
+    &quot;expected_target_scope_revision&quot;: 1,
+    &quot;alert_ids&quot;: [
+      &quot;00000000-0000-4000-8000-000000000002&quot;
+    ]
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;source&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;scope_revision&quot;: 2,
+    &quot;pending_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;changed&quot;: true
+  },
+  &quot;target&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000014&quot;,
+    &quot;scope_revision&quot;: 2,
+    &quot;pending_run_id&quot;: null,
+    &quot;changed&quot;: true
+  },
+  &quot;moved_alert_ids&quot;: [
+    &quot;00000000-0000-4000-8000-000000000002&quot;
+  ],
+  &quot;added_to_target_alert_ids&quot;: [
+    &quot;00000000-0000-4000-8000-000000000002&quot;
+  ]
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_move_requires_different_target</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_member_limit_exceeded</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>409</td><td>case_move_member_not_in_source</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E09.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e10"></a>
+<h2 id="e10-case-调查历史">E10 Case 调查历史</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/history</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case 调查历史。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；查询参数：<code>limit</code>, <code>cursor</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>HistoryPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回该案件的基础调查Run及已保存AI结果历史和下一页游标；人工任务修订历史通过E42/E43读取。</p>
+<p><b>规则与限制：</b> 按 next_cursor 取后续历史；类型区分 baseline 与 ai_saved，当前 Q 保存未实现。相关 A/I 运行需 E22/E23 组合，不能从 Case 历史推断全局目录。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e10">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=100</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>cursor</td><td>False</td><td>string; maxLength=512 / null</td><td>null</td><td>使用服务上一页 next_cursor；改变筛选条件后清空。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#historypage">HistoryPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;next_cursor&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_history_cursor</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_history_limit</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E10.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e11"></a>
+<h2 id="e11-准备新一轮调查">E11 准备新一轮调查</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/baseline/prepare</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 准备新一轮调查。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>PrepareBaseline</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>BaselinePreparation</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 为当前案件范围准备或复用待启动Run，返回Run ID及是否本次新建；随后需显式启动。</p>
+<p><b>规则与限制：</b> 先 E03 读当前 scope_revision，返回 pending_run_id 和 created。仅准备，不调用模型；存在运行中记录时可保留 pending，启动资格由 E12 判断。空范围/已解决案不能直接启动。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e11">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#baselinepreparation">BaselinePreparation</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;scope_revision&quot;: 1,
+  &quot;pending_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+  &quot;created&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>409</td><td>baseline_scope_empty</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>baseline_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>resolved_case_start_policy_not_enabled</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E11.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e12"></a>
+<h2 id="e12-读取-case-run-与执行明细">E12 读取 Case Run 与执行明细</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/runs/{run_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 读取 Case Run 与执行明细。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>RunDetail</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定Run的执行状态、冻结成员、步骤、工件、结果引用、用量和启动资格。</p>
+<p><b>规则与限制：</b> 读取 start_eligibility、冻结成员、steps、工件、用量和结果 ID。can_start=false 时显示 reason。成员上限200、步骤1000、工件/结果各200；被截断的集合当前没有进一步分页 API，必须明确提示。读取不会继续执行。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e12">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#rundetail">RunDetail</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;kind&quot;: &quot;baseline&quot;,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;purpose&quot;: &quot;仅说明合同结构，无真实执行或业务判断。&quot;,
+    &quot;trigger&quot;: &quot;manual&quot;,
+    &quot;scope_revision&quot;: 1,
+    &quot;scope_updated_at&quot;: null,
+    &quot;scope_kind&quot;: null,
+    &quot;window_start&quot;: null,
+    &quot;window_end&quot;: null,
+    &quot;state&quot;: &quot;pending_update&quot;,
+    &quot;comparison_result_id&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;executor_version&quot;: null,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: null,
+    &quot;ended_at&quot;: null,
+    &quot;stop_reason&quot;: null,
+    &quot;stop_detail&quot;: null,
+    &quot;delivery_state&quot;: &quot;none&quot;,
+    &quot;row_version&quot;: 1
+  },
+  &quot;result_ids&quot;: [],
+  &quot;result_count&quot;: 0,
+  &quot;results_truncated&quot;: false,
+  &quot;start_eligibility&quot;: {
+    &quot;can_start&quot;: false,
+    &quot;reason&quot;: &quot;empty_scope&quot;
+  },
+  &quot;current_member_count&quot;: 0,
+  &quot;input_member_count&quot;: 0,
+  &quot;members&quot;: [],
+  &quot;members_truncated&quot;: false,
+  &quot;read_counts&quot;: {},
+  &quot;analysis_counts&quot;: {},
+  &quot;steps&quot;: [],
+  &quot;steps_truncated&quot;: false,
+  &quot;tool_calls&quot;: 0,
+  &quot;usage&quot;: {
+    &quot;model_calls&quot;: 0,
+    &quot;known_total_tokens&quot;: 0,
+    &quot;unknown_token_calls&quot;: 0,
+    &quot;total_tokens&quot;: 0,
+    &quot;costs_by_currency_and_price_version&quot;: [],
+    &quot;unpriced_model_calls&quot;: 0
+  },
+  &quot;artifacts&quot;: [],
+  &quot;artifact_counts&quot;: {},
+  &quot;artifacts_truncated&quot;: false,
+  &quot;duration_seconds&quot;: null,
+  &quot;elapsed_seconds&quot;: null,
+  &quot;last_recorded_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;execution_summary&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_run_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>execution_plan_link_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E12.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e13"></a>
+<h2 id="e13-启动指定-pending-run">E13 启动指定 pending Run</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/runs/{run_id}/start</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 启动指定 pending Run。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>run_id</code>；JSON请求体：<code>Start</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>RunDetail</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 执行指定pending Run并等待本次执行返回，返回Run状态和已有结果引用；异常或执行未知时先读取同一Run。</p>
+<p><b>规则与限制：</b> 必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start&lt;=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e13">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>window_start</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口起点，带时区；和window_end同时提供或同时为空。</td></tr>
+<tr><td>window_end</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口终点，带时区且不早于起点。</td></tr>
+<tr><td>comparison_result_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同案比较结果ID；null表示未指定。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#rundetail">RunDetail</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1,
+    &quot;window_start&quot;: null,
+    &quot;window_end&quot;: null,
+    &quot;comparison_result_id&quot;: null
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;kind&quot;: &quot;baseline&quot;,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;purpose&quot;: &quot;仅说明合同结构，无真实执行或业务判断。&quot;,
+    &quot;trigger&quot;: &quot;manual&quot;,
+    &quot;scope_revision&quot;: 1,
+    &quot;scope_updated_at&quot;: null,
+    &quot;scope_kind&quot;: null,
+    &quot;window_start&quot;: null,
+    &quot;window_end&quot;: null,
+    &quot;state&quot;: &quot;failed&quot;,
+    &quot;comparison_result_id&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;executor_version&quot;: null,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;ended_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;stop_reason&quot;: &quot;example_unavailable&quot;,
+    &quot;stop_detail&quot;: &quot;合成失败示例，不表示真实执行&quot;,
+    &quot;delivery_state&quot;: &quot;none&quot;,
+    &quot;row_version&quot;: 1
+  },
+  &quot;result_ids&quot;: [],
+  &quot;result_count&quot;: 0,
+  &quot;results_truncated&quot;: false,
+  &quot;start_eligibility&quot;: {
+    &quot;can_start&quot;: false,
+    &quot;reason&quot;: &quot;not_pending&quot;
+  },
+  &quot;current_member_count&quot;: 0,
+  &quot;input_member_count&quot;: 0,
+  &quot;members&quot;: [],
+  &quot;members_truncated&quot;: false,
+  &quot;read_counts&quot;: {},
+  &quot;analysis_counts&quot;: {},
+  &quot;steps&quot;: [],
+  &quot;steps_truncated&quot;: false,
+  &quot;tool_calls&quot;: 0,
+  &quot;usage&quot;: {
+    &quot;model_calls&quot;: 0,
+    &quot;known_total_tokens&quot;: 0,
+    &quot;unknown_token_calls&quot;: 0,
+    &quot;total_tokens&quot;: 0,
+    &quot;costs_by_currency_and_price_version&quot;: [],
+    &quot;unpriced_model_calls&quot;: 0
+  },
+  &quot;artifacts&quot;: [],
+  &quot;artifact_counts&quot;: {},
+  &quot;artifacts_truncated&quot;: false,
+  &quot;duration_seconds&quot;: null,
+  &quot;elapsed_seconds&quot;: null,
+  &quot;last_recorded_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;execution_summary&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>full_executor_limits_outside_policy</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>503</td><td>full_baseline_executor_not_configured</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>503</td><td>read_run</td><td>执行异常或结果未知；先GET读取，禁止盲目重派</td></tr>
+<tr><td>404</td><td>baseline_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>comparison_result_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>baseline_already_active</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>baseline_already_claimed</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>baseline_scope_empty</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>baseline_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>resolved_case_start_policy_not_enabled</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E13.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e14"></a>
+<h2 id="e14-读取正式结果">E14 读取正式结果</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/results/{result_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 读取正式结果。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>result_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ResultDetail</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定正式结果、对应Run、冻结成员及交付信息；结论、发现、待核问题和建议分别返回。</p>
+<p><b>规则与限制：</b> 返回 result、run、冻结成员、source_answer、delivery。结论、发现、questions、建议分开，questions 作为结论的一部分，不建立问题管理状态；人工确认由用户 E38 建任务。conclusion=null/validation_state=rejected 不包装成成功判断。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e14">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>result_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>同案已保存正式结果 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#resultdetail">ResultDetail</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;result_id&quot;: &quot;00000000-0000-4000-8000-000000000005&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;result&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000005&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;kind&quot;: &quot;baseline&quot;,
+    &quot;source_run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;source_answer_id&quot;: null,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;purpose&quot;: &quot;仅说明合同结构，无真实执行或业务判断。&quot;,
+    &quot;conclusion&quot;: null,
+    &quot;conclusion_state&quot;: &quot;unavailable&quot;,
+    &quot;conclusion_origin&quot;: &quot;system&quot;,
+    &quot;validation_state&quot;: &quot;system_only&quot;,
+    &quot;closing_note&quot;: &quot;仅说明合同结构，无真实执行或业务判断。&quot;,
+    &quot;comparison_result_id&quot;: null,
+    &quot;change_kind&quot;: &quot;initial&quot;,
+    &quot;change_summary&quot;: null,
+    &quot;input_artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;graph_artifact_id&quot;: null,
+    &quot;report_artifact_id&quot;: null,
+    &quot;supersedes_result_id&quot;: null,
+    &quot;delivery_state&quot;: &quot;partial&quot;,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;saved_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;saved_by&quot;: null,
+    &quot;edited_fields&quot;: [],
+    &quot;edit_note&quot;: null,
+    &quot;findings&quot;: [],
+    &quot;questions&quot;: [],
+    &quot;recommendations&quot;: [],
+    &quot;case_impact&quot;: {
+      &quot;summary&quot;: null,
+      &quot;supported_changes&quot;: [],
+      &quot;cannot_generalize&quot;: [],
+      &quot;affected_scope&quot;: {
+        &quot;kind&quot;: &quot;selected_alerts&quot;,
+        &quot;alert_ids&quot;: [
+          &quot;00000000-0000-4000-8000-000000000002&quot;
+        ],
+        &quot;object_keys&quot;: [],
+        &quot;window_start&quot;: null,
+        &quot;window_end&quot;: null,
+        &quot;limitations&quot;: [
+          &quot;该轮未形成可采用结论&quot;
+        ]
+      },
+      &quot;next_steps&quot;: []
+    }
+  },
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;kind&quot;: &quot;baseline&quot;,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;purpose&quot;: &quot;仅说明合同结构，无真实执行或业务判断。&quot;,
+    &quot;trigger&quot;: &quot;manual&quot;,
+    &quot;scope_revision&quot;: 1,
+    &quot;scope_updated_at&quot;: null,
+    &quot;scope_kind&quot;: &quot;whole_case&quot;,
+    &quot;window_start&quot;: null,
+    &quot;window_end&quot;: null,
+    &quot;state&quot;: &quot;failed&quot;,
+    &quot;comparison_result_id&quot;: null,
+    &quot;input_artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;executor_version&quot;: null,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;ended_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;stop_reason&quot;: &quot;example_no_conclusion&quot;,
+    &quot;stop_detail&quot;: null,
+    &quot;delivery_state&quot;: &quot;partial&quot;,
+    &quot;row_version&quot;: 1
+  },
+  &quot;source_answer&quot;: null,
+  &quot;members&quot;: [
+    {
+      &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+      &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+      &quot;result_id&quot;: &quot;00000000-0000-4000-8000-000000000005&quot;,
+      &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+      &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+      &quot;assessment_state&quot;: &quot;not_analyzed&quot;,
+      &quot;conclusion_covered&quot;: false,
+      &quot;assessment&quot;: null,
+      &quot;limitations&quot;: &quot;该轮未形成可采用结论&quot;,
+      &quot;evidence_refs&quot;: []
+    }
+  ],
+  &quot;member_count&quot;: 1,
+  &quot;members_truncated&quot;: false,
+  &quot;delivery&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_result_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>result_answer_link_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>result_delivery_link_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E14.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e15"></a>
+<h2 id="e15-读取-case-run-工件">E15 读取 Case Run 工件</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 读取 Case Run 工件。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>run_id</code>, <code>artifact_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ArtifactContent</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定Case Run工件的元数据、正文和可用状态；完整性校验失败返回409。</p>
+<p><b>规则与限制：</b> 先 E12/E14 取得真实 artifact_id；父 Case/Run 必须匹配。返回 artifact 元数据和 content_json/content_text/availability；HTTP200 不保证正文可得。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e15">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+<tr><td>path</td><td>artifact_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>工件 UUID，必须保持父主体/Run 归属。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#artifactcontent">ArtifactContent</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;artifact&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;content_json&quot;: null,
+  &quot;content_text&quot;: &quot;合成示例报告：未形成可采用结论。&quot;,
+  &quot;availability&quot;: &quot;available&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>run_artifact_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>artifact_integrity_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E15.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e16"></a>
+<h2 id="e16-读取-case-非-run-来源工件">E16 读取 Case 非 Run 来源工件</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/artifacts/{artifact_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 读取 Case 非 Run 来源工件。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>artifact_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ArtifactContent</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回案件非Run来源工件的元数据、正文和可用状态；不适用于Run工件。</p>
+<p><b>规则与限制：</b> 仅适用于 run_id 为空的本案来源工件。Run 工件必须用 E15，不能以这个路径替代。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e16">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>artifact_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>工件 UUID，必须保持父主体/Run 归属。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#artifactcontent">ArtifactContent</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;artifact&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;content_json&quot;: null,
+  &quot;content_text&quot;: &quot;合成示例报告：未形成可采用结论。&quot;,
+  &quot;availability&quot;: &quot;available&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>run_artifact_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>artifact_integrity_invalid</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E16.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e17"></a>
+<h2 id="e17-case-处理活动">E17 Case 处理活动</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/activities</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case 处理活动。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；查询参数：<code>limit</code>, <code>offset</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>RecordPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回与案件、成员或显式关联事件匹配的处理活动、目标和分页信息。</p>
+<p><b>规则与限制：</b> 包括案件、成员和显式事件匹配活动，去重保留目标及前后值，按 next_offset 分页。活动不是模型推理过程。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e17">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=200</td><td>50</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>offset</td><td>False</td><td>integer; minimum=0; maximum=100000</td><td>0</td><td>分页偏移，沿 next_offset 继续。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#recordpage">RecordPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;limit&quot;: 50,
+    &quot;offset&quot;: 0
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_offset&quot;: null,
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;limitations&quot;: []
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_record_page</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E17.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e18"></a>
+<h2 id="e18-读取-run-冻结的告警材料">E18 读取 Run 冻结的告警材料</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/materials/{material_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 读取 Run 冻结的告警材料。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>run_id</code>, <code>material_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>FrozenAlertMaterial</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回该Run冻结的指定告警材料版本原始行，不替换为当前最新材料。</p>
+<p><b>规则与限制：</b> material_id 必须由该 Run 的冻结成员输入取得。返回 AlertMaterials 原始行，不是 ContentView 包装，没有 availability 字段；保留 material_state/retention。不能用当前材料代替。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e18">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+<tr><td>path</td><td>material_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>材料版本 UUID；历史读取使用冻结版本。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#frozenalertmaterial">FrozenAlertMaterial</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;material_id&quot;: &quot;00000000-0000-4000-8000-000000000008&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000008&quot;,
+  &quot;tenant_id&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;,
+  &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+  &quot;revision&quot;: 1,
+  &quot;received_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;source_version&quot;: null,
+  &quot;raw_text&quot;: null,
+  &quot;sha256&quot;: null,
+  &quot;raw_json&quot;: null,
+  &quot;ocsf_json&quot;: null,
+  &quot;enrichment&quot;: null,
+  &quot;detection&quot;: {},
+  &quot;source_scope&quot;: {},
+  &quot;retention&quot;: {},
+  &quot;material_state&quot;: &quot;unavailable&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>frozen_material_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E18.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e19"></a>
+<h2 id="e19-case-助手发送问题预留">E19 Case 助手发送问题（预留）</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/ai/messages</code></p>
+<p>状态：<b>未实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 未实现</p>
+<p><b>用途：</b> Case 助手发送问题（预留）。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>AskCaseAI</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 501，<code>AIUnavailable</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 当前返回501，不执行问答、不调用模型，也不保存消息。</p>
+<p><b>规则与限制：</b> 通过请求校验后返回501，无模型调用和保存。现有 DTO 只有 operation_key、question、conversation_id；产品设计的 scope 尚无字段，额外字段会422。</p>
+<p><b>验证结果（2026-11-12）：</b> 已确认返回501，功能未实现。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e19">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>question</td><td>是</td><td>string; minLength=1; maxLength=4000</td><td>无（可空不等于可省略）</td><td>用户明确发送的问题文本；当前Q接口未实现。</td></tr>
+<tr><td>conversation_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>可选会话UUID；当前无正式对话读写。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#aiunavailable">AIUnavailable</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;question&quot;: &quot;这些告警有哪些共同依据？&quot;,
+    &quot;conversation_id&quot;: null
+  }
+}</pre>
+<p>输出示例（HTTP 501）：</p>
+<pre>{
+  &quot;detail&quot;: {
+    &quot;code&quot;: &quot;case_ai_not_implemented&quot;,
+    &quot;status&quot;: &quot;not_implemented&quot;,
+    &quot;message&quot;: &quot;AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>501</td><td>case_ai_not_implemented</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E19.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e20"></a>
+<h2 id="e20-保存助手回答预留">E20 保存助手回答（预留）</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/ai/messages/{message_id}/save</code></p>
+<p>状态：<b>未实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 未实现</p>
+<p><b>用途：</b> 保存助手回答（预留）。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>message_id</code>；JSON请求体：<code>SaveCaseAIAnswer</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 501，<code>AIUnavailable</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 当前返回501，不保存回答，也不产生正式调查结果。</p>
+<p><b>规则与限制：</b> 通过请求校验后返回501，没有冻结或正式结果。title/conclusion 是待保存文本，不触发执行；当前不能使用。</p>
+<p><b>验证结果（2026-11-12）：</b> 已确认返回501，功能未实现。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e20">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>message_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>message_id</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>conclusion</td><td>是</td><td>string; minLength=1; maxLength=20000</td><td>无（可空不等于可省略）</td><td>本环节结论正文；null可能未交付/拒收，不补造。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#aiunavailable">AIUnavailable</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;message_id&quot;: &quot;00000000-0000-4000-8000-000000000012&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;title&quot;: &quot;待保存的回答&quot;,
+    &quot;conclusion&quot;: &quot;用户确认保存的正文（接口当前501）&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 501）：</p>
+<pre>{
+  &quot;detail&quot;: {
+    &quot;code&quot;: &quot;case_ai_not_implemented&quot;,
+    &quot;status&quot;: &quot;not_implemented&quot;,
+    &quot;message&quot;: &quot;AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>501</td><td>case_ai_not_implemented</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E20.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e21"></a>
+<h2 id="e21-显式采用其他结果预留">E21 显式采用其他结果（预留）</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/results/{result_id}/adopt</code></p>
+<p>状态：<b>未实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 未实现</p>
+<p><b>用途：</b> 显式采用其他结果（预留）。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>result_id</code>；JSON请求体：<code>AdoptCaseAIResult</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 501，<code>AIUnavailable</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 当前返回501，不变更案件当前采用判断。</p>
+<p><b>规则与限制：</b> 通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。</p>
+<p><b>验证结果（2026-11-12）：</b> 已确认返回501，功能未实现。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e21">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>result_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>同案已保存正式结果 UUID。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#aiunavailable">AIUnavailable</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;result_id&quot;: &quot;00000000-0000-4000-8000-000000000005&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1
+  }
+}</pre>
+<p>输出示例（HTTP 501）：</p>
+<pre>{
+  &quot;detail&quot;: {
+    &quot;code&quot;: &quot;case_ai_not_implemented&quot;,
+    &quot;status&quot;: &quot;not_implemented&quot;,
+    &quot;message&quot;: &quot;AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>501</td><td>case_ai_not_implemented</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E21.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e22"></a>
+<h2 id="e22-告警分诊目录">E22 告警分诊目录</h2>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}/analysis</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 告警分诊目录。</p>
+<p><b>输入：</b> 路径参数：<code>alert_id</code>；查询参数：<code>limit</code>, <code>before_run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>StagePage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回告警当前分诊及历史执行目录；失败尝试和当前有效分诊分别保留。</p>
+<p><b>规则与限制：</b> current 是当前指针对应分诊；entries 是历史尝试。失败尝试不能覆盖有效旧结论。分页使用 next_before_run_id。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e22">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>alert_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>告警 UUID。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>before_run_id</td><td>False</td><td>string (uuid) / null</td><td>null</td><td>沿上页 next_before_run_id 翻页。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#stagepage">StagePage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;subject_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+  &quot;kind&quot;: &quot;alert_basic&quot;,
+  &quot;current_pointer_id&quot;: null,
+  &quot;current&quot;: null,
+  &quot;current_unavailable_reason&quot;: null,
+  &quot;entries&quot;: [],
+  &quot;next_before_run_id&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_stage_history_limit</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E22.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e23"></a>
+<h2 id="e23-事件诊断目录">E23 事件诊断目录</h2>
+<p><code>GET /api/v1/socai2/incidents/{incident_id}/analysis</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 事件诊断目录。</p>
+<p><b>输入：</b> 路径参数：<code>incident_id</code>；查询参数：<code>limit</code>, <code>before_run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>StagePage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回事件当前诊断及历史执行目录，保留交付、成员覆盖和待核内容。</p>
+<p><b>规则与限制：</b> 区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e23">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>incident_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>事件 UUID。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>before_run_id</td><td>False</td><td>string (uuid) / null</td><td>null</td><td>沿上页 next_before_run_id 翻页。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#stagepage">StagePage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;incident_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;,
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;subject_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;,
+  &quot;kind&quot;: &quot;incident_diagnosis&quot;,
+  &quot;current_pointer_id&quot;: null,
+  &quot;current&quot;: null,
+  &quot;current_unavailable_reason&quot;: null,
+  &quot;entries&quot;: [],
+  &quot;next_before_run_id&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_stage_history_limit</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E23.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e24"></a>
+<h2 id="e24-指定告警-a-run">E24 指定告警 A Run</h2>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}/analysis/runs/{run_id}</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 指定告警 A Run。</p>
+<p><b>输入：</b> 路径参数：<code>alert_id</code>, <code>run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>StageEntry</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定告警分诊Run及其分诊结果、有效性和输入是否变化。</p>
+<p><b>规则与限制：</b> 用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e24">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>alert_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>告警 UUID。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#stageentry">StageEntry</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;kind&quot;: &quot;alert_basic&quot;,
+    &quot;state&quot;: &quot;pending_update&quot;,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: null,
+    &quot;ended_at&quot;: null,
+    &quot;executor_version&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;stop_reason&quot;: null,
+    &quot;delivery_state&quot;: &quot;none&quot;
+  },
+  &quot;freshness&quot;: &quot;unavailable&quot;,
+  &quot;is_current_pointer&quot;: false,
+  &quot;valid_for_current_input&quot;: false,
+  &quot;result&quot;: null,
+  &quot;explanation&quot;: null,
+  &quot;partial_analysis&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_run_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E24.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e25"></a>
+<h2 id="e25-指定事件-i-run">E25 指定事件 I Run</h2>
+<p><code>GET /api/v1/socai2/incidents/{incident_id}/analysis/runs/{run_id}</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 指定事件 I Run。</p>
+<p><b>输入：</b> 路径参数：<code>incident_id</code>, <code>run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>StageEntry</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定事件诊断Run及其诊断结果、交付状态和待核内容。</p>
+<p><b>规则与限制：</b> 读 diagnosis、open_questions、交付与待复核字段；执行过程需 E32。保存/格式通过不代表正文质量通过。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e25">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>incident_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>事件 UUID。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#stageentry">StageEntry</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;incident_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;kind&quot;: &quot;incident_diagnosis&quot;,
+    &quot;state&quot;: &quot;pending_update&quot;,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: null,
+    &quot;ended_at&quot;: null,
+    &quot;executor_version&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;stop_reason&quot;: null,
+    &quot;delivery_state&quot;: &quot;none&quot;
+  },
+  &quot;freshness&quot;: &quot;unavailable&quot;,
+  &quot;is_current_pointer&quot;: false,
+  &quot;valid_for_current_input&quot;: false,
+  &quot;result&quot;: null,
+  &quot;explanation&quot;: null,
+  &quot;partial_analysis&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_run_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E25.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e26"></a>
+<h2 id="e26-告警列表">E26 告警列表</h2>
+<p><code>GET /api/v1/socai2/alerts</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 告警列表。</p>
+<p><b>输入：</b> 查询参数：<code>limit</code>, <code>before_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>SubjectPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回告警列表、基础信息、负责人名称、汇总信息、统计和下一页游标。</p>
+<p><b>规则与限制：</b> 仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e26">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>before_id</td><td>False</td><td>string (uuid) / null</td><td>null</td><td>沿上页 next_before_id 翻页。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#subjectpage">SubjectPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;kind&quot;: &quot;alerts&quot;,
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_before_id&quot;: null,
+  &quot;overall_stats&quot;: {
+    &quot;total&quot;: 0,
+    &quot;new&quot;: 0,
+    &quot;in_progress&quot;: 0,
+    &quot;unknown&quot;: 0,
+    &quot;high_severity&quot;: 0,
+    &quot;investigating&quot;: 0
+  },
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_page_limit</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E26.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e27"></a>
+<h2 id="e27-事件列表">E27 事件列表</h2>
+<p><code>GET /api/v1/socai2/incidents</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 事件列表。</p>
+<p><b>输入：</b> 查询参数：<code>limit</code>, <code>before_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>SubjectPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回事件列表、基础信息、汇总信息、统计和下一页游标。</p>
+<p><b>规则与限制：</b> 仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e27">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>before_id</td><td>False</td><td>string (uuid) / null</td><td>null</td><td>沿上页 next_before_id 翻页。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#subjectpage">SubjectPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;limit&quot;: 20
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;kind&quot;: &quot;incidents&quot;,
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_before_id&quot;: null,
+  &quot;overall_stats&quot;: {
+    &quot;total&quot;: 0,
+    &quot;new&quot;: 0,
+    &quot;in_progress&quot;: 0,
+    &quot;unknown&quot;: 0,
+    &quot;active&quot;: 0,
+    &quot;unassigned&quot;: 0,
+    &quot;grouped_alert_count&quot;: 0,
+    &quot;new_alerts_24h&quot;: 0,
+    &quot;high_severity&quot;: 0
+  },
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_page_limit</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E27.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e28"></a>
+<h2 id="e28-告警详情">E28 告警详情</h2>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 告警详情。</p>
+<p><b>输入：</b> 路径参数：<code>alert_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>SubjectView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回告警事实、当前材料摘要、分诊、已存人工反馈及后续读取地址。</p>
+<p><b>规则与限制：</b> 返回 facts、derived、material、triage、feedback 及 analysis_url/section_urls。反馈读取不代表人工判定写入口已实现；发生时间缺失不以入库时间替代。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e28">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>alert_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>告警 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#subjectview">SubjectView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;kind&quot;: &quot;alerts&quot;,
+  &quot;facts&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+    &quot;source_namespace&quot;: &quot;example&quot;,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 1,
+    &quot;source_alert_id&quot;: null,
+    &quot;vendor_alert_id&quot;: null,
+    &quot;connector_id&quot;: null,
+    &quot;connector_type&quot;: null,
+    &quot;original_vendor&quot;: null,
+    &quot;category&quot;: null,
+    &quot;severity&quot;: null,
+    &quot;severity_raw&quot;: null,
+    &quot;event_time&quot;: null,
+    &quot;event_time_source&quot;: &quot;unknown&quot;,
+    &quot;first_seen_at&quot;: null,
+    &quot;last_seen_at&quot;: null,
+    &quot;ingested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;source_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;handling_status&quot;: &quot;new&quot;,
+    &quot;disposition&quot;: null,
+    &quot;closed_at&quot;: null,
+    &quot;closed_by&quot;: null,
+    &quot;latest_material_id&quot;: null,
+    &quot;latest_triage_id&quot;: null,
+    &quot;latest_feedback_id&quot;: null,
+    &quot;latest_explanation_id&quot;: null
+  },
+  &quot;owner_name&quot;: null,
+  &quot;owner_resolution&quot;: &quot;unassigned&quot;,
+  &quot;derived&quot;: {
+    &quot;severity_group&quot;: null,
+    &quot;false_positive&quot;: null,
+    &quot;member_count&quot;: null,
+    &quot;first_activity_at&quot;: null,
+    &quot;last_activity_at&quot;: null,
+    &quot;unknown_event_time_count&quot;: null,
+    &quot;unknown_severity_count&quot;: null,
+    &quot;severity_auto&quot;: null,
+    &quot;severity_effective&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;updated_at&quot;: null,
+    &quot;tactics&quot;: [],
+    &quot;tactic_counting_note&quot;: &quot;示例&quot;,
+    &quot;object_count&quot;: 0,
+    &quot;baseline_execution_counts&quot;: {
+      &quot;running&quot;: 0,
+      &quot;unknown&quot;: 0
+    }
+  },
+  &quot;material&quot;: null,
+  &quot;triage&quot;: null,
+  &quot;feedback&quot;: null,
+  &quot;analysis_url&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/analysis&quot;,
+  &quot;section_urls&quot;: {
+    &quot;incidents&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/incidents&quot;,
+    &quot;objects&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/objects&quot;,
+    &quot;sources&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/sources&quot;,
+    &quot;source_artifacts&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/source_artifacts&quot;,
+    &quot;assets&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/assets&quot;,
+    &quot;cases&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/cases&quot;,
+    &quot;comments&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/comments&quot;,
+    &quot;activities&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/activities&quot;,
+    &quot;related_alerts&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/related_alerts&quot;,
+    &quot;responses&quot;: &quot;/api/v1/socai2/alerts/00000000-0000-4000-8000-000000000002/records/responses&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>page_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E28.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e29"></a>
+<h2 id="e29-事件详情">E29 事件详情</h2>
+<p><code>GET /api/v1/socai2/incidents/{incident_id}</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 事件详情。</p>
+<p><b>输入：</b> 路径参数：<code>incident_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>SubjectView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回事件事实、成员和对象汇总及后续读取地址；诊断和成员明细使用对应读取接口。</p>
+<p><b>规则与限制：</b> 返回主体事实、derived 及目录链接；诊断另取 E23，成员/对象另取 E30。资产完整资料由业务后端提供。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e29">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>incident_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>事件 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#subjectview">SubjectView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;incident_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;kind&quot;: &quot;incidents&quot;,
+  &quot;facts&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;,
+    &quot;source_namespace&quot;: &quot;example&quot;,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 1,
+    &quot;source_incident_id&quot;: &quot;示例&quot;,
+    &quot;handling_status&quot;: &quot;new&quot;,
+    &quot;severity_override&quot;: null,
+    &quot;severity_override_reason&quot;: null,
+    &quot;severity_override_at&quot;: null,
+    &quot;severity_override_by&quot;: null,
+    &quot;resolution_note&quot;: null,
+    &quot;resolved_at&quot;: null,
+    &quot;resolved_by&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;latest_diagnosis_id&quot;: null
+  },
+  &quot;owner_name&quot;: null,
+  &quot;owner_resolution&quot;: &quot;unassigned&quot;,
+  &quot;derived&quot;: {
+    &quot;severity_group&quot;: null,
+    &quot;false_positive&quot;: null,
+    &quot;member_count&quot;: null,
+    &quot;first_activity_at&quot;: null,
+    &quot;last_activity_at&quot;: null,
+    &quot;unknown_event_time_count&quot;: null,
+    &quot;unknown_severity_count&quot;: null,
+    &quot;severity_auto&quot;: null,
+    &quot;severity_effective&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;updated_at&quot;: null,
+    &quot;tactics&quot;: [],
+    &quot;tactic_counting_note&quot;: &quot;示例&quot;,
+    &quot;object_count&quot;: 0,
+    &quot;baseline_execution_counts&quot;: {
+      &quot;running&quot;: 0,
+      &quot;unknown&quot;: 0
+    }
+  },
+  &quot;material&quot;: null,
+  &quot;triage&quot;: null,
+  &quot;feedback&quot;: null,
+  &quot;analysis_url&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/analysis&quot;,
+  &quot;section_urls&quot;: {
+    &quot;members&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/members&quot;,
+    &quot;objects&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/objects&quot;,
+    &quot;sources&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/sources&quot;,
+    &quot;source_artifacts&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/source_artifacts&quot;,
+    &quot;assets&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/assets&quot;,
+    &quot;cases&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/cases&quot;,
+    &quot;comments&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/comments&quot;,
+    &quot;activities&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/activities&quot;,
+    &quot;related_alerts&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/related_alerts&quot;,
+    &quot;responses&quot;: &quot;/api/v1/socai2/incidents/00000000-0000-4000-8000-000000000003/records/responses&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>page_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E29.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e30"></a>
+<h2 id="e30-主体分区记录">E30 主体分区记录</h2>
+<p><code>GET /api/v1/socai2/{subject}/{identity}/records/{section}</code></p>
+<p>状态：<b>已实现</b>。分类：告警、事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 主体分区记录。</p>
+<p><b>输入：</b> 路径参数：<code>subject</code>, <code>identity</code>, <code>section</code>；查询参数：<code>limit</code>, <code>offset</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>RecordPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回所选分区的记录、总数和下一页偏移；资产分区返回对象与真实库存资产的匹配记录及资产标签。</p>
+<p><b>规则与限制：</b> subject 只能 alerts/incidents；section 参见分区说明。members 仅事件，incidents 仅告警；其他错误组合404。items 随 section 变化，不能固定为一种记录。next_offset=null 结束；related_alerts 只是同类型/同命名空间/同对象键匹配，不是相似历史反馈或图探索服务。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e30">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>subject</td><td>True</td><td>string alerts, incidents</td><td>null</td><td>alerts 或 incidents，不能传 cases。</td></tr>
+<tr><td>path</td><td>identity</td><td>True</td><td>string (uuid)</td><td>null</td><td>subject 对应的告警或事件 UUID。</td></tr>
+<tr><td>path</td><td>section</td><td>True</td><td>string members, incidents, objects, sources, source_artifacts, assets, cases, comments, activities, related_alerts, responses</td><td>null</td><td>记录分区；members仅事件、incidents仅告警。见分区表。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=200</td><td>50</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>offset</td><td>False</td><td>integer; minimum=0; maximum=100000</td><td>0</td><td>分页偏移，沿 next_offset 继续。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#recordpage">RecordPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;subject&quot;: &quot;alerts&quot;,
+    &quot;identity&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;section&quot;: &quot;objects&quot;,
+    &quot;limit&quot;: 50,
+    &quot;offset&quot;: 0
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_offset&quot;: null,
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;limitations&quot;: []
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_record_page</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>page_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>section_not_applicable</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E30.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e31"></a>
+<h2 id="e31-告警材料正文">E31 告警材料正文</h2>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}/materials/{material_id}</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 告警材料正文。</p>
+<p><b>输入：</b> 路径参数：<code>alert_id</code>, <code>material_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ContentView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定告警材料版本的原始JSON、标准化记录、富化内容及原始文本，并说明正文可用性。</p>
+<p><b>规则与限制：</b> 从 E28 material.id 取得版本；content_json 包含 raw_json/ocsf_json/enrichment，content_text 为 raw_text。availability 限制与缺正文必须保留，不能展示空JSON当无异常。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e31">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>alert_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>告警 UUID。</td></tr>
+<tr><td>path</td><td>material_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>材料版本 UUID；历史读取使用冻结版本。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#contentview">ContentView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+    &quot;material_id&quot;: &quot;00000000-0000-4000-8000-000000000008&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;metadata&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000008&quot;,
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+    &quot;revision&quot;: 1,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;availability&quot;: &quot;available&quot;,
+  &quot;content_json&quot;: {
+    &quot;raw_json&quot;: {
+      &quot;example&quot;: true
+    },
+    &quot;ocsf_json&quot;: null,
+    &quot;enrichment&quot;: null
+  },
+  &quot;content_text&quot;: &quot;合成原始材料示例&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>alert_material_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>material_subject_invalid</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E31.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e32"></a>
+<h2 id="e32-ai-run-步骤及工件目录">E32 A/I Run 步骤及工件目录</h2>
+<p><code>GET /api/v1/socai2/{subject}/{identity}/analysis/runs/{run_id}/trace</code></p>
+<p>状态：<b>已实现</b>。分类：告警、事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> A/I Run 步骤及工件目录。</p>
+<p><b>输入：</b> 路径参数：<code>subject</code>, <code>identity</code>, <code>run_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>TraceView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定告警/事件Run的原始执行记录、步骤、工件目录、用量及截断标志。</p>
+<p><b>规则与限制：</b> subject=alerts/incidents，identity 为对应主体 UUID。返回 run、steps、artifacts、用量及截断标志。仅查既有记录，读取不重新执行；正文按 E33。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e32">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>subject</td><td>True</td><td>string alerts, incidents</td><td>null</td><td>alerts 或 incidents，不能传 cases。</td></tr>
+<tr><td>path</td><td>identity</td><td>True</td><td>string (uuid)</td><td>null</td><td>subject 对应的告警或事件 UUID。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#traceview">TraceView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;subject&quot;: &quot;alerts&quot;,
+    &quot;identity&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {},
+  &quot;steps&quot;: [],
+  &quot;steps_total&quot;: 0,
+  &quot;steps_truncated&quot;: false,
+  &quot;artifacts&quot;: [],
+  &quot;artifacts_total&quot;: 0,
+  &quot;artifacts_truncated&quot;: false,
+  &quot;usage&quot;: {},
+  &quot;tool_calls&quot;: 0,
+  &quot;duration_seconds&quot;: null,
+  &quot;last_recorded_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;observed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_run_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E32.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e33"></a>
+<h2 id="e33-ai-run-工件正文">E33 A/I Run 工件正文</h2>
+<p><code>GET /api/v1/socai2/{subject}/{identity}/analysis/runs/{run_id}/artifacts/{artifact_id}</code></p>
+<p>状态：<b>已实现</b>。分类：告警、事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> A/I Run 工件正文。</p>
+<p><b>输入：</b> 路径参数：<code>subject</code>, <code>identity</code>, <code>run_id</code>, <code>artifact_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ContentView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回告警/事件Run工件的元数据、正文及可用状态；内容完整性异常时正文为空并返回对应availability。</p>
+<p><b>规则与限制：</b> 父主体及 Run 必须匹配。返回 metadata/content_json/content_text/availability；metadata 与 Case E15 的 artifact 字段不同。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e33">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>subject</td><td>True</td><td>string alerts, incidents</td><td>null</td><td>alerts 或 incidents，不能传 cases。</td></tr>
+<tr><td>path</td><td>identity</td><td>True</td><td>string (uuid)</td><td>null</td><td>subject 对应的告警或事件 UUID。</td></tr>
+<tr><td>path</td><td>run_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>该父主体下的执行 UUID。</td></tr>
+<tr><td>path</td><td>artifact_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>工件 UUID，必须保持父主体/Run 归属。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#contentview">ContentView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;subject&quot;: &quot;alerts&quot;,
+    &quot;identity&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;metadata&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;availability&quot;: &quot;available&quot;,
+  &quot;content_json&quot;: null,
+  &quot;content_text&quot;: &quot;合成示例原文&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_artifact_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E33.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e34"></a>
+<h2 id="e34-告警非-run-来源工件">E34 告警非 Run 来源工件</h2>
+<p><code>GET /api/v1/socai2/alerts/{identity}/artifacts/{artifact_id}</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 告警非 Run 来源工件。</p>
+<p><b>输入：</b> 路径参数：<code>identity</code>, <code>artifact_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ContentView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回告警非Run来源工件的元数据、正文及可用状态。</p>
+<p><b>规则与限制：</b> 读取本告警 run_id 为空的来源工件，artifact_id 可由 source_artifacts 记录取得。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e34">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>identity</td><td>True</td><td>string (uuid)</td><td>null</td><td>subject 对应的告警或事件 UUID。</td></tr>
+<tr><td>path</td><td>artifact_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>工件 UUID，必须保持父主体/Run 归属。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#contentview">ContentView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;identity&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;metadata&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;availability&quot;: &quot;available&quot;,
+  &quot;content_json&quot;: null,
+  &quot;content_text&quot;: &quot;合成示例原文&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_artifact_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E34.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e35"></a>
+<h2 id="e35-事件非-run-来源工件">E35 事件非 Run 来源工件</h2>
+<p><code>GET /api/v1/socai2/incidents/{identity}/artifacts/{artifact_id}</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 事件非 Run 来源工件。</p>
+<p><b>输入：</b> 路径参数：<code>identity</code>, <code>artifact_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>ContentView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回事件非Run来源工件的元数据、正文及可用状态。</p>
+<p><b>规则与限制：</b> 读取本事件 run_id 为空的来源工件，不能替代运行工件路径。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e35">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>identity</td><td>True</td><td>string (uuid)</td><td>null</td><td>subject 对应的告警或事件 UUID。</td></tr>
+<tr><td>path</td><td>artifact_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>工件 UUID，必须保持父主体/Run 归属。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#contentview">ContentView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;identity&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;artifact_id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;metadata&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000009&quot;,
+    &quot;run_id&quot;: null,
+    &quot;material_state&quot;: &quot;complete&quot;
+  },
+  &quot;availability&quot;: &quot;available&quot;,
+  &quot;content_json&quot;: null,
+  &quot;content_text&quot;: &quot;合成示例原文&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>stage_artifact_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E35.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e36"></a>
+<h2 id="e36-手动告警分诊">E36 手动告警分诊</h2>
+<p><code>POST /api/v1/socai2/alerts/{alert_id}/analyze</code></p>
+<p>状态：<b>已实现</b>。分类：告警。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 手动告警分诊。</p>
+<p><b>输入：</b> 路径参数：<code>alert_id</code>；JSON请求体：<code>ExecuteStage</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>StageEntry</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 发起告警分诊并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。</p>
+<p><b>规则与限制：</b> 21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行模型，本轮入口验收未派发真实模型，结论质量以独立验收为准。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e36">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>alert_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>告警 UUID。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#stageentry">StageEntry</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;alert_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;kind&quot;: &quot;alert_basic&quot;,
+    &quot;state&quot;: &quot;failed&quot;,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;ended_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;executor_version&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;stop_reason&quot;: &quot;example_unavailable&quot;,
+    &quot;delivery_state&quot;: &quot;none&quot;
+  },
+  &quot;freshness&quot;: &quot;unavailable&quot;,
+  &quot;is_current_pointer&quot;: false,
+  &quot;valid_for_current_input&quot;: false,
+  &quot;result&quot;: null,
+  &quot;explanation&quot;: null,
+  &quot;partial_analysis&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>503</td><td>socai2_stage_execution_not_enabled</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>503</td><td>read_run</td><td>先读该主体下指定Run；此错误没有read_path</td></tr>
+<tr><td>404</td><td>stage_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>stage_execution_not_ready</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E36.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e37"></a>
+<h2 id="e37-手动事件诊断">E37 手动事件诊断</h2>
+<p><code>POST /api/v1/socai2/incidents/{incident_id}/diagnose</code></p>
+<p>状态：<b>已实现</b>。分类：事件。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 手动事件诊断。</p>
+<p><b>输入：</b> 路径参数：<code>incident_id</code>；JSON请求体：<code>ExecuteStage</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>StageEntry</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 发起事件诊断并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。</p>
+<p><b>规则与限制：</b> 部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。不能把路由可用当成自动消费者已开启或真实模型质量通过。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e37">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>incident_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>事件 UUID。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#stageentry">StageEntry</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;incident_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;run&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000004&quot;,
+    &quot;kind&quot;: &quot;incident_diagnosis&quot;,
+    &quot;state&quot;: &quot;failed&quot;,
+    &quot;requested_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;requested_by&quot;: null,
+    &quot;started_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;ended_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;executor_version&quot;: null,
+    &quot;input_artifact_id&quot;: null,
+    &quot;stop_reason&quot;: &quot;example_unavailable&quot;,
+    &quot;delivery_state&quot;: &quot;none&quot;
+  },
+  &quot;freshness&quot;: &quot;unavailable&quot;,
+  &quot;is_current_pointer&quot;: false,
+  &quot;valid_for_current_input&quot;: false,
+  &quot;result&quot;: null,
+  &quot;explanation&quot;: null,
+  &quot;partial_analysis&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>503</td><td>socai2_stage_execution_not_enabled</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>503</td><td>read_run</td><td>先读该主体下指定Run；此错误没有read_path</td></tr>
+<tr><td>404</td><td>stage_subject_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>stage_execution_not_ready</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E37.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e38"></a>
+<h2 id="e38-用户创建人工任务">E38 用户创建人工任务</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/tasks</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 用户创建人工任务。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>TaskCreate</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskMutation</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 保存用户创建的人工任务及首个修订，返回任务ID、当前版本和创建结果。</p>
+<p><b>规则与限制：</b> 用户明确决定需要人工确认后创建；不自动从 questions 批量生成。先 E03 获取范围版本，assignee_id 由业务后端人员目录取得。origin_finding_id 需同时有 origin_result_id；引用对象必须属于本案。保存不启动调查。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e38">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=10000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>assignee_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工任务负责人UUID，需真实存在于本租户；null未分配。</td></tr>
+<tr><td>due_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>state</td><td>否</td><td><a href="schemas.html#taskstate">TaskState</a></td><td>&quot;not_started&quot;</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。</td></tr>
+<tr><td>result_text</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>人工确认结果正文；任务completed时必填非空。</td></tr>
+<tr><td>result_scope</td><td>否</td><td><a href="schemas.html#scope">Scope</a> / null</td><td>无（可空不等于可省略）</td><td>人工结果适用范围；completed时必填，不得扩大到Case外。</td></tr>
+<tr><td>source_refs</td><td>否</td><td>array &lt;<a href="schemas.html#taskreference">TaskReference</a>&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>origin_result_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>创建任务时关联的同案正式结果UUID。</td></tr>
+<tr><td>origin_finding_id</td><td>否</td><td>string; minLength=1; maxLength=200 / null</td><td>无（可空不等于可省略）</td><td>该结果中的发现ID；必须同时传origin_result_id。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#taskmutation">TaskMutation</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+    &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+    &quot;assignee_id&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;state&quot;: &quot;not_started&quot;,
+    &quot;result_text&quot;: null,
+    &quot;result_scope&quot;: null,
+    &quot;source_refs&quot;: [],
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1,
+    &quot;origin_result_id&quot;: null,
+    &quot;origin_finding_id&quot;: null
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;task&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;current_revision_id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+    &quot;origin_result_id&quot;: null,
+    &quot;origin_finding_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;row_version&quot;: 1,
+    &quot;current&quot;: {
+      &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+      &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+      &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+      &quot;revision&quot;: 1,
+      &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+      &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+      &quot;assignee_id&quot;: null,
+      &quot;due_at&quot;: null,
+      &quot;state&quot;: &quot;not_started&quot;,
+      &quot;result_text&quot;: null,
+      &quot;result_scope&quot;: null,
+      &quot;source_refs&quot;: [],
+      &quot;completed_at&quot;: null,
+      &quot;completed_by&quot;: null,
+      &quot;changed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+      &quot;changed_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;
+    }
+  },
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_assignee_not_in_tenant</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_origin_finding_not_found</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_source_reference_outside_case</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>404</td><td>task_origin_result_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>task_source_reference_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E38.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e39"></a>
+<h2 id="e39-人工任务列表">E39 人工任务列表</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/tasks</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 人工任务列表。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；查询参数：<code>limit</code>, <code>offset</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回案件人工任务的当前版本列表、总数和下一页偏移。</p>
+<p><b>规则与限制：</b> 返回当前修订、总数和 next_offset；待办统计只计实际未结束任务。旧版本必须另用 E42/E43。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e39">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=100</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>offset</td><td>False</td><td>integer; minimum=0; maximum=100000</td><td>0</td><td>分页偏移，沿 next_offset 继续。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#taskpage">TaskPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;limit&quot;: 20,
+    &quot;offset&quot;: 0
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_offset&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_record_page</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E39.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e40"></a>
+<h2 id="e40-修订人工任务">E40 修订人工任务</h2>
+<p><code>PUT /api/v1/socai2/cases/{case_id}/tasks/{task_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 修订人工任务。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>task_id</code>；JSON请求体：<code>TaskEdit</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskMutation</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 完整更新任务字段，实际变更时保存新的不可变修订并返回当前版本；无变化不新建修订，幂等重试沿用原回执。完成任务必须提供结果正文及有效适用范围。</p>
+<p><b>规则与限制：</b> PUT 为完整 TaskFields，不是局部 PATCH；先 E41 取当前字段和 row_version，再 E03 取范围版本，完整带回未修改字段。省略可选字段会取默认值，可能清空原值。completed 必须有 result_text 和 result_scope；whole_case 覆盖当前全部成员，selected_alerts 只能当前子集，explicit_objects 还需非空有效 object_keys。事实变更生成新修订，旧引用不变。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e40">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>task_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>本案人工任务 UUID。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=10000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>assignee_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工任务负责人UUID，需真实存在于本租户；null未分配。</td></tr>
+<tr><td>due_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>state</td><td>否</td><td><a href="schemas.html#taskstate">TaskState</a></td><td>&quot;not_started&quot;</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。</td></tr>
+<tr><td>result_text</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>人工确认结果正文；任务completed时必填非空。</td></tr>
+<tr><td>result_scope</td><td>否</td><td><a href="schemas.html#scope">Scope</a> / null</td><td>无（可空不等于可省略）</td><td>人工结果适用范围；completed时必填，不得扩大到Case外。</td></tr>
+<tr><td>source_refs</td><td>否</td><td>array &lt;<a href="schemas.html#taskreference">TaskReference</a>&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#taskmutation">TaskMutation</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;
+  },
+  &quot;body&quot;: {
+    &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+    &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+    &quot;assignee_id&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;state&quot;: &quot;completed&quot;,
+    &quot;result_text&quot;: &quot;人工已联系负责人；其确认该次登录为本人操作。&quot;,
+    &quot;result_scope&quot;: {
+      &quot;kind&quot;: &quot;selected_alerts&quot;,
+      &quot;alert_ids&quot;: [
+        &quot;00000000-0000-4000-8000-000000000002&quot;
+      ],
+      &quot;object_keys&quot;: [],
+      &quot;window_start&quot;: null,
+      &quot;window_end&quot;: null,
+      &quot;limitations&quot;: [
+        &quot;仅覆盖人工核实的该条告警&quot;
+      ]
+    },
+    &quot;source_refs&quot;: [],
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_scope_revision&quot;: 1,
+    &quot;expected_row_version&quot;: 1
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;task&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;current_revision_id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+    &quot;origin_result_id&quot;: null,
+    &quot;origin_finding_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;row_version&quot;: 2,
+    &quot;current&quot;: {
+      &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+      &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+      &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+      &quot;revision&quot;: 2,
+      &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+      &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+      &quot;assignee_id&quot;: null,
+      &quot;due_at&quot;: null,
+      &quot;state&quot;: &quot;completed&quot;,
+      &quot;result_text&quot;: &quot;人工已联系负责人；其确认该次登录为本人操作。&quot;,
+      &quot;result_scope&quot;: {
+        &quot;kind&quot;: &quot;selected_alerts&quot;,
+        &quot;alert_ids&quot;: [
+          &quot;00000000-0000-4000-8000-000000000002&quot;
+        ],
+        &quot;object_keys&quot;: [],
+        &quot;window_start&quot;: null,
+        &quot;window_end&quot;: null,
+        &quot;limitations&quot;: [
+          &quot;仅覆盖人工核实的该条告警&quot;
+        ]
+      },
+      &quot;source_refs&quot;: [],
+      &quot;completed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+      &quot;completed_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;,
+      &quot;changed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+      &quot;changed_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;
+    }
+  },
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_scope_outside_current_case</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_whole_case_scope_incomplete</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_object_scope_empty</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>task_objects_outside_current_scope</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_task_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>404</td><td>task_source_reference_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>task_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_scope_revision_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E40.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e41"></a>
+<h2 id="e41-人工任务当前版本">E41 人工任务当前版本</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 人工任务当前版本。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>task_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定任务的当前修订和行版本，供读取或后续完整更新使用。</p>
+<p><b>规则与限制：</b> 读取 task.current 及 row_version。编辑要保留原字段；负责人和完成人均由服务保存，不由客户端伪造完成时间。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e41">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>task_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>本案人工任务 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#taskview">TaskView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;current_revision_id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+  &quot;origin_result_id&quot;: null,
+  &quot;origin_finding_id&quot;: null,
+  &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;created_by&quot;: null,
+  &quot;updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;row_version&quot;: 1,
+  &quot;current&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+    &quot;revision&quot;: 1,
+    &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+    &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+    &quot;assignee_id&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;state&quot;: &quot;not_started&quot;,
+    &quot;result_text&quot;: null,
+    &quot;result_scope&quot;: null,
+    &quot;source_refs&quot;: [],
+    &quot;completed_at&quot;: null,
+    &quot;completed_by&quot;: null,
+    &quot;changed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;changed_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;
+  }
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_task_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E41.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e42"></a>
+<h2 id="e42-人工任务修订历史">E42 人工任务修订历史</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}/revisions</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 人工任务修订历史。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>task_id</code>；查询参数：<code>limit</code>, <code>offset</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskRevisionPage</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回任务的历史修订列表及下一页偏移，保留各次确认时的事实和范围。</p>
+<p><b>规则与限制：</b> 使用 next_offset 分页。任务被引用时必须保存具体 revision_id，不用最新版本覆盖历史事实。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e42">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>task_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>本案人工任务 UUID。</td></tr>
+<tr><td>query</td><td>limit</td><td>False</td><td>integer; minimum=1; maximum=100</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
+<tr><td>query</td><td>offset</td><td>False</td><td>integer; minimum=0; maximum=100000</td><td>0</td><td>分页偏移，沿 next_offset 继续。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#taskrevisionpage">TaskRevisionPage</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+    &quot;limit&quot;: 20,
+    &quot;offset&quot;: 0
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;items&quot;: [],
+  &quot;total&quot;: 0,
+  &quot;next_offset&quot;: null
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>invalid_record_page</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_task_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E42.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e43"></a>
+<h2 id="e43-人工任务指定修订">E43 人工任务指定修订</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}/revisions/{revision_id}</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 人工任务指定修订。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>, <code>task_id</code>, <code>revision_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>TaskRevisionView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回指定不可变修订的事项、人工结果、范围、引用及完成信息。</p>
+<p><b>规则与限制：</b> 按引用的 revision_id 阅读当时 title/result_text/result_scope/source_refs/completed_at/by；旧版本不可变。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e43">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>path</td><td>task_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>本案人工任务 UUID。</td></tr>
+<tr><td>path</td><td>revision_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>指定不可变任务修订 UUID。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#taskrevisionview">TaskRevisionView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+    &quot;revision_id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000007&quot;,
+  &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;task_id&quot;: &quot;00000000-0000-4000-8000-000000000006&quot;,
+  &quot;revision&quot;: 1,
+  &quot;title&quot;: &quot;核实登录是否为本人操作&quot;,
+  &quot;description&quot;: &quot;联系对应负责人核实&quot;,
+  &quot;assignee_id&quot;: null,
+  &quot;due_at&quot;: null,
+  &quot;state&quot;: &quot;not_started&quot;,
+  &quot;result_text&quot;: null,
+  &quot;result_scope&quot;: null,
+  &quot;source_refs&quot;: [],
+  &quot;completed_at&quot;: null,
+  &quot;completed_by&quot;: null,
+  &quot;changed_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+  &quot;changed_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_task_revision_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E43.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e44"></a>
+<h2 id="e44-case管理信息与结案条件">E44 Case管理信息与结案条件</h2>
+<p><code>GET /api/v1/socai2/cases/{case_id}/management</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> Case管理信息与结案条件。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；无请求体。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseManagementView</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 返回当前Case、未完人工任务数量、running/unknown阻塞Run、结案/重开资格及是否需要待办确认。</p>
+<p><b>规则与限制：</b> 先读取当前Case行版本、未完任务数及阻塞Run。can_close只说明状态/执行条件；requires_open_task_confirmation为true时仍须确认及理由。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e44">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>无请求体。</p>
+<p>响应类型：<a href="schemas.html#casemanagementview">CaseManagementView</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: null
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;source_namespace&quot;: null,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;handling_status&quot;: &quot;in_progress&quot;,
+    &quot;severity&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;scope_revision&quot;: 1,
+    &quot;current_assessment_id&quot;: null,
+    &quot;classification&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;current_evidence_artifact_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_at&quot;: null,
+    &quot;resolved_by&quot;: null,
+    &quot;resolution_note&quot;: null,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 1
+  },
+  &quot;open_task_count&quot;: 1,
+  &quot;blocking_runs&quot;: [],
+  &quot;can_close&quot;: true,
+  &quot;can_reopen&quot;: false,
+  &quot;requires_open_task_confirmation&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E44.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e45"></a>
+<h2 id="e45-修改case基本信息">E45 修改Case基本信息</h2>
+<p><code>PATCH /api/v1/socai2/cases/{case_id}/management</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 修改Case基本信息。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>CaseManagementUpdate</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseManagementReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 只保存显式提交的管理字段，实际变化才增加行版本；返回保存后的完整Case及changed，不执行调查。</p>
+<p><b>规则与限制：</b> PATCH局部更新；至少一个管理字段。省略保持；description/owner_id/severity可null清空，tags=[]清空；title/tags/handling_status不能null。负责人不自动改状态，已结案状态只能显式重开。回执含完整Case快照，随后可E03/E44读取；同键重放返回原回执。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e45">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>title</td><td>否</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>severity</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#casemanagementreceipt">CaseManagementReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_row_version&quot;: 1,
+    &quot;title&quot;: &quot;需要人工跟进的调查&quot;,
+    &quot;description&quot;: &quot;核对相关告警&quot;,
+    &quot;owner_id&quot;: null,
+    &quot;severity&quot;: &quot;high&quot;,
+    &quot;tags&quot;: [
+      &quot;人工跟进&quot;
+    ],
+    &quot;handling_status&quot;: &quot;in_progress&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;source_namespace&quot;: null,
+    &quot;title&quot;: &quot;需要人工跟进的调查&quot;,
+    &quot;description&quot;: &quot;核对相关告警&quot;,
+    &quot;handling_status&quot;: &quot;in_progress&quot;,
+    &quot;severity&quot;: &quot;high&quot;,
+    &quot;severity_source&quot;: &quot;manual&quot;,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [
+      &quot;人工跟进&quot;
+    ],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;scope_revision&quot;: 1,
+    &quot;current_assessment_id&quot;: null,
+    &quot;classification&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;current_evidence_artifact_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_at&quot;: null,
+    &quot;resolved_by&quot;: null,
+    &quot;resolution_note&quot;: null,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 2
+  },
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>422</td><td>case_owner_not_in_tenant</td><td>业务约束/对象状态，见操作说明；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_reopen_required</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E45.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e46"></a>
+<h2 id="e46-结案">E46 结案</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/close</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 结案。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>CaseCloseRequest</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseManagementReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 核对当前运行和人工待办后，将Case标为resolved，保存解决人/时间/理由；返回Case快照，任务与Run保持。</p>
+<p><b>规则与限制：</b> 先E44提示未完任务及阻塞Run。running/unknown禁止结案；有未完任务须acknowledge_open_tasks=true及非空reason。无未完任务reason可省略。pending_update保留，不自动取消任务，不修改成员/判断；解决人及时间由服务保存。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e46">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>acknowledge_open_tasks</td><td>否</td><td>boolean</td><td>false</td><td>是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#casemanagementreceipt">CaseManagementReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_row_version&quot;: 1,
+    &quot;acknowledge_open_tasks&quot;: true,
+    &quot;reason&quot;: &quot;当前调查结案，未完人工任务另行跟进。&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;source_namespace&quot;: null,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;handling_status&quot;: &quot;resolved&quot;,
+    &quot;severity&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;scope_revision&quot;: 1,
+    &quot;current_assessment_id&quot;: null,
+    &quot;classification&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;current_evidence_artifact_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_by&quot;: &quot;00000000-0000-4000-8000-000000000010&quot;,
+    &quot;resolution_note&quot;: &quot;当前调查结案，未完人工任务另行跟进。&quot;,
+    &quot;reopened_at&quot;: null,
+    &quot;row_version&quot;: 2
+  },
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_active_run_prevents_close</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_open_tasks_confirmation_required</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_already_resolved</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E46.errors</code>，Swagger同操作 Responses 可直接展开。</p>
+<a id="e47"></a>
+<h2 id="e47-重开case">E47 重开Case</h2>
+<p><code>POST /api/v1/socai2/cases/{case_id}/reopen</code></p>
+<p>状态：<b>已实现</b>。分类：调查。</p>
+<p><b>实现状态：</b> 已实现</p>
+<p><b>用途：</b> 重开Case。</p>
+<p><b>输入：</b> 路径参数：<code>case_id</code>；JSON请求体：<code>CaseLifecycleRequest</code>，字段和必填要求见Request body。</p>
+<p><b>输出：</b> HTTP 200，<code>CaseManagementReceipt</code>；完整字段和示例见Responses。</p>
+<p><b>结果：</b> 将已解决Case恢复in_progress，记录重开时间并清空当前结案字段；返回Case快照，历史活动保留，不自动调查。</p>
+<p><b>规则与限制：</b> 仅resolved案件可重开，恢复in_progress并记录reopened_at，清空当前结案字段；旧结案说明保留在E17活动。reason可选。不新建或启动Run，不改变人工任务/成员/判断。</p>
+<p><b>验证结果（2026-11-12）：</b> 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。</p>
+<p><b>部署情况：</b> 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。</p>
+<p><a href="audit/interfaces.html#e47">本接口用途及完整输出字段审计</a> · <a href="audit/dynamic-fields.html">动态投影与差异</a></p>
+<table>
+<tr><th>位置</th><th>参数</th><th>必传</th><th>类型/限制</th><th>默认值</th><th>说明</th></tr>
+<tr><td>path</td><td>case_id</td><td>True</td><td>string (uuid)</td><td>null</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+</table>
+<p>请求体：</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+</table>
+<p>响应类型：<a href="schemas.html#casemanagementreceipt">CaseManagementReceipt</a>。字段完整展开见Schema或Swagger Models。</p>
+<p>输入示例（参数与JSON体）：</p>
+<pre>{
+  &quot;parameters&quot;: {
+    &quot;case_id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;
+  },
+  &quot;body&quot;: {
+    &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000011&quot;,
+    &quot;expected_row_version&quot;: 1,
+    &quot;reason&quot;: &quot;收到需要继续处理的信息，人工重开。&quot;
+  }
+}</pre>
+<p>输出示例（HTTP 200）：</p>
+<pre>{
+  &quot;case&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+    &quot;source_namespace&quot;: null,
+    &quot;title&quot;: &quot;合成示例：核查异常登录&quot;,
+    &quot;description&quot;: null,
+    &quot;handling_status&quot;: &quot;in_progress&quot;,
+    &quot;severity&quot;: null,
+    &quot;severity_source&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;scope_revision&quot;: 1,
+    &quot;current_assessment_id&quot;: null,
+    &quot;classification&quot;: null,
+    &quot;due_at&quot;: null,
+    &quot;current_evidence_artifact_id&quot;: null,
+    &quot;created_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;created_by&quot;: null,
+    &quot;business_updated_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;resolved_at&quot;: null,
+    &quot;resolved_by&quot;: null,
+    &quot;resolution_note&quot;: null,
+    &quot;reopened_at&quot;: &quot;2026-11-12T08:00:00Z&quot;,
+    &quot;row_version&quot;: 2
+  },
+  &quot;changed&quot;: true
+}</pre>
+<table>
+<tr><th>HTTP</th><th>错误/形状</th><th>处理</th></tr>
+<tr><td>401</td><td>not_authenticated</td><td>缺少有效已有凭据</td></tr>
+<tr><td>403</td><td>identity</td><td>现有身份/访问条件不符</td></tr>
+<tr><td>422</td><td>validation</td><td>UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。</td></tr>
+<tr><td>503</td><td>feature_disabled</td><td>服务对应功能开关关闭</td></tr>
+<tr><td>404</td><td>case_not_found</td><td>业务约束/对象状态，见操作说明</td></tr>
+<tr><td>409</td><td>case_row_version_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>case_not_resolved</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+<tr><td>409</td><td>operation_key_conflict</td><td>业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。</td></tr>
+</table>
+<p>完整错误JSON示例见 <code>examples.json</code> 的 <code>E47.errors</code>，Swagger同操作 Responses 可直接展开。</p></main></html>

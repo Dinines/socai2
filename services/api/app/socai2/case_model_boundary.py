@@ -12,7 +12,7 @@ from .case_input_hierarchy import render_tools
 from .case_input_text import prepare
 from .case_query_snapshot import source as query_source
 from .case_source_scope import query_scope
-from .incident_model_boundary import query_items
+from .incident_model_boundary import query_items, query_record_identity
 from .model_input_view import source_members
 from .program_facts import case_facts
 from .runtime_policy import active_policy, draft_limit
@@ -62,6 +62,7 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
                     projected.pop(key, None)
             query_members = source_members(context, ref, tool_payloads) if ref["source_path"] else owners
             additional.append({"ref": ref, "original_value": original, "value": projected,
+                "query_record_identity": query_record_identity(body, ref["source_path"]),
                 **query_scope(body, ref["source_path"], query_members, context.alerts),
                 **knowledge.metadata(body, ref),
                 "block": "background_query"})
@@ -107,7 +108,7 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
                      _excluded_knowledge=(*_excluded_knowledge, optional[-1]))
     reason = ("required_model_input_unavailable" if any(r["required"] for r in rejected) else
               "case_input_exceeds_prepared_limit" if len(encoded(messages)) > draft_limit() else
-              "projected_message_guard_blocked" if any(legacy.blocked(m["content"]) for m in messages) else None)
+              "projected_message_guard_blocked" if any(legacy.blocked_message(m["content"]) for m in messages) else None)
     prepared.pop("query_supplement")
     return {"schema_version": SCHEMA, "ready": reason is None, "reason": reason,
         "messages": messages if reason is None else [], "source_map": prepared["source_map"],
@@ -132,7 +133,12 @@ def messages(prepared, context, options):
     catalog = data(options or [])
     if legacy.blocked(catalog):
         raise StoreError("analysis_input_contract_or_size", 422)
-    presentation = render_tools(alias_catalog(catalog, prepared["case_boundary"]), profile.config)
+    visible_catalog = alias_catalog(catalog, prepared["case_boundary"])
+    visible_catalog["capabilities"] = [c for c in visible_catalog["capabilities"] if c["available"]]
+    presentation = (render_tools(visible_catalog, profile.config) if options else
+                    {"text": "[可用调查工具｜程序提供]\n本轮无可用查询候选。", "ledger": [],
+                     "catalog": visible_catalog, "capabilities": []})
+    presentation["original_catalog"] = catalog
     prepared["tool_presentation"] = presentation
     output.append({"role": "user", "content": presentation["text"]})
     if len(encoded(output)) > draft_limit() or any(legacy.blocked(m["content"]) for m in output):

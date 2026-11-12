@@ -7,7 +7,11 @@ import pytest
 from app.socai2 import alert_basic_contract as alert
 from app.socai2 import incident_diagnosis_contract as incident
 from app.socai2.baseline_store import StoreError
-from app.socai2.stage_answer_review import review_alert, review_incident
+from app.socai2.stage_answer_review import (
+    citation_feedback,
+    review_alert,
+    review_incident,
+)
 
 
 def packet(n=2):
@@ -32,6 +36,20 @@ def packet(n=2):
         "open_questions": [{"text": "核对授权。", "alert_ids": [aids[0]],
             "source_ids": ["N1_S1"], "evidence_requirements": ["人工确认"]}]}
     return sources, data, a, i
+
+
+def test_citation_feedback_uses_wire_paths_and_preserves_original():
+    sources, data, answer, _ = packet()
+    answer.update(recommendations=[], evidence_ids=["N1_S1", "N1_S1"])
+    content, diagnostics = json.dumps(answer), []
+    with pytest.raises(StoreError, match="alert_answer_source_invalid"):
+        alert.parse(content, sources, data, diagnostics=diagnostics)
+    feedback = citation_feedback("A", content, sources, diagnostics, {"source_map": sources})
+    assert feedback["errors"] == [{"path": "$.evidence_ids", "code": "alert_answer_source_invalid"}]
+    assert json.loads(content)["evidence_ids"] == ["N1_S1", "N1_S1"]
+    assert citation_feedback("A", content, sources, diagnostics, None) is None
+    diagnostics.append({"path": "$", "code": "model_usage_unknown_or_inconsistent", "severity": "error"})
+    assert citation_feedback("A", content, sources, diagnostics, {"source_map": sources}) is None
 
 
 def test_only_bad_advice_dropped_original_assessment_preserved():

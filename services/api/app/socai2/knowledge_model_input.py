@@ -64,8 +64,9 @@ def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=()):
             retained.extend(rows)
             continue
         origins = [o for r in rows for o in r["knowledge"]["origins"]]
-        purpose_allowed = any(o["purpose"] in policy["stage_purposes"][stage] for o in origins)
-        related = any(set(o["query_alert_ids"]) & set(allowed) for o in origins)
+        stage_origins = [o for o in origins if o["purpose"] in policy["stage_purposes"][stage]]
+        purpose_allowed = bool(stage_origins)
+        related = any(set(o["query_alert_ids"]) & set(allowed) for o in stage_origins)
         size = sum(len(encoded(r["value"]).decode()) for r in rows)
         reason = ("knowledge_input_capacity" if identity in excluded else
                   "knowledge_purpose_not_for_stage" if not purpose_allowed else

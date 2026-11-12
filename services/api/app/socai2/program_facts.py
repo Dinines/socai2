@@ -85,21 +85,41 @@ def member_facts(member, source_id, path):
     return result
 
 
+def query_outcome(payload):
+    """Derive the result from recorded state, never from the explanatory prose."""
+    state = payload.get("state")
+    count = payload.get("returned_rows", payload.get("observed_rows_in_bounded_fetch"))
+    if state == "skipped":
+        return "not_queried"
+    if state in {"failed", "timeout"}:
+        return "failed"
+    if state == "completed" and type(count) is int:
+        if count > 0:
+            return "data"
+        if count == 0 and not payload.get("truncated"):
+            return "empty"
+    return "unknown"
+
+
+def query_result_text(payload, names, *, tool_name=None):
+    """The model needs a query result, not its execution ledger."""
+    name = tool_name or payload.get("tool_name") or payload.get("source") or "查询"
+    result = {"not_queried": "未查询", "failed": "查询失败", "unknown": "结果未知",
+              "empty": "无结果", "data": "有结果"}[query_outcome(payload)]
+    return names.get(name, name) + "：" + result
+
+
 def query_statuses(queries):
     """Describe actual receipts; absence or truncation is never a zero-hit result."""
     facts = []
     for identity, payload in queries:
         state, count = payload.get("state"), payload.get("returned_rows")
-        if state == "skipped":
-            outcome, text = "not_queried", "本次未执行查询，不能称为无命中或无记录。"
-        elif state in {"failed", "timeout"}:
-            outcome, text = "failed", "查询失败或超时，未获得确定的查询结果。"
-        elif state == "completed" and type(count) is int and count > 0:
-            outcome, text = "data", f"本次查询保留{count}行；仅适用于回执中的对象、时间和来源范围。"
-        elif state == "completed" and count == 0 and type(count) is int and not payload.get("truncated"):
-            outcome, text = "empty", "本次查询成功，在该查询范围内返回0行；不能据此证明行为安全或检测错误。"
-        else:
-            outcome, text = "unknown", "回执不足或返回被截断，不能推定查空。"
+        outcome = query_outcome(payload)
+        text = {"not_queried": "本次未执行查询，不能称为无命中或无记录。",
+            "failed": "查询失败或超时，未获得确定的查询结果。",
+            "data": f"本次查询保留{count}行；仅适用于回执中的对象、时间和来源范围。",
+            "empty": "本次查询成功，在该查询范围内返回0行；不能据此证明行为安全或检测错误。",
+            "unknown": "回执不足或返回被截断，不能推定查空。"}[outcome]
         facts.append({"source": payload["tool_name"], "state": state, "outcome": outcome,
             "reason": payload.get("reason"), "returned_rows": count,
             "truncated": bool(payload.get("truncated")), "statement": text,

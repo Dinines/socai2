@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from app.api.v1.deps import CurrentUser, get_current_user
 from app.api.v1.endpoints import socai2_pages as api
 from app.models import socai2 as m
+from app.models.asset import Asset
 from app.socai2 import page_reader
 from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.page_contracts import SubjectPage, SubjectView, TraceView
@@ -26,7 +27,7 @@ LIMITS = Limits(max_model_calls=0, max_tokens=0, max_tool_calls=0, max_rows_per_
     deadline_at=None, policy_version="synthetic.page")
 
 
-async def run_checks(engine, record, only=None):
+async def run_checks(engine, record, only=None, fixture_engine=None):
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     writer, reader = StageResultService(sessions), PageReadService(sessions)
     principal = CurrentUser(USER, T, "analyst", "synthetic@example.invalid", scopes=["alerts:read", "cases:read"])
@@ -93,7 +94,10 @@ async def run_checks(engine, record, only=None):
         assert facts["original_vendor"] is None and facts["source_alert_id"] == "ingress-0" and facts["vendor_alert_id"] == "vendor-0"
         assert facts["handling_status"] == "completed" and facts["disposition"] == "false_positive"
         assert facts["event_time"] is None and facts["event_time_source"] == "unknown" and Decimal(facts["priority_value"]) == 0
-        assert result["owner_resolution"] == "unresolved" and result["owner_name"] is None
+        async with writer.transaction(T, readonly=True) as s:
+            owner = (await s.db.execute(text("SELECT username FROM public.users WHERE id=:id AND tenant_id=:tenant"),
+                {"id":USER,"tenant":T})).scalar_one()
+        assert result["owner_resolution"] == "resolved" and result["owner_name"] == owner
         assert result["triage"]["verdict"] == "benign" and result["triage"]["confidence_percent"] == 96
         assert result["triage"]["freshness"] == "current" and result["triage"]["valid_for_current_input"] and result["derived"]["false_positive"]
         assert "private_raw_marker" not in str(result) and "source_identity_key" not in str(result)
@@ -123,9 +127,14 @@ async def run_checks(engine, record, only=None):
     async def test_page_current_objects_sources_assets_and_neighbors():
         aids, _mids, iid, host = await fixture()
         asset, neighbor, wrong = uuid4(), uuid4(), uuid4()
+        # Inventory is maintained by the backend. Seed only these synthetic
+        # rows through an explicit fixture connection, keep the HTTP role unchanged.
+        async with (fixture_engine or engine).begin() as conn:
+            await conn.execute(insert(Asset.__table__).values(id=asset, tenant_id=T, name=host,
+                tags=['inventory-tag'], ip_addresses=[]))
+            await conn.execute(insert(Asset.__table__).values(id=uuid4(), tenant_id=OTHER, name=host,
+                tags=['other-tenant-tag']))
         async with writer.transaction(T) as s:
-            await s.db.execute(text("INSERT INTO public.assets(id,tenant_id,name,tags,ip_addresses) VALUES (:id,:tenant,:name,ARRAY['inventory-tag'],ARRAY[]::text[])"),
-                {"id":asset,"tenant":T,"name":host})
             for aid, namespace in [(neighbor,"page-review"),(wrong,"different-environment")]:
                 mid = uuid4()
                 await s.db.execute(insert(m.Alerts).values(id=aid, tenant_id=T, title="synthetic neighbor", source_namespace=namespace, source_identity_key=str(aid)))
@@ -134,9 +143,6 @@ async def run_checks(engine, record, only=None):
                 await s.db.execute(insert(m.AlertObjects).values(id=uuid4(),tenant_id=T,alert_id=aid,material_id=mid,object_key="host:"+host,
                     namespace=namespace,object_type="host",source_type="source",object_role="entity",raw_value=host,normalized_value=host,
                     source_path="$.raw_json.host",attributes={}))
-        async with writer.transaction(OTHER) as s:
-            await s.db.execute(text("INSERT INTO public.assets(id,tenant_id,name,tags) VALUES (:id,:tenant,:name,ARRAY['other-tenant-tag'])"),
-                {"id":uuid4(),"tenant":OTHER,"name":host})
         assets = await get(f"incidents/{iid}/records/assets?limit=1")
         assert assets["total"] == 2 and assets["next_offset"] == 1
         assert assets["items"][0]["tags"] == ["inventory-tag"] and assets["items"][0]["asset_id"] == str(asset)

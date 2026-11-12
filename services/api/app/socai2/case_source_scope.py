@@ -1,11 +1,18 @@
 """Case-only query provenance; a query binding is not a returned row's subject."""
 from uuid import UUID
 
-FIELDS = ("query_alert_ids", "record_alert_ids", "membership_basis", "knowledge")
+FIELDS = ("query_alert_ids", "record_alert_ids", "membership_basis", "knowledge", "query_record_identity")
 
 
 def metadata(source):
     return {key: source[key] for key in FIELDS if key in source}
+
+
+def knowledge_context(source, members):
+    """Selected knowledge can explain its query subjects, never own their facts."""
+    return bool(source.get("knowledge")
+                and source["ref"]["role"] in {"source_label", "prior_analysis", "human_statement"}
+                and set(source.get("query_alert_ids", ())).intersection(members))
 
 
 def identity(value):

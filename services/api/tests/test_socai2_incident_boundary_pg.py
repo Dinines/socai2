@@ -27,9 +27,9 @@ TENANT = UUID(int=1)
 
 
 @contextmanager
-def policy(candidate=True):
+def policy(candidate=True, name=None):
     original = runtime_policy.active_policy
-    name = "investigation-policy-incident-v1.toml" if candidate else "investigation-policy.toml"
+    name = name or ("investigation-policy-incident-v1.toml" if candidate else "investigation-policy.toml")
     selected = runtime_policy.load_policy(ROOT / "deploy/local-investigation" / name)
     runtime_policy.active_policy = lambda: selected
     try:
@@ -447,6 +447,57 @@ async def run_checks(engine, record, only=None):
             gets = await http_readback(iid, aids, mids, out, queries)
             return {"run_id": str(out["run_id"]), "http_gets": gets, "real_model_calls": 0,
                     "business_text_preserved": True, "delivery": "complete", "review": "required"}
+
+    async def test_boundary_ai_correction_saves_original_and_adopts_valid_answer():
+        class AlertGateway(Gateway):
+            async def complete(self, body, timeout):
+                self.calls += 1
+                self.requests.append(copy.deepcopy(body))
+                async with service.transaction(TENANT, readonly=True) as store:
+                    request = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                        F.c.alert_id == self.iid, F.c.kind == "model_request"))
+                        .order_by(F.c.captured_at.desc()).limit(1))).scalar_one()
+                sid = next(sid for sid, source in request["source_map"].items() if source["ref"]["role"] == "observation")
+                answer = {"verdict": "needs_review", "confidence": None, "rationale": "Synthetic authorization remains unknown.",
+                    "evidence_ids": [sid, sid] if self.calls == 1 else [sid], "recommendations": []}
+                payload = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
+                    "usage": {"prompt_tokens": 120, "completion_tokens": 80, "total_tokens": 200}}
+                self.responses.append(copy.deepcopy(payload))
+                return payload
+
+        class IncidentGateway(Gateway):
+            async def complete(self, body, timeout):
+                self.bad_member = self.calls == 0
+                return await super().complete(body, timeout)
+
+        with policy(name="investigation-policy-case-v1.toml"):
+            iid, aids, _, _ = await fixture()
+            outputs = []
+            for kind, subject, gateway, execute, code in (
+                ("alert_basic", aids[0], AlertGateway(service, aids[0]), service.execute_alert, "alert_answer_source_invalid"),
+                ("incident_diagnosis", iid, IncidentGateway(service, iid), service.execute_incident, "incident_source_wrong_member"),
+            ):
+                out = await execute(TENANT, subject, uuid4(), gateway=gateway)
+                assert out["state"] == "completed" and gateway.calls == 2
+                arts = sorted(await rows(F, F.c.run_id == out["run_id"]), key=lambda a: a["captured_at"])
+                requests = [a["content_json"] for a in arts if a["kind"] == "model_request"]
+                responses = [a for a in arts if a["kind"] == "model_response"]
+                assert requests[0]["correction"] is None
+                assert requests[1]["correction"]["original_response_artifact_id"] == str(responses[0]["id"])
+                assert responses[0]["content_json"]["validation_error"] == code
+                assert responses[0]["content_json"]["correction_feedback"]["errors"]
+                assert responses[1]["content_json"]["validation_error"] is None
+                assert [a["content_json"]["raw"] for a in responses] == gateway.responses
+                assert requests[1]["body"]["messages"][-2]["content"] == gateway.responses[0]["choices"][0]["message"]["content"]
+                assert requests[0]["source_map"] == requests[1]["source_map"]
+                assert requests[0]["body"]["response_format"] == requests[1]["body"]["response_format"]
+                entry = await reader.read_entry(TENANT, kind, subject, out["run_id"])
+                assert entry.run.delivery_state == "complete" and await service.freshness(TENANT, out["run_id"])
+                if kind == "incident_diagnosis":
+                    assert entry.result.diagnosis["conclusion"] == "Synthetic unresolved assessment."
+                    assert entry.result.summary == "Synthetic event summary."
+                outputs.append({"stage": kind, "run_id": str(out["run_id"]), "model_calls": gateway.calls})
+            return {"runs": outputs, "real_model_calls": 0, "originals_preserved": True, "valid_answer_adopted": True}
 
     for name, check in list(locals().items()):
         if name.startswith("test_boundary_") and (not only or name in only):

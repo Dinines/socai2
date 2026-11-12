@@ -68,7 +68,9 @@ class Gateway:
                 assert "没有可用的C3判断" in body["messages"][1]["content"]
             else:
                 rows = request["followup_boundary"]["records"]
-                assert any(r["block"] == "C3" and len(r["value"]["questions"]) == 6 for r in rows)
+                expected_questions = {q.id for q in context.questions if q.id != "coverage"}
+                assert any(r["block"] == "C3" and {q["id"] for q in r["value"]["questions"]} == expected_questions
+                           for r in rows)
                 assert any(r["block"] == "Deep" and r["value"]["support_ids"] for r in rows)
                 assert any(r["block"] == "plan" and r["value"]["followup"]["source_ids"] for r in rows)
                 assert all(d["visible_id"] for d in request["followup_boundary"]["dependencies"])
@@ -77,6 +79,9 @@ class Gateway:
                 answer["analysis"]["members"][0].update(state="analyzed", evidence_ids=[])
             if self.mode == "correction" and self.final_calls == 2:
                 assert json.loads(body["messages"][-1]["content"])["errors"][0]["subject_id"] == "A1"
+            if self.mode == "recommendation_correction" and self.final_calls == 2:
+                assert any(e["code"] == "recommendation_needs_sources"
+                           for e in json.loads(body["messages"][-1]["content"])["errors"])
             if self.mode == "scope_recovery" and self.final_calls == 1:
                 answer["analysis"]["domains"][0]["finding_ids"] = ["F99"]
                 answer["impact"].update(alert_ids=list(answer["conclusion"]["alert_ids"]),
@@ -96,6 +101,9 @@ class Gateway:
             role_finding(answer, request, "C6", invalid=True)
         if stage == "C6" and self.mode == "partial":
             answer["analysis"]["members"][0]["evidence_ids"] = ["invalid-source"]
+        if stage == "C6" and self.mode == "recommendation_correction" and self.final_calls == 1:
+            # A provider can ignore the generation constraint; preserve and reject its raw reply.
+            answer["recommendations"][0]["source_ids"] = []
         reply = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
                  "usage": {"prompt_tokens": 200, "completion_tokens": 200, "total_tokens": 400}}
         self.requests.append(copy.deepcopy(request))
@@ -123,7 +131,7 @@ async def scenario(service, sample, initial, mode):
             "limitations": ["Synthetic integration only."]}, [reference("artifact", c3["output_artifact_id"], "execution_receipt")])
     out = await service.finalize(T, cid, rid, gateway=gateway)
     assert out["state"] == "completed", out
-    assert gateway.final_calls == (2 if mode in {"correction", "partial", "scope_recovery", "role_recovery", "role_partial"} else 1), out
+    assert gateway.final_calls == (2 if mode in {"correction", "partial", "scope_recovery", "role_recovery", "role_partial", "recommendation_correction"} else 1), out
     assert gateway.deep_calls == (0 if mode == "fallback" else 2), out
     assert lake.calls == (0 if mode == "fallback" else 1), out
     assert out == await service.finalize(T, cid, rid, gateway=gateway)
@@ -153,6 +161,34 @@ async def scenario(service, sample, initial, mode):
             assert len(role_errors) == (4 if mode == "role_partial" else 2)
             if mode == "role_recovery":
                 assert result["validation_state"] == "accepted"
+        if mode == "recommendation_correction":
+            responses = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == rid, F.c.kind == "model_response")))).scalars().all()
+            rejected = [r for r in responses if r["payload"].get("validation_error") == "recommendation_needs_sources"]
+            assert len(rejected) == 1
+            assert rejected[0]["payload"]["raw"] == gateway.responses[-2]
+            assert result["validation_state"] == "accepted" and result["delivery_state"] == "complete"
+    if mode in {"valid", "recommendation_correction"}:
+        from app.api.v1.endpoints import socai2_cases as api
+        from app.socai2.case_service import CaseService
+        from fastapi import FastAPI
+        from httpx import ASGITransport, AsyncClient
+        app = FastAPI()
+        app.include_router(api.router)
+        app.dependency_overrides[api.get_service] = lambda: CaseService(service.sessions)
+        app.dependency_overrides[api.ReadUser.__metadata__[0].dependency] = lambda: SimpleNamespace(tenant_id=T)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://synthetic.local") as client:
+            response = await client.get(f"/socai2/cases/{cid}/results/{result['id']}")
+            assert response.status_code == 200
+            saved = response.json()["result"]
+            assert all(saved[key] == result[key] for key in ("conclusion","validation_state","delivery_state","recommendations"))
+            response = await client.get(f"/socai2/cases/{cid}")
+            assert response.status_code == 200
+            current = response.json()["current_assessment"]
+            assert current["value"]["conclusion"] == result["conclusion"]
+            assert current["value"]["validity"] == "accepted" and current["covers_current_members"]
     return {**sample, "real_model_calls": 0, "substitute_deep_calls": gateway.deep_calls,
             "substitute_final_calls": gateway.final_calls, "substitute_lake_calls": lake.calls,
-            "run_state": run["state"], "c6_idempotent_replay": True}
+            "run_state": run["state"], "c6_idempotent_replay": True,
+            "final_result_and_current_assessment_gets": mode in {"valid", "recommendation_correction"},
+            "final_recommendation_correction_and_gets": mode == "recommendation_correction"}

@@ -157,3 +157,9 @@ class RetrievalTests(IsolatedAsyncioTestCase):
                 await index(DB([]), TENANT, [DOC])
             with self.assertRaisesRegex(SourceUnavailable, "knowledge_document_purpose_missing"):
                 await index(DB([{**document(), "tags": []}]), TENANT, [DOC])
+            # Atomic JSON keeps its original text; it must not bypass the index cap.
+            from app.services.kb_chunking import chunk_text
+            content = json.dumps({"description": "x" * p.max_chunk_characters})
+            self.assertEqual(chunk_text(content), [content])
+            with self.assertRaisesRegex(SourceUnavailable, "knowledge_index_content_limit"):
+                await index(DB([{**document(), "content": content}]), TENANT, [DOC])

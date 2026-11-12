@@ -88,108 +88,121 @@ class AlertBasicExecutor:
             if not await self.gateway.configure(self.service, tenant):
                 await self.fail(tenant, rid, stage, "model_not_configured")
                 return await self.outcome(tenant, claim)
-            body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["A"], "temperature": 0,
-                    "response_format": response_format}
-            body = prepare_request(self.gateway, body)
-            async with self.service.transaction(tenant) as store:
-                meter_run, _ = await self.locked(store, rid)
-                meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
-            try:
-                from .token_budget import measure_with_deadline
-                measurement = await measure_with_deadline(self.gateway, body, "A", meter_seconds)
-            except StoreError as exc:
-                await self.fail(tenant, rid, stage, exc.code)
-                return await self.outcome(tenant, claim)
-            async with self.service.transaction(tenant) as store:
-                run, _ = await self.locked(store, rid)
-                limits, now = Limits.model_validate(run["limits"]), await store.now()
-                steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == rid)))).mappings().all()
-                reason = budget_reason(steps, limits, len(encoded(body)), now, measurement=measurement)
-                if not reason:
-                    model = await self.step(store, run, "model", "alert_triage_and_explanation", parent=stage)
-                    request = {"schema_version": VERSION, "provider": self.gateway.provider, "model": self.gateway.model,
-                        "schema_profile": getattr(self.gateway, "schema_profile", "standard"),
-                        "body": body, "source_map": source_map, "input_omissions": data["omissions"],
-                        "view_coverage": data["view_coverage"], "view_limitations": data["view_limitations"],
-                        "input_omission_details": data["omission_details"],
-                        "input_omission_detail_count": data["omission_detail_count"],
-                        "input_omission_details_truncated": data["omission_details_truncated"],
-                        "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement}
+            correction = None
+            for attempt in range(2):
+                body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["A"], "temperature": 0,
+                        "response_format": response_format}
+                body = prepare_request(self.gateway, body)
+                async with self.service.transaction(tenant) as store:
+                    meter_run, _ = await self.locked(store, rid)
+                    meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
+                try:
+                    from .token_budget import measure_with_deadline
+                    measurement = await measure_with_deadline(self.gateway, body, "A", meter_seconds)
+                except StoreError as exc:
+                    await self.fail(tenant, rid, stage, exc.code)
+                    return await self.outcome(tenant, claim)
+                async with self.service.transaction(tenant) as store:
+                    run, _ = await self.locked(store, rid)
+                    limits, now = Limits.model_validate(run["limits"]), await store.now()
+                    steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == rid)))).mappings().all()
+                    reason = budget_reason(steps, limits, len(encoded(body)), now, measurement=measurement)
+                    if not reason:
+                        model = await self.step(store, run, "model", "alert_triage_and_explanation", parent=stage)
+                        request = {"schema_version": VERSION, "provider": self.gateway.provider, "model": self.gateway.model,
+                            "schema_profile": getattr(self.gateway, "schema_profile", "standard"),
+                            "body": body, "source_map": source_map, "input_omissions": data["omissions"],
+                            "view_coverage": data["view_coverage"], "view_limitations": data["view_limitations"],
+                            "input_omission_details": data["omission_details"],
+                            "input_omission_detail_count": data["omission_detail_count"],
+                            "input_omission_details_truncated": data["omission_details_truncated"],
+                            "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement,
+                            "correction": correction}
+                        if prepared is not None:
+                            request["alert_boundary"] = prepared["boundary"]
+                        request_id = await self.save(store, run, model, "model_request", request)
+                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                            input_artifact_id=request_id, provider=self.gateway.provider))
+                        deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
+                if reason:
+                    await self.fail(tenant, rid, stage, reason)
+                    return await self.outcome(tenant, claim)
+                # Both exact request and running claim have committed before I/O.
+                try:
+                    async with asyncio.timeout_at(deadline):
+                        payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
+                except ModelCallError as exc:
+                    async with self.service.transaction(tenant) as store:
+                        run, _ = await self.locked(store, rid)
+                        response_id = await self.save(store, run, model, "model_response",
+                            {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
+                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                            output_artifact_id=response_id, usage=usage(None)))
+                        if exc.rejection_code:
+                            now = await store.now()
+                            await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                                state="failed", ended_at=now, error=error(exc.rejection_code, now)))
+                    if exc.rejection_code:
+                        await self.fail(tenant, rid, stage, exc.rejection_code)
+                        return await self.outcome(tenant, claim)
+                    raise  # Keep the existing uncertainty transition; never retry or adopt.
+                recorded = usage(payload)
+                rejection, result, diagnostics, review, complete_content = None, None, [], None, None
+                try:
+                    if recorded["usage_state"] != "reported":
+                        raise StoreError("model_usage_unknown_or_inconsistent", 422)
+                    if recorded["total_tokens"] > request["reserved_token_upper_bound"]:
+                        raise StoreError("provider_usage_exceeds_reservation", 422)
+                    choices = response_choices(payload)
+                    if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
+                        raise StoreError("model_choices_invalid", 422)
+                    choice = choices[0]
+                    message = choice.get("message")
+                    if choice.get("finish_reason") != "stop":
+                        raise StoreError("model_response_not_complete", 422)
+                    if (not isinstance(message, dict) or not isinstance(message.get("content"), str)
+                            or message.get("tool_calls") or message.get("function_call") or message.get("refusal")):
+                        raise StoreError("model_content_or_tool_protocol_invalid", 422)
+                    complete_content = message["content"]
                     if prepared is not None:
-                        request["alert_boundary"] = prepared["boundary"]
-                    request_id = await self.save(store, run, model, "model_request", request)
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                        input_artifact_id=request_id, provider=self.gateway.provider))
-                    deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
-            if reason:
-                await self.fail(tenant, rid, stage, reason)
-                return await self.outcome(tenant, claim)
-            # Both exact request and running claim have committed before I/O.
-            try:
-                async with asyncio.timeout_at(deadline):
-                    payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-            except ModelCallError as exc:
+                        from .alert_output_adapter import parse
+                        result = parse(complete_content, prepared, diagnostics=diagnostics)
+                    else:
+                        result = contract.parse(complete_content, source_map, data, diagnostics=diagnostics)
+                except StoreError as exc:
+                    rejection = exc.code
+                    if complete_content is not None:
+                        if prepared is not None:
+                            from .alert_output_adapter import review as review_candidate
+                            result, review = review_candidate(complete_content, prepared)
+                        else:
+                            from .stage_answer_review import review_alert
+                            result, review = review_alert(complete_content, source_map, data)
+                from .stage_answer_review import citation_feedback
+                feedback = (citation_feedback("A", complete_content, source_map, diagnostics, prepared)
+                    if attempt == 0 and result is None and complete_content is not None and limits.max_model_calls > 1 else None)
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)
                     response_id = await self.save(store, run, model, "model_response",
-                        {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
+                        {"schema_version": VERSION, "raw": payload, "usage": recorded, "validation_error": rejection,
+                         "validation_diagnostics": diagnostics, "partial_review": review,
+                         "correction_feedback": feedback,
+                         **({"alert_boundary_version": profile.version} if profile else {})})
+                    now = await store.now()
                     await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                        output_artifact_id=response_id, usage=usage(None)))
-                    if exc.rejection_code:
-                        now = await store.now()
-                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                            state="failed", ended_at=now, error=error(exc.rejection_code, now)))
-                if exc.rejection_code:
-                    await self.fail(tenant, rid, stage, exc.rejection_code)
-                    return await self.outcome(tenant, claim)
-                raise  # Keep the existing uncertainty transition; never retry or adopt.
-            recorded = usage(payload)
-            rejection, result, diagnostics, review, complete_content = None, None, [], None, None
-            try:
-                if recorded["usage_state"] != "reported":
-                    raise StoreError("model_usage_unknown_or_inconsistent", 422)
-                if recorded["total_tokens"] > request["reserved_token_upper_bound"]:
-                    raise StoreError("provider_usage_exceeds_reservation", 422)
-                choices = response_choices(payload)
-                if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
-                    raise StoreError("model_choices_invalid", 422)
-                choice = choices[0]
-                message = choice.get("message")
-                if choice.get("finish_reason") != "stop":
-                    raise StoreError("model_response_not_complete", 422)
-                if (not isinstance(message, dict) or not isinstance(message.get("content"), str)
-                        or message.get("tool_calls") or message.get("function_call") or message.get("refusal")):
-                    raise StoreError("model_content_or_tool_protocol_invalid", 422)
-                complete_content = message["content"]
-                if prepared is not None:
-                    from .alert_output_adapter import parse
-                    result = parse(complete_content, prepared, diagnostics=diagnostics)
+                        state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
+                        usage=recorded, error=error(rejection, now) if rejection and not result else null()))
+                if feedback:
+                    correction = {**feedback, "original_response_artifact_id": str(response_id)}
+                    messages = [*messages, {"role": "assistant", "content": complete_content},
+                                {"role": "user", "content": encoded(feedback).decode()}]
+                    continue
+                if result:
+                    await self.service.finish(tenant, rid, result, execution_step_id=stage,
+                        alert_delivery_state="partial" if rejection else "complete")
                 else:
-                    result = contract.parse(complete_content, source_map, data, diagnostics=diagnostics)
-            except StoreError as exc:
-                rejection = exc.code
-                if complete_content is not None:
-                    if prepared is not None:
-                        from .alert_output_adapter import review as review_candidate
-                        result, review = review_candidate(complete_content, prepared)
-                    else:
-                        from .stage_answer_review import review_alert
-                        result, review = review_alert(complete_content, source_map, data)
-            async with self.service.transaction(tenant) as store:
-                run, _ = await self.locked(store, rid)
-                response_id = await self.save(store, run, model, "model_response",
-                    {"schema_version": VERSION, "raw": payload, "usage": recorded, "validation_error": rejection,
-                     "validation_diagnostics": diagnostics, "partial_review": review,
-                     **({"alert_boundary_version": profile.version} if profile else {})})
-                now = await store.now()
-                await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                    state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
-                    usage=recorded, error=error(rejection, now) if rejection and not result else null()))
-            if result:
-                await self.service.finish(tenant, rid, result, execution_step_id=stage,
-                    alert_delivery_state="partial" if rejection else "complete")
-            else:
-                await self.fail(tenant, rid, stage, rejection)
+                    await self.fail(tenant, rid, stage, rejection)
+                break
         except (Exception, asyncio.CancelledError):
             # Never overwrite a commit that actually succeeded, nor redispatch.
             async with self.service.transaction(tenant) as store:

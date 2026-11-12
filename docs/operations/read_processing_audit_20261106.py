@@ -12,7 +12,13 @@ from uuid import UUID, uuid5
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "deploy/local-investigation"))
-from flow_export import TABLES, query_for
+from flow_export import TABLES as EXPORT_TABLES
+from flow_export import query_for
+
+# Keep this deployed reader compatible with a frozen V1 flow_export module.
+# Graph exploration persistence is not implemented and its empty table is retired.
+TABLES = tuple(name for name in EXPORT_TABLES if name != "graph_explorations")
+EXPORT_TABLE_SETS = (set(TABLES), set(TABLES) | {"graph_explorations"})
 
 BATCH = "ie-audit-20261106-a1"
 TENANT = "6aff0ef7-c670-5a84-a2ee-83d73e25b964"

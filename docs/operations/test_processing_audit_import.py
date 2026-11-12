@@ -46,6 +46,19 @@ class FolderImportTest(unittest.TestCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.source.iterdir()})
         self.assertEqual(next(importer.folder_cases(self.source))[2], self.alert)
 
+    def test_legacy_graph_collection_preserved_and_unknown_tables_rejected(self):
+        manifest, data = self.capture()
+        cid = str(uuid4())
+        data["cases"] = [{"tenant_id": self.tenant, "id": cid}]
+        data["graph_explorations"] = [{"tenant_id": self.tenant, "id": str(uuid4()), "case_id": cid}]
+        counts = {key: len(rows) for key, rows in data.items()}
+        before = json.dumps(data)
+        importer.checked_rows(data, self.tenant, counts)
+        self.assertEqual(json.dumps(data), before)
+        data["unknown_table"] = []
+        with self.assertRaisesRegex(ValueError, "database tables"):
+            importer.checked_rows(data, self.tenant, counts)
+
     def test_incomplete_credential_and_foreign_snapshot_leave_index_intact(self):
         manifest, data = self.capture()
         importer.import_folder(self.source, self.output)

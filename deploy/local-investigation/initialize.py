@@ -119,7 +119,9 @@ async def verify_postgres(conn):
         pg_get_userbyid(c.relowner) AS owner FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='socai2' AND c.relkind='r'""")
     columns = await conn.fetchval("SELECT count(*) FROM information_schema.columns WHERE table_schema='socai2'")
-    assert len(tables) == 29 and columns == 462, "unexpected investigation schema"
+    cleaned = await conn.fetchval("SELECT EXISTS(SELECT FROM public.aisoc_schema_migrations WHERE name='127_socai2_remove_unused_graph_table.sql')")
+    assert (len(tables), columns) == ((28, 450) if cleaned else (29, 462)), "unexpected investigation schema"
+    assert (await conn.fetchval("SELECT to_regclass('socai2.graph_explorations')") is None) == cleaned
     assert all(t["relrowsecurity"] and t["relforcerowsecurity"] for t in tables)
     assert all(t["owner"] not in {API_ROLE, FUSION_ROLE} for t in tables)
     for role in (API_ROLE, FUSION_ROLE):

@@ -39,6 +39,11 @@ from app.socai2.case_data_contracts import (
 from app.socai2.case_service import CaseService
 from app.socai2.enums import AssignmentState, Severity, WorkStatus
 from app.socai2.page_contracts import RecordPage
+from app.socai2.case_management import manage_case, read_management
+from app.socai2.case_management_contracts import (
+    CaseCloseRequest, CaseLifecycleRequest, CaseManagementReceipt,
+    CaseManagementUpdate, CaseManagementView,
+)
 
 
 async def get_service(request: Request):
@@ -180,3 +185,24 @@ async def case_activities(case_id: UUID, user: ReadUser, service: Service,
 @router.get("/{case_id}/runs/{run_id}/materials/{material_id}")
 async def frozen_material(case_id: UUID, run_id: UUID, material_id: UUID, user: ReadUser, service: Service):
     return await invoke(service.read_frozen_material(user.tenant_id, case_id, run_id, material_id))
+
+
+@router.get("/{case_id}/management", response_model=CaseManagementView)
+async def management(case_id: UUID, user: ReadUser, service: Service):
+    return await invoke(read_management(service, user.tenant_id, case_id))
+
+
+@router.patch("/{case_id}/management", response_model=CaseManagementReceipt)
+async def update_management(case_id: UUID, body: CaseManagementUpdate, user: WriteUser, service: Service):
+    return await invoke(manage_case(service, user.tenant_id, case_id, body, actor(user),
+                                   action="case_management_updated"))
+
+
+@router.post("/{case_id}/close", response_model=CaseManagementReceipt)
+async def close_case(case_id: UUID, body: CaseCloseRequest, user: WriteUser, service: Service):
+    return await invoke(manage_case(service, user.tenant_id, case_id, body, actor(user), action="case_closed"))
+
+
+@router.post("/{case_id}/reopen", response_model=CaseManagementReceipt)
+async def reopen_case(case_id: UUID, body: CaseLifecycleRequest, user: WriteUser, service: Service):
+    return await invoke(manage_case(service, user.tenant_id, case_id, body, actor(user), action="case_reopened"))

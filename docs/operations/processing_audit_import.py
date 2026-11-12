@@ -7,7 +7,10 @@ from uuid import UUID
 import export_processing_audit_batch as exporter
 import refresh_three_case_replay_20261106 as replay
 import update_processing_audit as site
-from read_processing_audit_20261106 import TABLES, check_credentials, require
+from read_processing_audit_20261106 import EXPORT_TABLE_SETS, check_credentials, require
+from read_processing_audit_20261106 import (
+    TABLES as TABLES,  # noqa: PLC0414 - public compatibility export
+)
 
 SECRET_TEXT = re.compile(
     r'(?i)"(?:client_secret|refresh_token|id_token|client_key|secret_access_key|private_key)"\s*:\s*"[^"]+'
@@ -51,8 +54,8 @@ def read(root, path, *, checksum=None):
 
 
 def checked_rows(data, tenant, counts):
-    require(set(data) == set(TABLES) and all(isinstance(rows, list) for rows in data.values()),
-            "expected all 29 database tables (empty tables are arrays)")
+    require(set(data) in EXPORT_TABLE_SETS and all(isinstance(rows, list) for rows in data.values()),
+            "expected current 28 or archived V1 29 database tables (empty tables are arrays)")
     require(counts == {table: len(rows) for table, rows in data.items()}, "snapshot table counts differ")
     known = {}
     for table, rows in data.items():

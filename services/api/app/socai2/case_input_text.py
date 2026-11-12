@@ -8,6 +8,8 @@ from .alert_basic_contract import raw_field_role
 from .baseline_context import reference
 from .baseline_model_view import blocked
 from .baseline_store import digest, encoded
+from .case_c3_input_selection import describe, select_rows
+from .case_c3_input_selection import semantic as material_semantic
 from .case_input_hierarchy import (
     enrichment,
     fact_projection,
@@ -17,10 +19,11 @@ from .case_input_hierarchy import (
     shared_fields,
     translate,
 )
-from .case_source_scope import describe, metadata, query_scope
-from .incident_model_boundary import fields, query_items
+from .case_source_scope import metadata, query_scope
+from .incident_model_boundary import fields, query_items, query_record_identity
 from .incident_query_receipts import receipts
 from .model_input_view import frozen_items, source_prefix
+from .program_facts import query_result_text
 
 
 def text(value):
@@ -103,6 +106,10 @@ def material_entries(aid, material, config, omissions, candidate=None):
 
 
 def prepare(sample, config, business):
+    config = copy.deepcopy(config)
+    local = config["c3_input_selection"]
+    config["presentation"]["labels"].update(local["labels"])
+    config["hierarchy"]["program_facts"].extend(local["hierarchy"]["program_facts"])
     context, cid = sample["context"], sample["context_id"]
     paired = copy.deepcopy(sample["query_source"])
     paired["members"] = [{"alert": row["alert"], "triage": row["triage"]} for row in context["alerts"].values()]
@@ -114,7 +121,8 @@ def prepare(sample, config, business):
     incident_aliases = {iid: config["incident_prefix"] + str(i) for i, iid in enumerate(sorted(context["incidents"]), 1)}
     object_aliases = {key: config["object_prefix"] + str(i) for i, key in enumerate(context["scope"]["object_keys"], 1)}
     external = {}
-    rules, cfg = config["rules"], business["render"]
+    rules, cfg = config["rules"], copy.deepcopy(business["render"])
+    cfg["query_names"].update(local["query_names"])
     omissions, entries, notices, presentation = [], [], [], []
 
     def owner_alias(aid):
@@ -132,10 +140,12 @@ def prepare(sample, config, business):
             result["object_keys"] = [object_aliases.get(key, key) for key in result["object_keys"]]
         return result
 
-    def add(path, original, owners, role, block, value=None, scope=None):
+    def add(path, original, owners, role, block, value=None, scope=None, incident_refs=None):
         entry = {"ref": reference("artifact", cid, role, path), "alert_ids": sorted(set(owners) & set(aliases)),
                  "value": copy.deepcopy(original if value is None else value),
                  "original_value": copy.deepcopy(original), "block": block}
+        if incident_refs is not None:
+            entry["incident_source_refs"] = copy.deepcopy(incident_refs)
         if scope is not None:
             entry["original_scope"] = copy.deepcopy(scope)
             entry["value"]["declared_scope"] = alias_scope(scope)
@@ -178,11 +188,12 @@ def prepare(sample, config, business):
             continue
         base, diagnosis = f"$.incidents.{iid}.diagnosis", row["diagnosis"]
         original_scope = {"alert_ids": row["member_ids"]}
-        add(base + ".summary", diagnosis["summary"], row["case_member_ids"], "prior_analysis", "incident")
+        overall_refs = diagnosis["diagnosis"].get("source_refs", [])
+        add(base + ".summary", diagnosis["summary"], row["case_member_ids"], "prior_analysis", "incident", incident_refs=overall_refs)
         for key in ("conclusion", "limitations"):
             if key in diagnosis["diagnosis"]:
                 value = diagnosis["diagnosis"][key]
-                add(base + ".diagnosis." + key, value, row["case_member_ids"], "prior_analysis", "incident")
+                add(base + ".diagnosis." + key, value, row["case_member_ids"], "prior_analysis", "incident", incident_refs=overall_refs)
         notices.append(incident_aliases[iid] + " 事件背景原范围：" + render(alias_scope(original_scope), config))
         for kind, values, path in (("finding", diagnosis["diagnosis"].get("findings", []), base + ".diagnosis.findings"),
                                    ("question", diagnosis.get("open_questions", []), base + ".open_questions")):
@@ -197,6 +208,7 @@ def prepare(sample, config, business):
         for ref, original, projected, owners in query_items(aid, row, cfg):
             scope = query_scope(row["content_json"], ref["source_path"], owners, aliases)
             entries.append({"ref": ref, **scope, "value": projected,
+                            "query_record_identity": query_record_identity(row["content_json"], ref["source_path"]),
                             "original_value": original, "block": "query"})
     entries.extend(copy.deepcopy(sample.get("additional_queries", [])))
     available_queries = {aid for aid, _ in verified_queries}
@@ -227,6 +239,10 @@ def prepare(sample, config, business):
         if "original_scope" in entry:
             source_map[sid]["original_scope"] = entry["original_scope"]
 
+    rows = select_rows(rows, context, config, cfg, omissions)
+    source_map = {r["id"]: source_map[r["id"]] for r in rows}
+    index_by_ref = {encoded(r["ref"]).decode(): i for i, r in enumerate(rows)}
+
     # Resolve only actually displayed direct references. Unavailable prior
     # support remains explicitly unavailable; the prior statement is unchanged.
     def resolve_prior_refs(refs):
@@ -240,7 +256,16 @@ def prepare(sample, config, business):
         return visible, missing
 
     for row in rows:
+        if row["block"] == "incident":
+            visible, missing = resolve_prior_refs(row["incident_source_refs"])
+            row["prior_reference_resolution"] = {"visible": visible, "not_visible": missing}
         if row["block"] == "triage":
+            if "source_refs" in row["original_value"]:
+                refs, missing = resolve_prior_refs(row["original_value"]["source_refs"])
+                row["value"]["source_refs"] = refs
+                row["prior_reference_resolution"] = {"visible": refs, "not_visible": missing}
+                if missing:
+                    row["value"]["unavailable_prior_reference_count"] = len(missing)
             resolutions = []
             for original, visible in zip(row["original_value"].get("recommendations", []),
                                          row["value"].get("recommendations", []), strict=True):
@@ -270,11 +295,7 @@ def prepare(sample, config, business):
         source_map[row["id"]]["visible_value_sha256"] = digest(row["value"])
 
     def field(row):
-        path = row["ref"]["source_path"] or ""
-        semantic = next((path[len(root):] for root in cfg["event_roots"] if path.startswith(root)), None)
-        if semantic is None and row.get("typed_raw_alert_envelope"):
-            semantic = config["material_field_aliases"].get(path)
-        return semantic
+        return material_semantic(row, cfg, config)
 
     def label(row):
         path = row["ref"]["source_path"] or ""
@@ -289,13 +310,15 @@ def prepare(sample, config, business):
                    else [aliases[a] for a in row["alert_ids"]])
         return row["block"], tuple(members), row["ref"]["role"]
 
-    # Aggregate duplicate representations ONLY within one material and one
-    # semantic field/value/role, retaining every resolvable source ID.
+    # Keep all references; share only exact material/history representations.
     groups, seen = [], {}
     for row in rows:
         ref = row["ref"]
         semantic = field(row)
         key = (ref["id"], ref["role"], semantic, digest(row["value"])) if ref["type"] == "alert_material" and semantic else None
+        if row.get("query_record_identity"):
+            key = ("history", tuple(row["query_record_identity"]), heading(row),
+                   tuple(row.get("record_alert_ids", [])), row.get("membership_basis"), digest(row["value"]))
         if key is not None and key in seen:
             seen[key]["ids"].append(row["id"])
             continue
@@ -313,6 +336,10 @@ def prepare(sample, config, business):
                for q in context["questions"] if q["id"] in config["question_instructions"]]
     if object_aliases:
         objects = {key: [] for key in object_aliases}
+        namespaces = {}
+        for member in context["alerts"].values():
+            for obj in member.get("objects", []):
+                namespaces.setdefault((obj["object_type"], digest(obj.get("raw_value"))), set()).add(obj.get("namespace"))
         for aid, member in context["alerts"].items():
             for obj in member.get("objects", []):
                 if obj["object_key"] in objects:
@@ -320,8 +347,15 @@ def prepare(sample, config, business):
                     for key in ("namespace", "attributes", "asset_ref"):
                         if obj.get(key) is not None and obj[key] != "" and obj[key] != {}:
                             detail[key] = obj[key]
+                    if obj.get("normalized_value") is not None and digest(obj["normalized_value"]) != digest(obj.get("raw_value")):
+                        detail["normalized_value"] = obj["normalized_value"]
                     detail = project(detail, "object", config, omissions,
                                      {"object_key": obj["object_key"], "member": aliases[aid]})
+                    detail = project(detail, "object", config["c3_input_selection"], omissions,
+                                     {"object_key": obj["object_key"], "member": aliases[aid]})
+                    if "namespace" in detail and len(namespaces[(obj["object_type"], digest(obj.get("raw_value")))]) == 1:
+                        omissions.append({"object_key": obj["object_key"], "reason": "unambiguous_object_namespace",
+                                          "value_sha256": digest(detail.pop("namespace"))})
                     matching = next((r for r in objects[obj["object_key"]] if r["detail"] == detail), None)
                     if matching:
                         matching["alert_ids"].append(aliases[aid])
@@ -333,14 +367,7 @@ def prepare(sample, config, business):
                 blocks.append(object_aliases[key] + "：" + render({**item["detail"], "alert_ids": item["alert_ids"]}, config))
     if notices:
         blocks += ["[实际材料限制与范围｜程序提供]", *dict.fromkeys(notices)]
-    shared, shared_omits = shared_fields(
-        [(r["id"], r["value"]) for r in rows if r["block"] in {"query", "background_query"} and r["ref"]["role"] == "execution_receipt"],
-        config["presentation"]["receipt_shared_fields"], omissions)
-    if shared:
-        blocks.append("[查询回执共同限制｜仅适用于所列回执]")
-        for item in shared:
-            value = translate({item["field"]: item["value"]}, "receipt", config, presentation, item["applies_to"])
-            blocks.append("、".join(item["applies_to"]) + "：" + render(value[item["field"]], config))
+    shared = []  # Query limitations stay in the ledger, not a shared prompt block.
     shared_scopes, scope_omits = shared_fields(
         [(r["id"], {"scope_limitations": r["value"]["declared_scope"].get("limitations", [])})
          for r in rows if r["block"] in {"finding", "question"}], ["scope_limitations"], presentation)
@@ -350,8 +377,6 @@ def prepare(sample, config, business):
             value = translate({"limitations": item["value"]}, "scope", config, presentation, item["applies_to"])
             blocks.append("、".join(item["applies_to"]) + "：" + render(value["limitations"], config))
     prose_references = repeated_prose(rows, config, omissions)
-    receipts_by_artifact = {r["ref"]["id"]: r["id"] for r in rows
-                            if r["block"] in {"query", "background_query"} and r["ref"]["role"] == "execution_receipt"}
     rows_by_ref = {(r["ref"]["id"], r["ref"]["source_path"]): r["id"] for r in rows}
     last = None
     for group in groups:
@@ -361,12 +386,11 @@ def prepare(sample, config, business):
             owners = "、".join(current_heading[1]) or "案件背景"
             if row["block"] in {"finding", "question"}:
                 owners = "原范围=" + owners
-            blocks.append(f"[{config['block_labels'][row['block']]}｜{owners}｜{cfg['roles'][row['ref']['role']]}]")
+            role = "查询结果" if row["ref"]["role"] == "execution_receipt" else cfg['roles'][row['ref']['role']]
+            blocks.append(f"[{config['block_labels'][row['block']]}｜{owners}｜{role}]")
             last = current_heading
         if row["ref"]["role"] == "execution_receipt" and row["block"] in {"query", "background_query"}:
-            value = {k: v for k, v in row["value"].items() if k not in shared_omits.get(row["id"], set())}
-            value = translate(value, "receipt", config, presentation, row["id"])
-            shown = render(value, config)
+            shown = query_result_text(row["value"], cfg["query_names"])
         else:
             value = copy.deepcopy(row["value"])
             if row["block"] == "material":
@@ -397,12 +421,19 @@ def prepare(sample, config, business):
                 path = row["ref"]["source_path"] or ""
                 parts = path.split(".")
                 if len(parts) >= 3 and parts[0:2] == ["$", "rows"]:
-                    receipt_id = receipts_by_artifact[row["ref"]["id"]]
                     parent = rows_by_ref.get((row["ref"]["id"], ".".join(parts[:3])))
-                    caption = (f"回执 {receipt_id} 的第 {int(parts[2]) + 1} 条返回" if len(parts) == 3
-                               else f"返回记录 {parent or receipt_id} 的 {'.'.join(parts[3:])}")
+                    if len(parts) == 3:
+                        caption = "知识参考" if row.get("knowledge") else "历史记录" if row.get("query_record_identity") else "查询结果"
+                    else:
+                        caption = (parent + " 的 " if parent else "") + ("人工反馈" if row["ref"]["role"] == "human_statement" else "历史判断")
             shown = caption + "：" + render(value, config)
-        provenance = describe(row, owner_alias)
+            if row["block"] == "incident":
+                resolution = row["prior_reference_resolution"]
+                if resolution["visible"]:
+                    shown += "；依据=" + render(resolution["visible"], config)
+                if resolution["not_visible"]:
+                    shown += f"；{len(resolution['not_visible'])}条原依据当前不可见"
+        provenance = "" if row["ref"]["role"] == "execution_receipt" else describe(row, owner_alias)
         if provenance:
             shown = provenance + " " + shown
         meaning = field_hint(row["ref"], config)

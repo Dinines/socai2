@@ -44,8 +44,10 @@ async def migrate(values):
             await conn.execute((ROOT / "services/api/migrations" / MIGRATION).read_text())
             await conn.execute("INSERT INTO public.aisoc_schema_migrations(name) VALUES($1)", MIGRATION)
         columns = await conn.fetchval("SELECT count(*) FROM information_schema.columns WHERE table_schema='socai2'")
-        assert columns == 462, columns
-        return {"migration": MIGRATION, "applied_now": not bool(name), "tables": 29, "columns": columns}
+        cleaned = await conn.fetchval("SELECT EXISTS(SELECT FROM public.aisoc_schema_migrations WHERE name='127_socai2_remove_unused_graph_table.sql')")
+        assert columns == (450 if cleaned else 462), columns
+        assert (await conn.fetchval("SELECT to_regclass('socai2.graph_explorations')") is None) == cleaned
+        return {"migration": MIGRATION, "applied_now": not bool(name), "tables": 28 if cleaned else 29, "columns": columns}
     finally:
         await conn.close()
 

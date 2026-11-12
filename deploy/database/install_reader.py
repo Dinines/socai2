@@ -12,12 +12,15 @@ import tomllib
 HERE = Path(__file__).resolve().parent
 ENTRIES = {"initialize": "init_socai2_v1_2_reader.sql",
            "upgrade": "upgrade_socai2_v1_2_reader.sql", "verify": "verify_socai2_v1_2_reader.sql",
-           "enable-api": "api_read_access_20261108.sql"}
+           "enable-api": "api_read_access_20261108.sql",
+           "initialize-current": "init_socai2_current_reader.sql",
+           "remove-unused-graph": "remove_unused_graph_table.sql"}
+GRAPH_MIGRATION = "../../services/api/migrations/127_socai2_remove_unused_graph_table.sql"
 
 
 def render(name, parents=()):
     """Inline repository-owned includes so local/SSH/container psql sees identical SQL."""
-    if not re.fullmatch(r"[a-z0-9_]+\.sql", name) or name in parents:
+    if (not re.fullmatch(r"[a-z0-9_]+\.sql", name) and name != GRAPH_MIGRATION) or name in parents:
         raise ValueError("invalid_sql_include")
     lines = []
     for line in (HERE / name).read_text(encoding="utf-8").splitlines():
@@ -31,8 +34,13 @@ def render(name, parents=()):
 def load_profile(path):
     with Path(path).open("rb") as f:
         cfg = tomllib.load(f)
-    if set(cfg) != {"database", "admin_role", "function_owner", "reader_role", "timeout_seconds", "psql_argv", "environment", "transport"}:
+    if set(cfg) - {"cleanup"} != {"database", "admin_role", "function_owner", "reader_role", "timeout_seconds", "psql_argv", "environment", "transport"}:
         raise ValueError("reader_install_configuration_incomplete")
+    if "cleanup" in cfg:
+        cleanup = cfg["cleanup"]
+        if (not isinstance(cleanup, dict) or set(cleanup) != {"lock_timeout_seconds", "statement_timeout_seconds"}
+                or any(type(v) is not int or v <= 0 for v in cleanup.values())):
+            raise ValueError("reader_cleanup_limits_invalid")
     for key in ("database", "admin_role", "function_owner", "reader_role"):
         if not isinstance(cfg[key], str) or not re.fullmatch(r"[a-z_][a-z0-9_]{0,62}", cfg[key]):
             raise ValueError("reader_install_identifier_invalid")
@@ -63,9 +71,14 @@ def load_profile(path):
 
 
 def execute(cfg, mode):
+    if mode in {"initialize-current", "remove-unused-graph"} and "cleanup" not in cfg:
+        raise ValueError("reader_cleanup_limits_required")
     command = [*cfg["psql_argv"], "-U", cfg["admin_role"], "-d", cfg["database"],
                "-v", "ON_ERROR_STOP=1", "-v", "expected_database=" + cfg["database"],
                "-v", "reader_role=" + cfg["reader_role"], "-v", "function_owner=" + cfg["function_owner"]]
+    if "cleanup" in cfg:
+        command += ["-v", "cleanup_lock_timeout=" + str(cfg["cleanup"]["lock_timeout_seconds"]) + "s",
+                    "-v", "cleanup_statement_timeout=" + str(cfg["cleanup"]["statement_timeout_seconds"]) + "s"]
     # Never inherit a different PG target/password from the parent environment.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(("PG", "DOCKER_"))}
     environment.update(cfg["environment"])

@@ -20,13 +20,17 @@
 
 C3／Deep／C6 按块身份和内容版本去重，原检索行保持；`source_map[].knowledge.origins` 记录所有原路径和用途。Deep 的可选目的为取证指导／历史参考，按问题成员与原查询主题映射选取，历史空成员范围不代表全案通用；前序引用的卡片及其分诊／反馈原角色优先恢复。C6 只补未决问题的可选知识。知识上限分别为 12,000／8,000／8,000 字符，预算不足省略整条可选内容，不裁正文；必要依赖仍受现有整体输入上限约束。
 
+本地固定流程修复（尚未发布）：已选知识按查询适用成员作辅助参考，所有知识都不计入本案成员/结论/影响覆盖；C3/C6 接收和纠错一致。合并条目的目的与成员范围须来自同一 origin，必要前序引用依赖保留。一次新批知识原引用已保存并由 GET 读回，但 C6 仍因建议缺依据拒收，生成 Schema 已补齐最少一个来源；合理使用和整体固定流程尚未通过。见[固定流程验证](../../openspec/changes/complete-socai2-investigation-chain/fixed-flow-validation-20261112.md)。
+
+本地知识正文整理（尚未发布）：新导入的完整 JSON 对象/数组保留一个原文块，普通文本仍按既有规则分段；超过现有索引配置上限仍拒绝索引，不扩大预算。C3/Deep/C6 在原件检查后共用结构化业务字段投影，已识别技术知识保留说明、平台、日志及核查方法原文，内部对象引用/版本字段留后台，普通正文与未知结构不语义改写。实际样例845字符原文生成448字符[模型正文](../operations/evidence/model-input-selection-20261112-05/knowledge-model-content.txt)；[离线回执](../operations/evidence/model-input-selection-20261112-05/README.md)明确没有导入/索引/模型调用。旧碎片不自动合并或重写，后续使用完整原件重新导入/索引；本步不改变 HTTP 字段、关联、存储列或表结构，新导入返回的块数量可能变化。下一次整体发布需同时包含 API 分块代码与处理侧正文投影；知识正文整理尚未发布。随后 [Deep/C6](../operations/evidence/model-input-selection-20261112-06/README.md)已完成本地按任务筛选及知识卡外壳清理，保留原用途/成员条件、知识版本和前序必要依赖；本批仅复用旧冻结材料，旧 JSON 切片未改。合理使用质量和完整固定流程仍未通过。
+
 ## 数据与字段对应
 
-无数据库迁移；调查 V1 29 表、462 列及告警前后端合同不变。
+本项无数据库迁移，告警前后端合同不变；调查当前28表/450列来自独立的空表清理，V1 29表/462列保留作基线，见[表职责](investigation-table-scope.md)。知识表及下列存取字段不受本次模型输入整理影响。
 
 | 信息 | 保存和读取位置 |
 | --- | --- |
-| 文档原文 | `public.aisoc_kb_documents`：`id/tenant_id/title/doc_kind/source_url/tags/chunk_index/chunk_total/content/created_at/updated_at`；原导入按正文分块 |
+| 文档原文 | `public.aisoc_kb_documents`：`id/tenant_id/title/doc_kind/source_url/tags/chunk_index/chunk_total/content/created_at/updated_at`；线上仍按原正文分块，本地新导入完整 JSON 的完整块规则尚未发布，字段与旧数据保持 |
 | 索引 | 独立 Qdrant 集合，point ID 为 PG 块 ID；payload 为 `tenant_id/doc_id/content_sha256/doc_kind/purposes/embedding_model/dimension`。hash 覆盖原文和身份/分类元数据 |
 | C2 实际请求 | `run_steps.actual_args` 及 `tool_request/tool_response.actual_args.parameters.selectors[]`：`purpose/purpose_label/value/source_paths/filters/limit/score_threshold/use/profile_sha256`，仍保留成员与 object_key |
 | C2 命中 | `tool_response.rows[]`：`record_id/object_key/namespace/purpose/purpose_label/use/similarity/content_sha256/limitations/record`；record 为当时 PG 回读原文，模型视图不使用 similarity/hash 作为业务依据 |

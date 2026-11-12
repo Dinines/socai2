@@ -1,4 +1,5 @@
 """C6 output: final analysis, explicit comparison and scoped Case impact."""
+import copy
 import json
 from typing import Literal
 from uuid import UUID
@@ -8,6 +9,7 @@ from pydantic import Field, ValidationError
 from . import baseline_analysis_contract as analysis
 from .baseline_contracts import Contract
 from .baseline_model_view import blocked
+from .case_source_scope import knowledge_context
 from .structured_output import response_format
 
 SCHEMA = "socai2.baseline-delivery.v1"
@@ -55,6 +57,23 @@ class Delivery(Contract):
     recommendations: list[Recommendation] = Field(max_length=12)
 
 
+def constrain_recommendations(fmt):
+    """Tighten generation without breaking partial recovery of invalid replies."""
+    schema = fmt["json_schema"]["schema"]
+    props = schema["$defs"]["Recommendation"]["properties"]
+    array = props["source_ids"]
+    while "$ref" in array:
+        array = schema["$defs"][array["$ref"].removeprefix("#/$defs/")]
+    if array.get("maxItems") == 0:
+        recommendations = schema["properties"]["recommendations"]
+        while "$ref" in recommendations:
+            recommendations = schema["$defs"][recommendations["$ref"].removeprefix("#/$defs/")]
+        schema["properties"]["recommendations"] = {**copy.deepcopy(recommendations), "maxItems": 0}
+    else:
+        props["source_ids"] = {**copy.deepcopy(array), "minItems": 1}
+    return fmt
+
+
 def delivery_format(sources, context, comparison):
     fmt = response_format(Delivery, sources, members=context.alerts,
         questions=[q.id for q in context.questions], objects=context.scope.object_keys)
@@ -64,7 +83,7 @@ def delivery_format(sources, context, comparison):
         props = fmt["json_schema"]["schema"]["$defs"]["Comparison"]["properties"]
         props.update(kind={"type": "string", "enum": ["initial"]}, summary={"type": "null"},
             support_ids={"type": "array", "items": {"type": "string"}, "maxItems": 0})
-    return fmt
+    return constrain_recommendations(fmt)
 
 
 def parse(content, source_map, context, coverage, comparison):
@@ -114,8 +133,10 @@ def parse(content, source_map, context, coverage, comparison):
             src = source_map[sid]
             if src["ref"]["role"] == "execution_receipt":
                 fail("execution_receipt_not_conclusion_evidence")
-            if not direct or (src["ref"]["role"] in {"observation", "human_statement"}
-                    and src.get("membership_basis") != "query_binding_only"):
+            if aids and src.get("knowledge") and not knowledge_context(src, aids):
+                fail("source_member_mismatch")
+            if not src.get("knowledge") and (not direct or (src["ref"]["role"] in {"observation", "human_statement"}
+                    and src.get("membership_basis") != "query_binding_only")):
                 owned.update(src["alert_ids"])
         if not set(aids) <= owned:
             fail("delivery_source_coverage_missing")

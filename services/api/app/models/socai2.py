@@ -2,9 +2,20 @@
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID as PyUUID
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKeyConstraint, Numeric, Text, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TIMESTAMP, UUID, CHAR
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    ForeignKeyConstraint,
+    Numeric,
+    Text,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, CHAR, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
 
 class Socai2Base(DeclarativeBase):
     pass
@@ -918,34 +929,6 @@ class Messages(Socai2Base):
         ForeignKeyConstraint(['tenant_id', 'case_id', 'conversation_id', 'in_reply_to'], ['socai2.messages.tenant_id', 'socai2.messages.case_id', 'socai2.messages.conversation_id', 'socai2.messages.id'], name='messages_in_reply_to_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'case_id', 'source_run_id'], ['socai2.runs.tenant_id', 'socai2.runs.case_id', 'socai2.runs.id'], name='messages_source_run_id_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'case_id', 'input_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.case_id', 'socai2.artifacts.id'], name='messages_input_artifact_id_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        {'schema': 'socai2'},
-    )
-
-class GraphExplorations(Socai2Base):
-    __tablename__ = 'graph_explorations'
-    id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    case_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    base_result_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    base_graph_artifact_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    base_input_artifact_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    graph_state: Mapped[object] = mapped_column(JSONB, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=text('transaction_timestamp()'))
-    created_by: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=text('transaction_timestamp()'))
-    updated_by: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    row_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text('1'))
-    __table_args__ = (
-        UniqueConstraint('tenant_id', 'id'),
-        CheckConstraint('jsonb_typeof("graph_state") = \'object\'', name='graph_explorations_graph_state_json_type'),
-        CheckConstraint('"row_version" > 0', name='graph_explorations_row_version_range'),
-        ForeignKeyConstraint(['tenant_id', 'case_id'], ['socai2.cases.tenant_id', 'socai2.cases.id'], name='graph_explorations_case_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'base_result_id'], ['socai2.results.tenant_id', 'socai2.results.id'], name='graph_explorations_base_result_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'base_graph_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.id'], name='graph_explorations_base_graph_artifact_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'base_input_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.id'], name='graph_explorations_base_input_artifact_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'case_id', 'base_result_id'], ['socai2.results.tenant_id', 'socai2.results.case_id', 'socai2.results.id'], name='graph_explorations_base_result_id_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'case_id', 'base_graph_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.case_id', 'socai2.artifacts.id'], name='graph_explorations_base_graph_artifact_id_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
-        ForeignKeyConstraint(['tenant_id', 'case_id', 'base_input_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.case_id', 'socai2.artifacts.id'], name='graph_explorations_base_input_artifact_id_scope_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         {'schema': 'socai2'},
     )
 

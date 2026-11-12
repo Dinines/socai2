@@ -1,0 +1,123 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="调查处理模块与业务后端数据交接">调查处理模块与业务后端数据交接</h1>
+<p>告警页以告警为主体，事件页以事件及其当前成员为主体，调查页要同时显示 Case、某次执行（Run）、正式结果（Result）和当前采用的判断。四者通过各自的 ID 关联。一次模型调用失败时，后端仍可交付已经保存的告警原件、事件诊断、执行回执和系统待核说明。</p>
+<p>适用范围为 PostgreSQL 16 的 <code>socai2</code> 命名空间，当前共 28 表、450 列，基准迁移 123–126 后增加 127（仅清理未用探索表）。当前表职责（来源：<code>docs/investigation/investigation-table-scope.md</code>）及<a href="/handoff/sources/socai2-data-contract-current.json">当前机器字典</a>为现行目录；旧字段字典保留 V1 基线。页面功能及产品验收见逐页功能清单（来源：<code>deliverables/investigation-validation-20261106/frontend-feature-list.md</code>），逐列类型、可空性与约束见字段字典（来源：<code>docs/design/socai2-field-dictionary-20261103.md</code>）。告警相关的前后端字段合同保持稳定；确需调整时按项目变更规则（来源：<code>AGENTS.md#调查数据库-v1-与人工确认</code>）列出影响并取得明确确认，必要读写接线和配置随功能处理。</p>
+<p><b>前次完整读取核验（清理前）：</b> 2026-11-10 在 21 的 <code>aisoc.socai2</code> 完成两案 365 次 GET、16,820 项字段／正文／关联核对。357 次正常返回，8 次错误父归属返回预期 404；读取前后快照一致。覆盖空当前判断、H 全部修订及同租户跨 Case 关系／活动。既有 29 表结构保持，Case/H GET、资产与用户关联、两项只读函数均可按现有身份读取。实际证据（来源：<code>docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json</code>）</p>
+<h2 id="来源边界">来源边界</h2>
+<table>
+<tr><th>环节</th><th>负责什么</th><th>交接边界</th></tr>
+<tr><td>采集与 Fusion</td><td>提供告警来源标识、原始材料、事件引用、对象与归并依据，保存告警及事件成员</td><td><code>source_event_id</code> 是来源命名空间内的标识，可能缺失或尚无湖记录。后端沿已保存的关系取数；不得用相似标题、主机或时间自行认定成员。</td></tr>
+<tr><td>调查处理模块</td><td>A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录</td><td>处理模块按需执行，当前版本以交接指南（来源：<code>FRONTEND_BACKEND_HANDOFF.md#2-当前运行环境</code>）为准，数据库为 <code>aisoc.socai2</code>；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。部署说明（来源：<code>deploy/aisoc21/README.md</code>）</td></tr>
+<tr><td>业务后端</td><td>从已认证用户确定租户与读取权限，通过 HTTP 调用调查服务，组装列表、详情、关联入口与空态；不要求直连 PG</td><td>同一响应尽量使用同一只读快照。<code>GET</code> 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。</td></tr>
+<tr><td>页面</td><td>按后端返回的字段、状态、计数与实体 ID 展示，按主体与版本打开详情</td><td>业务状态、模型判定、执行状态、交付完整性分别展示。模型响应中的建议、事实主张与外部实际行动分别标明来源。</td></tr>
+</table>
+<h2 id="字段保存读取">字段—保存—读取</h2>
+<p>表名下文均属于 <code>socai2</code>。数据读取须从经验证的 <code>tenant_id</code> 和主体 UUID 开始。每次联表同时限定租户和所属关系；同一个 Case 或 Run 下有多条记录时，再按对应指针或类型选取。<code>public.users</code> 等外部依赖按同租户 ID 解析，未分配、已解析、来源负责人未解析分别返回。来源厂商 ID、用户名、主机名均不得替代主体 UUID。</p>
+<h3 id="告警页">告警页</h3>
+<table>
+<tr><th>页面用途</th><th>权威存储与关联</th><th>后端取值</th></tr>
+<tr><td>列表及概览</td><td><code>alerts</code> 的 <code>id, title, description, category, severity, handling_status, disposition, event_time, event_time_source, ingested_at, owner_id, assignment_state</code></td><td><code>event_time</code> 是发生时间，可空；<code>ingested_at</code> 是入库时间。保留五级严重度。优先级同时返回 <code>priority_value, priority_state, priority_source</code>，有依据时再返回 <code>priority_basis</code>。</td></tr>
+<tr><td>来源和原件</td><td><code>alerts.latest_material_id → alert_materials.id</code>，同时匹配 <code>alert_id</code>。材料有 <code>revision, raw_json, raw_text, ocsf_json, detection, enrichment, material_state, sha256</code></td><td>列表读元数据，详情按版本加载正文。来源事件看 <code>alert_source_refs</code> 的 <code>material_id, source_namespace, source_event_id, source_path</code>；当前实体看同一材料版本 <code>alert_objects</code> 的 <code>object_key, object_type, normalized_value, object_role</code>。</td></tr>
+<tr><td>已发布分诊、人工反馈、解释</td><td><code>alerts.latest_triage_id / latest_feedback_id → alert_assessments</code>，分别校验 <code>kind=triage / human_feedback</code>；<code>latest_explanation_id → artifacts</code></td><td>分诊的 <code>verdict, rationale, confidence, score_state, input_material_id, source_run_id</code> 来自同一行。有效性还要核输入新鲜度、当前材料和对应 Run。<code>score_state=available</code> 且有值时才转换成百分数。</td></tr>
+<tr><td>查看分析尝试</td><td><code>runs.kind=alert_basic AND runs.alert_id=alerts.id</code>，再按 <code>run_id</code> 读步骤及工件</td><td>一个失败的 A Run 仍有执行记录。<code>latest_triage_id=NULL</code> 时显示尚无已发布分诊；从 <code>runs.stop_reason</code> 或步骤错误说明失败。</td></tr>
+</table>
+<h3 id="事件页">事件页</h3>
+<table>
+<tr><th>页面用途</th><th>权威存储与关联</th><th>后端取值</th></tr>
+<tr><td>事件概览和成员</td><td><code>incidents</code> 取 <code>id, title, description, handling_status, severity_override, priority_value, priority_state, owner_id, created_at</code>；<code>incident_alerts.(incident_id,alert_id) → alerts</code></td><td>成员数按告警计，归并依据来自关系行 <code>membership_source, correlation_basis, basis_version</code>。先聚合成员再连接材料、对象或步骤，避免成员数被一对多连接放大。</td></tr>
+<tr><td>时间与有效严重度</td><td>对成员 <code>alerts.event_time</code> 求最早、最晚，并单列无时间数。自动严重度按 <code>info &lt; low &lt; medium &lt; high &lt; critical</code> 取已知成员的最高级</td><td><code>severity_effective</code> 优先取人工覆盖 <code>severity_override</code>，其次取成员最高值，两者的来源分别为 <code>manual_override / member_max</code>。两者均缺失时，有效严重度与来源均返回 <code>null</code>。</td></tr>
+<tr><td>诊断摘要、未决问题</td><td><code>incidents.latest_diagnosis_id → incident_diagnoses.id</code>，同时匹配 <code>incident_id</code>；取 <code>state, summary, diagnosis, open_questions, source_run_id, generated_at</code></td><td>已发布诊断用指针读取。全部尝试从 <code>runs.kind=incident_diagnosis</code> 且 <code>incident_id</code> 相同的记录读取。I 的冻结输入含当时的成员及其分诊；当前成员或分诊可能已变化。</td></tr>
+<tr><td>进入 Case</td><td><code>case_incidents.(incident_id,case_id)</code> 保存显式关系，<code>case_alerts</code> 保存实际 Case 成员</td><td>“该事件关联的 Case”和“某成员告警所在的 Case”有不同含义；分别说明关联依据。没有 Case 时事件详情仍可展示。</td></tr>
+</table>
+<h3 id="case-与调查执行页">Case 与调查执行页</h3>
+<table>
+<tr><th>页面用途</th><th>权威存储与关联</th><th>后端取值</th></tr>
+<tr><td>案件资料及成员</td><td><code>cases</code> 取 <code>title, handling_status, severity, owner_id, scope_revision, row_version, classification, due_at</code>；成员用 <code>case_alerts</code>、关联事件用 <code>case_incidents</code></td><td><code>classification</code> 可为 <code>true_positive / informational / false_positive / null</code>；<code>due_at</code> 是可空带时区的案件期限。任务期限和 Run 预算独立读取。</td></tr>
+<tr><td>当前判断</td><td><code>cases.current_assessment_id → case_assessments</code>，按 <code>(tenant_id,case_id,id)</code> 匹配；<code>case_assessment_sources / case_assessment_members</code> 给来源和已覆盖成员</td><td>返回 <code>conclusion, origin, validity, formed_at, adopted_at, scope_revision</code>。<code>origin=system, validity=system_only</code> 表示系统待核说明。列表和详情的 <code>page_data.determination</code> 均沿该指针取值。指针为空时展示尚无采用判断，不能用最近 Result 填充；本批两案即为该空态。</td></tr>
+<tr><td>一次调查及其输入</td><td><code>runs.kind=baseline AND runs.case_id=cases.id</code>；<code>input_artifact_id</code> 是本轮输入；<code>run_members</code> 的 <code>alert_id, material_id, triage_id, feedback_id, read_state, analysis_state</code> 固定本轮版本</td><td><code>requested_at</code> 请求、<code>started_at</code> 实际启动、<code>ended_at</code> 实际结束。两端齐备才计算完成时长。<code>pending_update</code> 尚待启动，<code>unknown</code> 表示执行结果待确认；<code>running/unknown</code> 占用该 Case 的基础执行槽。</td></tr>
+<tr><td>步骤、模型及工具输入输出</td><td><code>run_steps</code> 按同 <code>run_id</code> 的 <code>seq</code> 排列，<code>parent_step_id</code> 指向父步骤。<code>input_artifact_id / output_artifact_id</code> 指向本轮输入和输出，<code>reused_artifact_id</code> 可指向同案其他 Run 的原件</td><td>读取 <code>stage_code, kind, state, actual_args, returned_rows, error, usage</code>。<code>completed + returned_rows=0</code> 是执行后查空。<code>skipped</code> 与失败原因各自保留。工件 <code>step_id=NULL</code> 仍可属于 Run。发生错误时继续返回可用原件与失败回执。</td></tr>
+<tr><td>正式结果、报告与图谱</td><td><code>results.source_run_id</code> 关联实际 Run，<code>result_members</code> 给 <code>conclusion_covered</code> 及依据。<code>report_artifact_id / graph_artifact_id</code> 指向同案同轮工件</td><td>分别展示 <code>runs.state</code>、<code>delivery_state</code>、结果的 <code>conclusion_state / conclusion_origin / validation_state</code> 和已采用判断。C6 回执中 <code>content_json.outcome.result_id</code> 可空。有报告及系统说明时，正式 Result 仍允许为零。</td></tr>
+<tr><td>证据目录、判断依据和威胁数</td><td><code>cases.current_evidence_artifact_id → artifacts</code>，匹配同租户同 Case、<code>kind=case_evidence_index</code>、<code>schema_version=socai2.case-evidence.v1</code></td><td>读取 <code>entries[]</code> 的证据 ID、关联成员和对象、<code>source_refs</code>、<code>verdict_sources</code>、<code>verdict</code>、威胁身份和状态。计数及范围优先复用 <code>CasePageData.evidence</code>。</td></tr>
+<tr><td>人工协作与处置</td><td><code>tasks.current_revision_id → task_revisions</code>。活动从 <code>activities.actor</code> 取操作者快照，从 <code>activity_targets</code> 取各目标的前后值。<code>response_links.receipt_artifact_id</code> 指向处置回执</td><td>区别人工任务、模型提出的后续行动、实际回执。存在 <code>recommendations</code> 时只显示建议。每条活动可能有多个目标，活动数按活动 ID 计。</td></tr>
+<tr><td>评论、探索画布、问答</td><td><code>comments</code> 按互斥的 <code>alert_id / incident_id / case_id</code> 确定评论对象。未使用的 <code>graph_explorations</code> 空表已清理，正式探索保存服务未实现；不能按旧表设计读取画布。<code>conversations.case_id</code> 关联案件，<code>messages.conversation_id</code> 关联会话，按 <code>sequence</code> 排序</td><td>评论、用户探索状态和正式结果图分别展示。问答表预留存储位置，当前命令可用性见下文。</td></tr>
+</table>
+<p>证据计数使用当前版本中 <code>state=active</code> 且全部关联告警仍在案件范围的条目。威胁数仅取其中 <code>malicious / suspicious</code> 且有明确威胁身份的条目，按 <code>(namespace,key)</code> 去重。<code>not_recorded / unavailable / invalid_reference</code> 的计数为 <code>null</code>；有效空目录或全撤回为 <code>0</code>；<code>partial</code> 返回已知计数、未覆盖成员及限制。证据的来源行、JSON Pointer、角色和范围均可核对。来源标签、模型判断和人工陈述应保留各自身份。证据合同（来源：<code>services/api/app/socai2/case_evidence.schema.json</code>） · 证据读取和验证（来源：<code>services/api/app/socai2/case_data.py</code>）</p>
+<p>Case/H 写入沿用原合同：建案返回 pending_run_id，任务修订追加 task_revisions 并更新 current_revision_id，后轮 C1 固定所选版本及 human_statement 来源。人工保存不自动启动 Run；操作顺序及本轮证据见 Case/H 交接（来源：<code>openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md</code>）。本 change 不增加表列、枚举或告警交接字段。</p>
+<p>Case 模型请求工件中的 <code>payload.source_map</code> 分别给查询范围、历史返回主体、允许的本案成员及其依据（<code>query_alert_ids / record_alert_ids / alert_ids / membership_basis</code>）。它们属于内部工件内容，数据库仍使用原 <code>artifacts.content_json</code>；告警及 Case HTTP 字段没有调整。按 <code>ref.id / source_path / role</code> 回查原件，不能把发起查询的成员当返回行主体。模型原答、<code>correction_feedback</code> 和 <code>validation_review</code> 分别留在响应工件；一次纠正前后的模型 Step 都应可查。 C3/C6 内部 Finding 的 observed 支持仅使用有成员依据的直接观察；inferred 需支持，unresolved 需限制。<code>socai2.case-citation-correction.v2</code> 额外给出角色和逐成员直接观察缺口，历史合法时间上下文仍兼容。此约束不新增列或 API 字段，也不代表正文质量通过。</p>
+<h2 id="查询形状与分页">查询形状与分页</h2>
+<p>路径均相对于 <code>/api/v1/socai2</code>。告警、事件和 A/I 分析读取要求 <code>alerts:read</code>，其中 <code>records/cases</code> 还要求 <code>cases:read</code>；Case 与 H 读取要求 <code>cases:read</code>。A/I 执行与 Case 命令分别要求 <code>alerts:write</code>、<code>cases:write</code>。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，21 r2 的 Case/H HTTP 写入口已开放并经正常登录写读验证；产品页面按已保存回执与版本刷新。<a href="/handoff/sources/socai2-independent-api-v2.openapi.json">完整路径及参数</a></p>
+<table>
+<tr><th>读取内容</th><th>路径</th><th>分页和返回边界</th></tr>
+<tr><td>告警、事件列表与详情</td><td><code>/alerts</code>、<code>/incidents</code>、相应 <code>/{id}</code></td><td>列表默认 20、上限 50。<code>next_before_id</code> 原样作为 <code>before_id</code>，告警按 <code>(ingested_at,id)</code>、事件按 <code>(created_at,id)</code> 倒序；读 <code>items, total, overall_stats, observed_at</code>。</td></tr>
+<tr><td>成员、对象、出处与记录</td><td><code>/{subject}/{id}/records/{section}</code>；告警正文 <code>/alerts/{id}/materials/{material_id}</code></td><td>依据详情返回的 <code>section_urls</code> 打开。记录默认 50、上限 200，按 <code>next_offset</code> 继续。正文单独读 <code>availability</code>；正文上限读取策略 <code>model.max_artifact_bytes</code>，当前为 1,048,576 字节；超过时保留元数据及不可展开原因。</td></tr>
+<tr><td>A/I 分析与追踪</td><td><code>/alerts/{id}/analysis</code> 或 <code>/incidents/{id}/analysis</code>。在分析路径后接 <code>/runs/{run_id}</code> 取一次执行，再在该执行路径后接 <code>/trace</code> 或 <code>/artifacts/{artifact_id}</code></td><td>分析列表默认 20、上限 50，按 <code>(requested_at,id)</code> 倒序，<code>next_before_run_id</code> 回传为 <code>before_run_id</code>。追踪区分步骤总数、工件总数和截断标志。</td></tr>
+<tr><td>来源工件与活动</td><td><code>/alerts/{id}/artifacts/{artifact_id}</code>、<code>/incidents/{id}/artifacts/{artifact_id}</code>、<code>/cases/{id}/artifacts/{artifact_id}</code>；<code>/cases/{id}/activities</code></td><td>来源工件按真实归属读取；Case 活动包含本案、成员及显式事件目标，按活动去重并返回前后值。</td></tr>
+<tr><td>Case 队列与资料</td><td><code>/cases</code>、<code>/cases/{id}</code>、<code>/cases/{id}/page-data</code></td><td>队列默认 20、上限 50，按 <code>(business_updated_at,id)</code> 倒序。<code>next_cursor</code> 原样用于同租户、同筛选条件的下一页；筛选后的 <code>total</code> 和全租户队列 <code>metrics</code> 分开。</td></tr>
+<tr><td>案件历史、Run、Result</td><td><code>/cases/{id}/history</code>、<code>/cases/{id}/runs/{run_id}</code>、<code>/cases/{id}/results/{result_id}</code></td><td>历史默认 20、上限 100，回传 <code>next_cursor</code>。来源为本案基础 Run 和明确保存的 <code>ai_saved</code> 结果。要展示相关 A/I 尝试，另按成员告警、关联事件读取，再按 Run UUID 去重。</td></tr>
+<tr><td>资料与任务明细</td><td><code>/cases/{id}/runs/{run_id}/artifacts/{artifact_id}</code>、<code>/materials/{material_id}</code>（同一 Run 路径下）；<code>/cases/{id}/tasks</code></td><td>Case Run 明细至多返回 200 个成员、1000 条步骤、200 个工件及 200 个结果 ID，各集合查看自己的总数与截断字段。任务/版本列表默认 20、上限 100，使用 offset。</td></tr>
+</table>
+<p>字段缺失、<code>null</code>、空数组和有值零要分别传递。读到 <code>null</code> 的负责人、严重度或耗时，应显示相应缺值。HTTP 错误、正文超限、某一来源没有记录也分别返回状态。原件中 decimal 可能为数值字符串，对账前按字段类型规范化；时刻用带时区的值比较，可统一以北京时间展示。主体读实现（来源：<code>services/api/app/socai2/page_reader.py</code>） · A/I 记录（来源：<code>services/api/app/socai2/stage_reader.py</code>） · Case 与 Run 读取（来源：<code>services/api/app/socai2/case_reader.py</code>）</p>
+<h2 id="http投影与字段审计补充">HTTP投影与字段审计补充</h2>
+<p>逐项用途、输入、输出见<a href="/handoff/audit/interfaces.html">43操作审计</a>，<a href="/handoff/audit/response-fields.html">固定输出字段</a>和<a href="/handoff/audit/dynamic-fields.html">28组动态结构</a>补充原OpenAPI中仅写dict/任意对象的部分。此处的表来源用于说明，不要求业务后端直连数据库。</p>
+<p>Case队列metrics不受列表筛选影响，但awaiting_assignment/high_severity/awaiting_human仅计new或in_progress；待分配还需assignment_state=unassigned且owner_id为空，高等级只计high。Case活动GET保留operation_id，A/I records/activities剔除该字段。</p>
+<p>Case详情的current_assessment.sources通过without_internal剔除tenant_id等字段，而page_data.assessment.sources当前直接返回来源行、包含tenant_id；不要假定两种投影完全相同。Case工件完整性失败为409，A/I工件同类失败是200加availability=content_integrity_mismatch。冻结材料GET直接返回原行，保留material_state/retention，没有统一availability包装。</p>
+<p>Case Run内部集合截断后当前没有继续分页的接口；读取方必须展示截断。当前判断覆盖比较遇到成员/覆盖集合不完整时返回null，不能擅自视为全部覆盖或没有未覆盖成员。questions[].state仅记录当轮回答状况，按D07随结论展示，不建立独立问题管理。</p>
+<h2 id="只读联查示例">只读联查示例</h2>
+<p>下列 SQL 仅用于调查服务内部维护和取数解释，<b>不是业务后端对接要求</b>。对接请使用<a href="/handoff/guide.html">HTTP交接包</a>。内部维护时可在 <b>psql</b> 的同一连接顺序执行。<code>tenant_id</code>、<code>case_id</code>、<code>run_id</code> 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。内部数据库读取应设置正确租户，并在事务结束后释放事务级配置；业务后端通过 HTTP 认证上下文确定租户。</p>
+<pre>\set tenant_id &#x27;00000000-0000-0000-0000-000000000001&#x27;
+\set case_id &#x27;2b37f5b3-862b-52cc-84bd-86db50dd3ad4&#x27;
+\set run_id &#x27;8d53cdb1-1cba-4df3-8ac2-f2724c062342&#x27;
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SELECT set_config(&#x27;app.current_tenant_id&#x27;, :&#x27;tenant_id&#x27;, true);
+
+-- 当前告警材料和已发布分诊；即使分诊为空也返回告警。
+SELECT a.id, a.title, a.event_time, m.id AS material_id, m.material_state,
+       t.id AS triage_id, t.verdict, t.source_run_id
+FROM socai2.case_alerts ca
+JOIN socai2.alerts a ON (a.tenant_id,a.id)=(ca.tenant_id,ca.alert_id)
+LEFT JOIN socai2.alert_materials m
+  ON (m.tenant_id,m.alert_id,m.id)=(a.tenant_id,a.id,a.latest_material_id)
+LEFT JOIN socai2.alert_assessments t
+  ON (t.tenant_id,t.alert_id,t.id)=(a.tenant_id,a.id,a.latest_triage_id) AND t.kind=&#x27;triage&#x27;
+WHERE ca.tenant_id=:&#x27;tenant_id&#x27;::uuid AND ca.case_id=:&#x27;case_id&#x27;::uuid ORDER BY a.id;
+
+-- 每个显式关联事件返回一行，含成员数量和已发布诊断。
+SELECT i.id, i.title, d.id AS diagnosis_id, d.summary,
+       (SELECT count(*) FROM socai2.incident_alerts ia
+        WHERE (ia.tenant_id,ia.incident_id)=(i.tenant_id,i.id)) AS member_count
+FROM socai2.case_incidents ci
+JOIN socai2.incidents i ON (i.tenant_id,i.id)=(ci.tenant_id,ci.incident_id)
+LEFT JOIN socai2.incident_diagnoses d
+  ON (d.tenant_id,d.incident_id,d.id)=(i.tenant_id,i.id,i.latest_diagnosis_id)
+WHERE ci.tenant_id=:&#x27;tenant_id&#x27;::uuid AND ci.case_id=:&#x27;case_id&#x27;::uuid ORDER BY i.id;
+
+-- 当前判断与每轮基础调查并列；正式结果按 Run 独立计数。
+SELECT c.id AS case_id, a.origin, a.validity, a.conclusion,
+       r.id AS run_id, r.state, r.delivery_state, r.started_at, r.ended_at,
+       (SELECT count(*) FROM socai2.results x
+        WHERE (x.tenant_id,x.case_id,x.source_run_id)=(c.tenant_id,c.id,r.id)
+          AND x.kind=&#x27;baseline&#x27;) AS baseline_result_count
+FROM socai2.cases c
+LEFT JOIN socai2.case_assessments a
+  ON (a.tenant_id,a.case_id,a.id)=(c.tenant_id,c.id,c.current_assessment_id)
+LEFT JOIN socai2.runs r ON (r.tenant_id,r.case_id)=(c.tenant_id,c.id) AND r.kind=&#x27;baseline&#x27;
+WHERE c.tenant_id=:&#x27;tenant_id&#x27;::uuid AND c.id=:&#x27;case_id&#x27;::uuid ORDER BY r.requested_at,r.id;
+-- 逐步回查该 Case 的一轮调查；父步骤、查询和模型分别保留。
+SELECT s.seq, s.stage_code, s.kind, s.state, s.parent_step_id, s.error,
+       s.input_artifact_id, s.output_artifact_id, s.reused_artifact_id,
+       s.returned_rows, s.usage
+FROM socai2.runs r
+JOIN socai2.run_steps s ON (s.tenant_id,s.run_id)=(r.tenant_id,r.id)
+WHERE r.tenant_id=:&#x27;tenant_id&#x27;::uuid AND r.case_id=:&#x27;case_id&#x27;::uuid
+  AND r.id=:&#x27;run_id&#x27;::uuid AND r.kind=&#x27;baseline&#x27;
+ORDER BY s.seq;
+ROLLBACK;</pre>
+<p>步骤顺序以该 Run 实际 <code>seq/stage_code</code> 为准。展开输入、输出时按工件 ID 限定同租户同 Run，并补读该步下 <code>artifacts.step_id=run_steps.id</code> 的其他工件。展开 <code>reused_artifact_id</code> 时单独按租户、案件、工件 ID 核对所属关系，保留其实际来源 Run。写在 Run 上且 <code>step_id=NULL</code> 的材料单列。进一步核对当前判断来源与证据目录可使用Case 资料与证据目录 SQL（来源：<code>docs/investigation/socai2-page-data-readback-20261106.sql</code>）。</p>
+<h2 id="保存的样例与验证">保存的样例与验证</h2>
+<table>
+<tr><th>正式库 Case</th><th>本次取数核验</th></tr>
+<tr><td><code>2b37f5b3-862b-52cc-84bd-86db50dd3ad4</code></td><td>3 告警、1 事件、5 Run；基础 Run <code>8d53cdb1-1cba-4df3-8ac2-f2724c062342</code> 为 completed/partial。160 GET，7,128 检查；模型来源结果的保存与读取通过，正文质量未通过</td></tr>
+<tr><td><code>5942734d-1bea-5c0b-97fe-0d9ccde01858</code></td><td>3 告警、1 事件、5 Run；基础 Run <code>4c870247-444c-4083-b511-db9791c32a17</code> 为 failed/partial。139 GET，5,970 检查；系统收尾、错误和已有上游结果可读</td></tr>
+</table>
+<p>两案均核对读取前后快照一致。材料原件、相关告警、活动、Run／Result、证据与判断按实际数据库逐字段比较。逐请求及数据库原件（来源：<code>docs/operations/evidence/current-release-20261110-01/readback-03/summary.json</code>）</p>
+<p>事件交付读取 <code>diagnosis.delivery_assessment</code> 的原因、成员覆盖和 <code>review_items</code>。该 JSON 块可缺失，缺失不推断为完整或无需待核；执行状态、交付、待复核、采用和质量分别显示。状态及空态（来源：<code>FRONTEND_BACKEND_HANDOFF.md#5-状态交付和空态</code>）</p>
+<p>补充有值／空值样例见字段样本（来源：<code>deliverables/investigation-validation-20261106/page-field-samples.md</code>），未开放业务和原页面显示差异见问题清单（来源：<code>docs/investigation/current-issues.md</code>）。固定导出只代表采样时点，不修改其失败或 unknown 结果。</p></main></html>

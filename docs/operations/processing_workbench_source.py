@@ -83,7 +83,7 @@ async def direct_query(sql, tenant, args, *, production=False):
             await connection.execute("SET LOCAL jit=off")
             await connection.execute("SELECT set_config('app.current_tenant_id',$1,true)", str(tenant))
             if not await connection.fetchval(RLS, tenant, list(TABLES)):
-                raise ValueError("read-only tenant RLS is required on all 29 tables")
+                raise ValueError("read-only tenant RLS is required on all configured investigation tables")
             value = await connection.fetchval(sql, tenant, *args)
             return json.loads(value) if value is not None else None
     finally:
@@ -133,7 +133,7 @@ ROLLBACK;
         raise RuntimeError("workbench source unavailable")
     body = proc.stdout.strip()
     if body == b"SCOPE_DENIED":
-        raise ValueError("read-only tenant RLS is required on all 29 tables")
+        raise ValueError("read-only tenant RLS is required on all configured investigation tables")
     return json.loads(body) if body else None
 
 

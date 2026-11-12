@@ -62,6 +62,22 @@ def test_unknown_nested_ids_zero_false_empty_and_prose_survive(sample):
     assert sample[0]['members'][0]['material']['raw_text'] in p['user']
 
 
+def test_configured_input_checks_actual_messages_not_unused_legacy_prompt(sample, monkeypatch):
+    from types import SimpleNamespace
+
+    from app.socai2 import alert_basic_contract as legacy
+
+    original = build(sample)
+    monkeypatch.setattr(legacy, 'PROMPT', 'x' * 60001)
+    with pytest.raises(StoreError, match='alert_model_view_unavailable'):
+        legacy.build(*sample[:3], complete_material=True)
+    assert build(sample) == original
+    # Actual sent messages retain the original guard; no size or safety bypass.
+    profile = SimpleNamespace(config={**sample[3].config, 'system_prompt': 'x' * 60001})
+    with pytest.raises(StoreError, match='alert_model_view_unavailable'):
+        build((*sample[:3], profile))
+
+
 def test_five_fields_restore_original_contract_without_rejudging(sample):
     prepared = build(sample); body = answer(prepared)
     Draft202012Validator(alert_output_adapter.schema(prepared['source_map'])['json_schema']['schema']).validate(body)
@@ -98,3 +114,53 @@ def test_labels_cannot_be_used_as_definitive_basis_and_old_mode_is_opt_in(sample
     with pytest.raises(StoreError, match='direct'):
         alert_output_adapter.parse(json.dumps(body), prepared)
     assert runtime_policy.load_policy(ROOT / 'deploy/local-investigation/investigation-policy.toml').alert_io is None
+
+
+def test_history_selection_keeps_business_judgments_and_human_text_without_envelopes(sample):
+    history = next(body for _, body in sample[2] if body['tool_name'] == 'history')
+    record = {'id': 'historical-record', 'material_id': 'historical-material',
+              'title': '历史目录标题', 'severity': 'medium', 'event_time': '2026-11-01T00:00:00Z',
+              'original_vendor': 'historical-vendor'}
+    thin = {'record_id': record['id'], 'object_key': 'match-key-only', 'namespace': 'match-namespace-only',
+            'match_basis': 'exact_typed_namespaced_object', 'record': record}
+    rich = copy.deepcopy(thin)
+    rich['record_id'] = rich['record']['id'] = 'record-with-business-context'
+    rich['record'].update(title='有业务内容的历史', observed_count=0, authorized=False, permissions_after=[])
+    rich['record']['triage'] = {'id': 'private-triage-id', 'source_run_id': 'private-run-id',
+        'verdict': 'true_positive', 'rationale': '历史判断正文逐字保留。'}
+    rich['record']['feedback'] = {'id': 'private-feedback-id', 'producer': 'private-producer',
+        'verdict': 'benign', 'rationale': '人工反对原判断的正文也必须保留。'}
+    duplicate = copy.deepcopy(rich)
+    duplicate['object_key'] = 'another-match-key'
+    history.update(rows=[thin, rich, duplicate], returned_rows=3)
+    original = copy.deepcopy(sample)
+    prepared = build(sample)
+    assert sample == original
+    for text in ('历史目录标题', 'match-key-only', 'match-namespace-only', 'private-triage-id',
+                 'private-run-id', 'private-feedback-id', 'private-producer', 'matched_by'):
+        assert text not in prepared['user']
+    for text in ('有业务内容的历史', '历史判断正文逐字保留。', '人工反对原判断的正文也必须保留。',
+                 '"observed_count":0', '"authorized":false', '"permissions_after":[]'):
+        assert text in prepared['user']
+    assert prepared['user'].count('历史判断正文逐字保留。') == 1
+    roles = {entry['ref']['role'] for entry in prepared['source_map'].values()}
+    assert {'prior_analysis', 'human_statement'} <= roles
+    assert any(row['reason'] == 'history_catalog_only' for row in prepared['omissions'])
+    retained = next(sid for sid, entry in prepared['source_map'].items() if entry['ref']['role'] == 'prior_analysis')
+    body = answer(prepared)
+    body['evidence_ids'].append(retained)
+    result = alert_output_adapter.parse(json.dumps(body), prepared)
+    assert any(ref.source_path.endswith('.record.triage') for ref in result.source_refs)
+
+
+def test_structured_text_selects_unique_fields_without_dropping_zero_false_or_empty(sample):
+    material = sample[0]['members'][0]['material']
+    material['ocsf_json']['business_size'] = 0
+    material['raw_text'] = '{"business_size":0,"additional_allowed":false,"additional_permissions":[]}'
+    original = copy.deepcopy(sample)
+    prepared = build(sample)
+    assert sample == original and material['raw_text'] not in prepared['user']
+    sid = next(sid for sid, row in prepared['source_map'].items() if row['ref']['source_path'] == '$.raw_text')
+    assert prepared['selected_values'][sid] == {'additional_allowed': False, 'additional_permissions': []}
+    assert '"additional_allowed":false' in prepared['user'] and '"additional_permissions":[]' in prepared['user']
+    assert any(row['reason'] == 'serialized_material_business_fields' for row in prepared['omissions'])

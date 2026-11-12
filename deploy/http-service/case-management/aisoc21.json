@@ -1,0 +1,38 @@
+{
+  "version": "socai2.http-service.v1",
+  "release": "case-management-20261112-r1",
+  "root": "/opt/socai2-http",
+  "reference_container": "socai2-http-api",
+  "base_image": "sha256:1db7027b962b6576b3e395adf28e7cc108e9893bd27132ebd89d5ea0c057c3a6",
+  "base_tag": "socai2-http-base:entry-1db7027b962b",
+  "buildkit": false,
+  "image": "socai2-http-api:case-management-20261112-r1",
+  "container": "socai2-http-api",
+  "project": "socai2-http",
+  "platform": "linux/amd64",
+  "network": "socai2_default",
+  "bind": "192.168.1.21",
+  "port": 18024,
+  "container_port": 8000,
+  "database": "aisoc",
+  "entry": "app.socai2_main:app",
+  "memory": "2g",
+  "tmpfs": "/tmp:rw,nosuid,nodev,size=128m,mode=1777",
+  "build_timeout_seconds": 300,
+  "startup_timeout_seconds": 50,
+  "environment": {
+    "SOCAI2_CASE_API_ENABLED": "true",
+    "SOCAI2_PAGE_READ_ENABLED": "true",
+    "SOCAI2_ANALYSIS_READ_ENABLED": "true",
+    "SOCAI2_STAGE_EXECUTION_ENABLED": "true",
+    "AISOC_STARTUP_SCHEMA_MIGRATIONS": "false",
+    "AISOC_DEV_AUTH_BYPASS": "false"
+  },
+  "patches": {
+    "services/api/app/api/v1/endpoints/socai2_cases.py": "app/api/v1/endpoints/socai2_cases.py",
+    "services/api/app/socai2/case_management.py": "app/socai2/case_management.py",
+    "services/api/app/socai2/case_management_contracts.py": "app/socai2/case_management_contracts.py"
+  },
+  "expected_operations": 47,
+  "replace_existing": true
+}

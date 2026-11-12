@@ -1,0 +1,19 @@
+services:
+  swagger:
+    image: ${SWAGGER_IMAGE:?select an image digest}
+    platform: ${DOCS_PLATFORM:?select target architecture}
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - "${DOCS_BIND:?select bind address}:${DOCS_PORT:?select port}:${DOCS_CONTAINER_PORT:?select container port}"
+    environment:
+      PORT: ${DOCS_CONTAINER_PORT}
+      SWAGGER_JSON_URL: /handoff/openapi.json
+      CONFIG_URL: /handoff/swagger-config.json
+      VALIDATOR_URL: none
+      DOC_EXPANSION: none
+      DISPLAY_OPERATION_ID: "true"
+      PERSIST_AUTHORIZATION: "false"
+      TRY_IT_OUT_ENABLED: "false"
+    volumes:
+      - ${DOCS_CONTENT:?select absolute handoff directory}:/usr/share/nginx/html/handoff:ro

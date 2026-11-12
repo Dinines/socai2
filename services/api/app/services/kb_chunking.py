@@ -7,10 +7,40 @@ can be unit-tested without importing FastAPI / auth / DB dependencies.
 
 from __future__ import annotations
 
+import json
+import math
 import re
+from decimal import Decimal, InvalidOperation
 
 CHUNK_SIZE = 800  # characters per chunk
 CHUNK_OVERLAP = 150  # overlap between consecutive chunks
+
+
+def structured_document(content: str):
+    """Recognize complete JSON without silently losing duplicate keys/values."""
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate_json_key")
+            result[key] = value
+        return result
+
+    def invalid_constant(value):
+        raise ValueError("non_json_constant")
+
+    def number(value):
+        parsed = float(value)
+        if not math.isfinite(parsed) or Decimal(str(parsed)) != Decimal(value):
+            raise ValueError("json_number_not_losslessly_representable")
+        return parsed
+
+    try:
+        value = json.loads(content, object_pairs_hook=unique, parse_constant=invalid_constant, parse_float=number)
+        json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        return value if isinstance(value, (dict, list)) else None
+    except (ValueError, TypeError, RecursionError, InvalidOperation):
+        return None
 
 
 def chunk_text(
@@ -29,11 +59,16 @@ def chunk_text(
     spans chunk boundaries and PostgreSQL ``to_tsvector`` stems complete words
     rather than truncated fragments.
 
-    All produced units are guaranteed to be <= chunk_size characters before
+    Complete JSON objects/arrays remain atomic and retain their original text.
+    The knowledge index enforces its configured content limit separately; it
+    must reject an oversized structured document rather than index broken JSON.
+    Plain-text units are guaranteed to be <= chunk_size characters before
     the overlap tail is prepended, so no chunk can grow beyond
     chunk_size + overlap in the worst case.
     """
     if not content:
+        return [content]
+    if structured_document(content) is not None:
         return [content]
 
     # ── Step 1: split into paragraphs ────────────────────────────────────

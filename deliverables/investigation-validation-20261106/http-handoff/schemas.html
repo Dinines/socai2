@@ -1,0 +1,1407 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><header><h1>调查服务 HTTP API</h1><p>告警 · 事件 · 调查</p><nav><a href="/">Swagger接口</a><a href="openapi.json">下载OpenAPI</a><a href="endpoints.html">参数与输入输出</a><a href="schemas.html">字段字典</a><a href="guide.html">接入说明</a></nav></header><h1 id="http字段与嵌套类型">HTTP字段与嵌套类型</h1>
+<p>按实际JSON类型保留required、可空、枚举和限制。请求额外字段禁止；服务输出可空字段不能擅自补0/空串。动态正文见<a href="json-contracts.json">原JSON合同</a>，不要将任意工件统一套成一种业务结论。</p>
+<a id="aiunavailable"></a>
+<h2 id="aiunavailable">AIUnavailable</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>detail</td><td>否</td><td><a href="schemas.html#aiunavailabledetail">AIUnavailableDetail</a></td><td>无（可空不等于可省略）</td><td>此501响应固定为AIUnavailableDetail对象（code/status/message），不是字符串或数组。 <a href="/handoff/audit/response-fields.html#aiunavailable">完整语义</a></td></tr>
+</table>
+<a id="aiunavailabledetail"></a>
+<h2 id="aiunavailabledetail">AIUnavailableDetail</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>code</td><td>否</td><td>string = case_ai_not_implemented</td><td>&quot;case_ai_not_implemented&quot;</td><td>机器可识别的错误码；AI预留固定case_ai_not_implemented。 <a href="/handoff/audit/response-fields.html#aiunavailabledetail">完整语义</a></td></tr>
+<tr><td>status</td><td>否</td><td>string = not_implemented</td><td>&quot;not_implemented&quot;</td><td>AI预留固定not_implemented；不表示业务执行状态。 <a href="/handoff/audit/response-fields.html#aiunavailabledetail">完整语义</a></td></tr>
+<tr><td>message</td><td>否</td><td>string</td><td>&quot;AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。&quot;</td><td>面向接手人的错误说明文本。 <a href="/handoff/audit/response-fields.html#aiunavailabledetail">完整语义</a></td></tr>
+</table>
+<a id="adoptcaseairesult"></a>
+<h2 id="adoptcaseairesult">AdoptCaseAIResult</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+</table>
+<a id="alertfacts"></a>
+<h2 id="alertfacts">AlertFacts</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>来源系统命名空间，不是原厂名称 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>接收到的标题；未知来源用显式缺失显示，不编造内容 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>description</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>来源说明；人工补充用评论 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>owner_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>public.users.id <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>assignment_state</td><td>是</td><td><a href="schemas.html#assignmentstate">AssignmentState</a></td><td>无（可空不等于可省略）</td><td>分配状态 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>unresolved时原负责人值 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近分配操作时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>业务标签；资产标签从库存读取 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>priority_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>已有优先级0到100，不以分诊分数填充 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>priority_state</td><td>是</td><td><a href="schemas.html#scorestate">ScoreState</a></td><td>无（可空不等于可省略）</td><td>优先级评分状态 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>priority_source</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>评分生产者/模型版本 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>评分来源依据；无值不造理由 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>实际业务字段变更时间；GET不更新 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近明确重开时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>管理乐观锁；每次实际写入+1 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>source_alert_id</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>接入来源编号；允许非UUID <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>vendor_alert_id</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>厂商原始告警编号；与接入编号分开 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>connector_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>已有连接器引用，同租户校验 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>connector_type</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>接入类型原值，不代替original_vendor <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>original_vendor</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>明确原厂，未知NULL <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>category</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>来源类别，不拿判定替代 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>severity</td><td>是</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>当前来源严重程度 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>severity_raw</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>未映射来源等级原文 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>event_time</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>真实发生时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>event_time_source</td><td>是</td><td><a href="schemas.html#timesource">TimeSource</a></td><td>无（可空不等于可省略）</td><td>发生时间依据 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>first_seen_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>已收到材料中首次活动时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>last_seen_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>已收到材料中末次活动时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>ingested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>首次接收时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>source_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本地保存新材料的时间 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>handling_status</td><td>是</td><td><a href="schemas.html#alertstatus">AlertStatus</a></td><td>无（可空不等于可省略）</td><td>业务处理状态 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>disposition</td><td>是</td><td><a href="schemas.html#disposition">Disposition</a> / null</td><td>无（可空不等于可省略）</td><td>当前采用判定；与latest反馈或分诊配套 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>closed_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>当前完成周期关闭时间；重开后置空，旧值在活动中 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>closed_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确用户关闭人；自动关闭记录活动服务身份 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>latest_material_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同告警最新有效材料 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>latest_triage_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同告警kind=triage记录 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>latest_feedback_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同告警kind=human_feedback记录 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+<tr><td>latest_explanation_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同告警kind=alert_explanation的有效Explain材料；GET不生成并写业务时钟 <a href="/handoff/audit/response-fields.html#alertfacts">完整语义</a></td></tr>
+</table>
+<a id="alertstatus"></a>
+<h2 id="alertstatus">AlertStatus</h2>
+<p>string new, in_progress, completed, unknown</p>
+<a id="artifactcontent"></a>
+<h2 id="artifactcontent">ArtifactContent</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>artifact</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>Case工件元数据，和A/I的metadata字段不同。 <a href="/handoff/audit/dynamic-fields.html#artifact-metadata">完整语义</a></td></tr>
+<tr><td>content_json</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>保存的结构化正文；格式由工件schema_version和实际类型决定。 <a href="/handoff/audit/response-fields.html#artifactcontent">完整语义</a></td></tr>
+<tr><td>content_text</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>保存的文本正文，可空；不得自动重生成。 <a href="/handoff/audit/response-fields.html#artifactcontent">完整语义</a></td></tr>
+<tr><td>availability</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>Case工件读取状态；内容hash/size不一致直接409 artifact_integrity_invalid，不返回成功正文。 <a href="/handoff/audit/response-fields.html#artifactcontent">完整语义</a></td></tr>
+</table>
+<a id="askcaseai"></a>
+<h2 id="askcaseai">AskCaseAI</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>question</td><td>是</td><td>string; minLength=1; maxLength=4000</td><td>无（可空不等于可省略）</td><td>用户明确发送的问题文本；当前Q接口未实现。</td></tr>
+<tr><td>conversation_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>可选会话UUID；当前无正式对话读写。</td></tr>
+</table>
+<a id="assessmentpageview"></a>
+<h2 id="assessmentpageview">AssessmentPageView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>conclusion</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>明确采用的判断 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>origin</td><td>是</td><td>string model, human, system, legacy</td><td>无（可空不等于可省略）</td><td>model/human/legacy，system交接不得采用为有效结论 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>validity</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>采用时有效性；不代表绝对事实证明 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>采用时Case范围版本 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>formed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>判断形成时间 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>adopted_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>采用时间 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+<tr><td>sources</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>该已采用判断的来源行；page_data版本保留tenant_id，CaseDetail.current_assessment版本剔除内部字段。 <a href="/handoff/audit/response-fields.html#assessmentpageview">完整语义</a></td></tr>
+</table>
+<a id="assignmentstate"></a>
+<h2 id="assignmentstate">AssignmentState</h2>
+<p>string unassigned, assigned, unresolved</p>
+<a id="associationreceipt"></a>
+<h2 id="associationreceipt">AssociationReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>Case成员范围版本，历史Run保持冻结值。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+<tr><td>pending_run_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>准备好的待启动Run；需要用户显式调用start。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>本次写入是否实际改变业务内容；幂等重读不表示重新执行。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+<tr><td>added_alert_ids</td><td>否</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>本次实际新增Case成员UUID。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+<tr><td>linked_incident_ids</td><td>否</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>本次新增的显式事件关系UUID。 <a href="/handoff/audit/response-fields.html#associationreceipt">完整语义</a></td></tr>
+</table>
+<a id="associationrequest"></a>
+<h2 id="associationrequest">AssociationRequest</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>alert_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+<tr><td>incident_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>显式关联事件UUID集合，服务展开成员。</td></tr>
+</table>
+<a id="baselinecounts"></a>
+<h2 id="baselinecounts">BaselineCounts</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>running</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>运行中基础Run数量。 <a href="/handoff/audit/response-fields.html#baselinecounts">完整语义</a></td></tr>
+<tr><td>unknown</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>执行状态未确认的基础Run数量，仍占活跃约束。 <a href="/handoff/audit/response-fields.html#baselinecounts">完整语义</a></td></tr>
+</table>
+<a id="baselinepreparation"></a>
+<h2 id="baselinepreparation">BaselinePreparation</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。 <a href="/handoff/audit/response-fields.html#baselinepreparation">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>Case成员范围版本，历史Run保持冻结值。 <a href="/handoff/audit/response-fields.html#baselinepreparation">完整语义</a></td></tr>
+<tr><td>pending_run_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>准备好的待启动Run；需要用户显式调用start。 <a href="/handoff/audit/response-fields.html#baselinepreparation">完整语义</a></td></tr>
+<tr><td>created</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>是否本次新建pending记录；false可能复用已有待启动项。 <a href="/handoff/audit/response-fields.html#baselinepreparation">完整语义</a></td></tr>
+</table>
+<a id="casebaselinerecord"></a>
+<h2 id="casebaselinerecord">CaseBaselineRecord</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>run</td><td>是</td><td><a href="schemas.html#runview">RunView</a></td><td>无（可空不等于可省略）</td><td>对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 <a href="/handoff/audit/response-fields.html#casebaselinerecord">完整语义</a></td></tr>
+<tr><td>start_eligibility</td><td>是</td><td><a href="schemas.html#startavailability">StartAvailability</a></td><td>无（可空不等于可省略）</td><td>是否可启动及原因，依据最新Run与Case范围。 <a href="/handoff/audit/response-fields.html#casebaselinerecord">完整语义</a></td></tr>
+</table>
+<a id="casecreate"></a>
+<h2 id="casecreate">CaseCreate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>severity</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>alert_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+<tr><td>incident_ids</td><td>否</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>显式关联事件UUID集合，服务展开成员。</td></tr>
+</table>
+<a id="casedatareceipt"></a>
+<h2 id="casedatareceipt">CaseDataReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。 <a href="/handoff/audit/response-fields.html#casedatareceipt">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>并发修改版本；后续写入的expected_row_version取此值。 <a href="/handoff/audit/response-fields.html#casedatareceipt">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>是否改变资料/目录；返回回执后刷新最新row_version，幂等重放不生成新版本。 <a href="/handoff/audit/response-fields.html#casedatareceipt">完整语义</a></td></tr>
+<tr><td>current_evidence_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>本次保存后当前证据目录工件UUID；未有目录为null。 <a href="/handoff/audit/response-fields.html#casedatareceipt">完整语义</a></td></tr>
+</table>
+<a id="casedataupdate"></a>
+<h2 id="casedataupdate">CaseDataUpdate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>classification</td><td>是</td><td>string true_positive, informational, false_positive / null</td><td>无（可空不等于可省略）</td><td>案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。</td></tr>
+<tr><td>due_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>source</td><td>是</td><td>string manual, import</td><td>无（可空不等于可省略）</td><td>本次资料变更来源 manual 或 import。</td></tr>
+<tr><td>source_note</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>资料修改原因/来源说明，非空。</td></tr>
+</table>
+<a id="casedetail"></a>
+<h2 id="casedetail">CaseDetail</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case</td><td>是</td><td><a href="schemas.html#caseview">CaseView</a></td><td>无（可空不等于可省略）</td><td>当前案件主体资料，不是执行记录。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>members</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 <a href="/handoff/audit/dynamic-fields.html#case-members">完整语义</a></td></tr>
+<tr><td>member_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>成员总数；超过返回长度时结合members_truncated，不把当前数组长度当全量。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>members_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>linked_incidents</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>Case显式关联事件，不包含仅共享成员而无显式关系的事件。 <a href="/handoff/audit/dynamic-fields.html#case-linked-incidents">完整语义</a></td></tr>
+<tr><td>linked_incident_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>本案显式事件关系总数。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>linked_incidents_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>current_assessment</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>当前采用判断及来源/覆盖；null表示未形成，不能自行采用最近结果。 <a href="/handoff/audit/dynamic-fields.html#current-assessment">完整语义</a></td></tr>
+<tr><td>baseline_records</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>本案pending_update/running/unknown基础Run及资格；已结束历史另读history。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+<tr><td>page_data</td><td>否</td><td><a href="schemas.html#casepagedata">CasePageData</a> / null</td><td>无（可空不等于可省略）</td><td>本案分类/期限/当前判断和证据目录投影。 <a href="/handoff/audit/response-fields.html#casedetail">完整语义</a></td></tr>
+</table>
+<a id="casepagedata"></a>
+<h2 id="casepagedata">CasePageData</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>schema_version</td><td>否</td><td>string = socai2.case-page-data.v1</td><td>&quot;socai2.case-page-data.v1&quot;</td><td>本结构/工件的合同版本；按实际版本解释字段，不把当前模型结构套给历史版本。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+<tr><td>classification</td><td>是</td><td>string true_positive, informational, false_positive / null</td><td>无（可空不等于可省略）</td><td>案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+<tr><td>due_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+<tr><td>determination</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>沿Case.current_assessment_id取得的已采用conclusion；没有指针为null，不取最新Result补。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+<tr><td>assessment</td><td>是</td><td><a href="schemas.html#assessmentpageview">AssessmentPageView</a> / null</td><td>无（可空不等于可省略）</td><td>已采用判断的页面投影。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+<tr><td>evidence</td><td>是</td><td><a href="schemas.html#evidenceview">EvidenceView</a></td><td>无（可空不等于可省略）</td><td>已发布证据目录及可用状态。 <a href="/handoff/audit/response-fields.html#casepagedata">完整语义</a></td></tr>
+</table>
+<a id="casequeueitem"></a>
+<h2 id="casequeueitem">CaseQueueItem</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case</td><td>是</td><td><a href="schemas.html#caseview">CaseView</a></td><td>无（可空不等于可省略）</td><td>当前案件主体资料，不是执行记录。 <a href="/handoff/audit/response-fields.html#casequeueitem">完整语义</a></td></tr>
+<tr><td>member_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>成员总数；超过返回长度时结合members_truncated，不把当前数组长度当全量。 <a href="/handoff/audit/response-fields.html#casequeueitem">完整语义</a></td></tr>
+<tr><td>open_task_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>本案not_started或in_progress人工任务数，questions不计入。 <a href="/handoff/audit/response-fields.html#casequeueitem">完整语义</a></td></tr>
+<tr><td>baseline_records</td><td>是</td><td>array &lt;<a href="schemas.html#casebaselinerecord">CaseBaselineRecord</a>&gt;</td><td>无（可空不等于可省略）</td><td>本案pending_update/running/unknown基础Run及资格；已结束历史另读history。 <a href="/handoff/audit/response-fields.html#casequeueitem">完整语义</a></td></tr>
+<tr><td>page_data</td><td>否</td><td><a href="schemas.html#casepagedata">CasePageData</a> / null</td><td>无（可空不等于可省略）</td><td>本案分类/期限/当前判断和证据目录投影。 <a href="/handoff/audit/response-fields.html#casequeueitem">完整语义</a></td></tr>
+</table>
+<a id="casequeuemetrics"></a>
+<h2 id="casequeuemetrics">CaseQueueMetrics</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>awaiting_assignment</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>handling_status为new/in_progress，且assignment_state=unassigned、owner_id=null的Case数；已解决/未知状态与unresolved分配不计。 <a href="/handoff/audit/response-fields.html#casequeuemetrics">完整语义</a></td></tr>
+<tr><td>in_progress</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>处理状态为in_progress的Case数；不是运行中的Run数。 <a href="/handoff/audit/response-fields.html#casequeuemetrics">完整语义</a></td></tr>
+<tr><td>high_severity</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>handling_status为new/in_progress且severity=high的Case数；不含critical，也不含resolved/unknown。 <a href="/handoff/audit/response-fields.html#casequeuemetrics">完整语义</a></td></tr>
+<tr><td>awaiting_human</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>handling_status为new/in_progress且至少有一个当前修订为not_started/in_progress人工任务的Case数；不是任务条数。 <a href="/handoff/audit/response-fields.html#casequeuemetrics">完整语义</a></td></tr>
+</table>
+<a id="casequeuepage"></a>
+<h2 id="casequeuepage">CaseQueuePage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#casequeueitem">CaseQueueItem</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#casequeuepage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#casequeuepage">完整语义</a></td></tr>
+<tr><td>next_cursor</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>下一页游标；null表示结束。 <a href="/handoff/audit/response-fields.html#casequeuepage">完整语义</a></td></tr>
+<tr><td>metrics</td><td>是</td><td><a href="schemas.html#casequeuemetrics">CaseQueueMetrics</a></td><td>无（可空不等于可省略）</td><td>Case租户整体指标，不随分页或筛选total变化。 <a href="/handoff/audit/response-fields.html#casequeuepage">完整语义</a></td></tr>
+</table>
+<a id="caseview"></a>
+<h2 id="caseview">CaseView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>Case固定数据身份命名空间；首次范围绑定后不可改，旧范围不能确认时NULL；不等于原始来源环境 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>名称 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>description</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>案情说明 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>handling_status</td><td>是</td><td><a href="schemas.html#workstatus">WorkStatus</a></td><td>无（可空不等于可省略）</td><td>业务状态 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>severity</td><td>是</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>当前明确案件等级 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>severity_source</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>手动设置或明确汇总规则，不从置信度猜 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>owner_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>当前负责人 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>assignment_state</td><td>是</td><td><a href="schemas.html#assignmentstate">AssignmentState</a></td><td>无（可空不等于可省略）</td><td>分配状态 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>历史未解析负责人 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近分配时间 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>案件标签 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>priority_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>已有优先级 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>priority_state</td><td>是</td><td><a href="schemas.html#scorestate">ScoreState</a></td><td>无（可空不等于可省略）</td><td>评分状态 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>priority_source</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>评分生产者 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>已有依据 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>仅当前告警成员真实变动+1 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>current_assessment_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>已明确采用版本；不等于最新Run <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>classification</td><td>否</td><td>string true_positive, informational, false_positive / null</td><td>无（可空不等于可省略）</td><td>明确保存的案件管理分类；NULL未设置，不继承事件或告警 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>due_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>案件截止时间，与任务期限和运行超时分离 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>current_evidence_artifact_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同租户同Case的当前case_evidence_index不可变工件；NULL未记录 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>创建时间 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>created_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>创建人，服务创建见活动 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>案件业务变化 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>resolved_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>当前解决周期时间 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>resolved_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确解决人 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>resolution_note</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>解决说明，不擅自添加必填要求 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近重开 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>乐观版本 <a href="/handoff/audit/response-fields.html#caseview">完整语义</a></td></tr>
+</table>
+<a id="changekind"></a>
+<h2 id="changekind">ChangeKind</h2>
+<p>string initial, unchanged, expanded, revised, withdrawn, not_comparable</p>
+<a id="conclusionstate"></a>
+<h2 id="conclusionstate">ConclusionState</h2>
+<p>string supported, uncertain, unavailable</p>
+<a id="contentview"></a>
+<h2 id="contentview">ContentView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>metadata</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>A/I工件/材料元数据。 <a href="/handoff/audit/response-fields.html#contentview">完整语义</a></td></tr>
+<tr><td>availability</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>A/I读取状态；工件hash/size不一致仍HTTP200但availability=content_integrity_mismatch且正文null。材料正文使用独立大小限制状态。 <a href="/handoff/audit/response-fields.html#contentview">完整语义</a></td></tr>
+<tr><td>content_json</td><td>否</td><td>object</td><td>无（可空不等于可省略）</td><td>保存的结构化正文；格式由工件schema_version和实际类型决定。 <a href="/handoff/audit/response-fields.html#contentview">完整语义</a></td></tr>
+<tr><td>content_text</td><td>否</td><td>string / null</td><td>无（可空不等于可省略）</td><td>保存的文本正文，可空；不得自动重生成。 <a href="/handoff/audit/response-fields.html#contentview">完整语义</a></td></tr>
+</table>
+<a id="delivery"></a>
+<h2 id="delivery">Delivery</h2>
+<p>string none, partial, complete, unknown</p>
+<a id="derivedfields"></a>
+<h2 id="derivedfields">DerivedFields</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>severity_group</td><td>是</td><td>string high, medium, low / null</td><td>无（可空不等于可省略）</td><td>展示分组：high包含high/critical，medium，low包含info/low；未知null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>false_positive</td><td>否</td><td>boolean / null</td><td>无（可空不等于可省略）</td><td>仅告警：disposition是否恰为false_positive；false不能解读为已确认真实威胁。事件为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>member_count</td><td>否</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>事件当前成员告警数；告警详情此派生字段不适用为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>first_activity_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>事件成员event_time最早值，全部未知则null；告警不适用为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>last_activity_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>事件成员event_time最晚值，全部未知则null；告警不适用为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>unknown_event_time_count</td><td>否</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>事件成员缺event_time的告警数；告警不适用为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>unknown_severity_count</td><td>否</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>事件成员缺severity的告警数；告警不适用为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>severity_auto</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>事件已知成员的最高严重度，无已知等级为null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>severity_effective</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>事件人工severity_override优先，否则severity_auto。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>severity_source</td><td>否</td><td>string manual_override, member_max / null</td><td>无（可空不等于可省略）</td><td>事件有效严重度来源：manual_override或member_max，两者都没有则null。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>updated_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>当前记录更新时刻；DerivedFields中为事件自身与成员business_updated_at的较晚值。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>tactics</td><td>是</td><td>array &lt;<a href="schemas.html#tacticcount">TacticCount</a>&gt;</td><td>无（可空不等于可省略）</td><td>当前材料detection.tactics按标签分组统计，计去重告警数；不是模型判定攻击阶段。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>tactic_counting_note</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>说明同一告警可计多个阶段，阶段之和可能超过告警总数。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>object_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前成员材料按namespace/object_type/object_key去重的对象数。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+<tr><td>baseline_execution_counts</td><td>是</td><td><a href="schemas.html#baselinecounts">BaselineCounts</a></td><td>无（可空不等于可省略）</td><td>与当前成员有关联的不同baseline Run数，分别统计running和unknown。 <a href="/handoff/audit/response-fields.html#derivedfields">完整语义</a></td></tr>
+</table>
+<a id="diagnosisstate"></a>
+<h2 id="diagnosisstate">DiagnosisState</h2>
+<p>string running, completed, failed, cancelled, unknown</p>
+<a id="diagnosisview"></a>
+<h2 id="diagnosisview">DiagnosisView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>source_run_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>incident_diagnosis执行，同事件 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>同事件尝试版本 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td><a href="schemas.html#diagnosisstate">DiagnosisState</a></td><td>无（可空不等于可省略）</td><td>生成尝试状态 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>summary</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>有效概况正文，失败不伪造 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>diagnosis</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>诊断、证据和限制 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>open_questions</td><td>是</td><td>array &lt;object&gt; / null</td><td>无（可空不等于可省略）</td><td>待核问题 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>冻结成员/分诊/来源材料快照 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>source_fingerprint</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>实际输入指纹 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>producer</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>实现和版本 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>requested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>尝试时间 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>generated_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>成功时间 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+<tr><td>error_code</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>事件诊断保存的error.code；无错误对象或无code为null，不包含完整底层异常。 <a href="/handoff/audit/response-fields.html#diagnosisview">完整语义</a></td></tr>
+</table>
+<a id="disposition"></a>
+<h2 id="disposition">Disposition</h2>
+<p>string true_positive, false_positive, benign, needs_review</p>
+<a id="evidenceentry"></a>
+<h2 id="evidenceentry">EvidenceEntry</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>evidence_id</td><td>是</td><td>string; maxLength=300; pattern=^[A-Za-z0-9_.-]+:[^\s]+$</td><td>无（可空不等于可省略）</td><td>命名空间化的证据条目标识，同一目录唯一。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>type</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>本结构的类型判别；EvidenceRef为引用目标类型，EvidenceEntry为证据分类。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; minItems=1; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>object_keys</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceobject">EvidenceObject</a>&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>对象键；explicit_objects需非空且属于所选告警当前对象。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>source_refs</td><td>是</td><td>array &lt;<a href="schemas.html#savedreference">SavedReference</a>&gt;; minItems=1; maxItems=30</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>verdict</td><td>是</td><td>string malicious, suspicious, clean, unknown, conflicting</td><td>无（可空不等于可省略）</td><td>该对象判定；分诊Disposition和证据目录verdict是两套不同枚举，不能互换。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>verdict_sources</td><td>是</td><td>array &lt;<a href="schemas.html#savedreference">SavedReference</a>&gt;; maxItems=30</td><td>无（可空不等于可省略）</td><td>支持该证据判定的已保存引用；unknown可为空，conflicting至少两份不同依据。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>threat</td><td>是</td><td><a href="schemas.html#threat">Threat</a> / null</td><td>无（可空不等于可省略）</td><td>可选明确威胁身份及来源，不按证据文本自行生成威胁ID。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>remediation</td><td>是</td><td><a href="schemas.html#savedreference">SavedReference</a> / null</td><td>无（可空不等于可省略）</td><td>可选已保存执行回执引用，role必须execution_receipt；建议不能充当处置成功。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td>string active, withdrawn</td><td>无（可空不等于可省略）</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。 <a href="/handoff/audit/response-fields.html#evidenceentry">完整语义</a></td></tr>
+</table>
+<a id="evidenceindex"></a>
+<h2 id="evidenceindex">EvidenceIndex</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>schema_version</td><td>是</td><td>string = socai2.case-evidence.v1</td><td>无（可空不等于可省略）</td><td>本结构/工件的合同版本；按实际版本解释字段，不把当前模型结构套给历史版本。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>Case成员范围版本，历史Run保持冻结值。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>supersedes_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>被替换的证据目录工件；首次为null。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>availability_state</td><td>是</td><td>string available, partial, unavailable</td><td>无（可空不等于可省略）</td><td>被发布证据目录的可用状态available/partial/unavailable；partial/unavailable要求限制说明。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string; minLength=1; maxLength=500; pattern=\S&gt;; maxItems=30</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+<tr><td>entries</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceentry">EvidenceEntry</a>&gt;; maxItems=500</td><td>无（可空不等于可省略）</td><td>当前对象条目数组：StagePage为历史尝试，证据模型为目录条目。 <a href="/handoff/audit/response-fields.html#evidenceindex">完整语义</a></td></tr>
+</table>
+<a id="evidenceobject"></a>
+<h2 id="evidenceobject">EvidenceObject</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>material_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该对象所属的具体告警材料版本ID，与object_key一起定位。 <a href="/handoff/audit/response-fields.html#evidenceobject">完整语义</a></td></tr>
+<tr><td>object_key</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>带类型/命名空间语义的稳定对象键，不能用展示名称或裸IP替代所有对象身份。 <a href="/handoff/audit/response-fields.html#evidenceobject">完整语义</a></td></tr>
+</table>
+<a id="evidencepublish"></a>
+<h2 id="evidencepublish">EvidencePublish</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>expected_current_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>当前证据目录工件 ID；首次为null。必须显式传入，和实际旧版本比较。</td></tr>
+<tr><td>index</td><td>是</td><td><a href="schemas.html#evidenceindex">EvidenceIndex</a></td><td>无（可空不等于可省略）</td><td>证据目录版本正文，不是自动生成证据的命令。</td></tr>
+</table>
+<a id="evidenceref"></a>
+<h2 id="evidenceref">EvidenceRef</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>type</td><td>是</td><td>string alert_material, artifact, task_revision, result</td><td>无（可空不等于可省略）</td><td>本结构的类型判别；EvidenceRef为引用目标类型，EvidenceEntry为证据分类。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本对象唯一身份；列表导航和关联使用该值，不能使用名称代替。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+<tr><td>external</td><td>是</td><td>null</td><td>无（可空不等于可省略）</td><td>现有EvidenceRef固定null；外部材料需先保存为内部可解析工件。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+<tr><td>source_path</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>保存原件内的路径；SavedReference强制以/开头的JSON Pointer；普通EvidenceRef可空。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+<tr><td>row_keys</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>普通引用中的行定位键；SavedReference现合同必须为空列表。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+<tr><td>role</td><td>是</td><td>string observation, source_label, prior_analysis, human_statement, execution_receipt</td><td>无（可空不等于可省略）</td><td>来源角色 observation/source_label/prior_analysis/human_statement/execution_receipt；不能相互替代证据。 <a href="/handoff/audit/response-fields.html#evidenceref">完整语义</a></td></tr>
+</table>
+<a id="evidenceview"></a>
+<h2 id="evidenceview">EvidenceView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>工件 UUID，必须保持父主体/Run 归属。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td>string available, partial, unavailable, not_recorded, invalid_reference</td><td>无（可空不等于可省略）</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>evidence_count</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>有效active且所有关联告警仍在本案的证据条目数；未记录/不可用/失效为null。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>threat_count</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>上述有效恶意/可疑证据中明确威胁按namespace/key去重数量；未知为null，0不证明安全。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>covered_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>有效证据条目覆盖的当前告警ID。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>uncovered_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>当前成员中未被有效证据条目覆盖的告警ID。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>excluded_evidence_ids</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>因撤回或范围不再适用等原因不参与当前统计的证据ID。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>entries</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceentry">EvidenceEntry</a>&gt;</td><td>无（可空不等于可省略）</td><td>当前对象条目数组：StagePage为历史尝试，证据模型为目录条目。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+<tr><td>index</td><td>是</td><td><a href="schemas.html#evidenceindex">EvidenceIndex</a> / null</td><td>无（可空不等于可省略）</td><td>证据目录版本正文，不是自动生成证据的命令。 <a href="/handoff/audit/response-fields.html#evidenceview">完整语义</a></td></tr>
+</table>
+<a id="executestage"></a>
+<h2 id="executestage">ExecuteStage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+</table>
+<a id="executionsummary"></a>
+<h2 id="executionsummary">ExecutionSummary</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>工件 UUID，必须保持父主体/Run 归属。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>availability</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>正文是否可用；200仅代表读取请求成功。available/retained_*/大小限制/外部正文未载入分开展示。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>schema_version</td><td>否</td><td>string / null</td><td>无（可空不等于可省略）</td><td>本结构/工件的合同版本；按实际版本解释字段，不把当前模型结构套给历史版本。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>capabilities</td><td>否</td><td>object / null</td><td>无（可空不等于可省略）</td><td>该轮计划中记录的工具/能力快照，开放字段由计划版本解释。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>limits</td><td>否</td><td>object / null</td><td>无（可空不等于可省略）</td><td>该轮执行计划中的限制快照，不能从Case RunView读取run.limits。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>final_reservation</td><td>否</td><td>object / null</td><td>无（可空不等于可省略）</td><td>该轮为最终收尾保留的资源，来自执行计划工件。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+<tr><td>limitations</td><td>否</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#executionsummary">完整语义</a></td></tr>
+</table>
+<a id="explanationview"></a>
+<h2 id="explanationview">ExplanationView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>工件 UUID，必须保持父主体/Run 归属。 <a href="/handoff/audit/response-fields.html#explanationview">完整语义</a></td></tr>
+<tr><td>available</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>此解释/部分结果工件的正文是否完整可读且通过内容完整性检查。 <a href="/handoff/audit/response-fields.html#explanationview">完整语义</a></td></tr>
+<tr><td>reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>available=false的读取原因；explanation可能material_*、external_or_missing_content、content_exceeds_read_limit、content_integrity_mismatch；partial_analysis可能external_or_incomplete_content等。 <a href="/handoff/audit/response-fields.html#explanationview">完整语义</a></td></tr>
+<tr><td>content</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>可用时的已保存结构化正文；不可用时null，按具体工件schema版本解释。 <a href="/handoff/audit/response-fields.html#explanationview">完整语义</a></td></tr>
+</table>
+<a id="finding"></a>
+<h2 id="finding">Finding</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本对象唯一身份；列表导航和关联使用该值，不能使用名称代替。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>statement</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>发现正文。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td>string observed, inferred, unresolved, withdrawn</td><td>无（可空不等于可省略）</td><td>observed原始观察、inferred推断、unresolved未决、withdrawn撤回；保留各自支持/反证/限制。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>scope</td><td>是</td><td><a href="schemas.html#scope">Scope</a></td><td>无（可空不等于可省略）</td><td>本条发现/问题的适用范围；范围声明不等于已证明覆盖。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>support</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>支持该发现的来源引用。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>counterevidence</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>反证或不支持该发现的来源引用。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
+</table>
+<a id="httpvalidationerror"></a>
+<h2 id="httpvalidationerror">HTTPValidationError</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>detail</td><td>否</td><td>array &lt;<a href="schemas.html#validationerror">ValidationError</a>&gt;</td><td>无（可空不等于可省略）</td><td>框架422字段校验错误数组，每项为ValidationError；其他服务抛出的422字符串错误不属于此模型。 <a href="/handoff/audit/response-fields.html#httpvalidationerror">完整语义</a></td></tr>
+</table>
+<a id="historyentry"></a>
+<h2 id="historyentry">HistoryEntry</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>历史目录显示身份，格式run:&lt;uuid&gt;或result:&lt;uuid&gt;；它不是可直接放入Run路径的UUID。 <a href="/handoff/audit/response-fields.html#historyentry">完整语义</a></td></tr>
+<tr><td>recorded_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>历史条目的排序时刻：Run requested_at或已保存AI结果saved_at。 <a href="/handoff/audit/response-fields.html#historyentry">完整语义</a></td></tr>
+<tr><td>run</td><td>是</td><td><a href="schemas.html#runview">RunView</a></td><td>无（可空不等于可省略）</td><td>对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 <a href="/handoff/audit/response-fields.html#historyentry">完整语义</a></td></tr>
+<tr><td>result</td><td>是</td><td><a href="schemas.html#resultsummary">ResultSummary</a> / null</td><td>无（可空不等于可省略）</td><td>本次读取的结果对象；可空时表示该次执行没有保存对应结果。 <a href="/handoff/audit/response-fields.html#historyentry">完整语义</a></td></tr>
+</table>
+<a id="historypage"></a>
+<h2 id="historypage">HistoryPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#historyentry">HistoryEntry</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#historypage">完整语义</a></td></tr>
+<tr><td>next_cursor</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>下一页游标；null表示结束。 <a href="/handoff/audit/response-fields.html#historypage">完整语义</a></td></tr>
+</table>
+<a id="impact"></a>
+<h2 id="impact">Impact</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>summary</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>当前结构的摘要，具体来源由模型/读取装配说明；null保留未形成。 <a href="/handoff/audit/response-fields.html#impact">完整语义</a></td></tr>
+<tr><td>supported_changes</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本轮有依据支持的案件认识变化。 <a href="/handoff/audit/response-fields.html#impact">完整语义</a></td></tr>
+<tr><td>cannot_generalize</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本轮不能推及其他成员/范围的限制。 <a href="/handoff/audit/response-fields.html#impact">完整语义</a></td></tr>
+<tr><td>affected_scope</td><td>是</td><td><a href="schemas.html#scope">Scope</a></td><td>无（可空不等于可省略）</td><td>案件影响的适用范围声明。 <a href="/handoff/audit/response-fields.html#impact">完整语义</a></td></tr>
+<tr><td>next_steps</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>后续建议，不代表已经派发任务或执行动作。 <a href="/handoff/audit/response-fields.html#impact">完整语义</a></td></tr>
+</table>
+<a id="incidentfacts"></a>
+<h2 id="incidentfacts">IncidentFacts</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>Fusion实例/来源命名空间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>事件自身标题 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>description</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>事件自身说明，非第一条成员标题 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>owner_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>当前明确负责人 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>assignment_state</td><td>是</td><td><a href="schemas.html#assignmentstate">AssignmentState</a></td><td>无（可空不等于可省略）</td><td>未分配/已分配/原值未解析 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>未解析来源负责人 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近改派时间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>事件业务标签，成员资产标签另外派生 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>priority_value</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>已有优先级0..100 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>priority_state</td><td>是</td><td><a href="schemas.html#scorestate">ScoreState</a></td><td>无（可空不等于可省略）</td><td>无来源不合成 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>priority_source</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>已有评分生产者 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>评分依据 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>自身管理或成员关联变动；移除最后成员仍更新 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>最近明确重开时间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>管理/范围写入乐观版本 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>source_incident_id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>来源事件ID，兼容原有文本键 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>handling_status</td><td>是</td><td><a href="schemas.html#workstatus">WorkStatus</a></td><td>无（可空不等于可省略）</td><td>事件业务处理状态 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>severity_override</td><td>是</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>人工事件覆盖等级；NULL=采用成员最高；不改成员 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>severity_override_reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>人工覆盖依据 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>severity_override_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>覆盖设置时间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>severity_override_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>覆盖人 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>resolution_note</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>事件解决说明，人工解决必填 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>resolved_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>当前解决周期时间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>resolved_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>解决人 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>事件首次持久化时间 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+<tr><td>latest_diagnosis_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同事件最新成功诊断；失败尝试不能覆盖 <a href="/handoff/audit/response-fields.html#incidentfacts">完整语义</a></td></tr>
+</table>
+<a id="memberchange"></a>
+<h2 id="memberchange">MemberChange</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+</table>
+<a id="movemembers"></a>
+<h2 id="movemembers">MoveMembers</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>target_case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>移动目标Case；不得等于路径源Case。</td></tr>
+<tr><td>expected_source_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>源 Case 当前范围版本。</td></tr>
+<tr><td>expected_target_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>目标 Case 当前范围版本。</td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;; minItems=1; maxItems=200</td><td>无（可空不等于可省略）</td><td>真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。</td></tr>
+</table>
+<a id="movereceipt"></a>
+<h2 id="movereceipt">MoveReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>source</td><td>是</td><td><a href="schemas.html#mutationreceipt">MutationReceipt</a></td><td>无（可空不等于可省略）</td><td>源Case变更回执（MoveReceipt）；请求CaseDataUpdate的source另为manual/import。 <a href="/handoff/audit/response-fields.html#movereceipt">完整语义</a></td></tr>
+<tr><td>target</td><td>是</td><td><a href="schemas.html#mutationreceipt">MutationReceipt</a></td><td>无（可空不等于可省略）</td><td>目标Case变更回执（MoveReceipt）。 <a href="/handoff/audit/response-fields.html#movereceipt">完整语义</a></td></tr>
+<tr><td>moved_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>本次实际从源Case移出的告警UUID。 <a href="/handoff/audit/response-fields.html#movereceipt">完整语义</a></td></tr>
+<tr><td>added_to_target_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>实际新增到目标Case的告警UUID；原已在目标的不会重复新增。 <a href="/handoff/audit/response-fields.html#movereceipt">完整语义</a></td></tr>
+</table>
+<a id="mutationreceipt"></a>
+<h2 id="mutationreceipt">MutationReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。 <a href="/handoff/audit/response-fields.html#mutationreceipt">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>Case成员范围版本，历史Run保持冻结值。 <a href="/handoff/audit/response-fields.html#mutationreceipt">完整语义</a></td></tr>
+<tr><td>pending_run_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>准备好的待启动Run；需要用户显式调用start。 <a href="/handoff/audit/response-fields.html#mutationreceipt">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>本次写入是否实际改变业务内容；幂等重读不表示重新执行。 <a href="/handoff/audit/response-fields.html#mutationreceipt">完整语义</a></td></tr>
+</table>
+<a id="origin"></a>
+<h2 id="origin">Origin</h2>
+<p>string model, human, system, legacy</p>
+<a id="preparebaseline"></a>
+<h2 id="preparebaseline">PrepareBaseline</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+</table>
+<a id="question"></a>
+<h2 id="question">Question</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本对象唯一身份；列表导航和关联使用该值，不能使用名称代替。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>text</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本轮待核问题正文。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>scope</td><td>是</td><td><a href="schemas.html#scope">Scope</a></td><td>无（可空不等于可省略）</td><td>本条发现/问题的适用范围；范围声明不等于已证明覆盖。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>evidence_requirements</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>要回答该问题所需的证据说明。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td>string open, answered, unresolved, not_attempted</td><td>无（可空不等于可省略）</td><td>本轮问题是否open/answered/unresolved/not_attempted，属于冻结调查内容；不是独立问题管理状态，不增加负责人/关闭/跨轮合并。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>answer</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>本轮已有回答，无回答为null。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>evidence_refs</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>本轮引用的材料/结果/人工版本，保留原角色与范围。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#question">完整语义</a></td></tr>
+</table>
+<a id="recommendation"></a>
+<h2 id="recommendation">Recommendation</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本对象唯一身份；列表导航和关联使用该值，不能使用名称代替。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>action_type</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>建议动作类型文本，不是执行接口名称。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>targets</td><td>是</td><td>array &lt;<a href="schemas.html#target">Target</a>&gt;</td><td>无（可空不等于可省略）</td><td>建议针对的对象键和展示名称。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>reason</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>approval_requirement</td><td>是</td><td>string required, not_required, unknown</td><td>无（可空不等于可省略）</td><td>该建议记录的审批需求；unknown不代表无需审批，当前没有审批执行接口。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>source_refs</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#recommendation">完整语义</a></td></tr>
+</table>
+<a id="recordpage"></a>
+<h2 id="recordpage">RecordPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+<tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>下一页偏移；null表示结束。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+</table>
+<a id="resultdetail"></a>
+<h2 id="resultdetail">ResultDetail</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>result</td><td>是</td><td><a href="schemas.html#resultview">ResultView</a></td><td>无（可空不等于可省略）</td><td>本次读取的结果对象；可空时表示该次执行没有保存对应结果。 <a href="/handoff/audit/response-fields.html#resultdetail">完整语义</a></td></tr>
+<tr><td>run</td><td>是</td><td><a href="schemas.html#runview">RunView</a></td><td>无（可空不等于可省略）</td><td>对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 <a href="/handoff/audit/response-fields.html#resultdetail">完整语义</a></td></tr>
+<tr><td>source_answer</td><td>是</td><td><a href="schemas.html#savedanswerreference">SavedAnswerReference</a> / null</td><td>无（可空不等于可省略）</td><td>ai_saved结果关联的已保存原回答身份；baseline或无源回答为null。 <a href="/handoff/audit/response-fields.html#resultdetail">完整语义</a></td></tr>
+<tr><td>members</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 <a href="/handoff/audit/dynamic-fields.html#result-members">完整语义</a></td></tr>
+<tr><td>member_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>成员总数；超过返回长度时结合members_truncated，不把当前数组长度当全量。 <a href="/handoff/audit/response-fields.html#resultdetail">完整语义</a></td></tr>
+<tr><td>members_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#resultdetail">完整语义</a></td></tr>
+<tr><td>delivery</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>C6交付回执定位信息及细节；没有有效回执为null，有报告不保证有正式Result。 <a href="/handoff/audit/dynamic-fields.html#delivery">完整语义</a></td></tr>
+</table>
+<a id="resultkind"></a>
+<h2 id="resultkind">ResultKind</h2>
+<p>string baseline, ai_saved</p>
+<a id="resultsummary"></a>
+<h2 id="resultsummary">ResultSummary</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>案件 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>kind</td><td>是</td><td><a href="schemas.html#resultkind">ResultKind</a></td><td>无（可空不等于可省略）</td><td>baseline/ai_saved <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>source_run_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>实际来源执行，同Case <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>source_answer_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>AI保存必有，baseline NULL <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>正式记录标题；AI保存可自定义 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>purpose</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本轮目标 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>conclusion</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>有效/不确定结论；无结论NULL <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>conclusion_state</td><td>是</td><td><a href="schemas.html#conclusionstate">ConclusionState</a></td><td>无（可空不等于可省略）</td><td>有依据/未决/无法给出 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>conclusion_origin</td><td>是</td><td><a href="schemas.html#origin">Origin</a></td><td>无（可空不等于可省略）</td><td>模型/人工/系统来源 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>validation_state</td><td>是</td><td><a href="schemas.html#validation">Validation</a></td><td>无（可空不等于可省略）</td><td>程序采用或拒绝状态 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>closing_note</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>每轮收尾说明，系统失败交接也有 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>comparison_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确同案已有结果；首次NULL <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>change_kind</td><td>是</td><td><a href="schemas.html#changekind">ChangeKind</a></td><td>无（可空不等于可省略）</td><td>比较类型 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>change_summary</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>相比基线输入/证据/判断变化 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>实际当时输入 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>graph_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>本轮图，无图NULL；不借另一轮冒充 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>report_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同版报告，无报告NULL <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>supersedes_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确修订另建版本，不能自指或跨案 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>delivery_state</td><td>是</td><td><a href="schemas.html#delivery">Delivery</a></td><td>无（可空不等于可省略）</td><td>正式交付完整性 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>执行产物形成时间 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>saved_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>正式保存时间；AI保存与答复时间不同 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>saved_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确AI保存人；baseline由服务保存 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>edited_fields</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>保存AI答案时用户改过的字段名；正文修改须origin=human且重新校验；原消息不改 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+<tr><td>edit_note</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>可选修改说明，不强制增加页面输入 <a href="/handoff/audit/response-fields.html#resultsummary">完整语义</a></td></tr>
+</table>
+<a id="resultview"></a>
+<h2 id="resultview">ResultView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>案件 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>kind</td><td>是</td><td><a href="schemas.html#resultkind">ResultKind</a></td><td>无（可空不等于可省略）</td><td>baseline/ai_saved <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>source_run_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>实际来源执行，同Case <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>source_answer_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>AI保存必有，baseline NULL <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>正式记录标题；AI保存可自定义 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>purpose</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本轮目标 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>conclusion</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>有效/不确定结论；无结论NULL <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>conclusion_state</td><td>是</td><td><a href="schemas.html#conclusionstate">ConclusionState</a></td><td>无（可空不等于可省略）</td><td>有依据/未决/无法给出 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>conclusion_origin</td><td>是</td><td><a href="schemas.html#origin">Origin</a></td><td>无（可空不等于可省略）</td><td>模型/人工/系统来源 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>validation_state</td><td>是</td><td><a href="schemas.html#validation">Validation</a></td><td>无（可空不等于可省略）</td><td>程序采用或拒绝状态 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>closing_note</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>每轮收尾说明，系统失败交接也有 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>comparison_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确同案已有结果；首次NULL <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>change_kind</td><td>是</td><td><a href="schemas.html#changekind">ChangeKind</a></td><td>无（可空不等于可省略）</td><td>比较类型 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>change_summary</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>相比基线输入/证据/判断变化 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>实际当时输入 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>graph_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>本轮图，无图NULL；不借另一轮冒充 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>report_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同版报告，无报告NULL <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>supersedes_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确修订另建版本，不能自指或跨案 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>delivery_state</td><td>是</td><td><a href="schemas.html#delivery">Delivery</a></td><td>无（可空不等于可省略）</td><td>正式交付完整性 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>执行产物形成时间 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>saved_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>正式保存时间；AI保存与答复时间不同 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>saved_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>明确AI保存人；baseline由服务保存 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>edited_fields</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>保存AI答案时用户改过的字段名；正文修改须origin=human且重新校验；原消息不改 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>edit_note</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>可选修改说明，不强制增加页面输入 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>findings</td><td>是</td><td>array &lt;<a href="schemas.html#finding">Finding</a>&gt;</td><td>无（可空不等于可省略）</td><td>稳定条目ID、依据、反证和限制 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>questions</td><td>是</td><td>array &lt;<a href="schemas.html#question">Question</a>&gt;</td><td>无（可空不等于可省略）</td><td>本轮问题/答案/缺口 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>recommendations</td><td>是</td><td>array &lt;<a href="schemas.html#recommendation">Recommendation</a>&gt;</td><td>无（可空不等于可省略）</td><td>建议含稳定proposal_id、目标、理由及审批要求 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+<tr><td>case_impact</td><td>是</td><td><a href="schemas.html#impact">Impact</a></td><td>无（可空不等于可省略）</td><td>作用范围、可调整认识、不能推广处 <a href="/handoff/audit/response-fields.html#resultview">完整语义</a></td></tr>
+</table>
+<a id="rundetail"></a>
+<h2 id="rundetail">RunDetail</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>run</td><td>是</td><td><a href="schemas.html#runview">RunView</a></td><td>无（可空不等于可省略）</td><td>对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>result_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>该Run已保存的正式结果UUID，按saved_at/id排序；最多200。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>result_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>该Run正式结果总数。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>results_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>start_eligibility</td><td>是</td><td><a href="schemas.html#startavailability">StartAvailability</a></td><td>无（可空不等于可省略）</td><td>是否可启动及原因，依据最新Run与Case范围。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>current_member_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前Case成员数量，可能与当轮输入不同。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>input_member_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>该Run冻结的run_members总数。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>members</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 <a href="/handoff/audit/dynamic-fields.html#run-members">完整语义</a></td></tr>
+<tr><td>members_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>read_counts</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>以read_state为键统计当轮成员数量。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>analysis_counts</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>以analysis_state为键统计当轮成员数量。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>steps</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>执行步骤目录，按seq组织；Case最多1000，A/I见动态结构限制。 <a href="/handoff/audit/dynamic-fields.html#run-steps">完整语义</a></td></tr>
+<tr><td>steps_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>tool_calls</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>kind=tool且state不为planned/skipped的实际尝试次数，包含失败，不是成功查询数。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>usage</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>按已读步骤及全量模型次数汇总；步骤截断时未读用量计unknown，不声称全量费用。 <a href="/handoff/audit/dynamic-fields.html#usage-total">完整语义</a></td></tr>
+<tr><td>artifacts</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>该Run工件元数据目录，正文通过对应工件接口读取。 <a href="/handoff/audit/dynamic-fields.html#artifact-metadata">完整语义</a></td></tr>
+<tr><td>artifact_counts</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>Case Run按工件kind分组的总数。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>artifacts_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>duration_seconds</td><td>是</td><td>number / null</td><td>无（可空不等于可省略）</td><td>started_at与ended_at均有值才计算秒数，否则null，不用0代未知。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>elapsed_seconds</td><td>是</td><td>number / null</td><td>无（可空不等于可省略）</td><td>Case Run已开始且未结束时从started_at到observed_at的秒数，否则null。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>last_recorded_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本轮请求/范围变动/开始/结束/步骤时间/工件捕获时间中实际存在的最新时刻，非服务心跳。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+<tr><td>execution_summary</td><td>否</td><td><a href="schemas.html#executionsummary">ExecutionSummary</a> / null</td><td>无（可空不等于可省略）</td><td>从C1.executor已保存计划工件读取的能力/限制快照；未找到为null，不用当前配置回填旧Run。 <a href="/handoff/audit/response-fields.html#rundetail">完整语义</a></td></tr>
+</table>
+<a id="runkind"></a>
+<h2 id="runkind">RunKind</h2>
+<p>string alert_basic, incident_diagnosis, baseline, ai_question</p>
+<a id="runstate"></a>
+<h2 id="runstate">RunState</h2>
+<p>string pending_update, running, unknown, completed, failed, cancelled</p>
+<a id="runtrigger"></a>
+<h2 id="runtrigger">RunTrigger</h2>
+<p>string ingested, refresh, case_created, members_changed, manual, question, retry</p>
+<a id="runview"></a>
+<h2 id="runview">RunView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>baseline/ai_question归属 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>kind</td><td>是</td><td><a href="schemas.html#runkind">RunKind</a></td><td>无（可空不等于可省略）</td><td>四机器流程明确区分 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本次执行名称，pending随范围更新 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>purpose</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本轮目标/提问 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>trigger</td><td>是</td><td><a href="schemas.html#runtrigger">RunTrigger</a></td><td>无（可空不等于可省略）</td><td>触发原因 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>Case成员版本；非Case NULL <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>scope_updated_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>pending最近合并范围时间 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>scope_kind</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>baseline whole_case，AI可选范围；其他流程NULL <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>window_start</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>固定绝对查询起点；不适用NULL <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>window_end</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>固定绝对查询终点；成对出现 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td><a href="schemas.html#runstate">RunState</a></td><td>无（可空不等于可省略）</td><td>记录/执行状态 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>comparison_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>领取时固定的同案比较基线，可跨成员范围 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>领取前NULL；提交running前冻结本地输入 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>executor_version</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>实际执行版本，pending NULL <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>requested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>记录创建/首次请求 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>requested_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>真实请求人 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>started_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>running领取事务时间 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>ended_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>终态时间；unknown未确认结束NULL <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>stop_reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>稳定原因码；不强用人类结论代替 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>stop_detail</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>可读原因 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>delivery_state</td><td>是</td><td><a href="schemas.html#delivery">Delivery</a></td><td>无（可空不等于可省略）</td><td>实际产物交付 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>执行状态条件更新版本 <a href="/handoff/audit/response-fields.html#runview">完整语义</a></td></tr>
+</table>
+<a id="savecaseaianswer"></a>
+<h2 id="savecaseaianswer">SaveCaseAIAnswer</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>conclusion</td><td>是</td><td>string; minLength=1; maxLength=20000</td><td>无（可空不等于可省略）</td><td>本环节结论正文；null可能未交付/拒收，不补造。</td></tr>
+</table>
+<a id="savedanswerreference"></a>
+<h2 id="savedanswerreference">SavedAnswerReference</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+<tr><td>conversation_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>会话 <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+<tr><td>in_reply_to</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>assistant指具体用户问题；同会话 <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+<tr><td>source_run_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>真实ai_question执行；用户消息NULL <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>assistant实际输入；不能保存时重新读取 <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+<tr><td>answered_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>实际回答完成 <a href="/handoff/audit/response-fields.html#savedanswerreference">完整语义</a></td></tr>
+</table>
+<a id="savedreference"></a>
+<h2 id="savedreference">SavedReference</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>type</td><td>是</td><td>string alert_material, artifact, task_revision, result</td><td>无（可空不等于可省略）</td><td>本结构的类型判别；EvidenceRef为引用目标类型，EvidenceEntry为证据分类。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本对象唯一身份；列表导航和关联使用该值，不能使用名称代替。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+<tr><td>external</td><td>是</td><td>null</td><td>无（可空不等于可省略）</td><td>现有EvidenceRef固定null；外部材料需先保存为内部可解析工件。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+<tr><td>source_path</td><td>是</td><td>string; minLength=1; maxLength=2000</td><td>无（可空不等于可省略）</td><td>保存原件内的路径；SavedReference强制以/开头的JSON Pointer；普通EvidenceRef可空。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+<tr><td>row_keys</td><td>是</td><td>array &lt;string&gt;; maxItems=0</td><td>无（可空不等于可省略）</td><td>普通引用中的行定位键；SavedReference现合同必须为空列表。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+<tr><td>role</td><td>是</td><td>string observation, source_label, prior_analysis, human_statement, execution_receipt</td><td>无（可空不等于可省略）</td><td>来源角色 observation/source_label/prior_analysis/human_statement/execution_receipt；不能相互替代证据。 <a href="/handoff/audit/response-fields.html#savedreference">完整语义</a></td></tr>
+</table>
+<a id="scope"></a>
+<h2 id="scope">Scope</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>kind</td><td>是</td><td>string whole_case, selected_alerts, explicit_objects</td><td>无（可空不等于可省略）</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+<tr><td>alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>本条结果/人工事实声明覆盖的告警UUID；历史结果按冻结范围解释，不强制变成当前成员。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+<tr><td>object_keys</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>范围进一步限定的对象键；explicit_objects必须有键，其他类型可为空。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+<tr><td>window_start</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口起点，带时区；和window_end同时提供或同时为空。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+<tr><td>window_end</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口终点，带时区且不早于起点。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+<tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#scope">完整语义</a></td></tr>
+</table>
+<a id="scorestate"></a>
+<h2 id="scorestate">ScoreState</h2>
+<p>string not_provided, not_computed, disabled, failed, available, legacy_unverified</p>
+<a id="severity"></a>
+<h2 id="severity">Severity</h2>
+<p>string info, low, medium, high, critical</p>
+<a id="stageentry"></a>
+<h2 id="stageentry">StageEntry</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>run</td><td>是</td><td><a href="schemas.html#stagerunview">StageRunView</a></td><td>无（可空不等于可省略）</td><td>对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>freshness</td><td>是</td><td>string current, stale, unverified, unavailable</td><td>无（可空不等于可省略）</td><td>该次运行输入与当前材料/成员/判断的比较：current/stale/unverified/unavailable；不是采用状态。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>is_current_pointer</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>该结果ID是否正是主体当前指针。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>valid_for_current_input</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>同时是当前指针、输入current、Run completed，事件还需diagnosis.validation_state=accepted；不代表模型语义正确。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>result</td><td>是</td><td><a href="schemas.html#triageview">TriageView</a> / <a href="schemas.html#diagnosisview">DiagnosisView</a> / null</td><td>无（可空不等于可省略）</td><td>本次读取的结果对象；可空时表示该次执行没有保存对应结果。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>explanation</td><td>是</td><td><a href="schemas.html#explanationview">ExplanationView</a> / null</td><td>无（可空不等于可省略）</td><td>A分诊的独立解释工件及可用性；I或无解释时null。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+<tr><td>partial_analysis</td><td>否</td><td><a href="schemas.html#explanationview">ExplanationView</a> / null</td><td>无（可空不等于可省略）</td><td>该Run最后可识别的模型响应partial_review读取结果；不可用与未记录分开，不作为当前有效判断。 <a href="/handoff/audit/response-fields.html#stageentry">完整语义</a></td></tr>
+</table>
+<a id="stagepage"></a>
+<h2 id="stagepage">StagePage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>subject_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本分析目录对应告警或事件UUID。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>kind</td><td>是</td><td>string alert_basic, incident_diagnosis</td><td>无（可空不等于可省略）</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>current_pointer_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>主体latest_triage_id/latest_diagnosis_id；它是分诊/诊断记录ID，不是Run ID。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>current</td><td>是</td><td><a href="schemas.html#stageentry">StageEntry</a> / null</td><td>无（可空不等于可省略）</td><td>指针可核对时的StageEntry，否则null；current_pointer_id是分诊/诊断记录ID。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>current_unavailable_reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>无当前指针时null；有指针但无法核对来源Run时current_pointer_without_verifiable_run。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>entries</td><td>是</td><td>array &lt;<a href="schemas.html#stageentry">StageEntry</a>&gt;</td><td>无（可空不等于可省略）</td><td>当前对象条目数组：StagePage为历史尝试，证据模型为目录条目。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+<tr><td>next_before_run_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>下一页运行游标；null表示结束。 <a href="/handoff/audit/response-fields.html#stagepage">完整语义</a></td></tr>
+</table>
+<a id="stagerunview"></a>
+<h2 id="stagerunview">StageRunView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>kind</td><td>是</td><td>string alert_basic, incident_diagnosis</td><td>无（可空不等于可省略）</td><td>四机器流程明确区分 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td><a href="schemas.html#runstate">RunState</a></td><td>无（可空不等于可省略）</td><td>记录/执行状态 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>requested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>记录创建/首次请求 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>requested_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>真实请求人 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>started_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>running领取事务时间 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>ended_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>终态时间；unknown未确认结束NULL <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>executor_version</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>实际执行版本，pending NULL <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>input_artifact_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>领取前NULL；提交running前冻结本地输入 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>stop_reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>稳定原因码；不强用人类结论代替 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+<tr><td>delivery_state</td><td>是</td><td><a href="schemas.html#delivery">Delivery</a></td><td>无（可空不等于可省略）</td><td>实际产物交付 <a href="/handoff/audit/response-fields.html#stagerunview">完整语义</a></td></tr>
+</table>
+<a id="start"></a>
+<h2 id="start">Start</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>window_start</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口起点，带时区；和window_end同时提供或同时为空。</td></tr>
+<tr><td>window_end</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>窗口终点，带时区且不早于起点。</td></tr>
+<tr><td>comparison_result_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同案比较结果ID；null表示未指定。</td></tr>
+</table>
+<a id="startavailability"></a>
+<h2 id="startavailability">StartAvailability</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>can_start</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>服务给出的启动资格，不由前端从状态猜测。 <a href="/handoff/audit/response-fields.html#startavailability">完整语义</a></td></tr>
+<tr><td>reason</td><td>是</td><td>string ready, not_pending, resolved_case, scope_changed, empty_scope, baseline_active</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。 <a href="/handoff/audit/response-fields.html#startavailability">完整语义</a></td></tr>
+</table>
+<a id="subjectpage"></a>
+<h2 id="subjectpage">SubjectPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>kind</td><td>是</td><td>string alerts, incidents</td><td>无（可空不等于可省略）</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#subjectview">SubjectView</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>next_before_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>下一页主体游标；null表示结束。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>overall_stats</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>主体整体统计；按原口径和observed_at展示。 <a href="/handoff/audit/dynamic-fields.html#overall-stats">完整语义</a></td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+</table>
+<a id="subjectview"></a>
+<h2 id="subjectview">SubjectView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>kind</td><td>是</td><td>string alerts, incidents</td><td>无（可空不等于可省略）</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>facts</td><td>是</td><td><a href="schemas.html#alertfacts">AlertFacts</a> / <a href="schemas.html#incidentfacts">IncidentFacts</a></td><td>无（可空不等于可省略）</td><td>该kind主体固定事实字段；告警AlertFacts，事件IncidentFacts。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>owner_name</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>从配置的人员目录按同租户owner_id解析出的用户名，无法解析为null。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>owner_resolution</td><td>是</td><td>string unassigned, resolved, unresolved</td><td>无（可空不等于可省略）</td><td>unassigned明确未分配，resolved名称已解析，unresolved有来源/负责人但本次未解析。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>derived</td><td>是</td><td><a href="schemas.html#derivedfields">DerivedFields</a></td><td>无（可空不等于可省略）</td><td>服务端计算字段；告警和事件含义、空值分别见DerivedFields。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>material</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>告警当前材料元数据，含content_url；事件该值null。正文另读，不含raw_text/raw_json/ocsf_json/enrichment。 <a href="/handoff/audit/dynamic-fields.html#alert-material-meta">完整语义</a></td></tr>
+<tr><td>triage</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>告警latest_triage_id对应记录及freshness/confidence_percent/run_state/valid_for_current_input派生值，非TriageView同形状。 <a href="/handoff/audit/dynamic-fields.html#alert-triage-feedback">完整语义</a></td></tr>
+<tr><td>feedback</td><td>是</td><td>object / null</td><td>无（可空不等于可省略）</td><td>告警latest_feedback_id对应kind=human_feedback的原始记录；事件或无记录时null。 <a href="/handoff/audit/dynamic-fields.html#alert-triage-feedback">完整语义</a></td></tr>
+<tr><td>analysis_url</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>该主体分析目录的相对HTTP路径。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+<tr><td>section_urls</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>section到相对HTTP路径的映射；members仅事件、incidents仅告警，其余见记录分区。 <a href="/handoff/audit/response-fields.html#subjectview">完整语义</a></td></tr>
+</table>
+<a id="tacticcount"></a>
+<h2 id="tacticcount">TacticCount</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>label</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>展示标签；TacticCount为原材料战术标签，Threat为威胁标签。 <a href="/handoff/audit/response-fields.html#tacticcount">完整语义</a></td></tr>
+<tr><td>alert_count</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>含该战术标签的不同告警数。 <a href="/handoff/audit/response-fields.html#tacticcount">完整语义</a></td></tr>
+</table>
+<a id="target"></a>
+<h2 id="target">Target</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>object_key</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>带类型/命名空间语义的稳定对象键，不能用展示名称或裸IP替代所有对象身份。 <a href="/handoff/audit/response-fields.html#target">完整语义</a></td></tr>
+<tr><td>display_name</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>对象展示名称，不作为关联键。 <a href="/handoff/audit/response-fields.html#target">完整语义</a></td></tr>
+</table>
+<a id="taskcreate"></a>
+<h2 id="taskcreate">TaskCreate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=10000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>assignee_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工任务负责人UUID，需真实存在于本租户；null未分配。</td></tr>
+<tr><td>due_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>state</td><td>否</td><td><a href="schemas.html#taskstate">TaskState</a></td><td>&quot;not_started&quot;</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。</td></tr>
+<tr><td>result_text</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>人工确认结果正文；任务completed时必填非空。</td></tr>
+<tr><td>result_scope</td><td>否</td><td><a href="schemas.html#scope">Scope</a> / null</td><td>无（可空不等于可省略）</td><td>人工结果适用范围；completed时必填，不得扩大到Case外。</td></tr>
+<tr><td>source_refs</td><td>否</td><td>array &lt;<a href="schemas.html#taskreference">TaskReference</a>&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>origin_result_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>创建任务时关联的同案正式结果UUID。</td></tr>
+<tr><td>origin_finding_id</td><td>否</td><td>string; minLength=1; maxLength=200 / null</td><td>无（可空不等于可省略）</td><td>该结果中的发现ID；必须同时传origin_result_id。</td></tr>
+</table>
+<a id="taskedit"></a>
+<h2 id="taskedit">TaskEdit</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>title</td><td>是</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=10000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>assignee_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工任务负责人UUID，需真实存在于本租户；null未分配。</td></tr>
+<tr><td>due_at</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>带时区的截止时间；null清空。</td></tr>
+<tr><td>state</td><td>否</td><td><a href="schemas.html#taskstate">TaskState</a></td><td>&quot;not_started&quot;</td><td>本对象状态；含义依模型枚举，不与交付/业务判定合并。</td></tr>
+<tr><td>result_text</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>人工确认结果正文；任务completed时必填非空。</td></tr>
+<tr><td>result_scope</td><td>否</td><td><a href="schemas.html#scope">Scope</a> / null</td><td>无（可空不等于可省略）</td><td>人工结果适用范围；completed时必填，不得扩大到Case外。</td></tr>
+<tr><td>source_refs</td><td>否</td><td>array &lt;<a href="schemas.html#taskreference">TaskReference</a>&gt;; maxItems=50</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。</td></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+</table>
+<a id="taskmutation"></a>
+<h2 id="taskmutation">TaskMutation</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>task</td><td>是</td><td><a href="schemas.html#taskview">TaskView</a></td><td>无（可空不等于可省略）</td><td>本次创建/修订后读取到的完整TaskView。 <a href="/handoff/audit/response-fields.html#taskmutation">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>本次写入是否实际改变业务内容；幂等重读不表示重新执行。 <a href="/handoff/audit/response-fields.html#taskmutation">完整语义</a></td></tr>
+</table>
+<a id="taskpage"></a>
+<h2 id="taskpage">TaskPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#taskview">TaskView</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#taskpage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#taskpage">完整语义</a></td></tr>
+<tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>下一页偏移；null表示结束。 <a href="/handoff/audit/response-fields.html#taskpage">完整语义</a></td></tr>
+</table>
+<a id="taskreference"></a>
+<h2 id="taskreference">TaskReference</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>type</td><td>是</td><td>string alert_material, artifact, result, task_revision</td><td>无（可空不等于可省略）</td><td>Type</td></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>Id</td></tr>
+</table>
+<a id="taskrevisionpage"></a>
+<h2 id="taskrevisionpage">TaskRevisionPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#taskrevisionview">TaskRevisionView</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#taskrevisionpage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#taskrevisionpage">完整语义</a></td></tr>
+<tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>下一页偏移；null表示结束。 <a href="/handoff/audit/response-fields.html#taskrevisionpage">完整语义</a></td></tr>
+</table>
+<a id="taskrevisionview"></a>
+<h2 id="taskrevisionview">TaskRevisionView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>同案FK <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>task_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>事项 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>从1开始，每次有效编辑+1 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>任务事项，非空 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>description</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>工作说明 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>assignee_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同租户可选负责人，NULL未分配 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>due_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>截止时间，可空 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td><a href="schemas.html#taskstate">TaskState</a></td><td>无（可空不等于可省略）</td><td>四种人工状态 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>result_text</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>事实反馈，completed必填非空 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>result_scope</td><td>是</td><td><a href="schemas.html#scope">Scope</a> / null</td><td>无（可空不等于可省略）</td><td>确认范围；完成时须明确，如未知部分写limitations <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>source_refs</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>读回为完整EvidenceRef（含角色/路径），创建/修订请求仅接收TaskReference的type/id，不能原样回传读对象。 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>completed_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>本次进入完成状态的真实时间 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>completed_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>本次实际完成人，不是assignee <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>changed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>版本编辑时间 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+<tr><td>changed_by</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>实际编辑人 <a href="/handoff/audit/response-fields.html#taskrevisionview">完整语义</a></td></tr>
+</table>
+<a id="taskstate"></a>
+<h2 id="taskstate">TaskState</h2>
+<p>string not_started, in_progress, completed, cancelled</p>
+<a id="taskview"></a>
+<h2 id="taskview">TaskView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>所属Case <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>current_revision_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>当前完整版本；延迟FK同事务插入 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>origin_result_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>同Case引出事项的结果 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>origin_finding_id</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>该结果findings中的稳定条目ID <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>任务创建 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>created_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>创建者 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>最新实际编辑 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>防旧表单覆盖 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+<tr><td>current</td><td>是</td><td><a href="schemas.html#taskrevisionview">TaskRevisionView</a></td><td>无（可空不等于可省略）</td><td>current_revision_id指向的完整当前修订对象；该HTTP结构为必返且不可空。 <a href="/handoff/audit/response-fields.html#taskview">完整语义</a></td></tr>
+</table>
+<a id="threat"></a>
+<h2 id="threat">Threat</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>namespace</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>身份命名空间；不同来源的同名键不得合并。 <a href="/handoff/audit/response-fields.html#threat">完整语义</a></td></tr>
+<tr><td>key</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>该命名空间内稳定威胁键。 <a href="/handoff/audit/response-fields.html#threat">完整语义</a></td></tr>
+<tr><td>label</td><td>是</td><td>string; minLength=1; maxLength=500; pattern=\S</td><td>无（可空不等于可省略）</td><td>展示标签；TacticCount为原材料战术标签，Threat为威胁标签。 <a href="/handoff/audit/response-fields.html#threat">完整语义</a></td></tr>
+<tr><td>source_refs</td><td>是</td><td>array &lt;<a href="schemas.html#savedreference">SavedReference</a>&gt;; minItems=1; maxItems=20</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。 <a href="/handoff/audit/response-fields.html#threat">完整语义</a></td></tr>
+</table>
+<a id="timesource"></a>
+<h2 id="timesource">TimeSource</h2>
+<p>string source, derived_source, unknown</p>
+<a id="traceview"></a>
+<h2 id="traceview">TraceView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>run</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>A/I实际Run行的公开字段，包括主体身份与limits；不同于精简StageRunView，见动态字段。 <a href="/handoff/audit/dynamic-fields.html#run-row">完整语义</a></td></tr>
+<tr><td>steps</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>执行步骤目录，按seq组织；Case最多1000，A/I见动态结构限制。 <a href="/handoff/audit/dynamic-fields.html#run-steps">完整语义</a></td></tr>
+<tr><td>steps_total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>该A/I Run全部步骤数量，不限返回目录长度。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>steps_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>artifacts</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>该Run工件元数据目录，正文通过对应工件接口读取。 <a href="/handoff/audit/dynamic-fields.html#artifact-metadata">完整语义</a></td></tr>
+<tr><td>artifacts_total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>该A/I Run全部工件数量。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>artifacts_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>usage</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>读取该Run所有模型步骤汇总，与steps目录是否截断无关。 <a href="/handoff/audit/dynamic-fields.html#usage-total">完整语义</a></td></tr>
+<tr><td>tool_calls</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>kind=tool且state不为planned/skipped的实际尝试次数，包含失败，不是成功查询数。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>duration_seconds</td><td>是</td><td>number / null</td><td>无（可空不等于可省略）</td><td>started_at与ended_at均有值才计算秒数，否则null，不用0代未知。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>last_recorded_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本轮请求/范围变动/开始/结束/步骤时间/工件捕获时间中实际存在的最新时刻，非服务心跳。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#traceview">完整语义</a></td></tr>
+</table>
+<a id="triageview"></a>
+<h2 id="triageview">TriageView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>该记录的应用UUID，不是页面展示编号或厂商编号。 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>input_material_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>判断依据的材料版；旧未知NULL <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>source_run_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>新alert_basic执行；与此告警一致 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>verdict</td><td>是</td><td><a href="schemas.html#disposition">Disposition</a> / null</td><td>无（可空不等于可省略）</td><td>同次判定 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>rationale</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>同次理由，历史缺失NULL <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>confidence</td><td>是</td><td>number / null</td><td>无（可空不等于可省略）</td><td>该分诊记录0..1置信度，score_state=available才作有效数值；SubjectView.triage.confidence_percent已乘100。 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>score_state</td><td>是</td><td><a href="schemas.html#scorestate">ScoreState</a></td><td>无（可空不等于可省略）</td><td>计算状态 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>recommendations</td><td>是</td><td>array &lt;object&gt; / null</td><td>无（可空不等于可省略）</td><td>同次建议，不与新人工判断拼接 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>producer</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>生产者及版本 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>actor</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>实际操作者/服务身份 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+<tr><td>assessed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>判断发生时间 <a href="/handoff/audit/response-fields.html#triageview">完整语义</a></td></tr>
+</table>
+<a id="validation"></a>
+<h2 id="validation">Validation</h2>
+<p>string not_checked, accepted, rejected, system_only, legacy_unverified</p>
+<a id="validationerror"></a>
+<h2 id="validationerror">ValidationError</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>loc</td><td>是</td><td>array &lt;string / integer&gt;</td><td>无（可空不等于可省略）</td><td>校验错误的位置路径，如body/字段名或path/参数。 <a href="/handoff/audit/response-fields.html#validationerror">完整语义</a></td></tr>
+<tr><td>msg</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>字段校验错误说明。 <a href="/handoff/audit/response-fields.html#validationerror">完整语义</a></td></tr>
+<tr><td>type</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>本结构的类型判别；EvidenceRef为引用目标类型，EvidenceEntry为证据分类。 <a href="/handoff/audit/response-fields.html#validationerror">完整语义</a></td></tr>
+<tr><td>input</td><td>否</td><td>object</td><td>无（可空不等于可省略）</td><td>触发字段校验的输入值（框架可能省略）。 <a href="/handoff/audit/response-fields.html#validationerror">完整语义</a></td></tr>
+<tr><td>ctx</td><td>否</td><td>object</td><td>无（可空不等于可省略）</td><td>字段校验的附加上下文（框架可能省略）。 <a href="/handoff/audit/response-fields.html#validationerror">完整语义</a></td></tr>
+</table>
+<a id="workstatus"></a>
+<h2 id="workstatus">WorkStatus</h2>
+<p>string new, in_progress, resolved, unknown</p>
+<a id="caseblockingrun"></a>
+<h2 id="caseblockingrun">CaseBlockingRun</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>阻止结案的本案Run ID。 <a href="/handoff/audit/response-fields.html#caseblockingrun">完整语义</a></td></tr>
+<tr><td>state</td><td>是</td><td>string running, unknown</td><td>无（可空不等于可省略）</td><td>running正在执行；unknown执行结果未明确，两者均阻止结案。 <a href="/handoff/audit/response-fields.html#caseblockingrun">完整语义</a></td></tr>
+</table>
+<a id="casecloserequest"></a>
+<h2 id="casecloserequest">CaseCloseRequest</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>acknowledge_open_tasks</td><td>否</td><td>boolean</td><td>false</td><td>是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。</td></tr>
+</table>
+<a id="caselifecyclerequest"></a>
+<h2 id="caselifecyclerequest">CaseLifecycleRequest</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+</table>
+<a id="casemanagementreceipt"></a>
+<h2 id="casemanagementreceipt">CaseManagementReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case</td><td>是</td><td><a href="schemas.html#caseview">CaseView</a></td><td>无（可空不等于可省略）</td><td>本次操作保存后的Case快照；幂等重放返回原回执，新状态请重新GET。 <a href="/handoff/audit/response-fields.html#casemanagementreceipt">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>是否实际改变Case字段；false不增加行版本，幂等重放保留原回执。 <a href="/handoff/audit/response-fields.html#casemanagementreceipt">完整语义</a></td></tr>
+</table>
+<a id="casemanagementupdate"></a>
+<h2 id="casemanagementupdate">CaseManagementUpdate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>title</td><td>否</td><td>string; minLength=1; maxLength=200</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>否</td><td>string; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>severity</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+</table>
+<a id="casemanagementview"></a>
+<h2 id="casemanagementview">CaseManagementView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case</td><td>是</td><td><a href="schemas.html#caseview">CaseView</a></td><td>无（可空不等于可省略）</td><td>当前已保存的Case管理字段和行版本，与Case详情一致。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+<tr><td>open_task_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>当前修订为not_started/in_progress的人工任务数；历史版本不重复计数。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+<tr><td>blocking_runs</td><td>是</td><td>array &lt;<a href="schemas.html#caseblockingrun">CaseBlockingRun</a>&gt;</td><td>无（可空不等于可省略）</td><td>本案running/unknown Run；空列表表示没有执行状态阻塞，不表示没有待办。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+<tr><td>can_close</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>案件未结案且无阻塞Run；如requires_open_task_confirmation为true仍须确认及理由。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+<tr><td>can_reopen</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>当前案件是否已解决，可由人显式重开。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+<tr><td>requires_open_task_confirmation</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>未结案且存在未完人工任务；关闭请求须确认并提供理由。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
+</table>
+<a id="frozenalertmaterial"></a>
+<h2 id="frozenalertmaterial">FrozenAlertMaterial</h2>
+<p>Run冻结材料的原始行；不包装ContentView。嵌套业务JSON见json-contracts.json。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>tenant_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>tenant_id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>revision</td><td>是</td><td>integer; minimum=1</td><td>无（可空不等于可省略）</td><td>材料或任务修订序号。</td></tr>
+<tr><td>received_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>received_at</td></tr>
+<tr><td>source_version</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>source_version</td></tr>
+<tr><td>raw_text</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>保留的原始文本。</td></tr>
+<tr><td>sha256</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>原件内容摘要；不等于业务结论验证。</td></tr>
+<tr><td>raw_json</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>保留的原始JSON。</td></tr>
+<tr><td>ocsf_json</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>标准化事件正文。</td></tr>
+<tr><td>enrichment</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>已有富化内容。</td></tr>
+<tr><td>detection</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>实际检测信息及分数/ATT&amp;CK标签。</td></tr>
+<tr><td>source_scope</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>原材料来源范围合同。</td></tr>
+<tr><td>retention</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>保留/截断说明。</td></tr>
+<tr><td>material_state</td><td>是</td><td>string complete, truncated, summary_only, unavailable</td><td>无（可空不等于可省略）</td><td>complete/truncated/summary_only/unavailable，保持原材料状态。</td></tr>
+</table>
+<a id="recordalert"></a>
+<h2 id="recordalert">RecordAlert</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_namespace</td></tr>
+<tr><td>source_alert_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>source_alert_id</td></tr>
+<tr><td>vendor_alert_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>vendor_alert_id</td></tr>
+<tr><td>connector_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>connector_id</td></tr>
+<tr><td>connector_type</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>connector_type</td></tr>
+<tr><td>original_vendor</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>original_vendor</td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>category</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>category</td></tr>
+<tr><td>severity</td><td>是</td><td>string/null info, low, medium, high, critical, None</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>severity_raw</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>severity_raw</td></tr>
+<tr><td>event_time</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>event_time</td></tr>
+<tr><td>event_time_source</td><td>是</td><td>string source, derived_source, unknown</td><td>无（可空不等于可省略）</td><td>event_time_source</td></tr>
+<tr><td>first_seen_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>first_seen_at</td></tr>
+<tr><td>last_seen_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>last_seen_at</td></tr>
+<tr><td>ingested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>ingested_at</td></tr>
+<tr><td>source_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>source_updated_at</td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>business_updated_at</td></tr>
+<tr><td>handling_status</td><td>是</td><td>string new, in_progress, completed, unknown</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>disposition</td><td>是</td><td>string/null true_positive, false_positive, benign, needs_review, None</td><td>无（可空不等于可省略）</td><td>disposition</td></tr>
+<tr><td>owner_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>assignment_state</td><td>是</td><td>string unassigned, assigned, unresolved</td><td>无（可空不等于可省略）</td><td>分配状态，unresolved不等于unassigned。</td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>owner_source_value</td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>assigned_at</td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>priority_value</td><td>是</td><td>number/null</td><td>无（可空不等于可省略）</td><td>priority_value</td></tr>
+<tr><td>priority_state</td><td>是</td><td>string not_provided, not_computed, disabled, failed, available, legacy_unverified</td><td>无（可空不等于可省略）</td><td>priority_state</td></tr>
+<tr><td>priority_source</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>priority_source</td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>priority_basis</td></tr>
+<tr><td>closed_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>closed_at</td></tr>
+<tr><td>closed_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>closed_by</td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>reopened_at</td></tr>
+<tr><td>latest_material_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_material_id</td></tr>
+<tr><td>latest_triage_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_triage_id</td></tr>
+<tr><td>latest_feedback_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_feedback_id</td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>并发修改版本；后续写入的expected_row_version取此值。</td></tr>
+<tr><td>latest_explanation_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_explanation_id</td></tr>
+</table>
+<a id="recordobject"></a>
+<h2 id="recordobject">RecordObject</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>material_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>材料版本 UUID；历史读取使用冻结版本。</td></tr>
+<tr><td>object_key</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>object_key</td></tr>
+<tr><td>object_type</td><td>是</td><td>string host, user, ip, domain, url, file, hash, process, email, application, cloud_resource, technique, other</td><td>无（可空不等于可省略）</td><td>object_type</td></tr>
+<tr><td>source_type</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>source_type</td></tr>
+<tr><td>object_role</td><td>是</td><td>string entity, ioc, both</td><td>无（可空不等于可省略）</td><td>object_role</td></tr>
+<tr><td>namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>namespace</td></tr>
+<tr><td>raw_value</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>raw_value</td></tr>
+<tr><td>normalized_value</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>normalized_value</td></tr>
+<tr><td>source_path</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_path</td></tr>
+<tr><td>attributes</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>attributes</td></tr>
+<tr><td>asset_match_state</td><td>是</td><td>string matched, ambiguous, not_found, not_checked</td><td>无（可空不等于可省略）</td><td>asset_match_state</td></tr>
+<tr><td>asset_ref</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>asset_ref</td></tr>
+<tr><td>match_basis</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>match_basis</td></tr>
+</table>
+<a id="recordsource"></a>
+<h2 id="recordsource">RecordSource</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>material_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>材料版本 UUID；历史读取使用冻结版本。</td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_namespace</td></tr>
+<tr><td>source_event_id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_event_id</td></tr>
+<tr><td>relation_kind</td><td>是</td><td>string source_event, threshold_candidate, sequence_candidate, related_record</td><td>无（可空不等于可省略）</td><td>relation_kind</td></tr>
+<tr><td>observed_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。</td></tr>
+<tr><td>source_path</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>source_path</td></tr>
+</table>
+<a id="recordcomment"></a>
+<h2 id="recordcomment">RecordComment</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>incident_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>事件 UUID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>body</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>body</td></tr>
+<tr><td>author_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>author_id</td></tr>
+<tr><td>author_name_snapshot</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>author_name_snapshot</td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>created_at</td></tr>
+<tr><td>edited_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>edited_at</td></tr>
+<tr><td>edited_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>edited_by</td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>并发修改版本；后续写入的expected_row_version取此值。</td></tr>
+</table>
+<a id="recordresponse"></a>
+<h2 id="recordresponse">RecordResponse</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>incident_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>事件 UUID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>result_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>同案已保存正式结果 UUID。</td></tr>
+<tr><td>proposal_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>proposal_id</td></tr>
+<tr><td>legacy_proposal_ref</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>legacy_proposal_ref</td></tr>
+<tr><td>external_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>external_namespace</td></tr>
+<tr><td>approval_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>approval_id</td></tr>
+<tr><td>action_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>action_id</td></tr>
+<tr><td>linked_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>linked_at</td></tr>
+<tr><td>receipt_artifact_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>receipt_artifact_id</td></tr>
+</table>
+<a id="recordactivity"></a>
+<h2 id="recordactivity">RecordActivity</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>actor</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>actor</td></tr>
+<tr><td>action</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>action</td></tr>
+<tr><td>subject_alert_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>subject_alert_id</td></tr>
+<tr><td>subject_incident_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>subject_incident_id</td></tr>
+<tr><td>subject_case_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>subject_case_id</td></tr>
+<tr><td>occurred_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>occurred_at</td></tr>
+<tr><td>summary</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>summary</td></tr>
+<tr><td>detail</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>detail</td></tr>
+<tr><td>matching_targets</td><td>是</td><td>array &lt;<a href="schemas.html#recordactivitytarget">RecordActivityTarget</a>&gt;</td><td>无（可空不等于可省略）</td><td>matching_targets</td></tr>
+<tr><td>targets_truncated</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>targets_truncated</td></tr>
+</table>
+<a id="recordactivitytarget"></a>
+<h2 id="recordactivitytarget">RecordActivityTarget</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>activity_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>activity_id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>incident_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>事件 UUID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>task_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>本案人工任务 UUID。</td></tr>
+<tr><td>run_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>该父主体下的执行 UUID。</td></tr>
+<tr><td>result_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>同案已保存正式结果 UUID。</td></tr>
+<tr><td>comment_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>comment_id</td></tr>
+<tr><td>before_value</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>before_value</td></tr>
+<tr><td>after_value</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>after_value</td></tr>
+<tr><td>result_state</td><td>是</td><td>string succeeded, failed, skipped</td><td>无（可空不等于可省略）</td><td>result_state</td></tr>
+<tr><td>reason</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+</table>
+<a id="recordalertmember"></a>
+<h2 id="recordalertmember">RecordAlertMember</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_namespace</td></tr>
+<tr><td>source_alert_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>source_alert_id</td></tr>
+<tr><td>vendor_alert_id</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>vendor_alert_id</td></tr>
+<tr><td>connector_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>connector_id</td></tr>
+<tr><td>connector_type</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>connector_type</td></tr>
+<tr><td>original_vendor</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>original_vendor</td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>category</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>category</td></tr>
+<tr><td>severity</td><td>是</td><td>string/null info, low, medium, high, critical, None</td><td>无（可空不等于可省略）</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
+<tr><td>severity_raw</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>severity_raw</td></tr>
+<tr><td>event_time</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>event_time</td></tr>
+<tr><td>event_time_source</td><td>是</td><td>string source, derived_source, unknown</td><td>无（可空不等于可省略）</td><td>event_time_source</td></tr>
+<tr><td>first_seen_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>first_seen_at</td></tr>
+<tr><td>last_seen_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>last_seen_at</td></tr>
+<tr><td>ingested_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>ingested_at</td></tr>
+<tr><td>source_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>source_updated_at</td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>business_updated_at</td></tr>
+<tr><td>handling_status</td><td>是</td><td>string new, in_progress, completed, unknown</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>disposition</td><td>是</td><td>string/null true_positive, false_positive, benign, needs_review, None</td><td>无（可空不等于可省略）</td><td>disposition</td></tr>
+<tr><td>owner_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>assignment_state</td><td>是</td><td>string unassigned, assigned, unresolved</td><td>无（可空不等于可省略）</td><td>分配状态，unresolved不等于unassigned。</td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>owner_source_value</td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>assigned_at</td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>priority_value</td><td>是</td><td>number/null</td><td>无（可空不等于可省略）</td><td>priority_value</td></tr>
+<tr><td>priority_state</td><td>是</td><td>string not_provided, not_computed, disabled, failed, available, legacy_unverified</td><td>无（可空不等于可省略）</td><td>priority_state</td></tr>
+<tr><td>priority_source</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>priority_source</td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>priority_basis</td></tr>
+<tr><td>closed_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>closed_at</td></tr>
+<tr><td>closed_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>closed_by</td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>reopened_at</td></tr>
+<tr><td>latest_material_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_material_id</td></tr>
+<tr><td>latest_triage_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_triage_id</td></tr>
+<tr><td>latest_feedback_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_feedback_id</td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>并发修改版本；后续写入的expected_row_version取此值。</td></tr>
+<tr><td>latest_explanation_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_explanation_id</td></tr>
+<tr><td>linked_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>linked_at</td></tr>
+<tr><td>membership_source</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>membership_source</td></tr>
+<tr><td>correlation_basis</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>correlation_basis</td></tr>
+<tr><td>basis_version</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>basis_version</td></tr>
+</table>
+<a id="recordincidentlink"></a>
+<h2 id="recordincidentlink">RecordIncidentLink</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>source_namespace</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_namespace</td></tr>
+<tr><td>source_incident_id</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>source_incident_id</td></tr>
+<tr><td>title</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>显示标题；写入必须非空，长度约束见Schema。</td></tr>
+<tr><td>description</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>补充说明，可空；不是程序生成结论。</td></tr>
+<tr><td>handling_status</td><td>是</td><td>string new, in_progress, resolved, unknown</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>owner_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>assignment_state</td><td>是</td><td>string unassigned, assigned, unresolved</td><td>无（可空不等于可省略）</td><td>分配状态，unresolved不等于unassigned。</td></tr>
+<tr><td>owner_source_value</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>owner_source_value</td></tr>
+<tr><td>assigned_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>assigned_at</td></tr>
+<tr><td>tags</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>severity_override</td><td>是</td><td>string/null info, low, medium, high, critical, None</td><td>无（可空不等于可省略）</td><td>severity_override</td></tr>
+<tr><td>severity_override_reason</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>severity_override_reason</td></tr>
+<tr><td>severity_override_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>severity_override_at</td></tr>
+<tr><td>severity_override_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>severity_override_by</td></tr>
+<tr><td>priority_value</td><td>是</td><td>number/null</td><td>无（可空不等于可省略）</td><td>priority_value</td></tr>
+<tr><td>priority_state</td><td>是</td><td>string not_provided, not_computed, disabled, failed, available, legacy_unverified</td><td>无（可空不等于可省略）</td><td>priority_state</td></tr>
+<tr><td>priority_source</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>priority_source</td></tr>
+<tr><td>priority_basis</td><td>是</td><td>object/null</td><td>无（可空不等于可省略）</td><td>priority_basis</td></tr>
+<tr><td>resolution_note</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>resolution_note</td></tr>
+<tr><td>resolved_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>resolved_at</td></tr>
+<tr><td>resolved_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>resolved_by</td></tr>
+<tr><td>reopened_at</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>reopened_at</td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>created_at</td></tr>
+<tr><td>business_updated_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>business_updated_at</td></tr>
+<tr><td>latest_diagnosis_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>latest_diagnosis_id</td></tr>
+<tr><td>row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>并发修改版本；后续写入的expected_row_version取此值。</td></tr>
+<tr><td>linked_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>linked_at</td></tr>
+<tr><td>membership_source</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>membership_source</td></tr>
+<tr><td>correlation_basis</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>correlation_basis</td></tr>
+<tr><td>basis_version</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>basis_version</td></tr>
+</table>
+<a id="recordsourceartifact"></a>
+<h2 id="recordsourceartifact">RecordSourceArtifact</h2>
+<p>实际读取行字段；嵌套JSON保持其原合同，非新增写入DTO。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>alert_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>告警 UUID。</td></tr>
+<tr><td>incident_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>事件 UUID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>Case UUID；来自真实回执/列表，不是页面展示编号。</td></tr>
+<tr><td>run_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>该父主体下的执行 UUID。</td></tr>
+<tr><td>step_id</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>step_id</td></tr>
+<tr><td>kind</td><td>是</td><td>string input_snapshot, model_request, model_response, tool_request, tool_response, domain_analysis, deep_analysis, attack_chain, attack_path, alert_graph, report_json, report_markdown, attachment, source_snapshot, handoff, query_plan, alert_explanation, case_evidence_index</td><td>无（可空不等于可省略）</td><td>kind</td></tr>
+<tr><td>schema_version</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>schema_version</td></tr>
+<tr><td>mime_type</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>mime_type</td></tr>
+<tr><td>file_name</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>file_name</td></tr>
+<tr><td>sha256</td><td>是</td><td>string/null</td><td>无（可空不等于可省略）</td><td>原件内容摘要；不等于业务结论验证。</td></tr>
+<tr><td>size_bytes</td><td>是</td><td>integer/null</td><td>无（可空不等于可省略）</td><td>size_bytes</td></tr>
+<tr><td>captured_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>captured_at</td></tr>
+<tr><td>event_time</td><td>是</td><td>string/null (date-time)</td><td>无（可空不等于可省略）</td><td>event_time</td></tr>
+<tr><td>material_state</td><td>是</td><td>string complete, truncated, summary_only, unavailable</td><td>无（可空不等于可省略）</td><td>complete/truncated/summary_only/unavailable，保持原材料状态。</td></tr>
+<tr><td>source_refs</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。</td></tr>
+<tr><td>retention</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>保留/截断说明。</td></tr>
+<tr><td>created_by</td><td>是</td><td>string/null (uuid)</td><td>无（可空不等于可省略）</td><td>created_by</td></tr>
+<tr><td>content_url</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>读取该非Run来源工件正文的相对URL。</td></tr>
+</table>
+<a id="recordcaselink"></a>
+<h2 id="recordcaselink">RecordCaseLink</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>否</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>id</td></tr>
+<tr><td>title</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>title</td></tr>
+<tr><td>handling_status</td><td>否</td><td><a href="schemas.html#workstatus">WorkStatus</a></td><td>无（可空不等于可省略）</td><td>handling_status</td></tr>
+<tr><td>scope_revision</td><td>否</td><td>integer</td><td>无（可空不等于可省略）</td><td>scope_revision</td></tr>
+<tr><td>via_member_alert</td><td>否</td><td>boolean</td><td>无（可空不等于可省略）</td><td>via_member_alert</td></tr>
+<tr><td>explicit_incident_link</td><td>否</td><td>boolean</td><td>无（可空不等于可省略）</td><td>explicit_incident_link</td></tr>
+</table>
+<a id="recordassetmatch"></a>
+<h2 id="recordassetmatch">RecordAssetMatch</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>object_id</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>object_id</td></tr>
+<tr><td>alert_id</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>alert_id</td></tr>
+<tr><td>material_id</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>material_id</td></tr>
+<tr><td>object_key</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>object_key</td></tr>
+<tr><td>namespace</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>namespace</td></tr>
+<tr><td>asset_id</td><td>否</td><td>string</td><td>无（可空不等于可省略）</td><td>asset_id</td></tr>
+<tr><td>name</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>name</td></tr>
+<tr><td>fqdn</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>fqdn</td></tr>
+<tr><td>asset_type</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>asset_type</td></tr>
+<tr><td>criticality</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>criticality</td></tr>
+<tr><td>os</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>os</td></tr>
+<tr><td>os_version</td><td>否</td><td>string/null</td><td>无（可空不等于可省略）</td><td>os_version</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>tags</td></tr>
+<tr><td>ip_addresses</td><td>否</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>ip_addresses</td></tr>
+<tr><td>match_basis</td><td>否</td><td>string exact_ip, exact_name_casefold, exact_fqdn_casefold</td><td>无（可空不等于可省略）</td><td>match_basis</td></tr>
+</table>
+<a id="serviceerror"></a>
+<h2 id="serviceerror">ServiceError</h2>
+<p>实际错误有字符串、结构化对象或字段校验数组三种detail；不要假定都是code对象。</p>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>detail</td><td>是</td><td>string / object / array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>detail</td></tr>
+</table></main></html>

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.core.config import settings
-from app.db.database import AsyncSessionLocal
+from app.db.case_database import get_case_write_sessions
 from app.socai2.baseline_contracts import Contract
 from app.socai2.baseline_store import StoreError
 from app.socai2.stage_read_contracts import StageEntry
@@ -21,7 +21,10 @@ class ExecuteStage(Contract):
 def get_execution_service():
     if not settings.SOCAI2_STAGE_EXECUTION_ENABLED:
         raise HTTPException(503, "socai2_stage_execution_not_enabled")
-    return StageResultService(AsyncSessionLocal)
+    try:
+        return StageResultService(get_case_write_sessions())
+    except StoreError as exc:
+        raise HTTPException(exc.status, exc.code) from None
 
 
 User = Annotated[CurrentUser, Depends(require_permission("alerts:write"))]

@@ -1,0 +1,1832 @@
+# 47个现有HTTP操作：用途、输入与输出审计
+
+按原功能清单和既有交接核对，所有路径以真实源码为依据。下列可用状态只说明已实现HTTP能力，不替代页面接线/模型质量验收。请求形状与示例继续使用[既有接口交接](../http-handoff/endpoints.md)，输出逐字段语义见[固定输出字段](response-fields.md)及[动态结构](dynamic-fields.md)。本轮不重跑业务或权限验证。
+
+| 编号 | HTTP用途 | 功能类别 | 当前状态 | 响应 |
+| --- | --- | --- | --- | --- |
+| E01 | 新建 Case | 告警、事件、调查 | 可用 | AssociationReceipt |
+| E02 | Case 队列与指标 | 调查 | 可用 | CaseQueuePage |
+| E03 | Case 详情与当前判断 | 告警、事件、调查 | 可用 | CaseDetail |
+| E04 | 更新分类和截止时间 | 调查 | 可用 | CaseDataReceipt |
+| E05 | Case 资料与证据目录 | 调查 | 可用 | CasePageData |
+| E06 | 发布证据目录 | 调查 | 可用 | CaseDataReceipt |
+| E07 | 替换完整 Case 成员 | 支撑操作，无独立页面子项 | 可用 | MutationReceipt |
+| E08 | 关联告警或事件 | 告警、事件、调查 | 可用 | AssociationReceipt |
+| E09 | 在两个 Case 间移动告警成员 | 调查 | 可用 | MoveReceipt |
+| E10 | Case 调查历史 | 调查 | 可用 | HistoryPage |
+| E11 | 准备新一轮调查 | 调查 | 可用 | BaselinePreparation |
+| E12 | 读取 Case Run 与执行明细 | 调查 | 可用 | RunDetail |
+| E13 | 启动指定 pending Run | 调查 | 可用 | RunDetail |
+| E14 | 读取正式结果 | 调查 | 可用 | ResultDetail |
+| E15 | 读取 Case Run 工件 | 调查 | 可用 | ArtifactContent |
+| E16 | 读取 Case 非 Run 来源工件 | 调查 | 可用 | ArtifactContent |
+| E17 | Case 处理活动 | 调查 | 可用 | RecordPage |
+| E18 | 读取 Run 冻结的告警材料 | 告警、调查 | 可用 | FrozenAlertMaterial动态整行 |
+| E19 | Case 助手发送问题（预留） | 告警、调查 | 未实现 | AIUnavailable |
+| E20 | 保存助手回答（预留） | 调查 | 未实现 | AIUnavailable |
+| E21 | 显式采用其他结果（预留） | 调查 | 未实现 | AIUnavailable |
+| E22 | 告警分诊目录 | 告警、调查 | 可用 | StagePage |
+| E23 | 事件诊断目录 | 事件、调查 | 可用 | StagePage |
+| E24 | 指定告警 A Run | 告警、调查 | 可用 | StageEntry |
+| E25 | 指定事件 I Run | 事件、调查 | 可用 | StageEntry |
+| E26 | 告警列表 | 告警、事件、调查 | 可用 | SubjectPage |
+| E27 | 事件列表 | 事件、调查 | 可用 | SubjectPage |
+| E28 | 告警详情 | 告警、事件、调查 | 可用 | SubjectView |
+| E29 | 事件详情 | 告警、事件、调查 | 可用 | SubjectView |
+| E30 | 主体分区记录 | 告警、事件、调查 | 可用 | RecordPage |
+| E31 | 告警材料正文 | 告警、调查 | 可用 | ContentView |
+| E32 | A/I Run 步骤及工件目录 | 告警、事件、调查 | 可用 | TraceView |
+| E33 | A/I Run 工件正文 | 告警、事件、调查 | 可用 | ContentView |
+| E34 | 告警非 Run 来源工件 | 调查 | 可用 | ContentView |
+| E35 | 事件非 Run 来源工件 | 调查 | 可用 | ContentView |
+| E36 | 手动告警分诊 | 支撑操作，无独立页面子项 | 已实现；当前独立服务已启用 | StageEntry |
+| E37 | 手动事件诊断 | 支撑操作，无独立页面子项 | 已实现；当前独立服务已启用 | StageEntry |
+| E38 | 用户创建人工任务 | 调查 | 可用 | TaskMutation |
+| E39 | 人工任务列表 | 调查 | 可用 | TaskPage |
+| E40 | 修订人工任务 | 调查 | 可用 | TaskMutation |
+| E41 | 人工任务当前版本 | 调查 | 可用 | TaskView |
+| E42 | 人工任务修订历史 | 调查 | 可用 | TaskRevisionPage |
+| E43 | 人工任务指定修订 | 调查 | 可用 | TaskRevisionView |
+| E44 | Case管理信息与结案条件 | 调查 | 已实现 | CaseManagementView |
+| E45 | 修改Case基本信息 | 调查 | 已实现 | CaseManagementReceipt |
+| E46 | 结案 | 调查 | 已实现 | CaseManagementReceipt |
+| E47 | 重开Case | 调查 | 已实现 | CaseManagementReceipt |
+
+
+<a id="e01"></a>
+
+## E01 新建 Case
+
+`POST /api/v1/socai2/cases`
+
+源码：[socai2_cases.py:75](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L75)。
+
+对应功能：F13-02 关联／新建与准备调查、F13-03 进入／创建／关联 Case、F09-04 新建 Case
+
+用途与业务结果：至少选择一个告警或事件；事件展开为成员并保留显式事件关系，合并后最多 200 条。保存后返回 pending_run_id；不自动执行。后续 E12→E13。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | title | 必传 | string；minLength=1；maxLength=200 | 见DTO默认值 | 显示标题；写入必须非空，长度约束见Schema。 |
+| JSON | description | 可省略 | string；maxLength=20000 / null | 见DTO默认值 | 补充说明，可空；不是程序生成结论。 |
+| JSON | severity | 可省略 | [Severity](../http-handoff/schemas.md#severity) / null | 见DTO默认值 | 严重度枚举；null为未知，不强行补默认等级。 |
+| JSON | tags | 可省略 | array〈string；minLength=1；maxLength=128〉；maxItems=50 | 见DTO默认值 | 标签列表，不替代资产标签。 |
+| JSON | alert_ids | 可省略 | array〈string uuid〉；maxItems=200 | 见DTO默认值 | 真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 |
+| JSON | incident_ids | 可省略 | array〈string uuid〉；maxItems=200 | 见DTO默认值 | 显式关联事件UUID集合，服务展开成员。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[AssociationReceipt](response-fields.md#associationreceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| scope_revision | Case成员范围版本，历史Run保持冻结值。 |
+| pending_run_id | 准备好的待启动Run；需要用户显式调用start。 |
+| changed | 本次写入是否实际改变业务内容；幂等重读不表示重新执行。 |
+| added_alert_ids | 本次实际新增Case成员UUID。 |
+| linked_incident_ids | 本次新增的显式事件关系UUID。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E01示例](../http-handoff/endpoints.md#e01)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e02"></a>
+
+## E02 Case 队列与指标
+
+`GET /api/v1/socai2/cases`
+
+源码：[socai2_cases.py:80](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L80)。
+
+对应功能：F09-01 四项案件指标、F09-02 搜索筛选和分页、F09-03 列选择与排序、F09-08 日期范围与导出、F09-09 手动与自动刷新、F09-11 调查运行与管理设置入口、F14-07 跨主体运行目录
+
+用途与业务结果：q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | cursor | 可省略 | string；maxLength=1024 / null | 无 | 使用服务上一页 next_cursor；改变筛选条件后清空。 |
+| query | q | 可省略 | string；maxLength=200 / null | 无 | Case标题或完整ID搜索；告警/事件列表不支持此参数。 |
+| query | handling_status | 可省略 | [WorkStatus](../http-handoff/schemas.md#workstatus) / null | 无 | 主体业务处理状态，与Run执行状态分开。 |
+| query | severity | 可省略 | [Severity](../http-handoff/schemas.md#severity) / null | 无 | 严重度枚举；null为未知，不强行补默认等级。 |
+| query | owner_id | 可省略 | string uuid / null | 无 | 负责人用户UUID；人员目录由业务后端负责。 |
+| query | assignment_state | 可省略 | [AssignmentState](../http-handoff/schemas.md#assignmentstate) / null | 无 | 分配状态，unresolved不等于unassigned。 |
+| query | metric | 可省略 | string；awaiting_assignment, in_progress, high_severity, awaiting_human / null | 无 | Case整体指标快捷过滤条件。 |
+| query | classification | 可省略 | string；true_positive, informational, false_positive / string = not_set / null | 无 | 案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[CaseQueuePage](response-fields.md#casequeuepage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_cursor | 下一页游标；null表示结束。 |
+| metrics | Case租户整体指标，不随分页或筛选total变化。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E02示例](../http-handoff/endpoints.md#e02)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e03"></a>
+
+## E03 Case 详情与当前判断
+
+`GET /api/v1/socai2/cases/{case_id}`
+
+源码：[socai2_cases.py:94](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L94)。
+
+对应功能：F13-01 查看所属事件和 Case、F13-03 进入／创建／关联 Case、F09-10 案件预览、F09-04 新建 Case、F09-05 资料页头与刷新、F23-04 管理 Case、F14-01 跨页执行提示、F09-06 案件说明和范围概况、F10-01 案件分类与截止时间、F11-01 当前采用判断、F12-01 判断覆盖与依据变化、F12-02 回查判断来源、F11-02 结论中的未解决问题、F09-07 ATT&CK 阶段与详细信息、F20-01 事实与认识时间线、F20-02 搜索与等级筛选、F20-03 单选／多选告警、F14-02 活跃与待启动分开、F14-03 准备新一轮、F14-05 历史与故事入口、F13-04 当前成员及事件、F13-05 添加告警／事件、F13-06 移动成员、F13-08 成员变化后的提示、F19-01 当前底图与阅读、F25-04 正式加入本案、F21-01 按对象浏览、F22-03 用户新建与分配、F22-04 编辑、取消及状态更新、F22-05 完成结果与适用范围、F22-07 并发冲突处理
+
+用途与业务结果：读取成员、显式事件、当前采用判断、baseline_records 和资料。检查集合总数与截断标记。current_assessment 为 null 时不得挑最新 Run 当成已采用判断。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[CaseDetail](response-fields.md#casedetail)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case | 当前案件主体资料，不是执行记录。 |
+| members | 此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 |
+| member_count | 成员总数；超过返回长度时结合members_truncated，不把当前数组长度当全量。 |
+| members_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| linked_incidents | Case显式关联事件，不包含仅共享成员而无显式关系的事件。 |
+| linked_incident_count | 本案显式事件关系总数。 |
+| linked_incidents_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| current_assessment | 当前采用判断及来源/覆盖；null表示未形成，不能自行采用最近结果。 |
+| baseline_records | 本案pending_update/running/unknown基础Run及资格；已结束历史另读history。 |
+| page_data | 本案分类/期限/当前判断和证据目录投影。 |
+
+
+动态字段：case-members、case-linked-incidents、current-assessment、assessment-value/members/sources。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E03示例](../http-handoff/endpoints.md#e03)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e04"></a>
+
+## E04 更新分类和截止时间
+
+`PATCH /api/v1/socai2/cases/{case_id}/page-data`
+
+源码：[socai2_cases.py:99](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L99)。
+
+对应功能：F23-04 管理 Case、F10-01 案件分类与截止时间
+
+用途与业务结果：先 E03 读 row_version。PATCH 必须同时传 classification、due_at，null 表示清空；source=manual/import，source_note 非空。不支持负责人、标题或关闭/重开。成功 E03/E05 刷新。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_row_version | 必传 | integer；minimum=1.0 | 见DTO默认值 | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| JSON | classification | 必传 | string；true_positive, informational, false_positive / null | 见DTO默认值 | 案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 |
+| JSON | due_at | 必传 | string date-time / null | 见DTO默认值 | 带时区的截止时间；null清空。 |
+| JSON | source | 必传 | string；manual, import | 见DTO默认值 | 本次资料变更来源 manual 或 import。 |
+| JSON | source_note | 必传 | string；minLength=1；maxLength=500；pattern=\S | 见DTO默认值 | 资料修改原因/来源说明，非空。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[CaseDataReceipt](response-fields.md#casedatareceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| row_version | 并发修改版本；后续写入的expected_row_version取此值。 |
+| changed | 是否改变资料/目录；返回回执后刷新最新row_version，幂等重放不生成新版本。 |
+| current_evidence_artifact_id | 本次保存后当前证据目录工件UUID；未有目录为null。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E04示例](../http-handoff/endpoints.md#e04)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+补充约束：classification与due_at均必传，null是清空；source_note非空。它不是通用Case管理PATCH。
+
+<a id="e05"></a>
+
+## E05 Case 资料与证据目录
+
+`GET /api/v1/socai2/cases/{case_id}/page-data`
+
+源码：[socai2_cases.py:104](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L104)。
+
+对应功能：F10-01 案件分类与截止时间、F11-01 当前采用判断、F12-01 判断覆盖与依据变化、F21-01 按对象浏览、F21-03 证据、威胁与覆盖
+
+用途与业务结果：读取 classification、due_at、determination、assessment、evidence。not_recorded 与 evidence_count=null 不等于没有威胁；questions 沿采用来源结果读取。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[CasePageData](response-fields.md#casepagedata)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| schema_version | 本结构/工件的合同版本；按实际版本解释字段，不把当前模型结构套给历史版本。 |
+| classification | 案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 |
+| due_at | 带时区的截止时间；null清空。 |
+| determination | 沿Case.current_assessment_id取得的已采用conclusion；没有指针为null，不取最新Result补。 |
+| assessment | 已采用判断的页面投影。 |
+| evidence | 已发布证据目录及可用状态。 |
+
+
+动态字段：assessment-sources；evidence固定类型见响应表。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E05示例](../http-handoff/endpoints.md#e05)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e06"></a>
+
+## E06 发布证据目录
+
+`POST /api/v1/socai2/cases/{case_id}/evidence-index`
+
+源码：[socai2_cases.py:109](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L109)。
+
+对应功能：F21-03 证据、威胁与覆盖
+
+用途与业务结果：发布已整理的引用目录，不会生成新证据或执行模型。先 E03/E05 获取行版本和旧 artifact_id；index.supersedes_artifact_id 对应旧版本，范围需匹配当前成员。partial/unavailable 必须写 limitations；unavailable 的 entries 必须为空。对象、来源路径、hash、角色均以实际原件为准。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_row_version | 必传 | integer；minimum=1.0 | 见DTO默认值 | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| JSON | expected_current_artifact_id | 必传 | string uuid / null | 见DTO默认值 | 当前证据目录工件 ID；首次为null。必须显式传入，和实际旧版本比较。 |
+| JSON | index | 必传 | [EvidenceIndex](../http-handoff/schemas.md#evidenceindex) | 见DTO默认值 | 证据目录版本正文，不是自动生成证据的命令。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[CaseDataReceipt](response-fields.md#casedatareceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| row_version | 并发修改版本；后续写入的expected_row_version取此值。 |
+| changed | 是否改变资料/目录；返回回执后刷新最新row_version，幂等重放不生成新版本。 |
+| current_evidence_artifact_id | 本次保存后当前证据目录工件UUID；未有目录为null。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E06示例](../http-handoff/endpoints.md#e06)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e07"></a>
+
+## E07 替换完整 Case 成员
+
+`PUT /api/v1/socai2/cases/{case_id}/members`
+
+源码：[socai2_cases.py:114](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L114)。
+
+对应功能：现有服务支撑操作；不能因有接口就新增产品按钮或功能范围。
+
+用途与业务结果：alert_ids 是替换后的完整集合，不能只传想删除的条目。可为空但空范围不能启动调查。保存产生范围版本及 pending 记录，不覆盖历史冻结输入。普通添加用 E08。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| JSON | alert_ids | 必传 | array〈string uuid〉；maxItems=200 | 见DTO默认值 | 真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[MutationReceipt](response-fields.md#mutationreceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| scope_revision | Case成员范围版本，历史Run保持冻结值。 |
+| pending_run_id | 准备好的待启动Run；需要用户显式调用start。 |
+| changed | 本次写入是否实际改变业务内容；幂等重读不表示重新执行。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E07示例](../http-handoff/endpoints.md#e07)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+补充约束：alert_ids为替换后的完整成员集合；不能仅传删除目标。现125功能没有单列移除按钮，不因该服务命令扩大页面设计。
+
+<a id="e08"></a>
+
+## E08 关联告警或事件
+
+`POST /api/v1/socai2/cases/{case_id}/associations`
+
+源码：[socai2_cases.py:119](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L119)。
+
+对应功能：F13-02 关联／新建与准备调查、F13-03 进入／创建／关联 Case、F13-05 添加告警／事件、F25-04 正式加入本案
+
+用途与业务结果：先 E03 获取 expected_scope_revision。至少选择一个告警/事件；只添加关联，不从别的 Case 移除，也不自动启动。事件展开成员；返回实际新增与显式关联列表。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| JSON | alert_ids | 可省略 | array〈string uuid〉；maxItems=200 | 见DTO默认值 | 真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 |
+| JSON | incident_ids | 可省略 | array〈string uuid〉；maxItems=200 | 见DTO默认值 | 显式关联事件UUID集合，服务展开成员。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[AssociationReceipt](response-fields.md#associationreceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| scope_revision | Case成员范围版本，历史Run保持冻结值。 |
+| pending_run_id | 准备好的待启动Run；需要用户显式调用start。 |
+| changed | 本次写入是否实际改变业务内容；幂等重读不表示重新执行。 |
+| added_alert_ids | 本次实际新增Case成员UUID。 |
+| linked_incident_ids | 本次新增的显式事件关系UUID。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E08示例](../http-handoff/endpoints.md#e08)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e09"></a>
+
+## E09 在两个 Case 间移动告警成员
+
+`POST /api/v1/socai2/cases/{case_id}/members/move`
+
+源码：[socai2_cases.py:124](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L124)。
+
+对应功能：F13-06 移动成员
+
+用途与业务结果：先分别 E03 读取两案 scope_revision。源/目标不同；一次事务更新两案，返回 source/target 回执；不移动显式事件关系，不改历史 Run。完整双案页面仍待验。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | target_case_id | 必传 | string uuid | 见DTO默认值 | 移动目标Case；不得等于路径源Case。 |
+| JSON | expected_source_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 源 Case 当前范围版本。 |
+| JSON | expected_target_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 目标 Case 当前范围版本。 |
+| JSON | alert_ids | 必传 | array〈string uuid〉；minItems=1；maxItems=200 | 见DTO默认值 | 真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[MoveReceipt](response-fields.md#movereceipt)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| source | 源Case变更回执（MoveReceipt）；请求CaseDataUpdate的source另为manual/import。 |
+| target | 目标Case变更回执（MoveReceipt）。 |
+| moved_alert_ids | 本次实际从源Case移出的告警UUID。 |
+| added_to_target_alert_ids | 实际新增到目标Case的告警UUID；原已在目标的不会重复新增。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E09示例](../http-handoff/endpoints.md#e09)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e10"></a>
+
+## E10 Case 调查历史
+
+`GET /api/v1/socai2/cases/{case_id}/history`
+
+源码：[socai2_cases.py:129](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L129)。
+
+对应功能：F09-11 调查运行与管理设置入口、F14-01 跨页执行提示、F09-06 案件说明和范围概况、F20-01 事实与认识时间线、F20-02 搜索与等级筛选、F16-01 已有结果摘要、F14-05 历史与故事入口、F14-06 历史记录分类与选择、F21-02 按调查浏览、F14-07 跨主体运行目录、F15-02 运行统计和卡片摘要
+
+用途与业务结果：按 next_cursor 取后续历史；类型区分 baseline 与 ai_saved，当前 Q 保存未实现。相关 A/I 运行需 E22/E23 组合，不能从 Case 历史推断全局目录。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | cursor | 可省略 | string；maxLength=512 / null | 无 | 使用服务上一页 next_cursor；改变筛选条件后清空。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[HistoryPage](response-fields.md#historypage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| next_cursor | 下一页游标；null表示结束。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E10示例](../http-handoff/endpoints.md#e10)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e11"></a>
+
+## E11 准备新一轮调查
+
+`POST /api/v1/socai2/cases/{case_id}/baseline/prepare`
+
+源码：[socai2_cases.py:136](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L136)。
+
+对应功能：F14-03 准备新一轮、F22-08 保存后的调查影响
+
+用途与业务结果：先 E03 读当前 scope_revision，返回 pending_run_id 和 created。仅准备，不调用模型；存在运行中记录时可保留 pending，启动资格由 E12 判断。空范围/已解决案不能直接启动。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[BaselinePreparation](response-fields.md#baselinepreparation)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| case_id | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| scope_revision | Case成员范围版本，历史Run保持冻结值。 |
+| pending_run_id | 准备好的待启动Run；需要用户显式调用start。 |
+| created | 是否本次新建pending记录；false可能复用已有待启动项。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E11示例](../http-handoff/endpoints.md#e11)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e12"></a>
+
+## E12 读取 Case Run 与执行明细
+
+`GET /api/v1/socai2/cases/{case_id}/runs/{run_id}`
+
+源码：[socai2_cases.py:141](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L141)。
+
+对应功能：F09-04 新建 Case、F14-01 跨页执行提示、F14-02 活跃与待启动分开、F14-03 准备新一轮、F14-04 确认启动、F16-01 已有结果摘要、F15-01 状态、交付与投入、F12-03 历史范围与冻结引用、F13-08 成员变化后的提示、F21-02 按调查浏览、F15-02 运行统计和卡片摘要、F15-03 执行、交付及用量、F12-04 查看当轮原始输入、F17-01 已保存分析过程、F17-02 步骤账本、F18-01 步骤输入／输出原件、F17-03 当轮能力与投入、F28-01 查询目录和结果
+
+用途与业务结果：读取 start_eligibility、冻结成员、steps、工件、用量和结果 ID。can_start=false 时显示 reason。成员上限200、步骤1000、工件/结果各200；被截断的集合当前没有进一步分页 API，必须明确提示。读取不会继续执行。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[RunDetail](response-fields.md#rundetail)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| result_ids | 该Run已保存的正式结果UUID，按saved_at/id排序；最多200。 |
+| result_count | 该Run正式结果总数。 |
+| results_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| start_eligibility | 是否可启动及原因，依据最新Run与Case范围。 |
+| current_member_count | 当前Case成员数量，可能与当轮输入不同。 |
+| input_member_count | 该Run冻结的run_members总数。 |
+| members | 此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 |
+| members_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| read_counts | 以read_state为键统计当轮成员数量。 |
+| analysis_counts | 以analysis_state为键统计当轮成员数量。 |
+| steps | 执行步骤目录，按seq组织；Case最多1000，A/I见动态结构限制。 |
+| steps_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| tool_calls | kind=tool且state不为planned/skipped的实际尝试次数，包含失败，不是成功查询数。 |
+| usage | 按已读步骤及全量模型次数汇总；步骤截断时未读用量计unknown，不声称全量费用。 |
+| artifacts | 该Run工件元数据目录，正文通过对应工件接口读取。 |
+| artifact_counts | Case Run按工件kind分组的总数。 |
+| artifacts_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| duration_seconds | started_at与ended_at均有值才计算秒数，否则null，不用0代未知。 |
+| elapsed_seconds | Case Run已开始且未结束时从started_at到observed_at的秒数，否则null。 |
+| last_recorded_at | 本轮请求/范围变动/开始/结束/步骤时间/工件捕获时间中实际存在的最新时刻，非服务心跳。 |
+| observed_at | 本次读取观察时间。 |
+| execution_summary | 从C1.executor已保存计划工件读取的能力/限制快照；未找到为null，不用当前配置回填旧Run。 |
+
+
+动态字段：run-members、run-steps、artifact-metadata、usage-total。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E12示例](../http-handoff/endpoints.md#e12)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e13"></a>
+
+## E13 启动指定 pending Run
+
+`POST /api/v1/socai2/cases/{case_id}/runs/{run_id}/start`
+
+源码：[socai2_cases.py:146](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L146)。
+
+对应功能：F14-04 确认启动、F16-02 结果比较、F22-08 保存后的调查影响
+
+用途与业务结果：必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | window_start | 可省略 | string date-time / null | 见DTO默认值 | 窗口起点，带时区；和window_end同时提供或同时为空。 |
+| JSON | window_end | 可省略 | string date-time / null | 见DTO默认值 | 窗口终点，带时区且不早于起点。 |
+| JSON | comparison_result_id | 可省略 | string uuid / null | 见DTO默认值 | 同案比较结果ID；null表示未指定。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[RunDetail](response-fields.md#rundetail)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| result_ids | 该Run已保存的正式结果UUID，按saved_at/id排序；最多200。 |
+| result_count | 该Run正式结果总数。 |
+| results_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| start_eligibility | 是否可启动及原因，依据最新Run与Case范围。 |
+| current_member_count | 当前Case成员数量，可能与当轮输入不同。 |
+| input_member_count | 该Run冻结的run_members总数。 |
+| members | 此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 |
+| members_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| read_counts | 以read_state为键统计当轮成员数量。 |
+| analysis_counts | 以analysis_state为键统计当轮成员数量。 |
+| steps | 执行步骤目录，按seq组织；Case最多1000，A/I见动态结构限制。 |
+| steps_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| tool_calls | kind=tool且state不为planned/skipped的实际尝试次数，包含失败，不是成功查询数。 |
+| usage | 按已读步骤及全量模型次数汇总；步骤截断时未读用量计unknown，不声称全量费用。 |
+| artifacts | 该Run工件元数据目录，正文通过对应工件接口读取。 |
+| artifact_counts | Case Run按工件kind分组的总数。 |
+| artifacts_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| duration_seconds | started_at与ended_at均有值才计算秒数，否则null，不用0代未知。 |
+| elapsed_seconds | Case Run已开始且未结束时从started_at到observed_at的秒数，否则null。 |
+| last_recorded_at | 本轮请求/范围变动/开始/结束/步骤时间/工件捕获时间中实际存在的最新时刻，非服务心跳。 |
+| observed_at | 本次读取观察时间。 |
+| execution_summary | 从C1.executor已保存计划工件读取的能力/限制快照；未找到为null，不用当前配置回填旧Run。 |
+
+
+动态字段：同E12。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E13示例](../http-handoff/endpoints.md#e13)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e14"></a>
+
+## E14 读取正式结果
+
+`GET /api/v1/socai2/cases/{case_id}/results/{result_id}`
+
+源码：[socai2_cases.py:159](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L159)。
+
+对应功能：F12-01 判断覆盖与依据变化、F12-02 回查判断来源、F11-02 结论中的未解决问题、F20-01 事实与认识时间线、F20-05 回到结果和人工版本、F14-04 确认启动、F16-01 已有结果摘要、F15-01 状态、交付与投入、F16-02 结果比较、F19-01 当前底图与阅读、F21-02 按调查浏览、F16-03 目标、结论、发现与限制、F19-03 历史图只读与来源、F16-04 阅读报告及收尾说明、F18-03 下载已有报告、F27-02 响应建议卡片
+
+用途与业务结果：返回 result、run、冻结成员、source_answer、delivery。结论、发现、questions、建议分开，questions 作为结论的一部分，不建立问题管理状态；人工确认由用户 E38 建任务。conclusion=null/validation_state=rejected 不包装成成功判断。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | result_id | 必传 | string uuid | 无 | 同案已保存正式结果 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ResultDetail](response-fields.md#resultdetail)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| result | 本次读取的结果对象；可空时表示该次执行没有保存对应结果。 |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| source_answer | ai_saved结果关联的已保存原回答身份；baseline或无源回答为null。 |
+| members | 此对象的成员列表；Case为当前成员，Run/Result为当轮冻结成员，动态字段见专门清单。 |
+| member_count | 成员总数；超过返回长度时结合members_truncated，不把当前数组长度当全量。 |
+| members_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| delivery | C6交付回执定位信息及细节；没有有效回执为null，有报告不保证有正式Result。 |
+
+
+动态字段：result-members、delivery。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E14示例](../http-handoff/endpoints.md#e14)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e15"></a>
+
+## E15 读取 Case Run 工件
+
+`GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}`
+
+源码：[socai2_cases.py:164](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L164)。
+
+对应功能：F11-02 结论中的未解决问题、F12-03 历史范围与冻结引用、F19-01 当前底图与阅读、F19-02 筛选、布局与节点详情、F21-02 按调查浏览、F21-03 证据、威胁与覆盖、F21-04 原件和引用回查、F24-02 已有附件查看／下载、F16-03 目标、结论、发现与限制、F12-04 查看当轮原始输入、F17-01 已保存分析过程、F18-01 步骤输入／输出原件、F28-01 查询目录和结果、F28-02 查询状态区分、F18-02 摘要、原文与引用、F19-03 历史图只读与来源、F16-04 阅读报告及收尾说明、F18-03 下载已有报告、F27-02 响应建议卡片、F27-04 执行记录与回执
+
+用途与业务结果：先 E12/E14 取得真实 artifact_id；父 Case/Run 必须匹配。返回 artifact 元数据和 content_json/content_text/availability；HTTP200 不保证正文可得。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+| path | artifact_id | 必传 | string uuid | 无 | 工件 UUID，必须保持父主体/Run 归属。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ArtifactContent](response-fields.md#artifactcontent)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| artifact | Case工件元数据，和A/I的metadata字段不同。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+| availability | Case工件读取状态；内容hash/size不一致直接409 artifact_integrity_invalid，不返回成功正文。 |
+
+
+动态字段：artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E15示例](../http-handoff/endpoints.md#e15)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e16"></a>
+
+## E16 读取 Case 非 Run 来源工件
+
+`GET /api/v1/socai2/cases/{case_id}/artifacts/{artifact_id}`
+
+源码：[socai2_cases.py:169](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L169)。
+
+对应功能：F21-04 原件和引用回查、F24-02 已有附件查看／下载、F18-02 摘要、原文与引用
+
+用途与业务结果：仅适用于 run_id 为空的本案来源工件。Run 工件必须用 E15，不能以这个路径替代。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | artifact_id | 必传 | string uuid | 无 | 工件 UUID，必须保持父主体/Run 归属。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ArtifactContent](response-fields.md#artifactcontent)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| artifact | Case工件元数据，和A/I的metadata字段不同。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+| availability | Case工件读取状态；内容hash/size不一致直接409 artifact_integrity_invalid，不返回成功正文。 |
+
+
+动态字段：artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E16示例](../http-handoff/endpoints.md#e16)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e17"></a>
+
+## E17 Case 处理活动
+
+`GET /api/v1/socai2/cases/{case_id}/activities`
+
+源码：[socai2_cases.py:174](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L174)。
+
+对应功能：F23-05 处理活动与目标
+
+用途与业务结果：包括案件、成员和显式事件匹配活动，去重保留目标及前后值，按 next_offset 分页。活动不是模型推理过程。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=200 | 50 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | offset | 可省略 | integer；minimum=0；maximum=100000 | 0 | 分页偏移，沿 next_offset 继续。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[RecordPage](response-fields.md#recordpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_offset | 下一页偏移；null表示结束。 |
+| observed_at | 本次读取观察时间。 |
+| limitations | 本次结果或阅读的限制，原样保留。 |
+
+
+动态字段：activity、activity-target。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E17示例](../http-handoff/endpoints.md#e17)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e18"></a>
+
+## E18 读取 Run 冻结的告警材料
+
+`GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/materials/{material_id}`
+
+源码：[socai2_cases.py:181](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L181)。
+
+对应功能：F05-01 来源引用与历史版本、F12-03 历史范围与冻结引用、F21-04 原件和引用回查、F12-04 查看当轮原始输入、F18-02 摘要、原文与引用
+
+用途与业务结果：material_id 必须由该 Run 的冻结成员输入取得。返回 AlertMaterials 原始行，不是 ContentView 包装，没有 availability 字段；保留 material_state/retention。不能用当前材料代替。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+| path | material_id | 必传 | string uuid | 无 | 材料版本 UUID；历史读取使用冻结版本。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[冻结材料整行](dynamic-fields.md#frozen-material)。
+动态字段：frozen-material。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E18示例](../http-handoff/endpoints.md#e18)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e19"></a>
+
+## E19 Case 助手发送问题（预留）
+
+`POST /api/v1/socai2/cases/{case_id}/ai/messages`
+
+源码：[socai2_case_ai.py:37](../../../services/api/app/api/v1/endpoints/socai2_case_ai.py#L37)。
+
+对应功能：F13-02 关联／新建与准备调查、F20-04 围绕条目或全案提问、F26-01 询问所选对象、F26-02 同案统一对话、F26-03 范围选择与问题编辑、F26-05 发送与只读分析、F26-06 失败与人工事实续接、F26-08 引用与继续追问、F22-09 用户创建人工任务／询问结果
+
+用途与业务结果：通过请求校验后返回501，无模型调用和保存。现有 DTO 只有 operation_key、question、conversation_id；产品设计的 scope 尚无字段，额外字段会422。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | question | 必传 | string；minLength=1；maxLength=4000 | 见DTO默认值 | 用户明确发送的问题文本；当前Q接口未实现。 |
+| JSON | conversation_id | 可省略 | string uuid / null | 见DTO默认值 | 可选会话UUID；当前无正式对话读写。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 501，返回[AIUnavailable](response-fields.md#aiunavailable)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| detail | 错误内容；实际可以是字符串/结构化对象/字段校验数组。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E19示例](../http-handoff/endpoints.md#e19)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+未实现边界：501是当前真实交付，不列成功业务输出。Q的scope、采用的reason等产品规则尚无请求字段，不能写进调用示例。
+
+<a id="e20"></a>
+
+## E20 保存助手回答（预留）
+
+`POST /api/v1/socai2/cases/{case_id}/ai/messages/{message_id}/save`
+
+源码：[socai2_case_ai.py:43](../../../services/api/app/api/v1/endpoints/socai2_case_ai.py#L43)。
+
+对应功能：F26-07 保存到调查记录、F26-08 引用与继续追问
+
+用途与业务结果：通过请求校验后返回501，没有冻结或正式结果。title/conclusion 是待保存文本，不触发执行；当前不能使用。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | message_id | 必传 | string uuid | 无 | 按路径主体身份 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | title | 必传 | string；minLength=1；maxLength=200 | 见DTO默认值 | 显示标题；写入必须非空，长度约束见Schema。 |
+| JSON | conclusion | 必传 | string；minLength=1；maxLength=20000 | 见DTO默认值 | 本环节结论正文；null可能未交付/拒收，不补造。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 501，返回[AIUnavailable](response-fields.md#aiunavailable)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| detail | 错误内容；实际可以是字符串/结构化对象/字段校验数组。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E20示例](../http-handoff/endpoints.md#e20)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+未实现边界：501是当前真实交付，不列成功业务输出。Q的scope、采用的reason等产品规则尚无请求字段，不能写进调用示例。
+
+<a id="e21"></a>
+
+## E21 显式采用其他结果（预留）
+
+`POST /api/v1/socai2/cases/{case_id}/results/{result_id}/adopt`
+
+源码：[socai2_case_ai.py:49](../../../services/api/app/api/v1/endpoints/socai2_case_ai.py#L49)。
+
+对应功能：F11-03 显式采用其他结果
+
+用途与业务结果：通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | result_id | 必传 | string uuid | 无 | 同案已保存正式结果 UUID。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 501，返回[AIUnavailable](response-fields.md#aiunavailable)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| detail | 错误内容；实际可以是字符串/结构化对象/字段校验数组。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E21示例](../http-handoff/endpoints.md#e21)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+未实现边界：501是当前真实交付，不列成功业务输出。Q的scope、采用的reason等产品规则尚无请求字段，不能写进调用示例。
+
+<a id="e22"></a>
+
+## E22 告警分诊目录
+
+`GET /api/v1/socai2/alerts/{alert_id}/analysis`
+
+源码：[socai2_analysis.py:35](../../../services/api/app/api/v1/endpoints/socai2_analysis.py#L35)。
+
+对应功能：F03-01 AI 分诊与评分、F03-02 发生了什么与依据、F03-03 查看分诊过程、F01-08 时间线、F27-01 响应建议与自动处理、F09-11 调查运行与管理设置入口、F14-06 历史记录分类与选择、F14-07 跨主体运行目录、F15-02 运行统计和卡片摘要
+
+用途与业务结果：current 是当前指针对应分诊；entries 是历史尝试。失败尝试不能覆盖有效旧结论。分页使用 next_before_run_id。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | 必传 | string uuid | 无 | 告警 UUID。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | before_run_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_run_id 翻页。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StagePage](response-fields.md#stagepage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| subject_id | 本分析目录对应告警或事件UUID。 |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| current_pointer_id | 主体latest_triage_id/latest_diagnosis_id；它是分诊/诊断记录ID，不是Run ID。 |
+| current | 指针可核对时的StageEntry，否则null；current_pointer_id是分诊/诊断记录ID。 |
+| current_unavailable_reason | 无当前指针时null；有指针但无法核对来源Run时current_pointer_without_verifiable_run。 |
+| entries | 当前对象条目数组：StagePage为历史尝试，证据模型为目录条目。 |
+| next_before_run_id | 下一页运行游标；null表示结束。 |
+
+
+动态字段：A解释/partial_review及诊断正文按版本。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E22示例](../http-handoff/endpoints.md#e22)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e23"></a>
+
+## E23 事件诊断目录
+
+`GET /api/v1/socai2/incidents/{incident_id}/analysis`
+
+源码：[socai2_analysis.py:40](../../../services/api/app/api/v1/endpoints/socai2_analysis.py#L40)。
+
+对应功能：F07-01 当前诊断和最近尝试、F08-02 关联分析图、F09-11 调查运行与管理设置入口、F14-06 历史记录分类与选择、F14-07 跨主体运行目录、F15-02 运行统计和卡片摘要
+
+用途与业务结果：区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | incident_id | 必传 | string uuid | 无 | 事件 UUID。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | before_run_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_run_id 翻页。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StagePage](response-fields.md#stagepage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| subject_id | 本分析目录对应告警或事件UUID。 |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| current_pointer_id | 主体latest_triage_id/latest_diagnosis_id；它是分诊/诊断记录ID，不是Run ID。 |
+| current | 指针可核对时的StageEntry，否则null；current_pointer_id是分诊/诊断记录ID。 |
+| current_unavailable_reason | 无当前指针时null；有指针但无法核对来源Run时current_pointer_without_verifiable_run。 |
+| entries | 当前对象条目数组：StagePage为历史尝试，证据模型为目录条目。 |
+| next_before_run_id | 下一页运行游标；null表示结束。 |
+
+
+动态字段：diagnosis/open_questions/partial_review。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E23示例](../http-handoff/endpoints.md#e23)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e24"></a>
+
+## E24 指定告警 A Run
+
+`GET /api/v1/socai2/alerts/{alert_id}/analysis/runs/{run_id}`
+
+源码：[socai2_analysis.py:45](../../../services/api/app/api/v1/endpoints/socai2_analysis.py#L45)。
+
+对应功能：F03-01 AI 分诊与评分、F03-02 发生了什么与依据、F03-03 查看分诊过程、F05-01 来源引用与历史版本、F27-01 响应建议与自动处理、F12-02 回查判断来源、F16-03 目标、结论、发现与限制、F27-02 响应建议卡片
+
+用途与业务结果：用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | 必传 | string uuid | 无 | 告警 UUID。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StageEntry](response-fields.md#stageentry)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| freshness | 该次运行输入与当前材料/成员/判断的比较：current/stale/unverified/unavailable；不是采用状态。 |
+| is_current_pointer | 该结果ID是否正是主体当前指针。 |
+| valid_for_current_input | 同时是当前指针、输入current、Run completed，事件还需diagnosis.validation_state=accepted；不代表模型语义正确。 |
+| result | 本次读取的结果对象；可空时表示该次执行没有保存对应结果。 |
+| explanation | A分诊的独立解释工件及可用性；I或无解释时null。 |
+| partial_analysis | 该Run最后可识别的模型响应partial_review读取结果；不可用与未记录分开，不作为当前有效判断。 |
+
+
+动态字段：A解释/partial_review。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E24示例](../http-handoff/endpoints.md#e24)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e25"></a>
+
+## E25 指定事件 I Run
+
+`GET /api/v1/socai2/incidents/{incident_id}/analysis/runs/{run_id}`
+
+源码：[socai2_analysis.py:50](../../../services/api/app/api/v1/endpoints/socai2_analysis.py#L50)。
+
+对应功能：F07-01 当前诊断和最近尝试、F12-02 回查判断来源、F16-03 目标、结论、发现与限制、F27-02 响应建议卡片
+
+用途与业务结果：读 diagnosis、open_questions、交付与待复核字段；执行过程需 E32。保存/格式通过不代表正文质量通过。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | incident_id | 必传 | string uuid | 无 | 事件 UUID。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StageEntry](response-fields.md#stageentry)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| freshness | 该次运行输入与当前材料/成员/判断的比较：current/stale/unverified/unavailable；不是采用状态。 |
+| is_current_pointer | 该结果ID是否正是主体当前指针。 |
+| valid_for_current_input | 同时是当前指针、输入current、Run completed，事件还需diagnosis.validation_state=accepted；不代表模型语义正确。 |
+| result | 本次读取的结果对象；可空时表示该次执行没有保存对应结果。 |
+| explanation | A分诊的独立解释工件及可用性；I或无解释时null。 |
+| partial_analysis | 该Run最后可识别的模型响应partial_review读取结果；不可用与未记录分开，不作为当前有效判断。 |
+
+
+动态字段：diagnosis/open_questions/partial_review。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E25示例](../http-handoff/endpoints.md#e25)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e26"></a>
+
+## E26 告警列表
+
+`GET /api/v1/socai2/alerts`
+
+源码：[socai2_pages.py:42](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L42)。
+
+对应功能：F01-01 默认九列、F01-02 搜索与快捷筛选、F01-03 排序与列选择、F01-04 指标与分页、F01-06 导出与批量选择、F01-09 刷新与清除条件、F06-06 处理中与队列压缩、F13-05 添加告警／事件、F14-07 跨主体运行目录
+
+用途与业务结果：仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | before_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_id 翻页。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_before_id | 下一页主体游标；null表示结束。 |
+| overall_stats | 主体整体统计；按原口径和observed_at展示。 |
+| observed_at | 本次读取观察时间。 |
+
+
+动态字段：overall-stats、alert-material-meta、alert-triage-feedback。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E26示例](../http-handoff/endpoints.md#e26)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e27"></a>
+
+## E27 事件列表
+
+`GET /api/v1/socai2/incidents`
+
+源码：[socai2_pages.py:47](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L47)。
+
+对应功能：F06-01 列表与搜索筛选、F06-02 四项指标、F06-06 处理中与队列压缩、F06-07 刷新、日期、列和导出、F13-05 添加告警／事件、F14-07 跨主体运行目录
+
+用途与业务结果：仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | before_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_id 翻页。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_before_id | 下一页主体游标；null表示结束。 |
+| overall_stats | 主体整体统计；按原口径和observed_at展示。 |
+| observed_at | 本次读取观察时间。 |
+
+
+动态字段：overall-stats；事件material/triage/feedback为null。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E27示例](../http-handoff/endpoints.md#e27)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e28"></a>
+
+## E28 告警详情
+
+`GET /api/v1/socai2/alerts/{alert_id}`
+
+源码：[socai2_pages.py:52](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L52)。
+
+对应功能：F01-05 预览及打开详情、F01-07 标题、属性与来源、F02-01 检测信息与 ATT&CK、F03-01 AI 分诊与评分、F08-01 实体、IOC 与相关告警、F03-04 人工判定及理由、F23-01 管理告警、F01-08 时间线、F04-01 原始记录阅读、F08-03 成员告警、F09-07 ATT&CK 阶段与详细信息、F20-01 事实与认识时间线、F20-02 搜索与等级筛选、F20-03 单选／多选告警、F20-05 回到结果和人工版本、F13-04 当前成员及事件、F13-07 管理所选告警
+
+用途与业务结果：返回 facts、derived、material、triage、feedback 及 analysis_url/section_urls。反馈读取不代表人工判定写入口已实现；发生时间缺失不以入库时间替代。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | 必传 | string uuid | 无 | 告警 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[SubjectView](response-fields.md#subjectview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| facts | 该kind主体固定事实字段；告警AlertFacts，事件IncidentFacts。 |
+| owner_name | 从配置的人员目录按同租户owner_id解析出的用户名，无法解析为null。 |
+| owner_resolution | unassigned明确未分配，resolved名称已解析，unresolved有来源/负责人但本次未解析。 |
+| derived | 服务端计算字段；告警和事件含义、空值分别见DerivedFields。 |
+| material | 告警当前材料元数据，含content_url；事件该值null。正文另读，不含raw_text/raw_json/ocsf_json/enrichment。 |
+| triage | 告警latest_triage_id对应记录及freshness/confidence_percent/run_state/valid_for_current_input派生值，非TriageView同形状。 |
+| feedback | 告警latest_feedback_id对应kind=human_feedback的原始记录；事件或无记录时null。 |
+| analysis_url | 该主体分析目录的相对HTTP路径。 |
+| section_urls | section到相对HTTP路径的映射；members仅事件、incidents仅告警，其余见记录分区。 |
+
+
+动态字段：alert-material-meta、alert-triage-feedback。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E28示例](../http-handoff/endpoints.md#e28)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e29"></a>
+
+## E29 事件详情
+
+`GET /api/v1/socai2/incidents/{incident_id}`
+
+源码：[socai2_pages.py:57](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L57)。
+
+对应功能：F13-01 查看所属事件和 Case、F06-03 预览与进入详情、F23-06 批量管理事件、F23-02 事件管理、F06-04 概览与 ATT&CK、F06-05 时间线与共同线索、F13-04 当前成员及事件
+
+用途与业务结果：返回主体事实、derived 及目录链接；诊断另取 E23，成员/对象另取 E30。资产完整资料由业务后端提供。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | incident_id | 必传 | string uuid | 无 | 事件 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[SubjectView](response-fields.md#subjectview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
+| facts | 该kind主体固定事实字段；告警AlertFacts，事件IncidentFacts。 |
+| owner_name | 从配置的人员目录按同租户owner_id解析出的用户名，无法解析为null。 |
+| owner_resolution | unassigned明确未分配，resolved名称已解析，unresolved有来源/负责人但本次未解析。 |
+| derived | 服务端计算字段；告警和事件含义、空值分别见DerivedFields。 |
+| material | 告警当前材料元数据，含content_url；事件该值null。正文另读，不含raw_text/raw_json/ocsf_json/enrichment。 |
+| triage | 告警latest_triage_id对应记录及freshness/confidence_percent/run_state/valid_for_current_input派生值，非TriageView同形状。 |
+| feedback | 告警latest_feedback_id对应kind=human_feedback的原始记录；事件或无记录时null。 |
+| analysis_url | 该主体分析目录的相对HTTP路径。 |
+| section_urls | section到相对HTTP路径的映射；members仅事件、incidents仅告警，其余见记录分区。 |
+
+
+动态字段：事件派生值、section_urls。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E29示例](../http-handoff/endpoints.md#e29)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e30"></a>
+
+## E30 主体分区记录
+
+`GET /api/v1/socai2/{subject}/{identity}/records/{section}`
+
+源码：[socai2_pages.py:62](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L62)。
+
+对应功能：F01-01 默认九列、F02-01 检测信息与 ATT&CK、F08-01 实体、IOC 与相关告警、F03-05 相似历史复核、F13-01 查看所属事件和 Case、F13-02 关联／新建与准备调查、F01-08 时间线、F05-01 来源引用与历史版本、F27-01 响应建议与自动处理、F06-04 概览与 ATT&CK、F06-05 时间线与共同线索、F08-02 关联分析图、F08-03 成员告警、F08-04 涉及对象与资产匹配、F23-03 处理活动、F13-03 进入／创建／关联 Case、F19-01 当前底图与阅读、F19-02 筛选、布局与节点详情、F25-01 推荐线索与候选预览、F21-01 按对象浏览、F27-04 执行记录与回执
+
+用途与业务结果：subject 只能 alerts/incidents；section 参见分区说明。members 仅事件，incidents 仅告警；其他错误组合404。items 随 section 变化，不能固定为一种记录。next_offset=null 结束；related_alerts 只是同类型/同命名空间/同对象键匹配，不是相似历史反馈或图探索服务。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | subject | 必传 | string；alerts, incidents | 无 | alerts 或 incidents，不能传 cases。 |
+| path | identity | 必传 | string uuid | 无 | subject 对应的告警或事件 UUID。 |
+| path | section | 必传 | string；members, incidents, objects, sources, source_artifacts, assets, cases, comments, activities, related_alerts, responses | 无 | 记录分区；members仅事件、incidents仅告警。见分区表。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=200 | 50 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | offset | 可省略 | integer；minimum=0；maximum=100000 | 0 | 分页偏移，沿 next_offset 继续。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[RecordPage](response-fields.md#recordpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_offset | 下一页偏移；null表示结束。 |
+| observed_at | 本次读取观察时间。 |
+| limitations | 本次结果或阅读的限制，原样保留。 |
+
+
+动态字段：records-members/incidents/objects/sources/assets/cases/comments/activities/related_alerts/responses；source_artifacts见artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E30示例](../http-handoff/endpoints.md#e30)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e31"></a>
+
+## E31 告警材料正文
+
+`GET /api/v1/socai2/alerts/{alert_id}/materials/{material_id}`
+
+源码：[socai2_pages.py:70](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L70)。
+
+对应功能：F02-01 检测信息与 ATT&CK、F04-01 原始记录阅读、F09-07 ATT&CK 阶段与详细信息、F21-04 原件和引用回查、F18-02 摘要、原文与引用
+
+用途与业务结果：从 E28 material.id 取得版本；content_json 包含 raw_json/ocsf_json/enrichment，content_text 为 raw_text。availability 限制与缺正文必须保留，不能展示空JSON当无异常。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | 必传 | string uuid | 无 | 告警 UUID。 |
+| path | material_id | 必传 | string uuid | 无 | 材料版本 UUID；历史读取使用冻结版本。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ContentView](response-fields.md#contentview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| metadata | A/I工件/材料元数据。 |
+| availability | A/I读取状态；工件hash/size不一致仍HTTP200但availability=content_integrity_mismatch且正文null。材料正文使用独立大小限制状态。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+
+
+动态字段：alert-material-meta；content_json包装原始/标准化/富化字段。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E31示例](../http-handoff/endpoints.md#e31)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e32"></a>
+
+## E32 A/I Run 步骤及工件目录
+
+`GET /api/v1/socai2/{subject}/{identity}/analysis/runs/{run_id}/trace`
+
+源码：[socai2_pages.py:75](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L75)。
+
+对应功能：F03-03 查看分诊过程、F07-01 当前诊断和最近尝试、F15-03 执行、交付及用量、F12-04 查看当轮原始输入、F17-01 已保存分析过程、F17-02 步骤账本、F18-01 步骤输入／输出原件、F17-03 当轮能力与投入、F28-01 查询目录和结果
+
+用途与业务结果：subject=alerts/incidents，identity 为对应主体 UUID。返回 run、steps、artifacts、用量及截断标志。仅查既有记录，读取不重新执行；正文按 E33。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | subject | 必传 | string；alerts, incidents | 无 | alerts 或 incidents，不能传 cases。 |
+| path | identity | 必传 | string uuid | 无 | subject 对应的告警或事件 UUID。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TraceView](response-fields.md#traceview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | A/I实际Run行的公开字段，包括主体身份与limits；不同于精简StageRunView，见动态字段。 |
+| steps | 执行步骤目录，按seq组织；Case最多1000，A/I见动态结构限制。 |
+| steps_total | 该A/I Run全部步骤数量，不限返回目录长度。 |
+| steps_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| artifacts | 该Run工件元数据目录，正文通过对应工件接口读取。 |
+| artifacts_total | 该A/I Run全部工件数量。 |
+| artifacts_truncated | 对应数组超过读取上限；true时不能把已返回集合当全量。当前Run内截断集合没有继续分页接口。 |
+| usage | 读取该Run所有模型步骤汇总，与steps目录是否截断无关。 |
+| tool_calls | kind=tool且state不为planned/skipped的实际尝试次数，包含失败，不是成功查询数。 |
+| duration_seconds | started_at与ended_at均有值才计算秒数，否则null，不用0代未知。 |
+| last_recorded_at | 本轮请求/范围变动/开始/结束/步骤时间/工件捕获时间中实际存在的最新时刻，非服务心跳。 |
+| observed_at | 本次读取观察时间。 |
+
+
+动态字段：run-row、run-steps、artifact-metadata、usage-total。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E32示例](../http-handoff/endpoints.md#e32)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e33"></a>
+
+## E33 A/I Run 工件正文
+
+`GET /api/v1/socai2/{subject}/{identity}/analysis/runs/{run_id}/artifacts/{artifact_id}`
+
+源码：[socai2_pages.py:80](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L80)。
+
+对应功能：F03-02 发生了什么与依据、F03-03 查看分诊过程、F05-01 来源引用与历史版本、F27-01 响应建议与自动处理、F08-02 关联分析图、F21-04 原件和引用回查、F12-04 查看当轮原始输入、F17-01 已保存分析过程、F18-01 步骤输入／输出原件、F28-01 查询目录和结果、F28-02 查询状态区分、F18-02 摘要、原文与引用、F27-04 执行记录与回执
+
+用途与业务结果：父主体及 Run 必须匹配。返回 metadata/content_json/content_text/availability；metadata 与 Case E15 的 artifact 字段不同。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | subject | 必传 | string；alerts, incidents | 无 | alerts 或 incidents，不能传 cases。 |
+| path | identity | 必传 | string uuid | 无 | subject 对应的告警或事件 UUID。 |
+| path | run_id | 必传 | string uuid | 无 | 该父主体下的执行 UUID。 |
+| path | artifact_id | 必传 | string uuid | 无 | 工件 UUID，必须保持父主体/Run 归属。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ContentView](response-fields.md#contentview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| metadata | A/I工件/材料元数据。 |
+| availability | A/I读取状态；工件hash/size不一致仍HTTP200但availability=content_integrity_mismatch且正文null。材料正文使用独立大小限制状态。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+
+
+动态字段：artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E33示例](../http-handoff/endpoints.md#e33)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e34"></a>
+
+## E34 告警非 Run 来源工件
+
+`GET /api/v1/socai2/alerts/{identity}/artifacts/{artifact_id}`
+
+源码：[socai2_pages.py:85](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L85)。
+
+对应功能：F21-04 原件和引用回查、F18-02 摘要、原文与引用
+
+用途与业务结果：读取本告警 run_id 为空的来源工件，artifact_id 可由 source_artifacts 记录取得。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | identity | 必传 | string uuid | 无 | subject 对应的告警或事件 UUID。 |
+| path | artifact_id | 必传 | string uuid | 无 | 工件 UUID，必须保持父主体/Run 归属。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ContentView](response-fields.md#contentview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| metadata | A/I工件/材料元数据。 |
+| availability | A/I读取状态；工件hash/size不一致仍HTTP200但availability=content_integrity_mismatch且正文null。材料正文使用独立大小限制状态。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+
+
+动态字段：artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E34示例](../http-handoff/endpoints.md#e34)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e35"></a>
+
+## E35 事件非 Run 来源工件
+
+`GET /api/v1/socai2/incidents/{identity}/artifacts/{artifact_id}`
+
+源码：[socai2_pages.py:90](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L90)。
+
+对应功能：F21-04 原件和引用回查、F18-02 摘要、原文与引用
+
+用途与业务结果：读取本事件 run_id 为空的来源工件，不能替代运行工件路径。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | identity | 必传 | string uuid | 无 | subject 对应的告警或事件 UUID。 |
+| path | artifact_id | 必传 | string uuid | 无 | 工件 UUID，必须保持父主体/Run 归属。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[ContentView](response-fields.md#contentview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| metadata | A/I工件/材料元数据。 |
+| availability | A/I读取状态；工件hash/size不一致仍HTTP200但availability=content_integrity_mismatch且正文null。材料正文使用独立大小限制状态。 |
+| content_json | 保存的结构化正文；格式由工件schema_version和实际类型决定。 |
+| content_text | 保存的文本正文，可空；不得自动重生成。 |
+
+
+动态字段：artifact-metadata。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E35示例](../http-handoff/endpoints.md#e35)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e36"></a>
+
+## E36 手动告警分诊
+
+`POST /api/v1/socai2/alerts/{alert_id}/analyze`
+
+源码：[socai2_stage_execution.py:47](../../../services/api/app/api/v1/endpoints/socai2_stage_execution.py#L47)。
+
+对应功能：现有服务支撑操作；不能因有接口就新增产品按钮或功能范围。
+
+用途与业务结果：程序已实现，SOCAI2_STAGE_EXECUTION_ENABLED 默认关闭；本轮不核验生产启用，不作为可直接调用的生产能力。operation_key 同租户稳定映射 Run；异常先 E24 查询，503 有 run_id。会执行模型，文档加载不会调用。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | 必传 | string uuid | 无 | 告警 UUID。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StageEntry](response-fields.md#stageentry)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| freshness | 该次运行输入与当前材料/成员/判断的比较：current/stale/unverified/unavailable；不是采用状态。 |
+| is_current_pointer | 该结果ID是否正是主体当前指针。 |
+| valid_for_current_input | 同时是当前指针、输入current、Run completed，事件还需diagnosis.validation_state=accepted；不代表模型语义正确。 |
+| result | 本次读取的结果对象；可空时表示该次执行没有保存对应结果。 |
+| explanation | A分诊的独立解释工件及可用性；I或无解释时null。 |
+| partial_analysis | 该Run最后可识别的模型响应partial_review读取结果；不可用与未记录分开，不作为当前有效判断。 |
+
+
+动态字段：同E24。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E36示例](../http-handoff/endpoints.md#e36)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e37"></a>
+
+## E37 手动事件诊断
+
+`POST /api/v1/socai2/incidents/{incident_id}/diagnose`
+
+源码：[socai2_stage_execution.py:52](../../../services/api/app/api/v1/endpoints/socai2_stage_execution.py#L52)。
+
+对应功能：现有服务支撑操作；不能因有接口就新增产品按钮或功能范围。
+
+用途与业务结果：启用边界同 E36；只传 operation_key，主体来自路径。异常先 E25 查询返回的 Run。不能把它当成自动消费者已开启。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | incident_id | 必传 | string uuid | 无 | 事件 UUID。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[StageEntry](response-fields.md#stageentry)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| run | 对应的执行记录；嵌套类型或动态结构见下表，不能和正式结果/当前判断混用。 |
+| freshness | 该次运行输入与当前材料/成员/判断的比较：current/stale/unverified/unavailable；不是采用状态。 |
+| is_current_pointer | 该结果ID是否正是主体当前指针。 |
+| valid_for_current_input | 同时是当前指针、输入current、Run completed，事件还需diagnosis.validation_state=accepted；不代表模型语义正确。 |
+| result | 本次读取的结果对象；可空时表示该次执行没有保存对应结果。 |
+| explanation | A分诊的独立解释工件及可用性；I或无解释时null。 |
+| partial_analysis | 该Run最后可识别的模型响应partial_review读取结果；不可用与未记录分开，不作为当前有效判断。 |
+
+
+动态字段：同E25。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E37示例](../http-handoff/endpoints.md#e37)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e38"></a>
+
+## E38 用户创建人工任务
+
+`POST /api/v1/socai2/cases/{case_id}/tasks`
+
+源码：[socai2_tasks.py:45](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L45)。
+
+对应功能：F22-03 用户新建与分配、F22-09 用户创建人工任务／询问结果
+
+用途与业务结果：用户明确决定需要人工确认后创建；不自动从 questions 批量生成。先 E03 获取范围版本，assignee_id 由业务后端人员目录取得。origin_finding_id 需同时有 origin_result_id；引用对象必须属于本案。保存不启动调查。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| JSON | title | 必传 | string；minLength=1；maxLength=200 | 见DTO默认值 | 显示标题；写入必须非空，长度约束见Schema。 |
+| JSON | description | 可省略 | string；maxLength=10000 / null | 见DTO默认值 | 补充说明，可空；不是程序生成结论。 |
+| JSON | assignee_id | 可省略 | string uuid / null | 见DTO默认值 | 人工任务负责人UUID，需真实存在于本租户；null未分配。 |
+| JSON | due_at | 可省略 | string date-time / null | 见DTO默认值 | 带时区的截止时间；null清空。 |
+| JSON | state | 可省略 | [TaskState](../http-handoff/schemas.md#taskstate) | not_started | 本对象状态；含义依模型枚举，不与交付/业务判定合并。 |
+| JSON | result_text | 可省略 | string；maxLength=20000 / null | 见DTO默认值 | 人工确认结果正文；任务completed时必填非空。 |
+| JSON | result_scope | 可省略 | [Scope](../http-handoff/schemas.md#scope) / null | 见DTO默认值 | 人工结果适用范围；completed时必填，不得扩大到Case外。 |
+| JSON | source_refs | 可省略 | array〈[TaskReference](../http-handoff/schemas.md#taskreference)〉；maxItems=50 | 见DTO默认值 | 来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| JSON | origin_result_id | 可省略 | string uuid / null | 见DTO默认值 | 创建任务时关联的同案正式结果UUID。 |
+| JSON | origin_finding_id | 可省略 | string；minLength=1；maxLength=200 / null | 见DTO默认值 | 该结果中的发现ID；必须同时传origin_result_id。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskMutation](response-fields.md#taskmutation)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| task | 本次创建/修订后读取到的完整TaskView。 |
+| changed | 本次写入是否实际改变业务内容；幂等重读不表示重新执行。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E38示例](../http-handoff/endpoints.md#e38)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+补充约束：completed要求非空结果和有效范围；源引用写入只传type/id，读回EvidenceRef不可原样回写。PUT需保留未改字段，省略可选项会按默认值处理。409保留用户输入后再确认。
+
+<a id="e39"></a>
+
+## E39 人工任务列表
+
+`GET /api/v1/socai2/cases/{case_id}/tasks`
+
+源码：[socai2_tasks.py:55](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L55)。
+
+对应功能：F09-06 案件说明和范围概况、F20-01 事实与认识时间线、F20-02 搜索与等级筛选、F22-01 人工摘要与待办、F14-05 历史与故事入口、F22-02 列表、状态和待办数
+
+用途与业务结果：返回当前修订、总数和 next_offset；待办统计只计实际未结束任务。旧版本必须另用 E42/E43。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | offset | 可省略 | integer；minimum=0；maximum=100000 | 0 | 分页偏移，沿 next_offset 继续。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskPage](response-fields.md#taskpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_offset | 下一页偏移；null表示结束。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E39示例](../http-handoff/endpoints.md#e39)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e40"></a>
+
+## E40 修订人工任务
+
+`PUT /api/v1/socai2/cases/{case_id}/tasks/{task_id}`
+
+源码：[socai2_tasks.py:50](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L50)。
+
+对应功能：F22-04 编辑、取消及状态更新、F22-05 完成结果与适用范围、F22-07 并发冲突处理、F22-08 保存后的调查影响
+
+用途与业务结果：PUT 为完整 TaskFields，不是局部 PATCH；先 E41 取当前字段和 row_version，再 E03 取范围版本，完整带回未修改字段。省略可选字段会取默认值，可能清空原值。completed 必须有 result_text 和 result_scope；whole_case 覆盖当前全部成员，selected_alerts 只能当前子集，explicit_objects 还需非空有效 object_keys。事实变更生成新修订，旧引用不变。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | task_id | 必传 | string uuid | 无 | 本案人工任务 UUID。 |
+| JSON | title | 必传 | string；minLength=1；maxLength=200 | 见DTO默认值 | 显示标题；写入必须非空，长度约束见Schema。 |
+| JSON | description | 可省略 | string；maxLength=10000 / null | 见DTO默认值 | 补充说明，可空；不是程序生成结论。 |
+| JSON | assignee_id | 可省略 | string uuid / null | 见DTO默认值 | 人工任务负责人UUID，需真实存在于本租户；null未分配。 |
+| JSON | due_at | 可省略 | string date-time / null | 见DTO默认值 | 带时区的截止时间；null清空。 |
+| JSON | state | 可省略 | [TaskState](../http-handoff/schemas.md#taskstate) | not_started | 本对象状态；含义依模型枚举，不与交付/业务判定合并。 |
+| JSON | result_text | 可省略 | string；maxLength=20000 / null | 见DTO默认值 | 人工确认结果正文；任务completed时必填非空。 |
+| JSON | result_scope | 可省略 | [Scope](../http-handoff/schemas.md#scope) / null | 见DTO默认值 | 人工结果适用范围；completed时必填，不得扩大到Case外。 |
+| JSON | source_refs | 可省略 | array〈[TaskReference](../http-handoff/schemas.md#taskreference)〉；maxItems=50 | 见DTO默认值 | 来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。 |
+| JSON | operation_key | 必传 | string uuid | 见DTO默认值 | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| JSON | expected_scope_revision | 必传 | integer；minimum=0.0 | 见DTO默认值 | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| JSON | expected_row_version | 必传 | integer；minimum=1.0 | 见DTO默认值 | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskMutation](response-fields.md#taskmutation)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| task | 本次创建/修订后读取到的完整TaskView。 |
+| changed | 本次写入是否实际改变业务内容；幂等重读不表示重新执行。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E40示例](../http-handoff/endpoints.md#e40)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+补充约束：completed要求非空结果和有效范围；源引用写入只传type/id，读回EvidenceRef不可原样回写。PUT需保留未改字段，省略可选项会按默认值处理。409保留用户输入后再确认。
+
+<a id="e41"></a>
+
+## E41 人工任务当前版本
+
+`GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}`
+
+源码：[socai2_tasks.py:60](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L60)。
+
+对应功能：F22-03 用户新建与分配、F22-04 编辑、取消及状态更新、F22-05 完成结果与适用范围、F22-06 完成人、修改人与历史、F22-07 并发冲突处理
+
+用途与业务结果：读取 task.current 及 row_version。编辑要保留原字段；负责人和完成人均由服务保存，不由客户端伪造完成时间。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | task_id | 必传 | string uuid | 无 | 本案人工任务 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskView](response-fields.md#taskview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| id | 该记录的应用UUID，不是页面展示编号或厂商编号。 |
+| case_id | 所属Case |
+| current_revision_id | 当前完整版本；延迟FK同事务插入 |
+| origin_result_id | 同Case引出事项的结果 |
+| origin_finding_id | 该结果findings中的稳定条目ID |
+| created_at | 任务创建 |
+| created_by | 创建者 |
+| updated_at | 最新实际编辑 |
+| row_version | 防旧表单覆盖 |
+| current | current_revision_id指向的完整当前修订对象；该HTTP结构为必返且不可空。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E41示例](../http-handoff/endpoints.md#e41)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e42"></a>
+
+## E42 人工任务修订历史
+
+`GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}/revisions`
+
+源码：[socai2_tasks.py:65](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L65)。
+
+对应功能：F20-01 事实与认识时间线、F22-06 完成人、修改人与历史
+
+用途与业务结果：使用 next_offset 分页。任务被引用时必须保存具体 revision_id，不用最新版本覆盖历史事实。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | task_id | 必传 | string uuid | 无 | 本案人工任务 UUID。 |
+| query | limit | 可省略 | integer；minimum=1；maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | offset | 可省略 | integer；minimum=0；maximum=100000 | 0 | 分页偏移，沿 next_offset 继续。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskRevisionPage](response-fields.md#taskrevisionpage)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
+| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| next_offset | 下一页偏移；null表示结束。 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E42示例](../http-handoff/endpoints.md#e42)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+<a id="e43"></a>
+
+## E43 人工任务指定修订
+
+`GET /api/v1/socai2/cases/{case_id}/tasks/{task_id}/revisions/{revision_id}`
+
+源码：[socai2_tasks.py:70](../../../services/api/app/api/v1/endpoints/socai2_tasks.py#L70)。
+
+对应功能：F12-02 回查判断来源、F20-05 回到结果和人工版本、F12-03 历史范围与冻结引用、F22-06 完成人、修改人与历史
+
+用途与业务结果：按引用的 revision_id 阅读当时 title/result_text/result_scope/source_refs/completed_at/by；旧版本不可变。
+
+### 输入
+
+| 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | 必传 | string uuid | 无 | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | task_id | 必传 | string uuid | 无 | 本案人工任务 UUID。 |
+| path | revision_id | 必传 | string uuid | 无 | 指定不可变任务修订 UUID。 |
+
+
+请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
+
+### 输出
+
+HTTP 200，返回[TaskRevisionView](response-fields.md#taskrevisionview)。
+| 顶层输出字段 | 含义 |
+| --- | --- |
+| id | 该记录的应用UUID，不是页面展示编号或厂商编号。 |
+| case_id | 同案FK |
+| task_id | 事项 |
+| revision | 从1开始，每次有效编辑+1 |
+| title | 任务事项，非空 |
+| description | 工作说明 |
+| assignee_id | 同租户可选负责人，NULL未分配 |
+| due_at | 截止时间，可空 |
+| state | 四种人工状态 |
+| result_text | 事实反馈，completed必填非空 |
+| result_scope | 确认范围；完成时须明确，如未知部分写limitations |
+| source_refs | 读回为完整EvidenceRef（含角色/路径），创建/修订请求仅接收TaskReference的type/id，不能原样回传读对象。 |
+| completed_at | 本次进入完成状态的真实时间 |
+| completed_by | 本次实际完成人，不是assignee |
+| changed_at | 版本编辑时间 |
+| changed_by | 实际编辑人 |
+
+
+动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
+
+输入输出及典型错误JSON继续使用[原E43示例](../http-handoff/endpoints.md#e43)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+
+## E44–E47 Case管理增量
+
+对应F23-04及D01；原E01–E43字段保持。E44 GET `/cases/{case_id}/management`返回当前Case、open_task_count、blocking_runs及操作资格。E45 PATCH同路径需要operation_key、expected_row_version和至少一个管理字段；省略保持，null只对description/owner_id/severity清空，tags=[]清空。E46 POST `/cases/{case_id}/close`拦截running/unknown；有未完任务须acknowledge_open_tasks及非空reason。E47 POST `/cases/{case_id}/reopen`仅resolved恢复in_progress，不启动Run。写回执含保存后的Case快照及changed，旧状态保留在E17活动。
+
+完整请求/响应示例、逐字段输入限制及404/409/422错误均由[当前Swagger源](../http-handoff/openapi.json)和[接口说明](../http-handoff/endpoints.md)生成，输出见[新增三种类型](response-fields.md#casemanagementview)。代码为`case_management.py`及`case_management_contracts.py`，无数据库迁移。

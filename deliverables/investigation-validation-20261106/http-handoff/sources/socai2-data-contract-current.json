@@ -1,0 +1,6776 @@
+{
+  "version": "socai2.page-model.v1",
+  "date": "2026-11-12",
+  "status": "current-schema-127-applied",
+  "namespace": "socai2",
+  "common": {
+    "tenant_id": {
+      "type": "uuid",
+      "nullable": false,
+      "default": null,
+      "meaning": "服务端租户；每表必有；引用 public.tenants(id)"
+    },
+    "identity": {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "default": "application UUID",
+      "meaning": "新记录UUID；外部任意文本ID另存，不能强转"
+    },
+    "key_rule": "所有实体 PRIMARY KEY(id), UNIQUE(tenant_id,id)；内部FK含tenant_id及所需父ID；关系表按所列联合PK",
+    "timestamps": "timestamptz，输入带时区，UTC存储；发生时间未知为NULL，不用NOW替代；created_at允许transaction_timestamp()",
+    "enums": "text+命名CHECK；API同一枚举字典；拒绝未知业务写入值，来源原值仍保存在材料；不使用中文标签入库",
+    "json": "JSON字段必须引用本文contract；NULL为未记录/不可得，[]为已读取且为空；禁止无定义的万能data/extra列",
+    "immutable": "材料/分诊反馈/诊断终态/结果/版本/活动追加；引用父对象不物理级联删除；应用无历史UPDATE/DELETE权限",
+    "users": "public.users.id为UUID，该公共表无(tenant_id,id)唯一键；先FK(id)，服务端在事务内校验同租户/可授权目标，禁止以用户名代外键；不宣称普通FK校验了租户",
+    "writers": "列的写入权按表owner和字段说明划分；来源同步不得覆盖人工管理；GET无写回",
+    "deletion": "业务接口不物理删除审计原件；成员移出仅删除当前关系并追加活动；保留/脱敏策略另作显式运维，不自动级联",
+    "rls": "schema 开启并 FORCE RLS，USING/WITH CHECK tenant_id=public.current_tenant_id()；事务必须设置认证租户，缺租户拒绝。21 当前运行角色与最小权限已核验，GET 无调查业务写入。"
+  },
+  "enums": {
+    "severity": {
+      "values": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "meaning": "来源五级，NULL未知；页面高/中/低不反向丢弃critical/info"
+    },
+    "alert_status": {
+      "values": [
+        "new",
+        "in_progress",
+        "completed",
+        "unknown"
+      ],
+      "meaning": "业务处理；旧fp/false_positive→completed并保留误报；unknown仅无法映射历史"
+    },
+    "work_status": {
+      "values": [
+        "new",
+        "in_progress",
+        "resolved",
+        "unknown"
+      ],
+      "meaning": "事件和Case业务处理；Run完成不自动resolved"
+    },
+    "disposition": {
+      "values": [
+        "true_positive",
+        "false_positive",
+        "benign",
+        "needs_review"
+      ],
+      "meaning": "告警判定；NULL尚未判断；benign=正常/授权，needs_review=需人工确认"
+    },
+    "assignment_state": {
+      "values": [
+        "unassigned",
+        "assigned",
+        "unresolved"
+      ],
+      "meaning": "明确未分配/已解析用户/来源负责人无法解析；unresolved保留原值"
+    },
+    "score_state": {
+      "values": [
+        "not_provided",
+        "not_computed",
+        "disabled",
+        "failed",
+        "available",
+        "legacy_unverified"
+      ],
+      "meaning": "仅available可作为已知有效评分；其他数值原件留材料"
+    },
+    "time_source": {
+      "values": [
+        "source",
+        "derived_source",
+        "unknown"
+      ],
+      "meaning": "发生时间不以接收时间补造"
+    },
+    "run_kind": {
+      "values": [
+        "alert_basic",
+        "incident_diagnosis",
+        "baseline",
+        "ai_question"
+      ],
+      "meaning": "五业务流程中四个真实机器执行；人工任务无Run"
+    },
+    "run_state": {
+      "values": [
+        "pending_update",
+        "running",
+        "unknown",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "meaning": "pending仅baseline；unknown仍占其执行槽；completed指机器已结束"
+    },
+    "run_trigger": {
+      "values": [
+        "ingested",
+        "refresh",
+        "case_created",
+        "members_changed",
+        "manual",
+        "question",
+        "retry"
+      ],
+      "meaning": "入口原因；来源未知不靠标题猜"
+    },
+    "delivery": {
+      "values": [
+        "none",
+        "partial",
+        "complete",
+        "unknown"
+      ],
+      "meaning": "产物交付完整性，独立执行状态与结论有效性"
+    },
+    "step_kind": {
+      "values": [
+        "stage",
+        "model",
+        "tool",
+        "graph",
+        "render"
+      ],
+      "meaning": "一次实际调用一行；父阶段不重复计成本"
+    },
+    "step_state": {
+      "values": [
+        "planned",
+        "running",
+        "completed",
+        "failed",
+        "timeout",
+        "cancelled",
+        "skipped",
+        "unknown"
+      ],
+      "meaning": "成功空查询=completed+returned_rows=0，失败rows=NULL"
+    },
+    "read_state": {
+      "values": [
+        "not_read",
+        "read",
+        "missing",
+        "denied",
+        "failed"
+      ],
+      "meaning": "成员材料读取；read还需material_id"
+    },
+    "analysis_state": {
+      "values": [
+        "not_analyzed",
+        "analyzed",
+        "unresolved",
+        "excluded"
+      ],
+      "meaning": "未分析/已分析/分析后未决/明确排除"
+    },
+    "result_kind": {
+      "values": [
+        "baseline",
+        "ai_saved"
+      ],
+      "meaning": "正式历史；未保存对话不进results"
+    },
+    "origin": {
+      "values": [
+        "model",
+        "human",
+        "system",
+        "legacy"
+      ],
+      "meaning": "结论来源；系统交接不冒充模型有效结论"
+    },
+    "validation": {
+      "values": [
+        "not_checked",
+        "accepted",
+        "rejected",
+        "system_only",
+        "legacy_unverified"
+      ],
+      "meaning": "程序采纳校验状态，不等同事实绝对正确"
+    },
+    "conclusion_state": {
+      "values": [
+        "supported",
+        "uncertain",
+        "unavailable"
+      ],
+      "meaning": "有依据/未决/无结论；unavailable正文可有handoff，不写有效结论"
+    },
+    "task_state": {
+      "values": [
+        "not_started",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "meaning": "完成须反馈；已完成仍可编辑为新版本"
+    },
+    "message_role": {
+      "values": [
+        "user",
+        "assistant"
+      ],
+      "meaning": "原始模型system/tool交换存artifacts，不伪造用户对话"
+    },
+    "message_state": {
+      "values": [
+        "accepted",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "unknown"
+      ],
+      "meaning": "消息交付状态；Run负责实际执行状态"
+    },
+    "actor_type": {
+      "values": [
+        "user",
+        "service",
+        "model",
+        "legacy_unknown"
+      ],
+      "meaning": "ID和名称快照；历史缺人不以当前负责人填充"
+    },
+    "object_type": {
+      "values": [
+        "host",
+        "user",
+        "ip",
+        "domain",
+        "url",
+        "file",
+        "hash",
+        "process",
+        "email",
+        "application",
+        "cloud_resource",
+        "technique",
+        "other"
+      ],
+      "meaning": "来源对象；other须原类型，host/user同名不得合并"
+    },
+    "object_role": {
+      "values": [
+        "entity",
+        "ioc",
+        "both"
+      ],
+      "meaning": "对象与IOC来源类别；不自动提升威胁判定"
+    },
+    "asset_match": {
+      "values": [
+        "matched",
+        "ambiguous",
+        "not_found",
+        "not_checked"
+      ],
+      "meaning": "库存匹配状态；matched须来源引用和依据"
+    },
+    "ref_kind": {
+      "values": [
+        "source_event",
+        "threshold_candidate",
+        "sequence_candidate",
+        "related_record"
+      ],
+      "meaning": "检测参与/候选与因果不混淆"
+    },
+    "membership_source": {
+      "values": [
+        "fusion",
+        "manual",
+        "incident_link",
+        "move",
+        "legacy"
+      ],
+      "meaning": "关系写入来源"
+    },
+    "material_state": {
+      "values": [
+        "complete",
+        "truncated",
+        "summary_only",
+        "unavailable"
+      ],
+      "meaning": "原件保留状态，完整只表示保存材料完整，不代表输入覆盖全"
+    },
+    "diagnosis_state": {
+      "values": [
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "unknown"
+      ],
+      "meaning": "事件诊断尝试，终态不可变"
+    },
+    "change_kind": {
+      "values": [
+        "initial",
+        "unchanged",
+        "expanded",
+        "revised",
+        "withdrawn",
+        "not_comparable"
+      ],
+      "meaning": "比较基线明确，initial无比较引用"
+    },
+    "approval_requirement": {
+      "values": [
+        "required",
+        "not_required",
+        "unknown"
+      ],
+      "meaning": "未记录不等于无需审批"
+    },
+    "activity_result": {
+      "values": [
+        "succeeded",
+        "failed",
+        "skipped"
+      ],
+      "meaning": "活动目标的实际处理结果，不用计数代目标"
+    },
+    "artifact_kind": {
+      "values": [
+        "input_snapshot",
+        "model_request",
+        "model_response",
+        "tool_request",
+        "tool_response",
+        "domain_analysis",
+        "deep_analysis",
+        "attack_chain",
+        "attack_path",
+        "alert_graph",
+        "report_json",
+        "report_markdown",
+        "attachment",
+        "source_snapshot",
+        "handoff",
+        "query_plan",
+        "alert_explanation",
+        "case_evidence_index"
+      ],
+      "meaning": "稳定类别；新类型需版本变更"
+    },
+    "assessment_kind": {
+      "values": [
+        "triage",
+        "human_feedback"
+      ],
+      "meaning": "自动与人工独立不可变历史"
+    },
+    "scope_kind": {
+      "values": [
+        "whole_case",
+        "selected_alerts",
+        "explicit_objects"
+      ],
+      "meaning": "结果/人工反馈范围的声明，不等于已证明覆盖"
+    },
+    "case_classification": {
+      "values": [
+        "true_positive",
+        "informational",
+        "false_positive"
+      ],
+      "meaning": "明确Case管理分类；NULL为未设置，与当前判断正文独立"
+    }
+  },
+  "contracts": {
+    "external_ref": {
+      "meaning": "外部事实稳定引用，不用裸ID；resolved由读取结果记录，不暗示有FK",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string"
+          },
+          "object_type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "namespace",
+          "object_type",
+          "id",
+          "version",
+          "captured_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "actor": {
+      "meaning": "真实主体；模型/服务要名称版本；人id指public.users",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "user",
+              "service",
+              "model",
+              "legacy_unknown"
+            ]
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name_snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "service_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "service_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "user_id",
+          "name_snapshot",
+          "service_name",
+          "service_version"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "user"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "user_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name_snapshot": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "service",
+                    "model"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "service_name": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "error": {
+      "meaning": "真实失败信息，不以空查询代替；不含凭据",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable",
+          "occurred_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "retention": {
+      "meaning": "完整存储与输入完整性不同；未知大小不可填0",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "original_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retained_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "original_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retained_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "omitted_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "original_size_bytes",
+          "retained_size_bytes",
+          "original_sha256",
+          "retained_sha256",
+          "truncated",
+          "reason",
+          "omitted_paths"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "scope": {
+      "meaning": "明确范围；空数组不意味着整案；whole_case也冻结成员ID",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "whole_case",
+              "selected_alerts",
+              "explicit_objects"
+            ]
+          },
+          "alert_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "object_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "window_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "alert_ids",
+          "object_keys",
+          "window_start",
+          "window_end",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evidence_ref": {
+      "meaning": "每条引用准确定位来源；由程序按type校验相应字段及作用域",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "alert_material",
+              "artifact",
+              "task_revision",
+              "result",
+              "external"
+            ]
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "external": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/external_ref"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "row_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "role": {
+            "enum": [
+              "observation",
+              "source_label",
+              "prior_analysis",
+              "human_statement",
+              "execution_receipt"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "external",
+          "source_path",
+          "row_keys",
+          "role"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "external"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "id": {
+                  "type": "null"
+                },
+                "external": {
+                  "$ref": "#/$defs/external_ref"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "external": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "evidence_refs": {
+      "meaning": "已采用或可回查引用集合；禁止占位符",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/evidence_ref"
+        }
+      }
+    },
+    "priority_basis": {
+      "meaning": "优先级已有评分方法和原始依据；不新造算法",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "computed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/evidence_ref"
+            }
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "method",
+          "version",
+          "computed_at",
+          "inputs",
+          "explanation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "raw_payload": {
+      "meaning": "来源原JSON不限制厂商扩展；不是内部业务状态容器",
+      "schema": {
+        "type": [
+          "object",
+          "array",
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "detection": {
+      "meaning": "检测语义有则保留；评分状态与值配套，标签不当攻击事实",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rule_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tactics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "techniques": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "labels_provided": {
+            "type": "boolean"
+          },
+          "confidence_state": {
+            "enum": [
+              "not_provided",
+              "not_computed",
+              "disabled",
+              "failed",
+              "available",
+              "legacy_unverified"
+            ]
+          },
+          "confidence_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence_rationale": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "score_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ocsf_class_uid": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "rule_id",
+          "rule_name",
+          "tactics",
+          "techniques",
+          "labels_provided",
+          "confidence_state",
+          "confidence_value",
+          "confidence_label",
+          "confidence_rationale",
+          "score_source",
+          "ocsf_class_uid"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "confidence_state": {
+                  "const": "available"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "confidence_value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "score_source": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "confidence_value": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "enrichment": {
+      "meaning": "保留Fusion收到的富化，项目按来源类型受控；源扩展只留raw",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "collected_at": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_path": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "value": {
+                  "$ref": "#/$defs/raw_payload"
+                }
+              },
+              "required": [
+                "kind",
+                "source",
+                "collected_at",
+                "source_path",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "items"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "source_scope": {
+      "meaning": "来源范围上限/截断明确，bounded observed不冒充完整参与集合",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "explicit_sources",
+              "bounded_observed_references",
+              "sequence_candidates",
+              "unknown"
+            ]
+          },
+          "received_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retained_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "window_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "omission_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "received_count",
+          "retained_count",
+          "complete",
+          "truncated",
+          "window_start",
+          "window_end",
+          "omission_reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "object_attributes": {
+      "meaning": "已收到进程/网络/文件的必要投影；缺失NULL，不从标题猜。IP用inet形式校验，端口0..65535，PID文本保跨平台原值",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hash_algorithm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hash_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_pid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "process_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "process_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "command_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_process_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_command_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "src_ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "src_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dst_ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dst_port": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dst_hostname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bytes_sent": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bytes_received": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    "match_basis": {
+      "meaning": "库存匹配要给出方法和查询时间；只匹配主机不能推同账号",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "matched_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inventory_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "method",
+          "matched_fields",
+          "checked_at",
+          "inventory_version",
+          "candidate_count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "correlation_basis": {
+      "meaning": "实际归并依据；候选时序不自动升级因果",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "object_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "window_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "relation_strength": {
+            "enum": [
+              "shared_object",
+              "window_candidate",
+              "sequence_candidate",
+              "manual",
+              "legacy_unverified"
+            ]
+          },
+          "source_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          }
+        },
+        "required": [
+          "method",
+          "rule_id",
+          "object_keys",
+          "window_start",
+          "window_end",
+          "reason",
+          "relation_strength",
+          "source_refs"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "question": {
+      "meaning": "问题有稳定ID与证据要求；Deep只围绕问题加深",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/$defs/scope"
+          },
+          "evidence_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "state": {
+            "enum": [
+              "open",
+              "answered",
+              "unresolved",
+              "not_attempted"
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "scope",
+          "evidence_requirements",
+          "state",
+          "answer",
+          "evidence_refs",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "questions": {
+      "meaning": "本次提出/回答/未决问题",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/question"
+        }
+      }
+    },
+    "finding": {
+      "meaning": "发现的原文、依据和反证独立，不用高置信度替代来源",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "observed",
+              "inferred",
+              "unresolved",
+              "withdrawn"
+            ]
+          },
+          "scope": {
+            "$ref": "#/$defs/scope"
+          },
+          "support": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "counterevidence": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "state",
+          "scope",
+          "support",
+          "counterevidence",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "meaning": "逐项发现与证据",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/finding"
+        }
+      }
+    },
+    "recommendation": {
+      "meaning": "可追踪建议；稳定proposal_id供审批关联；审批缺失unknown",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action_type": {
+            "type": "string"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "object_key": {
+                  "type": "string"
+                },
+                "display_name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "object_key",
+                "display_name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "reason": {
+            "type": "string"
+          },
+          "approval_requirement": {
+            "enum": [
+              "required",
+              "not_required",
+              "unknown"
+            ]
+          },
+          "source_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "action_type",
+          "targets",
+          "reason",
+          "approval_requirement",
+          "source_refs",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "recommendations": {
+      "meaning": "同一次分析的建议列表，不含假执行状态",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/recommendation"
+        }
+      }
+    },
+    "diagnosis": {
+      "meaning": "事件级汇总诊断，不冒充Case全流程",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validation_state": {
+            "enum": [
+              "not_checked",
+              "accepted",
+              "rejected",
+              "system_only",
+              "legacy_unverified",
+              "partial"
+            ]
+          },
+          "findings": {
+            "$ref": "#/$defs/findings"
+          },
+          "source_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "partial_review_artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delivery_assessment": {
+            "additionalProperties": false,
+            "properties": {
+              "schema_version": {
+                "const": "socai2.incident-delivery.v1",
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "complete",
+                  "partial",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "reasons": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "member_coverage": {
+                "additionalProperties": false,
+                "properties": {
+                  "expected_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "analyzed_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "not_reviewed_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "missing_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "expected_ids",
+                  "analyzed_ids",
+                  "not_reviewed_ids",
+                  "missing_ids"
+                ],
+                "type": "object"
+              },
+              "review_items": {
+                "additionalProperties": false,
+                "properties": {
+                  "state": {
+                    "enum": [
+                      "required",
+                      "none_listed",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "unresolved_member_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "unresolved_finding_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "open_question_ids": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "state",
+                  "unresolved_member_ids",
+                  "unresolved_finding_ids",
+                  "open_question_ids"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "schema_version",
+              "state",
+              "reasons",
+              "member_coverage",
+              "review_items"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "conclusion",
+          "validation_state",
+          "findings",
+          "limitations"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "validation_state": {
+                  "const": "partial"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "partial_review_artifact_id"
+              ],
+              "properties": {
+                "conclusion": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": [
+                "source_refs"
+              ],
+              "properties": {
+                "partial_review_artifact_id": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    "case_impact": {
+      "meaning": "描述影响，不自动改变当前判断或案件状态",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "supported_changes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cannot_generalize": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "affected_scope": {
+            "$ref": "#/$defs/scope"
+          },
+          "next_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "supported_changes",
+          "cannot_generalize",
+          "affected_scope",
+          "next_steps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "limits": {
+      "meaning": "实际启动时约束，非全局可变配置引用；未知项NULL",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "max_model_calls": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_tool_calls": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_rows_per_query": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policy_version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "max_model_calls",
+          "max_tokens",
+          "max_tool_calls",
+          "max_rows_per_query",
+          "deadline_at",
+          "policy_version"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "usage": {
+      "meaning": "零与未知分开；只在真实叶子调用计费，父阶段NULL",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached_input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasoning_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "price_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage_state": {
+            "enum": [
+              "reported",
+              "partial",
+              "unavailable",
+              "not_applicable"
+            ]
+          },
+          "cost_state": {
+            "enum": [
+              "priced",
+              "unpriced",
+              "not_applicable"
+            ]
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "input_tokens",
+          "output_tokens",
+          "cached_input_tokens",
+          "reasoning_tokens",
+          "total_tokens",
+          "cost",
+          "currency",
+          "price_version",
+          "usage_state",
+          "cost_state",
+          "request_id"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "cost_state": {
+                  "const": "priced"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "cost": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "price_version": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "cost": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "tool_args": {
+      "meaning": "scope/window/limit在统一外壳；parameters依name+contract_version的工具参数schema校验",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "tool_name": {
+            "type": "string"
+          },
+          "contract_version": {
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/$defs/scope"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameters": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "tool_name",
+          "contract_version",
+          "scope",
+          "limit",
+          "parameters"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "input_snapshot": {
+      "meaning": "冻结实际上下文，不仅保高层说明；model_view使用原始request工件",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "run_kind": {
+            "enum": [
+              "alert_basic",
+              "incident_diagnosis",
+              "baseline",
+              "ai_question"
+            ]
+          },
+          "scope_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "$ref": "#/$defs/scope"
+          },
+          "source_materials": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "prior_results": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "task_revisions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "comparison_result_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projection_version": {
+            "type": "string"
+          },
+          "omissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source_ref": {
+                  "$ref": "#/$defs/evidence_ref"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_ref",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "schema_version",
+          "run_kind",
+          "scope_revision",
+          "scope",
+          "source_materials",
+          "prior_results",
+          "task_revisions",
+          "comparison_result_id",
+          "projection_version",
+          "omissions",
+          "captured_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "model_exchange": {
+      "meaning": "记录实际请求/响应与provider参数；外部协议payload保原始形状",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "schema_profile": {
+            "enum": [
+              "standard",
+              "vllm_grammar_v1"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "request",
+              "response"
+            ]
+          },
+          "payload": {
+            "$ref": "#/$defs/raw_payload"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/usage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "provider",
+          "model",
+          "direction",
+          "payload",
+          "captured_at",
+          "request_id",
+          "usage"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tool_exchange": {
+      "meaning": "返回状态、实际查询、行和完整性；无结果不能造空rows",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "tool_name": {
+            "type": "string"
+          },
+          "contract_version": {
+            "type": "string"
+          },
+          "actual_args": {
+            "$ref": "#/$defs/tool_args"
+          },
+          "state": {
+            "enum": [
+              "planned",
+              "running",
+              "completed",
+              "failed",
+              "timeout",
+              "cancelled",
+              "skipped",
+              "unknown"
+            ]
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/raw_payload"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "returned_rows": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "query_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/error"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "schema_version",
+          "tool_name",
+          "contract_version",
+          "actual_args",
+          "state",
+          "rows",
+          "returned_rows",
+          "truncated",
+          "query_id",
+          "error",
+          "captured_at"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "const": "completed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/raw_payload"
+                  }
+                },
+                "returned_rows": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "error": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "state": {
+                  "enum": [
+                    "failed",
+                    "timeout",
+                    "cancelled",
+                    "unknown",
+                    "skipped",
+                    "planned",
+                    "running"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "rows": {
+                  "type": "null"
+                },
+                "returned_rows": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "analysis_block": {
+      "meaning": "领域/Deep分析保持统一证据结构，domain不是新增四套状态机；新C3/C6领域块保存applicability，旧块缺失表示未记录，不能从findings推定适用；新领域块的focus_scope为领域关注范围，finding.scope保留发现完整范围，旧块无focus_scope时不反推",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "applicability": {
+            "enum": [
+              "applicable",
+              "not_applicable",
+              "undetermined"
+            ]
+          },
+          "questions": {
+            "$ref": "#/$defs/questions"
+          },
+          "findings": {
+            "$ref": "#/$defs/findings"
+          },
+          "recommendations": {
+            "$ref": "#/$defs/recommendations"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "focus_scope": {
+            "$ref": "#/$defs/scope"
+          }
+        },
+        "required": [
+          "schema_version",
+          "domain",
+          "questions",
+          "findings",
+          "recommendations",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "graph": {
+      "meaning": "历史图和探索图共同数据形状但不同存储责任；edge必须有来源和强度",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "host",
+                    "user",
+                    "ip",
+                    "domain",
+                    "url",
+                    "file",
+                    "hash",
+                    "process",
+                    "email",
+                    "application",
+                    "cloud_resource",
+                    "technique",
+                    "other"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                },
+                "object_key": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "alert_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "source_refs": {
+                  "$ref": "#/$defs/evidence_refs"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "label",
+                "object_key",
+                "alert_ids",
+                "source_refs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "relation": {
+                  "type": "string"
+                },
+                "strength": {
+                  "enum": [
+                    "observed",
+                    "inferred",
+                    "candidate"
+                  ]
+                },
+                "source_refs": {
+                  "$ref": "#/$defs/evidence_refs"
+                },
+                "limitations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "from",
+                "to",
+                "relation",
+                "strength",
+                "source_refs",
+                "limitations"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "layout": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expanded_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selected_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "nodes",
+          "edges",
+          "layout",
+          "expanded_node_ids",
+          "selected_node_ids",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "report_result": {
+      "meaning": "结构报告与results同版，不让渲染另生事实",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "result_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closing_note": {
+            "type": "string"
+          },
+          "findings": {
+            "$ref": "#/$defs/findings"
+          },
+          "questions": {
+            "$ref": "#/$defs/questions"
+          },
+          "recommendations": {
+            "$ref": "#/$defs/recommendations"
+          },
+          "case_impact": {
+            "$ref": "#/$defs/case_impact"
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "result_id",
+          "title",
+          "conclusion",
+          "closing_note",
+          "findings",
+          "questions",
+          "recommendations",
+          "case_impact"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "handoff": {
+      "meaning": "无有效模型结论仍保存实际停止说明",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "stop_reason": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "successful_steps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "failed_steps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "stop_reason",
+          "summary",
+          "successful_steps",
+          "failed_steps",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "query_plan": {
+      "meaning": "计划阶段问题到工具映射；仅计划不计调用",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "questions": {
+            "$ref": "#/$defs/questions"
+          },
+          "planned_queries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "question_id": {
+                  "type": "string"
+                },
+                "args": {
+                  "$ref": "#/$defs/tool_args"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "question_id",
+                "args",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "questions",
+          "planned_queries"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "artifact_payload": {
+      "meaning": "content_json按artifacts.kind选择下列具体合同；禁止仅靠宽泛JSON通过",
+      "schema": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/input_snapshot"
+          },
+          {
+            "$ref": "#/$defs/model_exchange"
+          },
+          {
+            "$ref": "#/$defs/tool_args"
+          },
+          {
+            "$ref": "#/$defs/tool_exchange"
+          },
+          {
+            "$ref": "#/$defs/analysis_block"
+          },
+          {
+            "$ref": "#/$defs/graph"
+          },
+          {
+            "$ref": "#/$defs/report_result"
+          },
+          {
+            "$ref": "#/$defs/raw_payload"
+          },
+          {
+            "$ref": "#/$defs/handoff"
+          },
+          {
+            "$ref": "#/$defs/query_plan"
+          },
+          {
+            "$ref": "#/$defs/alert_explanation"
+          },
+          {
+            "$ref": "#/$defs/case_evidence_index"
+          }
+        ]
+      }
+    },
+    "activity_detail": {
+      "meaning": "活动原因/入口与实际影响；不以展示文案充字段",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "request_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actual_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "reason",
+          "request_key",
+          "source",
+          "expected_version",
+          "actual_version",
+          "notes"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "activity_value": {
+      "meaning": "被改字段的类型化值由target_type字段白名单检查；原件/凭据不进入活动",
+      "schema": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "array",
+            "object"
+          ]
+        }
+      }
+    },
+    "alert_explanation": {
+      "meaning": "告警Explain独立于当前判定和原始说明；保留正文、生成方式/时间、依据与建议",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "generation_method": {
+            "enum": [
+              "source",
+              "template",
+              "model",
+              "legacy"
+            ]
+          },
+          "generated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          },
+          "recommendations": {
+            "$ref": "#/$defs/recommendations"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "program_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/program_facts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "body",
+          "generation_method",
+          "generated_at",
+          "source_refs",
+          "recommendations",
+          "limitations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "case_evidence_index": {
+      "meaning": "不可变案件证据目录；详见socai2.case-evidence.v1严格Schema、来源/版本/计数合同",
+      "schema": "services/api/app/socai2/case_evidence.schema.json"
+    },
+    "program_facts": {
+      "meaning": "程序提供的冻结事实；原值和时钟分层，不从模型正文回填；缺映射/不完整范围明确未知",
+      "schema": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "members"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "socai2.program-facts.v1.2"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "execution_started_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "execution_time_source": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "snapshot_captured_at": {
+            "type": "string"
+          },
+          "time_rule": {
+            "type": "string"
+          },
+          "incident_severity": {
+            "type": "object"
+          },
+          "incident_source": {
+            "$ref": "#/$defs/evidence_ref"
+          },
+          "case_severity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_source": {
+            "$ref": "#/$defs/evidence_ref"
+          },
+          "incident_severities": {
+            "type": "object"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "query_statuses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "source",
+                "state",
+                "outcome",
+                "reason",
+                "returned_rows",
+                "truncated",
+                "statement",
+                "receipt"
+              ],
+              "properties": {
+                "source": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "outcome": {
+                  "enum": [
+                    "not_queried",
+                    "failed",
+                    "unknown",
+                    "empty",
+                    "data"
+                  ]
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "returned_rows": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "truncated": {
+                  "type": "boolean"
+                },
+                "statement": {
+                  "type": "string"
+                },
+                "receipt": {
+                  "$ref": "#/$defs/evidence_ref"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "tables": [
+    {
+      "name": "alerts",
+      "owner": "Fusion写来源；管理API写管理字段/当前引用",
+      "mutability": "current",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "source_namespace",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源系统命名空间，不是原厂名称"
+        },
+        {
+          "name": "source_alert_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "接入来源编号；允许非UUID"
+        },
+        {
+          "name": "vendor_alert_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "厂商原始告警编号；与接入编号分开"
+        },
+        {
+          "name": "connector_id",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有连接器引用，同租户校验"
+        },
+        {
+          "name": "connector_type",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "接入类型原值，不代替original_vendor"
+        },
+        {
+          "name": "original_vendor",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确原厂，未知NULL"
+        },
+        {
+          "name": "source_identity_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "Fusion已计算稳定身份键；与namespace组成幂等键"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "接收到的标题；未知来源用显式缺失显示，不编造内容"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "来源说明；人工补充用评论"
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "来源类别，不拿判定替代"
+        },
+        {
+          "name": "severity",
+          "type": "enum.severity",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前来源严重程度"
+        },
+        {
+          "name": "severity_raw",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "未映射来源等级原文"
+        },
+        {
+          "name": "event_time",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实发生时间"
+        },
+        {
+          "name": "event_time_source",
+          "type": "enum.time_source",
+          "nullable": false,
+          "default": "unknown",
+          "meaning": "发生时间依据"
+        },
+        {
+          "name": "first_seen_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "已收到材料中首次活动时间"
+        },
+        {
+          "name": "last_seen_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "已收到材料中末次活动时间"
+        },
+        {
+          "name": "ingested_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "首次接收时间"
+        },
+        {
+          "name": "source_updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "本地保存新材料的时间"
+        },
+        {
+          "name": "business_updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "实际业务字段变更时间；GET不更新"
+        },
+        {
+          "name": "handling_status",
+          "type": "enum.alert_status",
+          "nullable": false,
+          "default": "new",
+          "meaning": "业务处理状态"
+        },
+        {
+          "name": "disposition",
+          "type": "enum.disposition",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前采用判定；与latest反馈或分诊配套"
+        },
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "public.users.id"
+        },
+        {
+          "name": "assignment_state",
+          "type": "enum.assignment_state",
+          "nullable": false,
+          "default": "unassigned",
+          "meaning": "分配状态"
+        },
+        {
+          "name": "owner_source_value",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "unresolved时原负责人值"
+        },
+        {
+          "name": "assigned_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近分配操作时间"
+        },
+        {
+          "name": "tags",
+          "type": "text[]",
+          "nullable": false,
+          "default": "{}",
+          "meaning": "业务标签；资产标签从库存读取"
+        },
+        {
+          "name": "priority_value",
+          "type": "numeric(5,2)",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有优先级0到100，不以分诊分数填充"
+        },
+        {
+          "name": "priority_state",
+          "type": "enum.score_state",
+          "nullable": false,
+          "default": "not_provided",
+          "meaning": "优先级评分状态"
+        },
+        {
+          "name": "priority_source",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "评分生产者/模型版本"
+        },
+        {
+          "name": "priority_basis",
+          "type": "json.priority_basis",
+          "nullable": true,
+          "default": null,
+          "meaning": "评分来源依据；无值不造理由"
+        },
+        {
+          "name": "closed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前完成周期关闭时间；重开后置空，旧值在活动中"
+        },
+        {
+          "name": "closed_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确用户关闭人；自动关闭记录活动服务身份"
+        },
+        {
+          "name": "reopened_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近明确重开时间"
+        },
+        {
+          "name": "latest_material_id",
+          "type": "ref.alert_materials",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警最新有效材料"
+        },
+        {
+          "name": "latest_triage_id",
+          "type": "ref.alert_assessments",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警kind=triage记录"
+        },
+        {
+          "name": "latest_feedback_id",
+          "type": "ref.alert_assessments",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警kind=human_feedback记录"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "管理乐观锁；每次实际写入+1"
+        },
+        {
+          "name": "latest_explanation_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警kind=alert_explanation的有效Explain材料；GET不生成并写业务时钟"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant_id,source_namespace,source_identity_key)",
+        "event_time_source=unknown iff event_time IS NULL；first/last均有值时first<=last",
+        "assigned iff owner_id非空；unresolved须owner_source_value",
+        "priority available须数值+source；其他state数值NULL；0<=value<=100",
+        "latest三引用包含tenant_id+alert_id校验；物理FK后置以解循环；kind由受控写入检查"
+      ]
+    },
+    {
+      "name": "alert_materials",
+      "owner": "Fusion材料保存",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "所属告警"
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "同告警材料版本，从1开始"
+        },
+        {
+          "name": "received_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "接收时间"
+        },
+        {
+          "name": "source_version",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "输入已有源版本，未知NULL"
+        },
+        {
+          "name": "raw_text",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "原始字符串，保留原文"
+        },
+        {
+          "name": "raw_json",
+          "type": "json.raw_payload",
+          "nullable": true,
+          "default": null,
+          "meaning": "合法JSON输入"
+        },
+        {
+          "name": "ocsf_json",
+          "type": "json.raw_payload",
+          "nullable": true,
+          "default": null,
+          "meaning": "收到的OCSF原值"
+        },
+        {
+          "name": "detection",
+          "type": "json.detection",
+          "nullable": false,
+          "default": null,
+          "meaning": "规则、ATT&CK与来源检测评分合同"
+        },
+        {
+          "name": "enrichment",
+          "type": "json.enrichment",
+          "nullable": true,
+          "default": null,
+          "meaning": "已收到富化；来源及时间"
+        },
+        {
+          "name": "source_scope",
+          "type": "json.source_scope",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源引用范围、数量、截断和完整性"
+        },
+        {
+          "name": "material_state",
+          "type": "enum.material_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "原件留存状态"
+        },
+        {
+          "name": "sha256",
+          "type": "char(64)",
+          "nullable": true,
+          "default": null,
+          "meaning": "已留存字节哈希；原大小/原hash另在retention"
+        },
+        {
+          "name": "retention",
+          "type": "json.retention",
+          "nullable": false,
+          "default": null,
+          "meaning": "字节数、保存形式、截断及原因"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant_id,alert_id,revision)；revision>0",
+        "不可覆盖原材料；当前指针在同一事务更新",
+        "raw_json是查询副本，原字节保留时才可声称逐字节一致；不强制两者都有"
+      ]
+    },
+    {
+      "name": "alert_source_refs",
+      "owner": "Fusion来源绑定",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "归属告警"
+        },
+        {
+          "name": "material_id",
+          "type": "ref.alert_materials",
+          "nullable": false,
+          "default": null,
+          "meaning": "在哪版材料中接收到"
+        },
+        {
+          "name": "source_namespace",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "湖/数据源标识"
+        },
+        {
+          "name": "source_event_id",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "原始事件ID，有效UUID只规范表示，不拒绝其他文本"
+        },
+        {
+          "name": "relation_kind",
+          "type": "enum.ref_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源参与方式"
+        },
+        {
+          "name": "observed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "源事件时间"
+        },
+        {
+          "name": "source_path",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "材料字段路径"
+        }
+      ],
+      "constraints": [
+        "FK(tenant,alert,material)→alert_materials；UNIQUE(tenant,material,namespace,event_id,relation_kind)",
+        "不能为ClickHouse跨库伪造FK；引用是否查到另存Tool回执"
+      ]
+    },
+    {
+      "name": "alert_objects",
+      "owner": "Fusion对象提取；资产适配解析",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源告警"
+        },
+        {
+          "name": "material_id",
+          "type": "ref.alert_materials",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源材料版本"
+        },
+        {
+          "name": "object_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "type+namespace+normalized值计算的稳定键"
+        },
+        {
+          "name": "object_type",
+          "type": "enum.object_type",
+          "nullable": false,
+          "default": null,
+          "meaning": "有类型的对象"
+        },
+        {
+          "name": "source_type",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "来源原类型；other必有"
+        },
+        {
+          "name": "object_role",
+          "type": "enum.object_role",
+          "nullable": false,
+          "default": null,
+          "meaning": "实体或IOC"
+        },
+        {
+          "name": "namespace",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "主机域/账号域/算法等身份边界"
+        },
+        {
+          "name": "raw_value",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "原对象值"
+        },
+        {
+          "name": "normalized_value",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "按明确类型规则规范；不跨类型合并"
+        },
+        {
+          "name": "source_path",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源材料字段路径"
+        },
+        {
+          "name": "attributes",
+          "type": "json.object_attributes",
+          "nullable": false,
+          "default": null,
+          "meaning": "进程/端点/哈希等类型化已收属性"
+        },
+        {
+          "name": "asset_match_state",
+          "type": "enum.asset_match",
+          "nullable": false,
+          "default": "not_checked",
+          "meaning": "当时库存匹配状态"
+        },
+        {
+          "name": "asset_ref",
+          "type": "json.external_ref",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有库存的类型化引用"
+        },
+        {
+          "name": "match_basis",
+          "type": "json.match_basis",
+          "nullable": true,
+          "default": null,
+          "meaning": "匹配依据及时间快照"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,material,object_key,source_path)；同object_key可有多个来源路径",
+        "matched须asset_ref及match_basis；不能把来源对象当已匹配库存",
+        "当前对象读取latest_material_id；历史Run使用冻结材料版，不能join当前对象代替"
+      ]
+    },
+    {
+      "name": "alert_assessments",
+      "owner": "分诊执行器/人工反馈API",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "所属告警"
+        },
+        {
+          "name": "kind",
+          "type": "enum.assessment_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "分诊或人工反馈"
+        },
+        {
+          "name": "input_material_id",
+          "type": "ref.alert_materials",
+          "nullable": true,
+          "default": null,
+          "meaning": "判断依据的材料版；旧未知NULL"
+        },
+        {
+          "name": "source_run_id",
+          "type": "ref.runs",
+          "nullable": true,
+          "default": null,
+          "meaning": "新alert_basic执行；与此告警一致"
+        },
+        {
+          "name": "legacy_execution_ref",
+          "type": "json.external_ref",
+          "nullable": true,
+          "default": null,
+          "meaning": "旧执行稳定引用，不能冒充新Run"
+        },
+        {
+          "name": "verdict",
+          "type": "enum.disposition",
+          "nullable": true,
+          "default": null,
+          "meaning": "同次判定"
+        },
+        {
+          "name": "rationale",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "同次理由，历史缺失NULL"
+        },
+        {
+          "name": "confidence",
+          "type": "numeric(6,5)",
+          "nullable": true,
+          "default": null,
+          "meaning": "分诊置信度0..1，页面可乘100显示；人工无评分"
+        },
+        {
+          "name": "score_state",
+          "type": "enum.score_state",
+          "nullable": false,
+          "default": "not_provided",
+          "meaning": "计算状态"
+        },
+        {
+          "name": "recommendations",
+          "type": "json.recommendations",
+          "nullable": true,
+          "default": null,
+          "meaning": "同次建议，不与新人工判断拼接"
+        },
+        {
+          "name": "producer",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "生产者及版本"
+        },
+        {
+          "name": "actor",
+          "type": "json.actor",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际操作者/服务身份"
+        },
+        {
+          "name": "assessed_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "判断发生时间"
+        },
+        {
+          "name": "operation_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "本判断幂等键"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,operation_key)",
+        "kind=human_feedback→confidence NULL；available→confidence非空且0<=confidence<=1",
+        "input_material/source_run必须同告警；分诊失败不追加假判定，用Run失败事实展示"
+      ]
+    },
+    {
+      "name": "incidents",
+      "owner": "Fusion创建与关系维护；管理API；诊断写成功引用",
+      "mutability": "current",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "source_namespace",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "Fusion实例/来源命名空间"
+        },
+        {
+          "name": "source_incident_id",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源事件ID，兼容原有文本键"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "事件自身标题"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "事件自身说明，非第一条成员标题"
+        },
+        {
+          "name": "handling_status",
+          "type": "enum.work_status",
+          "nullable": false,
+          "default": "new",
+          "meaning": "事件业务处理状态"
+        },
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前明确负责人"
+        },
+        {
+          "name": "assignment_state",
+          "type": "enum.assignment_state",
+          "nullable": false,
+          "default": "unassigned",
+          "meaning": "未分配/已分配/原值未解析"
+        },
+        {
+          "name": "owner_source_value",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "未解析来源负责人"
+        },
+        {
+          "name": "assigned_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近改派时间"
+        },
+        {
+          "name": "tags",
+          "type": "text[]",
+          "nullable": false,
+          "default": "{}",
+          "meaning": "事件业务标签，成员资产标签另外派生"
+        },
+        {
+          "name": "severity_override",
+          "type": "enum.severity",
+          "nullable": true,
+          "default": null,
+          "meaning": "人工事件覆盖等级；NULL=采用成员最高；不改成员"
+        },
+        {
+          "name": "severity_override_reason",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "人工覆盖依据"
+        },
+        {
+          "name": "severity_override_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "覆盖设置时间"
+        },
+        {
+          "name": "severity_override_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "覆盖人"
+        },
+        {
+          "name": "priority_value",
+          "type": "numeric(5,2)",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有优先级0..100"
+        },
+        {
+          "name": "priority_state",
+          "type": "enum.score_state",
+          "nullable": false,
+          "default": "not_provided",
+          "meaning": "无来源不合成"
+        },
+        {
+          "name": "priority_source",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有评分生产者"
+        },
+        {
+          "name": "priority_basis",
+          "type": "json.priority_basis",
+          "nullable": true,
+          "default": null,
+          "meaning": "评分依据"
+        },
+        {
+          "name": "resolution_note",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "事件解决说明，人工解决必填"
+        },
+        {
+          "name": "resolved_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前解决周期时间"
+        },
+        {
+          "name": "resolved_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "解决人"
+        },
+        {
+          "name": "reopened_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近明确重开时间"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "事件首次持久化时间"
+        },
+        {
+          "name": "business_updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "自身管理或成员关联变动；移除最后成员仍更新"
+        },
+        {
+          "name": "latest_diagnosis_id",
+          "type": "ref.incident_diagnoses",
+          "nullable": true,
+          "default": null,
+          "meaning": "同事件最新成功诊断；失败尝试不能覆盖"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "管理/范围写入乐观版本"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,source_namespace,source_incident_id)",
+        "D01已确认：override值+理由+人+时间一起设置；清除时四列一起清空，显示回成员最高",
+        "派生严重程度不保存冗余列；resolution字段不由Run结束写入",
+        "当前诊断指针FK含incident_id；最新尝试用run/diagnoses时间查，不混配"
+      ]
+    },
+    {
+      "name": "incident_alerts",
+      "owner": "Fusion归并/明确成员维护",
+      "mutability": "current_relation",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": false,
+          "default": null,
+          "meaning": "事件"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "当前成员"
+        },
+        {
+          "name": "linked_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "加入时间"
+        },
+        {
+          "name": "membership_source",
+          "type": "enum.membership_source",
+          "nullable": false,
+          "default": null,
+          "meaning": "成员产生方式"
+        },
+        {
+          "name": "correlation_basis",
+          "type": "json.correlation_basis",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际规则、对象类型、值、窗口及候选关系"
+        },
+        {
+          "name": "basis_version",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "归并算法/合同版本"
+        },
+        {
+          "name": "source_operation_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "和活动同操作ID"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,alert_id)；当前单告警一个Fusion事件",
+        "旧事件移除+新事件加入+两个事件业务时间+活动在同事务；不覆写旧依据活动"
+      ]
+    },
+    {
+      "name": "incident_diagnoses",
+      "owner": "事件诊断执行器",
+      "mutability": "terminal_append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": false,
+          "default": null,
+          "meaning": "事件"
+        },
+        {
+          "name": "source_run_id",
+          "type": "ref.runs",
+          "nullable": false,
+          "default": null,
+          "meaning": "incident_diagnosis执行，同事件"
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "同事件尝试版本"
+        },
+        {
+          "name": "state",
+          "type": "enum.diagnosis_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "生成尝试状态"
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "有效概况正文，失败不伪造"
+        },
+        {
+          "name": "diagnosis",
+          "type": "json.diagnosis",
+          "nullable": true,
+          "default": null,
+          "meaning": "诊断、证据和限制"
+        },
+        {
+          "name": "open_questions",
+          "type": "json.questions",
+          "nullable": true,
+          "default": null,
+          "meaning": "待核问题"
+        },
+        {
+          "name": "input_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": false,
+          "default": null,
+          "meaning": "冻结成员/分诊/来源材料快照"
+        },
+        {
+          "name": "source_fingerprint",
+          "type": "char(64)",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际输入指纹"
+        },
+        {
+          "name": "producer",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "实现和版本"
+        },
+        {
+          "name": "requested_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "尝试时间"
+        },
+        {
+          "name": "generated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "成功时间"
+        },
+        {
+          "name": "error",
+          "type": "json.error",
+          "nullable": true,
+          "default": null,
+          "meaning": "失败原因；无报错NULL"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,incident,revision)；UNIQUE(tenant,source_run)",
+        "费用只从run_steps聚合，不复制旧summary费用",
+        "终态后不改正文；失败仍保留上一次成功指针"
+      ]
+    },
+    {
+      "name": "cases",
+      "owner": "案件管理服务",
+      "mutability": "current",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "source_namespace",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "Case固定数据身份命名空间；首次范围绑定后不可改，旧范围不能确认时NULL；不等于原始来源环境",
+          "introduced_in_migration": 124
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "名称"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "案情说明"
+        },
+        {
+          "name": "handling_status",
+          "type": "enum.work_status",
+          "nullable": false,
+          "default": "new",
+          "meaning": "业务状态"
+        },
+        {
+          "name": "severity",
+          "type": "enum.severity",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前明确案件等级"
+        },
+        {
+          "name": "severity_source",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "手动设置或明确汇总规则，不从置信度猜"
+        },
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前负责人"
+        },
+        {
+          "name": "assignment_state",
+          "type": "enum.assignment_state",
+          "nullable": false,
+          "default": "unassigned",
+          "meaning": "分配状态"
+        },
+        {
+          "name": "owner_source_value",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "历史未解析负责人"
+        },
+        {
+          "name": "assigned_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近分配时间"
+        },
+        {
+          "name": "tags",
+          "type": "text[]",
+          "nullable": false,
+          "default": "{}",
+          "meaning": "案件标签"
+        },
+        {
+          "name": "priority_value",
+          "type": "numeric(5,2)",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有优先级"
+        },
+        {
+          "name": "priority_state",
+          "type": "enum.score_state",
+          "nullable": false,
+          "default": "not_provided",
+          "meaning": "评分状态"
+        },
+        {
+          "name": "priority_source",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "评分生产者"
+        },
+        {
+          "name": "priority_basis",
+          "type": "json.priority_basis",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有依据"
+        },
+        {
+          "name": "scope_revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": "0",
+          "meaning": "仅当前告警成员真实变动+1"
+        },
+        {
+          "name": "current_assessment_id",
+          "type": "ref.case_assessments",
+          "nullable": true,
+          "default": null,
+          "meaning": "已明确采用版本；不等于最新Run"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "创建人，服务创建见活动"
+        },
+        {
+          "name": "business_updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "案件业务变化"
+        },
+        {
+          "name": "resolved_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "当前解决周期时间"
+        },
+        {
+          "name": "resolved_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确解决人"
+        },
+        {
+          "name": "resolution_note",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "解决说明，不擅自添加必填要求"
+        },
+        {
+          "name": "reopened_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "最近重开"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "乐观版本"
+        },
+        {
+          "name": "legacy_ref",
+          "type": "json.external_ref",
+          "nullable": true,
+          "default": null,
+          "meaning": "导入时原Case命名空间/文本ID"
+        },
+        {
+          "name": "classification",
+          "type": "enum.case_classification",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确保存的案件管理分类；NULL未设置，不继承事件或告警",
+          "introduced_in_migration": 126
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "案件截止时间，与任务期限和运行超时分离",
+          "introduced_in_migration": 126
+        },
+        {
+          "name": "current_evidence_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "同租户同Case的当前case_evidence_index不可变工件；NULL未记录",
+          "introduced_in_migration": 126
+        }
+      ],
+      "constraints": [
+        "current_assessment须同Case同租户；后置FK打破建表循环",
+        "scope_revision不由GET、任务编辑、调查进度增加",
+        "D02已确认有效baseline自动采用、AI明确采用；D04未定入口保持关闭",
+        "current_evidence_artifact_id须同租户同Case且kind=case_evidence_index/schema=socai2.case-evidence.v1；JSON引用由应用校验",
+        "classification/due_at修改留活动前后值，不改scope_revision/处理状态或启动Run"
+      ]
+    },
+    {
+      "name": "case_alerts",
+      "owner": "成员管理事务",
+      "mutability": "current_relation",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "当前Case"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "当前正式成员"
+        },
+        {
+          "name": "added_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "加入时间"
+        },
+        {
+          "name": "added_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确操作人"
+        },
+        {
+          "name": "membership_source",
+          "type": "enum.membership_source",
+          "nullable": false,
+          "default": null,
+          "meaning": "加入来源"
+        },
+        {
+          "name": "source_operation_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "批量实际操作"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,case,alert)；同告警可在多Case",
+        "不保留第二份cases.alert_ids数组作为真值",
+        "移动两案按ID锁Case；整体校验/修改/两个pending/活动同事务"
+      ]
+    },
+    {
+      "name": "case_incidents",
+      "owner": "事件关联事务",
+      "mutability": "current_relation",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "Case"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": false,
+          "default": null,
+          "meaning": "显式关联事件"
+        },
+        {
+          "name": "linked_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "关联时间"
+        },
+        {
+          "name": "linked_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "操作者"
+        },
+        {
+          "name": "source_operation_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "操作ID"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,case,incident)",
+        "关联时并入当时成员；之后事件新增成员不自动加Case；解除事件关系不擅自删case_alerts"
+      ]
+    },
+    {
+      "name": "case_assessments",
+      "owner": "明确采用/案件判断服务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "案件"
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "案件判断版本"
+        },
+        {
+          "name": "conclusion",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "明确采用的判断"
+        },
+        {
+          "name": "origin",
+          "type": "enum.origin",
+          "nullable": false,
+          "default": null,
+          "meaning": "model/human/legacy，system交接不得采用为有效结论"
+        },
+        {
+          "name": "validity",
+          "type": "enum.validation",
+          "nullable": false,
+          "default": null,
+          "meaning": "采用时有效性；不代表绝对事实证明"
+        },
+        {
+          "name": "scope_revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "采用时Case范围版本"
+        },
+        {
+          "name": "formed_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "判断形成时间"
+        },
+        {
+          "name": "adopted_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "采用时间"
+        },
+        {
+          "name": "adopted_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "人工采用时用户；基础结果自动采用NULL，actor明确service"
+        },
+        {
+          "name": "actor",
+          "type": "json.actor",
+          "nullable": false,
+          "default": null,
+          "meaning": "真实采用主体；baseline自动采用记录service"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "采用/修改理由"
+        },
+        {
+          "name": "operation_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "同一次采用幂等键"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,case,revision)；UNIQUE(tenant,operation_key)",
+        "正文+sources+members+Case指针+活动一次事务发布；后续新增成员不扩覆盖",
+        "拒绝把unavailable/system_only当有效判断；采用策略见auto_adoption_policy"
+      ]
+    },
+    {
+      "name": "case_assessment_sources",
+      "owner": "判断采用事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "用于父案复合FK"
+        },
+        {
+          "name": "assessment_id",
+          "type": "ref.case_assessments",
+          "nullable": false,
+          "default": null,
+          "meaning": "采用判断"
+        },
+        {
+          "name": "result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "具体正式结果版本"
+        },
+        {
+          "name": "task_revision_id",
+          "type": "ref.task_revisions",
+          "nullable": true,
+          "default": null,
+          "meaning": "具体人工事实版本"
+        },
+        {
+          "name": "artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "同案其他具体材料"
+        },
+        {
+          "name": "source_note",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "此来源被采用的部分"
+        }
+      ],
+      "constraints": [
+        "result_id/task_revision_id/artifact_id恰一非空；各自tenant+case FK",
+        "每类来源部分唯一，防同一assessment重复引用；不以最新task或最新report指针替代"
+      ]
+    },
+    {
+      "name": "case_assessment_members",
+      "owner": "判断采用事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "同案约束"
+        },
+        {
+          "name": "assessment_id",
+          "type": "ref.case_assessments",
+          "nullable": false,
+          "default": null,
+          "meaning": "采用判断"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "判断明确覆盖的告警"
+        },
+        {
+          "name": "coverage_note",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "范围限制；覆盖不是全告警都恶意"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,assessment,alert)；FK(tenant,case,assessment)",
+        "采用时成员属于当前Case且来源有适用依据；后续移出不删除该历史关系"
+      ]
+    },
+    {
+      "name": "runs",
+      "owner": "对应阶段执行服务；baseline由手动启动API领取",
+      "mutability": "lifecycle_frozen_input",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "kind",
+          "type": "enum.run_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "四机器流程明确区分"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "alert_basic归属"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "incident_diagnosis归属"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "baseline/ai_question归属"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "本次执行名称，pending随范围更新"
+        },
+        {
+          "name": "purpose",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "本轮目标/提问"
+        },
+        {
+          "name": "trigger",
+          "type": "enum.run_trigger",
+          "nullable": false,
+          "default": null,
+          "meaning": "触发原因"
+        },
+        {
+          "name": "scope_revision",
+          "type": "bigint",
+          "nullable": true,
+          "default": null,
+          "meaning": "Case成员版本；非Case NULL"
+        },
+        {
+          "name": "scope_updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "pending最近合并范围时间"
+        },
+        {
+          "name": "scope_kind",
+          "type": "enum.scope_kind",
+          "nullable": true,
+          "default": null,
+          "meaning": "baseline whole_case，AI可选范围；其他流程NULL"
+        },
+        {
+          "name": "window_start",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "固定绝对查询起点；不适用NULL"
+        },
+        {
+          "name": "window_end",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "固定绝对查询终点；成对出现"
+        },
+        {
+          "name": "state",
+          "type": "enum.run_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "记录/执行状态"
+        },
+        {
+          "name": "operation_key",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际执行请求幂等键，pending尚未领取可NULL"
+        },
+        {
+          "name": "request_hash",
+          "type": "char(64)",
+          "nullable": true,
+          "default": null,
+          "meaning": "规范请求指纹，与幂等键配对"
+        },
+        {
+          "name": "retry_of_run_id",
+          "type": "ref.runs",
+          "nullable": true,
+          "default": null,
+          "meaning": "显式重试指向旧已结束Run，不重写旧Run"
+        },
+        {
+          "name": "comparison_result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "领取时固定的同案比较基线，可跨成员范围"
+        },
+        {
+          "name": "input_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "领取前NULL；提交running前冻结本地输入"
+        },
+        {
+          "name": "executor_version",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际执行版本，pending NULL"
+        },
+        {
+          "name": "requested_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "记录创建/首次请求"
+        },
+        {
+          "name": "requested_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实请求人"
+        },
+        {
+          "name": "started_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "running领取事务时间"
+        },
+        {
+          "name": "ended_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "终态时间；unknown未确认结束NULL"
+        },
+        {
+          "name": "stop_reason",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "稳定原因码；不强用人类结论代替"
+        },
+        {
+          "name": "stop_detail",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "可读原因"
+        },
+        {
+          "name": "delivery_state",
+          "type": "enum.delivery",
+          "nullable": false,
+          "default": "none",
+          "meaning": "实际产物交付"
+        },
+        {
+          "name": "limits",
+          "type": "json.limits",
+          "nullable": true,
+          "default": null,
+          "meaning": "启动时预算和查询限额快照"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "执行状态条件更新版本"
+        }
+      ],
+      "constraints": [
+        "alert/incident/case恰一；kind限定对应父对象；scope_revision及scope_kind仅Case必填",
+        "UNIQUE(tenant,kind,operation_key) WHERE operation_key IS NOT NULL；同键不同hash冲突",
+        "UNIQUE(tenant,case) WHERE kind=baseline AND state=pending_update",
+        "活跃基础唯一：tenant+case WHERE kind=baseline AND state IN(running,unknown)；AI执行无共用槽唯一索引",
+        "running/unknown须started_at+input_artifact+executor_version+operation_key；终态ended_at非空；pending无started/ended/input",
+        "提交running后身份/范围/输入/版本/预算不可变；状态只按合法迁移；部分索引不能代替冻结保护",
+        "usage不存第二份累计真值，直接从model/tool叶子steps聚合，缺失保持unknown"
+      ]
+    },
+    {
+      "name": "run_members",
+      "owner": "范围事务/领取事务；执行器仅写读取分析状态",
+      "mutability": "frozen_identity_mutable_progress",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "ref.runs",
+          "nullable": false,
+          "default": null,
+          "meaning": "Case执行；非Case成员快照存输入工件"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "同案FK"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "本轮约定成员"
+        },
+        {
+          "name": "material_id",
+          "type": "ref.alert_materials",
+          "nullable": true,
+          "default": null,
+          "meaning": "领取选择的材料版；确实缺失NULL并标read状态"
+        },
+        {
+          "name": "triage_id",
+          "type": "ref.alert_assessments",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警同次分诊"
+        },
+        {
+          "name": "feedback_id",
+          "type": "ref.alert_assessments",
+          "nullable": true,
+          "default": null,
+          "meaning": "同告警当时人工反馈"
+        },
+        {
+          "name": "read_state",
+          "type": "enum.read_state",
+          "nullable": false,
+          "default": "not_read",
+          "meaning": "实际读到材料"
+        },
+        {
+          "name": "analysis_state",
+          "type": "enum.analysis_state",
+          "nullable": false,
+          "default": "not_analyzed",
+          "meaning": "实际分析状态"
+        },
+        {
+          "name": "omission_reason",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "缺失/失败/排除的具体原因"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,run,alert)；Run同Case；材料及两个assessment FK包含alert_id",
+        "pending可整体更新；running后禁止插删及改身份/引用，允许进度状态条件更新",
+        "baseline成员集合必须等于领取版本Case全成员；不能材料缺失就删成员"
+      ]
+    },
+    {
+      "name": "run_steps",
+      "owner": "执行器记录真实阶段/调用",
+      "mutability": "terminal_append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "ref.runs",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际执行"
+        },
+        {
+          "name": "seq",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "同Run显示顺序"
+        },
+        {
+          "name": "parent_step_id",
+          "type": "ref.run_steps",
+          "nullable": true,
+          "default": null,
+          "meaning": "同Run父阶段；不是跨Run复用"
+        },
+        {
+          "name": "retry_of_step_id",
+          "type": "ref.run_steps",
+          "nullable": true,
+          "default": null,
+          "meaning": "同Run失败调用的重试"
+        },
+        {
+          "name": "kind",
+          "type": "enum.step_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "stage/model/tool/graph/render"
+        },
+        {
+          "name": "stage_code",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "A1/I1/C1..C6/Q1等版本化阶段码"
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "输入计划中稳定问题ID"
+        },
+        {
+          "name": "state",
+          "type": "enum.step_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际状态"
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "阶段、模型或工具实际名称"
+        },
+        {
+          "name": "provider",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "模型/工具提供者"
+        },
+        {
+          "name": "implementation_version",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "工具合同/模型版本"
+        },
+        {
+          "name": "started_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实开始"
+        },
+        {
+          "name": "ended_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实完成"
+        },
+        {
+          "name": "input_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际输入/参数原件"
+        },
+        {
+          "name": "output_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际输出原件"
+        },
+        {
+          "name": "reused_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确复用旧材料，不记为新外部调用"
+        },
+        {
+          "name": "actual_args",
+          "type": "json.tool_args",
+          "nullable": true,
+          "default": null,
+          "meaning": "类型化查询范围/时间/上限及具体参数"
+        },
+        {
+          "name": "returned_rows",
+          "type": "bigint",
+          "nullable": true,
+          "default": null,
+          "meaning": "成功查询实际返回行数；未知/失败不填0"
+        },
+        {
+          "name": "usage",
+          "type": "json.usage",
+          "nullable": true,
+          "default": null,
+          "meaning": "模型真实tokens/费用与已知状态；非调用父阶段NULL"
+        },
+        {
+          "name": "error",
+          "type": "json.error",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际错误"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,run,seq)；parent/retry同Run，禁止自指，写入校验无环",
+        "终态不可改；重试另行；输出/artifact须同Run；复用允许同案旧Run但来源不改",
+        "returned_rows>=0；failed/timeout/unknown不得以0伪装空查询",
+        "stage_code不是可猜枚举，阶段注册表按executor_version固定；历史新增执行器不改旧值"
+      ]
+    },
+    {
+      "name": "artifacts",
+      "owner": "输入冻结器/各执行器/附件保存",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "非Case告警材料归属"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "非Case事件材料归属"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "Case材料归属"
+        },
+        {
+          "name": "run_id",
+          "type": "ref.runs",
+          "nullable": true,
+          "default": null,
+          "meaning": "存在时必须与其父对象一致"
+        },
+        {
+          "name": "step_id",
+          "type": "ref.run_steps",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际产生步骤，须属于run_id"
+        },
+        {
+          "name": "kind",
+          "type": "enum.artifact_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "材料类别"
+        },
+        {
+          "name": "schema_version",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "结构合同版本"
+        },
+        {
+          "name": "content_json",
+          "type": "json.artifact_payload",
+          "nullable": true,
+          "default": null,
+          "meaning": "结构化保存内容"
+        },
+        {
+          "name": "content_text",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "原始文本/Markdown"
+        },
+        {
+          "name": "blob_ref",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "受控内部对象存储键，不是任意远端URL"
+        },
+        {
+          "name": "mime_type",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际内容类型"
+        },
+        {
+          "name": "file_name",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "附件显示名，不作路径"
+        },
+        {
+          "name": "sha256",
+          "type": "char(64)",
+          "nullable": true,
+          "default": null,
+          "meaning": "已留存规范字节哈希"
+        },
+        {
+          "name": "size_bytes",
+          "type": "bigint",
+          "nullable": true,
+          "default": null,
+          "meaning": "已留存字节数"
+        },
+        {
+          "name": "captured_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "记录取得时间"
+        },
+        {
+          "name": "event_time",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "材料中的发生时间，未知NULL"
+        },
+        {
+          "name": "material_state",
+          "type": "enum.material_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "完整/截断/摘要/不可用"
+        },
+        {
+          "name": "source_refs",
+          "type": "json.evidence_refs",
+          "nullable": false,
+          "default": null,
+          "meaning": "来源和原材料引用；可为空数组但明确是无来源记录"
+        },
+        {
+          "name": "retention",
+          "type": "json.retention",
+          "nullable": false,
+          "default": null,
+          "meaning": "原件大小/原hash/保存大小/截断范围"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "人工上传人；自动来源由Run/Step明确"
+        }
+      ],
+      "constraints": [
+        "alert/incident/case恰一；run为空允许普通附件；step非空要求run非空",
+        "三种content存储恰一；unavailable允许全空但retention.reason必填",
+        "同Run产物跨层父对象用复合FK或约束trigger检查；JSON引用需应用解析验证，不声称FK已校验",
+        "旧证据复用只引用原artifact，不改归属；哈希不是事实真实性证明",
+        "source_snapshot允许raw_payload；schema按kind选择，不把anyOf形式通过当业务语义通过；原模型输出可以是无效JSON，保content_text"
+      ]
+    },
+    {
+      "name": "results",
+      "owner": "Case结果发布服务/AI明确保存API",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "案件"
+        },
+        {
+          "name": "kind",
+          "type": "enum.result_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "baseline/ai_saved"
+        },
+        {
+          "name": "source_run_id",
+          "type": "ref.runs",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际来源执行，同Case"
+        },
+        {
+          "name": "source_answer_id",
+          "type": "ref.messages",
+          "nullable": true,
+          "default": null,
+          "meaning": "AI保存必有，baseline NULL"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "正式记录标题；AI保存可自定义"
+        },
+        {
+          "name": "purpose",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "本轮目标"
+        },
+        {
+          "name": "conclusion",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "有效/不确定结论；无结论NULL"
+        },
+        {
+          "name": "conclusion_state",
+          "type": "enum.conclusion_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "有依据/未决/无法给出"
+        },
+        {
+          "name": "conclusion_origin",
+          "type": "enum.origin",
+          "nullable": false,
+          "default": null,
+          "meaning": "模型/人工/系统来源"
+        },
+        {
+          "name": "validation_state",
+          "type": "enum.validation",
+          "nullable": false,
+          "default": null,
+          "meaning": "程序采用或拒绝状态"
+        },
+        {
+          "name": "closing_note",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "每轮收尾说明，系统失败交接也有"
+        },
+        {
+          "name": "findings",
+          "type": "json.findings",
+          "nullable": false,
+          "default": null,
+          "meaning": "稳定条目ID、依据、反证和限制"
+        },
+        {
+          "name": "questions",
+          "type": "json.questions",
+          "nullable": false,
+          "default": null,
+          "meaning": "本轮问题/答案/缺口"
+        },
+        {
+          "name": "recommendations",
+          "type": "json.recommendations",
+          "nullable": false,
+          "default": null,
+          "meaning": "建议含稳定proposal_id、目标、理由及审批要求"
+        },
+        {
+          "name": "comparison_result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确同案已有结果；首次NULL"
+        },
+        {
+          "name": "change_kind",
+          "type": "enum.change_kind",
+          "nullable": false,
+          "default": null,
+          "meaning": "比较类型"
+        },
+        {
+          "name": "change_summary",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "相比基线输入/证据/判断变化"
+        },
+        {
+          "name": "case_impact",
+          "type": "json.case_impact",
+          "nullable": false,
+          "default": null,
+          "meaning": "作用范围、可调整认识、不能推广处"
+        },
+        {
+          "name": "input_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际当时输入"
+        },
+        {
+          "name": "graph_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "本轮图，无图NULL；不借另一轮冒充"
+        },
+        {
+          "name": "report_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "同版报告，无报告NULL"
+        },
+        {
+          "name": "supersedes_result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确修订另建版本，不能自指或跨案"
+        },
+        {
+          "name": "delivery_state",
+          "type": "enum.delivery",
+          "nullable": false,
+          "default": null,
+          "meaning": "正式交付完整性"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": null,
+          "meaning": "执行产物形成时间"
+        },
+        {
+          "name": "saved_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "正式保存时间；AI保存与答复时间不同"
+        },
+        {
+          "name": "saved_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "明确AI保存人；baseline由服务保存"
+        },
+        {
+          "name": "operation_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "正式保存请求幂等键"
+        },
+        {
+          "name": "edited_fields",
+          "type": "text[]",
+          "nullable": false,
+          "default": "{}",
+          "meaning": "保存AI答案时用户改过的字段名；正文修改须origin=human且重新校验；原消息不改"
+        },
+        {
+          "name": "edit_note",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "可选修改说明，不强制增加页面输入"
+        }
+      ],
+      "constraints": [
+        "baseline→source run kind=baseline且终态；ai_saved→assistant completed消息及ai_question Run",
+        "UNIQUE(tenant,source_run) WHERE kind=baseline AND supersedes_result_id IS NULL；修订只能显式关联链",
+        "UNIQUE(tenant,source_answer) WHERE kind=ai_saved AND supersedes_result_id IS NULL；同答复重复保存返回原结果",
+        "unavailable须conclusion NULL；system_only不能显示模型有效结论",
+        "结果/成员覆盖/工件同事务发布；运行中无最终结果；json数组内稳定ID唯一且引用同案合法来源",
+        "supersedes_result_id非空时UNIQUE(tenant,supersedes_result_id)防分叉；修订需同Case/source_run/source_answer且不改原记录；报告重新渲染产生新工件",
+        "AI正文被修改不能沿用原答复的accepted校验状态；仅改标题不改变结论来源"
+      ]
+    },
+    {
+      "name": "result_members",
+      "owner": "结果发布事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "父案校验"
+        },
+        {
+          "name": "result_id",
+          "type": "ref.results",
+          "nullable": false,
+          "default": null,
+          "meaning": "正式结果"
+        },
+        {
+          "name": "run_id",
+          "type": "ref.runs",
+          "nullable": false,
+          "default": null,
+          "meaning": "与result.source_run一致"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": false,
+          "default": null,
+          "meaning": "来自本轮run_members"
+        },
+        {
+          "name": "assessment_state",
+          "type": "enum.analysis_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际逐成员分析状态"
+        },
+        {
+          "name": "conclusion_covered",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false",
+          "meaning": "结论明确适用，不代表恶意"
+        },
+        {
+          "name": "assessment",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "本成员发现或未决说明"
+        },
+        {
+          "name": "limitations",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "限制"
+        },
+        {
+          "name": "evidence_refs",
+          "type": "json.evidence_refs",
+          "nullable": false,
+          "default": null,
+          "meaning": "明确材料及行/字段定位"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,result,alert)；FK(result,run,case)和(run,case,alert)组合",
+        "conclusion_covered=true要求实际分析及可核依据；AI局部答复不得覆盖整案"
+      ]
+    },
+    {
+      "name": "tasks",
+      "owner": "人工事项API",
+      "mutability": "current_pointer",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "所属Case"
+        },
+        {
+          "name": "current_revision_id",
+          "type": "ref.task_revisions",
+          "nullable": false,
+          "default": null,
+          "meaning": "当前完整版本；延迟FK同事务插入"
+        },
+        {
+          "name": "origin_result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "同Case引出事项的结果"
+        },
+        {
+          "name": "origin_finding_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "该结果findings中的稳定条目ID"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "任务创建"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "创建者"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "最新实际编辑"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "防旧表单覆盖"
+        }
+      ],
+      "constraints": [
+        "不在tasks复制title/state/result等第二份当前值；join current_revision即可",
+        "current_revision属于本task同案；循环FK DEFERRABLE INITIALLY DEFERRED",
+        "origin_finding要求origin_result并验证条目存在",
+        "task与revision UUID在同事务预生成；延迟当前指针FK不等于忽略完整性"
+      ]
+    },
+    {
+      "name": "task_revisions",
+      "owner": "每次人工事项保存事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "同案FK"
+        },
+        {
+          "name": "task_id",
+          "type": "ref.tasks",
+          "nullable": false,
+          "default": null,
+          "meaning": "事项"
+        },
+        {
+          "name": "revision",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "从1开始，每次有效编辑+1"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "任务事项，非空"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "工作说明"
+        },
+        {
+          "name": "assignee_id",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "同租户可选负责人，NULL未分配"
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "截止时间，可空"
+        },
+        {
+          "name": "state",
+          "type": "enum.task_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "四种人工状态"
+        },
+        {
+          "name": "result_text",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "事实反馈，completed必填非空"
+        },
+        {
+          "name": "result_scope",
+          "type": "json.scope",
+          "nullable": true,
+          "default": null,
+          "meaning": "确认范围；完成时须明确，如未知部分写limitations"
+        },
+        {
+          "name": "source_refs",
+          "type": "json.evidence_refs",
+          "nullable": false,
+          "default": "[]",
+          "meaning": "可选资料，不强制上传"
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "本次进入完成状态的真实时间"
+        },
+        {
+          "name": "completed_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "本次实际完成人，不是assignee"
+        },
+        {
+          "name": "changed_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "版本编辑时间"
+        },
+        {
+          "name": "changed_by",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际编辑人"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,task,revision)；completed必须有result_text/result_scope/completed_at/completed_by",
+        "完成后只修正文时保留原完成时间/人，changed记录编辑；重开后清当前完成字段，旧版本不改",
+        "状态不为completed不自动清除已有反馈正文；取消不算完成",
+        "保存版本→更新指针+乐观版本→活动同事务"
+      ]
+    },
+    {
+      "name": "conversations",
+      "owner": "Case问答服务",
+      "mutability": "current",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "明确案件上下文"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "会话标题"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "发起用户"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "创建"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "有真实消息或标题变化时更新"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "标题编辑版本"
+        }
+      ],
+      "constraints": [
+        "会话不能换Case；租户由服务端取得"
+      ]
+    },
+    {
+      "name": "messages",
+      "owner": "Case问答发送/执行回写服务",
+      "mutability": "terminal_append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": false,
+          "default": null,
+          "meaning": "显式同案约束"
+        },
+        {
+          "name": "conversation_id",
+          "type": "ref.conversations",
+          "nullable": false,
+          "default": null,
+          "meaning": "会话"
+        },
+        {
+          "name": "sequence",
+          "type": "bigint",
+          "nullable": false,
+          "default": null,
+          "meaning": "同会话顺序"
+        },
+        {
+          "name": "role",
+          "type": "enum.message_role",
+          "nullable": false,
+          "default": null,
+          "meaning": "user或assistant"
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实问题/答复；失败且无答复NULL"
+        },
+        {
+          "name": "state",
+          "type": "enum.message_state",
+          "nullable": false,
+          "default": null,
+          "meaning": "收取/答复状态"
+        },
+        {
+          "name": "in_reply_to",
+          "type": "ref.messages",
+          "nullable": true,
+          "default": null,
+          "meaning": "assistant指具体用户问题；同会话"
+        },
+        {
+          "name": "source_run_id",
+          "type": "ref.runs",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实ai_question执行；用户消息NULL"
+        },
+        {
+          "name": "input_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "assistant实际输入；不能保存时重新读取"
+        },
+        {
+          "name": "source_refs",
+          "type": "json.evidence_refs",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际引用；无结果NULL"
+        },
+        {
+          "name": "client_request_key",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "发送/答复去重键，客户端重发不重复执行"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "发送/占位时间"
+        },
+        {
+          "name": "answered_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际回答完成"
+        },
+        {
+          "name": "error",
+          "type": "json.error",
+          "nullable": true,
+          "default": null,
+          "meaning": "调用失败状态"
+        }
+      ],
+      "constraints": [
+        "UNIQUE(tenant,conversation,sequence)；UNIQUE(tenant,conversation,client_request_key)",
+        "user必须content非空；completed assistant必须content+source_run+input_artifact+answered_at",
+        "重试追加新assistant/Run关联同一用户问题，旧消息不改为成功；重复保存同答复不新调用",
+        "保存AI读取本消息冻结输入，不因当前Case成员后来变化改历史来源；原范围以source_run为准，权限另校验"
+      ]
+    },
+    {
+      "name": "activities",
+      "owner": "实际业务事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "一次批量操作分组，所有目标同ID"
+        },
+        {
+          "name": "actor",
+          "type": "json.actor",
+          "nullable": false,
+          "default": null,
+          "meaning": "真实人/服务身份和名称快照"
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "受版本控制业务动作码，见action_registry合同"
+        },
+        {
+          "name": "subject_alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "主对象告警"
+        },
+        {
+          "name": "subject_incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "主对象事件"
+        },
+        {
+          "name": "subject_case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "主对象Case"
+        },
+        {
+          "name": "occurred_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "实际操作时间"
+        },
+        {
+          "name": "summary",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "可读操作摘要，不能替代结构目标"
+        },
+        {
+          "name": "detail",
+          "type": "json.activity_detail",
+          "nullable": false,
+          "default": null,
+          "meaning": "请求原因和未完成原因，不复制完整原件"
+        }
+      ],
+      "constraints": [
+        "三个subject恰一非空；各FK含tenant；不再用无约束subject_type+id",
+        "UNIQUE(tenant,operation_id,id)仅查询分组，不强限一次operation只有一活动",
+        "活动随事实事务提交；失败事务不能留成功活动，失败请求单独audit而非业务成功"
+      ]
+    },
+    {
+      "name": "activity_targets",
+      "owner": "批量实际写入事务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "activity_id",
+          "type": "ref.activities",
+          "nullable": false,
+          "default": null,
+          "meaning": "所属实际活动"
+        },
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "被处理告警"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "被处理事件"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "被处理Case"
+        },
+        {
+          "name": "task_id",
+          "type": "ref.tasks",
+          "nullable": true,
+          "default": null,
+          "meaning": "被处理任务"
+        },
+        {
+          "name": "run_id",
+          "type": "ref.runs",
+          "nullable": true,
+          "default": null,
+          "meaning": "被操作执行"
+        },
+        {
+          "name": "result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "被采用/保存结果"
+        },
+        {
+          "name": "comment_id",
+          "type": "ref.comments",
+          "nullable": true,
+          "default": null,
+          "meaning": "评论"
+        },
+        {
+          "name": "before_value",
+          "type": "json.activity_value",
+          "nullable": true,
+          "default": null,
+          "meaning": "相关变更字段前值；新建NULL"
+        },
+        {
+          "name": "after_value",
+          "type": "json.activity_value",
+          "nullable": true,
+          "default": null,
+          "meaning": "相关变更字段后值；移除NULL"
+        },
+        {
+          "name": "result_state",
+          "type": "enum.activity_result",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际成功/跳过/失败"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "跳过/失败原因"
+        }
+      ],
+      "constraints": [
+        "七个目标引用恰一非空；按各列部分UNIQUE(tenant,activity,target)；全部FK含tenant",
+        "每个实际目标一行，无200条截断；显示数量由行数计算",
+        "before/after只保存改变字段与版本，不泄漏凭据/整份日志"
+      ]
+    },
+    {
+      "name": "comments",
+      "owner": "对象普通评论API",
+      "mutability": "current_with_activity_history",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "所属告警"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "所属事件"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "所属Case"
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "普通评论非空"
+        },
+        {
+          "name": "author_id",
+          "type": "uuid",
+          "nullable": false,
+          "default": null,
+          "meaning": "实际作者"
+        },
+        {
+          "name": "author_name_snapshot",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "当时显示名"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "创建"
+        },
+        {
+          "name": "edited_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际编辑时间"
+        },
+        {
+          "name": "edited_by",
+          "type": "uuid",
+          "nullable": true,
+          "default": null,
+          "meaning": "实际编辑人"
+        },
+        {
+          "name": "row_version",
+          "type": "bigint",
+          "nullable": false,
+          "default": "1",
+          "meaning": "并发编辑"
+        }
+      ],
+      "constraints": [
+        "三父恰一非空；FK含tenant；编辑前后内容记活动",
+        "管理备注选填意味着不创建评论行，不创建空body"
+      ]
+    },
+    {
+      "name": "response_links",
+      "owner": "建议到既有审批执行的关联服务",
+      "mutability": "append_only",
+      "common": [
+        "id",
+        "tenant_id"
+      ],
+      "columns": [
+        {
+          "name": "alert_id",
+          "type": "ref.alerts",
+          "nullable": true,
+          "default": null,
+          "meaning": "告警所属来源"
+        },
+        {
+          "name": "incident_id",
+          "type": "ref.incidents",
+          "nullable": true,
+          "default": null,
+          "meaning": "事件所属来源"
+        },
+        {
+          "name": "case_id",
+          "type": "ref.cases",
+          "nullable": true,
+          "default": null,
+          "meaning": "Case所属来源"
+        },
+        {
+          "name": "result_id",
+          "type": "ref.results",
+          "nullable": true,
+          "default": null,
+          "meaning": "正式结果建议"
+        },
+        {
+          "name": "proposal_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "recommendations中稳定ID；需result_id"
+        },
+        {
+          "name": "legacy_proposal_ref",
+          "type": "json.external_ref",
+          "nullable": true,
+          "default": null,
+          "meaning": "没有新result时已有建议/执行来源"
+        },
+        {
+          "name": "external_namespace",
+          "type": "text",
+          "nullable": false,
+          "default": null,
+          "meaning": "已有审批执行服务命名空间"
+        },
+        {
+          "name": "approval_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实审批ID，不强转UUID"
+        },
+        {
+          "name": "action_id",
+          "type": "text",
+          "nullable": true,
+          "default": null,
+          "meaning": "真实动作ID，批准不等于执行"
+        },
+        {
+          "name": "linked_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "transaction_timestamp()",
+          "meaning": "关系建立"
+        },
+        {
+          "name": "receipt_artifact_id",
+          "type": "ref.artifacts",
+          "nullable": true,
+          "default": null,
+          "meaning": "已有实际回执快照，同归属"
+        }
+      ],
+      "constraints": [
+        "alert/incident/case恰一；result+proposal或legacy_proposal恰一来源；approval/action至少一个",
+        "结果建议须同案且proposal存在；旧actions.incident_id不直接充当Fusion事件",
+        "同来源/同namespace/同approval/action去重，NULL分支分别部分唯一；重试动作另行",
+        "审批状态/执行状态由已有服务读取或明确时间回执，连接表不发明执行状态"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "topic": "事件严重程度覆盖",
+      "status": "confirmed_by_user",
+      "decision": "允许人工覆盖事件等级，保留自动汇总值；仅覆盖事件，不修改成员告警；记录人、时间、理由",
+      "previous_proposal": "保留汇总；允许事件人工覆盖；不改成员"
+    },
+    {
+      "id": "D02",
+      "topic": "Case当前判断采用",
+      "status": "confirmed_by_user",
+      "decision": "有效基础调查结果自动更新案件当前判断；AI结果仍需明确采用",
+      "previous_proposal": "明确采用才更新当前引用"
+    },
+    {
+      "id": "D03",
+      "topic": "AI与baseline互斥",
+      "status": "confirmed_by_user",
+      "decision": "仅限制基础调查单活跃；AI模型/工具问答可并行，不与基础调查共用槽",
+      "previous_proposal": "Case执行共用活跃槽"
+    },
+    {
+      "id": "D04",
+      "topic": "空Case/已解决Case",
+      "status": "proposal_not_confirmed",
+      "proposed": "允许保存空案/历史；无成员禁止启动；已解决案变更不静默重开，启动前显式重开"
+    }
+  ],
+  "action_registry": [
+    "alert.created",
+    "alert.material_added",
+    "alert.assigned",
+    "alert.status_changed",
+    "alert.feedback_saved",
+    "incident.created",
+    "incident.member_changed",
+    "incident.managed",
+    "case.created",
+    "case.members_changed",
+    "case.incident_linked",
+    "case.incident_unlinked",
+    "case.managed",
+    "case.assessment_adopted",
+    "run.started",
+    "run.cancel_requested",
+    "run.finished",
+    "task.created",
+    "task.updated",
+    "ai.result_saved",
+    "comment.created",
+    "comment.edited",
+    "exploration.saved",
+    "response.linked"
+  ],
+  "artifact_contracts": {
+    "input_snapshot": "input_snapshot",
+    "model_request": "model_exchange",
+    "model_response": "model_exchange",
+    "tool_request": "tool_args",
+    "tool_response": "tool_exchange",
+    "domain_analysis": "analysis_block",
+    "deep_analysis": "analysis_block",
+    "attack_chain": "graph",
+    "attack_path": "graph",
+    "alert_graph": "graph",
+    "report_json": "report_result",
+    "report_markdown": "content_text",
+    "attachment": "blob_ref or content_text",
+    "source_snapshot": "raw_payload",
+    "handoff": "handoff",
+    "query_plan": "query_plan",
+    "alert_explanation": "alert_explanation",
+    "case_evidence_index": "case_evidence_index"
+  },
+  "composite_unique_keys": {
+    "alert_materials": [
+      "tenant_id,alert_id,id"
+    ],
+    "alert_assessments": [
+      "tenant_id,alert_id,id"
+    ],
+    "incident_diagnoses": [
+      "tenant_id,incident_id,id"
+    ],
+    "case_assessments": [
+      "tenant_id,case_id,id"
+    ],
+    "task_revisions": [
+      "tenant_id,case_id,task_id,id",
+      "tenant_id,case_id,id"
+    ],
+    "tasks": [
+      "tenant_id,case_id,id"
+    ],
+    "runs": [
+      "tenant_id,case_id,id",
+      "tenant_id,alert_id,id",
+      "tenant_id,incident_id,id"
+    ],
+    "run_members": [
+      "tenant_id,case_id,run_id,alert_id"
+    ],
+    "run_steps": [
+      "tenant_id,run_id,id"
+    ],
+    "artifacts": [
+      "tenant_id,case_id,id",
+      "tenant_id,alert_id,id",
+      "tenant_id,incident_id,id",
+      "tenant_id,run_id,id"
+    ],
+    "results": [
+      "tenant_id,case_id,id",
+      "tenant_id,case_id,source_run_id,id"
+    ],
+    "conversations": [
+      "tenant_id,case_id,id"
+    ],
+    "messages": [
+      "tenant_id,case_id,conversation_id,id",
+      "tenant_id,case_id,id"
+    ]
+  },
+  "deferred_constraints": [
+    "tasks.current_revision_id与task_revisions.task_id循环使用预分配UUID+DEFERRABLE INITIALLY DEFERRED",
+    "alerts/incidents/cases最新指针先NULL，子行插入后同事务更新；DDL建完表再ALTER TABLE加FK",
+    "runs/steps与artifacts互引先预分配UUID，输入冻结和running在同事务；延迟约束提交必须一致"
+  ],
+  "application_invariants": [
+    "原子发布 JSON条目ID唯一、引用可解析且位于本轮允许来源；数据库JSON类型不能代替语义验证",
+    "所有JSON evidence_ref按类型精确一个来源(id或external)，scope时间窗口成对且start<=end，alert_ids/object_keys去重",
+    "detection confidence_state=available须value非空且0..100；缺标签用labels_provided=false而非声称无标签",
+    "usage.tokens部分已知时显示known_sum+unknown_call_count，不给unknown补0；费用保币种/计价版，不合计不同币种",
+    "案例history统一DTO将Run生命周期和Results连接；未保存AI执行不纳入正式调查历史；待更新baseline始终显示",
+    "当前判断是否覆盖当前Case按assessment_members与case_alerts集合比较；scope_revision不同只说明范围曾变，不直接证明结论错误",
+    "claimed后写入者必须携带run_id+expected_state/version；取消请求不等于停止证明，未知不释放槽",
+    "新写入保证用户/资产/连接器同租户；历史未解析值单列，不凭名字联结"
+  ],
+  "index_plan": {
+    "alerts": [
+      "(tenant_id,event_time DESC,id)",
+      "(tenant_id,handling_status,event_time DESC,id)",
+      "(tenant_id,severity,event_time DESC,id)",
+      "(tenant_id,owner_id,event_time DESC,id)"
+    ],
+    "incidents": [
+      "(tenant_id,business_updated_at DESC,id)",
+      "(tenant_id,handling_status,business_updated_at DESC,id)"
+    ],
+    "case_alerts": [
+      "UNIQUE(tenant_id,case_id,alert_id)",
+      "(tenant_id,alert_id,case_id)"
+    ],
+    "case_incidents": [
+      "UNIQUE(tenant_id,case_id,incident_id)",
+      "(tenant_id,incident_id,case_id)"
+    ],
+    "runs": [
+      "(tenant_id,case_id,requested_at DESC,id)",
+      "pending部分唯一",
+      "baseline活跃部分唯一"
+    ],
+    "run_steps": [
+      "UNIQUE(tenant_id,run_id,seq)"
+    ],
+    "results": [
+      "(tenant_id,case_id,saved_at DESC,id)",
+      "root baseline/ai_saved部分唯一",
+      "supersedes部分唯一"
+    ],
+    "task_revisions": [
+      "UNIQUE(tenant_id,task_id,revision)",
+      "(tenant_id,case_id,state,due_at)"
+    ],
+    "messages": [
+      "UNIQUE(tenant_id,conversation_id,sequence)"
+    ],
+    "artifacts": [
+      "(tenant_id,run_id,kind,captured_at,id)",
+      "(tenant_id,case_id,kind,captured_at,id)"
+    ],
+    "alert_objects": [
+      "(tenant_id,object_type,normalized_value,alert_id)",
+      "(tenant_id,material_id)"
+    ],
+    "activity_targets": [
+      "各类型target的(tenant_id,target_id,activity_id)"
+    ],
+    "comments": [
+      "三个对象分别(tenant_id,target_id,created_at,id)"
+    ]
+  },
+  "sql_boundary": "2026-11-06只读核对21处理交接库socai2_processing_handoff：123至126已登记，socai2下29表462列可供告警、事件和调查页面查询。D04特殊操作仍按原范围。",
+  "auto_adoption_policy": {
+    "eligible": "baseline completed + result.validation_state=accepted + model结论非空，非system_handoff；允许partial但仅采用conclusion_covered成员",
+    "scope": "Run.scope_revision等于Case.scope_revision且冻结成员集合等于当前成员；至少一条结论覆盖成员",
+    "input_freshness": "采用前核对冻结成员材料、分诊、反馈、事件上下文及已完成人工反馈版本；无法确认当前有效或已有变化时返回stale_input，保留Case当前判断",
+    "order": "锁Case；本轮started_at之后已有判断采用则跳过，避免覆盖较新的人工/其他判断",
+    "write": "新增case_assessment及sources/members，更新Case指针并写活动，同事务；重复同一result返回原采用记录",
+    "ai": "仅明确采用；保存AI答案不更新Case",
+    "status": "不自动改变Case处理状态；无自动启动/接续"
+  },
+  "incremental_migrations": [
+    {
+      "number": 124,
+      "path": "services/api/migrations/124_socai2_case_source_binding.sql",
+      "tables": 29,
+      "columns": 459,
+      "baseline_123_unchanged": true
+    },
+    {
+      "number": 125,
+      "path": "services/api/migrations/125_socai2_baseline_input_freshness.sql",
+      "tables": 29,
+      "columns": 459,
+      "baseline_123_unchanged": true
+    },
+    {
+      "number": 126,
+      "path": "services/api/migrations/126_socai2_case_page_data.sql",
+      "tables": 29,
+      "columns": 462,
+      "baseline_123_unchanged": true
+    },
+    {
+      "file": "services/api/migrations/127_socai2_remove_unused_graph_table.sql",
+      "purpose": "仅删除经核验为空且未使用的 graph_explorations；冻结 V1 原件保留"
+    }
+  ]
+}

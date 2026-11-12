@@ -50,6 +50,12 @@ def blocked(value):
     return False
 
 
+def blocked_message(content):
+    """Check the actual wire message, without counting JSON quoting as content."""
+    return bool(classify_message(content) or any(
+        classify_message(content[i:i + 4000]) for i in range(0, len(content), 3500)))
+
+
 def compact_objects(value):
     return [{k: obj.get(k) for k in ("object_type", "object_role", "namespace", "raw_value",
         "normalized_value", "asset_match_state")} for obj in value]

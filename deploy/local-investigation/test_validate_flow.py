@@ -131,8 +131,8 @@ def test_deployed_pilot_does_not_run_another_round():
     driver.preflight.assert_not_awaited()
 
 
-def test_all_29_exports_are_readonly_and_parameter_scoped():
-    assert len(TABLES) == len(set(TABLES)) == 29
+def test_all_28_exports_are_readonly_and_parameter_scoped():
+    assert len(TABLES) == len(set(TABLES)) == 28
     for table in TABLES:
         query = query_for(table)
         assert "t.tenant_id=s.tenant" in query and all(f"${i}::uuid" in query for i in range(1, 6))
@@ -249,7 +249,7 @@ def test_export_manifest_keeps_api_sources_and_excludes_oracle(tmp_path):
     manifest = json.loads((folder / "manifest.json").read_text())
     data = json.loads((folder / "database.json").read_text())
     assert manifest["schema_version"] == "socai2.page-export.v1" and manifest["input_kind"] == "synthetic"
-    assert data["cases"] == [case_row] and len(data) == 29
+    assert data["cases"] == [case_row] and len(data) == 28
     assert manifest["source_sha256"] == sha((folder / "database.json").read_bytes())
     responses = json.loads((folder / "api-responses.json").read_text())
     assert all(r["body"] == body for r in responses) and not (folder / "expected.json").exists()

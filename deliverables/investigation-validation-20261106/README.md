@@ -4,7 +4,11 @@
 
 | 使用目的 | 入口 |
 | --- | --- |
-| 页面功能与跳转 | [F01–F28／J01–J14](frontend-feature-list.md) |
+| 本轮文档遗漏核对 | [功能范围→43接口→固定/动态字段审计](http-handoff-audit/README.md)，字段语义已合入两端Swagger docs3，按告警/事件/调查接口分类 |
+| HTTP接口逐项交接 | [43个后端HTTP操作、用途、参数、结果、状态及示例](http-handoff/README.md)；[OpenAPI](http-handoff/openapi.json)；[Swagger部署入口](../../deploy/api-docs/README.md) |
+| 页面功能与实现状态 | [逐页功能清单](frontend-feature-list.md)：用途、操作结果、原型／服务页／后端分别说明 |
+| 规则确认记录 | [D01–D07 全部已确认](../../docs/design/investigation-product-decisions.md) |
+| 功能字段与跳转 | [F01–F28／J01–J14 技术附录](frontend-data-navigation-contract.md) |
 | 表、关联键和读取 | [服务端数据交接](../../docs/investigation/socai2-page-data-handoff-20261106.md) |
 | 字段及空态 | [字段取数样例](page-field-samples.md) |
 | 两案生产读取参照 | [365 次 GET 与 16,820 项核对](../../docs/operations/evidence/case-current-flow-20261110-01/readback-03/summary.json) |
@@ -13,7 +17,7 @@
 
 ## 调查运行记录页
 
-[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 的工作台组件为 `workbench-20261110-r2`，服务端主发布为 `v1.2-20261111-r2`；工作台只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
+[4177 调查工作台](http://127.0.0.1:4177/)用于查看 Run、步骤、实际输入、原答、错误、交付及保存的工件。21 的当前工作台与服务版本见[交接指南运行环境](../../FRONTEND_BACKEND_HANDOFF.md#2-当前运行环境)；工作台只监听 `127.0.0.1:4177`。本机沿[SSH 接入说明](../../docs/operations/mac-ssh-relay-20261107.md)转发：
 
 ```sh
 ssh -N -L 127.0.0.1:4177:127.0.0.1:4177 sting-infra21
@@ -34,7 +38,7 @@ ssh -N -L 127.0.0.1:4177:127.0.0.1:4177 sting-infra21
 
 ### 从导出更新静态资料
 
-单份页面导出须包含 `manifest.json`、`database.json`，清单格式为 `socai2.page-export.v1`，有租户、批次、29 表行数及逐文件 SHA-256。批次身份取导出清单，直接导入完整导出目录：
+单份页面导出须包含 `manifest.json`、`database.json`，清单格式为 `socai2.page-export.v1`，有租户、批次、当前 28 表行数及逐文件 SHA-256，兼容旧 29 表快照。批次身份取导出清单，直接导入完整导出目录：
 
 ```sh
 python docs/operations/update_processing_audit.py --batch '<导出目录>'

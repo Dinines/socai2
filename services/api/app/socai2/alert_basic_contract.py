@@ -170,7 +170,7 @@ def retain_omission_details(data, details):
         omission_details_truncated=len(retained) < len(details))
 
 
-def build(source, input_id, queries, *, execution_time=None, complete_material=False):
+def build(source, input_id, queries, *, execution_time=None, complete_material=False, render_messages=True):
     from .program_facts import stage_facts
     member = source["members"][0]
     material = member["material"]
@@ -270,9 +270,13 @@ def build(source, input_id, queries, *, execution_time=None, complete_material=F
     data["omissions"] = dict(omissions)
     if any(o["source"] == p[0] for o in omission_details for p in priority):
         raise StoreError("alert_required_input_unavailable", 422)
-    messages = [{"role": "system", "content": PROMPT}, {"role": "user", "content": encoded(compact(data)).decode()}]
-    if not source_map or size(data) > draft_limit() or len(encoded(messages)) > draft_limit() or blocked(messages):
+    if not source_map or size(data) > draft_limit():
         raise StoreError("alert_model_view_unavailable", 422)
+    messages = []
+    if render_messages:
+        messages = [{"role": "system", "content": PROMPT}, {"role": "user", "content": encoded(compact(data)).decode()}]
+        if len(encoded(messages)) > draft_limit() or blocked(messages):
+            raise StoreError("alert_model_view_unavailable", 422)
     retain_omission_details(data, omission_details)
     return messages, source_map, data
 

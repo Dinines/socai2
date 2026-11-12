@@ -13,7 +13,7 @@
       "graph": 50
     }
   },
-  "citation_instruction": "finding_ids 只引用本次回复同一 analysis.findings 中实际存在的 id，不沿用历史发现号或问题编号。跨成员比较须列全实际涉及的成员；查询范围与返回记录主体分别提供，不可互相替代。 observed 的 support_ids 仅选该成员的直接 observation，正文只写这些原字段支持的行为或属性；命令行表示所记录的命令内容，不自动证明命令效果。标签、来源自述、历史判断和人工陈述明确归因，可写入带原来源的成员摘要，勿与行为混成一条 observed 发现；标签不证明授权或良性。推断写明依据和限制，无充分依据则明确未决；不得仅删除引用或更换 state 保留超出证据的断言。 缺少资料只能构成待核缺口，不能充当相反解释的证据；Case记录的标题、描述及本次调查方式不证明原事件环境。 冲突的每个参与发现必须有对应成员的直接observation支持，conflict.evidence_ids须逐finding覆盖这些原始支持并至少包含两个不同来源。回执、标签、历史判断及仅查询绑定不能作为冲突事实。缺资料或解释可能性写入限制、问题或alternatives，不能包装成conflicts；没有有据的互斥事实用[]，不得为填冲突而编造发现或观察。",
+  "citation_instruction": "finding_ids 只引用本次回复同一 analysis.findings 中实际存在的 id，不沿用历史发现号或问题编号。跨成员比较须列全实际涉及的成员；查询范围与返回记录主体分别提供，不可互相替代。 observed 的 support_ids 仅选该成员的直接 observation，正文只写这些原字段支持的行为或属性；命令行表示所记录的命令内容，不自动证明命令效果。标签、来源自述、历史判断和人工陈述明确归因，可写入带原来源的成员摘要，勿与行为混成一条 observed 发现；标签不证明授权或良性。知识只可作为查询适用成员的辅助解释、推断或补查参考，不计入成员、结论和影响的本案依据覆盖；声明覆盖的每个成员仍须有非知识的本案来源。推断写明依据和限制，无充分依据则明确未决；不得仅删除引用或更换 state 保留超出证据的断言。 缺少资料只能构成待核缺口，不能充当相反解释的证据；Case记录的标题、描述及本次调查方式不证明原事件环境。 冲突的每个参与发现必须有对应成员的直接observation支持，conflict.evidence_ids须逐finding覆盖这些原始支持并至少包含两个不同来源。回执、标签、历史判断及仅查询绑定不能作为冲突事实。缺资料或解释可能性写入限制、问题或alternatives，不能包装成conflicts；没有有据的互斥事实用[]，不得为填冲突而编造发现或观察。",
   "followup": {
     "version": "socai2.case-followup.v1",
     "Deep": "只处理本次指定问题。先看补查目的、已有判断及其支持/反证，再决定查询、回答或交接。已有证据足够可直接回答，不强制查询；描述已知行为不等于解决缺口。query只选择目录中的binding_id，不生成参数或扩大范围；answer给有依据的答案及剩余限制；需要目录外材料或人工确认用handoff。query时answer=null；answer/handoff时binding_id=null，handoff必须unresolved。只输出action、binding_id、reason、answer，问题身份由程序绑定。 supported必须有支持引用；unresolved必须说明限制；同一来源不能同时作为支持与反证，执行回执不能充当行为依据。\n答案先说明本问题目前能确认什么，再分别列有来源支持的解释和待补事实。反证必须是已取得且实际反驳相应主张的内容；没有提供、没有查询或看不到的材料只列为限制，不能写成“支持相反解释”。没有可获得的新事实时，明确当前未知及下一项必要材料，不靠重复假设推进结论。\n已有C3回答及其状态是待核判断，只用于定位问题；引用它不构成独立证明，必须回到它的原始依赖核对。没有支持来源的前序说法不能升级为事实。reason也必须遵守相同证据边界：说明当前能回答的范围或为何需要交接，不把本次材料未提供确认写成现实中无人确认。需要的事实只能由目录外材料或业务人员提供时，用handoff给出具体缺口，不把重复前序总结作为问题已解决。",
@@ -42,12 +42,12 @@
       "C3": "前序C3判断原文｜待复核，不能当独立事实",
       "Deep": "前序Deep回答原文｜待复核，不能当独立事实",
       "query": "补查返回字段",
-      "plan": "原执行计划",
+      "plan": "原计划的待取证事项",
       "comparison": "选定历史判断",
       "graph": "派生图关系",
       "dependency": "前序判断引用的原始来源",
       "case_record": "Case记录说明｜不证明原事件环境或授权",
-      "query_receipt": "程序查询回执｜逐项工具、范围与状态",
+      "query_receipt": "查询结果",
       "background_status": "本轮背景查询的程序摘要｜仅对应工具与范围，以原回执为准"
     },
     "parent_dependencies": [
@@ -1163,6 +1163,631 @@
         "investigation_guidance",
         "historical_case_reference"
       ]
+    },
+    "content_projection": {
+      "version": "structured-knowledge-business-v1",
+      "profiles": [
+        {
+          "name": "analytic_fields",
+          "required_fields": {
+            "description": "str",
+            "x_mitre_platforms": "list",
+            "x_mitre_log_source_references": "list",
+            "x_mitre_mutable_elements": "list"
+          },
+          "rules": [
+            {
+              "path": "/id",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/type",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/spec_version",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/created",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/modified",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/created_by_ref",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/object_marking_refs",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            },
+            {
+              "path": "/x_mitre_log_source_references/*/x_mitre_data_component_ref",
+              "action": "omit",
+              "reason": "structured_knowledge_backend_field"
+            }
+          ]
+        }
+      ],
+      "labels": {
+        "name": "名称",
+        "description": "说明",
+        "x_mitre_platforms": "适用平台",
+        "x_mitre_log_source_references": "参考日志",
+        "channel": "日志通道",
+        "x_mitre_mutable_elements": "核查要点",
+        "field": "核查字段"
+      }
+    }
+  },
+  "c3_input_selection": {
+    "version": "c3-business-input-v2",
+    "material_field_aliases": {
+      "$.raw_json.hostname": "device.name",
+      "$.raw_json.username": "actor.user.name",
+      "$.raw_json.src_ip": "src_endpoint.ip",
+      "$.raw_json.dst_ip": "dst_endpoint.ip"
+    },
+    "material_backend_paths": [
+      "$.raw_json.source"
+    ],
+    "history_catalog_fields": [
+      "title",
+      "severity",
+      "event_time",
+      "original_vendor"
+    ],
+    "object_index_fields": [
+      "object_type",
+      "object_role",
+      "namespace",
+      "raw_value",
+      "normalized_value",
+      "asset_match_state"
+    ],
+    "historical_card_schema": "socai2.historical-alert-card.v1",
+    "hierarchy": {
+      "alert": [
+        {
+          "path": "/event_time_source",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ],
+      "triage": [
+        {
+          "path": "/recommendations/*/id",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/recommendations/*/approval_requirement",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/recommendations/*/limitations/*",
+          "action": "constant",
+          "value": "recommendation_only_not_executed",
+          "reason": "recommendation_role_already_labelled"
+        },
+        {
+          "path": "/recommendations/*/limitations",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        }
+      ],
+      "history": [
+        {
+          "path": "/match_basis",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/matched_by",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/object_key",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/namespace",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ],
+      "prior_analysis": [
+        {
+          "path": "/id",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/kind",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/assessed_at",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/confidence",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/score_state",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/source_refs",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ],
+      "human_statement": [
+        {
+          "path": "/id",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/kind",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/assessed_at",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/confidence",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/score_state",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor/type",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor/user_id",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor/service_name",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor/service_version",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/actor/name_snapshot",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/actor",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        }
+      ],
+      "source_scope": [
+        {
+          "path": "/kind",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/complete",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/truncated",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/window_start",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/window_end",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/omission_reason",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ],
+      "object": [
+        {
+          "path": "/role",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/asset_ref",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ],
+      "knowledge": [
+        {
+          "path": "/match_basis",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/limitations",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/id",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/tags",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/doc_kind",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/created_at",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/updated_at",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/chunk_index",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/record/chunk_total",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/state",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/reason",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/generic",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/matched",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/unknown",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/conflicts",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability/query_facets",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/purposes/*/purpose",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/purposes/*/use",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/applicability",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        }
+      ],
+      "historical_card": [
+        {
+          "path": "/title",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/source_url",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/schema_version",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/source",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/verification",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/material_alignment",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/assessment_usability",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/source_version_state",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/limitations",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/score_source",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/labels_provided",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/confidence_state",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/confidence_label",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/confidence_value",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/detection/confidence_rationale",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        },
+        {
+          "path": "/history/objects",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/history/detection/rule_id",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/history/detection/rule_name",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/history/detection/tactics",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/history/detection/techniques",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        },
+        {
+          "path": "/history/detection",
+          "action": "empty",
+          "reason": "configured_c3_empty_optional"
+        }
+      ],
+      "program_facts": [
+        {
+          "path": "/members/*/alert/event_time_source",
+          "action": "omit",
+          "reason": "configured_c3_backend_field"
+        }
+      ]
+    },
+    "query_names": {
+      "graph": "关系图",
+      "ueba": "行为分析",
+      "knowledge": "知识库"
+    },
+    "labels": {
+      "history": "历史材料",
+      "event": "事件",
+      "observations": "历史观察",
+      "source_path": "字段",
+      "content": "知识正文",
+      "applicability": "适用条件",
+      "conditions": "业务条件",
+      "purposes": "用途",
+      "purpose_label": "用途",
+      "ocsf.process.name": "进程名称",
+      "ocsf.activity.action": "记录动作",
+      "process": "进程",
+      "cmd_line": "命令行",
+      "name": "名称",
+      "activity": "活动",
+      "action": "动作",
+      "outcome": "动作结果",
+      "actor": "活动主体",
+      "user": "账号",
+      "name_snapshot": "陈述者"
+    }
+  },
+  "followup_input_selection": {
+    "version": "task-followup-input-v1",
+    "query_backend_fields": [
+      "event_id",
+      "product_device_id",
+      "product_source_connector_id",
+      "product_upstream_request_id"
+    ],
+    "stages": [
+      "Deep",
+      "C6"
+    ],
+    "hierarchy": {
+      "prior": [
+        {
+          "path": "/followups/*/binding_id",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        },
+        {
+          "path": "/followups/*/mode",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        },
+        {
+          "path": "/followups/*/priority",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        }
+      ],
+      "plan": [
+        {
+          "path": "/execution_plan_index",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        },
+        {
+          "path": "/followup/binding_id",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        },
+        {
+          "path": "/followup/mode",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        },
+        {
+          "path": "/followup/priority",
+          "action": "omit",
+          "reason": "followup_execution_field_kept_in_backend"
+        }
+      ],
+      "query_field": [
+        {
+          "path": "/source_path",
+          "action": "omit",
+          "reason": "query_field_mapping_kept_in_backend"
+        },
+        {
+          "path": "/transform",
+          "action": "constant",
+          "value": "identity",
+          "reason": "query_field_mapping_kept_in_backend"
+        },
+        {
+          "path": "/conflict",
+          "action": "constant",
+          "value": false,
+          "reason": "query_field_mapping_kept_in_backend"
+        }
+      ]
+    },
+    "no_tools_text": "[可用调查工具]\n无可用查询候选。",
+    "unavailable_text": "[材料可用性] 部分材料不可用。",
+    "graph_unavailable_text": "[关系图] 不可用",
+    "labels": {
+      "domains": "领域判断",
+      "members": "成员判断",
+      "summary": "概要",
+      "findings": "发现",
+      "id": "编号",
+      "statement": "发现内容",
+      "support_ids": "支持依据",
+      "counter_ids": "反证依据",
+      "alternatives": "替代解释",
+      "questions": "问题判断",
+      "question": "当前问题的前序回答",
+      "text": "回答",
+      "answer": "回答",
+      "evidence_ids": "依据",
+      "followups": "取证要求",
+      "followup": "待取证事项",
+      "objective": "目标",
+      "required_evidence": "所需材料",
+      "question_id": "问题",
+      "alert_id": "成员",
+      "finding_ids": "相关发现",
+      "applicability": "适用性",
+      "query_record_identity": "历史版本",
+      "unavailable_prior_reference_count": "不可见原依据数",
+      "visible_prior_references": "原判断依据"
     }
   }
 }

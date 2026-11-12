@@ -196,8 +196,8 @@ class Driver:
                 response = await client.get(f"http://127.0.0.1:{PORTS[service]}/readyz")
                 if response.status_code != 200:
                     raise FlowStopped(service + "_not_ready")
-        row = (await self.pg("SELECT current_database() AS database, (SELECT count(*) FROM information_schema.tables WHERE table_schema='socai2' AND table_type='BASE TABLE') AS tables, to_regprocedure('socai2.baseline_input_freshness(uuid,uuid)') IS NOT NULL AS freshness"))[0]
-        assert row == {"database": DATABASE, "tables": 29, "freshness": True}
+        row = (await self.pg("SELECT current_database() AS database, (SELECT count(*) FROM information_schema.tables WHERE table_schema='socai2' AND table_type='BASE TABLE') AS tables, to_regprocedure('socai2.baseline_input_freshness(uuid,uuid)') IS NOT NULL AS freshness, EXISTS(SELECT FROM public.aisoc_schema_migrations WHERE name='127_socai2_remove_unused_graph_table.sql') AS cleaned"))[0]
+        assert row == {"database": DATABASE, "tables": 28 if row["cleaned"] else 29, "freshness": True, "cleaned": row["cleaned"]}
         return {"database": row, "runtime": model_profile,
             "budget": await self.budget(PILOT_ALLOWANCE if pilot else 0), "model_calls": 0, "services_started": False}
 

@@ -1,5 +1,6 @@
 """ASGI + restricted synthetic PG; authentication/model/lake are substitutes."""
 import asyncio
+import hashlib
 import importlib.util
 import json
 import traceback
@@ -333,21 +334,25 @@ async def run_checks(engine, record, only=None):
         await request("GET", f"{BASE}/{cid}/history", params={"limit": 101}, code=422)
 
     async def test_artifact_scope_integrity_and_external_reference_not_exposed():
+        from app.socai2.baseline_context import retention_limit
         out, _ = await create()
         cid, rid = UUID(out["case_id"]), UUID(out["pending_run_id"])
         bad, external, large = uuid4(), uuid4(), uuid4()
+        large_text = "x" * (retention_limit() + 1)
         async with service.transaction(T) as store:
             now = await store.now()
             for identity, extra in ((bad, {"content_json": {"synthetic": True}, "size_bytes": 18}),
                     (external, {"blob_ref": "s3://synthetic-private-path", "size_bytes": 10}),
-                    (large, {"content_text": "synthetic declared large", "size_bytes": 131073})):
+                    (large, {"content_text": large_text, "size_bytes": len(large_text)})):
                 await store.db.execute(insert(F).values(id=identity, tenant_id=T, case_id=cid, run_id=rid,
-                    kind="source_snapshot", schema_version="synthetic.read.v1", mime_type="application/json", sha256="0" * 64,
+                    kind="source_snapshot", schema_version="synthetic.read.v1", mime_type="application/json",
+                    sha256=hashlib.sha256(large_text.encode()).hexdigest() if identity == large else "0" * 64,
                     captured_at=now, material_state="complete", source_refs=[], retention={}, **extra))
         await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{bad}", code=409)
         loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{external}")
         assert loaded["availability"] == "external_content_not_loaded" and "private-path" not in json.dumps(loaded)
-        assert (await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{large}"))["content_text"] is None
+        loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{large}")
+        assert loaded["content_text"] is None and loaded["availability"] == "content_exceeds_read_limit_or_size_unknown"
 
     async def test_run_last_record_uses_all_artifacts_when_directory_truncated():
         out, _ = await create()

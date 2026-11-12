@@ -1,5 +1,7 @@
 # v1 Kafka告警输入与融合输出
 
+> 本文保留 v1 消息字段合同与当时的运行说明。当前21连接、Topic/消费组及启用状态以[组件交接](../component-handoff-current.md)为准：Agents自动分析目前关闭，Fusion/UEBA/调查数据整理组仍在运行；调查结果读取18024 HTTP。
+
 [返回入口](README.md)。正式已有告警从raw进入，生产者不写fused，不直接入PG。所有JSON例子均为接口说明，未向broker发送。
 
 ## 1. Topic清单
