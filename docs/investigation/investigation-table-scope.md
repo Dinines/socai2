@@ -1,10 +1,10 @@
 # 当前调查业务表与写入职责
 
-2026-11-12，按当前 V1.1 实现分析。范围只包括本项目的 `socai2` 调查业务表；资产、用户、租户、来源配置等基础数据由业务后端负责。下文不把旧 AiSOC 的功能和公共表列入调查交付。
+2026-11-13，按当前 V1.1 实现分析。范围只包括本项目的 `socai2` 调查业务表；资产、用户、租户、来源配置等基础数据由业务后端负责。下文不把旧 AiSOC 的功能和公共表列入调查交付。
 
-**当前保留 28 张调查表：24 张有主链业务写入、2 张有读取用途、2 张预留但仍有结构依赖。** 有写入路径不表示所有字段或所有产品操作都已实现；下表列出实际用途。清理完成状态见[本项任务](../../openspec/changes/archive/2026-11-12-remove-unused-investigation-graph-table/tasks.md)。
+**当前保留 28 张调查表：25 张有业务写入、1 张有读取用途、2 张预留但仍有结构依赖。** 有写入路径不表示所有字段或所有产品操作都已实现；下表列出实际用途。清理完成状态见[本项任务](../../openspec/changes/archive/2026-11-12-remove-unused-investigation-graph-table/tasks.md)。
 
-## 1 当前有业务写入的 24 张表
+## 1 当前有业务写入的 25 张表
 
 以下省略 `socai2.`。业务后端调用已有命令或供数适配入口，调查模块维护内部记录及版本；页面 GET 不写表。
 
@@ -16,7 +16,7 @@
 | `alert_objects` | 材料中出现的主机、账号、IP、域名等对象和出处 | 入站适配从已收到材料提取。它是告警对象索引，不是资产库存表。 |
 | `incidents` | 调查使用的事件主体、当前诊断引用 | 入站适配保存来源事件；I 完成后维护诊断引用。 |
 | `incident_alerts` | 事件包含哪些告警、归并依据与关系来源 | 入站适配保存已确定关系；不是页面按主机/标题自行推定。 |
-| `alert_assessments` | 告警分诊判定、理由、置信度、建议及材料/Run 来源 | A 分诊通过保存校验后追加 `kind=triage`。`human_feedback` 有存储与读取设计，但正式告警级人工反馈写入口未接。 |
+| `alert_assessments` | 告警分诊判定、理由、置信度、建议及材料/Run 来源 | A 分诊通过保存校验后追加 `kind=triage`。E48/E49已提供单条/批量`human_feedback`写入，保留模型分诊。 |
 | `incident_diagnoses` | 事件诊断尝试的状态、摘要、诊断正文和待核事项 | I 开始时建立尝试，完成/失败时保存实际结果或错误。 |
 | `cases` | 案件主体、范围版本、分类/期限及当前判断、证据目录指针 | Case 命令建案、更新已接管理字段/范围，结果采用与证据保存更新对应指针。 |
 | `case_alerts` | Case 的当前正式告警成员 | 建案、替换成员、关联或跨案移动命令维护；已冻结 Run 的范围不随之重写。 |
@@ -34,6 +34,7 @@
 | `task_revisions` | 任务的每版状态、负责人、期限、人工结果、范围、完成人/时刻 | 人工创建/修订时追加；下一轮调查冻结所选版本，不覆盖旧轮输入。 |
 | `activities` | 已实施的 Case/成员/任务/发布等业务操作及操作者 | 服务命令保存操作回执；不把模型调用步骤混作业务活动。 |
 | `activity_targets` | 一次业务操作具体影响的目标、前后值、结果和原因 | 与 activity 同次保存，可包含多个目标。 |
+| `comments` | Case普通协作说明、原文、作者及时间 | E58追加保存；E59分页读取，E17查活动。不会直接成为人工事实或案件判断；不含编辑/删除或附件。 |
 
 入站实现在 [socai2_sink.py](../../services/fusion/app/services/socai2_sink.py)；A/I 保存见 [stage_results.py](../../services/api/app/socai2/stage_results.py)；Case 命令见 [case_service.py](../../services/api/app/socai2/case_service.py)，执行发布见 [baseline_store.py](../../services/api/app/socai2/baseline_store.py)，人工版本见 [human_task_service.py](../../services/api/app/socai2/human_task_service.py)。这些代码路径已核对，本轮没有重新调用模型证明质量。
 
@@ -41,7 +42,6 @@
 
 | 表 | 当前实际使用 | 本轮处理 |
 | --- | --- | --- |
-| `comments` | 告警/事件 `records/comments` 已查询；活动目标有评论外键。Case 完整评论/附件业务未接。 | 保留，不能因本次查到零行就删除。 |
 | `response_links` | 告警/事件 `records/responses` 读取；证据校验会核处置回执关联。真实响应执行不由该表保证。 | 保留；不把它扩展成全套审批/处置平台交付。 |
 | `conversations` | Q 会话预留，仍被 messages 外键引用；Q 业务接口返回 501。 | 保留依赖，不列为已实现问答功能。 |
 | `messages` | Q 消息预留；results 外键、发布校验函数及兼容结果读取引用它。 | 保留。直接删掉会使当前工件/结果发布校验失效。 |

@@ -49,6 +49,10 @@ def test_external_contract_preserves_compatibility_except_approved_list_delta():
     )
     after = app.openapi()
     normalized = copy.deepcopy(after)
+    comments = normalized["paths"].pop("/api/v1/socai2/cases/{case_id}/comments")
+    assert set(comments) == {"get", "post"}
+    for name in ("CaseCommentCreate", "CaseCommentPage", "CaseCommentView"):
+        normalized["components"]["schemas"].pop(name)
     for kind in ("alerts", "incidents", "cases"):
         exported = normalized["paths"].pop("/api/v1/socai2/" + kind + "/export")
         assert set(exported) == {"get"}

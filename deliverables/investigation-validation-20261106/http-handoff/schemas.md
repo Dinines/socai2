@@ -312,6 +312,51 @@ string unassigned, assigned, unresolved
 | acknowledge_open_tasks | 否 | boolean | false | 是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。 |
 
 
+<a id="casecommentcreate"></a>
+
+## CaseCommentCreate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 本次评论的幂等键；同案同作者同正文重试沿用，改变意图须新键。 |
+| body | 是 | string; minLength=1; maxLength=20000 | 无（可空不等于可省略） | 普通评论纯文本原文，不接受空白；不会自动成为已核实事实或触发调查。 |
+
+
+<a id="casecommentpage"></a>
+
+## CaseCommentPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[CaseCommentView](schemas.md#casecommentview)> | 无（可空不等于可省略） | 指定Case评论，按created_at、id升序；无评论为[]。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 指定Case的评论总数，不包含成员告警或事件的评论。 |
+| next_offset | 是 | integer / null | 无（可空不等于可省略） | 有后续记录时的下一页偏移，否则null；分页不是跨请求冻结快照。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次只读一致快照的观察时间。 |
+
+
+<a id="casecommentview"></a>
+
+## CaseCommentView
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | 已保存评论ID。 |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 评论所属Case；不因共享告警混入其他案件。 |
+| body | 是 | string | 无（可空不等于可省略） | 完整普通评论原文；调用方按纯文本显示，不作为已核实事实。 |
+| author_id | 是 | string (uuid) | 无（可空不等于可省略） | 认证用户的实际作者ID，由服务端保存。 |
+| author_name_snapshot | 是 | string | 无（可空不等于可省略） | 提交时作者显示名快照，不随人员目录后续改名而改写。 当前认证适配以登录邮箱作为作者名称保存。 |
+| created_at | 是 | string (date-time) | 无（可空不等于可省略） | 服务端保存时间。 |
+| edited_at | 是 | string (date-time) / null | 无（可空不等于可省略） | 历史记录的实际编辑时间；本接口只追加，不提供编辑，新增为null。 |
+| edited_by | 是 | string (uuid) / null | 无（可空不等于可省略） | 历史记录的实际编辑人；新增评论为null。 |
+| row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 评论自身行版本；本接口新增为1，不是Case版本。 |
+
+
 <a id="casecreate"></a>
 
 ## CaseCreate

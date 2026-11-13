@@ -1,8 +1,8 @@
 # 后续接口计划：按告警、事件、调查页面补齐
 
-更新于 2026-11-13。依据[125 项功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)和[已确认规则 D01–D07](../design/investigation-product-decisions.md)。第一批[告警/事件管理](../../openspec/changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53，并发布本机与21的服务及Swagger；两端各86次HTTP及SQL读回通过。第二批的三类列表筛选/排序/分页也已完成，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)；[完整CSV导出](../../openspec/changes/archive/2026-11-13-export-investigation-lists/validation.md)已作为独立change验收、发布并归档；[同范围归并统计](../../openspec/changes/archive/2026-11-13-summarize-incident-grouping/validation.md)为本批E57。下面标注“拟新增／拟扩展”的地址、参数及返回内容是设计草案，目前不可据此调用。
+更新于 2026-11-13。依据[125 项功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)和[已确认规则 D01–D07](../design/investigation-product-decisions.md)。第一批[告警/事件管理](../../openspec/changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53，并发布本机与21的服务及Swagger；两端各86次HTTP及SQL读回通过。第二批的三类列表筛选/排序/分页也已完成，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)；[完整CSV导出](../../openspec/changes/archive/2026-11-13-export-investigation-lists/validation.md)已作为独立change验收、发布并归档；[同范围归并统计](../../openspec/changes/archive/2026-11-13-summarize-incident-grouping/validation.md)为前批E57，本批[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)交付E58/E59。下面标注“拟新增／拟扩展”的地址、参数及返回内容是设计草案，目前不可据此调用。
 
-当前服务仍为 21 的 `18024`，Swagger 为 `18080`：57 个 HTTP 操作，54 个已实现、3 个问答／采用操作返回 `501`。功能清单中的“部分实现”也可能只是需要组合读取或由前端处理，不能全部算成缺 API。
+当前服务仍为 21 的 `18024`，Swagger 为 `18080`：59 个 HTTP 操作，56 个已实现、3 个问答／采用操作返回 `501`。功能清单中的“部分实现”也可能只是需要组合读取或由前端处理，不能全部算成缺 API。
 
 ## 1. 用户在什么页面做什么
 
@@ -18,7 +18,7 @@
 | 调查列表：日期、排序、导出 F09-03/08 | 按时间定位 Case，排序并导出 | E02保留原筛选，已补业务更新时间范围、有限排序和兼容游标 | 完整CSV导出已实现（E54/E55/E56） |
 | 调查“故事”页：搜索和等级筛选 F20-02 | 在案件的事实、历次调查和人工记录组成的时间线里查找条目 | 可以组合读取并筛选已加载条目 | 若按整个故事搜索，补统一的只读查询；返回条目来源和所属范围，不复制一套业务记录 |
 | 调查资料／结果：采用判断 F11-03 | 选一个已保存结果作为案件当前判断 | 采用接口返回 `501` | 展示原／新判断及覆盖范围，提交理由后采用，保留旧判断；局部答案不能覆盖全案 |
-| 调查评论与附件 F24-01/02/03 | 留评论，补充附件，再查看／下载 | 工件正文可读；Case 评论和通用附件闭环缺失 | 评论读写；附件目录与关联。建议业务后端保存文件，本服务保存文件引用 |
+| 调查评论与附件 F24-01/02/03 | 留评论，补充附件，再查看／下载 | Case普通评论E58/E59已交付，工件正文可读；通用附件闭环缺失 | 普通评论已完成；附件目录与关联待实施。建议业务后端保存文件，本服务保存文件引用 |
 | 案件内 AI 助手 F26-01–08、F20-04 | 对全案或选中的告警／对象提问，看回答与引用，继续追问 | 发送／保存接口返回 `501`，会话历史也缺失 | 发送、执行状态、会话历史、回答及引用读取；显式保存到调查记录 |
 | 案件关系图：探索 F25-01–04、F19-04 | 查候选、展开对象，保存画布，明确选择后加入案件 | 真实成员关联可用；探索查询及保存缺失 | 候选查询和来源；探索保存与加入成员分开，加入复用现有接口 |
 
@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | 1（已发布） | 告警人工判定、告警／事件单条管理和批量管理 | E48–E53，两端服务与Swagger已同步 |
 | 2（列表已发布） | 三类列表筛选／排序／分页和完整结果导出完成；同范围事件归并统计本批完成 | E02/E26/E27及E54–E56；E57已实现，统一只读范围 |
-| 3 | 采用已有调查结果、Case 评论、补充附件引用 | 补结果交接和人工补充材料；采用已有合格结果不必等待助手实现 |
+| 3 | 采用已有调查结果、Case 评论、补充附件引用 | 采用先由调查模块对齐未完任务及后续结果规则，HTTP随后接入；[现状／设计和 AD01–AD06](result-adoption-and-pending-work.md)。采用本轮只记录；普通评论E58/E59已单独交付，附件待后续；不必等待助手实现 |
 | 4 | 同案助手发送／读取／追问／保存，以及故事中的相关记录与搜索 | 一次完成提问到保存后读回；保存与采用分开，不扩到全局助手 |
 | 5 | 相似告警／探索候选查询，再做确有需要的探索保存 | 先解决“能找到真实候选”，再做画布保存；正式加入仍复用现有成员关联 |
 | 后置既有 change | 新材料及人工反馈后的自动更新／接续 | 继续按“先固定流程、后更新／流式”的已确认顺序，不在本轮启用自动消费 |
@@ -78,7 +78,7 @@
 | 完整筛选结果导出（已实现） | `GET /alerts/export`、`/incidents/export`、`/cases/export` | 同列表条件、明确列和排序 | CSV 文件及实际范围／数量；只导已加载数据仍由前端处理。服务导出不能静默截断；当前10000行/16MiB、SQL30秒；超限413，超时503，不先造任务平台 |
 | 事件列表归并统计（已实现） | `GET /incidents/grouping-summary` | 可选告警source_namespace、time_from/time_to；独立于事件表格筛选 | 同一观察时刻的告警数、事件数、未归并数量和比例定义；明确跨时间边界、重复归属的去重规则，避免拼接不同列表的统计 |
 | 采用已有结果 | 实现现有 E21 `POST /cases/{case_id}/results/{result_id}/adopt` | 已保存结果、当前范围／判断版本、替换理由及覆盖确认 | 新当前判断 ID、采用来源及旧判断引用；历史保留。理由／覆盖字段是待增量设计，当前请求多传仍可能 `422` |
-| Case 评论 | 拟 `POST/GET /cases/{case_id}/comments` | 正文和可选关联引用；列表分页 | 评论 ID、正文、作者、时间、所属 Case 和来源引用；不引入独立审批或问题工单 |
+| Case 评论（已交付） | E58 `POST`／E59 `GET /cases/{case_id}/comments` | POST为operation_key/body；GET为limit/offset | 评论ID、Case、原文、认证作者和时间；分页总数/下一页。E17回查活动；不含额外关联引用、编辑删除或附件 |
 | 补充附件 | 拟 `POST/GET /cases/{case_id}/attachments`，配套单项元数据／下载引用读取 | 业务后端已存文件的 ID、文件名、类型、大小及关联对象；承接方对引用校验 | 附件关系 ID、元数据、可用性及可用下载引用。文件上传由业务后端承接是建议方案，需在该批确认存储承接；本服务不照搬旧文件平台 |
 | 同案助手历史／回答读取 | 拟 `GET /cases/{case_id}/ai/conversations`、`/ai/conversations/{conversation_id}/messages`、`/ai/messages/{message_id}` | Case、会话或消息 ID、分页 | 原问题、当时选择范围、回答、引用、执行状态／错误、保存关联；重开助手能继续此前对话 |
 | 助手发送和显式保存 | 实现 E19、E20 原路径 | 问题、会话、明确选择的全案／告警／对象范围；保存指定回答及编辑后的标题／结论 | 发送返回消息／执行身份并能读进度及最终回答；保存返回冻结记录／结果 ID。保存不重新调用模型、不自动采用，不把用户编辑内容冒充模型原答 |
@@ -101,6 +101,6 @@
 
 ## 6. OpenSpec 与交接安排
 
-主 change [3.12](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)继续作为产品操作及接口缺口的总入口；独立入口、Case管理及本批告警／事件管理各自保留交付证据，不重新打开已完成范围。三类列表查询已作为独立change实现、验收、发布与文档同步；完整CSV导出已独立实施，同范围统计本批完成，下一批推进已有结果采用及评论附件，按对应功能另做规格和直接验收，不提前建表或发布占位接口。
+主 change [3.12](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)继续作为产品操作及接口缺口的总入口；独立入口、Case管理及本批告警／事件管理各自保留交付证据，不重新打开已完成范围。三类列表查询已作为独立change实现、验收、发布与文档同步；完整CSV导出已独立实施，同范围统计已完成。2026-11-13负责人说明调查功能由其他模块推进，本轮仅记录[结果采用与未完任务设计](result-adoption-and-pending-work.md)及问题Q02；采用接口待核心规则对齐后接入，避免另做一套采用或调度。随后[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)已独立交付；附件继续保留在后续范围，按对应功能另做规格和直接验收，不提前建表或发布占位接口。
 
 每个交付批次同步：功能编号 → HTTP 操作 → 参数／示例／字段含义／错误 → 保存和读回位置 → 实现状态。完成直接验证及独立审计后，按该批实际授权发布本地／21 API 与 Swagger，并读回确认；未实现接口继续明确标注，规划不算实现。模型质量和页面接线分别记录，不作为所有普通接口的统一完成条件。

@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.db.case_database import get_case_write_sessions
 from app.db.database import AsyncSessionLocal
 from app.socai2.baseline_store import StoreError
+from app.socai2.case_comments import CaseCommentService
 from app.socai2.case_management import manage_case, read_management
 from app.socai2.case_service import CaseService
 from app.socai2.grouping_summary import GroupingSummaryService
@@ -73,6 +74,10 @@ def case_sessions(method):
 
 def cases(method) -> CaseOperations:
     return CaseBackend(case_sessions(method))
+
+
+def comments(method):
+    return CaseCommentService(case_sessions(method))
 
 
 def tasks(method) -> TaskOperations:

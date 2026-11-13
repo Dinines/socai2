@@ -188,3 +188,11 @@ __all__ += ["AlertFacts", "CaseView", "IncidentFacts"]
 from app.socai2.grouping_contracts import GroupingQuery, GroupingSummary
 
 __all__ += ["GroupingQuery", "GroupingSummary"]
+
+from app.socai2.case_comment_contracts import (
+    CaseCommentCreate,
+    CaseCommentPage,
+    CaseCommentView,
+)
+
+__all__ += ["CaseCommentCreate", "CaseCommentPage", "CaseCommentView"]

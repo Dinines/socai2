@@ -188,3 +188,9 @@ curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
 ```
 
 该来源记录可能继续增加，以接口实际数量为准。输入仅来源与可选发生时间范围，不传q、负责人、状态或分页；完整字段和比例解释见[归并统计指南](../../deliverables/investigation-validation-20261106/http-handoff/README.md#事件归并统计)。本机专属[新合成批次](../operations/evidence/grouping-summary-20261113-01/fixture.json)主来源6告警，4条归为2事件，2条未归并，处理中1事件，比例0.5；次来源用于核对跨来源成员，不在21复写。查询不修改事件或触发调查。
+
+## Case普通评论
+
+使用21正式API18024；可先只读本批合成Case `386f516d-2bde-50b9-8acd-c6ddc4ab2331` 的 `GET /api/v1/socai2/cases/{case_id}/comments?limit=20&offset=0`，有两条评论。请在自己的验收Case提交新评论，以保持既有验证记录。POST同路径带 `operation_key` 和 `body`；同意图重试沿用键，改正文使用新键。返回真实作者、保存时间及完整正文，随后GET读回；E17活动可查提交。输入输出详见[普通评论](../../deliverables/investigation-validation-20261106/http-handoff/README.md#case普通评论)。
+
+评论不是人工任务完成，也不启动或采用调查；正文按纯文本展示。本批没有附件上传/下载接口。两端独立样本及数据库核对见[验收](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)。

@@ -58,6 +58,8 @@ OPERATIONS = {
 55: ('导出事件列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
 56: ('导出调查列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
 57: ('事件归并统计', '已实现', '按当前租户告警选范围：source_namespace精确匹配告警来源并区分大小写；time_from/time_to按alerts.event_time，带时区，[起点,终点)，允许单边。时间条件排除未知时间，无时间条件包含。省略三个条件统计全租户。仅支持这三个参数；q/负责人/处理状态/排序/分页等返回422，顶部统计不沿用事件表格筛选。只数范围内告警，按当前关联去重事件；跨范围成员不扩入分母，无范围内成员的事件不计。处理中只按所计事件handling_status=in_progress。压缩比例=(已归并告警数-事件数)/已归并告警数，0..1乘100展示百分比；无已归并告警时null。未归并数量单列，不当成压缩成果，也不代表准确率或解决率。所有数量与observed_at来自同一只读快照，不写库、不触发归并或模型。', 'grouping_query_parameter_not_supported:422 read_dependency_missing:503 read_dependency_permission_denied:503 read_dependency_schema_mismatch:503'),
+58: ('提交Case评论', '已实现', '提交operation_key和body纯文本原文（非空白，最多20000字符）。作者和时间由服务端保存；同案同键同作者同正文返回原评论，改内容或操作者409。只追加，不提供编辑/删除。允许已结案案件补充说明；更新案件业务时间和行版本，但不改变范围、处理状态、当前判断、任务或Run。评论不是已核实事实，不进入模型或自动成为任务。保存后用E59读取，E17回查活动。', 'case_not_found:404 operation_key_conflict:409 case_actor_not_in_tenant:403'),
+59: ('读取Case评论', '已实现', '仅指定Case的普通评论，不混入成员告警、事件或其他案件评论。limit默认20、范围1–100，offset默认0、范围0–100000；按created_at及id升序。返回items、total、next_offset和observed_at，空集合明确为空；单次一致快照，跨页非冻结快照。只接受limit/offset，其他参数422。', 'case_not_found:404 comment_query_parameter_not_supported:422'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -156,7 +158,7 @@ F22-06|需组合|41,42,43|当前完成人/时间及修改历史按固定revision
 F22-07|可用|40,41,3|409保留用户输入→读最新版本→显示差异再确认；不能自动覆盖重试。
 F22-08|部分实现|40,11,13|保存H仅生成修订；显式下一轮冻结新版本；自动C6复核和故事/Q仍未接。
 F23-05|可用|17|读取匹配活动与目标前后值，按next_offset分页。
-F24-01|未实现||Case评论完整读写无API；A/I records/comments只读不能充当Case评论服务。
+F24-01|已实现|58,59,17|E58追加普通评论，E59分页读取，E17查提交活动；不当作调查事实。
 F24-02|部分实现|15,16|已知工件正文可读；通用附件目录/文件下载闭环未实现。
 F24-03|未实现||无上传或附件保存接口。
 F26-02|未实现|19|无正式会话目录/历史读写；预留结构不算可用。

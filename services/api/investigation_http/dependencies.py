@@ -10,6 +10,7 @@ __all__ = [
     "CurrentUser",
     "analysis_service",
     "case_service",
+    "comment_service",
     "execution_service",
     "export_service",
     "grouping_service",
@@ -23,6 +24,10 @@ __all__ = [
 
 async def case_service(request: Request):
     return provide(services.cases, request.method)
+
+
+async def comment_service(request: Request):
+    return provide(services.comments, request.method)
 
 
 async def task_service(request: Request):

@@ -205,6 +205,36 @@
 <tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
 <tr><td>acknowledge_open_tasks</td><td>否</td><td>boolean</td><td>false</td><td>是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。</td></tr>
 </table>
+<a id="casecommentcreate"></a>
+<h2 id="casecommentcreate">CaseCommentCreate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本次评论的幂等键；同案同作者同正文重试沿用，改变意图须新键。</td></tr>
+<tr><td>body</td><td>是</td><td>string; minLength=1; maxLength=20000</td><td>无（可空不等于可省略）</td><td>普通评论纯文本原文，不接受空白；不会自动成为已核实事实或触发调查。</td></tr>
+</table>
+<a id="casecommentpage"></a>
+<h2 id="casecommentpage">CaseCommentPage</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#casecommentview">CaseCommentView</a>&gt;</td><td>无（可空不等于可省略）</td><td>指定Case评论，按created_at、id升序；无评论为[]。</td></tr>
+<tr><td>total</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>指定Case的评论总数，不包含成员告警或事件的评论。</td></tr>
+<tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>有后续记录时的下一页偏移，否则null；分页不是跨请求冻结快照。</td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次只读一致快照的观察时间。</td></tr>
+</table>
+<a id="casecommentview"></a>
+<h2 id="casecommentview">CaseCommentView</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>已保存评论ID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>评论所属Case；不因共享告警混入其他案件。</td></tr>
+<tr><td>body</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>完整普通评论原文；调用方按纯文本显示，不作为已核实事实。</td></tr>
+<tr><td>author_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>认证用户的实际作者ID，由服务端保存。</td></tr>
+<tr><td>author_name_snapshot</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>提交时作者显示名快照，不随人员目录后续改名而改写。 当前认证适配以登录邮箱作为作者名称保存。</td></tr>
+<tr><td>created_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>服务端保存时间。</td></tr>
+<tr><td>edited_at</td><td>是</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>历史记录的实际编辑时间；本接口只追加，不提供编辑，新增为null。</td></tr>
+<tr><td>edited_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>历史记录的实际编辑人；新增评论为null。</td></tr>
+<tr><td>row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>评论自身行版本；本接口新增为1，不是Case版本。</td></tr>
+</table>
 <a id="casecreate"></a>
 <h2 id="casecreate">CaseCreate</h2>
 <table>

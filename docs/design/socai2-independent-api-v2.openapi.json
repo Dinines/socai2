@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "grouping-summary-20261113-r1-local"
+    "version": "case-comments-20261113-r1-local"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -4892,6 +4892,134 @@
           }
         }
       }
+    },
+    "/api/v1/socai2/cases/{case_id}/comments": {
+      "post": {
+        "tags": [
+          "socai2-case-comments"
+        ],
+        "summary": "Create Comment",
+        "operationId": "create_comment_api_v1_socai2_cases__case_id__comments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseCommentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseCommentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-case-comments"
+        ],
+        "summary": "List Comments",
+        "operationId": "list_comments_api_v1_socai2_cases__case_id__comments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseCommentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5965,6 +6093,159 @@
           "expected_row_version"
         ],
         "title": "CaseCloseRequest"
+      },
+      "CaseCommentCreate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次评论的幂等键；同案同作者同正文重试沿用，改变意图须新键。"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "description": "普通评论纯文本原文，不接受空白；不会自动成为已核实事实或触发调查。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "body"
+        ],
+        "title": "CaseCommentCreate"
+      },
+      "CaseCommentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaseCommentView"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "指定Case评论，按created_at、id升序；无评论为[]。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "指定Case的评论总数，不包含成员告警或事件的评论。"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset",
+            "description": "有后续记录时的下一页偏移，否则null；分页不是跨请求冻结快照。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本次只读一致快照的观察时间。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_offset",
+          "observed_at"
+        ],
+        "title": "CaseCommentPage"
+      },
+      "CaseCommentView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "已保存评论ID。"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id",
+            "description": "评论所属Case；不因共享告警混入其他案件。"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "完整普通评论原文；调用方按纯文本显示，不作为已核实事实。"
+          },
+          "author_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Author Id",
+            "description": "认证用户的实际作者ID，由服务端保存。"
+          },
+          "author_name_snapshot": {
+            "type": "string",
+            "title": "Author Name Snapshot",
+            "description": "提交时作者显示名快照，不随人员目录后续改名而改写。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "服务端保存时间。"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At",
+            "description": "历史记录的实际编辑时间；本接口只追加，不提供编辑，新增为null。"
+          },
+          "edited_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited By",
+            "description": "历史记录的实际编辑人；新增评论为null。"
+          },
+          "row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Row Version",
+            "description": "评论自身行版本；本接口新增为1，不是Case版本。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "case_id",
+          "body",
+          "author_id",
+          "author_name_snapshot",
+          "created_at",
+          "edited_at",
+          "edited_by",
+          "row_version"
+        ],
+        "title": "CaseCommentView"
       },
       "CaseCreate": {
         "properties": {
