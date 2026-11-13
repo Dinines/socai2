@@ -1,4 +1,4 @@
-# 调查HTTP接口目录（62项）
+# 调查HTTP接口目录（64项）
 
 [共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)
 
@@ -26,7 +26,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e01) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -117,7 +117,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e02) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -210,7 +210,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e03) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -314,7 +314,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e04) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -400,7 +400,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e05) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -481,7 +481,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e06) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -580,7 +580,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e07) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -664,7 +664,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e08) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -755,7 +755,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e09) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -857,7 +857,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e10) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -927,7 +927,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e11) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1006,7 +1006,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e12) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1129,7 +1129,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e13) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1275,7 +1275,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e14) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1433,7 +1433,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e15) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1509,7 +1509,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e16) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1583,7 +1583,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e17) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1656,7 +1656,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e18) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1738,7 +1738,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e19) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1817,7 +1817,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e20) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1878,29 +1878,27 @@
 
 <a id="e21"></a>
 
-## E21 显式采用其他结果（预留）
+## E21 采用已保存调查结果
 
 `POST /api/v1/socai2/cases/{case_id}/results/{result_id}/adopt`
 
-状态：**未实现**。分类：调查。
+状态：**已实现**。分类：调查。
 
-**实现状态：** 未实现
+**实现状态：** 已实现
 
-**用途：** 显式采用其他结果（预留）。
+**用途：** 采用已保存调查结果。
 
-**输入：** 路径参数：`case_id`, `result_id`；JSON请求体：`AdoptCaseAIResult`，字段和必填要求见Request body。
+**输入：** 路径参数：`case_id`, `result_id`；JSON请求体：`ResultAdoptionRequest`，字段和必填要求见Request body。
 
-**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。
+**输出：** HTTP 200，`ResultAdoptionReceipt`；完整字段和示例见Responses。
 
-**结果：** 当前返回501，不变更案件当前采用判断。
+**结果：** 追加采用判断、来源和覆盖，返回判断ID、新版本及旧判断引用；当前指针更新。原结果、未完任务/Run和案件处理状态保持。
 
-**规则与限制：** 通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。
+**规则与限制：** 先E63预览当前判断、候选、覆盖及未完工作；仅采用当前依据、全员有效覆盖的completed/whole_case基础Result。提交operation_key、expected_review_token、非空reason；预览存在未完任务或Run时必须明确acknowledge_pending_work=true。保存新判断及来源，原Result/旧判断保留，任务/Run/Case处理状态保持；不调用模型。相同请求重试返回原回执，不把较新的判断回滚。旧501占位体expected_scope_revision已替换为本合同，不可继续发送；E03读当前指针，E64读历史，E17读活动。
 
-**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
-
-[本接口用途及完整输出字段审计](audit/interfaces.html#e21) · [动态投影与差异](audit/dynamic-fields.html)
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -1912,11 +1910,13 @@
 
 | 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
 | --- | --- | --- | --- | --- |
-| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
-| expected_scope_revision | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 一次逻辑采用的UUID；相同操作者和完整请求重试沿用，改变意图使用新key。 |
+| expected_review_token | 是 | string; pattern=^[0-9a-f]{64}$ | 无（可空不等于可省略） | 先GET E63取得的64位小写十六进制review_token，原样提交；不自行计算。预览中的判断、成员、任务或Run等变化时409。 |
+| reason | 是 | string; minLength=1; maxLength=4000 | 无（可空不等于可省略） | 采用理由；去掉两端空白后1–4000字符，记录实际操作者及理由。 |
+| acknowledge_pending_work | 否 | boolean | false | 默认false；预览requires_pending_work_acknowledgement=true时，用户明确知道任务/Run仍未完成后才传true。不会结束这些工作。 |
 
 
-响应类型：[AIUnavailable](schemas.md#aiunavailable)。字段完整展开见Schema或Swagger Models。
+响应类型：[ResultAdoptionReceipt](schemas.md#resultadoptionreceipt)。字段完整展开见Schema或Swagger Models。
 
 输入示例（参数与JSON体）：
 
@@ -1928,30 +1928,47 @@
   },
   "body": {
     "operation_key": "00000000-0000-4000-8000-000000000011",
-    "expected_scope_revision": 1
+    "expected_review_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "reason": "保留本轮待复核结论，人工核实任务继续跟进。",
+    "acknowledge_pending_work": true
   }
 }
 ```
 
-输出示例（HTTP 501）：
+输出示例（HTTP 200）：
 
 ```json
 {
-  "detail": {
-    "code": "case_ai_not_implemented",
-    "status": "not_implemented",
-    "message": "AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。"
-  }
+  "case_id": "00000000-0000-4000-8000-000000000001",
+  "result_id": "00000000-0000-4000-8000-000000000005",
+  "assessment_id": "00000000-0000-4000-8000-000000000007",
+  "previous_assessment_id": null,
+  "assessment_revision": 1,
+  "case_row_version": 2
 }
 ```
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
 | 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
+| 403 | permission_denied | 缺少对应Case操作能力 |
+| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
-| 501 | case_ai_not_implemented | 业务约束/对象状态，见操作说明 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | case_result_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | result_run_link_invalid | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | current_assessment_reference_invalid | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_adoption_preview_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_adoption_pending_work_confirmation_required | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | case_reopen_required | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_not_whole_case_baseline | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_run_not_completed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_conclusion_not_eligible | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_scope_not_current | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_member_coverage_incomplete | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | result_input_not_current | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 
 完整错误JSON示例见 `examples.json` 的 `E21.errors`，Swagger同操作 Responses 可直接展开。
 
@@ -1977,7 +1994,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e22) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2051,7 +2068,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e23) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2125,7 +2142,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e24) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2209,7 +2226,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e25) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2293,7 +2310,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e26) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2391,7 +2408,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e27) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2492,7 +2509,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e28) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2634,7 +2651,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e29) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2765,7 +2782,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e30) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2843,7 +2860,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e31) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2924,7 +2941,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e32) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3003,7 +3020,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e33) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3080,7 +3097,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e34) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3153,7 +3170,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e35) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3226,7 +3243,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e36) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3319,7 +3336,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e37) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3412,7 +3429,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e38) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3540,7 +3557,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e39) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3611,7 +3628,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e40) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3763,7 +3780,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e41) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3855,7 +3872,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e42) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3928,7 +3945,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e43) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4011,7 +4028,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e44) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4110,7 +4127,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e45) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4234,7 +4251,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e46) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4347,7 +4364,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e47) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4456,7 +4473,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e48) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4578,7 +4595,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e49) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4708,7 +4725,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e50) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4838,7 +4855,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e51) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4974,7 +4991,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e52) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5091,7 +5108,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e53) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5211,7 +5228,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5334,7 +5351,7 @@ facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5452,7 +5469,7 @@ facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5569,7 +5586,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5648,7 +5665,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5729,7 +5746,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5811,7 +5828,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5903,7 +5920,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5987,7 +6004,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；合同含62操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -6040,3 +6057,381 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 | 404 | case_attachment_not_found | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E62.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e63"></a>
+
+## E63 预览调查结果采用
+
+`GET /api/v1/socai2/cases/{case_id}/results/{result_id}/adoption-preview`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 预览调查结果采用。
+
+**输入：** 路径参数：`case_id`, `result_id`；无请求体。
+
+**输出：** HTTP 200，`ResultAdoptionPreview`；完整字段和示例见Responses。
+
+**结果：** 返回采用资格、比较内容及review_token；不写入判断、不执行调查。
+
+**规则与限制：** 只读比较当前判断与指定候选Result，完整返回结论、待核问题、覆盖、新鲜度、来源Run及未完任务/Run。can_adopt为资格结论，refusal_reasons列出原因；未完工作另以requires_pending_work_acknowledgement提示。review_token原样用于E21；只读预览不锁定后续状态，提交会事务重验。不接受查询参数。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
+
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| path | result_id | True | string (uuid) | null | 同案已保存正式结果 UUID。 |
+
+
+无请求体。
+
+响应类型：[ResultAdoptionPreview](schemas.md#resultadoptionpreview)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "result_id": "00000000-0000-4000-8000-000000000005"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "case_id": "00000000-0000-4000-8000-000000000001",
+  "case_row_version": 1,
+  "scope_revision": 1,
+  "handling_status": "new",
+  "review_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "current_assessment": null,
+  "candidate": {
+    "id": "00000000-0000-4000-8000-000000000005",
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "kind": "baseline",
+    "source_run_id": "00000000-0000-4000-8000-000000000004",
+    "source_answer_id": null,
+    "title": "合成示例：核查异常登录",
+    "purpose": "仅说明合同结构，无真实执行或业务判断。",
+    "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+    "conclusion_state": "uncertain",
+    "conclusion_origin": "model",
+    "validation_state": "accepted",
+    "closing_note": "仅说明合同结构，无真实执行或业务判断。",
+    "comparison_result_id": null,
+    "change_kind": "initial",
+    "change_summary": null,
+    "input_artifact_id": "00000000-0000-4000-8000-000000000009",
+    "graph_artifact_id": null,
+    "report_artifact_id": null,
+    "supersedes_result_id": null,
+    "delivery_state": "partial",
+    "created_at": "2026-11-12T08:00:00Z",
+    "saved_at": "2026-11-12T08:00:00Z",
+    "saved_by": null,
+    "edited_fields": [],
+    "edit_note": null,
+    "findings": [],
+    "questions": [
+      {
+        "id": "authorization",
+        "text": "这次操作是否经过维护授权？",
+        "scope": {
+          "kind": "whole_case",
+          "alert_ids": [
+            "00000000-0000-4000-8000-000000000002"
+          ],
+          "object_keys": [],
+          "window_start": null,
+          "window_end": null,
+          "limitations": []
+        },
+        "evidence_requirements": [
+          "维护负责人确认"
+        ],
+        "state": "unresolved",
+        "answer": null,
+        "evidence_refs": [],
+        "limitations": [
+          "尚未取得授权记录。"
+        ]
+      }
+    ],
+    "recommendations": [],
+    "case_impact": {
+      "summary": null,
+      "supported_changes": [],
+      "cannot_generalize": [],
+      "affected_scope": {
+        "kind": "selected_alerts",
+        "alert_ids": [
+          "00000000-0000-4000-8000-000000000002"
+        ],
+        "object_keys": [],
+        "window_start": null,
+        "window_end": null,
+        "limitations": [
+          "仅覆盖人工核实的该条告警"
+        ]
+      },
+      "next_steps": []
+    }
+  },
+  "source_run": {
+    "id": "00000000-0000-4000-8000-000000000004",
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "kind": "baseline",
+    "title": "合成示例：核查异常登录",
+    "purpose": "仅说明合同结构，无真实执行或业务判断。",
+    "trigger": "manual",
+    "scope_revision": 1,
+    "scope_updated_at": null,
+    "scope_kind": "whole_case",
+    "window_start": null,
+    "window_end": null,
+    "state": "completed",
+    "comparison_result_id": null,
+    "input_artifact_id": null,
+    "executor_version": null,
+    "requested_at": "2026-11-12T08:00:00Z",
+    "requested_by": null,
+    "started_at": "2026-11-12T08:00:00Z",
+    "ended_at": "2026-11-12T08:00:00Z",
+    "stop_reason": null,
+    "stop_detail": null,
+    "delivery_state": "partial",
+    "row_version": 1
+  },
+  "current_alert_ids": [
+    "00000000-0000-4000-8000-000000000002"
+  ],
+  "members": [
+    {
+      "alert_id": "00000000-0000-4000-8000-000000000002",
+      "assessment_state": "unresolved",
+      "conclusion_covered": true,
+      "assessment": null,
+      "limitations": "维护授权未核实。"
+    }
+  ],
+  "uncovered_alert_ids": [],
+  "outside_alert_ids": [],
+  "input_freshness": {
+    "state": "current",
+    "reasons": []
+  },
+  "unfinished_tasks": [
+    {
+      "task_id": "00000000-0000-4000-8000-000000000006",
+      "revision_id": "00000000-0000-4000-8000-000000000007",
+      "title": "核实维护授权",
+      "state": "not_started"
+    }
+  ],
+  "unfinished_runs": [],
+  "requires_pending_work_acknowledgement": true,
+  "can_adopt": true,
+  "refusal_reasons": []
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 缺少对应Case操作能力 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | result_adoption_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | case_result_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | result_run_link_invalid | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | current_assessment_reference_invalid | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E63.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e64"></a>
+
+## E64 读取采用判断历史
+
+`GET /api/v1/socai2/cases/{case_id}/assessments`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 读取采用判断历史。
+
+**输入：** 路径参数：`case_id`；查询参数：`limit`, `offset`；无请求体。
+
+**输出：** HTTP 200，`AssessmentHistory`；完整字段和示例见Responses。
+
+**结果：** 返回按版本倒序的采用判断及来源；total/next_offset支持继续读取历史。
+
+**规则与限制：** 按revision倒序返回指定Case的判断版本，含原结论/来源/覆盖、采用人和理由；结果待核内容沿results读取。limit默认20、1–100，offset默认0且非负，按next_offset续页；total为全部判断数。历史保留当时值，不重新判新鲜度；当前状态用E03读取。只接受limit/offset。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
+
+**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | limit | False | integer; minimum=1; maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | offset | False | integer; minimum=0 | 0 | 分页偏移，沿 next_offset 继续。 |
+
+
+无请求体。
+
+响应类型：[AssessmentHistory](schemas.md#assessmenthistory)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "limit": 20,
+    "offset": 0
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "revision": 1,
+      "scope_revision": 1,
+      "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+      "origin": "model",
+      "validity": "accepted",
+      "formed_at": "2026-11-12T08:00:00Z",
+      "adopted_at": "2026-11-12T08:00:00Z",
+      "adopted_by": "00000000-0000-4000-8000-000000000010",
+      "actor": {
+        "type": "user",
+        "user_id": "00000000-0000-4000-8000-000000000010",
+        "service_name": null,
+        "name_snapshot": "analyst@example.invalid",
+        "service_version": null
+      },
+      "reason": "保留本轮待复核结论，人工核实任务继续跟进。",
+      "sources": [
+        {
+          "result_id": "00000000-0000-4000-8000-000000000005",
+          "task_revision_id": null,
+          "artifact_id": null
+        }
+      ],
+      "members": [
+        {
+          "alert_id": "00000000-0000-4000-8000-000000000002",
+          "coverage_note": "维护授权未核实。"
+        }
+      ],
+      "results": [
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "case_id": "00000000-0000-4000-8000-000000000001",
+          "kind": "baseline",
+          "source_run_id": "00000000-0000-4000-8000-000000000004",
+          "source_answer_id": null,
+          "title": "合成示例：核查异常登录",
+          "purpose": "仅说明合同结构，无真实执行或业务判断。",
+          "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+          "conclusion_state": "uncertain",
+          "conclusion_origin": "model",
+          "validation_state": "accepted",
+          "closing_note": "仅说明合同结构，无真实执行或业务判断。",
+          "comparison_result_id": null,
+          "change_kind": "initial",
+          "change_summary": null,
+          "input_artifact_id": "00000000-0000-4000-8000-000000000009",
+          "graph_artifact_id": null,
+          "report_artifact_id": null,
+          "supersedes_result_id": null,
+          "delivery_state": "partial",
+          "created_at": "2026-11-12T08:00:00Z",
+          "saved_at": "2026-11-12T08:00:00Z",
+          "saved_by": null,
+          "edited_fields": [],
+          "edit_note": null,
+          "findings": [],
+          "questions": [
+            {
+              "id": "authorization",
+              "text": "这次操作是否经过维护授权？",
+              "scope": {
+                "kind": "whole_case",
+                "alert_ids": [
+                  "00000000-0000-4000-8000-000000000002"
+                ],
+                "object_keys": [],
+                "window_start": null,
+                "window_end": null,
+                "limitations": []
+              },
+              "evidence_requirements": [
+                "维护负责人确认"
+              ],
+              "state": "unresolved",
+              "answer": null,
+              "evidence_refs": [],
+              "limitations": [
+                "尚未取得授权记录。"
+              ]
+            }
+          ],
+          "recommendations": [],
+          "case_impact": {
+            "summary": null,
+            "supported_changes": [],
+            "cannot_generalize": [],
+            "affected_scope": {
+              "kind": "selected_alerts",
+              "alert_ids": [
+                "00000000-0000-4000-8000-000000000002"
+              ],
+              "object_keys": [],
+              "window_start": null,
+              "window_end": null,
+              "limitations": [
+                "仅覆盖人工核实的该条告警"
+              ]
+            },
+            "next_steps": []
+          }
+        }
+      ]
+    }
+  ],
+  "total": 1,
+  "next_offset": null
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 缺少对应Case操作能力 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | assessment_history_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | invalid_assessment_history_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E64.errors`，Swagger同操作 Responses 可直接展开。

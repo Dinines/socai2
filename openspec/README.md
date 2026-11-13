@@ -16,7 +16,7 @@
 
 [完整CSV导出](changes/archive/2026-11-13-export-investigation-lists/validation.md)已完成E54–E56及两端docs9。当前[事件归并统计](changes/archive/2026-11-13-summarize-incident-grouping/validation.md)补E57/F06-06，同一只读范围计数和明确压缩比例；已完成两端发布、实际读回和独立结束审计，Swagger docs10同步；发布事实以PROGRESS及本批验收为准。
 
-[Case普通评论](changes/archive/2026-11-13-add-case-comments/validation.md)已完成E58提交、E59分页读取，本机/21真实HTTP与SQL读回通过，Swagger docs11共59操作；原57合同及任务/Run保持。发布后独立复核及归档按本change记录，采用规则由调查模块统一，附件仍未交付。
+[Case普通评论](changes/archive/2026-11-13-add-case-comments/validation.md)已完成E58提交、E59分页读取，本机/21真实HTTP与SQL读回通过，Swagger docs11共59操作；原57合同及任务/Run保持。发布后独立复核及归档按本change记录，采用规则由调查模块统一，该评论批不包含附件。
 
 [Case附件引用](changes/archive/2026-11-13-link-case-attachments/validation.md)完成E60登记、E61目录、E62单项，两端真实HTTP/SQL及Swagger docs12同步，原59合同保持。文件上传/保存/下载已由负责人确认交业务后端，本服务不抓取文件或触发调查；独立结束审计及归档按本change记录。
 
@@ -54,3 +54,5 @@
 
 
 归档记录保存在 `changes/archive/`；各批授权和结论只适用于对应范围。当前操作按用户指令、AGENTS 与相关活动 change 执行。
+
+[人工采用调查结果](changes/archive/2026-11-13-adopt-investigation-results/validation.md)交付E21采用、E63预览、E64判断历史。两端独立服务和Swagger docs13已同步；本机工作树与冻结7文件各20HTTP/SQL通过，21只读既有判断/预览/历史，生产采用写入未实测。任务/Run/Case处理状态保持，其他61操作合同保持，核心规则不在HTTP复制；模型质量和主调查31/41不由此核销。

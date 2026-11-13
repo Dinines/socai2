@@ -6,7 +6,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from investigation_http.contracts import (
-    AdoptCaseAIResult,
     AIUnavailable,
     AskCaseAI,
     SaveCaseAIAnswer,
@@ -55,14 +54,4 @@ async def ask(case_id: UUID, body: AskCaseAI, user: User):
     summary="Reserved: save an AI answer as an investigation result (not implemented)",
 )
 async def save(case_id: UUID, message_id: UUID, body: SaveCaseAIAnswer, user: User):
-    return AIUnavailable()
-
-
-@router.post(
-    "/{case_id}/results/{result_id}/adopt",
-    status_code=501,
-    response_model=AIUnavailable,
-    summary="Reserved: explicitly adopt an AI result (not implemented)",
-)
-async def adopt(case_id: UUID, result_id: UUID, body: AdoptCaseAIResult, user: User):
     return AIUnavailable()

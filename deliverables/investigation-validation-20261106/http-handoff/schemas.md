@@ -26,16 +26,29 @@
 | message | 否 | string | "AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。" | 面向接手人的错误说明文本。 [完整语义](/handoff/audit/response-fields.html#aiunavailabledetail) |
 
 
-<a id="adoptcaseairesult"></a>
+<a id="adoptedassessment"></a>
 
-## AdoptCaseAIResult
+## AdoptedAssessment
 
 
 
 | 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
 | --- | --- | --- | --- | --- |
-| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
-| expected_scope_revision | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 读 Case 详情获得的当前范围版本；不匹配返回409。 |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | 判断版本UUID。 |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 所属案件UUID。 |
+| revision | 是 | integer | 无（可空不等于可省略） | 本案判断版本序号，按倒序读取。 |
+| scope_revision | 是 | integer | 无（可空不等于可省略） | 判断形成时的案件范围版本，不等于目前范围。 |
+| conclusion | 是 | string | 无（可空不等于可省略） | 当时采用的结论原文。 |
+| origin | 是 | string | 无（可空不等于可省略） | 结论内容来源；人工选择模型结果仍为model，不冒充人工生成。 |
+| validity | 是 | string | 无（可空不等于可省略） | 当时结果校验状态；accepted不等于模型结论准确或当前依据仍新鲜。 |
+| formed_at | 是 | string (date-time) | 无（可空不等于可省略） | 来源结果形成时间。 |
+| adopted_at | 是 | string (date-time) | 无（可空不等于可省略） | 本版本实际采用时间。 |
+| adopted_by | 是 | string (uuid) / null | 无（可空不等于可省略） | 人工采用的用户UUID；服务自动采用通常为null。 |
+| actor | 是 | object | 无（可空不等于可省略） | 采用者快照：type、user_id、service_name、name_snapshot、service_version；见接口字段表。 |
+| reason | 是 | string / null | 无（可空不等于可省略） | 本次人工采用理由；旧自动采用可能为null。 |
+| sources | 是 | array <object> | 无（可空不等于可省略） | 来源引用，每项result_id/task_revision_id/artifact_id；未使用的引用为null。 |
+| members | 是 | array <object> | 无（可空不等于可省略） | 当时覆盖的告警，含alert_id和coverage_note限制说明；不是当前成员快照。 |
+| results | 是 | array <[ResultView](schemas.md#resultview)> | 无（可空不等于可省略） | 来源Result完整原内容，含未解决问题与限制；判断历史本身不重新检查新鲜度，当前状态读取E03。 |
 
 
 <a id="alertfacts"></a>
@@ -189,6 +202,19 @@ string new, in_progress, completed, unknown
 | operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
 | question | 是 | string; minLength=1; maxLength=4000 | 无（可空不等于可省略） | 用户明确发送的问题文本；当前Q接口未实现。 |
 | conversation_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 可选会话UUID；当前无正式对话读写。 |
+
+
+<a id="assessmenthistory"></a>
+
+## AssessmentHistory
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[AdoptedAssessment](schemas.md#adoptedassessment)> | 无（可空不等于可省略） | 按revision倒序的判断版本及原来源。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 本案全部判断版本数，不受分页影响。 |
+| next_offset | 是 | integer / null | 无（可空不等于可省略） | 下一页偏移；null结束。每次请求读取当前快照，跨页不冻结。 |
 
 
 <a id="assessmentpageview"></a>
@@ -1199,6 +1225,64 @@ string model, human, system, legacy
 | next_offset | 是 | integer / null | 无（可空不等于可省略） | 下一页偏移；null表示结束。 [完整语义](/handoff/audit/response-fields.html#recordpage) |
 | observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次读取观察时间。 [完整语义](/handoff/audit/response-fields.html#recordpage) |
 | limitations | 是 | array <string> | 无（可空不等于可省略） | 本次结果或阅读的限制，原样保留。 [完整语义](/handoff/audit/response-fields.html#recordpage) |
+
+
+<a id="resultadoptionpreview"></a>
+
+## ResultAdoptionPreview
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 本案UUID。 |
+| case_row_version | 是 | integer | 无（可空不等于可省略） | 预览时Case行版本。 |
+| scope_revision | 是 | integer | 无（可空不等于可省略） | 预览时案件成员范围版本。 |
+| handling_status | 是 | string | 无（可空不等于可省略） | 案件处理状态；resolved必须先显式重开才能采用。 |
+| review_token | 是 | string; pattern=^[0-9a-f]{64}$ | 无（可空不等于可省略） | 本次预览摘要，提交E21的expected_review_token原样使用；不是权限凭据。 |
+| current_assessment | 是 | [AdoptedAssessment](schemas.md#adoptedassessment) / null | 无（可空不等于可省略） | 当前采用判断及原来源；null表示尚无判断。 |
+| candidate | 是 | [ResultView](schemas.md#resultview) | 无（可空不等于可省略） | 指定Result的完整既存内容，含conclusion、questions、limitations所在的原结构；不重新生成。 |
+| source_run | 是 | [RunView](schemas.md#runview) | 无（可空不等于可省略） | 候选来源Run的原执行状态和范围，不能用HTTP成功代替执行成功。 |
+| current_alert_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 当前案件实际成员告警UUID集合。 |
+| members | 是 | array <object> | 无（可空不等于可省略） | 候选覆盖明细；每项alert_id、assessment_state、conclusion_covered、assessment、limitations，见接口内动态字段表。 |
+| uncovered_alert_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 当前成员中未被候选有效覆盖的告警UUID；非空不能作为全案判断。 |
+| outside_alert_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 候选交付成员中不属于当前案件的告警UUID；非空不能采用。 |
+| input_freshness | 是 | object | 无（可空不等于可省略） | 候选依据新鲜度；state=current/stale/unverified及reasons原因数组，current才可采用。 |
+| unfinished_tasks | 是 | array <object> | 无（可空不等于可省略） | 当前未完人工任务：task_id、revision_id、title、state；状态not_started或in_progress。 |
+| unfinished_runs | 是 | array <object> | 无（可空不等于可省略） | 当前未完调查：run_id、kind、state、row_version；状态pending_update/running/unknown。 |
+| requires_pending_work_acknowledgement | 是 | boolean | 无（可空不等于可省略） | 是否存在上述未完工作；true时E21必须明确传acknowledge_pending_work=true。 |
+| can_adopt | 是 | boolean | 无（可空不等于可省略） | 当前资格是否满足；未完工作不会直接使此值false，但仍要求明确知晓。 |
+| refusal_reasons | 是 | array <string> | 无（可空不等于可省略） | 不符合资格的原因列表，空列表表示资格允许；具体含义见接口错误说明。 |
+
+
+<a id="resultadoptionreceipt"></a>
+
+## ResultAdoptionReceipt
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 本案UUID。 |
+| result_id | 是 | string (uuid) | 无（可空不等于可省略） | 本次选择的原Result UUID，不创建或改写Result。 |
+| assessment_id | 是 | string (uuid) | 无（可空不等于可省略） | 这次采用追加的判断UUID。 |
+| previous_assessment_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 采用前当前判断UUID；此前无判断为null。 |
+| assessment_revision | 是 | integer | 无（可空不等于可省略） | 这次追加的判断版本序号。 |
+| case_row_version | 是 | integer | 无（可空不等于可省略） | 采用提交后的Case行版本；重试返回原回执，最新版本和指针另读E03。 |
+
+
+<a id="resultadoptionrequest"></a>
+
+## ResultAdoptionRequest
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 一次逻辑采用的UUID；相同操作者和完整请求重试沿用，改变意图使用新key。 |
+| expected_review_token | 是 | string; pattern=^[0-9a-f]{64}$ | 无（可空不等于可省略） | 先GET E63取得的64位小写十六进制review_token，原样提交；不自行计算。预览中的判断、成员、任务或Run等变化时409。 |
+| reason | 是 | string; minLength=1; maxLength=4000 | 无（可空不等于可省略） | 采用理由；去掉两端空白后1–4000字符，记录实际操作者及理由。 |
+| acknowledge_pending_work | 否 | boolean | false | 默认false；预览requires_pending_work_acknowledgement=true时，用户明确知道任务/Run仍未完成后才传true。不会结束这些工作。 |
 
 
 <a id="resultdetail"></a>

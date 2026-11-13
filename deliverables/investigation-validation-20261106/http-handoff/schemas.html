@@ -14,12 +14,25 @@
 <tr><td>status</td><td>否</td><td>string = not_implemented</td><td>&quot;not_implemented&quot;</td><td>AI预留固定not_implemented；不表示业务执行状态。 <a href="/handoff/audit/response-fields.html#aiunavailabledetail">完整语义</a></td></tr>
 <tr><td>message</td><td>否</td><td>string</td><td>&quot;AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。&quot;</td><td>面向接手人的错误说明文本。 <a href="/handoff/audit/response-fields.html#aiunavailabledetail">完整语义</a></td></tr>
 </table>
-<a id="adoptcaseairesult"></a>
-<h2 id="adoptcaseairesult">AdoptCaseAIResult</h2>
+<a id="adoptedassessment"></a>
+<h2 id="adoptedassessment">AdoptedAssessment</h2>
 <table>
 <tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
-<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
-<tr><td>expected_scope_revision</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>读 Case 详情获得的当前范围版本；不匹配返回409。</td></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>判断版本UUID。</td></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>所属案件UUID。</td></tr>
+<tr><td>revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>本案判断版本序号，按倒序读取。</td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>判断形成时的案件范围版本，不等于目前范围。</td></tr>
+<tr><td>conclusion</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>当时采用的结论原文。</td></tr>
+<tr><td>origin</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>结论内容来源；人工选择模型结果仍为model，不冒充人工生成。</td></tr>
+<tr><td>validity</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>当时结果校验状态；accepted不等于模型结论准确或当前依据仍新鲜。</td></tr>
+<tr><td>formed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>来源结果形成时间。</td></tr>
+<tr><td>adopted_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本版本实际采用时间。</td></tr>
+<tr><td>adopted_by</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工采用的用户UUID；服务自动采用通常为null。</td></tr>
+<tr><td>actor</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>采用者快照：type、user_id、service_name、name_snapshot、service_version；见接口字段表。</td></tr>
+<tr><td>reason</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>本次人工采用理由；旧自动采用可能为null。</td></tr>
+<tr><td>sources</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>来源引用，每项result_id/task_revision_id/artifact_id；未使用的引用为null。</td></tr>
+<tr><td>members</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>当时覆盖的告警，含alert_id和coverage_note限制说明；不是当前成员快照。</td></tr>
+<tr><td>results</td><td>是</td><td>array &lt;<a href="schemas.html#resultview">ResultView</a>&gt;</td><td>无（可空不等于可省略）</td><td>来源Result完整原内容，含未解决问题与限制；判断历史本身不重新检查新鲜度，当前状态读取E03。</td></tr>
 </table>
 <a id="alertfacts"></a>
 <h2 id="alertfacts">AlertFacts</h2>
@@ -128,6 +141,14 @@
 <tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
 <tr><td>question</td><td>是</td><td>string; minLength=1; maxLength=4000</td><td>无（可空不等于可省略）</td><td>用户明确发送的问题文本；当前Q接口未实现。</td></tr>
 <tr><td>conversation_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>可选会话UUID；当前无正式对话读写。</td></tr>
+</table>
+<a id="assessmenthistory"></a>
+<h2 id="assessmenthistory">AssessmentHistory</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#adoptedassessment">AdoptedAssessment</a>&gt;</td><td>无（可空不等于可省略）</td><td>按revision倒序的判断版本及原来源。</td></tr>
+<tr><td>total</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>本案全部判断版本数，不受分页影响。</td></tr>
+<tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>下一页偏移；null结束。每次请求读取当前快照，跨页不冻结。</td></tr>
 </table>
 <a id="assessmentpageview"></a>
 <h2 id="assessmentpageview">AssessmentPageView</h2>
@@ -808,6 +829,49 @@
 <tr><td>next_offset</td><td>是</td><td>integer / null</td><td>无（可空不等于可省略）</td><td>下一页偏移；null表示结束。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
 <tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
 <tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#recordpage">完整语义</a></td></tr>
+</table>
+<a id="resultadoptionpreview"></a>
+<h2 id="resultadoptionpreview">ResultAdoptionPreview</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本案UUID。</td></tr>
+<tr><td>case_row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>预览时Case行版本。</td></tr>
+<tr><td>scope_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>预览时案件成员范围版本。</td></tr>
+<tr><td>handling_status</td><td>是</td><td>string</td><td>无（可空不等于可省略）</td><td>案件处理状态；resolved必须先显式重开才能采用。</td></tr>
+<tr><td>review_token</td><td>是</td><td>string; pattern=^[0-9a-f]{64}$</td><td>无（可空不等于可省略）</td><td>本次预览摘要，提交E21的expected_review_token原样使用；不是权限凭据。</td></tr>
+<tr><td>current_assessment</td><td>是</td><td><a href="schemas.html#adoptedassessment">AdoptedAssessment</a> / null</td><td>无（可空不等于可省略）</td><td>当前采用判断及原来源；null表示尚无判断。</td></tr>
+<tr><td>candidate</td><td>是</td><td><a href="schemas.html#resultview">ResultView</a></td><td>无（可空不等于可省略）</td><td>指定Result的完整既存内容，含conclusion、questions、limitations所在的原结构；不重新生成。</td></tr>
+<tr><td>source_run</td><td>是</td><td><a href="schemas.html#runview">RunView</a></td><td>无（可空不等于可省略）</td><td>候选来源Run的原执行状态和范围，不能用HTTP成功代替执行成功。</td></tr>
+<tr><td>current_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>当前案件实际成员告警UUID集合。</td></tr>
+<tr><td>members</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>候选覆盖明细；每项alert_id、assessment_state、conclusion_covered、assessment、limitations，见接口内动态字段表。</td></tr>
+<tr><td>uncovered_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>当前成员中未被候选有效覆盖的告警UUID；非空不能作为全案判断。</td></tr>
+<tr><td>outside_alert_ids</td><td>是</td><td>array &lt;string (uuid)&gt;</td><td>无（可空不等于可省略）</td><td>候选交付成员中不属于当前案件的告警UUID；非空不能采用。</td></tr>
+<tr><td>input_freshness</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>候选依据新鲜度；state=current/stale/unverified及reasons原因数组，current才可采用。</td></tr>
+<tr><td>unfinished_tasks</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>当前未完人工任务：task_id、revision_id、title、state；状态not_started或in_progress。</td></tr>
+<tr><td>unfinished_runs</td><td>是</td><td>array &lt;object&gt;</td><td>无（可空不等于可省略）</td><td>当前未完调查：run_id、kind、state、row_version；状态pending_update/running/unknown。</td></tr>
+<tr><td>requires_pending_work_acknowledgement</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>是否存在上述未完工作；true时E21必须明确传acknowledge_pending_work=true。</td></tr>
+<tr><td>can_adopt</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>当前资格是否满足；未完工作不会直接使此值false，但仍要求明确知晓。</td></tr>
+<tr><td>refusal_reasons</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>不符合资格的原因列表，空列表表示资格允许；具体含义见接口错误说明。</td></tr>
+</table>
+<a id="resultadoptionreceipt"></a>
+<h2 id="resultadoptionreceipt">ResultAdoptionReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>case_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本案UUID。</td></tr>
+<tr><td>result_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本次选择的原Result UUID，不创建或改写Result。</td></tr>
+<tr><td>assessment_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>这次采用追加的判断UUID。</td></tr>
+<tr><td>previous_assessment_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>采用前当前判断UUID；此前无判断为null。</td></tr>
+<tr><td>assessment_revision</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>这次追加的判断版本序号。</td></tr>
+<tr><td>case_row_version</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>采用提交后的Case行版本；重试返回原回执，最新版本和指针另读E03。</td></tr>
+</table>
+<a id="resultadoptionrequest"></a>
+<h2 id="resultadoptionrequest">ResultAdoptionRequest</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>一次逻辑采用的UUID；相同操作者和完整请求重试沿用，改变意图使用新key。</td></tr>
+<tr><td>expected_review_token</td><td>是</td><td>string; pattern=^[0-9a-f]{64}$</td><td>无（可空不等于可省略）</td><td>先GET E63取得的64位小写十六进制review_token，原样提交；不自行计算。预览中的判断、成员、任务或Run等变化时409。</td></tr>
+<tr><td>reason</td><td>是</td><td>string; minLength=1; maxLength=4000</td><td>无（可空不等于可省略）</td><td>采用理由；去掉两端空白后1–4000字符，记录实际操作者及理由。</td></tr>
+<tr><td>acknowledge_pending_work</td><td>否</td><td>boolean</td><td>false</td><td>默认false；预览requires_pending_work_acknowledgement=true时，用户明确知道任务/Run仍未完成后才传true。不会结束这些工作。</td></tr>
 </table>
 <a id="resultdetail"></a>
 <h2 id="resultdetail">ResultDetail</h2>

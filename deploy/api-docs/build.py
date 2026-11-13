@@ -3,12 +3,13 @@ from pathlib import Path
 import copy, json, re, html, hashlib, ast, argparse
 from catalog import OPERATIONS, FEATURE_MAP
 from publish import enrich_contract, publish_pages
+import adoption
 ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/'deliverables/investigation-validation-20261106'
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output',type=Path,default=SOURCE/'http-handoff')
 OUT=parser.parse_args().output.resolve()
-VERSION='2026-11-13.docs12'
+VERSION='2026-11-13.docs13'
 BASE=ROOT/'docs/design/socai2-independent-api-v2.openapi.json'
 DOC=json.loads(BASE.read_text())
 DOC['paths']={k:v for k,v in DOC['paths'].items() if k.startswith('/api/v1/socai2')}
@@ -54,6 +55,8 @@ for name,s in SC.items():
   elif field.endswith('_at'):p['description']='服务记录的带时区时间；null表示未记录/不可得。'
   elif field.endswith('_by'):p['description']='服务保存的操作者用户UUID；null表示未记录。'
   elif field.endswith('_id'):p['description']='原合同中的关联UUID；从对应父主体真实响应获取，不使用名称代替。'
+
+adoption.describe(SC)
 
 # 补充旧导出中没有形状的冻结材料响应：只记录实际行结构，不改变服务。
 props={}
@@ -131,7 +134,7 @@ SECTIONS={
 'related_alerts':('RecordAlert','同类型、同命名空间、同对象键的其他告警，排除当前成员，可跨Case。'),
 'responses':('RecordResponse','现有响应关联；ID本身不证明审批/执行成功。'),
 }
-DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='62 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。3个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
+DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='64 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。2个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
 DOC['servers']=[
  {'url':'http://192.168.1.21:18024','description':'21正式独立服务；数据库aisoc，内网HTTP对接使用此入口。'},
  {'url':'http://127.0.0.1:28024','description':'本机SSH转发到21正式服务；需已开启relay.json对应转发。'},
@@ -243,6 +246,8 @@ EX['CaseAttachmentCreate']={'operation_key':ID['operation'],'file_id':'synthetic
 EX['CaseAttachmentView']={'id':ID['artifact'],'case_id':ID['case'],**{k:v for k,v in EX['CaseAttachmentCreate'].items() if k!='operation_key'},'created_by':ID['user'],'created_at':DATE,'file_owner':'business_backend','availability':'managed_by_backend'}
 EX['CaseAttachmentPage']={'items':[copy.deepcopy(EX['CaseAttachmentView'])],'total':1,'next_offset':None,'observed_at':DATE}
 
+adoption.examples(EX, ID, DATE)
+
 features=[]
 lookup={}
 for l in FEATURE_MAP.strip().splitlines():
@@ -266,7 +271,7 @@ for path,methods in DOC['paths'].items():
   if method not in ['get','post','put','patch','delete']:continue
   i+=1;eid=f'E{i:02}';title,status,note,errs=OPERATIONS[i]
   op['operationId']=eid
-  tag='未实现AI预留' if i in [19,20,21] else '人工任务' if i>=38 else 'A/I分析' if i in [22,23,24,25,32,33,36,37] else '页面读取' if 26<=i<=35 else '调查运行与结果' if 10<=i<=18 else 'Case与范围'
+  tag='未实现AI预留' if i in [19,20] else '人工任务' if i>=38 else 'A/I分析' if i in [22,23,24,25,32,33,36,37] else '页面读取' if 26<=i<=35 else '调查运行与结果' if 10<=i<=18 else 'Case与范围'
   op['tags']=[tag];op['summary']=f'{eid} [{status}] {title}'
   mapped=[f['id'] for f in features if eid in f['operations']]
   op['x-feature-ids']=mapped;op['x-implementation-status']=status
@@ -296,8 +301,8 @@ for path,methods in DOC['paths'].items():
   req=sample(body['schema']) if body else None
   if body:body['examples']={'contract':{'summary':'合成请求示例；UUID与版本必须换成真实值','value':req}}
   if i==18:op['responses']['200']['content']['application/json']['schema']={'$ref':'#/components/schemas/FrozenAlertMaterial'}
-  if i in [19,20,21]:op['responses'].pop('200',None)
-  maincode='501' if i in [19,20,21] else '200'
+  if i in [19,20]:op['responses'].pop('200',None)
+  maincode='501' if i in [19,20] else '200'
   resp=op['responses'][maincode].setdefault('content',{}).setdefault('text/csv' if 54<=i<=56 else 'application/json',{})
   out=sample(resp.get('schema',{}))
   if 48 <= i <= 53:
@@ -360,8 +365,8 @@ for path,methods in DOC['paths'].items():
   if i==57:
    defaults['422'][0][1]['detail']=[{'type':'value_error','loc':[],'msg':'Value error, time_from_must_precede_time_to'}]
    defaults['403']=[('permission_denied',{'detail':'Permission denied: alerts:read'},'现有读取条件不符')]
-  if i in [58,59,60,61,62]:
-   defaults['403']=[('permission_denied',{'detail':'Permission denied: '+('cases:write' if i in [58,60] else 'cases:read')},'缺少对应Case操作能力')]
+  if i in [21,58,59,60,61,62,63,64]:
+   defaults['403']=[('permission_denied',{'detail':'Permission denied: '+('cases:write' if i in [21,58,60] else 'cases:read')},'缺少对应Case操作能力')]
   if i==2:
    defaults['403']=[('permission_denied',{'detail':'Permission denied: cases:read'},'缺少Case读取能力')]
   flag='socai2_page_read_not_enabled' if i in [54,55,57] else 'socai2_subject_write_not_enabled' if 48<=i<=53 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
@@ -421,10 +426,10 @@ def mdtable(headers,rows):
 def schema_table(s):
  if '$ref'in s:return schema_table(SC[s['$ref'].rsplit('/',1)[-1]])
  return mdtable(['字段','OpenAPI required','类型与约束','默认值','含义'],[[k,'是' if k in s.get('required',[]) else '否',typ(v),json.dumps(v['default'],ensure_ascii=False) if 'default'in v else '无（可空不等于可省略）',v.get('description',v.get('title',k)).split('\n\n')[0]+(' [完整语义]('+v['x-audit-url']+')' if 'x-audit-url' in v else '')] for k,v in s.get('properties',{}).items()])
-epmd='# 调查HTTP接口目录（62项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
+epmd='# 调查HTTP接口目录（64项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
 for e in endpoints:
  epmd+=f"\n<a id=\"{e['id'].lower()}\"></a>\n\n## {e['id']} {e['title']}\n\n`{e['method']} {e['path']}`\n\n状态：**{e['status']}**。分类：{e['tag']}。\n\n{e['description']}\n"
- if int(e['id'][1:])<54:epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
+ if int(e['id'][1:])<54 and e['id']!='E21':epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
  epmd+=mdtable(['位置','参数','必传','类型/限制','默认值','说明'],[[p['in'],p['name'],p['required'],typ(p['schema']),json.dumps(p['schema'].get('default'),ensure_ascii=False),p['description']] for p in e['params']]) if e['params'] else '\n无路径/查询参数。\n'
  epmd+='\n请求体：\n'+schema_table(e['body']['schema']) if e['body'] else '\n无请求体。\n'
  epmd+='\n响应类型：'+typ(e['response'].get('schema',{}))+'。字段完整展开见Schema或Swagger Models。\n'
@@ -440,7 +445,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 for name,obj in [('openapi.json',DOC),('examples.json',examples)]: (OUT/name).write_text(dump(obj))
 for name,txt in [('endpoints.md',epmd),('schemas.md',schmd)]: (OUT/name).write_text(txt.rstrip()+"\n")
 (OUT/'json-contracts.json').write_bytes((ROOT/'docs/design/socai2-json-contracts-20261103.schema.json').read_bytes())
-(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':613,'dynamic_structures':28,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
+(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':655,'dynamic_structures':35,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
 # 自包含静态功能页；无CDN，无线上校验或业务API调用。
 styles='body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}'
 def esc(x):return html.escape(str(x))

@@ -1,0 +1,43 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="采用调查结果后端调用指南">采用调查结果：后端调用指南</h1>
+<p>本批接口与发布进度见交付记录（来源：<code>openspec/changes/archive/2026-11-13-adopt-investigation-results/validation.md</code>）。路径前缀为<code>/api/v1/socai2</code>，后端使用21的<code>18024</code>；当前服务及Swagger版本以总交接指南（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）为准。</p>
+<p>“采用”就是用户选择一份已经保存的调查结果，作为该案件目前认可的判断。例如几轮调查有不同结论，用户对比后选择其中符合当前依据的一轮。它不重新执行模型，不结案，也不会把未完成任务标成完成。</p>
+<h2 id="调用顺序">调用顺序</h2>
+<p>1. 从调查历史E10或正式结果E14取得本案<code>result_id</code>。</p>
+<p>2. E63 <code>GET /cases/{case_id}/results/{result_id}/adoption-preview</code>。展示<code>current_assessment</code>旧判断、<code>candidate</code>候选结论/未解决问题/限制、<code>members</code>覆盖、<code>input_freshness</code>以及未完任务/调查。<code>can_adopt=false</code>时展示<code>refusal_reasons</code>，不要提交。</p>
+<p>3. 用户填写理由。如果<code>requires_pending_work_acknowledgement=true</code>，展示<code>unfinished_tasks/unfinished_runs</code>，让用户明确知晓它们仍未结束。</p>
+<p>4. E21 <code>POST /cases/{case_id}/results/{result_id}/adopt</code>，按下例提交。<code>expected_review_token</code>必须使用刚才预览的原值。</p>
+<p>5. 成功后E03重新读取案件当前判断，E64 <code>GET /cases/{case_id}/assessments?limit=20&amp;offset=0</code>读取版本历史，E17读取采用活动。E64按版本倒序，<code>next_offset=null</code>表示结束。</p>
+<pre>{
+  &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000901&quot;,
+  &quot;expected_review_token&quot;: &quot;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&quot;,
+  &quot;reason&quot;: &quot;保留本轮待复核结论，运维核实任务继续跟进。&quot;,
+  &quot;acknowledge_pending_work&quot;: true
+}</pre>
+<p>以上UUID和摘要仅说明格式，实际须换成本次操作UUID与预览响应。理由去除两端空白后1–4000字符。没有未完工作时确认字段可省略，默认false。旧E21一直是501占位，只有<code>operation_key/expected_scope_revision</code>；启用后需改用上述请求，旧<code>expected_scope_revision</code>会422。</p>
+<h2 id="成功返回什么">成功返回什么</h2>
+<table>
+<tr><th>字段</th><th>含义</th></tr>
+<tr><td><code>case_id</code></td><td>案件UUID</td></tr>
+<tr><td><code>result_id</code></td><td>用户选择的原结果UUID</td></tr>
+<tr><td><code>assessment_id</code></td><td>本次追加的判断UUID</td></tr>
+<tr><td><code>previous_assessment_id</code></td><td>被替换的旧判断UUID；此前没有为null</td></tr>
+<tr><td><code>assessment_revision</code></td><td>本次判断版本序号</td></tr>
+<tr><td><code>case_row_version</code></td><td>本次保存后的案件行版本</td></tr>
+</table>
+<p>原Result、原结论内容及所有旧判断保留。人工选择模型结果，结论来源仍是<code>model</code>；实际采用人和理由单独记录。未解决问题继续随结论展示，用户有需要时另建人工任务。</p>
+<p>历史中的<code>validity=accepted</code>表示当时校验通过，不表示模型质量已验收，也不证明依据目前仍有效。当前判断的新鲜度读取E03；E64保存各版本当时内容。候选即使是<code>uncertain/partial</code>，只要符合当前依据及全员有效覆盖等核心条件仍可采用，不能因此隐去待核事项。</p>
+<h2 id="未完成工作和后续结果">未完成工作和后续结果</h2>
+<p>采用不修改任务、Run或案件处理状态。已开始的旧调查在人工采用后完成，不覆盖更晚的人工选择；之后用户显式启动的新调查仍可按原规则自动采用。后续有效人工反馈可能使当前判断变为依据过期，需要时显式准备和启动新调查，本接口不自动重算。</p>
+<p>相同key、操作者、目标与完整请求重试会返回原回执。即使当前判断后来变化，旧请求重试也不回滚指针，所以拿到旧回执后仍应E03读取最新案件。改变理由、确认字段或目标属于新意图，应生成新key。</p>
+<h2 id="错误怎么处理">错误怎么处理</h2>
+<table>
+<tr><th>HTTP/原因</th><th>后端处理</th></tr>
+<tr><td>404</td><td>核对Case及Result是否真实存在且属于同案</td></tr>
+<tr><td>409 <code>result_adoption_preview_changed</code></td><td>保留用户理由，重新预览并展示变化，再由用户确认；不要自动换摘要重试</td></tr>
+<tr><td>409 <code>result_adoption_pending_work_confirmation_required</code></td><td>展示未完任务和Run，用户明确知晓后再提交</td></tr>
+<tr><td>409 <code>case_reopen_required</code></td><td>已结案须先显式重开</td></tr>
+<tr><td>409 结果/范围/覆盖/依据不合格</td><td>按<code>refusal_reasons</code>说明原因；不能强行采用局部、过期或未完成结果</td></tr>
+<tr><td>409 <code>operation_key_conflict</code></td><td>同key不能改意图；新操作使用新key</td></tr>
+<tr><td>422</td><td>修正请求格式、理由、旧多余字段或分页参数后再提交</td></tr>
+</table>
+<p>完整输入、所有固定/动态字段、独立合成示例及错误分支在Swagger的E21/E63/E64。文件附件与人工结果采用无自动关系：附件登记不会使候选重新分析或变成新证据。</p></main></html>

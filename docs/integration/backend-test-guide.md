@@ -202,3 +202,7 @@ curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
 实际业务先由后端上传保存文件，取得真实file_id，再调用E60登记。输入包含operation_key、file_id、file_name、mime_type、size_bytes及可选sha256；同key同元数据可重试，变意图409，同案同file_id重复登记409。登记失败先保留后端文件并核对E61/回执，不把文件删除或重新上传作为自动重试动作。
 
 本服务返回的id用于查关联，file_id由业务后端用来提供下载；大小/类型/哈希由后端声明。availability=managed_by_backend不表示已验证文件存在。完整例子见[附件对接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#case附件引用)，[两端存取证据](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)只覆盖引用，不覆盖文件平台。
+
+## 采用已有调查结果
+
+使用[采用操作指南](result-adoption-http.md)：E63预览→E21提交理由、预览摘要及必要未完确认→E03/E64/E17读回。21已只读核验Case `2b37f5b3-862b-52cc-84bd-86db50dd3ad4`、Result `88c45e26-0715-4225-99cf-c3925e90ebe7`，可用于读取预览和历史；不要修改这批已验收记录。写入联调使用自己的Case，先取得符合资格的已完成基础Result。程序构造的本机结果仅用于接口存取验收，不是模型质量证明；21生产采用写入未实测。

@@ -49,6 +49,15 @@ def test_external_contract_preserves_compatibility_except_approved_list_delta():
     )
     after = app.openapi()
     normalized = copy.deepcopy(after)
+    adoption = "/api/v1/socai2/cases/{case_id}/results/{result_id}/adopt"
+    assert "200" in normalized["paths"][adoption]["post"]["responses"]
+    normalized["paths"][adoption] = before["paths"][adoption]
+    assert set(normalized["paths"].pop(adoption + "ion-preview")) == {"get"}
+    assert set(normalized["paths"].pop("/api/v1/socai2/cases/{case_id}/assessments")) == {"get"}
+    for name in ("AdoptedAssessment", "AssessmentHistory", "ResultAdoptionPreview",
+                 "ResultAdoptionReceipt", "ResultAdoptionRequest"):
+        normalized["components"]["schemas"].pop(name)
+    normalized["components"]["schemas"]["AdoptCaseAIResult"] = before["components"]["schemas"]["AdoptCaseAIResult"]
     attachments = normalized["paths"].pop("/api/v1/socai2/cases/{case_id}/attachments")
     assert set(attachments) == {"get", "post"}
     assert set(normalized["paths"].pop("/api/v1/socai2/cases/{case_id}/attachments/{attachment_id}")) == {"get"}

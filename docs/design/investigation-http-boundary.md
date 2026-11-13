@@ -63,3 +63,5 @@ flowchart LR
 34项定向检查和18个子检查通过；本机候选18026完成24次TCP请求、告警/事件/Case全部facts与SQL逐值读回、任务修订及未启动Run核对；A/I执行另用真实隔离PG及不可用模型替身验证两项。没有真实模型调用。详情见[本项验证](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)。
 
 发布后本机正式18024完成新Case/任务写读及SQL核对；21采用既有验收记录做12次GET与9对象只读SQL核验，没有在正式库新增测试数据。上述为代码分离批次的docs7证据；当前列表增量已发布为list-query-20261113-r1及docs8，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)。
+
+采用已有调查结果的E21/E63/E64也属于对外业务接口：`external_routes/cases.py`通过CaseOperations调用CaseService核心，路由只作请求校验、身份和错误转换。资格、预览摘要、幂等及保存均由核心处理；内部调查继续直接调用核心，不依赖外部HTTP。

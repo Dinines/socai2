@@ -36,8 +36,9 @@ def test_attachment_preserves_previous_59_contracts():
     before = json.loads((Path(__file__).resolve().parents[3] /
         "docs/operations/evidence/case-comments-20261113-01/candidate-openapi.json").read_text())
     after = app.openapi()
-    assert all(after["paths"][p] == v for p, v in before["paths"].items())
-    assert all(after["components"]["schemas"][n] == v for n, v in before["components"]["schemas"].items())
+    assert all(after["paths"][p] == v for p, v in before["paths"].items()
+               if p != "/api/v1/socai2/cases/{case_id}/results/{result_id}/adopt")
+    assert all(after["components"]["schemas"][n] == v for n, v in before["components"]["schemas"].items() if n != "AdoptCaseAIResult")
 
 
 @pytest.mark.asyncio

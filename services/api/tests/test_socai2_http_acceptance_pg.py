@@ -235,8 +235,7 @@ async def run_checks(engine, record, only=None):
         created, _, _, _ = await fixture()
         path = BASE+'/'+created['case_id']
         for suffix, body in [('/ai/messages', {'question':'Synthetic question'}),
-                ('/ai/messages/'+str(uuid4())+'/save', {'title':'Synthetic answer','conclusion':'Unverified'}),
-                ('/results/'+str(uuid4())+'/adopt', {'expected_scope_revision':1})]:
+                ('/ai/messages/'+str(uuid4())+'/save', {'title':'Synthetic answer','conclusion':'Unverified'})]:
             response = await request('POST', path+suffix, json={'operation_key':str(uuid4()), **body}, code=501)
             assert response['detail']['code'] == 'case_ai_not_implemented'
         return {'implemented':False, 'http_status':501}

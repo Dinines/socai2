@@ -20,6 +20,18 @@ USERS = table("users", column("id", PGUUID(as_uuid=True)), column("tenant_id", P
 
 
 class CaseService(BaselineService):
+    async def preview_result_adoption(self, tenant_id, case_id, result_id):
+        from .case_adoption import read_preview
+        return await read_preview(self, tenant_id, case_id, result_id)
+
+    async def adopt_result(self, tenant_id, case_id, result_id, request, *, actor):
+        from .case_adoption import adopt
+        return await adopt(self, tenant_id, case_id, result_id, request, actor)
+
+    async def read_assessment_history(self, tenant_id, case_id, *, limit=20, offset=0):
+        from .case_adoption import read_history
+        return await read_history(self, tenant_id, case_id, limit=limit, offset=offset)
+
     async def update_page_data(self, tenant_id, case_id, request, *, actor):
         from .case_data import write_data
         return await write_data(self, tenant_id, case_id, request, actor)

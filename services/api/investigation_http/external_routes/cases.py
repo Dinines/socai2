@@ -3,11 +3,12 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import AwareDatetime
 
 from investigation_http.contracts import (
     ArtifactContent,
+    AssessmentHistory,
     AssignmentState,
     AssociationReceipt,
     AssociationRequest,
@@ -35,6 +36,9 @@ from investigation_http.contracts import (
     MutationReceipt,
     PrepareBaseline,
     RecordPage,
+    ResultAdoptionPreview,
+    ResultAdoptionReceipt,
+    ResultAdoptionRequest,
     ResultDetail,
     RunDetail,
     Severity,
@@ -204,6 +208,34 @@ async def result_detail(
     case_id: UUID, result_id: UUID, user: ReadUser, service: Service
 ):
     return await invoke(service.read_result(user.tenant_id, case_id, result_id))
+
+
+@router.get("/{case_id}/results/{result_id}/adoption-preview", response_model=ResultAdoptionPreview,
+    summary="Preview adoption of a saved whole-case result")
+async def preview_result_adoption(request: Request, case_id: UUID, result_id: UUID,
+    user: ReadUser, service: Service):
+    if request.query_params:
+        raise HTTPException(422, "result_adoption_query_parameter_not_supported")
+    return await invoke(service.preview_result_adoption(user.tenant_id, case_id, result_id))
+
+
+@router.post("/{case_id}/results/{result_id}/adopt", response_model=ResultAdoptionReceipt,
+    summary="Explicitly adopt a saved whole-case result",
+    responses={404: {"description": "Case or Result not found in this scope"},
+        409: {"description": "Preview changed, result ineligible, pending work not acknowledged, or operation conflict"}})
+async def adopt_result(case_id: UUID, result_id: UUID, body: ResultAdoptionRequest,
+    user: WriteUser, service: Service):
+    return await invoke(service.adopt_result(user.tenant_id, case_id, result_id, body, actor=actor(user)))
+
+
+@router.get("/{case_id}/assessments", response_model=AssessmentHistory,
+    summary="Read adopted judgment versions and their saved sources")
+async def assessment_history(request: Request, case_id: UUID, user: ReadUser, service: Service,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0):
+    if set(request.query_params) - {"limit", "offset"}:
+        raise HTTPException(422, "assessment_history_query_parameter_not_supported")
+    return await invoke(service.read_assessment_history(user.tenant_id, case_id, limit=limit, offset=offset))
 
 
 @router.get(

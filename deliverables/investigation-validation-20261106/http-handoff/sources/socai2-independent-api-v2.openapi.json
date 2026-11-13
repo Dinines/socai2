@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "case-attachments-20261113-r1-local"
+    "version": "case-result-adoption-20261113-r1"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1625,10 +1625,10 @@
     "/api/v1/socai2/cases/{case_id}/results/{result_id}/adopt": {
       "post": {
         "tags": [
-          "socai2-case-ai-reserved"
+          "socai2-cases"
         ],
-        "summary": "Reserved: explicitly adopt an AI result (not implemented)",
-        "operationId": "adopt_api_v1_socai2_cases__case_id__results__result_id__adopt_post",
+        "summary": "Explicitly adopt a saved whole-case result",
+        "operationId": "adopt_result_api_v1_socai2_cases__case_id__results__result_id__adopt_post",
         "security": [
           {
             "HTTPBearer": []
@@ -1661,27 +1661,27 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdoptCaseAIResult"
+                "$ref": "#/components/schemas/ResultAdoptionRequest"
               }
             }
           }
         },
         "responses": {
-          "501": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AIUnavailable"
+                  "$ref": "#/components/schemas/ResultAdoptionReceipt"
                 }
               }
             }
           },
-          "403": {
-            "description": "Case write permission and a user actor are required"
+          "404": {
+            "description": "Case or Result not found in this scope"
           },
-          "503": {
-            "description": "socai2 Case API is disabled"
+          "409": {
+            "description": "Preview changed, result ineligible, pending work not acknowledged, or operation conflict"
           },
           "422": {
             "description": "Validation Error",
@@ -5206,6 +5206,135 @@
           }
         }
       }
+    },
+    "/api/v1/socai2/cases/{case_id}/results/{result_id}/adoption-preview": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Preview adoption of a saved whole-case result",
+        "operationId": "preview_result_adoption_api_v1_socai2_cases__case_id__results__result_id__adoption_preview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultAdoptionPreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/assessments": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "Read adopted judgment versions and their saved sources",
+        "operationId": "assessment_history_api_v1_socai2_cases__case_id__assessments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5244,26 +5373,120 @@
         "type": "object",
         "title": "AIUnavailableDetail"
       },
-      "AdoptCaseAIResult": {
+      "AdoptedAssessment": {
         "properties": {
-          "operation_key": {
+          "id": {
             "type": "string",
             "format": "uuid",
-            "title": "Operation Key"
+            "title": "Id"
           },
-          "expected_scope_revision": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "revision": {
             "type": "integer",
-            "minimum": 0.0,
-            "title": "Expected Scope Revision"
+            "title": "Revision"
+          },
+          "scope_revision": {
+            "type": "integer",
+            "title": "Scope Revision"
+          },
+          "conclusion": {
+            "type": "string",
+            "title": "Conclusion"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "validity": {
+            "type": "string",
+            "title": "Validity"
+          },
+          "formed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Formed At"
+          },
+          "adopted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Adopted At"
+          },
+          "adopted_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adopted By"
+          },
+          "actor": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Actor"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "members": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Members"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultView"
+            },
+            "type": "array",
+            "title": "Results"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "operation_key",
-          "expected_scope_revision"
+          "id",
+          "case_id",
+          "revision",
+          "scope_revision",
+          "conclusion",
+          "origin",
+          "validity",
+          "formed_at",
+          "adopted_at",
+          "adopted_by",
+          "actor",
+          "reason",
+          "sources",
+          "members",
+          "results"
         ],
-        "title": "AdoptCaseAIResult"
+        "title": "AdoptedAssessment"
       },
       "AlertFacts": {
         "properties": {
@@ -5970,6 +6193,41 @@
           "question"
         ],
         "title": "AskCaseAI"
+      },
+      "AssessmentHistory": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdoptedAssessment"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_offset"
+        ],
+        "title": "AssessmentHistory"
       },
       "AssessmentPageView": {
         "properties": {
@@ -9728,6 +9986,222 @@
           "refresh_token"
         ],
         "title": "RefreshRequest"
+      },
+      "ResultAdoptionPreview": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "case_row_version": {
+            "type": "integer",
+            "title": "Case Row Version"
+          },
+          "scope_revision": {
+            "type": "integer",
+            "title": "Scope Revision"
+          },
+          "handling_status": {
+            "type": "string",
+            "title": "Handling Status"
+          },
+          "review_token": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Review Token"
+          },
+          "current_assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdoptedAssessment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/ResultView"
+          },
+          "source_run": {
+            "$ref": "#/components/schemas/RunView"
+          },
+          "current_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Current Alert Ids"
+          },
+          "members": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Members"
+          },
+          "uncovered_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Uncovered Alert Ids"
+          },
+          "outside_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Outside Alert Ids"
+          },
+          "input_freshness": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Freshness"
+          },
+          "unfinished_tasks": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Unfinished Tasks"
+          },
+          "unfinished_runs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Unfinished Runs"
+          },
+          "requires_pending_work_acknowledgement": {
+            "type": "boolean",
+            "title": "Requires Pending Work Acknowledgement"
+          },
+          "can_adopt": {
+            "type": "boolean",
+            "title": "Can Adopt"
+          },
+          "refusal_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Refusal Reasons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case_id",
+          "case_row_version",
+          "scope_revision",
+          "handling_status",
+          "review_token",
+          "current_assessment",
+          "candidate",
+          "source_run",
+          "current_alert_ids",
+          "members",
+          "uncovered_alert_ids",
+          "outside_alert_ids",
+          "input_freshness",
+          "unfinished_tasks",
+          "unfinished_runs",
+          "requires_pending_work_acknowledgement",
+          "can_adopt",
+          "refusal_reasons"
+        ],
+        "title": "ResultAdoptionPreview"
+      },
+      "ResultAdoptionReceipt": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "result_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Result Id"
+          },
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          },
+          "previous_assessment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Assessment Id"
+          },
+          "assessment_revision": {
+            "type": "integer",
+            "title": "Assessment Revision"
+          },
+          "case_row_version": {
+            "type": "integer",
+            "title": "Case Row Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case_id",
+          "result_id",
+          "assessment_id",
+          "previous_assessment_id",
+          "assessment_revision",
+          "case_row_version"
+        ],
+        "title": "ResultAdoptionReceipt"
+      },
+      "ResultAdoptionRequest": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key"
+          },
+          "expected_review_token": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Review Token"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "acknowledge_pending_work": {
+            "type": "boolean",
+            "title": "Acknowledge Pending Work",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_review_token",
+          "reason"
+        ],
+        "title": "ResultAdoptionRequest"
       },
       "ResultDetail": {
         "properties": {

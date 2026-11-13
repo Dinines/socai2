@@ -13,8 +13,13 @@ from app.socai2.baseline_contracts import (
 from app.socai2.baseline_store import (
     StoreError,
 )
+from app.socai2.case_adoption_contracts import (
+    AssessmentHistory,
+    ResultAdoptionPreview,
+    ResultAdoptionReceipt,
+    ResultAdoptionRequest,
+)
 from app.socai2.case_ai_contracts import (
-    AdoptCaseAIResult,
     AIUnavailable,
     AskCaseAI,
     SaveCaseAIAnswer,
@@ -113,7 +118,6 @@ class ExecuteStage(Contract):
 __all__ = [
     "AIUnavailable",
     "Actor",
-    "AdoptCaseAIResult",
     "AlertFeedback",
     "AlertFeedbackBatch",
     "AlertListQuery",
@@ -123,6 +127,7 @@ __all__ = [
     "AlertStatus",
     "ArtifactContent",
     "AskCaseAI",
+    "AssessmentHistory",
     "AssignmentState",
     "AssociationReceipt",
     "AssociationRequest",
@@ -160,6 +165,9 @@ __all__ = [
     "MutationReceipt",
     "PrepareBaseline",
     "RecordPage",
+    "ResultAdoptionPreview",
+    "ResultAdoptionReceipt",
+    "ResultAdoptionRequest",
     "ResultDetail",
     "RunDetail",
     "SaveCaseAIAnswer",

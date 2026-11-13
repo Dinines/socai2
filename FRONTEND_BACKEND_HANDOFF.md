@@ -6,7 +6,7 @@
 
 **业务后端调用 `http://192.168.1.21:18024`，在 `http://192.168.1.21:18080/` 查看 Swagger。**
 
-18024 是独立调查 API 服务，18080 是静态 Swagger。本机18024为case-attachments-20261113-r1-local，21正式18024为case-attachments-20261113-r1；两端均已挂载62操作，本机使用v12_upgrade_dev，21使用aisoc。 当前文档定义 **62 个操作：59 已实现、3 返回501**；两端实际测试与部署回执见下方入口。
+18024 是独立调查 API 服务，18080 是静态 Swagger。本机18024为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；两端均已挂载64操作，本机使用v12_upgrade_dev，21使用aisoc。 当前文档定义 **64 个操作：62 已实现、2 返回501**；两端实际测试与部署回执见下方入口。
 
 | 接入事项 | 直接入口 |
 | --- | --- |
@@ -38,6 +38,7 @@
 | 事件管理 | E52单条或E53批量 → E29/E30读回 | 负责人、状态、标签、人工严重度；解决和等级覆盖需理由，不改变成员等级 |
 | 调查基本管理 | E44 `GET /cases/{case_id}/management` → E45 `PATCH` 同路径 → E03/E44 读回 | 可改标题、说明、负责人、严重度、标签、处理状态；只更新显式提交字段 |
 | 关闭/重开 | E44 读条件和版本 → E46 `POST /cases/{case_id}/close` 或 E47 `POST /cases/{case_id}/reopen` → E17 读活动 | running/unknown 阻止关闭；未完任务要求明确确认及理由。重开恢复处理中，不重派调查 |
+| 采用已有调查结果 | E63预览→E21提交operation_key/expected_review_token/reason及必要未完工作确认→E03/E64/E17读回 | 新增判断并保留旧版本；原Result、任务/Run及处理状态保持。[调用指南](docs/integration/result-adoption-http.md) |
 
 调查没查清的内容直接写在调查结论里，例如“尚未确认这次登录是否由本人操作”。需要找人确认时，用户再建“联系本人核实登录”的任务；不会自动把每个疑问变成待办。
 
@@ -66,13 +67,13 @@ Authorization: Bearer <有效凭据>
 - `409`：版本冲突、运行阻塞或状态不允许等；保留用户输入，读取最新对象后按 `detail` 处理。不要直接无限重试。
 - `404`：对象不存在或不属于指定父主体；检查 Case/Run/材料之间的真实 ID 关系。
 - `422`：参数/枚举/必填项不合法；`detail` 可能是字段错误数组，也可能是业务错误字符串。
-- `501`：E19 助手提问、E20 保存回答、E21 显式采用其他结果尚未实现。
+- `501`：E19助手提问、E20保存回答尚未实现；E21采用已有基础调查结果已实现。
 - `503` 或执行请求超时：先读取原 Run；服务错误 `detail` 可能为对象，不能假定统一是字符串。
 - E02/E26/E27现支持筛选、排序、分页；告警时间按event_time，事件至少一条成员告警在窗口内，Case按business_updated_at。带时区时间前闭后开；缺值始终排序在后。告警/事件filtered_total是筛选数，total/overall_stats是整体；Case total是筛选数、metrics是整体。新条件用next_cursor续页，改条件清空；旧无新增条件的before_id保留，不能混用。完整参数见[列表用法](deliverables/investigation-validation-20261106/http-handoff/README.md#列表查询怎么用)。
 
 告警/事件写入的参数、批量选择、完整返回及错误见[后端测试指南](docs/integration/backend-test-guide.md#告警人工判定与告警事件管理)。
 
-“已实现”只描述接口业务是否存在；当前未完成的结果采用、问答、探索保存等见[接口实施计划](docs/investigation/http-implementation-plan-20261112.md)。真实模型结论质量仍未整体验收通过；页面修改不在这次后端交接范围。
+“已实现”只描述接口业务是否存在；当前未完成的问答、探索保存等见[接口实施计划](docs/investigation/http-implementation-plan-20261112.md)。真实模型结论质量仍未整体验收通过；页面修改不在这次后端交接范围。
 
 后续按功能流程推进，必要读写接线与配置随功能处理。告警相关的前后端字段合同保持稳定；字段名、类型、含义、关联和接口返回确需调整时先列明影响并确认。下表保留已核验的运行配置，配置当前值不构成后续功能开发的权限前置。
 
@@ -86,8 +87,8 @@ Authorization: Bearer <有效凭据>
 | 功能对应字段及跳转 | [F01–F28 字段／J01–J14 跳转附录](deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
 | 字段到存储、关联及读取 | [服务端数据交接](docs/investigation/socai2-page-data-handoff-20261106.md) |
 | 当前调查表与写入边界 | [28 表职责／25 表有写入路径](docs/investigation/investigation-table-scope.md)、[当前机器字典](docs/design/socai2-data-contract-current.json)；资产等基础数据由业务后端负责 |
-| HTTP字段审计来源 | [基于原三份资料的核对结论](deliverables/investigation-validation-20261106/http-handoff-audit/README.md)：先按告警22/事件15/调查88项，原43操作/522字段已审，Case管理增加4操作/10字段，前批告警/事件管理增加6操作/8字段，前批列表封套增加2字段，前批新增3个CSV操作，前批新增E57归并统计，前批E58/E59普通评论、本批E60–E62附件引用；当前62操作，原JSON有542个固定字段出现位置，E57新增12个、评论新增22个、附件引用新增37个（合计613）与28组动态投影，CSV另说明104个允许列；字段说明已合入当前Swagger |
-| HTTP逐项对接与在线文档 | 标准Swagger按告警/事件/调查接口分类，[62操作、用途、参数、输入输出、结果和实现状态](deliverables/investigation-validation-20261106/http-handoff/README.md)；[本机Swagger](http://127.0.0.1:18080/)、[21内网Swagger](http://192.168.1.21:18080/)；[Docker部署](deploy/api-docs/README.md) |
+| HTTP字段审计来源 | [基于原三份资料的核对结论](deliverables/investigation-validation-20261106/http-handoff-audit/README.md)：先按告警22/事件15/调查88项，原43操作/522字段已审，Case管理增加4操作/10字段，前批告警/事件管理增加6操作/8字段，前批列表封套增加2字段，前批新增3个CSV操作，前批新增E57归并统计，前批E58/E59普通评论、本批E60–E62附件引用；当前64操作，原JSON有542个固定字段出现位置，E57新增12个、评论新增22个、附件引用新增37个、采用新增42个（合计655）与35组动态说明，CSV另说明104个允许列；字段说明已合入当前Swagger |
+| HTTP逐项对接与在线文档 | 标准Swagger按告警/事件/调查接口分类，[64操作、用途、参数、输入输出、结果和实现状态](deliverables/investigation-validation-20261106/http-handoff/README.md)；[本机Swagger](http://127.0.0.1:18080/)、[21内网Swagger](http://192.168.1.21:18080/)；[Docker部署](deploy/api-docs/README.md) |
 | HTTP功能验证与后续实施 | [本机路由/真实隔离库验证](openspec/changes/complete-socai2-investigation-chain/http-functional-validation-20261112.md)：31项检查、43操作回执，模型为替身，真实质量未核销；[未实现功能计划](docs/investigation/http-implementation-plan-20261112.md)。[统一独立入口验收](openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已完成本机/21 TCP Case/H与SQL读回，详见下表 |
 | JSON 与 HTTP 合同 | [JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json)、[OpenAPI](docs/design/socai2-independent-api-v2.openapi.json) |
 | 对外与内部接口边界 | [架构与实际调用清单](docs/design/investigation-http-boundary.md)：列表/详情和显式analyze/diagnose/start均为对外业务接口，调查步骤与内部组件HTTP独立维护；代码分离已发布本机/21，本轮三个列表的已确认增量在该边界内实现 |
@@ -104,7 +105,7 @@ Authorization: Bearer <有效凭据>
 | 目标 | 21，SSH 别名 `sting-infra21` |
 | 发布 | `v1.2-20261112-r5`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
-| HTTP | 后端对接用`http://192.168.1.21:18024`，业务前缀`/api/v1/socai2`；独立服务`case-attachments-20261113-r1`，62操作齐全，E36/E37显式启动接口已启用，可由页面操作或后端业务逻辑调用 |
+| HTTP | 后端对接用`http://192.168.1.21:18024`，业务前缀`/api/v1/socai2`；独立服务`case-result-adoption-20261113-r1`，64操作齐全，E36/E37显式启动接口已启用，可由页面操作或后端业务逻辑调用 |
 | 本机与旧入口 | 本机18024接隔离`v12_upgrade_dev`，28024经显式SSH转发接正式`aisoc`；两库记录ID不得混用。旧主18000、旧独立18020继续保留；旧独立接`socai2_next_20261104`，不作为当前对接入口。部署与架构见[profile](deploy/http-service/README.md) |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |
@@ -174,7 +175,7 @@ Authorization: Bearer <有效凭据>
 
 既有操作路径、入参及存储关系见 [Case/H 操作交接](openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md)。按创建 Case 返回的 pending_run_id 显式启动首轮；人工任务通过 POST 创建、PUT 修订，使用返回的 row_version 和 current_revision_id；再次调查先 prepare 再 start。保存反馈不会自动启动调查。
 
-人工采用与未完任务、后续调查及结案的区别，见[现状、拟议设计与待对齐问题](docs/investigation/result-adoption-and-pending-work.md)。调查模块统一核心规则，E21仍返回501。
+人工采用与未完任务、后续调查及结案的规则见[AD01–AD06](docs/investigation/result-adoption-and-pending-work.md)。调查核心统一资格、未完工作确认、预览时效、幂等和判断历史；HTTP复用核心提供E21/E63/E64，两端服务及Swagger已同步。[后端调用指南](docs/integration/result-adoption-http.md)。采用只改变当前判断，不结束任务、Run或案件；无数据库迁移或告警字段变化。
 
 人工结果来自 `tasks.current_revision_id → task_revisions`。每轮领取时冻结所选修订到输入工件 `task_revisions/source_materials`，正文、范围和 human_statement 归属保持，旧修订及历史输入不被覆盖。Result 的六项结论/校验/发现/问题/建议仍使用原字段合同。前次 Case/H 批次没有表列、枚举、告警交接字段或 HTTP DTO 变化。
 
@@ -186,9 +187,9 @@ Case基本管理现新增E44–E47：GET/PATCH `/cases/{case_id}/management`、P
 
 调查可按技术解释、取证指导、历史案例参考三个目的检索知识。资料原文和向量索引分别保存，查询后回读原文及校验内容；具体输入输出见[知识交接](docs/investigation/case-knowledge-handoff.md)、[历史卡片字段](docs/investigation/historical-alert-knowledge-handoff.md)。知识是参考材料，不是本案发生过某行为的证据。
 
-新采用的告警分诊可按当前配置同步为历史知识；保存人工任务不会自动重跑调查。知识维护走原主API的`/api/v1/kb`，不在18024的62项接口中；入口和依赖见[组件指南](docs/integration/component-handoff-current.md)。
+新采用的告警分诊可按当前配置同步为历史知识；保存人工任务不会自动重跑调查。知识维护走原主API的`/api/v1/kb`，不在18024的64项接口中；入口和依赖见[组件指南](docs/integration/component-handoff-current.md)。
 
-当前62个HTTP操作中59已实现；E19提问、E20保存回答、E21显式采用其他结果未实现。结果采用、助手、故事及探索保存等未完成范围见[接口实施计划](docs/investigation/http-implementation-plan-20261112.md)，不扩展原AiSOC其他功能。
+当前64个HTTP操作中62已实现；E19提问、E20保存回答未实现。助手、故事及探索保存等未完成范围见[接口实施计划](docs/investigation/http-implementation-plan-20261112.md)，不扩展原AiSOC其他功能。
 
 API功能测试和模型结论质量分别验收：Case及告警/事件管理分别完成HTTP和数据库读回，真实完整调查的模型质量仍未通过。自动分析消费者未启用；显式调用后的内部流程由程序执行。当前部署、验收证据和后续工作以[PROGRESS](PROGRESS.md)为准，历史失败不改写；现有页面只用于测试。
 

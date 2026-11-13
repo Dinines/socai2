@@ -2,7 +2,7 @@
 
 更新于 2026-11-13。依据[125 项功能清单](../../deliverables/investigation-validation-20261106/frontend-feature-list.md)和[已确认规则 D01–D07](../design/investigation-product-decisions.md)。第一批[告警/事件管理](../../openspec/changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53，并发布本机与21的服务及Swagger；两端各86次HTTP及SQL读回通过。第二批的三类列表筛选/排序/分页也已完成，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)；[完整CSV导出](../../openspec/changes/archive/2026-11-13-export-investigation-lists/validation.md)已作为独立change验收、发布并归档；[同范围归并统计](../../openspec/changes/archive/2026-11-13-summarize-incident-grouping/validation.md)为前批E57，本批[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)交付E58/E59；本批[附件引用](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)交付E60–E62。下面标注“拟新增／拟扩展”的地址、参数及返回内容是设计草案，目前不可据此调用。
 
-当前服务仍为 21 的 `18024`，Swagger 为 `18080`：62 个 HTTP 操作，59 个已实现、3 个问答／采用操作返回 `501`。功能清单中的“部分实现”也可能只是需要组合读取或由前端处理，不能全部算成缺 API。
+当前服务仍为 21 的 `18024`，Swagger 为 `18080`：本次64个HTTP操作，62个已实现、2个问答操作返回`501`。功能清单中的“部分实现”也可能只是需要组合读取或由前端处理，不能全部算成缺 API。
 
 ## 1. 用户在什么页面做什么
 
@@ -17,7 +17,7 @@
 | 事件列表：“处理中与队列压缩” F06-06 | 查看多少条告警归并成多少个事件 | E57同一只读范围内返回告警总数、已归并/未归并、事件、处理中和比例 | 本批已实现；不把比例当准确率 |
 | 调查列表：日期、排序、导出 F09-03/08 | 按时间定位 Case，排序并导出 | E02保留原筛选，已补业务更新时间范围、有限排序和兼容游标 | 完整CSV导出已实现（E54/E55/E56） |
 | 调查“故事”页：搜索和等级筛选 F20-02 | 在案件的事实、历次调查和人工记录组成的时间线里查找条目 | 可以组合读取并筛选已加载条目 | 若按整个故事搜索，补统一的只读查询；返回条目来源和所属范围，不复制一套业务记录 |
-| 调查资料／结果：采用判断 F11-03 | 选一个已保存结果作为案件当前判断 | 采用接口返回 `501` | 展示原／新判断及覆盖范围，提交理由后采用，保留旧判断；局部答案不能覆盖全案 |
+| 调查资料／结果：采用判断 F11-03 | 选一个已保存结果作为案件当前判断 | E63预览、E21采用和E64判断历史已实现 | 本批已完成；提交预览摘要/理由，未完工作须明确知晓；只采用合格全案基础结果 |
 | 调查评论与附件 F24-01/02/03 | 留评论，补充附件，再查看／下载 | 普通评论及E60–E62附件登记/目录/单项已交付 | 负责人已确认业务后端上传/保存/下载，本服务保存引用；文件平台链路由业务后端验收 |
 | 案件内 AI 助手 F26-01–08、F20-04 | 对全案或选中的告警／对象提问，看回答与引用，继续追问 | 发送／保存接口返回 `501`，会话历史也缺失 | 发送、执行状态、会话历史、回答及引用读取；显式保存到调查记录 |
 | 案件关系图：探索 F25-01–04、F19-04 | 查候选、展开对象，保存画布，明确选择后加入案件 | 真实成员关联可用；探索查询及保存缺失 | 候选查询和来源；探索保存与加入成员分开，加入复用现有接口 |
@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | 1（已发布） | 告警人工判定、告警／事件单条管理和批量管理 | E48–E53，两端服务与Swagger已同步 |
 | 2（列表已发布） | 三类列表筛选／排序／分页和完整结果导出完成；同范围事件归并统计本批完成 | E02/E26/E27及E54–E56；E57已实现，统一只读范围 |
-| 3 | 采用已有调查结果、Case 评论、补充附件引用 | 采用先由调查模块对齐未完任务及后续结果规则，HTTP随后接入；[现状／设计和 AD01–AD06](result-adoption-and-pending-work.md)。采用本轮只记录；普通评论E58/E59及附件引用E60–E62已交付，文件平台归业务后端；不必等待助手实现 |
+| 3 | 采用已有调查结果、Case 评论、补充附件引用 | 采用核心已统一，E21/E63/E64完成HTTP接入与本地存取；[规则及AD01–AD06](result-adoption-and-pending-work.md)。普通评论、附件已交付；[本次统一发布](../../openspec/changes/archive/2026-11-13-adopt-investigation-results/validation.md)，文件平台归业务后端 |
 | 4 | 同案助手发送／读取／追问／保存，以及故事中的相关记录与搜索 | 一次完成提问到保存后读回；保存与采用分开，不扩到全局助手 |
 | 5 | 相似告警／探索候选查询，再做确有需要的探索保存 | 先解决“能找到真实候选”，再做画布保存；正式加入仍复用现有成员关联 |
 | 后置既有 change | 新材料及人工反馈后的自动更新／接续 | 继续按“先固定流程、后更新／流式”的已确认顺序，不在本轮启用自动消费 |
@@ -77,7 +77,7 @@
 | 三类列表完整查询（已发布） | 已扩展 E26 `GET /alerts`、E27 `GET /incidents`、E02 `GET /cases` | 对应页面已有的关键词、等级、状态、负责人、时间范围、排序和分页；Case 已有参数直接复用 | 当前页、筛选总数、稳定下一页游标；原整体指标保留原口径。告警按真实发生时间、事件按同一成员命中、Case按业务更新时间；不以入库时间补缺值 |
 | 完整筛选结果导出（已实现） | `GET /alerts/export`、`/incidents/export`、`/cases/export` | 同列表条件、明确列和排序 | CSV 文件及实际范围／数量；只导已加载数据仍由前端处理。服务导出不能静默截断；当前10000行/16MiB、SQL30秒；超限413，超时503，不先造任务平台 |
 | 事件列表归并统计（已实现） | `GET /incidents/grouping-summary` | 可选告警source_namespace、time_from/time_to；独立于事件表格筛选 | 同一观察时刻的告警数、事件数、未归并数量和比例定义；明确跨时间边界、重复归属的去重规则，避免拼接不同列表的统计 |
-| 采用已有结果 | 实现现有 E21 `POST /cases/{case_id}/results/{result_id}/adopt` | 已保存结果、当前范围／判断版本、替换理由及覆盖确认 | 新当前判断 ID、采用来源及旧判断引用；历史保留。理由／覆盖字段是待增量设计，当前请求多传仍可能 `422` |
+| 采用已有结果（已实现） | E63预览→E21原adopt路径→E64判断历史 | operation_key、expected_review_token、reason及必要acknowledge_pending_work；先预览当前依据/覆盖/未完工作 | 返回新判断ID/版本、旧判断ID与Case行版本；原Result、任务/Run和处理状态保持，历史保留；旧占位expected_scope_revision体不再使用 |
 | Case 评论（已交付） | E58 `POST`／E59 `GET /cases/{case_id}/comments` | POST为operation_key/body；GET为limit/offset | 评论ID、Case、原文、认证作者和时间；分页总数/下一页。E17回查活动；不含额外关联引用、编辑删除或附件 |
 | 补充附件引用（已交付） | E60/E61 `POST/GET /cases/{case_id}/attachments`、E62 `GET /cases/{case_id}/attachments/{attachment_id}` | operation_key、业务后端已保存的file_id、文件名、类型、字节数及可选SHA-256 | 返回关联ID、file_id、元数据、登记人/时间；availability表明业务后端管理，不返回下载URL或文件内容。本服务不核验文件实时可用性，上传/下载由业务后端负责 |
 | 同案助手历史／回答读取 | 拟 `GET /cases/{case_id}/ai/conversations`、`/ai/conversations/{conversation_id}/messages`、`/ai/messages/{message_id}` | Case、会话或消息 ID、分页 | 原问题、当时选择范围、回答、引用、执行状态／错误、保存关联；重开助手能继续此前对话 |
@@ -101,6 +101,8 @@
 
 ## 6. OpenSpec 与交接安排
 
-主 change [3.12](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)继续作为产品操作及接口缺口的总入口；独立入口、Case管理及本批告警／事件管理各自保留交付证据，不重新打开已完成范围。三类列表查询已作为独立change实现、验收、发布与文档同步；完整CSV导出已独立实施，同范围统计已完成。2026-11-13负责人说明调查功能由其他模块推进，本轮仅记录[结果采用与未完任务设计](result-adoption-and-pending-work.md)及问题Q02；采用接口待核心规则对齐后接入，避免另做一套采用或调度。随后[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)已独立交付；[附件引用](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)已按负责人确认分工完成，两端存取及Swagger已同步；真实文件上传/下载由业务后端完成，不据引用验收宣称文件链路已通过。
+主 change [3.12](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)继续作为产品操作及接口缺口的总入口；独立入口、Case管理及本批告警／事件管理各自保留交付证据，不重新打开已完成范围。三类列表查询已作为独立change实现、验收、发布与文档同步；完整CSV导出已独立实施，同范围统计已完成。2026-11-13负责人说明调查功能由其他模块推进，采用核心由调查模块统一，本轮复用其规则接入E21/E63/E64；[结果采用与未完任务规则](result-adoption-and-pending-work.md)及Q02按实际交付更新，不另做采用或调度。随后[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)已独立交付；[附件引用](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)已按负责人确认分工完成，两端存取及Swagger已同步；真实文件上传/下载由业务后端完成，不据引用验收宣称文件链路已通过。
 
 每个交付批次同步：功能编号 → HTTP 操作 → 参数／示例／字段含义／错误 → 保存和读回位置 → 实现状态。完成直接验证及独立审计后，按该批实际授权发布本地／21 API 与 Swagger，并读回确认；未实现接口继续明确标注，规划不算实现。模型质量和页面接线分别记录，不作为所有普通接口的统一完成条件。
+
+下一项按批次4整理同案助手的明确范围与输入输出：提问、会话历史、回答读取和显式保存。E19/E20仍501；本轮不提前实现或启用模型问答。

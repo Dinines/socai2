@@ -21,7 +21,7 @@ OPERATIONS = {
 18: ('读取 Run 冻结的告警材料', '可用', 'material_id 必须由该 Run 的冻结成员输入取得。返回 AlertMaterials 原始行，不是 ContentView 包装，没有 availability 字段；保留 material_state/retention。不能用当前材料代替。', 'frozen_material_not_found:404'),
 19: ('Case 助手发送问题（预留）', '未实现', '通过请求校验后返回501，无模型调用和保存。现有 DTO 只有 operation_key、question、conversation_id；产品设计的 scope 尚无字段，额外字段会422。', 'case_ai_not_implemented:501'),
 20: ('保存助手回答（预留）', '未实现', '通过请求校验后返回501，没有冻结或正式结果。title/conclusion 是待保存文本，不触发执行；当前不能使用。', 'case_ai_not_implemented:501'),
-21: ('显式采用其他结果（预留）', '未实现', '通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。', 'case_ai_not_implemented:501'),
+21: ('采用已保存调查结果', '已实现', '先E63预览当前判断、候选、覆盖及未完工作；仅采用当前依据、全员有效覆盖的completed/whole_case基础Result。提交operation_key、expected_review_token、非空reason；预览存在未完任务或Run时必须明确acknowledge_pending_work=true。保存新判断及来源，原Result/旧判断保留，任务/Run/Case处理状态保持；不调用模型。相同请求重试返回原回执，不把较新的判断回滚。旧501占位体expected_scope_revision已替换为本合同，不可继续发送；E03读当前指针，E64读历史，E17读活动。', 'case_not_found:404 case_result_not_found:404 result_run_link_invalid:409 current_assessment_reference_invalid:409 result_adoption_preview_changed:409 result_adoption_pending_work_confirmation_required:409 case_reopen_required:409 result_not_whole_case_baseline:409 result_run_not_completed:409 result_conclusion_not_eligible:409 result_scope_not_current:409 result_member_coverage_incomplete:409 result_input_not_current:409 operation_key_conflict:409 case_actor_not_in_tenant:403'),
 22: ('告警分诊目录', '可用', 'current 是当前指针对应分诊；entries 是历史尝试。失败尝试不能覆盖有效旧结论。分页使用 next_before_run_id。', 'stage_subject_not_found:404 invalid_stage_history_limit:422'),
 23: ('事件诊断目录', '可用', '区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。', 'stage_subject_not_found:404 invalid_stage_history_limit:422'),
 24: ('指定告警 A Run', '可用', '用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。', 'stage_run_not_found:404'),
@@ -63,6 +63,8 @@ OPERATIONS = {
 60: ('登记Case附件引用', '已实现', '业务后端先上传并保存文件，再提交operation_key、file_id、file_name、mime_type、size_bytes及可选sha256。本服务保存案件关联、服务端登记人/时间和活动；同key同意图返回原记录，改意图409；同案同file_id另键重复409。元数据由业务后端声明，文件实时可用性和下载由业务后端决定。本服务不接收文件字节或下载URL、不查验文件，不启动调查或改任务/判断。已结案Case可补充资料，状态保持。E61/E62读回，E17查回执。', 'case_not_found:404 operation_key_conflict:409 attachment_already_linked:409 case_actor_not_in_tenant:403'),
 61: ('读取Case附件目录', '已实现', '仅列本服务登记到本Case的附件引用，不混入其他Case、成员材料或Run报告。limit默认20(1–100)、offset默认0(0–100000)，按created_at/id升序；返回items/total/next_offset/observed_at，空集合为[]。同次只读一致快照，跨请求不冻结。只接受limit/offset。availability=managed_by_backend不代表文件探测或下载成功。', 'case_not_found:404 attachment_query_parameter_not_supported:422'),
 62: ('读取Case单个附件信息', '已实现', '按Case和附件关联ID读取原file_id、名称、类型、大小、可选哈希及登记人/时间。该ID是本服务关联ID，file_id才是业务后端下载时使用的文件ID；下载地址由业务后端提供。本接口不返回文件字节或下载URL，不报告未核验的文件存在性。不存在或跨案件404，不接受查询参数。', 'case_not_found:404 case_attachment_not_found:404 attachment_query_parameter_not_supported:422'),
+63: ('预览调查结果采用', '已实现', '只读比较当前判断与指定候选Result，完整返回结论、待核问题、覆盖、新鲜度、来源Run及未完任务/Run。can_adopt为资格结论，refusal_reasons列出原因；未完工作另以requires_pending_work_acknowledgement提示。review_token原样用于E21；只读预览不锁定后续状态，提交会事务重验。不接受查询参数。', 'case_not_found:404 case_result_not_found:404 result_run_link_invalid:409 current_assessment_reference_invalid:409 result_adoption_query_parameter_not_supported:422'),
+64: ('读取采用判断历史', '已实现', '按revision倒序返回指定Case的判断版本，含原结论/来源/覆盖、采用人和理由；结果待核内容沿results读取。limit默认20、1–100，offset默认0且非负，按next_offset续页；total为全部判断数。历史保留当时值，不重新判新鲜度；当前状态用E03读取。只接受limit/offset。', 'case_not_found:404 assessment_history_query_parameter_not_supported:422 invalid_assessment_history_page:422'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -121,7 +123,7 @@ F12-01|需组合|3,5,14|采用判断覆盖范围与当前成员比较，按真�
 F12-02|需组合|3,14,24,25,43|按来源类型和身份打开指定结果/分诊/诊断/人工版本，不跳当前版本冒充旧引用。
 F11-02|需组合|3,14,15|questions及原结论限制一并展示；用户需要时自行E38创建任务，无问题状态/关闭/合并接口。
 F09-07|需组合|3,28,31|遍历当前成员读取材料阶段标签，原字段不足就显示未知。
-F11-03|未实现|21|adopt返回501；D03理由/覆盖确认尚无已实现HTTP参数。
+F11-03|已实现|63,21,64,3,17|先预览原/新判断、覆盖与未完工作，提交预览摘要、理由和必要确认；保留旧判断，任务/Run/处理状态保持。
 F20-01|部分实现|3,28,10,14,39,42|成员事实+Run结果+H版本按来源时间组装故事；Q保存尚缺。
 F20-02|部分实现|3,28,10,39|已加载故事本地搜索/等级筛选；无全故事检索接口。
 F20-03|仅前端/部分|3,28|维护当前选择ID，组合已读故事；不修改Case成员。

@@ -1,18 +1,18 @@
 <html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="调查服务-http-api">调查服务 HTTP API</h1>
-<p>合同版本：2026-11-13.docs12。对应本机18024版本为 <code>case-attachments-20261113-r1-local</code>，21正式18024为 <code>case-attachments-20261113-r1</code>；合同含62操作，实际发布状态见部署回执，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
-<p>本轮新增E60登记Case附件引用、E61分页目录和E62单项信息，原59操作保持。文件上传、存储和下载由业务后端负责；调查服务只保存关联及元数据，不启动调查或改变人工任务。</p>
-<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共62个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
+<p>合同版本：2026-11-13.docs13。对应本机18024版本为 <code>case-result-adoption-20261113-r1-local</code>，21正式18024为 <code>case-result-adoption-20261113-r1</code>；合同含64操作，实际发布状态见部署回执，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
+<p>本轮实现E21采用已有调查结果，增加E63预览及E64判断历史，原其他61操作合同保持。先预览候选、覆盖与未完工作，再提交摘要和理由；采用不结束任务、取消调查或结案。文件上传/下载仍由业务后端负责。</p>
+<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共64个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
 <h2 id="每个接口怎么看">每个接口怎么看</h2>
 <p>展开接口即可查看：用途、输入参数、输出结构、操作后的结果、实现状态、请求/响应示例和错误。固定字段解释在Schema中；随分区或工件类型变化的字段在Responses说明中。示例是合成合同示例，需要替换为实际ID和版本。</p>
 <p>• <b>已实现</b>：接口逻辑已提供。执行结果及结论是否有效以返回状态为准。</p>
-<p>• <b>未实现</b>：E19发送问题、E20保存回答、E21采用结果目前返回501，不产生对应业务结果。</p>
+<p>• <b>未实现</b>：E19发送问题、E20保存回答目前返回501，不产生对应业务结果。</p>
 <p>• E36告警分诊、E37事件诊断在21独立正式服务已挂载并启用；由业务后端显式调用，可以来自页面操作或后端业务逻辑。调用后程序执行该次模型流程，返回Run及实际结果状态。</p>
-<p>原40个已实现操作已有本机原HTTP路由和真实隔离数据库的直接验证；E19–E21已确认501。另在本机TCP及21正式HTTP完成建案、人工任务创建/完成修订、当前和历史读取，保存字段与SQL读回一致，Run未启动。分析执行测试使用模型/查询替身，本轮发布未调用真实模型，真实模型质量仍未通过。展开接口可看对应验证范围；HTTP200仍需结合业务状态。</p>
+<p>当前64个操作中62已实现、2预留501。采用预览→确认→保存→详情/历史/活动的真实HTTP与SQL证据见本轮交付回执；本地程序构造Result不代表模型分析质量。其他接口沿既有验收，模型质量仍未通过。本次合同对应采用版本；实际上线状态以总交接（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）与部署回执为准。</p>
 <h2 id="http接入">HTTP接入</h2>
 <p>业务路径前缀为<code>/api/v1/socai2</code>。Swagger的Servers按实际调用环境选择；18080只提供文档。</p>
 <table>
 <tr><th>使用环境</th><th>API根地址</th><th>数据目标</th></tr>
-<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>case-attachments-20261113-r1</code>，62操作</td></tr>
+<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>case-result-adoption-20261113-r1</code>，64操作</td></tr>
 <tr><td>本机转发到21</td><td><code>http://127.0.0.1:28024</code></td><td>同一正式库；需开启<code>deploy/http-service/relay.json</code>对应转发</td></tr>
 <tr><td>本机开发验收</td><td><code>http://127.0.0.1:18024</code></td><td>隔离<code>v12_upgrade_dev</code>；本地记录ID与21不通用</td></tr>
 </table>
@@ -23,7 +23,8 @@
 <p>2. 事件：列表E27 → 详情E29 → 诊断目录E23 → 指定Run E25 → 步骤E32/工件E33。</p>
 <p>3. 调查：创建E01 → 读取案件E03及Run E12 → 显式启动E13 → 读取结果E14/工件E15。创建本身不执行调查。</p>
 <p>4. 人工任务：读取案件版本E03 → 创建E38；更新前读任务E41，完整提交E40；历史版本读取E42/E43。</p>
-<p>5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。当前54个已实现操作、3个预留501。</p>
+<p>5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。</p>
+<p>6. 采用结果：E63预览 → E21提交预览摘要/理由/必要未完确认 → E03当前判断、E64判断历史、E17活动。旧E21占位体expected_scope_revision已停用；完整字段与错误见<a href="/handoff/sources/result-adoption-http.html">采用操作指南</a>。</p>
 <p>管理字段省略保持；可空字段传null清空，标签[]清空。关闭时running/unknown禁止操作；未完任务须明确确认及理由，任务保留。重开恢复处理中，不自动启动调查。</p>
 <h2 id="返回和错误">返回和错误</h2>
 <p>• 查询参数、必填项、默认值、枚举及空值要求见对应操作；不要加入未声明字段。</p>

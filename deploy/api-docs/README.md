@@ -1,6 +1,6 @@
 # Swagger HTTP接口文档服务
 
-当前文档版本docs12，以标准Swagger展示62个后端HTTP操作，按告警、事件、调查归类。每个接口写明用途、输入、输出、结果、实现状态和错误；保留完整Schema及示例。旧功能目录URL转入Swagger，产品演示和页面接线进度不在当前接口入口展示。
+当前文档版本docs13，以标准Swagger展示64个后端HTTP操作，按告警、事件、调查归类。每个接口写明用途、输入、输出、结果、实现状态和错误；保留完整Schema及示例。旧功能目录URL转入Swagger，产品演示和页面接线进度不在当前接口入口展示。
 
 | 环境 | Swagger | 平台 |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ curl --fail http://127.0.0.1:18081/handoff/manifest.json
 docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml ps
 ```
 
-当前应显示 `2026-11-13.docs12`、62 操作、告警/事件/调查三组。62 是去重后的操作数，共用接口会在多个业务组显示。
+当前应显示 `2026-11-13.docs13`、62 操作、告警/事件/调查三组。62 是去重后的操作数，共用接口会在多个业务组显示。
 
 ### 选择调用哪个 API
 
@@ -109,8 +109,8 @@ python3 deploy/api-docs/build.py --output /tmp/socai2-docs-preview
 
 Compose项目为socai2-api-docs，容器为socai2-api-docs-swagger-1。只复制静态包、compose.yml及目标profile，不同步业务代码、私密配置或数据。
 
-- 本地：local.env，内容路径`.local/api-docs/releases/20261113-docs12/handoff`。
-- 21：aisoc21.env，内容路径`/opt/socai2-api-docs/releases/20261113-docs12/handoff`。
+- 本地：local.env，内容路径`.local/api-docs/releases/20261113-docs13/handoff`。
+- 21：aisoc21.env，内容路径`/opt/socai2-api-docs/releases/20261113-docs13/handoff`。
 
 两端继续使用既有官方Swagger镜像：多架构来源摘要sha256:59ee9021a8884437c7fd8aae79e0a46ee6b6dd3afd7f24a587c4501585fde53b；21单平台导入摘要sha256:95b2555796efa9171c00a281c096499d28261adc24e80856fc11571276251b9c。profile显式指定不同架构，本次不重新拉镜像或修改Docker代理。
 

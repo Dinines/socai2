@@ -1874,15 +1874,18 @@
     },
     "request_body": {
       "operation_key": "00000000-0000-4000-8000-000000000011",
-      "expected_scope_revision": 1
+      "expected_review_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reason": "保留本轮待复核结论，人工核实任务继续跟进。",
+      "acknowledge_pending_work": true
     },
-    "response_status": 501,
+    "response_status": 200,
     "response_body": {
-      "detail": {
-        "code": "case_ai_not_implemented",
-        "status": "not_implemented",
-        "message": "AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。"
-      }
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "result_id": "00000000-0000-4000-8000-000000000005",
+      "assessment_id": "00000000-0000-4000-8000-000000000007",
+      "previous_assessment_id": null,
+      "assessment_revision": 1,
+      "case_row_version": 2
     },
     "errors": {
       "not_authenticated": {
@@ -1891,10 +1894,16 @@
           "detail": "Not authenticated"
         }
       },
-      "identity": {
+      "permission_denied": {
         "status": 403,
         "body": {
-          "detail": "case_user_actor_required"
+          "detail": "Permission denied: cases:write"
+        }
+      },
+      "case_actor_not_in_tenant": {
+        "status": 403,
+        "body": {
+          "detail": "case_actor_not_in_tenant"
         }
       },
       "validation": {
@@ -1919,14 +1928,88 @@
           "detail": "socai2_case_api_not_enabled"
         }
       },
-      "case_ai_not_implemented": {
-        "status": 501,
+      "case_not_found": {
+        "status": 404,
         "body": {
-          "detail": {
-            "code": "case_ai_not_implemented",
-            "status": "not_implemented",
-            "message": "AI问答功能暂未实现；本次请求未执行、保存或采用任何结果。"
-          }
+          "detail": "case_not_found"
+        }
+      },
+      "case_result_not_found": {
+        "status": 404,
+        "body": {
+          "detail": "case_result_not_found"
+        }
+      },
+      "result_run_link_invalid": {
+        "status": 409,
+        "body": {
+          "detail": "result_run_link_invalid"
+        }
+      },
+      "current_assessment_reference_invalid": {
+        "status": 409,
+        "body": {
+          "detail": "current_assessment_reference_invalid"
+        }
+      },
+      "result_adoption_preview_changed": {
+        "status": 409,
+        "body": {
+          "detail": "result_adoption_preview_changed"
+        }
+      },
+      "result_adoption_pending_work_confirmation_required": {
+        "status": 409,
+        "body": {
+          "detail": "result_adoption_pending_work_confirmation_required"
+        }
+      },
+      "case_reopen_required": {
+        "status": 409,
+        "body": {
+          "detail": "case_reopen_required"
+        }
+      },
+      "result_not_whole_case_baseline": {
+        "status": 409,
+        "body": {
+          "detail": "result_not_whole_case_baseline"
+        }
+      },
+      "result_run_not_completed": {
+        "status": 409,
+        "body": {
+          "detail": "result_run_not_completed"
+        }
+      },
+      "result_conclusion_not_eligible": {
+        "status": 409,
+        "body": {
+          "detail": "result_conclusion_not_eligible"
+        }
+      },
+      "result_scope_not_current": {
+        "status": 409,
+        "body": {
+          "detail": "result_scope_not_current"
+        }
+      },
+      "result_member_coverage_incomplete": {
+        "status": 409,
+        "body": {
+          "detail": "result_member_coverage_incomplete"
+        }
+      },
+      "result_input_not_current": {
+        "status": 409,
+        "body": {
+          "detail": "result_input_not_current"
+        }
+      },
+      "operation_key_conflict": {
+        "status": 409,
+        "body": {
+          "detail": "operation_key_conflict"
         }
       }
     },
@@ -5824,6 +5907,397 @@
         "status": 404,
         "body": {
           "detail": "case_attachment_not_found"
+        }
+      }
+    },
+    "notice": "合成合同示例，不连接API或数据库；各示例为独立场景。"
+  },
+  "E63": {
+    "method": "GET",
+    "path": "/api/v1/socai2/cases/{case_id}/results/{result_id}/adoption-preview",
+    "parameters": {
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "result_id": "00000000-0000-4000-8000-000000000005"
+    },
+    "request_body": null,
+    "response_status": 200,
+    "response_body": {
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "case_row_version": 1,
+      "scope_revision": 1,
+      "handling_status": "new",
+      "review_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "current_assessment": null,
+      "candidate": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "case_id": "00000000-0000-4000-8000-000000000001",
+        "kind": "baseline",
+        "source_run_id": "00000000-0000-4000-8000-000000000004",
+        "source_answer_id": null,
+        "title": "合成示例：核查异常登录",
+        "purpose": "仅说明合同结构，无真实执行或业务判断。",
+        "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+        "conclusion_state": "uncertain",
+        "conclusion_origin": "model",
+        "validation_state": "accepted",
+        "closing_note": "仅说明合同结构，无真实执行或业务判断。",
+        "comparison_result_id": null,
+        "change_kind": "initial",
+        "change_summary": null,
+        "input_artifact_id": "00000000-0000-4000-8000-000000000009",
+        "graph_artifact_id": null,
+        "report_artifact_id": null,
+        "supersedes_result_id": null,
+        "delivery_state": "partial",
+        "created_at": "2026-11-12T08:00:00Z",
+        "saved_at": "2026-11-12T08:00:00Z",
+        "saved_by": null,
+        "edited_fields": [],
+        "edit_note": null,
+        "findings": [],
+        "questions": [
+          {
+            "id": "authorization",
+            "text": "这次操作是否经过维护授权？",
+            "scope": {
+              "kind": "whole_case",
+              "alert_ids": [
+                "00000000-0000-4000-8000-000000000002"
+              ],
+              "object_keys": [],
+              "window_start": null,
+              "window_end": null,
+              "limitations": []
+            },
+            "evidence_requirements": [
+              "维护负责人确认"
+            ],
+            "state": "unresolved",
+            "answer": null,
+            "evidence_refs": [],
+            "limitations": [
+              "尚未取得授权记录。"
+            ]
+          }
+        ],
+        "recommendations": [],
+        "case_impact": {
+          "summary": null,
+          "supported_changes": [],
+          "cannot_generalize": [],
+          "affected_scope": {
+            "kind": "selected_alerts",
+            "alert_ids": [
+              "00000000-0000-4000-8000-000000000002"
+            ],
+            "object_keys": [],
+            "window_start": null,
+            "window_end": null,
+            "limitations": [
+              "仅覆盖人工核实的该条告警"
+            ]
+          },
+          "next_steps": []
+        }
+      },
+      "source_run": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "case_id": "00000000-0000-4000-8000-000000000001",
+        "kind": "baseline",
+        "title": "合成示例：核查异常登录",
+        "purpose": "仅说明合同结构，无真实执行或业务判断。",
+        "trigger": "manual",
+        "scope_revision": 1,
+        "scope_updated_at": null,
+        "scope_kind": "whole_case",
+        "window_start": null,
+        "window_end": null,
+        "state": "completed",
+        "comparison_result_id": null,
+        "input_artifact_id": null,
+        "executor_version": null,
+        "requested_at": "2026-11-12T08:00:00Z",
+        "requested_by": null,
+        "started_at": "2026-11-12T08:00:00Z",
+        "ended_at": "2026-11-12T08:00:00Z",
+        "stop_reason": null,
+        "stop_detail": null,
+        "delivery_state": "partial",
+        "row_version": 1
+      },
+      "current_alert_ids": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "members": [
+        {
+          "alert_id": "00000000-0000-4000-8000-000000000002",
+          "assessment_state": "unresolved",
+          "conclusion_covered": true,
+          "assessment": null,
+          "limitations": "维护授权未核实。"
+        }
+      ],
+      "uncovered_alert_ids": [],
+      "outside_alert_ids": [],
+      "input_freshness": {
+        "state": "current",
+        "reasons": []
+      },
+      "unfinished_tasks": [
+        {
+          "task_id": "00000000-0000-4000-8000-000000000006",
+          "revision_id": "00000000-0000-4000-8000-000000000007",
+          "title": "核实维护授权",
+          "state": "not_started"
+        }
+      ],
+      "unfinished_runs": [],
+      "requires_pending_work_acknowledgement": true,
+      "can_adopt": true,
+      "refusal_reasons": []
+    },
+    "errors": {
+      "not_authenticated": {
+        "status": 401,
+        "body": {
+          "detail": "Not authenticated"
+        }
+      },
+      "permission_denied": {
+        "status": 403,
+        "body": {
+          "detail": "Permission denied: cases:read"
+        }
+      },
+      "validation": {
+        "status": 422,
+        "body": {
+          "detail": [
+            {
+              "type": "uuid_parsing",
+              "loc": [
+                "path",
+                "case_id"
+              ],
+              "msg": "Input should be a valid UUID",
+              "input": "not-a-uuid"
+            }
+          ]
+        }
+      },
+      "result_adoption_query_parameter_not_supported": {
+        "status": 422,
+        "body": {
+          "detail": "result_adoption_query_parameter_not_supported"
+        }
+      },
+      "feature_disabled": {
+        "status": 503,
+        "body": {
+          "detail": "socai2_case_api_not_enabled"
+        }
+      },
+      "case_not_found": {
+        "status": 404,
+        "body": {
+          "detail": "case_not_found"
+        }
+      },
+      "case_result_not_found": {
+        "status": 404,
+        "body": {
+          "detail": "case_result_not_found"
+        }
+      },
+      "result_run_link_invalid": {
+        "status": 409,
+        "body": {
+          "detail": "result_run_link_invalid"
+        }
+      },
+      "current_assessment_reference_invalid": {
+        "status": 409,
+        "body": {
+          "detail": "current_assessment_reference_invalid"
+        }
+      }
+    },
+    "notice": "合成合同示例，不连接API或数据库；各示例为独立场景。"
+  },
+  "E64": {
+    "method": "GET",
+    "path": "/api/v1/socai2/cases/{case_id}/assessments",
+    "parameters": {
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "limit": 20,
+      "offset": 0
+    },
+    "request_body": null,
+    "response_status": 200,
+    "response_body": {
+      "items": [
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "case_id": "00000000-0000-4000-8000-000000000001",
+          "revision": 1,
+          "scope_revision": 1,
+          "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+          "origin": "model",
+          "validity": "accepted",
+          "formed_at": "2026-11-12T08:00:00Z",
+          "adopted_at": "2026-11-12T08:00:00Z",
+          "adopted_by": "00000000-0000-4000-8000-000000000010",
+          "actor": {
+            "type": "user",
+            "user_id": "00000000-0000-4000-8000-000000000010",
+            "service_name": null,
+            "name_snapshot": "analyst@example.invalid",
+            "service_version": null
+          },
+          "reason": "保留本轮待复核结论，人工核实任务继续跟进。",
+          "sources": [
+            {
+              "result_id": "00000000-0000-4000-8000-000000000005",
+              "task_revision_id": null,
+              "artifact_id": null
+            }
+          ],
+          "members": [
+            {
+              "alert_id": "00000000-0000-4000-8000-000000000002",
+              "coverage_note": "维护授权未核实。"
+            }
+          ],
+          "results": [
+            {
+              "id": "00000000-0000-4000-8000-000000000005",
+              "case_id": "00000000-0000-4000-8000-000000000001",
+              "kind": "baseline",
+              "source_run_id": "00000000-0000-4000-8000-000000000004",
+              "source_answer_id": null,
+              "title": "合成示例：核查异常登录",
+              "purpose": "仅说明合同结构，无真实执行或业务判断。",
+              "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+              "conclusion_state": "uncertain",
+              "conclusion_origin": "model",
+              "validation_state": "accepted",
+              "closing_note": "仅说明合同结构，无真实执行或业务判断。",
+              "comparison_result_id": null,
+              "change_kind": "initial",
+              "change_summary": null,
+              "input_artifact_id": "00000000-0000-4000-8000-000000000009",
+              "graph_artifact_id": null,
+              "report_artifact_id": null,
+              "supersedes_result_id": null,
+              "delivery_state": "partial",
+              "created_at": "2026-11-12T08:00:00Z",
+              "saved_at": "2026-11-12T08:00:00Z",
+              "saved_by": null,
+              "edited_fields": [],
+              "edit_note": null,
+              "findings": [],
+              "questions": [
+                {
+                  "id": "authorization",
+                  "text": "这次操作是否经过维护授权？",
+                  "scope": {
+                    "kind": "whole_case",
+                    "alert_ids": [
+                      "00000000-0000-4000-8000-000000000002"
+                    ],
+                    "object_keys": [],
+                    "window_start": null,
+                    "window_end": null,
+                    "limitations": []
+                  },
+                  "evidence_requirements": [
+                    "维护负责人确认"
+                  ],
+                  "state": "unresolved",
+                  "answer": null,
+                  "evidence_refs": [],
+                  "limitations": [
+                    "尚未取得授权记录。"
+                  ]
+                }
+              ],
+              "recommendations": [],
+              "case_impact": {
+                "summary": null,
+                "supported_changes": [],
+                "cannot_generalize": [],
+                "affected_scope": {
+                  "kind": "selected_alerts",
+                  "alert_ids": [
+                    "00000000-0000-4000-8000-000000000002"
+                  ],
+                  "object_keys": [],
+                  "window_start": null,
+                  "window_end": null,
+                  "limitations": [
+                    "仅覆盖人工核实的该条告警"
+                  ]
+                },
+                "next_steps": []
+              }
+            }
+          ]
+        }
+      ],
+      "total": 1,
+      "next_offset": null
+    },
+    "errors": {
+      "not_authenticated": {
+        "status": 401,
+        "body": {
+          "detail": "Not authenticated"
+        }
+      },
+      "permission_denied": {
+        "status": 403,
+        "body": {
+          "detail": "Permission denied: cases:read"
+        }
+      },
+      "validation": {
+        "status": 422,
+        "body": {
+          "detail": [
+            {
+              "type": "uuid_parsing",
+              "loc": [
+                "path",
+                "case_id"
+              ],
+              "msg": "Input should be a valid UUID",
+              "input": "not-a-uuid"
+            }
+          ]
+        }
+      },
+      "assessment_history_query_parameter_not_supported": {
+        "status": 422,
+        "body": {
+          "detail": "assessment_history_query_parameter_not_supported"
+        }
+      },
+      "invalid_assessment_history_page": {
+        "status": 422,
+        "body": {
+          "detail": "invalid_assessment_history_page"
+        }
+      },
+      "feature_disabled": {
+        "status": 503,
+        "body": {
+          "detail": "socai2_case_api_not_enabled"
+        }
+      },
+      "case_not_found": {
+        "status": 404,
+        "body": {
+          "detail": "case_not_found"
         }
       }
     },

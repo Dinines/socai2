@@ -11,13 +11,11 @@ from investigation_http.adapters import services as backends
 
 CASE = UUID(int=1)
 MESSAGE = UUID(int=2)
-RESULT = UUID(int=3)
 OP = str(UUID(int=4))
 BASE = f"/api/v1/socai2/cases/{CASE}"
 REQUESTS = (
     (f"{BASE}/ai/messages", {"operation_key": OP, "question": "现有证据有什么限制？"}),
     (f"{BASE}/ai/messages/{MESSAGE}/save", {"operation_key": OP, "title": "待核实事实", "conclusion": "需要人工确认授权"}),
-    (f"{BASE}/results/{RESULT}/adopt", {"operation_key": OP, "expected_scope_revision": 1}),
 )
 
 
@@ -82,9 +80,8 @@ class ReservedCaseAITest(unittest.IsolatedAsyncioTestCase):
             with self.subTest(path=path, boundary="tenant_injection"):
                 self.assertEqual((await self.client.post(path, json={**body, "tenant_id": str(UUID(int=7))})).status_code, 422)
         self.assertEqual((await self.client.post(REQUESTS[0][0], json={"operation_key": OP, "question": "   "})).status_code, 422)
-        self.assertEqual((await self.client.post(REQUESTS[2][0], json={"operation_key": OP, "expected_scope_revision": -1})).status_code, 422)
         schema = self.app.openapi()
-        self.assertEqual(len(schema["paths"]), 3)
+        self.assertEqual(len(schema["paths"]), 2)
         for path in schema["paths"].values():
             self.assertIn("501", path["post"]["responses"])
             self.assertNotIn("200", path["post"]["responses"])
