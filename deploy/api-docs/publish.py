@@ -70,6 +70,7 @@ RESULTS = {
 54: '返回告警筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
 55: '返回事件筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
 56: '返回调查筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
+57:'返回同一告警范围的6个数量/比例字段、三个筛选条件和观察时间。例6条告警中4条归为2事件、2条未归并，compression_rate=0.5；处理中只数这些事件的实际in_progress状态。',
 }
 
 
@@ -147,7 +148,7 @@ def enrich_contract(root, doc, features, endpoints, version):
     doc['info']['description'] = (
         '后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。'
         '\n\n状态标明接口逻辑是否实现；E19–E21为未实现预留接口，返回501。'
-        '本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。'
+        '本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。'
         '原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。'
         '新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。'
         '示例为合成数据，实际执行和结论状态以响应字段为准。'
@@ -162,7 +163,7 @@ def enrich_contract(root, doc, features, endpoints, version):
         eid = e['id']; number = int(eid[1:]); op = all_ops[eid]
         if number in [48,49,50,51,54]:
             tags = ['告警']
-        elif number in [52,53,55]:
+        elif number in [52,53,55,57]:
             tags = ['事件']
         elif number <= 21 or number >= 38:
             tags = ['调查']
@@ -186,12 +187,12 @@ def enrich_contract(root, doc, features, endpoints, version):
             inputs.append('JSON请求体：`'+model+'`，字段和必填要求见Request body')
         else:inputs.append('无请求体')
         response=e['response'].get('schema',{}).get('$ref','').rsplit('/',1)[-1]
-        if number>=54:response='text/csv；字段名表头，完整CSV，错误仍为JSON'
+        if 54<=number<=56:response='text/csv；字段名表头，完整CSV，错误仍为JSON'
         desc = (f'**实现状态：** {status}\n\n**用途：** {e["title"]}。'
                 + '\n\n**输入：** '+'；'.join(inputs)+'。'
                 + f'\n\n**输出：** HTTP {e["example"]["response_status"]}，`{response}`；完整字段和示例见Responses。'
                 + '\n\n**结果：** '+RESULTS[number]+'\n\n**规则与限制：** '+e['note'])
-        verification = ('本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。' if number>=54 else '已确认返回501，功能未实现。' if number in [19,20,21] else
+        verification = ('本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。' if number==57 else '本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。' if 54<=number<=56 else '已确认返回501，功能未实现。' if number in [19,20,21] else
             '本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。' if number in [2,26,27] else
             '本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。' if 48 <= number <= 53 else
             '本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。' if number >= 44 else
@@ -199,8 +200,13 @@ def enrich_contract(root, doc, features, endpoints, version):
             '本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。' if number in [1,3,12,38,40,41,42,43,44,45,46,47] else
             '本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。')
         desc += '\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** '+verification
-        desc += '\n\n**部署情况：** '+'本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。'
+        desc += '\n\n**部署情况：** '+'本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。'
         response_notes = ''
+        if number==57:
+            for model in ('GroupingSummary','GroupingQuery'):
+                response_notes+='\n\n### '+model+'\n\n| 字段 | 含义 |\n| --- | --- |\n'
+                for field,prop in sc[model]['properties'].items():
+                    response_notes+='| `'+field+'` | '+prop.get('description', '固定合同版本socai2.incident-grouping.v1').replace('\n',' ')+' |\n'
         relevant = []
         for name, body in dynamic.items():
             match = re.search(r'^落点：([^\n]+)', body, re.M)
@@ -213,7 +219,7 @@ def enrich_contract(root, doc, features, endpoints, version):
                 response_notes += '\n### ' + name + '\n\n' + links(root, audit / 'dynamic-fields.md', dynamic[name])
         maincode=str(e['example']['response_status'])
         op['responses'][maincode]['description'] = RESULTS[number] + response_notes
-        if number>=54:
+        if 54<=number<=56:
             kind={54:'alerts',55:'incidents',56:'cases'}[number]
             columns=json.loads((root/'deploy/api-docs/list-export-columns.json').read_text())[kind]
             model={54:'AlertFacts',55:'IncidentFacts',56:'CaseView'}[number]
@@ -260,8 +266,8 @@ def publish_pages(root, out, doc, features, endpoints, version, render, head, in
     for name in ['README', 'interfaces', 'response-fields', 'dynamic-fields']:
         source = audit / (name + '.md'); text = source.read_text()
         # 保留审计原件的历史结论；线上附上当前发布注记。
-        notice = f'<p class="badge">本页保留既有JSON接口字段审计原文（原文的47/53操作和当前仅指原审计时点）。{version}总计56操作；新增CSV接口及104个可选列见<a href="/handoff/endpoints.html#e54">E54–E56</a>。旧审计不替代本批CSV验收。</p>'
-        (out / 'audit' / source.name).write_text('> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前56操作，新增CSV接口/104列见[ E54–E56 ](../endpoints.md#e54)。\n\n'+text)
+        notice = f'<p class="badge">本页保留既有JSON接口字段审计原文（原文的47/53操作和当前仅指原审计时点）。{version}总计57操作；新增CSV接口及104个可选列见<a href="/handoff/endpoints.html#e54">E54–E56</a>。E57新增归并统计和12个固定字段，见<a href="/handoff/endpoints.html#e57">E57</a>。旧审计不替代新接口验收。</p>'
+        (out / 'audit' / source.name).write_text('> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前57操作，CSV接口/104列见[E54–E56](../endpoints.md#e54)；新增统计/12字段见[E57](../endpoints.md#e57)。\n\n'+text)
         (out / 'audit' / (('guide' if name == 'README' else name) + '.html')).write_text(
             head + nav + notice + render(links(root, source, text)) + '</main></html>')
     (out / 'audit/coverage.json').write_bytes((audit / 'coverage.json').read_bytes())

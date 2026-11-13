@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "list-export-20261113-r1-local"
+    "version": "grouping-summary-20261113-r1-local"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -4802,6 +4802,96 @@
           }
         }
       }
+    },
+    "/api/v1/socai2/incidents/grouping-summary": {
+      "get": {
+        "tags": [
+          "socai2-grouping"
+        ],
+        "summary": "Read Grouping Summary",
+        "operationId": "read_grouping_summary_api_v1_socai2_incidents_grouping_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_namespace",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Namespace"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupingSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7821,6 +7911,130 @@
           "limitations"
         ],
         "title": "Finding"
+      },
+      "GroupingQuery": {
+        "properties": {
+          "source_namespace": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Namespace",
+            "description": "告警来源命名空间，精确匹配且区分大小写；省略表示当前租户全部来源。"
+          },
+          "time_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time From",
+            "description": "告警event_time起点，包含；须带时区。"
+          },
+          "time_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time To",
+            "description": "告警event_time终点，不包含；须带时区。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "GroupingQuery"
+      },
+      "GroupingSummary": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "socai2.incident-grouping.v1",
+            "title": "Schema Version",
+            "default": "socai2.incident-grouping.v1"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/GroupingQuery",
+            "description": "实际采用的告警来源和UTC发生时间条件；不是事件表格筛选。"
+          },
+          "alert_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alert Count",
+            "description": "范围内不同告警数；包括已归并和未归并告警。"
+          },
+          "grouped_alert_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Grouped Alert Count",
+            "description": "范围内当前关联事件的不同告警数。"
+          },
+          "ungrouped_alert_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ungrouped Alert Count",
+            "description": "范围内未关联事件的告警数；等于alert_count-grouped_alert_count。"
+          },
+          "incident_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Incident Count",
+            "description": "范围内已归并告警关联的不同事件数；无范围内成员的事件不计。"
+          },
+          "in_progress_incident_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "In Progress Incident Count",
+            "description": "上述事件中handling_status=in_progress的数量；不看Run或Case状态。"
+          },
+          "compression_rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compression Rate",
+            "description": "(grouped_alert_count-incident_count)/grouped_alert_count；0..1，乘100为百分比。无已归并告警时null；不包含未归并告警，不代表正确率或解决率。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本次REPEATABLE READ只读快照的观察时间。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scope",
+          "alert_count",
+          "grouped_alert_count",
+          "ungrouped_alert_count",
+          "incident_count",
+          "in_progress_incident_count",
+          "compression_rate",
+          "observed_at"
+        ],
+        "title": "GroupingSummary"
       },
       "HTTPValidationError": {
         "properties": {

@@ -57,6 +57,7 @@ OPERATIONS = {
 54: ('导出告警列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
 55: ('导出事件列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
 56: ('导出调查列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
+57: ('事件归并统计', '已实现', '按当前租户告警选范围：source_namespace精确匹配告警来源并区分大小写；time_from/time_to按alerts.event_time，带时区，[起点,终点)，允许单边。时间条件排除未知时间，无时间条件包含。省略三个条件统计全租户。仅支持这三个参数；q/负责人/处理状态/排序/分页等返回422，顶部统计不沿用事件表格筛选。只数范围内告警，按当前关联去重事件；跨范围成员不扩入分母，无范围内成员的事件不计。处理中只按所计事件handling_status=in_progress。压缩比例=(已归并告警数-事件数)/已归并告警数，0..1乘100展示百分比；无已归并告警时null。未归并数量单列，不当成压缩成果，也不代表准确率或解决率。所有数量与observed_at来自同一只读快照，不写库、不触发归并或模型。', 'grouping_query_parameter_not_supported:422 read_dependency_missing:503 read_dependency_permission_denied:503 read_dependency_schema_mismatch:503'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -85,7 +86,7 @@ F27-01|部分实现|22,24,33,30|建议从解释/结果取，section=responses读
 F06-01|已实现|27|标题/ID、有效等级、状态、负责人、分配状态和成员真实发生时间筛选全库，返回filtered_total和next_cursor。
 F06-02|可用|27|读取overall_stats，按事件统计和观察时间展示。
 F06-03|可用|29|incident_id→事实与派生摘要；诊断补E23。
-F06-06|部分实现|27,26|两主体统计的观察时间/范围不同不能直接认定为同口径压缩比，统一统计仍缺。
+F06-06|已实现|57|E57同一只读范围返回告警/已归并/未归并/事件/处理中数量和明确分母的压缩比例；不拼接两个列表统计。
 F06-07|已实现|27,55|E27筛选排序分页；E55完整CSV导出及选列，显示列和复制链接由调用方处理；跨设备偏好无明确需求不实施。
 F23-06|可用|53,29,30|批量管理明确选中的事件，各项版本校验，整体成功或拒绝；未选事件不变。
 F23-02|可用|52,29,30|事件负责人、状态、标签和人工等级覆盖可写；解决/等级覆盖需理由，保留成员等级和原诊断。

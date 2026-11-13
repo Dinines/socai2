@@ -1,4 +1,4 @@
-# 调查HTTP接口目录（56项）
+# 调查HTTP接口目录（57项）
 
 [共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)
 
@@ -26,7 +26,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e01) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -117,7 +117,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e02) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -210,7 +210,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e03) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -314,7 +314,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e04) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -400,7 +400,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e05) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -481,7 +481,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e06) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -580,7 +580,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e07) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -664,7 +664,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e08) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -755,7 +755,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e09) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -857,7 +857,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e10) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -927,7 +927,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e11) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1006,7 +1006,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e12) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1129,7 +1129,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e13) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1275,7 +1275,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e14) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1433,7 +1433,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e15) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1509,7 +1509,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e16) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1583,7 +1583,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e17) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1656,7 +1656,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e18) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1738,7 +1738,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e19) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1817,7 +1817,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e20) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1898,7 +1898,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e21) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1977,7 +1977,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e22) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2051,7 +2051,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e23) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2125,7 +2125,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e24) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2209,7 +2209,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e25) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2293,7 +2293,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e26) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2391,7 +2391,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e27) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2492,7 +2492,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e28) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2634,7 +2634,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e29) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2765,7 +2765,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e30) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2843,7 +2843,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e31) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2924,7 +2924,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e32) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3003,7 +3003,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e33) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3080,7 +3080,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e34) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3153,7 +3153,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e35) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3226,7 +3226,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e36) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3319,7 +3319,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e37) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3412,7 +3412,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e38) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3540,7 +3540,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e39) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3611,7 +3611,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e40) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3763,7 +3763,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e41) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3855,7 +3855,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e42) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3928,7 +3928,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e43) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4011,7 +4011,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e44) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4110,7 +4110,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e45) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4234,7 +4234,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e46) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4347,7 +4347,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e47) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4456,7 +4456,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e48) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4578,7 +4578,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e49) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4708,7 +4708,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e50) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4838,7 +4838,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e51) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4974,7 +4974,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e52) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5091,7 +5091,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e53) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5211,7 +5211,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5334,7 +5334,7 @@ facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5452,7 +5452,7 @@ facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5546,3 +5546,82 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 | 413 | export_size_limit_exceeded | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E56.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e57"></a>
+
+## E57 事件归并统计
+
+`GET /api/v1/socai2/incidents/grouping-summary`
+
+状态：**已实现**。分类：事件。
+
+**实现状态：** 已实现
+
+**用途：** 事件归并统计。
+
+**输入：** 查询参数：`source_namespace`, `time_from`, `time_to`；无请求体。
+
+**输出：** HTTP 200，`GroupingSummary`；完整字段和示例见Responses。
+
+**结果：** 返回同一告警范围的6个数量/比例字段、三个筛选条件和观察时间。例6条告警中4条归为2事件、2条未归并，compression_rate=0.5；处理中只数这些事件的实际in_progress状态。
+
+**规则与限制：** 按当前租户告警选范围：source_namespace精确匹配告警来源并区分大小写；time_from/time_to按alerts.event_time，带时区，[起点,终点)，允许单边。时间条件排除未知时间，无时间条件包含。省略三个条件统计全租户。仅支持这三个参数；q/负责人/处理状态/排序/分页等返回422，顶部统计不沿用事件表格筛选。只数范围内告警，按当前关联去重事件；跨范围成员不扩入分母，无范围内成员的事件不计。处理中只按所计事件handling_status=in_progress。压缩比例=(已归并告警数-事件数)/已归并告警数，0..1乘100展示百分比；无已归并告警时null。未归并数量单列，不当成压缩成果，也不代表准确率或解决率。所有数量与observed_at来自同一只读快照，不写库、不触发归并或模型。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。
+
+**部署情况：** 本机18024为grouping-summary-20261113-r1-local，21正式18024为grouping-summary-20261113-r1；两端均已挂载57操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| query | source_namespace | False | string; minLength=1; maxLength=256 / null | null | 告警来源命名空间精确匹配，区分大小写；省略为全部来源；空白拒绝422。 |
+| query | time_from | False | string (date-time) / null | null | 告警真实event_time的带时区范围：起点包含、终点不含；允许单边；范围内不包含未知时间。省略时间条件则包含未知时间。 |
+| query | time_to | False | string (date-time) / null | null | 告警真实event_time的带时区范围：起点包含、终点不含；允许单边；范围内不包含未知时间。省略时间条件则包含未知时间。 |
+
+
+无请求体。
+
+响应类型：[GroupingSummary](schemas.md#groupingsummary)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "source_namespace": "example"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "schema_version": "socai2.incident-grouping.v1",
+  "scope": {
+    "source_namespace": "example",
+    "time_from": null,
+    "time_to": null
+  },
+  "alert_count": 6,
+  "grouped_alert_count": 4,
+  "ungrouped_alert_count": 2,
+  "incident_count": 2,
+  "in_progress_incident_count": 1,
+  "compression_rate": 0.5,
+  "observed_at": "2026-11-12T08:00:00Z"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 现有读取条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | grouping_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | read_dependency_missing | 业务约束/对象状态，见操作说明 |
+| 503 | read_dependency_permission_denied | 业务约束/对象状态，见操作说明 |
+| 503 | read_dependency_schema_mismatch | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E57.errors`，Swagger同操作 Responses 可直接展开。

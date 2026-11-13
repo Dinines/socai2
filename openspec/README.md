@@ -10,9 +10,11 @@
 
 [独立HTTP入口](changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已统一21:18024的43操作和正式数据目标，Case/H真实TCP及SQL读回通过、docs5同步两端；仅发布入口/写连接两文件，不包含并行模型修改。后续业务按[HTTP实施计划](../docs/investigation/http-implementation-plan-20261112.md)逐项推进，主调查31/41保持。
 
-[Case基本管理](changes/archive/2026-11-12-manage-investigation-cases/validation.md)已完成E44–E47、两端各20次HTTP及SQL、限定独审和一次服务/Swagger发布；该批为47操作、docs6。随后[告警/事件管理](changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53及两端各86次HTTP、SQL逐值读回，服务和docs7均已发布；当前53操作、50已实现/3预留501，主调查31/41保持。
+[Case基本管理](changes/archive/2026-11-12-manage-investigation-cases/validation.md)已完成E44–E47、两端各20次HTTP及SQL、限定独审和一次服务/Swagger发布；该批为47操作、docs6。随后[告警/事件管理](changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53及两端各86次HTTP、SQL逐值读回，服务和docs7均已发布；该批53操作、50已实现/3预留501，主调查31/41保持。
 
 [对外HTTP代码分离](changes/archive/2026-11-13-separate-investigation-http/validation.md)已完成两端18024发布、直接读回、限定独审及归档。对外查询和业务操作由独立HTTP包维护，调查内部步骤及必要内部HTTP保持原归属，53操作合同不变；本机真实保存读取、21既有数据只读复验，Swagger保留一致的docs7。[列表查询增量](changes/archive/2026-11-13-query-investigation-lists/design.md)已完成三类列表筛选、排序和分页，仅告警/事件封套新增获准两键；15项离线检查及117次候选HTTP/PG通过，两端服务与docs8已同步，发布只读复验和独审见本change。
+
+[完整CSV导出](changes/archive/2026-11-13-export-investigation-lists/validation.md)已完成E54–E56及两端docs9。当前[事件归并统计](changes/archive/2026-11-13-summarize-incident-grouping/validation.md)补E57/F06-06，同一只读范围计数和明确压缩比例；已完成两端发布、实际读回和独立结束审计，Swagger docs10同步；发布事实以PROGRESS及本批验收为准。
 
 ## 文档职责
 

@@ -62,3 +62,7 @@ class StageExecution(Protocol):
 
 class ListExports(Protocol):
     async def read(self, tenant_id, kind, query): ...
+
+
+class GroupingReads(Protocol):
+    async def read(self, tenant_id, query): ...

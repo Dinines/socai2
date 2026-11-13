@@ -12,6 +12,7 @@ from investigation_http.external_routes import (
     case_ai,
     cases,
     exports,
+    grouping,
     pages,
     stage_execution,
     tasks,
@@ -26,6 +27,7 @@ runtime.configure_http(app)
 for router in (
     login_router,
     exports.router,
+    grouping.router,
     cases.router,
     case_ai.router,
     analysis.router,

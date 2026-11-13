@@ -53,6 +53,10 @@ def test_external_contract_preserves_compatibility_except_approved_list_delta():
         exported = normalized["paths"].pop("/api/v1/socai2/" + kind + "/export")
         assert set(exported) == {"get"}
         assert "text/csv" in exported["get"]["responses"]["200"]["content"]
+    summary = normalized["paths"].pop("/api/v1/socai2/incidents/grouping-summary")
+    assert set(summary) == {"get"}
+    for name in ("GroupingQuery", "GroupingSummary"):
+        normalized["components"]["schemas"].pop(name)
     common = {"time_from", "time_to", "sort_by", "sort_order"}
     subject = common | {"q", "severity", "handling_status", "owner_id", "assignment_state", "cursor"}
     for kind, allowed in (("cases", common), ("alerts", subject), ("incidents", subject)):

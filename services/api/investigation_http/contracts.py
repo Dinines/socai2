@@ -184,3 +184,7 @@ from app.socai2.case_contracts import CaseView
 from app.socai2.page_contracts import AlertFacts, IncidentFacts
 
 __all__ += ["AlertFacts", "CaseView", "IncidentFacts"]
+
+from app.socai2.grouping_contracts import GroupingQuery, GroupingSummary
+
+__all__ += ["GroupingQuery", "GroupingSummary"]

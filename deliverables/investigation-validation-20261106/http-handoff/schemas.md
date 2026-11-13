@@ -809,6 +809,38 @@ string true_positive, false_positive, benign, needs_review
 | limitations | 是 | array <string> | 无（可空不等于可省略） | 本次结果或阅读的限制，原样保留。 [完整语义](/handoff/audit/response-fields.html#finding) |
 
 
+<a id="groupingquery"></a>
+
+## GroupingQuery
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| source_namespace | 否 | string; minLength=1; maxLength=256 / null | 无（可空不等于可省略） | 告警来源命名空间，精确匹配且区分大小写；省略表示当前租户全部来源。 |
+| time_from | 否 | string (date-time) / null | 无（可空不等于可省略） | 告警event_time起点，包含；须带时区。 |
+| time_to | 否 | string (date-time) / null | 无（可空不等于可省略） | 告警event_time终点，不包含；须带时区。 |
+
+
+<a id="groupingsummary"></a>
+
+## GroupingSummary
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| schema_version | 否 | string = socai2.incident-grouping.v1 | "socai2.incident-grouping.v1" | Schema Version |
+| scope | 是 | [GroupingQuery](schemas.md#groupingquery) | 无（可空不等于可省略） | 实际采用的告警来源和UTC发生时间条件；不是事件表格筛选。 |
+| alert_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 范围内不同告警数；包括已归并和未归并告警。 |
+| grouped_alert_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 范围内当前关联事件的不同告警数。 |
+| ungrouped_alert_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 范围内未关联事件的告警数；等于alert_count-grouped_alert_count。 |
+| incident_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 范围内已归并告警关联的不同事件数；无范围内成员的事件不计。 |
+| in_progress_incident_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 上述事件中handling_status=in_progress的数量；不看Run或Case状态。 |
+| compression_rate | 是 | number; minimum=0.0; maximum=1.0 / null | 无（可空不等于可省略） | (grouped_alert_count-incident_count)/grouped_alert_count；0..1，乘100为百分比。无已归并告警时null；不包含未归并告警，不代表正确率或解决率。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次REPEATABLE READ只读快照的观察时间。 |
+
+
 <a id="httpvalidationerror"></a>
 
 ## HTTPValidationError

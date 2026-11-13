@@ -12,6 +12,7 @@ from app.db.database import AsyncSessionLocal
 from app.socai2.baseline_store import StoreError
 from app.socai2.case_management import manage_case, read_management
 from app.socai2.case_service import CaseService
+from app.socai2.grouping_summary import GroupingSummaryService
 from app.socai2.human_task_service import HumanTaskService
 from app.socai2.list_export import ListExportService
 from app.socai2.page_reader import PageReadService
@@ -113,3 +114,9 @@ class ExportBackend(ListExportService):
 
 def exports():
     return ExportBackend(AsyncSessionLocal)
+
+
+def grouping():
+    if not settings.SOCAI2_PAGE_READ_ENABLED:
+        raise StoreError("socai2_page_read_not_enabled", 503)
+    return GroupingSummaryService(AsyncSessionLocal)

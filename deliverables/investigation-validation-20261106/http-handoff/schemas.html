@@ -542,6 +542,28 @@
 <tr><td>counterevidence</td><td>是</td><td>array &lt;<a href="schemas.html#evidenceref">EvidenceRef</a>&gt;</td><td>无（可空不等于可省略）</td><td>反证或不支持该发现的来源引用。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
 <tr><td>limitations</td><td>是</td><td>array &lt;string&gt;</td><td>无（可空不等于可省略）</td><td>本次结果或阅读的限制，原样保留。 <a href="/handoff/audit/response-fields.html#finding">完整语义</a></td></tr>
 </table>
+<a id="groupingquery"></a>
+<h2 id="groupingquery">GroupingQuery</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>source_namespace</td><td>否</td><td>string; minLength=1; maxLength=256 / null</td><td>无（可空不等于可省略）</td><td>告警来源命名空间，精确匹配且区分大小写；省略表示当前租户全部来源。</td></tr>
+<tr><td>time_from</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>告警event_time起点，包含；须带时区。</td></tr>
+<tr><td>time_to</td><td>否</td><td>string (date-time) / null</td><td>无（可空不等于可省略）</td><td>告警event_time终点，不包含；须带时区。</td></tr>
+</table>
+<a id="groupingsummary"></a>
+<h2 id="groupingsummary">GroupingSummary</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>schema_version</td><td>否</td><td>string = socai2.incident-grouping.v1</td><td>&quot;socai2.incident-grouping.v1&quot;</td><td>Schema Version</td></tr>
+<tr><td>scope</td><td>是</td><td><a href="schemas.html#groupingquery">GroupingQuery</a></td><td>无（可空不等于可省略）</td><td>实际采用的告警来源和UTC发生时间条件；不是事件表格筛选。</td></tr>
+<tr><td>alert_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>范围内不同告警数；包括已归并和未归并告警。</td></tr>
+<tr><td>grouped_alert_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>范围内当前关联事件的不同告警数。</td></tr>
+<tr><td>ungrouped_alert_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>范围内未关联事件的告警数；等于alert_count-grouped_alert_count。</td></tr>
+<tr><td>incident_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>范围内已归并告警关联的不同事件数；无范围内成员的事件不计。</td></tr>
+<tr><td>in_progress_incident_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>上述事件中handling_status=in_progress的数量；不看Run或Case状态。</td></tr>
+<tr><td>compression_rate</td><td>是</td><td>number; minimum=0.0; maximum=1.0 / null</td><td>无（可空不等于可省略）</td><td>(grouped_alert_count-incident_count)/grouped_alert_count；0..1，乘100为百分比。无已归并告警时null；不包含未归并告警，不代表正确率或解决率。</td></tr>
+<tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次REPEATABLE READ只读快照的观察时间。</td></tr>
+</table>
 <a id="httpvalidationerror"></a>
 <h2 id="httpvalidationerror">HTTPValidationError</h2>
 <table>

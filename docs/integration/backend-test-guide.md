@@ -176,3 +176,15 @@ curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
 ```
 
 该21合成组应命中3条；相同q用于事件导出也是3条。调查可用`q=d5ef9c5a-00c9-564a-9fcb-fdb5810f890e`读取1条。仅GET，不触发分析或修改。当前上限10000行/16MiB，错误返回JSON；空结果CSV仅表头。[默认列、空值/转义和错误规则](../../deliverables/investigation-validation-20261106/http-handoff/README.md#完整列表导出)。本机专属55条合成告警及3事件/3Case见[新批次数据](../operations/evidence/list-export-20261113-01/fixture.json)，不能拿本机ID在21查询。
+
+## 事件归并统计联调
+
+使用E57 `GET /api/v1/socai2/incidents/grouping-summary`，可先只读查询21既有合成来源：
+
+```sh
+curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode 'source_namespace=synthetic-subject-management'
+```
+
+该来源记录可能继续增加，以接口实际数量为准。输入仅来源与可选发生时间范围，不传q、负责人、状态或分页；完整字段和比例解释见[归并统计指南](../../deliverables/investigation-validation-20261106/http-handoff/README.md#事件归并统计)。本机专属[新合成批次](../operations/evidence/grouping-summary-20261113-01/fixture.json)主来源6告警，4条归为2事件，2条未归并，处理中1事件，比例0.5；次来源用于核对跨来源成员，不在21复写。查询不修改事件或触发调查。
