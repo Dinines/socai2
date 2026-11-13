@@ -8,7 +8,7 @@ SOURCE=ROOT/'deliverables/investigation-validation-20261106'
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output',type=Path,default=SOURCE/'http-handoff')
 OUT=parser.parse_args().output.resolve()
-VERSION='2026-11-13.docs8'
+VERSION='2026-11-13.docs9'
 BASE=ROOT/'docs/design/socai2-independent-api-v2.openapi.json'
 DOC=json.loads(BASE.read_text())
 DOC['paths']={k:v for k,v in DOC['paths'].items() if k.startswith('/api/v1/socai2')}
@@ -130,7 +130,7 @@ SECTIONS={
 'related_alerts':('RecordAlert','同类型、同命名空间、同对象键的其他告警，排除当前成员，可跨Case。'),
 'responses':('RecordResponse','现有响应关联；ID本身不证明审批/执行成功。'),
 }
-DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='53 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。3个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
+DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='56 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。3个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
 DOC['servers']=[
  {'url':'http://192.168.1.21:18024','description':'21正式独立服务；数据库aisoc，内网HTTP对接使用此入口。'},
  {'url':'http://127.0.0.1:28024','description':'本机SSH转发到21正式服务；需已开启relay.json对应转发。'},
@@ -265,6 +265,9 @@ for path,methods in DOC['paths'].items():
   params=[]; pv={}
   for p in op.get('parameters',[]):
    p['description']=DESC.get(p['name'],p.get('description',p['name']))
+   if i>=54 and p['name']=='columns':p['description']='逗号分隔的公开字段路径，按给定顺序输出；省略使用默认列；空列、重复或未知列返回422。全部可选列及默认列见Responses。'
+   if i>=54 and p['name']=='severity':p['description']='按已知等级精确筛选；省略不筛选。当前没有单独筛选未知等级的参数，不传null字符串。'
+   if i>=54 and p['name']=='sort_by':p['description']+=' 默认'+{54:'ingested_at',55:'created_at',56:'business_updated_at'}[i]+'。'
    v=sample(p['schema'],p['name'])
    if p['name']=='section':v='objects'
    if p['name']=='subject':v='alerts'
@@ -279,9 +282,9 @@ for path,methods in DOC['paths'].items():
   if i==18:op['responses']['200']['content']['application/json']['schema']={'$ref':'#/components/schemas/FrozenAlertMaterial'}
   if i in [19,20,21]:op['responses'].pop('200',None)
   maincode='501' if i in [19,20,21] else '200'
-  resp=op['responses'][maincode].setdefault('content',{}).setdefault('application/json',{})
+  resp=op['responses'][maincode].setdefault('content',{}).setdefault('text/csv' if i>=54 else 'application/json',{})
   out=sample(resp.get('schema',{}))
-  if i >= 48:
+  if 48 <= i <= 53:
    one=copy.deepcopy(EX['SubjectMutationReceipt'])
    if i in [48,49]:
     one['feedback_id']=ID['result'];one['facts'].update(latest_feedback_id=ID['result'],disposition='false_positive',handling_status='completed',closed_at=DATE,closed_by=ID['user'])
@@ -290,6 +293,11 @@ for path,methods in DOC['paths'].items():
    if i in [50,51]:one['facts']['tags']=['人工跟进']
    if i==53:one['facts'].update(handling_status='resolved',resolution_note='人工完成事件核实',resolved_at=DATE,resolved_by=ID['user'])
    out={'operation_key':ID['operation'],'items':[one],'changed_count':1} if i in [49,51,53] else one
+  if i>=54:
+   kind={54:'alerts',55:'incidents',56:'cases'}[i]
+   cols=json.loads((ROOT/'deploy/api-docs/list-export-columns.json').read_text())[kind]['defaults']
+   out=','.join(cols)+'\r\n'
+   pv={'q':'合成示例无记录','columns':','.join(cols),'sort_by':'severity','sort_order':'desc'}
   if i in [23,25,37]:
    if 'kind' in out:out['kind']='incident_diagnosis'
    if 'subject_id' in out:out['subject_id']=ID['incident']
@@ -317,7 +325,7 @@ for path,methods in DOC['paths'].items():
     val=sample({'$ref':'#/components/schemas/'+nm})
     resp['examples'][s]={'summary':f'{s}分区的空集合示例；非空字段见对应Record Schema','value':{'items':[],'total':0,'next_offset':None,'observed_at':DATE,'limitations':[]}}
   errorlist=[]
-  defaults={'401':[('not_authenticated',{'detail':'Not authenticated'},'缺少有效已有凭据')],'403':[('identity',{'detail':('subject_user_actor_required' if i>=48 else 'case_user_actor_required') if i<22 or i>=38 else 'Permission denied: alerts:read'},'现有身份/访问条件不符')],'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
+  defaults={'401':[('not_authenticated',{'detail':'Not authenticated'},'缺少有效已有凭据')],'403':[('identity',{'detail':('subject_user_actor_required' if 48<=i<=53 else 'case_user_actor_required') if i<22 or i>=38 else 'Permission denied: alerts:read'},'现有身份/访问条件不符')],'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
   # 校验错误示例必须引用该操作实际存在的入参，列表不能虚构path.identity。
   error_param=next((p for p in params if p['in']=='path' and p['schema'].get('format')=='uuid'),None)
   if error_param:
@@ -327,9 +335,12 @@ for path,methods in DOC['paths'].items():
   else:
    error_item={'type':'int_parsing','loc':['query','limit'],'msg':'Input should be a valid integer','input':'not-an-integer'}
   defaults['422'][0][1]['detail']=[error_item]
+  if i>=54:
+   defaults['422'][0][1]['detail']='export_columns_invalid'
+   defaults['403']=[('permission_denied',{'detail':'Permission denied: '+('cases:read' if i==56 else 'alerts:read')},'现有读取条件不符')]
   if i==2:
    defaults['403']=[('permission_denied',{'detail':'Permission denied: cases:read'},'缺少Case读取能力')]
-  flag='socai2_subject_write_not_enabled' if i>=48 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
+  flag='socai2_page_read_not_enabled' if i in [54,55] else 'socai2_subject_write_not_enabled' if 48<=i<=53 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
   defaults['503'].append(('feature_disabled',{'detail':flag},'服务对应功能开关关闭'))
   if i in [2,26,27]:
    defaults['422'].append(('invalid_time_window',{'detail':[{'type':'value_error','loc':[],'msg':'Value error, time_from_must_precede_time_to'}]},'起点不早于终点；无时区、非法排序或枚举同样422'))
@@ -386,15 +397,15 @@ def mdtable(headers,rows):
 def schema_table(s):
  if '$ref'in s:return schema_table(SC[s['$ref'].rsplit('/',1)[-1]])
  return mdtable(['字段','OpenAPI required','类型与约束','默认值','含义'],[[k,'是' if k in s.get('required',[]) else '否',typ(v),json.dumps(v['default'],ensure_ascii=False) if 'default'in v else '无（可空不等于可省略）',v.get('description',v.get('title',k)).split('\n\n')[0]+(' [完整语义]('+v['x-audit-url']+')' if 'x-audit-url' in v else '')] for k,v in s.get('properties',{}).items()])
-epmd='# 调查HTTP接口目录（53项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
+epmd='# 调查HTTP接口目录（56项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
 for e in endpoints:
  epmd+=f"\n<a id=\"{e['id'].lower()}\"></a>\n\n## {e['id']} {e['title']}\n\n`{e['method']} {e['path']}`\n\n状态：**{e['status']}**。分类：{e['tag']}。\n\n{e['description']}\n"
- epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
+ if int(e['id'][1:])<54:epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
  epmd+=mdtable(['位置','参数','必传','类型/限制','默认值','说明'],[[p['in'],p['name'],p['required'],typ(p['schema']),json.dumps(p['schema'].get('default'),ensure_ascii=False),p['description']] for p in e['params']]) if e['params'] else '\n无路径/查询参数。\n'
  epmd+='\n请求体：\n'+schema_table(e['body']['schema']) if e['body'] else '\n无请求体。\n'
  epmd+='\n响应类型：'+typ(e['response'].get('schema',{}))+'。字段完整展开见Schema或Swagger Models。\n'
  epmd+='\n输入示例（参数与JSON体）：\n\n```json\n'+dump({'parameters':e['example']['parameters'],'body':e['example']['request_body']})+'```\n'
- epmd+=f"\n输出示例（HTTP {e['example']['response_status']}）：\n\n```json\n"+dump(e['example']['response_body'])+'```\n'
+ epmd+=f"\n输出示例（HTTP {e['example']['response_status']}）：\n\n"+("```csv\n"+e["example"]["response_body"]+"```\n" if int(e["id"][1:])>=54 else "```json\n"+dump(e["example"]["response_body"])+"```\n")
  epmd+=mdtable(['HTTP','错误/形状','处理'],[[h,k,why+('；保留用户输入→读最新版本→确认差异后重新提交。' if h=='409' else '；参数修正前不重试。' if h=='422' else '')] for h,k,why,v in e['errors']])
  epmd+='完整错误JSON示例见 `examples.json` 的 `'+e['id']+'.errors`，Swagger同操作 Responses 可直接展开。\n'
 schmd='# HTTP字段与嵌套类型\n\n按实际JSON类型保留required、可空、枚举和限制。请求额外字段禁止；服务输出可空字段不能擅自补0/空串。动态正文见[原JSON合同](json-contracts.json)，不要将任意工件统一套成一种业务结论。\n'

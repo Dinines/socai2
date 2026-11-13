@@ -1,10 +1,10 @@
 # 调查服务 HTTP API
 
-合同版本：2026-11-13.docs8。当前本机18024为 `list-query-20261113-r1-local`，21正式18024为 `list-query-20261113-r1`；两端均挂载53操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
+合同版本：2026-11-13.docs9。当前本机18024为 `list-export-20261113-r1-local`，21正式18024为 `list-export-20261113-r1`；两端均挂载56操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
 
-本轮补齐E02调查、E26告警、E27事件的全库筛选、排序和分页；外部HTTP路由仍独立于内部调查服务。列表仅查询，不启动调查或修改记录。完整字段、输入输出示例及422错误见Swagger；两端发布状态以[本轮验收](../../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)为准。
+本轮新增E54告警、E55事件、E56调查的完整CSV导出；筛选和排序复用E26/E27/E02，独立HTTP包负责文件响应，内部调查服务仍直接调用。参数、可选列、输入输出示例和错误见Swagger。
 
-标准Swagger入口：[本地](http://127.0.0.1:18080/)、[21内网](http://192.168.1.21:18080/)。共53个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。
+标准Swagger入口：[本地](http://127.0.0.1:18080/)、[21内网](http://192.168.1.21:18080/)。共56个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。
 
 ## 每个接口怎么看
 
@@ -22,7 +22,7 @@
 
 | 使用环境 | API根地址 | 数据目标 |
 | --- | --- | --- |
-| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`list-query-20261113-r1`，53操作 |
+| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`list-export-20261113-r1`，56操作 |
 | 本机转发到21 | `http://127.0.0.1:28024` | 同一正式库；需开启`deploy/http-service/relay.json`对应转发 |
 | 本机开发验收 | `http://127.0.0.1:18024` | 隔离`v12_upgrade_dev`；本地记录ID与21不通用 |
 
@@ -37,7 +37,7 @@ JSON请求使用`Content-Type: application/json`，身份沿用现有`Authorizat
 3. 调查：创建E01 → 读取案件E03及Run E12 → 显式启动E13 → 读取结果E14/工件E15。创建本身不执行调查。
 4. 人工任务：读取案件版本E03 → 创建E38；更新前读任务E41，完整提交E40；历史版本读取E42/E43。
 
-5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。当前50个已实现操作、3个预留501。
+5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。当前53个已实现操作、3个预留501。
 
 管理字段省略保持；可空字段传null清空，标签[]清空。关闭时running/unknown禁止操作；未完任务须明确确认及理由，任务保留。重开恢复处理中，不自动启动调查。
 
@@ -61,6 +61,34 @@ JSON请求使用`Content-Type: application/json`，身份沿用现有`Authorizat
 | 事件 E27 | 至少一条成员告警event_time在区间内 | created_at/last_activity_at/severity | filtered_total为筛选数；total为全部事件数 |
 | 调查 E02 | business_updated_at | business_updated_at/created_at/severity | total为筛选数；metrics保持整体 |
 
-例如 `GET /api/v1/socai2/alerts?severity=high&sort_by=event_time&sort_order=desc&limit=20`。读取items后，将响应的next_cursor原样URL编码为cursor，保留原筛选和排序取下一页；null表示结束。变更条件清空游标。查询不改变overall_stats/metrics统计范围；不提供冻结快照导出。等级排序为info<low<medium<high<critical，空值始终最后，同值按同方向UUID排序。
+例如 `GET /api/v1/socai2/alerts?severity=high&sort_by=event_time&sort_order=desc&limit=20`。读取items后，将响应的next_cursor原样URL编码为cursor，保留原筛选和排序取下一页；null表示结束。变更条件清空游标。查询不改变overall_stats/metrics统计范围；跨页请求不是同一冻结快照；需要完整文件使用E54/E55/E56。等级排序为info<low<medium<high<critical，空值始终最后，同值按同方向UUID排序。
 
 告警/事件旧limit+before_id调用保留；before_id与新筛选、排序或cursor混用返回422。Case未使用新增日期/排序的原v1游标仍可续页。非法日期、枚举和排序返回422；无效新游标为invalid_list_cursor，跨条件为list_cursor_filters_changed；旧Case错误码保留。
+
+## 完整列表导出
+
+| 功能 | HTTP | 输入和结果 |
+| --- | --- | --- |
+| 告警 E54 | `GET /api/v1/socai2/alerts/export` | E26同一筛选与排序，导出全部命中告警 |
+| 事件 E55 | `GET /api/v1/socai2/incidents/export` | E27同一筛选与排序，返回成员汇总和等级来源 |
+| 调查 E56 | `GET /api/v1/socai2/cases/export` | E02同一筛选与排序，保留metric/classification，含成员数和未完任务数 |
+
+`columns`可选，按逗号分隔字段路径并按此顺序输出，例如告警`facts.id,facts.title,facts.severity`。省略时使用接口列出的默认列；全部可选列及逐字段含义在各接口Responses中（告警39、事件34、调查31）。不能传分页参数limit/cursor/before_id/offset；未知参数、重复/非法列或无效时间返回422。
+
+成功为`text/csv`附件，UTF-8 BOM、逗号分隔、CRLF和字段路径表头；空集合200只有表头。响应头`Content-Disposition`给出文件名，`X-Export-Count`为实际记录数，`X-Export-Observed-At`为同一只读快照观察时间，`X-Export-Schema`为`socai2.list-export.v1`。
+
+CSV中的null写为`\N`，空字符串留空，数组/对象为JSON。实际以反斜杠开头的字符串加一个反斜杠，以单引号开头或可能成为公式的字符串加一个单引号；CSV解析后先识别精确`\N`为空值，再对上述转义去掉一个前缀，按字段类型还原。中文、引号和换行按标准CSV引用规则保留，不能按逗号或换行直接拆文件。
+
+当前最多10000行、16MiB，超限返回413（`export_row_limit_exceeded`或`export_size_limit_exceeded`）；SQL限时30秒，超时503 `export_query_timeout`，不返回截断的成功文件。错误仍为JSON。调整筛选后重新下载；接口只读取，不保存文件、不建任务、不调用模型。限制由服务的`list_export.json`配置。
+
+```sh
+curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode 'severity=high' \
+  --data-urlencode 'sort_by=event_time' \
+  --data-urlencode 'sort_order=desc' \
+  --data-urlencode 'columns=facts.id,facts.title,facts.severity,facts.event_time' \
+  --output alerts.csv
+```
+
+`API`选择上述实际环境，`TOKEN`使用已有凭据；先检查HTTP状态，失败保存的内容是错误JSON，不能作为CSV交付。此下载流程不需要先翻页列表。

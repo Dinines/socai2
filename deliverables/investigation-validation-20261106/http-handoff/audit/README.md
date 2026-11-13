@@ -1,6 +1,8 @@
+> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前56操作，新增CSV接口/104列见[ E54–E56 ](../endpoints.md#e54)。
+
 # HTTP 字段审计与当前增量
 
-当前为53个操作、542个固定输出字段出现位置、28组动态结构，对应125项产品功能。E02/E26/E27已补齐列表筛选、排序与游标；告警/事件封套仅新增filtered_total和next_cursor，行字段及数据库结构保持。当前输入输出见[接口字段](interfaces.md)、[固定字段](response-fields.md)及[Swagger交接](../http-handoff/README.md)。运行证据见[本轮验收](../../../openspec/changes/query-investigation-lists/validation.md)。
+当前为53个操作、542个固定输出字段出现位置、28组动态结构，对应125项产品功能。E02/E26/E27已补齐列表筛选、排序与游标；告警/事件封套仅新增filtered_total和next_cursor，行字段及数据库结构保持。当前输入输出见[接口字段](interfaces.md)、[固定字段](response-fields.md)及[Swagger交接](../http-handoff/README.md)。运行证据见[本轮验收](../../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)。
 
 以下是首次静态审计及Case增量的历史记录，其中docs1、43/47操作和当时缺口不代表当前部署；当前实现状态以交接包为准。
 

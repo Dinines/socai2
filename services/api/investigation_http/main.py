@@ -11,6 +11,7 @@ from investigation_http.external_routes import (
     analysis,
     case_ai,
     cases,
+    exports,
     pages,
     stage_execution,
     tasks,
@@ -24,6 +25,7 @@ app = FastAPI(
 runtime.configure_http(app)
 for router in (
     login_router,
+    exports.router,
     cases.router,
     case_ai.router,
     analysis.router,

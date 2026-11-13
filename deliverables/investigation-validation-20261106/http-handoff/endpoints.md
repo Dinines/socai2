@@ -1,4 +1,4 @@
-# 调查HTTP接口目录（53项）
+# 调查HTTP接口目录（56项）
 
 [共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)
 
@@ -26,7 +26,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e01) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -117,7 +117,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e02) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -210,7 +210,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e03) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -314,7 +314,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e04) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -400,7 +400,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e05) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -481,7 +481,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e06) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -580,7 +580,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e07) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -664,7 +664,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e08) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -755,7 +755,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e09) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -857,7 +857,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e10) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -927,7 +927,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e11) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1006,7 +1006,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e12) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1129,7 +1129,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e13) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1275,7 +1275,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e14) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1433,7 +1433,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e15) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1509,7 +1509,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e16) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1583,7 +1583,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e17) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1656,7 +1656,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e18) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1738,7 +1738,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e19) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1817,7 +1817,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e20) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1898,7 +1898,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e21) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1977,7 +1977,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e22) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2051,7 +2051,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e23) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2125,7 +2125,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e24) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2209,7 +2209,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e25) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2293,7 +2293,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e26) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2391,7 +2391,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e27) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2492,7 +2492,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e28) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2634,7 +2634,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e29) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2765,7 +2765,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e30) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2843,7 +2843,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e31) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2924,7 +2924,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e32) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3003,7 +3003,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e33) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3080,7 +3080,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e34) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3153,7 +3153,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e35) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3226,7 +3226,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e36) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3319,7 +3319,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e37) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3412,7 +3412,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e38) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3540,7 +3540,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e39) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3611,7 +3611,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e40) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3763,7 +3763,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e41) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3855,7 +3855,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e42) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3928,7 +3928,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e43) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4011,7 +4011,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e44) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4110,7 +4110,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e45) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4234,7 +4234,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e46) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4347,7 +4347,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e47) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4456,7 +4456,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e48) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4578,7 +4578,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e49) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4708,7 +4708,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e50) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4838,7 +4838,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e51) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4974,7 +4974,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e52) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5091,7 +5091,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e53) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5188,3 +5188,361 @@
 | 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 
 完整错误JSON示例见 `examples.json` 的 `E53.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e54"></a>
+
+## E54 导出告警列表 CSV
+
+`GET /api/v1/socai2/alerts/export`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 导出告警列表 CSV。
+
+**输入：** 查询参数：`columns`, `q`, `severity`, `handling_status`, `owner_id`, `assignment_state`, `time_from`, `time_to`, `sort_by`, `sort_order`；无请求体。
+
+**输出：** HTTP 200，`text/csv；字段名表头，完整CSV，错误仍为JSON`；完整字段和示例见Responses。
+
+**结果：** 返回告警筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。
+
+**规则与限制：** 复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
+
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+**可选输出列（按columns传入顺序）：**
+
+| 列名 | 默认列 | 含义 |
+| --- | --- | --- |
+| `facts.id` | 是 | 该记录的应用UUID，不是页面展示编号或厂商编号。 |
+| `facts.source_namespace` | 是 | 来源系统命名空间，不是原厂名称 |
+| `facts.title` | 是 | 接收到的标题；未知来源用显式缺失显示，不编造内容 |
+| `facts.description` | 否 | 来源说明；人工补充用评论 |
+| `facts.owner_id` | 是 | public.users.id |
+| `facts.assignment_state` | 是 | 分配状态 |
+| `facts.owner_source_value` | 否 | unresolved时原负责人值 |
+| `facts.assigned_at` | 否 | 最近分配操作时间 |
+| `facts.tags` | 是 | 业务标签；资产标签从库存读取 |
+| `facts.priority_value` | 否 | 已有优先级0到100，不以分诊分数填充 |
+| `facts.priority_state` | 否 | 优先级评分状态 |
+| `facts.priority_source` | 否 | 评分生产者/模型版本 |
+| `facts.priority_basis` | 否 | 评分来源依据；无值不造理由 |
+| `facts.business_updated_at` | 是 | 实际业务字段变更时间；GET不更新 |
+| `facts.reopened_at` | 否 | 最近明确重开时间 |
+| `facts.row_version` | 否 | 管理乐观锁；每次实际写入+1 |
+| `facts.source_alert_id` | 否 | 接入来源编号；允许非UUID |
+| `facts.vendor_alert_id` | 否 | 厂商原始告警编号；与接入编号分开 |
+| `facts.connector_id` | 否 | 已有连接器引用，同租户校验 |
+| `facts.connector_type` | 是 | 接入类型原值，不代替original_vendor |
+| `facts.original_vendor` | 是 | 明确原厂，未知NULL |
+| `facts.category` | 是 | 来源类别，不拿判定替代 |
+| `facts.severity` | 是 | 当前来源严重程度 |
+| `facts.severity_raw` | 否 | 未映射来源等级原文 |
+| `facts.event_time` | 是 | 真实发生时间 |
+| `facts.event_time_source` | 否 | 发生时间依据 |
+| `facts.first_seen_at` | 否 | 已收到材料中首次活动时间 |
+| `facts.last_seen_at` | 否 | 已收到材料中末次活动时间 |
+| `facts.ingested_at` | 否 | 首次接收时间 |
+| `facts.source_updated_at` | 否 | 本地保存新材料的时间 |
+| `facts.handling_status` | 是 | 业务处理状态 |
+| `facts.disposition` | 否 | 当前采用判定；与latest反馈或分诊配套 |
+| `facts.closed_at` | 否 | 当前完成周期关闭时间；重开后置空，旧值在活动中 |
+| `facts.closed_by` | 否 | 明确用户关闭人；自动关闭记录活动服务身份 |
+| `facts.latest_material_id` | 否 | 同告警最新有效材料 |
+| `facts.latest_triage_id` | 否 | 同告警kind=triage记录 |
+| `facts.latest_feedback_id` | 否 | 同告警kind=human_feedback记录 |
+| `facts.latest_explanation_id` | 否 | 同告警kind=alert_explanation的有效Explain材料；GET不生成并写业务时钟 |
+| `owner_name` | 是 | 本租户人员目录中的负责人显示名；未解析为null。 |
+
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| query | columns | False | string / null | null | 逗号分隔的公开字段路径，按给定顺序输出；省略使用默认列；空列、重复或未知列返回422。全部可选列及默认列见Responses。 |
+| query | q | False | string; maxLength=200 / null | null | 标题字面包含或精确UUID搜索；%和_按普通字符处理。 |
+| query | severity | False | [Severity](schemas.md#severity) / null | null | 按已知等级精确筛选；省略不筛选。当前没有单独筛选未知等级的参数，不传null字符串。 |
+| query | handling_status | False | [AlertStatus](schemas.md#alertstatus) / null | null | 主体业务处理状态，与Run执行状态分开。 |
+| query | owner_id | False | string (uuid) / null | null | 负责人用户UUID；人员目录由业务后端负责。 |
+| query | assignment_state | False | [AssignmentState](schemas.md#assignmentstate) / null | null | 分配状态，unresolved不等于unassigned。 |
+| query | time_from | False | string (date-time) / null | null | 带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。 |
+| query | time_to | False | string (date-time) / null | null | 带时区的终点，不包含；两端同时传时必须晚于time_from。 |
+| query | sort_by | False | string ingested_at, event_time, severity / null | null | 服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。 默认ingested_at。 |
+| query | sort_order | False | string asc, desc / null | null | asc升序或desc降序，默认desc。 |
+
+
+无请求体。
+
+响应类型：string (binary)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "q": "合成示例无记录",
+    "columns": "facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts.category,facts.original_vendor,facts.connector_type,facts.source_namespace,facts.owner_id,owner_name,facts.assignment_state,facts.tags,facts.business_updated_at",
+    "sort_by": "severity",
+    "sort_order": "desc"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```csv
+facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts.category,facts.original_vendor,facts.connector_type,facts.source_namespace,facts.owner_id,owner_name,facts.assignment_state,facts.tags,facts.business_updated_at
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 现有读取条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | export_query_timeout | 业务约束/对象状态，见操作说明 |
+| 503 | export_snapshot_incomplete | 业务约束/对象状态，见操作说明 |
+| 413 | export_row_limit_exceeded | 业务约束/对象状态，见操作说明 |
+| 413 | export_size_limit_exceeded | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E54.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e55"></a>
+
+## E55 导出事件列表 CSV
+
+`GET /api/v1/socai2/incidents/export`
+
+状态：**已实现**。分类：事件。
+
+**实现状态：** 已实现
+
+**用途：** 导出事件列表 CSV。
+
+**输入：** 查询参数：`columns`, `q`, `severity`, `handling_status`, `owner_id`, `assignment_state`, `time_from`, `time_to`, `sort_by`, `sort_order`；无请求体。
+
+**输出：** HTTP 200，`text/csv；字段名表头，完整CSV，错误仍为JSON`；完整字段和示例见Responses。
+
+**结果：** 返回事件筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。
+
+**规则与限制：** 复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
+
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+**可选输出列（按columns传入顺序）：**
+
+| 列名 | 默认列 | 含义 |
+| --- | --- | --- |
+| `facts.id` | 是 | 该记录的应用UUID，不是页面展示编号或厂商编号。 |
+| `facts.source_namespace` | 否 | Fusion实例/来源命名空间 |
+| `facts.title` | 是 | 事件自身标题 |
+| `facts.description` | 否 | 事件自身说明，非第一条成员标题 |
+| `facts.owner_id` | 是 | 当前明确负责人 |
+| `facts.assignment_state` | 是 | 未分配/已分配/原值未解析 |
+| `facts.owner_source_value` | 否 | 未解析来源负责人 |
+| `facts.assigned_at` | 否 | 最近改派时间 |
+| `facts.tags` | 是 | 事件业务标签，成员资产标签另外派生 |
+| `facts.priority_value` | 否 | 已有优先级0..100 |
+| `facts.priority_state` | 否 | 无来源不合成 |
+| `facts.priority_source` | 否 | 已有评分生产者 |
+| `facts.priority_basis` | 否 | 评分依据 |
+| `facts.business_updated_at` | 是 | 自身管理或成员关联变动；移除最后成员仍更新 |
+| `facts.reopened_at` | 否 | 最近明确重开时间 |
+| `facts.row_version` | 否 | 管理/范围写入乐观版本 |
+| `facts.source_incident_id` | 否 | 来源事件ID，兼容原有文本键 |
+| `facts.handling_status` | 是 | 事件业务处理状态 |
+| `facts.severity_override` | 否 | 人工事件覆盖等级；NULL=采用成员最高；不改成员 |
+| `facts.severity_override_reason` | 否 | 人工覆盖依据 |
+| `facts.severity_override_at` | 否 | 覆盖设置时间 |
+| `facts.severity_override_by` | 否 | 覆盖人 |
+| `facts.resolution_note` | 否 | 事件解决说明，人工解决必填 |
+| `facts.resolved_at` | 否 | 当前解决周期时间 |
+| `facts.resolved_by` | 否 | 解决人 |
+| `facts.created_at` | 是 | 事件首次持久化时间 |
+| `facts.latest_diagnosis_id` | 否 | 同事件最新成功诊断；失败尝试不能覆盖 |
+| `owner_name` | 是 | 本租户人员目录中的负责人显示名；未解析为null。 |
+| `derived.member_count` | 是 | 事件当前告警成员数。 |
+| `derived.first_activity_at` | 是 | 成员真实event_time最小值；全部缺失为null。 |
+| `derived.last_activity_at` | 是 | 成员真实event_time最大值；全部缺失为null。 |
+| `derived.severity_auto` | 否 | 成员已知等级最大值；全部未知为null。 |
+| `derived.severity_effective` | 是 | 人工覆盖优先，否则使用成员最大等级。 |
+| `derived.severity_source` | 是 | manual_override/member_max；无已知等级为null。 |
+
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| query | columns | False | string / null | null | 逗号分隔的公开字段路径，按给定顺序输出；省略使用默认列；空列、重复或未知列返回422。全部可选列及默认列见Responses。 |
+| query | q | False | string; maxLength=200 / null | null | 标题字面包含或精确UUID搜索；%和_按普通字符处理。 |
+| query | severity | False | [Severity](schemas.md#severity) / null | null | 按已知等级精确筛选；省略不筛选。当前没有单独筛选未知等级的参数，不传null字符串。 |
+| query | handling_status | False | [WorkStatus](schemas.md#workstatus) / null | null | 主体业务处理状态，与Run执行状态分开。 |
+| query | owner_id | False | string (uuid) / null | null | 负责人用户UUID；人员目录由业务后端负责。 |
+| query | assignment_state | False | [AssignmentState](schemas.md#assignmentstate) / null | null | 分配状态，unresolved不等于unassigned。 |
+| query | time_from | False | string (date-time) / null | null | 带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。 |
+| query | time_to | False | string (date-time) / null | null | 带时区的终点，不包含；两端同时传时必须晚于time_from。 |
+| query | sort_by | False | string created_at, last_activity_at, severity / null | null | 服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。 默认created_at。 |
+| query | sort_order | False | string asc, desc / null | null | asc升序或desc降序，默认desc。 |
+
+
+无请求体。
+
+响应类型：string (binary)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "q": "合成示例无记录",
+    "columns": "facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.member_count,derived.first_activity_at,derived.last_activity_at,facts.handling_status,facts.owner_id,owner_name,facts.assignment_state,facts.tags,facts.created_at,facts.business_updated_at",
+    "sort_by": "severity",
+    "sort_order": "desc"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```csv
+facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.member_count,derived.first_activity_at,derived.last_activity_at,facts.handling_status,facts.owner_id,owner_name,facts.assignment_state,facts.tags,facts.created_at,facts.business_updated_at
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 现有读取条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | export_query_timeout | 业务约束/对象状态，见操作说明 |
+| 503 | export_snapshot_incomplete | 业务约束/对象状态，见操作说明 |
+| 413 | export_row_limit_exceeded | 业务约束/对象状态，见操作说明 |
+| 413 | export_size_limit_exceeded | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E55.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e56"></a>
+
+## E56 导出调查列表 CSV
+
+`GET /api/v1/socai2/cases/export`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 导出调查列表 CSV。
+
+**输入：** 查询参数：`columns`, `q`, `severity`, `handling_status`, `owner_id`, `assignment_state`, `time_from`, `time_to`, `sort_by`, `sort_order`, `metric`, `classification`；无请求体。
+
+**输出：** HTTP 200，`text/csv；字段名表头，完整CSV，错误仍为JSON`；完整字段和示例见Responses。
+
+**结果：** 返回调查筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。
+
+**规则与限制：** 复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
+
+**部署情况：** 本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+**可选输出列（按columns传入顺序）：**
+
+| 列名 | 默认列 | 含义 |
+| --- | --- | --- |
+| `case.id` | 是 | 该记录的应用UUID，不是页面展示编号或厂商编号。 |
+| `case.source_namespace` | 否 | Case固定数据身份命名空间；首次范围绑定后不可改，旧范围不能确认时NULL；不等于原始来源环境 |
+| `case.title` | 是 | 名称 |
+| `case.description` | 否 | 案情说明 |
+| `case.handling_status` | 是 | 业务状态 |
+| `case.severity` | 是 | 当前明确案件等级 |
+| `case.severity_source` | 否 | 手动设置或明确汇总规则，不从置信度猜 |
+| `case.owner_id` | 是 | 当前负责人 |
+| `case.assignment_state` | 是 | 分配状态 |
+| `case.owner_source_value` | 否 | 历史未解析负责人 |
+| `case.assigned_at` | 否 | 最近分配时间 |
+| `case.tags` | 是 | 案件标签 |
+| `case.priority_value` | 否 | 已有优先级 |
+| `case.priority_state` | 否 | 评分状态 |
+| `case.priority_source` | 否 | 评分生产者 |
+| `case.priority_basis` | 否 | 已有依据 |
+| `case.scope_revision` | 否 | 仅当前告警成员真实变动+1 |
+| `case.current_assessment_id` | 否 | 已明确采用版本；不等于最新Run |
+| `case.classification` | 是 | 明确保存的案件管理分类；NULL未设置，不继承事件或告警 |
+| `case.due_at` | 是 | 案件截止时间，与任务期限和运行超时分离 |
+| `case.current_evidence_artifact_id` | 否 | 同租户同Case的当前case_evidence_index不可变工件；NULL未记录 |
+| `case.created_at` | 是 | 创建时间 |
+| `case.created_by` | 否 | 创建人，服务创建见活动 |
+| `case.business_updated_at` | 是 | 案件业务变化 |
+| `case.resolved_at` | 否 | 当前解决周期时间 |
+| `case.resolved_by` | 否 | 明确解决人 |
+| `case.resolution_note` | 否 | 解决说明，不擅自添加必填要求 |
+| `case.reopened_at` | 否 | 最近重开 |
+| `case.row_version` | 否 | 乐观版本 |
+| `member_count` | 是 | 当前案件告警成员数。 |
+| `open_task_count` | 是 | 当前案件未完成人工任务数。 |
+
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| query | columns | False | string / null | null | 逗号分隔的公开字段路径，按给定顺序输出；省略使用默认列；空列、重复或未知列返回422。全部可选列及默认列见Responses。 |
+| query | q | False | string; maxLength=200 / null | null | 标题字面包含或精确UUID搜索；%和_按普通字符处理。 |
+| query | severity | False | [Severity](schemas.md#severity) / null | null | 按已知等级精确筛选；省略不筛选。当前没有单独筛选未知等级的参数，不传null字符串。 |
+| query | handling_status | False | [WorkStatus](schemas.md#workstatus) / null | null | 主体业务处理状态，与Run执行状态分开。 |
+| query | owner_id | False | string (uuid) / null | null | 负责人用户UUID；人员目录由业务后端负责。 |
+| query | assignment_state | False | [AssignmentState](schemas.md#assignmentstate) / null | null | 分配状态，unresolved不等于unassigned。 |
+| query | time_from | False | string (date-time) / null | null | 带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。 |
+| query | time_to | False | string (date-time) / null | null | 带时区的终点，不包含；两端同时传时必须晚于time_from。 |
+| query | sort_by | False | string business_updated_at, created_at, severity / null | null | 服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。 默认business_updated_at。 |
+| query | sort_order | False | string asc, desc / null | null | asc升序或desc降序，默认desc。 |
+| query | metric | False | string awaiting_assignment, in_progress, high_severity, awaiting_human / null | null | Case整体指标快捷过滤条件。 |
+| query | classification | False | string true_positive, informational, false_positive / string = not_set / null | null | 案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 |
+
+
+无请求体。
+
+响应类型：string (binary)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "q": "合成示例无记录",
+    "columns": "case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignment_state,case.classification,case.due_at,member_count,open_task_count,case.tags,case.created_at,case.business_updated_at",
+    "sort_by": "severity",
+    "sort_order": "desc"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```csv
+case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignment_state,case.classification,case.due_at,member_count,open_task_count,case.tags,case.created_at,case.business_updated_at
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | permission_denied | 现有读取条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | export_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | export_query_timeout | 业务约束/对象状态，见操作说明 |
+| 503 | export_snapshot_incomplete | 业务约束/对象状态，见操作说明 |
+| 413 | export_row_limit_exceeded | 业务约束/对象状态，见操作说明 |
+| 413 | export_size_limit_exceeded | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E56.errors`，Swagger同操作 Responses 可直接展开。

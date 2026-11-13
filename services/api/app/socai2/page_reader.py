@@ -145,12 +145,9 @@ class PageReader:
             section_urls={key: root + "/records/" + key for key in SECTIONS
                 if not (key == "members" and self.kind == "alerts" or key == "incidents" and self.kind == "incidents")})
 
-    async def listing(self, *, limit=20, before_id=None, query=None):
-        if not 1 <= limit <= 50:
-            raise StoreError("invalid_page_limit", 422)
+    def selection(self, query):
+        """Shared SQL conditions/order for paging and complete exports."""
         table, tenant = self.table, self.store.tenant_id
-        query = query or (AlertListQuery if self.kind == "alerts" else IncidentListQuery)(limit=limit, before_id=before_id)
-        limit = query.limit
         sort_by = query.sort_by or ("ingested_at" if self.kind == "alerts" else "created_at")
         order = query.sort_order or "desc"
         clauses = list(self.store.where(table))
@@ -178,6 +175,15 @@ class PageReader:
         if query.severity is not None:
             clauses.append(rank == RANK[query.severity])
         sort_column = rank if sort_by == "severity" else clocks[sort_by]
+        return clauses, sort_column, sort_by, order
+
+    async def listing(self, *, limit=20, before_id=None, query=None):
+        if not 1 <= limit <= 50:
+            raise StoreError("invalid_page_limit", 422)
+        table, tenant = self.table, self.store.tenant_id
+        query = query or (AlertListQuery if self.kind == "alerts" else IncidentListQuery)(limit=limit, before_id=before_id)
+        limit = query.limit
+        clauses, sort_column, sort_by, order = self.selection(query)
         filtered_total = (await self.db.execute(select(func.count()).select_from(table).where(*clauses))).scalar_one()
         listing = select(table, sort_column.label("_list_sort_value")).where(*clauses)
         point = lists.read_cursor(tenant, self.kind, query, sort_by)

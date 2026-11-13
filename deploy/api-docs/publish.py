@@ -1,6 +1,7 @@
 """为标准Swagger补充已审计的HTTP字段语义；只处理静态文件。"""
 from pathlib import Path
 import re
+import json
 
 GROUPS = {'告警': ('alerts', 22), '事件': ('incidents', 15), '调查': ('investigation', 88)}
 AUDIT_REL = Path('deliverables/investigation-validation-20261106/http-handoff-audit')
@@ -66,6 +67,9 @@ RESULTS = {
 51:'items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。',
 52:'分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。',
 53:'对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。',
+54: '返回告警筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
+55: '返回事件筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
+56: '返回调查筛选命中的全部记录CSV；已选列按给定顺序，超限明确失败。不会修改记录。',
 }
 
 
@@ -143,7 +147,7 @@ def enrich_contract(root, doc, features, endpoints, version):
     doc['info']['description'] = (
         '后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。'
         '\n\n状态标明接口逻辑是否实现；E19–E21为未实现预留接口，返回501。'
-        '本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。'
+        '本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。'
         '原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。'
         '新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。'
         '示例为合成数据，实际执行和结论状态以响应字段为准。'
@@ -156,9 +160,9 @@ def enrich_contract(root, doc, features, endpoints, version):
     all_ops = {o['operationId']: o for methods in doc['paths'].values() for o in methods.values() if isinstance(o, dict) and 'operationId' in o}
     for e in endpoints:
         eid = e['id']; number = int(eid[1:]); op = all_ops[eid]
-        if number in [48,49,50,51]:
+        if number in [48,49,50,51,54]:
             tags = ['告警']
-        elif number in [52,53]:
+        elif number in [52,53,55]:
             tags = ['事件']
         elif number <= 21 or number >= 38:
             tags = ['调查']
@@ -182,19 +186,20 @@ def enrich_contract(root, doc, features, endpoints, version):
             inputs.append('JSON请求体：`'+model+'`，字段和必填要求见Request body')
         else:inputs.append('无请求体')
         response=e['response'].get('schema',{}).get('$ref','').rsplit('/',1)[-1]
+        if number>=54:response='text/csv；字段名表头，完整CSV，错误仍为JSON'
         desc = (f'**实现状态：** {status}\n\n**用途：** {e["title"]}。'
                 + '\n\n**输入：** '+'；'.join(inputs)+'。'
                 + f'\n\n**输出：** HTTP {e["example"]["response_status"]}，`{response}`；完整字段和示例见Responses。'
                 + '\n\n**结果：** '+RESULTS[number]+'\n\n**规则与限制：** '+e['note'])
-        verification = ('已确认返回501，功能未实现。' if number in [19,20,21] else
+        verification = ('本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。' if number>=54 else '已确认返回501，功能未实现。' if number in [19,20,21] else
             '本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。' if number in [2,26,27] else
-            '本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。' if number >= 48 else
+            '本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。' if 48 <= number <= 53 else
             '本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。' if number >= 44 else
             '本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。' if number in [13,36,37] else
             '本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。' if number in [1,3,12,38,40,41,42,43,44,45,46,47] else
             '本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。')
         desc += '\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** '+verification
-        desc += '\n\n**部署情况：** '+'本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。'
+        desc += '\n\n**部署情况：** '+'本机18024为list-export-20261113-r1-local，21正式18024为list-export-20261113-r1；两端均已挂载56操作，本机使用v12_upgrade_dev，21使用aisoc。'
         response_notes = ''
         relevant = []
         for name, body in dynamic.items():
@@ -208,6 +213,18 @@ def enrich_contract(root, doc, features, endpoints, version):
                 response_notes += '\n### ' + name + '\n\n' + links(root, audit / 'dynamic-fields.md', dynamic[name])
         maincode=str(e['example']['response_status'])
         op['responses'][maincode]['description'] = RESULTS[number] + response_notes
+        if number>=54:
+            kind={54:'alerts',55:'incidents',56:'cases'}[number]
+            columns=json.loads((root/'deploy/api-docs/list-export-columns.json').read_text())[kind]
+            model={54:'AlertFacts',55:'IncidentFacts',56:'CaseView'}[number]
+            derived={'owner_name':'本租户人员目录中的负责人显示名；未解析为null。','member_count':'当前案件告警成员数。','open_task_count':'当前案件未完成人工任务数。','derived.member_count':'事件当前告警成员数。','derived.first_activity_at':'成员真实event_time最小值；全部缺失为null。','derived.last_activity_at':'成员真实event_time最大值；全部缺失为null。','derived.severity_auto':'成员已知等级最大值；全部未知为null。','derived.severity_effective':'人工覆盖优先，否则使用成员最大等级。','derived.severity_source':'manual_override/member_max；无已知等级为null。'}
+            table='\n\n**可选输出列（按columns传入顺序）：**\n\n| 列名 | 默认列 | 含义 |\n| --- | --- | --- |\n'
+            for col in columns['allowed']:
+                desc_field=derived.get(col) or sc[model]['properties'][col.split('.',1)[1]].get('description',col)
+                table+='| `'+col+'` | '+('是' if col in columns['defaults'] else '否')+' | '+desc_field.split('\n\n')[0].replace('|','\\|').replace('\n',' ')+' |\n'
+            desc+=table
+            op['responses'][maincode]['description']+=table
+            op['x-csv-columns']=columns
         op['description'] = desc
         op['x-dynamic-sections'] = relevant
         e['description'] = desc
@@ -243,8 +260,8 @@ def publish_pages(root, out, doc, features, endpoints, version, render, head, in
     for name in ['README', 'interfaces', 'response-fields', 'dynamic-fields']:
         source = audit / (name + '.md'); text = source.read_text()
         # 保留审计原件的历史结论；线上附上当前发布注记。
-        notice = f'<p class="badge">本页为已审计补充，随 {version} 发布。审计原文中的“未发布/docs1”描述审计完成时点。</p>'
-        (out / 'audit' / source.name).write_text(text)
+        notice = f'<p class="badge">本页保留既有JSON接口字段审计原文（原文的47/53操作和当前仅指原审计时点）。{version}总计56操作；新增CSV接口及104个可选列见<a href="/handoff/endpoints.html#e54">E54–E56</a>。旧审计不替代本批CSV验收。</p>'
+        (out / 'audit' / source.name).write_text('> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前56操作，新增CSV接口/104列见[ E54–E56 ](../endpoints.md#e54)。\n\n'+text)
         (out / 'audit' / (('guide' if name == 'README' else name) + '.html')).write_text(
             head + nav + notice + render(links(root, source, text)) + '</main></html>')
     (out / 'audit/coverage.json').write_bytes((audit / 'coverage.json').read_bytes())

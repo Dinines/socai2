@@ -178,3 +178,9 @@ __all__ = [
     "TraceView",
     "WorkStatus",
 ]
+
+# Existing public facts and read-only export payload for the CSV boundary.
+from app.socai2.case_contracts import CaseView
+from app.socai2.page_contracts import AlertFacts, IncidentFacts
+
+__all__ += ["AlertFacts", "CaseView", "IncidentFacts"]

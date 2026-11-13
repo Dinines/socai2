@@ -11,6 +11,7 @@ __all__ = [
     "analysis_service",
     "case_service",
     "execution_service",
+    "export_service",
     "page_service",
     "require_case_enabled",
     "require_permission",
@@ -45,3 +46,7 @@ def execution_service():
 
 def require_case_enabled():
     return provide(services.require_case_enabled)
+
+
+def export_service():
+    return provide(services.exports)

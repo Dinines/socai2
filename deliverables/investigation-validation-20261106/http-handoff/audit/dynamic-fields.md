@@ -1,3 +1,5 @@
+> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前56操作，新增CSV接口/104列见[ E54–E56 ](../endpoints.md#e54)。
+
 # 动态输出字段与版本边界
 
 这些字段在原OpenAPI里是dict/array[Any]或空Schema。下文按实际读取装配展开，语义复用已存在的当前字段字典；不是新增数据表，也不要求业务后端直连数据库。字段类型写enum/contract时，完整定义沿[现有JSON合同](../../../docs/design/socai2-json-contracts-20261103.schema.json)或[当前机器字典](../../../docs/design/socai2-data-contract-current.json)。原件开放内容不伪造成固定业务DTO。

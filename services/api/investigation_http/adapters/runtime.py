@@ -8,6 +8,7 @@ from app.core.config import enforce_secure_defaults, settings
 from app.core.cors import build_cors_kwargs
 from app.db.case_database import close_case_database, get_case_write_sessions
 from app.db.database import engine
+from app.socai2.list_export import ExportLimits
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
@@ -40,6 +41,7 @@ def configured_database_name():
 async def lifespan(app):
     expected = configured_database_name()
     enforce_secure_defaults()
+    ExportLimits.load()
     try:
         async with engine.connect() as conn:
             actual = (

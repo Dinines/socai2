@@ -58,3 +58,7 @@ class StageExecution(Protocol):
     async def execute(
         self, tenant_id, kind, identity, operation_key, *, requested_by
     ): ...
+
+
+class ListExports(Protocol):
+    async def read(self, tenant_id, kind, query): ...

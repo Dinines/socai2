@@ -13,6 +13,7 @@ from app.socai2.baseline_store import StoreError
 from app.socai2.case_management import manage_case, read_management
 from app.socai2.case_service import CaseService
 from app.socai2.human_task_service import HumanTaskService
+from app.socai2.list_export import ListExportService
 from app.socai2.page_reader import PageReadService
 from app.socai2.stage_reader import StageReadService
 from app.socai2.stage_results import StageResultService
@@ -99,3 +100,16 @@ def execution() -> StageExecution:
     if not settings.SOCAI2_STAGE_EXECUTION_ENABLED:
         raise StoreError("socai2_stage_execution_not_enabled", 503)
     return ExecutionBackend(get_case_write_sessions())
+
+
+class ExportBackend(ListExportService):
+    async def read(self, tenant, kind, query):
+        if kind == "cases":
+            case_sessions("GET")
+        elif not settings.SOCAI2_PAGE_READ_ENABLED:
+            raise StoreError("socai2_page_read_not_enabled", 503)
+        return await super().read(tenant, kind, query)
+
+
+def exports():
+    return ExportBackend(AsyncSessionLocal)

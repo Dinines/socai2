@@ -54,6 +54,9 @@ OPERATIONS = {
 51: ('批量管理告警', '已实现', 'items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422 subject_batch_selection_invalid:422 alert_close_reason_required:422'),
 52: ('管理单个事件', '已实现', '分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422'),
 53: ('批量管理事件', '已实现', '对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422 subject_batch_selection_invalid:422'),
+54: ('导出告警列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
+55: ('导出事件列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
+56: ('导出调查列表 CSV', '已实现', '复用相应列表的筛选和排序，导出本次只读快照的全部命中；columns为逗号分隔的公开字段路径，省略使用默认列。禁止limit/cursor/before_id/offset及未知参数；列名空白、重复或不支持返回422。UTF-8 BOM、逗号分隔、CRLF、字段名为表头；空结果200仅表头。null写\\N，空串留空；实际以反斜杠开头的字符串额外加一个反斜杠，以单引号开头或可能成为公式的字符串前加单引号，程序读取时按此规则去掉一个前缀再还原；数组/对象为JSON。文件包含完整范围，超过10000行或16MiB返回413，不返回截断文件；SQL限时30秒，超时503。Content-Disposition提供文件名；X-Export-Count为实际条数、X-Export-Observed-At为快照观察时间、X-Export-Schema=socai2.list-export.v1。仅查询，不写库或启动分析。', 'export_columns_invalid:422 export_pagination_not_supported:422 export_query_parameter_not_supported:422 export_row_limit_exceeded:413 export_size_limit_exceeded:413 export_query_timeout:503 export_snapshot_incomplete:503'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -62,7 +65,7 @@ F01-02|已实现|26|按标题/ID、等级、状态、负责人、分配状态和
 F01-03|已实现；列选择由调用方处理|26|服务支持发生时间、入库时间和等级升降序，空值最后；列显隐由调用方处理，偏好持久化未实现。
 F01-04|可用|26|读filtered_total和next_cursor展示筛选总数及续页；total/overall_stats保持租户整体，高等级含high/critical；before_id仅旧查询。
 F01-05|可用|28|选 alert_id→详情，预览与跳转为前端交互，404展示不存在。
-F01-06|部分实现|26,51|已支持所选告警批量管理；已加载数据可前端导出，全量导出仍未实现。
+F01-06|已实现|26,51,54|E54按筛选和排序导出完整命中CSV，支持明确选列；E51批量管理。
 F01-09|已实现|26|刷新GET；移除条件或改排序时清空cursor/before_id回首页，不触发分诊。
 F01-07|可用|28|facts/owner_name/owner_resolution/derived；来源不明和时间缺失按原值展示。
 F02-01|需组合|28,31,30|详情取得 material.id→正文及 section=objects/sources；检测标签不当事实结论。
@@ -83,7 +86,7 @@ F06-01|已实现|27|标题/ID、有效等级、状态、负责人、分配状态
 F06-02|可用|27|读取overall_stats，按事件统计和观察时间展示。
 F06-03|可用|29|incident_id→事实与派生摘要；诊断补E23。
 F06-06|部分实现|27,26|两主体统计的观察时间/范围不同不能直接认定为同口径压缩比，统一统计仍缺。
-F06-07|部分实现|27|日期筛选、创建时间/末次活动/等级排序与分页已实现；选列及已加载导出由调用方处理，完整CSV导出与偏好持久化未实现。
+F06-07|已实现|27,55|E27筛选排序分页；E55完整CSV导出及选列，显示列和复制链接由调用方处理；跨设备偏好无明确需求不实施。
 F23-06|可用|53,29,30|批量管理明确选中的事件，各项版本校验，整体成功或拒绝；未选事件不变。
 F23-02|可用|52,29,30|事件负责人、状态、标签和人工等级覆盖可写；解决/等级覆盖需理由，保留成员等级和原诊断。
 F06-04|需组合|29,30|derived与section=members/objects，阶段来自真实成员材料。
@@ -97,7 +100,7 @@ F13-03|需组合|30,1,8,3|事件cases关系→新建/关联，incident_ids保留
 F09-01|可用|2|metrics整体四项，high_severity仅high；与筛选total分开。
 F09-02|可用|2|q及已声明筛选+cursor；条件改变丢弃旧cursor。
 F09-03|已实现；列选择由调用方处理|2|按业务更新时间、创建时间或等级升降序；列显隐由调用方处理，偏好持久化未实现。
-F09-08|部分实现|2|按业务更新时间筛选全库；已加载结果可由调用方导出，完整CSV导出未实现。
+F09-08|已实现|2,56|E02按业务更新时间筛选；E56完整CSV导出，支持明确选列。
 F09-09|仅前端/部分|2|手动GET刷新；自动刷新调度由前端实现，当前正式接线未完成。
 F09-10|可用|3|队列item.id→详情预览，保留当前列表位置。
 F09-11|部分实现|2,10,22,23|运行入口需要组合；管理设置模块没有对应实现。

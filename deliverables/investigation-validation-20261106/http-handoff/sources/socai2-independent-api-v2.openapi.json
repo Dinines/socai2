@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "2.0.0"
+    "version": "list-export-20261113-r1-local"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -4032,6 +4032,776 @@
           }
         ]
       }
+    },
+    "/api/v1/socai2/alerts/export": {
+      "get": {
+        "tags": [
+          "socai2-list-export"
+        ],
+        "summary": "Export Alerts",
+        "operationId": "export_alerts_api_v1_socai2_alerts_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "columns",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Columns"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ingested_at",
+                    "event_time",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "完整CSV，UTF-8 BOM；空结果也返回列头。",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Export-Count": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Export-Observed-At": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "X-Export-Schema": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "export_row_limit_exceeded或export_size_limit_exceeded；不返回截断文件。"
+          },
+          "503": {
+            "description": "export_query_timeout或已有读取依赖不可用；未生成成功CSV。"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/incidents/export": {
+      "get": {
+        "tags": [
+          "socai2-list-export"
+        ],
+        "summary": "Export Incidents",
+        "operationId": "export_incidents_api_v1_socai2_incidents_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "columns",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Columns"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "created_at",
+                    "last_activity_at",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "完整CSV，UTF-8 BOM；空结果也返回列头。",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Export-Count": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Export-Observed-At": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "X-Export-Schema": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "export_row_limit_exceeded或export_size_limit_exceeded；不返回截断文件。"
+          },
+          "503": {
+            "description": "export_query_timeout或已有读取依赖不可用；未生成成功CSV。"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/export": {
+      "get": {
+        "tags": [
+          "socai2-list-export"
+        ],
+        "summary": "Export Cases",
+        "operationId": "export_cases_api_v1_socai2_cases_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "columns",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Columns"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "business_updated_at",
+                    "created_at",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "awaiting_assignment",
+                    "in_progress",
+                    "high_severity",
+                    "awaiting_human"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metric"
+            }
+          },
+          {
+            "name": "classification",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "true_positive",
+                    "informational",
+                    "false_positive"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "not_set",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Classification"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "完整CSV，UTF-8 BOM；空结果也返回列头。",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Export-Count": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Export-Observed-At": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "X-Export-Schema": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "export_row_limit_exceeded或export_size_limit_exceeded；不返回截断文件。"
+          },
+          "503": {
+            "description": "export_query_timeout或已有读取依赖不可用；未生成成功CSV。"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4487,6 +5257,230 @@
         ],
         "title": "AlertFacts"
       },
+      "AlertFeedback": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "当前详情facts.row_version；过期409。"
+          },
+          "disposition": {
+            "$ref": "#/components/schemas/Disposition",
+            "description": "人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "人工判断的理由；原文保存，不替换模型分诊。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version",
+          "disposition",
+          "reason"
+        ],
+        "title": "AlertFeedback"
+      },
+      "AlertFeedbackBatch": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SelectedSubject"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items",
+            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
+          },
+          "feedback": {
+            "$ref": "#/components/schemas/FeedbackFields",
+            "description": "应用于全部明确选中告警的人工判定及理由。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "items",
+          "feedback"
+        ],
+        "title": "AlertFeedbackBatch"
+      },
+      "AlertManagementBatch": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SelectedSubject"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items",
+            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/AlertManagementFields",
+            "description": "应用于所选告警的局部修改。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "items",
+          "changes"
+        ],
+        "title": "AlertManagementBatch"
+      },
+      "AlertManagementFields": {
+        "properties": {
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id",
+            "description": "同租户已有人员ID；省略保持，null取消分配。"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxLength": 50,
+            "title": "Tags",
+            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
+          },
+          "handling_status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Handling Status",
+            "description": "人工处理状态；completed须reason；仅分配不改状态，重开不改原判定。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AlertManagementFields"
+      },
+      "AlertManagementUpdate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "当前详情facts.row_version；过期409。"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id",
+            "description": "同租户已有人员ID；省略保持，null取消分配。"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxLength": 50,
+            "title": "Tags",
+            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
+          },
+          "handling_status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "completed"
+            ],
+            "title": "Handling Status",
+            "description": "人工处理状态；completed须reason；仅分配不改状态，重开不改原判定。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version"
+        ],
+        "title": "AlertManagementUpdate"
+      },
       "AlertStatus": {
         "type": "string",
         "enum": [
@@ -4813,6 +5807,75 @@
         ],
         "title": "CaseBaselineRecord"
       },
+      "CaseBlockingRun": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "阻止结案的本案Run ID。"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "running",
+              "unknown"
+            ],
+            "title": "State",
+            "description": "running正在执行；unknown执行结果未明确，两者均阻止结案。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "state"
+        ],
+        "title": "CaseBlockingRun"
+      },
+      "CaseCloseRequest": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次结案或重开的幂等键。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "当前Case行版本；发生变化后需重新读取。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工理由，保存到活动；有未完任务时结案必填，其他情况可省略，不接受空白。"
+          },
+          "acknowledge_open_tasks": {
+            "type": "boolean",
+            "title": "Acknowledge Open Tasks",
+            "description": "是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version"
+        ],
+        "title": "CaseCloseRequest"
+      },
       "CaseCreate": {
         "properties": {
           "operation_key": {
@@ -5073,6 +6136,198 @@
           "baseline_records"
         ],
         "title": "CaseDetail"
+      },
+      "CaseLifecycleRequest": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次结案或重开的幂等键。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "当前Case行版本；发生变化后需重新读取。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工理由，保存到活动；有未完任务时结案必填，其他情况可省略，不接受空白。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version"
+        ],
+        "title": "CaseLifecycleRequest"
+      },
+      "CaseManagementReceipt": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/CaseView",
+            "description": "本次操作保存后的Case快照；幂等重放返回原回执，新状态请重新GET。"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed",
+            "description": "是否实际改变Case字段；false不增加行版本，幂等重放保留原回执。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case",
+          "changed"
+        ],
+        "title": "CaseManagementReceipt"
+      },
+      "CaseManagementUpdate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "一次逻辑修改的幂等键；同意图重试沿用原值。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "从当前Case读取的行版本；过期返回409。"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "案件名称；省略保持，不接受null或空白。"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "案件说明；省略保持，null清空。"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id",
+            "description": "同租户已有用户ID；省略保持，null取消分配；不自动改处理状态。"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Severity"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "人工严重程度；省略保持，null清空；不改变成员告警等级。"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxLength": 50,
+            "title": "Tags",
+            "description": "完整标签集合；省略保持，[]清空，不接受null、空白或重复标签。"
+          },
+          "handling_status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress"
+            ],
+            "title": "Handling Status",
+            "description": "未结案案件的人工处理状态；省略保持，结案和重开使用各自接口。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version"
+        ],
+        "title": "CaseManagementUpdate"
+      },
+      "CaseManagementView": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/CaseView",
+            "description": "当前已保存的Case管理字段和行版本，与Case详情一致。"
+          },
+          "open_task_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Open Task Count",
+            "description": "当前修订为not_started/in_progress的人工任务数；历史版本不重复计数。"
+          },
+          "blocking_runs": {
+            "items": {
+              "$ref": "#/components/schemas/CaseBlockingRun"
+            },
+            "type": "array",
+            "title": "Blocking Runs",
+            "description": "本案running/unknown Run；空列表表示没有执行状态阻塞，不表示没有待办。"
+          },
+          "can_close": {
+            "type": "boolean",
+            "title": "Can Close",
+            "description": "案件未结案且无阻塞Run；如requires_open_task_confirmation为true仍须确认及理由。"
+          },
+          "can_reopen": {
+            "type": "boolean",
+            "title": "Can Reopen",
+            "description": "当前案件是否已解决，可由人显式重开。"
+          },
+          "requires_open_task_confirmation": {
+            "type": "boolean",
+            "title": "Requires Open Task Confirmation",
+            "description": "未结案且存在未完人工任务；关闭请求须确认并提供理由。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case",
+          "open_task_count",
+          "blocking_runs",
+          "can_close",
+          "can_reopen",
+          "requires_open_task_confirmation"
+        ],
+        "title": "CaseManagementView"
       },
       "CasePageData": {
         "properties": {
@@ -6487,6 +7742,28 @@
         ],
         "title": "ExplanationView"
       },
+      "FeedbackFields": {
+        "properties": {
+          "disposition": {
+            "$ref": "#/components/schemas/Disposition",
+            "description": "人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "人工判断的理由；原文保存，不替换模型分诊。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "disposition",
+          "reason"
+        ],
+        "title": "FeedbackFields"
+      },
       "Finding": {
         "properties": {
           "id": {
@@ -6937,6 +8214,241 @@
           "latest_diagnosis_id"
         ],
         "title": "IncidentFacts"
+      },
+      "IncidentManagementBatch": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SelectedSubject"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items",
+            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/IncidentManagementFields",
+            "description": "应用于所选事件的局部修改。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "items",
+          "changes"
+        ],
+        "title": "IncidentManagementBatch"
+      },
+      "IncidentManagementFields": {
+        "properties": {
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id",
+            "description": "同租户已有人员ID；省略保持，null取消分配。"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxLength": 50,
+            "title": "Tags",
+            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
+          },
+          "handling_status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "resolved"
+            ],
+            "title": "Handling Status",
+            "description": "人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。"
+          },
+          "severity_override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Severity"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "人工等级覆盖；省略保持，null恢复按成员自动等级。"
+          },
+          "severity_override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity Override Reason",
+            "description": "设置人工等级覆盖必填理由；须与severity_override一起提交。"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note",
+            "description": "将事件改为resolved必填；须与handling_status=resolved一起提交。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "IncidentManagementFields"
+      },
+      "IncidentManagementUpdate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "当前详情facts.row_version；过期409。"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id",
+            "description": "同租户已有人员ID；省略保持，null取消分配。"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxLength": 50,
+            "title": "Tags",
+            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
+          },
+          "handling_status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "resolved"
+            ],
+            "title": "Handling Status",
+            "description": "人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。"
+          },
+          "severity_override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Severity"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "人工等级覆盖；省略保持，null恢复按成员自动等级。"
+          },
+          "severity_override_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity Override Reason",
+            "description": "设置人工等级覆盖必填理由；须与severity_override一起提交。"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note",
+            "description": "将事件改为resolved必填；须与handling_status=resolved一起提交。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_row_version"
+        ],
+        "title": "IncidentManagementUpdate"
       },
       "LoginRequest": {
         "properties": {
@@ -8497,6 +10009,29 @@
         ],
         "title": "ScoreState"
       },
+      "SelectedSubject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "用户明确选中的告警或事件ID。"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "description": "该对象当前facts.row_version。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "expected_row_version"
+        ],
+        "title": "SelectedSubject"
+      },
       "Severity": {
         "type": "string",
         "enum": [
@@ -8856,6 +10391,97 @@
           "reason"
         ],
         "title": "StartAvailability"
+      },
+      "SubjectBatchReceipt": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubjectMutationReceipt"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "按主体UUID排序的逐项保存结果。"
+          },
+          "changed_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Changed Count",
+            "description": "本批changed=true的对象数；不是任务或模型执行数。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "items",
+          "changed_count"
+        ],
+        "title": "SubjectBatchReceipt"
+      },
+      "SubjectMutationReceipt": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "alerts",
+              "incidents"
+            ],
+            "title": "Kind",
+            "description": "操作的主体种类。"
+          },
+          "facts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertFacts"
+              },
+              {
+                "$ref": "#/components/schemas/IncidentFacts"
+              }
+            ],
+            "title": "Facts",
+            "description": "提交时保存的主体事实快照；沿用原详情facts字段。重放返回原快照，最新值另GET。"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed",
+            "description": "本次是否产生主体变化；新增人工反馈为true。"
+          },
+          "feedback_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Id",
+            "description": "本次新建人工反馈ID；管理操作为null。"
+          },
+          "activity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Activity Id",
+            "description": "本次活动ID；在该主体records/activities中读取。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "facts",
+          "changed",
+          "feedback_id",
+          "activity_id"
+        ],
+        "title": "SubjectMutationReceipt"
       },
       "SubjectPage": {
         "properties": {
@@ -10051,862 +11677,6 @@
           "unknown"
         ],
         "title": "WorkStatus"
-      },
-      "CaseBlockingRun": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id",
-            "description": "阻止结案的本案Run ID。"
-          },
-          "state": {
-            "type": "string",
-            "enum": [
-              "running",
-              "unknown"
-            ],
-            "title": "State",
-            "description": "running正在执行；unknown执行结果未明确，两者均阻止结案。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "state"
-        ],
-        "title": "CaseBlockingRun"
-      },
-      "CaseCloseRequest": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次结案或重开的幂等键。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "当前Case行版本；发生变化后需重新读取。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工理由，保存到活动；有未完任务时结案必填，其他情况可省略，不接受空白。"
-          },
-          "acknowledge_open_tasks": {
-            "type": "boolean",
-            "title": "Acknowledge Open Tasks",
-            "description": "是否已确认当前未完人工任务；有未完任务时须true并填写reason，任务不会被取消。",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version"
-        ],
-        "title": "CaseCloseRequest"
-      },
-      "CaseLifecycleRequest": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次结案或重开的幂等键。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "当前Case行版本；发生变化后需重新读取。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工理由，保存到活动；有未完任务时结案必填，其他情况可省略，不接受空白。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version"
-        ],
-        "title": "CaseLifecycleRequest"
-      },
-      "CaseManagementReceipt": {
-        "properties": {
-          "case": {
-            "$ref": "#/components/schemas/CaseView",
-            "description": "本次操作保存后的Case快照；幂等重放返回原回执，新状态请重新GET。"
-          },
-          "changed": {
-            "type": "boolean",
-            "title": "Changed",
-            "description": "是否实际改变Case字段；false不增加行版本，幂等重放保留原回执。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "case",
-          "changed"
-        ],
-        "title": "CaseManagementReceipt"
-      },
-      "CaseManagementUpdate": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "一次逻辑修改的幂等键；同意图重试沿用原值。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "从当前Case读取的行版本；过期返回409。"
-          },
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title",
-            "description": "案件名称；省略保持，不接受null或空白。"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description",
-            "description": "案件说明；省略保持，null清空。"
-          },
-          "owner_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Id",
-            "description": "同租户已有用户ID；省略保持，null取消分配；不自动改处理状态。"
-          },
-          "severity": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Severity"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "人工严重程度；省略保持，null清空；不改变成员告警等级。"
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "maxLength": 128,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxLength": 50,
-            "title": "Tags",
-            "description": "完整标签集合；省略保持，[]清空，不接受null、空白或重复标签。"
-          },
-          "handling_status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "in_progress"
-            ],
-            "title": "Handling Status",
-            "description": "未结案案件的人工处理状态；省略保持，结案和重开使用各自接口。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version"
-        ],
-        "title": "CaseManagementUpdate"
-      },
-      "CaseManagementView": {
-        "properties": {
-          "case": {
-            "$ref": "#/components/schemas/CaseView",
-            "description": "当前已保存的Case管理字段和行版本，与Case详情一致。"
-          },
-          "open_task_count": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Open Task Count",
-            "description": "当前修订为not_started/in_progress的人工任务数；历史版本不重复计数。"
-          },
-          "blocking_runs": {
-            "items": {
-              "$ref": "#/components/schemas/CaseBlockingRun"
-            },
-            "type": "array",
-            "title": "Blocking Runs",
-            "description": "本案running/unknown Run；空列表表示没有执行状态阻塞，不表示没有待办。"
-          },
-          "can_close": {
-            "type": "boolean",
-            "title": "Can Close",
-            "description": "案件未结案且无阻塞Run；如requires_open_task_confirmation为true仍须确认及理由。"
-          },
-          "can_reopen": {
-            "type": "boolean",
-            "title": "Can Reopen",
-            "description": "当前案件是否已解决，可由人显式重开。"
-          },
-          "requires_open_task_confirmation": {
-            "type": "boolean",
-            "title": "Requires Open Task Confirmation",
-            "description": "未结案且存在未完人工任务；关闭请求须确认并提供理由。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "case",
-          "open_task_count",
-          "blocking_runs",
-          "can_close",
-          "can_reopen",
-          "requires_open_task_confirmation"
-        ],
-        "title": "CaseManagementView"
-      },
-      "AlertFeedback": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "当前详情facts.row_version；过期409。"
-          },
-          "disposition": {
-            "$ref": "#/components/schemas/Disposition",
-            "description": "人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。"
-          },
-          "reason": {
-            "type": "string",
-            "maxLength": 20000,
-            "minLength": 1,
-            "title": "Reason",
-            "description": "人工判断的理由；原文保存，不替换模型分诊。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version",
-          "disposition",
-          "reason"
-        ],
-        "title": "AlertFeedback"
-      },
-      "AlertFeedbackBatch": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SelectedSubject"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Items",
-            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
-          },
-          "feedback": {
-            "$ref": "#/components/schemas/FeedbackFields",
-            "description": "应用于全部明确选中告警的人工判定及理由。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "items",
-          "feedback"
-        ],
-        "title": "AlertFeedbackBatch"
-      },
-      "AlertManagementBatch": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SelectedSubject"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Items",
-            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
-          },
-          "changes": {
-            "$ref": "#/components/schemas/AlertManagementFields",
-            "description": "应用于所选告警的局部修改。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "items",
-          "changes"
-        ],
-        "title": "AlertManagementBatch"
-      },
-      "AlertManagementFields": {
-        "properties": {
-          "owner_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Id",
-            "description": "同租户已有人员ID；省略保持，null取消分配。"
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "maxLength": 128,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxLength": 50,
-            "title": "Tags",
-            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
-          },
-          "handling_status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "in_progress",
-              "completed"
-            ],
-            "title": "Handling Status",
-            "description": "人工处理状态；completed须reason；仅分配不改状态，重开不改原判定。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "AlertManagementFields"
-      },
-      "AlertManagementUpdate": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "当前详情facts.row_version；过期409。"
-          },
-          "owner_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Id",
-            "description": "同租户已有人员ID；省略保持，null取消分配。"
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "maxLength": 128,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxLength": 50,
-            "title": "Tags",
-            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
-          },
-          "handling_status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "in_progress",
-              "completed"
-            ],
-            "title": "Handling Status",
-            "description": "人工处理状态；completed须reason；仅分配不改状态，重开不改原判定。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version"
-        ],
-        "title": "AlertManagementUpdate"
-      },
-      "FeedbackFields": {
-        "properties": {
-          "disposition": {
-            "$ref": "#/components/schemas/Disposition",
-            "description": "人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。"
-          },
-          "reason": {
-            "type": "string",
-            "maxLength": 20000,
-            "minLength": 1,
-            "title": "Reason",
-            "description": "人工判断的理由；原文保存，不替换模型分诊。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "disposition",
-          "reason"
-        ],
-        "title": "FeedbackFields"
-      },
-      "IncidentManagementBatch": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SelectedSubject"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Items",
-            "description": "明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。"
-          },
-          "changes": {
-            "$ref": "#/components/schemas/IncidentManagementFields",
-            "description": "应用于所选事件的局部修改。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "items",
-          "changes"
-        ],
-        "title": "IncidentManagementBatch"
-      },
-      "IncidentManagementFields": {
-        "properties": {
-          "owner_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Id",
-            "description": "同租户已有人员ID；省略保持，null取消分配。"
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "maxLength": 128,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxLength": 50,
-            "title": "Tags",
-            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
-          },
-          "handling_status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "in_progress",
-              "resolved"
-            ],
-            "title": "Handling Status",
-            "description": "人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。"
-          },
-          "severity_override": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Severity"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "人工等级覆盖；省略保持，null恢复按成员自动等级。"
-          },
-          "severity_override_reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Severity Override Reason",
-            "description": "设置人工等级覆盖必填理由；须与severity_override一起提交。"
-          },
-          "resolution_note": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resolution Note",
-            "description": "将事件改为resolved必填；须与handling_status=resolved一起提交。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "IncidentManagementFields"
-      },
-      "IncidentManagementUpdate": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "当前详情facts.row_version；过期409。"
-          },
-          "owner_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Owner Id",
-            "description": "同租户已有人员ID；省略保持，null取消分配。"
-          },
-          "tags": {
-            "items": {
-              "type": "string",
-              "maxLength": 128,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxLength": 50,
-            "title": "Tags",
-            "description": "完整标签集合；省略保持，[]清空，不接受null或重复／空白标签。"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason",
-            "description": "人工状态变更理由；关闭告警必填，保存在活动中。"
-          },
-          "handling_status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "in_progress",
-              "resolved"
-            ],
-            "title": "Handling Status",
-            "description": "人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。"
-          },
-          "severity_override": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Severity"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "人工等级覆盖；省略保持，null恢复按成员自动等级。"
-          },
-          "severity_override_reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Severity Override Reason",
-            "description": "设置人工等级覆盖必填理由；须与severity_override一起提交。"
-          },
-          "resolution_note": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 20000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resolution Note",
-            "description": "将事件改为resolved必填；须与handling_status=resolved一起提交。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "expected_row_version"
-        ],
-        "title": "IncidentManagementUpdate"
-      },
-      "SelectedSubject": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id",
-            "description": "用户明确选中的告警或事件ID。"
-          },
-          "expected_row_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Expected Row Version",
-            "description": "该对象当前facts.row_version。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "expected_row_version"
-        ],
-        "title": "SelectedSubject"
-      },
-      "SubjectBatchReceipt": {
-        "properties": {
-          "operation_key": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Operation Key",
-            "description": "本次明确操作的幂等键；同内容重试沿用，不同意图换键。"
-          },
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SubjectMutationReceipt"
-            },
-            "type": "array",
-            "title": "Items",
-            "description": "按主体UUID排序的逐项保存结果。"
-          },
-          "changed_count": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Changed Count",
-            "description": "本批changed=true的对象数；不是任务或模型执行数。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "operation_key",
-          "items",
-          "changed_count"
-        ],
-        "title": "SubjectBatchReceipt"
-      },
-      "SubjectMutationReceipt": {
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "alerts",
-              "incidents"
-            ],
-            "title": "Kind",
-            "description": "操作的主体种类。"
-          },
-          "facts": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AlertFacts"
-              },
-              {
-                "$ref": "#/components/schemas/IncidentFacts"
-              }
-            ],
-            "title": "Facts",
-            "description": "提交时保存的主体事实快照；沿用原详情facts字段。重放返回原快照，最新值另GET。"
-          },
-          "changed": {
-            "type": "boolean",
-            "title": "Changed",
-            "description": "本次是否产生主体变化；新增人工反馈为true。"
-          },
-          "feedback_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Feedback Id",
-            "description": "本次新建人工反馈ID；管理操作为null。"
-          },
-          "activity_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Activity Id",
-            "description": "本次活动ID；在该主体records/activities中读取。"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "kind",
-          "facts",
-          "changed",
-          "feedback_id",
-          "activity_id"
-        ],
-        "title": "SubjectMutationReceipt"
       }
     },
     "securitySchemes": {

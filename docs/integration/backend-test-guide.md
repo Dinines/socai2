@@ -161,4 +161,18 @@ E26告警、E27事件、E02调查列表已经支持全库查询。先用本页�
 
 读取items后，将next_cursor原样URL编码为下次cursor，保持其他条件；null表示结束。改条件或排序时清空cursor。告警/事件filtered_total表示全部筛选命中数，total/overall_stats保持租户整体；Case total表示筛选数，metrics保持整体。旧告警/事件before_id仅在无新增条件时可用，不能和cursor、新筛选或排序混用。
 
-非法排序、日期无时区、起点不早于终点、游标非法或与条件不符返回422；旧before_id主体不存在返回404。具体输入输出、字段及错误示例见[Swagger交接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#列表查询怎么用)。完整CSV导出尚未实现；调用列表不会触发模型。
+非法排序、日期无时区、起点不早于终点、游标非法或与条件不符返回422；旧before_id主体不存在返回404。具体输入输出、字段及错误示例见[Swagger交接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#列表查询怎么用)。完整CSV导出使用E54/E55/E56；列表和导出均不会触发模型。
+
+## 下载完整筛选结果
+
+导出接口为`GET /api/v1/socai2/alerts/export`、`incidents/export`、`cases/export`。沿用列表筛选排序、可加`columns`；不传分页参数。21可用上面的合成管理批次标题查询：
+
+```sh
+curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-urlencode 'q=SYNTHETIC subject management a0735538-3c99-40a8-8af0-f1f6e14a0641' \
+  --data-urlencode 'columns=facts.id,facts.title,facts.handling_status,facts.disposition' \
+  --output synthetic-alerts.csv
+```
+
+该21合成组应命中3条；相同q用于事件导出也是3条。调查可用`q=d5ef9c5a-00c9-564a-9fcb-fdb5810f890e`读取1条。仅GET，不触发分析或修改。当前上限10000行/16MiB，错误返回JSON；空结果CSV仅表头。[默认列、空值/转义和错误规则](../../deliverables/investigation-validation-20261106/http-handoff/README.md#完整列表导出)。本机专属55条合成告警及3事件/3Case见[新批次数据](../operations/evidence/list-export-20261113-01/fixture.json)，不能拿本机ID在21查询。
