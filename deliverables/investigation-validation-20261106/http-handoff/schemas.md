@@ -274,6 +274,57 @@ string unassigned, assigned, unresolved
 | created | 是 | boolean | 无（可空不等于可省略） | 是否本次新建pending记录；false可能复用已有待启动项。 [完整语义](/handoff/audit/response-fields.html#baselinepreparation) |
 
 
+<a id="caseattachmentcreate"></a>
+
+## CaseAttachmentCreate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 本次登记的幂等键；同案同作者同元数据重试沿用。 |
+| file_id | 是 | string; minLength=1; maxLength=512 | 无（可空不等于可省略） | 业务后端已保存文件的稳定ID，不是下载URL；文件内容变化须使用新ID。 |
+| file_name | 是 | string; minLength=1; maxLength=512 | 无（可空不等于可省略） | 业务后端提供的文件显示名，原值保存，不作为路径使用。 |
+| mime_type | 是 | string; minLength=1; maxLength=255 | 无（可空不等于可省略） | 业务后端声明的文件内容类型，例如application/pdf。 |
+| size_bytes | 是 | integer; minimum=0.0; maximum=9.223372036854776e+18 | 无（可空不等于可省略） | 业务后端声明的完整文件字节数；本服务不读取文件核验。 |
+| sha256 | 否 | string; pattern=^[0-9a-f]{64}$ / null | 无（可空不等于可省略） | 业务后端提供的文件SHA-256；未知可省略或为null，不由本服务计算或验证。 |
+
+
+<a id="caseattachmentpage"></a>
+
+## CaseAttachmentPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[CaseAttachmentView](schemas.md#caseattachmentview)> | 无（可空不等于可省略） | 本服务登记到指定Case的附件，按created_at/id升序；不混入Run工件或其他案件。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 指定Case已登记附件引用的总数，不是探测可下载文件数。 |
+| next_offset | 是 | integer / null | 无（可空不等于可省略） | 有后续记录时的下一页偏移，否则null；不承诺跨请求冻结快照。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次只读一致快照的观察时间。 |
+
+
+<a id="caseattachmentview"></a>
+
+## CaseAttachmentView
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | 本服务保存的附件关联ID，不是业务后端文件ID。 |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 附件明确归属的Case。 |
+| file_id | 是 | string | 无（可空不等于可省略） | 业务后端文件ID；由业务后端据此提供下载或报告文件失效。 |
+| file_name | 是 | string | 无（可空不等于可省略） | 登记时业务后端提供的文件显示名。 |
+| mime_type | 是 | string | 无（可空不等于可省略） | 登记时业务后端声明的文件内容类型，未经本服务检测。 |
+| size_bytes | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 登记时业务后端声明的文件字节数，未经本服务核验。 |
+| sha256 | 是 | string / null | 无（可空不等于可省略） | 业务后端提供的文件哈希；null表示未提供，不是校验失败。 |
+| created_by | 是 | string (uuid) | 无（可空不等于可省略） | 实际登记人的认证用户ID，由服务端保存。 |
+| created_at | 是 | string (date-time) | 无（可空不等于可省略） | 服务端保存附件关联的时间，不是文件发生时间。 |
+| file_owner | 是 | string = business_backend | 无（可空不等于可省略） | 文件字节、上传和下载统一由业务后端管理。 |
+| availability | 是 | string = managed_by_backend | 无（可空不等于可省略） | 本服务只提供引用，未探测文件实时存在性或可下载性；下载结果由业务后端决定。 |
+
+
 <a id="casebaselinerecord"></a>
 
 ## CaseBaselineRecord

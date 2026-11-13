@@ -19,6 +19,11 @@ from app.socai2.case_ai_contracts import (
     AskCaseAI,
     SaveCaseAIAnswer,
 )
+from app.socai2.case_attachment_contracts import (
+    CaseAttachmentCreate,
+    CaseAttachmentPage,
+    CaseAttachmentView,
+)
 from app.socai2.case_contracts import (
     ArtifactContent,
     AssociationReceipt,
@@ -122,6 +127,9 @@ __all__ = [
     "AssociationReceipt",
     "AssociationRequest",
     "BaselinePreparation",
+    "CaseAttachmentCreate",
+    "CaseAttachmentPage",
+    "CaseAttachmentView",
     "CaseCloseRequest",
     "CaseCreate",
     "CaseDataReceipt",

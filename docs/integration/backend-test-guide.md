@@ -194,3 +194,11 @@ curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
 使用21正式API18024；可先只读本批合成Case `386f516d-2bde-50b9-8acd-c6ddc4ab2331` 的 `GET /api/v1/socai2/cases/{case_id}/comments?limit=20&offset=0`，有两条评论。请在自己的验收Case提交新评论，以保持既有验证记录。POST同路径带 `operation_key` 和 `body`；同意图重试沿用键，改正文使用新键。返回真实作者、保存时间及完整正文，随后GET读回；E17活动可查提交。输入输出详见[普通评论](../../deliverables/investigation-validation-20261106/http-handoff/README.md#case普通评论)。
 
 评论不是人工任务完成，也不启动或采用调查；正文按纯文本展示。本批没有附件上传/下载接口。两端独立样本及数据库核对见[验收](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)。
+
+## Case附件引用联调
+
+21已保存的本批合成Case：`c1c9c7bb-2da6-5d17-aa7f-e83761063c66`。使用E61 `GET /api/v1/socai2/cases/{case_id}/attachments`可读两份引用，再用E62按返回的关联id读单项。样例file_id明确为SYNTHETIC，未对应真实上传文件，不能据此测试下载成功。
+
+实际业务先由后端上传保存文件，取得真实file_id，再调用E60登记。输入包含operation_key、file_id、file_name、mime_type、size_bytes及可选sha256；同key同元数据可重试，变意图409，同案同file_id重复登记409。登记失败先保留后端文件并核对E61/回执，不把文件删除或重新上传作为自动重试动作。
+
+本服务返回的id用于查关联，file_id由业务后端用来提供下载；大小/类型/哈希由后端声明。availability=managed_by_backend不表示已验证文件存在。完整例子见[附件对接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#case附件引用)，[两端存取证据](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)只覆盖引用，不覆盖文件平台。

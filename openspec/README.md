@@ -18,6 +18,8 @@
 
 [Case普通评论](changes/archive/2026-11-13-add-case-comments/validation.md)已完成E58提交、E59分页读取，本机/21真实HTTP与SQL读回通过，Swagger docs11共59操作；原57合同及任务/Run保持。发布后独立复核及归档按本change记录，采用规则由调查模块统一，附件仍未交付。
 
+[Case附件引用](changes/archive/2026-11-13-link-case-attachments/validation.md)完成E60登记、E61目录、E62单项，两端真实HTTP/SQL及Swagger docs12同步，原59合同保持。文件上传/保存/下载已由负责人确认交业务后端，本服务不抓取文件或触发调查；独立结束审计及归档按本change记录。
+
 ## 文档职责
 
 当前优先级为[固定范围调查收口](changes/complete-socai2-investigation-chain/fixed-flow-plan.md)；[schedule-streaming-investigation-updates](changes/schedule-streaming-investigation-updates/proposal.md)已规划更新触发、队列合并、反馈复核和知识使用，按负责人最新指令在固定流程完成后实施，尚未改变运行行为。

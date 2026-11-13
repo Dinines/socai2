@@ -14,7 +14,7 @@
 | 问题与后续验收 | [问题清单](current-issues.md)、[OpenSpec 任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 | 采用结果与未完任务 | [现状、拟议设计和 AD01–AD06](result-adoption-and-pending-work.md)；调查模块统一规则，HTTP随后接入。E21仍501，采用不等同任务完成或结案 |
 | 实际实现审查 | [调查流程独立审查](investigation-flow-review-20261111.md)：入口、设计合理性、合同偏差、实现真实性及证据限制 |
-| 当前交付与下一项 | Case/H、分诊后知识同步、Case管理及告警/事件管理已交付；[HTTP分离](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)已独审归档。[三类列表查询](../../openspec/changes/archive/2026-11-13-query-investigation-lists/design.md)已完成本机/21及Swagger docs8发布、独审归档；完整CSV导出及E57归并统计也已发布，普通评论E58/E59也已发布，两端Swagger为docs11；结果采用待调查模块对齐，其他接口按[计划](http-implementation-plan-20261112.md)推进。固定调查和模型质量进展见[PROGRESS](../../PROGRESS.md) |
+| 当前交付与下一项 | Case/H、分诊后知识同步、Case管理及告警/事件管理已交付；[HTTP分离](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)已独审归档。[三类列表查询](../../openspec/changes/archive/2026-11-13-query-investigation-lists/design.md)已完成本机/21及Swagger docs8发布、独审归档；完整CSV导出及E57归并统计也已发布，普通评论E58/E59也已发布，附件引用E60–E62已发布，文件上传/下载由业务后端负责；两端Swagger为docs12；结果采用待调查模块对齐，其他接口按[计划](http-implementation-plan-20261112.md)推进。固定调查和模型质量进展见[PROGRESS](../../PROGRESS.md) |
 | 21 与本机接入 | [部署](../../deploy/aisoc21/README.md)、[SSH 转发](../operations/mac-ssh-relay-20261107.md) |
 | 资料归档与保留 | [历史索引](../handoff/history/README.md)、[代码与数据保留清单](../handoff/retention-map.md) |
 | 运行原件及样例 | [工作台与离线材料](../../deliverables/investigation-validation-20261106/README.md)、[本批证据](../operations/evidence/case-evidence-roles-20261110-01/) |

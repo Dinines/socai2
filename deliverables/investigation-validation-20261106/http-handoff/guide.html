@@ -1,7 +1,7 @@
 <html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="调查服务-http-api">调查服务 HTTP API</h1>
-<p>合同版本：2026-11-13.docs11。对应本机18024版本为 <code>case-comments-20261113-r1-local</code>，21正式18024为 <code>case-comments-20261113-r1</code>；合同含59操作，实际发布状态见部署回执，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
-<p>本轮新增E58提交Case评论、E59分页读取评论，保存原文、真实作者及时间。原57接口、归并统计及CSV保持；外部HTTP和内部调查直接调用分开。评论不作为已核实事实，不启动调查或改变人工任务。</p>
-<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共59个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
+<p>合同版本：2026-11-13.docs12。对应本机18024版本为 <code>case-attachments-20261113-r1-local</code>，21正式18024为 <code>case-attachments-20261113-r1</code>；合同含62操作，实际发布状态见部署回执，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
+<p>本轮新增E60登记Case附件引用、E61分页目录和E62单项信息，原59操作保持。文件上传、存储和下载由业务后端负责；调查服务只保存关联及元数据，不启动调查或改变人工任务。</p>
+<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共62个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
 <h2 id="每个接口怎么看">每个接口怎么看</h2>
 <p>展开接口即可查看：用途、输入参数、输出结构、操作后的结果、实现状态、请求/响应示例和错误。固定字段解释在Schema中；随分区或工件类型变化的字段在Responses说明中。示例是合成合同示例，需要替换为实际ID和版本。</p>
 <p>• <b>已实现</b>：接口逻辑已提供。执行结果及结论是否有效以返回状态为准。</p>
@@ -12,7 +12,7 @@
 <p>业务路径前缀为<code>/api/v1/socai2</code>。Swagger的Servers按实际调用环境选择；18080只提供文档。</p>
 <table>
 <tr><th>使用环境</th><th>API根地址</th><th>数据目标</th></tr>
-<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>case-comments-20261113-r1</code>，59操作</td></tr>
+<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>case-attachments-20261113-r1</code>，62操作</td></tr>
 <tr><td>本机转发到21</td><td><code>http://127.0.0.1:28024</code></td><td>同一正式库；需开启<code>deploy/http-service/relay.json</code>对应转发</td></tr>
 <tr><td>本机开发验收</td><td><code>http://127.0.0.1:18024</code></td><td>隔离<code>v12_upgrade_dev</code>；本地记录ID与21不通用</td></tr>
 </table>
@@ -87,4 +87,12 @@ Authorization: Bearer &lt;有效凭据&gt;</pre>
 <p>正文非空白、最多20000字符，保留换行与首尾内容，调用方按纯文本显示。服务保存作者ID、当时登录标识和创建时间，返回完整评论；不能从客户端指定作者。操作键相同且作者/正文相同返回原评论，换内容或作者返回409，不重复增加评论。</p>
 <p>E59 <code>GET /api/v1/socai2/cases/{case_id}/comments?limit=20&amp;offset=0</code> 只读本案评论，按创建时间和ID升序。返回items、total、next_offset和observed_at；按next_offset继续，null表示结束。limit为1–100，offset为0–100000，其他参数422；无评论明确返回空集合，Case不存在404。</p>
 <p>普通评论允许补充到已结案Case，更新业务时间及Case行版本；处理状态、当前判断、成员、任务和Run保持，不自动重开或分析。E17读取提交活动；评论自身row_version不是Case版本。现有任务事实仍经任务接口保存。</p>
-<p>本批仅提交及阅读，不含评论编辑/删除或附件上传。文件本体及下载由业务后端承接的方向保持，附件引用接口尚未交付；提交评论成功不能显示成文件上传成功。</p></main></html>
+<p>评论仅支持提交及阅读，不含编辑/删除。文件本体及下载由业务后端承接；附件引用现使用E60–E62。提交评论不能显示成文件上传成功。</p>
+<h2 id="case附件引用">Case附件引用</h2>
+<p>附件是用户给案件补充的文件，例如运维工单PDF、截图或日志。业务后端负责上传、保存和下载；调查服务负责记录文件与案件的关联。</p>
+<p>1. 业务后端先完成文件保存，取得稳定<code>file_id</code>，确保文件属于当前业务范围。</p>
+<p>2. E60 <code>POST /api/v1/socai2/cases/{case_id}/attachments</code>登记<code>operation_key</code>、<code>file_id</code>、<code>file_name</code>、<code>mime_type</code>、<code>size_bytes</code>及可选<code>sha256</code>。返回<code>id</code>是附件关联ID，<code>file_id</code>仍是业务后端文件ID。</p>
+<p>3. E61 <code>GET</code>同路径按<code>limit/offset</code>读取目录；E62 <code>GET /api/v1/socai2/cases/{case_id}/attachments/{attachment_id}</code>读取单项元数据。E17读取登记活动和回执。</p>
+<p>4. 用户下载时，由业务后端根据<code>file_id</code>提供文件；文件失效也由业务后端处理。本服务不保存或返回下载URL，不抓取文件。</p>
+<p>大小、类型和哈希按业务后端提供的值保存；<code>availability=managed_by_backend</code>只表示由后端管理，不代表本服务探测文件存在或下载成功。<code>created_by/created_at</code>由服务端记录，是登记人/时间。未知哈希返回null；零字节文件允许size_bytes=0。</p>
+<p>同key同作者同元数据重试返回原记录；改意图409，同案同file_id另key重复登记409，读取目录获取原关联。文件内容变化须使用新file_id；本批没有附件修改、删除或自动分析。空白/非法元数据422，错误或跨案附件404；正文和任务结论保持。附件登记成功后可以查看关联，不代表上传和下载完整链路已经验收。</p></main></html>

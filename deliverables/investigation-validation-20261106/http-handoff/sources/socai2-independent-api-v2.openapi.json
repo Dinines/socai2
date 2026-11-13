@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "case-comments-20261113-r1-local"
+    "version": "case-attachments-20261113-r1-local"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -5020,6 +5020,192 @@
           }
         }
       }
+    },
+    "/api/v1/socai2/cases/{case_id}/attachments": {
+      "post": {
+        "tags": [
+          "socai2-case-attachments"
+        ],
+        "summary": "Create Attachment",
+        "operationId": "create_attachment_api_v1_socai2_cases__case_id__attachments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseAttachmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseAttachmentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-case-attachments"
+        ],
+        "summary": "List Attachments",
+        "operationId": "list_attachments_api_v1_socai2_cases__case_id__attachments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseAttachmentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/attachments/{attachment_id}": {
+      "get": {
+        "tags": [
+          "socai2-case-attachments"
+        ],
+        "summary": "Read Attachment",
+        "operationId": "read_attachment_api_v1_socai2_cases__case_id__attachments__attachment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseAttachmentView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6007,6 +6193,201 @@
           "created"
         ],
         "title": "BaselinePreparation"
+      },
+      "CaseAttachmentCreate": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次登记的幂等键；同案同作者同元数据重试沿用。"
+          },
+          "file_id": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "File Id",
+            "description": "业务后端已保存文件的稳定ID，不是下载URL；文件内容变化须使用新ID。"
+          },
+          "file_name": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "File Name",
+            "description": "业务后端提供的文件显示名，原值保存，不作为路径使用。"
+          },
+          "mime_type": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Mime Type",
+            "description": "业务后端声明的文件内容类型，例如application/pdf。"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "description": "业务后端声明的完整文件字节数；本服务不读取文件核验。"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256",
+            "description": "业务后端提供的文件SHA-256；未知可省略或为null，不由本服务计算或验证。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "file_id",
+          "file_name",
+          "mime_type",
+          "size_bytes"
+        ],
+        "title": "CaseAttachmentCreate"
+      },
+      "CaseAttachmentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CaseAttachmentView"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "本服务登记到指定Case的附件，按created_at/id升序；不混入Run工件或其他案件。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "指定Case已登记附件引用的总数，不是探测可下载文件数。"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset",
+            "description": "有后续记录时的下一页偏移，否则null；不承诺跨请求冻结快照。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本次只读一致快照的观察时间。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_offset",
+          "observed_at"
+        ],
+        "title": "CaseAttachmentPage"
+      },
+      "CaseAttachmentView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "本服务保存的附件关联ID，不是业务后端文件ID。"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id",
+            "description": "附件明确归属的Case。"
+          },
+          "file_id": {
+            "type": "string",
+            "title": "File Id",
+            "description": "业务后端文件ID；由业务后端据此提供下载或报告文件失效。"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name",
+            "description": "登记时业务后端提供的文件显示名。"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type",
+            "description": "登记时业务后端声明的文件内容类型，未经本服务检测。"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "description": "登记时业务后端声明的文件字节数，未经本服务核验。"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256",
+            "description": "业务后端提供的文件哈希；null表示未提供，不是校验失败。"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By",
+            "description": "实际登记人的认证用户ID，由服务端保存。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "服务端保存附件关联的时间，不是文件发生时间。"
+          },
+          "file_owner": {
+            "type": "string",
+            "const": "business_backend",
+            "title": "File Owner",
+            "description": "文件字节、上传和下载统一由业务后端管理。"
+          },
+          "availability": {
+            "type": "string",
+            "const": "managed_by_backend",
+            "title": "Availability",
+            "description": "本服务只提供引用，未探测文件实时存在性或可下载性；下载结果由业务后端决定。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "case_id",
+          "file_id",
+          "file_name",
+          "mime_type",
+          "size_bytes",
+          "sha256",
+          "created_by",
+          "created_at",
+          "file_owner",
+          "availability"
+        ],
+        "title": "CaseAttachmentView"
       },
       "CaseBaselineRecord": {
         "properties": {

@@ -9,6 +9,7 @@ from investigation_http.errors import provide
 __all__ = [
     "CurrentUser",
     "analysis_service",
+    "attachment_service",
     "case_service",
     "comment_service",
     "execution_service",
@@ -28,6 +29,10 @@ async def case_service(request: Request):
 
 async def comment_service(request: Request):
     return provide(services.comments, request.method)
+
+
+async def attachment_service(request: Request):
+    return provide(services.attachments, request.method)
 
 
 async def task_service(request: Request):

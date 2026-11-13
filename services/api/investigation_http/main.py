@@ -9,6 +9,7 @@ from investigation_http.adapters.identity import login_router
 from investigation_http.adapters.runtime import configured_database_name
 from investigation_http.external_routes import (
     analysis,
+    attachments,
     case_ai,
     cases,
     comments,
@@ -31,6 +32,7 @@ for router in (
     grouping.router,
     cases.router,
     comments.router,
+    attachments.router,
     case_ai.router,
     analysis.router,
     pages.router,

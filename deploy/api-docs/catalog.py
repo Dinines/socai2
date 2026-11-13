@@ -60,6 +60,9 @@ OPERATIONS = {
 57: ('事件归并统计', '已实现', '按当前租户告警选范围：source_namespace精确匹配告警来源并区分大小写；time_from/time_to按alerts.event_time，带时区，[起点,终点)，允许单边。时间条件排除未知时间，无时间条件包含。省略三个条件统计全租户。仅支持这三个参数；q/负责人/处理状态/排序/分页等返回422，顶部统计不沿用事件表格筛选。只数范围内告警，按当前关联去重事件；跨范围成员不扩入分母，无范围内成员的事件不计。处理中只按所计事件handling_status=in_progress。压缩比例=(已归并告警数-事件数)/已归并告警数，0..1乘100展示百分比；无已归并告警时null。未归并数量单列，不当成压缩成果，也不代表准确率或解决率。所有数量与observed_at来自同一只读快照，不写库、不触发归并或模型。', 'grouping_query_parameter_not_supported:422 read_dependency_missing:503 read_dependency_permission_denied:503 read_dependency_schema_mismatch:503'),
 58: ('提交Case评论', '已实现', '提交operation_key和body纯文本原文（非空白，最多20000字符）。作者和时间由服务端保存；同案同键同作者同正文返回原评论，改内容或操作者409。只追加，不提供编辑/删除。允许已结案案件补充说明；更新案件业务时间和行版本，但不改变范围、处理状态、当前判断、任务或Run。评论不是已核实事实，不进入模型或自动成为任务。保存后用E59读取，E17回查活动。', 'case_not_found:404 operation_key_conflict:409 case_actor_not_in_tenant:403'),
 59: ('读取Case评论', '已实现', '仅指定Case的普通评论，不混入成员告警、事件或其他案件评论。limit默认20、范围1–100，offset默认0、范围0–100000；按created_at及id升序。返回items、total、next_offset和observed_at，空集合明确为空；单次一致快照，跨页非冻结快照。只接受limit/offset，其他参数422。', 'case_not_found:404 comment_query_parameter_not_supported:422'),
+60: ('登记Case附件引用', '已实现', '业务后端先上传并保存文件，再提交operation_key、file_id、file_name、mime_type、size_bytes及可选sha256。本服务保存案件关联、服务端登记人/时间和活动；同key同意图返回原记录，改意图409；同案同file_id另键重复409。元数据由业务后端声明，文件实时可用性和下载由业务后端决定。本服务不接收文件字节或下载URL、不查验文件，不启动调查或改任务/判断。已结案Case可补充资料，状态保持。E61/E62读回，E17查回执。', 'case_not_found:404 operation_key_conflict:409 attachment_already_linked:409 case_actor_not_in_tenant:403'),
+61: ('读取Case附件目录', '已实现', '仅列本服务登记到本Case的附件引用，不混入其他Case、成员材料或Run报告。limit默认20(1–100)、offset默认0(0–100000)，按created_at/id升序；返回items/total/next_offset/observed_at，空集合为[]。同次只读一致快照，跨请求不冻结。只接受limit/offset。availability=managed_by_backend不代表文件探测或下载成功。', 'case_not_found:404 attachment_query_parameter_not_supported:422'),
+62: ('读取Case单个附件信息', '已实现', '按Case和附件关联ID读取原file_id、名称、类型、大小、可选哈希及登记人/时间。该ID是本服务关联ID，file_id才是业务后端下载时使用的文件ID；下载地址由业务后端提供。本接口不返回文件字节或下载URL，不报告未核验的文件存在性。不存在或跨案件404，不接受查询参数。', 'case_not_found:404 case_attachment_not_found:404 attachment_query_parameter_not_supported:422'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -159,8 +162,8 @@ F22-07|可用|40,41,3|409保留用户输入→读最新版本→显示差异再�
 F22-08|部分实现|40,11,13|保存H仅生成修订；显式下一轮冻结新版本；自动C6复核和故事/Q仍未接。
 F23-05|可用|17|读取匹配活动与目标前后值，按next_offset分页。
 F24-01|已实现|58,59,17|E58追加普通评论，E59分页读取，E17查提交活动；不当作调查事实。
-F24-02|部分实现|15,16|已知工件正文可读；通用附件目录/文件下载闭环未实现。
-F24-03|未实现||无上传或附件保存接口。
+F24-02|本服务已实现|61,62|附件目录/信息可读，file_id供业务后端下载；本服务不探测文件实时存在性，文件下载由业务后端承接。
+F24-03|本服务已实现|60,61,62|业务后端上传成功后调用E60登记案件关联，再用E61/E62读回；上传与文件保存由业务后端承接。
 F26-02|未实现|19|无正式会话目录/历史读写；预留结构不算可用。
 F26-03|未实现|19|产品范围选择尚无DTO字段，当前多传scope将422。
 F26-04|未实现||无建议问题生成API。

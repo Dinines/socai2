@@ -54,3 +54,7 @@
 - 完整攻击溯源、全局／跨案助手、相似案件和旧平台其他模块不属于本次功能补全；不以“待确认”方式变相加入范围。
 
 依据：[产品需求第 16 节](alert-incident-case-product-requirements.md#16-已确认规则与后续能力)、[页面讨论约定](ui-discussion-principles.md)、[产品评审发现](investigation-product-page-review-20261112.md)、[当前后置更新规划](../../openspec/changes/schedule-streaming-investigation-updates/proposal.md)。本轮确认已同步到对应产品章节与功能清单；后续规则变更继续记录范围，实际实现和验收分别保留证据。
+
+## 附件职责补充（2026-11-13已确认）
+
+负责人确认F24-02/03中的文件上传、保存和下载由业务后端负责；调查服务只保存文件与Case的关联及文件ID、名称、类型、大小等元数据，并提供目录和单项读取。上传不自动触发调查，文件内容不直接成为已核实事实。文件下载可用性由业务后端判断，本服务保存引用成功不代表文件链路验收通过。
