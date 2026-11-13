@@ -59,6 +59,17 @@ def inspect(name):
     return json.loads(command(["docker", "inspect", name]))[0]
 
 
+def package_sources(item):
+    """An API image can contain separately owned sibling Python packages."""
+    packages = {"app": item["source"], **item.get("additional_packages", {})}
+    need(packages["app"] == item["source"], "cannot_replace_application_source")
+    for target, source in packages.items():
+        need(target.isidentifier() and not target.startswith("_"), "unsafe_package_name")
+        path = Path(source)
+        need(not path.is_absolute() and ".." not in path.parts, "unsafe_package_source")
+    return packages
+
+
 def freeze(config_path, output):
     cfg = read(config_path)
     need(cfg["version"] == "socai2.release.v1.2", "unsupported_release")
@@ -67,12 +78,14 @@ def freeze(config_path, output):
     need(not output.exists(), "release_exists_use_new_id")
     files = {}
     for item in cfg["build"].values():
-        folder = root / item["source"]
-        for path in sorted(folder.rglob("*")):
-            if not path.is_file() or "__pycache__" in path.parts:
-                continue
-            need(path.resolve() == path and not any(p.startswith(".") for p in path.relative_to(root).parts), "unsafe_source")
-            files[str(path.relative_to(root))] = path.read_bytes()
+        for source in package_sources(item).values():
+            folder = root / source
+            need(folder.is_dir(), "missing_package_source")
+            for path in sorted(folder.rglob("*")):
+                if not path.is_file() or "__pycache__" in path.parts:
+                    continue
+                need(path.resolve() == path and not any(p.startswith(".") for p in path.relative_to(root).parts), "unsafe_source")
+                files[str(path.relative_to(root))] = path.read_bytes()
     for name in cfg["files"]:
         path = root / name
         need(path.resolve() == path and path.is_file(), "missing_release_file")
@@ -124,10 +137,14 @@ def build(folder):
         if not existing:
             with tempfile.TemporaryDirectory() as temporary:
                 context = Path(temporary)
-                shutil.copytree(folder / item["source"], context / "app")
+                packages = package_sources(item)
+                for target, source in packages.items():
+                    shutil.copytree(folder / source, context / target)
                 (context / "Dockerfile").write_text(
                     "ARG BASE_IMAGE\nFROM ${BASE_IMAGE}\nUSER 0:0\n"
-                    "RUN rm -rf /app/app\nCOPY --chown=" + item["user"] + " app /app/app\n"
+                    + "".join("RUN rm -rf /app/" + target + "\nCOPY --chown=" + item["user"]
+                              + " " + target + " /app/" + target + "\n" for target in packages)
+                    +
                     "ENV PYTHONDONTWRITEBYTECODE=1\nUSER " + item["user"] + "\n")
                 command(["docker", "build", "--network=none", "--pull=false", "--build-arg", "BASE_IMAGE=" + base["Id"],
                     "--label", "socai2.release=" + sha, "--tag", item["tag"], str(context)],
@@ -135,12 +152,15 @@ def build(folder):
         image = json.loads(command(["docker", "image", "inspect", item["tag"]]))[0]
         need(image["Config"].get("Labels", {}).get("socai2.release") == sha and image["Config"]["User"] == item["user"],
              "candidate_image_collision")
-        actual = json.loads(command(["docker", "run", "--rm", "--network=none", "--read-only", "--entrypoint", "python",
-            image["Id"], "-B", "-c", HASH_APP, "/app/app"]))
-        expected = {path.removeprefix(item["source"] + "/"): value for path, value in manifest["files"].items()
-                    if path.startswith(item["source"] + "/")}
-        need(actual == expected, "image_source_mismatch_" + name)
-        images[name] = {"id": image["Id"], "tag": item["tag"], "files": len(actual)}
+        count = 0
+        for target, source in package_sources(item).items():
+            actual = json.loads(command(["docker", "run", "--rm", "--network=none", "--read-only", "--entrypoint", "python",
+                image["Id"], "-B", "-c", HASH_APP, "/app/" + target]))
+            expected = {path.removeprefix(source + "/"): value for path, value in manifest["files"].items()
+                        if path.startswith(source + "/")}
+            need(actual == expected, "image_source_mismatch_" + name + "_" + target)
+            count += len(actual)
+        images[name] = {"id": image["Id"], "tag": item["tag"], "files": count}
     write(folder / "images.json", {"manifest_sha256": sha, "images": images})
     return {"release": cfg["release"], "manifest_sha256": sha, "images": images, "network": "none", "services_changed": False}
 
@@ -426,10 +446,10 @@ def verify(folder, *, check_pointer=True):
             prepared = read(Path(cfg["state_dir"]) / (next(k for k,v in cfg["projects"].items() if v is project) + "-after.json"))
             runtime_matches(project, prepared, service, current)
             if "build" in change:
-                source = cfg["build"][change["build"]]["source"]
-                actual = json.loads(command(["docker", "exec", change["container"], "python", "-B", "-c", HASH_APP, "/app/app"]))
-                need(actual == {p.removeprefix(source + "/"): value for p, value in manifest["files"].items()
-                                if p.startswith(source + "/")}, "runtime_source_mismatch_" + service)
+                for target_package, source in package_sources(cfg["build"][change["build"]]).items():
+                    actual = json.loads(command(["docker", "exec", change["container"], "python", "-B", "-c", HASH_APP, "/app/" + target_package]))
+                    need(actual == {p.removeprefix(source + "/"): value for p, value in manifest["files"].items()
+                                    if p.startswith(source + "/")}, "runtime_source_mismatch_" + service + "_" + target_package)
             result[service] = {"container": change["container"], "image": current["Image"], "health": "healthy"}
             # Bind sources are part of this same release; verify inside the process namespace.
             bound = {}

@@ -12,6 +12,8 @@
 
 [Case基本管理](changes/archive/2026-11-12-manage-investigation-cases/validation.md)已完成E44–E47、两端各20次HTTP及SQL、限定独审和一次服务/Swagger发布；该批为47操作、docs6。随后[告警/事件管理](changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53及两端各86次HTTP、SQL逐值读回，服务和docs7均已发布；当前53操作、50已实现/3预留501，主调查31/41保持。
 
+[对外HTTP代码分离](changes/archive/2026-11-13-separate-investigation-http/validation.md)已完成两端18024发布、直接读回、限定独审及归档。对外查询和业务操作由独立HTTP包维护，调查内部步骤及必要内部HTTP保持原归属，53操作合同不变；本机真实保存读取、21既有数据只读复验，Swagger保留一致的docs7。[列表查询增量](changes/query-investigation-lists/design.md)的两个HTTP封套字段已获确认，功能尚未实施。
+
 ## 文档职责
 
 当前优先级为[固定范围调查收口](changes/complete-socai2-investigation-chain/fixed-flow-plan.md)；[schedule-streaming-investigation-updates](changes/schedule-streaming-investigation-updates/proposal.md)已规划更新触发、队列合并、反馈复核和知识使用，按负责人最新指令在固定流程完成后实施，尚未改变运行行为。

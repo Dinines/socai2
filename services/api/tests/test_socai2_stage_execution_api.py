@@ -10,6 +10,7 @@ from app.socai2.baseline_store import A, R
 from app.socai2.stage_results import StageResultService
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from investigation_http.adapters.services import ExecutionBackend
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -38,7 +39,9 @@ async def run_checks(engine, record, only=None):
     async def user():
         return principal
     app.dependency_overrides[get_current_user] = user
-    app.dependency_overrides[api.get_execution_service] = lambda: service
+    backend = ExecutionBackend(service.sessions)
+    backend._execution = service  # Model substitute stays behind the external use-case port.
+    app.dependency_overrides[api.get_execution_service] = lambda: backend
 
     async def fixture():
         aid, iid = uuid4(), uuid4()

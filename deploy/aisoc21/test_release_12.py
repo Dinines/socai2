@@ -16,6 +16,60 @@ r = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(r)
 
 
+@pytest.mark.parametrize("external", [False, True])
+def test_separate_http_package_is_frozen_built_and_checked(tmp_path, monkeypatch, external):
+    """Exercise the real freezer and build recipe; Docker is only a local fake."""
+    root = tmp_path / "source"
+    launcher = root / "deploy/aisoc21/release_12.py"
+    launcher.parent.mkdir(parents=True)
+    launcher.write_text(Path(r.__file__).read_text())
+    monkeypatch.setattr(r, "__file__", str(launcher))
+    packages = {"app": "services/api/app"}
+    item = {"source": packages["app"], "base_id": "base-id", "tag": "candidate", "user": "10001:10001"}
+    if external:
+        item["additional_packages"] = {"investigation_http": "services/api/investigation_http"}
+        packages.update(item["additional_packages"])
+    for source in packages.values():
+        directory = root / source
+        directory.mkdir(parents=True)
+        (directory / "__init__.py").write_text('"""Synthetic package."""\n')
+    cfg = {"version": "socai2.release.v1.2", "release": "synthetic-http-boundary",
+           "architecture": "amd64", "build_timeout_seconds": 10, "build": {"api": item}, "files": []}
+    config = tmp_path / "profile.json"
+    config.write_text(json.dumps(cfg))
+    monkeypatch.setattr(r, "command", lambda *args, **kwargs: "synthetic-commit")
+    folder = tmp_path / "frozen"
+    r.freeze(config, folder)
+    _, manifest, sha = r.verify_files(folder)
+    assert all(source + "/__init__.py" in manifest["files"] for source in packages.values())
+    verified = []
+
+    def docker(args, **kwargs):
+        if args[:3] == ["docker", "image", "ls"]:
+            return ""
+        if args[:3] == ["docker", "image", "inspect"]:
+            return json.dumps([{"Id": "base-id" if args[-1] == "base-id" else "built-id",
+                "Architecture": "amd64", "Config": {"User": item["user"], "Labels": {"socai2.release": sha}}}])
+        if args[:2] == ["docker", "build"]:
+            context = Path(args[-1])
+            recipe = (context / "Dockerfile").read_text()
+            for package in packages:
+                assert (context / package / "__init__.py").is_file()
+                assert f"COPY --chown={item['user']} {package} /app/{package}" in recipe
+            return ""
+        if args[:2] == ["docker", "run"]:
+            package = args[-1].removeprefix("/app/")
+            verified.append(package)
+            source = packages[package]
+            return json.dumps({"__init__.py": manifest["files"][source + "/__init__.py"]})
+        raise AssertionError(args)
+
+    monkeypatch.setattr(r, "command", docker)
+    result = r.build(folder)
+    assert set(verified) == set(packages)
+    assert result["images"]["api"]["files"] == len(packages)
+
+
 def test_gateway_timeout_is_in_release_and_new_install_configuration():
     root = Path(__file__).resolve().parents[2]
     cfg = json.loads((root / "deploy/aisoc21/release-v1.2.json").read_text())

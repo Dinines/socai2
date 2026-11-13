@@ -22,6 +22,7 @@ from app.socai2.case_service import CaseService
 from app.socai2.runtime_policy import load_policy
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from investigation_http.adapters import services as backends
 from pydantic import ValidationError
 from sqlalchemy import (
     JSON,
@@ -266,7 +267,7 @@ class QueueBoundaryTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await client.get("/api/v1/socai2/cases")).status_code, 403)
             principal.scopes = ["cases:read"]
             app.dependency_overrides.pop(api.get_service)
-            with patch.object(api.settings, "SOCAI2_CASE_API_ENABLED", False):
+            with patch.object(backends.settings, "SOCAI2_CASE_API_ENABLED", False):
                 self.assertEqual((await client.get("/api/v1/socai2/cases")).status_code, 503)
         self.assertIn("get", app.openapi()["paths"]["/api/v1/socai2/cases"])
 

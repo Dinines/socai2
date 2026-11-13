@@ -5,6 +5,7 @@
 ## 工作入口与范围
 
 - 本仓库负责用户已确认的服务端流程：告警分诊、事件诊断、Case 调查，以及对应存储和查询。页面工作以数据合同及内部 4177 查阅为主；不因参考工程完整而自动扩展到采集、原始检测或整个平台。
+- 对外业务HTTP与内部调查调用按用途分开：对外查询和显式业务操作归 `services/api/investigation_http/`，通过用例端口接调查核心；内部阶段、组件HTTP客户端及内部HTTP应用保持各自归属，不混入对外路由/Swagger，不为分层强制改成HTTP。调查核心不反向依赖对外HTTP包。
 - 开始先检查实际分支、未提交内容和目标环境，保留他人及前轮修改。在普通项目目录工作，不把活动源码工作树放到 `.local`，不静默切换到旧文档所写分支。
 - 先读 [PROGRESS.md](PROGRESS.md)、本轮相关设计/任务及 [前后端交接指南](FRONTEND_BACKEND_HANDOFF.md)。当前调查变更入口为 [complete-socai2-investigation-chain](openspec/changes/complete-socai2-investigation-chain/tasks.md)；其他资料按需从[调查导航](docs/investigation/README.md)和[文档导航](docs/README.md)读取，不默认加载全部历史。
 - 既有授权范围内直接推进，不重复索要确认。提交、推送、合并、父项目引用和部署按各自获准范围执行；某批发布授权不等于后续所有发布均获准。

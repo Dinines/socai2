@@ -6,6 +6,8 @@
 
 [统一清单](release-v1.2.json)给源码、固定镜像、Compose 来源和变化服务；[传输配置](current-rollout.json)给目标、独立目录和证据位置；[生产 profile](production-v1.2.toml)选择模型、库和[调查策略](../local-investigation/investigation-policy-case-v1.toml)。凭据只从已有 private 文件生成。
 
+工作树已为[对外HTTP代码分离](../../docs/design/investigation-http-boundary.md)补充主API构建的 `additional_packages.investigation_http`；发布器会一并冻结、复制和核验这个独立包。该源配置供下一次新release使用，不代表已发布r5镜像含有本轮代码，也不要复用已完成release目录。处理组件直接调用调查核心，不增加对外HTTP运行依赖；独立18024已发布 `http-boundary-20261113-r1`，见[专用部署说明](../http-service/README.md)。
+
 当前固定流程修复仍在本地：Case 策略的 A/I 最多两次模型调用（首答及一次引用纠正），总 token 24000／时限300秒不变，Case 预算不变；历史重复展示合并及实际消息检查随服务代码打包。未进行本轮构建/发布，21 运行值仍以 r5 回执为准。收口后统一打包、核实际加载与读回，不因小修单独发布。
 
 1. 处理组件有实际变化时使用 `prepare_processing_release.py --profile <构建配置>` 冻结，再执行 `rollout_transport.py --config <传输配置> processing upload/build`；把镜像和 manifest 回执填入清单。知识 change 的处理代码有变化，按 processing-build-case-v1.toml 构建并核验固定镜像。

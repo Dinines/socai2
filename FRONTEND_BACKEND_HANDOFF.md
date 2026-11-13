@@ -1,12 +1,12 @@
 # 告警、事件与 Case 前后端交接
 
-更新于 2026-11-12。本文是前后端 HTTP 和组件对接的共同入口，以 21 当前部署和实际读回为准。现有页面仅用于测试；本次交接不要求修改页面，也不把页面接线作为服务验收前置。告警分诊、事件诊断、Case 调查及基本管理接口已部署；模型正文质量继续单列验收。
+更新于 2026-11-13。本文是前后端 HTTP 和组件对接的共同入口，以 21 当前部署和实际读回为准。现有页面仅用于测试；本次交接不要求修改页面，也不把页面接线作为服务验收前置。告警分诊、事件诊断、Case 调查及基本管理接口已部署；模型正文质量继续单列验收。
 
 ## 接入先看这里
 
 **业务后端调用 `http://192.168.1.21:18024`，在 `http://192.168.1.21:18080/` 查看 Swagger。**
 
-18024 是独立调查 API 服务，18080 是静态 Swagger。本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。 当前文档定义 **53 个操作：50 已实现、3 返回501**；两端实际测试与部署回执见下方入口。
+18024 是独立调查 API 服务，18080 是静态 Swagger。本机18024为http-boundary-20261113-r1-local，21正式18024为http-boundary-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。 当前文档定义 **53 个操作：50 已实现、3 返回501**；两端实际测试与部署回执见下方入口。
 
 | 接入事项 | 直接入口 |
 | --- | --- |
@@ -90,6 +90,7 @@ Authorization: Bearer <有效凭据>
 | HTTP逐项对接与在线文档 | 标准Swagger按告警/事件/调查接口分类，[53操作、用途、参数、输入输出、结果和实现状态](deliverables/investigation-validation-20261106/http-handoff/README.md)；[本机Swagger](http://127.0.0.1:18080/)、[21内网Swagger](http://192.168.1.21:18080/)；[Docker部署](deploy/api-docs/README.md) |
 | HTTP功能验证与后续实施 | [本机路由/真实隔离库验证](openspec/changes/complete-socai2-investigation-chain/http-functional-validation-20261112.md)：31项检查、43操作回执，模型为替身，真实质量未核销；[未实现功能计划](docs/investigation/http-implementation-plan-20261112.md)。[统一独立入口验收](openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已完成本机/21 TCP Case/H与SQL读回，详见下表 |
 | JSON 与 HTTP 合同 | [JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json)、[OpenAPI](docs/design/socai2-independent-api-v2.openapi.json) |
+| 对外与内部接口边界 | [架构与实际调用清单](docs/design/investigation-http-boundary.md)：列表/详情和显式analyze/diagnose/start均为对外业务接口，调查步骤与内部组件HTTP独立维护；代码分离已发布本机/21，既有HTTP合同保持 |
 | 有值、空值与原件 | [字段取数样例](deliverables/investigation-validation-20261106/page-field-samples.md)、[运行记录及离线材料](deliverables/investigation-validation-20261106/README.md) |
 | 程序流程和模型职责 | [执行账本](docs/investigation/current-execution-ledger.md)、[每个模型环节的输入输出](docs/investigation/model-input-output-current-20261109.md) |
 | 模型输入字段选择 | [字段级清单](openspec/changes/complete-socai2-investigation-chain/model-input-field-review-20261112.md)：查询只给结果及 A/I/C3 字段筛选已本地落实；原冻结 C3 离线正文7,680字符、空工具消息24字符。完整 JSON 新导入保留完整块，C3/Deep/C6 共用已识别知识的业务正文投影，[新导入离线预览](docs/operations/evidence/model-input-selection-20261112-05/README.md)不代表实际导入/运行。HTTP 路由、请求/响应字段、关联及数据库表均不变，可继续接口交接；新导入分块数量可能变化，原工件/旧知识不重写。Deep/C6 已进一步按问题/全案任务筛选，[完整输入预览](docs/operations/evidence/model-input-selection-20261112-06/README.md)分别8,768/14,080字符，原引用/范围及输出保存读取合同保持；已补[大量工具返回处理及隔离库替身保存/读取验证](docs/operations/evidence/model-input-selection-20261112-07/README.md)，结果与当前评估GET一致；真实模型质量未通过，尚未发布本轮模型修改 |
@@ -103,7 +104,7 @@ Authorization: Bearer <有效凭据>
 | 目标 | 21，SSH 别名 `sting-infra21` |
 | 发布 | `v1.2-20261112-r5`；[发布清单](deploy/aisoc21/release-v1.2.json)固定源码、镜像和挂载 |
 | 数据库 | PostgreSQL 16，业务库 `aisoc`，调查 schema `socai2` |
-| HTTP | 后端对接用`http://192.168.1.21:18024`，业务前缀`/api/v1/socai2`；独立服务`subject-management-20261112-r1`，53操作齐全，E36/E37手动执行已启用 |
+| HTTP | 后端对接用`http://192.168.1.21:18024`，业务前缀`/api/v1/socai2`；独立服务`http-boundary-20261113-r1`，53操作齐全，E36/E37显式启动接口已启用，可由页面操作或后端业务逻辑调用 |
 | 本机与旧入口 | 本机18024接隔离`v12_upgrade_dev`，28024经显式SSH转发接正式`aisoc`；两库记录ID不得混用。旧主18000、旧独立18020继续保留；旧独立接`socai2_next_20261104`，不作为当前对接入口。部署与架构见[profile](deploy/http-service/README.md) |
 | 身份 | 用户按正常登录或有效 API key 认证；租户取认证上下文，Case/H 读取要求 `cases:read`，A/I 读取要求 `alerts:read` |
 | 页面读取 | `SOCAI2_PAGE_READ_ENABLED=true`、`SOCAI2_ANALYSIS_READ_ENABLED=true`；包括 Case/H 的 GET |

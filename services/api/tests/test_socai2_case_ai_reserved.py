@@ -7,6 +7,7 @@ from app.api.v1.deps import CurrentUser, get_current_user
 from app.api.v1.endpoints import socai2_case_ai as api
 from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
+from investigation_http.adapters import services as backends
 
 CASE = UUID(int=1)
 MESSAGE = UUID(int=2)
@@ -32,7 +33,7 @@ class ReservedCaseAITest(unittest.IsolatedAsyncioTestCase):
 
         self.app.dependency_overrides[get_current_user] = current_user
         self.client = AsyncClient(transport=ASGITransport(app=self.app), base_url="http://synthetic.local")
-        self.enabled = patch.object(api.settings, "SOCAI2_CASE_API_ENABLED", True)
+        self.enabled = patch.object(backends.settings, "SOCAI2_CASE_API_ENABLED", True)
         self.enabled.start()
         self.addCleanup(self.enabled.stop)
 
@@ -56,7 +57,7 @@ class ReservedCaseAITest(unittest.IsolatedAsyncioTestCase):
 
     async def test_access_and_disabled_boundaries(self):
         for path, body in REQUESTS:
-            with self.subTest(path=path, boundary="disabled"), patch.object(api.settings, "SOCAI2_CASE_API_ENABLED", False):
+            with self.subTest(path=path, boundary="disabled"), patch.object(backends.settings, "SOCAI2_CASE_API_ENABLED", False):
                 response = await self.client.post(path, json=body)
                 self.assertEqual(response.status_code, 503)
             with self.subTest(path=path, boundary="read_only"):

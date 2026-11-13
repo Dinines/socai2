@@ -52,12 +52,16 @@ def main():
         raise ValueError("candidate output must be inside repository .local")
     output.mkdir(parents=True, exist_ok=False)
     files = {}
-    for path in sorted((ROOT / "services/api/app").rglob("*")):
-        if "__pycache__" in path.parts or path.suffix == ".pyc" or not path.is_file():
-            continue
-        if path.is_symlink() or any(part.startswith(".") for part in path.relative_to(ROOT/"services/api/app").parts):
-            raise ValueError("unexpected application entry")
-        files["app/"+path.relative_to(ROOT/"services/api/app").as_posix()] = path.read_bytes()
+    for package in ("app", "investigation_http"):
+        folder = ROOT / "services/api" / package
+        for path in sorted(folder.rglob("*")):
+            if "__pycache__" in path.parts or path.suffix == ".pyc" or not path.is_file():
+                continue
+            if path.is_symlink() or any(part.startswith(".") for part in path.relative_to(folder).parts):
+                raise ValueError("unexpected application entry")
+            files[package+"/"+path.relative_to(folder).as_posix()] = path.read_bytes()
+    if "investigation_http/main.py" not in files:
+        raise ValueError("external HTTP package is missing")
     if "app/socai2_main.py" not in files:
         raise ValueError("isolated application entry point is missing")
     for name in ["123_socai2_page_data_model.sql", "124_socai2_case_source_binding.sql", "125_socai2_baseline_input_freshness.sql"]:
@@ -78,7 +82,8 @@ def main():
         if "__pycache__" not in path.parts:
             files["fusion/app/"+path.relative_to(ROOT/"services/fusion/app").as_posix()] = path.read_bytes()
     files["Dockerfile"] = (f"FROM {BASE_IMAGE}\nUSER root\nWORKDIR /app\nENV PYTHONPATH=/app\nRUN rm -rf /app/app\n"
-        "COPY --chown=10001:10001 app /app/app\nUSER 10001:10001\n"
+        "COPY --chown=10001:10001 app /app/app\n"
+        "COPY --chown=10001:10001 investigation_http /app/investigation_http\nUSER 10001:10001\n"
         'CMD ["python","-m","uvicorn","app.socai2_main:app","--host","0.0.0.0","--port","8000","--workers","1"]\n').encode()
     manifest = {"created_at": datetime.now(UTC).isoformat(), "base_image": BASE_IMAGE,
         "base_image_id": BASE_IMAGE_ID, "image": args.image,

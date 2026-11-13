@@ -12,22 +12,29 @@ from unittest.mock import patch
 from uuid import UUID, uuid4
 
 from app.api.v1.deps import CurrentUser, get_current_user
-from app.api.v1.endpoints import socai2_analysis, socai2_case_ai, socai2_cases, socai2_stage_execution, socai2_tasks
+from app.api.v1.endpoints import (
+    socai2_analysis,
+    socai2_case_ai,
+    socai2_cases,
+    socai2_stage_execution,
+    socai2_tasks,
+)
 from app.models import socai2 as m
 from app.socai2.baseline_store import F
-from app.socai2.case_service import CaseService
 from app.socai2.human_task_service import HumanTaskService
-from app.socai2.stage_results import StageResultService
 from app.socai2.stage_reader import StageReadService
+from app.socai2.stage_results import StageResultService
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from investigation_http.adapters.services import CaseBackend as CaseService
+from investigation_http.adapters.services import ExecutionBackend
 from jsonschema import Draft202012Validator
 from socai2_test_model_view import synthetic_measure
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from test_socai2_ai_boundary_pg import Gateway as AlertGateway
 from test_socai2_case_followup_boundary import final_answer
 from test_socai2_case_model_boundary import answer_for
-from test_socai2_ai_boundary_pg import Gateway as AlertGateway
 from test_socai2_incident_boundary_pg import Gateway as IncidentGateway
 
 TENANT, USER = UUID(int=1), UUID(int=3)
@@ -99,7 +106,9 @@ async def run_checks(engine, record, only=None):
     app.dependency_overrides[get_current_user] = lambda: principal
     app.dependency_overrides[socai2_cases.get_service] = lambda: service
     app.dependency_overrides[socai2_tasks.get_service] = lambda: tasks
-    app.dependency_overrides[socai2_stage_execution.get_execution_service] = lambda: stages
+    execution_backend = ExecutionBackend(sessions)
+    execution_backend._execution = stages  # Existing model substitute, same HTTP port.
+    app.dependency_overrides[socai2_stage_execution.get_execution_service] = lambda: execution_backend
     app.dependency_overrides[socai2_analysis.get_service] = lambda: StageReadService(sessions)
     client = AsyncClient(transport=ASGITransport(app=app), base_url='http://synthetic.local')
 
