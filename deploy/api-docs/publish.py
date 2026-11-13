@@ -60,6 +60,12 @@ RESULTS = {
 46:'核对当前运行和人工待办后，将Case标为resolved，保存解决人/时间/理由；返回Case快照，任务与Run保持。',
 47:'将已解决Case恢复in_progress，记录重开时间并清空当前结案字段；返回Case快照，历史活动保留，不自动调查。',
 
+48:'单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。',
+49:'仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。',
+50:'PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。',
+51:'items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。',
+52:'分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。',
+53:'对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。',
 }
 
 
@@ -124,7 +130,7 @@ def enrich_contract(root, doc, features, endpoints, version):
                 '/handoff/audit/response-fields.html')
             sc[name]['properties'][field]['x-audit-url'] = '/handoff/audit/response-fields.html#' + name.lower()
             count += 1
-    if count != 532:
+    if count != 540:
         raise ValueError(f'固定字段审计数量发生变化：{count}')
     dynamic = blocks((audit / 'dynamic-fields.md').read_text())
     if sum('落点：' in body for body in dynamic.values()) != 28:
@@ -137,8 +143,9 @@ def enrich_contract(root, doc, features, endpoints, version):
     doc['info']['description'] = (
         '后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。'
         '\n\n状态标明接口逻辑是否实现；E19–E21为未实现预留接口，返回501。'
-        '21正式独立服务为http://192.168.1.21:18024，47操作齐全，读写均连接aisoc；E36/E37手动执行已启用。'
+        '本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。'
         '原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。'
+        '新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。'
         '示例为合成数据，实际执行和结论状态以响应字段为准。'
         '\n\n[HTTP接入说明](/handoff/guide.html) · [下载OpenAPI](/handoff/openapi.json)')
     doc['tags'] = [
@@ -149,7 +156,11 @@ def enrich_contract(root, doc, features, endpoints, version):
     all_ops = {o['operationId']: o for methods in doc['paths'].values() for o in methods.values() if isinstance(o, dict) and 'operationId' in o}
     for e in endpoints:
         eid = e['id']; number = int(eid[1:]); op = all_ops[eid]
-        if number <= 21 or number >= 38:
+        if number in [48,49,50,51]:
+            tags = ['告警']
+        elif number in [52,53]:
+            tags = ['事件']
+        elif number <= 21 or number >= 38:
             tags = ['调查']
         elif number in [30,32,33]:
             tags = ['告警','事件']
@@ -176,12 +187,13 @@ def enrich_contract(root, doc, features, endpoints, version):
                 + f'\n\n**输出：** HTTP {e["example"]["response_status"]}，`{response}`；完整字段和示例见Responses。'
                 + '\n\n**结果：** '+RESULTS[number]+'\n\n**规则与限制：** '+e['note'])
         verification = ('已确认返回501，功能未实现。' if number in [19,20,21] else
+            '本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。' if number >= 48 else
             '本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。' if number >= 44 else
             '本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。' if number in [13,36,37] else
             '本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。' if number in [1,3,12,38,40,41,42,43,44,45,46,47] else
             '本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。')
         desc += '\n\n**验证结果（2026-11-12）：** '+verification
-        desc += '\n\n**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。'
+        desc += '\n\n**部署情况：** '+'本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。'
         response_notes = ''
         relevant = []
         for name, body in dynamic.items():

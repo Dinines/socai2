@@ -1,4 +1,4 @@
-<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><p class="badge">本页为已审计补充，随 2026-11-12.docs6 发布。审计原文中的“未发布/docs1”描述审计完成时点。</p><h1 id="http输出字段逐项审计">HTTP输出字段逐项审计</h1>
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><p class="badge">本页为已审计补充，随 2026-11-12.docs7 发布。审计原文中的“未发布/docs1”描述审计完成时点。</p><h1 id="http输出字段逐项审计">HTTP输出字段逐项审计</h1>
 <p>2026-11-12，静态文档/实现核对。复用既有OpenAPI类型、当前字段字典语义和实际读取装配；未调用业务接口、数据库或模型。此表解释HTTP字段，不要求业务后端直接查库。</p>
 <p>固定响应模型中的每个字段在下文列出；嵌套类型可点名称继续查看。<code>required</code>与<code>null</code>分开：字段必须出现仍可为null；可省略不等于客户端可自行补0。表中required取原OpenAPI声明；“可省略”指规范未列为required，当前响应装配若显式写出字段或默认值，实际仍会包含，不能从缺失自行推断业务状态。各结构的动态dict/items/工件正文在<a href="/handoff/audit/dynamic-fields.html">动态字段</a>继续展开。输入、用途和功能对应见<a href="/handoff/audit/interfaces.html">47操作审计</a>。</p>
 <a id="aiunavailable"></a>
@@ -908,4 +908,20 @@
 <tr><th>输出字段</th><th>类型/枚举/限制</th><th>required</th><th>空值</th><th>业务含义与取值规则</th><th>语义/实现来源</th></tr>
 <tr><td>case</td><td>CaseView</td><td>必填</td><td>非null</td><td>本次操作保存后的Case快照；幂等重放返回原回执，新状态请重新GET。</td><td><code>services/api/app/socai2/case_management_contracts.py</code>、<code>case_management.py</code></td></tr>
 <tr><td>changed</td><td>boolean</td><td>必填</td><td>非null</td><td>是否实际改变Case字段；false不增加行版本，幂等重放保留原回执。</td><td><code>services/api/app/socai2/case_management_contracts.py</code>、<code>case_management.py</code></td></tr>
+</table>
+<h2 id="subjectmutationreceipt">SubjectMutationReceipt</h2>
+<table>
+<tr><th>输出字段</th><th>类型</th><th>必填</th><th>空值</th><th>含义</th><th>来源</th></tr>
+<tr><td>kind</td><td>string</td><td>是</td><td>非null</td><td>alerts或incidents，表示被修改的主体种类</td><td>subject_management_contracts.py</td></tr>
+<tr><td>facts</td><td>AlertFacts / IncidentFacts</td><td>是</td><td>非null</td><td>提交时保存的完整事实快照，沿用原字段；重放原快照，最新值另GET</td><td>subject_management_contracts.py</td></tr>
+<tr><td>changed</td><td>boolean</td><td>是</td><td>非null</td><td>该次是否改变主体，人工反馈新增记录为true</td><td>subject_management_contracts.py</td></tr>
+<tr><td>feedback_id</td><td>UUID</td><td>是</td><td>可为null</td><td>人工反馈记录ID；普通管理为null</td><td>subject_management_contracts.py</td></tr>
+<tr><td>activity_id</td><td>UUID</td><td>是</td><td>非null</td><td>本操作活动ID，可从主体records/activities读取</td><td>subject_management_contracts.py</td></tr>
+</table>
+<h2 id="subjectbatchreceipt">SubjectBatchReceipt</h2>
+<table>
+<tr><th>输出字段</th><th>类型</th><th>必填</th><th>空值</th><th>含义</th><th>来源</th></tr>
+<tr><td>operation_key</td><td>UUID</td><td>是</td><td>非null</td><td>本次逻辑批量操作键；同意图重放返回同回执</td><td>subject_management_contracts.py</td></tr>
+<tr><td>items</td><td>SubjectMutationReceipt[]</td><td>是</td><td>非null</td><td>按主体UUID排序的逐项结果，整批成功或拒绝</td><td>subject_management_contracts.py</td></tr>
+<tr><td>changed_count</td><td>integer</td><td>是</td><td>非null</td><td>items中changed=true的个数，不是模型调用数</td><td>subject_management_contracts.py</td></tr>
 </table></main></html>

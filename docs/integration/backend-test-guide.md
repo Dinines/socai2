@@ -1,6 +1,6 @@
 # 后端联调：测试数据与操作步骤
 
-2026-11-12。适用21独立 API `http://192.168.1.21:18024`，Swagger `http://192.168.1.21:18080/`。Mac 已配置转发时可用 `http://127.0.0.1:28024`。本机18024是另一个隔离库，不能混用以下ID。
+2026-11-13。适用21独立 API `http://192.168.1.21:18024`，Swagger `http://192.168.1.21:18080/`。Mac 已配置转发时可用 `http://127.0.0.1:28024`。本机18024是另一个隔离库，不能混用以下ID。
 
 ## 1. 可直接读取的三条测试告警
 
@@ -93,3 +93,61 @@ python3 deploy/http-service/verify_management.py --profile .local/backend-integr
 本轮只校验样例格式，没有替后端投递这三条消息。需要完整湖补查时还要按事件信封提供相应日志；三条告警不等于已填充ClickHouse查询上下文。
 
 [4173测试页面及数据说明](test-page-4173.md) · [产品需求](../design/alert-incident-case-product-requirements.md) · [125项功能](../../deliverables/investigation-validation-20261106/frontend-feature-list.md) · [确认规则](../design/investigation-product-decisions.md) · [HTTP总指南](../../FRONTEND_BACKEND_HANDOFF.md)
+
+
+## 告警人工判定与告警事件管理
+
+当前新增六个操作，路径都加 `/api/v1/socai2`。先 GET 告警／事件详情，取 `facts.id`、`facts.row_version`。以下 UUID 为独立合成示例，不能直接向真实记录发送；正式联调请使用双方约定的测试对象。
+
+21已完成本批管理验收，可只读查看告警`a631df8d-5268-446d-bd0d-cb63a549f89c`、事件`9dbd1442-8164-40c2-9acb-4408850548d7`及Case`0407cdc9-141c-5cb6-95a5-13ecfbfe62a3`的详情和活动，观察反馈、管理字段及修改前后值。完整对象清单见[21合成测试数据](../operations/evidence/subject-management-20261112-01/21-fixture.json)，实际请求／响应见[验收回执](../operations/evidence/subject-management-20261112-01/21-http/verification.json)。这些是已结束验收记录，写入联调使用新测试批次；材料里的分诊为合成fixture，不代表真实模型结论。
+
+| 功能 | 方法与路径 | 输入的业务内容 | 结果与读回 |
+| --- | --- | --- | --- |
+| 单条告警人工判定 E48 | `POST /alerts/{alert_id}/feedback` | `operation_key`、`expected_row_version`、`disposition`、非空`reason` | 追加人工反馈，返回主体快照及反馈ID；GET详情的`feedback`读理由，`facts`读状态 |
+| 批量人工判定 E49 | `POST /alerts/feedback-batch` | 操作键、`items`逐条ID/版本、共用`feedback` | 整批校验保存，返回每条结果；不自动选择相似告警 |
+| 单条告警管理 E50 | `PATCH /alerts/{alert_id}/management` | 操作键、版本；`owner_id`、`tags`、`handling_status`中需改的字段，关闭带`reason` | 保存管理字段，原判定和分诊保留 |
+| 批量告警管理 E51 | `POST /alerts/management-batch` | 操作键、`items`、共用`changes` | 只修改选中对象，逐项返回新版本 |
+| 单个事件管理 E52 | `PATCH /incidents/{incident_id}/management` | 操作键、版本；负责人、标签、状态、等级覆盖及对应理由 | 保存后GET事件详情的`derived`读取有效等级及来源 |
+| 批量事件管理 E53 | `POST /incidents/management-batch` | 操作键、`items`、共用`changes` | 规则与单条一致，整批成功或拒绝，不修改成员等级 |
+
+单条人工判定请求：
+
+```json
+{
+  "operation_key": "00000000-0000-4000-8000-000000000901",
+  "expected_row_version": 3,
+  "disposition": "false_positive",
+  "reason": "经人工核实，本次检测为误报"
+}
+```
+
+批量事件解决请求：
+
+```json
+{
+  "operation_key": "00000000-0000-4000-8000-000000000902",
+  "items": [
+    {"id": "00000000-0000-4000-8000-000000000903", "expected_row_version": 2},
+    {"id": "00000000-0000-4000-8000-000000000904", "expected_row_version": 4}
+  ],
+  "changes": {"handling_status": "resolved", "resolution_note": "所选事件均已人工核实处理"}
+}
+```
+
+批量反馈将`changes`替换为`feedback`，内容为`disposition`和`reason`。默认最多100个明确选择的对象；空选择、重复ID或超限返回422。单条和批量每次操作用一个新`operation_key`，同意图网络重试沿用；同键改内容409。批量中任一版本过期、对象不存在或理由不完整，全部不保存；不要把失败当部分成功。
+
+单条响应包含以下全部字段；批量响应为`operation_key`、`items`（单条响应数组，按ID排序）、`changed_count`（实际变更对象数）：
+
+| 返回字段 | 含义 |
+| --- | --- |
+| `kind` | `alerts`或`incidents` |
+| `facts` | 保存当时的完整主体字段，结构与原详情`facts`相同；下次修改取其中`row_version` |
+| `changed` | 是否改变主体；相同管理值可为false，新人工反馈为true |
+| `feedback_id` | 本次新人工反馈ID，管理操作为null |
+| `activity_id` | 本次活动ID；从`/{alerts或incidents}/{id}/records/activities`读原值、新值和理由 |
+
+反馈四值：`true_positive`真实威胁、`false_positive`误报、`benign`正常/授权、`needs_review`需跟进。误报/正常使告警`completed`；已关闭改真实威胁/需跟进恢复`in_progress`。管理时仅分配不改告警状态；人工直接关闭必须有理由，不改原判定。
+
+事件分配未解决对象默认进入`in_progress`，已解决只换负责人保持`resolved`；显式解决须`resolution_note`。`severity_override`设置非null需同时给`severity_override_reason`，清空覆盖用null并省略理由；清空后恢复成员自动等级。省略字段不改，`owner_id=null`取消分配，`tags=[]`清空；`handling_status`和`tags`不接受null，不能人工写unknown。
+
+错误：404 `subject_not_found`；409 `subject_row_version_conflict`／`operation_key_conflict`；422 字段校验或`subject_owner_not_in_tenant`、`subject_batch_selection_invalid`、`alert_close_reason_required`。解决或覆盖理由缺失由字段校验返回422。未知执行先GET确认，不自动换键重新提交。写入不调用模型，不启动Run，不自动关闭/重开父事件或Case。

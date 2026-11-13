@@ -1593,6 +1593,177 @@ string new, in_progress, resolved, unknown
 | requires_open_task_confirmation | 是 | boolean | 无（可空不等于可省略） | 未结案且存在未完人工任务；关闭请求须确认并提供理由。 [完整语义](/handoff/audit/response-fields.html#casemanagementview) |
 
 
+<a id="alertfeedback"></a>
+
+## AlertFeedback
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| disposition | 是 | [Disposition](schemas.md#disposition) | 无（可空不等于可省略） | 人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。 |
+| reason | 是 | string; minLength=1; maxLength=20000 | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+
+
+<a id="alertfeedbackbatch"></a>
+
+## AlertFeedbackBatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| feedback | 是 | [FeedbackFields](schemas.md#feedbackfields) | 无（可空不等于可省略） | 应用于全部明确选中告警的人工判定及理由。 |
+
+
+<a id="alertmanagementbatch"></a>
+
+## AlertManagementBatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| changes | 是 | [AlertManagementFields](schemas.md#alertmanagementfields) | 无（可空不等于可省略） | 应用于所选告警的局部修改。 |
+
+
+<a id="alertmanagementfields"></a>
+
+## AlertManagementFields
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, completed | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+
+
+<a id="alertmanagementupdate"></a>
+
+## AlertManagementUpdate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, completed | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+
+
+<a id="feedbackfields"></a>
+
+## FeedbackFields
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| disposition | 是 | [Disposition](schemas.md#disposition) | 无（可空不等于可省略） | 人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。 |
+| reason | 是 | string; minLength=1; maxLength=20000 | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+
+
+<a id="incidentmanagementbatch"></a>
+
+## IncidentManagementBatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| changes | 是 | [IncidentManagementFields](schemas.md#incidentmanagementfields) | 无（可空不等于可省略） | 应用于所选事件的局部修改。 |
+
+
+<a id="incidentmanagementfields"></a>
+
+## IncidentManagementFields
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, resolved | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+| severity_override | 否 | [Severity](schemas.md#severity) / null | 无（可空不等于可省略） | 人工等级覆盖；省略保持，null恢复按成员自动等级。 |
+| severity_override_reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 设置人工等级覆盖必填理由；须与severity_override一起提交。 |
+| resolution_note | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 将事件改为resolved必填；须与handling_status=resolved一起提交。 |
+
+
+<a id="incidentmanagementupdate"></a>
+
+## IncidentManagementUpdate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, resolved | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+| severity_override | 否 | [Severity](schemas.md#severity) / null | 无（可空不等于可省略） | 人工等级覆盖；省略保持，null恢复按成员自动等级。 |
+| severity_override_reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 设置人工等级覆盖必填理由；须与severity_override一起提交。 |
+| resolution_note | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 将事件改为resolved必填；须与handling_status=resolved一起提交。 |
+
+
+<a id="selectedsubject"></a>
+
+## SelectedSubject
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | 用户明确选中的告警或事件ID。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+
+
+<a id="subjectbatchreceipt"></a>
+
+## SubjectBatchReceipt
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 本次逻辑批量操作键；同意图重放返回同回执 [完整语义](/handoff/audit/response-fields.html#subjectbatchreceipt) |
+| items | 是 | array <[SubjectMutationReceipt](schemas.md#subjectmutationreceipt)> | 无（可空不等于可省略） | 按主体UUID排序的逐项结果，整批成功或拒绝 [完整语义](/handoff/audit/response-fields.html#subjectbatchreceipt) |
+| changed_count | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | items中changed=true的个数，不是模型调用数 [完整语义](/handoff/audit/response-fields.html#subjectbatchreceipt) |
+
+
+<a id="subjectmutationreceipt"></a>
+
+## SubjectMutationReceipt
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| kind | 是 | string alerts, incidents | 无（可空不等于可省略） | alerts或incidents，表示被修改的主体种类 [完整语义](/handoff/audit/response-fields.html#subjectmutationreceipt) |
+| facts | 是 | [AlertFacts](schemas.md#alertfacts) / [IncidentFacts](schemas.md#incidentfacts) | 无（可空不等于可省略） | 提交时保存的完整事实快照，沿用原字段；重放原快照，最新值另GET [完整语义](/handoff/audit/response-fields.html#subjectmutationreceipt) |
+| changed | 是 | boolean | 无（可空不等于可省略） | 该次是否改变主体，人工反馈新增记录为true [完整语义](/handoff/audit/response-fields.html#subjectmutationreceipt) |
+| feedback_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 人工反馈记录ID；普通管理为null [完整语义](/handoff/audit/response-fields.html#subjectmutationreceipt) |
+| activity_id | 是 | string (uuid) | 无（可空不等于可省略） | 本操作活动ID，可从主体records/activities读取 [完整语义](/handoff/audit/response-fields.html#subjectmutationreceipt) |
+
+
 <a id="frozenalertmaterial"></a>
 
 ## FrozenAlertMaterial

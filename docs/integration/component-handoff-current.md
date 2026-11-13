@@ -76,7 +76,7 @@ Fusion 已解码但合同非法写 PG `aisoc_dead_letters`；无法确认持久/
 
 | 组件 | 当前地址/对象 | 调查中的用途与接入责任 |
 | --- | --- | --- |
-| HTTP API | `192.168.1.21:18024`，`/api/v1/socai2` | 业务后端的主要接入点；44 已实现+3预留501 |
+| HTTP API | `192.168.1.21:18024`，`/api/v1/socai2` | 业务后端的主要接入点；50已实现+3预留501，新增告警反馈和告警/事件单条及批量管理 |
 | Swagger | `192.168.1.21:18080` | 参数、输入输出和错误说明；[本地 Docker 配置](../../deploy/api-docs/README.md) |
 | PostgreSQL | `192.168.1.21:5432/aisoc`；当前调查 `socai2` 28表450列 | 调查状态、原件、Run/Step/Result、任务和历史；业务后端走 HTTP，不照搬 AiSOC 全表 |
 | 资产/人员基础数据 | 当前适配器读同租户 `public.assets/public.users` | 由业务后端实现资产和目录维护；当前调查服务没有资产写接口。更换库存来源需明确适配，不是假设外部库存已自动同步 |
@@ -90,6 +90,6 @@ Fusion 已解码但合同非法写 PG `aisoc_dead_letters`；无法确认持久/
 | OpenSearch | `192.168.1.21:9200`，TI 使用 `spirithub-opensearch-1:9200` | TI 索引 `socai2-threatintel-iocs/actors`；不是调查结果库 |
 | 图及产品主机工具 | 当前 `SOCAI2_SOURCE_GRAPH_ENABLED=false`、`SOCAI2_SOURCE_PRODUCT_HOST_ENABLED=false` | 外部来源未启用；Case 内部依据已保存材料整理关系图不等于调用 Neo4j/主机执行工具 |
 
-知识维护的 `POST /api/v1/kb/ingest`、`/kb/index`、`GET /kb/documents/{id}` 在原主 API（21 回环18000）；**不属于18024的47项业务接口**，独立入口没有挂载 KB router。后端若接知识维护，使用已配置代理/转发及[知识接口交接](../investigation/case-knowledge-handoff.md)，不能对18024试出404后假定功能不存在。本文不新发布另一个维护入口。
+知识维护的 `POST /api/v1/kb/ingest`、`/kb/index`、`GET /kb/documents/{id}` 在原主 API（21 回环18000）；**不属于18024的53项业务接口**，独立入口没有挂载 KB router。后端若接知识维护，使用已配置代理/转发及[知识接口交接](../investigation/case-knowledge-handoff.md)，不能对18024试出404后假定功能不存在。本文不新发布另一个维护入口。
 
 所有地址是配置项。正式值以 [生产 profile](../../deploy/aisoc21/production-v1.2.toml)、[独立 API profile](../../deploy/http-service/aisoc21.json)、[知识 profile](../../deploy/local-investigation/knowledge-profile.json)及本轮运行快照为准；密码、token、私钥不写入文档。业务后端只需当前调用的 HTTP/Kafka 配置，不必复制所有内部组件。

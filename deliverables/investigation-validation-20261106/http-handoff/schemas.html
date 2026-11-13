@@ -1086,6 +1086,117 @@
 <tr><td>can_reopen</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>当前案件是否已解决，可由人显式重开。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
 <tr><td>requires_open_task_confirmation</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>未结案且存在未完人工任务；关闭请求须确认并提供理由。 <a href="/handoff/audit/response-fields.html#casemanagementview">完整语义</a></td></tr>
 </table>
+<a id="alertfeedback"></a>
+<h2 id="alertfeedback">AlertFeedback</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>disposition</td><td>是</td><td><a href="schemas.html#disposition">Disposition</a></td><td>无（可空不等于可省略）</td><td>人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。</td></tr>
+<tr><td>reason</td><td>是</td><td>string; minLength=1; maxLength=20000</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+</table>
+<a id="alertfeedbackbatch"></a>
+<h2 id="alertfeedbackbatch">AlertFeedbackBatch</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#selectedsubject">SelectedSubject</a>&gt;; minItems=1</td><td>无（可空不等于可省略）</td><td>明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。</td></tr>
+<tr><td>feedback</td><td>是</td><td><a href="schemas.html#feedbackfields">FeedbackFields</a></td><td>无（可空不等于可省略）</td><td>应用于全部明确选中告警的人工判定及理由。</td></tr>
+</table>
+<a id="alertmanagementbatch"></a>
+<h2 id="alertmanagementbatch">AlertManagementBatch</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#selectedsubject">SelectedSubject</a>&gt;; minItems=1</td><td>无（可空不等于可省略）</td><td>明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。</td></tr>
+<tr><td>changes</td><td>是</td><td><a href="schemas.html#alertmanagementfields">AlertManagementFields</a></td><td>无（可空不等于可省略）</td><td>应用于所选告警的局部修改。</td></tr>
+</table>
+<a id="alertmanagementfields"></a>
+<h2 id="alertmanagementfields">AlertManagementFields</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress, completed</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+</table>
+<a id="alertmanagementupdate"></a>
+<h2 id="alertmanagementupdate">AlertManagementUpdate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress, completed</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+</table>
+<a id="feedbackfields"></a>
+<h2 id="feedbackfields">FeedbackFields</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>disposition</td><td>是</td><td><a href="schemas.html#disposition">Disposition</a></td><td>无（可空不等于可省略）</td><td>人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。</td></tr>
+<tr><td>reason</td><td>是</td><td>string; minLength=1; maxLength=20000</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+</table>
+<a id="incidentmanagementbatch"></a>
+<h2 id="incidentmanagementbatch">IncidentManagementBatch</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#selectedsubject">SelectedSubject</a>&gt;; minItems=1</td><td>无（可空不等于可省略）</td><td>明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。</td></tr>
+<tr><td>changes</td><td>是</td><td><a href="schemas.html#incidentmanagementfields">IncidentManagementFields</a></td><td>无（可空不等于可省略）</td><td>应用于所选事件的局部修改。</td></tr>
+</table>
+<a id="incidentmanagementfields"></a>
+<h2 id="incidentmanagementfields">IncidentManagementFields</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress, resolved</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>severity_override</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>人工等级覆盖；省略保持，null恢复按成员自动等级。</td></tr>
+<tr><td>severity_override_reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>设置人工等级覆盖必填理由；须与severity_override一起提交。</td></tr>
+<tr><td>resolution_note</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>将事件改为resolved必填；须与handling_status=resolved一起提交。</td></tr>
+</table>
+<a id="incidentmanagementupdate"></a>
+<h2 id="incidentmanagementupdate">IncidentManagementUpdate</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+<tr><td>owner_id</td><td>否</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
+<tr><td>tags</td><td>否</td><td>array &lt;string; minLength=1; maxLength=128&gt;; maxLength=50</td><td>无（可空不等于可省略）</td><td>标签列表，不替代资产标签。</td></tr>
+<tr><td>reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>服务返回原因；不代表adopt已有reason请求参数。</td></tr>
+<tr><td>handling_status</td><td>否</td><td>string new, in_progress, resolved</td><td>无（可空不等于可省略）</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
+<tr><td>severity_override</td><td>否</td><td><a href="schemas.html#severity">Severity</a> / null</td><td>无（可空不等于可省略）</td><td>人工等级覆盖；省略保持，null恢复按成员自动等级。</td></tr>
+<tr><td>severity_override_reason</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>设置人工等级覆盖必填理由；须与severity_override一起提交。</td></tr>
+<tr><td>resolution_note</td><td>否</td><td>string; minLength=1; maxLength=20000 / null</td><td>无（可空不等于可省略）</td><td>将事件改为resolved必填；须与handling_status=resolved一起提交。</td></tr>
+</table>
+<a id="selectedsubject"></a>
+<h2 id="selectedsubject">SelectedSubject</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>用户明确选中的告警或事件ID。</td></tr>
+<tr><td>expected_row_version</td><td>是</td><td>integer; minimum=1.0</td><td>无（可空不等于可省略）</td><td>读当前 Case/Task 获得的行版本；不匹配返回409。</td></tr>
+</table>
+<a id="subjectbatchreceipt"></a>
+<h2 id="subjectbatchreceipt">SubjectBatchReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>operation_key</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本次逻辑批量操作键；同意图重放返回同回执 <a href="/handoff/audit/response-fields.html#subjectbatchreceipt">完整语义</a></td></tr>
+<tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#subjectmutationreceipt">SubjectMutationReceipt</a>&gt;</td><td>无（可空不等于可省略）</td><td>按主体UUID排序的逐项结果，整批成功或拒绝 <a href="/handoff/audit/response-fields.html#subjectbatchreceipt">完整语义</a></td></tr>
+<tr><td>changed_count</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>items中changed=true的个数，不是模型调用数 <a href="/handoff/audit/response-fields.html#subjectbatchreceipt">完整语义</a></td></tr>
+</table>
+<a id="subjectmutationreceipt"></a>
+<h2 id="subjectmutationreceipt">SubjectMutationReceipt</h2>
+<table>
+<tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
+<tr><td>kind</td><td>是</td><td>string alerts, incidents</td><td>无（可空不等于可省略）</td><td>alerts或incidents，表示被修改的主体种类 <a href="/handoff/audit/response-fields.html#subjectmutationreceipt">完整语义</a></td></tr>
+<tr><td>facts</td><td>是</td><td><a href="schemas.html#alertfacts">AlertFacts</a> / <a href="schemas.html#incidentfacts">IncidentFacts</a></td><td>无（可空不等于可省略）</td><td>提交时保存的完整事实快照，沿用原字段；重放原快照，最新值另GET <a href="/handoff/audit/response-fields.html#subjectmutationreceipt">完整语义</a></td></tr>
+<tr><td>changed</td><td>是</td><td>boolean</td><td>无（可空不等于可省略）</td><td>该次是否改变主体，人工反馈新增记录为true <a href="/handoff/audit/response-fields.html#subjectmutationreceipt">完整语义</a></td></tr>
+<tr><td>feedback_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>人工反馈记录ID；普通管理为null <a href="/handoff/audit/response-fields.html#subjectmutationreceipt">完整语义</a></td></tr>
+<tr><td>activity_id</td><td>是</td><td>string (uuid)</td><td>无（可空不等于可省略）</td><td>本操作活动ID，可从主体records/activities读取 <a href="/handoff/audit/response-fields.html#subjectmutationreceipt">完整语义</a></td></tr>
+</table>
 <a id="frozenalertmaterial"></a>
 <h2 id="frozenalertmaterial">FrozenAlertMaterial</h2>
 <p>Run冻结材料的原始行；不包装ContentView。嵌套业务JSON见json-contracts.json。</p>

@@ -48,6 +48,12 @@ OPERATIONS = {
 45: ('修改Case基本信息', '已实现', 'PATCH局部更新；至少一个管理字段。省略保持；description/owner_id/severity可null清空，tags=[]清空；title/tags/handling_status不能null。负责人不自动改状态，已结案状态只能显式重开。回执含完整Case快照，随后可E03/E44读取；同键重放返回原回执。', 'case_not_found:404 case_row_version_conflict:409 case_owner_not_in_tenant:422 case_reopen_required:409 operation_key_conflict:409'),
 46: ('结案', '已实现', '先E44提示未完任务及阻塞Run。running/unknown禁止结案；有未完任务须acknowledge_open_tasks=true及非空reason。无未完任务reason可省略。pending_update保留，不自动取消任务，不修改成员/判断；解决人及时间由服务保存。', 'case_not_found:404 case_row_version_conflict:409 case_active_run_prevents_close:409 case_open_tasks_confirmation_required:409 case_already_resolved:409 operation_key_conflict:409'),
 47: ('重开Case', '已实现', '仅resolved案件可重开，恢复in_progress并记录reopened_at，清空当前结案字段；旧结案说明保留在E17活动。reason可选。不新建或启动Run，不改变人工任务/成员/判断。', 'case_not_found:404 case_row_version_conflict:409 case_not_resolved:409 operation_key_conflict:409'),
+48: ('提交告警人工判定', '已实现', '单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409'),
+49: ('批量提交告警人工判定', '已实现', '仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_batch_selection_invalid:422'),
+50: ('管理单条告警', '已实现', 'PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422 alert_close_reason_required:422'),
+51: ('批量管理告警', '已实现', 'items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422 subject_batch_selection_invalid:422 alert_close_reason_required:422'),
+52: ('管理单个事件', '已实现', '分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422'),
+53: ('批量管理事件', '已实现', '对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。', 'subject_not_found:404 subject_row_version_conflict:409 operation_key_conflict:409 subject_owner_not_in_tenant:422 subject_batch_selection_invalid:422'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -56,7 +62,7 @@ F01-02|部分实现|26|只分页；名称/等级/时间/分配给我尚无对应
 F01-03|仅前端/部分|26|对已加载列表排序、选列；全量服务排序和偏好持久化未实现。
 F01-04|可用|26|读 overall_stats、total、next_before_id；高等级含high/critical，统计范围不可拿当前页替代。
 F01-05|可用|28|选 alert_id→详情，预览与跳转为前端交互，404展示不存在。
-F01-06|部分实现|26|前端导出已加载数据和维护选中ID；全量导出及批量写管理未实现。
+F01-06|部分实现|26,51|已支持所选告警批量管理；已加载数据可前端导出，全量导出仍未实现。
 F01-09|部分实现|26|刷新GET和重置before_id；刷新不分诊，完整筛选仍缺。
 F01-07|可用|28|facts/owner_name/owner_resolution/derived；来源不明和时间缺失按原值展示。
 F02-01|需组合|28,31,30|详情取得 material.id→正文及 section=objects/sources；检测标签不当事实结论。
@@ -64,9 +70,9 @@ F03-01|需组合|28,22,24|triage百分数与指定Run confidence区分量纲；�
 F03-02|需组合|22,24,33|沿 explanation 实际来源定位工件读正文；GET不重新生成解释。
 F03-03|需组合|22,24,32,33|目录选run_id→Run→trace→工件，保留失败尝试。
 F08-01|部分实现|30,28|section=objects/related_alerts 后打开候选；服务同对象集合不等同近期同主机专项集合。
-F03-04|部分实现|28|feedback可读；人工判定写入及D02状态联动无API，不能用Case任务替代。
-F03-05|未实现|30|只有一般 related_alerts 可参考；同主机同战术/同IP哈希的最近专项候选及反馈未交付。
-F23-01|未实现|28|属性可读，无负责人/状态/标签管理写接口。
+F03-04|可用|48,49,28,30|单条或明确勾选批量提交人工判定及理由；D02关闭/恢复，反馈与模型判断并存，详情及活动读回。
+F03-05|部分实现|30,48|人工反馈已实现；同主机同战术/同IP哈希的最近专项候选仍未实现，一般related_alerts仅作参考。
+F23-01|可用|50,51,28,30|单条/批量维护负责人、标签和状态；仅分配不改变告警状态，关闭须理由并保留原判定。
 F13-01|需组合|30,29,3|section=incidents/cases→相应详情，零/一/多关系按返回值显示。
 F13-02|部分实现|30,1,8,19|先查cases，选择已有案关联或新建，返回pending；打开助手/发送尚501。
 F01-08|需组合|28,30,22|facts时间、section=activities与A目录按真实事件时间合并；缺时间单列。
@@ -78,8 +84,8 @@ F06-02|可用|27|读取overall_stats，按事件统计和观察时间展示。
 F06-03|可用|29|incident_id→事实与派生摘要；诊断补E23。
 F06-06|部分实现|27,26|两主体统计的观察时间/范围不同不能直接认定为同口径压缩比，统一统计仍缺。
 F06-07|部分实现|27|刷新分页和已加载数据列/排序/导出为前端；完整日期筛选缺失。
-F23-06|未实现|29|批量负责人/状态等管理无HTTP写入口。
-F23-02|未实现|29|管理字段可读，负责人/状态/严重度覆盖写回未实现。
+F23-06|可用|53,29,30|批量管理明确选中的事件，各项版本校验，整体成功或拒绝；未选事件不变。
+F23-02|可用|52,29,30|事件负责人、状态、标签和人工等级覆盖可写；解决/等级覆盖需理由，保留成员等级和原诊断。
 F06-04|需组合|29,30|derived与section=members/objects，阶段来自真实成员材料。
 F07-01|需组合|23,25,32|current与entries分别显示；current_unavailable_reason和失败尝试保留。
 F06-05|需组合|30,29|members/objects/activities及关联来源按真实时间组合。
@@ -125,7 +131,7 @@ F12-03|需组合|12,18,15,43|run.members指定材料、输入工件及冻结H修
 F13-04|需组合|3,28,29|Case members/linked_incidents→对应主体详情；member_count与截断保留。
 F13-05|可用|26,27,3,8|分页选候选→读scope_revision→associations→刷新Case。
 F13-06|可用|3,9|两案各读范围版本→move→刷新两案；事件显式关系不随告警移动。
-F13-07|未实现|28|所选告警通用管理无写接口。
+F13-07|可用|51,28,30|对明确所选告警整体保存管理修改，各项带版本；未选对象、Case成员和结论不变。
 F13-08|需组合|3,12|保存后读scope_revision/pending_run_id；提示范围更新，自动跟随/调度未实现。
 F19-01|需组合|3,30,14,15|当前成员对象组合底图，已存图按graph_artifact_id读取并标历史轮次。
 F19-02|仅前端/部分|30,15|布局/筛选/聚焦前端处理；节点详情来自原料，正式交互未接。

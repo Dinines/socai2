@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.v1.deps import CurrentUser, require_permission
+from app.api.v1.endpoints.socai2_subject_management import router as management_router
 from app.core.config import settings
 from app.db.database import AsyncSessionLocal
 from app.socai2.baseline_store import StoreError
@@ -29,6 +30,7 @@ def get_service():
 User = Annotated[CurrentUser, Depends(require_permission("alerts:read"))]
 Service = Annotated[PageReadService, Depends(get_service)]
 router = APIRouter(prefix="/socai2", tags=["socai2-page-fields"])
+router.include_router(management_router)
 
 
 async def invoke(call):

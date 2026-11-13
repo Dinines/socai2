@@ -1157,3 +1157,22 @@ string；new, in_progress, resolved, unknown
 | --- | --- | --- | --- | --- | --- |
 | case | CaseView | 必填 | 非null | 本次操作保存后的Case快照；幂等重放返回原回执，新状态请重新GET。 | `services/api/app/socai2/case_management_contracts.py`、`case_management.py` |
 | changed | boolean | 必填 | 非null | 是否实际改变Case字段；false不增加行版本，幂等重放保留原回执。 | `services/api/app/socai2/case_management_contracts.py`、`case_management.py` |
+
+
+## SubjectMutationReceipt
+
+| 输出字段 | 类型 | 必填 | 空值 | 含义 | 来源 |
+| --- | --- | --- | --- | --- | --- |
+| kind | string | 是 | 非null | alerts或incidents，表示被修改的主体种类 | subject_management_contracts.py |
+| facts | AlertFacts / IncidentFacts | 是 | 非null | 提交时保存的完整事实快照，沿用原字段；重放原快照，最新值另GET | subject_management_contracts.py |
+| changed | boolean | 是 | 非null | 该次是否改变主体，人工反馈新增记录为true | subject_management_contracts.py |
+| feedback_id | UUID | 是 | 可为null | 人工反馈记录ID；普通管理为null | subject_management_contracts.py |
+| activity_id | UUID | 是 | 非null | 本操作活动ID，可从主体records/activities读取 | subject_management_contracts.py |
+
+## SubjectBatchReceipt
+
+| 输出字段 | 类型 | 必填 | 空值 | 含义 | 来源 |
+| --- | --- | --- | --- | --- | --- |
+| operation_key | UUID | 是 | 非null | 本次逻辑批量操作键；同意图重放返回同回执 | subject_management_contracts.py |
+| items | SubjectMutationReceipt[] | 是 | 非null | 按主体UUID排序的逐项结果，整批成功或拒绝 | subject_management_contracts.py |
+| changed_count | integer | 是 | 非null | items中changed=true的个数，不是模型调用数 | subject_management_contracts.py |

@@ -8,7 +8,7 @@ SOURCE=ROOT/'deliverables/investigation-validation-20261106'
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output',type=Path,default=SOURCE/'http-handoff')
 OUT=parser.parse_args().output.resolve()
-VERSION='2026-11-12.docs6'
+VERSION='2026-11-12.docs7'
 BASE=ROOT/'docs/design/socai2-independent-api-v2.openapi.json'
 DOC=json.loads(BASE.read_text())
 DOC['paths']={k:v for k,v in DOC['paths'].items() if k.startswith('/api/v1/socai2')}
@@ -129,7 +129,7 @@ SECTIONS={
 'related_alerts':('RecordAlert','同类型、同命名空间、同对象键的其他告警，排除当前成员，可跨Case。'),
 'responses':('RecordResponse','现有响应关联；ID本身不证明审批/执行成功。'),
 }
-DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='47 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。3个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
+DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='53 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。3个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
 DOC['servers']=[
  {'url':'http://192.168.1.21:18024','description':'21正式独立服务；数据库aisoc，内网HTTP对接使用此入口。'},
  {'url':'http://127.0.0.1:28024','description':'本机SSH转发到21正式服务；需已开启relay.json对应转发。'},
@@ -222,6 +222,16 @@ EX['CaseManagementView']['case'].update(id=ID['case'],handling_status='in_progre
 EX['CaseManagementReceipt']={'case':copy.deepcopy(EX['CaseManagementView']['case']),'changed':True}
 EX['CaseManagementReceipt']['case']['row_version']=2
 
+EX['AlertFeedback']={'operation_key':ID['operation'],'expected_row_version':1,'disposition':'false_positive','reason':'人工核实为已知检测误报'}
+EX['AlertFeedbackBatch']={'operation_key':ID['operation'],'items':[{'id':ID['alert'],'expected_row_version':1}],'feedback':{'disposition':'false_positive','reason':'逐条核实所选告警属于本次误报'}}
+EX['AlertManagementUpdate']={'operation_key':ID['operation'],'expected_row_version':1,'owner_id':ID['user'],'tags':['人工跟进']}
+EX['IncidentManagementUpdate']={'operation_key':ID['operation'],'expected_row_version':1,'severity_override':'high','severity_override_reason':'人工核对影响范围后调整'}
+EX['AlertManagementBatch']={'operation_key':ID['operation'],'items':[{'id':ID['alert'],'expected_row_version':1}],'changes':{'owner_id':ID['user'],'tags':['人工跟进']}}
+EX['IncidentManagementBatch']={'operation_key':ID['operation'],'items':[{'id':ID['incident'],'expected_row_version':1}],'changes':{'handling_status':'resolved','resolution_note':'人工完成事件核实'}}
+EX['SubjectMutationReceipt']={'kind':'alerts','facts':base('AlertFacts'),'changed':True,'feedback_id':None,'activity_id':ID['operation']}
+EX['SubjectMutationReceipt']['facts'].update(id=ID['alert'],row_version=2,handling_status='in_progress',owner_id=ID['user'],assignment_state='assigned',assigned_at=DATE)
+EX['SubjectBatchReceipt']={'operation_key':ID['operation'],'items':[EX['SubjectMutationReceipt']],'changed_count':1}
+
 # 清晰区分代码标识、输入、输出与错误；示例不执行。
 features=[]
 lookup={}
@@ -268,6 +278,15 @@ for path,methods in DOC['paths'].items():
   maincode='501' if i in [19,20,21] else '200'
   resp=op['responses'][maincode].setdefault('content',{}).setdefault('application/json',{})
   out=sample(resp.get('schema',{}))
+  if i >= 48:
+   one=copy.deepcopy(EX['SubjectMutationReceipt'])
+   if i in [48,49]:
+    one['feedback_id']=ID['result'];one['facts'].update(latest_feedback_id=ID['result'],disposition='false_positive',handling_status='completed',closed_at=DATE,closed_by=ID['user'])
+   if i in [52,53]:
+    one['kind']='incidents';one['facts']=base('IncidentFacts');one['facts'].update(id=ID['incident'],row_version=2,handling_status='in_progress',severity_override='high',severity_override_reason='人工核对影响范围后调整',severity_override_by=ID['user'],severity_override_at=DATE)
+   if i in [50,51]:one['facts']['tags']=['人工跟进']
+   if i==53:one['facts'].update(handling_status='resolved',resolution_note='人工完成事件核实',resolved_at=DATE,resolved_by=ID['user'])
+   out={'operation_key':ID['operation'],'items':[one],'changed_count':1} if i in [49,51,53] else one
   if i in [23,25,37]:
    if 'kind' in out:out['kind']='incident_diagnosis'
    if 'subject_id' in out:out['subject_id']=ID['incident']
@@ -295,7 +314,7 @@ for path,methods in DOC['paths'].items():
     val=sample({'$ref':'#/components/schemas/'+nm})
     resp['examples'][s]={'summary':f'{s}分区的空集合示例；非空字段见对应Record Schema','value':{'items':[],'total':0,'next_offset':None,'observed_at':DATE,'limitations':[]}}
   errorlist=[]
-  defaults={'401':[('not_authenticated',{'detail':'Not authenticated'},'缺少有效已有凭据')],'403':[('identity',{'detail':'case_user_actor_required' if i<22 or i>=38 else 'Permission denied: alerts:read'},'现有身份/访问条件不符')],'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
+  defaults={'401':[('not_authenticated',{'detail':'Not authenticated'},'缺少有效已有凭据')],'403':[('identity',{'detail':('subject_user_actor_required' if i>=48 else 'case_user_actor_required') if i<22 or i>=38 else 'Permission denied: alerts:read'},'现有身份/访问条件不符')],'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
   # 校验错误示例必须引用该操作实际存在的入参，列表不能虚构path.identity。
   error_param=next((p for p in params if p['in']=='path' and p['schema'].get('format')=='uuid'),None)
   if error_param:
@@ -305,7 +324,7 @@ for path,methods in DOC['paths'].items():
   else:
    error_item={'type':'int_parsing','loc':['query','limit'],'msg':'Input should be a valid integer','input':'not-an-integer'}
   defaults['422'][0][1]['detail']=[error_item]
-  flag='socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
+  flag='socai2_subject_write_not_enabled' if i>=48 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
   defaults['503'].append(('feature_disabled',{'detail':flag},'服务对应功能开关关闭'))
   for e in errs.split():
    code,http=e.rsplit(':',1)
@@ -358,7 +377,7 @@ def mdtable(headers,rows):
 def schema_table(s):
  if '$ref'in s:return schema_table(SC[s['$ref'].rsplit('/',1)[-1]])
  return mdtable(['字段','OpenAPI required','类型与约束','默认值','含义'],[[k,'是' if k in s.get('required',[]) else '否',typ(v),json.dumps(v['default'],ensure_ascii=False) if 'default'in v else '无（可空不等于可省略）',v.get('description',v.get('title',k)).split('\n\n')[0]+(' [完整语义]('+v['x-audit-url']+')' if 'x-audit-url' in v else '')] for k,v in s.get('properties',{}).items()])
-epmd='# 调查HTTP接口目录（47项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
+epmd='# 调查HTTP接口目录（53项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
 for e in endpoints:
  epmd+=f"\n<a id=\"{e['id'].lower()}\"></a>\n\n## {e['id']} {e['title']}\n\n`{e['method']} {e['path']}`\n\n状态：**{e['status']}**。分类：{e['tag']}。\n\n{e['description']}\n"
  epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
@@ -377,7 +396,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 for name,obj in [('openapi.json',DOC),('examples.json',examples)]: (OUT/name).write_text(dump(obj))
 for name,txt in [('endpoints.md',epmd),('schemas.md',schmd)]: (OUT/name).write_text(txt.rstrip()+"\n")
 (OUT/'json-contracts.json').write_bytes((ROOT/'docs/design/socai2-json-contracts-20261103.schema.json').read_bytes())
-(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':532,'dynamic_structures':28,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
+(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':540,'dynamic_structures':28,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
 # 自包含静态功能页；无CDN，无线上校验或业务API调用。
 styles='body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}'
 def esc(x):return html.escape(str(x))

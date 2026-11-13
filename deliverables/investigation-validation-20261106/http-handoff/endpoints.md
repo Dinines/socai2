@@ -1,4 +1,4 @@
-# 调查HTTP接口目录（47项）
+# 调查HTTP接口目录（53项）
 
 [共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)
 
@@ -26,7 +26,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e01) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -117,7 +117,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e02) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -198,7 +198,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e03) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -302,7 +302,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e04) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -388,7 +388,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e05) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -469,7 +469,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e06) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -568,7 +568,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e07) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -652,7 +652,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e08) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -743,7 +743,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e09) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -845,7 +845,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e10) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -915,7 +915,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e11) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -994,7 +994,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e12) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1117,7 +1117,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e13) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1263,7 +1263,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e14) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1421,7 +1421,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e15) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1497,7 +1497,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e16) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1571,7 +1571,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e17) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1644,7 +1644,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e18) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1726,7 +1726,7 @@
 
 **验证结果（2026-11-12）：** 已确认返回501，功能未实现。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e19) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1805,7 +1805,7 @@
 
 **验证结果（2026-11-12）：** 已确认返回501，功能未实现。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e20) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1886,7 +1886,7 @@
 
 **验证结果（2026-11-12）：** 已确认返回501，功能未实现。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e21) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1965,7 +1965,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e22) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2039,7 +2039,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e23) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2113,7 +2113,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e24) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2197,7 +2197,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e25) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2281,7 +2281,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e26) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2358,7 +2358,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e27) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2438,7 +2438,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e28) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2580,7 +2580,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e29) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2711,7 +2711,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e30) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2789,7 +2789,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e31) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2870,7 +2870,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e32) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2949,7 +2949,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e33) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3026,7 +3026,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e34) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3099,7 +3099,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e35) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3172,7 +3172,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e36) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3265,7 +3265,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e37) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3358,7 +3358,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e38) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3486,7 +3486,7 @@
 
 **验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e39) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3557,7 +3557,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e40) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3709,7 +3709,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e41) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3801,7 +3801,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e42) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3874,7 +3874,7 @@
 
 **验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e43) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3957,7 +3957,7 @@
 
 **验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e44) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4056,7 +4056,7 @@
 
 **验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e45) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4180,7 +4180,7 @@
 
 **验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e46) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4293,7 +4293,7 @@
 
 **验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 21正式独立服务18024已挂载，版本case-management-20261112-r1；本机18024为独立测试数据。
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e47) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4379,3 +4379,758 @@
 | 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 
 完整错误JSON示例见 `examples.json` 的 `E47.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e48"></a>
+
+## E48 提交告警人工判定
+
+`POST /api/v1/socai2/alerts/{alert_id}/feedback`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 提交告警人工判定。
+
+**输入：** 路径参数：`alert_id`；JSON请求体：`AlertFeedback`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。
+
+**结果：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。
+
+**规则与限制：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e48) · [动态投影与差异](audit/dynamic-fields.html)
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | True | string (uuid) | null | 告警 UUID。 |
+
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| disposition | 是 | [Disposition](schemas.md#disposition) | 无（可空不等于可省略） | 人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。 |
+| reason | 是 | string; minLength=1; maxLength=20000 | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+
+
+响应类型：[SubjectMutationReceipt](schemas.md#subjectmutationreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "alert_id": "00000000-0000-4000-8000-000000000002"
+  },
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "expected_row_version": 1,
+    "disposition": "false_positive",
+    "reason": "人工核实为已知检测误报"
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "kind": "alerts",
+  "facts": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "source_namespace": "example",
+    "title": "合成示例：核查异常登录",
+    "description": null,
+    "owner_id": "00000000-0000-4000-8000-000000000010",
+    "assignment_state": "assigned",
+    "owner_source_value": null,
+    "assigned_at": "2026-11-12T08:00:00Z",
+    "tags": [],
+    "priority_value": null,
+    "priority_state": "not_provided",
+    "priority_source": null,
+    "priority_basis": null,
+    "business_updated_at": "2026-11-12T08:00:00Z",
+    "reopened_at": null,
+    "row_version": 2,
+    "source_alert_id": null,
+    "vendor_alert_id": null,
+    "connector_id": null,
+    "connector_type": null,
+    "original_vendor": null,
+    "category": null,
+    "severity": null,
+    "severity_raw": null,
+    "event_time": null,
+    "event_time_source": "source",
+    "first_seen_at": null,
+    "last_seen_at": null,
+    "ingested_at": "2026-11-12T08:00:00Z",
+    "source_updated_at": "2026-11-12T08:00:00Z",
+    "handling_status": "completed",
+    "disposition": "false_positive",
+    "closed_at": "2026-11-12T08:00:00Z",
+    "closed_by": "00000000-0000-4000-8000-000000000010",
+    "latest_material_id": null,
+    "latest_triage_id": null,
+    "latest_feedback_id": "00000000-0000-4000-8000-000000000005",
+    "latest_explanation_id": null
+  },
+  "changed": true,
+  "feedback_id": "00000000-0000-4000-8000-000000000005",
+  "activity_id": "00000000-0000-4000-8000-000000000011"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E48.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e49"></a>
+
+## E49 批量提交告警人工判定
+
+`POST /api/v1/socai2/alerts/feedback-batch`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 批量提交告警人工判定。
+
+**输入：** JSON请求体：`AlertFeedbackBatch`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。
+
+**结果：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。
+
+**规则与限制：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e49) · [动态投影与差异](audit/dynamic-fields.html)
+
+无路径/查询参数。
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| feedback | 是 | [FeedbackFields](schemas.md#feedbackfields) | 无（可空不等于可省略） | 应用于全部明确选中告警的人工判定及理由。 |
+
+
+响应类型：[SubjectBatchReceipt](schemas.md#subjectbatchreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {},
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "expected_row_version": 1
+      }
+    ],
+    "feedback": {
+      "disposition": "false_positive",
+      "reason": "逐条核实所选告警属于本次误报"
+    }
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "operation_key": "00000000-0000-4000-8000-000000000011",
+  "items": [
+    {
+      "kind": "alerts",
+      "facts": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "source_namespace": "example",
+        "title": "合成示例：核查异常登录",
+        "description": null,
+        "owner_id": "00000000-0000-4000-8000-000000000010",
+        "assignment_state": "assigned",
+        "owner_source_value": null,
+        "assigned_at": "2026-11-12T08:00:00Z",
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 2,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": null,
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "completed",
+        "disposition": "false_positive",
+        "closed_at": "2026-11-12T08:00:00Z",
+        "closed_by": "00000000-0000-4000-8000-000000000010",
+        "latest_material_id": null,
+        "latest_triage_id": null,
+        "latest_feedback_id": "00000000-0000-4000-8000-000000000005",
+        "latest_explanation_id": null
+      },
+      "changed": true,
+      "feedback_id": "00000000-0000-4000-8000-000000000005",
+      "activity_id": "00000000-0000-4000-8000-000000000011"
+    }
+  ],
+  "changed_count": 1
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E49.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e50"></a>
+
+## E50 管理单条告警
+
+`PATCH /api/v1/socai2/alerts/{alert_id}/management`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 管理单条告警。
+
+**输入：** 路径参数：`alert_id`；JSON请求体：`AlertManagementUpdate`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。
+
+**结果：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。
+
+**规则与限制：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e50) · [动态投影与差异](audit/dynamic-fields.html)
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | True | string (uuid) | null | 告警 UUID。 |
+
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, completed | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+
+
+响应类型：[SubjectMutationReceipt](schemas.md#subjectmutationreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "alert_id": "00000000-0000-4000-8000-000000000002"
+  },
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "expected_row_version": 1,
+    "owner_id": "00000000-0000-4000-8000-000000000010",
+    "tags": [
+      "人工跟进"
+    ]
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "kind": "alerts",
+  "facts": {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "source_namespace": "example",
+    "title": "合成示例：核查异常登录",
+    "description": null,
+    "owner_id": "00000000-0000-4000-8000-000000000010",
+    "assignment_state": "assigned",
+    "owner_source_value": null,
+    "assigned_at": "2026-11-12T08:00:00Z",
+    "tags": [
+      "人工跟进"
+    ],
+    "priority_value": null,
+    "priority_state": "not_provided",
+    "priority_source": null,
+    "priority_basis": null,
+    "business_updated_at": "2026-11-12T08:00:00Z",
+    "reopened_at": null,
+    "row_version": 2,
+    "source_alert_id": null,
+    "vendor_alert_id": null,
+    "connector_id": null,
+    "connector_type": null,
+    "original_vendor": null,
+    "category": null,
+    "severity": null,
+    "severity_raw": null,
+    "event_time": null,
+    "event_time_source": "source",
+    "first_seen_at": null,
+    "last_seen_at": null,
+    "ingested_at": "2026-11-12T08:00:00Z",
+    "source_updated_at": "2026-11-12T08:00:00Z",
+    "handling_status": "in_progress",
+    "disposition": null,
+    "closed_at": null,
+    "closed_by": null,
+    "latest_material_id": null,
+    "latest_triage_id": null,
+    "latest_feedback_id": null,
+    "latest_explanation_id": null
+  },
+  "changed": true,
+  "feedback_id": null,
+  "activity_id": "00000000-0000-4000-8000-000000000011"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | alert_close_reason_required | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E50.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e51"></a>
+
+## E51 批量管理告警
+
+`POST /api/v1/socai2/alerts/management-batch`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 批量管理告警。
+
+**输入：** JSON请求体：`AlertManagementBatch`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。
+
+**结果：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。
+
+**规则与限制：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e51) · [动态投影与差异](audit/dynamic-fields.html)
+
+无路径/查询参数。
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| changes | 是 | [AlertManagementFields](schemas.md#alertmanagementfields) | 无（可空不等于可省略） | 应用于所选告警的局部修改。 |
+
+
+响应类型：[SubjectBatchReceipt](schemas.md#subjectbatchreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {},
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "expected_row_version": 1
+      }
+    ],
+    "changes": {
+      "owner_id": "00000000-0000-4000-8000-000000000010",
+      "tags": [
+        "人工跟进"
+      ]
+    }
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "operation_key": "00000000-0000-4000-8000-000000000011",
+  "items": [
+    {
+      "kind": "alerts",
+      "facts": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "source_namespace": "example",
+        "title": "合成示例：核查异常登录",
+        "description": null,
+        "owner_id": "00000000-0000-4000-8000-000000000010",
+        "assignment_state": "assigned",
+        "owner_source_value": null,
+        "assigned_at": "2026-11-12T08:00:00Z",
+        "tags": [
+          "人工跟进"
+        ],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 2,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": null,
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "in_progress",
+        "disposition": null,
+        "closed_at": null,
+        "closed_by": null,
+        "latest_material_id": null,
+        "latest_triage_id": null,
+        "latest_feedback_id": null,
+        "latest_explanation_id": null
+      },
+      "changed": true,
+      "feedback_id": null,
+      "activity_id": "00000000-0000-4000-8000-000000000011"
+    }
+  ],
+  "changed_count": 1
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | alert_close_reason_required | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E51.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e52"></a>
+
+## E52 管理单个事件
+
+`PATCH /api/v1/socai2/incidents/{incident_id}/management`
+
+状态：**已实现**。分类：事件。
+
+**实现状态：** 已实现
+
+**用途：** 管理单个事件。
+
+**输入：** 路径参数：`incident_id`；JSON请求体：`IncidentManagementUpdate`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。
+
+**结果：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。
+
+**规则与限制：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e52) · [动态投影与差异](audit/dynamic-fields.html)
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | incident_id | True | string (uuid) | null | 事件 UUID。 |
+
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| expected_row_version | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 读当前 Case/Task 获得的行版本；不匹配返回409。 |
+| owner_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 负责人用户UUID；人员目录由业务后端负责。 |
+| tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
+| reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
+| handling_status | 否 | string new, in_progress, resolved | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+| severity_override | 否 | [Severity](schemas.md#severity) / null | 无（可空不等于可省略） | 人工等级覆盖；省略保持，null恢复按成员自动等级。 |
+| severity_override_reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 设置人工等级覆盖必填理由；须与severity_override一起提交。 |
+| resolution_note | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 将事件改为resolved必填；须与handling_status=resolved一起提交。 |
+
+
+响应类型：[SubjectMutationReceipt](schemas.md#subjectmutationreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "incident_id": "00000000-0000-4000-8000-000000000003"
+  },
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "expected_row_version": 1,
+    "severity_override": "high",
+    "severity_override_reason": "人工核对影响范围后调整"
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "kind": "incidents",
+  "facts": {
+    "id": "00000000-0000-4000-8000-000000000003",
+    "source_namespace": "example",
+    "title": "合成示例：核查异常登录",
+    "description": null,
+    "owner_id": null,
+    "assignment_state": "unassigned",
+    "owner_source_value": null,
+    "assigned_at": null,
+    "tags": [],
+    "priority_value": null,
+    "priority_state": "not_provided",
+    "priority_source": null,
+    "priority_basis": null,
+    "business_updated_at": "2026-11-12T08:00:00Z",
+    "reopened_at": null,
+    "row_version": 2,
+    "source_incident_id": "示例",
+    "handling_status": "in_progress",
+    "severity_override": "high",
+    "severity_override_reason": "人工核对影响范围后调整",
+    "severity_override_at": "2026-11-12T08:00:00Z",
+    "severity_override_by": "00000000-0000-4000-8000-000000000010",
+    "resolution_note": null,
+    "resolved_at": null,
+    "resolved_by": null,
+    "created_at": "2026-11-12T08:00:00Z",
+    "latest_diagnosis_id": null
+  },
+  "changed": true,
+  "feedback_id": null,
+  "activity_id": "00000000-0000-4000-8000-000000000011"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E52.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e53"></a>
+
+## E53 批量管理事件
+
+`POST /api/v1/socai2/incidents/management-batch`
+
+状态：**已实现**。分类：事件。
+
+**实现状态：** 已实现
+
+**用途：** 批量管理事件。
+
+**输入：** JSON请求体：`IncidentManagementBatch`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。
+
+**结果：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。
+
+**规则与限制：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。
+
+**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
+
+**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。
+
+[本接口用途及完整输出字段审计](audit/interfaces.html#e53) · [动态投影与差异](audit/dynamic-fields.html)
+
+无路径/查询参数。
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 客户端为一次逻辑写操作生成的 UUID；同一意图重试沿用，改变意图或操作者须新 key。执行未知先读取状态。 |
+| items | 是 | array <[SelectedSubject](schemas.md#selectedsubject)>; minItems=1 | 无（可空不等于可省略） | 明确选择及各自版本；不允许重复ID，数量上限由服务配置。整批成功或拒绝。 |
+| changes | 是 | [IncidentManagementFields](schemas.md#incidentmanagementfields) | 无（可空不等于可省略） | 应用于所选事件的局部修改。 |
+
+
+响应类型：[SubjectBatchReceipt](schemas.md#subjectbatchreceipt)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {},
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "items": [
+      {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "expected_row_version": 1
+      }
+    ],
+    "changes": {
+      "handling_status": "resolved",
+      "resolution_note": "人工完成事件核实"
+    }
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "operation_key": "00000000-0000-4000-8000-000000000011",
+  "items": [
+    {
+      "kind": "incidents",
+      "facts": {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "source_namespace": "example",
+        "title": "合成示例：核查异常登录",
+        "description": null,
+        "owner_id": null,
+        "assignment_state": "unassigned",
+        "owner_source_value": null,
+        "assigned_at": null,
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 2,
+        "source_incident_id": "示例",
+        "handling_status": "resolved",
+        "severity_override": "high",
+        "severity_override_reason": "人工核对影响范围后调整",
+        "severity_override_at": "2026-11-12T08:00:00Z",
+        "severity_override_by": "00000000-0000-4000-8000-000000000010",
+        "resolution_note": "人工完成事件核实",
+        "resolved_at": "2026-11-12T08:00:00Z",
+        "resolved_by": "00000000-0000-4000-8000-000000000010",
+        "created_at": "2026-11-12T08:00:00Z",
+        "latest_diagnosis_id": null
+      },
+      "changed": true,
+      "feedback_id": null,
+      "activity_id": "00000000-0000-4000-8000-000000000011"
+    }
+  ],
+  "changed_count": 1
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 401 | not_authenticated | 缺少有效已有凭据 |
+| 403 | identity | 现有身份/访问条件不符 |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | subject_row_version_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E53.errors`，Swagger同操作 Responses 可直接展开。
