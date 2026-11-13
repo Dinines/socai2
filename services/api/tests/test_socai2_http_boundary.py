@@ -1,6 +1,7 @@
 """Direct boundary checks: external routes, legacy imports, independent core."""
 
 import ast
+import copy
 import importlib
 import json
 import subprocess
@@ -36,7 +37,7 @@ def test_external_routes_have_no_internal_implementation_imports():
         ], path.name
 
 
-def test_external_contract_and_compatibility_entry_are_unchanged():
+def test_external_contract_preserves_compatibility_except_approved_list_delta():
     from app import socai2_main
     from investigation_http.main import app
 
@@ -47,8 +48,20 @@ def test_external_contract_and_compatibility_entry_are_unchanged():
         ).read_text()
     )
     after = app.openapi()
-    assert after["paths"] == before["paths"]
-    assert after["components"] == before["components"]
+    normalized = copy.deepcopy(after)
+    common = {"time_from", "time_to", "sort_by", "sort_order"}
+    subject = common | {"q", "severity", "handling_status", "owner_id", "assignment_state", "cursor"}
+    for kind, allowed in (("cases", common), ("alerts", subject), ("incidents", subject)):
+        operation = normalized["paths"]["/api/v1/socai2/" + kind]["get"]
+        old_names = {p["name"] for p in before["paths"]["/api/v1/socai2/" + kind]["get"]["parameters"]}
+        assert {p["name"] for p in operation["parameters"]} - old_names == allowed
+        operation["parameters"] = [p for p in operation["parameters"] if p["name"] not in allowed]
+    page = normalized["components"]["schemas"]["SubjectPage"]
+    for name in ("filtered_total", "next_cursor"):
+        page["properties"].pop(name)
+        page["required"].remove(name)
+    assert normalized["paths"] == before["paths"]
+    assert normalized["components"] == before["components"]
     assert socai2_main.app is app
     from investigation_http.adapters.runtime import configured_database_name
 

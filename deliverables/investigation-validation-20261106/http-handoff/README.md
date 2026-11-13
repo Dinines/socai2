@@ -1,8 +1,8 @@
 # 调查服务 HTTP API
 
-合同版本：2026-11-12.docs7。当前本机18024为 `http-boundary-20261113-r1-local`，21正式18024为 `http-boundary-20261113-r1`；两端均挂载53操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
+合同版本：2026-11-13.docs8。当前本机18024为 `list-query-20261113-r1-local`，21正式18024为 `list-query-20261113-r1`；两端均挂载53操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
 
-本轮只调整HTTP代码归属，接口路径、参数和返回保持，在线Swagger沿用docs7。该版本的OpenAPI及生成的静态说明保留发布时的服务版本文字；当前部署以[交接指南](../../../FRONTEND_BACKEND_HANDOFF.md)和[HTTP边界发布回执](../../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)为准。列表新增字段 `filtered_total/next_cursor` 已确认但尚未实现。
+本轮补齐E02调查、E26告警、E27事件的全库筛选、排序和分页；外部HTTP路由仍独立于内部调查服务。列表仅查询，不启动调查或修改记录。完整字段、输入输出示例及422错误见Swagger；两端发布状态以[本轮验收](../../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)为准。
 
 标准Swagger入口：[本地](http://127.0.0.1:18080/)、[21内网](http://192.168.1.21:18080/)。共53个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。
 
@@ -22,7 +22,7 @@
 
 | 使用环境 | API根地址 | 数据目标 |
 | --- | --- | --- |
-| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`http-boundary-20261113-r1`，53操作 |
+| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`list-query-20261113-r1`，53操作 |
 | 本机转发到21 | `http://127.0.0.1:28024` | 同一正式库；需开启`deploy/http-service/relay.json`对应转发 |
 | 本机开发验收 | `http://127.0.0.1:18024` | 隔离`v12_upgrade_dev`；本地记录ID与21不通用 |
 
@@ -50,3 +50,17 @@ JSON请求使用`Content-Type: application/json`，身份沿用现有`Authorizat
 - 未解决问题是当轮调查结论的一部分；需要人工核实时由用户创建任务。
 
 [下载OpenAPI](openapi.json) · [输入输出示例](examples.json) · [静态接口说明](endpoints.md) · [字段定义](schemas.md)
+
+## 列表查询怎么用
+
+三个GET接口均支持q、状态、等级、负责人、分配状态、time_from/time_to、sort_by/sort_order、limit和cursor；Case另保留metric/classification。时间必须带时区、起点包含而终点不包含，起点必须早于终点。
+
+| 列表 | 日期含义 | sort_by可选值（首项为默认） | 总数 |
+| --- | --- | --- | --- |
+| 告警 E26 | 真实event_time，缺失不补入库时间 | ingested_at/event_time/severity | filtered_total为筛选数；total为全部告警数 |
+| 事件 E27 | 至少一条成员告警event_time在区间内 | created_at/last_activity_at/severity | filtered_total为筛选数；total为全部事件数 |
+| 调查 E02 | business_updated_at | business_updated_at/created_at/severity | total为筛选数；metrics保持整体 |
+
+例如 `GET /api/v1/socai2/alerts?severity=high&sort_by=event_time&sort_order=desc&limit=20`。读取items后，将响应的next_cursor原样URL编码为cursor，保留原筛选和排序取下一页；null表示结束。变更条件清空游标。查询不改变overall_stats/metrics统计范围；不提供冻结快照导出。等级排序为info<low<medium<high<critical，空值始终最后，同值按同方向UUID排序。
+
+告警/事件旧limit+before_id调用保留；before_id与新筛选、排序或cursor混用返回422。Case未使用新增日期/排序的原v1游标仍可续页。非法日期、枚举和排序返回422；无效新游标为invalid_list_cursor，跨条件为list_cursor_filters_changed；旧Case错误码保留。

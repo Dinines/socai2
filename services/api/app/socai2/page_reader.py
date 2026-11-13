@@ -21,6 +21,8 @@ from .program_facts import RANK
 from .read_sources import ReadSources, lookup_error
 from .stage_inputs import freshness_sql
 from .stage_reader import StageReader
+from . import list_query as lists
+from .list_query_contracts import AlertListQuery, IncidentListQuery
 
 A, I, M, O, L, R, S, F = (x.__table__ for x in (m.Alerts, m.Incidents, m.AlertMaterials,
     m.AlertObjects, m.IncidentAlerts, m.Runs, m.RunSteps, m.Artifacts))
@@ -143,20 +145,57 @@ class PageReader:
             section_urls={key: root + "/records/" + key for key in SECTIONS
                 if not (key == "members" and self.kind == "alerts" or key == "incidents" and self.kind == "incidents")})
 
-    async def listing(self, *, limit=20, before_id=None):
+    async def listing(self, *, limit=20, before_id=None, query=None):
         if not 1 <= limit <= 50:
             raise StoreError("invalid_page_limit", 422)
-        table = self.table
-        clock = table.c.ingested_at if self.kind == "alerts" else table.c.created_at
-        query = select(table).where(*self.store.where(table))
-        if before_id:
-            self.identity = before_id
+        table, tenant = self.table, self.store.tenant_id
+        query = query or (AlertListQuery if self.kind == "alerts" else IncidentListQuery)(limit=limit, before_id=before_id)
+        limit = query.limit
+        sort_by = query.sort_by or ("ingested_at" if self.kind == "alerts" else "created_at")
+        order = query.sort_order or "desc"
+        clauses = list(self.store.where(table))
+        if query.q:
+            clauses.append(lists.title_match(table, query.q))
+        for field in ("handling_status", "owner_id", "assignment_state"):
+            if (value := getattr(query, field)) is not None:
+                clauses.append(table.c[field] == value)
+        if self.kind == "alerts":
+            rank = lists.severity_rank(A.c.severity)
+            clocks = {"ingested_at": A.c.ingested_at, "event_time": A.c.event_time}
+            clauses.extend(lists.time_filters(A.c.event_time, query))
+        else:
+            members = L.join(A, and_(L.c.tenant_id == A.c.tenant_id, L.c.alert_id == A.c.id))
+            member_scope = [L.c.tenant_id == tenant, L.c.incident_id == I.c.id]
+            maximum = select(func.max(lists.severity_rank(A.c.severity))).select_from(members).where(
+                *member_scope).correlate(I).scalar_subquery()
+            rank = func.coalesce(lists.severity_rank(I.c.severity_override), maximum)
+            last_time = select(func.max(A.c.event_time)).select_from(members).where(
+                *member_scope).correlate(I).scalar_subquery()
+            clocks = {"created_at": I.c.created_at, "last_activity_at": last_time}
+            if query.time_from is not None or query.time_to is not None:
+                clauses.append(select(L.c.id).select_from(members).where(
+                    *member_scope, *lists.time_filters(A.c.event_time, query)).correlate(I).exists())
+        if query.severity is not None:
+            clauses.append(rank == RANK[query.severity])
+        sort_column = rank if sort_by == "severity" else clocks[sort_by]
+        filtered_total = (await self.db.execute(select(func.count()).select_from(table).where(*clauses))).scalar_one()
+        listing = select(table, sort_column.label("_list_sort_value")).where(*clauses)
+        point = lists.read_cursor(tenant, self.kind, query, sort_by)
+        if point:
+            value = point.rank if sort_by == "severity" else point.at
+            listing = listing.where(lists.seek(sort_column, table.c.id, value, point.id, order))
+        if query.before_id:
+            self.identity = query.before_id
             before = await self.subject()
-            query = query.where(or_(clock < before[clock.name], and_(clock == before[clock.name], table.c.id < before_id)))
-        rows = await self.rows(query.order_by(clock.desc(), table.c.id.desc()).limit(limit + 1))
+            listing = listing.where(lists.seek(sort_column, table.c.id, before[sort_by], query.before_id, order))
+        rows = await self.rows(listing.order_by(*lists.ordering(sort_column, table.c.id, order)).limit(limit + 1))
         stats = await self.stats()
+        more = len(rows) > limit
+        next_cursor = lists.write_cursor(tenant, self.kind, query, sort_by,
+            rows[limit - 1]["id"], rows[limit - 1]["_list_sort_value"]) if more else None
         return SubjectPage(kind=self.kind, items=[await self.view(row) for row in rows[:limit]], total=stats["total"],
-            next_before_id=rows[limit - 1]["id"] if len(rows) > limit else None, overall_stats=stats, observed_at=await self.store.now())
+            next_before_id=rows[limit - 1]["id"] if more and query.legacy else None,
+            filtered_total=filtered_total, next_cursor=next_cursor, overall_stats=stats, observed_at=await self.store.now())
 
     async def stats(self):
         # Overall tenant counts; independent of the current page/cursor.

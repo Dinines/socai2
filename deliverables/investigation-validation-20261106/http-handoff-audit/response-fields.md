@@ -924,8 +924,10 @@ string；info, low, medium, high, critical
 | --- | --- | --- | --- | --- | --- |
 | kind | string；alerts, incidents | 是 | 非null | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
 | items | array〈[SubjectView](#subjectview)〉 | 是 | 非null | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
-| total | integer | 是 | 非null | 当前集合总数；records/assets为对象资产匹配边数。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
-| next_before_id | string uuid / null | 是 | 可为null | 下一页主体游标；null表示结束。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
+| total | integer | 是 | 非null | 租户全部该类主体数，不随列表筛选或分页变化。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
+| next_before_id | string uuid / null | 是 | 可为null | 旧调用的下一页主体UUID；新筛选/排序时为null，应使用next_cursor。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
+| filtered_total | integer；minimum=0 | 是 | 非null | 本次全部筛选命中数，不受游标/页长影响；无筛选时等于total。 | [page_reader.py](../../../services/api/app/socai2/page_reader.py) |
+| next_cursor | string / null | 是 | 可为null | 下一页不透明游标；null为末页，改变条件或排序后丢弃旧游标。 | [list_query.py](../../../services/api/app/socai2/list_query.py) |
 | overall_stats | object | 是 | 非null | 主体整体统计；按原口径和observed_at展示。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
 | observed_at | string date-time | 是 | 非null | 本次读取观察时间。 | [page_contracts.py](../../../services/api/app/socai2/page_contracts.py#L121) |
 

@@ -1215,10 +1215,12 @@ string info, low, medium, high, critical
 | --- | --- | --- | --- | --- |
 | kind | 是 | string alerts, incidents | 无（可空不等于可省略） | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
 | items | 是 | array <[SubjectView](schemas.md#subjectview)> | 无（可空不等于可省略） | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
-| total | 是 | integer | 无（可空不等于可省略） | 当前集合总数；records/assets为对象资产匹配边数。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
-| next_before_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 下一页主体游标；null表示结束。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
+| total | 是 | integer | 无（可空不等于可省略） | 租户全部该类主体数，不随列表筛选或分页变化。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
+| next_before_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 旧调用的下一页主体UUID；新筛选/排序时为null，应使用next_cursor。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
 | overall_stats | 是 | object | 无（可空不等于可省略） | 主体整体统计；按原口径和observed_at展示。 [完整语义](/handoff/audit/dynamic-fields.html#overall-stats) |
 | observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次读取观察时间。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
+| filtered_total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 本次全部筛选命中数，不受游标/页长影响；无筛选时等于total。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
+| next_cursor | 是 | string / null | 无（可空不等于可省略） | 下一页不透明游标；null为末页，改变条件或排序后丢弃旧游标。 [完整语义](/handoff/audit/response-fields.html#subjectpage) |
 
 
 <a id="subjectview"></a>

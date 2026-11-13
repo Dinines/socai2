@@ -151,3 +151,14 @@ python3 deploy/http-service/verify_management.py --profile .local/backend-integr
 事件分配未解决对象默认进入`in_progress`，已解决只换负责人保持`resolved`；显式解决须`resolution_note`。`severity_override`设置非null需同时给`severity_override_reason`，清空覆盖用null并省略理由；清空后恢复成员自动等级。省略字段不改，`owner_id=null`取消分配，`tags=[]`清空；`handling_status`和`tags`不接受null，不能人工写unknown。
 
 错误：404 `subject_not_found`；409 `subject_row_version_conflict`／`operation_key_conflict`；422 字段校验或`subject_owner_not_in_tenant`、`subject_batch_selection_invalid`、`alert_close_reason_required`。解决或覆盖理由缺失由字段校验返回422。未知执行先GET确认，不自动换键重新提交。写入不调用模型，不启动Run，不自动关闭/重开父事件或Case。
+
+
+## 三类列表筛选、排序和分页
+
+E26告警、E27事件、E02调查列表已经支持全库查询。先用本页同环境的真实ID执行 `GET /api/v1/socai2/alerts?q=<告警UUID>&sort_by=event_time&sort_order=desc&limit=20`；事件路径改为 `/incidents`、sort_by改为`last_activity_at`，调查改为 `/cases`、sort_by改为`business_updated_at`。返回该主体，不修改状态或启动分析。
+
+要连续翻页，将q改为待搜索的标题片段；也可按severity、handling_status、owner_id、assignment_state筛选。使用带时区的time_from/time_to时要URL编码，范围前闭后开：告警按实际发生时间，事件至少一条成员告警在范围内，Case按业务更新时间。sort_order为asc或desc，未知时间/等级始终在最后。
+
+读取items后，将next_cursor原样URL编码为下次cursor，保持其他条件；null表示结束。改条件或排序时清空cursor。告警/事件filtered_total表示全部筛选命中数，total/overall_stats保持租户整体；Case total表示筛选数，metrics保持整体。旧告警/事件before_id仅在无新增条件时可用，不能和cursor、新筛选或排序混用。
+
+非法排序、日期无时区、起点不早于终点、游标非法或与条件不符返回422；旧before_id主体不存在返回404。具体输入输出、字段及错误示例见[Swagger交接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#列表查询怎么用)。完整CSV导出尚未实现；调用列表不会触发模型。

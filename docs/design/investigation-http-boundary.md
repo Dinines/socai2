@@ -58,8 +58,8 @@ flowchart LR
 
 ## 兼容与验证
 
-本次53操作的请求/响应、错误、operationId及完整OpenAPI与迁移前一致。两个获准的列表封套新字段由[列表查询change](../../openspec/changes/query-investigation-lists/design.md)另行实现，本次未增加。
+本次53操作的请求/响应、错误、operationId及完整OpenAPI与迁移前一致。后续[列表查询change](../../openspec/changes/archive/2026-11-13-query-investigation-lists/design.md)已实现获准的两个列表封套字段及三列表参数；本轮仍遵循相同依赖方向。
 
 34项定向检查和18个子检查通过；本机候选18026完成24次TCP请求、告警/事件/Case全部facts与SQL逐值读回、任务修订及未启动Run核对；A/I执行另用真实隔离PG及不可用模型替身验证两项。没有真实模型调用。详情见[本项验证](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)。
 
-发布后本机正式18024完成新Case/任务写读及SQL核对；21采用既有验收记录做12次GET与9对象只读SQL核验，没有在正式库新增测试数据。两端Swagger仍为合同一致的docs7。新列表字段尚未实施，不因本次代码分离发布而变为可用。
+发布后本机正式18024完成新Case/任务写读及SQL核对；21采用既有验收记录做12次GET与9对象只读SQL核验，没有在正式库新增测试数据。上述为代码分离批次的docs7证据；当前列表增量已发布为list-query-20261113-r1及docs8，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)。

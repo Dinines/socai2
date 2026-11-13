@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import AwareDatetime
 
 from investigation_http.contracts import (
     ArtifactContent,
@@ -24,6 +25,7 @@ from investigation_http.contracts import (
     CasePageData,
     CaseQueuePage,
     CaseQueueQuery,
+    CaseSort,
     Classification,
     EvidencePublish,
     HistoryPage,
@@ -36,12 +38,13 @@ from investigation_http.contracts import (
     ResultDetail,
     RunDetail,
     Severity,
+    SortOrder,
     Start,
     WorkStatus,
 )
 from investigation_http.dependencies import CurrentUser, require_permission
 from investigation_http.dependencies import case_service as get_service
-from investigation_http.errors import actor, invoke
+from investigation_http.errors import actor, invoke, query_input
 from investigation_http.ports import CaseOperations
 
 ReadUser = Annotated[CurrentUser, Depends(require_permission("cases:read"))]
@@ -68,8 +71,12 @@ async def case_queue(
     assignment_state: AssignmentState | None = None,
     metric: CaseMetric | None = None,
     classification: Classification | Literal["not_set"] | None = None,
+    time_from: AwareDatetime | None = None,
+    time_to: AwareDatetime | None = None,
+    sort_by: CaseSort | None = None,
+    sort_order: SortOrder | None = None,
 ):
-    query = CaseQueueQuery(
+    query = query_input(CaseQueueQuery,
         limit=limit,
         cursor=cursor,
         q=q,
@@ -79,6 +86,10 @@ async def case_queue(
         assignment_state=assignment_state,
         metric=metric,
         classification=classification,
+        time_from=time_from,
+        time_to=time_to,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
     return await invoke(service.read_cases(user.tenant_id, query))
 

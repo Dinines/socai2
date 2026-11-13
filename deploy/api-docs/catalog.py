@@ -2,7 +2,7 @@
 # 编号稳定对应源 OpenAPI 的现有操作，不创建新业务路径。
 OPERATIONS = {
 1: ('新建 Case', '可用', '至少选择一个告警或事件；事件展开为成员并保留显式事件关系，合并后最多 200 条。保存后返回 pending_run_id；不自动执行。后续 E12→E13。', 'case_member_limit_exceeded:422 case_incident_not_found:404 case_source_namespace_mismatch:409 case_source_scope_unverified:409 operation_key_conflict:409'),
-2: ('Case 队列与指标', '可用', 'q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。', 'invalid_case_cursor:422 case_cursor_filters_changed:422'),
+2: ('Case 队列与指标', '可用', 'q按标题字面包含或精确UUID；保留handling_status、severity、owner_id、assignment_state、metric、classification。time_from/time_to按business_updated_at；sort_by=business_updated_at（默认）/created_at/severity。total为全部筛选命中数，metrics为租户整体且high_severity仍只计high。未使用新增日期/排序时兼容旧v1游标。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。', 'invalid_case_cursor:422 case_cursor_filters_changed:422 invalid_list_cursor:422 list_cursor_filters_changed:422'),
 3: ('Case 详情与当前判断', '可用', '读取成员、显式事件、当前采用判断、baseline_records 和资料。检查集合总数与截断标记。current_assessment 为 null 时不得挑最新 Run 当成已采用判断。', 'case_not_found:404 current_assessment_reference_invalid:409'),
 4: ('更新分类和截止时间', '可用', '先 E03 读 row_version。PATCH 必须同时传 classification、due_at，null 表示清空；source=manual/import，source_note 非空。不支持负责人、标题或关闭/重开。成功 E03/E05 刷新。', 'case_not_found:404 case_row_version_conflict:409 operation_key_conflict:409'),
 5: ('Case 资料与证据目录', '可用', '读取 classification、due_at、determination、assessment、evidence。not_recorded 与 evidence_count=null 不等于没有威胁；questions 沿采用来源结果读取。', 'case_not_found:404 current_assessment_reference_invalid:409'),
@@ -26,8 +26,8 @@ OPERATIONS = {
 23: ('事件诊断目录', '可用', '区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。', 'stage_subject_not_found:404 invalid_stage_history_limit:422'),
 24: ('指定告警 A Run', '可用', '用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。', 'stage_run_not_found:404'),
 25: ('指定事件 I Run', '可用', '读 diagnosis、open_questions、交付与待复核字段；执行过程需 E32。保存/格式通过不代表正文质量通过。', 'stage_run_not_found:404'),
-26: ('告警列表', '可用', '仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。', 'invalid_page_limit:422'),
-27: ('事件列表', '可用', '仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。', 'invalid_page_limit:422'),
+26: ('告警列表', '可用', 'q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/completed/unknown）、owner_id、assignment_state。time_from/time_to按真实event_time，缺失不以入库时间补齐。sort_by=ingested_at（默认）/event_time/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。', 'invalid_list_cursor:422 list_cursor_filters_changed:422 page_subject_not_found:404'),
+27: ('事件列表', '可用', 'q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/resolved/unknown）、owner_id、assignment_state。severity为人工覆盖优先、否则成员最大等级；time_from/time_to要求至少一条成员告警真实event_time处于该区间，不能仅用事件首尾跨越判断。sort_by=created_at（默认）/last_activity_at（成员最晚真实发生时间）/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。', 'invalid_list_cursor:422 list_cursor_filters_changed:422 page_subject_not_found:404'),
 28: ('告警详情', '可用', '返回 facts、derived、material、triage、feedback 及 analysis_url/section_urls。反馈读取不代表人工判定写入口已实现；发生时间缺失不以入库时间替代。', 'page_subject_not_found:404'),
 29: ('事件详情', '可用', '返回主体事实、derived 及目录链接；诊断另取 E23，成员/对象另取 E30。资产完整资料由业务后端提供。', 'page_subject_not_found:404'),
 30: ('主体分区记录', '可用', 'subject 只能 alerts/incidents；section 参见分区说明。members 仅事件，incidents 仅告警；其他错误组合404。items 随 section 变化，不能固定为一种记录。next_offset=null 结束；related_alerts 只是同类型/同命名空间/同对象键匹配，不是相似历史反馈或图探索服务。', 'page_subject_not_found:404 section_not_applicable:404 invalid_record_page:422'),
@@ -58,12 +58,12 @@ OPERATIONS = {
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
 F01-01|需组合|26,30|列表 facts/owner_name/derived；资产标签用 section=assets 的真实库存匹配，人员/资产完整资料由业务后端补。
-F01-02|部分实现|26|只分页；名称/等级/时间/分配给我尚无对应服务筛选参数，已加载集合可本地过滤。
-F01-03|仅前端/部分|26|对已加载列表排序、选列；全量服务排序和偏好持久化未实现。
-F01-04|可用|26|读 overall_stats、total、next_before_id；高等级含high/critical，统计范围不可拿当前页替代。
+F01-02|已实现|26|按标题/ID、等级、状态、负责人、分配状态和真实发生时间查询全库；分配给我传实际owner_id。
+F01-03|已实现；列选择由调用方处理|26|服务支持发生时间、入库时间和等级升降序，空值最后；列显隐由调用方处理，偏好持久化未实现。
+F01-04|可用|26|读filtered_total和next_cursor展示筛选总数及续页；total/overall_stats保持租户整体，高等级含high/critical；before_id仅旧查询。
 F01-05|可用|28|选 alert_id→详情，预览与跳转为前端交互，404展示不存在。
 F01-06|部分实现|26,51|已支持所选告警批量管理；已加载数据可前端导出，全量导出仍未实现。
-F01-09|部分实现|26|刷新GET和重置before_id；刷新不分诊，完整筛选仍缺。
+F01-09|已实现|26|刷新GET；移除条件或改排序时清空cursor/before_id回首页，不触发分诊。
 F01-07|可用|28|facts/owner_name/owner_resolution/derived；来源不明和时间缺失按原值展示。
 F02-01|需组合|28,31,30|详情取得 material.id→正文及 section=objects/sources；检测标签不当事实结论。
 F03-01|需组合|28,22,24|triage百分数与指定Run confidence区分量纲；判定/理由来自同一分诊版本。
@@ -79,11 +79,11 @@ F01-08|需组合|28,30,22|facts时间、section=activities与A目录按真实事
 F04-01|需组合|28,31|当前material.id→原始JSON/文本/标准化/富化，保留版本与availability。
 F05-01|需组合|30,24,33,18|section=sources/source_artifacts；历史A取当轮输入工件，Case取冻结materials，不替换为当前材料。
 F27-01|部分实现|22,24,33,30|建议从解释/结果取，section=responses读已有关联；审批及实际执行未接。
-F06-01|部分实现|27|列表/分页可用；完整搜索筛选参数缺失。
+F06-01|已实现|27|标题/ID、有效等级、状态、负责人、分配状态和成员真实发生时间筛选全库，返回filtered_total和next_cursor。
 F06-02|可用|27|读取overall_stats，按事件统计和观察时间展示。
 F06-03|可用|29|incident_id→事实与派生摘要；诊断补E23。
 F06-06|部分实现|27,26|两主体统计的观察时间/范围不同不能直接认定为同口径压缩比，统一统计仍缺。
-F06-07|部分实现|27|刷新分页和已加载数据列/排序/导出为前端；完整日期筛选缺失。
+F06-07|部分实现|27|日期筛选、创建时间/末次活动/等级排序与分页已实现；选列及已加载导出由调用方处理，完整CSV导出与偏好持久化未实现。
 F23-06|可用|53,29,30|批量管理明确选中的事件，各项版本校验，整体成功或拒绝；未选事件不变。
 F23-02|可用|52,29,30|事件负责人、状态、标签和人工等级覆盖可写；解决/等级覆盖需理由，保留成员等级和原诊断。
 F06-04|需组合|29,30|derived与section=members/objects，阶段来自真实成员材料。
@@ -96,8 +96,8 @@ F23-03|可用|30|section=activities；显示matching_targets和截断，不按�
 F13-03|需组合|30,1,8,3|事件cases关系→新建/关联，incident_ids保留显式关系并展开成员；不自动start。
 F09-01|可用|2|metrics整体四项，high_severity仅high；与筛选total分开。
 F09-02|可用|2|q及已声明筛选+cursor；条件改变丢弃旧cursor。
-F09-03|仅前端/部分|2|保留服务固定排序/游标，列选择前端；自定义服务排序/偏好保存缺失。
-F09-08|部分实现|2|已加载结果可前端导出，完整日期筛选/导出无接口。
+F09-03|已实现；列选择由调用方处理|2|按业务更新时间、创建时间或等级升降序；列显隐由调用方处理，偏好持久化未实现。
+F09-08|部分实现|2|按业务更新时间筛选全库；已加载结果可由调用方导出，完整CSV导出未实现。
 F09-09|仅前端/部分|2|手动GET刷新；自动刷新调度由前端实现，当前正式接线未完成。
 F09-10|可用|3|队列item.id→详情预览，保留当前列表位置。
 F09-11|部分实现|2,10,22,23|运行入口需要组合；管理设置模块没有对应实现。

@@ -2,16 +2,16 @@
 
 本仓库提供告警分诊、事件诊断、Case 调查，以及对应的管理、保存和查询服务。前后端从[交接指南](FRONTEND_BACKEND_HANDOFF.md)开始，通过 HTTP 对接。
 
-21 的后端接口为 **`http://192.168.1.21:18024`**，业务路径前缀为 `/api/v1/socai2`；[Swagger](http://192.168.1.21:18080/)按**告警、事件、调查**分类，包含用途、参数、输入输出示例、错误和实现状态。当前列出 53 个 HTTP 操作：50 个已实现，3 个问答／采用操作预留并返回 `501`。Case 基本管理、关闭和重开，以及告警人工判定、告警／事件的单条和批量管理已实现。
+21 的后端接口为 **`http://192.168.1.21:18024`**，业务路径前缀为 `/api/v1/socai2`；[Swagger](http://192.168.1.21:18080/)按**告警、事件、调查**分类，包含用途、参数、输入输出示例、错误和实现状态。当前列出 53 个 HTTP 操作：50 个已实现，3 个问答／采用操作预留并返回 `501`。Case 基本管理、关闭和重开，以及告警人工判定、告警／事件的单条和批量管理已实现。告警、事件和调查列表支持全库筛选、双向排序及游标分页；Swagger已同步docs8。
 
-本机18024为 `http-boundary-20261113-r1-local`，21正式18024为 `http-boundary-20261113-r1`；两端均已挂载53操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
+本机18024为 `list-query-20261113-r1-local`，21正式18024为 `list-query-20261113-r1`；两端均已挂载53操作，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
 
 | 内容 | 入口 |
 | --- | --- |
 | 对接总入口 | [前后端交接指南](FRONTEND_BACKEND_HANDOFF.md) |
 | 页面功能与产品规则 | [125 项功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)：告警 22 项、事件 15 项、调查 88 项，包含目的、结果、后端实现状态和接口；[产品说明](docs/design/alert-incident-case-product-requirements.md)、[已确认的七类规则](docs/design/investigation-product-decisions.md) |
 | HTTP 接口与字段 | [接口交接包](deliverables/investigation-validation-20261106/http-handoff/README.md)、[逐接口说明](deliverables/investigation-validation-20261106/http-handoff/endpoints.md)、[页面字段与跳转](deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
-| 对外与内部接口边界 | [调用分类与代码归属](docs/design/investigation-http-boundary.md)：对外查询/业务操作与内部步骤、内部HTTP分开；分离版本已发布本机/21，原53操作合同保持 |
+| 对外与内部接口边界 | [调用分类与代码归属](docs/design/investigation-http-boundary.md)：对外查询/业务操作与内部步骤、内部HTTP分开；分离架构继续保持，列表新增参数及两个封套字段见当前交接 |
 | Swagger 本地配置 | [Docker 安装与配置](deploy/api-docs/README.md)：本机 ARM64、21 AMD64、服务地址选择与离线安装；[本机已部署 Swagger](http://127.0.0.1:18080/) |
 | Kafka 与其他组件 | [当前组件对接说明](docs/integration/component-handoff-current.md)：Topic、生产者/消费者、消息示例、数据库、模型与知识服务 |
 | 测试数据与操作 | [后端测试指南](docs/integration/backend-test-guide.md)、[21 测试记录 ID](docs/integration/examples/current/live-21-fixtures.json)、[4173 测试页用法](docs/integration/test-page-4173.md) |

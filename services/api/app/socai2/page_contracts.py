@@ -4,6 +4,8 @@ from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
 
+from pydantic import Field
+
 from .baseline_contracts import Contract
 from .enums import (
     AlertStatus,
@@ -125,6 +127,8 @@ class SubjectPage(Contract):
     next_before_id: UUID | None
     overall_stats: dict[str, int]
     observed_at: datetime
+    filtered_total: int = Field(ge=0, description="全部筛选命中数，不受当前页或游标影响；total仍是全租户总数。")
+    next_cursor: str | None = Field(description="绑定租户、主体、筛选及排序的下一页游标；null表示末页。")
 
 
 class RecordPage(Contract):

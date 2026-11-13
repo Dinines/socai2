@@ -62,11 +62,11 @@ Case 模型请求工件中的 `payload.source_map` 分别给查询范围、历�
 
 | 读取内容 | 路径 | 分页和返回边界 |
 | --- | --- | --- |
-| 告警、事件列表与详情 | `/alerts`、`/incidents`、相应 `/{id}` | 列表默认 20、上限 50。`next_before_id` 原样作为 `before_id`，告警按 `(ingested_at,id)`、事件按 `(created_at,id)` 倒序；读 `items, total, overall_stats, observed_at`。 |
+| 告警、事件列表与详情 | `/alerts`、`/incidents`、相应 `/{id}` | 列表默认20、上限50；支持标题/ID、等级、状态、负责人/分配状态、时间筛选及明确枚举排序。读items、filtered_total和next_cursor；total/overall_stats/observed_at保持整体口径。旧无新增条件调用仍用next_before_id/before_id，不能混用新条件或cursor。告警默认(ingested_at,id)、事件默认(created_at,id)倒序。 |
 | 成员、对象、出处与记录 | `/{subject}/{id}/records/{section}`；告警正文 `/alerts/{id}/materials/{material_id}` | 依据详情返回的 `section_urls` 打开。记录默认 50、上限 200，按 `next_offset` 继续。正文单独读 `availability`；正文上限读取策略 `model.max_artifact_bytes`，当前为 1,048,576 字节；超过时保留元数据及不可展开原因。 |
 | A/I 分析与追踪 | `/alerts/{id}/analysis` 或 `/incidents/{id}/analysis`。在分析路径后接 `/runs/{run_id}` 取一次执行，再在该执行路径后接 `/trace` 或 `/artifacts/{artifact_id}` | 分析列表默认 20、上限 50，按 `(requested_at,id)` 倒序，`next_before_run_id` 回传为 `before_run_id`。追踪区分步骤总数、工件总数和截断标志。 |
 | 来源工件与活动 | `/alerts/{id}/artifacts/{artifact_id}`、`/incidents/{id}/artifacts/{artifact_id}`、`/cases/{id}/artifacts/{artifact_id}`；`/cases/{id}/activities` | 来源工件按真实归属读取；Case 活动包含本案、成员及显式事件目标，按活动去重并返回前后值。 |
-| Case 队列与资料 | `/cases`、`/cases/{id}`、`/cases/{id}/page-data` | 队列默认 20、上限 50，按 `(business_updated_at,id)` 倒序。`next_cursor` 原样用于同租户、同筛选条件的下一页；筛选后的 `total` 和全租户队列 `metrics` 分开。 |
+| Case 队列与资料 | `/cases`、`/cases/{id}`、`/cases/{id}/page-data` | 队列默认20、上限50，默认按(business_updated_at,id)倒序，可选created_at/severity及asc/desc；日期按business_updated_at。`next_cursor` 原样用于同租户、同筛选条件的下一页；筛选后的 `total` 和全租户队列 `metrics` 分开。 |
 | 案件历史、Run、Result | `/cases/{id}/history`、`/cases/{id}/runs/{run_id}`、`/cases/{id}/results/{result_id}` | 历史默认 20、上限 100，回传 `next_cursor`。来源为本案基础 Run 和明确保存的 `ai_saved` 结果。要展示相关 A/I 尝试，另按成员告警、关联事件读取，再按 Run UUID 去重。 |
 | 资料与任务明细 | `/cases/{id}/runs/{run_id}/artifacts/{artifact_id}`、`/materials/{material_id}`（同一 Run 路径下）；`/cases/{id}/tasks` | Case Run 明细至多返回 200 个成员、1000 条步骤、200 个工件及 200 个结果 ID，各集合查看自己的总数与截断字段。任务/版本列表默认 20、上限 100，使用 offset。 |
 
@@ -151,3 +151,5 @@ ROLLBACK;
 事件交付读取 `diagnosis.delivery_assessment` 的原因、成员覆盖和 `review_items`。该 JSON 块可缺失，缺失不推断为完整或无需待核；执行状态、交付、待复核、采用和质量分别显示。[状态及空态](../../FRONTEND_BACKEND_HANDOFF.md#5-状态交付和空态)
 
 补充有值／空值样例见[字段样本](../../deliverables/investigation-validation-20261106/page-field-samples.md)，未开放业务和原页面显示差异见[问题清单](current-issues.md)。固定导出只代表采样时点，不修改其失败或 unknown 结果。
+
+列表查询补充：告警时间为真实event_time；事件要求同一成员告警event_time落在区间内，last_activity_at为成员最晚真实时间；Case时间为business_updated_at。time_from/time_to必须带时区，前闭后开，可单边。缺失时间不替换为入库时间。记录排序字段缺值时始终排最后；非法sort_by返回422。改变条件或排序清空游标，游标原样URL编码续页。详见[HTTP交接](../../deliverables/investigation-validation-20261106/http-handoff/README.md#列表查询怎么用)。

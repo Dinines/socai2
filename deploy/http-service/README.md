@@ -1,6 +1,6 @@
 # 独立调查 HTTP 服务
 
-当前合同53个告警/事件/调查操作；E44–E47为Case管理/结案/重开，E19–E21仍501。新增E48–E53为告警反馈和告警/事件单条及批量管理；当前增量见[manage-alert-incident-operations](../../openspec/changes/archive/2026-11-13-manage-alert-incident-operations/tasks.md)，前批统一入口已归档。
+当前合同53个告警/事件/调查操作；E44–E47为Case管理/结案/重开，E19–E21仍501。新增E48–E53为告警反馈和告警/事件单条及批量管理；当前增量为[三类列表查询](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)，补齐E02/E26/E27筛选、排序与分页；前批管理与统一入口均已归档。
 
 | 环境 | Profile | 数据目标 | 入口 |
 | --- | --- | --- | --- |
@@ -9,11 +9,11 @@
 
 两个环境共享HTTP合同，记录ID各属本环境。21原主API18000、旧独立API18020及其旧隔离库保持。新的正式入口不启动消费者、不自动执行调查；业务后端显式调用分析接口后仍会按现有业务执行模型，结果质量按响应及独立验收记录判断。
 
-对外HTTP与内部调查调用的代码边界见[架构说明](../../docs/design/investigation-http-boundary.md)。两端18024已使用独立入口 `investigation_http.main:app`，旧 `app.socai2_main:app` 兼容转接到同一应用。当前21发布为 `http-boundary-20261113-r1`，本机为同源的 `http-boundary-20261113-r1-local`；根profile与 `http-boundary/local.json`、`http-boundary/aisoc21.json` 一致。该目录的preview用18026完成候选验证后已停止。新包仅挂对外业务接口，内部HTTP应用和组件客户端保持独立。
+对外HTTP与内部调查调用的代码边界见[架构说明](../../docs/design/investigation-http-boundary.md)。两端18024使用独立入口 `investigation_http.main:app`；当前21发布 `list-query-20261113-r1`，本机为同源 `list-query-20261113-r1-local`，根profile与list-query目录一致。新增列表查询只读、不触发调查；内部HTTP应用和组件客户端保持独立。
 
 本机访问21使用`relay.json`的28024；验收正常登录使用`auth-relay.json`的28025转到原主服务认证入口。旧28000转发本轮返回空503，未修改；新转发与原账号正常登录已实际验证。过期旧key未续期或改权，认证token不写入公共证据。
 
-21本轮从已发布subject-management服务派生受控环境及只读挂载，在其镜像上叠加26个HTTP包/兼容文件；镜像为 `sha256:b9316a414bf8bc1c388f02cf1edf7137f7ff096a9d05d22559f0acc62b045f3c`。本机使用从该实际镜像冻结的622个代码文件，位于普通项目目录 `../socai2-http-runtime/http-boundary-20261113-r1`，由profile显式配置运行路径和原有私密环境文件。这样两端均不加载工作区并行、尚未发布的模型修改；旧subject-management发布profile保留作历史记录。数据库目标不一致或已启用写入却没有写连接时，服务启动失败；没有自动建库/迁移。
+21本轮从已发布http-boundary镜像派生，仅覆盖list-query/aisoc21.json明确列出的10文件；实际镜像 `sha256:bf0b7beb96d72b25bc92e31da4eae631e93dddc6fce9aaed0954779dd2275bbd`。本机从相同基底冻结源码后覆盖相同10文件，位于普通项目目录 `../socai2-http-runtime/list-query-20261113-r1`。两端均不带入工作区并行模型修改，不自动建库/迁移。
 
 本机启动：
 
@@ -36,8 +36,10 @@ python3 manage.py --profile profile.json verify
 
 [直接验证](../../openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)区分本机TCP、受限写连接、实际SQL读回和21发布观察；历史真实模型失败不因入口通过而关闭。HTTP操作验证用`verify_flow.py`及环境专属profile，一次新Case/H，意图和响应逐步保存，不自动重试POST、不启动Run。
 
-本轮[分离验收](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)保留完整HTTP合同对比、本机真实写读、21既有记录只读复验及SQL读回。21本轮没有新增正式库测试数据；消费者、原主API和内部服务保持。两端Swagger继续使用合同相同的docs7，六个入口均200且文件摘要一致，无需因代码归属调整重建文档容器。
+本轮[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)包含旧调用兼容、三类列表TCP/PG和发布后只读核验；两端Swagger docs8已同步。正式库复用既有合成记录，未新增测试数据，其他服务/消费者保持。候选18026验证后停止，正式入口为18024。
 
-本轮替换已有18024服务的profile显式设`replace_existing=true`，先核原镜像及端口；`expected_operations=53`用于读回。`subject-management/preview.json`的18026仅作本机验收，正式本机使用根local.json的18024。`verify_management.py`按环境专属profile新建验收Case，记录意图及响应，不自动重试写入或启动模型。
+本轮替换已有18024服务的profile显式设`replace_existing=true`，先核原镜像及端口；`expected_operations=53`用于读回。`list-query/preview.json`的18026仅作本机验收，正式本机使用根local.json的18024。`verify_management.py`按环境专属profile新建验收Case，记录意图及响应，不自动重试写入或启动模型。
 
 告警／事件验收使用 `verify_subject_management.py` 和 `subject-management/verify-*.json`，只操作本批明确标记的合成主体；`subject_management_fixture.py`提供受控新样本与SQL读回。`SOCAI2_MANAGEMENT_CONFIG_FILE`显式指定批量配置，默认交付`max_batch_items=100`，变更后重启本项服务。人工写入复用`SOCAI2_CASE_API_ENABLED`及既有调查写连接，关闭时新接口返回`503 socai2_subject_write_not_enabled`。
+
+三类列表验收脚本为verify_list_query.py，配置在list-query/；seed仅允许本机隔离库，一批只建一次，verify仅GET及只读SQL，不重派分析。发布后复验脚本和回执保存在本批证据目录。

@@ -4,19 +4,29 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import AwareDatetime
 
 from investigation_http.contracts import (
+    AlertListQuery,
+    AlertSort,
+    AlertStatus,
+    AssignmentState,
     ContentView,
+    IncidentListQuery,
+    IncidentSort,
     RecordPage,
     Section,
+    Severity,
+    SortOrder,
     Subject,
     SubjectPage,
     SubjectView,
     TraceView,
+    WorkStatus,
 )
 from investigation_http.dependencies import CurrentUser, require_permission
 from investigation_http.dependencies import page_service as get_service
-from investigation_http.errors import invoke
+from investigation_http.errors import invoke, query_input
 from investigation_http.external_routes.subject_management import (
     router as management_router,
 )
@@ -34,10 +44,24 @@ async def alerts(
     service: Service,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
     before_id: UUID | None = None,
+    cursor: Annotated[str | None, Query(max_length=1024)] = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    severity: Severity | None = None,
+    handling_status: AlertStatus | None = None,
+    owner_id: UUID | None = None,
+    assignment_state: AssignmentState | None = None,
+    time_from: AwareDatetime | None = None,
+    time_to: AwareDatetime | None = None,
+    sort_by: AlertSort | None = None,
+    sort_order: SortOrder | None = None,
 ):
+    query = query_input(AlertListQuery, limit=limit, before_id=before_id, cursor=cursor,
+        q=q, severity=severity, handling_status=handling_status, owner_id=owner_id,
+        assignment_state=assignment_state, time_from=time_from, time_to=time_to,
+        sort_by=sort_by, sort_order=sort_order)
     return await invoke(
         service.read(
-            user.tenant_id, "alerts", None, "listing", limit=limit, before_id=before_id
+            user.tenant_id, "alerts", None, "listing", query=query
         )
     )
 
@@ -48,15 +72,28 @@ async def incidents(
     service: Service,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
     before_id: UUID | None = None,
+    cursor: Annotated[str | None, Query(max_length=1024)] = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    severity: Severity | None = None,
+    handling_status: WorkStatus | None = None,
+    owner_id: UUID | None = None,
+    assignment_state: AssignmentState | None = None,
+    time_from: AwareDatetime | None = None,
+    time_to: AwareDatetime | None = None,
+    sort_by: IncidentSort | None = None,
+    sort_order: SortOrder | None = None,
 ):
+    query = query_input(IncidentListQuery, limit=limit, before_id=before_id, cursor=cursor,
+        q=q, severity=severity, handling_status=handling_status, owner_id=owner_id,
+        assignment_state=assignment_state, time_from=time_from, time_to=time_to,
+        sort_by=sort_by, sort_order=sort_order)
     return await invoke(
         service.read(
             user.tenant_id,
             "incidents",
             None,
             "listing",
-            limit=limit,
-            before_id=before_id,
+            query=query,
         )
     )
 

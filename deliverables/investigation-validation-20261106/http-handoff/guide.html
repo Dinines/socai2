@@ -1,21 +1,22 @@
 <html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="调查服务-http-api">调查服务 HTTP API</h1>
-<p>版本：2026-11-12.docs7。本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。</p>
+<p>合同版本：2026-11-13.docs8。当前本机18024为 <code>list-query-20261113-r1-local</code>，21正式18024为 <code>list-query-20261113-r1</code>；两端均挂载53操作，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
+<p>本轮补齐E02调查、E26告警、E27事件的全库筛选、排序和分页；外部HTTP路由仍独立于内部调查服务。列表仅查询，不启动调查或修改记录。完整字段、输入输出示例及422错误见Swagger；两端发布状态以本轮验收（来源：<code>openspec/changes/query-investigation-lists/validation.md</code>）为准。</p>
 <p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共53个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
 <h2 id="每个接口怎么看">每个接口怎么看</h2>
 <p>展开接口即可查看：用途、输入参数、输出结构、操作后的结果、实现状态、请求/响应示例和错误。固定字段解释在Schema中；随分区或工件类型变化的字段在Responses说明中。示例是合成合同示例，需要替换为实际ID和版本。</p>
 <p>• <b>已实现</b>：接口逻辑已提供。执行结果及结论是否有效以返回状态为准。</p>
 <p>• <b>未实现</b>：E19发送问题、E20保存回答、E21采用结果目前返回501，不产生对应业务结果。</p>
-<p>• E36手动告警分诊、E37手动事件诊断在21新独立正式服务已挂载并启用；调用会执行当前模型流程，返回Run及实际结果状态。</p>
+<p>• E36告警分诊、E37事件诊断在21独立正式服务已挂载并启用；由业务后端显式调用，可以来自页面操作或后端业务逻辑。调用后程序执行该次模型流程，返回Run及实际结果状态。</p>
 <p>原40个已实现操作已有本机原HTTP路由和真实隔离数据库的直接验证；E19–E21已确认501。另在本机TCP及21正式HTTP完成建案、人工任务创建/完成修订、当前和历史读取，保存字段与SQL读回一致，Run未启动。分析执行测试使用模型/查询替身，本轮发布未调用真实模型，真实模型质量仍未通过。展开接口可看对应验证范围；HTTP200仍需结合业务状态。</p>
 <h2 id="http接入">HTTP接入</h2>
 <p>业务路径前缀为<code>/api/v1/socai2</code>。Swagger的Servers按实际调用环境选择；18080只提供文档。</p>
 <table>
 <tr><th>使用环境</th><th>API根地址</th><th>数据目标</th></tr>
-<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>subject-management-20261112-r1</code>，53操作</td></tr>
+<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>list-query-20261113-r1</code>，53操作</td></tr>
 <tr><td>本机转发到21</td><td><code>http://127.0.0.1:28024</code></td><td>同一正式库；需开启<code>deploy/http-service/relay.json</code>对应转发</td></tr>
 <tr><td>本机开发验收</td><td><code>http://127.0.0.1:18024</code></td><td>隔离<code>v12_upgrade_dev</code>；本地记录ID与21不通用</td></tr>
 </table>
-<p>旧主API18000和旧独立API18020保持运行；后者仍是旧隔离库，不作为本次对接入口。新服务只统一当前HTTP合同和读写连接，没有启动消费者或自动调查。</p>
+<p>旧主API18000和旧独立API18020保持运行；后者仍是旧隔离库，不作为本次对接入口。对外查询和业务操作由独立HTTP包维护，调查内部步骤及组件HTTP保持原归属，见代码与调用边界（来源：<code>docs/design/investigation-http-boundary.md</code>）。本轮没有启动消费者或自动调查。</p>
 <p>JSON请求使用<code>Content-Type: application/json</code>，身份沿用现有<code>Authorization: Bearer &lt;有效凭据&gt;</code>。后端通过HTTP对接，资产基础资料和人员目录由业务后端负责。</p>
 <h2 id="常见调用顺序">常见调用顺序</h2>
 <p>1. 告警：列表E26 → 详情E28 → 分诊目录E22 → 指定Run E24 → 步骤E32/工件E33。</p>
@@ -30,4 +31,14 @@
 <p>• 执行异常或结果未知时先读取原Run，不能换key盲目重新执行。</p>
 <p>• HTTP200表示读取/操作请求完成，不等于模型结论有效，也不等于原件正文完整；检查执行状态、校验状态和availability。</p>
 <p>• 未解决问题是当轮调查结论的一部分；需要人工核实时由用户创建任务。</p>
-<p><a href="/handoff/openapi.json">下载OpenAPI</a> · <a href="/handoff/examples.json">输入输出示例</a> · <a href="/handoff/endpoints.html">静态接口说明</a> · <a href="/handoff/schemas.html">字段定义</a></p></main></html>
+<p><a href="/handoff/openapi.json">下载OpenAPI</a> · <a href="/handoff/examples.json">输入输出示例</a> · <a href="/handoff/endpoints.html">静态接口说明</a> · <a href="/handoff/schemas.html">字段定义</a></p>
+<h2 id="列表查询怎么用">列表查询怎么用</h2>
+<p>三个GET接口均支持q、状态、等级、负责人、分配状态、time_from/time_to、sort_by/sort_order、limit和cursor；Case另保留metric/classification。时间必须带时区、起点包含而终点不包含，起点必须早于终点。</p>
+<table>
+<tr><th>列表</th><th>日期含义</th><th>sort_by可选值（首项为默认）</th><th>总数</th></tr>
+<tr><td>告警 E26</td><td>真实event_time，缺失不补入库时间</td><td>ingested_at/event_time/severity</td><td>filtered_total为筛选数；total为全部告警数</td></tr>
+<tr><td>事件 E27</td><td>至少一条成员告警event_time在区间内</td><td>created_at/last_activity_at/severity</td><td>filtered_total为筛选数；total为全部事件数</td></tr>
+<tr><td>调查 E02</td><td>business_updated_at</td><td>business_updated_at/created_at/severity</td><td>total为筛选数；metrics保持整体</td></tr>
+</table>
+<p>例如 <code>GET /api/v1/socai2/alerts?severity=high&amp;sort_by=event_time&amp;sort_order=desc&amp;limit=20</code>。读取items后，将响应的next_cursor原样URL编码为cursor，保留原筛选和排序取下一页；null表示结束。变更条件清空游标。查询不改变overall_stats/metrics统计范围；不提供冻结快照导出。等级排序为info&lt;low&lt;medium&lt;high&lt;critical，空值始终最后，同值按同方向UUID排序。</p>
+<p>告警/事件旧limit+before_id调用保留；before_id与新筛选、排序或cursor混用返回422。Case未使用新增日期/排序的原v1游标仍可续页。非法日期、枚举和排序返回422；无效新游标为invalid_list_cursor，跨条件为list_cursor_filters_changed；旧Case错误码保留。</p></main></html>

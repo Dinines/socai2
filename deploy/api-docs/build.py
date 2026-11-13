@@ -8,7 +8,7 @@ SOURCE=ROOT/'deliverables/investigation-validation-20261106'
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output',type=Path,default=SOURCE/'http-handoff')
 OUT=parser.parse_args().output.resolve()
-VERSION='2026-11-12.docs7'
+VERSION='2026-11-13.docs8'
 BASE=ROOT/'docs/design/socai2-independent-api-v2.openapi.json'
 DOC=json.loads(BASE.read_text())
 DOC['paths']={k:v for k,v in DOC['paths'].items() if k.startswith('/api/v1/socai2')}
@@ -27,9 +27,10 @@ DESC={
 'expected_current_artifact_id':'当前证据目录工件 ID；首次为null。必须显式传入，和实际旧版本比较。',
 'case_id':'Case UUID；来自真实回执/列表，不是页面展示编号。','alert_id':'告警 UUID。','incident_id':'事件 UUID。','run_id':'该父主体下的执行 UUID。','result_id':'同案已保存正式结果 UUID。','task_id':'本案人工任务 UUID。','revision_id':'指定不可变任务修订 UUID。','material_id':'材料版本 UUID；历史读取使用冻结版本。','artifact_id':'工件 UUID，必须保持父主体/Run 归属。',
 'identity':'subject 对应的告警或事件 UUID。','subject':'alerts 或 incidents，不能传 cases。','section':'记录分区；members仅事件、incidents仅告警。见分区表。',
-'limit':'本次最多返回条数；不是总量。默认值及上限见字段约束。','offset':'分页偏移，沿 next_offset 继续。','cursor':'使用服务上一页 next_cursor；改变筛选条件后清空。','before_id':'沿上页 next_before_id 翻页。','before_run_id':'沿上页 next_before_run_id 翻页。',
+'limit':'本次最多返回条数；不是总量。默认值及上限见字段约束。','offset':'分页偏移，沿 next_offset 继续。','cursor':'使用服务上一页 next_cursor；改变筛选条件后清空。','before_id':'仅无新增筛选/排序的旧调用沿next_before_id翻页；不与cursor混用。','before_run_id':'沿上页 next_before_run_id 翻页。',
 'next_cursor':'下一页游标；null表示结束。','next_offset':'下一页偏移；null表示结束。','next_before_id':'下一页主体游标；null表示结束。','next_before_run_id':'下一页运行游标；null表示结束。',
-'q':'Case标题或完整ID搜索；告警/事件列表不支持此参数。','metric':'Case整体指标快捷过滤条件。','classification':'案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。',
+'time_from':'带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。','time_to':'带时区的终点，不包含；两端同时传时必须晚于time_from。','sort_by':'服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。','sort_order':'asc升序或desc降序，默认desc。','filtered_total':'全部筛选条件命中数，不受分页影响；total和overall_stats仍为租户整体。',
+'q':'标题字面包含或精确UUID搜索；%和_按普通字符处理。','metric':'Case整体指标快捷过滤条件。','classification':'案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。',
 'due_at':'带时区的截止时间；null清空。','source':'本次资料变更来源 manual 或 import。','source_note':'资料修改原因/来源说明，非空。','source_refs':'来源引用；任务写入为type/id，读取为已冻结EvidenceRef，不能把读取对象原样回写。',
 'alert_ids':'真实告警UUID集合，禁止重复；具体是新增、完整替换或反馈覆盖范围见操作说明。','incident_ids':'显式关联事件UUID集合，服务展开成员。','target_case_id':'移动目标Case；不得等于路径源Case。',
 'window_start':'窗口起点，带时区；和window_end同时提供或同时为空。','window_end':'窗口终点，带时区且不早于起点。',
@@ -204,7 +205,7 @@ EX['StageEntry']['run'].update(id=ID['run'],kind='alert_basic',state='pending_up
 EX['StagePage']=base('StagePage');EX['StagePage'].update(subject_id=ID['alert'],kind='alert_basic',current=None,current_pointer_id=None,current_unavailable_reason=None)
 EX['SubjectView']=base('SubjectView');EX['SubjectView'].update(kind='alerts',analysis_url='/api/v1/socai2/alerts/'+ID['alert']+'/analysis',section_urls={s:'/api/v1/socai2/alerts/'+ID['alert']+'/records/'+s for s in SECTIONS if s!='members'})
 EX['SubjectView']['facts'].update(id=ID['alert'],source_namespace='example',event_time_source='unknown')
-EX['SubjectPage']=base('SubjectPage');EX['SubjectPage'].update(kind='alerts',overall_stats={k:0 for k in ['total','new','in_progress','unknown','high_severity','investigating']})
+EX['SubjectPage']=base('SubjectPage');EX['SubjectPage'].update(kind='alerts',total=0,filtered_total=0,next_cursor=None,next_before_id=None,overall_stats={k:0 for k in ['total','new','in_progress','unknown','high_severity','investigating']})
 EX['ArtifactContent']=base('ArtifactContent');EX['ArtifactContent'].update(availability='available',content_json=None,content_text='合成示例报告：未形成可采用结论。')
 EX['ContentView']=base('ContentView');EX['ContentView'].update(availability='available',content_json=None,content_text='合成示例原文')
 EX['ResultView']=base('ResultView');EX['ResultView'].update(id=ID['result'],case_id=ID['case'],source_run_id=ID['run'],conclusion=None,conclusion_state='unavailable',conclusion_origin='system',validation_state='system_only',delivery_state='partial')
@@ -270,6 +271,8 @@ for path,methods in DOC['paths'].items():
    if v is not None:p['example']=v
    if p['required'] or 'default' in p['schema']:pv[p['name']]=v
    params.append(p)
+  if i in [2,26,27]:
+   pv.update(q='需要核实',sort_by='severity',sort_order='desc',time_from='2026-11-10T00:00:00Z',time_to='2026-11-11T00:00:00Z')
   body=op.get('requestBody',{}).get('content',{}).get('application/json')
   req=sample(body['schema']) if body else None
   if body:body['examples']={'contract':{'summary':'合成请求示例；UUID与版本必须换成真实值','value':req}}
@@ -324,8 +327,14 @@ for path,methods in DOC['paths'].items():
   else:
    error_item={'type':'int_parsing','loc':['query','limit'],'msg':'Input should be a valid integer','input':'not-an-integer'}
   defaults['422'][0][1]['detail']=[error_item]
+  if i==2:
+   defaults['403']=[('permission_denied',{'detail':'Permission denied: cases:read'},'缺少Case读取能力')]
   flag='socai2_subject_write_not_enabled' if i>=48 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
   defaults['503'].append(('feature_disabled',{'detail':flag},'服务对应功能开关关闭'))
+  if i in [2,26,27]:
+   defaults['422'].append(('invalid_time_window',{'detail':[{'type':'value_error','loc':[],'msg':'Value error, time_from_must_precede_time_to'}]},'起点不早于终点；无时区、非法排序或枚举同样422'))
+  if i in [26,27]:
+   defaults['422'].append(('mixed_pagination',{'detail':[{'type':'value_error','loc':[],'msg':'Value error, before_id_cannot_combine_with_cursor_filters_or_sort'}]},'before_id不能与cursor、新筛选或排序混用'))
   for e in errs.split():
    code,http=e.rsplit(':',1)
    val=EX['AIUnavailable'] if http=='501' else {'detail':code}
@@ -396,7 +405,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 for name,obj in [('openapi.json',DOC),('examples.json',examples)]: (OUT/name).write_text(dump(obj))
 for name,txt in [('endpoints.md',epmd),('schemas.md',schmd)]: (OUT/name).write_text(txt.rstrip()+"\n")
 (OUT/'json-contracts.json').write_bytes((ROOT/'docs/design/socai2-json-contracts-20261103.schema.json').read_bytes())
-(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':540,'dynamic_structures':28,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
+(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':542,'dynamic_structures':28,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
 # 自包含静态功能页；无CDN，无线上校验或业务API调用。
 styles='body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}'
 def esc(x):return html.escape(str(x))

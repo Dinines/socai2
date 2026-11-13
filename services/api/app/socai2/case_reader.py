@@ -33,6 +33,8 @@ from .case_contracts import (
 )
 from .case_data import read_page_data
 from .page_contracts import RecordPage
+from . import list_query as lists
+from .list_query_contracts import EXTENDED_CASE_FIELDS
 
 S = m.RunSteps.__table__
 TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
@@ -63,10 +65,16 @@ def queue_metric_predicates(tenant_id):
 
 def queue_filter_fingerprint(tenant_id, query):
     return digest({"tenant_id": str(tenant_id), "sort": "business_updated_at_desc,id_desc",
-        **query.model_dump(mode="json", exclude={"limit", "cursor"})})
+        **query.model_dump(mode="json", exclude={"limit", "cursor", *EXTENDED_CASE_FIELDS})})
+
+
+def extended_queue(query):
+    return any(getattr(query, field) is not None for field in EXTENDED_CASE_FIELDS)
 
 
 def queue_cursor(tenant_id, query):
+    if extended_queue(query):
+        return lists.read_cursor(tenant_id, "cases", query, query.sort_by or "business_updated_at")
     if query.cursor is None:
         return None
     try:
@@ -97,6 +105,7 @@ def queue_filters(tenant_id, query):
         clauses.append(queue_metric_predicates(tenant_id)[query.metric])
     if query.classification is not None:
         clauses.append(C.c.classification.is_(None) if query.classification == "not_set" else C.c.classification == query.classification)
+    clauses.extend(lists.time_filters(C.c.business_updated_at, query))
     return clauses
 
 
@@ -173,6 +182,8 @@ class CaseReader:
         """Called inside one tenant-bound REPEATABLE READ, READ ONLY transaction."""
         tenant = self.store.tenant_id
         point = queue_cursor(tenant, query)
+        sort_by, order = query.sort_by or "business_updated_at", query.sort_order or "desc"
+        sort_column = lists.severity_rank(C.c.severity) if sort_by == "severity" else C.c[sort_by]
         predicates = queue_metric_predicates(tenant)
         metrics = (await self.rows(select(*[
             func.count().filter(predicate).label(name) for name, predicate in predicates.items()
@@ -182,11 +193,12 @@ class CaseReader:
         member_count = select(func.count()).select_from(CA).where(
             CA.c.tenant_id == tenant, CA.c.case_id == C.c.id).correlate(C).scalar_subquery()
         listing = select(C, member_count.label("member_count"),
+            sort_column.label("_list_sort_value"),
             queue_open_tasks(tenant).scalar_subquery().label("open_task_count")).where(*clauses)
         if point:
-            listing = listing.where(or_(C.c.business_updated_at < point.at,
-                and_(C.c.business_updated_at == point.at, C.c.id < point.id)))
-        selected = await self.rows(listing.order_by(C.c.business_updated_at.desc(), C.c.id.desc()).limit(query.limit + 1))
+            value = point.rank if sort_by == "severity" else point.at
+            listing = listing.where(lists.seek(sort_column, C.c.id, value, point.id, order))
+        selected = await self.rows(listing.order_by(*lists.ordering(sort_column, C.c.id, order)).limit(query.limit + 1))
         visible = selected[:query.limit]
         runs = defaultdict(list)
         if visible:
@@ -206,9 +218,12 @@ class CaseReader:
         next_cursor = None
         if len(selected) > query.limit:
             last = visible[-1]
-            cursor = CaseQueueCursor(at=last["business_updated_at"], id=last["id"],
-                filter_fingerprint=queue_filter_fingerprint(tenant, query))
-            next_cursor = base64.urlsafe_b64encode(cursor.model_dump_json().encode()).decode()
+            if extended_queue(query):
+                next_cursor = lists.write_cursor(tenant, "cases", query, sort_by, last["id"], last["_list_sort_value"])
+            else:
+                cursor = CaseQueueCursor(at=last["business_updated_at"], id=last["id"],
+                    filter_fingerprint=queue_filter_fingerprint(tenant, query))
+                next_cursor = base64.urlsafe_b64encode(cursor.model_dump_json().encode()).decode()
         return CaseQueuePage(items=items, total=total, next_cursor=next_cursor,
             metrics=CaseQueueMetrics.model_validate(metrics))
 

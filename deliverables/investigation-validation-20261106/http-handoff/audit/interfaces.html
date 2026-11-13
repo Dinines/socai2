@@ -1,4 +1,4 @@
-<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><p class="badge">本页为已审计补充，随 2026-11-12.docs7 发布。审计原文中的“未发布/docs1”描述审计完成时点。</p><h1 id="47个现有http操作用途输入与输出审计">47个现有HTTP操作：用途、输入与输出审计</h1>
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><p class="badge">本页为已审计补充，随 2026-11-13.docs8 发布。审计原文中的“未发布/docs1”描述审计完成时点。</p><h1 id="47个现有http操作用途输入与输出审计">47个现有HTTP操作：用途、输入与输出审计</h1>
 <p>按原功能清单和既有交接核对，所有路径以真实源码为依据。下列可用状态只说明已实现HTTP能力，不替代页面接线/模型质量验收。请求形状与示例继续使用<a href="/handoff/endpoints.html">既有接口交接</a>，输出逐字段语义见<a href="/handoff/audit/response-fields.html">固定输出字段</a>及<a href="/handoff/audit/dynamic-fields.html">动态结构</a>。本轮不重跑业务或权限验证。</p>
 <table>
 <tr><th>编号</th><th>HTTP用途</th><th>功能类别</th><th>当前状态</th><th>响应</th></tr>
@@ -84,21 +84,25 @@
 <a id="e02"></a>
 <h2 id="e02-case-队列与指标">E02 Case 队列与指标</h2>
 <p><code>GET /api/v1/socai2/cases</code></p>
-<p>源码：socai2_cases.py:80（来源：<code>services/api/app/api/v1/endpoints/socai2_cases.py#L80</code>）。</p>
+<p>源码：对外列表路由（来源：<code>services/api/investigation_http/external_routes/cases.py</code>）；查询在独立核心reader中实现。</p>
 <p>对应功能：F09-01 四项案件指标、F09-02 搜索筛选和分页、F09-03 列选择与排序、F09-08 日期范围与导出、F09-09 手动与自动刷新、F09-11 调查运行与管理设置入口、F14-07 跨主体运行目录</p>
-<p>用途与业务结果：q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。</p>
+<p>用途与业务结果：q按标题字面包含或精确UUID；保留handling_status、severity、owner_id、assignment_state、metric、classification。time_from/time_to按business_updated_at；sort_by=business_updated_at（默认）/created_at/severity。total为全部筛选命中数，metrics为租户整体且high_severity仍只计high。未使用新增日期/排序时兼容旧v1游标。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info&lt;low&lt;medium&lt;high&lt;critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。</p>
 <h3 id="输入">输入</h3>
 <table>
 <tr><th>位置</th><th>字段</th><th>是否必传</th><th>类型/枚举/约束</th><th>默认值</th><th>输入含义</th></tr>
 <tr><td>query</td><td>limit</td><td>可省略</td><td>integer；minimum=1；maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
 <tr><td>query</td><td>cursor</td><td>可省略</td><td>string；maxLength=1024 / null</td><td>无</td><td>使用服务上一页 next_cursor；改变筛选条件后清空。</td></tr>
-<tr><td>query</td><td>q</td><td>可省略</td><td>string；maxLength=200 / null</td><td>无</td><td>Case标题或完整ID搜索；告警/事件列表不支持此参数。</td></tr>
+<tr><td>query</td><td>q</td><td>可省略</td><td>string；maxLength=200 / null</td><td>无</td><td>标题字面包含或精确UUID搜索。</td></tr>
 <tr><td>query</td><td>handling_status</td><td>可省略</td><td><a href="/handoff/schemas.html#workstatus">WorkStatus</a> / null</td><td>无</td><td>主体业务处理状态，与Run执行状态分开。</td></tr>
 <tr><td>query</td><td>severity</td><td>可省略</td><td><a href="/handoff/schemas.html#severity">Severity</a> / null</td><td>无</td><td>严重度枚举；null为未知，不强行补默认等级。</td></tr>
 <tr><td>query</td><td>owner_id</td><td>可省略</td><td>string uuid / null</td><td>无</td><td>负责人用户UUID；人员目录由业务后端负责。</td></tr>
 <tr><td>query</td><td>assignment_state</td><td>可省略</td><td><a href="/handoff/schemas.html#assignmentstate">AssignmentState</a> / null</td><td>无</td><td>分配状态，unresolved不等于unassigned。</td></tr>
 <tr><td>query</td><td>metric</td><td>可省略</td><td>string；awaiting_assignment, in_progress, high_severity, awaiting_human / null</td><td>无</td><td>Case整体指标快捷过滤条件。</td></tr>
 <tr><td>query</td><td>classification</td><td>可省略</td><td>string；true_positive, informational, false_positive / string = not_set / null</td><td>无</td><td>案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。</td></tr>
+<tr><td>query</td><td>time_from</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>包含起点；具体时间字段见上方</td></tr>
+<tr><td>query</td><td>time_to</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>不包含终点；起点必须早于终点</td></tr>
+<tr><td>query</td><td>sort_by</td><td>可省略</td><td>business_updated_at/created_at/severity</td><td>无</td><td>默认枚举第一项</td></tr>
+<tr><td>query</td><td>sort_order</td><td>可省略</td><td>asc/desc</td><td>无</td><td>默认desc</td></tr>
 </table>
 <p>请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见<a href="/handoff/schemas.html">既有请求字段表</a>。JSON请求额外字段禁止；可空与可省略分开。</p>
 <h3 id="输出">输出</h3>
@@ -106,12 +110,13 @@
 <table>
 <tr><th>顶层输出字段</th><th>含义</th></tr>
 <tr><td>items</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。</td></tr>
-<tr><td>total</td><td>当前集合总数；records/assets为对象资产匹配边数。</td></tr>
+<tr><td>total</td><td>全部筛选命中数，不受游标和页长影响。</td></tr>
 <tr><td>next_cursor</td><td>下一页游标；null表示结束。</td></tr>
 <tr><td>metrics</td><td>Case租户整体指标，不随分页或筛选total变化。</td></tr>
 </table>
 <p>动态字段：固定结构；按嵌套类型逐层展开。。详见<a href="/handoff/audit/dynamic-fields.html">动态字段清单</a>。</p>
 <p>输入输出及典型错误JSON继续使用<a href="/handoff/endpoints.html#e02">原E02示例</a>；本轮发现的差异以<a href="/handoff/audit/guide.html">审计结论</a>和上方逐字段规则为准。</p>
+<p>错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_case_cursor:422 case_cursor_filters_changed:422 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。</p>
 <a id="e03"></a>
 <h2 id="e03-case-详情与当前判断">E03 Case 详情与当前判断</h2>
 <p><code>GET /api/v1/socai2/cases/{case_id}</code></p>
@@ -752,14 +757,24 @@
 <a id="e26"></a>
 <h2 id="e26-告警列表">E26 告警列表</h2>
 <p><code>GET /api/v1/socai2/alerts</code></p>
-<p>源码：socai2_pages.py:42（来源：<code>services/api/app/api/v1/endpoints/socai2_pages.py#L42</code>）。</p>
+<p>源码：对外列表路由（来源：<code>services/api/investigation_http/external_routes/pages.py</code>）；查询在独立核心reader中实现。</p>
 <p>对应功能：F01-01 默认九列、F01-02 搜索与快捷筛选、F01-03 排序与列选择、F01-04 指标与分页、F01-06 导出与批量选择、F01-09 刷新与清除条件、F06-06 处理中与队列压缩、F13-05 添加告警／事件、F14-07 跨主体运行目录</p>
-<p>用途与业务结果：仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。</p>
+<p>用途与业务结果：q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/completed/unknown）、owner_id、assignment_state。time_from/time_to按真实event_time，缺失不以入库时间补齐。sort_by=ingested_at（默认）/event_time/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422；旧before_id主体不存在返回404 page_subject_not_found。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info&lt;low&lt;medium&lt;high&lt;critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。</p>
 <h3 id="输入">输入</h3>
 <table>
 <tr><th>位置</th><th>字段</th><th>是否必传</th><th>类型/枚举/约束</th><th>默认值</th><th>输入含义</th></tr>
 <tr><td>query</td><td>limit</td><td>可省略</td><td>integer；minimum=1；maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
-<tr><td>query</td><td>before_id</td><td>可省略</td><td>string uuid / null</td><td>无</td><td>沿上页 next_before_id 翻页。</td></tr>
+<tr><td>query</td><td>before_id</td><td>可省略</td><td>string uuid / null</td><td>无</td><td>仅无新增筛选/排序的旧调用可用；不与cursor混用。</td></tr>
+<tr><td>query</td><td>cursor</td><td>可省略</td><td>string，最长1024</td><td>无</td><td>上一页next_cursor，改变条件清空</td></tr>
+<tr><td>query</td><td>q</td><td>可省略</td><td>string，最长200</td><td>无</td><td>标题字面包含或精确UUID</td></tr>
+<tr><td>query</td><td>severity</td><td>可省略</td><td>info/low/medium/high/critical</td><td>无</td><td>告警等级；事件用人工覆盖优先的有效等级</td></tr>
+<tr><td>query</td><td>handling_status</td><td>可省略</td><td>new/in_progress/completed/unknown</td><td>无</td><td>业务处理状态</td></tr>
+<tr><td>query</td><td>owner_id</td><td>可省略</td><td>UUID</td><td>无</td><td>负责人真实ID；分配给我传当前用户ID</td></tr>
+<tr><td>query</td><td>assignment_state</td><td>可省略</td><td>assigned/unassigned/unresolved</td><td>无</td><td>分配状态，未知人员不冒充未分配</td></tr>
+<tr><td>query</td><td>time_from</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>包含起点；具体时间字段见上方</td></tr>
+<tr><td>query</td><td>time_to</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>不包含终点；起点必须早于终点</td></tr>
+<tr><td>query</td><td>sort_by</td><td>可省略</td><td>ingested_at/event_time/severity</td><td>无</td><td>默认枚举第一项</td></tr>
+<tr><td>query</td><td>sort_order</td><td>可省略</td><td>asc/desc</td><td>无</td><td>默认desc</td></tr>
 </table>
 <p>请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见<a href="/handoff/schemas.html">既有请求字段表</a>。JSON请求额外字段禁止；可空与可省略分开。</p>
 <h3 id="输出">输出</h3>
@@ -768,24 +783,37 @@
 <tr><th>顶层输出字段</th><th>含义</th></tr>
 <tr><td>kind</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。</td></tr>
 <tr><td>items</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。</td></tr>
-<tr><td>total</td><td>当前集合总数；records/assets为对象资产匹配边数。</td></tr>
-<tr><td>next_before_id</td><td>下一页主体游标；null表示结束。</td></tr>
+<tr><td>total</td><td>租户该类主体总数，不随筛选变化。</td></tr>
+<tr><td>next_before_id</td><td>仅旧调用使用；新筛选/排序时为null。</td></tr>
+<tr><td>filtered_total</td><td>本次全部筛选命中数，不受游标和页长影响。</td></tr>
+<tr><td>next_cursor</td><td>下一页不透明游标；null表示末页。</td></tr>
 <tr><td>overall_stats</td><td>主体整体统计；按原口径和observed_at展示。</td></tr>
 <tr><td>observed_at</td><td>本次读取观察时间。</td></tr>
 </table>
 <p>动态字段：overall-stats、alert-material-meta、alert-triage-feedback。详见<a href="/handoff/audit/dynamic-fields.html">动态字段清单</a>。</p>
 <p>输入输出及典型错误JSON继续使用<a href="/handoff/endpoints.html#e26">原E26示例</a>；本轮发现的差异以<a href="/handoff/audit/guide.html">审计结论</a>和上方逐字段规则为准。</p>
+<p>错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。</p>
 <a id="e27"></a>
 <h2 id="e27-事件列表">E27 事件列表</h2>
 <p><code>GET /api/v1/socai2/incidents</code></p>
-<p>源码：socai2_pages.py:47（来源：<code>services/api/app/api/v1/endpoints/socai2_pages.py#L47</code>）。</p>
+<p>源码：对外列表路由（来源：<code>services/api/investigation_http/external_routes/pages.py</code>）；查询在独立核心reader中实现。</p>
 <p>对应功能：F06-01 列表与搜索筛选、F06-02 四项指标、F06-06 处理中与队列压缩、F06-07 刷新、日期、列和导出、F13-05 添加告警／事件、F14-07 跨主体运行目录</p>
-<p>用途与业务结果：仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。</p>
+<p>用途与业务结果：q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/resolved/unknown）、owner_id、assignment_state。severity为人工覆盖优先、否则成员最大等级；time_from/time_to要求至少一条成员告警真实event_time处于该区间，不能仅用事件首尾跨越判断。sort_by=created_at（默认）/last_activity_at（成员最晚真实发生时间）/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422；旧before_id主体不存在返回404 page_subject_not_found。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info&lt;low&lt;medium&lt;high&lt;critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。</p>
 <h3 id="输入">输入</h3>
 <table>
 <tr><th>位置</th><th>字段</th><th>是否必传</th><th>类型/枚举/约束</th><th>默认值</th><th>输入含义</th></tr>
 <tr><td>query</td><td>limit</td><td>可省略</td><td>integer；minimum=1；maximum=50</td><td>20</td><td>本次最多返回条数；不是总量。默认值及上限见字段约束。</td></tr>
-<tr><td>query</td><td>before_id</td><td>可省略</td><td>string uuid / null</td><td>无</td><td>沿上页 next_before_id 翻页。</td></tr>
+<tr><td>query</td><td>before_id</td><td>可省略</td><td>string uuid / null</td><td>无</td><td>仅无新增筛选/排序的旧调用可用；不与cursor混用。</td></tr>
+<tr><td>query</td><td>cursor</td><td>可省略</td><td>string，最长1024</td><td>无</td><td>上一页next_cursor，改变条件清空</td></tr>
+<tr><td>query</td><td>q</td><td>可省略</td><td>string，最长200</td><td>无</td><td>标题字面包含或精确UUID</td></tr>
+<tr><td>query</td><td>severity</td><td>可省略</td><td>info/low/medium/high/critical</td><td>无</td><td>告警等级；事件用人工覆盖优先的有效等级</td></tr>
+<tr><td>query</td><td>handling_status</td><td>可省略</td><td>new/in_progress/resolved/unknown</td><td>无</td><td>业务处理状态</td></tr>
+<tr><td>query</td><td>owner_id</td><td>可省略</td><td>UUID</td><td>无</td><td>负责人真实ID；分配给我传当前用户ID</td></tr>
+<tr><td>query</td><td>assignment_state</td><td>可省略</td><td>assigned/unassigned/unresolved</td><td>无</td><td>分配状态，未知人员不冒充未分配</td></tr>
+<tr><td>query</td><td>time_from</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>包含起点；具体时间字段见上方</td></tr>
+<tr><td>query</td><td>time_to</td><td>可省略</td><td>带时区datetime</td><td>无</td><td>不包含终点；起点必须早于终点</td></tr>
+<tr><td>query</td><td>sort_by</td><td>可省略</td><td>created_at/last_activity_at/severity</td><td>无</td><td>默认枚举第一项</td></tr>
+<tr><td>query</td><td>sort_order</td><td>可省略</td><td>asc/desc</td><td>无</td><td>默认desc</td></tr>
 </table>
 <p>请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见<a href="/handoff/schemas.html">既有请求字段表</a>。JSON请求额外字段禁止；可空与可省略分开。</p>
 <h3 id="输出">输出</h3>
@@ -794,13 +822,16 @@
 <tr><th>顶层输出字段</th><th>含义</th></tr>
 <tr><td>kind</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。</td></tr>
 <tr><td>items</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。</td></tr>
-<tr><td>total</td><td>当前集合总数；records/assets为对象资产匹配边数。</td></tr>
-<tr><td>next_before_id</td><td>下一页主体游标；null表示结束。</td></tr>
+<tr><td>total</td><td>租户该类主体总数，不随筛选变化。</td></tr>
+<tr><td>next_before_id</td><td>仅旧调用使用；新筛选/排序时为null。</td></tr>
+<tr><td>filtered_total</td><td>本次全部筛选命中数，不受游标和页长影响。</td></tr>
+<tr><td>next_cursor</td><td>下一页不透明游标；null表示末页。</td></tr>
 <tr><td>overall_stats</td><td>主体整体统计；按原口径和observed_at展示。</td></tr>
 <tr><td>observed_at</td><td>本次读取观察时间。</td></tr>
 </table>
 <p>动态字段：overall-stats；事件material/triage/feedback为null。详见<a href="/handoff/audit/dynamic-fields.html">动态字段清单</a>。</p>
 <p>输入输出及典型错误JSON继续使用<a href="/handoff/endpoints.html#e27">原E27示例</a>；本轮发现的差异以<a href="/handoff/audit/guide.html">审计结论</a>和上方逐字段规则为准。</p>
+<p>错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。</p>
 <a id="e28"></a>
 <h2 id="e28-告警详情">E28 告警详情</h2>
 <p><code>GET /api/v1/socai2/alerts/{alert_id}</code></p>

@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .baseline_contracts import Contract, Finding, Impact, Question, Recommendation
 from .case_data_contracts import Classification, CasePageData
+from .list_query_contracts import CaseSort, DatedQuery
 from .enums import (
     AssignmentState,
     ChangeKind,
@@ -249,7 +250,7 @@ class StartAvailability(Contract):
 CaseMetric = Literal["awaiting_assignment", "in_progress", "high_severity", "awaiting_human"]
 
 
-class CaseQueueQuery(Contract):
+class CaseQueueQuery(DatedQuery):
     limit: int = Field(default=20, ge=1, le=50)
     cursor: str | None = Field(default=None, max_length=1024)
     q: str | None = Field(default=None, max_length=200)
@@ -259,6 +260,7 @@ class CaseQueueQuery(Contract):
     assignment_state: AssignmentState | None = None
     metric: CaseMetric | None = None
     classification: Classification | Literal["not_set"] | None = None
+    sort_by: CaseSort | None = None
 
     @field_validator("q")
     @classmethod

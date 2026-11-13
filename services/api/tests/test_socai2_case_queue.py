@@ -7,7 +7,7 @@ this does not stand in for PostgreSQL RLS/isolation acceptance.
 import base64
 import unittest
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -34,6 +34,7 @@ from sqlalchemy import (
     create_engine,
     insert,
     select,
+    update,
 )
 from sqlalchemy.types import TypeDecorator
 
@@ -149,6 +150,41 @@ class QueueSQLTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(second.next_cursor)
         self.assertEqual(first.total, second.total)
         self.assertEqual(first.metrics, second.metrics)
+
+    async def test_new_sort_null_tail_and_time_window_preserve_legacy_cursor(self):
+        table = self.tables["C"]
+        self.connection.execute(update(table).where(table.c.id == UUID(int=3)).values(severity=None))
+        for identity in range(1, 5):
+            self.connection.execute(update(table).where(table.c.id == UUID(int=identity)).values(
+                created_at=NOW + timedelta(minutes=identity)))
+        for order, expected in (("asc", [1, 2, 4, 3]), ("desc", [4, 2, 1, 3])):
+            ids, cursor = [], None
+            while True:
+                page = await self.reader.queue(CaseQueueQuery(sort_by="severity", sort_order=order,
+                    limit=1, cursor=cursor))
+                ids.extend(item.case.id.int for item in page.items)
+                self.assertEqual(page.total, 4)
+                cursor = page.next_cursor
+                if cursor is None:
+                    break
+            self.assertEqual(ids, expected)
+        created = await self.reader.queue(CaseQueueQuery(sort_by="created_at", sort_order="asc"))
+        self.assertEqual([item.case.id.int for item in created.items], [1, 2, 3, 4])
+        exact = await self.reader.queue(CaseQueueQuery(time_from=NOW, time_to=NOW+timedelta(seconds=1)))
+        self.assertEqual(exact.total, 4)
+        excluded = await self.reader.queue(CaseQueueQuery(time_to=NOW))
+        self.assertEqual(excluded.total, 0)
+        self.assertEqual(excluded.metrics, exact.metrics)
+        # Construct the original v1 fingerprint independently of the new DTO.
+        original = {"q": None, "handling_status": None, "severity": None, "owner_id": None,
+            "assignment_state": None, "metric": None, "classification": None}
+        digest = reader.digest({"tenant_id": str(TENANT), "sort": "business_updated_at_desc,id_desc", **original})
+        token = base64.urlsafe_b64encode(reader.CaseQueueCursor(at=NOW, id=UUID(int=3),
+            filter_fingerprint=digest).model_dump_json().encode()).decode()
+        old = await self.reader.queue(CaseQueueQuery(cursor=token))
+        self.assertEqual([item.case.id.int for item in old.items], [2, 1])
+        with self.assertRaisesRegex(StoreError, "invalid_list_cursor"):
+            await self.reader.queue(CaseQueueQuery(cursor=token, sort_by="severity"))
 
     async def test_cursor_cannot_cross_filter_or_tenant(self):
         first = await self.reader.queue(CaseQueueQuery(limit=1))

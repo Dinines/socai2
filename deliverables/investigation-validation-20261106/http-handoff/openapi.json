@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "调查服务 HTTP API",
-    "version": "2026-11-12.docs7",
-    "description": "后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。\n\n状态标明接口逻辑是否实现；E19–E21为未实现预留接口，返回501。本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。示例为合成数据，实际执行和结论状态以响应字段为准。\n\n[HTTP接入说明](/handoff/guide.html) · [下载OpenAPI](/handoff/openapi.json)"
+    "version": "2026-11-13.docs8",
+    "description": "后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。\n\n状态标明接口逻辑是否实现；E19–E21为未实现预留接口，返回501。本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。示例为合成数据，实际执行和结论状态以响应字段为准。\n\n[HTTP接入说明](/handoff/guide.html) · [下载OpenAPI](/handoff/openapi.json)"
   },
   "paths": {
     "/api/v1/socai2/cases": {
@@ -220,7 +220,7 @@
           "F09-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 新建 Case。\n\n**输入：** JSON请求体：`CaseCreate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`AssociationReceipt`；完整字段和示例见Responses。\n\n**结果：** 创建Case并保存所选告警/事件关系，返回案件ID、范围版本和待启动Run ID；创建本身不执行调查。\n\n**规则与限制：** 至少选择一个告警或事件；事件展开为成员并保留显式事件关系，合并后最多 200 条。保存后返回 pending_run_id；不自动执行。后续 E12→E13。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 新建 Case。\n\n**输入：** JSON请求体：`CaseCreate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`AssociationReceipt`；完整字段和示例见Responses。\n\n**结果：** 创建Case并保存所选告警/事件关系，返回案件ID、范围版本和待启动Run ID；创建本身不执行调查。\n\n**规则与限制：** 至少选择一个告警或事件；事件展开为成员并保留显式事件关系，合并后最多 200 条。保存后返回 pending_run_id；不自动执行。后续 E12→E13。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       },
       "get": {
@@ -283,7 +283,7 @@
               ],
               "title": "Q"
             },
-            "description": "Case标题或完整ID搜索；告警/事件列表不支持此参数。"
+            "description": "标题字面包含或精确UUID搜索；%和_按普通字符处理。"
           },
           {
             "name": "handling_status",
@@ -402,11 +402,90 @@
               "title": "Classification"
             },
             "description": "案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。"
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            },
+            "description": "带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。"
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            },
+            "description": "带时区的终点，不包含；两端同时传时必须晚于time_from。"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "business_updated_at",
+                    "created_at",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            },
+            "description": "服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            },
+            "description": "asc升序或desc降序，默认desc。"
           }
         ],
         "responses": {
           "200": {
-            "description": "返回符合条件的案件列表、下一页游标，以及不受列表筛选影响的租户案件指标。\n### 输出字段：assessment-sources\n\n落点：E03 current_assessment.sources[]；E02/E03内嵌page_data.assessment.sources[]及E05 assessment.sources[]。\n\nE03通过without_internal剔除tenant_id/operation_key/request_hash；E02/E03内嵌page_data及E05均由read_page_data直接dict(row)，额外含tenant_id（认证租户UUID）。不要假定两个sources投影完全相同。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| case_id | ref.cases | 非null | 用于父案复合FK | `case_assessment_sources.case_id` |\n| assessment_id | ref.case_assessments | 非null | 采用判断 | `case_assessment_sources.assessment_id` |\n| result_id | ref.results | 可为null | 具体正式结果版本 | `case_assessment_sources.result_id` |\n| task_revision_id | ref.task_revisions | 可为null | 具体人工事实版本 | `case_assessment_sources.task_revision_id` |\n| artifact_id | ref.artifacts | 可为null | 同案其他具体材料 | `case_assessment_sources.artifact_id` |\n| source_note | text | 可为null | 此来源被采用的部分 | `case_assessment_sources.source_note` |\n| tenant_id | uuid | 非null，仅page_data路径返回 | 已采用判断来源行的认证租户；E03 current_assessment.sources不含此字段 | case_assessment_sources.tenant_id |\n| id | uuid | 非null | 该记录的应用UUID，不是页面展示编号或厂商编号。 | `case_assessment_sources.id` |\n\n\n\n",
+            "description": "按指定条件和顺序返回案件列表、筛选总数total和next_cursor；metrics保留租户整体指标。\n### 输出字段：assessment-sources\n\n落点：E03 current_assessment.sources[]；E02/E03内嵌page_data.assessment.sources[]及E05 assessment.sources[]。\n\nE03通过without_internal剔除tenant_id/operation_key/request_hash；E02/E03内嵌page_data及E05均由read_page_data直接dict(row)，额外含tenant_id（认证租户UUID）。不要假定两个sources投影完全相同。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| case_id | ref.cases | 非null | 用于父案复合FK | `case_assessment_sources.case_id` |\n| assessment_id | ref.case_assessments | 非null | 采用判断 | `case_assessment_sources.assessment_id` |\n| result_id | ref.results | 可为null | 具体正式结果版本 | `case_assessment_sources.result_id` |\n| task_revision_id | ref.task_revisions | 可为null | 具体人工事实版本 | `case_assessment_sources.task_revision_id` |\n| artifact_id | ref.artifacts | 可为null | 同案其他具体材料 | `case_assessment_sources.artifact_id` |\n| source_note | text | 可为null | 此来源被采用的部分 | `case_assessment_sources.source_note` |\n| tenant_id | uuid | 非null，仅page_data路径返回 | 已采用判断来源行的认证租户；E03 current_assessment.sources不含此字段 | case_assessment_sources.tenant_id |\n| id | uuid | 非null | 该记录的应用UUID，不是页面展示编号或厂商编号。 | `case_assessment_sources.id` |\n\n\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -432,7 +511,7 @@
             }
           },
           "422": {
-            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_case_cursor：业务约束/对象状态，见操作说明；case_cursor_filters_changed：业务约束/对象状态，见操作说明",
+            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_time_window：起点不早于终点；无时区、非法排序或枚举同样422；invalid_case_cursor：业务约束/对象状态，见操作说明；case_cursor_filters_changed：业务约束/对象状态，见操作说明；invalid_list_cursor：业务约束/对象状态，见操作说明；list_cursor_filters_changed：业务约束/对象状态，见操作说明",
             "content": {
               "application/json": {
                 "schema": {
@@ -462,6 +541,18 @@
                       ]
                     }
                   },
+                  "invalid_time_window": {
+                    "summary": "起点不早于终点；无时区、非法排序或枚举同样422",
+                    "value": {
+                      "detail": [
+                        {
+                          "type": "value_error",
+                          "loc": [],
+                          "msg": "Value error, time_from_must_precede_time_to"
+                        }
+                      ]
+                    }
+                  },
                   "invalid_case_cursor": {
                     "summary": "业务约束/对象状态，见操作说明",
                     "value": {
@@ -472,6 +563,18 @@
                     "summary": "业务约束/对象状态，见操作说明",
                     "value": {
                       "detail": "case_cursor_filters_changed"
+                    }
+                  },
+                  "invalid_list_cursor": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "invalid_list_cursor"
+                    }
+                  },
+                  "list_cursor_filters_changed": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "list_cursor_filters_changed"
                     }
                   }
                 }
@@ -497,17 +600,17 @@
             }
           },
           "403": {
-            "description": "identity：现有身份/访问条件不符",
+            "description": "permission_denied：缺少Case读取能力",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServiceError"
                 },
                 "examples": {
-                  "identity": {
-                    "summary": "现有身份/访问条件不符",
+                  "permission_denied": {
+                    "summary": "缺少Case读取能力",
                     "value": {
-                      "detail": "case_user_actor_required"
+                      "detail": "Permission denied: cases:read"
                     }
                   }
                 }
@@ -543,7 +646,7 @@
           "F14-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case 队列与指标。\n\n**输入：** 查询参数：`limit`, `cursor`, `q`, `handling_status`, `severity`, `owner_id`, `assignment_state`, `metric`, `classification`；无请求体。\n\n**输出：** HTTP 200，`CaseQueuePage`；完整字段和示例见Responses。\n\n**结果：** 返回符合条件的案件列表、下一页游标，以及不受列表筛选影响的租户案件指标。\n\n**规则与限制：** q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case 队列与指标。\n\n**输入：** 查询参数：`limit`, `cursor`, `q`, `handling_status`, `severity`, `owner_id`, `assignment_state`, `metric`, `classification`, `time_from`, `time_to`, `sort_by`, `sort_order`；无请求体。\n\n**输出：** HTTP 200，`CaseQueuePage`；完整字段和示例见Responses。\n\n**结果：** 按指定条件和顺序返回案件列表、筛选总数total和next_cursor；metrics保留租户整体指标。\n\n**规则与限制：** q按标题字面包含或精确UUID；保留handling_status、severity、owner_id、assignment_state、metric、classification。time_from/time_to按business_updated_at；sort_by=business_updated_at（默认）/created_at/severity。total为全部筛选命中数，metrics为租户整体且high_severity仍只计high。未使用新增日期/排序时兼容旧v1游标。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "assessment-sources"
         ]
@@ -793,7 +896,7 @@
           "F22-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case 详情与当前判断。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CaseDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定案件的资料、当前成员、关联事件、已采用判断和调查记录引用。\n\n**规则与限制：** 读取成员、显式事件、当前采用判断、baseline_records 和资料。检查集合总数与截断标记。current_assessment 为 null 时不得挑最新 Run 当成已采用判断。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case 详情与当前判断。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CaseDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定案件的资料、当前成员、关联事件、已采用判断和调查记录引用。\n\n**规则与限制：** 读取成员、显式事件、当前采用判断、baseline_records 和资料。检查集合总数与截断标记。current_assessment 为 null 时不得挑最新 Run 当成已采用判断。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "case-members",
           "case-linked-incidents",
@@ -1012,7 +1115,7 @@
           "F10-01"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 更新分类和截止时间。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseDataUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseDataReceipt`；完整字段和示例见Responses。\n\n**结果：** 保存分类和截止时间，返回案件ID、行版本、是否变更及当前证据目录ID；资料正文需随后GET E03/E05读取。传null会清空对应值。\n\n**规则与限制：** 先 E03 读 row_version。PATCH 必须同时传 classification、due_at，null 表示清空；source=manual/import，source_note 非空。不支持负责人、标题或关闭/重开。成功 E03/E05 刷新。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 更新分类和截止时间。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseDataUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseDataReceipt`；完整字段和示例见Responses。\n\n**结果：** 保存分类和截止时间，返回案件ID、行版本、是否变更及当前证据目录ID；资料正文需随后GET E03/E05读取。传null会清空对应值。\n\n**规则与限制：** 先 E03 读 row_version。PATCH 必须同时传 classification、due_at，null 表示清空；source=manual/import，source_note 非空。不支持负责人、标题或关闭/重开。成功 E03/E05 刷新。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       },
       "get": {
@@ -1209,7 +1312,7 @@
           "F21-03"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case 资料与证据目录。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CasePageData`；完整字段和示例见Responses。\n\n**结果：** 返回案件分类、期限、已采用判断摘要和当前证据目录。\n\n**规则与限制：** 读取 classification、due_at、determination、assessment、evidence。not_recorded 与 evidence_count=null 不等于没有威胁；questions 沿采用来源结果读取。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case 资料与证据目录。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CasePageData`；完整字段和示例见Responses。\n\n**结果：** 返回案件分类、期限、已采用判断摘要和当前证据目录。\n\n**规则与限制：** 读取 classification、due_at、determination、assessment、evidence。not_recorded 与 evidence_count=null 不等于没有威胁；questions 沿采用来源结果读取。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "assessment-sources"
         ]
@@ -1450,7 +1553,7 @@
           "F21-03"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 发布证据目录。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`EvidencePublish`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseDataReceipt`；完整字段和示例见Responses。\n\n**结果：** 保存并发布提交的证据目录版本，返回当前目录工件ID；此操作不生成新证据。\n\n**规则与限制：** 发布已整理的引用目录，不会生成新证据或执行模型。先 E03/E05 获取行版本和旧 artifact_id；index.supersedes_artifact_id 对应旧版本，范围需匹配当前成员。partial/unavailable 必须写 limitations；unavailable 的 entries 必须为空。对象、来源路径、hash、角色均以实际原件为准。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 发布证据目录。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`EvidencePublish`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseDataReceipt`；完整字段和示例见Responses。\n\n**结果：** 保存并发布提交的证据目录版本，返回当前目录工件ID；此操作不生成新证据。\n\n**规则与限制：** 发布已整理的引用目录，不会生成新证据或执行模型。先 E03/E05 获取行版本和旧 artifact_id；index.supersedes_artifact_id 对应旧版本，范围需匹配当前成员。partial/unavailable 必须写 limitations；unavailable 的 entries 必须为空。对象、来源路径、hash、角色均以实际原件为准。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -1670,7 +1773,7 @@
         },
         "x-feature-ids": [],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 替换完整 Case 成员。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`MemberChange`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`MutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 用提交的完整告警集合替换当前成员范围，返回新的范围版本及待启动调查引用。\n\n**规则与限制：** alert_ids 是替换后的完整集合，不能只传想删除的条目。可为空但空范围不能启动调查。保存产生范围版本及 pending 记录，不覆盖历史冻结输入。普通添加用 E08。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 替换完整 Case 成员。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`MemberChange`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`MutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 用提交的完整告警集合替换当前成员范围，返回新的范围版本及待启动调查引用。\n\n**规则与限制：** alert_ids 是替换后的完整集合，不能只传想删除的条目。可为空但空范围不能启动调查。保存产生范围版本及 pending 记录，不覆盖历史冻结输入。普通添加用 E08。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -1906,7 +2009,7 @@
           "F25-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 关联告警或事件。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`AssociationRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`AssociationReceipt`；完整字段和示例见Responses。\n\n**结果：** 将所选告警或事件关联到案件，返回实际新增成员、事件关系和范围版本。\n\n**规则与限制：** 先 E03 获取 expected_scope_revision。至少选择一个告警/事件；只添加关联，不从别的 Case 移除，也不自动启动。事件展开成员；返回实际新增与显式关联列表。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 关联告警或事件。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`AssociationRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`AssociationReceipt`；完整字段和示例见Responses。\n\n**结果：** 将所选告警或事件关联到案件，返回实际新增成员、事件关系和范围版本。\n\n**规则与限制：** 先 E03 获取 expected_scope_revision。至少选择一个告警/事件；只添加关联，不从别的 Case 移除，也不自动启动。事件展开成员；返回实际新增与显式关联列表。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -2132,7 +2235,7 @@
           "F13-06"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 在两个 Case 间移动告警成员。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`MoveMembers`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`MoveReceipt`；完整字段和示例见Responses。\n\n**结果：** 将所选告警从源案件移至目标案件，返回两案变更回执；历史调查范围保持不变。\n\n**规则与限制：** 先分别 E03 读取两案 scope_revision。源/目标不同；一次事务更新两案，返回 source/target 回执；不移动显式事件关系，不改历史 Run。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 在两个 Case 间移动告警成员。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`MoveMembers`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`MoveReceipt`；完整字段和示例见Responses。\n\n**结果：** 将所选告警从源案件移至目标案件，返回两案变更回执；历史调查范围保持不变。\n\n**规则与限制：** 先分别 E03 读取两案 scope_revision。源/目标不同；一次事务更新两案，返回 source/target 回执；不移动显式事件关系，不改历史 Run。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -2348,7 +2451,7 @@
           "F15-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case 调查历史。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `cursor`；无请求体。\n\n**输出：** HTTP 200，`HistoryPage`；完整字段和示例见Responses。\n\n**结果：** 返回该案件的基础调查Run及已保存AI结果历史和下一页游标；人工任务修订历史通过E42/E43读取。\n\n**规则与限制：** 按 next_cursor 取后续历史；类型区分 baseline 与 ai_saved，当前 Q 保存未实现。相关 A/I 运行需 E22/E23 组合，不能从 Case 历史推断全局目录。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case 调查历史。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `cursor`；无请求体。\n\n**输出：** HTTP 200，`HistoryPage`；完整字段和示例见Responses。\n\n**结果：** 返回该案件的基础调查Run及已保存AI结果历史和下一页游标；人工任务修订历史通过E42/E43读取。\n\n**规则与限制：** 按 next_cursor 取后续历史；类型区分 baseline 与 ai_saved，当前 Q 保存未实现。相关 A/I 运行需 E22/E23 组合，不能从 Case 历史推断全局目录。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -2550,7 +2653,7 @@
           "F22-08"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 准备新一轮调查。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`PrepareBaseline`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`BaselinePreparation`；完整字段和示例见Responses。\n\n**结果：** 为当前案件范围准备或复用待启动Run，返回Run ID及是否本次新建；随后需显式启动。\n\n**规则与限制：** 先 E03 读当前 scope_revision，返回 pending_run_id 和 created。仅准备，不调用模型；存在运行中记录时可保留 pending，启动资格由 E12 判断。空范围/已解决案不能直接启动。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 准备新一轮调查。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`PrepareBaseline`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`BaselinePreparation`；完整字段和示例见Responses。\n\n**结果：** 为当前案件范围准备或复用待启动Run，返回Run ID及是否本次新建；随后需显式启动。\n\n**规则与限制：** 先 E03 读当前 scope_revision，返回 pending_run_id 和 created。仅准备，不调用模型；存在运行中记录时可保留 pending，启动资格由 E12 判断。空范围/已解决案不能直接启动。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -2814,7 +2917,7 @@
           "F28-01"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case Run 与执行明细。\n\n**输入：** 路径参数：`case_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`RunDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定Run的执行状态、冻结成员、步骤、工件、结果引用、用量和启动资格。\n\n**规则与限制：** 读取 start_eligibility、冻结成员、steps、工件、用量和结果 ID。can_start=false 时显示 reason。成员上限200、步骤1000、工件/结果各200；被截断的集合当前没有进一步分页 API，必须明确提示。读取不会继续执行。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case Run 与执行明细。\n\n**输入：** 路径参数：`case_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`RunDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定Run的执行状态、冻结成员、步骤、工件、结果引用、用量和启动资格。\n\n**规则与限制：** 读取 start_eligibility、冻结成员、steps、工件、用量和结果 ID。can_start=false 时显示 reason。成员上限200、步骤1000、工件/结果各200；被截断的集合当前没有进一步分页 API，必须明确提示。读取不会继续执行。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "run-members",
           "run-steps",
@@ -3142,7 +3245,7 @@
           "F22-08"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 启动指定 pending Run。\n\n**输入：** 路径参数：`case_id`, `run_id`；JSON请求体：`Start`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`RunDetail`；完整字段和示例见Responses。\n\n**结果：** 执行指定pending Run并等待本次执行返回，返回Run状态和已有结果引用；异常或执行未知时先读取同一Run。\n\n**规则与限制：** 必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 启动指定 pending Run。\n\n**输入：** 路径参数：`case_id`, `run_id`；JSON请求体：`Start`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`RunDetail`；完整字段和示例见Responses。\n\n**结果：** 执行指定pending Run并等待本次执行返回，返回Run状态和已有结果引用；异常或执行未知时先读取同一Run。\n\n**规则与限制：** 必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "run-members",
           "run-steps",
@@ -3448,7 +3551,7 @@
           "F27-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 读取正式结果。\n\n**输入：** 路径参数：`case_id`, `result_id`；无请求体。\n\n**输出：** HTTP 200，`ResultDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定正式结果、对应Run、冻结成员及交付信息；结论、发现、待核问题和建议分别返回。\n\n**规则与限制：** 返回 result、run、冻结成员、source_answer、delivery。结论、发现、questions、建议分开，questions 作为结论的一部分，不建立问题管理状态；人工确认由用户 E38 建任务。conclusion=null/validation_state=rejected 不包装成成功判断。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 读取正式结果。\n\n**输入：** 路径参数：`case_id`, `result_id`；无请求体。\n\n**输出：** HTTP 200，`ResultDetail`；完整字段和示例见Responses。\n\n**结果：** 返回指定正式结果、对应Run、冻结成员及交付信息；结论、发现、待核问题和建议分别返回。\n\n**规则与限制：** 返回 result、run、冻结成员、source_answer、delivery。结论、发现、questions、建议分开，questions 作为结论的一部分，不建立问题管理状态；人工确认由用户 E38 建任务。conclusion=null/validation_state=rejected 不包装成成功判断。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "result-members",
           "delivery"
@@ -3680,7 +3783,7 @@
           "F27-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case Run 工件。\n\n**输入：** 路径参数：`case_id`, `run_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ArtifactContent`；完整字段和示例见Responses。\n\n**结果：** 返回指定Case Run工件的元数据、正文和可用状态；完整性校验失败返回409。\n\n**规则与限制：** 先 E12/E14 取得真实 artifact_id；父 Case/Run 必须匹配。返回 artifact 元数据和 content_json/content_text/availability；HTTP200 不保证正文可得。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case Run 工件。\n\n**输入：** 路径参数：`case_id`, `run_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ArtifactContent`；完整字段和示例见Responses。\n\n**结果：** 返回指定Case Run工件的元数据、正文和可用状态；完整性校验失败返回409。\n\n**规则与限制：** 先 E12/E14 取得真实 artifact_id；父 Case/Run 必须匹配。返回 artifact 元数据和 content_json/content_text/availability；HTTP200 不保证正文可得。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "artifact-metadata"
         ]
@@ -3882,7 +3985,7 @@
           "F18-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case 非 Run 来源工件。\n\n**输入：** 路径参数：`case_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ArtifactContent`；完整字段和示例见Responses。\n\n**结果：** 返回案件非Run来源工件的元数据、正文和可用状态；不适用于Run工件。\n\n**规则与限制：** 仅适用于 run_id 为空的本案来源工件。Run 工件必须用 E15，不能以这个路径替代。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Case 非 Run 来源工件。\n\n**输入：** 路径参数：`case_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ArtifactContent`；完整字段和示例见Responses。\n\n**结果：** 返回案件非Run来源工件的元数据、正文和可用状态；不适用于Run工件。\n\n**规则与限制：** 仅适用于 run_id 为空的本案来源工件。Run 工件必须用 E15，不能以这个路径替代。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "artifact-metadata"
         ]
@@ -4083,7 +4186,7 @@
           "F23-05"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case 处理活动。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`RecordPage`；完整字段和示例见Responses。\n\n**结果：** 返回与案件、成员或显式关联事件匹配的处理活动、目标和分页信息。\n\n**规则与限制：** 包括案件、成员和显式事件匹配活动，去重保留目标及前后值，按 next_offset 分页。活动不是模型推理过程。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case 处理活动。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`RecordPage`；完整字段和示例见Responses。\n\n**结果：** 返回与案件、成员或显式关联事件匹配的处理活动、目标和分页信息。\n\n**规则与限制：** 包括案件、成员和显式事件匹配活动，去重保留目标及前后值，按 next_offset 分页。活动不是模型推理过程。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "activity",
           "activity-target"
@@ -4289,7 +4392,7 @@
           "F18-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Run 冻结的告警材料。\n\n**输入：** 路径参数：`case_id`, `run_id`, `material_id`；无请求体。\n\n**输出：** HTTP 200，`FrozenAlertMaterial`；完整字段和示例见Responses。\n\n**结果：** 返回该Run冻结的指定告警材料版本原始行，不替换为当前最新材料。\n\n**规则与限制：** material_id 必须由该 Run 的冻结成员输入取得。返回 AlertMaterials 原始行，不是 ContentView 包装，没有 availability 字段；保留 material_state/retention。不能用当前材料代替。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 读取 Run 冻结的告警材料。\n\n**输入：** 路径参数：`case_id`, `run_id`, `material_id`；无请求体。\n\n**输出：** HTTP 200，`FrozenAlertMaterial`；完整字段和示例见Responses。\n\n**结果：** 返回该Run冻结的指定告警材料版本原始行，不替换为当前最新材料。\n\n**规则与限制：** material_id 必须由该 Run 的冻结成员输入取得。返回 AlertMaterials 原始行，不是 ContentView 包装，没有 availability 字段；保留 material_state/retention。不能用当前材料代替。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "frozen-material"
         ]
@@ -4466,7 +4569,7 @@
           "F22-09"
         ],
         "x-implementation-status": "未实现",
-        "description": "**实现状态：** 未实现\n\n**用途：** Case 助手发送问题（预留）。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`AskCaseAI`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不执行问答、不调用模型，也不保存消息。\n\n**规则与限制：** 通过请求校验后返回501，无模型调用和保存。现有 DTO 只有 operation_key、question、conversation_id；产品设计的 scope 尚无字段，额外字段会422。\n\n**验证结果（2026-11-12）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 未实现\n\n**用途：** Case 助手发送问题（预留）。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`AskCaseAI`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不执行问答、不调用模型，也不保存消息。\n\n**规则与限制：** 通过请求校验后返回501，无模型调用和保存。现有 DTO 只有 operation_key、question、conversation_id；产品设计的 scope 尚无字段，额外字段会422。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -4646,7 +4749,7 @@
           "F26-08"
         ],
         "x-implementation-status": "未实现",
-        "description": "**实现状态：** 未实现\n\n**用途：** 保存助手回答（预留）。\n\n**输入：** 路径参数：`case_id`, `message_id`；JSON请求体：`SaveCaseAIAnswer`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不保存回答，也不产生正式调查结果。\n\n**规则与限制：** 通过请求校验后返回501，没有冻结或正式结果。title/conclusion 是待保存文本，不触发执行；当前不能使用。\n\n**验证结果（2026-11-12）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 未实现\n\n**用途：** 保存助手回答（预留）。\n\n**输入：** 路径参数：`case_id`, `message_id`；JSON请求体：`SaveCaseAIAnswer`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不保存回答，也不产生正式调查结果。\n\n**规则与限制：** 通过请求校验后返回501，没有冻结或正式结果。title/conclusion 是待保存文本，不触发执行；当前不能使用。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -4824,7 +4927,7 @@
           "F11-03"
         ],
         "x-implementation-status": "未实现",
-        "description": "**实现状态：** 未实现\n\n**用途：** 显式采用其他结果（预留）。\n\n**输入：** 路径参数：`case_id`, `result_id`；JSON请求体：`AdoptCaseAIResult`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不变更案件当前采用判断。\n\n**规则与限制：** 通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。\n\n**验证结果（2026-11-12）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 未实现\n\n**用途：** 显式采用其他结果（预留）。\n\n**输入：** 路径参数：`case_id`, `result_id`；JSON请求体：`AdoptCaseAIResult`，字段和必填要求见Request body。\n\n**输出：** HTTP 501，`AIUnavailable`；完整字段和示例见Responses。\n\n**结果：** 当前返回501，不变更案件当前采用判断。\n\n**规则与限制：** 通过请求校验后返回501。D03 要求理由和覆盖确认，但现有 DTO 只有 operation_key/expected_scope_revision，reason 尚未实现，不能发送虚构参数。已有基础流程自动采用与本操作不同。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -5037,7 +5140,7 @@
           "F15-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 告警分诊目录。\n\n**输入：** 路径参数：`alert_id`；查询参数：`limit`, `before_run_id`；无请求体。\n\n**输出：** HTTP 200，`StagePage`；完整字段和示例见Responses。\n\n**结果：** 返回告警当前分诊及历史执行目录；失败尝试和当前有效分诊分别保留。\n\n**规则与限制：** current 是当前指针对应分诊；entries 是历史尝试。失败尝试不能覆盖有效旧结论。分页使用 next_before_run_id。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 告警分诊目录。\n\n**输入：** 路径参数：`alert_id`；查询参数：`limit`, `before_run_id`；无请求体。\n\n**输出：** HTTP 200，`StagePage`；完整字段和示例见Responses。\n\n**结果：** 返回告警当前分诊及历史执行目录；失败尝试和当前有效分诊分别保留。\n\n**规则与限制：** current 是当前指针对应分诊；entries 是历史尝试。失败尝试不能覆盖有效旧结论。分页使用 next_before_run_id。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -5247,7 +5350,7 @@
           "F15-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 事件诊断目录。\n\n**输入：** 路径参数：`incident_id`；查询参数：`limit`, `before_run_id`；无请求体。\n\n**输出：** HTTP 200，`StagePage`；完整字段和示例见Responses。\n\n**结果：** 返回事件当前诊断及历史执行目录，保留交付、成员覆盖和待核内容。\n\n**规则与限制：** 区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 事件诊断目录。\n\n**输入：** 路径参数：`incident_id`；查询参数：`limit`, `before_run_id`；无请求体。\n\n**输出：** HTTP 200，`StagePage`；完整字段和示例见Responses。\n\n**结果：** 返回事件当前诊断及历史执行目录，保留交付、成员覆盖和待核内容。\n\n**规则与限制：** 区分当前诊断、最近尝试及 partial_analysis；分页使用 next_before_run_id。诊断交付完整性、review_items、成员覆盖不混为一个成功状态。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -5445,7 +5548,7 @@
           "F27-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 指定告警 A Run。\n\n**输入：** 路径参数：`alert_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警分诊Run及其分诊结果、有效性和输入是否变化。\n\n**规则与限制：** 用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 指定告警 A Run。\n\n**输入：** 路径参数：`alert_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警分诊Run及其分诊结果、有效性和输入是否变化。\n\n**规则与限制：** 用目录返回 Run ID。检查 freshness、is_current_pointer、valid_for_current_input。TriageView.confidence 为0..1；SubjectView.triage.confidence_percent 为百分数，不能二次乘100。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -5639,7 +5742,7 @@
           "F27-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 指定事件 I Run。\n\n**输入：** 路径参数：`incident_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 返回指定事件诊断Run及其诊断结果、交付状态和待核内容。\n\n**规则与限制：** 读 diagnosis、open_questions、交付与待复核字段；执行过程需 E32。保存/格式通过不代表正文质量通过。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 指定事件 I Run。\n\n**输入：** 路径参数：`incident_id`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 返回指定事件诊断Run及其诊断结果、交付状态和待核内容。\n\n**规则与限制：** 读 diagnosis、open_questions、交付与待复核字段；执行过程需 E32。保存/格式通过不代表正文质量通过。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -5686,12 +5789,196 @@
               ],
               "title": "Before Id"
             },
-            "description": "沿上页 next_before_id 翻页。"
+            "description": "仅无新增筛选/排序的旧调用沿next_before_id翻页；不与cursor混用。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            },
+            "description": "使用服务上一页 next_cursor；改变筛选条件后清空。"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            },
+            "description": "标题字面包含或精确UUID搜索；%和_按普通字符处理。"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            },
+            "description": "严重度枚举；null为未知，不强行补默认等级。"
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            },
+            "description": "主体业务处理状态，与Run执行状态分开。"
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            },
+            "description": "负责人用户UUID；人员目录由业务后端负责。"
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            },
+            "description": "分配状态，unresolved不等于unassigned。"
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            },
+            "description": "带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。"
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            },
+            "description": "带时区的终点，不包含；两端同时传时必须晚于time_from。"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ingested_at",
+                    "event_time",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            },
+            "description": "服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            },
+            "description": "asc升序或desc降序，默认desc。"
           }
         ],
         "responses": {
           "200": {
-            "description": "返回告警列表、基础信息、负责人名称、汇总信息、统计和下一页游标。\n### 输出字段：overall-stats\n\n落点：E26/E27 overall_stats。\n\n都是平铺字段，没有by_state对象；指标与当前分页分开。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| total | integer | 非null | 本租户该主体总数 | 主体表 |\n| new / in_progress / unknown | integer | 非null | 各业务处理状态的主体数量，未输出completed/resolved专门键 | 主体handling_status分组 |\n| high_severity | integer | 非null | 告警high/critical；事件有效严重度high/critical | page_reader.stats |\n| investigating | integer | 仅告警 | 出现在running baseline里的不同告警数，不是A分诊运行数 | run_members + runs |\n| active | integer | 仅事件 | new+in_progress事件数 | 业务状态汇总 |\n| unassigned | integer | 仅事件 | assignment_state=unassigned事件数 | incidents |\n| grouped_alert_count | integer | 仅事件 | 所有事件成员关系中的去重告警数 | incident_alerts |\n| new_alerts_24h | integer | 仅事件 | 24小时窗口内含新增发生告警的事件数；不是告警条数 | 成员alerts.event_time |\n\n\n\n",
+            "description": "按条件和顺序返回告警列表；filtered_total为筛选总数，next_cursor用于下一页，total/overall_stats保持租户整体统计。\n### 输出字段：overall-stats\n\n落点：E26/E27 overall_stats。\n\n都是平铺字段，没有by_state对象；指标与当前分页分开。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| total | integer | 非null | 本租户该主体总数 | 主体表 |\n| new / in_progress / unknown | integer | 非null | 各业务处理状态的主体数量，未输出completed/resolved专门键 | 主体handling_status分组 |\n| high_severity | integer | 非null | 告警high/critical；事件有效严重度high/critical | page_reader.stats |\n| investigating | integer | 仅告警 | 出现在running baseline里的不同告警数，不是A分诊运行数 | run_members + runs |\n| active | integer | 仅事件 | new+in_progress事件数 | 业务状态汇总 |\n| unassigned | integer | 仅事件 | assignment_state=unassigned事件数 | incidents |\n| grouped_alert_count | integer | 仅事件 | 所有事件成员关系中的去重告警数 | incident_alerts |\n| new_alerts_24h | integer | 仅事件 | 24小时窗口内含新增发生告警的事件数；不是告警条数 | 成员alerts.event_time |\n\n\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -5713,7 +6000,9 @@
                         "high_severity": 0,
                         "investigating": 0
                       },
-                      "observed_at": "2026-11-12T08:00:00Z"
+                      "observed_at": "2026-11-12T08:00:00Z",
+                      "filtered_total": 0,
+                      "next_cursor": null
                     }
                   }
                 }
@@ -5721,7 +6010,7 @@
             }
           },
           "422": {
-            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_page_limit：业务约束/对象状态，见操作说明",
+            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_time_window：起点不早于终点；无时区、非法排序或枚举同样422；mixed_pagination：before_id不能与cursor、新筛选或排序混用；invalid_list_cursor：业务约束/对象状态，见操作说明；list_cursor_filters_changed：业务约束/对象状态，见操作说明",
             "content": {
               "application/json": {
                 "schema": {
@@ -5751,10 +6040,40 @@
                       ]
                     }
                   },
-                  "invalid_page_limit": {
+                  "invalid_time_window": {
+                    "summary": "起点不早于终点；无时区、非法排序或枚举同样422",
+                    "value": {
+                      "detail": [
+                        {
+                          "type": "value_error",
+                          "loc": [],
+                          "msg": "Value error, time_from_must_precede_time_to"
+                        }
+                      ]
+                    }
+                  },
+                  "mixed_pagination": {
+                    "summary": "before_id不能与cursor、新筛选或排序混用",
+                    "value": {
+                      "detail": [
+                        {
+                          "type": "value_error",
+                          "loc": [],
+                          "msg": "Value error, before_id_cannot_combine_with_cursor_filters_or_sort"
+                        }
+                      ]
+                    }
+                  },
+                  "invalid_list_cursor": {
                     "summary": "业务约束/对象状态，见操作说明",
                     "value": {
-                      "detail": "invalid_page_limit"
+                      "detail": "invalid_list_cursor"
+                    }
+                  },
+                  "list_cursor_filters_changed": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "list_cursor_filters_changed"
                     }
                   }
                 }
@@ -5814,6 +6133,24 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "page_subject_not_found：业务约束/对象状态，见操作说明",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceError"
+                },
+                "examples": {
+                  "page_subject_not_found": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "page_subject_not_found"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "x-feature-ids": [
@@ -5828,7 +6165,7 @@
           "F14-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 告警列表。\n\n**输入：** 查询参数：`limit`, `before_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectPage`；完整字段和示例见Responses。\n\n**结果：** 返回告警列表、基础信息、负责人名称、汇总信息、统计和下一页游标。\n\n**规则与限制：** 仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 告警列表。\n\n**输入：** 查询参数：`limit`, `before_id`, `cursor`, `q`, `severity`, `handling_status`, `owner_id`, `assignment_state`, `time_from`, `time_to`, `sort_by`, `sort_order`；无请求体。\n\n**输出：** HTTP 200，`SubjectPage`；完整字段和示例见Responses。\n\n**结果：** 按条件和顺序返回告警列表；filtered_total为筛选总数，next_cursor用于下一页，total/overall_stats保持租户整体统计。\n\n**规则与限制：** q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/completed/unknown）、owner_id、assignment_state。time_from/time_to按真实event_time，缺失不以入库时间补齐。sort_by=ingested_at（默认）/event_time/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "overall-stats"
         ]
@@ -5877,12 +6214,196 @@
               ],
               "title": "Before Id"
             },
-            "description": "沿上页 next_before_id 翻页。"
+            "description": "仅无新增筛选/排序的旧调用沿next_before_id翻页；不与cursor混用。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            },
+            "description": "使用服务上一页 next_cursor；改变筛选条件后清空。"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            },
+            "description": "标题字面包含或精确UUID搜索；%和_按普通字符处理。"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            },
+            "description": "严重度枚举；null为未知，不强行补默认等级。"
+          },
+          {
+            "name": "handling_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Handling Status"
+            },
+            "description": "主体业务处理状态，与Run执行状态分开。"
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            },
+            "description": "负责人用户UUID；人员目录由业务后端负责。"
+          },
+          {
+            "name": "assignment_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssignmentState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignment State"
+            },
+            "description": "分配状态，unresolved不等于unassigned。"
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            },
+            "description": "带时区的起点，包含；告警按event_time，事件至少一条成员event_time命中，Case按business_updated_at。"
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            },
+            "description": "带时区的终点，不包含；两端同时传时必须晚于time_from。"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "created_at",
+                    "last_activity_at",
+                    "severity"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort By"
+            },
+            "description": "服务排序字段，可选值见本接口枚举；记录排序字段缺值时置后，同值按UUID排序；非法sort_by返回422。"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort Order"
+            },
+            "description": "asc升序或desc降序，默认desc。"
           }
         ],
         "responses": {
           "200": {
-            "description": "返回事件列表、基础信息、汇总信息、统计和下一页游标。\n### 输出字段：overall-stats\n\n落点：E26/E27 overall_stats。\n\n都是平铺字段，没有by_state对象；指标与当前分页分开。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| total | integer | 非null | 本租户该主体总数 | 主体表 |\n| new / in_progress / unknown | integer | 非null | 各业务处理状态的主体数量，未输出completed/resolved专门键 | 主体handling_status分组 |\n| high_severity | integer | 非null | 告警high/critical；事件有效严重度high/critical | page_reader.stats |\n| investigating | integer | 仅告警 | 出现在running baseline里的不同告警数，不是A分诊运行数 | run_members + runs |\n| active | integer | 仅事件 | new+in_progress事件数 | 业务状态汇总 |\n| unassigned | integer | 仅事件 | assignment_state=unassigned事件数 | incidents |\n| grouped_alert_count | integer | 仅事件 | 所有事件成员关系中的去重告警数 | incident_alerts |\n| new_alerts_24h | integer | 仅事件 | 24小时窗口内含新增发生告警的事件数；不是告警条数 | 成员alerts.event_time |\n\n\n\n",
+            "description": "按条件和顺序返回事件列表；filtered_total为筛选总数，next_cursor用于下一页，total/overall_stats保持租户整体统计。\n### 输出字段：overall-stats\n\n落点：E26/E27 overall_stats。\n\n都是平铺字段，没有by_state对象；指标与当前分页分开。\n\n| 字段 | 类型/合同 | 空值或出现条件 | 业务含义/取值规则 | 实际来源 |\n| --- | --- | --- | --- | --- |\n| total | integer | 非null | 本租户该主体总数 | 主体表 |\n| new / in_progress / unknown | integer | 非null | 各业务处理状态的主体数量，未输出completed/resolved专门键 | 主体handling_status分组 |\n| high_severity | integer | 非null | 告警high/critical；事件有效严重度high/critical | page_reader.stats |\n| investigating | integer | 仅告警 | 出现在running baseline里的不同告警数，不是A分诊运行数 | run_members + runs |\n| active | integer | 仅事件 | new+in_progress事件数 | 业务状态汇总 |\n| unassigned | integer | 仅事件 | assignment_state=unassigned事件数 | incidents |\n| grouped_alert_count | integer | 仅事件 | 所有事件成员关系中的去重告警数 | incident_alerts |\n| new_alerts_24h | integer | 仅事件 | 24小时窗口内含新增发生告警的事件数；不是告警条数 | 成员alerts.event_time |\n\n\n\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -5907,7 +6428,9 @@
                         "new_alerts_24h": 0,
                         "high_severity": 0
                       },
-                      "observed_at": "2026-11-12T08:00:00Z"
+                      "observed_at": "2026-11-12T08:00:00Z",
+                      "filtered_total": 0,
+                      "next_cursor": null
                     }
                   }
                 }
@@ -5915,7 +6438,7 @@
             }
           },
           "422": {
-            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_page_limit：业务约束/对象状态，见操作说明",
+            "description": "validation：UUID、枚举、长度、额外字段或跨字段约束不符；invalid_time_window：起点不早于终点；无时区、非法排序或枚举同样422；mixed_pagination：before_id不能与cursor、新筛选或排序混用；invalid_list_cursor：业务约束/对象状态，见操作说明；list_cursor_filters_changed：业务约束/对象状态，见操作说明",
             "content": {
               "application/json": {
                 "schema": {
@@ -5945,10 +6468,40 @@
                       ]
                     }
                   },
-                  "invalid_page_limit": {
+                  "invalid_time_window": {
+                    "summary": "起点不早于终点；无时区、非法排序或枚举同样422",
+                    "value": {
+                      "detail": [
+                        {
+                          "type": "value_error",
+                          "loc": [],
+                          "msg": "Value error, time_from_must_precede_time_to"
+                        }
+                      ]
+                    }
+                  },
+                  "mixed_pagination": {
+                    "summary": "before_id不能与cursor、新筛选或排序混用",
+                    "value": {
+                      "detail": [
+                        {
+                          "type": "value_error",
+                          "loc": [],
+                          "msg": "Value error, before_id_cannot_combine_with_cursor_filters_or_sort"
+                        }
+                      ]
+                    }
+                  },
+                  "invalid_list_cursor": {
                     "summary": "业务约束/对象状态，见操作说明",
                     "value": {
-                      "detail": "invalid_page_limit"
+                      "detail": "invalid_list_cursor"
+                    }
+                  },
+                  "list_cursor_filters_changed": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "list_cursor_filters_changed"
                     }
                   }
                 }
@@ -6008,6 +6561,24 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "page_subject_not_found：业务约束/对象状态，见操作说明",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceError"
+                },
+                "examples": {
+                  "page_subject_not_found": {
+                    "summary": "业务约束/对象状态，见操作说明",
+                    "value": {
+                      "detail": "page_subject_not_found"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "x-feature-ids": [
@@ -6019,7 +6590,7 @@
           "F14-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 事件列表。\n\n**输入：** 查询参数：`limit`, `before_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectPage`；完整字段和示例见Responses。\n\n**结果：** 返回事件列表、基础信息、汇总信息、统计和下一页游标。\n\n**规则与限制：** 仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 事件列表。\n\n**输入：** 查询参数：`limit`, `before_id`, `cursor`, `q`, `severity`, `handling_status`, `owner_id`, `assignment_state`, `time_from`, `time_to`, `sort_by`, `sort_order`；无请求体。\n\n**输出：** HTTP 200，`SubjectPage`；完整字段和示例见Responses。\n\n**结果：** 按条件和顺序返回事件列表；filtered_total为筛选总数，next_cursor用于下一页，total/overall_stats保持租户整体统计。\n\n**规则与限制：** q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/resolved/unknown）、owner_id、assignment_state。severity为人工覆盖优先、否则成员最大等级；time_from/time_to要求至少一条成员告警真实event_time处于该区间，不能仅用事件首尾跨越判断。sort_by=created_at（默认）/last_activity_at（成员最晚真实发生时间）/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "overall-stats"
         ]
@@ -6276,7 +6847,7 @@
           "F13-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 告警详情。\n\n**输入：** 路径参数：`alert_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectView`；完整字段和示例见Responses。\n\n**结果：** 返回告警事实、当前材料摘要、分诊、已存人工反馈及后续读取地址。\n\n**规则与限制：** 返回 facts、derived、material、triage、feedback 及 analysis_url/section_urls。反馈读取不代表人工判定写入口已实现；发生时间缺失不以入库时间替代。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 告警详情。\n\n**输入：** 路径参数：`alert_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectView`；完整字段和示例见Responses。\n\n**结果：** 返回告警事实、当前材料摘要、分诊、已存人工反馈及后续读取地址。\n\n**规则与限制：** 返回 facts、derived、material、triage、feedback 及 analysis_url/section_urls。反馈读取不代表人工判定写入口已实现；发生时间缺失不以入库时间替代。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "alert-material-meta",
           "alert-triage-feedback"
@@ -6513,7 +7084,7 @@
           "F13-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 事件详情。\n\n**输入：** 路径参数：`incident_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectView`；完整字段和示例见Responses。\n\n**结果：** 返回事件事实、成员和对象汇总及后续读取地址；诊断和成员明细使用对应读取接口。\n\n**规则与限制：** 返回主体事实、derived 及目录链接；诊断另取 E23，成员/对象另取 E30。资产完整资料由业务后端提供。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 事件详情。\n\n**输入：** 路径参数：`incident_id`；无请求体。\n\n**输出：** HTTP 200，`SubjectView`；完整字段和示例见Responses。\n\n**结果：** 返回事件事实、成员和对象汇总及后续读取地址；诊断和成员明细使用对应读取接口。\n\n**规则与限制：** 返回主体事实、derived 及目录链接；诊断另取 E23，成员/对象另取 E30。资产完整资料由业务后端提供。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -6893,7 +7464,7 @@
           "F27-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 主体分区记录。\n\n**输入：** 路径参数：`subject`, `identity`, `section`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`RecordPage`；完整字段和示例见Responses。\n\n**结果：** 返回所选分区的记录、总数和下一页偏移；资产分区返回对象与真实库存资产的匹配记录及资产标签。\n\n**规则与限制：** subject 只能 alerts/incidents；section 参见分区说明。members 仅事件，incidents 仅告警；其他错误组合404。items 随 section 变化，不能固定为一种记录。next_offset=null 结束；related_alerts 只是同类型/同命名空间/同对象键匹配，不是相似历史反馈或图探索服务。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 主体分区记录。\n\n**输入：** 路径参数：`subject`, `identity`, `section`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`RecordPage`；完整字段和示例见Responses。\n\n**结果：** 返回所选分区的记录、总数和下一页偏移；资产分区返回对象与真实库存资产的匹配记录及资产标签。\n\n**规则与限制：** subject 只能 alerts/incidents；section 参见分区说明。members 仅事件，incidents 仅告警；其他错误组合404。items 随 section 变化，不能固定为一种记录。next_offset=null 结束；related_alerts 只是同类型/同命名空间/同对象键匹配，不是相似历史反馈或图探索服务。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-section-schemas": {
           "members": {
             "$ref": "#/components/schemas/RecordAlertMember"
@@ -7137,7 +7708,7 @@
           "F18-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 告警材料正文。\n\n**输入：** 路径参数：`alert_id`, `material_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警材料版本的原始JSON、标准化记录、富化内容及原始文本，并说明正文可用性。\n\n**规则与限制：** 从 E28 material.id 取得版本；content_json 包含 raw_json/ocsf_json/enrichment，content_text 为 raw_text。availability 限制与缺正文必须保留，不能展示空JSON当无异常。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 告警材料正文。\n\n**输入：** 路径参数：`alert_id`, `material_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警材料版本的原始JSON、标准化记录、富化内容及原始文本，并说明正文可用性。\n\n**规则与限制：** 从 E28 material.id 取得版本；content_json 包含 raw_json/ocsf_json/enrichment，content_text 为 raw_text。availability 限制与缺正文必须保留，不能展示空JSON当无异常。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "alert-material-meta"
         ]
@@ -7347,7 +7918,7 @@
           "F28-01"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** A/I Run 步骤及工件目录。\n\n**输入：** 路径参数：`subject`, `identity`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`TraceView`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警/事件Run的原始执行记录、步骤、工件目录、用量及截断标志。\n\n**规则与限制：** subject=alerts/incidents，identity 为对应主体 UUID。返回 run、steps、artifacts、用量及截断标志。仅查既有记录，读取不重新执行；正文按 E33。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** A/I Run 步骤及工件目录。\n\n**输入：** 路径参数：`subject`, `identity`, `run_id`；无请求体。\n\n**输出：** HTTP 200，`TraceView`；完整字段和示例见Responses。\n\n**结果：** 返回指定告警/事件Run的原始执行记录、步骤、工件目录、用量及截断标志。\n\n**规则与限制：** subject=alerts/incidents，identity 为对应主体 UUID。返回 run、steps、artifacts、用量及截断标志。仅查既有记录，读取不重新执行；正文按 E33。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "run-steps",
           "run-row",
@@ -7572,7 +8143,7 @@
           "F27-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** A/I Run 工件正文。\n\n**输入：** 路径参数：`subject`, `identity`, `run_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回告警/事件Run工件的元数据、正文及可用状态；内容完整性异常时正文为空并返回对应availability。\n\n**规则与限制：** 父主体及 Run 必须匹配。返回 metadata/content_json/content_text/availability；metadata 与 Case E15 的 artifact 字段不同。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** A/I Run 工件正文。\n\n**输入：** 路径参数：`subject`, `identity`, `run_id`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回告警/事件Run工件的元数据、正文及可用状态；内容完整性异常时正文为空并返回对应availability。\n\n**规则与限制：** 父主体及 Run 必须匹配。返回 metadata/content_json/content_text/availability；metadata 与 Case E15 的 artifact 字段不同。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "artifact-metadata"
         ]
@@ -7755,7 +8326,7 @@
           "F18-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 告警非 Run 来源工件。\n\n**输入：** 路径参数：`identity`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回告警非Run来源工件的元数据、正文及可用状态。\n\n**规则与限制：** 读取本告警 run_id 为空的来源工件，artifact_id 可由 source_artifacts 记录取得。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 告警非 Run 来源工件。\n\n**输入：** 路径参数：`identity`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回告警非Run来源工件的元数据、正文及可用状态。\n\n**规则与限制：** 读取本告警 run_id 为空的来源工件，artifact_id 可由 source_artifacts 记录取得。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "artifact-metadata"
         ]
@@ -7938,7 +8509,7 @@
           "F18-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 事件非 Run 来源工件。\n\n**输入：** 路径参数：`identity`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回事件非Run来源工件的元数据、正文及可用状态。\n\n**规则与限制：** 读取本事件 run_id 为空的来源工件，不能替代运行工件路径。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 事件非 Run 来源工件。\n\n**输入：** 路径参数：`identity`, `artifact_id`；无请求体。\n\n**输出：** HTTP 200，`ContentView`；完整字段和示例见Responses。\n\n**结果：** 返回事件非Run来源工件的元数据、正文及可用状态。\n\n**规则与限制：** 读取本事件 run_id 为空的来源工件，不能替代运行工件路径。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": [
           "artifact-metadata"
         ]
@@ -8174,7 +8745,7 @@
         },
         "x-feature-ids": [],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 手动告警分诊。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`ExecuteStage`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 发起告警分诊并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。\n\n**规则与限制：** 21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行模型，本轮入口验收未派发真实模型，结论质量以独立验收为准。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 手动告警分诊。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`ExecuteStage`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 发起告警分诊并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。\n\n**规则与限制：** 21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行模型，本轮入口验收未派发真实模型，结论质量以独立验收为准。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -8408,7 +8979,7 @@
         },
         "x-feature-ids": [],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 手动事件诊断。\n\n**输入：** 路径参数：`incident_id`；JSON请求体：`ExecuteStage`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 发起事件诊断并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。\n\n**规则与限制：** 部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。不能把路由可用当成自动消费者已开启或真实模型质量通过。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 手动事件诊断。\n\n**输入：** 路径参数：`incident_id`；JSON请求体：`ExecuteStage`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`StageEntry`；完整字段和示例见Responses。\n\n**结果：** 发起事件诊断并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。\n\n**规则与限制：** 部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。不能把路由可用当成自动消费者已开启或真实模型质量通过。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -8676,7 +9247,7 @@
           "F22-09"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 用户创建人工任务。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`TaskCreate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`TaskMutation`；完整字段和示例见Responses。\n\n**结果：** 保存用户创建的人工任务及首个修订，返回任务ID、当前版本和创建结果。\n\n**规则与限制：** 用户明确决定需要人工确认后创建；不自动从 questions 批量生成。先 E03 获取范围版本，assignee_id 由业务后端人员目录取得。origin_finding_id 需同时有 origin_result_id；引用对象必须属于本案。保存不启动调查。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 用户创建人工任务。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`TaskCreate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`TaskMutation`；完整字段和示例见Responses。\n\n**结果：** 保存用户创建的人工任务及首个修订，返回任务ID、当前版本和创建结果。\n\n**规则与限制：** 用户明确决定需要人工确认后创建；不自动从 questions 批量生成。先 E03 获取范围版本，assignee_id 由业务后端人员目录取得。origin_finding_id 需同时有 origin_result_id；引用对象必须属于本案。保存不启动调查。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       },
       "get": {
@@ -8876,7 +9447,7 @@
           "F22-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务列表。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`TaskPage`；完整字段和示例见Responses。\n\n**结果：** 返回案件人工任务的当前版本列表、总数和下一页偏移。\n\n**规则与限制：** 返回当前修订、总数和 next_offset；待办统计只计实际未结束任务。旧版本必须另用 E42/E43。\n\n**验证结果（2026-11-12）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务列表。\n\n**输入：** 路径参数：`case_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`TaskPage`；完整字段和示例见Responses。\n\n**结果：** 返回案件人工任务的当前版本列表、总数和下一页偏移。\n\n**规则与限制：** 返回当前修订、总数和 next_offset；待办统计只计实际未结束任务。旧版本必须另用 E42/E43。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -9191,7 +9762,7 @@
           "F22-08"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 修订人工任务。\n\n**输入：** 路径参数：`case_id`, `task_id`；JSON请求体：`TaskEdit`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`TaskMutation`；完整字段和示例见Responses。\n\n**结果：** 完整更新任务字段，实际变更时保存新的不可变修订并返回当前版本；无变化不新建修订，幂等重试沿用原回执。完成任务必须提供结果正文及有效适用范围。\n\n**规则与限制：** PUT 为完整 TaskFields，不是局部 PATCH；先 E41 取当前字段和 row_version，再 E03 取范围版本，完整带回未修改字段。省略可选字段会取默认值，可能清空原值。completed 必须有 result_text 和 result_scope；whole_case 覆盖当前全部成员，selected_alerts 只能当前子集，explicit_objects 还需非空有效 object_keys。事实变更生成新修订，旧引用不变。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 修订人工任务。\n\n**输入：** 路径参数：`case_id`, `task_id`；JSON请求体：`TaskEdit`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`TaskMutation`；完整字段和示例见Responses。\n\n**结果：** 完整更新任务字段，实际变更时保存新的不可变修订并返回当前版本；无变化不新建修订，幂等重试沿用原回执。完成任务必须提供结果正文及有效适用范围。\n\n**规则与限制：** PUT 为完整 TaskFields，不是局部 PATCH；先 E41 取当前字段和 row_version，再 E03 取范围版本，完整带回未修改字段。省略可选字段会取默认值，可能清空原值。completed 必须有 result_text 和 result_scope；whole_case 覆盖当前全部成员，selected_alerts 只能当前子集，explicit_objects 还需非空有效 object_keys。事实变更生成新修订，旧引用不变。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       },
       "get": {
@@ -9392,7 +9963,7 @@
           "F22-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务当前版本。\n\n**输入：** 路径参数：`case_id`, `task_id`；无请求体。\n\n**输出：** HTTP 200，`TaskView`；完整字段和示例见Responses。\n\n**结果：** 返回指定任务的当前修订和行版本，供读取或后续完整更新使用。\n\n**规则与限制：** 读取 task.current 及 row_version。编辑要保留原字段；负责人和完成人均由服务保存，不由客户端伪造完成时间。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务当前版本。\n\n**输入：** 路径参数：`case_id`, `task_id`；无请求体。\n\n**输出：** HTTP 200，`TaskView`；完整字段和示例见Responses。\n\n**结果：** 返回指定任务的当前修订和行版本，供读取或后续完整更新使用。\n\n**规则与限制：** 读取 task.current 及 row_version。编辑要保留原字段；负责人和完成人均由服务保存，不由客户端伪造完成时间。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -9602,7 +10173,7 @@
           "F22-06"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务修订历史。\n\n**输入：** 路径参数：`case_id`, `task_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`TaskRevisionPage`；完整字段和示例见Responses。\n\n**结果：** 返回任务的历史修订列表及下一页偏移，保留各次确认时的事实和范围。\n\n**规则与限制：** 使用 next_offset 分页。任务被引用时必须保存具体 revision_id，不用最新版本覆盖历史事实。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务修订历史。\n\n**输入：** 路径参数：`case_id`, `task_id`；查询参数：`limit`, `offset`；无请求体。\n\n**输出：** HTTP 200，`TaskRevisionPage`；完整字段和示例见Responses。\n\n**结果：** 返回任务的历史修订列表及下一页偏移，保留各次确认时的事实和范围。\n\n**规则与限制：** 使用 next_offset 分页。任务被引用时必须保存具体 revision_id，不用最新版本覆盖历史事实。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -9805,7 +10376,7 @@
           "F22-06"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务指定修订。\n\n**输入：** 路径参数：`case_id`, `task_id`, `revision_id`；无请求体。\n\n**输出：** HTTP 200，`TaskRevisionView`；完整字段和示例见Responses。\n\n**结果：** 返回指定不可变修订的事项、人工结果、范围、引用及完成信息。\n\n**规则与限制：** 按引用的 revision_id 阅读当时 title/result_text/result_scope/source_refs/completed_at/by；旧版本不可变。\n\n**验证结果（2026-11-12）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 人工任务指定修订。\n\n**输入：** 路径参数：`case_id`, `task_id`, `revision_id`；无请求体。\n\n**输出：** HTTP 200，`TaskRevisionView`；完整字段和示例见Responses。\n\n**结果：** 返回指定不可变修订的事项、人工结果、范围、引用及完成信息。\n\n**规则与限制：** 按引用的 revision_id 阅读当时 title/result_text/result_scope/source_refs/completed_at/by；旧版本不可变。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -10001,7 +10572,7 @@
           "F23-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** Case管理信息与结案条件。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CaseManagementView`；完整字段和示例见Responses。\n\n**结果：** 返回当前Case、未完人工任务数量、running/unknown阻塞Run、结案/重开资格及是否需要待办确认。\n\n**规则与限制：** 先读取当前Case行版本、未完任务数及阻塞Run。can_close只说明状态/执行条件；requires_open_task_confirmation为true时仍须确认及理由。\n\n**验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** Case管理信息与结案条件。\n\n**输入：** 路径参数：`case_id`；无请求体。\n\n**输出：** HTTP 200，`CaseManagementView`；完整字段和示例见Responses。\n\n**结果：** 返回当前Case、未完人工任务数量、running/unknown阻塞Run、结案/重开资格及是否需要待办确认。\n\n**规则与限制：** 先读取当前Case行版本、未完任务数及阻塞Run。can_close只说明状态/执行条件；requires_open_task_confirmation为true时仍须确认及理由。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       },
       "patch": {
@@ -10256,7 +10827,7 @@
           "F23-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 修改Case基本信息。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 只保存显式提交的管理字段，实际变化才增加行版本；返回保存后的完整Case及changed，不执行调查。\n\n**规则与限制：** PATCH局部更新；至少一个管理字段。省略保持；description/owner_id/severity可null清空，tags=[]清空；title/tags/handling_status不能null。负责人不自动改状态，已结案状态只能显式重开。回执含完整Case快照，随后可E03/E44读取；同键重放返回原回执。\n\n**验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 修改Case基本信息。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 只保存显式提交的管理字段，实际变化才增加行版本；返回保存后的完整Case及changed，不执行调查。\n\n**规则与限制：** PATCH局部更新；至少一个管理字段。省略保持；description/owner_id/severity可null清空，tags=[]清空；title/tags/handling_status不能null。负责人不自动改状态，已结案状态只能显式重开。回执含完整Case快照，随后可E03/E44读取；同键重放返回原回执。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -10511,7 +11082,7 @@
           "F23-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 结案。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseCloseRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 核对当前运行和人工待办后，将Case标为resolved，保存解决人/时间/理由；返回Case快照，任务与Run保持。\n\n**规则与限制：** 先E44提示未完任务及阻塞Run。running/unknown禁止结案；有未完任务须acknowledge_open_tasks=true及非空reason。无未完任务reason可省略。pending_update保留，不自动取消任务，不修改成员/判断；解决人及时间由服务保存。\n\n**验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 结案。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseCloseRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 核对当前运行和人工待办后，将Case标为resolved，保存解决人/时间/理由；返回Case快照，任务与Run保持。\n\n**规则与限制：** 先E44提示未完任务及阻塞Run。running/unknown禁止结案；有未完任务须acknowledge_open_tasks=true及非空reason。无未完任务reason可省略。pending_update保留，不自动取消任务，不修改成员/判断；解决人及时间由服务保存。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -10753,7 +11324,7 @@
           "F23-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 重开Case。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseLifecycleRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 将已解决Case恢复in_progress，记录重开时间并清空当前结案字段；返回Case快照，历史活动保留，不自动调查。\n\n**规则与限制：** 仅resolved案件可重开，恢复in_progress并记录reopened_at，清空当前结案字段；旧结案说明保留在E17活动。reason可选。不新建或启动Run，不改变人工任务/成员/判断。\n\n**验证结果（2026-11-12）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 重开Case。\n\n**输入：** 路径参数：`case_id`；JSON请求体：`CaseLifecycleRequest`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`CaseManagementReceipt`；完整字段和示例见Responses。\n\n**结果：** 将已解决Case恢复in_progress，记录重开时间并清空当前结案字段；返回Case快照，历史活动保留，不自动调查。\n\n**规则与限制：** 仅resolved案件可重开，恢复in_progress并记录reopened_at，清空当前结案字段；旧结案说明保留在E17活动。reason可选。不新建或启动Run，不改变人工任务/成员/判断。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -11003,7 +11574,7 @@
           "F03-05"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 提交告警人工判定。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`AlertFeedback`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。\n\n**规则与限制：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 提交告警人工判定。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`AlertFeedback`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。\n\n**规则与限制：** 单条人工判定，reason必填，追加反馈并保留模型分诊；误报/正常关闭，已关闭改真实威胁/需跟进恢复处理中。E28读feedback及facts，E30读活动，不自动改父事件/Case结论或启动模型。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -11257,7 +11828,7 @@
           "F03-04"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 批量提交告警人工判定。\n\n**输入：** JSON请求体：`AlertFeedbackBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。\n\n**规则与限制：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 批量提交告警人工判定。\n\n**输入：** JSON请求体：`AlertFeedbackBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。\n\n**规则与限制：** 仅用户明确选中的items，共用feedback判定和理由；逐项版本校验，整批成功或拒绝，默认配置最多100项。不会自动按相似度选中或批量改判。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -11522,7 +12093,7 @@
           "F23-01"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 管理单条告警。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`AlertManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。\n\n**规则与限制：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 管理单条告警。\n\n**输入：** 路径参数：`alert_id`；JSON请求体：`AlertManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。\n\n**规则与限制：** PATCH省略保持，owner_id=null取消分配、tags=[]清空；仅分配不改状态，人工关闭须reason且保留原判定。返回保存时facts及activity_id，最新摘要沿E28读取。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -11794,7 +12365,7 @@
           "F13-07"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 批量管理告警。\n\n**输入：** JSON请求体：`AlertManagementBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。\n\n**规则与限制：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 批量管理告警。\n\n**输入：** JSON请求体：`AlertManagementBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。\n\n**规则与限制：** items带每条ID和expected_row_version，共用changes；批量整体事务，未选告警不改。设置负责人不自动关闭或重开。返回按ID排序的逐项快照和changed_count。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -12038,7 +12609,7 @@
           "F23-02"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 管理单个事件。\n\n**输入：** 路径参数：`incident_id`；JSON请求体：`IncidentManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。\n\n**规则与限制：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 管理单个事件。\n\n**输入：** 路径参数：`incident_id`；JSON请求体：`IncidentManagementUpdate`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectMutationReceipt`；完整字段和示例见Responses。\n\n**结果：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。\n\n**规则与限制：** 分配未解决事件默认进入处理中；已解决仅改负责人不重开。显式resolved须resolution_note；severity_override非null须理由，null恢复自动等级且清空覆盖元数据；不改成员告警等级。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     },
@@ -12287,7 +12858,7 @@
           "F23-06"
         ],
         "x-implementation-status": "已实现",
-        "description": "**实现状态：** 已实现\n\n**用途：** 批量管理事件。\n\n**输入：** JSON请求体：`IncidentManagementBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。\n\n**规则与限制：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。\n\n**验证结果（2026-11-12）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为subject-management-20261112-r1-local，21正式18024为subject-management-20261112-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
+        "description": "**实现状态：** 已实现\n\n**用途：** 批量管理事件。\n\n**输入：** JSON请求体：`IncidentManagementBatch`，字段和必填要求见Request body。\n\n**输出：** HTTP 200，`SubjectBatchReceipt`；完整字段和示例见Responses。\n\n**结果：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。\n\n**规则与限制：** 对明确选中事件应用共用changes；每项都验证版本、状态和理由，整批成功或拒绝。负责人/严重度/状态遵守单条规则，不修改其他事件或Case。\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。\n\n**部署情况：** 本机18024为list-query-20261113-r1-local，21正式18024为list-query-20261113-r1；两端均已挂载53操作，本机使用v12_upgrade_dev，21使用aisoc。",
         "x-dynamic-sections": []
       }
     }
@@ -18009,7 +18580,7 @@
           "total": {
             "type": "integer",
             "title": "Total",
-            "description": "当前集合总数；records/assets为对象资产匹配边数。\n\nOpenAPI required：是；非null。来源：page_contracts.py（来源：`services/api/app/socai2/page_contracts.py#L121`）",
+            "description": "租户全部该类主体数，不随列表筛选或分页变化。\n\nOpenAPI required：是；非null。来源：page_contracts.py（来源：`services/api/app/socai2/page_contracts.py#L121`）",
             "x-audit-url": "/handoff/audit/response-fields.html#subjectpage"
           },
           "next_before_id": {
@@ -18023,7 +18594,7 @@
               }
             ],
             "title": "Next Before Id",
-            "description": "下一页主体游标；null表示结束。\n\nOpenAPI required：是；可为null。来源：page_contracts.py（来源：`services/api/app/socai2/page_contracts.py#L121`）",
+            "description": "旧调用的下一页主体UUID；新筛选/排序时为null，应使用next_cursor。\n\nOpenAPI required：是；可为null。来源：page_contracts.py（来源：`services/api/app/socai2/page_contracts.py#L121`）",
             "x-audit-url": "/handoff/audit/response-fields.html#subjectpage"
           },
           "overall_stats": {
@@ -18041,6 +18612,26 @@
             "title": "Observed At",
             "description": "本次读取观察时间。\n\nOpenAPI required：是；非null。来源：page_contracts.py（来源：`services/api/app/socai2/page_contracts.py#L121`）",
             "x-audit-url": "/handoff/audit/response-fields.html#subjectpage"
+          },
+          "filtered_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Filtered Total",
+            "description": "本次全部筛选命中数，不受游标/页长影响；无筛选时等于total。\n\nOpenAPI required：是；非null。来源：page_reader.py（来源：`services/api/app/socai2/page_reader.py`）",
+            "x-audit-url": "/handoff/audit/response-fields.html#subjectpage"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "下一页不透明游标；null为末页，改变条件或排序后丢弃旧游标。\n\nOpenAPI required：是；可为null。来源：list_query.py（来源：`services/api/app/socai2/list_query.py`）",
+            "x-audit-url": "/handoff/audit/response-fields.html#subjectpage"
           }
         },
         "additionalProperties": false,
@@ -18051,7 +18642,9 @@
           "total",
           "next_before_id",
           "overall_stats",
-          "observed_at"
+          "observed_at",
+          "filtered_total",
+          "next_cursor"
         ],
         "title": "SubjectPage"
       },

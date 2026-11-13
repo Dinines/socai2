@@ -834,10 +834,12 @@
 <tr><th>字段</th><th>OpenAPI required</th><th>类型与约束</th><th>默认值</th><th>含义</th></tr>
 <tr><td>kind</td><td>是</td><td>string alerts, incidents</td><td>无（可空不等于可省略）</td><td>此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
 <tr><td>items</td><td>是</td><td>array &lt;<a href="schemas.html#subjectview">SubjectView</a>&gt;</td><td>无（可空不等于可省略）</td><td>本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
-<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>当前集合总数；records/assets为对象资产匹配边数。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
-<tr><td>next_before_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>下一页主体游标；null表示结束。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>total</td><td>是</td><td>integer</td><td>无（可空不等于可省略）</td><td>租户全部该类主体数，不随列表筛选或分页变化。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>next_before_id</td><td>是</td><td>string (uuid) / null</td><td>无（可空不等于可省略）</td><td>旧调用的下一页主体UUID；新筛选/排序时为null，应使用next_cursor。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
 <tr><td>overall_stats</td><td>是</td><td>object</td><td>无（可空不等于可省略）</td><td>主体整体统计；按原口径和observed_at展示。 <a href="/handoff/audit/dynamic-fields.html#overall-stats">完整语义</a></td></tr>
 <tr><td>observed_at</td><td>是</td><td>string (date-time)</td><td>无（可空不等于可省略）</td><td>本次读取观察时间。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>filtered_total</td><td>是</td><td>integer; minimum=0.0</td><td>无（可空不等于可省略）</td><td>本次全部筛选命中数，不受游标/页长影响；无筛选时等于total。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
+<tr><td>next_cursor</td><td>是</td><td>string / null</td><td>无（可空不等于可省略）</td><td>下一页不透明游标；null为末页，改变条件或排序后丢弃旧游标。 <a href="/handoff/audit/response-fields.html#subjectpage">完整语义</a></td></tr>
 </table>
 <a id="subjectview"></a>
 <h2 id="subjectview">SubjectView</h2>

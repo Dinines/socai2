@@ -103,11 +103,11 @@ HTTP 200，返回[AssociationReceipt](response-fields.md#associationreceipt)。
 
 `GET /api/v1/socai2/cases`
 
-源码：[socai2_cases.py:80](../../../services/api/app/api/v1/endpoints/socai2_cases.py#L80)。
+源码：[对外列表路由](../../../services/api/investigation_http/external_routes/cases.py)；查询在独立核心reader中实现。
 
 对应功能：F09-01 四项案件指标、F09-02 搜索筛选和分页、F09-03 列选择与排序、F09-08 日期范围与导出、F09-09 手动与自动刷新、F09-11 调查运行与管理设置入口、F14-07 跨主体运行目录
 
-用途与业务结果：q 搜索标题/完整 ID；可按处理状态、严重度、负责人、分配状态、metric、classification 筛选。total 是筛选结果数，metrics 是租户整体；high_severity 只计 high。使用 next_cursor，改变条件须清空 cursor。
+用途与业务结果：q按标题字面包含或精确UUID；保留handling_status、severity、owner_id、assignment_state、metric、classification。time_from/time_to按business_updated_at；sort_by=business_updated_at（默认）/created_at/severity。total为全部筛选命中数，metrics为租户整体且high_severity仍只计high。未使用新增日期/排序时兼容旧v1游标。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。
 
 ### 输入
 
@@ -115,14 +115,17 @@ HTTP 200，返回[AssociationReceipt](response-fields.md#associationreceipt)。
 | --- | --- | --- | --- | --- | --- |
 | query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
 | query | cursor | 可省略 | string；maxLength=1024 / null | 无 | 使用服务上一页 next_cursor；改变筛选条件后清空。 |
-| query | q | 可省略 | string；maxLength=200 / null | 无 | Case标题或完整ID搜索；告警/事件列表不支持此参数。 |
+| query | q | 可省略 | string；maxLength=200 / null | 无 | 标题字面包含或精确UUID搜索。 |
 | query | handling_status | 可省略 | [WorkStatus](../http-handoff/schemas.md#workstatus) / null | 无 | 主体业务处理状态，与Run执行状态分开。 |
 | query | severity | 可省略 | [Severity](../http-handoff/schemas.md#severity) / null | 无 | 严重度枚举；null为未知，不强行补默认等级。 |
 | query | owner_id | 可省略 | string uuid / null | 无 | 负责人用户UUID；人员目录由业务后端负责。 |
 | query | assignment_state | 可省略 | [AssignmentState](../http-handoff/schemas.md#assignmentstate) / null | 无 | 分配状态，unresolved不等于unassigned。 |
 | query | metric | 可省略 | string；awaiting_assignment, in_progress, high_severity, awaiting_human / null | 无 | Case整体指标快捷过滤条件。 |
 | query | classification | 可省略 | string；true_positive, informational, false_positive / string = not_set / null | 无 | 案件分类true_positive/informational/false_positive；null未设置；队列可用not_set过滤未设置。 |
-
+| query | time_from | 可省略 | 带时区datetime | 无 | 包含起点；具体时间字段见上方 |
+| query | time_to | 可省略 | 带时区datetime | 无 | 不包含终点；起点必须早于终点 |
+| query | sort_by | 可省略 | business_updated_at/created_at/severity | 无 | 默认枚举第一项 |
+| query | sort_order | 可省略 | asc/desc | 无 | 默认desc |
 
 请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
 
@@ -132,7 +135,7 @@ HTTP 200，返回[CaseQueuePage](response-fields.md#casequeuepage)。
 | 顶层输出字段 | 含义 |
 | --- | --- |
 | items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
-| total | 当前集合总数；records/assets为对象资产匹配边数。 |
+| total | 全部筛选命中数，不受游标和页长影响。 |
 | next_cursor | 下一页游标；null表示结束。 |
 | metrics | Case租户整体指标，不随分页或筛选total变化。 |
 
@@ -140,6 +143,8 @@ HTTP 200，返回[CaseQueuePage](response-fields.md#casequeuepage)。
 动态字段：固定结构；按嵌套类型逐层展开。。详见[动态字段清单](dynamic-fields.md)。
 
 输入输出及典型错误JSON继续使用[原E02示例](../http-handoff/endpoints.md#e02)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_case_cursor:422 case_cursor_filters_changed:422 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。
 
 <a id="e03"></a>
 
@@ -1087,19 +1092,28 @@ HTTP 200，返回[StageEntry](response-fields.md#stageentry)。
 
 `GET /api/v1/socai2/alerts`
 
-源码：[socai2_pages.py:42](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L42)。
+源码：[对外列表路由](../../../services/api/investigation_http/external_routes/pages.py)；查询在独立核心reader中实现。
 
 对应功能：F01-01 默认九列、F01-02 搜索与快捷筛选、F01-03 排序与列选择、F01-04 指标与分页、F01-06 导出与批量选择、F01-09 刷新与清除条件、F06-06 处理中与队列压缩、F13-05 添加告警／事件、F14-07 跨主体运行目录
 
-用途与业务结果：仅有 limit/before_id 分页，没有 q、严重度、状态、日期等完整筛选入参。overall_stats 是服务统计；前端对已加载集合的过滤不能当全库搜索或全量导出。
+用途与业务结果：q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/completed/unknown）、owner_id、assignment_state。time_from/time_to按真实event_time，缺失不以入库时间补齐。sort_by=ingested_at（默认）/event_time/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422；旧before_id主体不存在返回404 page_subject_not_found。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。
 
 ### 输入
 
 | 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
 | --- | --- | --- | --- | --- | --- |
 | query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
-| query | before_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_id 翻页。 |
-
+| query | before_id | 可省略 | string uuid / null | 无 | 仅无新增筛选/排序的旧调用可用；不与cursor混用。 |
+| query | cursor | 可省略 | string，最长1024 | 无 | 上一页next_cursor，改变条件清空 |
+| query | q | 可省略 | string，最长200 | 无 | 标题字面包含或精确UUID |
+| query | severity | 可省略 | info/low/medium/high/critical | 无 | 告警等级；事件用人工覆盖优先的有效等级 |
+| query | handling_status | 可省略 | new/in_progress/completed/unknown | 无 | 业务处理状态 |
+| query | owner_id | 可省略 | UUID | 无 | 负责人真实ID；分配给我传当前用户ID |
+| query | assignment_state | 可省略 | assigned/unassigned/unresolved | 无 | 分配状态，未知人员不冒充未分配 |
+| query | time_from | 可省略 | 带时区datetime | 无 | 包含起点；具体时间字段见上方 |
+| query | time_to | 可省略 | 带时区datetime | 无 | 不包含终点；起点必须早于终点 |
+| query | sort_by | 可省略 | ingested_at/event_time/severity | 无 | 默认枚举第一项 |
+| query | sort_order | 可省略 | asc/desc | 无 | 默认desc |
 
 请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
 
@@ -1110,8 +1124,10 @@ HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
 | --- | --- |
 | kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
 | items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
-| total | 当前集合总数；records/assets为对象资产匹配边数。 |
-| next_before_id | 下一页主体游标；null表示结束。 |
+| total | 租户该类主体总数，不随筛选变化。 |
+| next_before_id | 仅旧调用使用；新筛选/排序时为null。 |
+| filtered_total | 本次全部筛选命中数，不受游标和页长影响。 |
+| next_cursor | 下一页不透明游标；null表示末页。 |
 | overall_stats | 主体整体统计；按原口径和observed_at展示。 |
 | observed_at | 本次读取观察时间。 |
 
@@ -1120,25 +1136,36 @@ HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
 
 输入输出及典型错误JSON继续使用[原E26示例](../http-handoff/endpoints.md#e26)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
 
+错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。
+
 <a id="e27"></a>
 
 ## E27 事件列表
 
 `GET /api/v1/socai2/incidents`
 
-源码：[socai2_pages.py:47](../../../services/api/app/api/v1/endpoints/socai2_pages.py#L47)。
+源码：[对外列表路由](../../../services/api/investigation_http/external_routes/pages.py)；查询在独立核心reader中实现。
 
 对应功能：F06-01 列表与搜索筛选、F06-02 四项指标、F06-06 处理中与队列压缩、F06-07 刷新、日期、列和导出、F13-05 添加告警／事件、F14-07 跨主体运行目录
 
-用途与业务结果：仅有 limit/before_id；按 next_before_id 分页。当前没有完整搜索/日期过滤。derived/overall_stats 按事件口径，不拿加载页数当全量。
+用途与业务结果：q按标题字面包含或精确UUID，支持severity、handling_status（new/in_progress/resolved/unknown）、owner_id、assignment_state。severity为人工覆盖优先、否则成员最大等级；time_from/time_to要求至少一条成员告警真实event_time处于该区间，不能仅用事件首尾跨越判断。sort_by=created_at（默认）/last_activity_at（成员最晚真实发生时间）/severity。filtered_total为全部筛选命中数；total和overall_stats仍为租户整体。无新增筛选/排序时旧before_id/next_before_id继续可用；新查询用cursor，before_id与cursor或新条件混用返回422；旧before_id主体不存在返回404 page_subject_not_found。时间必须带时区，区间为[time_from,time_to)，允许单边；两端同时传时起点必须早于终点。等级info<low<medium<high<critical，未知值总在最后；同值按同方向UUID排序。每页1–50条，默认20；sort_order默认desc。改变筛选或排序后清空cursor；下一页原样传next_cursor，不自行解析。每次请求为当前只读快照，跨请求有业务更新时不是冻结导出。
 
 ### 输入
 
 | 位置 | 字段 | 是否必传 | 类型/枚举/约束 | 默认值 | 输入含义 |
 | --- | --- | --- | --- | --- | --- |
 | query | limit | 可省略 | integer；minimum=1；maximum=50 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
-| query | before_id | 可省略 | string uuid / null | 无 | 沿上页 next_before_id 翻页。 |
-
+| query | before_id | 可省略 | string uuid / null | 无 | 仅无新增筛选/排序的旧调用可用；不与cursor混用。 |
+| query | cursor | 可省略 | string，最长1024 | 无 | 上一页next_cursor，改变条件清空 |
+| query | q | 可省略 | string，最长200 | 无 | 标题字面包含或精确UUID |
+| query | severity | 可省略 | info/low/medium/high/critical | 无 | 告警等级；事件用人工覆盖优先的有效等级 |
+| query | handling_status | 可省略 | new/in_progress/resolved/unknown | 无 | 业务处理状态 |
+| query | owner_id | 可省略 | UUID | 无 | 负责人真实ID；分配给我传当前用户ID |
+| query | assignment_state | 可省略 | assigned/unassigned/unresolved | 无 | 分配状态，未知人员不冒充未分配 |
+| query | time_from | 可省略 | 带时区datetime | 无 | 包含起点；具体时间字段见上方 |
+| query | time_to | 可省略 | 带时区datetime | 无 | 不包含终点；起点必须早于终点 |
+| query | sort_by | 可省略 | created_at/last_activity_at/severity | 无 | 默认枚举第一项 |
+| query | sort_order | 可省略 | asc/desc | 无 | 默认desc |
 
 请求嵌套结构沿既有Schema；类型可点进入固定字段说明，写专用类型见[既有请求字段表](../http-handoff/schemas.md)。JSON请求额外字段禁止；可空与可省略分开。
 
@@ -1149,8 +1176,10 @@ HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
 | --- | --- |
 | kind | 此结构的种类；Subject为alerts/incidents，Stage为alert_basic/incident_diagnosis，Scope为范围种类，枚举不互换。 |
 | items | 本页记录数组；元素类型在本行类型中说明，空数组仅表示此查询页没有记录。 |
-| total | 当前集合总数；records/assets为对象资产匹配边数。 |
-| next_before_id | 下一页主体游标；null表示结束。 |
+| total | 租户该类主体总数，不随筛选变化。 |
+| next_before_id | 仅旧调用使用；新筛选/排序时为null。 |
+| filtered_total | 本次全部筛选命中数，不受游标和页长影响。 |
+| next_cursor | 下一页不透明游标；null表示末页。 |
 | overall_stats | 主体整体统计；按原口径和observed_at展示。 |
 | observed_at | 本次读取观察时间。 |
 
@@ -1158,6 +1187,8 @@ HTTP 200，返回[SubjectPage](response-fields.md#subjectpage)。
 动态字段：overall-stats；事件material/triage/feedback为null。详见[动态字段清单](dynamic-fields.md)。
 
 输入输出及典型错误JSON继续使用[原E27示例](../http-handoff/endpoints.md#e27)；本轮发现的差异以[审计结论](README.md)和上方逐字段规则为准。
+
+错误：日期缺时区、倒置/空区间、非法枚举/排序、游标格式错误或与条件不符返回422；游标错误码为 invalid_list_cursor:422 list_cursor_filters_changed:422。输入输出及错误示例已同步当前Swagger。
 
 <a id="e28"></a>
 
