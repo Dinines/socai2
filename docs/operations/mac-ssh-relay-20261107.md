@@ -44,7 +44,7 @@ curl --noproxy '*' --fail --silent --show-error \
   -o /dev/null -w 'HTTP %{http_code}\n' http://127.0.0.1:4177/
 ```
 
-工作台入口为 <http://127.0.0.1:4177/>。这里是 SSH 把 **21 上的工作台**送到本机，并没有重新启动原来的 Mac 工作台服务。工作台校验 `Host` 和 `Origin` 中的端口，故本机也使用 `4177`；换成先前讨论的 `24177` 会返回 403。
+工作台入口为 [http://127.0.0.1:4177/](http://127.0.0.1:4177/)，自动进入 `/viewer/`。2026-11-16实际为21上的独立只读服务0.6.0，沿HTTP读取；历史测试业务数据已清空，当前展示真实空态，见[W5回执](evidence/streaming-w5-4177-20261116-01/README.md)。SSH将21服务送到本机，没有启动Mac业务服务。本机4173旧静态演示和58477临时预览已停止。当前保持原4177转发，旧工作台的Host/Origin端口校验不代表新版行为。
 
 后台任务在当前 Mac 用户登录后启动，SSH 检测断线后由 LaunchAgent 重新拉起。Windows 断网、VPN 断开或 Mac 睡眠期间无法访问；网络恢复后会重试，恢复不是即时的。
 
@@ -242,7 +242,7 @@ SOCAI2_MODEL_SCHEMA_PROFILE=vllm_grammar_v1
 | `ssh sting-win57 whoami` 不通 | Windows 是否开机、IP 是否还是 `192.168.3.57`、两机是否同一可达局域网、SSH 是否运行 |
 | Windows 可登录，`ssh sting-infra21 hostname` 不通 | Windows VPN 是否连接，`2221 → 21:22` 转发及 Windows 到 21 是否可达 |
 | SSH 正常，工作台打不开 | `ssh -O check sting-infra21-tunnel`、LaunchAgent 状态和日志；端口应为 `4177` |
-| 工作台返回 403 | 使用 `http://127.0.0.1:4177/`；不要改成本地 `24177` 或外部主机名 |
+| 工作台返回 403 | 先核实际服务版本与日志；旧静态工作台的端口校验不能套作当前0.6.0原因 |
 | `Address already in use` | 用 `lsof -nP -iTCP:端口 -sTCP:LISTEN` 确认占用者；常驻工作台只保留一个隧道实例 |
 | `25432` 连接被拒绝 | 数据库临时 SSH 命令是否仍在运行；它不属于常驻工作台配置 |
 | 数据库证书名称不匹配 | 实际连接走 `127.0.0.1`，证书身份仍为 21；按驱动区分 libpq 和 asyncpg 的处理 |
@@ -263,6 +263,6 @@ SOCAI2_MODEL_SCHEMA_PROFILE=vllm_grammar_v1
 
 Windows 转发配置备份位于 `C:\ProgramData\socai2-ssh-relay\backup-20261107-124324`。本文不要求再次修改 Windows 防火墙。
 
-2026-11-07 已核验：Windows 公钥登录、经 `57:2221` 登录 21、后台工作台隧道及首页 HTTP 200、21 的 PG/CH/API/网关监听地址。随后已完成本机专用只读 API→SSH 转发→PG 的真实账号认证、严格 TLS 和正式调查数据 GET 验证，见[回执](evidence/remote-readonly-20261107/verification.json)。其余本地服务端口仍按需；完整 API 写入/Fusion/Kafka 消费和模型质量不包含在本次结果中。
+2026-11-07 已核验：Windows 公钥登录、经 `57:2221` 登录 21、后台工作台隧道及首页 HTTP 200、21 的 PG/CH/API/网关监听地址。随后已完成本机专用只读 API→SSH 转发→PG 的真实账号认证、严格 TLS 和正式调查数据 GET 验证，见[回执](../handoff/history/2026-11-14-investigation-cleanup/evidence/remote-readonly-20261107/verification.json)。其余本地服务端口仍按需；完整 API 写入/Fusion/Kafka 消费和模型质量不包含在本次结果中。
 
 本机原 AISOC 容器与旧工作台已按此前指令停止，数据卷保留。本次临时只读 API 和自有数据库转发也已关闭；需要读取正式数据时按第五节选定 profile 启动。无需为查看远端工作台恢复本地整套基础设施，也不应默认切入独立测试库。

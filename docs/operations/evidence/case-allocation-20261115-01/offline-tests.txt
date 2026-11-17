@@ -1,0 +1,17 @@
+...........sssF                                                          [100%]
+=================================== FAILURES ===================================
+_________ test_case_allocation_upgrade_and_new_install_share_increment _________
+
+    def test_case_allocation_upgrade_and_new_install_share_increment():
+        increment = install_reader.render(install_reader.CASE_MIGRATION)
+        for entry in ('case_allocation.sql', 'init_socai2_current.sql', 'init_socai2_current_reader.sql'):
+            body = install_reader.render(entry)
+>           assert body.count(increment) == 1
+E           assert 0 == 1
+E            +  where 0 = <built-in method count of str object at 0x130338000>("-- Additive Case allocation only; no legacy backfill and no Run mutation.\nDO $preflight$\nBEGIN\n  IF current_databa...T INTO public.aisoc_schema_migrations(name) VALUES ('129_socai2_case_allocation.sql') ON CONFLICT (name) DO NOTHING;\n")
+E            +    where <built-in method count of str object at 0x130338000> = "-- Fresh reader installation plus explicitly configured current-schema cleanup.\n\\set ON_ERROR_STOP on\n-- V1 + V1.2...\else\nDO $failure$ BEGIN RAISE EXCEPTION 'reader_v1_2_dependency_or_permission_mismatch'; END $failure$;\n\\endif\n\n".count
+
+deploy/database/test_reader_install.py:177: AssertionError
+=========================== short test summary info ============================
+FAILED services/api::test_case_allocation_upgrade_and_new_install_share_increment
+1 failed, 11 passed, 3 skipped in 0.37s

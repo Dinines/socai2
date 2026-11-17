@@ -1,0 +1,694 @@
+{
+  "raw": {
+    "usage": {
+      "total_tokens": 400,
+      "prompt_tokens": 200,
+      "completion_tokens": 200
+    },
+    "choices": [
+      {
+        "message": {
+          "content": "{\"analysis\": {\"summary\": \"Synthetic unresolved analysis.\", \"members\": [{\"alert_id\": \"A1\", \"state\": \"unresolved\", \"summary\": \"Synthetic source-label context is attributed separately from the observation.\", \"evidence_ids\": [\"N3_S1\", \"N3_S2\"], \"limitations\": [\"Synthetic only.\"]}, {\"alert_id\": \"A2\", \"state\": \"unresolved\", \"summary\": \"Synthetic observation needs context.\", \"evidence_ids\": [\"N3_S9\"], \"limitations\": [\"Synthetic only.\"]}], \"questions\": [{\"id\": \"detection_facts\", \"state\": \"unresolved\", \"answer\": \"Needs evidence.\", \"evidence_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"id\": \"member_relationships\", \"state\": \"unresolved\", \"answer\": \"Needs evidence.\", \"evidence_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"id\": \"behavior_nature\", \"state\": \"unresolved\", \"answer\": \"Needs evidence.\", \"evidence_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"id\": \"authorization\", \"state\": \"unresolved\", \"answer\": \"Needs evidence.\", \"evidence_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"id\": \"impact\", \"state\": \"unresolved\", \"answer\": \"Needs evidence.\", \"evidence_ids\": [], \"limitations\": [\"Synthetic only.\"]}], \"findings\": [{\"id\": \"F1\", \"state\": \"observed\", \"alert_ids\": [\"A1\"], \"support_ids\": [\"N3_S1\", \"N3_S2\"], \"counter_ids\": [], \"alternatives\": [], \"limitations\": []}], \"domains\": [{\"name\": \"identity\", \"applicability\": \"undetermined\", \"reason\": \"Needs evidence.\", \"alert_ids\": [], \"finding_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"name\": \"cloud\", \"applicability\": \"undetermined\", \"reason\": \"Needs evidence.\", \"alert_ids\": [], \"finding_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"name\": \"phishing\", \"applicability\": \"undetermined\", \"reason\": \"Needs evidence.\", \"alert_ids\": [], \"finding_ids\": [], \"limitations\": [\"Synthetic only.\"]}, {\"name\": \"insider\", \"applicability\": \"undetermined\", \"reason\": \"Needs evidence.\", \"alert_ids\": [], \"finding_ids\": [], \"limitations\": [\"Synthetic only.\"]}], \"conflicts\": [], \"followups\": []}, \"conclusion\": {\"text\": \"Synthetic uncertain conclusion.\", \"state\": \"uncertain\", \"alert_ids\": [\"A1\", \"A2\"], \"support_ids\": [\"N3_S1\", \"N3_S9\"], \"limitations\": [\"Synthetic only.\"]}, \"closing_note\": \"Synthetic round.\", \"impact\": {\"summary\": \"No confirmed impact.\", \"alert_ids\": [], \"support_ids\": [], \"supported_changes\": [], \"cannot_generalize\": [\"Synthetic only.\"], \"next_steps\": []}, \"recommendations\": [{\"action_type\": \"investigate\", \"object_keys\": [], \"reason\": \"Synthetic review.\", \"source_ids\": [\"N3_S1\"], \"limitations\": []}]}"
+        },
+        "finish_reason": "stop"
+      }
+    ]
+  },
+  "validation_error": "non_observation_promoted_to_observed",
+  "correction_feedback": {
+    "errors": [
+      {
+        "code": "observed_original_field_unavailable",
+        "path": [
+          "analysis",
+          "findings",
+          0,
+          "support_ids"
+        ],
+        "reason": "原字段不可得或超出既有文字容量；选取本发现必需的原字段，不能删掉必要事实、编造内容或换状态掩盖错误。",
+        "subject_id": "F1"
+      },
+      {
+        "code": "non_observation_promoted_to_observed",
+        "path": [
+          "analysis",
+          "findings",
+          0,
+          "support_ids",
+          1
+        ],
+        "source_id": "N3_S2",
+        "subject_id": "F1",
+        "actual_role": "source_label"
+      }
+    ],
+    "policy": "socai2.case-citation-correction.v8",
+    "attempt": 1,
+    "instruction": "仅纠正上一份完整 JSON 一次，保留独立有效内容。finding_ids 只引用本次同一 analysis.findings 中实际存在的 id，不能引用历史发现号、问题号或为过校验编造发现。按真实证据重新核对正文、状态、成员范围和引用；不得机械扩大范围、随意填号或把查询出处当记录主体。observed 只陈述直接观察支持的主张，每个涉及成员都有相应观察。标签、历史判断和人工陈述应明确归因，混合句须按主张分开表达；标签说明可留在带来源的成员摘要。knowledge_reference_only 为 true 的知识可按查询范围作辅助比较，但不能代替成员、结论或影响所需的本案来源。不能只删除非法引用而保留超出证据的断言，也不能仅改为 inferred 掩盖无据事实。可用观察编号不表示它证明该主张，须核原字段含义。没有依据应明确未解决和缺口；同一来源不能兼作支持与反证，冲突必须是两条真实发现的矛盾，缺证据不是冲突。冲突每个参与发现须有对应成员的直接 observation 支持，evidence_ids 逐 finding 覆盖这些支持且至少两个不同来源；只有回执、标签或缺口的发现不能作冲突一方。不要补凑观察编号或编造发现，缺口放限制/问题，解释差异放 alternatives，无有据矛盾用 conflicts=[]。返回完整 JSON 并接受全部校验。",
+    "local_findings": [
+      {
+        "id": "F1",
+        "alert_ids": [
+          "A1"
+        ],
+        "direct_support_ids": [
+          "N3_S1"
+        ]
+      }
+    ],
+    "allowed_sources": [
+      {
+        "id": "N3_S1",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S2",
+        "role": "source_label",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S3",
+        "role": "source_label",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S4",
+        "role": "source_label",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S5",
+        "role": "source_label",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S6",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S7",
+        "role": "source_label",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S8",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S9",
+        "role": "observation",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S10",
+        "role": "source_label",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S11",
+        "role": "source_label",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S12",
+        "role": "source_label",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S13",
+        "role": "source_label",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S14",
+        "role": "observation",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S15",
+        "role": "source_label",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S16",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S17",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S18",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S19",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S20",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S21",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S22",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S23",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S24",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1"
+        ],
+        "query_alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S25",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1"
+        ],
+        "query_alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S26",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1"
+        ],
+        "query_alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S27",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S28",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S29",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S30",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S31",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S32",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S33",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S34",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S35",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "query_alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "membership_basis": "query_execution_scope",
+        "record_alert_ids": [],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S36",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S37",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S38",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S39",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S40",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S41",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S42",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S43",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S44",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S45",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S46",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S47",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S48",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S49",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S50",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S51",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S52",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S53",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S54",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S55",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S56",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S57",
+        "role": "observation",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S58",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S59",
+        "role": "execution_receipt",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S60",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S61",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S62",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1",
+          "A2"
+        ],
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S63",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "source_label",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S64",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A2"
+        ],
+        "membership_basis": "source_label",
+        "knowledge_reference_only": false
+      },
+      {
+        "id": "N3_S65",
+        "role": "prior_analysis",
+        "alert_ids": [
+          "A1"
+        ],
+        "membership_basis": "query_binding_only",
+        "knowledge_reference_only": false
+      }
+    ],
+    "observed_support_ids": [
+      "N3_S1",
+      "N3_S14",
+      "N3_S6",
+      "N3_S9"
+    ]
+  }
+}

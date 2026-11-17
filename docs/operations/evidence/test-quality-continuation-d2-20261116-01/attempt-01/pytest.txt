@@ -1,0 +1,149 @@
+.......FFF.F......                                                       [100%]
+=================================== FAILURES ===================================
+____ test_next_inputs_describe_only_the_actual_quality_problem[explanation] ____
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+quality = 'explanation'
+
+    @pytest.mark.parametrize("quality", ["explanation", "citation", "mixed"])
+    def test_next_inputs_describe_only_the_actual_quality_problem(sample, quality):
+        context, prepared = fixtures.prepared_sample(sample)
+        raw = fixtures.answer_for(prepared, context)
+        raw["summary"] = "  原结论保留；不因质量提示重写。\n"
+        if quality in {"explanation", "mixed"}:
+            raw["members"][0]["limitations"] = []
+        if quality in {"citation", "mixed"}:
+            raw["members"][0]["evidence_ids"] = ["missing-reference"]
+        before, review = copy.deepcopy(raw), new_review()
+        value = case_output_adapter.parse(json.dumps(raw, ensure_ascii=False), prepared, context, {},
+                                         citation_review=review)
+        previous = {"analysis": value.model_dump(mode="json"), "source_map": prepared["source_map"],
+                    "validation": VALIDATION, "basis": {"citation_review": review}}
+        previous_before = copy.deepcopy(previous)
+        checks = {}
+        for stage in ("Deep", "C6"):
+            options = {"question_id": context.questions[0].id} if stage == "Deep" else {
+                "extra": {"comparison": {"state": "initial", "result_id": None}}}
+            followup = case_followup_input.build(stage, context, prepared, {}, previous=previous,
+                                                prior_id=uuid4(), **options)
+            assert followup["ready"], followup["reason"]
+            text = followup["messages"][1]["content"]
+            assert (NOTE in text) == (quality in {"citation", "mixed"})
+            assert (LIMITATION_NOTE in text) == (quality in {"explanation", "mixed"})
+>           assert "原结论保留；不因质量提示重写。" in text
+E           AssertionError: assert '原结论保留；不因质量提示重写。' in '[本次任务]\n原始记录支持哪些行为和对象？\n调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:09Z；...=[]；限制=[Synthetic only.])；发现=[]；取证要求=[]；citation_quality_note=前序模型分析保留原判断；部分限制说明缺失，已记录质量问题，不代表正文已核实。\n[材料可用性] 部分材料不可用。'
+
+services/api/tests/test_socai2_d2_quality_independent.py:83: AssertionError
+_____ test_next_inputs_describe_only_the_actual_quality_problem[citation] ______
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+quality = 'citation'
+
+    @pytest.mark.parametrize("quality", ["explanation", "citation", "mixed"])
+    def test_next_inputs_describe_only_the_actual_quality_problem(sample, quality):
+        context, prepared = fixtures.prepared_sample(sample)
+        raw = fixtures.answer_for(prepared, context)
+        raw["summary"] = "  原结论保留；不因质量提示重写。\n"
+        if quality in {"explanation", "mixed"}:
+            raw["members"][0]["limitations"] = []
+        if quality in {"citation", "mixed"}:
+            raw["members"][0]["evidence_ids"] = ["missing-reference"]
+        before, review = copy.deepcopy(raw), new_review()
+        value = case_output_adapter.parse(json.dumps(raw, ensure_ascii=False), prepared, context, {},
+                                         citation_review=review)
+        previous = {"analysis": value.model_dump(mode="json"), "source_map": prepared["source_map"],
+                    "validation": VALIDATION, "basis": {"citation_review": review}}
+        previous_before = copy.deepcopy(previous)
+        checks = {}
+        for stage in ("Deep", "C6"):
+            options = {"question_id": context.questions[0].id} if stage == "Deep" else {
+                "extra": {"comparison": {"state": "initial", "result_id": None}}}
+            followup = case_followup_input.build(stage, context, prepared, {}, previous=previous,
+                                                prior_id=uuid4(), **options)
+            assert followup["ready"], followup["reason"]
+            text = followup["messages"][1]["content"]
+            assert (NOTE in text) == (quality in {"citation", "mixed"})
+            assert (LIMITATION_NOTE in text) == (quality in {"explanation", "mixed"})
+>           assert "原结论保留；不因质量提示重写。" in text
+E           AssertionError: assert '原结论保留；不因质量提示重写。' in '[本次任务]\n原始记录支持哪些行为和对象？\n调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:09Z；...ce.；依据=[]；限制=[Synthetic only.])；发现=[]；取证要求=[]；citation_quality_note=前序模型分析保留原判断；其引用存在质量问题，不能视为已核实事实。\n[材料可用性] 部分材料不可用。'
+
+services/api/tests/test_socai2_d2_quality_independent.py:83: AssertionError
+_______ test_next_inputs_describe_only_the_actual_quality_problem[mixed] _______
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+quality = 'mixed'
+
+    @pytest.mark.parametrize("quality", ["explanation", "citation", "mixed"])
+    def test_next_inputs_describe_only_the_actual_quality_problem(sample, quality):
+        context, prepared = fixtures.prepared_sample(sample)
+        raw = fixtures.answer_for(prepared, context)
+        raw["summary"] = "  原结论保留；不因质量提示重写。\n"
+        if quality in {"explanation", "mixed"}:
+            raw["members"][0]["limitations"] = []
+        if quality in {"citation", "mixed"}:
+            raw["members"][0]["evidence_ids"] = ["missing-reference"]
+        before, review = copy.deepcopy(raw), new_review()
+        value = case_output_adapter.parse(json.dumps(raw, ensure_ascii=False), prepared, context, {},
+                                         citation_review=review)
+        previous = {"analysis": value.model_dump(mode="json"), "source_map": prepared["source_map"],
+                    "validation": VALIDATION, "basis": {"citation_review": review}}
+        previous_before = copy.deepcopy(previous)
+        checks = {}
+        for stage in ("Deep", "C6"):
+            options = {"question_id": context.questions[0].id} if stage == "Deep" else {
+                "extra": {"comparison": {"state": "initial", "result_id": None}}}
+            followup = case_followup_input.build(stage, context, prepared, {}, previous=previous,
+                                                prior_id=uuid4(), **options)
+            assert followup["ready"], followup["reason"]
+            text = followup["messages"][1]["content"]
+            assert (NOTE in text) == (quality in {"citation", "mixed"})
+            assert (LIMITATION_NOTE in text) == (quality in {"explanation", "mixed"})
+>           assert "原结论保留；不因质量提示重写。" in text
+E           AssertionError: assert '原结论保留；不因质量提示重写。' in '[本次任务]\n原始记录支持哪些行为和对象？\n调查范围：范围类型=whole_case；成员=[A1 | A2 | A3]；对象=[O1 | O2 | O3 | O4 | O5]；起始时间=2026-11-08T01:21:09Z；...证要求=[]；citation_quality_note=前序模型分析保留原判断；其引用存在质量问题，不能视为已核实事实。 前序模型分析保留原判断；部分限制说明缺失，已记录质量问题，不代表正文已核实。\n[材料可用性] 部分材料不可用。'
+
+services/api/tests/test_socai2_d2_quality_independent.py:83: AssertionError
+____ test_recorded_r3_c6_quality_rejection_is_retained_by_current_receiver _____
+
+    def test_recorded_r3_c6_quality_rejection_is_retained_by_current_receiver():
+        frozen = SNAPSHOT.read_bytes()
+        original_hash = hashlib.sha256(frozen).hexdigest()
+        rows = json.loads(frozen)["rows"]
+        artifacts = {row["id"]: row["content_json"] for row in rows["artifacts"]}
+        context = Context.model_validate(artifacts["8a8af2e1-9d8d-45b0-a81f-5e35462980e9"])
+        prepared = copy.deepcopy(artifacts["24300b26-a508-4c1a-9bf8-5d9730d56cd0"]["payload"])
+        original_report = artifacts["cf756795-1629-4739-b470-54686255c3e8"]
+        comparison = original_report["comparison"]
+        # The stored wire has the actual C6 source map. Reconstruct only the receiver's
+        # coverage counts by the same public rule, never the prompt or source aliases.
+        prepared["coverage"] = copy.deepcopy(artifacts["aa16ff46-14c0-4a92-abbc-8be7f31eec80"]["coverage"])
+        for aid, entry in prepared["coverage"].items():
+            entry["included"] = sum(aid in row["alert_ids"] for row in prepared["source_map"].values())
+        content = artifacts["93b2483c-3864-464e-9281-1ae5a31541cc"]["raw"]["choices"][0]["message"]["content"]
+        raw, review = json.loads(content), new_review()
+>       value = case_followup_output.parse_final(content, prepared, context, comparison, citation_review=review)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_d2_quality_independent.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/case_followup_output.py:170: in parse_final
+    program.validate_program(value.analysis.model_dump(mode="json"), prepared["case_boundary"], citation_review=citation_review, path="$.analysis")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = {'summary': '本案涉及 svc-app-bc3b4605 账号在 host-app-3f979d56 上的连续行为序列：登录（A3）、启动 curl 进程（A1）、发起 TCP 连接（A2）。时间线紧密（间隔 4-10 分钟...1,"completed":1}', 'evidence_ids': ['N5_S220', 'N5_S170', 'N5_S171', 'N5_S172', 'N5_S173', 'N5_S174', ...], ...}], ...}
+boundary = {'stage': 'C6', 'profile': {'sha256': '3526ba19331bca0f87be348c82868d221b95ae238bcf63a1e2ecf046ba009982', 'version': '...9591e9fc1da1de28db6f1c'}, 'c3_output': {'version': 'socai2.c3-output.v1', 'max_findings': 5}, 'question_id': None, ...}
+citation_review = {'policy': 'socai2.citation-quality.v1', 'state': 'issues_recorded', 'issues': [{'code': 'unapplied_domain_needs_limit...: '$.analysis.domains.2', 'action': 'retain_judgment', 'category': 'explanation_completeness'}], 'processing': [], ...}
+path = '$.analysis'
+
+    def validate_program(root, boundary, *, citation_review=None, path="$"):
+        errors = program_errors(root, boundary, citation_review=citation_review, path=path)
+        if errors:
+>           raise AnalysisRejected(errors[0]["code"])
+E           app.socai2.baseline_analysis_contract.AnalysisRejected: observed_original_fields_exceed_statement_contract
+
+services/api/app/socai2/case_program_output.py:103: AnalysisRejected
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_d2_quality_independent.py::test_next_inputs_describe_only_the_actual_quality_problem[explanation]
+FAILED services/api/tests/test_socai2_d2_quality_independent.py::test_next_inputs_describe_only_the_actual_quality_problem[citation]
+FAILED services/api/tests/test_socai2_d2_quality_independent.py::test_next_inputs_describe_only_the_actual_quality_problem[mixed]
+FAILED services/api/tests/test_socai2_d2_quality_independent.py::test_recorded_r3_c6_quality_rejection_is_retained_by_current_receiver
+4 failed, 14 passed in 2.78s

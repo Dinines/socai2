@@ -8,7 +8,7 @@
 
 ## 1.2 统一发布入口（2026-11-08）
 
-最新 A/I 接入使用 `v1.2-20261108-r5`：A 结构模板输入与五字段、I 结构模板与四块输出、原存储/读取关联及交付状态。按需处理复用已核验的 `processing-20261108-r2` 不可变镜像；这是同一当前发布中记录的处理组件，不是另一套业务环境。应用源码与本轮4调用实测逐字相同。默认清单和 profile 已同步，旧 r1/r2/r3 记录保留，未启用 r4 只供问题回查。[结果与限制](../../investigation/ai-production-rollout-20261108.md)。
+最新 A/I 接入使用 `v1.2-20261108-r5`：A 结构模板输入与五字段、I 结构模板与四块输出、原存储/读取关联及交付状态。按需处理复用已核验的 `processing-20261108-r2` 不可变镜像；这是同一当前发布中记录的处理组件，不是另一套业务环境。应用源码与本轮4调用实测逐字相同。默认清单和 profile 已同步，旧 r1/r2/r3 记录保留，未启用 r4 只供问题回查。[结果与限制](2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md)。
 
 本轮执行快照用[原发布配置](../../../deploy/aisoc21/workbench-ai-production-20261108.json)保存首次结果；最终51GET成功复核用[读取快照配置](../../../deploy/aisoc21/workbench-ai-readback-20261108.json)发布，固定旧记录hash后仅推进本批快照，复用本机历史保持检查。默认不允许替换登记；只有配置明确列出的旧记录可刷新，旧内容文件及其他批次保留。该工具只发布静态证据，不重跑模型、不修改业务数据或重启容器。
 
@@ -23,9 +23,9 @@ python3 deploy/database/install_reader.py verify --profile deploy/database/api-r
 
 本轮4调用没有创建Case，原失败/部分结果保留；后续配置修正仅重验GET，不重派模型。下方 r1 及更早状态均为当批记录。
 
-2026-11-08续修：已激活 `v1.2-20261108-r1`，LiteLLM也纳入统一发布，沿原镜像只更新环境/配置挂载；`compose.gateway.yml` 与发布清单均显式设 `AISOC_LITELLM_REQUEST_TIMEOUT=300`，覆盖历史私有env中的45。应用策略保持300/1500/300秒。六服务健康、954个冻结文件及当前入口核验通过，网关实际读取300秒、无别名超时覆盖。见[本轮发布回执](../../operations/evidence/v1.2-followup-20261108/deployment-summary.json)；新批模型结果独立记录。配置仅变更时发布脚本用容器ID区分切换前后，避免同镜像被误认旧配置。
+2026-11-08续修：已激活 `v1.2-20261108-r1`，LiteLLM也纳入统一发布，沿原镜像只更新环境/配置挂载；`compose.gateway.yml` 与发布清单均显式设 `AISOC_LITELLM_REQUEST_TIMEOUT=300`，覆盖历史私有env中的45。应用策略保持300/1500/300秒。六服务健康、954个冻结文件及当前入口核验通过，网关实际读取300秒、无别名超时覆盖。见[本轮发布回执](2026-11-14-investigation-cleanup/evidence/v1.2-followup-20261108/deployment-summary.json)；新批模型结果独立记录。配置仅变更时发布脚本用容器ID区分切换前后，避免同镜像被误认旧配置。
 
-用户要求将 21 的调查服务统一到最新 1.2。发布来源为 [release-v1.2.json](../../../deploy/aisoc21/release-v1.2.json)，统一冻结源码、API/Fusion/Agents 镜像、Projection、4177 工作台与按需调查 profile。运行参数来自该清单、[production-v1.2.toml](../../../deploy/aisoc21/production-v1.2.toml)及既有私密配置；不再用下方历史多层命令选择当前版本。该段当批版本为 `v1.2-20261108-r1`；前版 `v1.2-20261107-r3` 的[历史回执](../../operations/evidence/v1.2-implementation-20261107/unified-release-summary.json)保留。
+用户要求将 21 的调查服务统一到最新 1.2。发布来源为 [release-v1.2.json](../../../deploy/aisoc21/release-v1.2.json)，统一冻结源码、API/Fusion/Agents 镜像、Projection、4177 工作台与按需调查 profile。运行参数来自该清单、[production-v1.2.toml](../../../deploy/aisoc21/production-v1.2.toml)及既有私密配置；不再用下方历史多层命令选择当前版本。该段当批版本为 `v1.2-20261108-r1`；前版 `v1.2-20261107-r3` 的[历史回执](2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/unified-release-summary.json)保留。
 
 `release_12.py` 按 freeze → build → preflight → prepare → rollout（逐服务）→ activate → verify 执行；prepare 保存私密回退配置和环境，rollout 使用已经核对并固定的完整 Compose，activate 验证后才更换当前指针。API 显式设置 `AISOC_STARTUP_SCHEMA_MIGRATIONS=false`，此次发布不执行 PG、ClickHouse 或 Neo4j 的启动迁移；Agents 仍暂停消费，租户总额度保持不限制。
 
@@ -43,7 +43,7 @@ r1阶段18000主API的新socai2路由开关仍关闭；该批验证的是按需�
 
 ## 1.2 按需处理候选与配置文件
 
-2026-11-10 Case 本地候选使用 [processing-build-case-v1.toml](../../../deploy/aisoc21/processing-build-case-v1.toml) 的 `processing-case-20261110-c2` 与 [Case 策略](../../../deploy/local-investigation/investigation-policy-case-v1.toml)，覆盖 C1/C3/Deep/C6 输入输出交接。规则、提示、输出适配和模块均随包收录；原正式 A/I profile 不变。当前仅本地接入与隔离验证，尚未构建/切换 21 服务，不把候选标签当作已发布版本。见[验证报告](../../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
+2026-11-10 Case 本地候选使用 [processing-build-case-v1.toml](../../../deploy/aisoc21/processing-build-case-v1.toml) 的 `processing-case-20261110-c2` 与 [Case 策略](../../../deploy/local-investigation/investigation-policy-case-v1.toml)，覆盖 C1/C3/Deep/C6 输入输出交接。规则、提示、输出适配和模块均随包收录；原正式 A/I profile 不变。当前仅本地接入与隔离验证，尚未构建/切换 21 服务，不把候选标签当作已发布版本。见[验证报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
 
 2026-11-07 用户明确取消 Agents 的24小时调用次数、累计token及未结算数量三项租户额度。已有 `AISOC_TRIAGE_BUDGET_POLICY_FILE: ""` 表示关闭该可选模块，所有租户适用；旧 `budget.json` 保留作历史材料但不再读取。初始化计划 `budget=null` 不生成有限额度文件，初始化身份检查核context-reader文件。[开发配置](../../../deploy/aisoc21/compose.triage-development.yml)由启动器最后加载；本次配置生效时消费者保持暂停，待来源/消费恢复验证后在此文件将 `AISOC_AGENT_KAFKA_DISABLE` 设为 `"0"`。调用用量和同Run防重复读取保持，不靠清账恢复。
 
@@ -58,17 +58,17 @@ python /path/to/processing-YYYYMMDD-rN/build_processing_image.py \
 
 冻结包包含完整 API 的 Python/JSON（含数据库 TLS、接口和 ORM）、Fusion、作业/入站入口及本轮策略；不包含私密配置或 DDL，不建库。构建核 manifest 全文件集合/字节/hash，使用已核基础镜像 ID，清掉镜像旧代码后复制；断网一次性容器再核源码全集、语法、策略和 C6 内存收尾。已有标签若身份不同则拒绝，不覆盖历史 release。旧 r1–r3 独立库启动器只保留在历史冻结包；不能拿它来安装本版候选。
 
-21 Docker 29.9.0 的 BuildKit 会把裸镜像 ID 解释成仓库名；r2 失败原件保留。构建配置因此显式 `buildkit=false`，使用支持本机镜像 ID 的经典构建器；不可用就失败，不回落可变标签或拉取镜像。新 `processing-20261107-r3` 已在21构建并断网核629个源文件、语法/策略/C6内存收尾通过，镜像ID以[候选回执](../../operations/evidence/v1.2-implementation-20261107/processing-candidate-r3.json)为准。r1与r2原包保留，未切换正式服务。
+21 Docker 29.9.0 的 BuildKit 会把裸镜像 ID 解释成仓库名；r2 失败原件保留。构建配置因此显式 `buildkit=false`，使用支持本机镜像 ID 的经典构建器；不可用就失败，不回落可变标签或拉取镜像。新 `processing-20261107-r3` 已在21构建并断网核629个源文件、语法/策略/C6内存收尾通过，镜像ID以[候选回执](2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/processing-candidate-r3.json)为准。r1与r2原包保留，未切换正式服务。
 
 运行 profile 的 image.tag/id 须填写候选构建回执。`production_processing.py --profile /path/to/production.toml install` 生成私有运行配置，`check` 只读核 DB 身份/结构、湖权限、模型目录以及实际代码/策略 hash。`job` 继续使用业务用户 API key。policy 由应用同一校验器在安装前检查，改动 profile/policy 后须重新安装生成运行环境；不能只换文件而沿用旧环境指纹。正式部署调用 `deploy_production_services.py` 也必须显式传 `--processing-profile`。
 
-本轮仅按需处理入口完成适配并构建候选，未切换正式服务或运行新调查；旧 whole-services、常驻 Projection/Fusion/Agents 继续单独核对。真实模型、工具、H 后轮、消费恢复与整版验收未完成。[本轮证据](../../operations/evidence/v1.2-implementation-20261107)
+本轮仅按需处理入口完成适配并构建候选，未切换正式服务或运行新调查；旧 whole-services、常驻 Projection/Fusion/Agents 继续单独核对。真实模型、工具、H 后轮、消费恢复与整版验收未完成。[本轮证据](2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107)
 
 ## 2026-10-28 独立调查API
 
 新服务`socai2-investigation-api`已按用户授权运行在21本机`127.0.0.1:18010`，与原18000 API并存。使用独立[Compose](../../../deploy/aisoc21/compose.investigation-v2-api.yml)，不并入下方历史叠加命令；原服务未替换或重启。代码在`/opt/sting-aisoc-socai2/investigation-v2/20261028-r1`，私有环境文件`private/investigation-v2.env`为0600。
 
-[访问地址、调用脚本及验证范围](../../investigation/resident-api-20261028.md)。新服务使用当前调查factory，不启动旧main后台任务或首次概况worker。120/121已安装，现有数据库迁移登记为136；下方134计数属于历史批次。
+[访问地址、调用脚本及验证范围](2026-11-14-investigation-cleanup/documents/docs/investigation/resident-api-20261028.md)。新服务使用当前调查factory，不启动旧main后台任务或首次概况worker。120/121已安装，现有数据库迁移登记为136；下方134计数属于历史批次。
 
 ## 2026-10-21原版full配套
 

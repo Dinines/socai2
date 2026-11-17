@@ -1,0 +1,24 @@
+{
+  "command": [
+    "docker",
+    "compose",
+    "--env-file",
+    "/Users/lychee/Documents/project/socai2/docs/operations/evidence/acceptance-docker-20261117-01/mounted-direct-02/environments/streaming-execution.env",
+    "-f",
+    "/Users/lychee/Documents/project/socai2/.local/investigation-test-release/test-service-0.6.0-20261117-3d03/deploy/investigation-test/acceptance.compose.yml",
+    "run",
+    "--name",
+    "socai2-acceptance-dk03-mountprobe",
+    "-T",
+    "--entrypoint",
+    "python",
+    "acceptance",
+    "-c",
+    "import errno,json,os\nfrom pathlib import Path\nerrors={}\nfor name in (\"/materials/.docker-ro-probe\", \"/run/acceptance-config/.docker-ro-probe\"):\n    try: Path(name).write_text(\"unexpected writable mount\")\n    except OSError as exc: errors[name]=exc.errno\nassert len(errors)==2 and all(value in (errno.EROFS,errno.EACCES) for value in errors.values())\nassert os.getuid()!=0\nPath(\"/results/nonroot-write.json\").write_text(json.dumps({\"uid\":os.getuid(),\"gid\":os.getgid(),\"readonly_errors\":errors}))\nprint(json.dumps({\"uid\":os.getuid(),\"gid\":os.getgid(),\"readonly_errors\":errors}))"
+  ],
+  "input_commands": null,
+  "expected_exit": 0,
+  "exit_code": 0,
+  "stdout": "{\"uid\": 501, \"gid\": 20, \"readonly_errors\": {\"/materials/.docker-ro-probe\": 30, \"/run/acceptance-config/.docker-ro-probe\": 30}}\n",
+  "stderr": " Container socai2-acceptance-dk03-mountprobe Creating \n Container socai2-acceptance-dk03-mountprobe Created \n"
+}

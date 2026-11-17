@@ -10,6 +10,7 @@ from . import baseline_delivery_contract as delivery
 from . import case_program_output as program
 from .analysis_review import Review, decode
 from .case_citation_feedback import feedback
+from .case_citation_quality import normalized
 from .case_finding_schema import constrain_findings, validate_conflicts
 from .structured_output import response_format
 
@@ -51,17 +52,35 @@ def deep_format(prepared):
     return fmt
 
 
-def parse_deep(content, prepared):
+def parse_deep(content, prepared, *, citation_review=None):
     value = decode(content)
     if set(value) != {"action", "binding_id", "reason", "answer"}:
         raise analysis.AnalysisRejected("deep_boundary_shape_invalid")
     qid = prepared["case_boundary"]["question_id"]
     return deep.parse(json.dumps({"question_id": qid, **value}, ensure_ascii=False),
-                      prepared["source_map"], prepared["binding_map"], qid)
+                      prepared["source_map"], prepared["binding_map"], qid, citation_review=citation_review)
 
 
 def fixed_comparison(comparison):
     return comparison["state"] == "initial" and comparison["result_id"] is None
+
+
+def restored_comparison(prepared, comparison):
+    frozen = prepared["case_boundary"].get("fixed_comparison")
+    initial = fixed_comparison(comparison)
+    if frozen is None:
+        # Preserve the contract of previously frozen requests.
+        return {"kind": "initial", "summary": None, "support_ids": []} if initial else None
+    value = frozen.get("value", {})
+    if (frozen.get("version") != "socai2.case-fixed-comparison.v1"
+            or frozen.get("selection") != {key: comparison[key] for key in ("state", "result_id")}
+            or delivery.comparable_source_ids(prepared["source_map"], comparison)
+            or set(value) != {"kind", "summary", "support_ids"}
+            or value["kind"] != ("initial" if initial else "not_comparable") or value["support_ids"] != []
+            or (value["summary"] is not None if initial else
+                not isinstance(value["summary"], str) or not value["summary"].strip())):
+        raise analysis.AnalysisRejected("fixed_comparison_boundary_invalid")
+    return copy.deepcopy(value)
 
 
 def final_format(prepared, context, comparison):
@@ -91,9 +110,14 @@ def final_format(prepared, context, comparison):
     recommendation = schema["$defs"]["Recommendation"]
     recommendation["properties"].pop("id")
     recommendation["required"].remove("id")
-    if fixed_comparison(comparison):
+    if restored_comparison(prepared, comparison) is not None:
         schema["properties"].pop("comparison")
         schema["required"].remove("comparison")
+    elif not delivery.comparable_source_ids(prepared["source_map"], comparison):
+        props = schema["$defs"]["Comparison"]["properties"]
+        props["kind"] = {"type": "string", "enum": ["not_comparable"]}
+        props["summary"] = copy.deepcopy(next(item for item in props["summary"]["anyOf"]
+                                             if item.get("type") != "null"))
     if program.enabled(boundary):
         schema["$defs"]["Answer"]["properties"]["id"] = {"type": "string", "enum": [q.id for q in context.questions if q.id != "coverage"]}
         questions = schema["$defs"]["Analysis"]["properties"]["questions"]
@@ -105,14 +129,14 @@ def final_format(prepared, context, comparison):
                               program_owned=program.enabled(boundary))
 
 
-def restore_final(content, prepared, comparison):
-    value = decode(content)
+def restore_final(content, prepared, comparison, *, citation_review=None):
+    value = normalized(decode(content), citation_review)
     boundary = prepared["case_boundary"]
     members = {v: k for k, v in boundary["member_aliases"].items()}
     objects = {v: k for k, v in boundary["object_aliases"].items()}
     try:
         root = value["analysis"]
-        program.restore_observed(root, boundary)
+        program.restore_observed(root, boundary, citation_review=citation_review, path="$.analysis")
         program.restore_coverage(root, boundary)
         for row in root["members"]:
             row["alert_id"] = members[row["alert_id"]]
@@ -128,21 +152,22 @@ def restore_final(content, prepared, comparison):
                 raise KeyError("model_must_not_supply_recommendation_id")
             row["id"] = "R" + str(i)
             row["object_keys"] = [objects[key] for key in row["object_keys"]]
-        if fixed_comparison(comparison):
+        comparison_value = restored_comparison(prepared, comparison)
+        if comparison_value is not None:
             if "comparison" in value:
                 raise KeyError("model_must_not_supply_fixed_comparison")
-            value["comparison"] = {"kind": "initial", "summary": None, "support_ids": []}
+            value["comparison"] = comparison_value
         delivery.Delivery.model_validate(value)
     except (KeyError, TypeError, ValidationError) as exc:
         raise analysis.AnalysisRejected("final_boundary_shape_or_alias_invalid") from exc
     return json.dumps(value, ensure_ascii=False)
 
 
-def parse_final(content, prepared, context, comparison):
-    value = delivery.parse(restore_final(content, prepared, comparison),
-                           prepared["source_map"], context, prepared["coverage"], comparison)
-    validate_conflicts(value.analysis.model_dump(mode="json"), prepared["source_map"])
-    program.validate_program(value.analysis.model_dump(mode="json"), prepared["case_boundary"])
+def parse_final(content, prepared, context, comparison, *, citation_review=None):
+    value = delivery.parse(restore_final(content, prepared, comparison, citation_review=citation_review),
+                           prepared["source_map"], context, prepared["coverage"], comparison, citation_review=citation_review)
+    validate_conflicts(value.analysis.model_dump(mode="json"), prepared["source_map"], citation_review=citation_review, path="$.analysis")
+    program.validate_program(value.analysis.model_dump(mode="json"), prepared["case_boundary"], citation_review=citation_review, path="$.analysis")
     return value
 
 
@@ -164,6 +189,7 @@ class FinalReview(Review):
         owned = program.enabled(self.prepared["case_boundary"])
         return feedback(content, "C6", sources, [aliases[a] for a in self.context.alerts],
             [q.id for q in self.context.questions if not owned or q.id != "coverage"],
+            comparison=self.comparison,
             extra_errors=program.program_errors(decode(content)["analysis"], self.prepared["case_boundary"]))
 
     def partial(self, content):

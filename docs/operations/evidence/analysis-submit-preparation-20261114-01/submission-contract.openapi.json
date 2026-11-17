@@ -1,0 +1,1463 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "UNREGISTERED asynchronous admission contract; execution not ready",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/socai2/cases/{case_id}/investigations": {
+      "post": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "提交案件检查或再次调查",
+        "description": "保存任务后返回原受理ID及查询地址；202不等于调查已执行。",
+        "operationId": "case_investigation_api_v1_socai2_cases__case_id__investigations_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskReceipt"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "operation_conflict / subject_closed / empty_scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Case Investigation Api V1 Socai2 Cases  Case Id  Investigations Post"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable；同key重放恢复原受理身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/incidents/{incident_id}/diagnose": {
+      "post": {
+        "tags": [
+          "socai2-incidents"
+        ],
+        "summary": "提交事件检查或重新诊断",
+        "description": "保存任务后返回原受理ID及查询地址；同key同请求回原任务，最新进度读GET。",
+        "operationId": "incident_diagnosis_api_v1_socai2_incidents__incident_id__diagnose_post",
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskReceipt"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "operation_conflict / subject_closed / empty_scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Incident Diagnosis Api V1 Socai2 Incidents  Incident Id  Diagnose Post"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable；同key重放恢复原受理身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/alerts/{subject_id}/analysis-tasks": {
+      "get": {
+        "tags": [
+          "socai2-alerts"
+        ],
+        "summary": "读取告警分析任务列表",
+        "description": "包括尚未产生Run的已受理任务；按提交时间倒序，total为全部任务数。GET不受理或启动分析。",
+        "operationId": "task_list_api_v1_socai2_alerts__subject_id__analysis_tasks_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "单页数量，默认/上限由显式任务policy配置。",
+              "title": "Limit"
+            },
+            "description": "单页数量，默认/上限由显式任务policy配置。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "上一页next_cursor，不可跨主体使用。",
+              "title": "Cursor"
+            },
+            "description": "上一页next_cursor，不可跨主体使用。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task List Api V1 Socai2 Alerts  Subject Id  Analysis Tasks Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/alerts/{subject_id}/analysis-tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "socai2-alerts"
+        ],
+        "summary": "读取告警分析任务详情",
+        "description": "返回原任务状态、实际尝试和结果URL；无Run时不伪造Run，合并任务仍用原ID查询。",
+        "operationId": "task_detail_api_v1_socai2_alerts__subject_id__analysis_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task Detail Api V1 Socai2 Alerts  Subject Id  Analysis Tasks  Task Id  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/incidents/{subject_id}/analysis-tasks": {
+      "get": {
+        "tags": [
+          "socai2-incidents"
+        ],
+        "summary": "读取事件分析任务列表",
+        "description": "包括尚未产生Run的已受理任务；按提交时间倒序，total为全部任务数。GET不受理或启动分析。",
+        "operationId": "task_list_api_v1_socai2_incidents__subject_id__analysis_tasks_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "单页数量，默认/上限由显式任务policy配置。",
+              "title": "Limit"
+            },
+            "description": "单页数量，默认/上限由显式任务policy配置。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "上一页next_cursor，不可跨主体使用。",
+              "title": "Cursor"
+            },
+            "description": "上一页next_cursor，不可跨主体使用。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task List Api V1 Socai2 Incidents  Subject Id  Analysis Tasks Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/incidents/{subject_id}/analysis-tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "socai2-incidents"
+        ],
+        "summary": "读取事件分析任务详情",
+        "description": "返回原任务状态、实际尝试和结果URL；无Run时不伪造Run，合并任务仍用原ID查询。",
+        "operationId": "task_detail_api_v1_socai2_incidents__subject_id__analysis_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task Detail Api V1 Socai2 Incidents  Subject Id  Analysis Tasks  Task Id  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{subject_id}/analysis-tasks": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "读取案件分析任务列表",
+        "description": "包括尚未产生Run的已受理任务；按提交时间倒序，total为全部任务数。GET不受理或启动分析。",
+        "operationId": "task_list_api_v1_socai2_cases__subject_id__analysis_tasks_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "单页数量，默认/上限由显式任务policy配置。",
+              "title": "Limit"
+            },
+            "description": "单页数量，默认/上限由显式任务policy配置。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "上一页next_cursor，不可跨主体使用。",
+              "title": "Cursor"
+            },
+            "description": "上一页next_cursor，不可跨主体使用。"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task List Api V1 Socai2 Cases  Subject Id  Analysis Tasks Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{subject_id}/analysis-tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "socai2-cases"
+        ],
+        "summary": "读取案件分析任务详情",
+        "description": "返回原任务状态、实际尝试和结果URL；无Run时不伪造Run，合并任务仍用原ID查询。",
+        "operationId": "task_detail_api_v1_socai2_cases__subject_id__analysis_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTaskDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "subject_not_found / analysis_task_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Task Detail Api V1 Socai2 Cases  Subject Id  Analysis Tasks  Task Id  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalysisAttemptView": {
+        "properties": {
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Attempt No",
+            "description": "同任务的实际尝试序号，从1开始；不是内部attempt ID。"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id",
+            "description": "本次真实Run；准备失败或尚未开始时可空。"
+          },
+          "run_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Url",
+            "description": "该Run详情地址；无Run则为null。"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At",
+            "description": "本次尝试实际开始时间，可能早于Run创建。"
+          },
+          "local_ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Ended At",
+            "description": "本地实际收尾时间；不是Run的结束时间。"
+          },
+          "interruption_observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interruption Observed At",
+            "description": "实际观察到执行中断的时间；未记录为null。"
+          },
+          "local_state": {
+            "type": "string",
+            "enum": [
+              "running",
+              "ended",
+              "interrupted"
+            ],
+            "title": "Local State",
+            "description": "本地执行状态，不替代Run结果。"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "failed",
+                  "unknown"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome",
+            "description": "本次尝试结果；仍执行中为null。unknown不伪造确定结论。"
+          },
+          "failed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failed At",
+            "description": "记录失败或未知结果的时间；没有则为null。"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code",
+            "description": "保存的失败原因码；没有则为null。"
+          },
+          "error_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Stage",
+            "description": "保存的失败阶段；没有则为null。"
+          },
+          "error_detail": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Detail",
+            "description": "受控错误明细，可含exception_type/http_status/stage/code；不含提示词、凭据或堆栈。"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "description": "本次是否为允许重试的已知失败；不保证还剩次数或一定再次执行。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "attempt_no",
+          "run_id",
+          "run_url",
+          "started_at",
+          "local_ended_at",
+          "interruption_observed_at",
+          "local_state",
+          "outcome",
+          "failed_at",
+          "error_code",
+          "error_stage",
+          "error_detail",
+          "retryable"
+        ],
+        "title": "AnalysisAttemptView"
+      },
+      "AnalysisSubmitRequest": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次操作的幂等UUID；重放相同请求沿用，不以换key代替查询进度。"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "check",
+              "rerun"
+            ],
+            "title": "Mode",
+            "description": "check检查已有材料变化；rerun明确重新分析。执行判断由调查核心负责。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "mode"
+        ],
+        "title": "AnalysisSubmitRequest"
+      },
+      "AnalysisTaskDetail": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id",
+            "description": "原始受理任务ID；合并任务仍以原ID读取，不暴露内部根任务ID。"
+          },
+          "status_url": {
+            "type": "string",
+            "title": "Status Url",
+            "description": "本任务详情的相对HTTP地址。"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type",
+            "description": "告警alert、事件incident或案件case。"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id",
+            "description": "任务所属业务对象ID。"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "alert_triage",
+              "incident_diagnosis",
+              "case_investigation"
+            ],
+            "title": "Kind",
+            "description": "业务任务类型；不包含内部知识同步任务。"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "check",
+              "rerun",
+              "targeted",
+              "synthesis"
+            ],
+            "title": "Intent",
+            "description": "initial首次、check检查更新、rerun重跑、targeted定向、synthesis综合。"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ingress",
+              "case_create",
+              "periodic",
+              "user",
+              "knowledge"
+            ],
+            "title": "Source",
+            "description": "真实受理来源，不从Run触发字段猜测。"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "running",
+              "completed",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "description": "accepted包括等待及已安排重试；completed只表示流程结束，不表示结论质量或已采用。"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code",
+            "description": "真实原因，如no_changes、closed_before_start、retry_scheduled或失败码。"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At",
+            "description": "本任务原始受理时间；合并后仍保留。"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At",
+            "description": "实际开始时间；尚未开始为null。"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At",
+            "description": "本地任务终态时间；不改写Run的unknown。"
+          },
+          "request": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Request",
+            "description": "回显保存的业务请求；当前initial/check/rerun为{}，不含队列或内部输入摘要。"
+          },
+          "retry_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Retry Count",
+            "description": "已实际开始的重试次数；首次尝试不计为重试。"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At",
+            "description": "已安排重试的最早时间，不保证该时刻启动；未安排为null。"
+          },
+          "latest_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run Id",
+            "description": "最近实际尝试关联的Run；尚无任何Run为null。"
+          },
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisAttemptView"
+            },
+            "type": "array",
+            "title": "Attempts",
+            "description": "实际尝试，按attempt_no升序；无尝试为[]。"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DirectoryResultRef"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "各次实际保存的结果及读取地址；无结果为[]，不推断或伪造成功。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "task_id",
+          "status_url",
+          "subject_type",
+          "subject_id",
+          "kind",
+          "intent",
+          "source",
+          "status",
+          "reason_code",
+          "submitted_at",
+          "started_at",
+          "ended_at",
+          "request",
+          "retry_count",
+          "next_retry_at",
+          "latest_run_id",
+          "attempts",
+          "results"
+        ],
+        "title": "AnalysisTaskDetail"
+      },
+      "AnalysisTaskPage": {
+        "properties": {
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type",
+            "description": "所查询的业务对象类别。"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id",
+            "description": "所查询的业务对象ID。"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisTaskDetail"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "按submitted_at DESC、task_id DESC排列的本页任务。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "该主体全部业务分析任务数，含合并原任务，不含知识同步。"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "下一页游标；到底为null，不能跨主体/租户使用。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本页、总数和更新资格的同一事务观察时刻；跨请求不是冻结快照。"
+          },
+          "update_state": {
+            "$ref": "#/components/schemas/AnalysisUpdateState",
+            "description": "主体自动更新资格摘要，与任务状态分开表示。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subject_type",
+          "subject_id",
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at",
+          "update_state"
+        ],
+        "title": "AnalysisTaskPage"
+      },
+      "AnalysisTaskReceipt": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id",
+            "description": "已持久受理的原任务ID；同key同内容返回原ID。"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type",
+            "description": "任务真实所属对象类型。"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id",
+            "description": "任务真实所属对象ID。"
+          },
+          "status": {
+            "type": "string",
+            "const": "accepted",
+            "title": "Status",
+            "description": "仅表示受理已保存，不表示已经开始或完成；最新状态读status_url。"
+          },
+          "status_url": {
+            "type": "string",
+            "title": "Status Url",
+            "description": "已注册任务详情GET的相对HTTP地址。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "task_id",
+          "subject_type",
+          "subject_id",
+          "status",
+          "status_url"
+        ],
+        "title": "AnalysisTaskReceipt"
+      },
+      "AnalysisUpdateState": {
+        "properties": {
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible",
+            "description": "主体是否满足核心自动更新资格；不表示调度已运行或任务正在执行。"
+          },
+          "last_normal_completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Normal Completed At",
+            "description": "最近正常全案/事件完成时间；未记录为null。"
+          },
+          "auto_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Expires At",
+            "description": "本轮自动资格到期时间；告警非周期对象为null。"
+          },
+          "next_check_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Check At",
+            "description": "核心保存的下次检查时间；未安排为null，不保证执行时刻。"
+          },
+          "ineligible_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ineligible Reason",
+            "description": "不具资格的原因：not_periodic/not_registered/closed/expired或实际停止原因；具备资格为null。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "eligible",
+          "last_normal_completed_at",
+          "auto_expires_at",
+          "next_check_at",
+          "ineligible_reason"
+        ],
+        "title": "AnalysisUpdateState"
+      },
+      "DirectoryResultRef": {
+        "properties": {
+          "result_type": {
+            "type": "string",
+            "enum": [
+              "case_result",
+              "alert_assessment",
+              "incident_diagnosis"
+            ],
+            "title": "Result Type",
+            "description": "结果记录类型。"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "该条真实结果的ID，不是Run或任务ID。"
+          },
+          "source_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Run Id",
+            "description": "产生结果的Run ID，与所在目录项一致。"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "结果种类，沿已保存记录返回。"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "读取结果的相对HTTP地址；告警/事件结果在Run详情中，Case结果有独立详情。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "result_type",
+          "id",
+          "source_run_id",
+          "kind",
+          "url"
+        ],
+        "title": "DirectoryResultRef"
+      },
+      "RecordError": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/RecordErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "RecordError"
+      },
+      "RecordErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "context"
+        ],
+        "title": "RecordErrorDetail"
+      },
+      "RecordValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "RecordValidationError"
+      }
+    }
+  }
+}

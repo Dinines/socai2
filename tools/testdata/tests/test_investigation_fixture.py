@@ -1,6 +1,7 @@
 """D1 direct offline contracts; no service startup or backend access."""
 import importlib.util
 import json
+from ipaddress import IPv4Address
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -84,9 +85,9 @@ class InvestigationFixtureTest(unittest.TestCase):
                 self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
                 self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
                                  ("192.0.2.70", dest, 443, "TCP"))
-                self.assertEqual(row["src_hostname"], f"{RUN}-host")
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
                 self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
-                self.assertEqual(row["connector_type"], "socai2-investigation-fixture")
+                self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["product_name"])
                 raw = json.loads(row["raw_payload"])
                 self.assertEqual(raw["event_id"], row["event_id"])
                 self.assertEqual(raw["tenant_id"], row["tenant_id"])
@@ -94,11 +95,15 @@ class InvestigationFixtureTest(unittest.TestCase):
                 self.assertEqual(raw["hostname"], row["src_hostname"])
                 for key in ("source_ip", "dest_ip", "src_port", "dst_port", "protocol", "action", "outcome"):
                     self.assertEqual(raw[key], row[key])
-                self.assertEqual(raw["source"], row["connector_type"])
+                self.assertEqual(raw["source"], fixture.SOURCE_PROFILE["connector_type"])
                 self.assertEqual(sha256(row["raw_payload"].encode()), record["raw_payload_sha256"])
-                self.assertEqual(sha256(row["ocsf_json"].encode()), record["ocsf_json_sha256"])
-                self.assertEqual(json.loads(row["ocsf_json"]), event["ocsf_event"])
-                self.assertEqual(str(lake._to_ip_obj(row["source_ip"])), "::ffff:c000:246")
+                stored = json.loads(row["ocsf_json"])
+                metadata = stored.pop("_socai2_storage")
+                self.assertFalse(metadata["raw_payload"]["truncated"])
+                self.assertEqual(metadata["raw_payload"]["sha256"], record["raw_payload_sha256"])
+                self.assertEqual(sha256(json_bytes(stored)), record["ocsf_source_sha256"])
+                self.assertEqual(stored, event["ocsf_event"])
+                self.assertEqual(lake._to_ip_obj(row["source_ip"]).ipv4_mapped, IPv4Address("192.0.2.70"))
 
     def test_independent_query_predicate_matches_only_linked_event(self):
         self.generate()
@@ -106,7 +111,7 @@ class InvestigationFixtureTest(unittest.TestCase):
         rows = [lake.event_to_row(event) for event in events]
         # Independent fixed expectations, not the generator's own query helper.
         matched = [row["event_id"] for row in rows if row["tenant_id"] == TENANT
-                   and row["src_hostname"] == f"{RUN}-host" and row["source_ip"] == "192.0.2.70"
+                   and row["src_hostname"] == alerts[0]["hostname"] and row["source_ip"] == "192.0.2.70"
                    and row["dest_ip"] == "198.51.100.70" and row["dst_port"] == 443
                    and row["protocol"] == "TCP"
                    and datetime(2026, 10, 23, 10) <= row["event_time"] < datetime(2026, 10, 23, 10, 5)]

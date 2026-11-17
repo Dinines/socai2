@@ -75,6 +75,18 @@ class Gateway:
                 assert any(r["block"] == "plan" and r["value"]["followup"]["source_ids"] for r in rows)
                 assert all(d["visible_id"] for d in request["followup_boundary"]["dependencies"])
             answer = final_answer(request, context, comparison)
+            if self.mode == "human_followup":
+                human_id = next(row["id"] for row in request["followup_boundary"]["records"]
+                                if row.get("context_kind") == "human_feedback")
+                baseline_id = next(sid for sid, src in request["source_map"].items()
+                                   if src["ref"]["type"] == "result" and src["ref"]["id"] == comparison["result_id"])
+                answer["conclusion"]["text"] = (
+                    "Synthetic uncertainty retained after H review; process start does not establish completion or authorization.")
+                answer["conclusion"]["support_ids"].append(human_id)
+                answer["recommendations"][0]["source_ids"].append(human_id)
+                answer["comparison"] = {"kind": "unchanged",
+                    "summary": "Synthetic review retains uncertainty; H feedback is not proof of authorization.",
+                    "support_ids": [baseline_id, human_id]}
             if self.mode == "correction" and self.final_calls == 1:
                 answer["analysis"]["members"][0].update(state="analyzed", evidence_ids=[])
             if self.mode == "correction" and self.final_calls == 2:
@@ -151,6 +163,19 @@ async def scenario(service, sample, initial, mode):
         requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
             F.c.run_id == rid, F.c.kind == "model_request")))).scalars().all()
         assert all(any(req["payload"]["body"] == sent["body"] for req in requests) for sent in gateway.requests)
+        if mode == "human_followup":
+            final_request = gateway.requests[-1]
+            baseline_id = final_request["followup_boundary"]["program_metadata"]["comparison"]["result_id"]
+            frozen_context = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == rid, F.c.schema_version == "socai2.baseline-context.v1")))).scalar_one()
+            old = frozen_context["prior_results"][baseline_id]
+            selected = next(row for row in final_request["followup_boundary"]["records"]
+                            if row["ref"]["type"] == "result" and row["ref"]["id"] == baseline_id)
+            basis = selected["value"]["comparison_basis"]
+            assert [f["statement"] for f in basis["findings"]] == [f["statement"] for f in old["findings"]]
+            assert basis["case_impact"]["cannot_generalize"] == old["case_impact"]["cannot_generalize"]
+            assert all(q["id"] != "coverage" for q in basis["questions"])
+            assert old["conclusion"] in final_request["body"]["messages"][1]["content"]
         if mode in {"role_recovery", "role_partial"}:
             assert len(requests) == 6
             responses = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
@@ -161,6 +186,13 @@ async def scenario(service, sample, initial, mode):
             assert len(role_errors) == (4 if mode == "role_partial" else 2)
             if mode == "role_recovery":
                 assert result["validation_state"] == "accepted"
+                from app.socai2.case_program_output import VERSION, observed_text
+                last = gateway.requests[-1]
+                answer = json.loads(gateway.responses[-1]["choices"][0]["message"]["content"])
+                finding = answer["analysis"]["findings"][0]
+                assert last["case_boundary"]["program_output"] == VERSION
+                assert result["findings"][0]["statement"] == observed_text(finding, last["case_boundary"])
+                assert result["findings"][0]["support"] == [last["source_map"][sid]["ref"] for sid in finding["support_ids"]]
         if mode == "recommendation_correction":
             responses = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
                 F.c.run_id == rid, F.c.kind == "model_response")))).scalars().all()
@@ -168,7 +200,8 @@ async def scenario(service, sample, initial, mode):
             assert len(rejected) == 1
             assert rejected[0]["payload"]["raw"] == gateway.responses[-2]
             assert result["validation_state"] == "accepted" and result["delivery_state"] == "complete"
-    if mode in {"valid", "recommendation_correction"}:
+    readback = {}
+    if mode in {"valid", "human_followup", "recommendation_correction", "role_recovery"}:
         from app.api.v1.endpoints import socai2_cases as api
         from app.socai2.case_service import CaseService
         from fastapi import FastAPI
@@ -181,14 +214,48 @@ async def scenario(service, sample, initial, mode):
             response = await client.get(f"/socai2/cases/{cid}/results/{result['id']}")
             assert response.status_code == 200
             saved = response.json()["result"]
-            assert all(saved[key] == result[key] for key in ("conclusion","validation_state","delivery_state","recommendations"))
+            assert all(saved[key] == result[key] for key in (
+                "conclusion", "validation_state", "delivery_state", "recommendations", "change_kind", "change_summary", "findings"))
             response = await client.get(f"/socai2/cases/{cid}")
             assert response.status_code == 200
             current = response.json()["current_assessment"]
             assert current["value"]["conclusion"] == result["conclusion"]
             assert current["value"]["validity"] == "accepted" and current["covers_current_members"]
+            readback = {"result": saved, "current_assessment": current}
     return {**sample, "real_model_calls": 0, "substitute_deep_calls": gateway.deep_calls,
             "substitute_final_calls": gateway.final_calls, "substitute_lake_calls": lake.calls,
+            "result_id": result["id"], "report_artifact_id": out["report_artifact_id"],
+            "readback": readback,
             "run_state": run["state"], "c6_idempotent_replay": True,
-            "final_result_and_current_assessment_gets": mode in {"valid", "recommendation_correction"},
+            "final_result_and_current_assessment_gets": mode in {"valid", "human_followup", "recommendation_correction", "role_recovery"},
             "final_recommendation_correction_and_gets": mode == "recommendation_correction"}
+
+
+async def human_readback(service, cid, rid, comparison_result_id, prior_scope, human_ref, revisions):
+    """Read the full delivery artifact and immutable H revisions; never redispatch."""
+    from app.api.v1.endpoints import socai2_tasks as api
+    from app.socai2.human_task_service import HumanTaskService
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+    async with service.transaction(T, readonly=True) as store:
+        report = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+            F.c.case_id == cid, F.c.run_id == rid,
+            F.c.content_json["type"].astext == "delivery_report")))).scalar_one()
+    assert report["comparison"]["result_id"] == str(comparison_result_id)
+    assert report["comparison"]["state"] == "eligible"
+    assert report["comparison"]["prior_scope"] == prior_scope
+    refs = [report["source_map"][sid]["ref"] for sid in report["delivery"]["conclusion"]["support_ids"]]
+    assert human_ref in refs
+    assert human_ref in report["result"]["recommendations"][0]["source_refs"]
+    human = HumanTaskService(service.sessions)
+    app = FastAPI()
+    app.include_router(api.router)
+    app.dependency_overrides[api.get_service] = lambda: human
+    app.dependency_overrides[api.ReadUser.__metadata__[0].dependency] = lambda: SimpleNamespace(tenant_id=T)
+    readbacks = []
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://synthetic.local") as client:
+        for expected in revisions:
+            response = await client.get(f"/socai2/cases/{cid}/tasks/{expected.task_id}/revisions/{expected.id}")
+            assert response.status_code == 200 and response.json() == expected.model_dump(mode="json")
+            readbacks.append(response.json())
+    return {"comparison": report["comparison"], "conclusion_refs": refs, "human_revisions": readbacks}

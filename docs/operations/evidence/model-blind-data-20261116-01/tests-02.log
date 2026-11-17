@@ -1,0 +1,141 @@
+......................................F.............                                                               [100%]
+=================================== FAILURES ===================================
+_ InvestigationFixtureTest.test_independent_query_predicate_matches_only_linked_event _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_independent_query_predicate_matches_only_linked_event>
+
+    def test_independent_query_predicate_matches_only_linked_event(self):
+        self.generate()
+        _, alerts, events = fixture.load_fixture(self.batch)
+        rows = [lake.event_to_row(event) for event in events]
+        # Independent fixed expectations, not the generator's own query helper.
+        matched = [row["event_id"] for row in rows if row["tenant_id"] == TENANT
+                   and row["src_hostname"] == f"{RUN}-host" and row["source_ip"] == "192.0.2.70"
+                   and row["dest_ip"] == "198.51.100.70" and row["dst_port"] == 443
+                   and row["protocol"] == "TCP"
+                   and datetime(2026, 10, 23, 10) <= row["event_time"] < datetime(2026, 10, 23, 10, 5)]
+>       self.assertEqual(matched, [events[0]["id"]])
+E       AssertionError: Lists differ: [] != ['08fab564-ea5d-558b-adcf-c3030ef31534']
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       '08fab564-ea5d-558b-adcf-c3030ef31534'
+E       
+E       - []
+E       + ['08fab564-ea5d-558b-adcf-c3030ef31534']
+
+tools/testdata/tests/test_investigation_fixture.py:113: AssertionError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='08fab564-ea5d-558b-adcf-c3030ef31534') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+>               self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["connector_type"])
+E               AssertionError: 'Endpoint Collector' != 'telemetry-channel-01'
+E               - Endpoint Collector
+E               + telemetry-channel-01
+
+tools/testdata/tests/test_investigation_fixture.py:89: AssertionError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='a9439119-320d-51a9-aed5-ab3b913c3275') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+>               self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["connector_type"])
+E               AssertionError: 'Endpoint Collector' != 'telemetry-channel-01'
+E               - Endpoint Collector
+E               + telemetry-channel-01
+
+tools/testdata/tests/test_investigation_fixture.py:89: AssertionError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='32b24b28-6154-5d2e-8217-91e5ed52366f') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+>               self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["connector_type"])
+E               AssertionError: 'Endpoint Collector' != 'telemetry-channel-01'
+E               - Endpoint Collector
+E               + telemetry-channel-01
+
+tools/testdata/tests/test_investigation_fixture.py:89: AssertionError
+=========================== short test summary info ============================
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_independent_query_predicate_matches_only_linked_event
+SUBFAILED(event='08fab564-ea5d-558b-adcf-c3030ef31534') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+SUBFAILED(event='a9439119-320d-51a9-aed5-ab3b913c3275') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+SUBFAILED(event='32b24b28-6154-5d2e-8217-91e5ed52366f') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+4 failed, 51 passed, 27 subtests passed in 0.48s

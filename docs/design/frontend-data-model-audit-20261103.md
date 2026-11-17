@@ -10,7 +10,7 @@
 
 - 最新页面需求：[产品说明](alert-incident-case-product-requirements.md)及本地c71afb5原型：告警/事件、Case资料/概览/故事、调查历史、AI、人工任务、探索、对象证据、响应、评论。未刷新远端，不能称远端此刻无更新。
 - 当前服务端：39f4033检查点加case-baseline-history独立工作区已有修改。新表设计分支中的较早服务代码不作最新基线。
-- [85项已有字段核对](../investigation/page-field-support-matrix-20261102.md)是48f54abd历史需求的现存数据证据，本轮用作遗漏回查；[36项调查结果字段核对](investigation-result-field-audit-20261103.md)对应新版调查展示。两者不是同一时点的上线验收。
+- [85项已有字段核对](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/page-field-support-matrix-20261102.md)是48f54abd历史需求的现存数据证据，本轮用作遗漏回查；[36项调查结果字段核对](investigation-result-field-audit-20261103.md)对应新版调查展示。两者不是同一时点的上线验收。
 - 五流程仍以[唯一主设计](../architecture/investigation-planning-design.md)为准。Fusion收到数据之前的问题不追查；已有输入被内部丢失/误用仍在范围。页面交互不改；r13报告问题不因新表消失。
 
 ## 2. 审计发现与设计修正

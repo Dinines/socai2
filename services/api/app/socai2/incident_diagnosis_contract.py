@@ -28,7 +28,7 @@ from .baseline_store import StoreError, digest, encoded
 from .model_input_view import LIMITATIONS, compact, size, source_prefix
 from .stage_result_contracts import IncidentOutput
 
-Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=3000)]
+Text = Annotated[str, StringConstraints(min_length=1, max_length=3000, pattern=r"\S")]
 
 
 class Member(Contract):
@@ -43,14 +43,14 @@ class Finding(Contract):
     id: Annotated[str, StringConstraints(pattern=r"^F[1-9][0-9]*$")]
     statement: Text
     state: Literal["inferred", "unresolved"]
-    alert_ids: list[UUID] = Field(min_length=1, max_length=200)
-    source_ids: list[Alias] = Field(min_length=1, max_length=40)
+    alert_ids: list[UUID] = Field(min_length=1)
+    source_ids: list[Alias] = Field(max_length=40, json_schema_extra={"minItems": 1})
     limitations: list[Text] = Field(max_length=10)
 
 
 class Question(Contract):
     text: Text
-    alert_ids: list[UUID] = Field(min_length=1, max_length=200)
+    alert_ids: list[UUID] = Field(min_length=1)
     source_ids: list[Alias] = Field(max_length=30)
     evidence_requirements: list[Text] = Field(min_length=1, max_length=10)
 
@@ -58,8 +58,8 @@ class Question(Contract):
 class Answer(Contract):
     summary: Text
     conclusion: Text
-    evidence_ids: list[Alias] = Field(min_length=1, max_length=60)
-    members: list[Member] = Field(min_length=1, max_length=200)
+    evidence_ids: list[Alias] = Field(max_length=60, json_schema_extra={"minItems": 1})
+    members: list[Member] = Field(min_length=1)
     findings: list[Finding] = Field(max_length=8)
     open_questions: list[Question] = Field(max_length=10)
     limitations: list[Text] = Field(max_length=20)
@@ -87,7 +87,7 @@ PROMPT = (
 
 def build(source, input_id, *, execution_time=None):
     from .program_facts import stage_facts
-    if len(source["members"]) > 200:
+    if len(source["members"]) > source.get("input_selection", {}).get("limit", 200):
         raise StoreError("incident_member_directory_too_large", 422)
     validation = source.get("triage_validation")
     if validation is None:
@@ -117,8 +117,12 @@ def build(source, input_id, *, execution_time=None):
             first.append((reference("artifact", input_id, "human_statement", prefix + "feedback"),
                           member["feedback"], member["feedback"], [aid]))
         if usable:
+            from .citation_quality import prior_note
+            value = {k: paired.get(k) for k in ("verdict", "rationale", "confidence", "score_state", "assessed_at")}
+            if note := prior_note(source, aid):
+                value["citation_quality_note"] = note
             first.append((reference("artifact", input_id, "prior_analysis", prefix + "triage"), paired,
-                {k: paired.get(k) for k in ("verdict", "rationale", "confidence", "score_state", "assessed_at")}, [aid]))
+                value, [aid]))
         if member["alert"].get("event_time") is not None:
             value = member["alert"]["event_time"]
             first.append((reference("artifact", input_id, "source_label", prefix + "alert.event_time"), value, value, [aid]))
@@ -199,8 +203,8 @@ def build(source, input_id, *, execution_time=None):
     return messages, source_map, data
 
 
-def parse(content, source_map, data, *, diagnostics=None):
-    checks = Checks(diagnostics)
+def parse(content, source_map, data, *, diagnostics=None, citation_review=None):
+    checks = Checks(diagnostics, citation_review=citation_review)
     def bad(code):
         checks.add(code, "$", "shape")
         checks.add("source_checks_not_run", "$", "source", "info", "not_checked")
@@ -216,6 +220,9 @@ def parse(content, source_map, data, *, diagnostics=None):
 
     try:
         raw = json.loads(content, object_pairs_hook=pairs, parse_constant=lambda _: bad("incident_answer_nonfinite"))
+        if citation_review is not None:
+            from .citation_quality import normalize
+            raw = normalize(raw, citation_review)
         answer = Answer.model_validate(raw)
     except (ValueError, TypeError, ValidationError):
         bad("incident_answer_shape_invalid")
@@ -227,9 +234,22 @@ def parse(content, source_map, data, *, diagnostics=None):
         checks.add("incident_member_coverage_invalid", "$.members", "scope")
 
     def refs(ids, path, owned=None):
+        from .citation_quality import record_references
+        record_references(citation_review, ids, source_map, path, owned)
+        if path == "$.evidence_ids" or path.startswith("$.findings."):
+            checks.require(bool(ids), "incident_answer_source_missing", path)
         if len(ids) != len(set(ids)) or not set(ids) <= set(source_map):
             checks.add("incident_answer_source_invalid", path)
         known = [s for s in ids if s in source_map]
+        if citation_review is not None:
+            from .citation_quality import issue
+            if not ids or len(known) != len(ids):
+                issue(citation_review, "missing_or_unbound_sources", path, source_ids=ids,
+                      unresolved_ids=sorted(set(ids) - set(source_map)))
+            actual = {aid for s in known for aid in source_map[s]["alert_ids"]}
+            if owned is not None and (actual != set(owned) or any(not source_map[s]["alert_ids"] for s in known)):
+                issue(citation_review, "source_scope_diagnostic", path, declared_members=owned,
+                      resolved_members={s: source_map[s]["alert_ids"] for s in known})
         if owned is not None:
             if not owned or not set(owned) <= set(coverage) or len(owned) != len(set(owned)):
                 checks.add("incident_answer_scope_invalid", path, "scope")

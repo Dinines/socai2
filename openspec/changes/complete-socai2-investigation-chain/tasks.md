@@ -1,30 +1,55 @@
 # 当前任务
 
-主调查 **31/41**，保留全部编号与原勾选状态。当前程序功能交付不代表主调查整体验收；交付及问题分别见 [PROGRESS](../../../PROGRESS.md)、[问题清单](../../../docs/investigation/current-issues.md)。
+主调查 **31/41**，全部任务编号、描述及勾选状态保持。当前程序交付和未完项分别见[PROGRESS](../../../PROGRESS.md)、[问题清单](../../../docs/investigation/current-issues.md)及[11-14评审](../../../docs/investigation/investigation-current-review-20261114.md)。逐批实施流水已移入[11-14整理前任务记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/snapshots/openspec/changes/complete-socai2-investigation-chain/tasks.md)，旧失败和验收边界不变。
 
-2026-11-12 当前执行顺序：先按[固定流程计划](fixed-flow-plan.md)完成 3.10/3.14 和 3.7/3.30 的固定范围子集、3.12 的对应读取；只修直接缺口并复用验证。其后再实施[更新/流式 change](../schedule-streaming-investigation-updates/tasks.md)，当前不做队列或反馈后的自动重算；主任务完成数不变。
+## 当前范围与顺序
 
-本地续修 A/I 一次引用纠正、C6 缺依据反馈、同一历史记录的程序展示去重及配置 Case 实际消息检查；固定原件、原答和失败不改写。[验证记录](fixed-flow-validation-20261112.md)分别说明替身保存/采用验证、真实模型和 GET 读回，未以输入可用或代码完成核销整体质量与本任务树。
+**阶段一状态：本地验收完成，待统一发布。** 负责人已确认七步开发实施收口；本地保存读取及展示证据齐全，原答、失败和unknown保留。仅保留[统一发布、发布后验证两项交付待办](stage1-problems-and-plan-20261114.md#发布与发布后验证待办)，主任务31/41及全部原任务勾选保持，未归档整个change。后续调度问题归其所属change，不计入阶段一待办或关闭条件。
 
-负责人进一步明确：先说明模型任务，再选择有用字段，禁止原始数据整包透传；查询只给结果。长期规则已写入 AGENTS，具体[字段梳理](model-input-field-review-20261112.md)覆盖 A/I/C3/Deep/C6。查询结果展示已本地修改、离线重建并通过限定静态独审；对象、历史、知识等后续字段选择按表逐项实施，不把梳理完成写成全部代码已生效，不增加模型采样。
+阶段一交付按统一目标版本同步调查核心、独立HTTP读取器、配置、Swagger及4177，不增加旧客户端兼容层、双轨返回或临时表；外部路由/Swagger保持原归属。已完成范围及发布验证安排见[阶段一稳定交接](stage1-problems-and-plan-20261114.md#10-阶段一稳定交接与统一目标版本)。本轮只更新文档，不发布，Git提交由其他对话处理。
 
-当前按负责人“逐步整理每次模型输入”顺序，[A 输入业务字段](model-input-field-review-20261112.md#10-按环节实施先整理-a)及[I 成员事实/有效 A/必要历史](model-input-field-review-20261112.md#11-i按事件诊断整理成员和历史)已本地实施并离线重建。I 当前3,047字符/71行，8项直接检查通过；[第12节 C3](model-input-field-review-20261112.md#12-c3首轮调查的事实前序判断与知识)已本地实施，正文7,680字符/102来源，6项直接检查通过，I 整体依赖遗漏经独审修正并定向2项通过。第13节完整 JSON 新导入分块及 C3/Deep/C6 的知识正文投影已本地实施，5项不同直接检查通过，独审数值缺口修复后定向2项及限定复核通过；样例业务正文448字符，新导入离线 C3 预览6,930字符，原冻结 C3 仍7,680字符。HTTP 字段合同/数据库表不变，新导入分块数量可能变化，旧数据不重写；未实际导入、索引或派发模型。第14/15节 Deep/C6 已本地按任务筛选，完整输入8,768/14,080字符、原文和必要依赖保持；7项不同直接检查及限定独审通过。不新增真实模型调用。局部完成不勾选主调查未完项。
+固定A/I→Case程序功能版及独立HTTP同步已交付，现行输入筛选见[按环节字段设计](model-input-field-review-20261112.md)，保存/采用规则见[固定结果人工采用](result-adoption.md)。当前4177是11-14三案保存快照，发布基线10批不再作为“最新展示”入口。
 
-按[后续工作顺序](design.md#后续工作顺序)推进：有据结论程序范围与 [Case/H 正常 HTTP 操作](../archive/2026-11-11-enable-case-human-http-flow/tasks.md)已统一发布，M01-A/M01-B 按负责人决定后置、质量 NOT_PASSED 保持。当前按[知识使用位置](design.md#知识库使用位置与本地嵌入)完成本地 C2 检索→C3 输入/引用→Deep/C6 复用，21 r3 已统一发布并读回；知识合理使用质量仍单列；A/I 与动态补检索不扩入首项。[历史告警知识](../archive/2026-11-12-use-historical-alert-knowledge/tasks.md)已补齐 C2 历史参考及模型传递，并完成 21 发布读回；该 change 已归档并推送；后续 [refine-purpose-aware-knowledge-use](../archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已交付用途筛选、模型去重／选择及历史选入更新，经一次直接流程和独审后发布 `v1.2-20261112-r3`，知识写读及 4177 已核验，质量仍未通过。[分诊后知识同步](../archive/2026-11-12-sync-saved-alert-knowledge/tasks.md)已完成本地直接验收、独审及 r5 实际加载读回，不改变主调查完成计数。页面数据对应、自动处理继续保留。每项只做改动相关检查和一条代表性完整路径，证据跨关联主任务复用；不重复 56 项审查或开展可用性矩阵，一个 change 统一发布/推送。
+阶段一已完成评审确认的程序修正：8192下C3单次七部分/最多5发现、一次缺字段补答、结论与引用问题分别存取、补查能力分流、模块原件完整留存及4177业务结论展示。引用正确性及生成约束优化继续后置，不能仅因引用错误否定、删除或降级模型原结论；后续更新另归[流式change](../schedule-streaming-investigation-updates/tasks.md)，不重新打开阶段一。
 
-本轮另按负责人要求完成[HTTP功能直接验证与后续规划](http-functional-validation-20261112.md)：本机原路由/真实隔离库31项检查通过，43操作有回执，模型替身不核销真实质量。随后复用[serve-investigation-api](../archive/2026-11-12-serve-investigation-api/tasks.md)完成独立入口：21:18024统一43操作并接正式aisoc，本机与21各9次TCP Case/H及SQL读回一致，旧服务保持。对应3.12的入口子项，不勾整体。随后[manage-investigation-cases](../archive/2026-11-12-manage-investigation-cases/tasks.md)已完成E44–E47管理/结案/重开，本机与21各20次TCP和SQL读回通过、docs6同步；随后[manage-alert-incident-operations](../archive/2026-11-13-manage-alert-incident-operations/validation.md)完成E48–E53告警反馈及告警/事件单条、批量管理，两端各86次TCP及SQL逐值读回通过；当前53操作、docs7，原47合同不变。后续按[接口实施计划](../../../docs/investigation/http-implementation-plan-20261112.md)继续补列表筛选/排序等，主任务计数保持。
+具体阶段目标、交付物和通过条件见[11-14实施规划](../../../docs/investigation/investigation-implementation-plan-20261114.md)。阶段1的RV01问题记录/合同衔接、RV02/RV04及RV12当前展示归本change既有任务，阶段2–5归流式change，阶段6引用及正文质量继续后置。限定修复验收不核销本change整体；全部编号和勾选状态保持，不另建任务树。
+
+[阶段一详细设计](stage1-problems-and-plan-20261114.md)及调查/查阅页规格增量已同步；引用失败置空、引用纠错及丢弃前序结论的旧目标规则已调整。按负责人补充的[全项目分步规则](../../../openspec/README.md#阶段规划与分步执行)，先说明阶段整体目标、效果、测试和验收，再逐步实施；不把本表所有工作合成一次执行。
+
+步骤1 A/I已完成[本地保存读取验收](../../../docs/operations/evidence/stage1-ai-retention-20261114-01/README.md)。**步骤2：Case C3/Deep/C6原结论保留、引用独立记录、下游和采用**也已完成，实施前目标与验证安排见[详细设计第8节](stage1-problems-and-plan-20261114.md#8-整体实施顺序预期效果与验证安排)。[步骤2回执](../../../docs/operations/evidence/stage1-case-retention-20261114-01/README.md)：59项直接检查通过，1项修改前同样失败的历史查询展示断言登记后置；新隔离PG完成C3→Deep→C6、报告/Result及自动采用，54次GET、4次采用请求通过，原文/原判定、引用诊断、下游质量提示与hash可对照。当前人工选择、旧预览令牌和新材料stale保护保持。共6次模型替身（含2A+1I夹具），0次真实模型/外部来源调用；验收脚本错误保留，后续仅读回同一已完成Run，没有重派旧Run。
+
+已完成**步骤3：C3一次七部分、8192额度、最多5个核心发现**；目标、实现顺序、0/5/6项边界和新隔离PG保存读取安排已先写入[详细设计](stage1-problems-and-plan-20261114.md#本轮步骤3c3七部分8192额度及最多5个核心发现)。[第三步回执](../../../docs/operations/evidence/stage1-c3-contract-20261114-01/README.md)：48项直接检查、实际8192请求与5发现保存、C6读取原文及44次GET通过；仅1次C3和1次C6替身，另含2A+I夹具共5次，0次真实模型/外部来源调用。旧冻结及C6容量兼容，空补查无追加调用；补答机制仍留步骤4，Run总预算及其他阶段配额不动。步骤3当轮在保存读取验收后停止，未部署、提交或推送，主调查31/41及整体任务勾选保持。
+
+已完成**步骤4：C3截断/缺项最多一次只补缺失字段**。实施前目标及安排见[第四步设计](stage1-problems-and-plan-20261114.md#本轮步骤4c3有界缺字段补答及可追溯合并)；[实际回执](../../../docs/operations/evidence/stage1-c3-completion-20261114-01/README.md)记录65项不同直接检查、一次真实模型补followups及19次GET。新隔离Run导入历史真实首答并计其usage，原Case/Run和前六字段保持，原答/补答/合并逐字段可追溯；无模型替身，首答length/失败及引用问题继续保存。新补答10,998tokens，含历史首答共22,116；Run预算、8192/最多5及C6预留保持。三个生成前脚本错误及回滚保留；步骤4当轮止于该步，未执行Deep/C6、发布或提交推送，主31/41不变。
+
+已完成**步骤5：补查目标与能力分流**。目标及安排见[第五步设计](stage1-problems-and-plan-20261114.md#本轮步骤5补查目标与能力分流)；[回执](../../../docs/operations/evidence/stage1-followup-routing-20261114-01/README.md)记录44项直接检查、经用户授权的6条演练湖记录及新隔离Run真实C3→认证查询→C6→47次GET。新增湖上下文实际进入C6，Result accepted/uncertain/partial，human不建任务；原计划和引用问题继续保存。首轮传输脚本错误前已生成的C3及unknown保留，33次读取已核，两Run共3次真实模型；未重复写湖或重派旧Run。预算、C6预留及C3合同/补答策略保持；查询目标描述过宽仍属质量未过，不因单次认证查询宣称其他类型已查。步骤5当轮止于补查分流，未推进后续步骤或发布，主31/41不变。
+
+已完成**步骤6：各模块原件完整留存、关联和读取**，实施前目标、步骤及验证安排见[第六步安排](stage1-problems-and-plan-20261114.md#第六步实施安排原件关联与读取)。只解除原件字节拒存/拒读及取得后删行，逐模块复核不可变关联；模型/查询额度保持，C5图限制独立配置。复用已有真实Run，新增超1 MiB原件的隔离PG保存及HTTP读取核size/hash，不新调模型或写湖；该批止于步骤6，步骤7已在后续独立批次完成。[回执](../../../docs/operations/evidence/stage1-original-retention-20261114-01/README.md)：30项离线及8项隔离PG直接检查；7份大于旧1 MiB的原件及26次GET，历史8Run/176工件/77来源关联/73次GET通过，原答和unknown保持；新Run配置原文可还原。原模型/查询预算和C6预留保持。仅存取夹具，0次模型调用，实际4177及服务未发布；主任务31/41及勾选保持。
+
+**步骤7：同Run结论、分项状态及原件查阅**已完成本地直接验收，实施前目标与安排见[第七步设计](stage1-problems-and-plan-20261114.md#第七步实施安排同run结论分项状态与原件查阅)。[回执](../../../docs/operations/evidence/stage1-viewer-20261114-01/README.md)：14项离线检查、11份快照的33Run/221步骤/542工件逐值读回及21项实际浏览器检查通过；正常结束、引用问题与采用分离，C3初/补/合并、527227字符完整展开、宽窄屏和切换空态可查。取消I占位无结论的说明已修正并复验。阶段一七步限定本地证据已齐，0新模型/业务写入，21及实际4177未发布；主change31/41、质量NOT_PASSED及整体任务勾选保持，未做结束审计、归档或推送。
+
+| 原任务归属 | 阶段一细化工作 | 直接验收入口 |
+| --- | --- | --- |
+| 3.10、3.23、3.30 | A/I/C3/Deep/C6原判定与引用诊断分开，装配/下游/采用不隐式丢结论；同列表去重 | 复用旧原答，核保存/读取/下游及采用的原文和独立问题记录 |
+| 3.30 | C3七部分、8192/最多5；边界解析、一次字段补答、冻结上下文及可追溯合并 | 完整输出路径、旧截断原答与受控补答，额度和失败边界直接断言 |
+| 3.7、3.30 | query/Deep/待补材料按实际能力流转 | 一条实际来源取证到结果存取，缺来源明确未验 |
+| 3.12及既有查阅范围 | 模块输入/原答/处理/输出、超限原件存取、同Run结论及分项状态 | 同一代表流程关联和超旧阈值原件读回、4177实际查看 |
+
+任务编号及勾选状态保持；上表是原任务的实施细化，不新增另一套复选任务，也不核销整体模型质量或产品页面范围。
+
+负责人已明确引用正确性与模型正文质量后续解决，不再为已后置问题追加采样；引用错误不作为结论错误的证明，原答、原业务判定及质量问题分别保留，旧拒收、unknown及`NOT_PASSED`不追认。真实解析、主体身份和程序保存/读取故障仍需修正，引用质量不单独阻断业务结论交付。各页面AI对话暂缓，E19/E20仍501；自动消费、真实响应及产品页面未验范围单列，不因资料归档勾选完成。
 
 ## 尚未完成
 
 按负责人关于大量工具返回的补充，第16节已本地实现：保留现有查询/请求容量边界，补普通查询字段按记录关联的共同值展示及内部身份筛选；1项已有字段检查及1项正常隔离库替身保存/读取流程通过，结果/当前评估GET一致。[07批证据](../../../docs/operations/evidence/model-input-selection-20261112-07/README.md)明确区分合成预览、实际替身请求、accepted/partial结果与前置脚本失败；不新增翻页、模型摘要或压力测试，真实模型质量和旧失败不追认。
 
-第14/15节已依次完成 Deep/C6 的本地程序筛选和[完整输入预览](../../../docs/operations/evidence/model-input-selection-20261112-06/README.md)，7项不同直接检查通过；范围/引用补充定向复验及限定独审通过。没有新模型/数据库/HTTP调用，不改变表结构及接口合同。下一步固定流程结论与保存读取验收，不提前勾选以下整体任务。
+第14/15节已依次完成 Deep/C6 的本地程序筛选和[完整输入预览](../../../docs/operations/evidence/model-input-selection-20261112-06/README.md)，7项不同直接检查通过；范围/引用补充定向复验及限定独审通过。该批没有新模型/数据库/HTTP调用；随后07批替身保存读取证据如上。固定05批已补实际导入与真实固定流程失败读回证据；07批补了一次接受并采用的C6保存读取，正文质量仍未通过，保持表结构及接口合同，不提前勾选以下整体任务。
 
 - [ ] 3.7 完成正常 Kafka/Fusion→A/I/C→H→下一轮 C 的实际业务闭环，确认人工版本进入输入并影响依据或待核事项，结果保存后可读。已有链路和 H 传递证据复用；真实知识使用、完整结论质量及远端模型对照未验范围仍保留，对照不作为下一功能前置。
 - [ ] 3.10 补齐 A/I/C3/Deep/C6 的结论依据、来源/范围、查询状态和效果边界。当前 Case 子范围由 ground-case-conclusions 处理审计 A01/A02；来源角色与有限纠正复用，A/I 其余范围仍保留，不随子 change 完成整项勾选。不另建通用语义评判或复杂测试框架。
-- [ ] 3.12 完成当前 Case/H 正常操作和产品页面数据对应。F01–F28 的存储/读取与证据目录已验范围复用，P01–P04、实际 HTTP 写操作及人工反馈后调查继续核验；4177 不代替产品页面，评论附件、探索、Q 与外部响应继续后置。
+- [ ] 3.12 完成当前 Case/H 正常操作和产品页面数据对应。F01–F28 的存储/读取与证据目录已验范围复用，实际 HTTP 写操作及 H 进入后轮已有限定证据，自动反馈复核另由流式 change 实施；P01–P04 产品页面非当前后端前置，4177 不代替产品页面；普通评论、附件引用及[E65案件故事](../archive/2026-11-13-query-case-story/validation.md)已独立交付，不核销本任务整体；[E66案件候选](../archive/2026-11-13-query-case-exploration-candidates/validation.md)已独立交付，[探索保存E67–E69](../archive/2026-11-13-save-case-exploration/validation.md)已独立交付，[E70相似历史复核](../archive/2026-11-13-query-alert-review-candidates/validation.md)已独立交付，[E71同主机近期查询](../archive/2026-11-13-query-alert-host-recency/validation.md)已独立交付，外部响应仍后置，Q对话按负责人要求暂缓。
 - [ ] 3.14 由 [enable-purpose-aware-case-knowledge](../archive/2026-11-11-enable-purpose-aware-case-knowledge/tasks.md)接通 C2 按目标的本地嵌入检索、后续模型使用及 4177 展示，完成适用真实知识从既有导入/索引/检索入口进入调查并合理用于补查或解释。已有资产、SOP 和全文检索证据保留；查空或直接 seed 不代替实际使用，身份图/UEBA 等未验范围单列，不提前勾选整体任务。
-- [ ] 3.16 核验加入实质人工材料后，必要事实、所选 H 版本、原计划及指定比较进入下一轮 C3/C6；可选历史不挤占必需输入。复用现有容量/装配，只修直接缺口；旧失败不重派、不回算。
+- [ ] 3.16 核验加入实质人工材料后，必要事实、所选 H 版本、原计划及指定比较进入下一轮 C3/C6；可选历史不挤占必需输入。第19节已完成本地字段选择、H实际source_refs修复及[冻结C01离线预览](../../../docs/operations/evidence/case-human-input-20261113-01/README.md)，2项直接检查通过；H字段补齐后仅定向复验1项，限定独审通过。随后[隔离库H保存读取](../../../docs/operations/evidence/case-human-persistence-20261113-01/README.md)补齐C3/Deep/C6、指定基线、原计划与H/结果/当前判断读回，模型和查询全替身，限定独审通过；两次验证脚本问题保留，第二批仅只读补完余项，没有第三次流程。随后06批无H/核查H/限定模拟H三场景13次真实调用均拒收，H归因和范围有实际证据，完整结论质量与有效授权正向采纳仍未通过；07批复用H01及原A/I，C6一次纠错后接受并采用，完整质量仍未通过；不可用比较改由程序冻结装配并经直接检查/替身存取，旧边界保持。原文/范围/旧失败保持，不重派旧Run或提前勾选。
 - [ ] 3.21 补齐自动处理的实际消费、分诊及应触发的后续业务。代码/镜像/配置来源、公共表读取及 Fusion 归并已有证据，网关超时已按当前策略修正；Agents 暂停，自动消费尚未验收，保留原位点与 unknown。必要接线随功能处理。
 - [ ] 3.23 继续验收 A 的输入覆盖和正文依据，保留描述、人工正文、未知业务值、0/false/有效空列表。五字段映射与保存/读取已接入；历史截断、重复引用和语义问题仍保留，整体未核销，五字段不套用于 I/Case。
 - [ ] 3.30 完成 Case C1/C3/Deep/C6 的实际结论质量与业务闭环。ground-case-conclusions 只交付当前 Deep/C6 依据与 C3 补查约束；来源范围/角色等已交付证据复用，实际知识与产品操作继续按 3.7/3.10/3.12/3.16 共用一条相应功能链的证据，不重复执行或提前勾选整体完成。
@@ -72,6 +97,6 @@
 ## 直接证据入口
 
 - [当前程序功能交付](../archive/2026-11-11-ground-case-conclusions/validation.md)、[Case 来源范围与纠正](../archive/2026-11-10-fix-case-evidence-scope-and-recovery/validation.md)、[Finding 角色参照批次](../archive/2026-11-10-align-case-finding-evidence-roles/validation.md)。
-- [Case 实际流程与 H 传递](case-current-flow-20261110.md)、[发布与交接核验](release-current-20261110.md)、[4177 节点详情](workbench-node-inspector-20261110.md)。
-- [事件接入](../../../docs/operations/evidence/incident-boundary-integration-20261108-01/summary.json)、[字段及模型交接](../../../FRONTEND_BACKEND_HANDOFF.md)。
+- [Case 实际流程与 H 传递](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)、[发布与交接核验](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)、[4177 节点详情](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/workbench-node-inspector-20261110.md)。
+- [事件接入](../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/incident-boundary-integration-20261108-01/summary.json)、[字段及模型交接](../../../FRONTEND_BACKEND_HANDOFF.md)。
 - [历史任务与计划](../../../docs/handoff/history/2026-11-11-local-cleanup/investigation-change/tasks.md)保留各批验收边界，旧 r13/5.3 未随本轮核销；Q 实际业务仍后置。

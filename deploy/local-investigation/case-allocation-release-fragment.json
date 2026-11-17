@@ -1,0 +1,43 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires": [
+    "analysis-incident-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/app/socai2/case_allocation.py": "app/socai2/case_allocation.py",
+    "services/api/app/socai2/case_allocation_contracts.py": "app/socai2/case_allocation_contracts.py",
+    "services/api/app/socai2/case_allocation_policy.py": "app/socai2/case_allocation_policy.py",
+    "services/api/app/socai2/case_relationship_reader.py": "app/socai2/case_relationship_reader.py",
+    "services/api/app/socai2/case_relations.py": "app/socai2/case_relations.py",
+    "services/api/app/socai2/case_service.py": "app/socai2/case_service.py",
+    "services/api/app/socai2/case_contracts.py": "app/socai2/case_contracts.py",
+    "services/api/app/socai2/case_reader.py": "app/socai2/case_reader.py",
+    "services/api/app/socai2/page_contracts.py": "app/socai2/page_contracts.py",
+    "services/api/app/socai2/page_reader.py": "app/socai2/page_reader.py",
+    "services/api/app/models/socai2.py": "app/models/socai2.py",
+    "services/api/app/socai2/case_management.py": "app/socai2/case_management.py",
+    "services/api/app/socai2/stage_inputs.py": "app/socai2/stage_inputs.py"
+  },
+  "schema": {
+    "prerequisite": "128_socai2_analysis_lifecycle.sql",
+    "new_migration": "129_socai2_case_allocation.sql",
+    "installer_mode": "case-allocation"
+  },
+  "environment": {
+    "SOCAI2_CASE_ALLOCATION_CONFIG_FILE": "/run/processor/case-allocation.json",
+    "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "/run/processor/analysis-tasks.json"
+  },
+  "config_files": {
+    "deploy/local-investigation/case-allocation.json": "/run/processor/case-allocation.json",
+    "deploy/local-investigation/analysis-tasks.json": "/run/processor/analysis-tasks.json"
+  },
+  "notes": [
+    "Use the selected profile and existing writer/reader roles. Apply 129 before loading the new Case/incident ORM and read DTOs. No legacy backfill.",
+    "Coordinate E01/E07/E08/E09, Case continuation/related reads and I-only receiving fields with the HTTP step5 adapter and Swagger.",
+    "New Case initial tasks are registered atomically; no Case execution handler or periodic producer is enabled in this step.",
+    "The configured capacity does not limit event membership; source_page_size only controls complete source fetching.",
+    "The old fixed-flow validate_flow.py driver targets historical synchronous A/I/Case contracts; it is not the acceptance runner for this async candidate.",
+    "No deployment, production service restart or consumer activation is authorized by this fragment."
+  ]
+}

@@ -25,11 +25,20 @@ def literal_source_name(sid, data, owned=None):
 
 
 class Checks:
-    def __init__(self, diagnostics=None):
+    def __init__(self, diagnostics=None, *, citation_review=None):
         self.entries = diagnostics if diagnostics is not None else []
         self.first_error = None
+        self.citation_review = citation_review
 
-    def add(self, code, path, category="source", severity="error", check_state="failed"):
+    def add(self, code, path, category="source", severity="error", check_state="failed", **details):
+        quality_only = self.citation_review is not None and (
+            category in {"source", "role", "coverage", "presentation"}
+            or code in {"incident_source_wrong_member", "incident_source_scope_not_covered",
+                        "incident_answer_prose_source_wrong_member"})
+        if quality_only and severity in {"error", "warning"}:
+            from .citation_quality import issue
+            issue(self.citation_review, code, path, category=category, **details)
+            severity = "warning"
         if severity == "error" and self.first_error is None:
             self.first_error = code
         if len(self.entries) < 64:
@@ -54,17 +63,18 @@ class Checks:
             if literal_source_name(sid, data, owned):
                 continue
             if sid not in source_map:
-                self.add(prefix + "_prose_source_unbound", path)
+                self.add(prefix + "_prose_source_unbound", path, source_id=sid)
             elif owned is not None and (not source_map[sid].get("alert_ids") or
                     not set(source_map[sid]["alert_ids"]) <= set(owned)):
-                self.add(prefix + "_prose_source_wrong_member", path, "scope")
+                self.add(prefix + "_prose_source_wrong_member", path, "scope", source_id=sid,
+                         declared_members=owned, resolved_members=source_map[sid]["alert_ids"])
             elif data.get("citations") == "structured_v3":
                 # Structured arrays are authoritative. Do not infer/add a source
                 # from prose, and do not invalidate an otherwise sound array
                 # because the model redundantly mentioned a visible local ID.
                 code = "source_alias_in_prose" if sid in permitted else "inline_source_not_structured_evidence"
-                self.add(code, path, "presentation", "warning", "observed")
+                self.add(code, path, "presentation", "warning", "observed", source_id=sid)
             elif sid not in permitted:
-                self.add(prefix + "_prose_source_unbound", path)
+                self.add(prefix + "_prose_source_unbound", path, source_id=sid)
             else:
-                self.add("source_alias_in_prose", path, "presentation", "warning", "observed")
+                self.add("source_alias_in_prose", path, "presentation", "warning", "observed", source_id=sid)

@@ -82,12 +82,13 @@ def interrupted_report(publication, run):
         "closing_delivery_state": "partial", "closing_reason": "investigation_execution_uncertain"}).model_dump(mode="json")
 
 
-async def interrupted(service, tenant_id, case_id, run_id):
+async def interrupted(service, tenant_id, case_id, run_id, *, failure=None):
     """Persist C6 system closure without pretending an uncertain call finished."""
     from .baseline_context import reference
     from .baseline_delivery import BaselineDelivery
     from .baseline_delivery_contract import SCHEMA
     from .baseline_delivery_projection import make_publication, markdown
+    from .baseline_failure import settle_unsent
     from .baseline_store import RES, RM
 
     executor, steps_table = BaselineDelivery(service), models.RunSteps.__table__
@@ -96,6 +97,8 @@ async def interrupted(service, tenant_id, case_id, run_id):
         run = await store.run(case_id, run_id)
         if run["state"] not in {"running", "unknown"} or await store.one(select(RES.c.id)
                 .where(*store.where(RES, RES.c.source_run_id == run_id)).limit(1)):
+            return
+        if await settle_unsent(store, run, failure):
             return
         await store.mark_unknown(case_id, run_id)
         run = await store.run(case_id, run_id)

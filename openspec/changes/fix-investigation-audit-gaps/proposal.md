@@ -1,8 +1,8 @@
 ## Why
 
-2026-10-31 [详细审计](../../../docs/investigation/design-implementation-audit-20261031.md)确认：进程 Tool 可能混入非进程事件（A01）；概况刷新失败保留旧 Case 正文时，stale 与权限/提交顺序不一致（A02）；Case 未取入已有告警正文和原始材料（D01）。这些问题影响证据含义、正常刷新及调查取材，需要在既有 Case 流程内修正。
+2026-10-31 [详细审计](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-implementation-audit-20261031.md)确认：进程 Tool 可能混入非进程事件（A01）；概况刷新失败保留旧 Case 正文时，stale 与权限/提交顺序不一致（A02）；Case 未取入已有告警正文和原始材料（D01）。这些问题影响证据含义、正常刷新及调查取材，需要在既有 Case 流程内修正。
 
-用户随后要求“推进执行”；本 change 已完成B1–B3和本地组合验证，部署/真实复验及结束独审待完成。精确状态见[实施记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)。起始源码基线 `5b95138`；最近真实四案例仍为 `512c004/r1`，2/4 流程通过。A03/A04 文档修正已经完成，不重复列为待实现功能。
+用户随后要求“推进执行”；本 change 已完成B1–B3和本地组合验证，部署/真实复验及结束独审待完成。精确状态见[实施记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-fixes-implementation-20261031.md)。起始源码基线 `5b95138`；最近真实四案例仍为 `512c004/r1`，2/4 流程通过。A03/A04 文档修正已经完成，不重复列为待实现功能。
 
 ## What Changes
 
@@ -31,5 +31,5 @@
 - API 请求形状不变；预览、结果及证据读取增加来源信息；进程 Tool 返回行增加类型字段；概况刷新增加上述条件式前置 403。
 - 不新增数据库表/迁移、模型或厂商调用能力、权限种类、后台任务、事件深入分析、F5、前端、恢复/压力测试。
 - 路线归属：当前 Case 功能修复；[上层旧调查 change](../continue-isolated-investigation-v2/tasks.md) 的 2.2/2.3 不因此核销。[追加修复](../fix-case-followup-gaps/tasks.md)保持原完成事实和真实复验待办，由本计划汇总版本与执行批次。
-- 前置依据：[静态清单](../../../docs/operations/investigation-static-audit-20261031.json)、[四案例原结果](../../../docs/investigation/multi-case-http-20261028.md)、[本地追加修复记录](../../../docs/operations/investigation-followup-fix-local-20261028.json)。
+- 前置依据：[静态清单](../../../docs/operations/investigation-static-audit-20261031.json)、[四案例原结果](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/multi-case-http-20261028.md)、[本地追加修复记录](../../../docs/operations/investigation-followup-fix-local-20261028.json)。
 - 用户已推进本地实施和必要直接验证，沿原边界准备可审阅版本；实际更新/调用、提交与推送状态另记，不把本地结果冒充真实交付。

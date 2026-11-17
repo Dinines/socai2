@@ -1,0 +1,237 @@
+"""Three explicit fixed-flow scenarios; immutable requests, no automatic retry."""
+import argparse
+import asyncio
+import sys
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+from uuid import UUID
+
+ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+from tools.testdata.case_scope_recovery.real_model import Gateway, initialize
+from tools.testdata.incident_integration.fixtures import identity
+from tools.testdata.incident_integration.run import connect, read, save, sha
+
+
+def plan_for(config, folder):
+    plan = read(folder / config.get('plan_file', 'plan.json'))
+    assert plan['config'] == config
+    assert all(sha(ROOT / p) == value for p, value in plan['source_sha256'].items()), 'prepared_source_changed'
+    return plan
+
+
+def prepare(config, path, folder):
+    from app.socai2.baseline_contracts import Scope
+    from app.socai2.human_task_contracts import TaskCreate
+    from app.socai2.runtime_policy import active_policy
+    previous = ROOT / config['previous_flow']
+    snapshot = read(ROOT / config['snapshot'])
+    members = read(previous / 'plan.json')['members']
+    times = [datetime.fromisoformat(m['alert']['event_time']) for m in members]
+    pad = timedelta(seconds=config['window_padding_seconds'])
+    scope = Scope(kind='whole_case', alert_ids=[m['alert_id'] for m in members], object_keys=[],
+        window_start=min(times)-pad, window_end=max(times)+pad, limitations=[]).model_dump(mode='json')
+    scenarios = []
+    for item in config['scenarios']:
+        key = item['key']
+        selected = members if 'scope_action' not in item else [m for m in members if
+            m['material']['raw_json']['raw_event']['ocsf_event']['activity']['action'] == item['scope_action']]
+        assert selected and ('scope_action' not in item or len(selected) == 1)
+        request = None
+        if 'human_text' in item:
+            request = TaskCreate(operation_key=identity(config['batch'], key + ':human'), expected_scope_revision=1,
+                title=item['title'], description='明确标注的演练反馈；不代表新增现场证据或实际人员授权。',
+                state='completed', result_text=item['human_text'],
+                result_scope={**scope, 'kind': 'whole_case' if len(selected) == len(members) else 'selected_alerts',
+                    'alert_ids': [m['alert_id'] for m in selected]},
+                source_refs=[{'type': 'alert_material', 'id': m['material_id']} for m in selected]).model_dump(mode='json')
+        scenarios.append({**item, 'human_request': request, 'operation_keys': {
+            name: identity(config['batch'], key + ':' + name) for name in ('create', 'prepare', 'start')}})
+    files = [path, Path(__file__), previous / 'plan.json', ROOT / config['snapshot'], ROOT / config['policy'],
+             ROOT / config['knowledge_profile'], Path(__file__).with_name('model-route.json')]
+    files += [p for p in (ROOT / 'services/api/app/socai2').glob('*') if p.suffix in {'.py', '.json'}]
+    files += [ROOT / 'tools/testdata/case_scope_recovery/real_model.py',
+              ROOT / 'tools/testdata/case_io_eval/model_worker.py', ROOT / 'tools/testdata/case_io_eval/model_eval.py']
+    folder.mkdir(parents=True, exist_ok=False)
+    save(folder / 'plan.json', {'config': config, 'members': members, 'scope': scope, 'scenarios': scenarios,
+        'incident_id': read(previous / 'execution.json')['incident_id'],
+        'prior_stage_run_ids': [s['run_id'] for s in read(previous / 'execution.json')['stages']],
+        'expected_alert_pointers': {a['id']: {k: a[k] for k in ('latest_material_id', 'latest_triage_id', 'latest_feedback_id')}
+                                    for a in snapshot['alerts']},
+        'expected_incident_pointers': {i['id']: i['latest_diagnosis_id'] for i in snapshot['incidents']},
+        'max_model_calls_per_run': active_policy().case.max_model_calls, 'new_runs_at_most': len(scenarios),
+        'source_sha256': {str(p.relative_to(ROOT)): sha(p) for p in files}})
+    print('Prepared B01/H01/H02; no database writes or model generation.', flush=True)
+
+
+async def run(config, folder, key):
+    from app.db import database
+    from app.models import socai2 as m
+    from app.socai2.baseline_contracts import Actor, Start
+    from app.socai2.case_contracts import CaseCreate, PrepareBaseline
+    from app.socai2.case_service import CaseService
+    from app.socai2.human_task_contracts import TaskCreate
+    from app.socai2.human_task_service import HumanTaskService
+    from app.socai2.runtime_policy import active_policy
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from tools.testdata.case_io_eval.model_eval import check_route
+    plan = plan_for(config, folder)
+    scenario = next(s for s in plan['scenarios'] if s['key'] == key)
+    out = folder / key
+    assert not (out / 'execute-intent.json').exists(), 'do_not_redispatch_recorded_attempt'
+    preflight = read(Path(__file__).with_name('model-route.json'))
+    check_route(config, preflight)
+    parent = read(folder / scenario['depends_on'] / 'execution.json') if scenario.get('depends_on') else None
+    if parent:
+        settled = read(folder / scenario['depends_on'] / 'export/http-readback.json')['run']['body']
+        parent.update(run_state=settled['run']['state'], result_ids=settled['result_ids'])
+    if parent and (parent.get('run_state') in {'unknown', 'running', 'pending_update'} or not parent.get('result_ids')):
+        save(out / 'skipped.json', {'reason': 'baseline_not_settled_or_result_missing', 'parent': parent,
+            'new_runs': 0, 'model_calls': 0})
+        print(key, 'skipped; baseline unavailable', flush=True)
+        return
+    transport = {**config['transport'], 'remote_evidence_dir': config['remote_evidence_dir'] + '/' + key}
+    gateway = Gateway({**config, 'preflight': preflight, 'transport': transport}, out / 'calls')
+    engine = await connect(config)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    service, human = CaseService(sessions), HumanTaskService(sessions)
+    tenant = UUID(config['tenant_id'])
+    actor = Actor(user_id=UUID(config['actor_id']), name=config['actor_name'])
+    cid = rid = None
+    outcome, phase = {}, 'source_verification'
+    try:
+        async with service.transaction(tenant, readonly=True) as store:
+            for member in plan['members']:
+                alert = await store.one(select(m.Alerts.__table__).where(m.Alerts.id == UUID(member['alert_id']),
+                    m.Alerts.tenant_id == tenant))
+                assert {k: str(alert[k]) if alert[k] else None for k in plan['expected_alert_pointers'][member['alert_id']]} == plan['expected_alert_pointers'][member['alert_id']]
+                material = await store.one(select(m.AlertMaterials.__table__).where(m.AlertMaterials.id == UUID(member['material_id']),
+                    m.AlertMaterials.tenant_id == tenant))
+                assert {k: material[k] for k in member['material']} == member['material']
+            for iid, diagnosis in plan['expected_incident_pointers'].items():
+                value = (await store.db.execute(select(m.Incidents.latest_diagnosis_id).where(
+                    m.Incidents.id == UUID(iid), m.Incidents.tenant_id == tenant))).scalar_one()
+                assert str(value) == diagnosis
+        save(out / 'execute-intent.json', {'scenario': key, 'attempt': 1,
+            'plan_file': config.get('plan_file', 'plan.json'), 'plan_sha256': sha(folder / config.get('plan_file', 'plan.json')),
+            'new_A_I_runs': 0, 'Case_runs': 1, 'transport_retries': 0})
+        phase = 'case_and_H_setup'
+        if parent:
+            cid = UUID(parent['case_id'])
+        else:
+            created = await service.create_case(tenant, CaseCreate(operation_key=scenario['operation_keys']['create'],
+                title='固定调查演练 06-' + key, incident_ids=[plan['incident_id']]), actor=actor)
+            save(out / 'created.json', created.model_dump(mode='json'))
+            cid, rid = created.case_id, created.pending_run_id
+        if scenario['human_request']:
+            task = await human.write(tenant, cid, TaskCreate.model_validate(scenario['human_request']), actor=actor)
+            save(out / 'human.json', task.model_dump(mode='json'))
+        if parent:
+            pending = await service.prepare_baseline(tenant, cid, PrepareBaseline(
+                operation_key=scenario['operation_keys']['prepare'], expected_scope_revision=1), actor=actor)
+            save(out / 'prepared.json', pending.model_dump(mode='json'))
+            rid = pending.pending_run_id
+        request = Start(operation_key=scenario['operation_keys']['start'], expected_scope_revision=1,
+            window_start=plan['scope']['window_start'], window_end=plan['scope']['window_end'],
+            comparison_result_id=parent['result_ids'][0] if parent else None)
+        save(out / 'start-request.json', {'case_id': cid, 'run_id': rid, 'body': request.model_dump(mode='json')})
+        async with service.transaction(tenant, readonly=True) as store:
+            now = await store.now()
+        policy = active_policy()
+        limits = policy.case.limits(now, policy.identity)
+        save(out / 'limits.json', limits.model_dump(mode='json'))
+        phase = 'fixed_C1_C6'
+        await service.start_full(tenant, cid, rid, request, actor=actor, limits=limits, gateway=gateway)
+        phase = 'run_readback'
+        actual = await service.read_run(tenant, cid, rid)
+        actual = actual.model_dump(mode='json') if hasattr(actual, 'model_dump') else actual
+        save(out / 'run-readback.json', actual)
+        outcome = {'run_state': actual['run']['state'], 'result_ids': actual['result_ids']}
+    except Exception as exc:  # noqa: BLE001 -- retain state without exposing private connection details
+        outcome = {'state': 'execution_exception', 'phase': phase, 'error_type': type(exc).__name__,
+            'code': getattr(exc, 'code', None)}
+    finally:
+        save(out / 'execution.json', {**outcome, 'scenario': key, 'case_id': cid, 'run_id': rid,
+            'model_calls': gateway.calls, 'unknown': gateway.unknown})
+        await database.engine.dispose()
+        await engine.dispose()
+    print(key, outcome, 'model_calls', gateway.calls, flush=True)
+
+
+async def export(config, folder, key):
+    from app.api.v1.endpoints import socai2_cases as api
+    from app.api.v1.endpoints import socai2_tasks as task_api
+    from app.socai2.case_service import CaseService
+    from app.socai2.human_task_service import HumanTaskService
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    sys.path.insert(0, str(ROOT / 'docs/operations'))
+    from capture_processing_case import TABLES, check_credentials, scoped_table_query
+    plan = plan_for(config, folder)
+    out = folder / key
+    execution = read(out / 'execution.json')
+    cid, rid = UUID(execution['case_id']), UUID(execution['run_id'])
+    engine = await connect(config)
+    data = {}
+    try:
+        async with engine.connect() as db, db.begin():
+            await db.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'))
+            await db.execute(text("SELECT set_config('app.current_tenant_id',:tenant,true)"), {'tenant': config['tenant_id']})
+            scope = ('WITH scope AS (SELECT CAST(:tenant AS uuid) tenant, CAST(:aids AS uuid[]) aids, '
+                'CAST(:incident AS uuid[]) incident, CAST(:cid AS uuid) cid, CAST(:stages AS uuid[]) stages) ')
+            params = {'tenant': config['tenant_id'], 'aids': [m['alert_id'] for m in plan['members']],
+                'incident': [plan['incident_id']], 'cid': str(cid), 'stages': plan['prior_stage_run_ids']}
+            for table in TABLES:
+                data[table] = (await db.execute(text(scope + scoped_table_query(table)), params)).scalar_one()
+        import json
+        check_credentials(json.dumps(data, default=str).encode())
+        save(out / 'export/database.json', data)
+        sessions = async_sessionmaker(engine, expire_on_commit=False)
+        app = FastAPI()
+        app.include_router(api.router)
+        app.include_router(task_api.router)
+        app.dependency_overrides[api.get_service] = lambda: CaseService(sessions)
+        app.dependency_overrides[task_api.get_service] = lambda: HumanTaskService(sessions)
+        for module in (api, task_api):
+            app.dependency_overrides[module.ReadUser.__metadata__[0].dependency] = lambda: SimpleNamespace(tenant_id=UUID(config['tenant_id']))
+        paths = {'case': f'/socai2/cases/{cid}', 'run': f'/socai2/cases/{cid}/runs/{rid}'}
+        for result in data['results']:
+            if result['source_run_id'] == str(rid):
+                paths['result-' + result['id']] = f"/socai2/cases/{cid}/results/{result['id']}"
+        for revision in data['task_revisions']:
+            paths['H-' + revision['id']] = f"/socai2/cases/{cid}/tasks/{revision['task_id']}/revisions/{revision['id']}"
+        replies = {}
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=config['http_base_url']) as client:
+            for label, path in paths.items():
+                response = await client.get(path)
+                replies[label] = {'path': path, 'status': response.status_code, 'body': response.json()}
+        save(out / 'export/http-readback.json', replies)
+        save(out / 'export/manifest.json', {'schema_version': 'socai2.page-export.v1',
+            'batch_id': config['batch'] + '-' + key, 'case_id': str(cid), 'tenant_id': config['tenant_id'],
+            'exported_at': datetime.now(UTC), 'source_environment': 'isolated_local_pg_real_model_reused_AI',
+            'database': config['expected_database'], 'sources': [{'file': 'database.json', 'sha256': sha(out / 'export/database.json')}],
+            'table_counts': {k: len(v) for k, v in data.items()}, 'limitations': config['limitations']})
+        assert all(r['status'] == 200 for r in replies.values()), 'read_error_retained'
+        print(key, 'snapshot and', len(replies), 'ASGI GETs saved.', flush=True)
+    finally:
+        await engine.dispose()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('phase', choices=('prepare', 'run', 'export'))
+    parser.add_argument('--scenario', choices=('B01', 'H01', 'H02'))
+    parser.add_argument('--config', type=Path, default=Path(__file__).with_name('config.json'))
+    args = parser.parse_args()
+    config, folder = initialize(args.config)
+    if args.phase == 'prepare':
+        prepare(config, args.config.resolve(), folder)
+    else:
+        assert args.scenario, '--scenario is required'
+        asyncio.run({'run': run, 'export': export}[args.phase](config, folder, args.scenario))

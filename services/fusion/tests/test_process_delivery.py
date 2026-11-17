@@ -12,12 +12,9 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-
 from app.api import router as router_module
 from app.core.config import settings
-from app.models.alert import RawAlert
+from app.models.alert import FusedAlert, RawAlert
 from app.security.tenant_scope import TenantPrincipal, require_console_or_service_auth
 from app.services.alert_sink import PersistOutcome, PersistResult
 from app.services.correlator import Correlator
@@ -25,7 +22,8 @@ from app.services.deduplicator import Deduplicator
 from app.services.delivery_recovery import SnapshotLookup
 from app.services.fusion_engine import FusionEngine
 from app.workers.consumer import FusionWorker
-
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 TENANT = UUID(int=301)
 
@@ -144,6 +142,36 @@ async def test_entries_share_canonical_identity_and_complete_first_result(first_
     assert len(sink.rows) == 1
     worker.engine.process.assert_awaited_once()
     worker.engine._enricher.enrich.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                         ids=["one-source", "multiple-sources", "unknown-sources"])
+async def test_http_process_preserves_explicit_source_scope_through_save_and_publish(sources):
+    from app.services.socai2_projection import project, snapshot_id
+
+    worker, sink, _ = worker_fixture()
+    original = {**payload("source-v1"), "source_event_ids": sources}
+    async with client_for(worker) as client:
+        response = await client.post("/process", json=original)
+    assert response.status_code == 200
+    assert len(sink.rows) == 1
+    saved = next(iter(sink.rows.values()))["fused"]
+    published = worker._producer.send_and_wait.await_args.kwargs["value"]
+    assert response.json()["alert"]["source_event_ids"] == sources
+    assert saved["alert"]["source_event_ids"] == sources
+    assert published["alert"]["source_event_ids"] == sources
+    assert saved["alert"]["source_alert_id"] == original["source_alert_id"]
+    assert saved["alert"]["raw_event"] == original["raw_event"]
+    fused = FusedAlert.model_validate(saved)
+    _, material, refs, _ = project(fused, fused.alert, snapshot_id(fused.id))
+    assert material["raw_json"]["source_event_ids"] == sources
+    assert [ref["source_event_id"] for ref in refs] == sources
+    scope = material["source_scope"]
+    assert scope["received_count"] == scope["retained_count"] == len(sources)
+    assert scope["kind"] == ("explicit_sources" if sources else "unknown")
+    assert scope["complete"] is (True if sources else None)
+    assert scope["truncated"] is False
 
 
 @pytest.mark.asyncio

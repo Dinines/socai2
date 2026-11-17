@@ -1,0 +1,71 @@
+{
+  "date": "2026-11-14",
+  "scope": "后续调查流程与HTTP设计协作；未实施",
+  "planner_thread": "01a1d815-c721-7b12-9823-69b5a67b6b7c",
+  "implementation_thread": "01a1d887-6fd1-7bb3-8073-591802e919c0",
+  "user_decisions": [
+    {
+      "message_id": "01a1d9a5-2b91-7202-9d6b-8066f99f2971",
+      "text": "告警的分整是直接执行的，不需要你做请求吧。对一个 case 做完整调查。现在这个场景应该是说，比如说我听见了一个 case，对吧？然后它会默认地去做一个完整调查的流程。比如说加入我们的那个任务队列，以及再次调查，就是手工点击再次调查，这些都是异步的。事件诊断也是异步的，只是提交任务，这些都是提交任务。除了告警这个，告警这个应该是自动执行的，没有这个手动的整合接口吧。\n"
+    },
+    {
+      "message_id": "01a1d9a5-ad3d-7df3-a9a7-59b0434485ec",
+      "text": "这个烹丁队列对前后端应该是透明的，只是我们内部调度的一个实现，跟它们没有关系吧？它们不需要知道这个东西。pending队列\n"
+    },
+    {
+      "message_id": "01a1d9a7-441d-7302-9116-d3e1687f0f07",
+      "text": "前后端看到的应该是任务ID，对吧？就之前的三层ID，case ID，任务ID，执行ID。其实他应该拿到的是case，就是那个任务ID，对吧。\n"
+    }
+  ],
+  "implementation_evidence": "../../../../openspec/changes/schedule-streaming-investigation-updates/execution-code-review-20261114.md",
+  "contract": "../../../../openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md",
+  "planner_agreement": {
+    "message_id": "msg_08faa7d49f8e8443016af83e6d8cfc87d0bfb45744d185034d",
+    "text": "接口侧第 7 节的设计可以先按以下结论收口：\n\n- **采纳所列路径、五种业务状态和三层身份**：主体 ID → `task_id` → 实际执行时产生的 `run_id`。Case／事件异步受理；告警自动触发。队列信息不对外暴露。\n- **持久化归属确定**：`analysis_tasks` 保存受理身份、意图、任务状态和重试安排；`analysis_attempts` 保存每次实际尝试、Run 关联、失败原因及本地结束时间；`analysis_subject_state` 保存自动检查所需时间。新表与现有人工任务表分开。\n- **任务列表附带主体更新摘要**，本轮不再增加独立的更新状态 GET。采用预览单列 `unfinished_analysis_tasks`，覆盖尚未生成 Run 的任务。\n- 新提交仅接受 `operation_key + mode`；比较对象由程序选择上一轮调查。自选时间窗、人工方向独立保存接口、同告警原材料更新入口及附件正文接入暂缓，不能静默接受参数却不使用。\n\n上述是待实施目标合同；现有接口和数据库本轮不改。\n"
+  },
+  "status": "target HTTP routes, task identities/statuses, persistence ownership and deferred scope agreed; implementation not started",
+  "product_requirements": {
+    "document": "../../../../docs/integration/product-api-data-requirements-20261114.md",
+    "instruction": "以125项已讨论页面功能提出数据/接口/来源表供给要求，不以现有实现缩减需求；内部具体实现由提供方负责，统一版本不做旧兼容。",
+    "feature_counts": {
+      "alerts": 22,
+      "incidents": 15,
+      "investigation": 88
+    },
+    "stage1_ack": {
+      "message_id": "msg_06b53eaa268a136c016af84511b34887d086f2e084e09bf47d",
+      "summary": "确认R1完整跨主体目录/同范围统计包含无结果失败unknown；R3/R4超1000步骤/200工件可发现并继续读回；补R2/E3关联run_steps、冻结材料、人工版本、成员alerts及新analysis_attempts；阶段一不重开；P6附件正文AI读取不在当前需求。"
+    },
+    "planner_ack": {
+      "message_id": "msg_08faa7d49f8e8443016af84506ca5887d0ae95f7e872747171",
+      "summary": "确认跨A/I/Case完整目录统计及超过目录上限后的继续读取由调查模块提供查询用例，HTTP侧确定路径；不需负责人决定内部实现。自动调查默认查询范围需明确；附件正文未纳入当前页面要求。"
+    },
+    "latest_direction_clarification": {
+      "message_id": "01a1d9ce-5059-79a1-a41a-d15123a157c5",
+      "text": "人工指定我的理解里是模型进行一轮分析是否有用户指定的工具或者事分析方向？不用重跑完整的流程，如果有新的有价值的发现 可以跑后续流程？",
+      "status": "业务意图正在规划聊天澄清；不能先定永久方向或每次完整重跑"
+    },
+    "implementation_status": "requirements and provider acknowledgement only; no code, database, deployment or Git operation"
+  },
+  "final_http_contract_agreement": {
+    "date": "2026-11-14",
+    "user_authorization": "讨论确认后 可以实施",
+    "planner_thread": "01a1d815-c721-7b12-9823-69b5a67b6b7c",
+    "planner_confirmation": "已读回四项修订和第8节最终字段，确认双方合同一致，无遗留业务冲突。核心存储第10–14节、Q1规格、队列/任务及阶段台账已对齐。R3沿真实字段命名及artifact_refs，正文路径/无Run合法来源保持真实。E07分配、接收资格、unresolved覆盖、profile分页均确认。",
+    "resolved": [
+      "接收资格不因同输入分析停止而禁止新告警加入",
+      "unresolved计入covered，和analyzed、not_analyzed分开展示",
+      "artifact_refs返回实际源Run及主体正文地址",
+      "分页默认50/最大100读取profile，不作为业务代码常量"
+    ],
+    "contract": "openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md#8",
+    "next_step": "仅实施任务2.7中的R3/R4完整步骤与工件只读分页；调度、其他写入口及统一发布另行推进",
+    "runtime_changed": false,
+    "artifact_time_erratum": {
+      "reason": "Artifacts ORM及V1只有captured_at，无created_at；基类无共享字段",
+      "confirmed_by_planner": true,
+      "resolution": "RunArtifactView删除created_at，按captured_at ASC/id ASC；不加迁移",
+      "implementation_receipt": "docs/operations/evidence/run-records-20261114-01/README.md"
+    }
+  }
+}

@@ -1,0 +1,807 @@
+{
+  "schema_version": 1,
+  "batch": {
+    "id": "streaming-fullflow-20261116-02",
+    "environment": "streaming-release-20261116-04",
+    "title": "完整调查流程02：首轮、告警追加与后轮",
+    "scenario_version": "socai2-streaming-s01-s04/v2",
+    "execution_state": "finished",
+    "mode": "live",
+    "provenance": "live_execution",
+    "started_at": "2026-11-16T15:56:32.555729+00:00",
+    "updated_at": "2026-11-17T00:09:18.905791+00:00",
+    "quality_status": "issues_recorded"
+  },
+  "cases": [
+    {
+      "id": "setup",
+      "use_case_id": "P1",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "当前环境和材料就绪，失败意图与恢复事实保留"
+      ],
+      "actual": [
+        "r4身份/profile/空态通过；通道恢复后证实首次发送未执行"
+      ],
+      "operation_ids": [
+        "transport-not-executed"
+      ],
+      "evidence_ids": [
+        "preparation",
+        "transports"
+      ]
+    },
+    {
+      "id": "ingress",
+      "use_case_id": "P2",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "上下文先入湖，3告警形成事件并完成真实A/I"
+      ],
+      "actual": [
+        "12上下文/3告警ACK与读回、3A/1I完成，76次HTTP一致"
+      ],
+      "operation_ids": [
+        "send-S01-context",
+        "send-S01-alerts",
+        "task-bcfee16c-4531-58ca-b26c-9cdb30001a9b",
+        "task-c81dea50-c609-59c5-8781-e7fc38b29cf5",
+        "task-46b36cdf-da3f-52f6-a25b-927da1bc62c8",
+        "task-3c4f6a48-ae6e-56a2-865e-a314a1fffb03"
+      ],
+      "evidence_ids": [
+        "inputs",
+        "transports",
+        "checks",
+        "models"
+      ]
+    },
+    {
+      "id": "whole-initial",
+      "use_case_id": "P3",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "整事件Case首轮覆盖3成员，来源与结果可读"
+      ],
+      "actual": [
+        "HTTP201；整案首轮3成员，accepted/uncertain/partial"
+      ],
+      "operation_ids": [
+        "task-f0232c57-e67b-4211-8de3-3bdb776b3a4a"
+      ],
+      "evidence_ids": [
+        "checks",
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "single-initial",
+      "use_case_id": "P3",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "单告警Case首轮固定A01，质量不扩大程序范围"
+      ],
+      "actual": [
+        "HTTP201；单案1成员，accepted/uncertain/partial；质量单列"
+      ],
+      "operation_ids": [
+        "task-21ed0dd5-3c46-4de0-926d-b309a06b6f37"
+      ],
+      "evidence_ids": [
+        "checks",
+        "execution",
+        "models",
+        "quality"
+      ]
+    },
+    {
+      "id": "append-update",
+      "use_case_id": "P4",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "追加E13/A04后事件4成员，整案R2比较最近R1，单案不扩展"
+      ],
+      "actual": [
+        "增量ACK与入湖通过；I完整4成员；整案R2 expanded，单案保持1轮/1成员"
+      ],
+      "operation_ids": [
+        "send-S04-context",
+        "send-S04-alerts",
+        "task-53ce7836-b9be-5ea9-86b8-4e45f097ae84",
+        "task-10e32083-5249-4600-bad5-c29088ffcece",
+        "task-92f0d58c-d474-46aa-aabb-d38c1b6999f4"
+      ],
+      "evidence_ids": [
+        "inputs",
+        "transports",
+        "checks",
+        "execution",
+        "quality"
+      ]
+    },
+    {
+      "id": "unchanged",
+      "use_case_id": "P5",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "无新材料的新key检查不得增加Run或模型调用"
+      ],
+      "actual": [
+        "skipped/no_changes；0attempt/Run/model增量"
+      ],
+      "operation_ids": [
+        "task-adc087a7-2423-49fd-8f78-bad2e0a6561c"
+      ],
+      "evidence_ids": [
+        "checks",
+        "execution"
+      ]
+    },
+    {
+      "id": "readback",
+      "use_case_id": "P5",
+      "scenario_id": "streaming-normal-flow-v2",
+      "status": "passed",
+      "expected": [
+        "所有步骤、原答与Result通过正式HTTP追溯"
+      ],
+      "actual": [
+        "318 GET；9Run/77step/224个Run工件、3Result一致，前后23表不变"
+      ],
+      "operation_ids": [
+        "http-final"
+      ],
+      "evidence_ids": [
+        "http",
+        "execution",
+        "models",
+        "quality"
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "id": "transport-not-executed",
+      "case_id": "setup",
+      "intent": "首发SSH握手失败，恢复核实没有远端发送",
+      "execution_state": "failed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "preparation",
+        "transports"
+      ]
+    },
+    {
+      "id": "send-S01-context",
+      "case_id": "ingress",
+      "intent": "S01-context逐条发送并核ACK",
+      "execution_state": "completed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "transports"
+      ]
+    },
+    {
+      "id": "send-S01-alerts",
+      "case_id": "ingress",
+      "intent": "S01-alerts逐条发送并核ACK",
+      "execution_state": "completed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "transports"
+      ]
+    },
+    {
+      "id": "send-S04-context",
+      "case_id": "append-update",
+      "intent": "S04-context逐条发送并核ACK",
+      "execution_state": "completed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "transports"
+      ]
+    },
+    {
+      "id": "send-S04-alerts",
+      "case_id": "append-update",
+      "intent": "S04-alerts逐条发送并核ACK",
+      "execution_state": "completed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "transports"
+      ]
+    },
+    {
+      "id": "task-bcfee16c-4531-58ca-b26c-9cdb30001a9b",
+      "case_id": "ingress",
+      "intent": "alert initial（ingress）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:29:57.272818+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "c9fadd40-c8ba-5c3e-a5f8-222ca163887e",
+          "task_id": "bcfee16c-4531-58ca-b26c-9cdb30001a9b",
+          "run_id": "83984491-9843-5221-9693-0ba45397f061",
+          "result_type": "alert_assessment",
+          "result_id": "686a4924-8782-592c-a1c0-680fe238852b"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-c81dea50-c609-59c5-8781-e7fc38b29cf5",
+      "case_id": "ingress",
+      "intent": "incident initial（ingress）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:29:57.272818+00:00",
+      "mappings": [
+        {
+          "subject_type": "incident",
+          "subject_id": "8709dcb7-6d6e-4050-8ad6-7b6f82c34379",
+          "task_id": "c81dea50-c609-59c5-8781-e7fc38b29cf5",
+          "run_id": "10535c76-6a2e-5943-8cfc-efcc31c456a9",
+          "result_type": "incident_diagnosis",
+          "result_id": "c96eaf98-253c-5556-a5a2-7d05922c209c"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-46b36cdf-da3f-52f6-a25b-927da1bc62c8",
+      "case_id": "ingress",
+      "intent": "alert initial（ingress）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:29:57.821801+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "3096acc0-c8f5-572a-93ab-1ce7c603a57d",
+          "task_id": "46b36cdf-da3f-52f6-a25b-927da1bc62c8",
+          "run_id": "1b768713-1577-5ec2-9e95-9cd2c0ff3f3b",
+          "result_type": "alert_assessment",
+          "result_id": "a9f7c700-e258-596c-9d9b-b25d3e6e1b3f"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-3c4f6a48-ae6e-56a2-865e-a314a1fffb03",
+      "case_id": "ingress",
+      "intent": "alert initial（ingress）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:29:57.85161+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "babf1a16-ca2c-5c6a-8b73-1f1d0765d690",
+          "task_id": "3c4f6a48-ae6e-56a2-865e-a314a1fffb03",
+          "run_id": "c0a12659-a194-5926-8313-62b833178297",
+          "result_type": "alert_assessment",
+          "result_id": "29e1cf22-eb36-539f-b65e-16881d7ddf4d"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-f0232c57-e67b-4211-8de3-3bdb776b3a4a",
+      "case_id": "whole-initial",
+      "intent": "case initial（case_create）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:37:14.630175+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "52752ea4-08b1-5e9d-8105-7e041d23f89a",
+          "task_id": "f0232c57-e67b-4211-8de3-3bdb776b3a4a",
+          "run_id": "1ae2cb6e-ee3e-483b-828c-0414d3529917",
+          "result_type": "case_result",
+          "result_id": "b0149e2e-35cc-4633-9814-0a65ee921d19"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-21ed0dd5-3c46-4de0-926d-b309a06b6f37",
+      "case_id": "single-initial",
+      "intent": "case initial（case_create）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:37:33.382425+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "1db68510-6378-5666-a47e-2c0b52208af4",
+          "task_id": "21ed0dd5-3c46-4de0-926d-b309a06b6f37",
+          "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+          "result_type": "case_result",
+          "result_id": "3bf1e7b4-f9c3-4f17-aa3f-66614a123966"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-53ce7836-b9be-5ea9-86b8-4e45f097ae84",
+      "case_id": "append-update",
+      "intent": "alert initial（ingress）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:49:23.29682+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "8a29d5d4-4f26-5c05-9fc3-8512db7e728a",
+          "task_id": "53ce7836-b9be-5ea9-86b8-4e45f097ae84",
+          "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+          "result_type": "alert_assessment",
+          "result_id": "99601c54-3d22-5225-be95-9234b13b12e7"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-10e32083-5249-4600-bad5-c29088ffcece",
+      "case_id": "append-update",
+      "intent": "incident check（user）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:51:43.27568+00:00",
+      "mappings": [
+        {
+          "subject_type": "incident",
+          "subject_id": "8709dcb7-6d6e-4050-8ad6-7b6f82c34379",
+          "task_id": "10e32083-5249-4600-bad5-c29088ffcece",
+          "run_id": "43477be5-cd39-5e48-a7b4-5e2faa69b6e8",
+          "result_type": "incident_diagnosis",
+          "result_id": "e0ae436a-3977-5da2-89e2-e04f0b151892"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-92f0d58c-d474-46aa-aabb-d38c1b6999f4",
+      "case_id": "append-update",
+      "intent": "case check（user）",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T23:55:44.740548+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "52752ea4-08b1-5e9d-8105-7e041d23f89a",
+          "task_id": "92f0d58c-d474-46aa-aabb-d38c1b6999f4",
+          "run_id": "30c0c38c-ee33-4073-bd94-566a73017fed",
+          "result_type": "case_result",
+          "result_id": "d266316f-4cf9-4d17-b108-7ac2ae460cbb"
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "task-adc087a7-2423-49fd-8f78-bad2e0a6561c",
+      "case_id": "unchanged",
+      "intent": "case check（user）",
+      "execution_state": "skipped",
+      "occurred_at": "2026-11-17T00:02:43.716484+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "52752ea4-08b1-5e9d-8105-7e041d23f89a",
+          "task_id": "adc087a7-2423-49fd-8f78-bad2e0a6561c",
+          "run_id": null
+        }
+      ],
+      "evidence_ids": [
+        "execution",
+        "models"
+      ]
+    },
+    {
+      "id": "http-final",
+      "case_id": "readback",
+      "intent": "只读遍历所有任务和目录并核对原件",
+      "execution_state": "completed",
+      "occurred_at": null,
+      "mappings": [],
+      "evidence_ids": [
+        "http"
+      ]
+    }
+  ],
+  "preparation": {
+    "status": "prepared",
+    "cleanup_mode": "executed",
+    "summary": "协调方完成本轮范围内清理和r4发布；测试核空态、材料/版本/来源。首次通道失败已核实未发送，原失败保留。",
+    "resources": [
+      "21 aisoc PostgreSQL",
+      "Kafka",
+      "Redis",
+      "raw_events lake",
+      "r4 HTTP",
+      "真实配置模型"
+    ],
+    "observed_at": "2026-11-16T15:58:41.622773+00:00",
+    "evidence_ids": [
+      "preparation",
+      "inputs",
+      "transports"
+    ]
+  },
+  "quality_issues": [
+    {
+      "id": "Q-cfaffb51e882",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C3",
+      "category": "duplicate_source",
+      "description": "duplicate_source：$.findings[0].support_ids。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-30d3bd2b933d",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C3",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.findings[3]。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-8bbe7fd37cf1",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C3",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.followups[0]。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-8e3c36e83be4",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C3",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.followups[1]。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-101d7cb12f71",
+      "case_id": "whole-initial",
+      "run_id": "1ae2cb6e-ee3e-483b-828c-0414d3529917",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.findings.5。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-f32cf80db2cb",
+      "case_id": "whole-initial",
+      "run_id": "1ae2cb6e-ee3e-483b-828c-0414d3529917",
+      "stage": "C6",
+      "category": "domain_finding_scope_mismatch",
+      "description": "domain_finding_scope_mismatch：$.analysis.domains.0。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-1d57088867fb",
+      "case_id": "whole-initial",
+      "run_id": "1ae2cb6e-ee3e-483b-828c-0414d3529917",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.followups.0。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-e41f4f3a19f2",
+      "case_id": "append-update",
+      "run_id": "30c0c38c-ee33-4073-bd94-566a73017fed",
+      "stage": "C6",
+      "category": "duplicate_source",
+      "description": "duplicate_source：$.conclusion.support_ids。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-1f63312b808e",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C6",
+      "category": "duplicate_source",
+      "description": "duplicate_source：$.recommendations.2.source_ids。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-4cc2961246b2",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.findings.3。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-8d19dd9f0c6d",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.followups.0。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-702ac157f3e3",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.followups.1。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-8770094454d3",
+      "case_id": "single-initial",
+      "run_id": "1422d925-f8e5-4f6a-84ed-3f9e2a15ca4e",
+      "stage": "C6",
+      "category": "source_member_mismatch",
+      "description": "source_member_mismatch：$.analysis.followups.2。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-9a0a6d0df5c7",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "inline_source_not_structured_evidence",
+      "description": "inline_source_not_structured_evidence：$.rationale。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-6f63cd9771ab",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "inline_source_not_structured_evidence",
+      "description": "inline_source_not_structured_evidence：$.rationale。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-e6c1d71707d7",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "source_alias_in_prose",
+      "description": "source_alias_in_prose：$.rationale。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-386d3706a50f",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "source_alias_in_prose",
+      "description": "source_alias_in_prose：$.rationale。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-f9b9735979f8",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "source_alias_in_prose",
+      "description": "source_alias_in_prose：$.explanation。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    },
+    {
+      "id": "Q-08836149c0e4",
+      "case_id": "append-update",
+      "run_id": "c3cbeebc-4538-52cf-8052-f661d068f418",
+      "stage": "A",
+      "category": "source_alias_in_prose",
+      "description": "source_alias_in_prose：$.explanation。程序诊断保留；原答不改，质量后置处理。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "quality",
+        "models"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "preparation",
+      "path": "preparation.json",
+      "label": "当前发布、空态与来源核对",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/preflight-02.json"
+    },
+    {
+      "id": "inputs",
+      "path": "inputs.json",
+      "label": "冻结告警和上下文原件",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/batch/manifest.json"
+    },
+    {
+      "id": "transports",
+      "path": "transports.json",
+      "label": "四阶段Kafka ACK与实际通道失败",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/send-S04-alerts-01.json"
+    },
+    {
+      "id": "checks",
+      "path": "checks.json",
+      "label": "各阶段程序判据及上下文查询核对",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/final-validation.json"
+    },
+    {
+      "id": "execution",
+      "path": "execution.json",
+      "label": "实际任务、Run、步骤及Result索引",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/final-pg.json"
+    },
+    {
+      "id": "models",
+      "path": "models.json",
+      "label": "14次真实模型请求与原答索引",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/model-io/index.json"
+    },
+    {
+      "id": "quality",
+      "path": "quality.json",
+      "label": "质量问题原始诊断，后置处理",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/quality-register.json"
+    },
+    {
+      "id": "http",
+      "path": "http.json",
+      "label": "完整HTTP读回及前后数据库一致",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/final-http-01.json"
+    },
+    {
+      "id": "static",
+      "path": "static.json",
+      "label": "本机静态查阅更新，旧记录保持",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-02/static-verification.json"
+    }
+  ]
+}

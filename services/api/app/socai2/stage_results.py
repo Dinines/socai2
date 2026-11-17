@@ -13,7 +13,6 @@ from app.models import socai2 as m
 from .baseline_contracts import Limits
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest, encoded
-from .runtime_policy import retention_limit
 from .stage_inputs import SOURCE_SQL, VERSION, incident_source_sql
 from .stage_result_contracts import (
     ALERT_EXECUTOR_VERSION,
@@ -26,10 +25,10 @@ A, I, R, F, D, AS = (x.__table__ for x in (m.Alerts, m.Incidents, m.Runs, m.Arti
                                           m.IncidentDiagnoses, m.AlertAssessments))
 
 
-async def source_input(store, kind, identity, *, validated_triage=False, with_queries=False):
-    sql = incident_source_sql(with_queries=with_queries) if kind == "incident_diagnosis" and validated_triage else SOURCE_SQL
+async def source_input(store, kind, identity, *, validated_triage=False, with_queries=False, with_citation_quality=False, incident_limit=None):
+    sql = incident_source_sql(with_queries=with_queries, with_citation_quality=with_citation_quality, selection_limit=":incident_limit" if incident_limit is not None else None) if kind == "incident_diagnosis" and validated_triage else SOURCE_SQL
     return (await store.db.execute(text(sql), {"tenant": store.tenant_id,
-        "id": identity, "kind": kind, "version": VERSION})).scalar_one()
+        "id": identity, "kind": kind, "version": VERSION, "incident_limit": incident_limit})).scalar_one()
 
 
 def parent(kind):
@@ -42,8 +41,6 @@ def parent(kind):
 
 async def artifact(store, run, identity, kind, value, now, refs, *, step_id=None, schema_version=VERSION):
     body = encoded(value)
-    if len(body) > retention_limit():
-        raise StoreError("stage_artifact_too_large", 422)
     sha = digest(value)
     _, key = parent(run["kind"])
     await store.db.execute(insert(F).values(id=identity, tenant_id=store.tenant_id,
@@ -133,8 +130,16 @@ class StageResultService(BaselineService):
     """Server-internal persistence boundary. A/I calls do not start Case runs."""
 
     async def begin(self, tenant_id, kind, identity, operation_key: UUID, *, producer: str, limits: Limits | None,
-                    requested_by: UUID | None = None):
+                    requested_by: UUID | None = None, dispatch_context=None, frozen_source=None):
         table, key = parent(kind)
+        if dispatch_context is not None:
+            task = dispatch_context.task
+            if (task["kind"] != {"alert_basic": "alert_triage", "incident_diagnosis": "incident_diagnosis"}.get(kind) or task["tenant_id"] != tenant_id
+                    or task["subject_id"] != identity or not isinstance(frozen_source, dict)
+                    or operation_key != dispatch_context.operation_key):
+                raise StoreError("analysis_attempt_subject_mismatch", 422)
+        elif frozen_source is not None:
+            raise StoreError("analysis_attempt_required", 422)
         if not producer.strip():
             raise StoreError("stage_producer_required", 422)
         expected = {"alert_basic": ALERT_EXECUTOR_VERSION, "incident_diagnosis": INCIDENT_EXECUTOR_VERSION}
@@ -161,9 +166,10 @@ class StageResultService(BaselineService):
                     raise StoreError("operation_key_conflict")
                 return {"run_id": rid, "input_artifact_id": old["input_artifact_id"], "newly_claimed": False}
             from .runtime_policy import active_policy
-            with_queries = kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION and active_policy().incident_io is not None
-            source = await source_input(store, kind, identity, validated_triage=producer == INCIDENT_EXECUTOR_VERSION,
-                with_queries=with_queries)
+            with_queries = kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION
+            source = frozen_source if dispatch_context is not None else await source_input(
+                store, kind, identity, validated_triage=producer == INCIDENT_EXECUTOR_VERSION,
+                with_queries=with_queries, with_citation_quality=producer == INCIDENT_EXECUTOR_VERSION)
             if not source["members"]:
                 raise StoreError("stage_members_required", 422)
             now, input_id = await store.now(), uuid4()
@@ -172,12 +178,19 @@ class StageResultService(BaselineService):
                 policy = active_policy()
                 limits = getattr(policy, kind).limits(now, policy.identity)
             run = {"id": rid, "kind": kind, key: identity}
-            await artifact(store, run, input_id, "input_snapshot", source, now, [])
+            policy_id = uuid5(rid, "runtime-policy")
+            from .baseline_context import reference
+            await artifact(store, run, policy_id, "source_snapshot", active_policy().snapshot(), now, [],
+                schema_version="socai2.runtime-policy.v1")
+            await artifact(store, run, input_id, "input_snapshot", source, now,
+                [reference("artifact", policy_id, "execution_receipt")])
             await store.db.execute(insert(R).values(**run, tenant_id=tenant_id,
                 title="告警基本分析" if kind == "alert_basic" else "事件诊断", purpose="source-scoped analysis",
                 trigger="refresh", state="running", operation_key=str(operation_key), request_hash=intent,
                 input_artifact_id=input_id, executor_version=producer, requested_at=now, started_at=now,
                 limits=limits.model_dump(mode="json"), requested_by=requested_by))
+            if dispatch_context is not None:
+                await dispatch_context.bind_in_transaction(store, rid, input_digest=digest(source.get("change_view", source)), policy_artifact_id=policy_id)
             if kind == "incident_diagnosis":
                 rev = (await store.db.execute(select(func.coalesce(func.max(D.c.revision), 0)).where(
                     *store.where(D, D.c.incident_id == identity)))).scalar_one() + 1
@@ -197,13 +210,15 @@ class StageResultService(BaselineService):
         return run, target, source
 
     async def finish(self, tenant_id, run_id, output: AlertOutput | IncidentOutput, *, execution_step_id=None,
-                     validated_members=None, alert_delivery_state=None):
+                     validated_members=None, alert_delivery_state=None, incident_delivery_state=None):
         payload = output.model_dump(mode="json")
         async with self.transaction(tenant_id) as store:
             run, target, source = await self.locked(store, run_id)
             is_alert = run["kind"] == "alert_basic"
             if alert_delivery_state is not None and (not is_alert or alert_delivery_state not in {"complete", "partial"}):
                 raise StoreError("alert_delivery_state_invalid", 422)
+            if incident_delivery_state is not None and (is_alert or incident_delivery_state not in {"complete", "partial"}):
+                raise StoreError("incident_delivery_state_invalid", 422)
             if is_alert != isinstance(output, AlertOutput):
                 raise StoreError("stage_output_kind_mismatch", 422)
             receipt_id = uuid5(run_id, "publication")
@@ -243,9 +258,12 @@ class StageResultService(BaselineService):
                 if not step or active:
                     raise StoreError("stage_execution_not_ready")
             table, key = parent(run["kind"])
-            fresh = digest(await source_input(store, run["kind"], run[key],
+            current_source = await source_input(store, run["kind"], run[key],
                 validated_triage="triage_validation_version" in source,
-                with_queries="query_receipts_version" in source)) == digest(source)
+                with_queries="query_receipts_version" in source,
+                with_citation_quality="triage_citation_quality_version" in source,
+                incident_limit=source.get("input_selection", {}).get("limit"))
+            fresh = digest(current_source.get("change_view", current_source)) == digest(source.get("change_view", source))
             pointer = "latest_triage_id" if is_alert else "latest_diagnosis_id"
             result_table = AS if is_alert else D
             newer = False
@@ -274,6 +292,9 @@ class StageResultService(BaselineService):
             else:
                 from .incident_delivery import assess
                 delivery = assess(source, output=payload, members=validated_members)
+                if incident_delivery_state == "partial":
+                    delivery["state"] = "partial"
+                    delivery["reasons"].append("stage_output_incomplete_see_stage_delivery")
                 diagnosis = {"conclusion": output.conclusion, "validation_state": "accepted", "findings": payload["findings"],
                              "source_refs": refs, "limitations": output.limitations, "program_facts": facts,
                              "delivery_assessment": delivery}
@@ -341,6 +362,9 @@ class StageResultService(BaselineService):
                 raise StoreError("stage_run_not_found", 404)
             _, key = parent(run["kind"])
             source = (await store.db.execute(select(F.c.content_json).where(*store.where(F, F.c.id == run["input_artifact_id"])))).scalar_one()
-            return digest(source) == digest(await source_input(store, run["kind"], run[key],
+            current_source = await source_input(store, run["kind"], run[key],
                 validated_triage="triage_validation_version" in source,
-                with_queries="query_receipts_version" in source))
+                with_queries="query_receipts_version" in source,
+                with_citation_quality="triage_citation_quality_version" in source,
+                incident_limit=source.get("input_selection", {}).get("limit"))
+            return digest(source.get("change_view", source)) == digest(current_source.get("change_view", current_source))

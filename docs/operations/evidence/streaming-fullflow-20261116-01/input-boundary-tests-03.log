@@ -1,0 +1,51 @@
+..F.                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_actual_nested_routing_metadata_is_omitted_without_mutating_original[C3] _
+
+stage = 'C3'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109b0abd0>
+
+    @pytest.mark.parametrize('stage', ['A', 'I', 'C3'])
+    def test_actual_nested_routing_metadata_is_omitted_without_mutating_original(stage, monkeypatch):
+        rows = json.loads((SAVED / 'out/ai-pg-01.json').read_text())['rows']
+        kind = 'alert_basic' if stage == 'A' else 'incident_diagnosis'
+        run = next(r for r in rows['runs'] if r['kind'] == kind)
+        source = next(a['content_json'] for a in rows['artifacts'] if a['id'] == run['input_artifact_id'])
+        policy = runtime_policy.load_policy(ROOT / 'deploy/local-investigation/investigation-policy-case-v1.toml')
+        monkeypatch.setenv('SOCAI2_INVESTIGATION_POLICY', str(ROOT / 'deploy/local-investigation/investigation-policy-case-v1.toml'))
+        monkeypatch.setattr(runtime_policy, 'active_policy', lambda: policy)
+        material = source['members'][0]['material']
+        record = material['raw_json']['raw_event']['telemetry'][0]
+        record.update(packet_count=0, connection_reset=False, dns_answers=[],
+                      business={'source': 'business-source-kept', 'id': 'business-id-kept', 'note': '原文照录。'})
+        material['raw_json']['raw_event']['telemetry'].append(copy.deepcopy(record))
+        # The wildcard must only match list indices, not similarly named business branches.
+        material['raw_json']['raw_event']['other'] = {'source': 'other-business-source-kept', 'tenant_id': 'business-tenant-kept'}
+        before = copy.deepcopy(source)
+        if stage == 'A':
+            queries = [(a['id'], a['content_json']) for a in rows['artifacts']
+                       if a['run_id'] == run['id'] and a['kind'] == 'tool_response']
+            prepared = alert_model_boundary.build(source, run['input_artifact_id'], queries, policy.alert_io)[-1]
+            visible = prepared['user'];omissions = prepared['omissions']
+        elif stage == 'I':
+            prepared = incident_model_boundary.build(source, run['input_artifact_id'], policy.incident_io)[-1]
+            visible = prepared['user'];omissions = prepared['omissions']
+        else:
+            omissions = []
+            selected = material_entries(source['members'][0]['alert']['id'], material, policy.case_io.business,
+                                        omissions, policy.case_io.config)
+            visible = json.dumps(selected, ensure_ascii=False)
+        assert source == before
+>       assert record['source'] not in visible and record['tenant_id'] not in visible
+E       assert ('telemetry-channel-01' not in '[{"ref": {"...ope": true}]'
+E         
+E         'telemetry-channel-01' is contained here:
+E         ?           ^^
+E           "value": "telemetry-channel-01", "original_value": "telemetry-channel-01", "block": "material", "typed_raw_alert_envelope": true}, {"ref": {"type": "alert_material", "id": "913eeea0-1b41-55f6-ad84-12c5648d1bc4", "external": null, "source_path": "$.raw_json.src_ip", "row_keys": [], "role": "observation"}, "alert_ids": ["42f446b5-7093-56d2-851a-e6573033a6ef"], "value": "192.0.2.70", "original_value": "192.0.2.70", "block": "material", "typed_raw_alert_envelope": true}, {"ref": {"type": "alert_material", "id": "913eeea0-1b...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show)
+
+services/api/tests/test_socai2_nested_transport_metadata.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_nested_transport_metadata.py::test_actual_nested_routing_metadata_is_omitted_without_mutating_original[C3]
+1 failed, 3 passed in 0.96s

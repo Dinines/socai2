@@ -1,0 +1,35 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="告警详情同主机最近告警">告警详情：同主机最近告警</h1>
+<p>E71供告警详情→概况→相关告警区域使用。查看当前告警涉及的主机最近还发生了什么，返回最近7条其他告警；7是条数，不是7天。</p>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}/same-host-alerts</code></p>
+<p>唯一输入是路径里的真实告警UUID <code>alert_id</code>。不接受查询参数，不要求Case。不调用模型，不改变告警判定、处理状态或关联。打开返回的告警用E28；核对主机材料用E31。</p>
+<h2 id="查询规则">查询规则</h2>
+<p>• 起点和候选只取各自最新材料的<code>host</code>对象。多个主机取并集，候选告警只显示一次，保留全部匹配对象对。</p>
+<p>• 同租户、同告警<code>source_namespace</code>，对象<code>namespace</code>和<code>normalized_value</code>完全相同。不要求战术相同，不根据IP、资产ID、主机名相似或别名推断。</p>
+<p>• 从数据库已保存且真实<code>event_time</code>已知的记录中，按<code>event_time</code>倒序、告警ID倒序取最近7条；排除当前告警。没有额外时间窗，可包含当前告警之后发生的记录。</p>
+<p>• 候选发生时间未知时排除，不用入库时间替代。起点时间未知仍可查；没有当前材料或主机时返回空列表。</p>
+<p>• 已关闭、已判误报的告警仍保留原状态和判定。共享主机只说明关联，不证明共同攻击。</p>
+<p>默认上限7由<code>alert-host-query.json</code>的<code>display_limit</code>配置，<code>SOCAI2_ALERT_HOST_CONFIG_FILE</code>可指定文件；允许1–100，错误返回503。HTTP调用方不能传limit改变上限，本功能没有续页；<code>total</code>说明全部匹配数，<code>limit</code>说明本次实际上限。</p>
+<h2 id="输出字段">输出字段</h2>
+<table>
+<tr><th>字段</th><th>含义与使用</th></tr>
+<tr><td><code>items[].alert</code></td><td>原AlertFacts；显示title、severity、event_time，原状态和判定保持；点击id调用E28打开详情</td></tr>
+<tr><td><code>items[].matches[].seed</code></td><td>起点最新材料中的主机对象；id、alert_id、material_id、object_type、namespace、object_key、raw_value、normalized_value、source_path，algorithm为null</td></tr>
+<tr><td><code>items[].matches[].candidate</code></td><td>对应候选主机对象，字段同seed；沿alert_id/material_id调用E31，再按source_path回查原文</td></tr>
+<tr><td><code>total</code></td><td>全范围去重匹配告警数，可大于items长度</td></tr>
+<tr><td><code>limit</code></td><td>实际配置的返回上限，当前7</td></tr>
+<tr><td><code>source_alert_id</code></td><td>当前查看的告警，它本身不在结果中</td></tr>
+<tr><td><code>source_material_id</code></td><td>实际查询的起点最新材料ID；没有材料时null</td></tr>
+<tr><td><code>source_namespace</code></td><td>本次告警来源范围</td></tr>
+<tr><td><code>source_hosts</code></td><td>起点实际参与匹配的主机对象；为空时items和total均为空/0</td></tr>
+<tr><td><code>observed_at</code></td><td>单次数据库只读快照时间；再次查询可能读取到新增数据</td></tr>
+</table>
+<p>成功有值/空值完整JSON例子和嵌套字段见Swagger E71。无匹配返回<code>items=[]、total=0</code>，仍返回起点及主机范围；空结果不表示主机安全。</p>
+<h2 id="错误和与其他接口的关系">错误和与其他接口的关系</h2>
+<table>
+<tr><th>HTTP</th><th>情况</th></tr>
+<tr><td>404</td><td><code>alert_host_source_not_found</code>：起点不存在或不属于当前租户</td></tr>
+<tr><td>422</td><td>路径UUID非法；或<code>alert_host_query_parameter_not_supported</code>：传入了查询参数</td></tr>
+<tr><td>503</td><td><code>invalid_alert_host_configuration</code>：配置文件或上限不合法；<code>socai2_page_read_not_enabled</code>：现有页面读取开关未开启</td></tr>
+</table>
+<p>E70“相似历史复核”仍按同主机且同战术、同IP或哈希查询，默认起点前30天，支持分页，用于人工判定时对照。E71仅提供同主机最新7条，两个接口用途和条件各自保持。查询都不会自动提交人工反馈、关联Case或启动调查；E30的一般对象关系读取保持原合同。</p>
+<p>本轮直接验收见回执（来源：<code>docs/operations/evidence/alert-host-20261113-01/README.md</code>）；仅交付后端HTTP，未修改测试页面，暂不提交或推送Git。</p></main></html>

@@ -1,0 +1,198 @@
+{
+  "script": "\"\"\"Stop this candidate after a fresh observation found no remaining work or active attempt.\"\"\"\nimport json\nimport subprocess\nimport sys\nfrom datetime import datetime, timezone\n\nv = json.load(sys.stdin)\nc, observation = v['config'], v['observation']\nassert observation['all_terminal'] and observation['running_attempts'] == 0\n\n\ndef run(args):\n    return subprocess.run(args, capture_output=True, text=True, check=True,\n                          timeout=c['command_timeout_seconds']).stdout\n\n\nbefore = json.loads(run(['docker', 'inspect', c['container']]))[0]\nassert before['Image'] == c['image'] and before['State']['Running']\nrun(['docker', 'stop', '--time', str(c['stop_timeout_seconds']), c['container']])\nafter = json.loads(run(['docker', 'inspect', c['container']]))[0]\nprint(json.dumps({'observed_at': datetime.now(timezone.utc).isoformat(), 'status': 'stopped_after_terminal',\n    'container_id': after['Id'], 'image': after['Image'], 'exit_code': after['State']['ExitCode'],\n    'state': after['State']['Status'], 'task_observation_at': observation['observed_at'],\n    'running_attempts_before_stop': observation['running_attempts'], 'business_records_rewritten': False}, indent=2))\n",
+  "input": {
+    "config": {
+      "candidate_id": "streaming-20261115-01",
+      "batch_id": "streaming-ai-20261115-01",
+      "ssh_target": "sting-infra21",
+      "root": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01",
+      "network": "socai2_default",
+      "image": "sha256:859c34c4730956511f6fb1c3f54085eeafd48e09671c8ffb45d7a4e5cab9d12f",
+      "container": "socai2-streaming-dispatch-20261115",
+      "user": "10001:10001",
+      "workdir": "/app",
+      "memory": "2g",
+      "pids_limit": 128,
+      "command_timeout_seconds": 55,
+      "stop_timeout_seconds": 30,
+      "probe_timeout_seconds": 40,
+      "private_model_source": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+      "private_http_source": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/http-runtime.json",
+      "private_redis_source": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/redis-runtime.json",
+      "model_key_name": "OPENAI_API_KEY",
+      "model_base_url": "http://litellm:4000/v1",
+      "model_alias": "aisoc-investigation",
+      "backend_base_url": "http://192.168.1.43:8000/v1",
+      "backend_model": "aisoc-test-investigation",
+      "redis_container": "socai2-streaming-redis-20261115",
+      "redis_port": 6379,
+      "redis_db": 1,
+      "database": "socai2_streaming_20261115",
+      "writer": "socai2_streaming_20261115_writer",
+      "private_runtime_path": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/analysis.env",
+      "runtime_env": {
+        "ENVIRONMENT": "production",
+        "ENV": "production",
+        "DEBUG": "false",
+        "AISOC_DEV_AUTH_BYPASS": "false",
+        "AISOC_AIRGAPPED": "true",
+        "AISOC_AIRGAP_ALLOWLIST": "[\"litellm\", \"192.168.1.43\"]",
+        "SOCAI2_SOURCE_UEBA_ENABLED": "false",
+        "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "false",
+        "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+        "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false",
+        "DATABASE_POOL_SIZE": "2",
+        "DATABASE_MAX_OVERFLOW": "0",
+        "PGSSLMODE": "require",
+        "SOCAI2_MODEL_PROTOCOL": "chat_completions",
+        "SOCAI2_MODEL_SCHEMA_PROFILE": "vllm_grammar_v1",
+        "SOCAI2_SERVICE_DATABASE_NAME": "socai2_streaming_20261115",
+        "SOCAI2_INVESTIGATION_POLICY": "/run/analysis/investigation-policy.toml",
+        "SOCAI2_CASE_ALLOCATION_CONFIG_FILE": "/run/analysis/case-allocation.json",
+        "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "/run/analysis/lifecycle.json",
+        "PYTHONPATH": "/app"
+      },
+      "source_tables": [
+        "public.assets",
+        "socai2.alerts",
+        "socai2.alert_objects",
+        "socai2.alert_assessments",
+        "public.threat_intel_iocs",
+        "public.tenant_llm_credentials"
+      ],
+      "identity_map": "docs/operations/evidence/test-streaming-s01-ingress-20261115-02/readback/identity-map.json",
+      "no_kafka_send": true,
+      "no_case_creation": true,
+      "database_driver": "postgresql+asyncpg"
+    },
+    "observation": {
+      "observed_at": "2026-11-15 12:28:25.150383+00:00",
+      "tasks": [
+        {
+          "id": "5cc51760-c3c0-5043-a86c-892758a9ed32",
+          "subject_id": "9d80ff2b-af0a-4d33-95bb-2fe273cbc53c",
+          "kind": "incident_diagnosis",
+          "intent": "initial",
+          "state": "skipped",
+          "reason_code": "closed_before_start",
+          "retry_count": 0,
+          "started_at": null,
+          "ended_at": "2026-11-15 12:27:12.686425+00:00"
+        },
+        {
+          "id": "7fc9040f-9a9c-5b7b-a0c4-f16c9d820077",
+          "subject_id": "03c0764c-43a1-5906-8db9-425755afe9ed",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "skipped",
+          "reason_code": "closed_before_start",
+          "retry_count": 0,
+          "started_at": null,
+          "ended_at": "2026-11-15 12:26:52.382796+00:00"
+        },
+        {
+          "id": "74153ec1-3812-5f49-bfd4-8584c8b24802",
+          "subject_id": "978aaa6e-4ff8-549a-a01b-d31ac7f3c1c7",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "skipped",
+          "reason_code": "closed_before_start",
+          "retry_count": 0,
+          "started_at": null,
+          "ended_at": "2026-11-15 12:26:52.392681+00:00"
+        },
+        {
+          "id": "d9643a10-ac6f-5e7f-a5ca-af059701a718",
+          "subject_id": "c7769f40-6390-5ffc-ac8e-d809d34b9639",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "skipped",
+          "reason_code": "closed_before_start",
+          "retry_count": 0,
+          "started_at": null,
+          "ended_at": "2026-11-15 12:26:52.401115+00:00"
+        },
+        {
+          "id": "16116d1b-8da4-56a4-8707-8a82e1f2382f",
+          "subject_id": "09e85609-d734-5b2a-81ba-d086fc81b619",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "completed",
+          "reason_code": null,
+          "retry_count": 0,
+          "started_at": "2026-11-15 12:26:52.428606+00:00",
+          "ended_at": "2026-11-15 12:26:57.567586+00:00"
+        },
+        {
+          "id": "48ecacbb-bfa0-514a-b231-12b26282a111",
+          "subject_id": "263a1c58-e9c6-4ba4-9204-3b0568970551",
+          "kind": "incident_diagnosis",
+          "intent": "initial",
+          "state": "completed",
+          "reason_code": null,
+          "retry_count": 0,
+          "started_at": "2026-11-15 12:27:12.754109+00:00",
+          "ended_at": "2026-11-15 12:28:03.137855+00:00"
+        },
+        {
+          "id": "f366e654-15a9-5a6d-9569-20be9467e2ee",
+          "subject_id": "69eff99f-252e-5720-a6d4-ca556f29a557",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "completed",
+          "reason_code": null,
+          "retry_count": 0,
+          "started_at": "2026-11-15 12:26:58.510776+00:00",
+          "ended_at": "2026-11-15 12:27:05.163804+00:00"
+        },
+        {
+          "id": "049eb83d-5e8a-5377-b5ca-fb63e246d766",
+          "subject_id": "f4542be8-4097-59af-8a68-50c52a10f50b",
+          "kind": "alert_triage",
+          "intent": "initial",
+          "state": "completed",
+          "reason_code": null,
+          "retry_count": 0,
+          "started_at": "2026-11-15 12:27:05.606087+00:00",
+          "ended_at": "2026-11-15 12:27:12.376883+00:00"
+        }
+      ],
+      "attempts": [
+        {
+          "task_id": "16116d1b-8da4-56a4-8707-8a82e1f2382f",
+          "attempt_no": 1,
+          "run_id": "d04f0165-8dbf-533c-bb23-6ea999957689",
+          "local_state": "ended",
+          "outcome": "completed",
+          "error_code": null
+        },
+        {
+          "task_id": "f366e654-15a9-5a6d-9569-20be9467e2ee",
+          "attempt_no": 1,
+          "run_id": "563de456-0540-523f-95b2-4d6f33d4122a",
+          "local_state": "ended",
+          "outcome": "completed",
+          "error_code": null
+        },
+        {
+          "task_id": "049eb83d-5e8a-5377-b5ca-fb63e246d766",
+          "attempt_no": 1,
+          "run_id": "439806fe-b525-5601-bd28-c23a28a38619",
+          "local_state": "ended",
+          "outcome": "completed",
+          "error_code": null
+        },
+        {
+          "task_id": "48ecacbb-bfa0-514a-b231-12b26282a111",
+          "attempt_no": 1,
+          "run_id": "b5410c29-8134-544d-94e0-f8d59ee82958",
+          "local_state": "ended",
+          "outcome": "completed",
+          "error_code": null
+        }
+      ],
+      "all_terminal": true,
+      "running_attempts": 0
+    }
+  }
+}

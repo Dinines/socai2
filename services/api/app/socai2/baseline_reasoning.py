@@ -9,8 +9,13 @@ from sqlalchemy import insert, null, select, update
 from . import baseline_analysis_contract as analysis
 from .baseline_analysis import budget_reason, reserved_calls
 from .baseline_analysis_model import usage
-from .baseline_capacity import final_wire_reason, remaining_seconds, reservation_for
-from .baseline_context import reference, retention_limit
+from .baseline_capacity import (
+    CAPACITY_FAILURES,
+    final_wire_reason,
+    remaining_seconds,
+    reservation_for,
+)
+from .baseline_context import reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_evidence import BaselineEvidence
@@ -118,8 +123,6 @@ class ModelSteps(BaselineEvidence):
         self.schema = schema
 
     async def save(self, store, run, step, payload, kind, refs=()):
-        if len(encoded(payload)) > retention_limit():
-            raise StoreError("reasoning_artifact_exceeds_retention_limit", 422)
         identity = uuid4()
         await store.save_input_artifact(run["case_id"], run["id"], identity, payload, kind=kind,
             schema=self.schema, captured_at=await store.now(), refs=list(refs), actor_id=run["requested_by"], step_id=step)
@@ -131,9 +134,12 @@ class ModelSteps(BaselineEvidence):
         if any(r["id"] != owner for r in rows):
             raise StoreError("baseline_step_in_progress")
 
-    async def uncertain(self, tenant_id, case_id, run_id, stage_id):
+    async def uncertain(self, tenant_id, case_id, run_id, stage_id, exc=None):
+        from .baseline_failure import settle_unsent
         async with self.service.transaction(tenant_id) as store:
-            await self.locked(store, case_id, run_id)
+            run = await self.locked(store, case_id, run_id)
+            if await settle_unsent(store, run, exc):
+                return
             await store.db.execute(update(S).where(*store.where(S, S.c.run_id == run_id,
                 (S.c.id == stage_id) | (S.c.parent_step_id == stage_id), S.c.state.in_(["running", "planned"]))
             ).values(state="unknown", error=error("reasoning_dispatch_or_commit_uncertain", await store.now())))
@@ -189,6 +195,16 @@ class ModelSteps(BaselineEvidence):
             if reason is None and stage_code == "C6":
                 reason = final_wire_reason(body, reservation, measurement)
             if reason:
+                if reason in CAPACITY_FAILURES:
+                    # This is a prepared, unsent request, not a model call or a
+                    # fabricated response. Keep the actual wire and count result.
+                    await self.save(store, run, stage_id, {"schema_version": self.schema,
+                        "type": "capacity_preflight", "stage": stage_code, "dispatch_state": "not_sent",
+                        "reason": reason, "body": body, "token_measurement": measurement,
+                        "source_map": prepared["source_map"], "binding_map": prepared.get("binding_map", {}),
+                        "input_artifact_ids": prepared["input_artifact_ids"], "limits": run["limits"],
+                        "final_reservation": reservation}, "source_snapshot",
+                        [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]])
                 return None, reason, None, None
             model_id = uuid4()
             await store.db.execute(insert(S).values(id=model_id, tenant_id=tenant_id, run_id=run_id,
@@ -210,6 +226,8 @@ class ModelSteps(BaselineEvidence):
                 request["payload"]["tool_presentation"] = prepared.get("tool_presentation")
             if "followup_boundary" in prepared:
                 request["payload"]["followup_boundary"] = prepared["followup_boundary"]
+            if "section_completion" in prepared:
+                request["payload"]["section_completion"] = prepared["section_completion"]
             refs = [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]]
             request_id = await self.save(store, run, model_id, request, "model_request", refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
@@ -217,26 +235,50 @@ class ModelSteps(BaselineEvidence):
         try:
             async with asyncio.timeout_at(deadline):
                 payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-        except ModelCallError as exc:
+        except (Exception, asyncio.CancelledError) as exc:
+            from .baseline_failure import unsent_failure
+            unavailable = unsent_failure(exc)
+            if not isinstance(exc, ModelCallError) and unavailable is None:
+                raise
+            rejection = exc.rejection_code if isinstance(exc, ModelCallError) else None
+            receipt = exc.payload() if isinstance(exc, ModelCallError) else {
+                "raw": None, "validation_error": unavailable.error_code,
+                "transport_error": unavailable.error_detail}
             async with self.service.transaction(tenant_id) as store:
                 run = await self.locked(store, case_id, run_id)
                 if run["state"] != "running":
                     raise StoreError("baseline_not_running")
                 response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                    "direction": "response", "payload": exc.payload(), "captured_at": (await store.now()).isoformat(),
+                    "direction": "response", "payload": receipt, "captured_at": (await store.now()).isoformat(),
                     "request_id": None, "usage": usage(None)}
                 response_id = await self.save(store, run, model_id, response, "model_response",
                     [reference("artifact", request_id, "execution_receipt")])
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
                     output_artifact_id=response_id, usage=usage(None)))
-                if exc.rejection_code:
+                if rejection or unavailable:
                     now = await store.now()
+                    failure = error(rejection or unavailable.error_code, now)
+                    if unavailable:
+                        failure.update(retryable=True, **unavailable.error_detail)
                     await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
-                        state="failed", ended_at=now, error=error(exc.rejection_code, now)))
-            if exc.rejection_code:
-                return None, exc.rejection_code, model_id, response_id
+                        state="failed", ended_at=now, error=failure))
+            if rejection:
+                return None, rejection, model_id, response_id
             raise
         recorded, parsed, reason, adaptation, content = usage(payload), None, None, None, None
+        citation_review = prepared.get("citation_review")
+        if citation_review is not None:
+            # Commit the received original before any adapter/parser can fail.
+            async with self.service.transaction(tenant_id) as store:
+                run = await self.locked(store, case_id, run_id)
+                original_id = await self.save(store, run, model_id,
+                    {"schema_version": self.schema, "type": "model_original_response", "stage": stage_code,
+                     "request_artifact_id": str(request_id), "raw": payload, "usage": recorded}, "source_snapshot",
+                    [reference("artifact", request_id, "execution_receipt")])
+            citation_review.update(original_response_artifact_id=str(original_id),
+                request_artifact_id=str(request_id), step_id=str(model_id), stage=stage_code,
+                path_basis="restored_frozen_identities")
+        original_content = None
         try:
             if recorded["usage_state"] != "reported":
                 raise analysis.AnalysisRejected("model_usage_unknown_or_inconsistent")
@@ -246,12 +288,18 @@ class ModelSteps(BaselineEvidence):
             if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
                 raise analysis.AnalysisRejected("model_choices_invalid")
             msg = choices[0].get("message")
-            if choices[0].get("finish_reason") != "stop":
+            finish_reason = choices[0].get("finish_reason")
+            prepared["received_finish_reason"] = finish_reason
+            if finish_reason not in ({"stop", "length"} if stage_code in {"C3", "C4.deep"} else {"stop"}):
                 raise analysis.AnalysisRejected("model_response_not_complete")
             if (not isinstance(msg, dict) or msg.get("tool_calls") or msg.get("function_call") or msg.get("refusal")
                     or not isinstance(msg.get("content"), str)):
                 raise analysis.AnalysisRejected("model_content_or_tool_protocol_invalid")
             content = msg["content"]
+            original_content = content
+            if stage_code in {"C3", "C4.deep"}:
+                from .model_protocol import response_content_path
+                prepared["original_content_path"] = response_content_path(payload)
             if response_adapter is not None:
                 content, adaptation = response_adapter(content)
             parsed = parser(content)
@@ -277,6 +325,10 @@ class ModelSteps(BaselineEvidence):
             response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
                 "direction": "response", "payload": {"raw": payload, "validation_error": reason},
                 "captured_at": now.isoformat(), "request_id": recorded["request_id"], "usage": recorded}
+            if citation_review is not None:
+                from .citation_quality import seal
+                derived = parsed.model_dump(mode="json") if parsed else None
+                response["payload"].update(citation_review=seal(citation_review, original_content, derived), derived=derived)
             if adaptation is not None:
                 response["payload"]["output_adapter"] = adaptation
             if review and review.details:

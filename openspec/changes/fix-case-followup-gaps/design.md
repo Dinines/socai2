@@ -8,4 +8,4 @@ Clarify that T references triage rather than a member, member UUIDs are not host
 
 Prepare local fixes and direct evidence first. Any resident image replacement and new live test credentials are a separate concrete approval step; do not overwrite prior test output or replay failed Runs.
 
-Documentation clarification (2026-10-29): the [four-case report](../../../docs/investigation/multi-case-http-20261028.md) and its four case pages now explain business intent, manual/automatic triggers, recorded internal steps and HTTP readback separately, including why each evidence link is followed. This uses the original batch only; no test replay, frozen evidence rewrite or runtime behavior change.
+Documentation clarification (2026-10-29): the [four-case report](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/multi-case-http-20261028.md) and its four case pages now explain business intent, manual/automatic triggers, recorded internal steps and HTTP readback separately, including why each evidence link is followed. This uses the original batch only; no test replay, frozen evidence rewrite or runtime behavior change.

@@ -1,16 +1,16 @@
 2026-11-08 已授权实施、发布21和独立新批：四项修复沿原范围，不新增DDL/权限。网关加入统一清单并由配置提供300秒；A发送Schema使用四个完整对象分支约束verdict/basis，保留严格parser和原答。A查询状态从实际回执派生program_facts.query_statuses，含来源工件、state/reason/行数及未查/查空/失败释义，输入与发布副本一致；不改模型自由正文，不把输入说明当作质量保证。unknown系统收尾使用独立InterruptedReport正文：terminal_state=null、run_state=unknown、delivery_state=none；closing_state=saved及closing_delivery_state=partial只表示说明工件保存，Run/unknown用量不终结、不新增Result。兼容历史正文，不重写旧记录。直接验证后固定新清单发布并核网关实际超时，最后新批验证真实模型结果及DB/GET/4177。
 
-实施结果：已发布21 `v1.2-20261108-r1`，六服务健康、网关实际300秒。新批7模型/71,576tokens走到认证查空、Deep未决和C6 adopted/uncertain/partial，报告状态与Run一致，3条原材料证据索引可查。A依据配对和结构化查询状态通过；A2正文仍误称TI查空，另有事实/来源措辞问题，不能核销语义质量。新批无unknown，独立收尾分支沿隔离PG直接证据，旧unknown不改写。见[发布](../../../../operations/evidence/v1.2-followup-20261108/deployment-summary.json)、[新批](../../../../operations/evidence/production-multialert-20261108-01/summary.json)、[剩余](../../../../operations/evidence/production-multialert-20261108-01/problems.json)及[独审](../../../../operations/evidence/production-multialert-20261108-01/independent-review.json)。
+实施结果：已发布21 `v1.2-20261108-r1`，六服务健康、网关实际300秒。新批7模型/71,576tokens走到认证查空、Deep未决和C6 adopted/uncertain/partial，报告状态与Run一致，3条原材料证据索引可查。A依据配对和结构化查询状态通过；A2正文仍误称TI查空，另有事实/来源措辞问题，不能核销语义质量。新批无unknown，独立收尾分支沿隔离PG直接证据，旧unknown不改写。见[发布](../../2026-11-14-investigation-cleanup/evidence/v1.2-followup-20261108/deployment-summary.json)、[新批](../../../../operations/evidence/production-multialert-20261108-01/summary.json)、[剩余](../../../../operations/evidence/production-multialert-20261108-01/problems.json)及[独审](../../../../operations/evidence/production-multialert-20261108-01/independent-review.json)。
 
 2026-11-07 新批执行补充：发布后按用户要求执行 `production-multialert-20261107-02`。3条演练告警经真实Fusion成1事件，归并依据记录；5次模型尝试/3原答/16,280已知tokens，I和C3的另2次用量未知。现有网关环境仍45秒，未与应用300秒策略对齐，导致两次408；这是发布配置遗漏，后续需同步部署来源并核整条超时链路。本批不改网关、不重派。A2/A3 needs_review与非空refuted_detection依据冲突，核心拒收、各2合法建议保留；A2还将TI skipped误述成查空。Case Run unknown/none，C6仅系统收尾，报告顶层failed/partial与Run状态不一致；后续须明确执行状态与系统交接状态的字段语义。未进入模型决定的C4/Deep或C6模型总结，预先C4.materials实际完成；0Result、证据目录未生成，不能认作完整质量通过。
 
-29表148行、5Run/29Step/59工件与131GET完成核对，5,484项批量及5项新增读取检查通过；本机只读API按原profile重启加载新路由，4177本机/21的ID集合一致。Agents位点未动、积压10，消费者暂停。见[本批汇总](../../../../operations/evidence/production-multialert-20261107-02/summary.json)、[问题与修复方向](../../../../operations/evidence/production-multialert-20261107-02/problems.json)、[限定独审](../../../../operations/evidence/production-multialert-20261107-02/independent-review.json)。没有业务逻辑、DDL或权限变更，测试/数据证据收口不核销3.7/3.12/3.21或1.2整体质量。
+29表148行、5Run/29Step/59工件与131GET完成核对，5,484项批量及5项新增读取检查通过；本机只读API按原profile重启加载新路由，4177本机/21的ID集合一致。Agents位点未动、积压10，消费者暂停。见[本批汇总](../../2026-11-14-investigation-cleanup/evidence/production-multialert-20261107-02/summary.json)、[问题与修复方向](../../2026-11-14-investigation-cleanup/evidence/production-multialert-20261107-02/problems.json)、[限定独审](../../2026-11-14-investigation-cleanup/evidence/production-multialert-20261107-02/independent-review.json)。没有业务逻辑、DDL或权限变更，测试/数据证据收口不核销3.7/3.12/3.21或1.2整体质量。
 
 2026-11-07 发布执行补充：同一 1.2 清单固定五服务与正式按需入口；准备阶段保存完整有效配置、私密环境与指针回退副本，逐服务切换前复核实际配置，切换后核源码/挂载 hash 和健康。API 配置 `AISOC_STARTUP_SCHEMA_MIGRATIONS=false`，关闭发布启动时的 PG dev/demo、Neo4j/ClickHouse 建表或迁移，保留连接初始化。此开关不改变既有表设计，也不自动授权未来迁移。Agents 暂停，三项租户额度不限制；不新增模型调用或重派旧批。
 
 ## Context
 
-2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 本change承接基线a1be1931后的C6资源/收尾、query/Deep、Case读取、原模板真实数据及场景评估；当前完成状态和后续判据见[tasks](tasks.md)、[本机计划](../../../../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)及[修改与评审记录](../../../../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)。
+2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 本change承接基线a1be1931后的C6资源/收尾、query/Deep、Case读取、原模板真实数据及场景评估；当前完成状态和后续判据见[tasks](tasks.md)、[本机计划](../../../../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)及[修改与评审记录](../../2026-11-14-investigation-cleanup/documents/docs/investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)。
 
 当前本机物理合同为socai2 schema的29表462列：原123保持，124为Case增加固定source_namespace，126增加分类、期限与证据索引指针。Fusion可选writer、C手动完整执行、Case HTTP、A/I执行及结果存储和新鲜度读取、73项页面字段与执行留痕出口、显式事件关联和成员移动、H及显式prepare、必要来源适配已有分批直接验证。当前进行独立服务真实模型验收；用户已明确不替换原版，不再安排旧消费者迁移。模型替身验证不代表真实质量通过。详见[差距明细](../../../../design/investigation-design-current-gap-review-20261103.md)，历史“下一步”不替代当前tasks。
 
@@ -40,7 +40,7 @@
 
 用户进一步明确：本轮目标是确认数据库有数据、关联逻辑正确、前后端按交接请求可正确取数；不要求实现或测试前端跳转。依 F01–F28、J01–J14 核对存储和读取合同，对已有数据验证父子归属及正文原值；空表/未生成字段与接口不可读分开记录，不造数据填空、不重跑已结束调查、不修改前端。
 
-实施回执：已只授予上述两函数 EXECUTE，Case 详情 200/input_freshness=current；函数定义及其他权限保持。本批 29 表/167 行与执行结束快照相同；135 GET 中 127 正常读取成功、4 错归属正确 404、4 资产读取 500。资产错误已定位为 `public.assets` SELECT 不足，未在原授权外扩权；负责人非空路径依赖 `public.users` 也缺权限，本批未触发。归并依据缺失、模型 Case 内容/证据索引未生成及既有业务后端待接项继续保留。见[新核对回执](../../../../operations/evidence/database-handoff-review-20261107/review.json)，原批 500 原件不改写。本次完成授权及数据核查；[限定独立复核](../../../../operations/evidence/database-handoff-review-20261107/independent-review.json)为 ACCEPT/0 必须修，不代表资产接口、全功能或模型质量通过。
+实施回执：已只授予上述两函数 EXECUTE，Case 详情 200/input_freshness=current；函数定义及其他权限保持。本批 29 表/167 行与执行结束快照相同；135 GET 中 127 正常读取成功、4 错归属正确 404、4 资产读取 500。资产错误已定位为 `public.assets` SELECT 不足，未在原授权外扩权；负责人非空路径依赖 `public.users` 也缺权限，本批未触发。归并依据缺失、模型 Case 内容/证据索引未生成及既有业务后端待接项继续保留。见[新核对回执](../../2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/review.json)，原批 500 原件不改写。本次完成授权及数据核查；[限定独立复核](../../2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/independent-review.json)为 ACCEPT/0 必须修，不代表资产接口、全功能或模型质量通过。
 
 ### 多告警 Case 原流程与原页面验收（2026-11-07，已授权）
 
@@ -64,7 +64,7 @@
 
 验证仅限本地 profile/驱动兼容、TLS 正反例、实际会话身份与只读属性、HTTP 认证及 GET 数据读回；不发起模型、调查、消费、迁移、DML、授权或远端部署。数据为空如实返回，不用合成数据补齐。独立测试历史和生产原件保持。
 
-实施结果：已有只读角色/TLSv1.3/29 表 462 列核对通过，固定业务租户 1 告警、1 事件、0 Case、2 Run；13 项 HTTP 检查及错误 TLS 身份拒绝通过，21 不同单测最新通过。临时 API 和其数据库转发已退出，4177 保持。详见[回执](../../../../operations/evidence/remote-readonly-20261107/verification.json)与[启动说明](../../../../../deploy/local-investigation/README.md#21-正式数据只读-profile)。Case 空态只验证列表，未新增生产样本补验；原调查质量待办不核销。
+实施结果：已有只读角色/TLSv1.3/29 表 462 列核对通过，固定业务租户 1 告警、1 事件、0 Case、2 Run；13 项 HTTP 检查及错误 TLS 身份拒绝通过，21 不同单测最新通过。临时 API 和其数据库转发已退出，4177 保持。详见[回执](../../2026-11-14-investigation-cleanup/evidence/remote-readonly-20261107/verification.json)与[启动说明](../../../../../deploy/local-investigation/README.md#21-正式数据只读-profile)。Case 空态只验证列表，未新增生产样本补验；原调查质量待办不核销。
 
 ### V1.2 修复计划（2026-11-07，待实施）
 
@@ -86,21 +86,21 @@ M0 公共读取采用用户最新开发决定：用户明确说“不要搞这�
 
 用户随后明确取消 Agents 的三项租户总额度（24小时10次/20万token/最多1笔未结算）。实现使用既有空 `AISOC_TRIAGE_BUDGET_POLICY_FILE` 关闭此层策略，所有租户不再查有限额度文件；初始化 `budget=null` 与 Compose 同步，不用大整数冒充不限。保留常规用量、执行领取和未知Run防重派；旧预约不清理。该配置是明确开发决定，不再沿用“等待批准新增租户额度”作为这一层的阻塞；实际消费恢复仍需验证其他来源配置和结果，不由本次额度调整代替。
 
-实施已生效：21沿原Agents镜像重建一次，两个租户实际策略None；部署来源及新初始化同步。API/Agents就绪通过，消费者仍暂停，组三分区34/37/42未改。取消该可选模块后不会创建新的预算预约/Invocation钩子，常规执行用量和同Run领取仍独立存在，旧预约不删。见[运行回执](../../../../operations/evidence/v1.2-implementation-20261107/triage-unlimited-runtime.json)、[最终就绪](../../../../operations/evidence/v1.2-implementation-20261107/triage-unlimited-final-readiness.json)和[限定独审](../../../../operations/evidence/v1.2-implementation-20261107/triage-unlimited-limited-review.json)；恢复验收继续待。
+实施已生效：21沿原Agents镜像重建一次，两个租户实际策略None；部署来源及新初始化同步。API/Agents就绪通过，消费者仍暂停，组三分区34/37/42未改。取消该可选模块后不会创建新的预算预约/Invocation钩子，常规执行用量和同Run领取仍独立存在，旧预约不删。见[运行回执](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/triage-unlimited-runtime.json)、[最终就绪](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/triage-unlimited-final-readiness.json)和[限定独审](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/triage-unlimited-limited-review.json)；恢复验收继续待。
 
-恢复预查进一步确认默认租户缺7项凭据映射；全部7条积压在旧Agents确定性Run账本中尚未领取，但其中3条已由结束批次的新版A/I处理。旧 `investigation_runs` 与 `socai2.runs` 的不同流程标识不能提供跨流程防重，不能据旧表为空再分析已结束批次。消费者维持暂停，接续规则及映射须先明确实施，再按原位点验证；不跳位点或改旧结果。见[完整恢复诊断](../../../../operations/evidence/v1.2-implementation-20261107/agents-recovery-summary.json)，其他4条是否已由不同流程处理不从本次旧Run检查推断。
+恢复预查进一步确认默认租户缺7项凭据映射；全部7条积压在旧Agents确定性Run账本中尚未领取，但其中3条已由结束批次的新版A/I处理。旧 `investigation_runs` 与 `socai2.runs` 的不同流程标识不能提供跨流程防重，不能据旧表为空再分析已结束批次。消费者维持暂停，接续规则及映射须先明确实施，再按原位点验证；不跳位点或改旧结果。见[完整恢复诊断](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/agents-recovery-summary.json)，其他4条是否已由不同流程处理不从本次旧Run检查推断。
 
-2026-11-07 续修已本地实现 A/I 局部引用保留、冻结 `program_facts`、四类时间/分层严重性/配置标签释义；A 核心判断独立校验，I 局部结果不保留总判断，不改已有当前指针。A/I/C6 实际落库正文通过完整 JSON 合同，三份定义保持兼容；独审发现遗漏 diagnosis 定义后已补齐，原拒收与复核结论单独保留。最新 147 核心纯检查通过，本批 10 个不同隔离 PG 方法及四条正文合同复验通过（复验不是额外不同方法）；模型/湖为替身。旧冻结三告警包含29项必要输入，C3/C6含输出与安全预留为16146/22403tokens，0新生成。[续修与构建证据](../../../../operations/evidence/v1.2-implementation-20261107)
+2026-11-07 续修已本地实现 A/I 局部引用保留、冻结 `program_facts`、四类时间/分层严重性/配置标签释义；A 核心判断独立校验，I 局部结果不保留总判断，不改已有当前指针。A/I/C6 实际落库正文通过完整 JSON 合同，三份定义保持兼容；独审发现遗漏 diagnosis 定义后已补齐，原拒收与复核结论单独保留。最新 147 核心纯检查通过，本批 10 个不同隔离 PG 方法及四条正文合同复验通过（复验不是额外不同方法）；模型/湖为替身。旧冻结三告警包含29项必要输入，C3/C6含输出与安全预留为16146/22403tokens，0新生成。[续修与构建证据](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107)
 
 按需处理入口、发布包、probe 已接显式 production profile 与应用同一完整 policy 校验；构建入口改为显式 build profile，冻结完整 API/Fusion 源码及实际 TLS 模块，以新候选镜像验证，不将候选构建等同正式服务部署。整版仍待超大材料动态分配/摘要、实际运行配置/归并与消费、新批工具/模型/H后轮和最终验收；以下范围及任务不因本段限定检查提前核销。
 
-12-09/12-10 的实际根因已只读核实：[运行诊断](../../../../operations/evidence/v1.2-implementation-20261107/runtime-rootcause-summary.json)。Fusion 运行中的 Correlator 只返回二元组，模型和落库源没有 correlation_basis；三个关键文件均与本地不同，需部署已有归并依据实现后验新消息，不补写历史。Agents 三个关键源码与本地相同，2026-11-06 12:09:08 UTC 在 fused 分区1/位点37处理默认租户时，预算文件仅配置正式租户 f6a5…，触发 KeyError→BudgetHold，继而消费窗口 LedgerPersistError 退出。当前组 Empty，分区0/1/2提交34/37/42，末端37/39/44，三分区位点差合计7；只读观察前后位点不变。恢复前须对齐租户、预算及 context/writer 配置和新批额度，不能靠重启或跳位点称恢复。此次未改配置/重启/提交位点/新增模型，恢复验收仍待。
+12-09/12-10 的实际根因已只读核实：[运行诊断](../../2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107/runtime-rootcause-summary.json)。Fusion 运行中的 Correlator 只返回二元组，模型和落库源没有 correlation_basis；三个关键文件均与本地不同，需部署已有归并依据实现后验新消息，不补写历史。Agents 三个关键源码与本地相同，2026-11-06 12:09:08 UTC 在 fused 分区1/位点37处理默认租户时，预算文件仅配置正式租户 f6a5…，触发 KeyError→BudgetHold，继而消费窗口 LedgerPersistError 退出。当前组 Empty，分区0/1/2提交34/37/42，末端37/39/44，三分区位点差合计7；只读观察前后位点不变。恢复前须对齐租户、预算及 context/writer 配置和新批额度，不能靠重启或跳位点称恢复。此次未改配置/重启/提交位点/新增模型，恢复验收仍待。
 
 | 来源 | 已证实的情况 | 1.2 如何承接 |
 | --- | --- | --- |
 | [V1.1 问题 F01—F16](../../../../operations/known-issues.md#21-分步测试问题清单--签名暂存机--2026-11-06)、[收尾原记录](../root/inv-history.txt)及下方逐项讨论 | 45 秒超时、3,000 输出截断；空引用使整答拒收；领域/发现范围混用；工具能力误解；活动/告警时间及严重性混用；归并依据缺失；Agents 订阅异常。部分加长时限和输出只在临时作业验证。 | 承接已确认方案；引用范围的新规则取代旧全包含规则，旧原答不追认通过。此处 F 编号是问题编号，不是页面功能 F01—F28。 |
 | [正式多告警批次](../../../../operations/evidence/production-multialert-20261107-01/summary.json) | 3 告警→1 事件→1 Case；3 A/1 I 共 4 次模型调用。Case 在 8,192B 视图无法容纳必需诊断时停止，C3/C6 模型调用为 0；仅系统结果和关系图。部分本机模块与固定运行镜像不同。 | 容量修复必须覆盖完整装配链和实际运行版本；不能只修引用或调单个模型参数。 |
-| [数据库与 GET 核对](../../../../operations/evidence/database-handoff-review-20261107/review.json) | 29 表/167 行、5 Run/30 Step/67 工件可回查；127 正常 GET 成功，4 错归属正确 404，4 资产 GET 500。无负责人样本未触发 `public.users` 读取，该权限也不足。 | 主体存储和关系可复用；补资产及非空负责人读取，保留真实空态；继续用相同合同验证有值分支。 |
+| [数据库与 GET 核对](../../2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/review.json) | 29 表/167 行、5 Run/30 Step/67 工件可回查；127 正常 GET 成功，4 错归属正确 404，4 资产 GET 500。无负责人样本未触发 `public.users` 读取，该权限也不足。 | 主体存储和关系可复用；补资产及非空负责人读取，保留真实空态；继续用相同合同验证有值分支。 |
 | 已完成的适配 | 远端 profile/TLS 已接正式 `aisoc`；Case 详情已按明确授权补两个函数 EXECUTE，返回 200。源主机候选保留已有修复；V1 存储基线为 29 表/462 列。 | 全部列为回归，不重复开发或重复授权；原 Case 500、旧模型失败及历史工件保留。 |
 
 `inv-review.md` 是后续方向，不能整体视为已确认的 1.2 需求。其自动更新/优先级调度、跨案 Neo4j、全面改自然语言输入和每一步通用重试继续后置；本轮采用已经逐项讨论确认的有界方案。
@@ -126,7 +126,7 @@ M0 公共读取采用用户最新开发决定：用户明确说“不要搞这�
 
 #### 12-13：A/I 按本阶段结果判断交付完整性（2026-11-08）
 
-确认人：项目负责人（本会话用户）；日期：2026-11-08。用户明确要求：“告警分诊和事件诊断按本阶段实际结果判断是否完整交付，待复核单独展示。”实施任务为3.22。当前A/I均已实施并随v1.2-20261108-r5发布21，原GET与4177核对通过。新批网络A完整交付且needs_review，坏A failed/none，I failed/partial；具体见[部署实测](../../../../investigation/ai-production-rollout-20261108.md)，下方保留前批I验证记录。
+确认人：项目负责人（本会话用户）；日期：2026-11-08。用户明确要求：“告警分诊和事件诊断按本阶段实际结果判断是否完整交付，待复核单独展示。”实施任务为3.22。当前A/I均已实施并随v1.2-20261108-r5发布21，原GET与4177核对通过。新批网络A完整交付且needs_review，坏A failed/none，I failed/partial；具体见[部署实测](../../2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md)，下方保留前批I验证记录。
 
 问题依据：`StageResultService.finish()` 在 A/I 成功发布时固定写入 `runs.delivery_state=partial`，没有根据本阶段实际保留的结果判断完整性。[源码](../../../../../services/api/app/socai2/stage_results.py)及[本批数据库快照](../../../../operations/evidence/production-multialert-20261108-01/exports/20261108T013952440775Z/database.json)可核：3 个 `alert_basic` 和事件诊断 Run `27db8785-fa50-5e08-afef-40150a1310bc` 均为 `completed/partial`；四份原答 `validation_error=null`、`partial_review=null`，事件诊断仅有正文编号展示警告。这些状态不能解释为四轮都只完成了一半，也不能归因于后续 Case 的领域引用问题。
 
@@ -144,7 +144,7 @@ M0 公共读取采用用户最新开发决定：用户明确说“不要搞这�
 
 完整结果与Run交付状态在原发布事务中一起保存；原局部保留事务同时保存partial/none。失败和unknown保持实际执行状态；输入过期/较新结果存在影响采用与新鲜度，不误降已保存交付。I默认合同及候选合同均走同一计算；可信内部生产者未提供已校验成员目录时不能直接声称完整。A成功保存的原状态本轮未变，Case也未变。4177模板在执行状态/交付状态之外展示保存的复核状态、待核数量和缺项原因，不解析正文猜判定。
 
-验证见[独立新批](../../../../operations/evidence/incident-delivery-validation-20261108-01/summary.json)：51个不同纯检查最新通过、7个隔离PG方法通过、15个实际ASGI GET读取核对；包含完整且待核、局部拒收、全部无效、格式错误、显式未分析、超时、输入过期和发布回滚。首次纯检查有1项展示测试将既有“失败”标签误写成“执行失败”，修正断言后定向通过，原失败保留；PG首批全部通过。上一批3事件/11Run/44工件、各29表读回逐值不变，旧partial/none不回填。本批5事件/10告警/19Run实际快照追加本机静态运行记录；模型与工具均为替身、0真实调用，尚未同步21及在线4177，不代表模型正文或整体1.2质量通过。
+验证见[独立新批](../../2026-11-14-investigation-cleanup/evidence/incident-delivery-validation-20261108-01/summary.json)：51个不同纯检查最新通过、7个隔离PG方法通过、15个实际ASGI GET读取核对；包含完整且待核、局部拒收、全部无效、格式错误、显式未分析、超时、输入过期和发布回滚。首次纯检查有1项展示测试将既有“失败”标签误写成“执行失败”，修正断言后定向通过，原失败保留；PG首批全部通过。上一批3事件/11Run/44工件、各29表读回逐值不变，旧partial/none不回填。本批5事件/10告警/19Run实际快照追加本机静态运行记录；模型与工具均为替身、0真实调用，尚未同步21及在线4177，不代表模型正文或整体1.2质量通过。
 
 #### 12-14：告警输入与任务输出（2026-11-08，隔离对照完成、生产待接入）
 
@@ -156,7 +156,7 @@ M0 公共读取采用用户最新开发决定：用户明确说“不要搞这�
 
 用户随后明确本轮只做结构精简与已有结构化值拼接。自由文本（描述、既有分析、建议理由、人工正文）原样保留，程序只加来源和引用边界，不摘要/提炼/纠错或按语义重复删句；同一记录同版本同内容才去重。理解字段职责不等于预先解析每句话。历史原件补读不在本轮范围，文本以原值完整传递验证，已知结构化字段以确定性映射验证。
 
-最新[三组实测](../../../../../openspec/changes/complete-socai2-investigation-chain/alert-io-evaluation-20261108.md)：9样例36请求，现版/仅精简输入/五字段组，12/12/12份Schema有效、9/9/12份核心解析通过。相对现版，后两组输入tokens降58.7%/62.8%，平均HTTP耗时降20.2%/39.7%；查询状态和历史范围正文错误仍在。五字段组同时改指令和直接引用枚举，不能归因于字段数单一变化。S3标签口径、S6时间/计划夹具问题单列，合成标签无方向反转不等于准确率或整体质量通过。候选仅在tools/testdata/alert_io_eval，配置由文件提供；生产事务/新鲜度/GET/4177未接入，无新DDL/部署/旧Run修改，3.23未完成。
+最新[三组实测](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/alert-io-evaluation-20261108.md)：9样例36请求，现版/仅精简输入/五字段组，12/12/12份Schema有效、9/9/12份核心解析通过。相对现版，后两组输入tokens降58.7%/62.8%，平均HTTP耗时降20.2%/39.7%；查询状态和历史范围正文错误仍在。五字段组同时改指令和直接引用枚举，不能归因于字段数单一变化。S3标签口径、S6时间/计划夹具问题单列，合成标签无方向反转不等于准确率或整体质量通过。候选仅在tools/testdata/alert_io_eval，配置由文件提供；生产事务/新鲜度/GET/4177未接入，无新DDL/部署/旧Run修改，3.23未完成。
 
 #### 12-15：4177 展示告警输入输出对比（2026-11-08，用户要求）
 
@@ -172,11 +172,11 @@ M0 公共读取采用用户最新开发决定：用户明确说“不要搞这�
 
 调用前冻结新计划并核旧代码/材料指纹；调用后原答、解析与装配分存，核旧批与运行配置/路由保持。沿21既有内网模型，不创建业务Run、不写业务库或切换生产；4177另建对照批次。S3分类口径/S6时间计划问题保持，无独立真值的告警不报告准确率，待复核单列；对应3.25，不提前完成3.23或整版1.2。
 
-本批已结束：24原答/46,676tokens，各组12/12格式与核心解析；输入仅降0.81%，输出增加17.26%、HTTP增加18.30%，正文新增错误，v2不采用。独立4177批次已静态发布，见[实测报告](../../../../../openspec/changes/complete-socai2-investigation-chain/alert-prompt-evaluation-20261108.md)。用户随后要求结合官方实践从原文整理，已形成[新文案与规则映射](../../../../../openspec/changes/complete-socai2-investigation-chain/alert-prompt-restructure-20261108.md)；该v3未测试或启用，保留原v1/v2及本批全部证据。
+本批已结束：24原答/46,676tokens，各组12/12格式与核心解析；输入仅降0.81%，输出增加17.26%、HTTP增加18.30%，正文新增错误，v2不采用。独立4177批次已静态发布，见[实测报告](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/alert-prompt-evaluation-20261108.md)。用户随后要求结合官方实践从原文整理，已形成[新文案与规则映射](../../../../../openspec/changes/complete-socai2-investigation-chain/alert-prompt-restructure-20261108.md)；该v3未测试或启用，保留原v1/v2及本批全部证据。
 
 #### 12-17：按模块目标梳理后续模型环节（2026-11-08）
 
-**当前部署结果：** 项目负责人随后要求告警和事件均部署21并开展不建Case的新批。现已激活v1.2-20261108-r5，A五字段与I四块各用自己的配置合同；3A/1I实际4模型、0重试、0Case。3.22/3.29限定技术接入完成，51原GET、1,910项字段内容与29表前后快照核对通过，4177已显示实际结果和读取复核。登录截断、进程重复引用、I成员依据不足及正文错误分别记录，质量仍未通过；3.23通用质量/结束审计、Case后续未核销。见[当前报告](../../../../investigation/ai-production-rollout-20261108.md)。下方“21仅发布静态/入口未部署”等为各前批时点。
+**当前部署结果：** 项目负责人随后要求告警和事件均部署21并开展不建Case的新批。现已激活v1.2-20261108-r5，A五字段与I四块各用自己的配置合同；3A/1I实际4模型、0重试、0Case。3.22/3.29限定技术接入完成，51原GET、1,910项字段内容与29表前后快照核对通过，4177已显示实际结果和读取复核。登录截断、进程重复引用、I成员依据不足及正文错误分别记录，质量仍未通过；3.23通用质量/结束审计、Case后续未核销。见[当前报告](../../2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md)。下方“21仅发布静态/入口未部署”等为各前批时点。
 
 本轮21接入检查补充：原API的A/I读取开关关闭，现有`aisoc_app`也没有`socai2`读取权限。拟配置开启两个只读GET开关，并为现有API角色仅补schema USAGE、当前29表SELECT、已有只读函数与公共查找依赖。首次自动审批要求明确范围，命令未执行；项目负责人（本会话用户）于2026-11-08明确回复“允许上述只读授权”，已记录并按同一脚本实施，29表/462列及只读权限验证通过。授权人、原问答与回执见`docs/operations/evidence/ai-deployment-20261108-01/api-reader-user-authorization.json`和`api-reader-grant.json`。同步`api_read_access_20261108.sql`及`api-reader-21.toml`，新装和升级都使用同一增量入口；不修改V1建表原件、列、RLS、角色属性、所有权、未来表默认授权或写权限。接口沿请求租户过滤，权限元数据及实际GET均需复核。此次不是表设计迁移。
 
@@ -215,7 +215,7 @@ E2属于程序误伤：业务术语“S3”被旧裸S数字引用语法识别。
 
 本轮49个不同纯检查最新通过（含新增16项边界检查和1项候选打包；分批执行），7个不同隔离PG方法最新通过（3新增、4旧流程回归），其中新版正常保存的10个ASGI GET检查了原描述、成员、诊断、材料及A回执入口。模型与工具全部为明确测试替身，0真实模型/外部工具调用；不据此更新正文质量结论。前两批夹具缺stage_code/提前终态、第三批HTTP依赖包装与DTO取值、初打包测试路径假设的失败均保留，修后定向通过，不能称一次首过。
 
-独立`incident-boundary-integration-20261108-01`保存3事件/6告警/11个实际隔离库Run的快照（含局部失败及旧模式记录），已用既有更新器追加到本机静态运行记录，保留旧批次；该静态增量尚未同步21的4177服务。另提供现存三告警原件加同A回执的新版离线输入，新增完整材料/9回执后大小变化不能拿旧3607B纯投影比较宣称性能收益。详见[验证摘要](../../../../operations/evidence/incident-boundary-integration-20261108-01/summary.json)和[当前输入](../../../../operations/evidence/incident-boundary-integration-20261108-01/input-current.txt)。
+独立`incident-boundary-integration-20261108-01`保存3事件/6告警/11个实际隔离库Run的快照（含局部失败及旧模式记录），已用既有更新器追加到本机静态运行记录，保留旧批次；该静态增量尚未同步21的4177服务。另提供现存三告警原件加同A回执的新版离线输入，新增完整材料/9回执后大小变化不能拿旧3607B纯投影比较宣称性能收益。详见[验证摘要](../../2026-11-14-investigation-cleanup/evidence/incident-boundary-integration-20261108-01/summary.json)和[当前输入](../../2026-11-14-investigation-cleanup/evidence/incident-boundary-integration-20261108-01/input-current.txt)。
 
 3.22的I交付状态随后已本地完成，见12-13及独立交付状态批次。3.29仍未完成：更完整的检索/空态、新批多类型真实模型验证、21受控发布和实际4177展示仍待。没有DDL、生产库写入、线上策略切换、新模型调用或提交推送；已结束单轮原件/质量结论保持，不重派旧对照。
 
@@ -331,7 +331,7 @@ E2属于程序误伤：业务术语“S3”被旧裸S数字引用语法识别。
 
 **独立候选与离线验证结果（2026-11-08继续推进）。** 已在[tools/testdata/incident_io_eval](../../../../../tools/testdata/incident_io_eval)落地独立输入呈现、输出适配、候选任务指令及离线审计入口，不接入生产执行器。模板、标签、明确省略路径、快照/输出路径等在[config.json](../../../../../tools/testdata/incident_io_eval/config.json)，边界数量/文本约束复用现有I合同，不另设散落限额。没有模型客户端、远端调用或数据库写入。输入只转换已保存的I模型可见材料；不假装重新读取了未进入原视图的完整业务材料。已知后台身份/版本及本任务不再评审的归并依据退出模型输入，留在原快照和映射账本；同材料/成员/角色/语义路径/数值一致的标量副本合并显示，所有有效来源编号仍可回原件。未知业务字段与语义有意义的空列表保留。
 
-输出候选为`diagnosis/members/findings/open_questions`四块；保留模型分析限制及逐成员评述，程序转换为现有IncidentOutput，沿原解析器做引用/范围检查和局部保留。不能将这些本地模块描述为服务已切换。详见[机器汇总](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/summary.json)、[检查回执](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/verification.json)及[源码指纹](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/source-fingerprints.json)。
+输出候选为`diagnosis/members/findings/open_questions`四块；保留模型分析限制及逐成员评述，程序转换为现有IncidentOutput，沿原解析器做引用/范围检查和局部保留。不能将这些本地模块描述为服务已切换。详见[机器汇总](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/summary.json)、[检查回执](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/verification.json)及[源码指纹](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/source-fingerprints.json)。
 
 | 已完成的离线核对 | 实际结果及限制 |
 | --- | --- |
@@ -344,7 +344,7 @@ E2属于程序误伤：业务术语“S3”被旧裸S数字引用语法识别。
 
 非空描述、云/邮件扩展等使用明确合成的输入片段测试，只验证收到这些值后的呈现/适配；没有声称对应采集链路、全部告警类型或新增真实事件已跑通。`description`原样例空值来源仍未追溯到采集报文，不能判断是上游未传还是接入未映射。第一次测试15过1失败是测试取`retained`而非原接口的`retained_analysis`，修正断言后16过；首次Ruff三处导入及一处宽泛异常断言已修。原快照SHA256保持，未重派旧批。未新增模型tokens/耗时/质量结果，也未做数据库保存、HTTP或页面回归；完整兼容验收仍待。
 
-直接查看[转换前输入](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/input-before.txt)、[转换后输入](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/input-after.txt)、[旧答结构回放](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/output-replay-candidate.json)及[装配后的原合同](../../../../operations/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/output-replay-assembled.json)。可复用命令如下；每次离线审计另建时间戳目录，不覆盖原件：
+直接查看[转换前输入](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/input-before.txt)、[转换后输入](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/input-after.txt)、[旧答结构回放](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/output-replay-candidate.json)及[装配后的原合同](../../2026-11-14-investigation-cleanup/evidence/incident-io-offline-20261108-01/20261108T063458388075Z/output-replay-assembled.json)。可复用命令如下；每次离线审计另建时间戳目录，不覆盖原件：
 
 ```sh
 PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m pytest -q tools/testdata/incident_io_eval/test_adapters.py
@@ -401,7 +401,7 @@ PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m tools.testdata.in
 10. **同时验证必要信息、质量和消耗。** 同材料对照分别测输入变化与输出合同变化；若用历史参照，写明时间、查询、前序等差异。检查关键事实/0/false/非空描述/未知类型/冲突是否保留，记录判定与引用变化、输出截断、拒收/待核、输入输出tokens和耗时。字节减少不等于tokens减少，更不保证准确或提速；没有独立真值不报准确率。
 11. **配置与实际版本可核对。** 模板、字段映射、提示、工具说明、输出合同、容量和超时通过配置及版本管理进入部署来源；按实际完整请求容量规划，并给最终阶段保留资源。验证执行进程真正加载的配置，不仅看文件已上传；测试页展示真实请求和真实结果。
 
-**Case只读梳理的现状证据。** [离线审计](../../../../operations/evidence/case-boundary-design-20261108-01/current-audit.json)读取既有production-multialert-20261108-01的3份Case请求，另对已结束事件批次的2云审计/1邮件材料调用当前纯投影函数。0新模型、0DB连接、0远端动作、0Case；原快照hash保持。它是现状诊断，不是新候选的性能/质量测试。
+**Case只读梳理的现状证据。** [离线审计](../../2026-11-14-investigation-cleanup/evidence/case-boundary-design-20261108-01/current-audit.json)读取既有production-multialert-20261108-01的3份Case请求，另对已结束事件批次的2云审计/1邮件材料调用当前纯投影函数。0新模型、0DB连接、0远端动作、0Case；原快照hash保持。它是现状诊断，不是新候选的性能/质量测试。
 
 - C1冻结版本与成员、C2背景查询和C5图生成主要由程序完成。当前自动Case执行器调用C3初次分析→按需C4问题级Deep/查询→C6最终综合；四领域共享C3的一次调用，不是四个独立模型。C3.reanalysis有单独入口，但不是该默认执行链额外必经步骤。
 - 样本中已冻结的有效I包含8条findings（含3条成员评述）和2个open_questions；C3、Deep、C6实际可见I内容均仅summary/conclusion/limitations，关键发现及待核问题未直接交接。它们仍在DB和C1快照里，不能称原件丢失，也不能假设信息必然完全不见于其他正文。
@@ -422,7 +422,7 @@ PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m tools.testdata.in
 
 2026-11-08最新测试范围：用户要求不再保留旧对照展示，并做整理版v3的一轮测试。沿3.26，9份既有冻结材料各1次，只派当前指令；原告警正文、五字段Schema、映射和参数不变，原批不重派。4177当前列表仅保留新批，旧两批静态资料移到配置指定的可恢复归档，原始证据和业务Case保持。审查本轮实际原答，不把前v2失败或官方指南视为v3实测结论。
 
-本轮已完成：9原答/16,918tokens、无重试，格式/核心9/9，2良性/7待复核、平均HTTP6.09秒。协议、历史成功范围、字段含义及意图推断仍有正文错误；质量未过，不启用生产。4177已仅列本轮，29新文件、9份展示原答逐值、34HTTP和浏览器核验通过；184旧静态文件可恢复归档，原件与Case保持。见[本轮报告](../../../../../openspec/changes/complete-socai2-investigation-chain/alert-prompt-validation-20261108.md)；3.26测试结束，3.23适配及语义质量继续待。
+本轮已完成：9原答/16,918tokens、无重试，格式/核心9/9，2良性/7待复核、平均HTTP6.09秒。协议、历史成功范围、字段含义及意图推断仍有正文错误；质量未过，不启用生产。4177已仅列本轮，29新文件、9份展示原答逐值、34HTTP和浏览器核验通过；184旧静态文件可恢复归档，原件与Case保持。见[本轮报告](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/alert-prompt-validation-20261108.md)；3.26测试结束，3.23适配及语义质量继续待。
 
 | 里程碑 | 处理内容与依赖 | 达到什么才进入下一步 |
 | --- | --- | --- |
@@ -474,7 +474,7 @@ PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m tools.testdata.in
 
 ### 引用为空时的一次纠正方案（2026-11-07，已确认，待实施）
 
-用户确认：“引用为空时先告诉模型具体原因，让它纠正一次，再重新校验。”本轮只记录方案，暂不改代码。对应签名暂存机 F15 的 C3/C6：第六题标记 `answered`，但 `evidence_ids=[]`，正式接收校验报 `answered_question_needs_sources`；模型输入中有可引用来源，不能将本问题解释成整个输入证据列表为空。见[原批次摘录](../../../../operations/evidence/signing-staging-20261107/model-replay.json)。
+用户确认：“引用为空时先告诉模型具体原因，让它纠正一次，再重新校验。”本轮只记录方案，暂不改代码。对应签名暂存机 F15 的 C3/C6：第六题标记 `answered`，但 `evidence_ids=[]`，正式接收校验报 `answered_question_needs_sources`；模型输入中有可引用来源，不能将本问题解释成整个输入证据列表为空。见[原批次摘录](../../2026-11-14-investigation-cleanup/evidence/signing-staging-20261107/model-replay.json)。
 
 拟议流程为：完整回答收到后，若命中上述空引用错误，向模型返回具体题目、字段路径、错误原因及本次允许引用的已有来源，要求纠正原答；同一份回答最多纠正一次，收到后重新执行完整校验。引用必须真实支持对应主张；来源不足时应说明缺口并调整回答状态或结论，不能随意填编号以通过校验。纠正后仍不通过的引用及依赖项，按下节逐项处理，不因单项错误一律拒收整份分析，也不把“已纠正”当成已验收。
 
@@ -506,7 +506,7 @@ PYTHONPATH=services/api .local/conda-envs/socai2/bin/python -m tools.testdata.in
 
 后续对本轮冻结材料中已有的确定字段由程序直接提供。若兼容旧输出仍含重复字段，须先核同一对象、字段含义、时间版本和单位，再在程序交付副本中回填；保存原模型值、程序值、来源路径及原因，原答不变。字段归属不清、来源冲突或缺失时保留未知/冲突，不能挑一个值冒充权威值。性质、授权、因果、影响及发现涉及哪些成员属于分析主张，不能用这条规则自动扩大或缩小；领域/发现范围按上节分别处理。
 
-F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:50:10。保存的 C6 输入有 `logon` 动作和告警时间，却没有认证活动原始时间；原答在成员摘要正文中把告警时刻写成登录时刻，晚 25 秒。它不属于仅替换一个专用时间字段就能保证正确的情况。当前材料投影未包含该原始 OCSF 时间，后续应明确提供活动时间及来源，与告警、入库、执行时间分别表达；缺活动时间时明确未知，禁止用告警时间代替。见[本轮时间对账](../../../../operations/evidence/signing-staging-20261107/login-time.json)。
+F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:50:10。保存的 C6 输入有 `logon` 动作和告警时间，却没有认证活动原始时间；原答在成员摘要正文中把告警时刻写成登录时刻，晚 25 秒。它不属于仅替换一个专用时间字段就能保证正确的情况。当前材料投影未包含该原始 OCSF 时间，后续应明确提供活动时间及来源，与告警、入库、执行时间分别表达；缺活动时间时明确未知，禁止用告警时间代替。见[本轮时间对账](../../2026-11-14-investigation-cleanup/evidence/signing-staging-20261107/login-time.json)。
 
 正文中的错误通过正确输入、明确时间含义及相应语义核查处理，不做全局字符串替换；结构化字段准确不等于整段分析正确。具体字段清单、兼容回填位置及诊断表达待实施，历史错误原答保持。已有事件等级按程序规则提供、检测标签由词典解释的决定继续见“严重性分层与检测标签释义”。
 
@@ -522,19 +522,19 @@ F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:
 
 在讨论本轮常驻网关单次默认 45 秒后，用户确认“这个可以改成三百秒”，随后进一步确认“整轮设为1500秒，最终报告预留300秒”。已确认方案为：**单次模型请求等待上限 300 秒、整轮调查上限 1,500 秒、最终报告 C6 预留 300 秒**。这些是最长等待和资源预留，提前完成即结束；本轮只记录方案，暂不改代码，不声称常驻配置已经生效。
 
-保存的测试记录显示，首次事件诊断在 45.01 秒返回 HTTP 408；同一输入另一次请求显式等待 300 秒后，在 48.779 秒收到完整原答。F15 的 C3、C6 分别耗时 68.091、93.396 秒，整轮 162.25 秒；F15 使用的是一次性作业的单次 1,800 秒、整轮 7,500 秒，不能写成已验证常驻 300 秒策略。见[已知时限问题](../../../../operations/known-issues.md)及[Case 运行摘录](../../../../operations/evidence/signing-staging-20261107/case-runs.json)。
+保存的测试记录显示，首次事件诊断在 45.01 秒返回 HTTP 408；同一输入另一次请求显式等待 300 秒后，在 48.779 秒收到完整原答。F15 的 C3、C6 分别耗时 68.091、93.396 秒，整轮 162.25 秒；F15 使用的是一次性作业的单次 1,800 秒、整轮 7,500 秒，不能写成已验证常驻 300 秒策略。见[已知时限问题](../../../../operations/known-issues.md)及[Case 运行摘录](../../2026-11-14-investigation-cleanup/evidence/signing-staging-20261107/case-runs.json)。
 
 实施需同时更新正式入口的整轮时限、执行器的时限允许范围和 C6 预留，并对齐应用等待及网关转发等待。前序分析、Deep 和纠正调用须保护 C6 的 300 秒；实际单次等待不得超过 300 秒或当时剩余可用时间。纠正调用仍计入该 Run 的次数、时间和 token 预算，不能另起一份整轮时限。超时不自动重试，原 unknown 保留。该时限确认不自动增加模型/工具调用次数或整轮 token 预算；现行代码的整轮 120 秒、C6 预留 30 秒尚未修改，未重跑历史 Run。
 
 ### 分阶段输出额度（2026-11-07，待验证方案，未实施）
 
-讨论 F10/F12 截断后，用户回复“ok jixu”，继续沿只记方案、不改代码的方式推进。将 **C3 初步分析 4,096 tokens、C6 最终报告 8,192 tokens** 记为待验证的输出上限候选。依据为同材料 F14/F15 完整回复的实际输出：C3 为 3,254/3,435，C6 为 3,527/4,729 tokens；这些回复格式完整但仍因引用问题拒收，不能据此声称模型质量通过。见[运行摘录](../../../../operations/evidence/signing-staging-20261107/case-runs.json)。
+讨论 F10/F12 截断后，用户回复“ok jixu”，继续沿只记方案、不改代码的方式推进。将 **C3 初步分析 4,096 tokens、C6 最终报告 8,192 tokens** 记为待验证的输出上限候选。依据为同材料 F14/F15 完整回复的实际输出：C3 为 3,254/3,435，C6 为 3,527/4,729 tokens；这些回复格式完整但仍因引用问题拒收，不能据此声称模型质量通过。见[运行摘录](../../2026-11-14-investigation-cleanup/evidence/signing-staging-20261107/case-runs.json)。
 
 后续按阶段设置额度，减少重复限制及已有事实的重复生成；上述候选不自动扩展到 A/I 或 Deep，也不代表所有案件都足够。必须一起核算实际完整请求、整轮共享预算、C6 输出预留及一次纠正的消耗，使发送参数、预算检查和保存回执一致；不能只调高请求中的上限，导致调用前又被预算检查挡住。本次未确认增加整轮总额度，未授权新增真实模型测试。截断原答继续保存并拒收，不用补括号或截取片段冒充完整分析，不重跑已结束批次。
 
 ### 按模型容量分配与分组选择工具（2026-11-07，已确认方向，待细化）
 
-用户要求讨论按模型实际容量统一分配输入，并提出超限时可分多次请求判断是否执行工具；在进一步讨论摘要输入后回复“OK，继续”。本节记录已确认的设计方向，暂不改代码。65,536 tokens 是本轮测试服务器配置的输入与输出共享上下文窗口，不是字节数，也不等于每轮调查的累计调用额度。既有 12 KiB 消息、8 KiB 资料视图、2 KiB 单项和 1,800 字节工具目录是固定应用限制；历史记录说明沿用原限额，未提供按本轮 65K 服务容量推算这些数值的依据。见[原 C3 预算说明](../../../../investigation/socai2-baseline-c3-20261103.md)和[本轮容量记录](../../../../operations/known-issues.md)。
+用户要求讨论按模型实际容量统一分配输入，并提出超限时可分多次请求判断是否执行工具；在进一步讨论摘要输入后回复“OK，继续”。本节记录已确认的设计方向，暂不改代码。65,536 tokens 是本轮测试服务器配置的输入与输出共享上下文窗口，不是字节数，也不等于每轮调查的累计调用额度。既有 12 KiB 消息、8 KiB 资料视图、2 KiB 单项和 1,800 字节工具目录是固定应用限制；历史记录说明沿用原限额，未提供按本轮 65K 服务容量推算这些数值的依据。见[原 C3 预算说明](../../2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-c3-20261103.md)和[本轮容量记录](../../../../operations/known-issues.md)。
 
 拟按本次实际模型服务及网关的有效上下文、输出上限和计量方式统一准备请求：先按阶段预留输出与余量，再分配系统提示、案件材料、工具说明和输出约束实际占用的输入容量；完整装配后用与服务匹配的计量方式复核，计入协议及模板开销，并记录估计与服务回执的差异。模型切换时重新计算，不能只改一处窗口参数而仍被另一处固定消息门裁剪。用于存储、传输或单项材料处理的字节上限另行明确用途，不直接把字节数当作模型 tokens，也不把增大上下文当作已经读取全部材料。
 
@@ -556,7 +556,7 @@ F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:
 
 ### 核对运行版本并补齐归并依据（2026-11-07，已确认，待实施）
 
-用户确认先记录“核对实际运行版本、补齐归并依据”的方案，暂不改代码。对应 F01：三条告警已归入同一事件，成员数由 1 增至 3，但保存的 `basis_version=unrecorded`、关联理由为空。当前源码已有 Correlator 生成依据、Fusion 传递和存储映射的路径；仅凭本轮离线材料不能确定实际部署版本或哪个传递环节缺失，不能直接认定尚未开发或必须重做归并算法。见[原批次摘录](../../../../operations/evidence/signing-staging-20261107/alert-event.json)和[现有保存映射](../../../../../services/fusion/app/services/socai2_projection.py)。
+用户确认先记录“核对实际运行版本、补齐归并依据”的方案，暂不改代码。对应 F01：三条告警已归入同一事件，成员数由 1 增至 3，但保存的 `basis_version=unrecorded`、关联理由为空。当前源码已有 Correlator 生成依据、Fusion 传递和存储映射的路径；仅凭本轮离线材料不能确定实际部署版本或哪个传递环节缺失，不能直接认定尚未开发或必须重做归并算法。见[原批次摘录](../../2026-11-14-investigation-cleanup/evidence/signing-staging-20261107/alert-event.json)和[现有保存映射](../../../../../services/fusion/app/services/socai2_projection.py)。
 
 后续先核实际镜像、代码版本与启用的消费/写入路径，再按同一告警逐段比对“归并决策 → Fusion 输出及原始快照 → 调查成员关系”的依据内容。定位缺口后，让程序把当次真实决策的规则版本、匹配对象、窗口语义和原因随成员关系保存；复用已有 `correlation_basis`、`basis_version` 及来源快照，不预设新增表或字段。
 
@@ -582,7 +582,7 @@ F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:
 
 ### 页面数据合同优先推进（2026-11-06）
 
-用户最新要求以“原页面需要的业务数据能够保存并查回”为推进标准。依据[只读覆盖核对](../../../../../openspec/changes/complete-socai2-investigation-chain/page-data-coverage-20261106.md)，本轮先收口R7的数据部分；下节S1—S7继续作为算法与真实流程质量路线，**不是本轮数据交接的前置条件**。现有主链字段可先交接，D1—D3涉及字段逐项补齐；跨域、实时表单、模型效果、VPN及新的工具流程不进入本轮完成条件。本节的数据部分已按126增量实施：本机29表462列，4份合成数据合同样例和14案兼容读回；见[数据交接](../../../../investigation/socai2-page-data-handoff-20261106.md)。19/26任务及48/50模型尝试保持，原布局不改；完整3.12与模型质量继续待。
+用户最新要求以“原页面需要的业务数据能够保存并查回”为推进标准。依据[只读覆盖核对](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/page-data-coverage-20261106.md)，本轮先收口R7的数据部分；下节S1—S7继续作为算法与真实流程质量路线，**不是本轮数据交接的前置条件**。现有主链字段可先交接，D1—D3涉及字段逐项补齐；跨域、实时表单、模型效果、VPN及新的工具流程不进入本轮完成条件。本节的数据部分已按126增量实施：本机29表462列，4份合成数据合同样例和14案兼容读回；见[数据交接](../../../../investigation/socai2-page-data-handoff-20261106.md)。19/26任务及48/50模型尝试保持，原布局不改；完整3.12与模型质量继续待。
 
 #### 实施顺序及交付
 
@@ -644,7 +644,7 @@ F16 的原认证活动时间为北京时间 20:49:45，关联告警时间为 20:
 
 ### R1—R8后续推进方案（2026-11-05，基于5eacb314，待实施）
 
-本节是三组真实对比后的算法/流程修复计划，承接[评审清单](../../../../investigation/design-audit-and-scenario-evaluation-20261105.md#93-后续评审与修复清单)。2026-11-06先推进上节数据合同，下面顺序仍适用于质量路线，不阻挡数据交接。原任务19/26状态不变；本轮只完善OpenSpec，不改运行代码、页面或旧结果，不调用模型。以下是新候选的目标，不把旧窄审或本次规划复核当作实施完成。
+本节是三组真实对比后的算法/流程修复计划，承接[评审清单](../../2026-11-14-investigation-cleanup/documents/docs/investigation/design-audit-and-scenario-evaluation-20261105.md#93-后续评审与修复清单)。2026-11-06先推进上节数据合同，下面顺序仍适用于质量路线，不阻挡数据交接。原任务19/26状态不变；本轮只完善OpenSpec，不改运行代码、页面或旧结果，不调用模型。以下是新候选的目标，不把旧窄审或本次规划复核当作实施完成。
 
 #### 推进顺序与完成边界
 
@@ -795,7 +795,7 @@ vllm_grammar_v1只在发送前省略uniqueItems，本地唯一性/范围/角色�
 
 时间仍为source_label，唯一例外是确切成员alert.event_time可附作上下文，不能独自支撑observed；仍需每成员observation。领域finding_ids表示相关事实，不表示领域已定性，故三种applicability均可关联范围合法的发现，非applicable必须有limitations。由同一analysis解析器覆盖C3/再分析/C6，避免为通过某份旧答特判其内容。
 
-新领域工件显式写applicability，请求工件保存schema_profile。analysis_block和model_exchange分别增加兼容旧记录的可选属性，运行Schema/设计Schema/字典三份同步；旧缺失不推算。无需DDL。实现及本地验证见[m1后修正](../../../../investigation/socai2-m1-contract-fix-20261104.md)，真实完整链质量仍未完成。
+新领域工件显式写applicability，请求工件保存schema_profile。analysis_block和model_exchange分别增加兼容旧记录的可选属性，运行Schema/设计Schema/字典三份同步；旧缺失不推算。无需DDL。实现及本地验证见[m1后修正](../../2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m1-contract-fix-20261104.md)，真实完整链质量仍未完成。
 
 ### 一个目录与一份当前设计
 
@@ -873,7 +873,7 @@ C1冻结当前及当前判断已采用的旧revision，只有已完成非空结�
 
 ### m3确认的DeepSeek引用兼容修订（2026-11-04）
 
-m3明确授权后两请求均400：anyOf中的裸$ref被报缺type，多类型type数组中的object也被拒。仅DeepSeek发送层在预算计量/请求保存前展开anyOf本地引用，保留全部原约束和null分支，普通属性/数组refs继续共享，规范Schema及本地解析不改。44纯检查和A/完整C3-Deep-C6两个真实隔离PG方法通过（模型湖替身）；新表达的真实供应商接收尚未验证，不称兼容已验收。n11本地固定未部署，m3结束不重派；m4单次确认已固定、等待新增1次许可，源于用户m3两次额度已耗尽。详见[修复明细](../../../../investigation/socai2-deepseek-union-fix-20261104.md)。
+m3明确授权后两请求均400：anyOf中的裸$ref被报缺type，多类型type数组中的object也被拒。仅DeepSeek发送层在预算计量/请求保存前展开anyOf本地引用，保留全部原约束和null分支，普通属性/数组refs继续共享，规范Schema及本地解析不改。44纯检查和A/完整C3-Deep-C6两个真实隔离PG方法通过（模型湖替身）；新表达的真实供应商接收尚未验证，不称兼容已验收。n11本地固定未部署，m3结束不重派；m4单次确认已固定、等待新增1次许可，源于用户m3两次额度已耗尽。详见[修复明细](../../2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-deepseek-union-fix-20261104.md)。
 
 ### m2后本地修订与验收口径（历史，后续见m3）
 
@@ -911,7 +911,7 @@ C3未通过不取消C6。已知失败且预算允许时，C6直接根据冻结�
 - 历史表及旧服务不做隐式双写。按最新要求单开socai2-next-api（18020），新PG数据库socai2_next_20261104、CH空间socai2_next_validation、Redis DB13；无旧Kafka消费/调度器。新服务用真实API Key，新身份和凭据留21。旧服务不切换、不迁移。真实合成材料由实际Fusion writer写新表，CH材料由明确标记的fixture loader写新空间，不能冒充真实Kafka/采集链验收。
 # 当前设计与工作顺序
 
-当前发布与配置以[Case 流程实测及修正](../../../../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)为准，数据库及接口基础验收保留在[发布核验](../../../../../openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)。本批完成 2 个 Case、3 个 Run、8 次真实模型调用及 H 传递；保存／读取通过，模型质量 NOT_PASSED。结构保持 29 表、462 列，自动消费尚未验收。
+当前发布与配置以[Case 流程实测及修正](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)为准，数据库及接口基础验收保留在[发布核验](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/release-current-20261110.md)。本批完成 2 个 Case、3 个 Run、8 次真实模型调用及 H 传递；保存／读取通过，模型质量 NOT_PASSED。结构保持 29 表、462 列，自动消费尚未验收。
 
 ## 后续工作顺序
 
@@ -933,7 +933,7 @@ C3未通过不取消C6。已知失败且预算允许时，C6直接根据冻结�
 
 先处理第 1 项的 Deep/C6 正文边界。读取保存的实际输入与原答，检查 `case-input-v1.json` 的阶段任务指令和 `case_followup_input.py` 提供的材料用途／查询状态；复用当前输出适配与保存接口。程序确定的数据由程序提供，模型负责判断和说明依据；保留原始描述，不增加通用关键词审查、额外评判模型或新一套事实校验平台。确有正常功能缺口才改对应装配或接线。
 
-开始实施时按该明确范围补独立 change 的规格与任务；本次只更新后续规划，未修改业务实现、调用模型、部署或推送。告警合同、实际失败及历史原答保持。前批真实调查与 H 记录见 [Case 流程实测](../../../../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)，当前已交付的角色约束见[验收报告](../../../../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)，不重做这些已完成范围。
+开始实施时按该明确范围补独立 change 的规格与任务；本次只更新后续规划，未修改业务实现、调用模型、部署或推送。告警合同、实际失败及历史原答保持。前批真实调查与 H 记录见 [Case 流程实测](../../2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)，当前已交付的角色约束见[验收报告](../../../../../openspec/changes/archive/2026-11-10-align-case-finding-evidence-roles/validation.md)，不重做这些已完成范围。
 
 ### 每项功能的交付方式
 

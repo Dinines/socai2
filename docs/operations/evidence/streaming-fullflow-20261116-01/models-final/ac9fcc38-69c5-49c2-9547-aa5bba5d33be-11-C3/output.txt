@@ -1,0 +1,170 @@
+{
+  "summary": "本案核心为 svc-app-bc3b4605 账号在 host-app-3f979d56 上的成功登录及后续网络活动，现有材料仅证实行为发生，缺乏授权、载荷及业务上下文，定性为待复核。",
+  "members": [
+    {
+      "alert_id": "A1",
+      "state": "unresolved",
+      "summary": "记录 svc-app-bc3b4605 账号于 2026-11-16T05:40:12Z 从 192.0.2.81 成功登录 host-app-3f979d56，会话 ID 为 4a35e0ed-65cf-5691-af98-066cc09f8b9f。",
+      "evidence_ids": ["N1_S4", "N1_S5", "N1_S6", "N1_S7", "N1_S8", "N1_S9", "N1_S20", "N1_S21", "N1_S25", "N1_S27", "N1_S29", "N1_S30", "N1_S31", "N1_S32", "N1_S33", "N1_S34", "N1_S35", "N1_S36", "N1_S37", "N1_S38", "N1_S39", "N1_S40", "N1_S41", "N1_S42", "N1_S43", "N1_S44", "N1_S45", "N1_S46", "N1_S47", "N1_S51", "N1_S52", "N1_S54"],
+      "limitations": ["缺乏人工确认或授权记录", "无历史行为基线", "查空结果不足以排除异常", "日志等级为 Informational 无法直接定性"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "state": "observed",
+      "alert_ids": ["A1"],
+      "support_ids": ["N1_S4", "N1_S5", "N1_S6", "N1_S7", "N1_S8", "N1_S9", "N1_S20", "N1_S21", "N1_S25", "N1_S27", "N1_S29", "N1_S30", "N1_S31", "N1_S32", "N1_S33", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34", "N1_S34"],
+      "counter_ids": [],
+      "alternatives": [],
+      "limitations": ["仅证明登录动作成功，未证明业务目的或授权范围"]
+    },
+    {
+      "id": "F2",
+      "state": "inferred",
+      "statement": "账号登录行为存在异常可能性，因缺乏授权记录、业务上下文及历史基线支持，且查空结果无法排除内部威胁。",
+      "alert_ids": ["A1"],
+      "support_ids": ["N1_S52", "N1_S54", "N1_S55", "N1_S58"],
+      "counter_ids": [],
+      "alternatives": ["该账号可能为自动化运维脚本且拥有合法权限", "该登录属于计划内但未记录的操作"]
+    ,
+      "limitations": ["依赖‘查空’和‘无历史告警’作为负面证据，逻辑上不构成反证"]
+    },
+    {
+      "id": "F3",
+      "state": "unresolved",
+      "statement": "账号登录后的具体进程活动（如 curl 启动）及网络流量载荷内容未知，无法确认是否涉及数据外传或恶意命令执行。",
+      "alert_ids": ["A1"],
+      "support_ids": ["N1_S56", "N1_S57", "N1_S60", "N1_S61"],
+      "counter_ids": [],
+      "alternatives": ["进程启动可能为正常业务调用", "网络流量可能为常规更新或心跳"]
+    ,
+      "limitations": ["现有材料未包含命令行参数或流量包载荷"]
+    },
+    {
+      "id": "F4",
+      "state": "unresolved",
+      "statement": "无法确认 svc-app-bc3b4605 账号对 host-app-3f979d56 及外部 IP 198.51.100.81 的访问是否拥有明确业务授权。",
+      "alert_ids": ["A1"],
+      "support_ids": ["N1_S52", "N1_S60"],
+      "counter_ids": [],
+      "alternatives": ["账号可能拥有该主机的管理权限", "外部 IP 可能为白名单内的业务服务器"]
+    ,
+      "limitations": ["缺乏权限配置表、审批单或运维操作记录"]
+    },
+    {
+      "id": "F5",
+      "state": "unresolved",
+      "statement": "事件呈现‘登录 - 启动进程 - 网络连接’的完整攻击链雏形，但各环节间的因果联系及最终影响尚未证实。",
+      "alert_ids": ["A1"],
+      "support_ids": ["N1_S59"],
+      "counter_ids": [],
+      "alternatives": ["各环节可能由不同业务逻辑独立触发", "时间邻近不等于因果关联"]
+    ,
+      "limitations": ["缺少会话上下文、设备指纹及行为基线"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "detection_facts",
+      "state": "answered",
+      "answer": "原始记录支持 svc-app-bc3b4605 账号于 2026-11-16T05:40:12Z 从 192.0.2.81 成功登录 host-app-3f979d56，会话 ID 为 4a35e0ed-65cf-5691-af98-066cc09f8b9f。",
+      "evidence_ids": ["N1_S4", "N1_S5", "N1_S6", "N1_S7", "N1_S8", "N1_S9", "N1_S20", "N1_S21", "N1_S25", "N1_S27", "N1_S29", "N1_S30", "N1_S31", "N1_S32", "N1_S33", "N1_S34", "N1_S35", "N1_S36", "N1_S37", "N1_S38", "N1_S39", "N1_S40", "N1_S41", "N1_S42", "N1_S43", "N1_S44", "N1_S45", "N1_S46", "N1_S47", "N1_S51", "N1_S52"]
+    ,
+      "limitations": ["日志等级为 Informational，不足以直接定性"]
+    },
+    {
+      "id": "member_relationships",
+      "state": "answered",
+      "answer": "成员 A1 内部无多告警关联，仅单条登录记录。与案件外背景 X1/X2 的关联基于时间邻近和逻辑推断（登录->进程->网络），但无直接证据链证明因果。",
+      "evidence_ids": ["N1_S59"],
+      "limitations": ["时间接近和图可达不能直接当成因果或影响"]
+    },
+    {
+      "id": "behavior_nature",
+      "state": "unresolved",
+      "answer": "恶意：无直接证据；正常：无授权记录或业务文档支持；误操作：无具体操作描述。当前状态为待复核，主要缺口在于缺乏授权记录和基线数据。",
+      "evidence_ids": ["N1_S52", "N1_S54", "N1_S55", "N1_S58", "N1_S59"],
+      "limitations": ["查空、未接通不构成反证；标签不证明行为发生"]
+    },
+    {
+      "id": "authorization",
+      "state": "unresolved",
+      "answer": "无明确授权材料。人工反馈建议核实账号权限及业务需求，但未提供审批单、权限配置表或运维记录。",
+      "evidence_ids": ["N1_S52", "N1_S60"],
+      "limitations": ["未提供审批不等于不存在，需人工确认"]
+    },
+    {
+      "id": "impact",
+      "state": "unresolved",
+      "answer": "观察到：登录成功。已确认影响：无。待核影响：是否发生数据外传、系统被控或配置篡改。现有材料仅显示进程启动和网络连接计数，未显示载荷或业务结果。",
+      "evidence_ids": ["N1_S56", "N1_S57", "N1_S61"],
+      "limitations": ["进程启动成功不证明脚本完成或数据外传；连接成功不证明业务完成"]
+    }
+  ],
+  "domains": [
+    {
+      "name": "identity",
+      "applicability": "applicable",
+      "reason": "涉及账号登录、会话管理及权限验证。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F1", "F2", "F4"],
+      "limitations": ["缺乏 MFA 记录、会话超时策略及权限基线"]
+    },
+    {
+      "name": "cloud",
+      "applicability": "applicable",
+      "reason": "涉及主机资源访问及网络连接。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F3", "F5"],
+      "limitations": ["缺乏配置管理记录、网络策略详情及资源归属信息"]
+    },
+    {
+      "name": "phishing",
+      "applicability": "not_applicable",
+      "reason": "无邮件投递、链接点击或附件执行相关记录。",
+      "alert_ids": [],
+      "finding_ids": [],
+      "limitations": ["无相关告警或日志支持"]
+    },
+    {
+      "name": "insider",
+      "applicability": "applicable",
+      "reason": "涉及服务账号的数据访问及潜在外传行为。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F3", "F4", "F5"],
+      "limitations": ["缺乏数据访问日志、外传目的地确认及行为基线"]
+    }
+  ],
+  "conflicts": [],
+  "followups": [
+    {
+      "question_id": "detection_facts",
+      "alert_ids": ["A1"],
+      "mode": "query",
+      "objective": "获取 host-app-3f979d56 在案件时间窗口内的详细认证活动、进程活动及网络连接记录，以验证登录后的具体操作及网络流向。",
+      "required_evidence": "authentication_activity 返回的会话详情；process_activity 返回的命令行参数；network_connections 返回的端点及流量载荷。",
+      "source_ids": ["N1_S65", "N1_S66", "N1_S67", "N1_S68", "N1_S69", "N1_S70"]
+    ,
+      "object_keys": ["O1", "O1", "O1"]
+    ,
+      "binding_id": "B1"
+    ,
+      "priority": "decision_critical"
+    },
+    {
+      "question_id": "detection_facts",
+      "alert_ids": ["A1"],
+      "mode": "query",
+      "objective": "获取 host-app-3f979d56 在案件时间窗口内的详细认证活动、进程活动及网络连接记录，以验证登录后的具体操作及网络流向。",
+      "required_evidence": "authentication_activity 返回的会话详情；process_activity 返回的命令行参数；network_connections 返回的端点及流量载荷。",
+      "source_ids": ["N1_S65", "N1_S66", "N1_S67", "N1_S68", "N1_S69", "N1_S70"]
+    ,
+      "object_keys": ["O1", "O1", "O1"]
+    ,
+      "binding_id": "B2"
+    ,
+      "priority": "decision_critical"
+    }
+  ]
+}

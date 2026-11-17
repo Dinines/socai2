@@ -236,7 +236,12 @@ def fact_projection(facts, rows, aliases, incident_aliases, config, ledger):
                 members[alias] = level
         value["member_severities"] = members
         if "missing_member_ids" in value:
-            value["missing_member_ids"] = [aliases[a] for a in value["missing_member_ids"]]
+            outside = [aid for aid in value["missing_member_ids"] if aid not in aliases]
+            if outside:
+                value["outside_case_missing_member_count"] = len(outside)
+                record_omission(ledger, "program_facts.incident_severities." + iid,
+                                ("missing_member_ids",), outside, "outside_case_members_counted_separately")
+            value["missing_member_ids"] = [aliases[a] for a in value["missing_member_ids"] if a in aliases]
         levels[incident_aliases[iid]] = value
     if "incident_severities" in facts:
         facts["incident_severities"] = levels
@@ -271,9 +276,12 @@ def render_tools(catalog, config):
             ledger.append({"tool_name": capability["tool_name"], "reason": "technical_fields_retained_in_backend",
                            "returned_fields": fields,
                            "business_description_sha256": digest({k: capability[k] for k in detail_policy["required_business_fields"]})})
+    shown_catalog = project(catalog, "tool_catalog", config, ledger, "tool_catalog")
+    shown_capabilities = [project(c, "tool_capability", config, ledger, c["tool_name"])
+                          for c in shown_capabilities]
     shared, omitted = shared_fields([(c["tool_name"], c) for c in shown_capabilities],
                                      config["presentation"]["tool_shared_fields"], ledger)
-    lines = ["[可用调查工具｜程序提供]", render(catalog, config)]
+    lines = ["[可用调查工具｜程序提供]", render(shown_catalog, config)]
     for item in shared:
         shown = translate({item["field"]: item["value"]}, "tool", config, ledger, item["applies_to"])[item["field"]]
         lines.append("共同" + config["presentation"]["labels"].get(item["field"], item["field"]) +

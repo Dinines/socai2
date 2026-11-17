@@ -5,18 +5,26 @@ import os
 from fastapi import FastAPI
 
 from investigation_http.adapters import runtime
-from investigation_http.adapters.identity import login_router
+from investigation_http.adapters.identity import configure_trusted_access
 from investigation_http.adapters.runtime import configured_database_name
 from investigation_http.external_routes import (
+    alert_hosts,
+    alert_review,
     analysis,
+    analysis_submissions,
+    analysis_tasks,
     attachments,
     case_ai,
     cases,
     comments,
+    exploration,
+    exploration_state,
     exports,
     grouping,
     pages,
-    stage_execution,
+    run_directory,
+    run_records,
+    story,
     tasks,
 )
 
@@ -27,7 +35,6 @@ app = FastAPI(
 )
 runtime.configure_http(app)
 for router in (
-    login_router,
     exports.router,
     grouping.router,
     cases.router,
@@ -35,10 +42,21 @@ for router in (
     attachments.router,
     case_ai.router,
     analysis.router,
+    analysis_tasks.router,
     pages.router,
-    stage_execution.router,
+    analysis_submissions.incident_router,
+    analysis_submissions.case_router,
     tasks.router,
+    story.router,
+    exploration.router,
+    exploration_state.router,
+    alert_review.router,
+    alert_hosts.router,
+    run_records.router,
+    run_directory.router,
 ):
     app.include_router(router, prefix="/api/v1")
+
+configure_trusted_access(app)
 
 __all__ = ["app", "configured_database_name"]

@@ -55,15 +55,16 @@ def read(root, path, *, checksum=None):
 
 def checked_rows(data, tenant, counts):
     require(set(data) in EXPORT_TABLE_SETS and all(isinstance(rows, list) for rows in data.values()),
-            "expected current 28 or archived V1 29 database tables (empty tables are arrays)")
+            "expected scoped 28, archived V1 29, or lifecycle 31 database tables (empty tables are arrays)")
     require(counts == {table: len(rows) for table, rows in data.items()}, "snapshot table counts differ")
     known = {}
     for table, rows in data.items():
         ids = set()
         for row in rows:
-            require(row.get("tenant_id") == tenant and row["id"] and row["id"] not in ids,
+            identity = (row.get("subject_type"), row.get("subject_id")) if table == "analysis_subject_state" else row.get("id")
+            require(row.get("tenant_id") == tenant and identity and identity not in ids,
                     f"{table}: unexpected tenant or duplicate identity")
-            ids.add(row["id"])
+            ids.add(identity)
         known[table] = ids
     # Rows are complete for this subject. Other business subjects may be named
     # by external references, but the owner of each execution must be present.
@@ -80,6 +81,19 @@ def checked_rows(data, tenant, counts):
             require(steps[a["step_id"]] == a.get("run_id"), "artifact belongs to a different Run")
     require(all(r.get("case_id") or r.get("alert_id") or r.get("incident_id") for r in data["runs"]),
             "Run without a scoped subject")
+    tasks = {t["id"]: t for t in data.get("analysis_tasks", [])}
+    runs = {r["id"]: r for r in data["runs"]}
+    for table in ("analysis_tasks", "analysis_attempts", "analysis_subject_state"):
+        for row in data.get(table, []):
+            subject = row.get("subject_type")
+            require(subject in {"alert", "incident", "case"} and row.get("subject_id") in known[subject + "s"],
+                    f"{table}: subject outside snapshot")
+            if table == "analysis_attempts":
+                task = tasks.get(row.get("task_id"), {})
+                require((task.get("subject_type"), task.get("subject_id"), task.get("kind")) ==
+                        (subject, row["subject_id"], row["kind"]), "analysis attempt task mismatch")
+                if row.get("run_id"):
+                    require(runs[row["run_id"]].get(subject + "_id") == row["subject_id"], "analysis attempt Run mismatch")
 
 
 def reject_retired_rows(data, tenant):

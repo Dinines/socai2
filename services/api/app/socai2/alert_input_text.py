@@ -179,7 +179,7 @@ def prepare(data, source_map, config):
                 omissions.append({"path": path, "reason": "same_history_record_match_relations_combined",
                                   "source_paths": [row["field"] for row in group]})
             continue
-        if path in cfg["known_metadata_paths"]:
+        if isinstance(path, str) and any(matches(pattern, path) for pattern in cfg["known_metadata_paths"]):
             omissions.append({"path": path, "reason": "program_metadata", "original": value})
             continue
         if data.get("raw_alert_envelope") and path.startswith("$.raw_json."):

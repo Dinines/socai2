@@ -30,15 +30,15 @@
 
 2026-11-03。用户确认D01–D03后，已从字段合同生成迁移、ORM、枚举和JSON schema，并按用户要求使用**21现有PostgreSQL实例中的独立验证库**完成实际建表和直接验证。
 
-同日后续：已在最新后台工作树实现新表的成员→pending→手动领取→结果发布存储服务，并用受限数据库角色完成17项不同Python服务/PG事务检查（最终均通过，另有测试资源清理检查）。[服务实现与边界](../investigation/socai2-baseline-storage-20261103.md)和[本批明细回执](../operations/socai2-baseline-storage-20261103.json)为最新进展；旧HTTP入口和完整执行器仍未接线。以下39项是此前独立的物理约束检查，不能与本批17项合称一次测试。
+同日后续：已在最新后台工作树实现新表的成员→pending→手动领取→结果发布存储服务，并用受限数据库角色完成17项不同Python服务/PG事务检查（最终均通过，另有测试资源清理检查）。[服务实现与边界](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-storage-20261103.md)和[本批明细回执](../operations/socai2-baseline-storage-20261103.json)为最新进展；旧HTTP入口和完整执行器仍未接线。以下39项是此前独立的物理约束检查，不能与本批17项合称一次测试。
 
-再后续：已完成并接入[C1整案数据准备](../investigation/socai2-baseline-c1-20261103.md)，11项C1检查及10项原事务回归最终通过。复用现有artifacts.source_snapshot，不改29表458列、迁移、ORM、枚举或原38通用JSON合同；新增[专用C1内容合同](socai2-baseline-context-v1.schema.json)。
+再后续：已完成并接入[C1整案数据准备](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-c1-20261103.md)，11项C1检查及10项原事务回归最终通过。复用现有artifacts.source_snapshot，不改29表458列、迁移、ORM、枚举或原38通用JSON合同；新增[专用C1内容合同](socai2-baseline-context-v1.schema.json)。
 
-最新后续：[C2背景查询与模型输入视图](../investigation/socai2-baseline-c2-20261103.md)已实现；资产、同对象历史告警、租户内部TI三类实际SQL接同一Run，UEBA/知识/Graph未接逐项留因。保存六来源步骤/请求/返回/限制，复用Run额度；查询中禁止发布，重复C2不重查。模型视图保全成员覆盖和六项问题，8192字节总量/2048字节单项及原值guard；准备不等于模型已读。11项C2/视图及8项受影响回归最终通过，[回执](../operations/socai2-baseline-c2-20261103.json)保留首轮失败和定向复用记录。本批不改业务29表/列/DDL，只在原独立验证库添加两张来源夹具；C3–C6、三类余下适配及业务入口仍未接，无模型/部署/页面变化。
+最新后续：[C2背景查询与模型输入视图](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-c2-20261103.md)已实现；资产、同对象历史告警、租户内部TI三类实际SQL接同一Run，UEBA/知识/Graph未接逐项留因。保存六来源步骤/请求/返回/限制，复用Run额度；查询中禁止发布，重复C2不重查。模型视图保全成员覆盖和六项问题，8192字节总量/2048字节单项及原值guard；准备不等于模型已读。11项C2/视图及8项受影响回归最终通过，[回执](../operations/socai2-baseline-c2-20261103.json)保留首轮失败和定向复用记录。本批不改业务29表/列/DDL，只在原独立验证库添加两张来源夹具；C3–C6、三类余下适配及业务入口仍未接，无模型/部署/页面变化。
 
 ## 1. 已固定的决定
 
-最新实现补充：[C3初始主分析与领域结果](../investigation/socai2-baseline-c3-20261103.md)已接同一Run和原模型配置/guard入口；保存原请求/回复、真实上报用量、全成员/六问题、四领域适用性与发现、冲突/替代解释和补查需求。使用一次共享调用，非四个独立专家；不发布Result或自动采用。12项新检查＋7项回归最终通过，[回执](../operations/socai2-baseline-c3-20261103.json)说明合成模型替身范围。新增[专用C3输出合同](socai2-baseline-analysis-v1.schema.json)，业务表、原通用合同保持。C4–C6/再分析回合/完整执行器/HTTP仍待，未调用真实模型。
+最新实现补充：[C3初始主分析与领域结果](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-c3-20261103.md)已接同一Run和原模型配置/guard入口；保存原请求/回复、真实上报用量、全成员/六问题、四领域适用性与发现、冲突/替代解释和补查需求。使用一次共享调用，非四个独立专家；不发布Result或自动采用。12项新检查＋7项回归最终通过，[回执](../operations/socai2-baseline-c3-20261103.json)说明合成模型替身范围。新增[专用C3输出合同](socai2-baseline-analysis-v1.schema.json)，业务表、原通用合同保持。C4–C6/再分析回合/完整执行器/HTTP仍待，未调用真实模型。
 
 | 决定 | 当前实现/合同 |
 | --- | --- |

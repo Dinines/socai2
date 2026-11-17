@@ -31,4 +31,4 @@
 
 保存的联合 A/I/Case 快照按 case_integration README 使用 `update_processing_audit.py --batch <case导出目录>`。`--folder` 是另一种严格的 Case 显式关联导出，不能把含通过告警关联的 I 背景材料的联合测试快照冒充该格式。
 
-当前实现与结果：[接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
+当前实现与结果：[接入报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。

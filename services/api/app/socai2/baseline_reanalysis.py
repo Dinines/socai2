@@ -27,7 +27,9 @@ class BaselineReanalysis(ModelSteps):
 
     async def input(self, tenant_id, case_id, run_id, context, previous, prior_id, bases, *,
                     instruction=None, extra_data=None, lead_candidates=(), executed_plan_id=None):
-        if context.case_input_profile is not None and (extra_data or {}).get("round") == "final_delivery":
+        from .case_model_boundary import selected_profile
+        selected_profile(context)
+        if (extra_data or {}).get("round") == "final_delivery":
             from .case_followup_loader import final
             return await final(self, tenant_id, case_id, run_id, previous, prior_id, bases, extra_data, lead_candidates)
         async with self.service.transaction(tenant_id) as store:
@@ -86,9 +88,10 @@ class BaselineReanalysis(ModelSteps):
                     or item["source"]["type"] == "alert_material" and item["source"]["role"] == "observation"})
         all_aids = sorted(context.alerts)
         prior_analysis = (previous or {}).get("analysis")
+        from .case_citation_quality import with_note
         if prior_analysis:
             judgments.append({"original": prior_analysis, "entry": {"role": "prior_analysis", "alert_ids": all_aids,
-                "value": {"previous_summary": prior_analysis["summary"]}},
+                "value": with_note({"previous_summary": prior_analysis["summary"]}, previous)},
                 "source": {"ref": reference("artifact", prior_id, "prior_analysis", "$.analysis"), "alert_ids": all_aids}})
         for index, item in enumerate((prior_analysis or {}).get("followups", [])):
             if str(prior_id) == executed_plan_id:
@@ -103,8 +106,8 @@ class BaselineReanalysis(ModelSteps):
             value = r["content_json"]
             if value.get("type") == "deep_summary" and value.get("answer"):
                 judgments.append({"original": value["answer"], "entry": {"role": "prior_analysis", "alert_ids": all_aids,
-                    "value": {"question_id": value["question_id"], "answer": {k: value["answer"][k]
-                        for k in ("state", "text", "alternatives", "limitations")}}},
+                    "value": with_note({"question_id": value["question_id"], "answer": {k: value["answer"][k]
+                        for k in ("state", "text", "alternatives", "limitations")}}, value)},
                     "source": {"ref": reference("artifact", r["id"], "prior_analysis", "$.answer"), "alert_ids": all_aids}})
         candidates = [*lead_candidates, *final_observations]
         for group in zip_longest(old_candidates, observations, judgments, graph_candidates):
@@ -142,7 +145,7 @@ class BaselineReanalysis(ModelSteps):
             context = await store.read_context(case_id, run_id)
             rows = (await store.db.execute(select(F).where(*store.where(F, F.c.run_id == run_id,
                 F.c.kind == "source_snapshot", F.c.schema_version.in_([
-                    evidence.SCHEMA, deep_contract.SCHEMA, graph_contract.SCHEMA]))))
+                    evidence.SCHEMA, *deep_contract.READ_SCHEMAS, graph_contract.SCHEMA]))))
                 ).mappings().all()
             if any(digest(r["content_json"]) != r["sha256"] for r in rows):
                 raise StoreError("evidence_receipt_invalid")
@@ -175,7 +178,10 @@ class BaselineReanalysis(ModelSteps):
                 state="running", implementation_version=contract.SCHEMA, started_at=await store.now(), input_artifact_id=prior_id))
         try:
             prepared = await self.input(tenant_id, case_id, run_id, context, previous, prior_id, bases)
-            parser = lambda content: contract.parse(content, prepared["source_map"], context, prepared["coverage"])
+            from .citation_quality import new_review
+            prepared["citation_review"] = new_review()
+            parser = lambda content: contract.parse(content, prepared["source_map"], context, prepared["coverage"],
+                citation_review=prepared["citation_review"])
             result, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                 stage_id, "C3.reanalysis", prepared, gateway, parser,
                 output_format=response_format(contract.Analysis, prepared["source_map"],
@@ -186,7 +192,7 @@ class BaselineReanalysis(ModelSteps):
                 [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]],
                 analysis=result, source_map=prepared.get("source_map"), context=context, response_id=response_id,
                 phase="C3_reanalysis", basis={"evidence_set_key": key, "comparison_analysis_artifact_id": str(prior_id),
-                    "input_artifact_ids": prepared["input_artifact_ids"]})
-        except (Exception, asyncio.CancelledError):
-            await self.uncertain(tenant_id, case_id, run_id, stage_id)
+                    "input_artifact_ids": prepared["input_artifact_ids"], "citation_review": prepared["citation_review"]})
+        except (Exception, asyncio.CancelledError) as exc:
+            await self.uncertain(tenant_id, case_id, run_id, stage_id, exc)
             raise

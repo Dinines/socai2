@@ -1,4 +1,4 @@
-"""Opt-in new-schema Case surface; the old /cases routes keep their contract."""
+"""External Case allocation, queries and explicit business operations."""
 
 from typing import Annotated, Literal
 from uuid import UUID
@@ -6,13 +6,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import AwareDatetime
 
+from investigation_http.case_allocation_contracts import (
+    CaseAllocationReceipt,
+    CaseMoveReceipt,
+    CaseReplacementReceipt,
+    RelatedCasePage,
+)
 from investigation_http.contracts import (
     ArtifactContent,
     AssessmentHistory,
     AssignmentState,
-    AssociationReceipt,
     AssociationRequest,
-    BaselinePreparation,
     CaseCloseRequest,
     CaseCreate,
     CaseDataReceipt,
@@ -32,34 +36,49 @@ from investigation_http.contracts import (
     HistoryPage,
     MemberChange,
     MoveMembers,
-    MoveReceipt,
-    MutationReceipt,
-    PrepareBaseline,
     RecordPage,
     ResultAdoptionPreview,
     ResultAdoptionReceipt,
     ResultAdoptionRequest,
-    ResultDetail,
-    RunDetail,
     Severity,
     SortOrder,
-    Start,
     WorkStatus,
 )
 from investigation_http.dependencies import CurrentUser, require_permission
 from investigation_http.dependencies import case_service as get_service
-from investigation_http.errors import actor, invoke, query_input
+from investigation_http.errors import (
+    actor,
+    check_query,
+    invoke,
+    invoke_record,
+    query_input,
+)
 from investigation_http.ports import CaseOperations
+from investigation_http.record_links import comparison_links, directory_links
+from investigation_http.run_record_contracts import (
+    RecordError,
+    RecordValidationError,
+    ResultDetailWithComparison,
+    RunDetailWithDirectories,
+)
 
 ReadUser = Annotated[CurrentUser, Depends(require_permission("cases:read"))]
 WriteUser = Annotated[CurrentUser, Depends(require_permission("cases:write"))]
 Service = Annotated[CaseOperations, Depends(get_service)]
 router = APIRouter(prefix="/socai2/cases", tags=["socai2-cases"])
+ALLOCATION_RESPONSES = {
+    404: {"model": RecordError, "description": "案件、所选告警或事件不存在"},
+    409: {"model": RecordError, "description": "operation_conflict / scope_conflict / subject_closed / empty_scope，或来源与续建关系不满足要求"},
+    422: {"model": RecordError | RecordValidationError, "description": "invalid_input，或请求字段校验detail数组"},
+    503: {"model": RecordError, "description": "service_unavailable；保存未确认时沿原operation_key重放"},
+}
 
 
-@router.post("", response_model=AssociationReceipt)
-async def create_case(body: CaseCreate, user: WriteUser, service: Service):
-    return await invoke(service.create_case(user.tenant_id, body, actor=actor(user)))
+@router.post("", response_model=CaseAllocationReceipt, status_code=201, responses=ALLOCATION_RESPONSES)
+async def create_case(request: Request, body: CaseCreate, user: WriteUser, service: Service):
+    """创建并按容量分配，返回各案版本及真实首轮任务；受理不等于调查完成。"""
+    check_query(request, set())
+    return await invoke_record(service.create_case(user.tenant_id, body, actor=actor(user)))
 
 
 @router.get("", response_model=CaseQueuePage)
@@ -103,6 +122,22 @@ async def case_detail(case_id: UUID, user: ReadUser, service: Service):
     return await invoke(service.read_case(user.tenant_id, case_id))
 
 
+@router.get("/{case_id}/related-cases", response_model=RelatedCasePage, responses={
+    404: {"model": RecordError, "description": "case_not_found"},
+    409: {"model": RecordError, "description": "cursor_stale：关联集合或顺序变化，重新读取第一页"},
+    422: {"model": RecordError | RecordValidationError, "description": "invalid_input / invalid_cursor，或字段校验detail数组"},
+    503: {"model": RecordError, "description": "service_unavailable"},
+}, summary="查询容量续建及共享事件关联案件")
+async def related_cases(
+    request: Request, case_id: UUID, user: ReadUser, service: Service,
+    limit: Annotated[int | None, Query(ge=1, description="单页条数，省略时采用配置默认值；最大值由同一配置限制。")] = None,
+    cursor: Annotated[str | None, Query(max_length=1024)] = None,
+):
+    """续建组优先、共享事件组其次，同Case去重并保留两种来源；只读，不改变事件接收目标。"""
+    check_query(request, {"limit", "cursor"})
+    return await invoke_record(service.read_related_cases(user.tenant_id, case_id, limit=limit, cursor=cursor))
+
+
 @router.patch("/{case_id}/page-data", response_model=CaseDataReceipt)
 async def update_page_data(
     case_id: UUID, body: CaseDataUpdate, user: WriteUser, service: Service
@@ -126,29 +161,35 @@ async def publish_evidence(
     )
 
 
-@router.put("/{case_id}/members", response_model=MutationReceipt)
+@router.put("/{case_id}/members", response_model=CaseReplacementReceipt, responses=ALLOCATION_RESPONSES)
 async def replace_members(
-    case_id: UUID, body: MemberChange, user: WriteUser, service: Service
+    request: Request, case_id: UUID, body: MemberChange, user: WriteUser, service: Service
 ):
-    return await invoke(
+    """仅替换指定案件成员；新增按实际接收案分配，空数组只清空本案。"""
+    check_query(request, set())
+    return await invoke_record(
         service.change_members(user.tenant_id, case_id, body, actor=actor(user))
     )
 
 
-@router.post("/{case_id}/associations", response_model=AssociationReceipt)
+@router.post("/{case_id}/associations", response_model=CaseAllocationReceipt, responses=ALLOCATION_RESPONSES)
 async def associate(
-    case_id: UUID, body: AssociationRequest, user: WriteUser, service: Service
+    request: Request, case_id: UUID, body: AssociationRequest, user: WriteUser, service: Service
 ):
-    return await invoke(
+    """关联告警或完整事件，返回本次全部实际分配与接收目标变化。"""
+    check_query(request, set())
+    return await invoke_record(
         service.associate(user.tenant_id, case_id, body, actor=actor(user))
     )
 
 
-@router.post("/{case_id}/members/move", response_model=MoveReceipt)
+@router.post("/{case_id}/members/move", response_model=CaseMoveReceipt, responses=ALLOCATION_RESPONSES)
 async def move_members(
-    case_id: UUID, body: MoveMembers, user: WriteUser, service: Service
+    request: Request, case_id: UUID, body: MoveMembers, user: WriteUser, service: Service
 ):
-    return await invoke(
+    """原子移出源案并分配至目标串；保留源案版本与各目标实际成员。"""
+    check_query(request, set())
+    return await invoke_record(
         service.move_members(user.tenant_id, case_id, body, actor=actor(user))
     )
 
@@ -166,48 +207,19 @@ async def history(
     )
 
 
-@router.post("/{case_id}/baseline/prepare", response_model=BaselinePreparation)
-async def prepare_baseline(
-    case_id: UUID, body: PrepareBaseline, user: WriteUser, service: Service
-):
-    return await invoke(
-        service.prepare_baseline(user.tenant_id, case_id, body, actor=actor(user))
-    )
-
-
-@router.get("/{case_id}/runs/{run_id}", response_model=RunDetail)
+@router.get("/{case_id}/runs/{run_id}", response_model=RunDetailWithDirectories)
 async def run_detail(case_id: UUID, run_id: UUID, user: ReadUser, service: Service):
-    return await invoke(service.read_run(user.tenant_id, case_id, run_id))
+    detail = await invoke(service.read_run(user.tenant_id, case_id, run_id))
+    return {**detail, **directory_links(run_id),
+        **comparison_links(case_id, detail["run"].comparison_context)}
 
 
-@router.post("/{case_id}/runs/{run_id}/start", response_model=RunDetail)
-async def start(
-    case_id: UUID, run_id: UUID, body: Start, user: WriteUser, service: Service
-):
-    try:
-        return await invoke(
-            service.start_case(user.tenant_id, case_id, run_id, body, actor=actor(user))
-        )
-    except HTTPException:
-        raise
-    except Exception:  # noqa: BLE001 -- sanitize the external execution boundary
-        # No raw database/provider exception goes into a client response. The
-        # Run is the source of truth even if execution or response was lost.
-        raise HTTPException(
-            503,
-            {
-                "code": "baseline_execution_unavailable_read_run",
-                "run_id": str(run_id),
-                "read_path": f"/api/v1/socai2/cases/{case_id}/runs/{run_id}",
-            },
-        ) from None
-
-
-@router.get("/{case_id}/results/{result_id}", response_model=ResultDetail)
+@router.get("/{case_id}/results/{result_id}", response_model=ResultDetailWithComparison)
 async def result_detail(
     case_id: UUID, result_id: UUID, user: ReadUser, service: Service
 ):
-    return await invoke(service.read_result(user.tenant_id, case_id, result_id))
+    detail = await invoke(service.read_result(user.tenant_id, case_id, result_id))
+    return {**detail, **comparison_links(case_id, detail["result"].comparison_context)}
 
 
 @router.get("/{case_id}/results/{result_id}/adoption-preview", response_model=ResultAdoptionPreview,

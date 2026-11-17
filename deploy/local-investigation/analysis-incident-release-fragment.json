@@ -1,0 +1,49 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires": [
+    "analysis-alert-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/app/socai2/analysis_incident_executor.py": "app/socai2/analysis_incident_executor.py",
+    "services/api/app/socai2/analysis_dispatcher.py": "app/socai2/analysis_dispatcher.py",
+    "services/api/app/socai2/analysis_dispatch_store.py": "app/socai2/analysis_dispatch_store.py",
+    "services/api/app/socai2/analysis_task_store.py": "app/socai2/analysis_task_store.py",
+    "services/api/app/socai2/incident_inputs.py": "app/socai2/incident_inputs.py",
+    "services/api/app/socai2/stage_inputs.py": "app/socai2/stage_inputs.py",
+    "services/api/app/socai2/stage_results.py": "app/socai2/stage_results.py",
+    "services/api/app/socai2/stage_reader.py": "app/socai2/stage_reader.py",
+    "services/api/app/socai2/stage_read_contracts.py": "app/socai2/stage_read_contracts.py",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "app/socai2/incident_diagnosis_executor.py",
+    "services/api/app/socai2/incident_diagnosis_contract.py": "app/socai2/incident_diagnosis_contract.py",
+    "services/api/app/socai2/incident_model_boundary.py": "app/socai2/incident_model_boundary.py",
+    "services/fusion/app/services/socai2_sink.py": "smoke-fusion/app/services/socai2_sink.py",
+    "services/fusion/app/services/socai2_analysis_tasks.py": "smoke-fusion/app/services/socai2_analysis_tasks.py",
+    "deploy/local-investigation/analysis-ai-dispatch.example.json": "config/analysis-ai-dispatch.example.json",
+    "deploy/local-investigation/analysis-ai-executors.example.json": "config/analysis-ai-executors.example.json",
+    "deploy/aisoc21/processing_job.py": "processing_job.py"
+  },
+  "schema": {
+    "prerequisite": "128_socai2_analysis_lifecycle.sql",
+    "new_migration": null,
+    "installer_mode": "analysis-ingress"
+  },
+  "executor_factory": "app.socai2.analysis_incident_executor:executors",
+  "registered_kinds": [
+    "alert_triage",
+    "incident_diagnosis"
+  ],
+  "default_enabled": false,
+  "notes": [
+    "Replace the A-only factory in the sole dispatcher profile with this combined A/I factory; do not run separate A and I dispatcher instances.",
+    "Native first event persistence now registers I initial together with first membership. New A remains independently registered. No existing-subject backfill.",
+    "Select the lifecycle, executor and investigation policy files explicitly; model environment and optional source switches remain in controlled configuration.",
+    "Incident periodic checks run in the same single dispatcher loop, using configured 4-hour checks, 7-day activity window, recent-member limit 100 and bounded scan size.",
+    "Package the core with the E37 async HTTP adapter and event-only read DTO/Swagger changes in the coordinated release. Case asynchronous submissions remain inactive.",
+    "No deployment or activation is authorized by this fragment. Current runtime profiles and 21 services remain unchanged.",
+    "Remove the old direct incident CLI action; event initiation uses E37 task submission."
+  ],
+  "host_launchers": [
+    "deploy/aisoc21/production_processing.py"
+  ]
+}

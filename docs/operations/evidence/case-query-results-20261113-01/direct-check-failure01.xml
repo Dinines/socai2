@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.911" timestamp="2026-11-13T20:30:32.142595+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_case_followup_boundary" name="test_background_query_business_rows_keep_values_and_refs_across_stages" time="0.017"><failure message="KeyError: 'parameters'">sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+
+    def test_background_query_business_rows_keep_values_and_refs_across_stages(sample):
+        from app.socai2.baseline_context import Context
+    
+        context = Context.model_validate(sample["context"])
+        enrichment = background_query_example(context)
+        original = copy.deepcopy(enrichment)
+&gt;       base = base_tests.boundary.build(context, sample["context_id"], enrichment, [], sample["materials"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_case_followup_boundary.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/case_model_boundary.py:65: in build
+    query_members = source_members(context, ref, tool_payloads) if ref["source_path"] else owners
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+context = Context(schema_version='socai2.baseline-context.v1', case_id=UUID('2b37f5b3-862b-52cc-84bd-86db50dd3ad4'), captured_at...3438037474f7e533097b813b0dd90', 'business_sha256': '131515b66725557b375baa07e2239aca515ac016ed33a5221ef6d9445c981170'})
+ref = {'type': 'artifact', 'id': '00000000-0000-0000-0000-0000000003e9', 'external': None, 'source_path': '$.rows.0', ...}
+tool_payloads = {'00000000-0000-0000-0000-0000000003e9': {'tool_name': 'assets', 'state': 'completed', 'returned_rows': 1, 'truncated'...000-0000-0000-0000000003ec': {'tool_name': 'graph', 'state': 'completed', 'returned_rows': 1, 'truncated': False, ...}}
+
+    def source_members(context, ref, tool_payloads):
+        path = (ref.get("source_path") or "").split(".")
+        members = set(context.alerts)
+        if ref.get("type") == "alert_material":
+            return sorted(aid for aid, alert in context.alerts.items()
+                          if alert.material and str(alert.material["id"]) == str(ref["id"]))
+        if len(path) &gt; 2 and path[1] == "alerts":
+            return sorted(members &amp; {path[2]})
+        if len(path) &gt; 2 and path[1] == "incidents":
+            return list(map(str, context.incidents[path[2]].case_member_ids))
+        if len(path) &gt; 2 and path[1] in {"tasks", "adopted_task_revisions"}:
+            revision = (context.tasks[path[2]].revision if path[1] == "tasks"
+                        else context.adopted_task_revisions[path[2]])
+            return sorted(members &amp; set((revision.get("result_scope") or {}).get("alert_ids", [])))
+        if len(path) &gt; 2 and path[1] == "prior_results":
+            return sorted(members &amp; {d["alert_id"] for d in context.prior_results[path[2]].get("member_deliveries", [])})
+        if len(path) &gt; 1 and path[1] == "current_assessment":
+            return sorted(members &amp; {m["alert_id"] for m in context.assessment_members})
+        if len(path) &gt; 2 and path[1] == "rows":
+            payload = tool_payloads[ref["id"]]
+            row = payload["rows"][int(path[2])]
+&gt;           keys = payload["actual_args"]["parameters"]["selectors"]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'parameters'
+
+services/api/app/socai2/model_input_view.py:114: KeyError</failure></testcase></testsuite></testsuites>

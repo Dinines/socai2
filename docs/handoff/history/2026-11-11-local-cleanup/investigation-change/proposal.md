@@ -4,7 +4,7 @@
 
 本版以完整调查及数据库/读取交接为目标：统一事实输入、容量与时限，局部引用处理和一次纠正，领域与发现范围分离，工具能力和增量输入，运行版本/配置、真实归并/消费，以及最新资产/负责人读取与证据目录缺口。已修 Case 详情权限作为回归；`inv-review.md` 的自动刷新/队列/跨案图等仍后置。数据验收不要求实现前端跳转，未接功能与真实空态不计为本批自动通过。
 
-2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 本change承接基线a1be1931后的C6资源/收尾、query/Deep、Case读取、原模板真实数据及场景评估；当前完成状态和后续判据见[tasks](tasks.md)、[本机计划](../../../../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)及[修改与评审记录](../../../../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)。
+2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 本change承接基线a1be1931后的C6资源/收尾、query/Deep、Case读取、原模板真实数据及场景评估；当前完成状态和后续判据见[tasks](tasks.md)、[本机计划](../../../../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)及[修改与评审记录](../../2026-11-14-investigation-cleanup/documents/docs/investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)。
 
 新页面要求区分告警基本查询/分诊（A）、事件诊断（I）、完整基础调查（C）、人工确认（H）和AI问答（Q）。新socai2表、A/I执行、Case关系、人工结果及读取组件已有分批实现和回执；完整真实调查质量与页面实际字段闭环尚未通过，继续在同一开发分支用OpenSpec追踪剩余交付。
 

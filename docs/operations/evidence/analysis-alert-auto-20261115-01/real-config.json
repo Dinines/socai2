@@ -1,0 +1,60 @@
+{
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/v1.2-reader-validation/app-test-environment.json",
+  "sslmode": "disable",
+  "redis_url_file": "/Users/lychee/Documents/project/socai2/.local/analysis-alert-validation/redis-url",
+  "lifecycle_policy_file": "/Users/lychee/Documents/project/socai2/deploy/local-investigation/analysis-tasks.json",
+  "investigation_policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "false",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "false",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false"
+  },
+  "check_timeout_seconds": 900,
+  "check_interval_seconds": 0.2,
+  "dispatch": {
+    "namespace": "socai2-alert-auto-20261115",
+    "max_running_tasks": 1,
+    "poll_interval_seconds": 0.05,
+    "execution_timeout_seconds": 800,
+    "replenish_limit": 100,
+    "priorities": [
+      "case_investigation",
+      "alert_triage",
+      "incident_diagnosis",
+      "knowledge_sync"
+    ],
+    "receipt_directory": "/Users/lychee/Documents/project/socai2/.local/analysis-alert-validation/completions",
+    "lock_file": "/Users/lychee/Documents/project/socai2/.local/analysis-alert-validation/test.lock"
+  },
+  "batch": "real-01",
+  "expected_database": "v12_upgrade_dev",
+  "transport": {
+    "ssh_binary": "ssh",
+    "ssh_target": "sting-infra21",
+    "remote_python": "python3",
+    "connect_timeout_seconds": 8,
+    "command_timeout_seconds": 340,
+    "gateway_base_url": "http://127.0.0.1:14000/v1",
+    "runtime_env_file": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+    "key_variable": "OPENAI_API_KEY",
+    "model_variable": "OPENAI_MODEL",
+    "expected_model": "aisoc-investigation",
+    "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/analysis-alert-auto-20261115-01-real"
+  },
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "preflight_timeout_seconds": 30,
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ]
+}

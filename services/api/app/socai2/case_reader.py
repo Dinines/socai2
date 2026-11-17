@@ -10,8 +10,9 @@ from sqlalchemy import String, and_, cast, func, literal, or_, select
 
 from app.models import socai2 as m
 
-from .baseline_context import retention_limit
+from . import list_query as lists
 from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest, encoded
+from .case_comparison import project_comparison
 from .case_contracts import (
     CaseBaselineRecord,
     CaseQueueCursor,
@@ -19,7 +20,6 @@ from .case_contracts import (
     CaseQueueMetrics,
     CaseQueuePage,
     CaseQueueQuery,
-    CaseView,
     ExecutionSummary,
     HistoryCursor,
     HistoryEntry,
@@ -32,9 +32,8 @@ from .case_contracts import (
     project,
 )
 from .case_data import read_page_data
-from .page_contracts import RecordPage
-from . import list_query as lists
 from .list_query_contracts import EXTENDED_CASE_FIELDS
+from .page_contracts import RecordPage
 
 S = m.RunSteps.__table__
 TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
@@ -174,9 +173,10 @@ class CaseReader:
         eligibility = start_availability(cas, run, member_count, False)
         if not eligibility.can_start:
             return eligibility
-        active = await self.store.one(select(R.c.id).where(*self.store.where(R, R.c.case_id == cas["id"],
-            R.c.kind == "baseline", R.c.state.in_(["running", "unknown"]))).limit(1))
-        return start_availability(cas, run, member_count, bool(active))
+        from .analysis_task_store import active_case_work
+
+        attempts, active = await active_case_work(self.store, cas["id"])
+        return start_availability(cas, run, member_count, bool(active or attempts))
 
     async def queue(self, query: CaseQueueQuery):
         """Called inside one tenant-bound REPEATABLE READ, READ ONLY transaction."""
@@ -208,12 +208,21 @@ class CaseReader:
                     .order_by(R.c.requested_at, R.c.id)):
                 runs[run["case_id"]].append(run)
         items = []
+        attempts = m.AnalysisAttempts.__table__
+        active_cases = set((await self.store.db.execute(select(attempts.c.subject_id).where(
+            *self.store.where(attempts, attempts.c.subject_type == "case", attempts.c.local_state == "running",
+                attempts.c.subject_id.in_([row["id"] for row in visible]))))).scalars()) if visible else set()
+        if visible:
+            active_cases.update((await self.store.db.execute(select(R.c.case_id).where(*self.store.where(R,
+                R.c.case_id.in_([row["id"] for row in visible]), R.c.state == "running")))).scalars())
         for row in visible:
             baseline = runs[row["id"]]
-            active = any(run["state"] in {"running", "unknown"} for run in baseline)
-            items.append(CaseQueueItem(case=project(CaseView, row), member_count=row["member_count"],
+            active = row["id"] in active_cases
+            from .case_relationship_reader import case_view
+            view = await case_view(self.store, row)
+            items.append(CaseQueueItem(case=view, member_count=row["member_count"],
                 open_task_count=row["open_task_count"], page_data=await read_page_data(self.store, row), baseline_records=[
-                    CaseBaselineRecord(run=project(RunView, run), start_eligibility=start_availability(
+                    CaseBaselineRecord(run=await project_comparison(self.store, RunView, run), start_eligibility=start_availability(
                         row, run, row["member_count"], active)) for run in baseline]))
         next_cursor = None
         if len(selected) > query.limit:
@@ -274,12 +283,14 @@ class CaseReader:
                 "covers_current_members": current <= known if complete else None,
                 "uncovered_current_alert_ids": sorted(current - known) if complete else None,
                 "no_longer_current_alert_ids": sorted(known - current) if complete else None}
-        return {"case": project(CaseView, cas), "members": members, "member_count": total,
+        from .case_relationship_reader import case_view
+        view = await case_view(self.store, cas)
+        return {"case": view, "members": members, "member_count": total,
             "linked_incidents": linked, "linked_incident_count": linked_count,
             "linked_incidents_truncated": linked_count > len(linked),
             "members_truncated": total > len(members), "current_assessment": assessment,
             "page_data": await read_page_data(self.store, cas),
-            "baseline_records": [{"run": project(RunView, r), "start_eligibility": await self.eligibility(cas, r, total)} for r in baseline]}
+            "baseline_records": [{"run": await project_comparison(self.store, RunView, r), "start_eligibility": await self.eligibility(cas, r, total)} for r in baseline]}
 
     async def history(self, case_id, *, limit=20, cursor=None):
         await self.store.case(case_id, lock=False)
@@ -311,8 +322,8 @@ class CaseReader:
             R.c.id.in_([i["run_id"] for i in visible]))))}
         results = {r["id"]: r for r in await self.rows(select(RES).where(*self.store.where(RES, RES.c.case_id == case_id,
             RES.c.id.in_([i["result_id"] for i in visible if i["result_id"]]))))}
-        items = [HistoryEntry(id=i["key"], recorded_at=i["at"], run=project(RunView, runs[i["run_id"]]),
-            result=project(ResultSummary, results[i["result_id"]]) if i["result_id"] else None) for i in visible]
+        items = [HistoryEntry(id=i["key"], recorded_at=i["at"], run=await project_comparison(self.store, RunView, runs[i["run_id"]]),
+            result=await project_comparison(self.store, ResultSummary, results[i["result_id"]]) if i["result_id"] else None) for i in visible]
         more = None
         if len(selected) > limit:
             value = HistoryCursor(at=visible[-1]["at"], key=visible[-1]["key"])
@@ -367,7 +378,7 @@ class CaseReader:
         duration = (row["ended_at"] - row["started_at"]).total_seconds() if row["ended_at"] and row["started_at"] else None
         recorded = [row[k] for k in ("requested_at", "scope_updated_at", "started_at", "ended_at")]
         recorded += [r["last_recorded_at"] for r in counts + artifact_counts]
-        return {"run": project(RunView, row), "result_ids": result_ids,
+        return {"run": await project_comparison(self.store, RunView, row), "result_ids": result_ids,
             "result_count": result_count, "results_truncated": result_count > len(result_ids),
             "start_eligibility": await self.eligibility(cas, row, current_count),
             "current_member_count": current_count, "input_member_count": member_count,
@@ -392,7 +403,7 @@ class CaseReader:
         out = {"artifact": meta, "content_json": None, "content_text": None, "availability": "unavailable"}
         if external:
             return {**out, "availability": "external_content_not_loaded"}
-        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
+        if row["size_bytes"] is None:
             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
         value = body["content_json"]
@@ -464,7 +475,7 @@ class CaseReader:
                 delivery = {"receipt_artifact_id": step["output_artifact_id"],
                     "detail_artifact_id": UUID(receipt["detail_artifact_id"]),
                     "markdown_artifact_id": UUID(receipt["markdown_artifact_id"]), "detail": detail["content_json"]}
-        return {"result": project(ResultView, row), "run": project(RunView, run),
+        return {"result": await project_comparison(self.store, ResultView, row), "run": await project_comparison(self.store, RunView, run),
             "source_answer": source_answer,
             "members": [without_internal(r) for r in members], "member_count": count,
             "members_truncated": count > len(members), "delivery": delivery}

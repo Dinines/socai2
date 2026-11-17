@@ -93,7 +93,7 @@ def query_record_identity(body, path):
 
 
 def build(source, input_id, profile, *, execution_time=None):
-    if len(source["members"]) > 200:
+    if len(source["members"]) > source.get("input_selection", {}).get("limit", 200):
         raise StoreError("incident_member_directory_too_large", 422)
     validation = source.get("triage_validation")
     if validation is None:
@@ -118,7 +118,10 @@ def build(source, input_id, profile, *, execution_time=None):
                           ("feedback", "human_statement"), ("triage", "prior_analysis")):
             value = member.get(key)
             if value and (key != "triage" or usable):
-                candidates.append((reference("artifact", input_id, role, f"$.members.{index}.{key}"), value, value, [aid]))
+                from .citation_quality import prior_note
+                note = prior_note(source, aid) if key == "triage" else None
+                projected = {**value, "citation_quality_note": note} if note else value
+                candidates.append((reference("artifact", input_id, role, f"$.members.{index}.{key}"), value, projected, [aid]))
         if not material or material["material_state"] != "complete":
             continue
         for key in ("raw_text", "ocsf_json", "raw_json", "detection", "enrichment", "source_scope"):

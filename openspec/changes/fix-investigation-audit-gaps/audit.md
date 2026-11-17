@@ -1,4 +1,4 @@
-> 阅读说明（2026-11-01）：以下为原r3本地交付的独立结束审阅，审阅结论和范围保持；不是r11复审或报告语义验收。最新问题见[当前审阅指南](../../../docs/investigation/review-guide-20261101.md)，真实批次见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)。本轮仅维护文档，没有再次独立审阅或业务测试。
+> 阅读说明（2026-11-01）：以下为原r3本地交付的独立结束审阅，审阅结论和范围保持；不是r11复审或报告语义验收。最新问题见[当前审阅指南](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/review-guide-20261101.md)，真实批次见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)。本轮仅维护文档，没有再次独立审阅或业务测试。
 
 # 结束审阅：fix-investigation-audit-gaps
 
@@ -8,7 +8,7 @@
 
 ## 1. 实际范围与方法
 
-- 读取根目录 `AGENTS.md` 最新执行边界、本 change 的 proposal/design/tasks/validation/execution-validation、三项 capability 规格、[实施记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)及[机器回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。
+- 读取根目录 `AGENTS.md` 最新执行边界、本 change 的 proposal/design/tasks/validation/execution-validation、三项 capability 规格、[实施记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-fixes-implementation-20261031.md)及[机器回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。
 - 对基线读取四份已跟踪业务文件的完整 diff，并直接读取新增 `case_source_material.py`；检查改变的 Case/Incident 测试及其替身设置。依赖核对涵盖原模型调用/输入 guard、Case API 权限、概况 worker、related 来源视图复制、tenant session 事务收尾和仓库 ClickHouse 表字段。
 - 独立只读计算 5 份业务源码、6 份列入回执的测试源码、476 份候选文件、归档各项、7 份测试日志和 6 份 Office 冻件的 SHA256；从 tar 内直接读内容比较，没有解压或改写原件。
 - 阅读各阶段日志、原 B2 两个失败 subtest 和最终复核日志，按测试方法去重；核对 Office 测试使用实际执行器、MockTransport 的两次调用、原错误答复/6982 usage、结果保存断言和当前预检公式。原 Case 冻件的 description 确为 null，与 Office 用例中的输入一致。

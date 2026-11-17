@@ -50,7 +50,7 @@ root另做64本地链接/围栏/机器JSON、git diff --check及restore strict�
 
 ## 2026-10-22 两例落地及数据盘点结束独审
 
-未参与实现者 `v1_two_examples_audit` 直接读取本地真实PG正文/元数据/图缓存回执，独立重算21份工件字节/hash通过，核21份event关联、成本3行/8回复31788tokens、25表428字段及约束、两例发送/读取坐标均与原回执一致，最终交接正文限定ACCEPT、0项本轮收口阻塞。机器字典未含凭据或prompt正文。完整逐步骤原文留存及调查质量不通过；graph_step仅node、tool preview200、prompt副本截断、seq后写低值问题已说明。分类源码未改，不由本批追认旧质量或原5/15完成。SQL实际执行校验由root在只读事务完成9 SELECT通过，不冒称独审者重新运行。新版交接包94331字节/26项，manifest覆盖17份正文及7份辅助文件，SHA256 `ac6d29a15d6ad2117bc1147f917219c0ca4216047c5cf135273f69f8cce8e058`；124链接/3锚点/7JSON、diff/OpenSpec strict通过，旧包不覆盖。v1_two_examples_audit随后独立窄核最终ZIP、17+7文件及manifest/本地一致、无私有配置或prompt正文，限定ACCEPT、0收口阻塞；只读SQL执行回执为readonly开启/9SELECT成功，原留存/质量不通过结论保持。见[回执](../../../../docs/operations/service-v1-functional-20261022.md)。
+未参与实现者 `v1_two_examples_audit` 直接读取本地真实PG正文/元数据/图缓存回执，独立重算21份工件字节/hash通过，核21份event关联、成本3行/8回复31788tokens、25表428字段及约束、两例发送/读取坐标均与原回执一致，最终交接正文限定ACCEPT、0项本轮收口阻塞。机器字典未含凭据或prompt正文。完整逐步骤原文留存及调查质量不通过；graph_step仅node、tool preview200、prompt副本截断、seq后写低值问题已说明。分类源码未改，不由本批追认旧质量或原5/15完成。SQL实际执行校验由root在只读事务完成9 SELECT通过，不冒称独审者重新运行。新版交接包94331字节/26项，manifest覆盖17份正文及7份辅助文件，SHA256 `ac6d29a15d6ad2117bc1147f917219c0ca4216047c5cf135273f69f8cce8e058`；124链接/3锚点/7JSON、diff/OpenSpec strict通过，旧包不覆盖。v1_two_examples_audit随后独立窄核最终ZIP、17+7文件及manifest/本地一致、无私有配置或prompt正文，限定ACCEPT、0收口阻塞；只读SQL执行回执为readonly开启/9SELECT成功，原留存/质量不通过结论保持。见[回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)。
 
 ## 2026-10-22 后端对接发布文档v1结束独审
 
@@ -84,13 +84,13 @@ root负责主文、原件164条功能矩阵和交接记录；migration_evidence_
 
 root负责环境/镜像导入构建、必要helper适配及探针；candidate_image_verification_plan只读建议最小检查。未参与实现的candidate_images_end_audit结束独审**限定ACCEPT，0项本轮剩余阻塞**。核精确父ID、19源码、固定manifest、本地BuildKit单节点/context Host、RootFS前缀与配置继承、两镜像probe19hash/7排除项/385和129导入/4方法，实际受限argv、exit0/stderr空及定向清理0。15份证据hash/当前helper hash与文档/JSON一致，原15项/5勾不变。
 
-本轮helper仅因实际环境修可选Config字段、显式验证本地BuildKit/context；三次失败、最初导出拒绝后用户明确授权及OrbStack恢复11既有本地容器均保留，不称全程无本地容器启动。审查者只读，无Docker/网络/业务测试或文件修改。OpenSpec strict/diff/3本地链接通过；结论只覆盖API5a1e1fd8/Agents49643b84本地构建与离线检查，不批准21部署、实际业务质量或常驻，不重跑前批100/模型，不归档/Git提交。详见[本轮回执](../../../../docs/operations/investigation-candidate-images-20261022.md)。
+本轮helper仅因实际环境修可选Config字段、显式验证本地BuildKit/context；三次失败、最初导出拒绝后用户明确授权及OrbStack恢复11既有本地容器均保留，不称全程无本地容器启动。审查者只读，无Docker/网络/业务测试或文件修改。OpenSpec strict/diff/3本地链接通过；结论只覆盖API5a1e1fd8/Agents49643b84本地构建与离线检查，不批准21部署、实际业务质量或常驻，不重跑前批100/模型，不归档/Git提交。详见[本轮回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-candidate-images-20261022.md)。
 
 ## 2026-10-22 候选组合与构建准备结束独审
 
 root负责组合/取证/记录，candidate_build_recipe_review负责最小配方助手，candidate_combination_plan只读建议测试范围。未参与实现者candidate_preparation_audit只读结束独审**限定ACCEPT，0项本轮剩余阻塞**：19份review/隔离组合/context hash一致，7excluded为candidate05原件，Deep仅摘要变体；full bundle定向取证与UEBA保持、父ID语义、Agents55/API45隔离测试及4方法router登记证据一致。
 
-独审提出助手未绑定清单身份、文档所述构建后父层/启动配置比较尚未实现两点，已最小补齐固定manifest SHA及实际执行分支比较并复核。默认plan通过且images_built=false，真实Docker分支只静态审；本地daemon未运行，本轮无镜像构建/部署/常驻。独审未重跑业务测试、联网或调用Docker。新回执/机器摘要/AGENTS/进度/原任务一致，15项/5勾及旧质量失败保持；不批准实际镜像、运行/质量或发布，不归档。详见[本批回执](../../../../docs/operations/investigation-candidate-build-20261022.md)。
+独审提出助手未绑定清单身份、文档所述构建后父层/启动配置比较尚未实现两点，已最小补齐固定manifest SHA及实际执行分支比较并复核。默认plan通过且images_built=false，真实Docker分支只静态审；本地daemon未运行，本轮无镜像构建/部署/常驻。独审未重跑业务测试、联网或调用Docker。新回执/机器摘要/AGENTS/进度/原任务一致，15项/5勾及旧质量失败保持；不批准实际镜像、运行/质量或发布，不归档。详见[本批回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-candidate-build-20261022.md)。
 
 ## 2026-10-22阶段收口与选定源码副本结束独审
 
@@ -98,7 +98,7 @@ root负责组合/取证/记录，candidate_build_recipe_review负责最小配方
 
 一个现有材料交接用例明确加载副本Deep，1 passed；独审未重复业务测试或扩大为19文件组合验收。审查发现副本导入后多出一个pyc，root只删本轮该派生缓存并使runner在导入前sys.dont_write_bytecode=True；独审只读复核恰好19物理.py且源码hash不变。独审所查420本地链接0缺失；root450为另一文件集，不相加称业务测试。
 
-父版本只依据最近full回执，纯full bundle字节/hash本地缺证与最新运行态未查明确保留。本结论不批准组合/构建/发布、旧C2最终source05、常驻启用或整体质量；未新发模型/消息/后端HTTP或业务PG/图写，不归档/提交推送。具体边界见[本轮收口](../../../../docs/operations/investigation-stage-closeout-20261022.md)。
+父版本只依据最近full回执，纯full bundle字节/hash本地缺证与最新运行态未查明确保留。本结论不批准组合/构建/发布、旧C2最终source05、常驻启用或整体质量；未新发模型/消息/后端HTTP或业务PG/图写，不归档/提交推送。具体边界见[本轮收口](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-closeout-20261022.md)。
 
 ## 2026-10-22关联/链图模块评估文档结束复核
 
@@ -210,7 +210,7 @@ triage_review未参与编辑，结束独审accept：新增需求已撤回、两�
 
 未参与实现者 `service_v1_release_audit` 先审具体operator/plan/overlay，再独立核实际回执和Run工件，结论**限定 ACCEPT，0项本轮必须修正/发布阻塞**。核新生产tenant/reader-writer最小身份、预算仅生产授权、一次性新组起点、原group/unknown保持、模型摘要一致、两服务healthy/readyz及fused订阅。独立比对15容器快照恰仅API/Agents改变、其余13对象一致；新raw Kafka合成告警15事件/14工件、5个授权GET200、新组仅p1前进一条且追平end，普通预算responded/settled。
 
-7个可见回复28216tokens（首次2048/graph26168），graph/报告running且completion partial、六轮/软预算、缺源和不受支持结论如实保留；不宣称自治质量、硬预算边界、全部迁移或标书满足。首次及Deep3—6轮仅持久prompt副本截断，不称实际请求截断。旧C2/原5/15不改，无旧输入重发/Git提交/厂商执行。独审同时扫描公开新增材料，生成token/私钥模式0命中。详见[发布回执](../../../../docs/operations/service-v1-release-20261022.md)和[JSON](../../../../docs/handoff/service-v1-release-20261022.json)。最终包/manifest窄复核仍限定ACCEPT：21项、60156字节，13份正文及6份辅助文件与当前源码一致，SHA256 `89e3b927c677ae08263a5ad38a40d0a0b124a9dbe2c23e30aeb9c5c5cd16e803`，凭据模式0命中。本条不重复业务/模型验证。
+7个可见回复28216tokens（首次2048/graph26168），graph/报告running且completion partial、六轮/软预算、缺源和不受支持结论如实保留；不宣称自治质量、硬预算边界、全部迁移或标书满足。首次及Deep3—6轮仅持久prompt副本截断，不称实际请求截断。旧C2/原5/15不改，无旧输入重发/Git提交/厂商执行。独审同时扫描公开新增材料，生成token/私钥模式0命中。详见[发布回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)和[JSON](../../../../docs/handoff/service-v1-release-20261022.json)。最终包/manifest窄复核仍限定ACCEPT：21项、60156字节，13份正文及6份辅助文件与当前源码一致，SHA256 `89e3b927c677ae08263a5ad38a40d0a0b124a9dbe2c23e30aeb9c5c5cd16e803`，凭据模式0命中。本条不重复业务/模型验证。
 
 
 ## 2026-10-23 页面V1字段文档与取数证据结束独审

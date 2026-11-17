@@ -1,0 +1,105 @@
+{
+  "id": "C02",
+  "title": "维护账号运行编码脚本并访问文件共享",
+  "alert": {
+    "id": "alert-01",
+    "title": "Encoded PowerShell and SMB access",
+    "severity": "high",
+    "event_time": "2026-10-25T01:15:00+08:00",
+    "created_at": "2026-10-26T08:30:00+08:00",
+    "hostname": "ops-17",
+    "username": "svc_patch",
+    "dst_ip": "192.0.2.20",
+    "risk_score": null,
+    "rule_condition": "PowerShell encoded command followed by SMB access; encoding alone does not establish maliciousness"
+  },
+  "scope": {
+    "entities": [
+      "ops-17",
+      "svc_patch",
+      "192.0.2.20"
+    ],
+    "start": "2026-10-24T16:50:00Z",
+    "end": "2026-10-24T17:40:00Z"
+  },
+  "sources": {
+    "events": {
+      "status": "ok",
+      "coverage": "complete for supplied entities and this window; not organisation-wide",
+      "rows": [
+        {
+          "ref": "E1",
+          "entity": "ops-17",
+          "timestamp": "2026-10-25T01:15:00+08:00",
+          "user": "svc_patch",
+          "process": "powershell.exe",
+          "parent": "approved_patch_runner.exe",
+          "command": "powershell -EncodedCommand <encoded-inventory-script>",
+          "decoded_action": "inventory software versions",
+          "script_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "ref": "E2",
+          "entity": "ops-17",
+          "timestamp": "2026-10-24T17:16:00Z",
+          "destination": "192.0.2.20",
+          "protocol": "SMB",
+          "operation": "read package catalog",
+          "result": "success",
+          "bytes_out": 4096
+        }
+      ]
+    },
+    "authorization": {
+      "status": "ok",
+      "rows": [
+        {
+          "ref": "A1",
+          "account": "svc_patch",
+          "host": "ops-17",
+          "target": "192.0.2.20",
+          "action": "inventory software versions and read package catalog",
+          "script_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "decision": "approved",
+          "start": "2026-10-24T17:00:00Z",
+          "end": "2026-10-24T17:10:00Z"
+        }
+      ]
+    },
+    "asset": {
+      "status": "ok",
+      "rows": [
+        {
+          "ref": "H1",
+          "host": "ops-17",
+          "role": "production management workstation",
+          "criticality": "high"
+        }
+      ]
+    },
+    "graph": {
+      "status": "ok",
+      "rows": [
+        {
+          "ref": "G1",
+          "source": "ops-17",
+          "target": "192.0.2.20",
+          "relationship": "observed SMB session",
+          "time": "2026-10-24T17:16:00Z"
+        }
+      ]
+    },
+    "intel": {
+      "status": "ok",
+      "rows": [
+        {
+          "ref": "I1",
+          "ioc": "192.0.2.20",
+          "ioc_type": "ip",
+          "verdict": "not listed",
+          "note": "absence of reputation is not proof of safety"
+        }
+      ]
+    }
+  }
+}

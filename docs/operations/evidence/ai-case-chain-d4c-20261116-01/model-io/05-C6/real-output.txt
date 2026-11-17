@@ -1,0 +1,219 @@
+{
+  "analysis": {
+    "summary": "本案涉及成员 A1-A4 在主机 host-app-3f979d56 上的连续活动：A1 记录服务登录，A2 记录 curl 进程启动，A3/A4 记录向外部 IP 198.51.100.81 的网络流量。所有原始告警等级均为 Informational，当前综合等级为 Medium。核心矛盾在于：A4 的网络流量时间（05:50:12）早于 A2 的 curl 进程启动时间（05:46:12），导致无法确证流量是由该 curl 命令产生。同时，缺乏资产基线、威胁情报及人工授权确认，无法区分是正常业务交互还是异常行为。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "analyzed",
+        "summary": "记录 svc-app-bc3b4605 在 host-app-3f979d56 上的成功登录（logon），时间 05:40:12。",
+        "evidence_ids": ["N4_S2", "N4_S3", "N4_S4", "N4_S5", "N4_S6", "N4_S17", "N4_S41"],
+        "limitations": ["缺乏授权确认", "缺乏资产基线"]
+      },
+      {
+        "alert_id": "A2",
+        "state": "analyzed",
+        "summary": "记录 curl 进程启动，命令为 curl --head https://198.51.100.81/status，时间 05:46:12。",
+        "evidence_ids": ["N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92"],
+        "limitations": ["仅证明进程启动，未证明命令执行结果或数据读取"]
+      },
+      {
+        "alert_id": "A3",
+        "state": "analyzed",
+        "summary": "记录从 host-app-3f979d56 到 198.51.100.81 的 TCP 流量，时间 06:05:12。",
+        "evidence_ids": ["N4_S96", "N4_S97", "N4_S98", "N4_S103", "N4_S108", "N4_S114", "N4_S115", "N4_S116", "N4_S117", "N4_S118", "N4_S134", "N4_S139", "N4_S145", "N4_S152", "N4_S154"],
+        "limitations": ["outcome=unknown", "无 DNS 解析记录", "无包内容"]
+      },
+      {
+        "alert_id": "A4",
+        "state": "analyzed",
+        "summary": "记录从 host-app-3f979d56 到 198.51.100.81 的 TCP 流量，时间 05:50:12。",
+        "evidence_ids": ["N4_S156", "N4_S157", "N4_S158", "N4_S163", "N4_S168", "N4_S174", "N4_S175", "N4_S176", "N4_S177", "N4_S178", "N4_S212", "N4_S214"],
+        "limitations": ["outcome=unknown", "无 DNS 解析记录", "无包内容"]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "observed",
+        "alert_ids": ["A1"],
+        "support_ids": ["N4_S2", "N4_S3", "N4_S4", "N4_S5", "N4_S6", "N4_S17", "N4_S41"],
+        "counter_ids": [],
+        "alternatives": ["预期的服务间认证登录", "异常凭证被盗用登录"],
+        "limitations": ["缺乏人工确认授权状态", "缺乏资产基线判断是否异常"]
+      },
+      {
+        "id": "F2",
+        "state": "observed",
+        "alert_ids": ["A2"],
+        "support_ids": ["N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92"],
+        "counter_ids": [],
+        "alternatives": ["正常的健康检查或数据拉取", "恶意侦察或 C2 通信尝试"],
+        "limitations": ["仅证明进程启动，未证明命令执行结果", "无法确认目标 IP 安全性"]
+      },
+      {
+        "id": "F3",
+        "state": "inferred",
+        "statement": "A4 的网络流量（05:50:12）发生在 A2 的 curl 进程启动（05:46:12）之前，因此 A4 不可能是 A2 命令的直接执行结果。A4 可能是独立的定时任务、遗留连接或另一未记录的进程发起的通信。",
+        "alert_ids": ["A2", "A3", "A4"],
+        "support_ids": ["N4_S156", "N4_S45", "N4_S96"],
+        "counter_ids": [],
+        "alternatives": ["A4 是独立任务", "A3 是 A2 命令执行后的流量"],
+        "limitations": ["缺乏应用层日志关联", "无法确认流量内容", "无法确证因果链条"]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "已确认 svc-app-bc3b4605 在 host-app-3f979d56 上的登录（A1）、curl 进程启动（A2）及两次向 198.51.100.81 的 TCP 流量（A3, A4）。",
+        "evidence_ids": ["N4_S2", "N4_S3", "N4_S4", "N4_S5", "N4_S6", "N4_S17", "N4_S41", "N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92", "N4_S96", "N4_S97", "N4_S98", "N4_S103", "N4_S108", "N4_S114", "N4_S115", "N4_S116", "N4_S117", "N4_S118", "N4_S134", "N4_S139", "N4_S145", "N4_S152", "N4_S154", "N4_S156"],
+        "limitations": ["无资产库存、威胁情报、历史告警或行为分析数据支持定性"]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "A1 与 A2 存在同一账号同一主机的时序关联（登录->进程启动）。A2 与 A3/A4 存在目标 IP 关联，但时间顺序上 A4 早于 A2，A3 晚于 A2，无法确证因果链条。",
+        "evidence_ids": ["N4_S3", "N4_S46", "N4_S97", "N4_S157", "N4_S114", "N4_S174", "N4_S156", "N4_S45"],
+        "limitations": ["无法确证 A4 与 A2/A3 的因果", "无法确证 A3 与 A2 的因果"]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "当前无法定性为恶意、正常或误操作。所有告警等级均为 Informational，且缺乏人工确认和外部情报。",
+        "evidence_ids": ["N4_S11", "N4_S59", "N4_S109", "N4_S169"],
+        "limitations": ["标签不证明行为性质", "缺乏基线对比", "缺乏人工反馈"]
+      },
+      {
+        "id": "authorization",
+        "state": "unresolved",
+        "answer": "无明确授权材料，未提供人工确认或审批记录，不能推断为未授权或已授权。",
+        "evidence_ids": [],
+        "limitations": ["未提供不等于不存在", "需人工补充确认"]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "观察到登录成功和进程启动，但未观察到数据外传、配置修改或业务损失，影响范围未知。",
+        "evidence_ids": ["N4_S6", "N4_S55"],
+        "limitations": ["仅命令内容不证明效果", "无业务结果确认", "无数据流向确认"]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及用户 svc-app-bc3b4605 的登录行为及进程启动。"
+      ,
+      "alert_ids": ["A1", "A2"],
+      "finding_ids": ["F1", "F2"],
+      "limitations": ["缺乏身份基线", "无授权确认"]
+      },
+      {
+        "name": "cloud",
+        "applicability": "not_applicable",
+        "reason": "环境为 Endpoint Collector 采集的本地主机，无云环境特征。"
+      ,
+      "alert_ids": [],
+      "finding_ids": []
+      ,
+      "limitations": ["非云环境"]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "无钓鱼邮件、链接或凭证窃取迹象，仅涉及服务账号。"
+      ,
+      "alert_ids": [],
+      "finding_ids": []
+      ,
+      "limitations": ["无相关证据"]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及内部服务账号 svc-app-bc3b4605 的行为，需确认是否为内部人员滥用或正常运维。"
+      ,
+      "alert_ids": ["A1", "A2", "A3", "A4"],
+      "finding_ids": ["F1", "F2", "F3"],
+      "limitations": ["无法区分内部正常运维与恶意内部行为"]
+      }
+    ],
+    "conflicts": [
+      {
+        "id": "C1",
+        "finding_ids": ["F2", "F3"],
+        "state": "unresolved",
+        "explanation": "F2 推断 A2 的 curl 命令可能产生流量，但 F3 指出 A4 的流量时间（05:50:12）早于 A2 的进程启动时间（05:46:12），两者在时间线上互斥，无法建立因果。",
+        "evidence_ids": ["N4_S156", "N4_S45", "N4_S96"]
+      }
+    ]
+  ,
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2", "A3", "A4"],
+      "mode": "human",
+      "objective": "确认 svc-app-bc3b4605 访问 198.51.100.81 是否为预期业务行为，获取人工授权确认或排除依据。"
+    ,
+      "required_evidence": "人工陈述、审批记录、业务文档或运维日志确认"
+    ,
+      "source_ids": []
+    ,
+      "object_keys": ["O1", "O2", "O3", "O4"]
+    }
+    ,
+    {
+      "question_id": "impact",
+      "alert_ids": ["A2", "A3", "A4"],
+      "mode": "deep",
+      "objective": "核实 curl 命令是否成功执行并获取数据，确认是否有数据外传或配置修改。"
+    ,
+      "required_evidence": "应用层日志、网络包捕获内容、目标服务器响应记录"
+    ,
+      "source_ids": []
+    ,
+      "object_keys": ["O2", "O3"]
+    }
+  ]
+  },
+  "conclusion": {
+    "text": "本案目前无法定性。观察到服务账号 svc-app-bc3b4605 登录主机并启动 curl 命令访问外部 IP，且存在两次网络流量记录。但由于 A4 流量时间早于 curl 进程启动，因果链断裂；且缺乏授权确认、资产基线和威胁情报，无法判断行为性质（正常业务 vs 恶意侦察）。",
+    "state": "uncertain",
+    "alert_ids": ["A1", "A2", "A3", "A4"],
+    "support_ids": ["N4_S2", "N4_S3", "N4_S4", "N4_S5", "N4_S6", "N4_S17", "N4_S41", "N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92", "N4_S96", "N4_S97", "N4_S98", "N4_S103", "N4_S108", "N4_S114", "N4_S115", "N4_S116", "N4_S117", "N4_S118", "N4_S134", "N4_S139", "N4_S145", "N4_S152", "N4_S154", "N4_S156"],
+    "limitations": ["时间顺序矛盾导致因果不明", "缺乏授权证据", "缺乏外部情报"]
+  },
+  "closing_note": "本案核心缺口在于：1. 时间线矛盾（A4 流量早于 A2 进程）导致无法确认流量来源；2. 完全缺失人工授权确认，无法区分正常运维与异常行为；3. 无资产基线判断 198.51.100.81 的合法性。需人工介入确认业务意图，并进一步查询应用层日志以验证 curl 执行结果。",
+  "impact": {
+    "summary": "已观察到登录成功和进程启动，但未观察到数据外传、配置修改或业务损失。影响范围未知。",
+    "alert_ids": ["A1", "A2", "A3", "A4"],
+    "support_ids": ["N4_S6", "N4_S55"],
+    "supported_changes": []
+  ,
+    "cannot_generalize": ["curl 命令执行结果未知", "数据是否外传未知", "业务是否受损未知", "行为是否授权未知"]
+  ,
+    "next_steps": ["需人工确认授权", "需查询应用层日志确认命令结果"]
+  }
+  ,
+  "recommendations": [
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O2", "O3", "O4"],
+      "reason": "需人工确认 svc-app-bc3b4605 访问 198.51.100.81 是否为预期业务行为。"
+    ,
+      "source_ids": ["N4_S2", "N4_S3", "N4_S4", "N4_S5", "N4_S6", "N4_S17", "N4_S41", "N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92", "N4_S96", "N4_S97", "N4_S98", "N4_S103", "N4_S108", "N4_S114", "N4_S115", "N4_S116", "N4_S117", "N4_S118", "N4_S134", "N4_S139", "N4_S145", "N4_S152", "N4_S154", "N4_S156"]
+    ,
+      "limitations": ["需人工配合"]
+    }
+    ,
+    {
+      "action_type": "investigate",
+      "object_keys": ["O2", "O3"],
+      "reason": "需核实 curl 命令是否成功执行并获取数据，确认是否有数据外传。"
+    ,
+      "source_ids": ["N4_S45", "N4_S46", "N4_S47", "N4_S50", "N4_S51", "N4_S54", "N4_S55", "N4_S64", "N4_S92", "N4_S96", "N4_S97", "N4_S98", "N4_S103", "N4_S108", "N4_S114", "N4_S115", "N4_S116", "N4_S117", "N4_S118", "N4_S134", "N4_S139", "N4_S145", "N4_S152", "N4_S154", "N4_S156"]
+    ,
+      "limitations": ["需应用层日志或 PCAP"]
+    }
+  ]
+  }

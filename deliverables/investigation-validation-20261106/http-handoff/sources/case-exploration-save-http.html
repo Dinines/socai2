@@ -1,0 +1,65 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="案件关系图保存与恢复">案件关系图：保存与恢复</h1>
+<p>用途：用户展开案件线索、调整画布后保存，下次继续上次的探索。保存不加入案件成员，不产生调查，不采用结论。明确加入仍调用 E08，AI 对话继续暂缓。这里提供后端 HTTP 能力，画布由调用方绘制。</p>
+<table>
+<tr><th>操作</th><th>HTTP（前缀 <code>/api/v1/socai2</code>）</th><th>输入</th><th>输出与结果</th></tr>
+<tr><td>E67 读取探索底图</td><td>GET <code>/cases/{case_id}/exploration-base</code></td><td>案件 ID，可选 <code>run_id</code></td><td><code>ExplorationBase</code>：底图来源、原图、成员材料对象和指纹；只读</td></tr>
+<tr><td>E68 保存探索</td><td>PUT <code>/cases/{case_id}/exploration</code></td><td><code>ExplorationSave</code>，见下方</td><td><code>ExplorationSnapshot</code>：不可变保存 ID、底图、匹配来源、画布状态</td></tr>
+<tr><td>E69 恢复探索</td><td>GET <code>/cases/{case_id}/exploration</code></td><td>案件 ID</td><td><code>{&quot;snapshot&quot;: ...}</code>；从未保存时 <code>{&quot;snapshot&quot;:null}</code></td></tr>
+</table>
+<h2 id="调用步骤">调用步骤</h2>
+<p>1. 打开案件先 E69。已有保存时直接还原 <code>snapshot.base</code>、<code>expanded_links</code>、<code>expanded_sources</code> 和 <code>view_state</code>。没有保存再 E67。</p>
+<p>2. E67 默认选择最近完成的基础调查。返回 <code>run_id</code>、<code>result_id</code>、<code>graph_artifact_id</code> 和原图 JSON。<code>delivery_state=partial</code> 原样保留；当次缺图返回 <code>graph_state=unavailable</code>，不借另一轮图补齐。没有已完成基础调查时 <code>kind=members</code>，用 <code>sources.alerts/objects</code> 绘制成员关系。AI 对话结果不作为底图。</p>
+<p>3. E66 查询候选，用户展开后，将对应 <code>matches.seed.id</code> 与 <code>matches.candidate.id</code> 保存到 <code>expanded_links</code>。涉及的全部对象可先 E30 <code>section=objects</code> 回查。</p>
+<p>4. 初次保存：<code>expected_snapshot_id:null</code>，<code>base_run_id</code> 和 <code>base_fingerprint</code> 来自 E67，成员底图的 Run ID 为 null。</p>
+<p>5. 再次保存：<code>expected_snapshot_id</code> 填最近 E69/E68 的保存 ID；<code>base_snapshot_id</code> 填要继续的保存 ID，不传 <code>base_run_id/base_fingerprint</code>。服务端复制当时底图及已有来源快照，新调查不会替换它。</p>
+<p>6. 撤销展开：去掉对应关系及其后续依赖分支，再 E68。重置：重新 E67，按新指纹保存空 <code>expanded_links</code> 和新的 <code>view_state</code>；仍传最近保存 ID 防覆盖他人。</p>
+<h2 id="请求示例">请求示例</h2>
+<p>下列 UUID 和指纹仅说明格式，实际值从 E67/E66 取得。<code>operation_key</code> 每次新的保存生成一次，重试沿用。</p>
+<pre>{
+  &quot;operation_key&quot;: &quot;00000000-0000-4000-8000-000000000001&quot;,
+  &quot;expected_snapshot_id&quot;: null,
+  &quot;base_run_id&quot;: null,
+  &quot;base_fingerprint&quot;: &quot;aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&quot;,
+  &quot;expanded_links&quot;: [
+    {
+      &quot;seed_object_id&quot;: &quot;00000000-0000-4000-8000-000000000002&quot;,
+      &quot;candidate_object_id&quot;: &quot;00000000-0000-4000-8000-000000000003&quot;
+    }
+  ],
+  &quot;view_state&quot;: {
+    &quot;positions&quot;: {&quot;alert:真实告警ID&quot;: {&quot;x&quot;: 120, &quot;y&quot;: -40}},
+    &quot;selected&quot;: [&quot;alert:真实告警ID&quot;],
+    &quot;zoom&quot;: 1.25,
+    &quot;filters&quot;: {&quot;high&quot;: true}
+  }
+}</pre>
+<p><code>view_state</code> 的键由调用方定义，是展示信息，服务端原样保存返回，不解释成事实、证据或正式成员。可保存位置、选择、隐藏、缩放和筛选。不会自动生成页面。JSON 字段及完整成功/错误示例在 Swagger E67–E69。</p>
+<h2 id="返回字段">返回字段</h2>
+<table>
+<tr><th>字段</th><th>含义</th></tr>
+<tr><td><code>snapshot.id/case_id/created_at/created_by</code></td><td>不可变保存标识、案件和实际保存人/时间</td></tr>
+<tr><td><code>base.kind/run_id/result_id/graph_artifact_id</code></td><td>固定起点与原件来源；成员底图后三项为 null；已关联图但内容不可用时保留原件 ID，查看 graph_state</td></tr>
+<tr><td><code>base.scope_revision/delivery_state/graph_state</code></td><td>当时范围版本、原调查交付和图材料状态，缺图如实保留</td></tr>
+<tr><td><code>base.graph</code></td><td>保存时的调查图 JSON 原文；成员底图/缺图为 null</td></tr>
+<tr><td><code>base.sources.alerts/objects</code></td><td>成员或指定 Run 成员对应的告警事实与材料对象；图原文以 <code>graph</code> 为准</td></tr>
+<tr><td><code>base.fingerprint</code></td><td>E67 内容摘要，初次保存/重置用来检测来源变化</td></tr>
+<tr><td><code>expanded_links[].seed/candidate/basis</code></td><td>原对象、告警、材料、字段路径、值及匹配规则；只证明共有对象，不证明攻击因果</td></tr>
+<tr><td><code>expanded_sources.alerts/objects</code></td><td>展开涉及的真实告警和所选材料全部对象；保存后冻结，不代表实时告警状态</td></tr>
+<tr><td><code>view_state</code></td><td>调用方提交的画布 JSON 原样返回</td></tr>
+</table>
+<p>展开按输入先后校验：起点必须连接底图告警或前序展开告警，双方必须同案件来源、同对象 namespace/type 和符合 E66 的值匹配规则。hash 要有明确合法算法。允许保留旧材料对象，因此“保存合法关系”不代表重新执行了一次最新 E66 时间窗口查询；实时候选重新查 E66。跨案件查看允许，但不改变原案归属。</p>
+<h2 id="错误处理">错误处理</h2>
+<table>
+<tr><th>HTTP / detail</th><th>处理</th></tr>
+<tr><td>404 <code>case_not_found</code> / <code>exploration_completed_run_not_found</code></td><td>检查案件、Run ID 与归属；Run 必须已完成且为基础调查</td></tr>
+<tr><td>404 <code>exploration_snapshot_not_found</code> / <code>exploration_object_not_found</code></td><td>保存或对象不存在/不在允许来源，不伪造空成功</td></tr>
+<tr><td>409 <code>exploration_snapshot_changed</code></td><td>他人已保存；重新 E69 后由调用方决定合并，不能自动覆盖</td></tr>
+<tr><td>409 <code>exploration_base_changed</code></td><td>首次/重置底图指纹失效；重读 E67 或继续原保存</td></tr>
+<tr><td>409 <code>operation_key_conflict</code></td><td>同幂等键对应的用户或请求不同，新操作使用新键</td></tr>
+<tr><td>422 <code>exploration_objects_do_not_match</code></td><td>对象不构成支持的真实匹配关系</td></tr>
+<tr><td>422 <code>exploration_disconnected_branch</code></td><td>展开顺序不成立或撤销后仍有悬空分支</td></tr>
+<tr><td>422 <code>exploration_snapshot_too_large</code></td><td>请求/最终保存超过配置大小或连线数；不会静默截断</td></tr>
+<tr><td>422 字段校验 / <code>exploration_query_parameter_not_supported</code></td><td>必填项、重复关系、混用底图来源、未知/重复查询参数不合法</td></tr>
+</table>
+<p>配置在 <code>exploration-state.json</code>（可通过 <code>SOCAI2_EXPLORATION_STATE_CONFIG_FILE</code> 指定）：当前最多 1000 条展开关系、完整快照 4 MiB。复用 artifacts 的独立 <code>socai2.case-exploration.v1</code> schema；无新增表或迁移，保存不更新 Case 行版本/业务时间、Run、Result、任务或评估。每次保存仅追加快照和活动回执。旧保存保留，当前接口恢复最近一次，不提供历史版本管理页面。</p>
+<p>本轮验收与发布状态见证据（来源：<code>docs/operations/evidence/case-exploration-state-20261113-01/README.md</code>）。</p></main></html>

@@ -1,0 +1,116 @@
+--- before/deploy/local-investigation/investigation-policy-case-v1.toml
++++ deploy/local-investigation/investigation-policy-case-v1.toml
+@@ -41,7 +41,7 @@
+ [model.output_tokens]
+ A = 3000
+ I = 3000
+-C3 = 4096
++C3 = 8192
+ Deep = 3000
+ C6 = 8192
+ 
+--- before/services/api/app/socai2/runtime_policy.py
++++ services/api/app/socai2/runtime_policy.py
+@@ -96,10 +96,13 @@
+                                                      for k, v in questions.items())):
+         raise ValueError("case_context_meaning_policy_invalid")
+     output = data.get("c3_output")
+-    if (not isinstance(output, dict) or set(output) != {"max_followups", "instruction"}
++    if (not isinstance(output, dict) or set(output) != {"version", "max_findings", "max_followups", "instruction"}
++            or output["version"] != "socai2.c3-output.v1"
++            or type(output["max_findings"]) is not int or not 0 <= output["max_findings"] <= 24
+             or type(output["max_followups"]) is not int or not 0 <= output["max_followups"] <= 12
+-            or not isinstance(output["instruction"], str) or "{max_followups}" not in output["instruction"]):
+-        # 12 is the existing storage contract's capacity, not a runtime default.
++            or not isinstance(output["instruction"], str)
++            or any(field not in output["instruction"] for field in ("{max_findings}", "{max_followups}"))):
++        # 24/12 are existing storage capacities, not runtime defaults.
+         raise ValueError("case_c3_output_policy_invalid")
+     program = data.get("program_output")
+     if (not isinstance(program, dict) or not {"version", "instruction"} <= set(program)
+--- before/services/api/app/socai2/case_model_boundary.py
++++ services/api/app/socai2/case_model_boundary.py
+@@ -101,7 +101,8 @@
+     for replacement in profile.config["system_replacements"]:
+         system = system.replace(replacement["old"], replacement["new"])
+     system += "\n" + profile.config["citation_instruction"]
+-    system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"]))
++    system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"])).replace(
++        "{max_findings}", str(output["max_findings"]))
+     system += "\n" + profile.config["program_output"]["instruction"]
+     messages = [{"role": "system", "content": system}, {"role": "user", "content": prepared["user"]}]
+     optional = [r["knowledge"]["identity"] for r in prepared["records"] if r.get("knowledge")]
+@@ -116,6 +117,7 @@
+         "messages": messages if reason is None else [], "source_map": prepared["source_map"],
+         "coverage": prepared["coverage"], "omissions": prepared["omissions"],
+         "source_state_ledger": states, "case_boundary": {"profile": profile.identity, "max_followups": output["max_followups"],
++            "c3_output": {key: output[key] for key in ("version", "max_findings")},
+             "program_output": profile.config["program_output"]["version"],
+             **({"coverage_facts": initial_coverage(prepared, len(context.alerts))}
+                if profile.config["program_output"].get("c3_coverage") else {}),
+--- before/services/api/app/socai2/case_output_adapter.py
++++ services/api/app/socai2/case_output_adapter.py
+@@ -35,6 +35,13 @@
+     result = constrain_findings(execution_format(result, aliased), prepared["source_map"], context.alerts,
+                                 program_owned=program.enabled(boundary))
+     result["json_schema"]["schema"]["properties"]["followups"]["maxItems"] = followup_limit(boundary)
++    limit = finding_limit(boundary)
++    if limit is not None:
++        schema = result["json_schema"]["schema"]
++        findings = schema["properties"]["findings"]
++        while "$ref" in findings:
++            findings = copy.deepcopy(schema["$defs"][findings["$ref"].removeprefix("#/$defs/")])
++        schema["properties"]["findings"] = {**findings, "maxItems": limit}
+     if program.owns_coverage(boundary):
+         schema = result["json_schema"]["schema"]
+         questions = schema["properties"]["questions"]
+@@ -56,10 +63,26 @@
+     return limit
+ 
+ 
++def finding_limit(boundary):
++    # Previously frozen replies have no C3-specific count policy. Their
++    # historical contract and the shared C6 Analysis capacity stay unchanged.
++    if "c3_output" not in boundary:
++        return None
++    output = boundary["c3_output"]
++    if (not isinstance(output, dict) or set(output) != {"version", "max_findings"}
++            or output["version"] != "socai2.c3-output.v1"
++            or type(output["max_findings"]) is not int or not 0 <= output["max_findings"] <= 24):
++        raise contract.AnalysisRejected("case_finding_limit_unavailable")
++    return output["max_findings"]
++
++
+ def restore_current(content, boundary, *, citation_review=None):
+     """Admit new C3 replies; historical and C6 structural restoration stays compatible."""
+     limit = followup_limit(boundary)
++    findings = finding_limit(boundary)
+     value = normalized(decode(content), citation_review)
++    if findings is not None and isinstance(value.get("findings"), list) and len(value["findings"]) > findings:
++        raise contract.AnalysisRejected("case_finding_limit_exceeded")
+     if isinstance(value.get("followups"), list) and len(value["followups"]) > limit:
+         raise contract.AnalysisRejected("case_followup_limit_exceeded")
+     try:
+--- before/services/api/app/socai2/baseline_analysis_contract.py
++++ services/api/app/socai2/baseline_analysis_contract.py
+@@ -278,5 +278,5 @@
+ 四领域：identity核认证/MFA/会话/权限及授权范围；cloud核控制面、资源/IAM/配置及影响；phishing核邮件身份/头、链接/附件、投递/点击/执行；insider核数据访问/外传、数量/目的地/时间、行为基线及授权，不凭作息或角色定恶意。
+ 保留替代解释与未决；conflicts仅列至少两条已有发现的实际矛盾，缺证据不算矛盾，不编造发现凑数。未提供审批、查空、未接通不构成不存在或反证；省略不同于未发生。端口不能证明HTTPS/TLS等应用协议。
+ followups只提需求：一次补查用query、按返回继续查用deep、关系核验用graph、人工确认用human；不生成SQL或扩范围。正文仅涉及alert_ids，object_keys须属于这些成员；跨成员核验须列全相关成员。
+-仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多3个核心findings、2个必要followups，成员/六问题/四领域完整。目标1800输出tokens，不复制原文或内部限制代码，不宣称全文已读。
++仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；findings和followups按Schema数量上限输出，成员/六问题/四领域完整。不复制原文或内部限制代码，不宣称全文已读。
+ """
+--- before/services/api/app/socai2/case-input-v1.json
++++ services/api/app/socai2/case-input-v1.json
+@@ -1153,8 +1153,10 @@
+   },
+   "business_profile": "incident-input-v1.json",
+   "c3_output": {
++    "version": "socai2.c3-output.v1",
++    "max_findings": 5,
+     "max_followups": 2,
+-    "instruction": "仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多3个核心findings、{max_followups}个必要followups，成员/五个业务问题/四领域完整。补查优先选择最影响当前判断的需求，无新需求填[]；数量上限由程序校验，不生成额外补查。目标1800输出tokens，不复制原文或内部限制代码，不宣称全文已读。"
++    "instruction": "一次返回summary、members、findings、questions、domains、conflicts、followups七部分，符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多{max_findings}个核心findings、{max_followups}个必要followups，不要求填满，findings/conflicts/followups可为空。成员/五个业务问题/四领域完整。补查优先选择最影响当前判断的需求，无新需求填[]；数量上限由程序校验。不复制原文或内部限制代码，不宣称全文已读。"
+   },
+   "program_output": {
+     "version": "socai2.case-program-output.v2",

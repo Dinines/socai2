@@ -15,6 +15,7 @@ from app.socai2.baseline_context import Context
 from app.socai2.baseline_store import StoreError
 from jsonschema import Draft202012Validator
 from jsonschema import ValidationError as SchemaError
+from socai2_test_incident_scope import attach as attach_incident_scope
 
 from tools.testdata.case_io_eval.fixtures import load
 
@@ -47,6 +48,7 @@ def sample(configured):
         if not item["diagnosis_usable"]:
             continue
         diagnosis, base = item["diagnosis"], f"$.incidents.{iid}.diagnosis"
+        attach_incident_scope(item, raw["alerts"])
         paths = [base + ".summary"]
         paths += [base + ".diagnosis." + key for key in ("conclusion", "limitations") if key in diagnosis["diagnosis"]]
         paths += [base + f".diagnosis.findings.{i}" for i in range(len(diagnosis["diagnosis"].get("findings", [])))]
@@ -65,7 +67,7 @@ def prepared_sample(sample):
 
 
 def answer_for(prepared, context):
-    aliases = prepared["case_boundary"]["member_aliases"]
+    aliases = {aid: alias for aid, alias in prepared["case_boundary"]["member_aliases"].items() if aid in context.alerts}
     own = {aid: next(sid for sid, item in prepared["source_map"].items()
                     if item["alert_ids"] == [aid] and item["ref"]["role"] == "observation") for aid in aliases}
     return {"summary": "Synthetic unresolved analysis.",
@@ -74,7 +76,7 @@ def answer_for(prepared, context):
         "questions": [{"id": q.id, "state": "unresolved", "answer": "Needs evidence.",
                        "evidence_ids": [], "limitations": ["Synthetic only."]} for q in context.questions
                       if not (prepared["case_boundary"].get("program_output")
-                              and prepared["case_boundary"].get("stage") == "C6" and q.id == "coverage")],
+                              and "coverage_facts" in prepared["case_boundary"] and q.id == "coverage")],
         "findings": [], "domains": [{"name": name, "applicability": "undetermined", "reason": "Needs evidence.",
                                      "alert_ids": [], "finding_ids": [], "limitations": ["Synthetic only."]}
                                     for name in contract.DOMAINS], "conflicts": [], "followups": []}
@@ -104,10 +106,14 @@ def test_c1_copy_references_resolve_exact_roles_without_mutating_sources(sample)
         if not item["diagnosis_usable"]:
             continue
         refs = item["diagnosis"]["diagnosis"].get("source_refs", [])
-        summary = next(r for r in prepared["input_ledger"]["records"]
-                       if r["block"] == "incident" and r["original_value"] == item["diagnosis"]["summary"])
-        assert summary["incident_source_refs"] == refs
-        resolved = summary["prior_reference_resolution"]
+        conclusion = item["diagnosis"]["diagnosis"].get("conclusion")
+        prior = next(r for r in prepared["input_ledger"]["records"]
+                     if r["block"] == "incident" and r["original_value"] == (conclusion or item["diagnosis"]["summary"]))
+        if conclusion:
+            assert not any(r["ref"]["source_path"].endswith(".diagnosis.summary")
+                           for r in prepared["input_ledger"]["records"] if r["block"] == "incident")
+        assert prior["incident_source_refs"] == refs
+        resolved = prior["prior_reference_resolution"]
         assert len(resolved["visible"]) + len(resolved["not_visible"]) == len(refs)
 
 
@@ -197,6 +203,57 @@ def test_correction_feedback_and_conditional_tool_schema_use_same_short_namespac
         validator.validate(answer)
 
 
+def test_c3_task_selection_keeps_judgments_and_explicit_dependencies(configured):
+    from app.socai2.baseline_context import reference
+    from app.socai2.case_c3_input_selection import select_rows
+
+    def row(sid, path, value, block="incident", **extra):
+        return {"id": sid, "ref": reference("artifact", "frozen-context", "prior_analysis", path),
+                "value": copy.deepcopy(value), "original_value": copy.deepcopy(value), "block": block,
+                "alert_ids": ["member"], **extra}
+
+    overview = row("overview", "$.incidents.i.diagnosis.summary", "Original overview.")
+    conclusion = row("conclusion", "$.incidents.i.diagnosis.diagnosis.conclusion", "Needs business authorization.")
+    fallback = row("fallback", "$.incidents.other.diagnosis.summary", "Only available prior explanation.")
+    unavailable = row("unavailable", "$.prior_results.old", {"conclusion_state": "unavailable"},
+                      "background", context_kind="prior_result")
+    cited = {**copy.deepcopy(unavailable), "id": "cited", "ref": reference("artifact", "frozen-context", "prior_analysis", "$.prior_results.cited")}
+    finding = row("finding", "$.incidents.i.diagnosis.diagnosis.findings.0",
+                  {"statement": "Original opposing judgment.", "counterevidence": [cited["ref"]]}, "finding")
+    limits = row("limits", "$.incidents.i.diagnosis.diagnosis.limitations",
+                 ["Original business limitation.", "structure_scope_sources_checked_not_truth_proven",
+                  "triage_not_used:member:unavailable", "Unknown limitation remains."])
+    empty = row("empty", "$.incidents.empty.diagnosis.diagnosis.limitations", [])
+    program_only = row("program_only", "$.incidents.program.diagnosis.diagnosis.limitations", ["member_coverage:unresolved"])
+    required_empty = row("required_empty", "$.incidents.required.diagnosis.diagnosis.limitations", [])
+    finding["original_value"]["counterevidence"].append(required_empty["ref"])
+    scope = {"alert_ids": ["member", "outside"], "object_keys": ["business-object"], "window_start": "2026-11-13T00:00:00Z",
+             "limitations": ["frozen_incident_members_only", "Original business scope."]}
+    finding["value"]["declared_scope"] = copy.deepcopy(scope)
+    finding["original_scope"] = copy.deepcopy(scope)
+    finding["value"]["limitations"] = ["member_coverage:unresolved", "member_coverage:unknown_future_state",
+                                        "原文包含 member_coverage:unresolved，不改写这句话。"]
+    business_empty = row("business_empty", "$.raw_json.business", {"items": [], "count": 0, "enabled": False}, "material")
+    rows = [overview, conclusion, fallback, unavailable, cited, finding, limits, empty, program_only, required_empty, business_empty]
+    before = copy.deepcopy(rows)
+    context = {"alerts": {"member": {"alert": {}, "triage_freshness": "unavailable"}}}
+    selected = select_rows(rows, context, configured.case_io.config, configured.case_io.business["render"], [])
+    assert {r["id"] for r in selected} == {"conclusion", "fallback", "cited", "finding", "limits", "required_empty", "business_empty"}
+    assert next(r for r in selected if r["id"] == "limits")["value"] == ["Original business limitation.", "Unknown limitation remains."]
+    kept_finding = next(r for r in selected if r["id"] == "finding")
+    assert kept_finding["value"]["declared_scope"] == {**scope, "limitations": ["Original business scope."]}
+    assert kept_finding["original_scope"] == scope
+    assert kept_finding["value"]["limitations"] == ["member_coverage:unknown_future_state",
+                                                  "原文包含 member_coverage:unresolved，不改写这句话。"]
+    assert next(r for r in selected if r["id"] == "business_empty")["value"] == business_empty["value"]
+    assert all(r["original_value"] == next(o for o in before if o["id"] == r["id"])["original_value"] for r in selected)
+    # An explicit retained H attachment overrides the optional overview omission.
+    kept = select_rows(copy.deepcopy(before), context, configured.case_io.config,
+                       configured.case_io.business["render"], [], required_refs=[overview["ref"], program_only["ref"]])
+    assert any(r["id"] == "overview" for r in kept)
+    assert next(r for r in kept if r["id"] == "program_only")["value"] == []
+
+
 def test_c3_history_selection_keeps_cited_catalog_and_opposing_feedback(configured):
     from app.socai2.baseline_context import reference
     from app.socai2.case_c3_input_selection import select_rows
@@ -225,18 +282,31 @@ def test_c3_history_selection_keeps_cited_catalog_and_opposing_feedback(configur
     # Same record identity, different full version must not retain a catalog-only version.
     rows[1]["query_record_identity"][:2] = ["same-alert", "catalog-version"]
     rows[4]["query_record_identity"][:2] = ["same-alert", "feedback-version"]
+    # A cited, separately visible judgment must not retain its catalog wrapper.
+    parent = row("parent", "$.rows.6", catalog)
+    child = row("child", "$.rows.6.record.triage", {"verdict": "needs_review", "rationale": "Original historical judgment."},
+                "prior_analysis")
+    child["query_record_identity"] = ["parent", "v1", "record.triage"]
+    finding["original_value"]["support"].append(child["ref"])
+    # Without a separately visible child, keep the parent that carries the dependency.
+    unresolved_parent = row("parent_fallback", "$.rows.7", catalog)
+    finding["original_value"]["support"].append(reference("artifact", "history-receipt", "source_label", "$.rows.7.record.title"))
+    rows.extend([parent, child, unresolved_parent])
     original = copy.deepcopy(rows)
     omissions = []
     selected = select_rows(rows, {"alerts": {}}, configured.case_io.config,
                            configured.case_io.business["render"], omissions)
-    assert {r["id"] for r in selected} == {"receipt", "support", "counter", "human", "business", "finding", "overall", "incident"}
+    assert {r["id"] for r in selected} == {"receipt", "support", "counter", "human", "business", "finding", "overall", "incident",
+                                         "child", "parent_fallback"}
     human = next(r for r in selected if r["id"] == "human")
     assert human["value"] == {"actor": {"name_snapshot": "值班分析员"}, "rationale": "This was not authorized.",
                               "approved": False, "attempts": 0, "exceptions": []}
     for current in selected:
         old = next(r for r in original if r["id"] == current["id"])
         assert all(current[k] == old[k] for k in ("ref", "original_value", "alert_ids", "query_alert_ids", "record_alert_ids"))
-    assert [o["source_id"] for o in omissions if o["reason"] == "history_catalog_only"] == ["drop"]
+    assert [o["source_id"] for o in omissions if o["reason"] == "history_catalog_only"] == ["drop", "parent"]
+    from app.socai2.case_c3_input_selection import describe
+    assert "案件外历史参考" in describe(child, lambda _: "X1")
 
 
 def test_c3_knowledge_and_material_projection_keeps_business_values(configured):

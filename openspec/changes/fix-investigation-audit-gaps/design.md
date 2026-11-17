@@ -1,6 +1,6 @@
 ## Context
 
-这是基于 `5b95138` 的设计；用户随后要求“推进执行”，B1–B3及T6已本地实现和直接验证，实际交付状态见[执行记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)。审计编号、代码位置及反例见[详细审计](../../../docs/investigation/design-implementation-audit-20261031.md)。API v2 常驻 factory、Case 同步模型/Tool 循环及现有 ledger 继续使用；旧 fixed/program 不改。
+这是基于 `5b95138` 的设计；用户随后要求“推进执行”，B1–B3及T6已本地实现和直接验证，实际交付状态见[执行记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-fixes-implementation-20261031.md)。审计编号、代码位置及反例见[详细审计](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-implementation-audit-20261031.md)。API v2 常驻 factory、Case 同步模型/Tool 循环及现有 ledger 继续使用；旧 fixed/program 不改。
 
 当前本地已有追加压缩、required_tools、query_status；真实 r1 批次没有这些改动。新增原始材料会改变模型输入，因此原 Office `16786 < 17018` 只保留为旧离线重建事实，不能直接成为本设计的预算验收结果。
 

@@ -71,7 +71,7 @@ Fusion 候选链已有内部续组、交付和留存，但当前没有下游业�
 
 ### 3.3 威胁情报 IOC 与增强
 
-**接口迁入和基本读写方向正确，数据覆盖与 IOC 验证不可混同。** PG 历史 IOC、OpenSearch 项目 IOC 写入/搜索/精确匹配、TI/API 代理和 enrichment 返回均有证据。单 IOC 的 `type`→`ioc_type` 修正在本地真实接缝成立，已纳入候选但未发布。[依赖用法](dependency-usage.md)、[本地工具修正](investigation-functional-20261021.md#6-两处最小本地修正)
+**接口迁入和基本读写方向正确，数据覆盖与 IOC 验证不可混同。** PG 历史 IOC、OpenSearch 项目 IOC 写入/搜索/精确匹配、TI/API 代理和 enrichment 返回均有证据。单 IOC 的 `type`→`ioc_type` 修正在本地真实接缝成立，已纳入候选但未发布。[依赖用法](dependency-usage.md)、[本地工具修正](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md#6-两处最小本地修正)
 
 无 provider 时 `sources=null`、零分不表示安全；合成 IOC 命中也不表示真实威胁覆盖。原提取器曾把 `.exe` 文件名识别为域名，影响 P183/P221。TI 的 OpenSearch 搜索按共享情报设计，不能把 tenant 头当作私有 IOC 隔离；租户私有 IOC 继续使用既有 PG 路径。
 
@@ -101,13 +101,13 @@ P202 要求支持高风险自动触发，但并未规定只能调查高风险；
 | graph/deep | 按工具结果继续查证，适合 P206/P207 的动态调查 | 自动 C2 及本地 Deep 有真实工具→ToolMessage→下一轮输入 | 原工具后端不全、预算软边界、停止时无完整结论；作为后续主动调查的主要补齐位置 |
 | Router 领域分支 | 有结构化领域材料时快速专项判断 | 本地 Identity/Cloud 与模板 Markdown 可运行；新链图材料交接有直接测试 | 分支无取证循环，领域 verdict 不支持 NR；Case 告警嵌套字段不自动 flatten。不能默认替代前两种 |
 
-上游资料与源码支持演进并存，没有明确证据要求把三套串跑或立即新旧替换。**建议保留原入口和编排，在共同的材料、工具返回、证据引用与结果语义处补缺口。** 这比先重构成一套总框架更直接对应标书。[设计评价](../architecture/investigation-design-review.md)
+上游资料与源码支持演进并存，没有明确证据要求把三套串跑或立即新旧替换。**建议保留原入口和编排，在共同的材料、工具返回、证据引用与结果语义处补缺口。** 这比先重构成一套总框架更直接对应标书。[设计评价](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)
 
 两个必须面对的设计问题：一是当前 typed 查询多以 `now()-hours` 回看，不等于 P204/P210 所要求的人员限定范围和告警发生前后窗口；二是默认人工 stream 在报告生成后才执行 groundedness，修改 Forensic 分数/摘要却不重建已有 Markdown。提示词提醒不足以证明最终报告与校验结果一致。[查询实现](../../services/api/app/services/investigation_tools.py)、[人工编排](../../services/agents/app/investigator/orchestrator.py)
 
 ### 3.7 调查链 图与攻击路径
 
-**当前已形成有价值的关系上下文，但尚未满足行为攻击链重建。** 本地新 Case 的 11 节点/15 边、四份模型输入及三类 Run 工件有证据；Kafka 分诊前 prepare 的真实联合也已证明直接邻域 5 节点/4 边。两者来自不同观察，不能合并成一次最新全链验收。[链图回执](attack-chain-path-local-20261021.md)、[Kafka 联合](kafka-graph-joint-20261022.md)
+**当前已形成有价值的关系上下文，但尚未满足行为攻击链重建。** 本地新 Case 的 11 节点/15 边、四份模型输入及三类 Run 工件有证据；Kafka 分诊前 prepare 的真实联合也已证明直接邻域 5 节点/4 边。两者来自不同观察，不能合并成一次最新全链验收。[链图回执](attack-chain-path-local-20261021.md)、[Kafka 联合](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-joint-20261022.md)
 
 当前图主要表达 Case 包含 Alert、Alert 涉及 Host/User/IOC、映射 Technique。PG Chain 搜索同租户相关告警，Case Path 展开已有关系；它们没有凭空补出进程父子、登录会话、横移或外传的行为边。共享 Technique 可使 blast radius 扩到同租户历史对象，14 个可达候选不是 14 个确认受影响对象；MERGE 也未解决解绑后的旧关系撤销。
 
@@ -117,7 +117,7 @@ P202 要求支持高风险自动触发，但并未规定只能调查高风险；
 
 ### 3.8 报告 持久化与审计
 
-**Markdown 生成、保存、按 Case/Run 读取已具备代表交付证据。** 这是当前迁移可认定成立的重要成果，不需要为文档评估重跑报告模型或恢复 PDF 专项。[阶段交接](investigation-stage-handoff-20261022.md)
+**Markdown 生成、保存、按 Case/Run 读取已具备代表交付证据。** 这是当前迁移可认定成立的重要成果，不需要为文档评估重跑报告模型或恢复 PDF 专项。[阶段交接](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-handoff-20261022.md)
 
 不过标书 P242—P250 要求报告中的确认异常、时间线、入口/传播、影响范围及证据均有实际含义；报告中有对应章节不表示内容已成立。P385—P391 的五类证据状态目前也没有在各条路径中一致、可靠地实现。Run completed、工具成功、模型高分和事实确认必须分开。
 
@@ -157,11 +157,11 @@ P202 要求支持高风险自动触发，但并未规定只能调查高风险；
 
 ### 5.2 实际发布边界
 
-最近 full 回执记录 API `1be37c38`、Fusion `c52b9aac`、Agents `aec3c54f`；UEBA/enrichment/TI 也已有各自镜像。Agents 的 full 版在 candidate05 上只替换 bundle 以接 UEBA。最新候选准备又定向核过 API/Agents 父镜像 ID 与 full bundle 字节，不能继续把“缺 full bundle 证明”当当前问题。[候选构建准备](investigation-candidate-build-20261022.md)
+最近 full 回执记录 API `1be37c38`、Fusion `c52b9aac`、Agents `aec3c54f`；UEBA/enrichment/TI 也已有各自镜像。Agents 的 full 版在 candidate05 上只替换 bundle 以接 UEBA。最新候选准备又定向核过 API/Agents 父镜像 ID 与 full bundle 字节，不能继续把“缺 full bundle 证明”当当前问题。[候选构建准备](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-candidate-build-20261022.md)
 
 19 文件候选只包含两处工具合同、链图与 Kafka 入口准备等接线。Deep 采用父版本仅追加链图摘要的变体；7 项旧 C2/文案差异及 Deep 中其余 C2 修改未选入。**发布该候选不会顺带修复旧 C2 的证据/预算/完成语义。** 当前整工作区不可直接替代已审候选打包。
 
-本次评估收尾时已纳入同日最新 [本地镜像回执](investigation-candidate-images-20261022.md)：API `5a1e1fd8` / Agents `49643b84` 两个 linux/amd64 候选已构建，父层/启动配置继承、19 份源码、7 排除项及镜像内导入/路由均通过离线核验；结束独审限定 ACCEPT。Docker 未运行、镜像未构建是此前准备阶段事实，不能继续列为当前待办。
+本次评估收尾时已纳入同日最新 [本地镜像回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-candidate-images-20261022.md)：API `5a1e1fd8` / Agents `49643b84` 两个 linux/amd64 候选已构建，父层/启动配置继承、19 份源码、7 排除项及镜像内导入/路由均通过离线核验；结束独审限定 ACCEPT。Docker 未运行、镜像未构建是此前准备阶段事实，不能继续列为当前待办。
 
 剩余是阶段发布准备、实际 21 发布及所需运行验证。复用现有镜像与原证据，只在输入发生变化时重新构建；阶段发布保持原 full/infra overlays、reader/writer 隔离与 worker OFF。部署增量与开放自治须分别记结果。本评估未调用 Docker，也不把另批镜像操作记作本轮执行。
 

@@ -32,9 +32,14 @@ def test_candidate_contains_current_tls_readers_policy_and_ingress(tmp_path):
         archive.extractall(unpacked, filter="data")
     verify_release(unpacked)
     for name in ("db/database.py", "socai2/runtime_policy.py", "socai2/stage_answer_review.py",
-                 "socai2/contracts.schema.json", "api/v1/endpoints/socai2_pages.py", "models/socai2.py"):
+                 "socai2/contracts.schema.json", "api/v1/endpoints/socai2_pages.py", "models/socai2.py",
+                 "socai2/analysis_incident_executor.py", "socai2/incident_inputs.py"):
         assert (unpacked / "app" / name).read_bytes() == (ROOT / "services/api/app" / name).read_bytes()
     assert (unpacked / "production_ingress.py").read_bytes() == (HERE / "production_ingress.py").read_bytes()
+    for name in ("production_projection.py", "projection_config.py"):
+        assert (unpacked / name).read_bytes() == (HERE / name).read_bytes()
+    for name in ("socai2_sink.py", "socai2_analysis_tasks.py"):
+        assert (unpacked / "smoke-fusion/app/services" / name).read_bytes() == (ROOT / "services/fusion/app/services" / name).read_bytes()
     assert not any(name.startswith("schema/") or "private" in Path(name).parts for name in manifest["files"])
     original = (directory / "release.tar.gz").read_bytes()
     profile.write_text(profile.read_text().replace('build_timeout_seconds = 300', 'build_timeout_seconds = 301'))

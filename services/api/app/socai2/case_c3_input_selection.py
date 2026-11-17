@@ -1,8 +1,9 @@
-"""C3-only field selection after original guards; no prose summarization."""
+"""Case field selection after original guards; no prose summarization."""
 import copy
 import json
 
 from .baseline_store import digest, encoded
+from .case_context_input import human_refs
 from .case_input_hierarchy import project
 from .knowledge_content import project_content
 
@@ -19,6 +20,9 @@ def prior_refs(rows):
     result = []
     for row in rows:
         value = row["original_value"]
+        if row.get("context_kind") == "human_feedback":
+            for _, refs in human_refs(value):
+                result.extend(refs)
         if row["block"] == "triage":
             for item in [value, *value.get("recommendations", [])]:
                 result.extend(item.get("source_refs", []))
@@ -58,9 +62,14 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
     """Keep each retained ref/subject/scope unchanged, including shared history."""
     policy = config["c3_input_selection"]
     refs = [*prior_refs(rows), *required_refs]
+    available_paths = {(r["ref"]["type"], r["ref"]["id"], r["ref"]["role"], r["ref"].get("source_path") or "") for r in rows}
     tools = {r["ref"]["id"]: r["value"].get("tool_name") for r in rows
              if r["ref"]["role"] == "execution_receipt" and isinstance(r["value"], dict)}
     material_values = {}
+    incident_overviews = {(r["ref"]["type"], r["ref"]["id"],
+                           r["ref"]["source_path"].removesuffix(".diagnosis.conclusion") + ".summary")
+                          for r in rows if r["block"] == "incident" and isinstance(r["value"], str)
+                          and r["value"].strip() and (r["ref"].get("source_path") or "").endswith(".diagnosis.conclusion")}
     for row in rows:
         field = semantic(row, business, config)
         if row["block"] == "material" and field:
@@ -71,14 +80,16 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
         path = ref.get("source_path") or ""
         return any(r.get("type") == ref["type"] and r.get("id") == ref["id"]
                    and ((r.get("source_path") or "") == path
-                        or (r.get("source_path") or "").startswith(path + ".")) for r in refs)
+                        or ((r.get("source_path") or "").startswith(path + ".")
+                            and (r.get("type"), r.get("id"), r.get("role"), r.get("source_path") or "") not in available_paths))
+                   for r in refs)
 
     def omit(row, reason):
         omissions.append({"source_id": row["id"], "ref": copy.deepcopy(row["ref"]),
                           "alert_ids": row["alert_ids"], "reason": reason,
                           "value_sha256": digest(row["value"])})
 
-    histories, kept = {}, []
+    kept = []
     for row in rows:
         ref, value = row["ref"], copy.deepcopy(row["value"])
         path, kind = ref.get("source_path") or "", row["block"]
@@ -88,13 +99,40 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
                 "human_statement" if ref["role"] == "human_statement" else "knowledge" if row.get("knowledge") else "history")
         elif kind == "material":
             kind = path[2:] if path in {"$.source_scope", "$.detection"} else "material"
+        elif (kind in {"query", "background_query"} and path.startswith("$.rows.")
+              and path.removeprefix("$.rows.").isdigit()):
+            query_kind = f"query_{tools.get(ref['id'])}"
+            if query_kind in policy["hierarchy"]:
+                kind = query_kind
         value = project(value, kind, policy, omissions, row["id"])
+        program_limits = policy.get("incident_program_limitations", [])
+        if program_limits and row["block"] in {"incident", "finding", "question"}:
+            limits = value if path.endswith(".diagnosis.limitations") else (
+                value.get("limitations") if isinstance(value, dict) else None)
+            if isinstance(limits, list):
+                known = [*program_limits, *(f"triage_not_used:{aid}:{member.get('triage_freshness')}"
+                                           for aid, member in context["alerts"].items())]
+                selected_limits = [item for item in limits if item not in known]
+                if selected_limits != limits:
+                    omit(row, "incident_program_markers_not_business_limits")
+                    if isinstance(value, list):
+                        value = selected_limits
+                    else:
+                        value["limitations"] = selected_limits
         if kind == "knowledge" and isinstance(value, dict):
             value = project_content(value, config, omissions, row["id"])
             record = value.get("record", {})
             if record.get("history", {}).get("schema_version") == policy["historical_card_schema"]:
                 value["record"] = project(record, "historical_card", policy, omissions, row["id"])
         reason = None
+        if row["block"] == "incident" and path.endswith(".diagnosis.limitations") and value == []:
+            reason = "incident_no_business_limitations"
+        if (policy.get("omit_unusable_prior_results") and row.get("context_kind") == "prior_result"
+                and isinstance(value, dict) and not value.get("conclusion")):
+            reason = "no_historical_judgment_for_c3"
+        if (policy.get("prefer_incident_conclusion") and row["block"] == "incident"
+                and (ref["type"], ref["id"], path) in incident_overviews):
+            reason = "incident_conclusion_and_findings_used_instead_of_overview"
         if row["block"] == "background" and len(row["alert_ids"]) == 1:
             aid = row["alert_ids"][0]
             member = context["alerts"][aid]
@@ -123,39 +161,30 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
             if value is None or value == {} and (kind in {"source_scope", "detection"} or path == "$.raw_text"
                                                 or semantic(row, business, config) == "raw_data"):
                 reason = "empty_after_c3_selection"
+        if historical:
+            # Select each projected part independently. A useful judgment or
+            # human statement does not make its catalog wrapper evidence.
+            useful = value not in (None, "", {}) if ref["role"] in {"prior_analysis", "human_statement"} else False
+            if ref["role"] not in {"prior_analysis", "human_statement"} and isinstance(value, dict):
+                useful = any(k not in policy["history_catalog_fields"] and v is not None and v != ""
+                             for k, v in value.get("record", {}).items())
+                useful |= any(k != "record" and v is not None and v != "" for k, v in value.items())
+            if not useful:
+                reason = "history_catalog_only"
         if reason and not required(row):
             omit(row, reason)
             continue
         row["value"] = value
         kept.append(row)
-        if historical:
-            # Full record digest distinguishes versions, not just equal prose.
-            identity = row.get("query_record_identity")
-            key = tuple(identity[:2]) if identity else (ref["id"], ".".join(path.split(".")[:3]))
-            histories.setdefault(key, []).append(row)
-
-    dropped = set()
-    for entries in histories.values():
-        useful = any(required(r) for r in entries)
-        for row in entries:
-            value = row["value"]
-            if row["ref"]["role"] in {"prior_analysis", "human_statement"}:
-                useful |= value not in (None, "", {})
-            elif isinstance(value, dict):
-                useful |= any(k not in policy["history_catalog_fields"] and v is not None and v != ""
-                              for k, v in value.get("record", {}).items())
-                useful |= any(k != "record" and v is not None and v != "" for k, v in value.items())
-        if not useful:
-            for row in entries:
-                omit(row, "history_catalog_only")
-                dropped.add(row["id"])
-    return [r for r in kept if r["id"] not in dropped]
+    return kept
 
 
 def describe(row, alias):
     """Only the returned subject matters here; receipt details stay backstage."""
     basis = row.get("membership_basis")
-    if basis in {"history_record_identity", "history_record_outside_case"}:
+    if basis == "history_record_outside_case":
+        return "案件外历史参考｜原主体=" + "、".join(alias(a) for a in row["record_alert_ids"]) + "；不证明本案成员事实。"
+    if basis == "history_record_identity":
         return "历史记录主体=" + "、".join(alias(a) for a in row["record_alert_ids"]) + "。"
     if basis == "history_record_identity_unverified":
         return "历史记录主体未核实。"

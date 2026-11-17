@@ -4,15 +4,18 @@ default_tenant = "00000000-0000-0000-0000-000000000001"
 [paths]
 private_dir = "/opt/sting-aisoc-socai2/private/processing-production"
 transport_env_file = "/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env"
-ca_file = "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt"
-ca_mount = "/run/certs/ca.crt"
-policy_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/local-investigation/investigation-policy-case-v1.toml"
+policy_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261113-r1/deploy/local-investigation/investigation-policy-case-v1.toml"
 policy_mount = "/run/processor/investigation-policy.toml"
+# Local target additions; select coordinated new image/policy before publishing this profile.
+projection_file = "/opt/sting-aisoc-socai2/private/analysis-projection.json"
+projection_mount = "/app/config/analysis-projection.json"
+analysis_tasks_file = "/opt/sting-aisoc-socai2/private/analysis-tasks.json"
+analysis_tasks_mount = "/app/config/analysis-tasks.json"
 
 [image]
 # Image identity from the verified processing build receipt.
-tag = "socai2-processing:processing-20261112-r3"
-id = "sha256:51d94e50fcf5861c556ec2c59268185fb58a1e849f96cc75f64c02727749880d"
+tag = "socai2-processing:processing-20261113-r1"
+id = "sha256:4999860349fd69b047adfe60045efd470fd373e56d5dcbe573bc859c9064b7a5"
 user = "10001:10001"
 
 [postgres]
@@ -23,7 +26,8 @@ host = "192.168.1.21"
 port = 5432
 processor_role = "socai2_prod_processor"
 ingress_role = "socai2_prod_ingress"
-tls_mode = "verify-full"
+# Target configuration; the currently deployed frozen profile is unchanged.
+tls_mode = "require"
 
 [lake]
 container = "sting-infra21-clickhouse-1"
@@ -62,7 +66,7 @@ DATABASE_POOL_SIZE = "2"
 DATABASE_MAX_OVERFLOW = "1"
 
 [knowledge]
-profile_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261112-r5/deploy/local-investigation/knowledge-profile.json"
+profile_file = "/opt/sting-aisoc-socai2/releases/v1.2-20261113-r1/deploy/local-investigation/knowledge-profile.json"
 profile_mount = "/run/knowledge/profile.json"
 key_file = "/opt/sting-aisoc-socai2/private/processing-production/knowledge-qdrant-key"
 key_mount = "/run/knowledge/qdrant-key"

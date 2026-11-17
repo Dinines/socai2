@@ -1,0 +1,38 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires": ["analysis-lifecycle-release-fragment.json", "analysis-dispatch-release-fragment.json"],
+  "patches": {
+    "services/api/app/socai2/analysis_alert_executor.py": "app/socai2/analysis_alert_executor.py",
+    "services/api/app/socai2/analysis_dispatch_runtime.py": "app/socai2/analysis_dispatch_runtime.py",
+    "services/api/app/socai2/analysis_dispatcher.py": "app/socai2/analysis_dispatcher.py",
+    "services/api/app/socai2/analysis_dispatch_types.py": "app/socai2/analysis_dispatch_types.py",
+    "services/api/app/socai2/stage_results.py": "app/socai2/stage_results.py",
+    "services/api/app/socai2/alert_basic_executor.py": "app/socai2/alert_basic_executor.py",
+    "services/fusion/app/services/socai2_sink.py": "smoke-fusion/app/services/socai2_sink.py",
+    "services/fusion/app/services/socai2_analysis_tasks.py": "smoke-fusion/app/services/socai2_analysis_tasks.py",
+    "deploy/aisoc21/production_ingress.py": "production_ingress.py",
+    "deploy/aisoc21/production_projection.py": "production_projection.py",
+    "deploy/aisoc21/projection_config.py": "projection_config.py",
+    "deploy/local-investigation/analysis-alert-dispatch.example.json": "config/analysis-alert-dispatch.example.json",
+    "deploy/local-investigation/analysis-alert-executors.example.json": "config/analysis-alert-executors.example.json",
+    "deploy/aisoc21/analysis-projection.example.json": "config/analysis-projection.example.json"
+  },
+  "schema": {
+    "prerequisite": "128_socai2_analysis_lifecycle.sql",
+    "functional_grants": "deploy/database/analysis_ingress_access.sql",
+    "installer_mode": "analysis-ingress"
+  },
+  "executor_factory": "app.socai2.analysis_alert_executor:executors",
+  "registered_kinds": ["alert_triage"],
+  "default_enabled": false,
+  "notes": [
+    "Build API/Fusion/projection from the same new immutable processing release; do not mount new projection scripts over the old r3 image.",
+    "Select projection and lifecycle files/mounts in the production profile. SOCAI2_PROJECTION_IMAGE and config mount variables are derived from that profile by the launcher.",
+    "Install migration 128 and the ordinary ingress grants before enabling native alert persistence. Existing alert delivery contract and first snapshot remain unchanged.",
+    "The dispatcher factory receives explicit executor JSON and the configured task service/session pool. Keep model runtime environment and investigation policy aligned.",
+    "Preserve the existing Kafka topic/group/activation offsets; never create a different group to skip held work. No historical task backfill.",
+    "Merge the HTTP E36 removal, read-side, audit-page changes and this fragment in the coordinated change release; this fragment does not enable a producer or grant deployment permission.",
+    "I/Case handlers and queued knowledge maintenance remain later implementation steps. Existing synchronous knowledge hook remains configuration-controlled until step 10."
+  ]
+}

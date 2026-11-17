@@ -1,0 +1,85 @@
+{
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/case-knowledge-20261111-01/environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "actor_name": "local-material-review@example.invalid",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "window_padding_seconds": 300,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false",
+    "SOCAI2_KNOWLEDGE_PROFILE": "/Users/lychee/Documents/project/socai2/docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+    "AISOC_AIRGAPPED": "false"
+  },
+  "transport_config": "tools/testdata/alert_io_eval/config.json",
+  "preflight_timeout_seconds": 30,
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ],
+  "knowledge_profile": "docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+  "http_base_url": "http://local.validation",
+  "http_timeout_seconds": 1600,
+  "batch": "fixed-investigation-20261113-06",
+  "output": "docs/operations/evidence/fixed-investigation-20261113-06/flow",
+  "previous_flow": "docs/operations/evidence/fixed-investigation-20261112-05/flow",
+  "snapshot": "docs/operations/evidence/fixed-investigation-20261112-05/flow/export/database.json",
+  "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/fixed-investigation-20261113-06",
+  "limitations": [
+    "Three predefined scenarios, two new Cases and at most three new fixed-scope Runs. No A/I or old Run redispatch.",
+    "Real model and tokenizer through the verified project internal gateway, existing isolated PostgreSQL and existing knowledge collection.",
+    "Synthetic alert materials and explicitly authored/simulated H statements; no independent business truth or accuracy claim.",
+    "Vendor/ClickHouse sources remain unavailable. Existing per-Run limits and one bounded correction apply.",
+    "Persistently inadequate budget may be raised in an explicit new policy and new attempt after evidence review; prior attempts are immutable. Unknown dispatch is never retried blindly.",
+    "Repeated model-content quality problems are recorded/deferred; no repeated sampling to obtain a passing answer. No streaming or deployment."
+  ],
+  "scenarios": [
+    {
+      "key": "B01",
+      "kind": "baseline",
+      "title": "固定调查对比：无H基线",
+      "expectation": [
+        "三成员原事实进入输入；无授权或损害证据时保留待核。",
+        "知识仅作解释/取证参考，历史材料不得当当前成员的独立观察。"
+      ]
+    },
+    {
+      "key": "H01",
+      "kind": "review_same_case",
+      "depends_on": "B01",
+      "title": "材料核查反馈后再调查",
+      "human_text": "本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。\n1. 本案包含登录、进程启动及出站连接三类记录；请分别核对，不因登录A未形成有效判断而忽略原始登录事实。\n2. process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。\n3. 登录来源IP和出站连接源IP属于不同记录上下文；同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。\n4. 不能从主机名、用户名推断已获批的自动化流程。现有材料未提供审批、白名单、文件传输或受损证明；请据此复核结论和待核事项，不把本反馈当成行为合法或恶意的证明。",
+      "expectation": [
+        "H原文/版本/范围/附件在输入和引用中保持。",
+        "与B01比较，检查事实遗漏、理由和待核事项是否响应反馈；不要求翻转结论。",
+        "B01结果仅在程序判定可比时参与比较，拒收基线不得被模型恢复为有效结论。"
+      ]
+    },
+    {
+      "key": "H02",
+      "kind": "scoped_feedback",
+      "scope_action": "process_start",
+      "title": "固定调查对比：单成员授权陈述",
+      "human_text": "以下为演练案例中模拟业务人员提交的反馈，不是真实生产授权：我仅确认本任务范围内这一条 powershell.exe -NoProfile -Command Get-LocalUser 进程活动属于获批的账户盘点安排。本陈述未附审批原件，也不确认该命令已经执行完成。\n我没有确认本案登录记录的会话归属，也没有确认出站连接或目标地址198.51.100.77获批；这两项仍需分别核查。",
+      "expectation": [
+        "反馈范围仅为进程成员，不允许扩大为登录/出站连接或全案已授权。",
+        "人工陈述保持human_statement角色，不当成新增日志、审批原件或命令完成的证明。",
+        "与B01核对进程解释和全案待核项变化；与H01区分核查意见和有限业务陈述。"
+      ]
+    }
+  ]
+}

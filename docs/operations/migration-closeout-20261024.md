@@ -18,11 +18,11 @@
 | --- | --- | --- |
 | 源码、依赖与基础资源 | [完整性及18组功能对照](alert-function-alignment.md)、[full配套迁移](full-support-migration.md)；所选API/Fusion/Agents/Actions/UEBA/enrichment/TI及直接依赖已迁 | 不等于复制或部署上游整个仓库；原占位、缺源和独立模块边界保持 |
 | 告警身份、Fusion与持久交付 | [B1](integrity-b1.md)；HTTP/Kafka canonical身份、首次材料、真实PG与raw/fused消息已验 | 正式输入为已有告警Kafka；HTTP是测试辅助。原始事件采集/规范化/检测另属上游 |
-| 自动关闭及自动实际调查 | [v1发布](service-v1-release-20261022.md)、[生产两例](service-v1-functional-20261022.md)；新生产租户已实际关闭或无需人工再点就升级调查 | 调查为partial，旧理由/预算/报告质量失败不变；真实厂商动作未开启 |
-| 人工调查及其他调查接缝 | [人工R01](integrity-investigation-r01.md)、[Router/Deep本地实测](investigation-functional-20261021.md)、[链图](attack-chain-path-local-20261021.md)、[Kafka入口写图](kafka-graph-joint-20261022.md) | 各路径证明范围不同，不拼成一次新整链验收；所有分支未逐项验证 |
-| 工具、知识及来源 | [工具目录](../architecture/investigation-tool-catalog.md)、[依赖使用说明](dependency-usage.md)、[引用和工具身份](integrity-citations-tools.md) | PG全文片段实际入模有证；向量消费、丰富真实历史/厂商来源及引用正确性未全面通过 |
+| 自动关闭及自动实际调查 | [v1发布](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)、[生产两例](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)；新生产租户已实际关闭或无需人工再点就升级调查 | 调查为partial，旧理由/预算/报告质量失败不变；真实厂商动作未开启 |
+| 人工调查及其他调查接缝 | [人工R01](integrity-investigation-r01.md)、[Router/Deep本地实测](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)、[链图](attack-chain-path-local-20261021.md)、[Kafka入口写图](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-joint-20261022.md) | 各路径证明范围不同，不拼成一次新整链验收；所有分支未逐项验证 |
+| 工具、知识及来源 | [工具目录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)、[依赖使用说明](dependency-usage.md)、[引用和工具身份](integrity-citations-tools.md) | PG全文片段实际入模有证；向量消费、丰富真实历史/厂商来源及引用正确性未全面通过 |
 | 结果和Markdown | 上述人工/自动Run及[后端交接](../integration/v1/README.md)有事件、工件、正文读取证据 | completed是执行结束，调查完成度另读；旧prompt截断、preview与seq分页限制保持，PDF/HTML非本期前置 |
-| 测试数据工具 | [10月23日回执](testdata-migration-execution-20261023.md)：44直接测试/39子项，3条Fusion接线输入及自动关闭/partial调查两例；生成、答案分离、Kafka有界发送、持久观察已具备 | 本地工具沿用已记录的隔离方式；背景事件入湖和有数据调查验证由独立调查模块承接，本批不重复、不宣称另侧通过 |
+| 测试数据工具 | [10月23日回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-migration-execution-20261023.md)：44直接测试/39子项，3条Fusion接线输入及自动关闭/partial调查两例；生成、答案分离、Kafka有界发送、持久观察已具备 | 本地工具沿用已记录的隔离方式；背景事件入湖和有数据调查验证由独立调查模块承接，本批不重复、不宣称另侧通过 |
 | 数据库及后端取数交接 | [25表428字段字典](../integration/v1/table-fields.md)、[四页90项建议](../integration/v1/page-elements.md)、[SQL/HTTP映射](../integration/v1/page-data-mapping.md)、[字段审计](../integration/v1/ui-functional-data-audit.md) | 25表是盘点范围，90项是建议；实值/派生/空态/缺合同/仅本地分别保持，不代表页面或聚合后端已经实现 |
 
 ## 3. 版本、运行与数据边界
@@ -30,8 +30,8 @@
 | 层级 | 收尾采用的事实 | 后续使用方式 |
 | --- | --- | --- |
 | 已发布v1 | 10月22日回执记录API `5a1e1fd8`、Agents `49643b84`，Fusion `c52b9aac`；独立生产租户/消费组已启自动分诊和自动升级，模型沿用当时配置 | 读取[生产接入](../integration/v1/production.md)及实际发布清单；本次没有再次验证10月24日健康、offset或配置漂移 |
-| 本地调查小修 | [10月23日小修](investigation-result-handoff-20261023.md)已验前置校验、逐工具留存、结构状态和停止交接，当时未部署 | 作为独立调查开发的已有材料；不能写成线上v1已具备，不在本批补发布 |
-| 旧C2及后续设计 | 原问题、未全选入v1的差异、四块统一设计分别在[问题表](upstream-issues.md)、[旧收口清单](investigation-stage-closeout-20261022.md)、[调查规划](../architecture/investigation-planning-design.md) | 不从当前工作区整包替换线上；独立实施方先检查其实际基线，设计文档不证明已经实现 |
+| 本地调查小修 | [10月23日小修](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-result-handoff-20261023.md)已验前置校验、逐工具留存、结构状态和停止交接，当时未部署 | 作为独立调查开发的已有材料；不能写成线上v1已具备，不在本批补发布 |
+| 旧C2及后续设计 | 原问题、未全选入v1的差异、四块统一设计分别在[问题表](upstream-issues.md)、[旧收口清单](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-closeout-20261022.md)、[调查规划](../architecture/investigation-planning-design.md) | 不从当前工作区整包替换线上；独立实施方先检查其实际基线，设计文档不证明已经实现 |
 | 湖仓 | full配方及10月22日留存快照为写入开启，并有规范化事件入湖/查询正例；测试Fusion探针关闭写入且只投已有告警 | 关闭探针不等于生产归档关闭；RawAlert不自动变成ClickHouse背景事件。本批不改开关、不补写、不复验独立模块 |
 | 保护与凭据 | 原tenant/scopes、reader/writer分离、预算、旧unknown/积压和失败工件保持 | 不清理旧现场、不重投未知请求、不扩大真实动作权限；凭据只按[受控索引](configuration.md)交接 |
 

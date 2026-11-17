@@ -1,7 +1,7 @@
 """Task-specific followup views; select structure, never summarize prose."""
 import copy
 
-from .baseline_store import encoded
+from .baseline_store import StoreError, encoded
 from .case_c3_input_selection import select_rows
 from .case_input_hierarchy import project
 
@@ -13,18 +13,24 @@ def prior(analysis, question, lead, prior_id, config, ledger, *, program_owned):
     policy = config["followup_input_selection"]
     if question:
         allowed = set(map(str, question.scope.alert_ids))
-        selected = {
-            "question": next(q for q in selected["questions"] if q["id"] == question.id),
-            "findings": [f for f in selected.get("findings", [])
-                         if not f.get("alert_ids") or allowed.intersection(map(str, f["alert_ids"]))],
-            "followups": [f for f in selected["followups"] if f["question_id"] == question.id],
-        }
+        answer = next((q for q in selected.get("questions", []) if q["id"] == question.id), None)
+        if answer is None:
+            raise StoreError("c3_question_dependency_unavailable", 422)
+        selected = {"question": answer, **({"findings": [f for f in selected["findings"]
+            if not f.get("alert_ids") or allowed.intersection(map(str, f["alert_ids"]))]}
+            if "findings" in selected else {}), **({"followups": [f for f in selected["followups"]
+            if f["question_id"] == question.id]} if "followups" in selected else {})}
     else:
-        if program_owned:
+        for key in policy.get("final_prior_omit", []):
+            if key in selected:
+                ledger.append({"reason": "c6_reassesses_from_facts_and_findings", "field": key,
+                               "owner": str(prior_id)})
+                selected.pop(key)
+        if program_owned and "questions" in selected:
             selected["questions"] = [q for q in selected["questions"] if q["id"] != "coverage"]
         plans = [r for r in lead if str(r["source"]["ref"]["id"]) == str(prior_id)
                  and "execution_plan_index" in r["entry"]["value"]]
-        if plans and [r["original"] for r in plans] == analysis["followups"]:
+        if plans and [r["original"] for r in plans] == analysis.get("followups"):
             selected.pop("followups")  # The same immutable plan is shown once below.
     return project(selected, "prior", policy, ledger, "selected_C3")
 
@@ -63,6 +69,23 @@ def records(base, context, config, business, required, omissions):
         if item.get("source_id") in frozen_refs and "ref" in item:
             item["ref"] = frozen_refs[item["source_id"]]
     return selected
+
+
+def deferred_context(row, config):
+    """Earlier judgments are dependencies, not another default synthesis layer."""
+    if row["ref"]["role"] == "human_statement":
+        return False  # Independent feedback can contradict the selected C3.
+    if row["block"] in {"triage", "incident", "finding", "question"} or row.get("context_kind") == "prior_result":
+        return True
+    if row.get("membership_basis") not in {
+            "history_record_identity", "history_record_outside_case", "history_record_identity_unverified"}:
+        return False
+    if row["ref"]["role"] == "prior_analysis":
+        return True
+    value = row["value"]
+    return (row["ref"]["role"] == "source_label" and isinstance(value, dict) and set(value) <= {"record"}
+            and isinstance(value.get("record"), dict)
+            and set(value["record"]) <= set(config["c3_input_selection"]["history_catalog_fields"]))
 
 
 def available_tools(catalog):

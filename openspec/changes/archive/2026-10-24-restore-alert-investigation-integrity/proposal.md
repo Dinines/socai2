@@ -64,9 +64,9 @@ API返回统一的有界attack_context：明确Case/Alert锚点、原链、CaseP
 
 ## 当前增量：分诊规划与调查逐调用说明（2026-10-21）
 
-Fusion阶段交接后进入Agents分诊，先按支持项、源码默认/实际配置、输入输出/依赖、规则与模型、关闭/升级和对比例梳理，再讨论功能取舍。用户进一步要求调查每一步及每个智能体调用详细说明；新增[分诊工作卡](../../../../docs/architecture/triage.md)与[调查调用说明](../../../../docs/architecture/investigation.md)，分别追自动post-triage、默认人工四节点及Router/full入口，记录模型/工具顺序、可变分支、真实Run实例及审计缺口。
+Fusion阶段交接后进入Agents分诊，先按支持项、源码默认/实际配置、输入输出/依赖、规则与模型、关闭/升级和对比例梳理，再讨论功能取舍。用户进一步要求调查每一步及每个智能体调用详细说明；新增[分诊工作卡](../../../../docs/architecture/triage.md)与[调查调用说明](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)，分别追自动post-triage、默认人工四节点及Router/full入口，记录模型/工具顺序、可变分支、真实Run实例及审计缺口。
 
-用户随后强调两套调查的目的/输出和四Agent设计评价，补[专项评价](../../../../docs/architecture/investigation-design-review.md)，核固定官方历史并区分源码事实与推断；先理解价值和重叠，再讨论取舍，不因Agent名称或数量预定重构。
+用户随后强调两套调查的目的/输出和四Agent设计评价，补[专项评价](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)，核固定官方历史并区分源码事实与推断；先理解价值和重叠，再讨论取舍，不因Agent名称或数量预定重构。
 
 本轮为现有2.1/4.1的分析交接及3.3/3.4后续实施准备，无新业务合同/代码/运行变更，不新增或勾产品任务，不另建重复change。复用C1/C2等原证据，不重调旧样例或新发模型；下一步取舍明确后只补直接差异。本地先验证、保存版本、按阶段发布，当前不部署或启常驻；复杂可用性/冗余及非阻塞问题继续后置。
 

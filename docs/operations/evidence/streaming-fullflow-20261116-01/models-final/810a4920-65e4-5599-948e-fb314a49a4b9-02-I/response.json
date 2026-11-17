@@ -1,0 +1,34 @@
+{
+  "id": "chatcmpl-afbd989a9f315f95",
+  "model": "aisoc-investigation",
+  "usage": {
+    "total_tokens": 6896,
+    "prompt_tokens": 5091,
+    "completion_tokens": 1805,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"members\": [\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录 svc-app-bc3b4605 账号在 host-app-3f979d56 上成功启动 curl 进程并访问外部 IP 198.51.100.81。现有分析指出缺乏授权记录、人工确认及业务上下文，仅凭‘查空’无法排除内部威胁或异常行为，维持待复核状态。\"\n    ,\n    \"source_ids\": [\n      \"N3_S2\",\n      \"N3_S4\",\n      \"N3_S304\",\n      \"N3_S311\",\n      \"N3_S312\"\n    ]\n    ,\n    \"limitations\": [\n      \"缺乏该账号的授权访问记录或业务操作文档。\"\n    ]\n    ,\n    \"alert_ref\": \"A1\"\n    },\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录同一账号在进程启动后 4 分钟内发起 TCP 网络流量至 198.51.100.81:443。现有分析认为单次流量观察未提供数据外传内容或恶意特征，且无授权证明，证据不足以定性，维持待复核。\"\n    ,\n      \"source_ids\": [\n      \"N3_S75\",\n      \"N3_S77\",\n      \"N3_S313\",\n      \"N3_S326\",\n      \"N3_S327\"\n    ]\n    ,\n      \"limitations\": [\n      \"未获取流量载荷（Payload）以确认传输内容性质。\"\n    ]\n    ,\n      \"alert_ref\": \"A2\"\n    },\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录 svc-app-bc3b4605 账号通过网络方式成功登录主机。现有分析强调‘查空’历史告警或威胁情报不足以判定为误报，缺乏业务上下文支持，无法排除异常登录可能，维持待复核。\"\n    ,\n      \"source_ids\": [\n      \"N3_S157\",\n      \"N3_S159\",\n      \"N3_S328\",\n      \"N3_S329\",\n      \"N3_S330\"\n    ]\n    ,\n      \"limitations\": [\n      \"缺失登录会话的授权审批记录或正常业务用途说明。\"\n    ]\n    ,\n      \"alert_ref\": \"A3\"\n    },\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录同一账号在登录及进程启动后再次发起网络流量至 198.51.100.81:443。现有分析指出缺乏进程命令细节、数据内容及授权记录，无法区分正常业务通信与恶意行为，维持待复核。\"\n    ,\n      \"source_ids\": [\n      \"N3_S222\",\n      \"N3_S224\",\n      \"N3_S331\",\n      \"N3_S332\",\n      \"N3_S353\"\n    ]\n    ,\n      \"limitations\": [\n      \"未提供该账号的资产归属信息或历史行为基线。\"\n    ]\n    ,\n      \"alert_ref\": \"A4\"\n    }\n  ],\n  \"findings\": [\n    {\n      \"statement\": \"事件链显示 svc-app-bc3b4605 账号在 host-app-3f979d56 上存在‘登录 -> 启动 curl -> 访问外部 IP'的完整行为序列，且该外部 IP (198.51.100.81) 在资产库和威胁情报中均无匹配记录。\"\n    ,\n      \"state\": \"unresolved\"\n    ,\n      \"source_ids\": [\n      \"N3_S157\",\n      \"N3_S2\",\n      \"N3_S75\",\n      \"N3_S222\"\n    ]\n    ,\n      \"limitations\": [\n      \"关键缺口：缺乏该账号的授权访问凭证及业务操作日志。\"\n    ]\n    ,\n      \"alert_refs\": [\n      \"A1\",\n      \"A2\",\n      \"A3\",\n      \"A4\"\n    ]\n    }\n  ],\n  \"open_questions\": [\n    {\n      \"text\": \"svc-app-bc3b4605 账号是否拥有访问 198.51.100.81 的明确业务授权？\"\n    ,\n      \"source_ids\": [\n      \"N3_S157\",\n      \"N3_S2\",\n      \"N3_S75\",\n      \"N3_S222\"\n    ]\n    ,\n      \"evidence_requirements\": [\n      \"需调取账号权限配置表、业务审批单或运维操作记录。\"\n    ]\n    ,\n      \"alert_refs\": [\n      \"A1\",\n      \"A2\",\n      \"A3\",\n      \"A4\"\n    ]\n    },\n    {\n      \"text\": \"curl 进程启动的具体命令行参数及网络流量传输的实际载荷内容是什么？\"\n    ,\n      \"source_ids\": [\n      \"N3_S12\",\n      \"N3_S82\",\n      \"N3_S83\",\n      \"N3_S229\",\n      \"N3_S230\"\n    ]\n    ,\n      \"evidence_requirements\": [\n      \"需获取进程启动时的完整命令行（CLI）及网络抓包中的 HTTP 请求/响应体。\"\n    ]\n    ,\n      \"alert_refs\": [\n      \"A1\",\n      \"A2\",\n      \"A4\"\n    ]\n    }\n  ],\n  \"diagnosis\": {\n    \"summary\": \"事件涉及 svc-app-bc3b4605 账号在 host-app-3f979d56 上的登录、进程启动（curl）及多次网络外联行为，目标 IP 198.51.100.81 未在现有资产或威胁情报库中命中。\"\n    ,\n    \"conclusion\": \"整体判断为‘待复核’。现有材料仅能确认行为序列发生，但缺乏授权记录、业务上下文及流量载荷分析，无法区分正常业务运维与潜在的内部威胁或异常行为。所有成员的分析均一致指出证据不足以支持确定性判定。\"\n    ,\n    \"limitations\": [\n      \"关键证据缺失：无账号授权记录、无业务操作文档、无流量载荷详情。\"\n    ]\n    ,\n    \"source_ids\": [\n      \"N3_S2\",\n      \"N3_S4\",\n      \"N3_S75\",\n      \"N3_S77\",\n      \"N3_S157\",\n      \"N3_S159\",\n      \"N3_S222\",\n      \"N3_S224\",\n      \"N3_S304\",\n      \"N3_S311\",\n      \"N3_S312\",\n      \"N3_S313\",\n      \"N3_S326\",\n      \"N3_S327\",\n      \"N3_S328\",\n      \"N3_S329\",\n      \"N3_S330\",\n      \"N3_S331\",\n      \"N3_S332\",\n      \"N3_S353\"\n    ]\n  }\n}",
+        "provider_specific_fields": {
+          "refusal": null,
+          "reasoning": null
+        }
+      },
+      "finish_reason": "stop",
+      "provider_specific_fields": {
+        "token_ids": null,
+        "stop_reason": null,
+        "routed_experts": null
+      }
+    }
+  ],
+  "created": 1794815419,
+  "system_fingerprint": "vllm-0.30.0-76652a79"
+}

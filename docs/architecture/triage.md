@@ -35,7 +35,7 @@ Fusion给出身份、关联、信号与分数；分诊决定这条告警属于�
 | 6 一次模型分类 | `triage`角色；system prompt＋有界告警/上下文，要求`verdict/confidence/rationale` JSON | 通常一次回复；这里没有deep调查的选工具循环。模型失败可回确定性路径，高/严重告警失败另有保守保护 |
 | 7 校验与关闭策略 | agent解析分类，结合注入/工具来源检查及tenant/class关闭policy、阈值、kill switch和可选grant形成关闭候选；worker再做groundedness最终复核，可降级/撤销关闭 | 只有可关闭类别且所有条件允许才关闭；模型自报高confidence不是关闭授权 |
 | 8 首次结果持久 | `_record`保存分类、可见模型材料、上下文工件、usage及业务状态 | 普通live更新对应Alert，首次分诊确认后才向后续调查推进 |
-| 9 prior写回及自动升级 | 首次持久后先按开关写处置prior；随后未关闭、writer允许且升级开关开启时，`_maybe_escalate → run_escalation` | 实际调查节点和工具继续执行；详见[调查调用说明](investigation.md)，不是只创建Run |
+| 9 prior写回及自动升级 | 首次持久后先按开关写处置prior；随后未关闭、writer允许且升级开关开启时，`_maybe_escalate → run_escalation` | 实际调查节点和工具继续执行；详见[调查调用说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)，不是只创建Run |
 | 10 附加出口 | 升级返回后按各自开关处理审批提案、源SIEM处置写回等 | 建议、提案、dry-run、实际厂商写入分别表达。`response_dispatched=false`不能证明所有附加出口都无副作用 |
 
 顺序依据[worker.triage](../../services/agents/app/workers/fused_alert_consumer.py)、[业务规则](../../services/agents/app/workers/business_context.py)、[模型及关闭](../../services/agents/app/agents/auto_triage_agent.py)。review_only会拒绝/隔离不属于其准入范围的分支，不能拿上表直接描述该profile当前都在执行。
@@ -85,7 +85,7 @@ C1/C2原始事实见[自治R01回执](../operations/integrity-autonomy-r01.md)�
 | 后续做了什么 | graph_step、deep工具/模型工件、graph结果/报告、graph_usage | 首次分诊usage与调查增量分别保留；每步详见调查说明 |
 | 用了多少 | 实际prompt/completion tokens；measured/estimated/unpriced cost | 固定预约单位不是usage；unknown价格不能说零费用 |
 
-实现集中在[triage持久端口](../../services/agents/app/workers/triage_persistence.py)、[ledger](../../services/agents/app/investigator/ledger.py)及worker `_record`。读取端沿已有Run详情/events/artifacts/report接口；确切路径见[调查审计交接](investigation.md#6-逐调用审计如何阅读)，不新建账本或审计服务。
+实现集中在[triage持久端口](../../services/agents/app/workers/triage_persistence.py)、[ledger](../../services/agents/app/investigator/ledger.py)及worker `_record`。读取端沿已有Run详情/events/artifacts/report接口；确切路径见[调查审计交接](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md#6-逐调用审计如何阅读)，不新建账本或审计服务。
 
 ## 7. 接下来的实际实施顺序
 

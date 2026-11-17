@@ -22,7 +22,7 @@ Case 的目标是在既定案件范围内，结合告警原件、已有判断及
 
 ## 2. 现状缺口与最小推进范围
 
-[已有离线核对](../../../docs/operations/evidence/case-boundary-design-20261108-01/current-audit.json)包含 3 份历史 Case 请求，以及两份云审计和一份邮件材料的纯函数投影。本次继续核对其 3 份快照和 15 份源码/配置指纹，均与该回执一致；没有把历史请求称为当前在线实测。
+[已有离线核对](../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/case-boundary-design-20261108-01/current-audit.json)包含 3 份历史 Case 请求，以及两份云审计和一份邮件材料的纯函数投影。本次继续核对其 3 份快照和 15 份源码/配置指纹，均与该回执一致；没有把历史请求称为当前在线实测。
 
 | 已确认现状 | 影响 | 候选处理 |
 | --- | --- | --- |
@@ -157,9 +157,9 @@ C3 只负责提出补查问题和选择已有 binding。工具用途、返回内
 
 固定 C3 对照批次 `case-model-comparison-20261108-01` 已在用户另行明确允许后结束。两份已分词请求内容逐值保持，每组一次，单次时限 300 秒、0 客户端重试；2 HTTP 200/stop、合计 24,778 tokens。21 网关实际路由到 43 模型，运行前后配置和路由指纹相同；远端两份 attempt=1 intent、可见原答与本机核对一致。没有业务工具/DB/新 Run/Case/部署或采用。最初自动审批拒绝与后续授权分别保存，已不再等待授权，不重派已结束批次。
 
-实际输入 tokens 9,663→9,044（−6.41%），输出 2,410→3,661，总量 12,073→12,705（+5.23%），耗时 49.04→73.73 秒。两版规范 Schema 通过，严格业务校验均拒收；前版两个补查绑定不匹配，新版将旧 I 分析当 observed，连带排除依赖领域/冲突，两个补查也拒收。正文共有执行扩大、工具能力误用等问题；新版改善 A2 未查表述和授权未知，但新增整案历史查空及无依据同会话/攻击链推断。局部保留不能证明正文正确，质量仍为 NOT_PASSED。单样本各一次，不报告准确率、稳定时延收益或“精简必然造成错误”。详见[逐项比较](case-model-comparison-20261108.md)。
+实际输入 tokens 9,663→9,044（−6.41%），输出 2,410→3,661，总量 12,073→12,705（+5.23%），耗时 49.04→73.73 秒。两版规范 Schema 通过，严格业务校验均拒收；前版两个补查绑定不匹配，新版将旧 I 分析当 observed，连带排除依赖领域/冲突，两个补查也拒收。正文共有执行扩大、工具能力误用等问题；新版改善 A2 未查表述和授权未知，但新增整案历史查空及无依据同会话/攻击链推断。局部保留不能证明正文正确，质量仍为 NOT_PASSED。单样本各一次，不报告准确率、稳定时延收益或“精简必然造成错误”。详见[逐项比较](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-model-comparison-20261108.md)。
 
-以上为两次对照结束时的状态。后续 C1/C3 本地业务接入与兼容读回见第十节和[接入报告](case-boundary-integration-20261109.md)，Deep/C6、部署及结束审计仍未完成；质量缺口记录后迭代，不通过程序改写模型事实来追认成功。后续输出设计应让程序从选定 binding 恢复固定成员/对象，模型选择业务问题、方式和可用工具，并减少重复引用/叙述。见[固定请求](../../../docs/operations/evidence/case-model-comparison-20261108-01/plan-and-packets.json)、[实测汇总](../../../docs/operations/evidence/case-model-comparison-20261108-01/summary.json)与[正文复核](../../../docs/operations/evidence/case-model-comparison-20261108-01/semantic-review.json)。原 3 份快照、15 份生产源码/策略指纹保持；任务 3.30 尚未完成。
+以上为两次对照结束时的状态。后续 C1/C3 本地业务接入与兼容读回见第十节和[接入报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)，Deep/C6、部署及结束审计仍未完成；质量缺口记录后迭代，不通过程序改写模型事实来追认成功。后续输出设计应让程序从选定 binding 恢复固定成员/对象，模型选择业务问题、方式和可用工具，并减少重复引用/叙述。见[固定请求](../../../docs/operations/evidence/case-model-comparison-20261108-01/plan-and-packets.json)、[实测汇总](../../../docs/operations/evidence/case-model-comparison-20261108-01/summary.json)与[正文复核](../../../docs/operations/evidence/case-model-comparison-20261108-01/semantic-review.json)。原 3 份快照、15 份生产源码/策略指纹保持；任务 3.30 尚未完成。
 
 ## 10. C1/C3 本地接入范围
 
@@ -173,7 +173,7 @@ C3 只负责提出补查问题和选择已有 binding。工具用途、返回内
 
 直接验证覆盖：同 A 真实配对及错父/错租户/错版本拒绝；旧快照缺回执不回填；失败/未查/空/有返回区分；I 原范围和来源角色；未知非空业务字段及人工正文保真；输入 profile 变化；短号恢复与一次纠正/局部拒收；原保存/读取合同和新鲜度失效。使用既有隔离测试库与模型/工具替身验证存取，不使用正式库造数，不把替身结果称为模型质量通过。
 
-2026-11-09 接入结果：本节范围已本地实施，58 项离线、4 个新增隔离 PG 方法和 2 个旧流程 PG 方法最新通过，29 表/462 列保持。实际记录已更新 4177 本地静态目录，当前端口不可访问、未发布 21，早期失败不改写；本批没有新增真实模型或远端部署。详见[接入与兼容报告](case-boundary-integration-20261109.md)。
+2026-11-09 接入结果：本节范围已本地实施，58 项离线、4 个新增隔离 PG 方法和 2 个旧流程 PG 方法最新通过，29 表/462 列保持。实际记录已更新 4177 本地静态目录，当前端口不可访问、未发布 21，早期失败不改写；本批没有新增真实模型或远端部署。详见[接入与兼容报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)。
 
 ## 11. Deep/C6 交接细化（2026-11-09，设计及离线核对）
 
@@ -219,4 +219,4 @@ Deep/C6 复用 C3 的完整冻结业务来源，新增查询直接读取实际�
 
 直接验证包括完整业务字段、同 A 回执、有效 C3/Deep 原文、支持/反证重映射、缺依赖/未知角色/跨成员、初步分析失败、计划/回执、查询前后输入变化、输出恢复和 C6 局部拒收。冻结同材料比较实际输入、Schema、来源/依赖、原答机械适配，字节不冒称 tokens/模型质量；使用隔离 PG 和模型/工具替身验证实际保存/读取，再决定新批真实模型验证。已结束真实模型批次不重派，部署另行处理。
 
-本节实施与同材料对比已完成，详细结果见 [2026-11-10 接入报告](case-followup-integration-20261110.md)。当前版本按配置关联父级引用明细，保留历史比较窗口/范围，复用 C6 最小查询依据检查；后台字段恢复和来源映射不改变正式表或原读取合同。真实模型、部署及逐项差量复核仍待。
+本节实施与同材料对比已完成，详细结果见 [2026-11-10 接入报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。当前版本按配置关联父级引用明细，保留历史比较窗口/范围，复用 C6 最小查询依据检查；后台字段恢复和来源映射不改变正式表或原读取合同。真实模型、部署及逐项差量复核仍待。

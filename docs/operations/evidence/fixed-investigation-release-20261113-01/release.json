@@ -1,0 +1,214 @@
+{
+  "version": "socai2.release.v1.2",
+  "release": "v1.2-20261113-r1",
+  "architecture": "amd64",
+  "build_timeout_seconds": 180,
+  "deploy_timeout_seconds": 90,
+  "state_dir": "/opt/sting-aisoc-socai2/private/release-v1.2-20261113-r1",
+  "agents_container": "socai2-agents-1",
+  "build": {
+    "api": {
+      "source": "services/api/app",
+      "additional_packages": {
+        "investigation_http": "services/api/investigation_http"
+      },
+      "base_id": "sha256:0c7fc22631c5dd05719e43c8097ead1d112f1d9220e2028fa76e8cb50214fee9",
+      "tag": "socai2-api:v1.2-20261113-r1",
+      "user": "10001:10001"
+    }
+  },
+  "files": [
+    "deploy/aisoc21/processing_job.py",
+    "deploy/aisoc21/production_ingress.py",
+    "deploy/aisoc21/production_processing.py",
+    "deploy/aisoc21/production_profile.py",
+    "deploy/aisoc21/production_projection.py",
+    "deploy/local-investigation/backend_profile.py",
+    "deploy/local-investigation/config.py",
+    "deploy/local-investigation/flow_export.py",
+    "deploy/local-investigation/flow_fixture.py",
+    "deploy/local-investigation/investigation-policy.toml",
+    "docs/operations/capture_processing_case.py",
+    "docs/operations/export_processing_audit_batch.py",
+    "docs/operations/processing_audit_detail.py",
+    "docs/operations/processing_audit_delivery.py",
+    "docs/operations/processing_audit_flow.py",
+    "docs/operations/processing_audit_inspector.py",
+    "docs/operations/processing_audit_import.py",
+    "docs/operations/processing_audit_index.py",
+    "docs/operations/publish_alert_io_comparison.py",
+    "docs/operations/alert_io_comparison_page.html",
+    "deploy/aisoc21/workbench-comparison-20261108.json",
+    "docs/operations/processing_audit_logs.py",
+    "docs/operations/processing_audit_subjects.py",
+    "docs/operations/processing_workbench_retention.py",
+    "docs/operations/processing_workbench_source.py",
+    "docs/operations/read_processing_audit_20261106.py",
+    "docs/operations/refresh_three_case_replay_20261106.py",
+    "docs/operations/serve_processing_workbench.py",
+    "docs/operations/update_processing_audit.py",
+    "services/api/app/socai2/runtime_policy.py",
+    "deploy/aisoc21/production-v1.2.toml",
+    "deploy/aisoc21/production_entry.py",
+    "deploy/aisoc21/compose.gateway.yml",
+    "deploy/aisoc21/litellm.config.yaml",
+    "deploy/aisoc21/workbench-prompt-comparison-20261108.json",
+    "deploy/aisoc21/workbench-alert-validation-20261108.json",
+    "deploy/aisoc21/workbench-incident-validation-20261108.json",
+    "docs/operations/incident_input_validation_page.html",
+    "deploy/local-investigation/investigation-policy-ai-v1.toml",
+    "deploy/local-investigation/investigation-policy-incident-v1.toml",
+    "deploy/aisoc21/processing-build-ai-v1.toml",
+    "deploy/aisoc21/ai-rollout-20261108.json",
+    "deploy/aisoc21/rollout_transport.py",
+    "deploy/database/install_reader.py",
+    "deploy/database/api-reader-21.toml",
+    "deploy/database/api_read_access_20261108.sql",
+    "deploy/database/reader_freshness_access_20261107.sql",
+    "deploy/database/reader_public_lookups_20261107.sql",
+    "deploy/database/verify_socai2_v1_2_reader.sql",
+    "deploy/database/init_socai2_v1.sql",
+    "deploy/database/init_socai2_v1_2_reader.sql",
+    "deploy/database/upgrade_socai2_v1_2_reader.sql",
+    "deploy/local-investigation/investigation-policy-case-v1.toml",
+    "deploy/aisoc21/processing-build-case-v1.toml",
+    "deploy/aisoc21/current-rollout.json",
+    "deploy/database/install_aisoc21_v1.py",
+    "deploy/database/verify_aisoc21_processing_access.sql",
+    "deploy/database/aisoc21_processing_access.sql",
+    "deploy/aisoc21/case-http.env.example",
+    "deploy/local-investigation/knowledge-profile.json",
+    "deploy/aisoc21/production-profile.example.toml",
+    "deploy/database/knowledge_history_write_access.sql",
+    "docs/operations/evidence/fixed-investigation-release-20261113-01/production-profile.toml",
+    "docs/operations/evidence/fixed-investigation-release-20261113-01/processing-build.toml",
+    "docs/operations/evidence/fixed-investigation-release-20261113-01/rollout.json"
+  ],
+  "projects": {
+    "main": {
+      "name": "socai2",
+      "directory": "/opt/sting-aisoc-socai2",
+      "files": [
+        "/opt/sting-aisoc-socai2/private/release-v1.2-20261112-r5/main-after.json"
+      ],
+      "services": {
+        "api": {
+          "container": "socai2-api-1",
+          "expected_image": "sha256:0c7fc22631c5dd05719e43c8097ead1d112f1d9220e2028fa76e8cb50214fee9",
+          "build": "api",
+          "override": {
+            "env_file": [
+              {
+                "path": "/opt/sting-aisoc-socai2/private/release-v1.2-20261113-r1/api-model.env",
+                "format": "raw"
+              }
+            ],
+            "volumes": [
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261113-r1/deploy/local-investigation/investigation-policy-case-v1.toml:/run/processor/investigation-policy.toml:ro",
+              "/opt/sting-aisoc-socai2/releases/v1.2-20261113-r1/deploy/local-investigation/knowledge-profile.json:/run/knowledge/profile.json:ro",
+              "/opt/sting-aisoc-socai2/private/processing-production/knowledge-qdrant-key:/run/knowledge/qdrant-key:ro"
+            ],
+            "environment": {
+              "AISOC_STARTUP_SCHEMA_MIGRATIONS": "false",
+              "ENVIRONMENT": "production",
+              "ENV": "production",
+              "AISOC_DEMO_MODE": "false",
+              "SOCAI2_PAGE_READ_ENABLED": "true",
+              "SOCAI2_ANALYSIS_READ_ENABLED": "true",
+              "SOCAI2_CASE_API_ENABLED": "true"
+            }
+          },
+          "allowed_env_changes": [
+            "OPENAI_API_KEY",
+            "OPENAI_BASE_URL",
+            "OPENAI_MODEL",
+            "SOCAI2_MODEL_PROTOCOL",
+            "SOCAI2_MODEL_SCHEMA_PROFILE",
+            "SOCAI2_INVESTIGATION_POLICY",
+            "SOCAI2_INVESTIGATION_POLICY_SHA256",
+            "SOCAI2_PROCESSING_PROFILE_SHA256",
+            "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS",
+            "SOCAI2_CASE_DATABASE_URL",
+            "SOCAI2_SOURCE_UEBA_ENABLED",
+            "SOCAI2_SOURCE_KNOWLEDGE_ENABLED",
+            "SOCAI2_SOURCE_GRAPH_ENABLED",
+            "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED",
+            "SOCAI2_LAKE_DATABASE",
+            "SOCAI2_KNOWLEDGE_PROFILE",
+            "AISOC_AIRGAP_ALLOWLIST"
+          ],
+          "use_processing_environment": true
+        }
+      }
+    }
+  },
+  "processing": {
+    "profile": "/opt/sting-aisoc-socai2/releases/v1.2-20261113-r1/docs/operations/evidence/fixed-investigation-release-20261113-01/production-profile.toml",
+    "entry": "/opt/sting-aisoc-socai2/ops/processing-production.py",
+    "image": "sha256:4999860349fd69b047adfe60045efd470fd373e56d5dcbe573bc859c9064b7a5",
+    "required_existing_secrets": [
+      "db-password",
+      "ingress-password",
+      "lake-password",
+      "credential-key",
+      "runtime.env",
+      "ingress.env"
+    ],
+    "api_model_env": "/opt/sting-aisoc-socai2/private/release-v1.2-20261113-r1/api-model.env",
+    "api_model_keys": [
+      "OPENAI_API_KEY",
+      "OPENAI_BASE_URL",
+      "OPENAI_MODEL",
+      "SOCAI2_MODEL_PROTOCOL",
+      "SOCAI2_MODEL_SCHEMA_PROFILE",
+      "SOCAI2_INVESTIGATION_POLICY",
+      "SOCAI2_INVESTIGATION_POLICY_SHA256",
+      "SOCAI2_PROCESSING_PROFILE_SHA256",
+      "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS",
+      "SOCAI2_CASE_DATABASE_URL",
+      "SOCAI2_SOURCE_UEBA_ENABLED",
+      "SOCAI2_SOURCE_KNOWLEDGE_ENABLED",
+      "SOCAI2_SOURCE_GRAPH_ENABLED",
+      "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED",
+      "SOCAI2_LAKE_DATABASE",
+      "SOCAI2_KNOWLEDGE_PROFILE",
+      "AISOC_AIRGAP_ALLOWLIST"
+    ],
+    "image_tag": "socai2-processing:processing-20261113-r1",
+    "manifest_sha256": "252f55e0f4806152b23a66b4c463d1105d5bb00ae4fcf6e2ed4beb26a2725ca1",
+    "api_environment_sources": {
+      "SOCAI2_CASE_DATABASE_URL": "DATABASE_URL"
+    }
+  },
+  "current_pointer": "/opt/sting-aisoc-socai2/current-v1.2",
+  "required_environment": {
+    "socai2-agents-1": {
+      "AISOC_AGENT_KAFKA_DISABLE": "1",
+      "AISOC_PLAYBOOK_SEED_DISABLE": "1",
+      "AISOC_ATTCK_STARTUP_DISABLE": "1",
+      "AISOC_ATTCK_INDEX_DISABLE": "1",
+      "AISOC_HUNT_SCHEDULER_DISABLE": "1",
+      "AISOC_PLAYBOOK_SWEEPER_DISABLE": "1",
+      "AISOC_TRIAGE_BUDGET_POLICY_FILE": ""
+    }
+  },
+  "inherited_services": [],
+  "scope": "Fixed A/I/Case model business inputs, program assembly and save/read closure. One core API rollout and explicit processing entry activation. External18024, Swagger, workbench and consumers unchanged; quality deferred; no new generation or DDL.",
+  "processing_policy_check": {
+    "container": "socai2-api-1",
+    "profiles": {
+      "alert_io": "socai2.alert-boundary.v1",
+      "incident_io": "socai2.incident-boundary.v1",
+      "case_io": "socai2.case-boundary.v1"
+    },
+    "read_flags": {
+      "SOCAI2_PAGE_READ_ENABLED": true,
+      "SOCAI2_ANALYSIS_READ_ENABLED": true
+    }
+  },
+  "case_http_check": {
+    "container": "socai2-api-1",
+    "database": "aisoc",
+    "role": "socai2_prod_processor"
+  }
+}

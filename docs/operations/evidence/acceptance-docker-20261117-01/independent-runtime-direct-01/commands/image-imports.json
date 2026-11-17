@@ -1,0 +1,25 @@
+{
+  "command": [
+    "docker",
+    "run",
+    "--rm",
+    "--pull=never",
+    "--platform",
+    "linux/amd64",
+    "--network",
+    "none",
+    "--read-only",
+    "--tmpfs",
+    "/tmp:rw,mode=1777",
+    "--entrypoint",
+    "python",
+    "socai2-investigation-acceptance@sha256:6504fdad4ed0e965d16ee027302ddd0d666d2f13172ffa70108876dfd7bb5297",
+    "-c",
+    "import hashlib,importlib,importlib.metadata,json,os,pathlib,platform,sys\np=pathlib.Path.cwd();sys.path.insert(0,str(p/\"tools/testdata\"))\nnames=[\"acceptance\",\"acceptance_run\",\"acceptance_append\",\"acceptance_status\",\"acceptance_report\",\"acceptance_console\",\"pydantic\",\"httpx\",\"aiokafka\",\"asyncpg\",\"clickhouse_driver\",\"dotenv\"]\nfor n in names:importlib.import_module(n)\ninfo=json.loads((p/\"compatibility.json\").read_text())[\"acceptance_image\"]\nversions={n:importlib.metadata.version(n) for n in info[\"runtime_dependencies\"]}\nassert versions==info[\"runtime_dependencies\"]\nmanifest=json.loads((p/\"package-manifest.json\").read_text())\nassert all(hashlib.sha256((p/n).read_bytes()).hexdigest()==v[\"sha256\"] for n,v in manifest[\"files\"].items())\nprint(json.dumps({\"imports\":names,\"versions\":versions,\"python\":platform.python_version(),\"uid\":os.getuid(),\"files\":len(manifest[\"files\"]),\"manifest_sha256\":hashlib.sha256((p/\"package-manifest.json\").read_bytes()).hexdigest()}))"
+  ],
+  "stdin": null,
+  "exit_code": 0,
+  "expected_exit": 0,
+  "stdout": "{\"imports\": [\"acceptance\", \"acceptance_run\", \"acceptance_append\", \"acceptance_status\", \"acceptance_report\", \"acceptance_console\", \"pydantic\", \"httpx\", \"aiokafka\", \"asyncpg\", \"clickhouse_driver\", \"dotenv\"], \"versions\": {\"aiokafka\": \"0.14.0\", \"annotated-types\": \"0.8.0\", \"anyio\": \"4.16.0\", \"async-timeout\": \"5.0.1\", \"asyncpg\": \"0.31.0\", \"certifi\": \"2026.10.23\", \"clickhouse-driver\": \"0.2.11\", \"h11\": \"0.16.0\", \"httpcore\": \"1.0.9\", \"httpx\": \"0.28.1\", \"idna\": \"3.20\", \"packaging\": \"26.3\", \"pydantic\": \"2.14.0\", \"pydantic-core\": \"2.50.0\", \"python-dotenv\": \"1.2.3\", \"pytz\": \"2026.6\", \"typing-extensions\": \"4.16.0\", \"typing-inspection\": \"0.4.5\", \"tzlocal\": \"5.4.5\"}, \"python\": \"3.11.17\", \"uid\": 10001, \"files\": 109, \"manifest_sha256\": \"844df1894a79576e61121e1ebffd167ff0f1a9d1f2100a795ca01be55c3f21ca\"}\n",
+  "stderr": ""
+}

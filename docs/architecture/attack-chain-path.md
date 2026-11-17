@@ -2,9 +2,9 @@
 
 2026-10-22概念讨论已归档到本文：[对象与ID](#concepts)、[Incident与Fusion链四种归组组合](#membership-examples)、[调查Chain与Path的范围](#investigation-scope)、[Case与Playbook触发](#case-automation)、[讨论结论与未决取舍](#discussion-conclusions)、[当前模块评估与推进建议](#module-assessment)。这些章节区分源码事实、规则推演例子和未实施方向；不新增业务实现或验收结论。
 
-2026-10-22增量：用户选择在Agents收到fused Kafka告警后统一准备图，Fusion保持不改；写入移到schema校验后、恢复/抑制/分诊前，后续上下文GET只读。源码与直接合同见[Kafka入口接线](../operations/kafka-graph-intake-20261022.md)，依赖补齐后另做[真实Kafka/PG/Neo4j联合观察](../operations/kafka-graph-joint-20261022.md)：在分诊入口前准备成功，直接邻域5节点4边；GET影响范围另有14个可达候选。下文2026-10-21真实Case证据保持原范围，当前联合不代替业务分诊/模型或21部署。
+2026-10-22增量：用户选择在Agents收到fused Kafka告警后统一准备图，Fusion保持不改；写入移到schema校验后、恢复/抑制/分诊前，后续上下文GET只读。源码与直接合同见[Kafka入口接线](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-intake-20261022.md)，依赖补齐后另做[真实Kafka/PG/Neo4j联合观察](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-joint-20261022.md)：在分诊入口前准备成功，直接邻域5节点4边；GET影响范围另有14个可达候选。下文2026-10-21真实Case证据保持原范围，当前联合不代替业务分诊/模型或21部署。
 
-2026-10-21。本文说明当前工作区已经接入的接口与交接方式。**源码接通不代表21已发布或真实案例通过**；本地真实案例及模型、Run工件、报告实测见[本批回执](../operations/attack-chain-path-local-20261021.md)。此前调查测试见[上批回执](../operations/investigation-functional-20261021.md)，不能代验本次链图接线。
+2026-10-21。本文说明当前工作区已经接入的接口与交接方式。**源码接通不代表21已发布或真实案例通过**；本地真实案例及模型、Run工件、报告实测见[本批回执](../operations/attack-chain-path-local-20261021.md)。此前调查测试见[上批回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)，不能代验本次链图接线。
 
 这项能力在调查开始时读取候选关联和图谱，把来源、范围及缺口一起交给原编排。它没有增加固定模型步骤，也不把候选链或图可达关系判为真实攻击因果。原四节点、Router、Graph/Deep仍各走各的流程。
 
@@ -67,7 +67,7 @@ Case准备仍由正式`POST /cases/{case_id}/investigate`内部执行，该请�
 | 6. 原编排分析 | 默认四节点、Router或Deep在原有调用中使用摘要 | 输出仍沿原schema与编排采用；“拿到资料”与“模型准确引用/得到正确结论”需分开核实 |
 | 7. 保存与交付 | 原Run/tenant及本次三块context | 三类工件、原步骤审计及Markdown；按Run读当时工件，不用当前图查询冒充当时输入 |
 
-正式Case入口仍传原嵌套`raw_alert.alerts[]`，没有flatten。它原始告警正文投影是最新最多3条；**链种子另按Case关联取最早告警**，不取这3条的第一项代替。Case ID及准备回执附在该payload中。默认调查的具体启动、状态和报告接口见[调查说明](investigation.md)。
+正式Case入口仍传原嵌套`raw_alert.alerts[]`，没有flatten。它原始告警正文投影是最新最多3条；**链种子另按Case关联取最早告警**，不取这3条的第一项代替。Case ID及准备回执附在该payload中。默认调查的具体启动、状态和报告接口见[调查说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)。
 
 ### 图准备表达什么
 
@@ -374,7 +374,7 @@ flowchart LR
 | Case Path | 能统一查看案件告警与主机/用户/IOC/MITRE来源关系 | 没有完整行为边或时间因果，不能独立重建入侵经过 | 作为Case关系上下文使用，保留来源和回退语义 |
 | Alert图 | 无Case也可查看告警直接邻域，Kafka提前写图已有实际收益 | 可达范围可能经共享Technique扩到历史对象；持续同步和解绑旧边仍有限制 | 区分直接关联与可达候选，不把后者作为确认影响 |
 
-证据复用：[阶段交接表](../operations/investigation-stage-handoff-20261022.md)覆盖已有自动/人工调查、上下文和Markdown；[链图本地实测](../operations/attack-chain-path-local-20261021.md)有真实四模型输入、Neo4j及Run工件；[Kafka真实联合](../operations/kafka-graph-joint-20261022.md)证明分诊前投影和直接邻域，未执行该条消息的分诊/调查模型。不同Run不能拼成一个新端到端实测，也不重跑它们来增加“通过”数量。
+证据复用：[阶段交接表](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-handoff-20261022.md)覆盖已有自动/人工调查、上下文和Markdown；[链图本地实测](../operations/attack-chain-path-local-20261021.md)有真实四模型输入、Neo4j及Run工件；[Kafka真实联合](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-joint-20261022.md)证明分诊前投影和直接邻域，未执行该条消息的分诊/调查模型。不同Run不能拼成一个新端到端实测，也不重跑它们来增加“通过”数量。
 
 ### 11.2 哪些事现在必须区分
 
@@ -382,7 +382,7 @@ flowchart LR
 
 没有Case时Path为not_linked属于适用范围，不是要求先自动建Case的故障。Fusion链未消费、关联效果、多轮解释、行为边、blast规则及旧边清理可作为二开取舍；现有问题继续放[原问题清单](../operations/upstream-issues.md)，不另造前置门禁。
 
-实际交付仍有本地/发布差距。已有链图与两处接口合同修正是本地已验未发布；部分整文件还含旧C2 graph/deep及文案修改，旧C2没有最终独审。**局部链图ACCEPT、本地保版都不能当整包发布批准**；发布与常驻worker启用也分开判断。具体版本/证据见[已发布与本地差异](../operations/investigation-stage-handoff-20261022.md#已发布与本地差异)。
+实际交付仍有本地/发布差距。已有链图与两处接口合同修正是本地已验未发布；部分整文件还含旧C2 graph/deep及文案修改，旧C2没有最终独审。**局部链图ACCEPT、本地保版都不能当整包发布批准**；发布与常驻worker启用也分开判断。具体版本/证据见[已发布与本地差异](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-handoff-20261022.md#已发布与本地差异)。
 
 ### 11.3 推荐的最近推进顺序
 

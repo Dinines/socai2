@@ -10,6 +10,8 @@ import time
 from pathlib import Path
 from urllib.request import ProxyHandler, build_opener
 
+import tomllib
+
 HERE = Path(__file__).resolve().parent
 BASE = Path("/opt/sting-aisoc-socai2")
 RELEASES = BASE / "releases"
@@ -99,11 +101,13 @@ def start_projection(folder):
     # status checks the existing committed offsets without writing to Kafka.
     # Refuse a missing group offset after activation; never reset it on deploy.
     if boundary.is_file():
-        projection_command(folder, ["run", "--rm", "--no-deps", "--pull", "never", "projection", "status"])
+        projection_command(folder, ["run", "--rm", "--no-deps", "--pull", "never", "projection", "status",
+                                    "--profile", os.environ["SOCAI2_PROJECTION_CONFIG_MOUNT"]])
     else:
         need(not call(["docker", "ps", "-aq", "--filter", "name=^/" + PROJECTOR + "$"], "inspect projection"),
              "existing projection lost activation record")
-        projection_command(folder, ["run", "--rm", "--no-deps", "--pull", "never", "projection", "activate"], activation=True)
+        projection_command(folder, ["run", "--rm", "--no-deps", "--pull", "never", "projection", "activate",
+                                    "--profile", os.environ["SOCAI2_PROJECTION_CONFIG_MOUNT"]], activation=True)
     projection_command(folder, ["up", "-d", "--no-build", "--pull", "never", "projection"])
 
 
@@ -120,17 +124,18 @@ def healthy():
             raise DeployError(name + " health check timed out")
 
 
-def verify_services(processor, workbench):
+def verify_services(processor, workbench, projection):
     healthy()
     folder = processor / "deploy/aisoc21"
-    for name in ("production_projection.py", "production_ingress.py"):
+    for name in ("production_projection.py", "production_ingress.py", "projection_config.py"):
         need(mounted(PROJECTOR, "/opt/processor/" + name) == folder / name, "projection release mismatch")
     need(mounted(PROJECTOR, "/var/lib/socai2-projection") == STATE, "projection boundary must be read-only")
     need(mounted(WORKBENCH, "/opt/workbench") == workbench, "workbench release mismatch")
-    status = call(["docker", "exec", PROJECTOR, "python", "-B", "/opt/processor/production_projection.py", "status"],
+    status = call(["docker", "exec", PROJECTOR, "python", "-B", "/opt/processor/production_projection.py", "status",
+                   "--profile", os.environ["SOCAI2_PROJECTION_CONFIG_MOUNT"]],
                   "verify projection position")
     data = json.loads(status.splitlines()[-1])
-    need(data.get("group") == "socai2-investigation-projection-v1" and data.get("topic") == "socai2.alerts.fused"
+    need(data.get("group") == projection["group"] and data.get("topic") == projection["topic"]
          and data.get("database") == "aisoc" and data.get("schema") == "socai2", "projection status mismatch")
     with build_opener(ProxyHandler({})).open("http://127.0.0.1:4177/_workbench/status", timeout=8) as reply:
         panel = json.loads(reply.read(65536))
@@ -157,13 +162,21 @@ def host(mode, paths, processing_profile):
         if mode == "apply":
             call(["python3", str(launcher), "--profile", processing_profile, "install"], "install processor")
         receipt = json.loads(call(["python3", str(launcher), "--profile", processing_profile, "check"], "check processor").splitlines()[-1])
+        selected = tomllib.loads(Path(processing_profile).read_text())
+        settings = selected["paths"]
+        os.environ.update(SOCAI2_PROJECTION_IMAGE=selected["image"]["tag"],
+            SOCAI2_PROJECTION_CONFIG_HOST_FILE=settings["projection_file"],
+            SOCAI2_PROJECTION_CONFIG_MOUNT=settings["projection_mount"],
+            SOCAI2_ANALYSIS_TASKS_HOST_FILE=settings["analysis_tasks_file"],
+            SOCAI2_ANALYSIS_TASKS_MOUNT=settings["analysis_tasks_mount"])
+        projection = json.loads(Path(settings["projection_file"]).read_text())
         need(receipt.get("database") == "aisoc" and receipt.get("db_role") == "socai2_prod_processor"
              and receipt.get("lake_table") == "aisoc.raw_events" and receipt.get("model_calls") == 0,
              "processor target check mismatch")
         if mode == "apply":
             start_projection(launcher.parent)
             call(["python3", str(workbench / "deploy/aisoc21/install_production_workbench.py")], "install workbench")
-        status = verify_services(processor, workbench)
+        status = verify_services(processor, workbench, projection)
         if mode == "apply" and prior != processor:
             staged = ENTRY.with_name("." + ENTRY.name + "." + str(os.getpid()))
             staged.symlink_to(launcher)

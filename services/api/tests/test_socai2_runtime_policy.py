@@ -1,6 +1,8 @@
 """Configured time limits apply at admission, reservation and actual dispatch."""
 
 import asyncio
+import hashlib
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +12,24 @@ from app.socai2 import baseline_analysis_model as model
 from app.socai2 import runtime_policy as policy
 
 FILE = Path(__file__).resolve().parents[3] / "deploy/local-investigation/investigation-policy.toml"
+
+
+@pytest.mark.parametrize("filename", ["investigation-policy.toml", "investigation-policy-ai-v1.toml",
+    "investigation-policy-incident-v1.toml", "investigation-policy-case-v1.toml"])
+def test_original_retention_is_independent_and_config_is_recoverable(filename):
+    path = FILE.with_name(filename)
+    settings = policy.load_policy(path)
+    snapshot = settings.snapshot()
+    assert snapshot["toml_text"].encode() == path.read_bytes()
+    assert hashlib.sha256(snapshot["toml_text"].encode()).hexdigest() == snapshot["sha256"]
+    assert settings.views["max_graph_bytes"] == 1048576
+    assert settings.model.max_prepared_bytes == (1048576 if filename == "investigation-policy-case-v1.toml" else 262144)
+    assert not hasattr(settings.model, "max_artifact_bytes")
+    for name, profile in snapshot["profiles"].items():
+        assert json.loads(profile["json_text"]) == getattr(settings, name).config
+        assert hashlib.sha256(profile["json_text"].encode()).hexdigest() == profile["sha256"]
+        if "business" in profile:
+            assert json.loads(profile["business"]["json_text"]) == settings.case_io.business
 
 
 def test_selected_policy_is_fingerprinted_and_has_independent_stage_deadlines():

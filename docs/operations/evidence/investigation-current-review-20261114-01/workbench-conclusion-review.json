@@ -1,0 +1,238 @@
+{
+  "review_date": "2026-11-14",
+  "scope": "RV12 follow-up: saved conclusions versus run stop reason",
+  "inspection_method": [
+    "read-only HTTP HTML capture",
+    "parse saved records and flow links",
+    "compare same-run business output with original database snapshot",
+    "inspect exact embedded JavaScript and local renderer source"
+  ],
+  "browser_interaction_verified": false,
+  "browser_limitation": "CUA browser host unavailable; no click or visual-layout verification performed.",
+  "live_page": {
+    "url": "http://127.0.0.1:4177/cases/1d3a9b7ebbbfb4086ca2d0213ea1b79563fdf470486164e85d8b9e36c473022e.html",
+    "capture_file_mtime_utc": "2026-11-14T03:00:30.947293+00:00",
+    "bytes": 8184824,
+    "sha256": "1d3a9b7ebbbfb4086ca2d0213ea1b79563fdf470486164e85d8b9e36c473022e",
+    "parsed_records": 126,
+    "mode": "saved_snapshots",
+    "embedded_inspector_script_matches_local_source": true
+  },
+  "findings": [
+    {
+      "id": "RV12.1",
+      "fact": "All non-null run stop reasons are appended to modelErrors, including stage_output_saved on completed runs.",
+      "live_script_clause": "if (kind === 'run' && row.stop_reason != null) errors.push(['本轮停止原因', row.stop_reason]);",
+      "error_notice": "存在错误或限制，详见“概览与原因”。输入与输出以实际保存记录为准。"
+    },
+    {
+      "id": "RV12.2",
+      "fact": "Execution and delivery nodes link to the same Run. These A/I Run rows have no output_artifact_id. Output view renders linked output, a selected artifact itself, and tool_response artifacts; it does not render the related source_snapshot publication for a Run selection.",
+      "boundary": "Published source_snapshot artifacts have step_id=null here and are related to the Run; the output renderer still does not select them. Saved-result artifact nodes and the lower raw-record section retain the output."
+    },
+    {
+      "id": "RV12.3",
+      "fact": "stage_outputs renders alert verdict/rationale, but incident summary/status only; incident diagnosis.conclusion remains in the original JSON. Business result rows are not inspector-selectable result records."
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "377e1379-5a8c-54a2-aa36-f6b4d63f8c65",
+      "kind": "alert_basic",
+      "run_anchor": "run-0",
+      "state": "failed",
+      "delivery_state": "none",
+      "stop_reason": "alert_answer_source_invalid",
+      "html_run_equals_snapshot": true,
+      "run_has_output_artifact_id_field": false,
+      "execution_delivery_nodes": [
+        {
+          "label": "本轮执行 · 失败",
+          "href": "#run-0",
+          "state": "failed",
+          "title": "alert_answer_source_invalid"
+        },
+        {
+          "label": "本轮交付 · 无交付",
+          "href": "#run-0",
+          "state": "none",
+          "title": null
+        }
+      ],
+      "result_table": "alert_assessments",
+      "result_ids": [],
+      "publications": []
+    },
+    {
+      "run_id": "66221b0f-72ad-5616-88ae-e2ca39a73fcf",
+      "kind": "alert_basic",
+      "run_anchor": "run-1",
+      "state": "completed",
+      "delivery_state": "complete",
+      "stop_reason": "stage_output_saved",
+      "html_run_equals_snapshot": true,
+      "run_has_output_artifact_id_field": false,
+      "execution_delivery_nodes": [
+        {
+          "label": "本轮执行 · 已完成",
+          "href": "#run-1",
+          "state": "completed",
+          "title": "stage_output_saved"
+        },
+        {
+          "label": "本轮交付 · 完整交付",
+          "href": "#run-1",
+          "state": "complete",
+          "title": null
+        }
+      ],
+      "result_table": "alert_assessments",
+      "result_ids": [
+        "923f2768-dfd2-5c96-b870-b7f41f03330a"
+      ],
+      "publications": [
+        {
+          "artifact_anchor": "artifact-66",
+          "artifact_id": "ca18e3c2-85c8-545a-ad99-acfd04887d42",
+          "step_id": null,
+          "outcome": {
+            "reason": "current",
+            "adopted": true,
+            "result_id": "923f2768-dfd2-5c96-b870-b7f41f03330a"
+          },
+          "business_output": {
+            "verdict": "needs_review",
+            "rationale": "当前告警显示主机 socai2-flow-20261107-01 上的用户 flow-observer 建立了出站连接。虽然主机名和用户名为自动化流程特征，且存在“同步接线验证”的推测，但本次材料中缺乏明确的业务授权记录、演练标签或人工确认来证实该行为的合法性。同时，现有证据不足以证明存在恶意行为（如数据外传或横向移动）。因此，在缺乏确凿的良性或恶意证据时，无法确定告警性质。",
+            "confidence": null
+          },
+          "matches_database_result": true
+        }
+      ]
+    },
+    {
+      "run_id": "e4830bdc-81ff-5696-9606-ff8f1d9e1a18",
+      "kind": "alert_basic",
+      "run_anchor": "run-3",
+      "state": "completed",
+      "delivery_state": "complete",
+      "stop_reason": "stage_output_saved",
+      "html_run_equals_snapshot": true,
+      "run_has_output_artifact_id_field": false,
+      "execution_delivery_nodes": [
+        {
+          "label": "本轮执行 · 已完成",
+          "href": "#run-3",
+          "state": "completed",
+          "title": "stage_output_saved"
+        },
+        {
+          "label": "本轮交付 · 完整交付",
+          "href": "#run-3",
+          "state": "complete",
+          "title": null
+        }
+      ],
+      "result_table": "alert_assessments",
+      "result_ids": [
+        "b79ba899-3537-5133-9b05-4c5c95a9b4ad"
+      ],
+      "publications": [
+        {
+          "artifact_anchor": "artifact-38",
+          "artifact_id": "81d0d073-37ee-5902-9a1b-f7a67d32d616",
+          "step_id": null,
+          "outcome": {
+            "reason": "current",
+            "adopted": true,
+            "result_id": "b79ba899-3537-5133-9b05-4c5c95a9b4ad"
+          },
+          "business_output": {
+            "verdict": "needs_review",
+            "rationale": "告警显示在主机 'socai2-flow-20261107-01' 上，由用户 'flow-observer' 启动了 'powershell.exe -NoProfile -Command Get-LocalUser'。虽然该命令常用于信息收集，但主机名包含 'flow' 且用户名为 'flow-observer'，强烈暗示这是自动化流程或监控代理。历史分析明确指出这是“同步接线验证用模板判断”，且业务合理性尚未核实。当前材料缺乏明确的授权记录、演练标签或人工确认来证明其良性，同时也缺乏恶意行为的确凿证据（如后续横向移动或数据外传），因此无法确定性质。",
+            "confidence": 0.9
+          },
+          "matches_database_result": true
+        }
+      ]
+    },
+    {
+      "run_id": "f25f2839-1627-58db-925f-f16b146a983a",
+      "kind": "incident_diagnosis",
+      "run_anchor": "run-4",
+      "state": "completed",
+      "delivery_state": "complete",
+      "stop_reason": "stage_output_saved",
+      "html_run_equals_snapshot": true,
+      "run_has_output_artifact_id_field": false,
+      "execution_delivery_nodes": [
+        {
+          "label": "本轮执行 · 已完成",
+          "href": "#run-4",
+          "state": "completed",
+          "title": "stage_output_saved"
+        },
+        {
+          "label": "本轮交付 · 完整交付",
+          "href": "#run-4",
+          "state": "complete",
+          "title": null
+        }
+      ],
+      "result_table": "incident_diagnoses",
+      "result_ids": [
+        "0c16f87f-cffa-5f15-ac0c-08d8878edbe8"
+      ],
+      "publications": [
+        {
+          "artifact_anchor": "artifact-5",
+          "artifact_id": "1506dc22-b872-584f-92f8-1b59fbb8a8c0",
+          "step_id": null,
+          "outcome": {
+            "reason": "current",
+            "adopted": true,
+            "result_id": "0c16f87f-cffa-5f15-ac0c-08d8878edbe8"
+          },
+          "business_output": {
+            "summary": "主机 socai2-flow-20261107-01 上的自动化账号 flow-observer 在短时间内完成了登录、本地用户枚举及出站连接操作。",
+            "conclusion": "整体行为符合自动化流程特征，但因缺乏明确的业务授权、演练标签或人工确认，无法排除恶意利用自动化名义进行隐蔽操作的可能性。当前证据不足以定性为良性业务活动或恶意攻击，判定为待复核。"
+          },
+          "matches_database_result": true
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "docs/operations/evidence/fixed-investigation-20261114-01/flow/C01/export/database.json",
+      "sha256": "99eb24c12b22747574e3a94e98db53d7be2d30c9e1477afc971bf9b8359d141e"
+    },
+    {
+      "path": "docs/operations/processing_audit_inspector.py",
+      "sha256": "db9079ee625bf2e6da9bfb63a39c3c908d202c1057fbc664af47b336a32f7698"
+    },
+    {
+      "path": "docs/operations/processing_audit_flow.py",
+      "sha256": "c7f5452c34000e8f6c9f3d1ea5b139f6a4ac3d722a4c8b2285198c7cff34edb8"
+    },
+    {
+      "path": "docs/operations/processing_audit_detail.py",
+      "sha256": "577af9ae5a9f0bebb88084dca2e2478666bb56fba3947ec11a8a242164741c5e"
+    },
+    {
+      "path": "docs/operations/processing_audit_delivery.py",
+      "sha256": "25853a0e0143dc799b61b7a916999f459b8cfc5b9a11f481d7618764cccaf7de"
+    },
+    {
+      "path": "services/api/app/socai2/stage_results.py",
+      "sha256": "36472b05b771d9f0665f5366ead15d7fcb922f803dab3742e9e98093a66c78d7"
+    }
+  ],
+  "quality_boundary": "Original business prose is preserved for display diagnosis only; known prose-quality findings remain NOT_PASSED.",
+  "mutations": {
+    "business_code": false,
+    "ui_code": false,
+    "database": false,
+    "deployment": false,
+    "model_calls": 0
+  }
+}

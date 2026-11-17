@@ -1,0 +1,218 @@
+{
+  "analysis": {
+    "summary": "本轮复核确认了前序判断的核心事实：主机 socai2-flow-20261107-01 上的用户 flow-observer 在 2026-11-07T06:38:27Z 至 06:39:07Z 间执行了登录、PowerShell 枚举命令及出站连接。关键缺口在于缺乏业务授权、演练标签或人工确认来证实行为的合法性，同时威胁情报和资产库存查询未能提供决定性支持或排除项。成员间存在时间邻近与对象重合，但无法证实因果链。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "analyzed",
+        "summary": "记录显示用户 flow-observer 从 192.0.2.77 发起出站 TCP 连接至 198.51.100.77:443。",
+        "evidence_ids": ["N7_S3", "N7_S4", "N7_S5", "N7_S6", "N7_S7", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S13", "N7_S14", "N7_S27", "N7_S29"],
+        "limitations": ["连接成功仅说明建立，不证明数据已传输或业务目的达成。", "目的 IP 归属未知。"]
+      },
+      {
+        "alert_id": "A2",
+        "state": "analyzed",
+        "summary": "记录显示用户 flow-observer 从 203.0.113.77 成功登录主机 socai2-flow-20261107-01。",
+        "evidence_ids": ["N7_S30", "N7_S31", "N7_S32", "N7_S33", "N7_S34", "N7_S35", "N7_S36", "N7_S37", "N7_S38", "N7_S48", "N7_S50"],
+        "limitations": ["登录来源 IP 与出站连接源 IP 不同，不能直接证明同一会话。"]
+      },
+      {
+        "alert_id": "A3",
+        "state": "analyzed",
+        "summary": "记录显示用户 flow-observer 在主机上启动了 powershell.exe 并执行了 Get-LocalUser 命令。",
+        "evidence_ids": ["N7_S51", "N7_S52", "N7_S53", "N7_S54", "N7_S55", "N7_S56", "N7_S57", "N7_S58", "N7_S59", "N7_S60", "N7_S71", "N7_S73"],
+        "limitations": ["进程启动成功仅说明启动，不证明命令执行完成或已读取信息。"]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "observed",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N7_S3", "N7_S30", "N7_S51"],
+        "counter_ids": [],
+        "alternatives": [],
+        "limitations": ["同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。", "标题、厂商、测试/演练自述不证明授权、良性或排除恶意。", "未提供审批、查空、未接通不构成不存在或反证。"]
+      },
+      {
+        "id": "F2",
+        "state": "inferred",
+        "statement": "主机 socai2-flow-20261107-01 上的用户 flow-observer 执行了登录、PowerShell 枚举命令及出站连接，行为具有自动化特征（主机名/用户名）。",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N7_S4", "N7_S31", "N7_S52", "N7_S5", "N7_S32", "N7_S53", "N7_S6", "N7_S56", "N7_S13", "N7_S37", "N7_S59"],
+        "counter_ids": [],
+        "alternatives": ["用户 flow-observer 可能是合法的业务账户，执行的是正常的运维或数据同步任务。"],
+        "limitations": ["不能从主机名、用户名推断已获批的自动化流程。", "现有材料未提供审批、白名单、文件传输或受损证明。", "标签 synthetic 仅表示数据生成方式，不证明行为性质。"]
+      },
+      {
+        "id": "F3",
+        "state": "unresolved",
+        "statement": "无法确定行为性质（恶意、正常或误操作），亦无法确认是否存在业务授权。",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N7_S87", "N7_S88", "N7_S89", "N7_S90", "N7_S91"],
+        "counter_ids": [],
+        "alternatives": ["若后续查询证实目的 IP 为已知合作伙伴或内部资产，且存在对应授权文档，则可能为良性。", "若后续查询证实目的 IP 为恶意 C2 服务器，且无授权，则可能为攻击。"],
+        "limitations": ["威胁情报与资产库存查询未能提供决定性支持。", "在缺乏确凿良性或恶意证据前，不能定性为误报或攻击。", "已知连接端点与未知外传目的须分开表述。"]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "原始记录支持主机 socai2-flow-20261107-01 上用户 flow-observer 在 2026-11-07T06:38:27Z 至 06:39:07Z 间执行登录（A2）、启动 PowerShell 执行 Get-LocalUser（A3）及出站 TCP 连接至 198.51.100.77:443（A1）。",
+        "evidence_ids": ["N7_S30", "N7_S51", "N7_S3", "N7_S31", "N7_S52", "N7_S4", "N7_S53", "N7_S32", "N7_S54", "N7_S5", "N7_S33", "N7_S55", "N7_S6", "N7_S56", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S34", "N7_S57", "N7_S7", "N7_S58", "N7_S59", "N7_S60", "N7_S35", "N7_S37", "N7_S38", "N7_S46", "N7_S49", "N7_S50", "N7_S47", "N7_S48"]
+      ,
+        "limitations": ["process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。", "网络连接成功仅说明连接建立，不证明数据已传输或业务目的达成。"]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "成员 A2、A3、A1 共享同一主机（socai2-flow-20261107-01）、同一用户（flow-observer）及时间邻近（间隔 20 秒至 1 分钟），构成潜在的行为序列。",
+        "evidence_ids": ["N7_S30", "N7_S51", "N7_S3", "N7_S31", "N7_S52", "N7_S4", "N7_S53", "N7_S32", "N7_S54", "N7_S5", "N7_S33", "N7_S55", "N7_S6", "N7_S56", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S34", "N7_S57", "N7_S7", "N7_S58", "N7_S59", "N7_S60", "N7_S35", "N7_S37", "N7_S38", "N7_S46", "N7_S49", "N7_S50", "N7_S47", "N7_S48"]
+      ,
+        "limitations": ["登录来源 IP（203.0.113.77）和出站连接源 IP（192.0.2.77）属于不同记录上下文，同主机账号时间邻近不能直接证明同一会话或因果链。", "图可达不能直接当成因果或影响。"]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "行为具有自动化特征（主机名/用户名），但缺乏确凿的良性（授权/演练）或恶意（数据外传/横向移动）证据，性质待定。",
+        "evidence_ids": ["N7_S13", "N7_S37", "N7_S59", "N7_S87", "N7_S88", "N7_S89", "N7_S90", "N7_S92", "N7_S91"]
+      ,
+        "limitations": ["标签 synthetic 不证明对应行为发生，也不证明授权或良性。", "历史判断和人工陈述明确归因，可写入摘要，勿与行为混成一条 observed 发现。", "不以单个标签或分数定性。"]
+      },
+      {
+        "id": "authorization",
+        "state": "unresolved",
+        "answer": "当前无明确授权材料。人工反馈（N7_S1）明确标注为演练反馈而非业务人员授权确认，且未提供审批、白名单或文件传输证明。",
+        "evidence_ids": ["N7_S1", "N7_S87", "N7_S88", "N7_S91", "N7_S13", "N7_S37", "N7_S59"]
+      ,
+        "limitations": ["未提供审批、查空、未接通不构成不存在或反证。", "标题、厂商、测试/演练自述不证明授权、良性或排除恶意。", "省略不同于未发生。"]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "观察到进程启动和网络连接动作，但命令执行结果、数据是否外传、业务状态是否修改均尚未确认。",
+        "evidence_ids": ["N7_S7", "N7_S57", "N7_S6", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S55"]
+      ,
+        "limitations": ["仅有命令内容/启动或连接记录时，明确结果与影响尚未确认。", "只有实际返回内容、作用结果或业务确认才能陈述已取得信息、修改状态或造成损失。", "图可达不等于受影响。"]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及用户 flow-observer 的登录及进程执行行为。",
+        "alert_ids": ["A1", "A2", "A3"]
+      ,
+        "finding_ids": ["F1", "F2", "F3"]
+      ,
+        "limitations": ["用户身份合法性及权限范围未通过授权材料证实。"]
+      },
+      {
+        "name": "cloud",
+        "applicability": "not_applicable",
+        "reason": "当前材料未提供云环境特定上下文或 API 调用记录。",
+        "alert_ids": []
+      ,
+        "finding_ids": []
+      ,
+        "limitations": ["无法评估云原生风险。"]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "当前材料未涉及钓鱼邮件、链接或凭证窃取特征。",
+        "alert_ids": []
+      ,
+        "finding_ids": []
+      ,
+        "limitations": ["无法评估钓鱼风险。"]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及内部用户 flow-observer 执行枚举命令，需确认是否为内部威胁或授权运维。",
+        "alert_ids": ["A1", "A2", "A3"]
+      ,
+        "finding_ids": ["F2", "F3"]
+      ,
+        "limitations": ["缺乏用户行为基线或异常检测数据支持判断。"]
+      }
+    ],
+    "conflicts": []
+  ,
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2", "A3"],
+      "mode": "human",
+      "objective": "核实主机 socai2-flow-20261107-01 及用户 flow-observer 是否属于已知的自动化监控代理或业务流程，获取业务授权记录或演练计划文档。"
+    ,
+      "required_evidence": "业务授权书、演练标签、人工确认记录或资产库存中的业务用途说明。"
+    ,
+      "source_ids": ["N7_S91", "N7_S1", "N7_S87", "N7_S88"]
+    ,
+      "object_keys": ["O1", "O5"]
+    }
+  ,
+    {
+      "question_id": "impact",
+      "alert_ids": ["A1", "A3"],
+      "mode": "query",
+      "objective": "确认 PowerShell 命令执行结果及出站连接的实际数据流向，判断是否造成数据泄露或系统配置变更。"
+    ,
+      "required_evidence": "命令执行返回内容、网络连接载荷分析、业务系统状态变更日志。"
+    ,
+      "source_ids": ["N7_S55", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S7", "N7_S57"]
+    ,
+      "object_keys": ["O1", "O3"]
+    }
+  ]
+  },
+  "conclusion": {
+    "text": "案件状态维持为'待复核'。现有证据链显示行为符合自动化特征，但关键的业务上下文（授权/演练）缺失，且威胁情报和资产库存查询未能提供决定性支持或排除项。在缺乏确凿良性证据前，不能直接认定为误报；在缺乏确凿恶意证据前，不能定性为攻击。",
+    "state": "uncertain",
+    "alert_ids": ["A1", "A2", "A3"]
+  ,
+    "support_ids": ["N7_S87", "N7_S88", "N7_S89", "N7_S90", "N7_S91", "N7_S1"]
+  ,
+    "limitations": ["缺乏明确的授权记录、演练标签或人工确认来证明该进程启动的合法性。", "威胁情报未查询，无法排除恶意脚本特征。", "资产库存查询无结果，无法确认主机及用户名的业务背景。"]
+  },
+  "closing_note": "本次材料未提供业务授权书、演练计划文档或人工确认记录，无法证实行为合法性。威胁情报与资产库存查询结果不足以排除风险或确认良性。需人工介入核实业务上下文及目的 IP 归属。",
+  "comparison": {
+    "kind": "unchanged",
+    "summary": "本轮复核结论与前序判断（N7_S94）一致，均判定为'待复核'。核心事实（登录、枚举、连接）及关键缺口（缺乏授权、情报/库存无结果）未发生变化。",
+    "support_ids": ["N7_S94", "N7_S87", "N7_S88", "N7_S89", "N7_S90", "N7_S91"]
+  },
+  "impact": {
+    "summary": "已观察到命令启动和连接建立动作，但未观察到数据外传、系统配置修改或业务损失的确切结果。行为是否属于授权业务未知。",
+    "alert_ids": ["A1", "A2", "A3"]
+  ,
+    "support_ids": ["N7_S7", "N7_S57", "N7_S6", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S55"]
+  ,
+    "supported_changes": []
+  ,
+    "cannot_generalize": ["命令执行的具体结果（如获取了哪些用户信息）未知。", "出站连接是否传输了敏感数据未知。", "行为是否属于授权业务未知。"]
+  ,
+    "next_steps": ["需通过人工确认或深度取证获取命令执行结果及数据流向信息。"]
+  },
+  "recommendations": [
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O5"],
+      "reason": "需核实主机及用户是否属于合法自动化流程，获取授权记录。",
+      "source_ids": ["N7_S91", "N7_S1"]
+    ,
+      "limitations": ["当前缺乏业务侧授权或演练定义材料。"]
+    }
+  ,
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O3"],
+      "reason": "需确认 PowerShell 命令执行结果及出站连接的实际数据流向。",
+      "source_ids": ["N7_S55", "N7_S9", "N7_S10", "N7_S11", "N7_S12", "N7_S7", "N7_S57"]
+    ,
+      "limitations": ["当前仅有命令内容和连接记录，无执行结果或载荷分析。"]
+    }
+  ]
+}

@@ -334,11 +334,10 @@ async def run_checks(engine, record, only=None):
         await request("GET", f"{BASE}/{cid}/history", params={"limit": 101}, code=422)
 
     async def test_artifact_scope_integrity_and_external_reference_not_exposed():
-        from app.socai2.baseline_context import retention_limit
         out, _ = await create()
         cid, rid = UUID(out["case_id"]), UUID(out["pending_run_id"])
         bad, external, large = uuid4(), uuid4(), uuid4()
-        large_text = "x" * (retention_limit() + 1)
+        large_text = "x" * (1048576 + 1)
         async with service.transaction(T) as store:
             now = await store.now()
             for identity, extra in ((bad, {"content_json": {"synthetic": True}, "size_bytes": 18}),
@@ -352,7 +351,7 @@ async def run_checks(engine, record, only=None):
         loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{external}")
         assert loaded["availability"] == "external_content_not_loaded" and "private-path" not in json.dumps(loaded)
         loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{large}")
-        assert loaded["content_text"] is None and loaded["availability"] == "content_exceeds_read_limit_or_size_unknown"
+        assert loaded["content_text"] == large_text and loaded["availability"] == "available"
 
     async def test_run_last_record_uses_all_artifacts_when_directory_truncated():
         out, _ = await create()

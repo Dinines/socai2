@@ -344,7 +344,7 @@ API在21主机为`http://127.0.0.1:18000`，同项目容器网络为`http://api:
 
 ## 4. 已核样例的落地坐标与留存边界
 
-本章合并原盘点文档的独有实测信息，时点为2026-10-22两条样例产生及22:56复核，后续14:39/16:42验证见前章。这里的“本轮/本例”指原样例批次，不是这次文档拆分的新执行。完整回执见[两例验证](../../operations/service-v1-functional-20261022.md)。
+本章合并原盘点文档的独有实测信息，时点为2026-10-22两条样例产生及22:56复核，后续14:39/16:42验证见前章。这里的“本轮/本例”指原样例批次，不是这次文档拆分的新执行。完整回执见[两例验证](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)。
 
 22:56生产总量含发布canary：3 Alert、3 Run、36事件、35工件、5成本行；本章两例只对应其中2 Alert/2 Run/21事件/21工件/3成本行。两份普通分诊预算预留各20000、responded且settled，不代表后续整个调查硬用量上限。没有独立`socai2_triage_deliveries`表，原认领复用Run与seq=-1开始事件；其他表当时行数见[数据库字典](table-fields.md)。
 
@@ -393,4 +393,4 @@ API在21主机为`http://127.0.0.1:18000`，同项目容器网络为`http://api:
 | OpenSearch / Qdrant | 本轮没有TI/知识导入，不制造IOC/向量行 | 它们是资料来源；不存在“每条告警必须各写一行”的合同 |
 | UEBA / KB / 资产 / 身份 | 本生产tenant相关PG表当前0行，五类读取no_match | 接口可达不等于资料覆盖；需后端/上游按模块合同提供资料 |
 
-当前例2仍有TI归因401、部分processing-context BufferError、process_tree缺父进程字段/network_connections查询失败、零行及六轮及软20k预算超限等真实边界，见[测试回执](../../operations/service-v1-functional-20261022.md)。这些不能改写成“所有模块正常”；对接交付成立的部分是输入、关联、自动执行、已有结果的持久化与读取。
+当前例2仍有TI归因401、部分processing-context BufferError、process_tree缺父进程字段/network_connections查询失败、零行及六轮及软20k预算超限等真实边界，见[测试回执](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)。这些不能改写成“所有模块正常”；对接交付成立的部分是输入、关联、自动执行、已有结果的持久化与读取。

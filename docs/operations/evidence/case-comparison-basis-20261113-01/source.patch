@@ -1,0 +1,216 @@
+--- a/services/api/app/socai2/case_context_input.py
++++ b/services/api/app/socai2/case_context_input.py
+@@ -62,6 +62,36 @@
+     return result
+ 
+ 
++def comparison_basis(original, config, omissions, ref):
++    """Select old judgment content for comparison, not new evidence or actions."""
++    policy = config.get("comparison_input_selection")
++    if (not policy or original.get("validation_state") != "accepted"
++            or original.get("conclusion_state") == "unavailable" or not original.get("conclusion")):
++        return {}
++    result = {}
++    for field, omitted in policy["omit"].items():
++        source = original.get(field)
++        if not isinstance(source, (dict, list)):
++            continue
++        rows = source if isinstance(source, list) else [source]
++        selected = []
++        for index, row in enumerate(rows):
++            if not isinstance(row, dict):
++                continue
++            if field == "questions" and (row.get("id") in policy["exclude_questions"]
++                    or row.get("state") not in policy["question_states"]):
++                omissions.append({"ref": ref, "field": f"{field}.{index}",
++                                  "reason": "comparison_needs_open_business_questions", "value_sha256": digest(row)})
++                continue
++            selected.append({k: copy.deepcopy(v) for k, v in row.items() if k not in omitted})
++            for key in omitted:
++                if key in row:
++                    omissions.append({"ref": ref, "field": f"{field}.{index}.{key}",
++                                      "reason": "historical_reference_or_action_kept_in_original", "value_sha256": digest(row[key])})
++        result[field] = selected if isinstance(source, list) else selected[0]
++    return result
++
++
+ def scope_key(row):
+     return "result_scope" if row.get("context_kind") == "human_feedback" else "declared_scope"
+ 
+--- a/services/api/app/socai2/case_followup_input.py
++++ b/services/api/app/socai2/case_followup_input.py
+@@ -84,9 +84,10 @@
+ 
+ 
+ class Sources:
+-    def __init__(self, context, base, artifacts, extra, records=None, field_selection=False):
++    def __init__(self, context, base, artifacts, extra, records=None, field_selection=False, comparison_id=None):
+         self.artifacts, self.context = artifacts, context
+         self.field_selection = field_selection
++        self.comparison_id = comparison_id
+         self.rows, self.by_ref, self.dependencies, self.omissions = [], {}, [], copy.deepcopy(base["omissions"])
+         self.prefix = source_prefix([context.model_dump(mode="json"), base, artifacts, extra])
+         self.boundary = copy.deepcopy(base["case_boundary"])
+@@ -106,6 +107,13 @@
+         ref, owners = copy.deepcopy(ref), list(map(str, owners))
+         config = selected_profile(self.context).config
+         value = project_context(ref, value, config, self.omissions)
++        identity = ref["id"] if ref["type"] == "result" else (
++            extra.get("context_identity") if extra.get("context_kind") == "prior_result" else None)
++        if self.comparison_id and str(identity) == str(self.comparison_id):
++            prior = self.context.prior_results.get(str(self.comparison_id), {})
++            details = case_context_input.comparison_basis(prior, config, self.omissions, ref)
++            if details:
++                value = {**value, "comparison_basis": identities(details, self.boundary)}
+         if extra.get("context_kind") and "original_scope" in extra:
+             value = copy.deepcopy(value)
+             value[case_context_input.scope_key(extra)] = identities(extra["original_scope"], self.boundary)
+@@ -371,8 +379,10 @@
+                 plan = artifacts.get(str(row["source"]["ref"]["id"]), {}).get("content_json", {})
+                 required.extend(selection.references(row["original"], plan.get("source_map", {})))
+         selected_records = selection.records(base, context, cfg, profile.business, required, selection_omissions)
++    comparison = (extra or {}).get("comparison", {})
+     reg = Sources(context, base, artifacts, [previous, extra, lead, graphs], records=selected_records,
+-                  field_selection=task_selection)
++                  field_selection=task_selection, comparison_id=comparison.get("result_id")
++                  if stage == "C6" and comparison.get("state") == "eligible" else None)
+     reg.omissions.extend(selection_omissions)
+     boundary, ledger = reg.boundary, base["input_ledger"]
+     required_missing = False
+@@ -543,6 +553,8 @@
+         if comparison_ids:
+             blocks.append("指定比较基线引用=[" + ",".join(sorted(comparison_ids))
+                 + "]。comparison.support_ids需包含指定基线；比较变化还需本轮依据。同文历史背景引用仅保留前序依赖，不能替代指定基线。")
++            if cfg.get("comparison_input_selection"):
++                blocks.append(cfg["comparison_input_selection"]["instruction"])
+     if metadata.get("graph_state") in {"not_built", "stale"}:
+         blocks.append(cfg["followup_input_selection"]["graph_unavailable_text"] if task_selection else
+                       "[图谱限制] " + metadata["graph_state"] + "；未提供可用的当前派生图，不表示没有关联。")
+--- a/services/api/app/socai2/case-input-v1.json
++++ b/services/api/app/socai2/case-input-v1.json
+@@ -1841,7 +1841,12 @@
+       "applicability": "适用性",
+       "query_record_identity": "历史版本",
+       "unavailable_prior_reference_count": "不可见原依据数",
+-      "visible_prior_references": "原判断依据"
++      "visible_prior_references": "原判断依据",
++      "comparison_basis": "指定基线的判断内容",
++      "case_impact": "历史影响判断",
++      "supported_changes": "原判断支持的影响",
++      "cannot_generalize": "原判断未确认的影响",
++      "affected_scope": "原影响范围"
+     },
+     "final_prior_omit": [
+       "members",
+@@ -1851,6 +1856,17 @@
+     "graph_directory_relations": [
+       "source_reports_object"
+     ]
++  },
++  "comparison_input_selection": {
++    "version": "fixed-comparison-business-v1",
++    "omit": {
++      "findings": ["id", "support", "counterevidence"],
++      "questions": ["evidence_refs"],
++      "case_impact": ["next_steps"]
++    },
++    "question_states": ["unresolved", "not_attempted"],
++    "exclude_questions": ["coverage"],
++    "instruction": "指定基线的发现、未决问题和影响均是历史判断，用于比较原结论及边界，不是本轮新增观察或独立证据。保留原文中的旧短号不属于本次引用；引用历史内容统一使用上述指定基线短号。只比较实际给出的判断内容，不能凭摘要长短、条目数量或本轮解释更详细就断言证据更充分。"
+   },
+   "context_input_selection": {
+     "version": "fixed-human-comparison-input-v1",
+--- a/services/api/app/socai2/runtime_policy.py
++++ b/services/api/app/socai2/runtime_policy.py
+@@ -113,6 +113,16 @@
+             or any(not isinstance(comparison[k], str) or not comparison[k].strip()
+                    for k in ("summary", "instruction")) or len(comparison["summary"]) > 1200):
+         raise ValueError("case_fixed_comparison_policy_invalid")
++    comparison_input = data.get("comparison_input_selection")
++    if comparison_input is not None and (not isinstance(comparison_input, dict)
++            or set(comparison_input) != {"version", "omit", "question_states", "exclude_questions", "instruction"}
++            or comparison_input["version"] != "fixed-comparison-business-v1"
++            or not isinstance(comparison_input["omit"], dict)
++            or set(comparison_input["omit"]) != {"findings", "questions", "case_impact"}
++            or any(not isinstance(v, list) or any(not isinstance(k, str) for k in v)
++                   for v in [*comparison_input["omit"].values(), comparison_input["question_states"], comparison_input["exclude_questions"]])
++            or not isinstance(comparison_input["instruction"], str) or not comparison_input["instruction"].strip()):
++        raise ValueError("case_comparison_input_policy_invalid")
+     enrichment = data.get("enrichment")
+     if (not isinstance(enrichment, dict) or set(enrichment) != {
+             "version", "reserved_tool_calls", "paired_source_penalty", "priorities"}
+--- a/services/api/tests/test_socai2_case_followup_boundary.py
++++ b/services/api/tests/test_socai2_case_followup_boundary.py
+@@ -738,13 +738,28 @@
+             "object_keys": ["host:previous-only"], "window_start": "2026-10-01T00:00:00Z", "window_end": "2026-10-01T01:00:00Z"}}
+     value = {"comparison_result_id": rid, "validation_state": "accepted", "delivery_state": "complete",
+              "conclusion_state": "uncertain", "conclusion_origin": "model", "conclusion": "Old judgment unchanged."}
++    historical_ref = inputs.reference("artifact", uuid4(), "observation")
+     old = {**value, "id": rid, "member_deliveries": [{"alert_id": aid}, {"alert_id": removed}],
+-           "findings": [{"statement": "Old report details not needed for this comparison."}],
++           "findings": [{"id": "historical-internal-finding", "state": "inferred",
++               "statement": "Old N1_S1 suggested a shared session, without direct proof.",
++               "scope": comparison["prior_scope"], "support": [historical_ref], "counterevidence": [],
++               "limitations": ["Different sessions remain possible."], "business_extension": {"count": 0, "confirmed": False}}],
++           "questions": [
++               {"id": "authorization", "state": "unresolved", "answer": "No authorization was confirmed.",
++                "scope": comparison["prior_scope"], "limitations": ["Absence of approval is not proof of malice."],
++                "evidence_refs": [historical_ref]},
++               {"id": "coverage", "state": "unresolved", "answer": "Old execution statistics are not a business question."},
++               {"id": "detection_facts", "state": "answered", "answer": "Resolved old answer need not repeat the findings."}],
++           "case_impact": {"summary": "Transfer was not established.", "supported_changes": [],
++               "cannot_generalize": ["A connection does not establish a data transfer."],
++               "affected_scope": comparison["prior_scope"], "next_steps": ["Old action must not become current advice."]},
+            "operation_key": "internal-result-operation", "business_extension": {"count": 0, "approved": False, "exceptions": []}}
+     sample["context"]["prior_results"][rid] = old
+     sample["context"]["citation_roles"][f"$.prior_results.{rid}"] = "prior_analysis"
+     context, base, prior = fixture(sample)
+     base_row = next(r for r in base["input_ledger"]["records"] if r.get("context_identity") == rid)
++    assert "comparison_basis" not in base_row["value"]
++    assert old["findings"][0]["statement"] not in base["messages"][1]["content"]
+     prior["analysis"]["questions"][0]["evidence_ids"].append(base_row["id"])
+     lead = [{"original": value, "required": True, "entry": {"value": value},
+              "source": {"ref": inputs.reference("result", rid, "prior_analysis"), "alert_ids": [aid]}}]
+@@ -765,7 +780,19 @@
+     assert len(duplicates) == 2 and {r["ref"]["type"] for r in duplicates} == {"artifact", "result"}
+     assert duplicates[0]["value"] == duplicates[1]["value"]
+     assert text.count(value["conclusion"]) == 1
+-    assert "internal-result-operation" not in text and old["findings"][0]["statement"] not in text
++    assert "internal-result-operation" not in text
++    assert text.count(old["findings"][0]["statement"]) == 1
++    basis = row["value"]["comparison_basis"]
++    assert basis["findings"][0]["scope"]["alert_ids"] == [prepared["case_boundary"]["member_aliases"][aid], "X1"]
++    assert basis["findings"][0]["limitations"] == old["findings"][0]["limitations"]
++    assert basis["findings"][0]["business_extension"] == {"count": 0, "confirmed": False}
++    assert [q["id"] for q in basis["questions"]] == ["authorization"]
++    assert basis["questions"][0]["answer"] == old["questions"][0]["answer"]
++    assert basis["case_impact"]["supported_changes"] == []
++    assert basis["case_impact"]["cannot_generalize"] == old["case_impact"]["cannot_generalize"]
++    assert all(excluded not in text for excluded in (historical_ref["id"], "historical-internal-finding",
++        old["questions"][1]["answer"], old["questions"][2]["answer"], old["case_impact"]["next_steps"][0]))
++    assert context.prior_results[rid] == old
+     assert row["value"]["business_extension"] == old["business_extension"]
+     assert row["original_scope"]["alert_ids"] == sorted([aid, removed])
+     background = next(r for r in duplicates if r["ref"]["type"] == "artifact")
+--- a/services/api/tests/test_socai2_case_followup_pg.py
++++ b/services/api/tests/test_socai2_case_followup_pg.py
+@@ -163,6 +163,19 @@
+         requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+             F.c.run_id == rid, F.c.kind == "model_request")))).scalars().all()
+         assert all(any(req["payload"]["body"] == sent["body"] for req in requests) for sent in gateway.requests)
++        if mode == "human_followup":
++            final_request = gateway.requests[-1]
++            baseline_id = final_request["followup_boundary"]["program_metadata"]["comparison"]["result_id"]
++            frozen_context = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
++                F.c.run_id == rid, F.c.schema_version == "socai2.baseline-context.v1")))).scalar_one()
++            old = frozen_context["prior_results"][baseline_id]
++            selected = next(row for row in final_request["followup_boundary"]["records"]
++                            if row["ref"]["type"] == "result" and row["ref"]["id"] == baseline_id)
++            basis = selected["value"]["comparison_basis"]
++            assert [f["statement"] for f in basis["findings"]] == [f["statement"] for f in old["findings"]]
++            assert basis["case_impact"]["cannot_generalize"] == old["case_impact"]["cannot_generalize"]
++            assert all(q["id"] != "coverage" for q in basis["questions"])
++            assert old["conclusion"] in final_request["body"]["messages"][1]["content"]
+         if mode in {"role_recovery", "role_partial"}:
+             assert len(requests) == 6
+             responses = (await store.db.execute(select(F.c.content_json).where(*store.where(F,

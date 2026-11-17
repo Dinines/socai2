@@ -1,0 +1,111 @@
+<!doctype html><meta charset="utf-8"><title>模型部署前验证</title><style>body{font:16px system-ui;margin:32px auto;max-width:1400px;padding:0 20px;color:#243040;background:#f4f6fa}article{background:white;padding:24px;margin:20px 0;border:1px solid #d8deea;border-radius:12px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6}section{min-width:0}h2{color:#2357a5}@media(max-width:800px){.pair{display:block}}@media print{details{display:block}article{break-inside:avoid}}</style><h1>模型部署前验证</h1><p>自动结果只检查协议与结构；参考是合成场景的人工判断依据。模型自报 confidence 不是质量分。响应中的 reasoning 不落盘。请求/响应/工具明细在各样例目录。</p><article><h2>read_probe_auto</h2><p>执行：complete；协议/结构：[&#x27;PASS: standard call, local execution, matching tool reply and final exact values&#x27;]</p><details><summary>请求数、耗时、用量</summary><pre>{
+  &quot;requests&quot;: 2,
+  &quot;http_duration_seconds&quot;: 3.842,
+  &quot;known_total_tokens&quot;: 1241,
+  &quot;missing_token_usage_requests&quot;: 0,
+  &quot;cost&quot;: &quot;unpriced&quot;,
+  &quot;statuses&quot;: [
+    &quot;responded&quot;,
+    &quot;responded&quot;
+  ]
+}</pre></details><div class="pair"><section><h3>实际输出</h3><pre>{
+  &quot;call&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;&quot;,
+    &quot;tool_calls&quot;: [
+      {
+        &quot;id&quot;: &quot;call_4ltourzf&quot;,
+        &quot;index&quot;: 0,
+        &quot;type&quot;: &quot;function&quot;,
+        &quot;function&quot;: {
+          &quot;name&quot;: &quot;read_probe_record&quot;,
+          &quot;arguments&quot;: &quot;{\&quot;record_id\&quot;:\&quot;probe-f46773fb70013757\&quot;}&quot;
+        }
+      }
+    ]
+  },
+  &quot;follow_up&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;{\&quot;record_id\&quot;: \&quot;probe-f46773fb70013757\&quot;, \&quot;receipt\&quot;: \&quot;73777d73cac1f2171ed50a66636e8afe\&quot;, \&quot;evidence_ref\&quot;: \&quot;EV-885aa0dffb78fbced9bcf60bbdd9baa1\&quot;}&quot;
+  }
+}</pre></section><section><h3>人工参考（未发送给模型）</h3><pre>{
+  &quot;mode&quot;: &quot;receipt&quot;,
+  &quot;expected&quot;: {
+    &quot;record_id&quot;: &quot;probe-f46773fb70013757&quot;,
+    &quot;receipt&quot;: &quot;73777d73cac1f2171ed50a66636e8afe&quot;,
+    &quot;evidence_ref&quot;: &quot;EV-885aa0dffb78fbced9bcf60bbdd9baa1&quot;
+  }
+}</pre></section></div><p>人工记录：结论正确 □　证据充分 □　工具有效 □　无虚构 □　需复查 □</p></article><article><h2>read_probe_required</h2><p>执行：complete；协议/结构：[&#x27;PASS: standard call, local execution, matching tool reply and final exact values&#x27;]</p><details><summary>请求数、耗时、用量</summary><pre>{
+  &quot;requests&quot;: 2,
+  &quot;http_duration_seconds&quot;: 1.695,
+  &quot;known_total_tokens&quot;: 1044,
+  &quot;missing_token_usage_requests&quot;: 0,
+  &quot;cost&quot;: &quot;unpriced&quot;,
+  &quot;statuses&quot;: [
+    &quot;responded&quot;,
+    &quot;responded&quot;
+  ]
+}</pre></details><div class="pair"><section><h3>实际输出</h3><pre>{
+  &quot;call&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;&quot;,
+    &quot;tool_calls&quot;: [
+      {
+        &quot;id&quot;: &quot;call_d1h3eel4&quot;,
+        &quot;index&quot;: 0,
+        &quot;type&quot;: &quot;function&quot;,
+        &quot;function&quot;: {
+          &quot;name&quot;: &quot;read_probe_record&quot;,
+          &quot;arguments&quot;: &quot;{\&quot;record_id\&quot;:\&quot;probe-b2d3a6d9791c1df3\&quot;}&quot;
+        }
+      }
+    ]
+  },
+  &quot;follow_up&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;{\&quot;record_id\&quot;: \&quot;probe-b2d3a6d9791c1df3\&quot;, \&quot;receipt\&quot;: \&quot;a163062792adad451c36ff2c8f499031\&quot;, \&quot;evidence_ref\&quot;: \&quot;EV-48293f1bcb52462031838186dfe6f826\&quot;}&quot;
+  }
+}</pre></section><section><h3>人工参考（未发送给模型）</h3><pre>{
+  &quot;mode&quot;: &quot;receipt&quot;,
+  &quot;expected&quot;: {
+    &quot;record_id&quot;: &quot;probe-b2d3a6d9791c1df3&quot;,
+    &quot;receipt&quot;: &quot;a163062792adad451c36ff2c8f499031&quot;,
+    &quot;evidence_ref&quot;: &quot;EV-48293f1bcb52462031838186dfe6f826&quot;
+  }
+}</pre></section></div><p>人工记录：结论正确 □　证据充分 □　工具有效 □　无虚构 □　需复查 □</p></article><article><h2>read_probe_stream</h2><p>执行：failed；协议/结构：[&#x27;FAIL: tool chain incomplete or returned values differ&#x27;]</p><pre>$: missing [&#x27;evidence_ref&#x27;, &#x27;receipt&#x27;]</pre><details><summary>请求数、耗时、用量</summary><pre>{
+  &quot;requests&quot;: 2,
+  &quot;http_duration_seconds&quot;: 1.54,
+  &quot;known_total_tokens&quot;: 982,
+  &quot;missing_token_usage_requests&quot;: 0,
+  &quot;cost&quot;: &quot;unpriced&quot;,
+  &quot;statuses&quot;: [
+    &quot;responded&quot;,
+    &quot;responded&quot;
+  ]
+}</pre></details><div class="pair"><section><h3>实际输出</h3><pre>{
+  &quot;call&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;&quot;,
+    &quot;tool_calls&quot;: [
+      {
+        &quot;id&quot;: &quot;call_lveq96kb&quot;,
+        &quot;type&quot;: &quot;function&quot;,
+        &quot;function&quot;: {
+          &quot;name&quot;: &quot;read_probe_record&quot;,
+          &quot;arguments&quot;: &quot;{\&quot;record_id\&quot;:\&quot;probe-b9a1548fa73c9e74\&quot;}&quot;
+        }
+      }
+    ]
+  },
+  &quot;follow_up&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;{\&quot;record_id\&quot;: \&quot;probe-b9a1548fa73c9e74\&quot;}&quot;
+  }
+}</pre></section><section><h3>人工参考（未发送给模型）</h3><pre>{
+  &quot;mode&quot;: &quot;receipt&quot;,
+  &quot;expected&quot;: {
+    &quot;record_id&quot;: &quot;probe-b9a1548fa73c9e74&quot;,
+    &quot;receipt&quot;: &quot;c059cf22ece92463ef87692b2f374c5c&quot;,
+    &quot;evidence_ref&quot;: &quot;EV-48492211b6ec4cf8bd26ac18f5d72567&quot;
+  }
+}</pre></section></div><p>人工记录：结论正确 □　证据充分 □　工具有效 □　无虚构 □　需复查 □</p></article>

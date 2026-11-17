@@ -18,7 +18,7 @@ from uuid import UUID
 from production_profile import ProfileError, load, runtime_values
 
 HERE = Path(__file__).resolve().parent
-ACTIONS = ("alert", "incident", "case-create", "case-prepare", "case-start")
+ACTIONS = ("case-create",)
 
 
 def select_profile(path):
@@ -152,8 +152,9 @@ def configure():
     processor_url = url(PROCESSOR, pg_credential(PROCESSOR, "db-password"))
     ingress_url = url(INGRESS, pg_credential(INGRESS, "ingress-password"))
     lake_password = lake_credential()
-    ingress = {key: env[key] for key in ("PGSSLMODE", "PGSSLROOTCERT", "SSL_CERT_FILE",
-        "SOCAI2_SERVICE_DATABASE_NAME", "SOCAI2_PROCESSING_DB_HOST", "SOCAI2_PROCESSING_DB_PORT", "SOCAI2_PROCESSING_INGRESS_ROLE")}
+    ingress = {key: env[key] for key in ("PGSSLMODE",
+        "SOCAI2_SERVICE_DATABASE_NAME", "SOCAI2_PROCESSING_DB_HOST", "SOCAI2_PROCESSING_DB_PORT", "SOCAI2_PROCESSING_INGRESS_ROLE",
+        "SOCAI2_PROJECTION_CONFIG_FILE", "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE")}
     save_env("ingress.env", {**ingress, "DATABASE_URL": ingress_url, "PYTHONPATH": PROFILE.docker.fusion_pythonpath})
     for k in ("SECRET_KEY", "JWT_SECRET", "REALTIME_INTERNAL_TOKEN", "AISOC_REALTIME_JWT_SECRET", "METRICS_TOKEN"):
         env[k] = secret(k.lower())
@@ -185,7 +186,9 @@ def run(tenant, actor, args):
         argv.extend(("-e", "SOCAI2_PROCESSING_ACTOR_ID=" + str(actor)))
     mounts = [(HERE / "processing_job.py", "/opt/processor/production_job.py"),
                           (HERE / "production_ingress.py", "/opt/processor/production_ingress.py"),
-                          (Path(PROFILE.paths.ca_file), PROFILE.paths.ca_mount),
+                          (HERE / "projection_config.py", "/opt/processor/projection_config.py"),
+                          (Path(PROFILE.paths.projection_file), PROFILE.paths.projection_mount),
+                          (Path(PROFILE.paths.analysis_tasks_file), PROFILE.paths.analysis_tasks_mount),
                           (Path(PROFILE.paths.policy_file), PROFILE.paths.policy_mount)]
     if getattr(PROFILE, "knowledge", None) is not None:
         mounts.extend([(Path(PROFILE.knowledge.profile_file), PROFILE.knowledge.profile_mount),

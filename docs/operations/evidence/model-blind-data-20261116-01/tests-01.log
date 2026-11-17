@@ -1,0 +1,1597 @@
+FFFFFF...FFEEEEEEEEEEEEEEEE........FFFFFFFF...FFFFFF     [100%]
+==================================== ERRORS ====================================
+__ ERROR at setup of test_prepare_phase_counts_identity_and_no_expected_reads __
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_prepare_phase_counts_iden0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_two_phases_gate_actual_readback_ack_and_fixed_receipts _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_two_phases_gate_actual_re0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_unknown_stops_and_preserves_unattempted_and_no_resend[timeout] _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_unknown_stops_and_preserv0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_unknown_stops_and_preserves_unattempted_and_no_resend[wrong] _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_unknown_stops_and_preserv1')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_unknown_stops_and_preserves_unattempted_and_no_resend[cancel] _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_unknown_stops_and_preserv2')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+______ ERROR at setup of test_known_presend_failure_keeps_all_unattempted ______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_known_presend_failure_kee0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_____ ERROR at setup of test_wrong_profile_refused_before_output[change0] ______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_wrong_profile_refused_bef0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_____ ERROR at setup of test_wrong_profile_refused_before_output[change1] ______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_wrong_profile_refused_bef1')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_____ ERROR at setup of test_wrong_profile_refused_before_output[change2] ______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_wrong_profile_refused_bef2')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_____ ERROR at setup of test_wrong_profile_refused_before_output[change3] ______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_wrong_profile_refused_bef3')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_bad_readback_or_s04_and_transport_change_do_not_send __
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_bad_readback_or_s04_and_t0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_________ ERROR at setup of test_tampered_wire_and_profile_are_refused _________
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_tampered_wire_and_profile0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_s04_prepares_only_frozen_increment_without_expected_reads _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_s04_prepares_only_frozen_0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ ERROR at setup of test_s04_absence_and_incremental_gate_before_exactly_two_sends _
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_s04_absence_and_increment0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+______ ERROR at setup of test_s04_unknown_never_replays_or_unlocks_alert _______
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_s04_unknown_never_replays0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+____ ERROR at setup of test_s04_requires_prior_snapshot_in_selected_profile ____
+
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_s04_requires_prior_snapsh0')
+
+    @pytest.fixture
+    def fixture(tmp_path):
+        config = json.loads((ROOT / "tools/testdata/streaming-fixture.example.json").read_bytes())
+        config["batch_id"] = "sender-component-new-batch"
+        dataset = tmp_path / "dataset"
+>       streaming_fixture.generate(config, dataset)
+
+tools/testdata/tests/test_streaming_send.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '3b11a718-f23e-55ad-abe5-9593c37a809d', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+=================================== FAILURES ===================================
+____________ test_offline_deterministic_and_reusable_with_new_batch ____________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_offline_deterministic_and0')
+
+    def test_offline_deterministic_and_reusable_with_new_batch(config, tmp_path):
+        with patch("socket.socket", side_effect=AssertionError("offline only")):
+>           result = fixture.generate(config, tmp_path / "one")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+__________________ test_wire_source_and_correlation_contracts __________________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+
+    def test_wire_source_and_correlation_contracts(config):
+>       _, manifest, inputs, _ = fixture.build(config)
+                                 ^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+__________ test_actual_lake_mapping_preserves_source_time_and_values ___________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+
+    def test_actual_lake_mapping_preserves_source_time_and_values(config):
+>       _, manifest, inputs, _ = fixture.build(config)
+                                 ^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+______ test_independent_host_window_predicate_matches_frozen_expectations ______
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+
+    def test_independent_host_window_predicate_matches_frozen_expectations(config):
+>       _, manifest, inputs, controls = fixture.build(config)
+                                        ^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+__________ test_input_loader_does_not_open_expected_or_actual_results __________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_input_loader_does_not_ope0')
+
+    def test_input_loader_does_not_open_expected_or_actual_results(config, tmp_path):
+>       fixture.generate(config, tmp_path / "batch")
+
+tools/testdata/tests/test_streaming_fixture.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+______________ test_refuses_overwrite_and_rehashed_input_changes _______________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-212/test_refuses_overwrite_and_reh0')
+
+    def test_refuses_overwrite_and_rehashed_input_changes(config, tmp_path):
+        out = tmp_path / "batch"
+>       fixture.generate(config, out)
+
+tools/testdata/tests/test_streaming_fixture.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:219: in generate
+    c, manifest, inputs, controls = build(config)
+                                    ^^^^^^^^^^^^^
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_________ test_no_business_identity_or_runtime_readiness_is_fabricated _________
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+
+    def test_no_business_identity_or_runtime_readiness_is_fabricated(config):
+>       _, manifest, _, controls = fixture.build(config)
+                                   ^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ test_candidate_progress_flags_do_not_change_materials_but_target_change_does _
+
+config = {'dataset_version': 'socai2-streaming-s01-s04/v2', 'batch_id': 'model-blind-s01-s04-20261116-01', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'base_time': '2026-11-15T04:00:00+00:00', ...}
+
+    def test_candidate_progress_flags_do_not_change_materials_but_target_change_does(config):
+        original = Path.read_text
+        identity_path = ROOT / config["candidate_identity"]
+        identity = json.loads(identity_path.read_text())
+>       before = fixture.build(config)
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_streaming_fixture.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/streaming_fixture.py:143: in build
+    alerts[logical], predictions[logical] = source_wire(payload, c["tenant_id"])
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '9ca37832-1800-5fb4-924c-e0194d706109', 'tenant_id': 'fa031e01-0c89-5b35-88e7-37c1d5cf078b', 'source': 'telemetry-channel-01', ...}
+tenant = 'fa031e01-0c89-5b35-88e7-37c1d5cf078b'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_expected_integrity_is_separate_from_transport_validation _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_expected_integrity_is_separate_from_transport_validation>
+
+    def test_expected_integrity_is_separate_from_transport_validation(self):
+>       self.generate()
+
+tools/testdata/tests/test_investigation_fixture.py:199: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_file_mutation_and_rehashed_semantic_mutation_are_rejected _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_file_mutation_and_rehashed_semantic_mutation_are_rejected>
+
+    def test_file_mutation_and_rehashed_semantic_mutation_are_rejected(self):
+        for index, change in enumerate(("bytes", "address", "time", "tenant", "source_link", "answer")):
+            directory = self.root / f"mutation-{index}"
+>           manifest = self.generate(directory)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_investigation_fixture.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_generation_is_offline_deterministic_and_timezone_normalized _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_generation_is_offline_deterministic_and_timezone_normalized>
+
+    def test_generation_is_offline_deterministic_and_timezone_normalized(self):
+        with patch("socket.socket", side_effect=AssertionError("D1 must not access network")):
+>           one = self.generate()
+                  ^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_investigation_fixture.py:51: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_independent_query_predicate_matches_only_linked_event _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_independent_query_predicate_matches_only_linked_event>
+
+    def test_independent_query_predicate_matches_only_linked_event(self):
+>       self.generate()
+
+tools/testdata/tests/test_investigation_fixture.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_invalid_parameters_and_existing_directory_are_rejected _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_invalid_parameters_and_existing_directory_are_rejected>
+
+    def test_invalid_parameters_and_existing_directory_are_rejected(self):
+        for index, changes in enumerate(({"run_id": "../escape"}, {"tenant": "invalid"},
+                {"window_start": "2026-10-23T10:00:00"}, {"window_start": "bad"},
+                {"window_start": "1900-01-01T00:00:00Z"})):
+            directory = self.root / f"invalid-{index}"
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                self.generate(directory, **changes)
+            self.assertFalse(directory.exists())
+>       self.generate()
+
+tools/testdata/tests/test_investigation_fixture.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+----------------------------- Captured stdout call -----------------------------
+uuuuu
+__ InvestigationFixtureTest.test_load_and_prepare_kafka_do_not_open_expected ___
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_load_and_prepare_kafka_do_not_open_expected>
+
+    def test_load_and_prepare_kafka_do_not_open_expected(self):
+>       self.generate()
+
+tools/testdata/tests/test_investigation_fixture.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+>       self.generate()
+
+tools/testdata/tests/test_investigation_fixture.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ InvestigationFixtureTest.test_query_scope_paths_and_event_count_cannot_be_relaxed _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_query_scope_paths_and_event_count_cannot_be_relaxed>
+
+    def test_query_scope_paths_and_event_count_cannot_be_relaxed(self):
+        for index, change in enumerate(("scope", "path", "count")):
+            directory = self.root / f"manifest-{index}"
+>           manifest = self.generate(directory)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_investigation_fixture.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/tests/test_investigation_fixture.py:47: in generate
+    return fixture.generate_fixture(**args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:140: in generate_fixture
+    manifest, files = _build(run_id=run_id, tenant=tenant, window_start=window_start)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tools/testdata/investigation_fixture.py:90: in _build
+    source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema_version': 'v1', 'id': '83ac7d0c-1f9e-55c9-8220-08253b6f1348', 'tenant_id': '53824f24-d1d4-5820-8147-f6cfda8a1247', 'source': 'telemetry-channel-01', ...}
+tenant = '53824f24-d1d4-5820-8147-f6cfda8a1247'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+________________ WireTest.test_tamper_and_cross_tenant_refused _________________
+
+self = <test_kafka_wire.WireTest testMethod=test_tamper_and_cross_tenant_refused>
+
+    def test_tamper_and_cross_tenant_refused(self):
+        self.generate()
+        with self.assertRaises(ValueError):
+            prepare_kafka(input_dir=self.root / "input", tenant="22222222-2222-4222-8222-222222222222", out=self.root / "prepared")
+        self.assertFalse((self.root / "prepared").exists())
+>       prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "prepared")
+
+tools/testdata/tests/test_kafka_wire.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_ WireTest.test_wire_matches_real_model_and_preserves_material_without_reading_answers _
+
+self = <test_kafka_wire.WireTest testMethod=test_wire_matches_real_model_and_preserves_material_without_reading_answers>
+
+    def test_wire_matches_real_model_and_preserves_material_without_reading_answers(self):
+        original = self.generate()
+        for answer in (self.root / "input/expected").iterdir():
+            answer.unlink()  # Conversion must not depend on answers.
+>       result = prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "prepared")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tools/testdata/tests/test_kafka_wire.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+___________ SenderTest.test_acknowledged_only_and_exclusive_receipt ____________
+
+self = <test_kafka_send.SenderTest testMethod=test_acknowledged_only_and_exclusive_receipt>
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        generate_batch(run_id="send-test", tenant=TENANT, event_time="2026-10-23T08:00:00+08:00", out=self.root / "input")
+>       prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "wire")
+
+tools/testdata/tests/test_kafka_send.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+___________ SenderTest.test_pre_send_failure_and_cancel_are_distinct ___________
+
+self = <test_kafka_send.SenderTest testMethod=test_pre_send_failure_and_cancel_are_distinct>
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        generate_batch(run_id="send-test", tenant=TENANT, event_time="2026-10-23T08:00:00+08:00", out=self.root / "input")
+>       prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "wire")
+
+tools/testdata/tests/test_kafka_send.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+______ SenderTest.test_production_topic_refused_before_client_or_receipt _______
+
+self = <test_kafka_send.SenderTest testMethod=test_production_topic_refused_before_client_or_receipt>
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        generate_batch(run_id="send-test", tenant=TENANT, event_time="2026-10-23T08:00:00+08:00", out=self.root / "input")
+>       prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "wire")
+
+tools/testdata/tests/test_kafka_send.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+_______ SenderTest.test_unknown_or_wrong_confirmation_stops_after_first ________
+
+self = <test_kafka_send.SenderTest testMethod=test_unknown_or_wrong_confirmation_stops_after_first>
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        generate_batch(run_id="send-test", tenant=TENANT, event_time="2026-10-23T08:00:00+08:00", out=self.root / "input")
+>       prepare_kafka(input_dir=self.root / "input", tenant=TENANT, out=self.root / "wire")
+
+tools/testdata/tests/test_kafka_send.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tools/testdata/alert_kafka.py:52: in prepare_kafka
+    materials = [source_wire(payload, tenant) for payload in payloads]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'created_at': '2026-10-23T00:00:00+00:00', 'description': None, 'event_time': '2026-10-23T00:00:00+00:00', 'hostname': 'WIN-DC-PRIMARY', ...}
+tenant = '11111111-1111-4111-8111-111111111111'
+
+    def source_wire(payload: dict[str, Any], tenant: str) -> tuple[dict[str, Any], str]:
+        tenant = str(UUID(tenant))
+        if payload.get("tenant_id") != tenant:
+            raise ValueError("payload tenant differs from explicit test tenant")
+        _without_answers(payload)
+        if payload.get("identity_version", "source-v1") != "source-v1":
+            raise ValueError("legacy identity is not accepted for a new test")
+        if payload.get("source_alert_id", payload["id"]) != payload["id"]:
+            raise ValueError("source ID differs from input ID")
+        wire = {**payload, "identity_version": "source-v1", "source_alert_id": payload["id"]}
+>       parsed = raw_alert_model().model_validate(wire)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for RawAlert
+E       description
+E         Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.14/v/string_type
+
+tools/testdata/alert_kafka.py:42: ValidationError
+=========================== short test summary info ============================
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_offline_deterministic_and_reusable_with_new_batch
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_wire_source_and_correlation_contracts
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_actual_lake_mapping_preserves_source_time_and_values
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_independent_host_window_predicate_matches_frozen_expectations
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_input_loader_does_not_open_expected_or_actual_results
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_refuses_overwrite_and_rehashed_input_changes
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_no_business_identity_or_runtime_readiness_is_fabricated
+FAILED tools/testdata/tests/test_streaming_fixture.py::test_candidate_progress_flags_do_not_change_materials_but_target_change_does
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_expected_integrity_is_separate_from_transport_validation
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_file_mutation_and_rehashed_semantic_mutation_are_rejected
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_generation_is_offline_deterministic_and_timezone_normalized
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_independent_query_predicate_matches_only_linked_event
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_invalid_parameters_and_existing_directory_are_rejected
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_load_and_prepare_kafka_do_not_open_expected
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+FAILED tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_query_scope_paths_and_event_count_cannot_be_relaxed
+FAILED tools/testdata/tests/test_kafka_wire.py::WireTest::test_tamper_and_cross_tenant_refused
+FAILED tools/testdata/tests/test_kafka_wire.py::WireTest::test_wire_matches_real_model_and_preserves_material_without_reading_answers
+FAILED tools/testdata/tests/test_kafka_send.py::SenderTest::test_acknowledged_only_and_exclusive_receipt
+FAILED tools/testdata/tests/test_kafka_send.py::SenderTest::test_pre_send_failure_and_cancel_are_distinct
+FAILED tools/testdata/tests/test_kafka_send.py::SenderTest::test_production_topic_refused_before_client_or_receipt
+FAILED tools/testdata/tests/test_kafka_send.py::SenderTest::test_unknown_or_wrong_confirmation_stops_after_first
+ERROR tools/testdata/tests/test_streaming_send.py::test_prepare_phase_counts_identity_and_no_expected_reads
+ERROR tools/testdata/tests/test_streaming_send.py::test_two_phases_gate_actual_readback_ack_and_fixed_receipts
+ERROR tools/testdata/tests/test_streaming_send.py::test_unknown_stops_and_preserves_unattempted_and_no_resend[timeout]
+ERROR tools/testdata/tests/test_streaming_send.py::test_unknown_stops_and_preserves_unattempted_and_no_resend[wrong]
+ERROR tools/testdata/tests/test_streaming_send.py::test_unknown_stops_and_preserves_unattempted_and_no_resend[cancel]
+ERROR tools/testdata/tests/test_streaming_send.py::test_known_presend_failure_keeps_all_unattempted
+ERROR tools/testdata/tests/test_streaming_send.py::test_wrong_profile_refused_before_output[change0]
+ERROR tools/testdata/tests/test_streaming_send.py::test_wrong_profile_refused_before_output[change1]
+ERROR tools/testdata/tests/test_streaming_send.py::test_wrong_profile_refused_before_output[change2]
+ERROR tools/testdata/tests/test_streaming_send.py::test_wrong_profile_refused_before_output[change3]
+ERROR tools/testdata/tests/test_streaming_send.py::test_bad_readback_or_s04_and_transport_change_do_not_send
+ERROR tools/testdata/tests/test_streaming_send.py::test_tampered_wire_and_profile_are_refused
+ERROR tools/testdata/tests/test_streaming_send.py::test_s04_prepares_only_frozen_increment_without_expected_reads
+ERROR tools/testdata/tests/test_streaming_send.py::test_s04_absence_and_incremental_gate_before_exactly_two_sends
+ERROR tools/testdata/tests/test_streaming_send.py::test_s04_unknown_never_replays_or_unlocks_alert
+ERROR tools/testdata/tests/test_streaming_send.py::test_s04_requires_prior_snapshot_in_selected_profile
+22 failed, 14 passed, 16 errors, 16 subtests passed in 0.45s

@@ -1,0 +1,195 @@
+{
+  "analysis": {
+    "summary": "本轮复核确认了 A1、A2、A3 三成员在 2026-11-07T06:38:27Z 至 06:39:07Z 期间，于主机 socai2-flow-20261107-01 上由用户 flow-observer 触发的连续事件：登录（A2）、启动 PowerShell 执行枚举命令（A3）、出站连接（A1）。所有记录均标记为 synthetic（合成/演练数据），且人工反馈明确声明当前材料仅为代拟的核查反馈，非实际业务授权或新采集证据。威胁情报与资产库存查询未提供决定性支持（部分未查，部分无结果）。现有证据链显示行为具有自动化特征，但缺乏确凿的良性（授权/演练文档）或恶意（数据外传/横向移动）证明。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "unresolved",
+        "summary": "观察到出站连接至 198.51.100.77:443。",
+        "evidence_ids": ["N5_S6", "N5_S7", "N5_S9", "N5_S10", "N5_S11", "N5_S12", "N5_S23", "N5_S24", "N5_S25", "N5_S26", "N5_S27", "N5_S29", "N5_S74"],
+        "limitations": ["仅证明连接动作成功，未证明数据外传或业务完成。", "来源 IP 与登录源 IP 不同，无法直接建立会话因果链。", "威胁情报未查询，资产库存无结果。"]
+      },
+      {
+        "alert_id": "A2",
+        "state": "unresolved",
+        "summary": "观察到用户 flow-observer 登录成功。",
+        "evidence_ids": ["N5_S33", "N5_S34", "N5_S36", "N5_S30", "N5_S31", "N5_S32", "N5_S35", "N5_S37", "N5_S38", "N5_S40", "N5_S41", "N5_S42", "N5_S43", "N5_S44", "N5_S45", "N5_S46", "N5_S47", "N5_S48", "N5_S49", "N5_S50", "N5_S74"],
+        "limitations": ["登录来源 IP (203.0.113.77) 与出站连接源 IP (192.0.2.77) 不一致。", "标签 synthetic 仅表示数据生成方式，不证明行为良性或授权。", "缺乏业务侧授权或演练定义材料。"]
+      },
+      {
+        "alert_id": "A3",
+        "state": "unresolved",
+        "summary": "观察到用户 flow-observer 启动 powershell.exe 执行 Get-LocalUser 命令。",
+        "evidence_ids": ["N5_S54", "N5_S55", "N5_S56", "N5_S57", "N5_S61", "N5_S62", "N5_S63", "N5_S64", "N5_S65", "N5_S66", "N5_S67", "N5_S68", "N5_S69", "N5_S70", "N5_S71", "N5_S72", "N5_S73", "N5_S74", "N5_S77", "N5_S78"],
+        "limitations": ["process_start success 仅证明进程启动，不证明命令执行完成或信息读取。", "威胁情报未查询，无法排除恶意脚本特征。", "资产库存查询无结果，无法确认主机及用户名的业务背景。"]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "observed",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N5_S3", "N5_S30", "N5_S51"],
+        "counter_ids": [],
+        "alternatives": [],
+        "limitations": ["现有材料未提供审批、白名单、文件传输或受损证明。", "标签 synthetic 仅表示数据生成方式，不证明行为良性或授权。", "人工反馈明确标注为演练材料代拟，不代表新增现场证据或实际人员授权。"]
+      },
+      {
+        "id": "F2",
+        "state": "inferred",
+        "statement": "成员 A2、A3 与 A1 在时间上邻近（间隔 20-40 秒），且共享同一主机 socai2-flow-20261107-01 及用户 flow-observer，暗示可能属于同一会话或自动化流程的连续步骤。",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N5_S3", "N5_S30", "N5_S51"],
+        "counter_ids": [],
+        "alternatives": [
+          "登录来源 IP (203.0.113.77) 与出站连接源 IP (192.0.2.77) 不同，且人工反馈明确指出同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。",
+          "无法确认是否存在中间代理或不同用户代理导致的巧合。"
+        ],
+        "limitations": ["仅凭时间邻近和同对象关联不足以建立确凿的行为因果链。", "缺乏进程启动与网络连接之间的直接关联证据（如网络连接是否由该 PowerShell 进程发起）。"]
+      },
+      {
+        "id": "F3",
+        "state": "inferred",
+        "statement": "行为性质目前无法定性为恶意或良性，属于待复核状态。自动化特征（主机名/用户名）与枚举命令（Get-LocalUser）并存，但缺乏业务授权证实。",
+        "alert_ids": ["A1", "A2", "A3"],
+        "support_ids": ["N5_S2", "N5_S87", "N5_S88", "N5_S89", "N5_S90"],
+        "counter_ids": [],
+        "alternatives": [
+          "可能是合法的自动化监控代理或同步接线验证流程。",
+          "可能是恶意攻击者利用合法账户进行信息收集。"
+        ],
+        "limitations": [
+          "威胁情报与资产库存查询未能提供决定性支持或排除项。",
+          "未提供审批、查空、未接通不构成不存在或反证。",
+          "人工反馈明确说明不能把本反馈当成行为合法或恶意的证明。"
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "unresolved",
+        "answer": "A1 观察到出站连接至 198.51.100.77:443；A2 观察到登录成功；A3 观察到 PowerShell 启动 Get-LocalUser。",
+        "evidence_ids": ["N5_S3", "N5_S30", "N5_S51", "N5_S6", "N5_S33", "N5_S56"],
+        "limitations": ["process_start 的 success 只证明启动，不证明命令完成或结果返回。", "网络连接成功不证明数据外传或业务完成。"]
+      },
+      {
+        "id": "member_relationships",
+        "state": "unresolved",
+        "answer": "A2、A3 与 A1 存在时间邻近和同对象关联，但无法证实因果链。登录源 IP 与出站源 IP 不同，人工反馈明确禁止直接推断同一会话。",
+        "evidence_ids": ["N5_S3", "N5_S30", "N5_S51", "N5_S36", "N5_S11"],
+        "limitations": ["时间接近和图可达不能直接当成因果或影响。", "缺少直接关联进程与网络连接的证据。"]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "行为具有自动化特征，但缺乏确凿良性或恶意证据。主机名和用户名为自动化流程特征，但人工反馈指出不能从主机名、用户名推断已获批的自动化流程。",
+        "evidence_ids": ["N5_S2", "N5_S87", "N5_S91", "N5_S92"],
+        "limitations": ["标签 synthetic 不证明对应行为发生。", "有效旧分诊仍需核实，不能直接定性。"]
+      },
+      {
+        "id": "authorization",
+        "state": "unresolved",
+        "answer": "无明确授权材料。现有材料未提供审批、白名单、文件传输或受损证明。人工反馈明确说明本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。",
+        "evidence_ids": ["N5_S1", "N5_S90", "N5_S89"],
+        "limitations": ["未提供审批、查空、未接通不构成不存在或反证。", "标题、厂商、测试/演练自述不证明授权、良性或排除恶意。"]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "观察到的动作包括登录、进程启动和出站连接。尚无原始结果证明命令执行完成、信息被读取或数据外传。影响对象、行为与证据之间无直接作用结果证明。",
+        "evidence_ids": ["N5_S7", "N5_S57", "N5_S74"],
+        "limitations": ["仅有命令内容/启动或连接记录时，明确结果与影响尚未确认。", "只有实际返回内容、作用结果或业务确认才能陈述已取得信息、修改状态或造成损失。", "已知连接端点与未知外传目的须分开表述。"]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及用户 flow-observer 的登录及进程执行行为。",
+        "alert_ids": ["A2", "A3"],
+        "finding_ids": ["F1", "F2", "F3"]
+      ,
+      "limitations": ["用户身份真实性及授权状态未知。", "登录来源 IP 与出站 IP 不一致，身份关联存疑。"]
+      },
+      {
+        "name": "cloud",
+        "applicability": "not_applicable",
+        "reason": "当前材料未提供云环境上下文或云原生服务调用记录。",
+        "alert_ids": [],
+        "finding_ids": []
+      ,
+      "limitations": ["主机名 socai2-flow-20261107-01 暗示可能是虚拟机或容器，但无云配置详情。"]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "未观察到钓鱼邮件、恶意链接点击或凭证窃取等典型特征。",
+        "alert_ids": [],
+        "finding_ids": []
+      ,
+      "limitations": ["无法排除攻击者利用合法账户进行后续操作的可能性。"]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及内部用户 flow-observer 执行枚举命令，需确认是否为内部人员恶意行为或误操作。",
+        "alert_ids": ["A2", "A3"],
+        "finding_ids": ["F1", "F2", "F3"]
+      ,
+      "limitations": ["缺乏用户行为基线或历史操作记录对比。", "标签 synthetic 使得判断内部人员意图更加困难。"]
+      }
+    ],
+    "conflicts": []
+  ,
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2", "A3"],
+      "mode": "human",
+      "objective": "核实该主机 'socai2-flow-20261107-01' 是否为合法的自动化流程节点或监控代理，以及用户 'flow-observer' 是否拥有执行该命令的明确业务授权。",
+      "required_evidence": "业务授权书、演练标签、人工确认记录或资产库存中的业务用途说明。"
+    ,
+      "source_ids": ["N5_S90", "N5_S1"]
+    ,
+      "object_keys": ["O1", "O5"]
+    }
+  ]
+  },
+  "conclusion": {
+    "text": "当前案件状态为'待复核'。证据链显示主机 socai2-flow-20261107-01 上的用户 flow-observer 执行了登录、PowerShell 枚举命令及出站连接，行为具有自动化特征但缺乏业务授权证实。威胁情报与资产库存查询未能提供决定性支持。在缺乏确凿良性或恶意证据前，不能定性为误报或攻击，需人工介入核实业务上下文。",
+    "state": "uncertain",
+    "alert_ids": ["A1", "A2", "A3"]
+  ,
+  "support_ids": ["N5_S2", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S1"]
+  ,
+  "limitations": ["现有材料未提供审批、白名单、文件传输或受损证明。", "标签 synthetic 仅表示数据生成方式，不证明行为良性或授权。", "人工反馈明确标注为演练材料代拟，不代表新增现场证据或实际人员授权。", "威胁情报与资产库存查询未能提供决定性支持或排除项。"]
+  },
+  "closing_note": "本轮复核确认所有原始观察事实，但关键的业务上下文（授权/演练）缺失。人工反馈明确标注材料为代拟，非实际授权。威胁情报与资产库存查询结果不足以定性。需人工介入核实业务授权记录或演练计划文档，以证实或排除自动化流程的合法性。",
+  "comparison": {
+    "kind": "not_comparable",
+    "summary": "前序判断（N5_S87, N5_S88, N5_S89, N5_S90, N5_S91, N5_S92, N5_S93, N5_S96）与本轮结论在核心事实认定上保持一致，均判定为'待复核'。主要差异在于本轮更严格地依据人工反馈（N5_S1）明确了材料性质为'代拟'，并再次强调了标签 synthetic 不证明授权。前序判断中部分关于威胁情报和资产库存的查询状态描述（如 A3 未查询）在本轮通过汇总查询结果（N5_S82, N5_S83, N5_S84）得到了更清晰的确认（部分未查，部分无结果）。",
+    "support_ids": ["N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S91", "N5_S92", "N5_S93", "N5_S96", "N5_S1", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S87", "N5_S88", "N5_S89", "N5_S90", "N5_S87", "N5_S88", "N5_S89"]
+  },
+  "impact": {
+    "summary": "已证影响：观察到登录、进程启动和出站连接动作。尚未确认影响：命令执行结果、信息读取情况、数据外传情况、业务状态变更。",
+    "alert_ids": ["A1", "A2", "A3"],
+    "support_ids": ["N5_S7", "N5_S57", "N5_S73", "N5_S29", "N5_S50", "N5_S73"],
+    "supported_changes": []
+  ,
+  "cannot_generalize": ["无法确认是否造成数据泄露或系统受损。", "无法确认是否属于预定义的良性自动化流程。"]
+  ,
+  "next_steps": ["需人工核实业务授权记录或演练计划文档。"]
+  }
+  ,
+  "recommendations": [
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O5"],
+      "reason": "需核实主机 socai2-flow-20261107-01 及用户 flow-observer 的业务授权记录或演练计划文档，以证实或排除自动化流程的合法性。",
+      "source_ids": ["N5_S90", "N5_S1"]
+    ,
+      "limitations": ["当前材料未提供审批、白名单、文件传输或受损证明。", "标签 synthetic 仅表示数据生成方式，不证明行为良性或授权。"]
+    }
+  ]
+  }

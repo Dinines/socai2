@@ -13,13 +13,13 @@
 - 真实基础设施 attempt01 在配置阶段因 `structlog.make_filtering_bound_logger(100)` 的 `KeyError` 停止；回执明确为生成/联网前失败，新增消息、topic、业务行和模型调用均为 0，未启动本地 API。失败回执仍在 `.local/aisoc21/testdata-ingress-20261022-attempt01/receipt.json`，原私有配置保持原位。
 - [一次性探针](../../deploy/aisoc21/probe_testdata_ingress.py)已将上述日志配置改为 `DropEvent`，**修正后尚未重跑**。真实 Kafka/Fusion/PG 联测、最终回执和该测试工具增量的结束独审均待续，不把脚本存在写成实际通过。
 
-以后继续时先读 [测试工具回执](../operations/testdata-tools-20261022.md)，核探针当前状态及必要连接配置，再按原有小批量隔离范围决定是否执行。实际重试使用全新输出目录和输入 ID，保留 attempt01；任何后续部分发布或超时先核原回执，不盲目重发。模型、常驻 worker 和部署不因恢复这个会话自动启用。
+以后继续时先读 [测试工具回执](history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-tools-20261022.md)，核探针当前状态及必要连接配置，再按原有小批量隔离范围决定是否执行。实际重试使用全新输出目录和输入 ID，保留 attempt01；任何后续部分发布或超时先核原回执，不盲目重发。模型、常驻 worker 和部署不因恢复这个会话自动启用。
 
 ## 2.「astra评估模块迁移并制定后续推进方案」
 
 会话 ID：`01a1622e-96a1-7072-9e14-d3838f5ead48`。
 
-上一轮的 [标书评估](../operations/tender-requirements-assessment-20261022.md)及 [35 子组、164 条矩阵](../requirements/socai2-requirements-matrix-20261022.md)已经交付并独审。最后一轮新增的 [智能调查产品与工程建议](../architecture/investigation-product-engineering-roadmap-20261022.md)正文及导航也已保存。
+上一轮的 [标书评估](../operations/tender-requirements-assessment-20261022.md)及 [35 子组、164 条矩阵](../requirements/socai2-requirements-matrix-20261022.md)已经交付并独审。最后一轮新增的 [智能调查产品与工程建议](history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-product-engineering-roadmap-20261022.md)正文及导航也已保存。
 
 已从原独审会话 `01a1623d-629a-7903-8ce2-8548addab345` 找回最终回复：`tender_document_final_audit` 对新增两段核源码后给出 **限定 ACCEPT、0 项阻塞**，其余已审结论保持。该回复对应 237 行版本 SHA-256：`da49036cddf0a7c8740deedcbcf980c995ded91b2e865633f1d769cf54e3ca10`，本轮核当前文件相同；原回复副本保存在下述本地快照的 `evidence/previous-product-audit.txt`。原 root 中断前未把这次最终独审回写 audit，也未发送最终答复，本轮已补记录。
 

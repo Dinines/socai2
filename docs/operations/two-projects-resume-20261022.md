@@ -17,7 +17,7 @@
 
 ## 实际结果补充
 
-23:22启动attempt02，退出码0。完整输入ID/canonical ID/消息坐标与实际逐步结果见[工具回执](testdata-tools-20261022.md)及[机器摘要](../handoff/testdata-tools-20261022.json)。原尝试失败和本次本地材料核对的一次假设错误均已保留：Fusion按原合同向source_event_ids追加上游Alert ID，修正观察后通过，未改业务或重投。产品建议已交接到当前v1事实，优先范围/真实数据、证据与报告一致性、停止后交接，未变更运行。
+23:22启动attempt02，退出码0。完整输入ID/canonical ID/消息坐标与实际逐步结果见[工具回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-tools-20261022.md)及[机器摘要](../handoff/testdata-tools-20261022.json)。原尝试失败和本次本地材料核对的一次假设错误均已保留：Fusion按原合同向source_event_ids追加上游Alert ID，修正观察后通过，未改业务或重投。产品建议已交接到当前v1事实，优先范围/真实数据、证据与报告一致性、停止后交接，未变更运行。
 
 ## 结束结论
 
@@ -27,6 +27,6 @@
 
 ## 原始证据入口
 
-- [测试工具原回执](testdata-tools-20261022.md)、[工具使用方法](../../tools/testdata/README.md)、[真实探针](../../deploy/aisoc21/probe_testdata_ingress.py)。
-- [产品与工程建议](../architecture/investigation-product-engineering-roadmap-20261022.md)、[原建议独审](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/audit.md)。
-- [v1发布](service-v1-release-20261022.md)、[生产两例](service-v1-functional-20261022.md)、[后端数据盘点](../integration/v1/page-data-mapping.md)。
+- [测试工具原回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-tools-20261022.md)、[工具使用方法](../../tools/testdata/README.md)、[真实探针](../../deploy/aisoc21/probe_testdata_ingress.py)。
+- [产品与工程建议](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-product-engineering-roadmap-20261022.md)、[原建议独审](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/audit.md)。
+- [v1发布](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)、[生产两例](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)、[后端数据盘点](../integration/v1/page-data-mapping.md)。

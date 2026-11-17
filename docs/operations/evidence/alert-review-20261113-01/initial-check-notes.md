@@ -1,0 +1,5 @@
+# 初次检查记录
+
+首次verify在任何HTTP前因验收脚本把人工反馈表模型误写为不存在的AlertFeedback而停止，实际模型是AlertAssessments。未重新seed，未产生查询或业务写入；更正脚本后从原独立批次开始只读验收。原20条合成告警及Case保留。
+
+首次静态文档构建引用了不存在的示例变量seed_obj/candidate_obj，在输出文件生成前停止；改成原seed_object/candidate_object后重建。没有服务调用或业务影响。

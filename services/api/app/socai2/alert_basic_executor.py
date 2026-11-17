@@ -7,16 +7,19 @@ from uuid import uuid4
 from sqlalchemy import func, insert, null, select, update
 from sqlalchemy.exc import DBAPIError
 
-from . import alert_basic_contract as contract
+from . import ai_delivery_store
 from . import baseline_enrichment_sources as sources
+from .alert_model_boundary import build
+from .alert_output_adapter import schema
 from .baseline_analysis import budget_reason
 from .baseline_analysis_model import TenantChatGateway, usage
-from .baseline_context import reference, retention_limit
+from .baseline_context import reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_store import StoreError, digest, encoded
 from .model_errors import ModelCallError
-from .model_protocol import prepare_request, response_choices
+from .model_protocol import prepare_request
+from .runtime_policy import active_policy, execution_policy
 from .stage_result_contracts import ALERT_EXECUTOR_VERSION as VERSION
 from .stage_results import F, R, artifact
 
@@ -54,9 +57,10 @@ class AlertBasicExecutor:
             run = await store.one(select(R).where(*store.where(R, R.c.id == claim["run_id"])))
             return {**claim, "state": run["state"], "stop_reason": run["stop_reason"]}
 
-    async def execute(self, tenant, alert_id, operation_key, *, requested_by=None):
+    async def execute(self, tenant, alert_id, operation_key, *, requested_by=None, dispatch_context=None, frozen_source=None):
+        profile = execution_policy("alert_io").alert_io
         claim = await self.service.begin(tenant, "alert_basic", alert_id, operation_key, producer=VERSION, limits=None,
-            requested_by=requested_by)
+            requested_by=requested_by, dispatch_context=dispatch_context, frozen_source=frozen_source)
         if not claim["newly_claimed"]:
             return await self.outcome(tenant, claim)
         rid = claim["run_id"]
@@ -69,150 +73,117 @@ class AlertBasicExecutor:
                     raise StoreError("alert_input_snapshot_invalid", 422)
                 stage = await self.step(store, run, "stage", "alert_basic_analysis")
             queries = [await self.background(tenant, rid, stage, source, name) for name in ("assets", "history", "threat_intel")]
-            from .runtime_policy import active_policy
-            profile, prepared = active_policy().alert_io, None
             try:
-                if profile:
-                    from .alert_model_boundary import build
-                    from .alert_output_adapter import schema
-                    messages, source_map, data, prepared = build(source, claim["input_artifact_id"], queries, profile,
-                        execution_time=run["started_at"].isoformat())
-                    response_format = schema(source_map)
-                else:
-                    messages, source_map, data = contract.build(source, claim["input_artifact_id"], queries,
-                        execution_time=run["started_at"].isoformat())
-                    response_format = contract.constrained_response_format(source_map)
+                messages, source_map, data, prepared = build(source, claim["input_artifact_id"], queries, profile,
+                    execution_time=run["started_at"].isoformat())
+                response_format = schema(source_map)
             except StoreError as exc:
                 await self.fail(tenant, rid, stage, exc.code)
                 return await self.outcome(tenant, claim)
             if not await self.gateway.configure(self.service, tenant):
                 await self.fail(tenant, rid, stage, "model_not_configured")
                 return await self.outcome(tenant, claim)
-            correction = None
-            for attempt in range(2):
-                body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["A"], "temperature": 0,
-                        "response_format": response_format}
-                body = prepare_request(self.gateway, body)
-                async with self.service.transaction(tenant) as store:
-                    meter_run, _ = await self.locked(store, rid)
-                    meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
-                try:
-                    from .token_budget import measure_with_deadline
-                    measurement = await measure_with_deadline(self.gateway, body, "A", meter_seconds)
-                except StoreError as exc:
-                    await self.fail(tenant, rid, stage, exc.code)
-                    return await self.outcome(tenant, claim)
-                async with self.service.transaction(tenant) as store:
-                    run, _ = await self.locked(store, rid)
-                    limits, now = Limits.model_validate(run["limits"]), await store.now()
-                    steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == rid)))).mappings().all()
-                    reason = budget_reason(steps, limits, len(encoded(body)), now, measurement=measurement)
-                    if not reason:
-                        model = await self.step(store, run, "model", "alert_triage_and_explanation", parent=stage)
-                        request = {"schema_version": VERSION, "provider": self.gateway.provider, "model": self.gateway.model,
-                            "schema_profile": getattr(self.gateway, "schema_profile", "standard"),
-                            "body": body, "source_map": source_map, "input_omissions": data["omissions"],
-                            "view_coverage": data["view_coverage"], "view_limitations": data["view_limitations"],
-                            "input_omission_details": data["omission_details"],
-                            "input_omission_detail_count": data["omission_detail_count"],
-                            "input_omission_details_truncated": data["omission_details_truncated"],
-                            "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement,
-                            "correction": correction}
-                        if prepared is not None:
-                            request["alert_boundary"] = prepared["boundary"]
-                        request_id = await self.save(store, run, model, "model_request", request)
-                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                            input_artifact_id=request_id, provider=self.gateway.provider))
-                        deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
-                if reason:
-                    await self.fail(tenant, rid, stage, reason)
-                    return await self.outcome(tenant, claim)
-                # Both exact request and running claim have committed before I/O.
-                try:
-                    async with asyncio.timeout_at(deadline):
-                        payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-                except ModelCallError as exc:
-                    async with self.service.transaction(tenant) as store:
-                        run, _ = await self.locked(store, rid)
-                        response_id = await self.save(store, run, model, "model_response",
-                            {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
-                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                            output_artifact_id=response_id, usage=usage(None)))
-                        if exc.rejection_code:
-                            now = await store.now()
-                            await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                                state="failed", ended_at=now, error=error(exc.rejection_code, now)))
-                    if exc.rejection_code:
-                        await self.fail(tenant, rid, stage, exc.rejection_code)
-                        return await self.outcome(tenant, claim)
-                    raise  # Keep the existing uncertainty transition; never retry or adopt.
-                recorded = usage(payload)
-                rejection, result, diagnostics, review, complete_content = None, None, [], None, None
-                try:
-                    if recorded["usage_state"] != "reported":
-                        raise StoreError("model_usage_unknown_or_inconsistent", 422)
-                    if recorded["total_tokens"] > request["reserved_token_upper_bound"]:
-                        raise StoreError("provider_usage_exceeds_reservation", 422)
-                    choices = response_choices(payload)
-                    if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
-                        raise StoreError("model_choices_invalid", 422)
-                    choice = choices[0]
-                    message = choice.get("message")
-                    if choice.get("finish_reason") != "stop":
-                        raise StoreError("model_response_not_complete", 422)
-                    if (not isinstance(message, dict) or not isinstance(message.get("content"), str)
-                            or message.get("tool_calls") or message.get("function_call") or message.get("refusal")):
-                        raise StoreError("model_content_or_tool_protocol_invalid", 422)
-                    complete_content = message["content"]
-                    if prepared is not None:
-                        from .alert_output_adapter import parse
-                        result = parse(complete_content, prepared, diagnostics=diagnostics)
-                    else:
-                        result = contract.parse(complete_content, source_map, data, diagnostics=diagnostics)
-                except StoreError as exc:
-                    rejection = exc.code
-                    if complete_content is not None:
-                        if prepared is not None:
-                            from .alert_output_adapter import review as review_candidate
-                            result, review = review_candidate(complete_content, prepared)
-                        else:
-                            from .stage_answer_review import review_alert
-                            result, review = review_alert(complete_content, source_map, data)
-                from .stage_answer_review import citation_feedback
-                feedback = (citation_feedback("A", complete_content, source_map, diagnostics, prepared)
-                    if attempt == 0 and result is None and complete_content is not None and limits.max_model_calls > 1 else None)
+            attempt = 0
+            body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["A"], "temperature": 0,
+                    "response_format": response_format}
+            body = prepare_request(self.gateway, body)
+            async with self.service.transaction(tenant) as store:
+                meter_run, _ = await self.locked(store, rid)
+                meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
+            try:
+                from .token_budget import measure_with_deadline
+                measurement = await measure_with_deadline(self.gateway, body, "A", meter_seconds)
+            except StoreError as exc:
+                await self.fail(tenant, rid, stage, exc.code)
+                return await self.outcome(tenant, claim)
+            async with self.service.transaction(tenant) as store:
+                run, _ = await self.locked(store, rid)
+                limits, now = Limits.model_validate(run["limits"]), await store.now()
+                steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == rid)))).mappings().all()
+                reason = budget_reason(steps, limits, len(encoded(body)), now, measurement=measurement)
+                if not reason:
+                    model = await self.step(store, run, "model", "alert_triage_and_explanation", parent=stage)
+                    request = {"schema_version": VERSION, "provider": self.gateway.provider, "model": self.gateway.model,
+                        "schema_profile": getattr(self.gateway, "schema_profile", "standard"),
+                        "body": body, "source_map": source_map, "input_omissions": data["omissions"],
+                        "view_coverage": data["view_coverage"], "view_limitations": data["view_limitations"],
+                        "input_omission_details": data["omission_details"],
+                        "input_omission_detail_count": data["omission_detail_count"],
+                        "input_omission_details_truncated": data["omission_details_truncated"],
+                        "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement,
+                        "correction": None}
+                    request["alert_boundary"] = prepared["boundary"]
+                    request_id = await self.save(store, run, model, "model_request", request)
+                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                        input_artifact_id=request_id, provider=self.gateway.provider))
+                    deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds()
+            if reason:
+                await self.fail(tenant, rid, stage, reason)
+                return await self.outcome(tenant, claim)
+            # Both exact request and running claim have committed before I/O.
+            try:
+                async with asyncio.timeout_at(deadline):
+                    payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
+            except ModelCallError as exc:
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)
                     response_id = await self.save(store, run, model, "model_response",
-                        {"schema_version": VERSION, "raw": payload, "usage": recorded, "validation_error": rejection,
-                         "validation_diagnostics": diagnostics, "partial_review": review,
-                         "correction_feedback": feedback,
-                         **({"alert_boundary_version": profile.version} if profile else {})})
-                    now = await store.now()
+                        {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
                     await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                        state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
-                        usage=recorded, error=error(rejection, now) if rejection and not result else null()))
-                if feedback:
-                    correction = {**feedback, "original_response_artifact_id": str(response_id)}
-                    messages = [*messages, {"role": "assistant", "content": complete_content},
-                                {"role": "user", "content": encoded(feedback).decode()}]
-                    continue
-                if result:
-                    await self.service.finish(tenant, rid, result, execution_step_id=stage,
-                        alert_delivery_state="partial" if rejection else "complete")
-                else:
-                    await self.fail(tenant, rid, stage, rejection)
-                break
-        except (Exception, asyncio.CancelledError):
+                        output_artifact_id=response_id, usage=usage(None)))
+                    if exc.rejection_code:
+                        now = await store.now()
+                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                            state="failed", ended_at=now, error=error(exc.rejection_code, now)))
+                if exc.rejection_code:
+                    await self.fail(tenant, rid, stage, exc.rejection_code)
+                    return await self.outcome(tenant, claim)
+                raise  # Keep the existing uncertainty transition; never retry or adopt.
+            from .citation_quality import seal
+            recorded = usage(payload)
+            async with self.service.transaction(tenant) as store:
+                run, _ = await self.locked(store, rid)
+                original_id = await self.save(store, run, model, "source_snapshot",
+                    {"schema_version": VERSION, "artifact_role": "model_original_response",
+                     "request_artifact_id": str(request_id), "attempt": attempt, "raw": payload, "usage": recorded})
+            received = ai_delivery_store.receive_payload("A", payload, prepared, original_id, recorded, request)
+            result, rejection = received["result"], received["rejection"]
+            citation_review = received["quality"]
+            citation_review.update(original_response_artifact_id=str(original_id), request_artifact_id=str(request_id), attempt=attempt)
+            complete_content = received["content"]
+            async with self.service.transaction(tenant) as store:
+                run, _ = await self.locked(store, rid)
+                response_id = await self.save(store, run, model, "model_response",
+                    {"schema_version": VERSION, "raw": payload, "usage": recorded, "validation_error": rejection,
+                     "validation_diagnostics": received["invalid_units"], "partial_review": None,
+                     "received_analysis": received["analysis"],
+                     "citation_review": seal(citation_review, complete_content, result.model_dump(mode="json") if result else None),
+                     "correction_feedback": None,
+                     "alert_boundary_version": profile.version})
+                await ai_delivery_store.save(store, run, stage, request_id, original_id, received)
+                now = await store.now()
+                await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
+                    state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
+                    usage=recorded, error=error(rejection, now) if rejection and not result else null()))
+            if result:
+                await self.service.finish(tenant, rid, result, execution_step_id=stage,
+                    alert_delivery_state=received["delivery"]["state"])
+            else:
+                await self.fail(tenant, rid, stage, rejection)
+        except (Exception, asyncio.CancelledError) as exc:
             # Never overwrite a commit that actually succeeded, nor redispatch.
+            from .analysis_dispatch_types import classify_failure
+            failure = classify_failure(exc, stage="execute")
             async with self.service.transaction(tenant) as store:
                 run, _, _ = await self.service.locked(store, rid)
                 if run["state"] == "running":
+                    now = await store.now()
                     await store.db.execute(update(S).where(*store.where(S, S.c.run_id == rid,
-                        S.c.state.in_(["running", "planned"]))).values(state="unknown",
-                            error=error("alert_execution_uncertain", await store.now())))
+                        S.c.state.in_(["running", "planned"]))).values(state=failure.outcome,
+                            ended_at=now if failure.outcome == "failed" else None, error=error(failure.error_code, now)))
                     await store.db.execute(update(R).where(*store.where(R, R.c.id == rid)).values(
-                        state="unknown", stop_reason="alert_execution_uncertain", row_version=R.c.row_version + 1))
+                        state=failure.outcome, ended_at=now if failure.outcome == "failed" else None,
+                        stop_reason=failure.error_code, row_version=R.c.row_version + 1))
             raise
         return await self.outcome(tenant, claim)
 
@@ -257,6 +228,7 @@ class AlertBasicExecutor:
             deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds() if not reason else None
         rows, state, captured, observed = None, "skipped", now, None
         truncation = []
+        overflow_rows = []
         if not reason:
             try:
                 async with asyncio.timeout_at(deadline):
@@ -264,11 +236,9 @@ class AlertBasicExecutor:
                 observed = len(rows)
                 if observed > args["limit"]:
                     truncation.append("row_limit")
-                rows = rows[:args["limit"]]
-                if len(encoded(rows)) > retention_limit():
-                    truncation.append("retained_row_bytes_limit")
-                while rows and len(encoded(rows)) > retention_limit():
-                    rows.pop()
+                # Keep every received row. Only the bounded business rows are
+                # used downstream; the fetch sentinel remains in the receipt.
+                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
                 state = "completed"
             except TimeoutError:
                 state, reason = "timeout", "source_deadline_exceeded"
@@ -281,6 +251,7 @@ class AlertBasicExecutor:
             payload = {"schema_version": VERSION, "tool_name": name, "contract_version": sources.VERSION,
                 "state": state, "reason": reason, "actual_args": args, "rows": rows,
                 "returned_rows": len(rows) if rows is not None else None, "observed_rows_in_bounded_fetch": observed,
+                "overflow_rows": overflow_rows,
                 "truncated": bool(truncation), "truncation_reasons": truncation, "captured_at": captured.isoformat(),
                 "query_id": "local-step:" + str(step) if state != "skipped" else None,
                 "limitations": sources.LIMITATIONS[name]}

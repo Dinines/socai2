@@ -9,11 +9,10 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, JsonValue, ValidationError
 from sqlalchemy import text
 
+from . import case_incident_material
 from .baseline_contracts import Contract, Question, Scope
-from .runtime_policy import (
-    retention_limit as retention_limit,  # noqa: PLC0414 - reader compatibility
-)
-from .stage_inputs import Freshness, freshness_sql
+from .case_incident_scope import freeze as freeze_diagnosis_scope
+from .stage_inputs import Freshness, same_material_triage_sql
 
 SCHEMA = "socai2.baseline-context.v1"
 PROJECTION = "socai2.baseline-manifest.v2"
@@ -63,6 +62,8 @@ class IncidentInput(Contract):
     diagnosis_usable: bool
     limitations: list[str]
     diagnosis_freshness: Freshness = "unverified"
+    diagnosis_scope: dict[str, JsonValue] | None = None
+    analysis_material: dict[str, JsonValue] | None = None
 
 
 class TaskInput(Contract):
@@ -100,6 +101,9 @@ class Context(Contract):
     citation_roles: dict[str, Literal["source_label", "prior_analysis", "human_statement", "execution_receipt"]]
     query_receipts_version: str | None = None
     case_input_profile: dict[str, str] | None = None
+    # Execution receipt only; business model views select their own fields.
+    query_preparation: dict[str, JsonValue] | None = None
+    update_context: dict[str, JsonValue] | None = None
 
 
 CAPTURE_SQL = """
@@ -153,9 +157,7 @@ SELECT jsonb_build_object(
    'member_links',COALESCE((SELECT jsonb_agg(to_jsonb(ia) ORDER BY ia.alert_id)
       FROM socai2.incident_alerts ia JOIN a ON a.id=ia.alert_id
       WHERE ia.tenant_id=:tenant AND ia.incident_id=i.id),'[]'),
-   'diagnosis_freshness',__DIAGNOSIS_FRESHNESS__,
-   'diagnosis',(SELECT to_jsonb(d) FROM socai2.incident_diagnoses d WHERE d.tenant_id=:tenant
-      AND d.incident_id=i.id AND d.id=i.latest_diagnosis_id)
+   '_terminal_material',__TERMINAL_MATERIAL__
  ) ORDER BY i.id) FROM socai2.incidents i JOIN relevant_incidents ri ON ri.incident_id=i.id
  WHERE i.tenant_id=:tenant),'{}'),
  'tasks',COALESCE((SELECT jsonb_object_agg(t.id::text,jsonb_build_object('task_id',t.id,'revision',to_jsonb(v)) ORDER BY t.id)
@@ -182,10 +184,8 @@ SELECT jsonb_build_object(
 """
 
 
-CAPTURE_SQL = CAPTURE_SQL.replace("__TRIAGE_FRESHNESS__", freshness_sql("alert_basic", "a.id",
-    "SELECT t.source_run_id FROM socai2.alert_assessments t WHERE t.tenant_id=:tenant AND t.alert_id=a.id AND t.id=a.latest_triage_id AND t.kind='triage'"))
-CAPTURE_SQL = CAPTURE_SQL.replace("__DIAGNOSIS_FRESHNESS__", freshness_sql("incident_diagnosis", "i.id",
-    "SELECT d.source_run_id FROM socai2.incident_diagnoses d WHERE d.tenant_id=:tenant AND d.incident_id=i.id AND d.id=i.latest_diagnosis_id"))
+CAPTURE_SQL = CAPTURE_SQL.replace("__TRIAGE_FRESHNESS__", same_material_triage_sql("a.id", "a.latest_triage_id"))
+CAPTURE_SQL = CAPTURE_SQL.replace("__TERMINAL_MATERIAL__", case_incident_material.source_sql())
 
 
 QUESTIONS = (
@@ -201,14 +201,13 @@ QUESTIONS = (
 async def capture(db, tenant_id, case_id, request) -> Context:
     """Called with the Case and pending Run locked, before any Run input freezes."""
     from . import case_query_snapshot
-    from .runtime_policy import active_policy
+    from .runtime_policy import execution_policy
 
-    profile = active_policy().case_io
-    sql = case_query_snapshot.capture_sql(CAPTURE_SQL) if profile else CAPTURE_SQL
+    profile = execution_policy("case_io").case_io
+    sql = case_query_snapshot.capture_sql(CAPTURE_SQL)
     raw = (await db.execute(text(sql), {"tenant": tenant_id, "case": case_id,
         "comparison": request.comparison_result_id})).scalar_one()
-    if profile:
-        raw["case_input_profile"] = profile.identity
+    raw["case_input_profile"] = profile.identity
     omissions, roles = [], {"$.case": "source_label"}
 
     def omit(section, source_id, reason):
@@ -255,11 +254,25 @@ async def capture(db, tenant_id, case_id, request) -> Context:
     if not raw["incidents"]:
         omit("incidents", None, "no_linked_incident")
     for iid, item in raw["incidents"].items():
-        reasons, diagnosis = [], item["diagnosis"]
+        candidate = item.pop("_terminal_material", None)
+        item["analysis_material"], reasons = case_incident_material.freeze(iid, candidate, member_ids)
+        material = item["analysis_material"]
+        diagnosis = candidate.get("diagnosis") if candidate and material and material["receipt"]["use"]["conclusion_available"] else None
+        item["diagnosis"] = diagnosis
+        item["diagnosis_freshness"] = "current" if material else "unavailable"
         item["case_member_ids"] = sorted(set(item["member_ids"]) & member_ids)
+        source = ({**candidate["input"], "source_run_id": candidate["run"]["id"],
+                   "run_state": candidate["run"]["state"], "input_artifact_id": candidate["input"]["id"]}
+                  if material else None)
+        item["diagnosis_scope"], scope_reasons = freeze_diagnosis_scope(iid, diagnosis, source, member_ids)
+        reasons.extend(scope_reasons)
+        if material:
+            roles.update({f"$.incidents.{iid}.analysis_material.units.{index}.value": "prior_analysis"
+                          for index, _ in enumerate(material["units"])})
         validity = (diagnosis.get("diagnosis") or {}).get("validation_state") if diagnosis else None
         item["diagnosis_usable"] = bool(diagnosis and diagnosis["state"] == "completed"
-                                       and validity == "accepted" and item["case_member_ids"]
+                                       and validity == "accepted" and item["diagnosis_scope"]
+                                       and item["diagnosis_scope"]["case_covered_alert_ids"]
                                        and item["diagnosis_freshness"] == "current")
         if set(item["member_ids"]) - member_ids:
             reasons.append("incident_scope_extends_beyond_case")
@@ -339,4 +352,9 @@ def selected_refs(context):
     refs += [reference("task_revision", tid, "human_statement") for tid in sorted(task_ids)]
     refs += [reference("result", rid, "prior_analysis") for rid in sorted(context.prior_results)]
     refs += [reference("artifact", fid, "prior_analysis") for fid in sorted(context.adopted_artifacts)]
-    return refs
+    for incident in context.incidents.values():
+        material = incident.analysis_material
+        if material:
+            refs.extend(reference("artifact", row["id"], "execution_receipt") for row in
+                        [material["input"], material["response"], material["receipt_source"], *material["originals"]])
+    return list({(ref["type"], ref["id"]): ref for ref in refs}.values())

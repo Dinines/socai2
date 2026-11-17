@@ -1,4 +1,4 @@
-"""One manually claimed Run, one C1-C6 pipeline; no queue or automatic resume."""
+"""One frozen Run, one C1-C6 pipeline; lifecycle scheduling belongs to its caller."""
 import asyncio
 from collections import Counter
 from types import SimpleNamespace
@@ -42,14 +42,20 @@ class BaselineExecutor(ModelSteps):
         try:
             return await self.execute(claim)
         except (Exception, asyncio.CancelledError) as exc:
-            if isinstance(exc, StoreError) and exc.code in {"full_executor_claim_required", "full_executor_already_claimed"}:
+            if isinstance(exc, StoreError) and exc.code in {"full_executor_claim_required", "full_executor_already_claimed",
+                    "investigation_execution_contract_required", "case_input_profile_changed"}:
                 raise
             from .baseline_closing import interrupted
-            await asyncio.shield(interrupted(self.service, self.tenant_id, claim.case_id, claim.run_id))
+            await asyncio.shield(interrupted(self.service, self.tenant_id, claim.case_id, claim.run_id, failure=exc))
             raise
 
     async def execute(self, claim):
         tenant_id, case_id, run_id = self.tenant_id, claim.case_id, claim.run_id
+        from .case_model_boundary import selected_profile
+        from .runtime_policy import execution_policy
+        execution_policy("case_io")
+        async with self.service.transaction(tenant_id, readonly=True) as store:
+            selected_profile(await store.read_context(case_id, run_id))
         configured = await self.gateway.configure(self.service, tenant_id)
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
@@ -76,7 +82,7 @@ class BaselineExecutor(ModelSteps):
                     "binding_count": len(capability_catalog["bindings"]), "unsupported": capability_catalog["unsupported"],
                     "offered_tools_at_start": sorted({b["tool_name"] for b in enabled_bindings.values()}),
                     "unoffered_binding_reasons": dict(Counter(o["reason"] for o in excluded)),
-                    "limitations": ["four_domains_share_one_model_pass", "200_members_storage_limit_not_model_capacity_promise",
+                    "limitations": ["four_domains_share_one_model_pass", "member_limit_not_model_capacity_promise",
                         "host_time_bindings_not_row_to_alert_attribution", "enabled_sources_checked_again_before_C3_and_dispatch"]},
                 "limitations": ["backend_token_measurement_reserves_output_and_safety_margin",
                     "no_unknown_call_retry_or_automatic_successor_or_task_creation", "graph_uses_retained_sources_only"],
@@ -85,13 +91,17 @@ class BaselineExecutor(ModelSteps):
         await self.service.enrich(tenant_id, case_id, run_id)
         await self.service.prepare_evidence(tenant_id, case_id, run_id)
         initial = await self.service.analyze(tenant_id, case_id, run_id, gateway=self.gateway, lake=self.lake)
+        delivery = (initial.get("basis") or {}).get("stage_delivery") or {}
+        allowed = {i for i, path in enumerate(delivery.get("followup_unit_paths", []))
+                   if path in delivery.get("dispatch_paths", [])}
         routes = await dispatch_followups(self.service, tenant_id, case_id, run_id,
             (initial.get("analysis") or {}).get("followups", []),
-            (initial.get("basis") or {}).get("binding_map", {}), gateway=self.gateway, lake=self.lake)
+            (initial.get("basis") or {}).get("binding_map", {}), gateway=self.gateway, lake=self.lake,
+            allowed_indices=allowed)
 
         graph = await self.service.build_graph(tenant_id, case_id, run_id)
         for route in routes:
-            if route["mode"] == "graph":
+            if route["mode"] == "graph" and route["state"] == "scheduled":
                 route.update(state="completed", graph_artifact_id=graph["graph_artifact_id"])
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)

@@ -1,4 +1,4 @@
-# 调查HTTP接口目录（64项）
+# 调查HTTP接口目录（71项）
 
 [共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)
 
@@ -26,7 +26,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e01) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -83,8 +83,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | case_member_limit_exceeded | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -117,7 +115,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e02) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -176,8 +174,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少Case读取能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_time_window | 起点不早于终点；无时区、非法排序或枚举同样422；参数修正前不重试。 |
 | 422 | invalid_case_cursor | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -210,7 +206,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e03) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -283,8 +279,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -314,7 +308,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e04) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -368,8 +362,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -400,7 +392,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e05) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -450,8 +442,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -481,7 +471,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e06) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -543,8 +533,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | evidence_index_scope_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | evidence_source_not_found | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -580,7 +568,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e07) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -630,8 +618,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -664,7 +650,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e08) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -720,8 +706,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | case_member_limit_exceeded | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -755,7 +739,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e09) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -823,8 +807,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | case_move_requires_different_target | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | case_member_limit_exceeded | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -857,7 +839,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e10) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -895,8 +877,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_history_cursor | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | invalid_history_limit | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -927,7 +907,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e11) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -973,8 +953,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 409 | baseline_scope_empty | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
@@ -1006,7 +984,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e12) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1098,8 +1076,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_run_not_found | 业务约束/对象状态，见操作说明 |
@@ -1125,11 +1101,11 @@
 
 **结果：** 执行指定pending Run并等待本次执行返回，返回Run状态和已有结果引用；异常或执行未知时先读取同一Run。
 
-**规则与限制：** 必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。
+**规则与限制：** 必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。当前独立服务同步核心v1.2-20261113-r1：C3模型回答五项调查问题，程序补充覆盖说明；E12工件和E14结果仍按原合同读取。实际执行状态、交付完整性和待复核分别判断，模型质量仍未通过。
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e13) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1236,8 +1212,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | full_executor_limits_outside_policy | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -1275,7 +1249,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e14) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1401,8 +1375,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_result_not_found | 业务约束/对象状态，见操作说明 |
@@ -1433,7 +1405,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e15) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1478,8 +1450,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | run_artifact_not_found | 业务约束/对象状态，见操作说明 |
@@ -1509,7 +1479,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e16) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1552,8 +1522,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | run_artifact_not_found | 业务约束/对象状态，见操作说明 |
@@ -1583,7 +1551,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e17) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1625,8 +1593,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_record_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -1656,7 +1622,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e18) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1708,8 +1674,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | frozen_material_not_found | 业务约束/对象状态，见操作说明 |
@@ -1738,7 +1702,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e19) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1787,8 +1751,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 501 | case_ai_not_implemented | 业务约束/对象状态，见操作说明 |
@@ -1817,7 +1779,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 已确认返回501，功能未实现。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e20) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -1868,8 +1830,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 501 | case_ai_not_implemented | 业务约束/对象状态，见操作说明 |
@@ -1898,7 +1858,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -1950,9 +1910,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
-| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -1969,6 +1926,7 @@
 | 409 | result_member_coverage_incomplete | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 | 409 | result_input_not_current | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 | 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E21.errors`，Swagger同操作 Responses 可直接展开。
 
@@ -1994,7 +1952,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e22) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2037,8 +1995,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_stage_history_limit | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -2068,7 +2024,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e23) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2111,8 +2067,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_stage_history_limit | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -2142,7 +2096,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e24) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2196,8 +2150,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_run_not_found | 业务约束/对象状态，见操作说明 |
@@ -2226,7 +2178,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e25) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2280,8 +2232,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_run_not_found | 业务约束/对象状态，见操作说明 |
@@ -2310,7 +2260,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e26) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2374,8 +2324,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_time_window | 起点不早于终点；无时区、非法排序或枚举同样422；参数修正前不重试。 |
 | 422 | mixed_pagination | before_id不能与cursor、新筛选或排序混用；参数修正前不重试。 |
@@ -2408,7 +2356,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e27) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2475,8 +2423,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_time_window | 起点不早于终点；无时区、非法排序或枚举同样422；参数修正前不重试。 |
 | 422 | mixed_pagination | before_id不能与cursor、新筛选或排序混用；参数修正前不重试。 |
@@ -2509,7 +2455,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e28) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2621,8 +2567,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | page_subject_not_found | 业务约束/对象状态，见操作说明 |
@@ -2651,7 +2595,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e29) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2752,8 +2696,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | page_subject_not_found | 业务约束/对象状态，见操作说明 |
@@ -2782,7 +2724,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e30) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2828,8 +2770,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_record_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -2860,7 +2800,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e31) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2910,8 +2850,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | alert_material_not_found | 业务约束/对象状态，见操作说明 |
@@ -2941,7 +2879,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e32) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -2990,8 +2928,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_run_not_found | 业务约束/对象状态，见操作说明 |
@@ -3020,7 +2956,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e33) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3067,8 +3003,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_artifact_not_found | 业务约束/对象状态，见操作说明 |
@@ -3097,7 +3031,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e34) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3140,8 +3074,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_artifact_not_found | 业务约束/对象状态，见操作说明 |
@@ -3170,7 +3102,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e35) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3213,8 +3145,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | stage_artifact_not_found | 业务约束/对象状态，见操作说明 |
@@ -3239,11 +3169,11 @@
 
 **结果：** 发起告警分诊并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。
 
-**规则与限制：** 21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行模型，本轮入口验收未派发真实模型，结论质量以独立验收为准。
+**规则与限制：** 21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行新版核心的告警分诊及保存；当前策略最多2次模型调用、24000tokens，调用方不用传模型参数。本轮同步复用已发布核心证据，未重新派发模型，结论质量以独立验收为准。
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e36) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3302,8 +3232,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 503 | socai2_stage_execution_not_enabled | 业务约束/对象状态，见操作说明 |
@@ -3332,11 +3260,11 @@
 
 **结果：** 发起事件诊断并返回Run结果；21新独立正式入口已挂载并启用，调用会执行当前模型流程。
 
-**规则与限制：** 部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。不能把路由可用当成自动消费者已开启或真实模型质量通过。
+**规则与限制：** 部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。调用执行新版事件诊断及保存，当前策略最多2次模型调用、24000tokens。不能把路由可用当成自动消费者已开启或真实模型质量通过。
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库的执行、保存和读取通过；模型/外部查询为替身，真实模型效果未据此验收。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e37) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3395,8 +3323,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 503 | socai2_stage_execution_not_enabled | 业务约束/对象状态，见操作说明 |
@@ -3429,7 +3355,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e38) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3521,8 +3447,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | task_assignee_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | task_origin_finding_not_found | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -3557,7 +3481,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e39) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3597,8 +3521,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_record_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -3628,7 +3550,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e40) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3742,8 +3664,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | task_scope_outside_current_case | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | task_whole_case_scope_incomplete | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -3780,7 +3700,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e41) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3842,8 +3762,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_task_not_found | 业务约束/对象状态，见操作说明 |
@@ -3872,7 +3790,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e42) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3914,8 +3832,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | invalid_record_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -3945,7 +3861,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e43) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -3998,8 +3914,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_task_revision_not_found | 业务约束/对象状态，见操作说明 |
@@ -4028,7 +3942,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e44) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4097,8 +4011,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -4127,7 +4039,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e45) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4217,8 +4129,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | case_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -4251,7 +4161,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e46) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4329,8 +4239,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -4364,7 +4272,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e47) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4440,8 +4348,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
@@ -4473,7 +4379,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e48) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4563,8 +4469,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | subject_not_found | 业务约束/对象状态，见操作说明 |
@@ -4595,7 +4499,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e49) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4692,8 +4596,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -4725,7 +4627,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e50) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4821,8 +4723,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | alert_close_reason_required | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -4855,7 +4755,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e51) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -4956,8 +4856,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -4991,7 +4889,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e52) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5075,8 +4973,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -5108,7 +5004,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 [本接口用途及完整输出字段审计](audit/interfaces.html#e53) · [动态投影与差异](audit/dynamic-fields.html)
 
@@ -5194,8 +5090,6 @@
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | identity | 现有身份/访问条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | subject_owner_not_in_tenant | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | subject_batch_selection_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -5228,7 +5122,7 @@
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5315,8 +5209,6 @@ facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 现有读取条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -5351,7 +5243,7 @@ facts.id,facts.title,facts.severity,facts.event_time,facts.handling_status,facts
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5433,8 +5325,6 @@ facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 现有读取条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -5469,7 +5359,7 @@ facts.id,facts.title,derived.severity_effective,derived.severity_source,derived.
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 **可选输出列（按columns传入顺序）：**
 
@@ -5550,8 +5440,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 现有读取条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | export_columns_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | export_pagination_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -5586,7 +5474,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5632,8 +5520,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 现有读取条件不符 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | grouping_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -5665,7 +5551,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5714,13 +5600,11 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
-| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
 | 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E58.errors`，Swagger同操作 Responses 可直接展开。
 
@@ -5746,7 +5630,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5797,8 +5681,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | comment_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -5828,7 +5710,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5887,14 +5769,12 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
-| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
 | 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
 | 409 | attachment_already_linked | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 403 | case_actor_not_in_tenant | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E60.errors`，Swagger同操作 Responses 可直接展开。
 
@@ -5920,7 +5800,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -5973,8 +5853,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | attachment_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -6004,7 +5882,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -6048,8 +5926,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | attachment_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -6080,7 +5956,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -6246,8 +6122,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | result_adoption_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 503 | feature_disabled | 服务对应功能开关关闭 |
@@ -6280,7 +6154,7 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 **验证结果（列表更新于2026-11-13；其他沿既有验收）：** 采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。
 
-**部署情况：** 对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
 
 | 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- | --- |
@@ -6426,8 +6300,6 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 
 | HTTP | 错误/形状 | 处理 |
 | --- | --- | --- |
-| 401 | not_authenticated | 缺少有效已有凭据 |
-| 403 | permission_denied | 缺少对应Case操作能力 |
 | 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
 | 422 | assessment_history_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
 | 422 | invalid_assessment_history_page | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
@@ -6435,3 +6307,1057 @@ case.id,case.title,case.handling_status,case.severity,case.owner_id,case.assignm
 | 404 | case_not_found | 业务约束/对象状态，见操作说明 |
 
 完整错误JSON示例见 `examples.json` 的 `E64.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e65"></a>
+
+## E65 读取案件故事
+
+`GET /api/v1/socai2/cases/{case_id}/story`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 读取案件故事。
+
+**输入：** 路径参数：`case_id`；查询参数：`q`, `severity`, `limit`, `cursor`；无请求体。
+
+**输出：** HTTP 200，`StoryPage`；完整字段和示例见Responses。
+
+**结果：** 返回本案故事条目、筛选总数及下一页游标；保留原始身份、正文、状态和时间，可跳回原告警/Run/结果/任务修订。
+
+**规则与限制：** 只读聚合当前成员告警、基础调查Run及终态已存结果、人工完成修订。q按标题/说明、主机账号或调查/人工正文作字面子串搜索；severity仅筛选告警，调查与人工结果保留。按实际时间倒序、未知时间最后，同时间按稳定id倒序；limit默认20、1–100，cursor沿next_cursor续页且绑定Case/筛选。每项保留原ID，E28/E12/E14/E43回查；旧完成修订标is_current_task_revision，活跃Run不显示最终结果。只读取，不写入或调用模型。AI对话不在本接口范围。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机30次真实TCP功能检查及补充1次GET/11表原行核对通过；原快照脚本错误保留，正式本机和21各7次只读GET核对版本、故事和源记录通过。无模型调用或数据库迁移。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | q | False | string; maxLength=200 / null | null | 字面子串搜索；告警标题/说明/最新主机账号，调查标题/目的/结论/变化，人工任务标题/说明/结果。 |
+| query | severity | False | [Severity](schemas.md#severity) / null | null | 仅筛选告警等级；调查及人工完成结果保留作上下文。 |
+| query | limit | False | integer; minimum=1; maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | cursor | False | string; maxLength=2048 / null | null | 上页next_cursor，绑定Case与筛选；变更条件需清空。 |
+
+
+无请求体。
+
+响应类型：[StoryPage](schemas.md#storypage)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "limit": 20
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "items": [
+    {
+      "id": "investigation:00000000-0000-4000-8000-000000000004",
+      "kind": "investigation",
+      "occurred_at": "2026-11-12T08:00:00Z",
+      "time_source": "ended_at",
+      "alert": null,
+      "run": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "case_id": "00000000-0000-4000-8000-000000000001",
+        "kind": "baseline",
+        "title": "合成示例：核查异常登录",
+        "purpose": "仅说明合同结构，无真实执行或业务判断。",
+        "trigger": "manual",
+        "scope_revision": 1,
+        "scope_updated_at": null,
+        "scope_kind": "whole_case",
+        "window_start": null,
+        "window_end": null,
+        "state": "completed",
+        "comparison_result_id": null,
+        "input_artifact_id": null,
+        "executor_version": null,
+        "requested_at": "2026-11-12T08:00:00Z",
+        "requested_by": null,
+        "started_at": "2026-11-12T08:00:00Z",
+        "ended_at": "2026-11-12T08:00:00Z",
+        "stop_reason": null,
+        "stop_detail": null,
+        "delivery_state": "partial",
+        "row_version": 1
+      },
+      "results": [
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "case_id": "00000000-0000-4000-8000-000000000001",
+          "kind": "baseline",
+          "source_run_id": "00000000-0000-4000-8000-000000000004",
+          "source_answer_id": null,
+          "title": "合成示例：核查异常登录",
+          "purpose": "仅说明合同结构，无真实执行或业务判断。",
+          "conclusion": "仍需核实维护授权；保留待核问题及限制。",
+          "conclusion_state": "uncertain",
+          "conclusion_origin": "model",
+          "validation_state": "accepted",
+          "closing_note": "仅说明合同结构，无真实执行或业务判断。",
+          "comparison_result_id": null,
+          "change_kind": "initial",
+          "change_summary": null,
+          "input_artifact_id": "00000000-0000-4000-8000-000000000009",
+          "graph_artifact_id": null,
+          "report_artifact_id": null,
+          "supersedes_result_id": null,
+          "delivery_state": "partial",
+          "created_at": "2026-11-12T08:00:00Z",
+          "saved_at": "2026-11-12T08:00:00Z",
+          "saved_by": null,
+          "edited_fields": [],
+          "edit_note": null,
+          "findings": [],
+          "questions": [
+            {
+              "id": "authorization",
+              "text": "这次操作是否经过维护授权？",
+              "scope": {
+                "kind": "whole_case",
+                "alert_ids": [
+                  "00000000-0000-4000-8000-000000000002"
+                ],
+                "object_keys": [],
+                "window_start": null,
+                "window_end": null,
+                "limitations": []
+              },
+              "evidence_requirements": [
+                "维护负责人确认"
+              ],
+              "state": "unresolved",
+              "answer": null,
+              "evidence_refs": [],
+              "limitations": [
+                "尚未取得授权记录。"
+              ]
+            }
+          ],
+          "recommendations": [],
+          "case_impact": {
+            "summary": null,
+            "supported_changes": [],
+            "cannot_generalize": [],
+            "affected_scope": {
+              "kind": "selected_alerts",
+              "alert_ids": [
+                "00000000-0000-4000-8000-000000000002"
+              ],
+              "object_keys": [],
+              "window_start": null,
+              "window_end": null,
+              "limitations": [
+                "仅覆盖人工核实的该条告警"
+              ]
+            },
+            "next_steps": []
+          }
+        }
+      ],
+      "task_revision": null,
+      "is_current_task_revision": null
+    },
+    {
+      "id": "human_result:00000000-0000-4000-8000-000000000007",
+      "kind": "human_result",
+      "occurred_at": "2026-11-12T08:00:00Z",
+      "time_source": "completed_at",
+      "alert": null,
+      "run": null,
+      "results": [],
+      "task_revision": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "case_id": "00000000-0000-4000-8000-000000000001",
+        "task_id": "00000000-0000-4000-8000-000000000006",
+        "revision": 1,
+        "title": "核实登录是否为本人操作",
+        "description": "联系对应负责人核实",
+        "assignee_id": null,
+        "due_at": null,
+        "state": "completed",
+        "result_text": "合成示例：人工确认来自维护作业，仍需核实授权范围。",
+        "result_scope": {
+          "kind": "selected_alerts",
+          "alert_ids": [
+            "00000000-0000-4000-8000-000000000002"
+          ],
+          "object_keys": [],
+          "window_start": null,
+          "window_end": null,
+          "limitations": [
+            "仅覆盖人工核实的该条告警"
+          ]
+        },
+        "source_refs": [],
+        "completed_at": "2026-11-12T08:00:00Z",
+        "completed_by": "00000000-0000-4000-8000-000000000010",
+        "changed_at": "2026-11-12T08:00:00Z",
+        "changed_by": "00000000-0000-4000-8000-000000000010"
+      },
+      "is_current_task_revision": false
+    },
+    {
+      "id": "alert:00000000-0000-4000-8000-000000000002",
+      "kind": "alert",
+      "occurred_at": "2026-11-12T08:00:00Z",
+      "time_source": "event_time",
+      "alert": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "source_namespace": "example",
+        "title": "合成示例：核查异常登录",
+        "description": null,
+        "owner_id": null,
+        "assignment_state": "unassigned",
+        "owner_source_value": null,
+        "assigned_at": null,
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 1,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": "2026-11-12T08:00:00Z",
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "new",
+        "disposition": null,
+        "closed_at": null,
+        "closed_by": null,
+        "latest_material_id": null,
+        "latest_triage_id": null,
+        "latest_feedback_id": null,
+        "latest_explanation_id": null
+      },
+      "run": null,
+      "results": [],
+      "task_revision": null,
+      "is_current_task_revision": null
+    }
+  ],
+  "total": 3,
+  "next_cursor": null,
+  "observed_at": "2026-11-12T08:00:00Z"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | story_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | invalid_story_cursor | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | story_cursor_filters_changed | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E65.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e66"></a>
+
+## E66 查询案件探索候选
+
+`GET /api/v1/socai2/cases/{case_id}/exploration-candidates`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 查询案件探索候选。
+
+**输入：** 路径参数：`case_id`；查询参数：`alert_id`, `object_id`, `time_from`, `time_to`, `limit`, `cursor`；无请求体。
+
+**输出：** HTTP 200，`ExplorationPage`；完整字段和示例见Responses。
+
+**结果：** 返回案件一层候选告警及逐对匹配原件、共享对象数、时间差、归属和分页；不修改图、案件成员或调查。
+
+**规则与限制：** 只读查询当前案件成员或指定alert_id/object_id的一层候选。起点ID必须来自当前材料，不接受图节点名称；两ID互斥。host/user/ip/domain/url按同来源类型和值精确匹配，hash需明确且合法的MD5/SHA1/SHA256/SHA512算法和值。默认起点事件范围前后配置24小时，显式time_from/time_to需同时提供，起点包含终点不含；无已知起点时间需明确范围。按共享对象数降序、距匹配起点最近秒数升序、ID升序分页。返回原告警、每对来源对象/材料、时间差和案件/事件归属；当前成员标already_in_case。matches只含匹配对象，展开全部对象读E30 objects；图保存和AI对话不在此范围。明确加入使用E08。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机30次真实HTTP核对匹配、哈希算法、时间、分页、来源回查及明确加入；查询前后10表原行一致，原案归属保留。0模型/0生产写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | alert_id | False | string (uuid) / null | null | 可选起点告警ID，与object_id互斥；必须同Case来源范围，可用已读候选逐层查询。 |
+| query | object_id | False | string (uuid) / null | null | 可选起点的alert_objects.id，来自E30 objects或E66 matches；必须最新材料，不是图内部节点ID。 |
+| query | time_from | False | string (date-time) / null | null | 显式窗口起点（包含），带时区，和time_to一起传；省略用起点发生时间范围前后各配置24小时。 |
+| query | time_to | False | string (date-time) / null | null | 显式窗口终点（不包含），带时区，必须晚于time_from；未知时间候选不返回。 |
+| query | limit | False | integer; minimum=1; maximum=100 | 20 | 本次最多返回条数；不是总量。默认值及上限见字段约束。 |
+| query | cursor | False | string; maxLength=4096 / null | null | 原样传next_cursor；案件/起点/查询范围或起点材料变化409，需从首页读取。 |
+
+
+无请求体。
+
+响应类型：[ExplorationPage](schemas.md#explorationpage)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "limit": 20
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "items": [
+    {
+      "alert": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "source_namespace": "example",
+        "title": "合成候选告警",
+        "description": null,
+        "owner_id": null,
+        "assignment_state": "unassigned",
+        "owner_source_value": null,
+        "assigned_at": null,
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 1,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": "2026-11-12T08:20:00Z",
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "new",
+        "disposition": null,
+        "closed_at": null,
+        "closed_by": null,
+        "latest_material_id": "00000000-0000-4000-8000-000000000015",
+        "latest_triage_id": null,
+        "latest_feedback_id": null,
+        "latest_explanation_id": null
+      },
+      "shared_object_count": 1,
+      "time_delta_seconds": 1200.0,
+      "already_in_case": false,
+      "case_ids": [],
+      "incident_ids": [],
+      "matches": [
+        {
+          "basis": "same_source_value",
+          "seed": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "alert_id": "00000000-0000-4000-8000-000000000002",
+            "material_id": "00000000-0000-4000-8000-000000000008",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          },
+          "candidate": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "alert_id": "00000000-0000-4000-8000-000000000014",
+            "material_id": "00000000-0000-4000-8000-000000000015",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          }
+        }
+      ]
+    }
+  ],
+  "total": 1,
+  "next_cursor": null,
+  "scope": {
+    "seed_kind": "alert",
+    "seed_alert_ids": [
+      "00000000-0000-4000-8000-000000000002"
+    ],
+    "source_namespace": "example",
+    "case_scope_revision": 1,
+    "time_from": "2026-11-11T08:00:00Z",
+    "time_to": "2026-11-13T08:00:00Z",
+    "window_basis": "seed_event_times",
+    "excluded_objects": []
+  },
+  "observed_at": "2026-11-12T08:30:00Z"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | invalid_exploration_cursor | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_unsupported_object_type | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_hash_algorithm_or_value_invalid | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_explicit_window_required | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | exploration_start_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | exploration_start_material_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | exploration_cursor_scope_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E66.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e67"></a>
+
+## E67 读取案件探索底图
+
+`GET /api/v1/socai2/cases/{case_id}/exploration-base`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 读取案件探索底图。
+
+**输入：** 路径参数：`case_id`；查询参数：`run_id`；无请求体。
+
+**输出：** HTTP 200，`ExplorationBase`；完整字段和示例见Responses。
+
+**结果：** 返回当前或指定完成调查底图及指纹，缺图如实保留；只读。
+
+**规则与限制：** 只读取得最近completed基础调查的原图、来源和指纹；可指定本案已完成run_id。缺图unavailable，不借另一轮；无完成调查才用当前成员最新材料关系。partial原样保留，AI对话结果不参与。首次或重置保存将run_id和fingerprint原样交E68；继续已有保存用E69。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PG与HTTP保存恢复、撤销、幂等/冲突、来源错误和新调查不替换旧底图已直接验证；7张业务表保存前后保持。合成历史图构造失败已保留，修正构造后完成剩余验证；0模型/0生产写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+| query | run_id | False | string (uuid) / null | null | 可选：本案已完成基础调查Run ID；省略选最新completed；缺图不会回退其他轮。 |
+
+
+无请求体。
+
+响应类型：[ExplorationBase](schemas.md#explorationbase)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "kind": "members",
+  "case_id": "00000000-0000-4000-8000-000000000001",
+  "run_id": null,
+  "result_id": null,
+  "graph_artifact_id": null,
+  "scope_revision": 1,
+  "delivery_state": null,
+  "graph_state": "members",
+  "graph": null,
+  "sources": {
+    "alerts": [],
+    "objects": []
+  },
+  "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | exploration_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | exploration_completed_run_not_found | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E67.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e68"></a>
+
+## E68 保存案件探索进度
+
+`PUT /api/v1/socai2/cases/{case_id}/exploration`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 保存案件探索进度。
+
+**输入：** 路径参数：`case_id`；JSON请求体：`ExplorationSave`，字段和必填要求见Request body。
+
+**输出：** HTTP 200，`ExplorationSnapshot`；完整字段和示例见Responses。
+
+**结果：** 保存固定底图、真实展开关系和画布状态，返回不可变保存ID；不产生调查或加入成员。
+
+**规则与限制：** 提交operation_key、expected_snapshot_id（首次null）、expanded_links及view_state。首次/重置传base_run_id和base_fingerprint；继续旧快照用base_snapshot_id且不可混用前两项。按对象ID校验真实匹配及展开链路，保存原底图、来源和画布；新调查不替换旧保存。旧材料关系可保留，不代表重新执行E66实时查询。并发版本或来源变化409；同键同用户同请求返回原保存。配置默认1000关系/4MiB，不截断。只追加快照及活动，不改成员、Run、Result、任务或Case版本。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PG与HTTP保存恢复、撤销、幂等/冲突、来源错误和新调查不替换旧底图已直接验证；7张业务表保存前后保持。合成历史图构造失败已保留，修正构造后完成剩余验证；0模型/0生产写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+
+
+请求体：
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 本次保存幂等键；相同用户/请求重试返回原快照，改请求409。 |
+| expected_snapshot_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 最近读到的保存 ID，首次必须明确 null；并发变化409。 |
+| base_snapshot_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 继续已存探索时填该快照 ID，固定复制其底图；首次或重置为 null。 |
+| base_run_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 首次/重置的底图 Run ID；成员图为 null；复制快照时不可填。 |
+| base_fingerprint | 否 | string; pattern=^[0-9a-f]{64}$ / null | 无（可空不等于可省略） | 首次/重置必填 GET 底图指纹；复制快照时不可填。 |
+| expanded_links | 是 | array <[ExplorationLinkInput](schemas.md#explorationlinkinput)> | 无（可空不等于可省略） | 按展开先后排列的所有保留关系；撤销需去除后续悬空分支。 |
+| view_state | 是 | object | 无（可空不等于可省略） | 客户端画布位置、选择、隐藏、视角等 JSON，原样保存返回；不当作业务事实或成员。 |
+
+
+响应类型：[ExplorationSnapshot](schemas.md#explorationsnapshot)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "body": {
+    "operation_key": "00000000-0000-4000-8000-000000000011",
+    "expected_snapshot_id": null,
+    "base_run_id": null,
+    "base_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expanded_links": [],
+    "view_state": {
+      "positions": {},
+      "selected": [],
+      "zoom": 1
+    }
+  }
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "id": "00000000-0000-4000-8000-000000000009",
+  "case_id": "00000000-0000-4000-8000-000000000001",
+  "created_at": "2026-11-12T08:00:00Z",
+  "created_by": "00000000-0000-4000-8000-000000000010",
+  "base": {
+    "kind": "members",
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": null,
+    "result_id": null,
+    "graph_artifact_id": null,
+    "scope_revision": 1,
+    "delivery_state": null,
+    "graph_state": "members",
+    "graph": null,
+    "sources": {
+      "alerts": [],
+      "objects": []
+    },
+    "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "expanded_links": [],
+  "expanded_sources": {
+    "alerts": [],
+    "objects": []
+  },
+  "view_state": {
+    "positions": {},
+    "selected": [],
+    "zoom": 1
+  }
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | exploration_objects_do_not_match | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_disconnected_branch | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_snapshot_too_large | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | exploration_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | exploration_snapshot_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | exploration_object_not_found | 业务约束/对象状态，见操作说明 |
+| 404 | exploration_completed_run_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | operation_key_conflict | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | exploration_snapshot_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+| 409 | exploration_base_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E68.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e69"></a>
+
+## E69 恢复案件探索进度
+
+`GET /api/v1/socai2/cases/{case_id}/exploration`
+
+状态：**已实现**。分类：调查。
+
+**实现状态：** 已实现
+
+**用途：** 恢复案件探索进度。
+
+**输入：** 路径参数：`case_id`；无请求体。
+
+**输出：** HTTP 200，`ExplorationSaved`；完整字段和示例见Responses。
+
+**结果：** 恢复本案最近保存，未保存时snapshot为null；内容不随新调查替换。
+
+**规则与限制：** 只读返回本案最近保存的snapshot，底图、展开来源和view_state按当时值恢复；尚未保存时snapshot为null。新调查不覆盖保存；实时成员和告警状态须另行读取。只接受case_id，不接受查询参数。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机真实PG与HTTP保存恢复、撤销、幂等/冲突、来源错误和新调查不替换旧底图已直接验证；7张业务表保存前后保持。合成历史图构造失败已保留，修正构造后完成剩余验证；0模型/0生产写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | case_id | True | string (uuid) | null | Case UUID；来自真实回执/列表，不是页面展示编号。 |
+
+
+无请求体。
+
+响应类型：[ExplorationSaved](schemas.md#explorationsaved)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "case_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "snapshot": {
+    "id": "00000000-0000-4000-8000-000000000009",
+    "case_id": "00000000-0000-4000-8000-000000000001",
+    "created_at": "2026-11-12T08:00:00Z",
+    "created_by": "00000000-0000-4000-8000-000000000010",
+    "base": {
+      "kind": "members",
+      "case_id": "00000000-0000-4000-8000-000000000001",
+      "run_id": null,
+      "result_id": null,
+      "graph_artifact_id": null,
+      "scope_revision": 1,
+      "delivery_state": null,
+      "graph_state": "members",
+      "graph": null,
+      "sources": {
+        "alerts": [],
+        "objects": []
+      },
+      "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "expanded_links": [],
+    "expanded_sources": {
+      "alerts": [],
+      "objects": []
+    },
+    "view_state": {
+      "positions": {},
+      "selected": [],
+      "zoom": 1
+    }
+  }
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | exploration_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 404 | case_not_found | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E69.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e70"></a>
+
+## E70 查询告警相似历史复核候选
+
+`GET /api/v1/socai2/alerts/{alert_id}/review-candidates`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 查询告警相似历史复核候选。
+
+**输入：** 路径参数：`alert_id`；查询参数：`time_from`, `time_to`, `limit`, `cursor`；无请求体。
+
+**输出：** HTTP 200，`AlertReviewPage`；完整字段和示例见Responses。
+
+**结果：** 返回按时间排序的相似历史候选、逐对匹配依据及当前判定/归属；不复制反馈，不改变告警或触发调查。
+
+**规则与限制：** 按同主机且同战术，或同IP，或同明确合法算法哈希查候选。三个规则取并集，告警去重并保留每对原件/标签路径；同租户同告警来源及对象namespace，仅用当前材料，排除自身。默认limit=5，按真实event_time及ID倒序；默认起点发生时间向前配置30天，起点时间未知需同时提供带时区time_from/time_to，[起点,终点)，显式窗口可查起点之后。候选时间未知不计入；已关闭/已反馈仍可核查。游标绑定起点材料/对象/战术与窗口，变化409。返回当前状态/判定/事件与Case归属；E28打开、E31回原件，用户确认后才沿用E48/E49反馈。本接口不写入、不调用模型，不将共有对象等同攻击或自动复制判定。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机20条独立合成告警/事件/Case的23HTTP验证通过，10表查询前后原行相同；随后独立夹具材料更新验证旧游标409。无模型或生产业务写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | True | string (uuid) | null | 正在复核的真实告警ID，无需Case；排除自身。 |
+| query | time_from | False | string (date-time) / null | null | 显式候选发生时间下界（包含），带时区且与time_to一起提供；省略默认起点前配置30天。 |
+| query | time_to | False | string (date-time) / null | null | 显式上界（不包含），必须晚于time_from；默认起点event_time，起点缺时需明确窗口。 |
+| query | limit | False | integer; minimum=1; maximum=100 | 5 | 每页候选告警数，默认5，1–100；先按真实发生时间倒序。 |
+| query | cursor | False | string; maxLength=4096 / null | null | 原样使用next_cursor；绑定起点材料/对象/战术与窗口，变化409。 |
+
+
+无请求体。
+
+响应类型：[AlertReviewPage](schemas.md#alertreviewpage)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "alert_id": "00000000-0000-4000-8000-000000000002",
+    "limit": 5
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "items": [
+    {
+      "alert": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "source_namespace": "example",
+        "title": "合成候选告警",
+        "description": null,
+        "owner_id": null,
+        "assignment_state": "unassigned",
+        "owner_source_value": null,
+        "assigned_at": null,
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 1,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": "2026-11-11T08:00:00Z",
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "new",
+        "disposition": null,
+        "closed_at": null,
+        "closed_by": null,
+        "latest_material_id": "00000000-0000-4000-8000-000000000015",
+        "latest_triage_id": null,
+        "latest_feedback_id": null,
+        "latest_explanation_id": null
+      },
+      "matched_rules": [
+        "same_host_and_tactic"
+      ],
+      "time_delta_seconds": 86400.0,
+      "matches": [
+        {
+          "rule": "same_host_and_tactic",
+          "seed": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "alert_id": "00000000-0000-4000-8000-000000000002",
+            "material_id": "00000000-0000-4000-8000-000000000008",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          },
+          "candidate": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "alert_id": "00000000-0000-4000-8000-000000000014",
+            "material_id": "00000000-0000-4000-8000-000000000015",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          },
+          "shared_tactics": [
+            {
+              "label": "Execution",
+              "seed_source_paths": [
+                "$.detection.tactics[0]"
+              ],
+              "candidate_source_paths": [
+                "$.detection.tactics[0]"
+              ]
+            }
+          ]
+        }
+      ],
+      "incident_ids": [],
+      "case_ids": []
+    }
+  ],
+  "total": 1,
+  "next_cursor": null,
+  "scope": {
+    "source_alert_id": "00000000-0000-4000-8000-000000000002",
+    "source_material_id": "00000000-0000-4000-8000-000000000008",
+    "source_event_time": "2026-11-12T08:00:00Z",
+    "source_namespace": "example",
+    "time_from": "2026-10-13T08:00:00Z",
+    "time_to": "2026-11-12T08:00:00Z",
+    "window_basis": "seed_lookback",
+    "unavailable_rules": [
+      "same_ip",
+      "same_hash_algorithm_and_value"
+    ],
+    "excluded_objects": []
+  },
+  "observed_at": "2026-11-12T08:00:00Z"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | invalid_alert_review_cursor | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | alert_review_explicit_window_required | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 422 | alert_review_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | invalid_alert_review_configuration | 业务约束/对象状态，见操作说明 |
+| 404 | alert_review_source_not_found | 业务约束/对象状态，见操作说明 |
+| 409 | alert_review_cursor_scope_changed | 业务约束/对象状态，见操作说明；保留用户输入→读最新版本→确认差异后重新提交。 |
+
+完整错误JSON示例见 `examples.json` 的 `E70.errors`，Swagger同操作 Responses 可直接展开。
+
+<a id="e71"></a>
+
+## E71 读取同主机最近告警
+
+`GET /api/v1/socai2/alerts/{alert_id}/same-host-alerts`
+
+状态：**已实现**。分类：告警。
+
+**实现状态：** 已实现
+
+**用途：** 读取同主机最近告警。
+
+**输入：** 路径参数：`alert_id`；无请求体。
+
+**输出：** HTTP 200，`AlertHostPage`；完整字段和示例见Responses。
+
+**结果：** 返回同主机最新7条其他告警及全部主机来源；total为完整匹配数，不要求同战术，不改变判定或调查。
+
+**规则与限制：** 告警详情概况的相关告警。唯一输入alert_id，不接受查询参数；在同租户、同告警来源、同对象namespace下，按最新材料主机规范值精确匹配，不要求战术相同，不从IP或资产ID推断。排除自身，多个主机取并集并保留全部来源；按真实event_time倒序、ID倒序取配置上限，当前7条，不是7天；不限定在起点之前，无已知候选时间则排除，起点缺时仍可查。total为全匹配数，limit为实际返回上限，无分页。没有主机或材料返回空列表；已关闭/误报仍保留原值。E28打开告警、E31回查双方材料；不写入、不调用模型。
+
+**验证结果（列表更新于2026-11-13；其他沿既有验收）：** 本机20条独立合成告警的17次GET通过：9条候选正确取最新7条、16对主机来源回查、不同战术匹配、未知时间/空态/隔离/错误及4表原行保持。0模型/0生产写入。
+
+**部署情况：** 本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。
+
+| 位置 | 参数 | 必传 | 类型/限制 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| path | alert_id | True | string (uuid) | null | 告警 UUID。 |
+
+
+无请求体。
+
+响应类型：[AlertHostPage](schemas.md#alerthostpage)。字段完整展开见Schema或Swagger Models。
+
+输入示例（参数与JSON体）：
+
+```json
+{
+  "parameters": {
+    "alert_id": "00000000-0000-4000-8000-000000000002"
+  },
+  "body": null
+}
+```
+
+输出示例（HTTP 200）：
+
+```json
+{
+  "items": [
+    {
+      "alert": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "source_namespace": "example",
+        "title": "合成候选告警",
+        "description": null,
+        "owner_id": null,
+        "assignment_state": "unassigned",
+        "owner_source_value": null,
+        "assigned_at": null,
+        "tags": [],
+        "priority_value": null,
+        "priority_state": "not_provided",
+        "priority_source": null,
+        "priority_basis": null,
+        "business_updated_at": "2026-11-12T08:00:00Z",
+        "reopened_at": null,
+        "row_version": 1,
+        "source_alert_id": null,
+        "vendor_alert_id": null,
+        "connector_id": null,
+        "connector_type": null,
+        "original_vendor": null,
+        "category": null,
+        "severity": null,
+        "severity_raw": null,
+        "event_time": "2026-11-12T08:20:00Z",
+        "event_time_source": "source",
+        "first_seen_at": null,
+        "last_seen_at": null,
+        "ingested_at": "2026-11-12T08:00:00Z",
+        "source_updated_at": "2026-11-12T08:00:00Z",
+        "handling_status": "new",
+        "disposition": null,
+        "closed_at": null,
+        "closed_by": null,
+        "latest_material_id": "00000000-0000-4000-8000-000000000015",
+        "latest_triage_id": null,
+        "latest_feedback_id": null,
+        "latest_explanation_id": null
+      },
+      "matches": [
+        {
+          "seed": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "alert_id": "00000000-0000-4000-8000-000000000002",
+            "material_id": "00000000-0000-4000-8000-000000000008",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          },
+          "candidate": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "alert_id": "00000000-0000-4000-8000-000000000014",
+            "material_id": "00000000-0000-4000-8000-000000000015",
+            "object_type": "host",
+            "namespace": "example-connector",
+            "object_key": "host:HOST-A",
+            "raw_value": "HOST-A",
+            "normalized_value": "HOST-A",
+            "source_path": "$.raw_json.hostname",
+            "algorithm": null
+          }
+        }
+      ]
+    }
+  ],
+  "total": 1,
+  "limit": 7,
+  "source_alert_id": "00000000-0000-4000-8000-000000000002",
+  "source_material_id": "00000000-0000-4000-8000-000000000008",
+  "source_namespace": "example",
+  "source_hosts": [
+    {
+      "id": "00000000-0000-4000-8000-000000000009",
+      "alert_id": "00000000-0000-4000-8000-000000000002",
+      "material_id": "00000000-0000-4000-8000-000000000008",
+      "object_type": "host",
+      "namespace": "example-connector",
+      "object_key": "host:HOST-A",
+      "raw_value": "HOST-A",
+      "normalized_value": "HOST-A",
+      "source_path": "$.raw_json.hostname",
+      "algorithm": null
+    }
+  ],
+  "observed_at": "2026-11-12T08:30:00Z"
+}
+```
+
+| HTTP | 错误/形状 | 处理 |
+| --- | --- | --- |
+| 422 | validation | UUID、枚举、长度、额外字段或跨字段约束不符；参数修正前不重试。 |
+| 422 | alert_host_query_parameter_not_supported | 业务约束/对象状态，见操作说明；参数修正前不重试。 |
+| 503 | feature_disabled | 服务对应功能开关关闭 |
+| 503 | invalid_alert_host_configuration | 业务约束/对象状态，见操作说明 |
+| 404 | alert_host_source_not_found | 业务约束/对象状态，见操作说明 |
+
+完整错误JSON示例见 `examples.json` 的 `E71.errors`，Swagger同操作 Responses 可直接展开。

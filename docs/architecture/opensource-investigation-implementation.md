@@ -1,6 +1,6 @@
 # 开源版本实现
 
-本页说明参考的AiSOC开源版本怎样执行调查。参照基线为固定提交 `34ca18c57dd4175539e5c6dd3d04a72dc057306b` 的已有源码审阅，见[源码与产品说明核对记录](investigation-design-review.md)。不是本轮重新核验的最新上游版本，也不是本项目当前部署状态。
+本页说明参考的AiSOC开源版本怎样执行调查。参照基线为固定提交 `34ca18c57dd4175539e5c6dd3d04a72dc057306b` 的已有源码审阅，见[源码与产品说明核对记录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)。不是本轮重新核验的最新上游版本，也不是本项目当前部署状态。
 
 我们的方案只在[调查模块最新设计](investigation-planning-design.md)维护；已经接通和仍缺的能力见[当前实现与差距](../design/investigation-design-current-gap-review-20261103.md)。
 

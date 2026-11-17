@@ -1,0 +1,93 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-16T00:03:11.416966+00:00",
+  "case_id": "58194401-03ca-5383-83b4-ac82886a5acd",
+  "content_json": {
+    "raw": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "content": "{\n  \"analysis\": {\n    \"summary\": \"本轮复核确认案件状态为 Unresolved。现有证据链（登录->进程启动->网络流量）在时间、主机和账号上高度一致，但所有原始记录均标记为 `synthetic` 且明确声明授权与意图未知。关键缺口在于缺乏命令执行结果（curl 输出）和网络载荷分析，无法区分这是模拟测试数据还是真实的未授权外传/侦察行为。威胁情报与资产库存查询未提供决定性反证。\",\n    \"members\": [\n      {\n        \"alert_id\": \"A1\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录显示用户 O4 在主机 O1 成功登录。该记录标记为 synthetic，仅证明登录动作发生，未证明后续操作的授权。\",\n        \"evidence_ids\": [\"N4_S3\", \"N4_S4\", \"N4_S5\", \"N4_S6\", \"N4_S7\", \"N4_S8\", \"N4_S14\", \"N4_S22\", \"N4_S26\", \"N4_S48\", \"N4_S50\"],\n        \"limitations\": [\"记录标记为 synthetic，意图未知\", \"无后续命令执行结果佐证\"]\n      },\n      {\n        \"alert_id\": \"A2\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录显示进程 curl 启动，命令文本指向 IP O3。该记录标记为 synthetic，仅证明进程启动，未证明命令执行完成或数据读取。\",\n        \"evidence_ids\": [\"N4_S52\", \"N4_S53\", \"N4_S54\", \"N4_S55\", \"N4_S56\", \"N4_S57\", \"N4_S58\", \"N4_S59\", \"N4_S60\", \"N4_S61\", \"N4_S62\", \"N4_S68\", \"N4_S75\", \"N4_S79\", \"N4_S105\", \"N4_S107\"],\n        \"limitations\": [\"仅记录命令文本，无执行结果\", \"标记为 synthetic，无法定性\"]\n      },\n      {\n        \"alert_id\": \"A3\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录显示主机 O1 向 IP O3 发起 TCP 流量。该记录标记为 synthetic，outcome 为 unknown，无法确认流量内容或目的。\",\n        \"evidence_ids\": [\"N4_S108\", \"N4_S109\", \"N4_S110\", \"N4_S111\", \"N4_S112\", \"N4_S113\", \"N4_S114\", \"N4_S115\", \"N4_S116\", \"N4_S117\", \"N4_S121\", \"N4_S122\", \"N4_S123\", \"N4_S124\", \"N4_S129\", \"N4_S130\", \"N4_S131\", \"N4_S132\", \"N4_S133\", \"N4_S134\", \"N4_S135\", \"N4_S136\", \"N4_S141\", \"N4_S170\", \"N4_S171\", \"N4_S173\"],\n        \"limitations\": [\"outcome 为 unknown\", \"标记为 synthetic\", \"无载荷分析\"]\n      },\n      {\n        \"alert_id\": \"A4\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录显示主机 O1 向 IP O3 发起 TCP 流量。该记录标记为 synthetic，outcome 为 unknown，与 A3 时间接近但独立记录。\",\n        \"evidence_ids\": [\"N4_S174\", \"N4_S175\", \"N4_S176\", \"N4_S177\", \"N4_S178\", \"N4_S179\", \"N4_S180\", \"N4_S181\", \"N4_S182\", \"N4_S183\", \"N4_S184\", \"N4_S185\", \"N4_S186\", \"N4_S187\", \"N4_S188\", \"N4_S189\", \"N4_S190\", \"N4_S195\", \"N4_S196\", \"N4_S197\", \"N4_S198\", \"N4_S199\", \"N4_S200\", \"N4_S201\", \"N4_S202\", \"N4_S207\", \"N4_S236\", \"N4_S237\", \"N4_S239\"],\n        \"limitations\": [\"outcome 为 unknown\", \"标记为 synthetic\", \"无载荷分析\"]\n      }\n    ],\n    \"findings\": [\n      {\n        \"id\": \"F1\",\n        \"state\": \"observed\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"support_ids\": [\"N4_S3\", \"N4_S52\", \"N4_S109\", \"N4_S175\"],\n        \"counter_ids\": [],\n        \"alternatives\": [],\n        \"limitations\": [\"所有记录均标记为 synthetic，无法直接推断真实意图\"]\n      },\n      {\n        \"id\": \"F2\",\n        \"state\": \"inferred\",\n        \"statement\": \"基于时间顺序（登录->进程启动->网络流量）和命令行内容（curl 连接 198.51.100.20），推测存在从主机 O1 到外部 IP O3 的数据交互意图。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"support_ids\": [\"N4_S8\", \"N4_S60\", \"N4_S110\", \"N4_S175\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"该流量可能为正常的健康检查或心跳包，非恶意侦察或外传。\"],\n        \"limitations\": [\"缺乏命令执行结果和网络载荷证据，无法确认实际传输内容或是否完成。\"]\n      },\n      {\n        \"id\": \"F3\",\n        \"state\": \"unresolved\",\n        \"statement\": \"无法确认是否存在数据外传或恶意侦察行为。\",\n        \"alert_ids\": [\"A2\", \"A3\", \"A4\"],\n        \"support_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"流量可能为业务正常所需；synthetic 标签暗示可能是测试环境产生的模拟数据。\"],\n        \"limitations\": [\"缺少命令输出、文件读取记录及数据载荷分析。\"]\n      },\n      {\n        \"id\": \"F4\",\n        \"state\": \"unresolved\",\n        \"statement\": \"无法确认操作是否获得业务授权。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"support_ids\": [\"N4_S48\", \"N4_S105\", \"N4_S171\", \"N4_S237\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"账号 O4 名称包含 report，可能具有预授权的报告生成功能。\"],\n        \"limitations\": [\"无审批记录、无业务系统确认，仅凭账号名无法定性。\"]\n      },\n      {\n        \"id\": \"F5\",\n        \"state\": \"unresolved\",\n        \"statement\": \"无法确认外部 IP O3 的性质及连接目的。\",\n        \"alert_ids\": [\"A2\", \"A3\", \"A4\"],\n        \"support_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"该 IP 可能是合法的监控端点、API 网关或测试靶机。\"],\n        \"limitations\": [\"威胁情报查询无结果，资产库存未明确业务归属。\"]\n      }\n    ],\n    \"questions\": [\n      {\n        \"id\": \"detection_facts\",\n        \"state\": \"answered\",\n        \"answer\": \"原始记录支持：A1 登录成功，A2 进程 curl 启动，A3/A4 网络流量观测。对象涉及主机 O1、账号 O4、源 IP O2 和目的 IP O3。\",\n        \"evidence_ids\": [\"N4_S3\", \"N4_S4\", \"N4_S5\", \"N4_S6\", \"N4_S7\", \"N4_S8\", \"N4_S52\", \"N4_S53\", \"N4_S54\", \"N4_S55\", \"N4_S56\", \"N4_S57\", \"N4_S58\", \"N4_S59\", \"N4_S60\", \"N4_S61\", \"N4_S62\", \"N4_S108\", \"N4_S109\", \"N4_S110\", \"N4_S111\", \"N4_S116\", \"N4_S174\", \"N4_S175\", \"N4_S176\", \"N4_S177\", \"N4_S182\"],\n        \"limitations\": [\"标签 synthetic 限制了对行为真实意图的直接推断。\"]\n      },\n      {\n        \"id\": \"member_relationships\",\n        \"state\": \"answered\",\n        \"answer\": \"已证实联系：A1 登录后的会话与 A2 进程启动及 A3/A4 流量在时间上紧密关联，且共享同一主机 O1 和账号 O4。\",\n        \"evidence_ids\": [\"N4_S8\", \"N4_S60\", \"N4_S110\", \"N4_S175\"],\n        \"limitations\": [\"时间邻近和同对象不直接证明因果，需结合命令执行结果确认。\"]\n      },\n      {\n        \"id\": \"behavior_nature\",\n        \"state\": \"unresolved\",\n        \"answer\": \"行为性质待定。可能是正常的报告应用测试（synthetic 标签暗示），也可能是恶意侦察。\",\n        \"evidence_ids\": [\"N4_S58\", \"N4_S48\", \"N4_S22\"],\n        \"limitations\": [\"缺乏上下文判断是测试还是攻击。无威胁情报匹配。\"]\n      },\n      {\n        \"id\": \"authorization\",\n        \"state\": \"unresolved\",\n        \"answer\": \"无明确授权证据。所有记录均声明授权未知，且无审批流程记录。\",\n        \"evidence_ids\": [\"N4_S48\", \"N4_S105\", \"N4_S171\", \"N4_S237\"],\n        \"limitations\": [\"需人工确认该账号是否有执行此类操作的常规权限。资产 owner_email 为空。\"]\n      },\n      {\n        \"id\": \"impact\",\n        \"state\": \"unresolved\",\n        \"answer\": \"观察到进程启动和网络连接动作，但未观察到数据外传或系统配置变更的确切结果。\",\n        \"evidence_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"],\n        \"limitations\": [\"无法确认 curl 是否获取了敏感数据，也无法确认流量内容。outcome 为 unknown。\"]\n      }\n    ],\n    \"domains\": [\n      {\n        \"name\": \"identity\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及账号 O4 的登录及后续操作授权判断。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"finding_ids\": [\"F4\"]\n      ,\n      \"limitations\": [\"账号名暗示用途但无业务确认\", \"无审批记录\"]\n      },\n      {\n        \"name\": \"cloud\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及主机 O1 的资产信息及网络流量。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"finding_ids\": [\"F5\"]\n      ,\n      \"limitations\": [\"资产 owner_email 为空\", \"威胁情报无结果\"]\n      },\n      {\n        \"name\": \"phishing\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"无钓鱼邮件、链接或凭证窃取相关证据。\",\n        \"alert_ids\": [],\n        \"finding_ids\": []\n      ,\n      \"limitations\": [\"当前材料未涉及\"]\n      },\n      {\n        \"name\": \"insider\",\n        \"applicability\": \"undetermined\",\n        \"reason\": \"无法区分是内部人员误操作、授权测试还是外部攻击，需进一步调查。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n        \"finding_ids\": [\"F3\"]\n      ,\n      \"limitations\": [\"缺乏动机证据\"]\n      }\n    ],\n    \"conflicts\": []\n  ,\n  \"followups\": [\n    {\n      \"question_id\": \"behavior_nature\",\n      \"alert_ids\": [\"A2\", \"A3\", \"A4\"],\n      \"mode\": \"deep\",\n      \"objective\": \"分析 A2 的 curl 命令与 A3/A4 的流量在时间差（4 分钟）内的逻辑关系，确认是否存在失败重试或其他进程干扰。\"\n    ,\n      \"required_evidence\": \"更细粒度的进程日志、网络时序图\"\n    ,\n      \"source_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"]\n    ,\n      \"object_keys\": [\"O2\", \"O3\"]\n    }\n    ,\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"mode\": \"human\",\n      \"objective\": \"人工确认账号 O4 的业务权限范围及本次操作是否属于预授权的测试场景。\"\n    ,\n      \"required_evidence\": \"业务审批记录、运维手册或人工访谈\"\n    ,\n      \"source_ids\": [\"N4_S48\", \"N4_S105\", \"N4_S171\", \"N4_S237\"]\n    ,\n      \"object_keys\": [\"O4\"]\n    }\n  ]\n  },\n  \"conclusion\": {\n    \"text\": \"案件状态为 Unresolved。现有证据证实了登录、进程启动和网络连接的发生，且所有记录均标记为 `synthetic` 并声明授权未知。虽然存在时间上的逻辑关联，但缺乏命令执行结果和网络载荷的确切证据，无法确认是否发生了数据外传或恶意侦察。历史判定为 `benign` 缺乏独立事实支撑。需进一步深度查询以获取进程输出和网络载荷，并人工确认账号权限。\",\n    \"state\": \"uncertain\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"]\n  ,\n  \"support_ids\": [\"N4_S3\", \"N4_S52\", \"N4_S109\", \"N4_S175\", \"N4_S48\", \"N4_S105\", \"N4_S171\", \"N4_S237\"]\n  ,\n  \"limitations\": [\"所有记录标记为 synthetic\", \"缺乏命令执行结果和网络载荷\", \"无明确授权证据\"]\n  },\n  \"closing_note\": \"本轮复核确认所有记录均为 synthetic 且意图未知。关键缺口在于无法区分模拟测试与真实攻击，且缺乏命令执行结果和网络载荷分析。需人工确认账号 O4 权限及业务背景，并进一步分析 A2 与 A3/A4 的时序逻辑。\",\n  \"comparison\": {\n    \"kind\": \"withdrawn\",\n    \"summary\": \"本轮范围新增成员 A3，时间范围略有扩展。核心发现（synthetic 标签、缺乏执行结果、授权未知）与前序基线 N4_S270 一致，未发生实质性结论变化。\",\n    \"support_ids\": [\"N4_S270\"]\n  }\n  ,\n  \"impact\": {\n    \"summary\": \"已观察到进程启动和网络连接动作，但未观察到数据外传或系统配置变更的确切结果。影响范围仅限于动作本身，具体业务影响未知。\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"]\n  ,\n  \"support_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"]\n  ,\n  \"supported_changes\": []\n  ,\n  \"cannot_generalize\": [\"无法确认 curl 是否获取了敏感数据\", \"无法确认流量内容是否包含敏感信息\", \"无法确认操作是否被业务授权\"]\n  ,\n  \"next_steps\": [\"获取进程输出和网络载荷\", \"人工确认账号权限\"]\n  }\n  ,\n  \"recommendations\": [\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O2\", \"O3\"],\n      \"reason\": \"需获取 curl 命令执行结果和网络载荷内容，以确认是否发生数据外传。\",\n      \"source_ids\": [\"N4_S58\", \"N4_S109\", \"N4_S175\"]\n    ,\n      \"limitations\": [\"当前材料未提供进程输出或 PCAP 文件\"]\n    }\n    ,\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O4\"],\n      \"reason\": \"需确认账号 O4 的权限范围及本次操作是否经过业务审批。\",\n      \"source_ids\": [\"N4_S48\", \"N4_S105\", \"N4_S171\", \"N4_S237\"]\n    ,\n      \"limitations\": [\"无审批记录、无业务系统确认\"]\n    }\n  ]\n  }",
+            "provider_specific_fields": {
+              "reasoning": null,
+              "refusal": null
+            },
+            "role": "assistant"
+          },
+          "provider_specific_fields": {
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        }
+      ],
+      "created": 1794787306,
+      "id": "chatcmpl-934910eafcc70c03",
+      "model": "aisoc-investigation",
+      "object": "chat.completion",
+      "system_fingerprint": "vllm-0.30.0-76652a79",
+      "usage": {
+        "completion_tokens": 4177,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 13882,
+        "total_tokens": 18059
+      }
+    },
+    "request_artifact_id": "a3b1a40b-d01e-4d84-b9b7-3b499d6606c0",
+    "schema_version": "socai2.baseline-delivery.v2",
+    "stage": "C6",
+    "type": "model_original_response",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 13882,
+      "output_tokens": 4177,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-934910eafcc70c03",
+      "total_tokens": 18059,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": null,
+  "event_time": null,
+  "file_name": null,
+  "id": "afa92534-df7c-4d21-9c05-bd90638899e7",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "ca698ed36bcb24984b1144bcdf76609afbace1d277b8aa87a2a7f2729554d618",
+    "original_size_bytes": 14583,
+    "reason": null,
+    "retained_sha256": "ca698ed36bcb24984b1144bcdf76609afbace1d277b8aa87a2a7f2729554d618",
+    "retained_size_bytes": 14583,
+    "truncated": false
+  },
+  "run_id": "4278127e-92ec-47ee-9cde-e530b29abb90",
+  "schema_version": "socai2.baseline-delivery.v2",
+  "sha256": "ca698ed36bcb24984b1144bcdf76609afbace1d277b8aa87a2a7f2729554d618",
+  "size_bytes": 14583,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "a3b1a40b-d01e-4d84-b9b7-3b499d6606c0",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "15d1b730-a01f-4bf0-8241-aea60352952a",
+  "tenant_id": "fa031e01-0c89-5b35-88e7-37c1d5cf078b"
+}

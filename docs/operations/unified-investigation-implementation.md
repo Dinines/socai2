@@ -1,6 +1,6 @@
 ## 2026-10-27 当前实现与历史证据的审计入口
 
-[审计导航](../investigation/audit-guide-20261027.md)、[当前实现详解](../investigation/current-implementation-reference-20261027.md)及[证据全目录](../investigation/evidence-catalog-20261027.md)补齐当前F1/F2/F3。代码基线6044615：F1提交8b242b9、F2提交686a39d、F3提交6044615；均为代码及替身直接验证，未部署/做真实模型或PG/CH整链验证。本文件下方为原阶段记录，真实回执只证明各自限定路径；不得据此核销F3或OpenSpec 2.2/2.3。本次只补文档/链接，不跑业务验证。
+[审计导航](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-guide-20261027.md)、[当前实现详解](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-implementation-reference-20261027.md)及[证据全目录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/evidence-catalog-20261027.md)补齐当前F1/F2/F3。代码基线6044615：F1提交8b242b9、F2提交686a39d、F3提交6044615；均为代码及替身直接验证，未部署/做真实模型或PG/CH整链验证。本文件下方为原阶段记录，真实回执只证明各自限定路径；不得据此核销F3或OpenSpec 2.2/2.3。本次只补文档/链接，不跑业务验证。
 
 ## 2026-10-25 M8a4.4a实际PG零工具/模型接缝
 
@@ -329,7 +329,7 @@ c2c50ca后仅API新result gateway/GET/factory；复用既有认证及cases:read�
 
 ## 2026-10-24 独立总审计与规划
 
-基线7b7bb6b，三位新审阅者分别核架构/代码/证据；140项合同通过、39哈希条目一致，但新增离线反例确认A1 mapped IPv6误拒（P2待修）。A2子窗口ready、A3程序路径投影限制作为M6.2前合同门，详见[报告及后续流程](../investigation/independent-audit-20261024.md)、[公开观察回执](investigation-independent-audit-20261024.json)。本轮只审计规划，未修功能或运行真实业务/模型；旧回执和失败保留，2.2/2.3未勾。先修接缝/合同，再M6.2、M7、M8a；Case整体/自动政策前须验证语义及Deep价值。
+基线7b7bb6b，三位新审阅者分别核架构/代码/证据；140项合同通过、39哈希条目一致，但新增离线反例确认A1 mapped IPv6误拒（P2待修）。A2子窗口ready、A3程序路径投影限制作为M6.2前合同门，详见[报告及后续流程](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/independent-audit-20261024.md)、[公开观察回执](investigation-independent-audit-20261024.json)。本轮只审计规划，未修功能或运行真实业务/模型；旧回执和失败保留，2.2/2.3未勾。先修接缝/合同，再M6.2、M7、M8a；Case整体/自动政策前须验证语义及Deep价值。
 
 ## 2026-10-24 M6.1固定有限事实与停止交接（限定通过）
 
@@ -902,6 +902,6 @@ M1结束独审由未参与实现的`audit_contracts`完成，限定ACCEPT、0新
 
 用户随后要求核服务端OS/CH和main测试数据进展。已fetch `origin/main=7ea813a`，最新提交只有21份文档变化，测试数据与服务代码未变；未合并覆盖本工作树未提交稿。两路只读审计确认：测试工具生成的telemetry尚未写入CH历史事件；OS现有为共享TI索引，并非事件全文/审批库，其查询也不等于现Agents enrichment路径。
 
-当时具体场景、数据补齐、最小工具和逐步验收见[工具数据规划](../architecture/investigation-tool-data-plan.md)。该次历史结论为**M0来源盘点完成，首场景及工具数据方案待讨论，M0未放行；M1预期/spec只是目标，代码未开始**。用户随后已确认并完成上文D1—D3，当前M0有限场景放行以新回执为准，不改写当时来源不足的结论。
+当时具体场景、数据补齐、最小工具和逐步验收见[工具数据规划](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-data-plan.md)。该次历史结论为**M0来源盘点完成，首场景及工具数据方案待讨论，M0未放行；M1预期/spec只是目标，代码未开始**。用户随后已确认并完成上文D1—D3，当前M0有限场景放行以新回执为准，不改写当时来源不足的结论。
 
 该次历史盘点无新业务数据写入、模型、部署、Git提交推送；后续D2新增3条湖记录、D3新增1条告警另有真实回执，不与历史盘点混同。原5/15、旧失败/unknown保持。当前按上文已固定的场景/政策和M1→M2预期逐块推进，每块实际通过后才进入下一块。

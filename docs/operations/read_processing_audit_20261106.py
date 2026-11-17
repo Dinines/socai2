@@ -18,7 +18,8 @@ from flow_export import query_for
 # Keep this deployed reader compatible with a frozen V1 flow_export module.
 # Graph exploration persistence is not implemented and its empty table is retired.
 TABLES = tuple(name for name in EXPORT_TABLES if name != "graph_explorations")
-EXPORT_TABLE_SETS = (set(TABLES), set(TABLES) | {"graph_explorations"})
+ANALYSIS_TABLES = {"analysis_tasks", "analysis_attempts", "analysis_subject_state"}
+EXPORT_TABLE_SETS = (set(TABLES), set(TABLES) | {"graph_explorations"}, set(TABLES) | ANALYSIS_TABLES)
 
 BATCH = "ie-audit-20261106-a1"
 TENANT = "6aff0ef7-c670-5a84-a2ee-83d73e25b964"

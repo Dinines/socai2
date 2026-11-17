@@ -1,0 +1,32 @@
+{
+  "observed_at": "2026-11-15T08:52:14.431640+00:00",
+  "scope": "read_only_local_pg_ssl_capability",
+  "mode": "preparation_only",
+  "target": {
+    "host": "127.0.0.1",
+    "port": 28413,
+    "container": "socai2-case-trigger-db-20261115",
+    "database": "v12_upgrade_dev"
+  },
+  "commands": [
+    {
+      "command": "docker ps --filter publish=28413 --format <id,name,ports>",
+      "exit_code": 0,
+      "result": "e6e8296dd3da socai2-case-trigger-db-20261115 127.0.0.1:28413->5432/tcp"
+    },
+    {
+      "command": "docker exec socai2-case-trigger-db-20261115 psql -U postgres -d v12_upgrade_dev -X -A -t -c SHOW_ssl",
+      "exit_code": 0,
+      "result": "off"
+    }
+  ],
+  "connection_kind": "local_container_management_socket",
+  "password_authentication_proven": false,
+  "target_require_connection_proven": false,
+  "verification_state": "not_run_waiting_code_handoff",
+  "services_changed": 0,
+  "business_writes": 0,
+  "model_calls": 0,
+  "kafka_messages": 0,
+  "note": "Local SSL off; do not restart shared fixture or count disable as require. Ordinary TCP/password verification pending."
+}

@@ -309,14 +309,17 @@ async def run_checks(engine, record, only=None):
         out = await service.publish(T, cid, rid, result(ctx, [good]))
         assert out["adoption"]["state"] == "adopted"
 
-    async def test_c1_size_limit_atomic_and_tenant():
+    async def test_c1_large_original_and_tenant():
         cid, _aids, mids, rid = await fixture(1)
         await reject("frozen_material_not_found", service.read_material(T, cid, rid, mids[0]))
         async with service.transaction(T) as store:
-            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * c1.retention_limit()))
-        await reject("baseline_context_too_large", start(cid, rid))
-        assert (await one(select(R.c.state).where(R.c.id == rid)))["state"] == "pending_update"
-        assert await one(select(F.c.id).where(F.c.run_id == rid)) is None
+            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * (1048576 + 1)))
+        claim = await start(cid, rid)
+        ctx = await service.read_context(T, cid, rid)
+        assert ctx.case["description"] == "X" * (1048576 + 1)
+        manifest = await one(select(F).where(F.c.id == claim.input_artifact_id))
+        policy = await one(select(F).where(F.c.run_id == rid, F.c.schema_version == "socai2.runtime-policy.v1"))
+        assert any(r["id"] == str(policy["id"]) for r in manifest["source_refs"])
         await reject("case_not_found", service.read_context(OTHER, cid, rid))
 
     async def test_c1_legacy_does_not_reconstruct_live():
@@ -353,7 +356,7 @@ async def run_checks(engine, record, only=None):
         test_c1_same_statement_pointer_selection, test_c1_incomplete_and_wider_scope,
         test_c1_paired_triage_and_feedback, test_c1_adopted_old_task_and_current_revision,
         test_c1_explicit_comparison_not_latest, test_c1_citation_role_and_path,
-        test_c1_size_limit_atomic_and_tenant, test_c1_legacy_does_not_reconstruct_live,
+        test_c1_large_original_and_tenant, test_c1_legacy_does_not_reconstruct_live,
         test_c1_json_null_and_truncated_material]
     for check in checks:
         if only is not None and check.__name__ not in only:

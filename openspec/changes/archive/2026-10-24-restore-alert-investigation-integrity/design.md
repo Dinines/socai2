@@ -93,13 +93,13 @@ API返回统一的有界attack_context：明确Case/Alert锚点、原链、CaseP
 
 ## 当前分诊与调查分析的实施切分（2026-10-21）
 
-用户追加要求预处理、工具决策/执行及每次模型目的/输入/输出详述，交付[专篇](../../../../docs/architecture/investigation-preprocessing-tools.md)：按真实入口投影/字段裁剪、固定查询、Router代码领域路由和Deep结构化tool_calls分开；逐模型表与静态JSON/HTTP/ToolMessage示例用于解释，不冒充新实测。Case嵌套/真实时间默认/参数校验边界仅记录，未决定改变输入或新增框架。当前无规格级行为变化，沿2.1/4.1分析交接，原任务及运行保护保持。
+用户追加要求预处理、工具决策/执行及每次模型目的/输入/输出详述，交付[专篇](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)：按真实入口投影/字段裁剪、固定查询、Router代码领域路由和Deep结构化tool_calls分开；逐模型表与静态JSON/HTTP/ToolMessage示例用于解释，不冒充新实测。Case嵌套/真实时间默认/参数校验边界仅记录，未决定改变输入或新增框架。当前无规格级行为变化，沿2.1/4.1分析交接，原任务及运行保护保持。
 
 本轮讨论澄清同步至调查说明/评价：Case `/investigate`用Router开关二选一，Kafka graph/deep保持独立；Router专业分支一次领域模型，不内含旧四节点，其确定性响应摘要/报告不能作完整取证/响应计划等价替换。graph外层控制仍固定，模型主要在deep内部选择查询。固定官方未找到旧四节点弃用计划，不据演进先后预定替代/裁剪。本增量仅说明原实现，无新合同、实现、配置或完成承诺。
 
-用户最新强调调查设计本身很重要：[专项评价](../../../../docs/architecture/investigation-design-review.md)对比默认Case四节点与graph/deep目的、输入输出及四Agent的分工价值/限制，并核固定官方路线/变更日志/Case文档。将官方陈述、当前调用和工程推断分开；证据支持演进并存，不将自动/人工等同两套必须串跑的架构，不由文档设计意图追认实测质量。当前先分析，不实施合并/裁剪或新模型比较。
+用户最新强调调查设计本身很重要：[专项评价](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)对比默认Case四节点与graph/deep目的、输入输出及四Agent的分工价值/限制，并核固定官方路线/变更日志/Case文档。将官方陈述、当前调用和工程推断分开；证据支持演进并存，不将自动/人工等同两套必须串跑的架构，不由文档设计意图追认实测质量。当前先分析，不实施合并/裁剪或新模型比较。
 
-Fusion阶段后先交接[分诊](../../../../docs/architecture/triage.md)的实际字段、规则/模型、策略关闭和升级，按原支持/默认/当前配置/实证分别列；不预定接入所有Fusion字段或按route_to切换编排。调查按[逐调用说明](../../../../docs/architecture/investigation.md)区分自动post-triage graph、默认人工四节点及Router/full；每步明确触发、实际输入、模型角色/可见提示、工具服务/查询参数、返回采用、分支循环与结束、审计/持久落点。可变deep调用用原C2的真实逐轮记录举例，不把六轮上限当固定六阶段，不索取隐藏推理。
+Fusion阶段后先交接[分诊](../../../../docs/architecture/triage.md)的实际字段、规则/模型、策略关闭和升级，按原支持/默认/当前配置/实证分别列；不预定接入所有Fusion字段或按route_to切换编排。调查按[逐调用说明](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)区分自动post-triage graph、默认人工四节点及Router/full；每步明确触发、实际输入、模型角色/可见提示、工具服务/查询参数、返回采用、分支循环与结束、审计/持久落点。可变deep调用用原C2的真实逐轮记录举例，不把六轮上限当固定六阶段，不索取隐藏推理。
 
 推进顺序为原机制交接→共同功能取舍→只针对确定差异的最小修改→复用直接测试/必要本地联动→一次结束独审和本地版本→阶段发布。当前仅前一项分析/规划，不做业务修改、测试/模型、线上核验或发布；新行为届时补现有规格/设计，沿原15任务记录，不先增加全入口测试、通用审计框架或可用性矩阵。原报告/预算/partial失败与未部署源码修正分别标明，不能由本次说明追认为已通过。
 

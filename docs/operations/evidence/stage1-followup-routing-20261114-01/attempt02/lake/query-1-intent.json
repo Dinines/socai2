@@ -1,0 +1,49 @@
+{
+  "args": {
+    "tool_name": "authentication_activity",
+    "contract_version": "socai2.c4-lake.v1",
+    "scope": {
+      "kind": "whole_case",
+      "alert_ids": [
+        "2c323f72-6107-5aa1-bafb-3a5234976183",
+        "5635ea3d-3d2a-5647-9743-2d42a8d09378",
+        "fb56fb0c-f339-58ed-b11b-c904217d9837"
+      ],
+      "window_end": "2026-11-07T06:44:07Z",
+      "limitations": [],
+      "object_keys": [
+        "[\"host\",\"socai2-flow-20261107-01\"]",
+        "[\"ip\",\"192.0.2.77\"]",
+        "[\"ip\",\"198.51.100.77\"]",
+        "[\"ip\",\"203.0.113.77\"]",
+        "[\"user\",\"flow-observer\"]"
+      ],
+      "window_start": "2026-11-07T06:33:27Z"
+    },
+    "limit": 50,
+    "parameters": {
+      "tenant_id": "00000000-0000-0000-0000-000000000001",
+      "hostname": "socai2-flow-20261107-01",
+      "binding_id": "fc09c606a82466fe28108b9612dbc5debbd26b0f0ea559383f98d57b69c8e14e",
+      "alert_ids": [
+        "2c323f72-6107-5aa1-bafb-3a5234976183",
+        "5635ea3d-3d2a-5647-9743-2d42a8d09378",
+        "fb56fb0c-f339-58ed-b11b-c904217d9837"
+      ],
+      "query_id": "eebeee51-3257-4cdd-b7e7-52b69ad1a200",
+      "source_database": "aisoc"
+    }
+  },
+  "sql": "SELECT event_id, event_time, class_uid, src_hostname, dst_hostname, process_name, source_ip, dest_ip, src_port, dst_port, protocol, file_path, hash_sha256, user_name, action, outcome, session_id, session_key, session_key_kind, session_originating_human, ocsf_json FROM (\n SELECT event_id, event_time, class_uid, src_hostname, dst_hostname, process_name, source_ip, dest_ip, src_port, dst_port, protocol, file_path, hash_sha256, user_name, action, outcome, session_id, session_key, session_key_kind, session_originating_human, ocsf_json, row_number() OVER (\n PARTITION BY tenant_id,event_time,class_uid,event_id ORDER BY ingest_time DESC) AS source_rank\n FROM aisoc.raw_events WHERE tenant_id=%(tenant_id)s AND src_hostname=%(hostname)s\n AND event_time>=toDateTime64(%(start)s,6,'UTC') AND event_time<toDateTime64(%(end)s,6,'UTC')\n AND class_uid=%(class_uid)s\n) WHERE source_rank=1 ORDER BY event_time,event_id LIMIT %(fetch_limit)s",
+  "parameters": {
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "hostname": "socai2-flow-20261107-01",
+    "start": "2026-11-07 06:33:27.000000",
+    "end": "2026-11-07 06:44:07.000000",
+    "class_uid": 3002,
+    "fetch_limit": 51
+  },
+  "rendered_sql": "SELECT event_id, event_time, class_uid, src_hostname, dst_hostname, process_name, source_ip, dest_ip, src_port, dst_port, protocol, file_path, hash_sha256, user_name, action, outcome, session_id, session_key, session_key_kind, session_originating_human, ocsf_json FROM (\n SELECT event_id, event_time, class_uid, src_hostname, dst_hostname, process_name, source_ip, dest_ip, src_port, dst_port, protocol, file_path, hash_sha256, user_name, action, outcome, session_id, session_key, session_key_kind, session_originating_human, ocsf_json, row_number() OVER (\n PARTITION BY tenant_id,event_time,class_uid,event_id ORDER BY ingest_time DESC) AS source_rank\n FROM aisoc.raw_events WHERE tenant_id='00000000-0000-0000-0000-000000000001' AND src_hostname='socai2-flow-20261107-01'\n AND event_time>=toDateTime64('2026-11-07 06:33:27.000000',6,'UTC') AND event_time<toDateTime64('2026-11-07 06:44:07.000000',6,'UTC')\n AND class_uid=3002\n) WHERE source_rank=1 ORDER BY event_time,event_id LIMIT 51 FORMAT JSON",
+  "query_id": "eebeee51-3257-4cdd-b7e7-52b69ad1a200",
+  "transport": "SSH_to_readonly_ClickHouse_HTTP"
+}

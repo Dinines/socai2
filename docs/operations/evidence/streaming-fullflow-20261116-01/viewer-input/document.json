@@ -1,0 +1,627 @@
+{
+  "schema_version": 1,
+  "batch": {
+    "id": "streaming-fullflow-20261116-01",
+    "environment": "streaming-release-20261116-02",
+    "title": "登录、进程与外联：首轮及增量调查",
+    "scenario_version": "streaming-v2",
+    "execution_state": "finished",
+    "mode": "live",
+    "provenance": "live_execution",
+    "started_at": "2026-11-16T07:23:18.051354+00:00",
+    "updated_at": "2026-11-16T08:09:05.347295+00:00",
+    "quality_status": "issues_recorded"
+  },
+  "cases": [
+    {
+      "id": "whole_initial",
+      "use_case_id": "whole_initial",
+      "scenario_id": "S01",
+      "status": "failed",
+      "expected": [
+        "三条告警归入同一事件；整案首轮运行C1–C6并保存结果。"
+      ],
+      "actual": [
+        "告警分诊：completed，交付=complete，Run=7e2f68f4-393f-5dde-ab74-36ac0f866e65",
+        "告警分诊：completed，交付=complete，Run=4a4f2e4c-2e2a-5e18-b1fc-4b9c0f98ee84",
+        "告警分诊：completed，交付=complete，Run=dcbc8991-723b-5ae0-8af8-a21be78515a1",
+        "事件诊断：completed，交付=complete，Run=015358ab-c7f4-576e-b67d-9c57b7cfb07e",
+        "Case完整调查：completed，交付=partial，Run=f21248be-39eb-4832-8d87-866d7f62d40d"
+      ],
+      "operation_ids": [
+        "run_01",
+        "run_02",
+        "run_03",
+        "run_04",
+        "run_05"
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks"
+      ]
+    },
+    {
+      "id": "single_initial",
+      "use_case_id": "single_initial",
+      "scenario_id": "S01",
+      "status": "passed",
+      "expected": [
+        "单告警案完成首轮并保持固定成员。"
+      ],
+      "actual": [
+        "Case完整调查：completed，交付=partial，Run=ac9fcc38-69c5-49c2-9547-aa5bba5d33be"
+      ],
+      "operation_ids": [
+        "run_06"
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks"
+      ]
+    },
+    {
+      "id": "incremental",
+      "use_case_id": "incremental",
+      "scenario_id": "S04",
+      "status": "passed",
+      "expected": [
+        "追加告警进入原事件；显式检查新诊断和整案后轮，冻结4成员。"
+      ],
+      "actual": [
+        "告警分诊：completed，交付=complete，Run=fc139e35-c30e-5f93-9fdb-6a4f724b7946",
+        "事件诊断：completed，交付=complete，Run=810a4920-65e4-5599-948e-fb314a49a4b9",
+        "Case完整调查：completed，交付=partial，Run=873af97c-559f-46f3-a454-d8e4f92d0672"
+      ],
+      "operation_ids": [
+        "run_07",
+        "run_08",
+        "run_09"
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks"
+      ]
+    },
+    {
+      "id": "no_changes",
+      "use_case_id": "no_changes",
+      "scenario_id": "S04",
+      "status": "passed",
+      "expected": [
+        "第二次显式检查无变化时跳过，不新增Run或模型调用。"
+      ],
+      "actual": [
+        "实际skipped/no_changes；无attempt、Run和模型调用。"
+      ],
+      "operation_ids": [
+        "no_change_check"
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks"
+      ]
+    },
+    {
+      "id": "periodic_due",
+      "use_case_id": "periodic_due",
+      "scenario_id": "coverage",
+      "status": "not_covered",
+      "expected": [
+        "正式I4小时、Case6小时周期尚未到，本批用显式HTTP check，未覆盖到时自动触发。"
+      ],
+      "actual": [
+        "正式I4小时、Case6小时周期尚未到，本批用显式HTTP check，未覆盖到时自动触发。"
+      ],
+      "operation_ids": [],
+      "evidence_ids": [
+        "saved-checks"
+      ]
+    },
+    {
+      "id": "eligible_comparison",
+      "use_case_id": "eligible_comparison",
+      "scenario_id": "coverage",
+      "status": "not_covered",
+      "expected": [
+        "整案首轮C6拒收；后轮正确保留上一Run并标记结论不可用，未覆盖有效结论比较。"
+      ],
+      "actual": [
+        "整案首轮C6拒收；后轮正确保留上一Run并标记结论不可用，未覆盖有效结论比较。"
+      ],
+      "operation_ids": [],
+      "evidence_ids": [
+        "saved-checks"
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "id": "run_01",
+      "case_id": "whole_initial",
+      "intent": "告警分诊",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:23:18.051354+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "a9b49ea1-fdb0-5530-84d0-92f0556b7c94",
+          "task_id": "96be110a-60af-5b5c-885f-0eed80eb7066",
+          "run_id": "7e2f68f4-393f-5dde-ab74-36ac0f866e65",
+          "result_type": "alert_assessment",
+          "result_id": "36854eae-ccba-5a4f-9b78-87f209826365"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_02",
+      "case_id": "whole_initial",
+      "intent": "告警分诊",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:24:18.094707+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "08929b81-fafa-572b-a366-e1b269ce6375",
+          "task_id": "301c65e4-7100-5aad-9461-be22c6859072",
+          "run_id": "4a4f2e4c-2e2a-5e18-b1fc-4b9c0f98ee84",
+          "result_type": "alert_assessment",
+          "result_id": "32b8e0e7-cd85-5aaa-a110-a47d5f7d8c99"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_03",
+      "case_id": "whole_initial",
+      "intent": "告警分诊",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:25:18.172618+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "4af1e904-8d6f-5edd-9ebf-5b71561fa6c2",
+          "task_id": "84d473c5-3710-529c-88eb-11d65cd78f27",
+          "run_id": "dcbc8991-723b-5ae0-8af8-a21be78515a1",
+          "result_type": "alert_assessment",
+          "result_id": "92f6de4a-05fc-5116-b497-1feb6d6a8987"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_04",
+      "case_id": "whole_initial",
+      "intent": "事件诊断",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:26:18.306051+00:00",
+      "mappings": [
+        {
+          "subject_type": "incident",
+          "subject_id": "9bfedca6-43d7-45d5-8788-f0cf58eed8bb",
+          "task_id": "df70dc51-41b5-5598-ba75-42164d28a67f",
+          "run_id": "015358ab-c7f4-576e-b67d-9c57b7cfb07e",
+          "result_type": "incident_diagnosis",
+          "result_id": "a8bfcad6-59b0-51db-b185-918dfc75d715"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_05",
+      "case_id": "whole_initial",
+      "intent": "Case完整调查",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:31:23.092828+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "6de4104d-5762-572f-a19a-c56264d754e4",
+          "task_id": "19cce13e-345b-4537-ac82-5961d1ba215b",
+          "run_id": "f21248be-39eb-4832-8d87-866d7f62d40d",
+          "result_type": "case_result",
+          "result_id": "f8b7a293-b009-4a0e-960d-9c0762378f79"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_06",
+      "case_id": "single_initial",
+      "intent": "Case完整调查",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:35:23.218245+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "99d6c7ab-0ced-564b-ac19-c7505ac06da3",
+          "task_id": "baf7ba90-aa02-4d0b-a999-b901aa35283f",
+          "run_id": "ac9fcc38-69c5-49c2-9547-aa5bba5d33be",
+          "result_type": "case_result",
+          "result_id": "019813fc-d4e3-4dfa-a605-49704046dc9e"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_07",
+      "case_id": "incremental",
+      "intent": "告警分诊",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:44:19.071279+00:00",
+      "mappings": [
+        {
+          "subject_type": "alert",
+          "subject_id": "d0e01f78-4c39-5ffd-b0ee-bd7d30edfa4f",
+          "task_id": "b997f039-b3f0-5ff7-9e71-cfcd85befdb3",
+          "run_id": "fc139e35-c30e-5f93-9fdb-6a4f724b7946",
+          "result_type": "alert_assessment",
+          "result_id": "87b5b92a-ae33-544b-84af-5cb2cb46a511"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_08",
+      "case_id": "incremental",
+      "intent": "事件诊断",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:50:19.488589+00:00",
+      "mappings": [
+        {
+          "subject_type": "incident",
+          "subject_id": "9bfedca6-43d7-45d5-8788-f0cf58eed8bb",
+          "task_id": "3b1e955f-4733-4dc4-8825-b2709d6e325c",
+          "run_id": "810a4920-65e4-5599-948e-fb314a49a4b9",
+          "result_type": "incident_diagnosis",
+          "result_id": "92a16e82-8e03-5845-bf21-1c22a480aa92"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "run_09",
+      "case_id": "incremental",
+      "intent": "Case完整调查",
+      "execution_state": "completed",
+      "occurred_at": "2026-11-16T07:55:24.374019+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "6de4104d-5762-572f-a19a-c56264d754e4",
+          "task_id": "b4bae117-26a2-4fb6-bd1d-f6a07dcb60ed",
+          "run_id": "873af97c-559f-46f3-a454-d8e4f92d0672",
+          "result_type": "case_result",
+          "result_id": "25d9795e-ce55-4f20-9dd0-d391e4d9b517"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "model-checks",
+        "http-exchanges"
+      ]
+    },
+    {
+      "id": "no_change_check",
+      "case_id": "no_changes",
+      "intent": "后轮完成后检查是否仍有新变化",
+      "execution_state": "skipped",
+      "occurred_at": "2026-11-16T08:04:27.931798+00:00",
+      "mappings": [
+        {
+          "subject_type": "case",
+          "subject_id": "6de4104d-5762-572f-a19a-c56264d754e4",
+          "task_id": "ccaf55dc-e0cb-40b1-86c2-a7ec96f1b714"
+        }
+      ],
+      "evidence_ids": [
+        "saved-checks",
+        "http-checks",
+        "http-exchanges"
+      ]
+    }
+  ],
+  "preparation": {
+    "status": "prepared",
+    "cleanup_mode": "no_cleanup",
+    "summary": "21正式aisoc；独立新批4告警/13上下文。先读回上下文再投告警是本批发送顺序。I与Case后轮由显式HTTP检查触发；运行代码r3，HTTP/4177沿现环境标签。",
+    "resources": [
+      "真实Kafka",
+      "真实ClickHouse",
+      "真实PostgreSQL",
+      "Qwen3.5-9B经现有网关"
+    ],
+    "observed_at": "2026-11-16T08:09:05.347295+00:00",
+    "evidence_ids": [
+      "saved-checks"
+    ]
+  },
+  "quality_issues": [
+    {
+      "id": "issue_1",
+      "case_id": "whole_initial",
+      "run_id": "7e2f68f4-393f-5dde-ab74-36ac0f866e65",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_2",
+      "case_id": "whole_initial",
+      "run_id": "4a4f2e4c-2e2a-5e18-b1fc-4b9c0f98ee84",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_3",
+      "case_id": "whole_initial",
+      "run_id": "dcbc8991-723b-5ae0-8af8-a21be78515a1",
+      "stage": "模型输出",
+      "category": "citation_review",
+      "description": "保存了6条引用检查记录（包含诊断记录）；原文和来源在模型回执中，正文尚未全面验收。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_4",
+      "case_id": "whole_initial",
+      "run_id": "dcbc8991-723b-5ae0-8af8-a21be78515a1",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_5",
+      "case_id": "whole_initial",
+      "run_id": "015358ab-c7f4-576e-b67d-9c57b7cfb07e",
+      "stage": "模型输出",
+      "category": "citation_review",
+      "description": "保存了5条引用检查记录（包含诊断记录）；原文和来源在模型回执中，正文尚未全面验收。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_6",
+      "case_id": "whole_initial",
+      "run_id": "015358ab-c7f4-576e-b67d-9c57b7cfb07e",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_7",
+      "case_id": "whole_initial",
+      "run_id": "f21248be-39eb-4832-8d87-866d7f62d40d",
+      "stage": "C6",
+      "category": "validation_failure",
+      "description": "unapplied_domain_needs_limitations",
+      "status": "open",
+      "affects_flow": true,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_8",
+      "case_id": "whole_initial",
+      "run_id": "f21248be-39eb-4832-8d87-866d7f62d40d",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_9",
+      "case_id": "single_initial",
+      "run_id": "ac9fcc38-69c5-49c2-9547-aa5bba5d33be",
+      "stage": "模型输出",
+      "category": "citation_review",
+      "description": "保存了2条引用检查记录（包含诊断记录）；原文和来源在模型回执中，正文尚未全面验收。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_10",
+      "case_id": "single_initial",
+      "run_id": "ac9fcc38-69c5-49c2-9547-aa5bba5d33be",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_11",
+      "case_id": "incremental",
+      "run_id": "fc139e35-c30e-5f93-9fdb-6a4f724b7946",
+      "stage": "模型输出",
+      "category": "citation_review",
+      "description": "保存了3条引用检查记录（包含诊断记录）；原文和来源在模型回执中，正文尚未全面验收。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_12",
+      "case_id": "incremental",
+      "run_id": "fc139e35-c30e-5f93-9fdb-6a4f724b7946",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_13",
+      "case_id": "incremental",
+      "run_id": "810a4920-65e4-5599-948e-fb314a49a4b9",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    },
+    {
+      "id": "issue_14",
+      "case_id": "incremental",
+      "run_id": "873af97c-559f-46f3-a454-d8e4f92d0672",
+      "stage": "模型输出",
+      "category": "citation_review",
+      "description": "保存了4条引用检查记录（包含诊断记录）；原文和来源在模型回执中，正文尚未全面验收。",
+      "status": "deferred",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks"
+      ]
+    },
+    {
+      "id": "issue_15",
+      "case_id": "incremental",
+      "run_id": "873af97c-559f-46f3-a454-d8e4f92d0672",
+      "stage": "模型输入",
+      "category": "backend_metadata",
+      "description": "实际输入仍包含不必要的tenant_uid后台字段；固定中性告警源及测试标记未见于本批模型输入，整体输入边界仍未通过。",
+      "status": "open",
+      "affects_flow": false,
+      "evidence_ids": [
+        "model-checks",
+        "input-residuals"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "saved-checks",
+      "path": "saved-checks.json",
+      "label": "数据库保存与前后轮核对",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-01/saved-validation.json"
+    },
+    {
+      "id": "http-checks",
+      "path": "http-checks.json",
+      "label": "同一快照HTTP读回核对",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-01/http-readback-final/validation.json"
+    },
+    {
+      "id": "model-checks",
+      "path": "model-checks.json",
+      "label": "实际模型用量、结束状态及引用检查",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-01/model-summary-final.json"
+    },
+    {
+      "id": "input-residuals",
+      "path": "input-residuals.json",
+      "label": "16次实际模型输入的后台字段残留记录",
+      "mime_type": "application/json",
+      "visibility": "public",
+      "source_ref": "docs/operations/evidence/streaming-fullflow-20261116-01/input-residual-review-final.json"
+    },
+    {
+      "id": "http-exchanges",
+      "path": "http-exchanges.json",
+      "label": "真实HTTP请求与201/202回执",
+      "mime_type": "application/json",
+      "visibility": "public"
+    }
+  ]
+}

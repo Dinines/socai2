@@ -1,0 +1,95 @@
+{
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/case-knowledge-20261111-01/environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "actor_name": "local-material-review@example.invalid",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "window_padding_seconds": 300,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false",
+    "SOCAI2_KNOWLEDGE_PROFILE": "/Users/lychee/Documents/project/socai2/docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+    "AISOC_AIRGAPPED": "false"
+  },
+  "transport_config": "tools/testdata/alert_io_eval/config.json",
+  "preflight_timeout_seconds": 30,
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ],
+  "knowledge_profile": "docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+  "http_base_url": "http://local.validation",
+  "http_timeout_seconds": 1600,
+  "local_services": "tools/testdata/case_knowledge/local-services.json",
+  "ssh_connect_timeout_seconds": 10,
+  "ssh_keepalive_seconds": 10,
+  "tunnel_ready_timeout_seconds": 15,
+  "batch": "fixed-investigation-20261114-01",
+  "output": "docs/operations/evidence/fixed-investigation-20261114-01/flow",
+  "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/fixed-investigation-20261114-01",
+  "source_plan": "docs/operations/evidence/fixed-investigation-20261112-05/flow/plan.json",
+  "source_driver": "docs/operations/evidence/fixed-investigation-20261113-10/run.py",
+  "expected_cases": 3,
+  "fixture_groups": [
+    {
+      "key": "E01",
+      "title": "登录、外联和本地账户枚举",
+      "actions": [
+        "logon",
+        "network_connection",
+        "process_start"
+      ]
+    },
+    {
+      "key": "E02",
+      "title": "仅有一次外联记录",
+      "actions": [
+        "network_connection"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "key": "C01",
+      "group": "E01",
+      "title": "基础调查：登录、外联与账户枚举",
+      "purpose": "查看多成员事实与有效 A/I 如何进入 C3、Deep 和 C6；不预置良恶结论。"
+    },
+    {
+      "key": "C02",
+      "group": "E01",
+      "title": "人工反馈：仅确认账户盘点命令的授权",
+      "purpose": "与 C01 共用本批 A/I 和原始事实，仅增加指定进程告警范围的 H；检查是否错误扩大授权。",
+      "human_action": "process_start",
+      "human_text": "演练反馈：仅确认主机 socai2-flow-20261107-01 在 2026-11-07T06:38:47Z 以 flow-observer 启动 powershell.exe -NoProfile -Command Get-LocalUser 属于获批的资产盘点。授权仅覆盖该条进程启动；没有确认命令完成或返回了账户数据。本反馈不覆盖 06:38:27 的登录和 06:38:37 的外联，也没有确认两者属于该次维护。"
+    },
+    {
+      "key": "C03",
+      "group": "E02",
+      "title": "材料不足：仅有外联，无进程及授权依据",
+      "purpose": "检查单条网络连接记录能支持什么，缺少进程/登录/授权时能否明确待核，不把未查写成查空。"
+    }
+  ],
+  "limitations": [
+    "Synthetic copied materials and authored H for a viewing exercise, not real operational authorization or independent ground truth.",
+    "Real isolated PostgreSQL and real configured model; 4 new A, 2 new I and 3 new Case runs. C01/C02 share this batch A/I.",
+    "One attempt per run with existing bounded correction and budgets. Failures and raw answers retained; no iterative quality sampling.",
+    "C01/C02 are a functional comparison, not controlled A/B: C2 background may differ after earlier Case persistence.",
+    "Static 4177 snapshots are synchronized; they do not claim that local test Cases are production database records.",
+    "No streaming scheduler, C6-only feedback automation, production consumer, schema migration or model-service deployment."
+  ]
+}

@@ -1,0 +1,1499 @@
+[
+  {
+    "path": "$",
+    "kind": "object",
+    "value": {
+      "members": [
+        {
+          "state": "summarized",
+          "assessment": "记录 svc-app-bc3b4605 账号在 host-app-3f979d56 上成功启动 curl 进程并访问外部 IP 198.51.100.81。现有分析指出缺乏授权记录、人工确认及业务上下文，仅凭‘查空’无法排除内部威胁或异常行为，维持待复核状态。",
+          "source_ids": [
+            "N2_S2",
+            "N2_S4",
+            "N2_S222",
+            "N2_S229",
+            "N2_S230"
+          ],
+          "limitations": [
+            "缺乏该账号的历史授权记录或业务操作文档以验证行为合法性。"
+          ],
+          "alert_ref": "A1"
+        },
+        {
+          "state": "summarized",
+          "assessment": "记录同一账号在进程启动后 4 分钟内发起 TCP 网络流量至 198.51.100.81:443，字节数较小（入 128/出 2048）。分析认为证据不足以判定性质，未提供数据外传内容或明确恶意特征，且资产查询无结果，维持待复核。",
+          "source_ids": [
+            "N2_S75",
+            "N2_S77",
+            "N2_S231",
+            "N2_S244",
+            "N2_S245"
+          ],
+          "limitations": [
+            "网络流量记录未包含完整载荷或协议细节，无法确认通信内容是否合规。"
+          ],
+          "alert_ref": "A2"
+        },
+        {
+          "state": "summarized",
+          "assessment": "记录 svc-app-bc3b4605 账号通过网络方式成功登录主机，时间为进程启动前 4 分钟。分析强调缺乏人工确认和授权记录，仅凭无历史告警或查空不足以判定为误报，无法排除异常行为。",
+          "source_ids": [
+            "N2_S157",
+            "N2_S159",
+            "N2_S246",
+            "N2_S247",
+            "N2_S248"
+          ],
+          "limitations": [
+            "缺少登录会话的上下文信息（如登录地点、设备指纹）及该账号的常规登录模式基线。"
+          ],
+          "alert_ref": "A3"
+        }
+      ],
+      "findings": [
+        {
+          "statement": "事件呈现完整的攻击链雏形：账号先登录（A3），随后启动 curl 工具（A1），最后建立网络连接（A2），时间间隔紧密（4-10 分钟）。",
+          "state": "unresolved",
+          "source_ids": [
+            "N2_S161",
+            "N2_S177",
+            "N2_S161",
+            "N2_S177",
+            "N2_S79",
+            "N2_S98"
+          ],
+          "limitations": [
+            "现有材料未提供该账号的白名单状态或业务用途说明。"
+          ],
+          "alert_refs": [
+            "A1",
+            "A2",
+            "A3"
+          ]
+        }
+      ],
+      "open_questions": [
+        {
+          "text": "svc-app-bc3b4605 账号是否拥有访问 198.51.100.81 的明确业务授权？",
+          "source_ids": [
+            "N2_S7",
+            "N2_S98"
+          ],
+          "evidence_requirements": [
+            "需调取账号权限配置表、业务审批单或运维操作记录。"
+          ],
+          "alert_refs": [
+            "A1",
+            "A2",
+            "A3"
+          ]
+        },
+        {
+          "text": "curl 进程启动的具体命令行参数及后续网络传输的实际数据内容是什么？",
+          "source_ids": [
+            "N2_S12",
+            "N2_S82"
+          ],
+          "evidence_requirements": [
+            "需获取完整的命令行日志（command line arguments）及网络流量包载荷（payload）分析。"
+          ],
+          "alert_refs": [
+            "A1",
+            "A2"
+          ]
+        }
+      ],
+      "diagnosis": {
+        "summary": "事件显示 svc-app-bc3b4605 账号在 host-app-3f979d56 上完成登录、启动 curl 进程并访问外部 IP 198.51.100.81 的连续操作。现有证据链完整但缺乏业务上下文和授权证明，无法区分正常运维与潜在威胁。",
+        "conclusion": "整体判断为‘待复核’。现有材料支持该行为存在异常可能性（如未授权访问或数据外传），但不足以定性为恶意事件。主要缺口在于缺乏账号授权记录、业务操作文档及详细的流量载荷分析。",
+        "limitations": [
+          "所有成员的分析均基于‘查空’结果，未命中资产库或威胁情报，导致无法通过外部数据佐证行为性质。",
+          "缺乏该账号的历史行为基线，难以判断当前操作是否符合常规模式。"
+        ],
+        "source_ids": [
+          "N2_S2",
+          "N2_S4",
+          "N2_S75",
+          "N2_S77",
+          "N2_S157",
+          "N2_S159",
+          "N2_S222",
+          "N2_S229",
+          "N2_S230",
+          "N2_S231",
+          "N2_S244",
+          "N2_S245",
+          "N2_S246",
+          "N2_S247",
+          "N2_S248"
+        ]
+      }
+    },
+    "value_span": [
+      0,
+      2998
+    ],
+    "value_sha256": "58ea8620636bafccb8f783b95a9226ad6ea91858027c8f75749683627cbcbcb7",
+    "closure_offset": 2998
+  },
+  {
+    "path": "$.members",
+    "kind": "array",
+    "value": [
+      {
+        "state": "summarized",
+        "assessment": "记录 svc-app-bc3b4605 账号在 host-app-3f979d56 上成功启动 curl 进程并访问外部 IP 198.51.100.81。现有分析指出缺乏授权记录、人工确认及业务上下文，仅凭‘查空’无法排除内部威胁或异常行为，维持待复核状态。",
+        "source_ids": [
+          "N2_S2",
+          "N2_S4",
+          "N2_S222",
+          "N2_S229",
+          "N2_S230"
+        ],
+        "limitations": [
+          "缺乏该账号的历史授权记录或业务操作文档以验证行为合法性。"
+        ],
+        "alert_ref": "A1"
+      },
+      {
+        "state": "summarized",
+        "assessment": "记录同一账号在进程启动后 4 分钟内发起 TCP 网络流量至 198.51.100.81:443，字节数较小（入 128/出 2048）。分析认为证据不足以判定性质，未提供数据外传内容或明确恶意特征，且资产查询无结果，维持待复核。",
+        "source_ids": [
+          "N2_S75",
+          "N2_S77",
+          "N2_S231",
+          "N2_S244",
+          "N2_S245"
+        ],
+        "limitations": [
+          "网络流量记录未包含完整载荷或协议细节，无法确认通信内容是否合规。"
+        ],
+        "alert_ref": "A2"
+      },
+      {
+        "state": "summarized",
+        "assessment": "记录 svc-app-bc3b4605 账号通过网络方式成功登录主机，时间为进程启动前 4 分钟。分析强调缺乏人工确认和授权记录，仅凭无历史告警或查空不足以判定为误报，无法排除异常行为。",
+        "source_ids": [
+          "N2_S157",
+          "N2_S159",
+          "N2_S246",
+          "N2_S247",
+          "N2_S248"
+        ],
+        "limitations": [
+          "缺少登录会话的上下文信息（如登录地点、设备指纹）及该账号的常规登录模式基线。"
+        ],
+        "alert_ref": "A3"
+      }
+    ],
+    "value_span": [
+      15,
+      1240
+    ],
+    "value_sha256": "812754311d160e8acb0a86459029790f61df93e101f58bdd83cbc6daad6b58b9",
+    "closure_offset": 1240
+  },
+  {
+    "path": "$.members[0]",
+    "kind": "object",
+    "value": {
+      "state": "summarized",
+      "assessment": "记录 svc-app-bc3b4605 账号在 host-app-3f979d56 上成功启动 curl 进程并访问外部 IP 198.51.100.81。现有分析指出缺乏授权记录、人工确认及业务上下文，仅凭‘查空’无法排除内部威胁或异常行为，维持待复核状态。",
+      "source_ids": [
+        "N2_S2",
+        "N2_S4",
+        "N2_S222",
+        "N2_S229",
+        "N2_S230"
+      ],
+      "limitations": [
+        "缺乏该账号的历史授权记录或业务操作文档以验证行为合法性。"
+      ],
+      "alert_ref": "A1"
+    },
+    "value_span": [
+      21,
+      426
+    ],
+    "value_sha256": "08acfd62b7ea6399dc54503b30400645d73574bb70654db4abcb2aea14b43ff5",
+    "closure_offset": 426
+  },
+  {
+    "path": "$.members[0].state",
+    "kind": "string",
+    "value": "summarized",
+    "value_span": [
+      38,
+      50
+    ],
+    "value_sha256": "a23bb71738799b0434bccf696f8c28b40e015242f821ab69cc238815e658f2ed",
+    "closure_offset": 50
+  },
+  {
+    "path": "$.members[0].assessment",
+    "kind": "string",
+    "value": "记录 svc-app-bc3b4605 账号在 host-app-3f979d56 上成功启动 curl 进程并访问外部 IP 198.51.100.81。现有分析指出缺乏授权记录、人工确认及业务上下文，仅凭‘查空’无法排除内部威胁或异常行为，维持待复核状态。",
+    "value_span": [
+      72,
+      204
+    ],
+    "value_sha256": "b39512535dc7bd1ee7af098fd58ccede076cecb7e4d01d93eb141d8154737400",
+    "closure_offset": 204
+  },
+  {
+    "path": "$.members[0].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S2",
+      "N2_S4",
+      "N2_S222",
+      "N2_S229",
+      "N2_S230"
+    ],
+    "value_span": [
+      229,
+      316
+    ],
+    "value_sha256": "c22eeb099090c2bfd38e58500fbf3eef4e6424f7bc584358179fb7eb7d8e8864",
+    "closure_offset": 316
+  },
+  {
+    "path": "$.members[0].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S2",
+    "value_span": [
+      237,
+      244
+    ],
+    "value_sha256": "ddaece222fbd317c2058aa18d29b7aeaf6fc2e36046a8f26b76bb750fb6a302a",
+    "closure_offset": 244
+  },
+  {
+    "path": "$.members[0].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S4",
+    "value_span": [
+      252,
+      259
+    ],
+    "value_sha256": "bd2c6e863e0ca05f4ef19f016d7f5d59f04812bd8d2b27fe3851a22947952a53",
+    "closure_offset": 259
+  },
+  {
+    "path": "$.members[0].source_ids[2]",
+    "kind": "string",
+    "value": "N2_S222",
+    "value_span": [
+      267,
+      276
+    ],
+    "value_sha256": "45c30ca73e8b26b8194b044cdda55d7aa1547a5420d53e97a729db824c7c2ae2",
+    "closure_offset": 276
+  },
+  {
+    "path": "$.members[0].source_ids[3]",
+    "kind": "string",
+    "value": "N2_S229",
+    "value_span": [
+      284,
+      293
+    ],
+    "value_sha256": "2f28737326d820ad451ccdbf499b9fc433873414c00078ec9a2fbf157d4676d9",
+    "closure_offset": 293
+  },
+  {
+    "path": "$.members[0].source_ids[4]",
+    "kind": "string",
+    "value": "N2_S230",
+    "value_span": [
+      301,
+      310
+    ],
+    "value_sha256": "7106eb8f9dbf3c6ed1795328e2e2d0355a0e4503b2f812d23bc0c8af96ee137a",
+    "closure_offset": 310
+  },
+  {
+    "path": "$.members[0].limitations",
+    "kind": "array",
+    "value": [
+      "缺乏该账号的历史授权记录或业务操作文档以验证行为合法性。"
+    ],
+    "value_span": [
+      342,
+      390
+    ],
+    "value_sha256": "78b56ab424511325dff1f7c06e09d7cd8d14ede0999ed1f87bb19df9930f2fb4",
+    "closure_offset": 390
+  },
+  {
+    "path": "$.members[0].limitations[0]",
+    "kind": "string",
+    "value": "缺乏该账号的历史授权记录或业务操作文档以验证行为合法性。",
+    "value_span": [
+      352,
+      382
+    ],
+    "value_sha256": "8377c5f0c4a5c4426a151444a5e83102f86d1abd884b3ab018454d04de96fcfc",
+    "closure_offset": 382
+  },
+  {
+    "path": "$.members[0].alert_ref",
+    "kind": "string",
+    "value": "A1",
+    "value_span": [
+      416,
+      420
+    ],
+    "value_sha256": "961ea6171fe18f8c510fc30a17ba90b2dc0cca62fd36a1b8749aad14fe357483",
+    "closure_offset": 420
+  },
+  {
+    "path": "$.members[1]",
+    "kind": "object",
+    "value": {
+      "state": "summarized",
+      "assessment": "记录同一账号在进程启动后 4 分钟内发起 TCP 网络流量至 198.51.100.81:443，字节数较小（入 128/出 2048）。分析认为证据不足以判定性质，未提供数据外传内容或明确恶意特征，且资产查询无结果，维持待复核。",
+      "source_ids": [
+        "N2_S75",
+        "N2_S77",
+        "N2_S231",
+        "N2_S244",
+        "N2_S245"
+      ],
+      "limitations": [
+        "网络流量记录未包含完整载荷或协议细节，无法确认通信内容是否合规。"
+      ],
+      "alert_ref": "A2"
+    },
+    "value_span": [
+      432,
+      844
+    ],
+    "value_sha256": "928617bdef41e87d13e41de06d99e3ab55b5a8806256a46a96e18ba415c66d5a",
+    "closure_offset": 844
+  },
+  {
+    "path": "$.members[1].state",
+    "kind": "string",
+    "value": "summarized",
+    "value_span": [
+      449,
+      461
+    ],
+    "value_sha256": "a23bb71738799b0434bccf696f8c28b40e015242f821ab69cc238815e658f2ed",
+    "closure_offset": 461
+  },
+  {
+    "path": "$.members[1].assessment",
+    "kind": "string",
+    "value": "记录同一账号在进程启动后 4 分钟内发起 TCP 网络流量至 198.51.100.81:443，字节数较小（入 128/出 2048）。分析认为证据不足以判定性质，未提供数据外传内容或明确恶意特征，且资产查询无结果，维持待复核。",
+    "value_span": [
+      483,
+      600
+    ],
+    "value_sha256": "e675b3690e9ce31e670207d03a9cf6ba09876e84d7b1d45972e676e4a442fa1f",
+    "closure_offset": 600
+  },
+  {
+    "path": "$.members[1].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S75",
+      "N2_S77",
+      "N2_S231",
+      "N2_S244",
+      "N2_S245"
+    ],
+    "value_span": [
+      627,
+      728
+    ],
+    "value_sha256": "81dd62ba26b0c9d0755f0b0f854b023ab0ed071948e3167f1bb55acd1f27ad64",
+    "closure_offset": 728
+  },
+  {
+    "path": "$.members[1].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S75",
+    "value_span": [
+      637,
+      645
+    ],
+    "value_sha256": "9c18cdbb7419972cb318dccdaf508cfc51cd2c01823e273d29949ba6c116fe27",
+    "closure_offset": 645
+  },
+  {
+    "path": "$.members[1].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S77",
+    "value_span": [
+      655,
+      663
+    ],
+    "value_sha256": "3e9a2d4b69fa5d39fe11731cf23af816026a11a676661733cd44abb9250a2125",
+    "closure_offset": 663
+  },
+  {
+    "path": "$.members[1].source_ids[2]",
+    "kind": "string",
+    "value": "N2_S231",
+    "value_span": [
+      673,
+      682
+    ],
+    "value_sha256": "86b714848c962da09912503b11409e2d9b65daf677718aa20e971d1d4557cb53",
+    "closure_offset": 682
+  },
+  {
+    "path": "$.members[1].source_ids[3]",
+    "kind": "string",
+    "value": "N2_S244",
+    "value_span": [
+      692,
+      701
+    ],
+    "value_sha256": "172599c3c2007225181d2ac008ced026a8433380263cd70d625a44e6e03d1cd2",
+    "closure_offset": 701
+  },
+  {
+    "path": "$.members[1].source_ids[4]",
+    "kind": "string",
+    "value": "N2_S245",
+    "value_span": [
+      711,
+      720
+    ],
+    "value_sha256": "ce0824f5d9ee522b283e073f2d3cfa782dd566ddb97c43d8f8b42a1df18a82a1",
+    "closure_offset": 720
+  },
+  {
+    "path": "$.members[1].limitations",
+    "kind": "array",
+    "value": [
+      "网络流量记录未包含完整载荷或协议细节，无法确认通信内容是否合规。"
+    ],
+    "value_span": [
+      756,
+      808
+    ],
+    "value_sha256": "3f749b598de2ef330408511e6b45c4be9428f79278c7dbb6b4cc6a0a3e0a469e",
+    "closure_offset": 808
+  },
+  {
+    "path": "$.members[1].limitations[0]",
+    "kind": "string",
+    "value": "网络流量记录未包含完整载荷或协议细节，无法确认通信内容是否合规。",
+    "value_span": [
+      766,
+      800
+    ],
+    "value_sha256": "57237f987976e05741fb486605cbe6c772b62c62bfa4c2bf7b96841d5fb87325",
+    "closure_offset": 800
+  },
+  {
+    "path": "$.members[1].alert_ref",
+    "kind": "string",
+    "value": "A2",
+    "value_span": [
+      834,
+      838
+    ],
+    "value_sha256": "fc032765194b27a7af6e61472671edd9a55cae4019c6f63ee6a1bc4307b1f653",
+    "closure_offset": 838
+  },
+  {
+    "path": "$.members[2]",
+    "kind": "object",
+    "value": {
+      "state": "summarized",
+      "assessment": "记录 svc-app-bc3b4605 账号通过网络方式成功登录主机，时间为进程启动前 4 分钟。分析强调缺乏人工确认和授权记录，仅凭无历史告警或查空不足以判定为误报，无法排除异常行为。",
+      "source_ids": [
+        "N2_S157",
+        "N2_S159",
+        "N2_S246",
+        "N2_S247",
+        "N2_S248"
+      ],
+      "limitations": [
+        "缺少登录会话的上下文信息（如登录地点、设备指纹）及该账号的常规登录模式基线。"
+      ],
+      "alert_ref": "A3"
+    },
+    "value_span": [
+      850,
+      1236
+    ],
+    "value_sha256": "799e6360bc0c9b005acf7635249c88a0e4c75b7485306f6b394172a4cfc0b2a5",
+    "closure_offset": 1236
+  },
+  {
+    "path": "$.members[2].state",
+    "kind": "string",
+    "value": "summarized",
+    "value_span": [
+      867,
+      879
+    ],
+    "value_sha256": "a23bb71738799b0434bccf696f8c28b40e015242f821ab69cc238815e658f2ed",
+    "closure_offset": 879
+  },
+  {
+    "path": "$.members[2].assessment",
+    "kind": "string",
+    "value": "记录 svc-app-bc3b4605 账号通过网络方式成功登录主机，时间为进程启动前 4 分钟。分析强调缺乏人工确认和授权记录，仅凭无历史告警或查空不足以判定为误报，无法排除异常行为。",
+    "value_span": [
+      901,
+      996
+    ],
+    "value_sha256": "52d8fb6d1b5c00fcba744f6ac7fc3d25264d0d5cc9d1c0b5a6082b3759084d3e",
+    "closure_offset": 996
+  },
+  {
+    "path": "$.members[2].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S157",
+      "N2_S159",
+      "N2_S246",
+      "N2_S247",
+      "N2_S248"
+    ],
+    "value_span": [
+      1023,
+      1114
+    ],
+    "value_sha256": "6ecd7df9db79df18be3926c1b532c701a9207653e90a19a94a4ebe9784353b17",
+    "closure_offset": 1114
+  },
+  {
+    "path": "$.members[2].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S157",
+    "value_span": [
+      1031,
+      1040
+    ],
+    "value_sha256": "d2ec63b5a4ad530e0543693079ef3bab923f74a7afee7a5ed25a238a6894d68c",
+    "closure_offset": 1040
+  },
+  {
+    "path": "$.members[2].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S159",
+    "value_span": [
+      1048,
+      1057
+    ],
+    "value_sha256": "283456f03359cdbeee887d2edf9677bb3729bb0df399d110b0c583039d0c8026",
+    "closure_offset": 1057
+  },
+  {
+    "path": "$.members[2].source_ids[2]",
+    "kind": "string",
+    "value": "N2_S246",
+    "value_span": [
+      1065,
+      1074
+    ],
+    "value_sha256": "d668f7377306c3acc39266a03aaeca62c5b9f06c429190dbde3e52230453f194",
+    "closure_offset": 1074
+  },
+  {
+    "path": "$.members[2].source_ids[3]",
+    "kind": "string",
+    "value": "N2_S247",
+    "value_span": [
+      1082,
+      1091
+    ],
+    "value_sha256": "399e33c50c442fd06f971bbc3b0ed2689c71e1d8ba673bd46458ce7801d4b30f",
+    "closure_offset": 1091
+  },
+  {
+    "path": "$.members[2].source_ids[4]",
+    "kind": "string",
+    "value": "N2_S248",
+    "value_span": [
+      1099,
+      1108
+    ],
+    "value_sha256": "c2f0f83758f11c03948bcf0ec07c2be22961a61abf15a83a06608acf8a35f452",
+    "closure_offset": 1108
+  },
+  {
+    "path": "$.members[2].limitations",
+    "kind": "array",
+    "value": [
+      "缺少登录会话的上下文信息（如登录地点、设备指纹）及该账号的常规登录模式基线。"
+    ],
+    "value_span": [
+      1142,
+      1200
+    ],
+    "value_sha256": "a8f2016cbc89a99f27e8003306e7fea80fbd3dd1b4d79cfca6e19bed6fbe2f27",
+    "closure_offset": 1200
+  },
+  {
+    "path": "$.members[2].limitations[0]",
+    "kind": "string",
+    "value": "缺少登录会话的上下文信息（如登录地点、设备指纹）及该账号的常规登录模式基线。",
+    "value_span": [
+      1152,
+      1192
+    ],
+    "value_sha256": "b0c68b78f1b10fdaea4ba90e80a30f7938368f7c4f3d7ee6a24d566c60942387",
+    "closure_offset": 1192
+  },
+  {
+    "path": "$.members[2].alert_ref",
+    "kind": "string",
+    "value": "A3",
+    "value_span": [
+      1226,
+      1230
+    ],
+    "value_sha256": "973ce3432355cdc6c2318cd864fafc0bbf390c8a2e44c08f0421b01347e993be",
+    "closure_offset": 1230
+  },
+  {
+    "path": "$.findings",
+    "kind": "array",
+    "value": [
+      {
+        "statement": "事件呈现完整的攻击链雏形：账号先登录（A3），随后启动 curl 工具（A1），最后建立网络连接（A2），时间间隔紧密（4-10 分钟）。",
+        "state": "unresolved",
+        "source_ids": [
+          "N2_S161",
+          "N2_S177",
+          "N2_S161",
+          "N2_S177",
+          "N2_S79",
+          "N2_S98"
+        ],
+        "limitations": [
+          "现有材料未提供该账号的白名单状态或业务用途说明。"
+        ],
+        "alert_refs": [
+          "A1",
+          "A2",
+          "A3"
+        ]
+      }
+    ],
+    "value_span": [
+      1256,
+      1689
+    ],
+    "value_sha256": "b5a17843cbb42cf2c05a2f07334185c4dbfe65ea1a77ea873c6d1be7388e49a2",
+    "closure_offset": 1689
+  },
+  {
+    "path": "$.findings[0]",
+    "kind": "object",
+    "value": {
+      "statement": "事件呈现完整的攻击链雏形：账号先登录（A3），随后启动 curl 工具（A1），最后建立网络连接（A2），时间间隔紧密（4-10 分钟）。",
+      "state": "unresolved",
+      "source_ids": [
+        "N2_S161",
+        "N2_S177",
+        "N2_S161",
+        "N2_S177",
+        "N2_S79",
+        "N2_S98"
+      ],
+      "limitations": [
+        "现有材料未提供该账号的白名单状态或业务用途说明。"
+      ],
+      "alert_refs": [
+        "A1",
+        "A2",
+        "A3"
+      ]
+    },
+    "value_span": [
+      1262,
+      1685
+    ],
+    "value_sha256": "28ed87f384dd5062075ccd3ba6ae5485ed91d6df7653b0e566f9aff19847df81",
+    "closure_offset": 1685
+  },
+  {
+    "path": "$.findings[0].statement",
+    "kind": "string",
+    "value": "事件呈现完整的攻击链雏形：账号先登录（A3），随后启动 curl 工具（A1），最后建立网络连接（A2），时间间隔紧密（4-10 分钟）。",
+    "value_span": [
+      1283,
+      1354
+    ],
+    "value_sha256": "93b495c985b759e6767189917bf2e3f4e5f166e268f83a5e54117efc8cda8b7b",
+    "closure_offset": 1354
+  },
+  {
+    "path": "$.findings[0].state",
+    "kind": "string",
+    "value": "unresolved",
+    "value_span": [
+      1371,
+      1383
+    ],
+    "value_sha256": "e3db67692bcffe55218a65c50e3686a0f7a7940960adfc734ffd88bf8b695e9a",
+    "closure_offset": 1383
+  },
+  {
+    "path": "$.findings[0].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S161",
+      "N2_S177",
+      "N2_S161",
+      "N2_S177",
+      "N2_S79",
+      "N2_S98"
+    ],
+    "value_span": [
+      1410,
+      1530
+    ],
+    "value_sha256": "c7ea12129a62d712c3f6b25d35882cfb9080ef9c100ca1c89026c6ae0f5e4fda",
+    "closure_offset": 1530
+  },
+  {
+    "path": "$.findings[0].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S161",
+    "value_span": [
+      1420,
+      1429
+    ],
+    "value_sha256": "b8c42883ee4294a3fdd1762b657503d9895c0b4add86c9dd5feb4e57dcb9227a",
+    "closure_offset": 1429
+  },
+  {
+    "path": "$.findings[0].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S177",
+    "value_span": [
+      1439,
+      1448
+    ],
+    "value_sha256": "96d516bd3f5153d7f57c251ce6c4e2c600e1295566abe01eb45a70878ef4f882",
+    "closure_offset": 1448
+  },
+  {
+    "path": "$.findings[0].source_ids[2]",
+    "kind": "string",
+    "value": "N2_S161",
+    "value_span": [
+      1458,
+      1467
+    ],
+    "value_sha256": "b8c42883ee4294a3fdd1762b657503d9895c0b4add86c9dd5feb4e57dcb9227a",
+    "closure_offset": 1467
+  },
+  {
+    "path": "$.findings[0].source_ids[3]",
+    "kind": "string",
+    "value": "N2_S177",
+    "value_span": [
+      1477,
+      1486
+    ],
+    "value_sha256": "96d516bd3f5153d7f57c251ce6c4e2c600e1295566abe01eb45a70878ef4f882",
+    "closure_offset": 1486
+  },
+  {
+    "path": "$.findings[0].source_ids[4]",
+    "kind": "string",
+    "value": "N2_S79",
+    "value_span": [
+      1496,
+      1504
+    ],
+    "value_sha256": "161b0bd6e245c3ee729a7d686590f0768f21a9ad845c04875bcc49d72a7a72b5",
+    "closure_offset": 1504
+  },
+  {
+    "path": "$.findings[0].source_ids[5]",
+    "kind": "string",
+    "value": "N2_S98",
+    "value_span": [
+      1514,
+      1522
+    ],
+    "value_sha256": "d5bfad4c65ee07de51f7702a8779a27acdc81dd97cd5907269ef93ab1bb26304",
+    "closure_offset": 1522
+  },
+  {
+    "path": "$.findings[0].limitations",
+    "kind": "array",
+    "value": [
+      "现有材料未提供该账号的白名单状态或业务用途说明。"
+    ],
+    "value_span": [
+      1558,
+      1602
+    ],
+    "value_sha256": "ac8ebbc9e13ae8197260d4859a5e0eae66195ddf59d981a7abc6c00f823c7649",
+    "closure_offset": 1602
+  },
+  {
+    "path": "$.findings[0].limitations[0]",
+    "kind": "string",
+    "value": "现有材料未提供该账号的白名单状态或业务用途说明。",
+    "value_span": [
+      1568,
+      1594
+    ],
+    "value_sha256": "df96b3b9babe9c9dbb616d9beeba93c63dba9ab51c58d0c35120e2f54b986d33",
+    "closure_offset": 1594
+  },
+  {
+    "path": "$.findings[0].alert_refs",
+    "kind": "array",
+    "value": [
+      "A1",
+      "A2",
+      "A3"
+    ],
+    "value_span": [
+      1629,
+      1679
+    ],
+    "value_sha256": "dd73b2f47d077b392238f3775a0bcdce58631cb625546484a7cd351a76641ad7",
+    "closure_offset": 1679
+  },
+  {
+    "path": "$.findings[0].alert_refs[0]",
+    "kind": "string",
+    "value": "A1",
+    "value_span": [
+      1639,
+      1643
+    ],
+    "value_sha256": "961ea6171fe18f8c510fc30a17ba90b2dc0cca62fd36a1b8749aad14fe357483",
+    "closure_offset": 1643
+  },
+  {
+    "path": "$.findings[0].alert_refs[1]",
+    "kind": "string",
+    "value": "A2",
+    "value_span": [
+      1653,
+      1657
+    ],
+    "value_sha256": "fc032765194b27a7af6e61472671edd9a55cae4019c6f63ee6a1bc4307b1f653",
+    "closure_offset": 1657
+  },
+  {
+    "path": "$.findings[0].alert_refs[2]",
+    "kind": "string",
+    "value": "A3",
+    "value_span": [
+      1667,
+      1671
+    ],
+    "value_sha256": "973ce3432355cdc6c2318cd864fafc0bbf390c8a2e44c08f0421b01347e993be",
+    "closure_offset": 1671
+  },
+  {
+    "path": "$.open_questions",
+    "kind": "array",
+    "value": [
+      {
+        "text": "svc-app-bc3b4605 账号是否拥有访问 198.51.100.81 的明确业务授权？",
+        "source_ids": [
+          "N2_S7",
+          "N2_S98"
+        ],
+        "evidence_requirements": [
+          "需调取账号权限配置表、业务审批单或运维操作记录。"
+        ],
+        "alert_refs": [
+          "A1",
+          "A2",
+          "A3"
+        ]
+      },
+      {
+        "text": "curl 进程启动的具体命令行参数及后续网络传输的实际数据内容是什么？",
+        "source_ids": [
+          "N2_S12",
+          "N2_S82"
+        ],
+        "evidence_requirements": [
+          "需获取完整的命令行日志（command line arguments）及网络流量包载荷（payload）分析。"
+        ],
+        "alert_refs": [
+          "A1",
+          "A2"
+        ]
+      }
+    ],
+    "value_span": [
+      1711,
+      2324
+    ],
+    "value_sha256": "96ba69e9a455136f71219fa2a2decde0889332c5edba73a712f3f4fad88f27fd",
+    "closure_offset": 2324
+  },
+  {
+    "path": "$.open_questions[0]",
+    "kind": "object",
+    "value": {
+      "text": "svc-app-bc3b4605 账号是否拥有访问 198.51.100.81 的明确业务授权？",
+      "source_ids": [
+        "N2_S7",
+        "N2_S98"
+      ],
+      "evidence_requirements": [
+        "需调取账号权限配置表、业务审批单或运维操作记录。"
+      ],
+      "alert_refs": [
+        "A1",
+        "A2",
+        "A3"
+      ]
+    },
+    "value_span": [
+      1717,
+      2013
+    ],
+    "value_sha256": "f2ef9dc12012b6e61e9de2b0a87eba5fa05a6226c4b15f49064bc5e7dc3ba5b4",
+    "closure_offset": 2013
+  },
+  {
+    "path": "$.open_questions[0].text",
+    "kind": "string",
+    "value": "svc-app-bc3b4605 账号是否拥有访问 198.51.100.81 的明确业务授权？",
+    "value_span": [
+      1733,
+      1783
+    ],
+    "value_sha256": "9714aeb27f440b0e26a8646238e7ecbe0295e098d5770149346366d77b006996",
+    "closure_offset": 1783
+  },
+  {
+    "path": "$.open_questions[0].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S7",
+      "N2_S98"
+    ],
+    "value_span": [
+      1805,
+      1848
+    ],
+    "value_sha256": "0061f665da629fad48ae8a4f8ecba355ef3619a63181e7a5d2ccd13e3569102a",
+    "closure_offset": 1848
+  },
+  {
+    "path": "$.open_questions[0].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S7",
+    "value_span": [
+      1815,
+      1822
+    ],
+    "value_sha256": "f2c3c9d236b7210fcb47e9445ae6f2916f6cab05b8082ff1cea4eb343d0be04a",
+    "closure_offset": 1822
+  },
+  {
+    "path": "$.open_questions[0].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S98",
+    "value_span": [
+      1832,
+      1840
+    ],
+    "value_sha256": "d5bfad4c65ee07de51f7702a8779a27acdc81dd97cd5907269ef93ab1bb26304",
+    "closure_offset": 1840
+  },
+  {
+    "path": "$.open_questions[0].evidence_requirements",
+    "kind": "array",
+    "value": [
+      "需调取账号权限配置表、业务审批单或运维操作记录。"
+    ],
+    "value_span": [
+      1886,
+      1930
+    ],
+    "value_sha256": "538a569d3a9ec88532567f144f73aa89aaa6b6f307b3ee309d1ecce530d36199",
+    "closure_offset": 1930
+  },
+  {
+    "path": "$.open_questions[0].evidence_requirements[0]",
+    "kind": "string",
+    "value": "需调取账号权限配置表、业务审批单或运维操作记录。",
+    "value_span": [
+      1896,
+      1922
+    ],
+    "value_sha256": "c5e55ca755b49475fd45f09b95d7bf0e616874cb4aa7cc07efcf84c0f82d6465",
+    "closure_offset": 1922
+  },
+  {
+    "path": "$.open_questions[0].alert_refs",
+    "kind": "array",
+    "value": [
+      "A1",
+      "A2",
+      "A3"
+    ],
+    "value_span": [
+      1957,
+      2007
+    ],
+    "value_sha256": "dd73b2f47d077b392238f3775a0bcdce58631cb625546484a7cd351a76641ad7",
+    "closure_offset": 2007
+  },
+  {
+    "path": "$.open_questions[0].alert_refs[0]",
+    "kind": "string",
+    "value": "A1",
+    "value_span": [
+      1967,
+      1971
+    ],
+    "value_sha256": "961ea6171fe18f8c510fc30a17ba90b2dc0cca62fd36a1b8749aad14fe357483",
+    "closure_offset": 1971
+  },
+  {
+    "path": "$.open_questions[0].alert_refs[1]",
+    "kind": "string",
+    "value": "A2",
+    "value_span": [
+      1981,
+      1985
+    ],
+    "value_sha256": "fc032765194b27a7af6e61472671edd9a55cae4019c6f63ee6a1bc4307b1f653",
+    "closure_offset": 1985
+  },
+  {
+    "path": "$.open_questions[0].alert_refs[2]",
+    "kind": "string",
+    "value": "A3",
+    "value_span": [
+      1995,
+      1999
+    ],
+    "value_sha256": "973ce3432355cdc6c2318cd864fafc0bbf390c8a2e44c08f0421b01347e993be",
+    "closure_offset": 1999
+  },
+  {
+    "path": "$.open_questions[1]",
+    "kind": "object",
+    "value": {
+      "text": "curl 进程启动的具体命令行参数及后续网络传输的实际数据内容是什么？",
+      "source_ids": [
+        "N2_S12",
+        "N2_S82"
+      ],
+      "evidence_requirements": [
+        "需获取完整的命令行日志（command line arguments）及网络流量包载荷（payload）分析。"
+      ],
+      "alert_refs": [
+        "A1",
+        "A2"
+      ]
+    },
+    "value_span": [
+      2019,
+      2320
+    ],
+    "value_sha256": "5ec79ca138b1bc87071a7548caf2ae270b9a86a7affd290e77aef2681c2ee134",
+    "closure_offset": 2320
+  },
+  {
+    "path": "$.open_questions[1].text",
+    "kind": "string",
+    "value": "curl 进程启动的具体命令行参数及后续网络传输的实际数据内容是什么？",
+    "value_span": [
+      2035,
+      2072
+    ],
+    "value_sha256": "7734f9bcf9077a092fd55e15a84c1e60434004fce331ef811b16b366f7b3cfa8",
+    "closure_offset": 2072
+  },
+  {
+    "path": "$.open_questions[1].source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S12",
+      "N2_S82"
+    ],
+    "value_span": [
+      2094,
+      2138
+    ],
+    "value_sha256": "88268c0b075070bc1632d7c4a4057818157210c23ab9276dc9a0d64356456740",
+    "closure_offset": 2138
+  },
+  {
+    "path": "$.open_questions[1].source_ids[0]",
+    "kind": "string",
+    "value": "N2_S12",
+    "value_span": [
+      2104,
+      2112
+    ],
+    "value_sha256": "1172499feb7c2cedc2cd28dbd65dac80b06b8035f609be33751a1acaafbddbd0",
+    "closure_offset": 2112
+  },
+  {
+    "path": "$.open_questions[1].source_ids[1]",
+    "kind": "string",
+    "value": "N2_S82",
+    "value_span": [
+      2122,
+      2130
+    ],
+    "value_sha256": "3d49c634fcee0fbddd5d0bb1fd7a34fb49a26fa28b162d75c3d9c5418c252841",
+    "closure_offset": 2130
+  },
+  {
+    "path": "$.open_questions[1].evidence_requirements",
+    "kind": "array",
+    "value": [
+      "需获取完整的命令行日志（command line arguments）及网络流量包载荷（payload）分析。"
+    ],
+    "value_span": [
+      2176,
+      2251
+    ],
+    "value_sha256": "2cd9c4f57f06f0ec0c3ec57dd29f84573bcc2873a5a07a9d432ff67061cd8349",
+    "closure_offset": 2251
+  },
+  {
+    "path": "$.open_questions[1].evidence_requirements[0]",
+    "kind": "string",
+    "value": "需获取完整的命令行日志（command line arguments）及网络流量包载荷（payload）分析。",
+    "value_span": [
+      2186,
+      2243
+    ],
+    "value_sha256": "bfeb97816ef1282643ef2866bb02907079de2da9ea625b1f9d183871286fdbb5",
+    "closure_offset": 2243
+  },
+  {
+    "path": "$.open_questions[1].alert_refs",
+    "kind": "array",
+    "value": [
+      "A1",
+      "A2"
+    ],
+    "value_span": [
+      2278,
+      2314
+    ],
+    "value_sha256": "ca79fe5a4048f09b0260c5a5742e848d6252ffed8738505d3d6d6d3f93f37770",
+    "closure_offset": 2314
+  },
+  {
+    "path": "$.open_questions[1].alert_refs[0]",
+    "kind": "string",
+    "value": "A1",
+    "value_span": [
+      2288,
+      2292
+    ],
+    "value_sha256": "961ea6171fe18f8c510fc30a17ba90b2dc0cca62fd36a1b8749aad14fe357483",
+    "closure_offset": 2292
+  },
+  {
+    "path": "$.open_questions[1].alert_refs[1]",
+    "kind": "string",
+    "value": "A2",
+    "value_span": [
+      2302,
+      2306
+    ],
+    "value_sha256": "fc032765194b27a7af6e61472671edd9a55cae4019c6f63ee6a1bc4307b1f653",
+    "closure_offset": 2306
+  },
+  {
+    "path": "$.diagnosis",
+    "kind": "object",
+    "value": {
+      "summary": "事件显示 svc-app-bc3b4605 账号在 host-app-3f979d56 上完成登录、启动 curl 进程并访问外部 IP 198.51.100.81 的连续操作。现有证据链完整但缺乏业务上下文和授权证明，无法区分正常运维与潜在威胁。",
+      "conclusion": "整体判断为‘待复核’。现有材料支持该行为存在异常可能性（如未授权访问或数据外传），但不足以定性为恶意事件。主要缺口在于缺乏账号授权记录、业务操作文档及详细的流量载荷分析。",
+      "limitations": [
+        "所有成员的分析均基于‘查空’结果，未命中资产库或威胁情报，导致无法通过外部数据佐证行为性质。",
+        "缺乏该账号的历史行为基线，难以判断当前操作是否符合常规模式。"
+      ],
+      "source_ids": [
+        "N2_S2",
+        "N2_S4",
+        "N2_S75",
+        "N2_S77",
+        "N2_S157",
+        "N2_S159",
+        "N2_S222",
+        "N2_S229",
+        "N2_S230",
+        "N2_S231",
+        "N2_S244",
+        "N2_S245",
+        "N2_S246",
+        "N2_S247",
+        "N2_S248"
+      ]
+    },
+    "value_span": [
+      2341,
+      2996
+    ],
+    "value_sha256": "e6884ea673e0c57a1a9e154fc1614b7c61a6466d094b22add1423adbbb9647ca",
+    "closure_offset": 2996
+  },
+  {
+    "path": "$.diagnosis.summary",
+    "kind": "string",
+    "value": "事件显示 svc-app-bc3b4605 账号在 host-app-3f979d56 上完成登录、启动 curl 进程并访问外部 IP 198.51.100.81 的连续操作。现有证据链完整但缺乏业务上下文和授权证明，无法区分正常运维与潜在威胁。",
+    "value_span": [
+      2358,
+      2484
+    ],
+    "value_sha256": "62583de5a0f3d8c4eaba766f3897007f00f7c864f139324764523e96c1cca415",
+    "closure_offset": 2484
+  },
+  {
+    "path": "$.diagnosis.conclusion",
+    "kind": "string",
+    "value": "整体判断为‘待复核’。现有材料支持该行为存在异常可能性（如未授权访问或数据外传），但不足以定性为恶意事件。主要缺口在于缺乏账号授权记录、业务操作文档及详细的流量载荷分析。",
+    "value_span": [
+      2504,
+      2591
+    ],
+    "value_sha256": "ace6a1cf6e6ff967f399dbf4ef1f5ff321804a3dcc5ca7809554e20c9798680a",
+    "closure_offset": 2591
+  },
+  {
+    "path": "$.diagnosis.limitations",
+    "kind": "array",
+    "value": [
+      "所有成员的分析均基于‘查空’结果，未命中资产库或威胁情报，导致无法通过外部数据佐证行为性质。",
+      "缺乏该账号的历史行为基线，难以判断当前操作是否符合常规模式。"
+    ],
+    "value_span": [
+      2612,
+      2714
+    ],
+    "value_sha256": "4f7ba147c954da093c1ffa8a5008e56305639a0c50b8d17043406f57c794ad45",
+    "closure_offset": 2714
+  },
+  {
+    "path": "$.diagnosis.limitations[0]",
+    "kind": "string",
+    "value": "所有成员的分析均基于‘查空’结果，未命中资产库或威胁情报，导致无法通过外部数据佐证行为性质。",
+    "value_span": [
+      2620,
+      2668
+    ],
+    "value_sha256": "58bc05b9499a9e6f52cd2d8a3d49f6227c472c7933b42dee8fa1536181f26881",
+    "closure_offset": 2668
+  },
+  {
+    "path": "$.diagnosis.limitations[1]",
+    "kind": "string",
+    "value": "缺乏该账号的历史行为基线，难以判断当前操作是否符合常规模式。",
+    "value_span": [
+      2676,
+      2708
+    ],
+    "value_sha256": "40ef09d52f0a8dcddff5817a29b01657d2f253c2ad9a39b3d1a2860ea8329c5b",
+    "closure_offset": 2708
+  },
+  {
+    "path": "$.diagnosis.source_ids",
+    "kind": "array",
+    "value": [
+      "N2_S2",
+      "N2_S4",
+      "N2_S75",
+      "N2_S77",
+      "N2_S157",
+      "N2_S159",
+      "N2_S222",
+      "N2_S229",
+      "N2_S230",
+      "N2_S231",
+      "N2_S244",
+      "N2_S245",
+      "N2_S246",
+      "N2_S247",
+      "N2_S248"
+    ],
+    "value_span": [
+      2737,
+      2992
+    ],
+    "value_sha256": "371171e5430dbb8e0d33e406c15aa77cd82106b949c374e390cd5cc45e40c3be",
+    "closure_offset": 2992
+  },
+  {
+    "path": "$.diagnosis.source_ids[0]",
+    "kind": "string",
+    "value": "N2_S2",
+    "value_span": [
+      2745,
+      2752
+    ],
+    "value_sha256": "ddaece222fbd317c2058aa18d29b7aeaf6fc2e36046a8f26b76bb750fb6a302a",
+    "closure_offset": 2752
+  },
+  {
+    "path": "$.diagnosis.source_ids[1]",
+    "kind": "string",
+    "value": "N2_S4",
+    "value_span": [
+      2760,
+      2767
+    ],
+    "value_sha256": "bd2c6e863e0ca05f4ef19f016d7f5d59f04812bd8d2b27fe3851a22947952a53",
+    "closure_offset": 2767
+  },
+  {
+    "path": "$.diagnosis.source_ids[2]",
+    "kind": "string",
+    "value": "N2_S75",
+    "value_span": [
+      2775,
+      2783
+    ],
+    "value_sha256": "9c18cdbb7419972cb318dccdaf508cfc51cd2c01823e273d29949ba6c116fe27",
+    "closure_offset": 2783
+  },
+  {
+    "path": "$.diagnosis.source_ids[3]",
+    "kind": "string",
+    "value": "N2_S77",
+    "value_span": [
+      2791,
+      2799
+    ],
+    "value_sha256": "3e9a2d4b69fa5d39fe11731cf23af816026a11a676661733cd44abb9250a2125",
+    "closure_offset": 2799
+  },
+  {
+    "path": "$.diagnosis.source_ids[4]",
+    "kind": "string",
+    "value": "N2_S157",
+    "value_span": [
+      2807,
+      2816
+    ],
+    "value_sha256": "d2ec63b5a4ad530e0543693079ef3bab923f74a7afee7a5ed25a238a6894d68c",
+    "closure_offset": 2816
+  },
+  {
+    "path": "$.diagnosis.source_ids[5]",
+    "kind": "string",
+    "value": "N2_S159",
+    "value_span": [
+      2824,
+      2833
+    ],
+    "value_sha256": "283456f03359cdbeee887d2edf9677bb3729bb0df399d110b0c583039d0c8026",
+    "closure_offset": 2833
+  },
+  {
+    "path": "$.diagnosis.source_ids[6]",
+    "kind": "string",
+    "value": "N2_S222",
+    "value_span": [
+      2841,
+      2850
+    ],
+    "value_sha256": "45c30ca73e8b26b8194b044cdda55d7aa1547a5420d53e97a729db824c7c2ae2",
+    "closure_offset": 2850
+  },
+  {
+    "path": "$.diagnosis.source_ids[7]",
+    "kind": "string",
+    "value": "N2_S229",
+    "value_span": [
+      2858,
+      2867
+    ],
+    "value_sha256": "2f28737326d820ad451ccdbf499b9fc433873414c00078ec9a2fbf157d4676d9",
+    "closure_offset": 2867
+  },
+  {
+    "path": "$.diagnosis.source_ids[8]",
+    "kind": "string",
+    "value": "N2_S230",
+    "value_span": [
+      2875,
+      2884
+    ],
+    "value_sha256": "7106eb8f9dbf3c6ed1795328e2e2d0355a0e4503b2f812d23bc0c8af96ee137a",
+    "closure_offset": 2884
+  },
+  {
+    "path": "$.diagnosis.source_ids[9]",
+    "kind": "string",
+    "value": "N2_S231",
+    "value_span": [
+      2892,
+      2901
+    ],
+    "value_sha256": "86b714848c962da09912503b11409e2d9b65daf677718aa20e971d1d4557cb53",
+    "closure_offset": 2901
+  },
+  {
+    "path": "$.diagnosis.source_ids[10]",
+    "kind": "string",
+    "value": "N2_S244",
+    "value_span": [
+      2909,
+      2918
+    ],
+    "value_sha256": "172599c3c2007225181d2ac008ced026a8433380263cd70d625a44e6e03d1cd2",
+    "closure_offset": 2918
+  },
+  {
+    "path": "$.diagnosis.source_ids[11]",
+    "kind": "string",
+    "value": "N2_S245",
+    "value_span": [
+      2926,
+      2935
+    ],
+    "value_sha256": "ce0824f5d9ee522b283e073f2d3cfa782dd566ddb97c43d8f8b42a1df18a82a1",
+    "closure_offset": 2935
+  },
+  {
+    "path": "$.diagnosis.source_ids[12]",
+    "kind": "string",
+    "value": "N2_S246",
+    "value_span": [
+      2943,
+      2952
+    ],
+    "value_sha256": "d668f7377306c3acc39266a03aaeca62c5b9f06c429190dbde3e52230453f194",
+    "closure_offset": 2952
+  },
+  {
+    "path": "$.diagnosis.source_ids[13]",
+    "kind": "string",
+    "value": "N2_S247",
+    "value_span": [
+      2960,
+      2969
+    ],
+    "value_sha256": "399e33c50c442fd06f971bbc3b0ed2689c71e1d8ba673bd46458ce7801d4b30f",
+    "closure_offset": 2969
+  },
+  {
+    "path": "$.diagnosis.source_ids[14]",
+    "kind": "string",
+    "value": "N2_S248",
+    "value_span": [
+      2977,
+      2986
+    ],
+    "value_sha256": "c2f0f83758f11c03948bcf0ec07c2be22961a61abf15a83a06608acf8a35f452",
+    "closure_offset": 2986
+  }
+]

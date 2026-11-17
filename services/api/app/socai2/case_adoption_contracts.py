@@ -45,6 +45,7 @@ class ResultAdoptionPreview(Contract):
     input_freshness: dict[str, Any]
     unfinished_tasks: list[dict[str, Any]]
     unfinished_runs: list[dict[str, Any]]
+    unfinished_analysis_tasks: list[dict[str, Any]]
     requires_pending_work_acknowledgement: bool
     can_adopt: bool
     refusal_reasons: list[str]

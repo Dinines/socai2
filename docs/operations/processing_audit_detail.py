@@ -3,8 +3,9 @@ import html
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
-from processing_audit_delivery import incident_fields
+from processing_audit_delivery import incident_fields, run_delivery
 from processing_audit_flow import SOURCES, STATES, TOOLS, render_flow
 from processing_audit_inspector import PANEL
 from processing_audit_inspector import SCRIPT as INSPECTOR_SCRIPT
@@ -227,7 +228,8 @@ def stage_outputs(run, run_artifacts, data):
     is_incident = run["kind"] == "incident_diagnosis"
     table = "incident_diagnoses" if is_incident else "alert_assessments"
     noun = "事件诊断" if is_incident else "告警分诊"
-    rows = [r for r in data.get(table, ()) if r.get("source_run_id") == run["id"]]
+    identities = {r["id"] for r in run_delivery(run, data)["results"]}
+    rows = [r for r in data.get(table, ()) if r["id"] in identities]
     receipts = {}
     for artifact in run_artifacts:
         body = artifact.get("content_json")
@@ -241,9 +243,9 @@ def stage_outputs(run, run_artifacts, data):
         receipt = receipts.get(row["id"], {})
         facts = []
         if receipt.get("adopted") is True:
-            facts.append(("发布状态", "本轮已发布"))
+            facts.append(("保存时采用", "本轮保存时已采用"))
         elif receipt.get("adopted") is False:
-            facts.append(("发布状态", "已保存，本轮未发布"))
+            facts.append(("保存时采用", "已保存，本轮未采用"))
             facts.append(("原因", receipt.get("reason")))
         if is_incident:
             facts.append(("诊断记录状态", row.get("state")))
@@ -261,7 +263,8 @@ def stage_outputs(run, run_artifacts, data):
 
 
 def case_outputs(run, run_artifacts, directory, data):
-    results = [r for r in data.get("results", ()) if r.get("source_run_id") == run["id"]]
+    identities = {r["id"] for r in run_delivery(run, data)["results"]}
+    results = [r for r in data.get("results", ()) if r["id"] in identities]
     parts = [f"<p>本轮正式 Result（{len(results)}）</p>"]
     for result in results:
         parts.extend((fields([("结论来源", result.get("conclusion_origin")), ("结论", result.get("conclusion")),
@@ -531,6 +534,12 @@ def render_case_detail(*, key: str, title: str, batch: str, data: dict, extras: 
     view.append("</section>")
     if extras:
         view.append(test_materials(extras))
+    config = json.loads(Path(__file__).with_name("processing_audit_view.json").read_text())
+    if not isinstance(config.get("preview_characters"), int) or config["preview_characters"] <= 0:
+        raise ValueError("preview_characters must be a positive integer")
+    payload = {"config": config, "runs": {r["id"]: run_delivery(r, data) for r in data.get("runs", [])}}
+    view.append('<script type="application/json" id="inspector-data">' +
+                json.dumps(payload, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c") + '</script>')
     # Native anchors retain a working target even in a script-disabled iframe.
     view.append("""</main><script>
 document.addEventListener("toggle", event => {

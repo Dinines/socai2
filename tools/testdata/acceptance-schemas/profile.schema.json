@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "ConnectionFiles": {
+      "additionalProperties": false,
+      "properties": {
+        "http": {
+          "minLength": 1,
+          "title": "Http",
+          "type": "string"
+        },
+        "kafka": {
+          "minLength": 1,
+          "title": "Kafka",
+          "type": "string"
+        },
+        "lake": {
+          "minLength": 1,
+          "title": "Lake",
+          "type": "string"
+        },
+        "postgres": {
+          "minLength": 1,
+          "title": "Postgres",
+          "type": "string"
+        }
+      },
+      "required": [
+        "http",
+        "kafka",
+        "postgres",
+        "lake"
+      ],
+      "title": "ConnectionFiles",
+      "type": "object"
+    },
+    "Limits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_alerts_per_part": {
+          "minimum": 1,
+          "title": "Max Alerts Per Part",
+          "type": "integer"
+        },
+        "max_context_events_per_part": {
+          "minimum": 0,
+          "title": "Max Context Events Per Part",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_alerts_per_part",
+        "max_context_events_per_part"
+      ],
+      "title": "Limits",
+      "type": "object"
+    },
+    "Timing": {
+      "additionalProperties": false,
+      "properties": {
+        "part_timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Part Timeout Seconds",
+          "type": "number"
+        },
+        "poll_interval_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Poll Interval Seconds",
+          "type": "number"
+        },
+        "send_interval_seconds": {
+          "minimum": 0,
+          "title": "Send Interval Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "send_interval_seconds",
+        "poll_interval_seconds",
+        "part_timeout_seconds"
+      ],
+      "title": "Timing",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "connection_files": {
+      "$ref": "#/$defs/ConnectionFiles"
+    },
+    "environment_label": {
+      "minLength": 1,
+      "title": "Environment Label",
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/Limits"
+    },
+    "profile_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "socai2.acceptance-profile.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tenant_id": {
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "timing": {
+      "$ref": "#/$defs/Timing"
+    }
+  },
+  "required": [
+    "schema_version",
+    "profile_id",
+    "environment_label",
+    "tenant_id",
+    "connection_files",
+    "limits",
+    "timing"
+  ],
+  "title": "Profile",
+  "type": "object"
+}

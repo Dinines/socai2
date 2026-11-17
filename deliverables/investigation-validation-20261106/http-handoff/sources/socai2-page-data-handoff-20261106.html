@@ -7,7 +7,7 @@
 <tr><th>环节</th><th>负责什么</th><th>交接边界</th></tr>
 <tr><td>采集与 Fusion</td><td>提供告警来源标识、原始材料、事件引用、对象与归并依据，保存告警及事件成员</td><td><code>source_event_id</code> 是来源命名空间内的标识，可能缺失或尚无湖记录。后端沿已保存的关系取数；不得用相似标题、主机或时间自行认定成员。</td></tr>
 <tr><td>调查处理模块</td><td>A 分诊告警，I 诊断事件，C 执行 Case 调查，保存每次尝试、冻结输入、步骤、工件和交付记录</td><td>处理模块按需执行，当前版本以交接指南（来源：<code>FRONTEND_BACKEND_HANDOFF.md#2-当前运行环境</code>）为准，数据库为 <code>aisoc.socai2</code>；作业没有对外 HTTP 监听。A/I/Case 策略由当前 profile 显式选择。主 API 提供读取，自动消费者暂停。部署说明（来源：<code>deploy/aisoc21/README.md</code>）</td></tr>
-<tr><td>业务后端</td><td>从已认证用户确定租户与读取权限，通过 HTTP 调用调查服务，组装列表、详情、关联入口与空态；不要求直连 PG</td><td>同一响应尽量使用同一只读快照。<code>GET</code> 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及权限校验。</td></tr>
+<tr><td>业务后端</td><td>默认内部可信，通过HTTP调用调查服务；租户与记录操作人由服务配置确定，组装列表、详情、关联入口与空态；不要求直连 PG</td><td>同一响应尽量使用同一只读快照。<code>GET</code> 只读；详情缺数据时仍返回已取得的主体、可用性与限制。告警、事件、Case 的写操作须走相应服务命令及业务状态/版本校验。</td></tr>
 <tr><td>页面</td><td>按后端返回的字段、状态、计数与实体 ID 展示，按主体与版本打开详情</td><td>业务状态、模型判定、执行状态、交付完整性分别展示。模型响应中的建议、事实主张与外部实际行动分别标明来源。</td></tr>
 </table>
 <h2 id="字段保存读取">字段—保存—读取</h2>
@@ -44,7 +44,7 @@
 <p>Case/H 写入沿用原合同：建案返回 pending_run_id，任务修订追加 task_revisions 并更新 current_revision_id，后轮 C1 固定所选版本及 human_statement 来源。人工保存不自动启动 Run；操作顺序及本轮证据见 Case/H 交接（来源：<code>openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md</code>）。本 change 不增加表列、枚举或告警交接字段。</p>
 <p>Case 模型请求工件中的 <code>payload.source_map</code> 分别给查询范围、历史返回主体、允许的本案成员及其依据（<code>query_alert_ids / record_alert_ids / alert_ids / membership_basis</code>）。它们属于内部工件内容，数据库仍使用原 <code>artifacts.content_json</code>；告警及 Case HTTP 字段没有调整。按 <code>ref.id / source_path / role</code> 回查原件，不能把发起查询的成员当返回行主体。模型原答、<code>correction_feedback</code> 和 <code>validation_review</code> 分别留在响应工件；一次纠正前后的模型 Step 都应可查。 C3/C6 内部 Finding 的 observed 支持仅使用有成员依据的直接观察；inferred 需支持，unresolved 需限制。<code>socai2.case-citation-correction.v2</code> 额外给出角色和逐成员直接观察缺口，历史合法时间上下文仍兼容。此约束不新增列或 API 字段，也不代表正文质量通过。</p>
 <h2 id="查询形状与分页">查询形状与分页</h2>
-<p>路径均相对于 <code>/api/v1/socai2</code>。告警、事件和 A/I 分析读取要求 <code>alerts:read</code>，其中 <code>records/cases</code> 还要求 <code>cases:read</code>；Case 与 H 读取要求 <code>cases:read</code>。A/I 执行与 Case 命令分别要求 <code>alerts:write</code>、<code>cases:write</code>。21 主 API 在回环端口 18000，普通登录／有效 API key 绑定认证租户；页面及分析读取已启用，21 r2 的 Case/H HTTP 写入口已开放并经正常登录写读验证；产品页面按已保存回执与版本刷新。<a href="/handoff/sources/socai2-independent-api-v2.openapi.json">完整路径及参数</a></p>
+<p>路径均相对于<code>/api/v1/socai2</code>。本轮独立18024采用内部默认可信，不要求登录、Token、scope或角色；由服务配置明确租户和记录操作人，业务字段/版本/关联规则保持。该改动已在本机候选完成真实保存读取，正式两端尚未统一切换；实际状态见总交接（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）。<a href="/handoff/sources/socai2-independent-api-v2.openapi.json">完整路径及参数</a></p>
 <table>
 <tr><th>读取内容</th><th>路径</th><th>分页和返回边界</th></tr>
 <tr><td>告警、事件列表与详情</td><td><code>/alerts</code>、<code>/incidents</code>、相应 <code>/{id}</code></td><td>列表默认20、上限50；支持标题/ID、等级、状态、负责人/分配状态、时间筛选及明确枚举排序。读items、filtered_total和next_cursor；total/overall_stats/observed_at保持整体口径。旧无新增条件调用仍用next_before_id/before_id，不能混用新条件或cursor。告警默认(ingested_at,id)、事件默认(created_at,id)倒序。</td></tr>
@@ -62,7 +62,7 @@
 <p>Case详情的current_assessment.sources通过without_internal剔除tenant_id等字段，而page_data.assessment.sources当前直接返回来源行、包含tenant_id；不要假定两种投影完全相同。Case工件完整性失败为409，A/I工件同类失败是200加availability=content_integrity_mismatch。冻结材料GET直接返回原行，保留material_state/retention，没有统一availability包装。</p>
 <p>Case Run内部集合截断后当前没有继续分页的接口；读取方必须展示截断。当前判断覆盖比较遇到成员/覆盖集合不完整时返回null，不能擅自视为全部覆盖或没有未覆盖成员。questions[].state仅记录当轮回答状况，按D07随结论展示，不建立独立问题管理。</p>
 <h2 id="只读联查示例">只读联查示例</h2>
-<p>下列 SQL 仅用于调查服务内部维护和取数解释，<b>不是业务后端对接要求</b>。对接请使用<a href="/handoff/guide.html">HTTP交接包</a>。内部维护时可在 <b>psql</b> 的同一连接顺序执行。<code>tenant_id</code>、<code>case_id</code>、<code>run_id</code> 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。内部数据库读取应设置正确租户，并在事务结束后释放事务级配置；业务后端通过 HTTP 认证上下文确定租户。</p>
+<p>下列 SQL 仅用于调查服务内部维护和取数解释，<b>不是业务后端对接要求</b>。对接请使用<a href="/handoff/guide.html">HTTP交接包</a>。内部维护时可在 <b>psql</b> 的同一连接顺序执行。<code>tenant_id</code>、<code>case_id</code>、<code>run_id</code> 分别为授权租户、案件和选中调查轮次的 UUID。示例选择当前核验中的模型来源 Case，对应结果列在下一节。内部数据库读取应设置正确租户，并在事务结束后释放事务级配置；业务后端无需传认证信息，调查服务使用配置的租户。</p>
 <pre>\set tenant_id &#x27;00000000-0000-0000-0000-000000000001&#x27;
 \set case_id &#x27;2b37f5b3-862b-52cc-84bd-86db50dd3ad4&#x27;
 \set run_id &#x27;8d53cdb1-1cba-4df3-8ac2-f2724c062342&#x27;

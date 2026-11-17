@@ -77,6 +77,10 @@ def render_flow(run, steps, artifacts, artifact_indices, step_ids, run_anchor):
         return result
 
     def model(code, label):
+        if code == "C3" and select(code, "model"):
+            return [step_node(label + (" · 补答" if (payload(s.get("input_artifact_id")).get("payload") or {})
+                                      .get("section_completion") else " · 初答"), s)
+                    for s in select(code, "model")]
         return step_nodes(label, select(code, "model"))
 
     def domain_outputs(matches):

@@ -11,7 +11,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from alert_scenarios import _without_answers, json_bytes, sha256
+from alert_scenarios import SOURCE_PROFILE, _without_answers, json_bytes, sha256
 from investigation_fixture import _identity, _parameters
 
 
@@ -35,7 +35,7 @@ def build(*, run_id, tenant, case):
         ("process-near", 1007, base + timedelta(seconds=5), host, None, None, None, 0, 0, 0, 0),
         ("auth-failure", 3002, base - timedelta(seconds=40), host, None, None, None, 0, 0, 0, 0),
         ("auth-success", 3002, base - timedelta(seconds=30), host, None, None, None, 0, 0, 0, 0),
-        ("control-other-host", 4001, base, host + "-control", dst, 443, "tcp", 400, 200, 2, 1),
+        ("control-other-host", 4001, base, SOURCE_PROFILE['host_prefix']+'-'+_identity(tenant,run_id,'other-host')[:8], dst, 443, "tcp", 400, 200, 2, 1),
         ("control-before-window", 4001, start - timedelta(microseconds=1), host, dst, 443, "tcp", 400, 200, 2, 1),
         ("control-at-window-end", 4001, end, host, dst, 443, "tcp", 400, 200, 2, 1),
     ]
@@ -47,7 +47,7 @@ def build(*, run_id, tenant, case):
     for ordinal, (role, kind, when, hostname, dest, port, protocol, bout, bin_, pout, pin) in enumerate(specs):
         identity = _identity(tenant, run_id, case["key"] + ":" + role)
         ocsf = {"class_uid": kind, "time": when.isoformat(), "device": {"name": hostname},
-            "metadata": {"uid": identity, "product": {"name": "context-fixture", "vendor_name": "LabTelemetry"}}}
+            "metadata": {"uid": identity, "product": {"name": SOURCE_PROFILE["product_name"], "vendor_name": SOURCE_PROFILE["vendor_name"]}}}
         if kind == 4001:
             ocsf.update(src_endpoint={"hostname": hostname, "ip": src, "port": 52000 + ordinal},
                 dst_endpoint={"ip": dest, "port": port}, connection_info={"protocol_name": protocol},
@@ -65,7 +65,7 @@ def build(*, run_id, tenant, case):
                     "session": {"id": "ctx-" + identity[:8]}})
         ocsf["raw_data"] = json_bytes(ocsf).decode("utf-8")
         envelope = {"schema_version": "v1", "event_id": identity, "tenant_id": tenant,
-            "connector_type": "validation", "original_vendor": "LabTelemetry", "ocsf_event": ocsf}
+            "connector_type": SOURCE_PROFILE["connector_type"], "original_vendor": SOURCE_PROFILE["vendor_name"], "ocsf_event": ocsf}
         _without_answers(envelope)
         events.append(envelope)
         if role.startswith("control-"):

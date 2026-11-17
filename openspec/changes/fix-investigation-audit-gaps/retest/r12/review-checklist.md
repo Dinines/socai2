@@ -1,6 +1,6 @@
 # r12候选与报告核对表
 
-P1本地准备已完成；这是下一批的执行材料，不是部署或真实验收结果。候选标签为`20261101-r12`，源码取自当前工作区快照，尚无新Git提交。以[候选清单](../../../../../docs/operations/evidence/investigation-r12-preparation-20261101/candidate-manifest.json)的文件hash和[包记录](../../../../../docs/operations/evidence/investigation-r12-preparation-20261101/candidate.json)固定内容；后续源码变化须更新候选，不能沿用旧包声称包含新修复。
+P1本地准备已完成；这是下一批的执行材料，不是部署或真实验收结果。候选标签为`20261101-r12`，源码取自当前工作区快照，尚无新Git提交。以[候选清单](../../../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/investigation-r12-preparation-20261101/candidate-manifest.json)的文件hash和[包记录](../../../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/investigation-r12-preparation-20261101/candidate.json)固定内容；后续源码变化须更新候选，不能沿用旧包声称包含新修复。
 
 ## 固定调用范围
 

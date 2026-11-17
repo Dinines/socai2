@@ -1,7 +1,6 @@
 """C6 final synthesis and atomic report/result publication on the claimed Run."""
 import asyncio
 import hashlib
-import json
 from uuid import UUID, uuid4, uuid5
 
 from sqlalchemy import insert, null, select, update
@@ -12,7 +11,8 @@ from . import baseline_evidence as evidence
 from . import baseline_graph_projection as graph_contract
 from .baseline_analysis import domain_block
 from .baseline_analysis_model import TenantChatGateway
-from .baseline_context import reference, retention_limit
+from .baseline_capacity import CAPACITY_FAILURES, capacity_failure
+from .baseline_context import reference
 from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Scope
 from .baseline_delivery_compat import normalize as normalize_delivery
 from .baseline_delivery_projection import make_publication, markdown
@@ -32,7 +32,7 @@ class BaselineDelivery(ModelSteps):
     async def bases(self, store, run_id):
         rows = (await store.db.execute(select(F).where(*store.where(F, F.c.run_id == run_id,
             F.c.kind == "source_snapshot", F.c.schema_version.in_([
-                evidence.SCHEMA, deep.SCHEMA, graph_contract.SCHEMA]))))).mappings().all()
+                evidence.SCHEMA, *deep.READ_SCHEMAS, graph_contract.SCHEMA]))))).mappings().all()
         if any(digest(r["content_json"]) != r["sha256"] for r in rows):
             raise StoreError("evidence_receipt_invalid")
         return sorted([r for r in rows if r["content_json"].get("type") in {
@@ -48,12 +48,17 @@ class BaselineDelivery(ModelSteps):
 
     async def comparison(self, store, run, context):
         rid = str(run["comparison_result_id"]) if run["comparison_result_id"] else None
+        selection = (context.update_context or {}).get("comparison_context")
         history = await store.one(select(RES.c.id).where(*store.where(RES, RES.c.case_id == run["case_id"])).limit(1))
         # C1 only freezes selected/adopted results. A failed, unadopted prior
         # Result still means this is not the first recorded investigation.
         meta = {"result_id": rid, "state": "not_selected" if history else "initial",
             "prior_scope": None, "added_alert_ids": [], "removed_alert_ids": [], "shared_alert_ids": [],
             "limitations": ["comparison_is_between_recorded_judgments_not_independent_evidence"]}
+        if selection is not None:
+            meta["state"] = selection["state"]
+            if selection["reason_code"]:
+                meta["limitations"].append(selection["reason_code"])
         if not rid:
             return meta, []
         meta["state"] = "unavailable"
@@ -101,7 +106,10 @@ class BaselineDelivery(ModelSteps):
                 raise StoreError("baseline_not_running")
             await self.idle(store, run_id)
             context = await store.read_context(case_id, run_id)
+            from .case_model_boundary import selected_profile
+            selected_profile(context)
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            capacity_reason = capacity_failure(steps) if context.query_preparation is not None else None
             dispatch_step = next((s for s in steps if s["stage_code"] == "C4.routing" and s["state"] == "completed"), None)
             if run["executor_version"] in FULL_EXECUTOR_VERSIONS and not dispatch_step:
                 raise StoreError("full_executor_followups_not_settled")
@@ -133,30 +141,28 @@ class BaselineDelivery(ModelSteps):
                        if previous is None else {}),
                     "followup_execution": execution}, lead_candidates=[*lead, *planned],
                 executed_plan_id=dispatch["initial_analysis_artifact_id"] if dispatch else None)
-            if prepared["ready"] and "followup_boundary" not in prepared:
-                prepared["source_states"] = json.loads(prepared["messages"][1]["content"])["source_states"]
             if dispatch_step:
                 prepared["input_artifact_ids"] = list(dict.fromkeys([*prepared["input_artifact_ids"],
                     dispatch["initial_analysis_artifact_id"], str(dispatch_step["output_artifact_id"])]))
             prepared["followup_dispatch"] = dispatch
-            parser = lambda content: contract.parse(content, prepared["source_map"], context, prepared["coverage"], comparison)
-            from .analysis_review import Review
-            review = Review("C6", prepared["source_map"], context, prepared["coverage"])
-            output_format = contract.delivery_format(prepared["source_map"], context, comparison)
-            if "followup_boundary" in prepared:
-                from .case_followup_output import FinalReview, final_format, parse_final
-                parser = lambda content: parse_final(content, prepared, context, comparison)
-                review = FinalReview(prepared, context, comparison)
-                output_format = final_format(prepared, context, comparison)
-            value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
-                stage_id, "C6", prepared, gateway, parser,
-                response_adapter=normalize_delivery,
-                review=review,
-                output_format=output_format)
+            from .citation_quality import new_review
+            citation_review = prepared["citation_review"] = new_review()
+            from .case_followup_output import FinalReview, final_format, parse_final
+            parser = lambda content: parse_final(content, prepared, context, comparison, citation_review=citation_review)
+            review = FinalReview(prepared, context, comparison)
+            output_format = final_format(prepared, context, comparison)
+            if capacity_reason:
+                value, reason, model_id, response_id = None, capacity_reason, None, None
+            else:
+                value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
+                    stage_id, "C6", prepared, gateway, parser,
+                    response_adapter=normalize_delivery,
+                    review=review, allow_correction=False,
+                    output_format=output_format)
             return await self.finish(tenant_id, case_id, run_id, stage_id, context, bases, key, graph,
                 comparison, prepared, value, reason, model_id, response_id)
-        except (Exception, asyncio.CancelledError):
-            await self.uncertain(tenant_id, case_id, run_id, stage_id)
+        except (Exception, asyncio.CancelledError) as exc:
+            await self.uncertain(tenant_id, case_id, run_id, stage_id, exc)
             raise
 
     async def finish(self, tenant_id, case_id, run_id, stage_id, context, bases, key, graph,
@@ -174,6 +180,9 @@ class BaselineDelivery(ModelSteps):
             members = {r["alert_id"]: r for r in rows}
             pub, limits = make_publication(value, context, members, prepared, comparison, graph,
                 uuid5(run_id, "socai2-C6-publication-v1"), reason)
+            if context.query_preparation is not None and reason in CAPACITY_FAILURES:
+                pub = pub.model_copy(update={"terminal_state": "failed", "stop_reason": "capacity_exceeded",
+                                            "stop_detail": reason})
             now = await store.now()
             from .baseline_evidence_index import publish_directory
             directory = await publish_directory(store, run, context, stage_id)
@@ -196,7 +205,7 @@ class BaselineDelivery(ModelSteps):
                     for finding in block["findings"]:
                         finding["scope"]["object_keys"] = []
                     block["limitations"] = [d.reason, *d.limitations,
-                        "shared_final_analysis_not_independent_expert_vote", "structure_scope_sources_checked_not_truth_proven"]
+                        "shared_final_analysis_not_independent_expert_vote", "structure_scope_checked_citations_recorded_not_truth_proven"]
                     domains[d.name] = str(await self.save(store, run, stage_id, block, "domain_analysis", refs))
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)).order_by(S.c.seq))).mappings().all()
             model_steps = [s for s in steps if s["kind"] == "model" and s["state"] not in {"planned", "skipped"}]
@@ -217,15 +226,15 @@ class BaselineDelivery(ModelSteps):
                 "result": pub.model_dump(mode="json"), "delivery": value.model_dump(mode="json") if value else None,
                 "source_map": prepared.get("source_map", {}), "comparison": comparison,
                 "validation_review": prepared.get("validation_review"), "correction_result": prepared.get("correction_result"),
+                "citation_review": prepared.get("citation_review"),
                 "evidence_directory": directory,
                 "program_facts": prepared.get("program_facts"),
                 "input_artifact_ids": prepared["input_artifact_ids"], "domain_artifact_ids": domains,
-                "execution": execution, "limitations": limits + ["structure_scope_sources_checked_not_truth_proven"],
+                "execution": execution, "limitations": limits + ["structure_scope_checked_citations_recorded_not_truth_proven"],
                 "captured_at": now.isoformat()}
-            if len(encoded(report)) > retention_limit():
-                raise StoreError("delivery_artifact_exceeds_retention_limit", 422)
             detail_id = await self.save(store, run, stage_id, report, "source_snapshot", refs)
             report_core = {"schema_version": contract.SCHEMA, "result_id": str(result_id),
+                "citation_review": report["citation_review"],
                 "program_facts": report["program_facts"],
                 **{k: report["result"][k] for k in ("title", "conclusion", "closing_note", "findings", "questions",
                     "recommendations", "case_impact")}}
@@ -253,8 +262,6 @@ class BaselineDelivery(ModelSteps):
 
     async def save_markdown(self, store, run, step_id, text, report_id, detail_id):
         body = text.encode("utf-8")
-        if len(body) > retention_limit():
-            raise StoreError("delivery_markdown_exceeds_retention_limit", 422)
         identity, sha = uuid4(), hashlib.sha256(body).hexdigest()
         await store.db.execute(insert(F).values(id=identity, tenant_id=store.tenant_id,
             case_id=run["case_id"], run_id=run["id"], step_id=step_id, kind="report_markdown",

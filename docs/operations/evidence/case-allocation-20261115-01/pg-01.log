@@ -1,0 +1,91 @@
+error ignored terminating <psycopg.AsyncPipeline [INERROR, pipeline=ON] (host=127.0.0.1 port=28412 user=postgres database=v12_upgrade_dev) at 0x10ac74050>: pipeline aborted
+Traceback (most recent call last):
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 949, in do_executemany
+    cursor.executemany(statement, parameters)
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 654, in executemany
+    return self.await_(self._cursor.executemany(query, params_seq))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/psycopg/cursor_async.py", line 148, in executemany
+    raise ex.with_traceback(None)
+psycopg.errors.NotNullViolation: null value in column "membership_source" of relation "incident_alerts" violates not-null constraint
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/lychee/Documents/project/socai2/docs/operations/evidence/case-allocation-20261115-01/validate.py", line 224, in <module>
+    asyncio.run(main(parser.parse_args()))
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/docs/operations/evidence/case-allocation-20261115-01/validate.py", line 90, in main
+    await store.db.execute(insert(m.IncidentAlerts), [{'id':uuid4(),'tenant_id':tenant,'incident_id':event,'alert_id':aid}
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/session.py", line 448, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2373, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2271, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/orm/bulk_persistence.py", line 1308, in orm_execute_statement
+    result = _bulk_insert(
+             ^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/orm/bulk_persistence.py", line 222, in _bulk_insert
+    result = persistence._emit_insert_statements(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 1049, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 949, in do_executemany
+    cursor.executemany(statement, parameters)
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg.py", line 654, in executemany
+    return self.await_(self._cursor.executemany(query, params_seq))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/psycopg/cursor_async.py", line 148, in executemany
+    raise ex.with_traceback(None)
+sqlalchemy.exc.IntegrityError: (psycopg.errors.NotNullViolation) null value in column "membership_source" of relation "incident_alerts" violates not-null constraint
+[SQL: INSERT INTO socai2.incident_alerts (id, tenant_id, incident_id, alert_id) VALUES (%(id)s::UUID, %(tenant_id)s::UUID, %(incident_id)s::UUID, %(alert_id)s::UUID)]
+[SQL parameters hidden due to hide_parameters=True]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)

@@ -13,7 +13,7 @@ from app.models.socai2 import RunSteps
 
 from . import baseline_enrichment_sources as sources
 from .baseline_context import SCHEMA as C1_SCHEMA
-from .baseline_context import reference, retention_limit
+from .baseline_context import reference
 from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Limits
 from .baseline_optional_sources import SourceUnavailable
 from .baseline_store import F, StoreError, digest, encoded
@@ -201,6 +201,7 @@ class BaselineEnrichment:
             await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(input_artifact_id=request_id))
         state, rows, captured, truncated = "skipped", None, now, False
         observed_rows, truncation_reasons = None, []
+        overflow_rows = []
         source_metadata = {}
         if reason is None:
             try:
@@ -215,13 +216,7 @@ class BaselineEnrichment:
                 if source_metadata.get("source_truncated_count", 0):
                     truncated = True
                     truncation_reasons.append("upstream_row_limit")
-                rows = rows[:args["limit"]]
-                # Whole rows only. Mark omitted rows; never clip JSON or a fact.
-                if len(encoded(rows)) > retention_limit():
-                    truncation_reasons.append("retained_row_bytes_limit")
-                while rows and len(encoded(rows)) > retention_limit():
-                    rows.pop()
-                    truncated = True
+                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
                 state = "completed"
             except TimeoutError:
                 state, reason, rows = "timeout", "source_deadline_exceeded", None
@@ -241,6 +236,8 @@ class BaselineEnrichment:
                 raise StoreError("baseline_not_running")
             result = {"schema_version": SCHEMA, "tool_name": source, "contract_version": sources.VERSION,
                 "actual_args": args, "state": state, "rows": rows,
+                "overflow_rows": overflow_rows, "observed_rows_in_bounded_fetch": observed_rows,
+                "truncation_reasons": truncation_reasons, "source_metadata": source_metadata,
                 "returned_rows": len(rows) if rows is not None else None, "truncated": truncated,
                 "query_id": "local-step:" + str(step_id) if state != "skipped" else None,
                 "error": error(reason, await store.now()) if reason else None, "captured_at": captured.isoformat()}

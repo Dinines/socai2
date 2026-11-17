@@ -164,8 +164,8 @@ node docs/operations/verify_investigation_pages_20261106.cjs --handoff
 | 本轮驱动/模型配置 | 31项定向通过；增加新批预算界限用例、补齐旧导出测试fixture。首次30过1失败是fixture缺Case tenant/scope新字段，修测试后通过，不是模型或数据库失败 |
 | 页面数据与导出回归 | [前批21后端/24前端及真实PG回执](../operations/evidence/page-data-20261106/summary.json)；21后端本轮复用，24前端在新增样例后复跑通过，不叠加成更多不同测试。见[本轮验证摘要](../operations/evidence/additional-tests-20261106/verification-summary.json) |
 | 原C6业务字段/系统收尾 | [限定汇总](../operations/evidence/investigation-repair-20261105/local-c6-business-fields-summary.json)及[前轮三案](../operations/evidence/investigation-repair-20261105/local-comparison-summary.json)；保最初失败 |
-| 旧21环境Kafka双模型/补充上下文 | [Kafka到结论记录](kafka-to-conclusion-validation-20261105.md)、[k4上下文](../operations/socai2-context-k4-20261105.json)；是历史m/k/r证据，未在本轮重跑，不混入本机63次 |
-| 旧协议/范围/预算回归 | [m3](../operations/socai2-schema-probe-m3-20261104.json)、[m4](../operations/socai2-schema-probe-m4-20261105.json)、[后续PG](../operations/socai2-followup-pg-20261105.json)、[当前审计](current-investigation-audit-20261105.md)；各自时点和替身/真实边界保持 |
+| 旧21环境Kafka双模型/补充上下文 | [Kafka到结论记录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/kafka-to-conclusion-validation-20261105.md)、[k4上下文](../operations/socai2-context-k4-20261105.json)；是历史m/k/r证据，未在本轮重跑，不混入本机63次 |
+| 旧协议/范围/预算回归 | [m3](../operations/socai2-schema-probe-m3-20261104.json)、[m4](../operations/socai2-schema-probe-m4-20261105.json)、[后续PG](../operations/socai2-followup-pg-20261105.json)、[当前审计](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-investigation-audit-20261105.md)；各自时点和替身/真实边界保持 |
 
 本轮新增校验器的初次不一致也保留：页面校验曾把assessment包装层及分开的工件元数据/正文误当整行比较；补充GET校验曾把decimal字符串和数字直接比较。已修校验器并对同一原件复核，没有修改业务结果。两次中间数值校验和首次页面回执保存在本批evidence目录。报告脚本首轮7项Ruff问题已修；不是产品运行失败。
 

@@ -1,0 +1,188 @@
+{
+  "schema_version": "socai2.acceptance-task4-source-review.v1",
+  "reviewed_at": "2026-11-17T17:43:17.206398+08:00",
+  "status": "criteria_and_source_gaps_recorded",
+  "scope": "Task4a planning and read-only source review only; no environment acceptance",
+  "plan": "openspec/changes/schedule-streaming-investigation-updates/full-flow-test-plan-20261115.md",
+  "plan_sha256": "c853fd04ed40ea2e614cc51e5d024b580ca97433bdb6177138bbaec83b6545ed",
+  "phase_order": [
+    "4a material and environment readiness",
+    "4b first-part real execution",
+    "4c explicit append, report, workbench and limited independent review"
+  ],
+  "suggested_minimum": {
+    "parts": 2,
+    "alerts_per_part": 1,
+    "context_counts_to_freeze": [
+      2,
+      1
+    ],
+    "incident_scoped_cases": 1,
+    "expected_members": [
+      1,
+      2
+    ],
+    "new_execution_identity": true,
+    "time_policy": "preserve"
+  },
+  "reviewed_sources": [
+    {
+      "path": "tools/testdata/acceptance_clients.py",
+      "sha256": "434b67430fab248e411c5d4909ff5d9c73546096177e92142bbdbb3ba3d2da89"
+    },
+    {
+      "path": "tools/testdata/acceptance_run.py",
+      "sha256": "b0488f7f01a38d86821112e30e0fb25f62677fccd3af10915883a3ca879f8aa5"
+    },
+    {
+      "path": "tools/testdata/acceptance_append.py",
+      "sha256": "4110b3653644509bd849f6a7effd0fe77cb75e25a5c727553b8cdf3f8a3a15d9"
+    },
+    {
+      "path": "tools/testdata/acceptance_contract.py",
+      "sha256": "9f0821db2f715ebff96af3d5f6da70e7add664e02b2770a6a86e03230c17078b"
+    },
+    {
+      "path": "tools/testdata/acceptance_runtime_contract.py",
+      "sha256": "a125c2a483aa06b144289ed0cf93b329f8dbb42f33c3c00b6a839dd2a060e134"
+    },
+    {
+      "path": "tools/testdata/acceptance_report.py",
+      "sha256": "b12eb353a04d50d4730a7b4f21cb6360b680ef810f06b0becdc7131a5402bb9f"
+    },
+    {
+      "path": "tools/testdata/acceptance_report_render.py",
+      "sha256": "6b22501744016e6e17773b719230a5995aef01fcc88e441a7b4f493092830a0a"
+    },
+    {
+      "path": "tools/testdata/acceptance_console.py",
+      "sha256": "130eb5ff5b7fe204198276b0c865ceb523975fa72ab0b8e98e2bf058cb37179f"
+    },
+    {
+      "path": "services/investigation_test/web/viewer.js",
+      "sha256": "4611467c45504e7e916792f3209d4dc667e6096a0f41befa9050d2ff51803bf0"
+    },
+    {
+      "path": "services/investigation_test/web/viewer_state.mjs",
+      "sha256": "7a4ff32562a2f82bbe96e625e646f9bbdedb1eced64baa93c3444908b073004e"
+    },
+    {
+      "path": "services/investigation_test/viewer.py",
+      "sha256": "6412259c6f79787bbdca532f1d363095da61fa9bb31171ed2c96751978080dcf"
+    },
+    {
+      "path": "deploy/investigation-test/acceptance.compose.yml",
+      "sha256": "871341f63768c58c936e016801fcb5c7012a9c152f56cc6fcc87f5f5466cf8a0"
+    },
+    {
+      "path": "deploy/investigation-test/acceptance-config.example/profile.json",
+      "sha256": "9ad72ffe53417baf6bdb68fbea99dcfbcb1b1abf9757fae570a22dbb631dbf5e"
+    },
+    {
+      "path": "deploy/investigation-test/acceptance-docker.md",
+      "sha256": "aae249944738fe3996183e2fc73cb0296fbd06774d7f3a1a4a5eb81e5b6bac2c"
+    }
+  ],
+  "findings": [
+    {
+      "id": "T4-PREP-01",
+      "kind": "configuration_and_readiness",
+      "fact": "Compose selects network explicitly. Connections.open checks PostgreSQL database/user, Kafka configuration equality and Fusion ready plus an alerts GET. It does not establish broker reachability, inspect Redis/model effective configuration or verify the deployed source version.",
+      "minimum": "Provide a concrete target profile and read-only evidence from the intended Docker network, including advertised Kafka endpoints, required PG/lake fields and existing service readiness. No new generic health framework is needed.",
+      "sources": [
+        {
+          "path": "tools/testdata/acceptance_clients.py",
+          "line": 212
+        },
+        {
+          "path": "deploy/investigation-test/acceptance.compose.yml",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "id": "T4-PREP-02",
+      "kind": "report_to_viewer_missing",
+      "fact": "Saved report renders subject/Run IDs and local original links. Current profile has no viewer address and viewer startup does not consume subject/Run URL selection.",
+      "minimum": "Configure the browser-facing viewer URL, generate links from saved real identities, and select the matching subject and exact Run through existing read-only HTTP. Invalid or missing requested identity must not silently select latest.",
+      "sources": [
+        {
+          "path": "tools/testdata/acceptance_contract.py",
+          "line": 66
+        },
+        {
+          "path": "tools/testdata/acceptance_report_render.py",
+          "line": 48
+        },
+        {
+          "path": "services/investigation_test/web/viewer.js",
+          "line": 581
+        },
+        {
+          "path": "services/investigation_test/web/viewer.js",
+          "line": 173
+        }
+      ]
+    },
+    {
+      "id": "T4-PREP-03",
+      "kind": "test_source_annotation_missing",
+      "fact": "Purple test annotation is derived from test-api batch operation mappings. Acceptance run/append/report currently do not automatically generate or publish those source mappings; business subjects themselves remain independently readable.",
+      "minimum": "Reuse existing source publication/identity mapping with data automatically derived from saved execution; do not require a hand-written ledger, change Case fields or make the source annotation determine business success.",
+      "sources": [
+        {
+          "path": "services/investigation_test/web/viewer.js",
+          "line": 181
+        },
+        {
+          "path": "tools/testdata/acceptance_report.py",
+          "line": 157
+        }
+      ]
+    },
+    {
+      "id": "T4-PREP-04",
+      "kind": "do_not_use_execution_as_readiness_probe",
+      "fact": "execute_part creates runs/<part> before preflight, and run.execute continues directly into context publication. A failed preflight leaves an incomplete execution that cannot be replayed.",
+      "minimum": "Keep task4a readiness observations outside run/append execution. Do not delete a failed part directory to reuse it or call the execution path solely to check connectivity.",
+      "sources": [
+        {
+          "path": "tools/testdata/acceptance_run.py",
+          "line": 256
+        },
+        {
+          "path": "tools/testdata/acceptance_run.py",
+          "line": 127
+        }
+      ]
+    }
+  ],
+  "environment_evidence": {
+    "provenance": "current handoff and coordinator request, not a new runtime observation",
+    "target_21": "processing/HTTP r4, viewer r6 old layout; local C1 fix and new workbench absent per handoff",
+    "local_candidate": "requires explicit selection and renewed readiness evidence; not substituted for 21",
+    "actual_profile": "not_supplied_for_independent_review",
+    "new_material_freeze": "not_supplied_for_independent_review",
+    "ready_for_4b": "not_verified"
+  },
+  "actions": {
+    "product_edits": 0,
+    "remote_environment_checks": 0,
+    "business_http_requests": 0,
+    "kafka_sends": 0,
+    "new_model_calls": 0,
+    "business_writes": 0,
+    "service_lifecycle_actions": 0,
+    "cleanup": 0,
+    "deployment": 0
+  },
+  "not_covered": [
+    "actual container-network or target-service readiness",
+    "task4 new material validation/preparation",
+    "4b/4c execution",
+    "21 deployment/readback",
+    "model body quality",
+    "D5/D6 or whole change completion"
+  ],
+  "conclusion": "Source review and necessary criteria are recorded. Task4a environment/material acceptance awaits implementation evidence; no real execution or deployment is implied."
+}

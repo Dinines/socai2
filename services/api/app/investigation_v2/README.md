@@ -1,18 +1,18 @@
-**2026-11-03基础调查待更新：** Case成员变化同事务新增/更新Run表中的baseline/pending_update记录；领取时提交running并冻结，然后才调用执行器。每Case最多一条活跃基础调查及一条待更新记录；不含周期领取或结束自动接续。需要迁移122，尚未应用。53个本地用例通过，7个新增PG事务测试和18个既有DB测试跳过，真实并发未验。[字段、接口与边界](../../../../docs/investigation/baseline-execution-record-20261103.md)。
+**2026-11-03基础调查待更新：** Case成员变化同事务新增/更新Run表中的baseline/pending_update记录；领取时提交running并冻结，然后才调用执行器。每Case最多一条活跃基础调查及一条待更新记录；不含周期领取或结束自动接续。需要迁移122，尚未应用。53个本地用例通过，7个新增PG事务测试和18个既有DB测试跳过，真实并发未验。[字段、接口与边界](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/baseline-execution-record-20261103.md)。
 
-**2026-10-28公共查询：** execution_index提供统一业务筛选和原生结果地址；case_navigation/case_evidence提供报告引用、证据、调用步骤和来源行跳转，仅读已存材料。[接口和验证](../../../../docs/investigation/execution-index-and-evidence-20261028.md)。
+**2026-10-28公共查询：** execution_index提供统一业务筛选和原生结果地址；case_navigation/case_evidence提供报告引用、证据、调用步骤和来源行跳转，仅读已存材料。[接口和验证](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/execution-index-and-evidence-20261028.md)。
 
-**2026-10-28多告警分析：** case_synthesis提供逐成员判断、关联引用校验、来源时间线和未决问题，接入case_analysis的现有输出及报告。[字段和验证](../../../../docs/investigation/multi-alert-synthesis-20261028.md)。
+**2026-10-28多告警分析：** case_synthesis提供逐成员判断、关联引用校验、来源时间线和未决问题，接入case_analysis的现有输出及报告。[字段和验证](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/multi-alert-synthesis-20261028.md)。
 
-**2026-10-28产品Tool：** case_product_tools绑定选定告警的精确CrowdStrike连接器，以现有Actions HTTP读取当前主机详情；Case预览、模型循环、证据及报告已接通。[合同和验证](../../../../docs/investigation/product-host-tool-20261028.md)。
+**2026-10-28产品Tool：** case_product_tools绑定选定告警的精确CrowdStrike连接器，以现有Actions HTTP读取当前主机详情；Case预览、模型循环、证据及报告已接通。[合同和验证](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/product-host-tool-20261028.md)。
 
-**2026-10-28告警/事件关联：** application:create_app组合当前告警、事件、Case、成员关联和query路由，不依赖旧program网关配置。新增alert_context_api、事件investigations GET及include_investigations手动概况参数；[接口与范围](../../../../docs/investigation/alert-event-investigation-links-20261028.md)。
+**2026-10-28告警/事件关联：** application:create_app组合当前告警、事件、Case、成员关联和query路由，不依赖旧program网关配置。新增alert_context_api、事件investigations GET及include_investigations手动概况参数；[接口与范围](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/alert-event-investigation-links-20261028.md)。
 
-**2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。当批范围从已有Case开始，F5不属该批目标；[接口与调用例子](../../../../docs/investigation/case-first-version-20261028.md)。
+**2026-10-28 Case初版：** case_analysis_api新增材料预览、步骤列表/详情、报告下载；investigate支持previous_run_id追加问题及refresh_queries跳过历史查询复用。使用原ledger，无新迁移。当批范围从已有Case开始，F5不属该批目标；[接口与调用例子](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/case-first-version-20261028.md)。
 
-**2026-10-28：** 新增case_links_api的成员转Case及关联读取、case_history的新版Case历史列表，均注册到Case独立factory及program_result/start组合。需要迁移121（尚未执行），[实现与5项直接验证](../../../../docs/investigation/case-linking-20261028.md)。
+**2026-10-28：** 新增case_links_api的成员转Case及关联读取、case_history的新版Case历史列表，均注册到Case独立factory及program_result/start组合。需要迁移121（尚未执行），[实现与5项直接验证](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/case-linking-20261028.md)。
 
-**2026-10-27当前路径说明：** F1/F2 Incident及F3 Case已在本包实现。F3由本API进程直接执行模型/查询循环，使用自己的Case路由和原ledger，不走旧fixed/program结果网关或Agents M3。完整接口/数据/验证边界见[当前实现详解](../../../../docs/investigation/current-implementation-reference-20261027.md)，文档与证据见[审计导航](../../../../docs/investigation/audit-guide-20261027.md)。下方旧阶段“下一步/仅query”等按原记录解释。
+**2026-10-27当前路径说明：** F1/F2 Incident及F3 Case已在本包实现。F3由本API进程直接执行模型/查询循环，使用自己的Case路由和原ledger，不走旧fixed/program结果网关或Agents M3。完整接口/数据/验证边界见[当前实现详解](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-implementation-reference-20261027.md)，文档与证据见[审计导航](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-guide-20261027.md)。下方旧阶段“下一步/仅query”等按原记录解释。
 
 `program_result_api.create_app`是新的显式兼容读factory，独立COMPAT_READ_URL/TOKEN，只读known fixed/program DTO，旧factory保持。原Bearer前置及cases/alerts双read权限、当前tenant/user_id转发；完整manifest/execution/candidate/材料版本与hash校验，1MiB有界后解析/单GET无fallback。105直接/独立、8hash/34离线回放限定通过；未知数量/范围保null，不混原声明与确认状态。回执docs/operations/investigation-compatible-gateway-20261025.json；仍无实际部署或启动入口，双进程离线组合d4与a4.2准入后续。
 

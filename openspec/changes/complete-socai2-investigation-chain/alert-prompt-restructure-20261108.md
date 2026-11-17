@@ -1,6 +1,6 @@
 # 五字段任务指令：基于原文的结构整理
 
-2026-11-08，用户进一步要求从原五字段文案出发，参考 OpenAI / Anthropic（Claude）官方提示词工程实践改善混乱的结构。交付[独立候选 v3](../../../tools/testdata/alert_prompt_eval/five-field-system-v3.txt)，保留 v1/v2 原件。用户随后要求不再展示旧对照、做本版一轮测试，已完成9次独立调用，格式通过但正文质量未通过，见[本轮结果](alert-prompt-validation-20261108.md)；生产分诊未切换。
+2026-11-08，用户进一步要求从原五字段文案出发，参考 OpenAI / Anthropic（Claude）官方提示词工程实践改善混乱的结构。交付[独立候选 v3](../../../tools/testdata/alert_prompt_eval/five-field-system-v3.txt)，保留 v1/v2 原件。用户随后要求不再展示旧对照、做本版一轮测试，已完成9次独立调用，格式通过但正文质量未通过，见[本轮结果](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/alert-prompt-validation-20261108.md)；生产分诊未切换。
 
 ## 设计依据
 

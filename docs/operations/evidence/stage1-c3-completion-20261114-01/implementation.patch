@@ -1,0 +1,715 @@
+--- before/services/api/app/socai2/baseline_analysis.py
++++ services/api/app/socai2/baseline_analysis.py
+@@ -217,16 +217,23 @@
+                 review = case_output_adapter.CaseReview(prepared, context, bindings)
+                 parser = lambda content: case_output_adapter.parse(content, prepared, context, bindings, citation_review=citation_review)
+             phase = "model_dispatch_and_review"
+-            analysis, rejection, model_id, response_id = await ModelSteps(self.service, self.schema).call(
++            outcome = await ModelSteps(self.service, self.schema).call(
+                 tenant_id, case_id, run_id, stage_id, "C3", call_input, gateway, parser,
+                 output_format=fmt, wire_transform=compact_execution_wire if bindings is not None else None,
+                 review=review, allow_correction=False)
++            if use_boundary:
++                from .case_c3_completion_flow import complete_sections
++                outcome = await complete_sections(self.service, tenant_id, case_id, run_id, stage_id,
++                    call_input, context, bindings, fmt, gateway, outcome, schema=self.schema)
++            analysis, rejection, model_id, response_id = outcome
+             phase = "response_publication"
+             return await self.finish(tenant_id, case_id, run_id, stage_id, model_id,
+                 "completed" if analysis else "failed" if model_id else "skipped", rejection, refs,
+                 analysis=analysis, source_map=source_map, context=context, response_id=response_id,
+                 basis={"binding_map": bindings, "unoffered_bindings": excluded,
+                     "citation_review": citation_review,
++                    **({"section_completion": call_input["section_completion_result"]}
++                       if "section_completion_result" in call_input else {}),
+                     "validation_review": call_input.get("validation_review"),
+                     "correction_result": call_input.get("correction_result")})
+         except (Exception, asyncio.CancelledError) as exc:
+--- before/services/api/app/socai2/baseline_analysis_contract.py
++++ services/api/app/socai2/baseline_analysis_contract.py
+@@ -136,8 +136,20 @@
+         if isinstance(exc, AnalysisRejected):
+             raise
+         raise AnalysisRejected("analysis_shape_invalid") from None
++    return validate_analysis(analysis, source_map, context, coverage, bindings=bindings,
++                             citation_review=citation_review, root_path=root_path)
++
++
++def validate_analysis(analysis, source_map, context, coverage, *, bindings=None, citation_review=None,
++                      root_path="$", sections=None, question_ids=None):
++    """The same identity/execution checks also validate complete retained C3 sections."""
++    path = root_path
++    sections = set(Analysis.model_fields) if sections is None else set(sections)
+     member_ids = set(context.alerts)
+-    question_ids = {q.id for q in context.questions}
++    question_ids = {q.id for q in context.questions} if question_ids is None else set(question_ids)
++
++    def fail(code):
++        reject_or_record(citation_review, code, path)
+ 
+     def unique(values, code):
+         if len(values) != len(set(values)):
+@@ -168,7 +180,7 @@
+ 
+     ids = [str(m.alert_id) for m in analysis.members]
+     unique(ids, "duplicate_member_delivery")
+-    if set(ids) != member_ids:
++    if "members" in sections and set(ids) != member_ids:
+         fail("member_delivery_incomplete")
+     for index, item in enumerate(analysis.members):
+         path = f"{root_path}.members.{index}"
+@@ -180,7 +192,7 @@
+             fail("member_limitations_required")
+     ids = [q.id for q in analysis.questions]
+     unique(ids, "duplicate_question")
+-    if set(ids) != question_ids:
++    if "questions" in sections and set(ids) != question_ids:
+         fail("question_coverage_incomplete")
+     for index, item in enumerate(analysis.questions):
+         path = f"{root_path}.questions.{index}"
+@@ -213,7 +225,7 @@
+             fail("finding_limitations_required")
+     names = [d.name for d in analysis.domains]
+     unique(names, "duplicate_domain")
+-    if set(names) != set(DOMAINS):
++    if "domains" in sections and set(names) != set(DOMAINS):
+         fail("domain_coverage_incomplete")
+     finding_lookup = {f.id: f for f in analysis.findings}
+     for index, item in enumerate(analysis.domains):
+--- before/services/api/app/socai2/baseline_delivery.py
++++ services/api/app/socai2/baseline_delivery.py
+@@ -115,6 +115,11 @@
+                 and s["state"] == "completed"]
+             previous_step = max(successful, key=lambda s: s["seq"]) if successful else None
+             previous = await self.read_artifact(store, run_id, previous_step["output_artifact_id"]) if previous_step else None
++            if previous is None and initial_plan and (initial_plan.get("basis", {}).get("section_completion") or {}).get("retained_analysis"):
++                # A bounded C3 completion can retain useful fields without a
++                # complete/executable plan. C6 sees those fields as partial prior analysis.
++                previous = initial_plan
++                previous_step = next(s for s in steps if str(s["output_artifact_id"]) == dispatch["initial_analysis_artifact_id"])
+             bases = await self.bases(store, run_id)
+             graph = self.current_graph(bases)
+             await self.read_artifact(store, run_id, UUID(graph["graph_artifact_id"]))
+--- before/services/api/app/socai2/baseline_reasoning.py
++++ services/api/app/socai2/baseline_reasoning.py
+@@ -210,6 +210,8 @@
+                 request["payload"]["tool_presentation"] = prepared.get("tool_presentation")
+             if "followup_boundary" in prepared:
+                 request["payload"]["followup_boundary"] = prepared["followup_boundary"]
++            if "section_completion" in prepared:
++                request["payload"]["section_completion"] = prepared["section_completion"]
+             refs = [reference("artifact", UUID(i), "execution_receipt") for i in prepared["input_artifact_ids"]]
+             request_id = await self.save(store, run, model_id, request, "model_request", refs)
+             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
+--- before/services/api/app/socai2/case-input-v1.json
++++ services/api/app/socai2/case-input-v1.json
+@@ -2090,5 +2090,56 @@
+       "selected_comparison": "指定比较基线",
+       "current_assessment": "当前采用判断"
+     }
++  },
++  "c3_completion": {
++    "version": "socai2.c3-completion.v1",
++    "max_attempts": 1,
++    "instruction": "这是同一次C3的唯一补答。仅返回{missing}的完整JSON字段及其子结构，不带围栏、不续写半句、不返回或修改其余已完成字段。程序另行保留并合并已完成内容。重带材料及短号沿用初答；标为prior_analysis的是前次模型分析，不是新增事实或独立证据。按本次Schema与原成员/问题/领域/来源/工具绑定作答，不要求凑发现或补查；取不到的材料保留待核，不虚构工具或已执行动作。",
++    "dependencies": {
++      "summary": [
++        "members",
++        "findings",
++        "questions",
++        "domains",
++        "conflicts",
++        "followups"
++      ],
++      "members": [
++        "findings",
++        "questions",
++        "conflicts"
++      ],
++      "findings": [
++        "members",
++        "questions",
++        "domains",
++        "conflicts"
++      ],
++      "questions": [
++        "summary",
++        "members",
++        "findings",
++        "conflicts"
++      ],
++      "domains": [
++        "members",
++        "findings",
++        "questions",
++        "conflicts"
++      ],
++      "conflicts": [
++        "findings",
++        "questions",
++        "domains"
++      ],
++      "followups": [
++        "summary",
++        "members",
++        "findings",
++        "questions",
++        "domains",
++        "conflicts"
++      ]
++    }
+   }
+ }
+--- before/services/api/app/socai2/case_followup_input.py
++++ services/api/app/socai2/case_followup_input.py
+@@ -361,6 +361,8 @@
+     from .case_citation_quality import accepted, with_note
+     if previous and previous.get("analysis") and not accepted(previous):
+         raise StoreError("unaccepted_prior_analysis", 422)
++    completion = (previous or {}).get("basis", {}).get("section_completion") or {}
++    partial = completion.get("retained_analysis") if stage == "C6" and completion.get("state") == "incomplete" else None
+     task_selection = stage in cfg.get("followup_input_selection", {}).get("stages", [])
+     question = next((q for q in context.questions if q.id == question_id), None) if stage == "Deep" else None
+     if stage == "Deep" and question is None:
+@@ -376,6 +378,8 @@
+             selected_analysis = selection.prior(previous["analysis"], question, lead, prior_id, cfg,
+                 selection_omissions, program_owned=enabled(base["case_boundary"]))
+             required.extend(selection.references(selected_analysis, previous["source_map"]))
++        if partial:
++            required.extend(selection.references(partial, previous["source_map"]))
+         if stage == "C6":
+             for artifact in artifacts.values():
+                 payload = artifact.get("content_json") or {}
+@@ -443,6 +447,16 @@
+         value = with_note(reg.rebind(analysis, previous["source_map"], str(prior_id)), previous)
+         prior_visible = reg.add(reference("artifact", prior_id, "prior_analysis", "$.analysis"), value,
+                                 sorted(context.alerts), "C3", original=previous["analysis"])
++    elif partial:
++        analysis = copy.deepcopy(partial)
++        for followup in analysis.get("followups", []):
++            for key in policy["prior_followup_omit"]:
++                followup.pop(key, None)
++        value = with_note(reg.rebind(analysis, previous["source_map"], str(prior_id)),
++                          {"citation_review": completion.get("retained_citation_review")})
++        value.update(completion_state="incomplete", missing_sections=completion["missing_fields"])
++        prior_visible = reg.add(reference("artifact", prior_id, "prior_analysis", "$.basis.section_completion.retained_analysis"),
++                                value, sorted(context.alerts), "C3", original=partial)
+     for row in lead:
+         value = copy.deepcopy(row["entry"]["value"])
+         original, context_meta = row["original"], {}
+@@ -564,7 +578,9 @@
+     if metadata.get("graph_state") in {"not_built", "stale"}:
+         blocks.append(cfg["followup_input_selection"]["graph_unavailable_text"] if task_selection else
+                       "[图谱限制] " + metadata["graph_state"] + "；未提供可用的当前派生图，不表示没有关联。")
+-    if prior_visible is None:
++    if partial:
++        blocks.append("C3仅完成已列出的部分；缺失部分没有结论，补查建议未经完整计划接收或执行。请结合冻结事实独立收尾，保留前序原文及其局限。")
++    elif prior_visible is None:
+         blocks.append("没有可用的C3判断；需根据现有材料独立分析，不能假装已承接初步结论。")
+     presentation = []
+     shared, shared_omits = shared_fields(
+--- before/services/api/app/socai2/case_model_boundary.py
++++ services/api/app/socai2/case_model_boundary.py
+@@ -101,6 +101,7 @@
+     for replacement in profile.config["system_replacements"]:
+         system = system.replace(replacement["old"], replacement["new"])
+     system += "\n" + profile.config["citation_instruction"]
++    completion_system = system + "\n" + profile.config["program_output"]["instruction"]
+     system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"])).replace(
+         "{max_findings}", str(output["max_findings"]))
+     system += "\n" + profile.config["program_output"]["instruction"]
+@@ -118,6 +119,7 @@
+         "coverage": prepared["coverage"], "omissions": prepared["omissions"],
+         "source_state_ledger": states, "case_boundary": {"profile": profile.identity, "max_followups": output["max_followups"],
+             "c3_output": {key: output[key] for key in ("version", "max_findings")},
++            "c3_completion": {**profile.config["c3_completion"], "system": completion_system},
+             "program_output": profile.config["program_output"]["version"],
+             **({"coverage_facts": initial_coverage(prepared, len(context.alerts))}
+                if profile.config["program_output"].get("c3_coverage") else {}),
+--- before/services/api/app/socai2/case_output_adapter.py
++++ services/api/app/socai2/case_output_adapter.py
+@@ -95,18 +95,22 @@
+     return restore(json.dumps(value, ensure_ascii=False), boundary)
+ 
+ 
++def restore_aliases(value, boundary):
++    members = {v: k for k, v in boundary["member_aliases"].items()}
++    objects = {v: k for k, v in boundary["object_aliases"].items()}
++    for member in value.get("members", []):
++        member["alert_id"] = members[member["alert_id"]]
++    for key in ("findings", "domains", "followups"):
++        for item in value.get(key, []):
++            item["alert_ids"] = [members[aid] for aid in item["alert_ids"]]
++            if key == "followups":
++                item["object_keys"] = [objects[obj] for obj in item["object_keys"]]
++
++
+ def restore(content, boundary):
+     value = decode(content)
+-    members = {v: k for k, v in boundary["member_aliases"].items()}
+-    objects = {v: k for k, v in boundary["object_aliases"].items()}
+     try:
+-        for member in value["members"]:
+-            member["alert_id"] = members[member["alert_id"]]
+-        for key in ("findings", "domains", "followups"):
+-            for item in value[key]:
+-                item["alert_ids"] = [members[aid] for aid in item["alert_ids"]]
+-                if key == "followups":
+-                    item["object_keys"] = [objects[obj] for obj in item["object_keys"]]
++        restore_aliases(value, boundary)
+         contract.ExecutionAnalysis.model_validate(value)
+     except (KeyError, TypeError, ValidationError) as exc:
+         raise contract.AnalysisRejected("case_output_shape_or_alias_invalid") from exc
+--- before/services/api/app/socai2/runtime_policy.py
++++ services/api/app/socai2/runtime_policy.py
+@@ -71,6 +71,23 @@
+     def identity(self):
+         return {"version": self.version, "sha256": self.sha256,
+                 "business_sha256": hashlib.sha256(self.business_raw).hexdigest()}
++
++
++C3_COMPLETION_VERSION = "socai2.c3-completion.v1"
++C3_SECTIONS = ("summary", "members", "findings", "questions", "domains", "conflicts", "followups")
++
++
++def validate_c3_completion(policy, *, frozen=False):
++    keys = {"version", "max_attempts", "instruction", "dependencies"} | ({"system"} if frozen else set())
++    if (not isinstance(policy, dict) or set(policy) != keys or policy.get("version") != C3_COMPLETION_VERSION
++            or type(policy.get("max_attempts")) is not int or policy["max_attempts"] != 1
++            or not isinstance(policy.get("instruction"), str) or "{missing}" not in policy["instruction"]
++            or not isinstance(policy.get("dependencies"), dict) or set(policy["dependencies"]) != set(C3_SECTIONS)
++            or any(not isinstance(v, list) or any(k not in C3_SECTIONS for k in v) or len(v) != len(set(v))
++                   for v in policy["dependencies"].values())
++            or (frozen and (not isinstance(policy.get("system"), str) or not policy["system"].strip()))):
++        raise ValueError("case_c3_completion_policy_invalid")
++
+ 
+ 
+ def load_case_profile(selection):
+@@ -104,6 +121,7 @@
+             or any(field not in output["instruction"] for field in ("{max_findings}", "{max_followups}"))):
+         # 24/12 are existing storage capacities, not runtime defaults.
+         raise ValueError("case_c3_output_policy_invalid")
++    validate_c3_completion(data.get("c3_completion"))
+     program = data.get("program_output")
+     if (not isinstance(program, dict) or not {"version", "instruction"} <= set(program)
+             or set(program) - {"version", "instruction", "c3_coverage"}
+--- before/services/api/app/socai2/case_c3_sections.py
++++ services/api/app/socai2/case_c3_sections.py
+@@ -0,0 +1,170 @@
++"""Read complete top-level JSON values from a C3 reply; never repair a value."""
++import json
++
++from .baseline_analysis_contract import AnalysisRejected
++from .runtime_policy import C3_SECTIONS as SECTIONS
++
++
++class Incomplete(Exception):
++    pass
++
++
++class Reader:
++    def __init__(self, text):
++        self.text, self.pos = text, 0
++        self.values, self.spans = {}, {}
++        self.close_only = False
++
++    def peek(self):
++        return self.text[self.pos:self.pos + 1]
++
++    def space(self):
++        while self.peek() and self.peek() in " \t\r\n":
++            self.pos += 1
++
++    def need(self, char):
++        self.space()
++        if not self.peek():
++            raise Incomplete
++        if self.peek() != char:
++            raise AnalysisRejected("c3_completion_json_invalid")
++        self.pos += 1
++
++    def string(self):
++        start = self.pos
++        self.need('"')
++        while self.peek():
++            char = self.peek()
++            self.pos += 1
++            if char == '"':
++                return json.loads(self.text[start:self.pos])
++            if ord(char) < 32:
++                raise AnalysisRejected("c3_completion_json_invalid")
++            if char == "\\":
++                if not self.peek():
++                    raise Incomplete
++                escape = self.peek()
++                self.pos += 1
++                if escape == "u":
++                    for _ in range(4):
++                        if not self.peek():
++                            raise Incomplete
++                        if self.peek() not in "0123456789abcdefABCDEF":
++                            raise AnalysisRejected("c3_completion_json_invalid")
++                        self.pos += 1
++                elif escape not in '"\\/bfnrt':
++                    raise AnalysisRejected("c3_completion_json_invalid")
++        raise Incomplete
++
++    def number(self):
++        if self.peek() == "-":
++            self.pos += 1
++        if not self.peek():
++            raise Incomplete
++        if self.peek() == "0":
++            self.pos += 1
++        elif self.peek() in "123456789":
++            while self.peek() and self.peek() in "0123456789":
++                self.pos += 1
++        else:
++            raise AnalysisRejected("c3_completion_json_invalid")
++        for marker in (".", "eE"):
++            if self.peek() and self.peek() in marker:
++                self.pos += 1
++                if marker == "eE" and self.peek() and self.peek() in "+-":
++                    self.pos += 1
++                if not self.peek():
++                    raise Incomplete
++                if self.peek() not in "0123456789":
++                    raise AnalysisRejected("c3_completion_json_invalid")
++                while self.peek() and self.peek() in "0123456789":
++                    self.pos += 1
++
++    def value(self):
++        self.space()
++        char = self.peek()
++        if not char:
++            raise Incomplete
++        if char == '"':
++            self.string()
++        elif char == "{":
++            self.object()
++        elif char == "[":
++            self.pos += 1
++            self.space()
++            if self.peek() == "]":
++                self.pos += 1
++                return
++            while True:
++                self.value()
++                self.space()
++                if self.peek() == "]":
++                    self.pos += 1
++                    return
++                self.need(",")
++        elif char in "-0123456789":
++            self.number()
++        else:
++            literal = {"t": "true", "f": "false", "n": "null"}.get(char)
++            if literal is None:
++                raise AnalysisRejected("c3_completion_json_invalid")
++            tail = self.text[self.pos:self.pos + len(literal)]
++            if not literal.startswith(tail):
++                raise AnalysisRejected("c3_completion_json_invalid")
++            if len(tail) < len(literal):
++                raise Incomplete
++            self.pos += len(literal)
++
++    def object(self, *, root=False):
++        self.need("{")
++        self.space()
++        if self.peek() == "}":
++            self.pos += 1
++            return
++        seen = set()
++        while True:
++            self.space()
++            key = self.string()
++            if key in seen:
++                raise AnalysisRejected("duplicate_json_key")
++            seen.add(key)
++            if root and key not in SECTIONS:
++                raise AnalysisRejected("c3_completion_extra_section")
++            self.need(":")
++            self.space()
++            start = self.pos
++            self.value()
++            if root:
++                self.values[key] = json.loads(self.text[start:self.pos])
++                self.spans[key] = [start, self.pos]
++            self.space()
++            if self.peek() == "}":
++                self.pos += 1
++                return
++            if root and not self.peek():
++                self.close_only = set(self.values) == set(SECTIONS)
++            self.need(",")
++
++
++def read_sections(content):
++    if not isinstance(content, str):
++        raise AnalysisRejected("c3_completion_json_invalid")
++    reader = Reader(content)
++    closed = False
++    try:
++        reader.object(root=True)
++        reader.space()
++        if reader.peek():
++            raise AnalysisRejected("c3_completion_json_invalid")
++        closed = True
++    except Incomplete:
++        pass
++    except (RecursionError, ValueError) as exc:
++        if isinstance(exc, AnalysisRejected):
++            raise
++        raise AnalysisRejected("c3_completion_json_invalid") from None
++    missing = [key for key in SECTIONS if key not in reader.values]
++    if not reader.values or (not missing and not closed and not reader.close_only):
++        raise AnalysisRejected("c3_completion_no_reliable_sections")
++    return {"retained": reader.values, "missing": missing, "value_spans": reader.spans,
++            "outer_closed": closed, "closing_delimiter_only": reader.close_only}
+--- before/services/api/app/socai2/case_c3_completion.py
++++ services/api/app/socai2/case_c3_completion.py
+@@ -0,0 +1,119 @@
++"""C3 section validation, frozen completion request and lossless wire-value merge."""
++import copy
++import json
++from types import SimpleNamespace
++from typing import Annotated
++
++from pydantic import Field, RootModel, TypeAdapter, ValidationError
++
++from . import baseline_analysis_contract as contract
++from . import case_output_adapter as output
++from . import case_program_output as program
++from .analysis_review import decode
++from .baseline_model_view import blocked
++from .baseline_store import encoded
++from .case_c3_sections import SECTIONS
++from .case_citation_quality import normalized
++from .citation_quality import new_review
++from .runtime_policy import C3_COMPLETION_VERSION as VERSION
++from .runtime_policy import draft_limit
++from .runtime_policy import validate_c3_completion as validate_policy
++
++
++class SectionReply(RootModel[dict]):
++    pass
++
++
++def validate_sections(raw, prepared, context, bindings, *, restored=False, citation_review=None):
++    """Validate only present complete sections, without manufacturing absent ones."""
++    if not isinstance(raw, dict) or not raw or set(raw) - set(SECTIONS) or blocked(raw):
++        raise contract.AnalysisRejected("c3_completion_sections_invalid")
++    boundary = prepared["case_boundary"]
++    review = new_review() if citation_review is None else citation_review
++    value = normalized(copy.deepcopy(raw), review)
++    question_ids = output.model_questions(context, boundary)
++    try:
++        if "findings" in value:
++            limit = output.finding_limit(boundary)
++            if limit is not None and len(value["findings"]) > limit:
++                raise contract.AnalysisRejected("case_finding_limit_exceeded")
++            program.restore_observed(value, boundary, citation_review=review)
++            program.validate_program(value, boundary, citation_review=review)
++        if "followups" in value:
++            if len(value["followups"]) > output.followup_limit(boundary):
++                raise contract.AnalysisRejected("case_followup_limit_exceeded")
++            if any(row["question_id"] not in question_ids for row in value["followups"]):
++                raise contract.AnalysisRejected("followup_question_outside_run")
++        output.restore_aliases(value, boundary)
++        typed = {}
++        for key, item in value.items():
++            annotation = contract.ExecutionAnalysis.model_fields[key].rebuild_annotation()
++            if key == "questions":
++                annotation = Annotated[list[contract.Answer], Field(min_length=len(question_ids), max_length=len(question_ids))]
++            typed[key] = TypeAdapter(annotation).validate_python(item)
++        # Empty iteration fields are internal to the shared validator only;
++        # they are never emitted as model answers or persisted retained fields.
++        fields = {key: [] for key in SECTIONS if key != "summary"}
++        fields.update(typed)
++        contract.validate_analysis(SimpleNamespace(**fields), prepared["source_map"], context, prepared["coverage"],
++            bindings=bindings, citation_review=review, sections=set(raw), question_ids=question_ids)
++    except (KeyError, TypeError, AttributeError, ValidationError):
++        raise contract.AnalysisRejected("c3_completion_section_shape_or_identity_invalid") from None
++    return value if restored else SectionReply(copy.deepcopy(raw))
++
++
++def parse_reply(content, missing, prepared, context, bindings):
++    raw = decode(content)
++    if set(raw) != set(missing):
++        raise contract.AnalysisRejected("c3_completion_reply_fields_mismatch")
++    return validate_sections(raw, prepared, context, bindings)
++
++
++def subset_format(fmt, missing):
++    value = copy.deepcopy(fmt)
++    schema = value["json_schema"]["schema"]
++    schema["properties"] = {key: schema["properties"][key] for key in missing}
++    schema.update(required=list(missing), additionalProperties=False)
++    value["json_schema"]["name"] = "C3MissingSections"
++    return value
++
++
++def prepare_completion(prepared, request, retained, missing, initial_response_id):
++    policy = request["case_boundary"]["c3_completion"]
++    try:
++        validate_policy(policy, frozen=True)
++    except ValueError:
++        raise contract.AnalysisRejected("case_c3_completion_policy_invalid") from None
++    # This is the previously saved wire's business view and offered tools,
++    # not a new selection from latest materials or the live profile.
++    original_messages = request["body"].get("messages", request["body"].get("input"))
++    if not isinstance(original_messages, list) or original_messages[0].get("role") != "system":
++        raise contract.AnalysisRejected("c3_completion_frozen_messages_invalid")
++    dependencies = {key for section in missing for key in policy["dependencies"][section]}
++    prior = {key: retained[key] for key in SECTIONS if key in dependencies and key in retained}
++    value = copy.deepcopy(prepared)
++    value["messages"] = [{"role": "system", "content": policy["system"] + "\n" +
++        policy["instruction"].replace("{missing}", "、".join(missing))}, *copy.deepcopy(original_messages[1:]),
++        {"role": "user", "content": encoded({"role": "prior_analysis", "retained_sections": prior,
++            "requested_sections": missing}).decode()}]
++    value["citation_review"] = new_review()
++    for key in ("validation_review", "correction_result"):
++        value.pop(key, None)
++    for key in ("source_map", "binding_map", "case_boundary", "tool_presentation"):
++        if key in request:
++            value[key] = copy.deepcopy(request[key])
++    value["input_artifact_ids"] = list(dict.fromkeys([*request["input_artifact_ids"], initial_response_id]))
++    value["section_completion"] = {"version": VERSION, "attempt": 1,
++        "initial_response_artifact_id": initial_response_id, "retained_fields": list(retained),
++        "missing_fields": list(missing), "prior_analysis_fields": list(prior)}
++    if len(encoded(value["messages"])) > draft_limit() or any(blocked(m["content"]) for m in value["messages"]):
++        raise contract.AnalysisRejected("c3_completion_input_contract_or_size")
++    return value
++
++
++def merge(retained, reply, prepared, context, bindings, review):
++    if set(retained) & set(reply) or set(retained) | set(reply) != set(SECTIONS):
++        raise contract.AnalysisRejected("c3_completion_merge_fields_mismatch")
++    wire = {key: copy.deepcopy(retained[key] if key in retained else reply[key]) for key in SECTIONS}
++    analysis = output.parse(json.dumps(wire, ensure_ascii=False), prepared, context, bindings, citation_review=review)
++    return wire, analysis
+--- before/services/api/app/socai2/case_c3_completion_flow.py
++++ services/api/app/socai2/case_c3_completion_flow.py
+@@ -0,0 +1,121 @@
++"""One C3-only completion attempt, using stored originals and normal budget gates."""
++import copy
++from uuid import UUID
++
++from sqlalchemy import select
++
++from . import case_c3_completion as completion
++from .baseline_analysis_contract import AnalysisRejected
++from .baseline_analysis_model import usage
++from .baseline_context import reference
++from .baseline_enrichment import S
++from .baseline_execution_schema import compact_execution_wire
++from .baseline_reasoning import ModelSteps
++from .baseline_store import F, StoreError, digest
++from .case_c3_sections import SECTIONS, read_sections
++from .citation_quality import new_review, seal
++from .model_protocol import response_choices
++
++
++async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared, context, bindings,
++                            fmt, gateway, initial, *, schema):
++    _, reason, model_id, response_id = initial
++    if (reason is None or not model_id or not response_id
++            or "c3_completion" not in prepared.get("case_boundary", {})):
++        return initial
++    steps = ModelSteps(service, schema)
++    async with service.transaction(tenant) as store:
++        run = await steps.locked(store, case_id, run_id)
++        attempts = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id,
++            S.c.parent_step_id == stage_id, S.c.kind == "model")))).mappings().all()
++        if len(attempts) != 1 or attempts[0]["id"] != model_id or attempts[0]["state"] not in {"completed", "failed"}:
++            return initial
++        first = attempts[0]
++        async def artifact(identity):
++            row = await store.one(select(F).where(*store.where(F, F.c.run_id == run_id, F.c.id == identity)))
++            if row is None or digest(row["content_json"]) != row["sha256"]:
++                raise StoreError("c3_completion_artifact_invalid")
++            return row["content_json"]
++        response = await artifact(response_id)
++        request = (await artifact(first["input_artifact_id"]))["payload"]
++        raw = response["payload"].get("raw")
++        original_id = response["payload"].get("citation_review", {}).get("original_response_artifact_id")
++        if not original_id or (await artifact(UUID(original_id)))["raw"] != raw:
++            return initial
++    record = {"schema_version": schema, "type": "c3_section_completion", "version": completion.VERSION,
++        "initial_response_artifact_id": str(response_id), "initial_original_artifact_id": original_id,
++        "initial_request_artifact_id": str(first["input_artifact_id"]), "initial_reason": reason,
++        "state": "ineligible", "attempts": 0, "retained_sections": {}, "missing_fields": []}
++    parsed, supplemental, wire, merged = None, None, None, None
++    try:
++        reported = usage(raw)
++        choices = response_choices(raw)
++        if (reported["usage_state"] != "reported" or first["usage"] != reported
++                or reported["total_tokens"] > request["token_measurement"]["reserved_total_tokens"]):
++            raise AnalysisRejected("c3_completion_usage_unavailable")
++        if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
++            raise AnalysisRejected("model_choices_invalid")
++        choice, message = choices[0], choices[0].get("message")
++        if (choice.get("finish_reason") not in {"stop", "length"} or not isinstance(message, dict)
++                or message.get("tool_calls") or message.get("function_call") or message.get("refusal")):
++            raise AnalysisRejected("c3_completion_protocol_ineligible")
++        scanned = read_sections(message.get("content"))
++        if not scanned["missing"] and choice["finish_reason"] == "stop":
++            return initial  # A complete but rejected answer is not a missing-section problem.
++        retained_review = new_review()
++        restored = completion.validate_sections(scanned["retained"], prepared, context, bindings,
++                                                restored=True, citation_review=retained_review)
++        record.update(state="ready", retained_sections=scanned["retained"], retained_analysis=restored,
++            missing_fields=scanned["missing"], value_spans=scanned["value_spans"],
++            initial_finish_reason=choice["finish_reason"], initial_usage=reported,
++            closing_delimiter_only=scanned["closing_delimiter_only"],
++            retained_citation_review=seal(retained_review, message["content"], restored))
++        async with service.transaction(tenant) as store:
++            run = await steps.locked(store, case_id, run_id)
++            plan_id = await steps.save(store, run, stage_id, record, "source_snapshot",
++                                      [reference("artifact", response_id, "execution_receipt")])
++        record["plan_artifact_id"] = str(plan_id)
++        if scanned["missing"]:
++            supplemental = completion.prepare_completion(prepared, request, scanned["retained"], scanned["missing"], str(response_id))
++            supplemental["section_completion"]["plan_artifact_id"] = str(plan_id)
++            supplemental["input_artifact_ids"].append(str(plan_id))
++            parsed, failure, second_model_id, second_response_id = await steps.call(
++                tenant, case_id, run_id, stage_id, "C3", supplemental, gateway,
++                lambda content: completion.parse_reply(content, scanned["missing"], prepared, context, bindings),
++                output_format=completion.subset_format(fmt, scanned["missing"]),
++                wire_transform=compact_execution_wire, allow_correction=False)
++            record.update(attempts=int(second_model_id is not None),
++                supplement_response_artifact_id=str(second_response_id) if second_response_id else None,
++                supplement_original_artifact_id=supplemental["citation_review"].get("original_response_artifact_id"),
++                supplement_reason=failure)
++            if parsed is None:
++                raise AnalysisRejected(failure or "c3_completion_reply_unavailable")
++        review = new_review()
++        wire, merged = completion.merge(scanned["retained"], parsed.model_dump() if parsed else {},
++                                         prepared, context, bindings, review)
++        origins = {}
++        for key in SECTIONS:
++            from_initial = key in scanned["retained"]
++            origins[key] = {"response_artifact_id": str(response_id) if from_initial else record["supplement_response_artifact_id"],
++                "original_artifact_id": original_id if from_initial else record["supplement_original_artifact_id"],
++                "field": f"$.{key}", "value_sha256": digest(wire[key])}
++        record.update(state="merged", reason=None, merged_sections=wire,
++                      derived=merged.model_dump(mode="json"), field_origins=origins)
++        review.update(stage="C3", original_response_artifact_ids=list(dict.fromkeys(v["original_artifact_id"] for v in origins.values())),
++                      initial_response_artifact_id=str(response_id), field_origins=origins, path_basis="restored_frozen_identities")
++        record["citation_review"] = seal(review, None, record["derived"])
++        record["citation_review"]["merged_sections_sha256"] = digest(wire)
++    except AnalysisRejected as exc:
++        record.update(state="incomplete" if record["retained_sections"] else "ineligible", reason=str(exc))
++    refs = [reference("artifact", response_id, "execution_receipt")]
++    if record.get("supplement_response_artifact_id"):
++        refs.append(reference("artifact", record["supplement_response_artifact_id"], "execution_receipt"))
++    async with service.transaction(tenant) as store:
++        run = await steps.locked(store, case_id, run_id)
++        outcome_id = await steps.save(store, run, stage_id, record, "source_snapshot", refs)
++    prepared["section_completion_result"] = {**copy.deepcopy(record), "artifact_id": str(outcome_id)}
++    if merged is not None:
++        prepared["citation_review"].clear()
++        prepared["citation_review"].update(record["citation_review"], merge_artifact_id=str(outcome_id))
++        return merged, None, model_id, outcome_id
++    return initial

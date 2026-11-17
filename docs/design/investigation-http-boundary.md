@@ -29,11 +29,11 @@ flowchart LR
 
 ## 代码边界
 
-对外代码在 [`services/api/investigation_http/`](../../services/api/investigation_http/README.md)，独立入口 `investigation_http.main:app`，保留 `/api/v1/socai2` 的53个操作。
+对外代码在 [`services/api/investigation_http/`](../../services/api/investigation_http/README.md)，独立入口 `investigation_http.main:app`；原代码分离批保留53操作，后续按功能增加，当前 `/api/v1/socai2` 为71操作。
 
 - `external_routes/`：HTTP参数、响应和状态码，只调用用例端口；不写SQL、模型编排或消费者逻辑。
 - `ports.py`、`dependencies.py`：对外路由能调用哪些业务方法，以及怎样获得这些服务。
-- `adapters/`：接现有调查核心、认证和运行配置；数据库Session不传给路由。A/I执行后的结果读取也在适配层完成。
+- `adapters/`：接现有调查核心、可信业务上下文和运行配置；数据库Session不传给路由。A/I执行后的结果读取也在适配层完成。
 - `contracts.py`：HTTP专用请求；共享业务DTO明确导出，保持单一字段定义，避免维护两份告警合同。
 
 内部业务保留在 `app/socai2/`，既有处理服务直接调用这些业务方法，不导入对外HTTP包。旧 `app.socai2_main` 和7个 `socai2_*` 端点模块保留兼容转接，同一套实现，不复制逻辑。原主API挂载范围保持。
@@ -62,6 +62,14 @@ flowchart LR
 
 34项定向检查和18个子检查通过；本机候选18026完成24次TCP请求、告警/事件/Case全部facts与SQL逐值读回、任务修订及未启动Run核对；A/I执行另用真实隔离PG及不可用模型替身验证两项。没有真实模型调用。详情见[本项验证](../../openspec/changes/archive/2026-11-13-separate-investigation-http/validation.md)。
 
-发布后本机正式18024完成新Case/任务写读及SQL核对；21采用既有验收记录做12次GET与9对象只读SQL核验，没有在正式库新增测试数据。上述为代码分离批次的docs7证据；当前列表增量已发布为list-query-20261113-r1及docs8，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)。
+发布后本机正式18024完成新Case/任务写读及SQL核对；21采用既有验收记录做12次GET与9对象只读SQL核验，没有在正式库新增测试数据。上述为代码分离批次的docs7证据；后续列表增量曾发布为list-query-20261113-r1及docs8，见[列表验收](../../openspec/changes/archive/2026-11-13-query-investigation-lists/validation.md)。
 
 采用已有调查结果的E21/E63/E64也属于对外业务接口：`external_routes/cases.py`通过CaseOperations调用CaseService核心，路由只作请求校验、身份和错误转换。资格、预览摘要、幂等及保存均由核心处理；内部调查继续直接调用核心，不依赖外部HTTP。
+
+E65案件故事也是对外只读查询：`external_routes/story.py`经CaseStory端口与适配器调用独立`case_story.py`。只读事务聚合已有事实/Run/Result/H修订，调查执行不反向调用此HTTP接口；没有增加模型、内部HTTP或保存流程。
+
+E66案件候选通过`external_routes/exploration.py`→CaseExploration端口→独立核心`exploration.py`读取。匹配策略与配置独立于旧related_alerts和C5构图；没有内部HTTP、模型或保存流程。
+
+2026-11-13调查核心同步：独立服务`investigation-sync-20261113-r1`与核心已发布`v1.2-20261113-r1`的运行源码/策略对齐，保留71操作和153运行Schema。E36/E37/E13仍是外部显式启动入口，由适配器直接调用核心，无新增内部HTTP回路；[同步回执](../operations/evidence/investigation-http-sync-20261113-01/README.md)。
+
+2026-11-15候选已沿新目标切换：E36手动告警执行已移除，E37只受理任务返回202；[Case首轮](../integration/case-initial-http.md)建案受理后由唯一A/I/Case调度器执行，外部E11/E13路由、端口及无用DTO导出已移除。内部prepare/start仍在核心内，不经对外HTTP绕行；Case check/rerun仍待第7步。当前候选79操作、无鉴权，21仍待统一发布；上述11-13记录仅保留历史适用范围。

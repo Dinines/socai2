@@ -1,0 +1,356 @@
+{
+  "observed_at": "2026-11-15T03:28:49.830616+00:00",
+  "target": "sting-infra21",
+  "mode": "read_only",
+  "model_calls": 0,
+  "kafka": {
+    "state": "probe_error",
+    "exit_code": 1,
+    "error_class": "aiokafka.errors.KafkaConnectionError"
+  },
+  "redis": {
+    "socai2-http-api": {
+      "host": "192.168.1.21",
+      "port": 6379,
+      "database": "8",
+      "ping": true,
+      "dbsize": 0,
+      "new_dispatch_namespace_configured": false,
+      "default_namespace_match_count": 0,
+      "scan_complete": true,
+      "key_types": {}
+    },
+    "socai2-fusion-1": {
+      "host": "192.168.1.21",
+      "port": 6379,
+      "database": "9",
+      "ping": true,
+      "dbsize": 0,
+      "new_dispatch_namespace_configured": false,
+      "default_namespace_match_count": 0,
+      "scan_complete": true,
+      "key_types": {}
+    },
+    "socai2-agents-1": {
+      "host": "192.168.1.21",
+      "port": 6379,
+      "database": "10",
+      "ping": true,
+      "dbsize": 0,
+      "new_dispatch_namespace_configured": false,
+      "default_namespace_match_count": 0,
+      "scan_complete": true,
+      "key_types": {}
+    }
+  },
+  "sources_and_config": {
+    "SOCAI2_INVESTIGATION_POLICY": {
+      "configured": true,
+      "path": "/app/config/investigation-policy.toml",
+      "exists": true,
+      "sha256": "a3298006f954f0a811e76a95bb26a1fbab866dd44260662a10af2bb4bc88d9d8",
+      "section_names": [
+        "version",
+        "single_model_timeout_seconds",
+        "final_reserve_seconds",
+        "case",
+        "alert_basic",
+        "incident_diagnosis",
+        "model",
+        "tools",
+        "labels",
+        "incident_io",
+        "alert_io",
+        "case_io"
+      ],
+      "limits": {
+        "model": {
+          "alias": "aisoc-investigation",
+          "protocol": "chat_completions",
+          "schema_profile": "vllm_grammar_v1",
+          "context_tokens": 65536,
+          "max_prepared_bytes": 262144,
+          "max_artifact_bytes": 1048576,
+          "final_reserved_input_tokens": 16384,
+          "final_reserved_calls": 2,
+          "output_tokens": {
+            "A": 3000,
+            "I": 3000,
+            "C3": 4096,
+            "Deep": 3000,
+            "C6": 8192
+          },
+          "tokenizer": {
+            "endpoint": "http://192.168.1.43:8000/tokenize",
+            "served_model": "aisoc-test-investigation",
+            "timeout_seconds": 30,
+            "safety_tokens": 1024,
+            "authentication": "none"
+          }
+        }
+      }
+    },
+    "SOCAI2_KNOWLEDGE_PROFILE": {
+      "configured": true,
+      "path": "/run/knowledge/profile.json",
+      "exists": true,
+      "sha256": "0ce1a5003fd7288768d7ab8ea279a7710c6423a0856ba8e2a9155e796a005ecf"
+    },
+    "SOCAI2_ANALYSIS_DISPATCH_CONFIG_FILE": {
+      "configured": false
+    },
+    "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": {
+      "configured": false
+    },
+    "SOCAI2_CASE_ALLOCATION_CONFIG_FILE": {
+      "configured": false
+    },
+    "SOCAI2_HTTP_CONTEXT_FILE": {
+      "configured": false
+    },
+    "/app/investigation_http/main.py": {
+      "exists": true,
+      "sha256": "b1cb895f9ff2615c433ebbee73e7928ac7b39fc583903d46f6353242854dcee8"
+    },
+    "/app/app/socai2/alert-input-v1.json": {
+      "exists": true,
+      "sha256": "b3a5e4843e272b8d6fb95d53bf001ffdb3046f90a69595e24158a2c3b90ce8a4"
+    },
+    "/app/app/socai2/incident-input-v1.json": {
+      "exists": true,
+      "sha256": "131515b66725557b375baa07e2239aca515ac016ed33a5221ef6d9445c981170"
+    },
+    "/app/app/socai2/case-input-v1.json": {
+      "exists": true,
+      "sha256": "ae6f8a182c2d70288e552966b97f272370dce69b30eb03c63eeaf7ad4c8df29f"
+    },
+    "lake": {
+      "identity": [
+        [
+          "aisoc",
+          "23.8.16.16"
+        ]
+      ],
+      "tables": [
+        [
+          "raw_events"
+        ]
+      ],
+      "raw_event_columns": [
+        [
+          "event_id",
+          "UUID"
+        ],
+        [
+          "tenant_id",
+          "UUID"
+        ],
+        [
+          "event_time",
+          "DateTime64(3, 'UTC')"
+        ],
+        [
+          "ingest_time",
+          "DateTime64(3, 'UTC')"
+        ],
+        [
+          "class_uid",
+          "UInt32"
+        ],
+        [
+          "category_uid",
+          "UInt32"
+        ],
+        [
+          "severity_id",
+          "UInt8"
+        ],
+        [
+          "severity",
+          "String"
+        ],
+        [
+          "activity_id",
+          "UInt32"
+        ],
+        [
+          "source_ip",
+          "IPv6"
+        ],
+        [
+          "dest_ip",
+          "IPv6"
+        ],
+        [
+          "src_port",
+          "UInt16"
+        ],
+        [
+          "dst_port",
+          "UInt16"
+        ],
+        [
+          "protocol",
+          "String"
+        ],
+        [
+          "src_hostname",
+          "String"
+        ],
+        [
+          "dst_hostname",
+          "String"
+        ],
+        [
+          "user_name",
+          "String"
+        ],
+        [
+          "process_name",
+          "String"
+        ],
+        [
+          "file_path",
+          "String"
+        ],
+        [
+          "hash_sha256",
+          "String"
+        ],
+        [
+          "connector_type",
+          "String"
+        ],
+        [
+          "raw_payload",
+          "String"
+        ],
+        [
+          "ocsf_json",
+          "String"
+        ],
+        [
+          "mitre_techniques",
+          "Array(String)"
+        ],
+        [
+          "mitre_tactics",
+          "Array(String)"
+        ],
+        [
+          "iocs",
+          "Array(String)"
+        ],
+        [
+          "actor_kind",
+          "LowCardinality(String)"
+        ],
+        [
+          "actor_kind_source",
+          "String"
+        ],
+        [
+          "actor_id",
+          "String"
+        ],
+        [
+          "actor_on_behalf_of",
+          "String"
+        ],
+        [
+          "action",
+          "String"
+        ],
+        [
+          "resource_type",
+          "String"
+        ],
+        [
+          "resource_id",
+          "String"
+        ],
+        [
+          "resource_owner",
+          "String"
+        ],
+        [
+          "src_country_code",
+          "LowCardinality(String)"
+        ],
+        [
+          "src_asn",
+          "UInt32"
+        ],
+        [
+          "src_as_org",
+          "String"
+        ],
+        [
+          "src_reputation",
+          "Float32"
+        ],
+        [
+          "src_reputation_known",
+          "UInt8"
+        ],
+        [
+          "client_family",
+          "LowCardinality(String)"
+        ],
+        [
+          "client_version",
+          "String"
+        ],
+        [
+          "client_category",
+          "LowCardinality(String)"
+        ],
+        [
+          "client_raw",
+          "String"
+        ],
+        [
+          "outcome",
+          "LowCardinality(String)"
+        ],
+        [
+          "session_id",
+          "String"
+        ],
+        [
+          "session_key",
+          "String"
+        ],
+        [
+          "session_key_kind",
+          "LowCardinality(String)"
+        ],
+        [
+          "session_originating_human",
+          "String"
+        ]
+      ]
+    },
+    "knowledge": {
+      "http_status": 200,
+      "collection": "socai2_knowledge_qwen06b_1024",
+      "status": "green",
+      "points_count": 7,
+      "vectors_count": 7,
+      "vectors_config": {
+        "size": 1024,
+        "distance": "Cosine"
+      },
+      "embedding_model": "qwen3-embedding:0.6b",
+      "embedding_dimension": 1024,
+      "embedding_called": false
+    }
+  },
+  "model_route_config_only": [
+    {
+      "alias": "aisoc-investigation",
+      "upstream_model": "os.environ/AISOC_LLM_MODEL_DEEP",
+      "upstream_base": "os.environ/AISOC_LLM_API_BASE"
+    }
+  ]
+}

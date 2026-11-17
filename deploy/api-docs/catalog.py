@@ -13,7 +13,7 @@ OPERATIONS = {
 10: ('Case 调查历史', '可用', '按 next_cursor 取后续历史；类型区分 baseline 与 ai_saved，当前 Q 保存未实现。相关 A/I 运行需 E22/E23 组合，不能从 Case 历史推断全局目录。', 'case_not_found:404 invalid_history_cursor:422 invalid_history_limit:422'),
 11: ('准备新一轮调查', '可用', '先 E03 读当前 scope_revision，返回 pending_run_id 和 created。仅准备，不调用模型；存在运行中记录时可保留 pending，启动资格由 E12 判断。空范围/已解决案不能直接启动。', 'baseline_scope_empty:409 baseline_scope_revision_conflict:409 resolved_case_start_policy_not_enabled:409 operation_key_conflict:409'),
 12: ('读取 Case Run 与执行明细', '可用', '读取 start_eligibility、冻结成员、steps、工件、用量和结果 ID。can_start=false 时显示 reason。成员上限200、步骤1000、工件/结果各200；被截断的集合当前没有进一步分页 API，必须明确提示。读取不会继续执行。', 'case_run_not_found:404 execution_plan_link_invalid:409'),
-13: ('启动指定 pending Run', '可用', '必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。模型质量仍未通过。', 'baseline_not_found:404 baseline_already_active:409 baseline_already_claimed:409 baseline_scope_empty:409 baseline_scope_revision_conflict:409 comparison_result_not_found:404 resolved_case_start_policy_not_enabled:409 full_baseline_executor_not_configured:503 full_executor_limits_outside_policy:422'),
+13: ('启动指定 pending Run', '可用', '必须使用 E01/E08/E11 返回的 Run ID，先看 E12 启动资格。可选 window_start/end 同时传带时区的时间，start<=end；comparison_result_id 必须属于同案。当前是同步等待执行，不是202队列提交；POST 等待时可 GET E12 观察。超时/503/unknown 先读取该 Run，不换 operation_key 重新发起。当前独立服务同步核心v1.2-20261113-r1：C3模型回答五项调查问题，程序补充覆盖说明；E12工件和E14结果仍按原合同读取。实际执行状态、交付完整性和待复核分别判断，模型质量仍未通过。', 'baseline_not_found:404 baseline_already_active:409 baseline_already_claimed:409 baseline_scope_empty:409 baseline_scope_revision_conflict:409 comparison_result_not_found:404 resolved_case_start_policy_not_enabled:409 full_baseline_executor_not_configured:503 full_executor_limits_outside_policy:422'),
 14: ('读取正式结果', '可用', '返回 result、run、冻结成员、source_answer、delivery。结论、发现、questions、建议分开，questions 作为结论的一部分，不建立问题管理状态；人工确认由用户 E38 建任务。conclusion=null/validation_state=rejected 不包装成成功判断。', 'case_result_not_found:404 result_answer_link_invalid:409 result_delivery_link_invalid:409'),
 15: ('读取 Case Run 工件', '可用', '先 E12/E14 取得真实 artifact_id；父 Case/Run 必须匹配。返回 artifact 元数据和 content_json/content_text/availability；HTTP200 不保证正文可得。', 'run_artifact_not_found:404 artifact_integrity_invalid:409'),
 16: ('读取 Case 非 Run 来源工件', '可用', '仅适用于 run_id 为空的本案来源工件。Run 工件必须用 E15，不能以这个路径替代。', 'run_artifact_not_found:404 artifact_integrity_invalid:409'),
@@ -36,8 +36,8 @@ OPERATIONS = {
 33: ('A/I Run 工件正文', '可用', '父主体及 Run 必须匹配。返回 metadata/content_json/content_text/availability；metadata 与 Case E15 的 artifact 字段不同。', 'stage_artifact_not_found:404'),
 34: ('告警非 Run 来源工件', '可用', '读取本告警 run_id 为空的来源工件，artifact_id 可由 source_artifacts 记录取得。', 'stage_artifact_not_found:404'),
 35: ('事件非 Run 来源工件', '可用', '读取本事件 run_id 为空的来源工件，不能替代运行工件路径。', 'stage_artifact_not_found:404'),
-36: ('手动告警分诊', '已实现', '21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行模型，本轮入口验收未派发真实模型，结论质量以独立验收为准。', 'socai2_stage_execution_not_enabled:503 stage_subject_not_found:404 stage_execution_not_ready:409 operation_key_conflict:409'),
-37: ('手动事件诊断', '已实现', '部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。不能把路由可用当成自动消费者已开启或真实模型质量通过。', 'socai2_stage_execution_not_enabled:503 stage_subject_not_found:404 stage_execution_not_ready:409 operation_key_conflict:409'),
+36: ('手动告警分诊', '已实现', '21新独立正式服务18024已挂载/开启，读写目标aisoc。operation_key 同租户稳定映射 Run；执行异常先 E24 查询，异常回执含 run_id；其他部署未启用时503仅返回socai2_stage_execution_not_enabled。调用会执行新版核心的告警分诊及保存；当前策略最多2次模型调用、24000tokens，调用方不用传模型参数。本轮同步复用已发布核心证据，未重新派发模型，结论质量以独立验收为准。', 'socai2_stage_execution_not_enabled:503 stage_subject_not_found:404 stage_execution_not_ready:409 operation_key_conflict:409'),
+37: ('手动事件诊断', '已实现', '部署同E36，21新独立正式服务18024已挂载/开启。只传 operation_key，主体来自路径。执行异常先 E25 查询返回的 Run；其他部署未启用时503不产生Run。调用执行新版事件诊断及保存，当前策略最多2次模型调用、24000tokens。不能把路由可用当成自动消费者已开启或真实模型质量通过。', 'socai2_stage_execution_not_enabled:503 stage_subject_not_found:404 stage_execution_not_ready:409 operation_key_conflict:409'),
 38: ('用户创建人工任务', '可用', '用户明确决定需要人工确认后创建；不自动从 questions 批量生成。先 E03 获取范围版本，assignee_id 由业务后端人员目录取得。origin_finding_id 需同时有 origin_result_id；引用对象必须属于本案。保存不启动调查。', 'case_scope_revision_conflict:409 task_assignee_not_in_tenant:422 task_origin_result_not_found:404 task_origin_finding_not_found:422 task_source_reference_not_found:404 task_source_reference_outside_case:422 operation_key_conflict:409'),
 39: ('人工任务列表', '可用', '返回当前修订、总数和 next_offset；待办统计只计实际未结束任务。旧版本必须另用 E42/E43。', 'case_not_found:404 invalid_record_page:422'),
 40: ('修订人工任务', '可用', 'PUT 为完整 TaskFields，不是局部 PATCH；先 E41 取当前字段和 row_version，再 E03 取范围版本，完整带回未修改字段。省略可选字段会取默认值，可能清空原值。completed 必须有 result_text 和 result_scope；whole_case 覆盖当前全部成员，selected_alerts 只能当前子集，explicit_objects 还需非空有效 object_keys。事实变更生成新修订，旧引用不变。', 'case_task_not_found:404 task_row_version_conflict:409 case_scope_revision_conflict:409 task_scope_outside_current_case:422 task_whole_case_scope_incomplete:422 task_object_scope_empty:422 task_objects_outside_current_scope:422 task_source_reference_not_found:404 operation_key_conflict:409'),
@@ -65,6 +65,13 @@ OPERATIONS = {
 62: ('读取Case单个附件信息', '已实现', '按Case和附件关联ID读取原file_id、名称、类型、大小、可选哈希及登记人/时间。该ID是本服务关联ID，file_id才是业务后端下载时使用的文件ID；下载地址由业务后端提供。本接口不返回文件字节或下载URL，不报告未核验的文件存在性。不存在或跨案件404，不接受查询参数。', 'case_not_found:404 case_attachment_not_found:404 attachment_query_parameter_not_supported:422'),
 63: ('预览调查结果采用', '已实现', '只读比较当前判断与指定候选Result，完整返回结论、待核问题、覆盖、新鲜度、来源Run及未完任务/Run。can_adopt为资格结论，refusal_reasons列出原因；未完工作另以requires_pending_work_acknowledgement提示。review_token原样用于E21；只读预览不锁定后续状态，提交会事务重验。不接受查询参数。', 'case_not_found:404 case_result_not_found:404 result_run_link_invalid:409 current_assessment_reference_invalid:409 result_adoption_query_parameter_not_supported:422'),
 64: ('读取采用判断历史', '已实现', '按revision倒序返回指定Case的判断版本，含原结论/来源/覆盖、采用人和理由；结果待核内容沿results读取。limit默认20、1–100，offset默认0且非负，按next_offset续页；total为全部判断数。历史保留当时值，不重新判新鲜度；当前状态用E03读取。只接受limit/offset。', 'case_not_found:404 assessment_history_query_parameter_not_supported:422 invalid_assessment_history_page:422'),
+65: ('读取案件故事', '已实现', '只读聚合当前成员告警、基础调查Run及终态已存结果、人工完成修订。q按标题/说明、主机账号或调查/人工正文作字面子串搜索；severity仅筛选告警，调查与人工结果保留。按实际时间倒序、未知时间最后，同时间按稳定id倒序；limit默认20、1–100，cursor沿next_cursor续页且绑定Case/筛选。每项保留原ID，E28/E12/E14/E43回查；旧完成修订标is_current_task_revision，活跃Run不显示最终结果。只读取，不写入或调用模型。AI对话不在本接口范围。', 'case_not_found:404 story_query_parameter_not_supported:422 invalid_story_cursor:422 story_cursor_filters_changed:422'),
+66: ('查询案件探索候选', '已实现', '只读查询当前案件成员或指定alert_id/object_id的一层候选。起点ID必须来自当前材料，不接受图节点名称；两ID互斥。host/user/ip/domain/url按同来源类型和值精确匹配，hash需明确且合法的MD5/SHA1/SHA256/SHA512算法和值。默认起点事件范围前后配置24小时，显式time_from/time_to需同时提供，起点包含终点不含；无已知起点时间需明确范围。按共享对象数降序、距匹配起点最近秒数升序、ID升序分页。返回原告警、每对来源对象/材料、时间差和案件/事件归属；当前成员标already_in_case。matches只含匹配对象，展开全部对象读E30 objects；图保存和AI对话不在此范围。明确加入使用E08。', 'case_not_found:404 exploration_start_not_found:404 exploration_start_material_changed:409 exploration_cursor_scope_changed:409 invalid_exploration_cursor:422 exploration_query_parameter_not_supported:422 exploration_unsupported_object_type:422 exploration_hash_algorithm_or_value_invalid:422 exploration_explicit_window_required:422'),
+67: ('读取案件探索底图', '已实现', '只读取得最近completed基础调查的原图、来源和指纹；可指定本案已完成run_id。缺图unavailable，不借另一轮；无完成调查才用当前成员最新材料关系。partial原样保留，AI对话结果不参与。首次或重置保存将run_id和fingerprint原样交E68；继续已有保存用E69。', 'case_not_found:404 exploration_completed_run_not_found:404 exploration_query_parameter_not_supported:422'),
+68: ('保存案件探索进度', '已实现', '提交operation_key、expected_snapshot_id（首次null）、expanded_links及view_state。首次/重置传base_run_id和base_fingerprint；继续旧快照用base_snapshot_id且不可混用前两项。按对象ID校验真实匹配及展开链路，保存原底图、来源和画布；新调查不替换旧保存。旧材料关系可保留，不代表重新执行E66实时查询。并发版本或来源变化409；同键同用户同请求返回原保存。配置默认1000关系/4MiB，不截断。只追加快照及活动，不改成员、Run、Result、任务或Case版本。', 'case_not_found:404 exploration_snapshot_not_found:404 exploration_object_not_found:404 exploration_completed_run_not_found:404 operation_key_conflict:409 exploration_snapshot_changed:409 exploration_base_changed:409 exploration_objects_do_not_match:422 exploration_disconnected_branch:422 exploration_snapshot_too_large:422 exploration_query_parameter_not_supported:422'),
+69: ('恢复案件探索进度', '已实现', '只读返回本案最近保存的snapshot，底图、展开来源和view_state按当时值恢复；尚未保存时snapshot为null。新调查不覆盖保存；实时成员和告警状态须另行读取。只接受case_id，不接受查询参数。', 'case_not_found:404 exploration_query_parameter_not_supported:422'),
+70: ('查询告警相似历史复核候选', '已实现', '按同主机且同战术，或同IP，或同明确合法算法哈希查候选。三个规则取并集，告警去重并保留每对原件/标签路径；同租户同告警来源及对象namespace，仅用当前材料，排除自身。默认limit=5，按真实event_time及ID倒序；默认起点发生时间向前配置30天，起点时间未知需同时提供带时区time_from/time_to，[起点,终点)，显式窗口可查起点之后。候选时间未知不计入；已关闭/已反馈仍可核查。游标绑定起点材料/对象/战术与窗口，变化409。返回当前状态/判定/事件与Case归属；E28打开、E31回原件，用户确认后才沿用E48/E49反馈。本接口不写入、不调用模型，不将共有对象等同攻击或自动复制判定。', 'alert_review_source_not_found:404 alert_review_cursor_scope_changed:409 invalid_alert_review_cursor:422 alert_review_explicit_window_required:422 alert_review_query_parameter_not_supported:422 invalid_alert_review_configuration:503'),
+71: ('读取同主机最近告警', '已实现', '告警详情概况的相关告警。唯一输入alert_id，不接受查询参数；在同租户、同告警来源、同对象namespace下，按最新材料主机规范值精确匹配，不要求战术相同，不从IP或资产ID推断。排除自身，多个主机取并集并保留全部来源；按真实event_time倒序、ID倒序取配置上限，当前7条，不是7天；不限定在起点之前，无已知候选时间则排除，起点缺时仍可查。total为全匹配数，limit为实际返回上限，无分页。没有主机或材料返回空列表；已关闭/误报仍保留原值。E28打开告警、E31回查双方材料；不写入、不调用模型。', 'alert_host_source_not_found:404 alert_host_query_parameter_not_supported:422 invalid_alert_host_configuration:503'),
 }
 # 功能|状态|操作编号|对应调用与功能边界。可用指 HTTP，不代表页面接线/模型质量已验收。
 FEATURE_MAP = '''
@@ -80,9 +87,9 @@ F02-01|需组合|28,31,30|详情取得 material.id→正文及 section=objects/s
 F03-01|需组合|28,22,24|triage百分数与指定Run confidence区分量纲；判定/理由来自同一分诊版本。
 F03-02|需组合|22,24,33|沿 explanation 实际来源定位工件读正文；GET不重新生成解释。
 F03-03|需组合|22,24,32,33|目录选run_id→Run→trace→工件，保留失败尝试。
-F08-01|部分实现|30,28|section=objects/related_alerts 后打开候选；服务同对象集合不等同近期同主机专项集合。
+F08-01|已实现，需组合|71,30,28,31|E71按最新材料主机值查最近7条→E28打开→E31回查来源；E30读取实体/IOC和一般关系，不要求同战术。
 F03-04|可用|48,49,28,30|单条或明确勾选批量提交人工判定及理由；D02关闭/恢复，反馈与模型判断并存，详情及活动读回。
-F03-05|部分实现|30,48|人工反馈已实现；同主机同战术/同IP哈希的最近专项候选仍未实现，一般related_alerts仅作参考。
+F03-05|已实现，需组合|70,28,31,48,49|E70查同主机且同战术/同IP/合法算法哈希的近期候选→E28/E31核对→用户确认后E48/E49反馈；不自动复制判定。
 F23-01|可用|50,51,28,30|单条/批量维护负责人、标签和状态；仅分配不改变告警状态，关闭须理由并保留原判定。
 F13-01|需组合|30,29,3|section=incidents/cases→相应详情，零/一/多关系按返回值显示。
 F13-02|部分实现|30,1,8,19|先查cases，选择已有案关联或新建，返回pending；打开助手/发送尚501。
@@ -124,17 +131,17 @@ F12-02|需组合|3,14,24,25,43|按来源类型和身份打开指定结果/分诊
 F11-02|需组合|3,14,15|questions及原结论限制一并展示；用户需要时自行E38创建任务，无问题状态/关闭/合并接口。
 F09-07|需组合|3,28,31|遍历当前成员读取材料阶段标签，原字段不足就显示未知。
 F11-03|已实现|63,21,64,3,17|先预览原/新判断、覆盖与未完工作，提交预览摘要、理由和必要确认；保留旧判断，任务/Run/处理状态保持。
-F20-01|部分实现|3,28,10,14,39,42|成员事实+Run结果+H版本按来源时间组装故事；Q保存尚缺。
-F20-02|部分实现|3,28,10,39|已加载故事本地搜索/等级筛选；无全故事检索接口。
-F20-03|仅前端/部分|3,28|维护当前选择ID，组合已读故事；不修改Case成员。
-F20-04|未实现|19|仅助手预留501，不能将故事选中范围当新成员写入。
-F20-05|需组合|14,43,28|条目保存真实主体/结果/revision_id后导航；故事页面接线待补。
+F20-01|已实现（非对话范围）|65,28,12,14,43,30,31|E65集中读取告警、调查与人工完成修订；战术/库存仍组合E31/E30；AI对话记录暂缓。
+F20-02|已实现|65|对整个案件故事先搜索/筛选再分页；severity仅筛告警并保留调查/人工上下文。
+F20-03|调用方处理|65,28,30|用E65条目中的真实告警ID维护选择；E28/E30读详情/对象，选择不改成员。
+F20-04|暂缓（未实现）|19|仅助手预留501，不能将故事选中范围当新成员写入。负责人已暂缓各页面AI对话。
+F20-05|已实现，需组合|65,14,43,28,12|E65给出源ID，沿E28/E12/E14/E43读取原告警、Run、结果及人工修订。
 F14-02|需组合|3,12|running/unknown与pending分组，can_start/reason决定启动按钮。
 F14-03|可用|3,11,12|scope_revision→prepare→pending读取；准备不执行。
 F14-04|可用|12,13,14|确认时间/比较对象→start；GET读进度，终态读result_ids；异常不盲目重复POST。
 F16-01|需组合|10,12,14|历史→选Run→结果摘要，区分当前采用与历史结论。
 F22-01|需组合|39|取完任务分页后按state计待办；不把questions纳入待办数。
-F14-05|需组合|10,3,39|历史直接读；故事按F20组合，暂无独立故事接口。
+F14-05|需组合|10,3,39,65|调查历史按E10读取，集中故事按E65读取，任务目录用E39。
 F14-06|需组合|10,22,23|本案baseline/ai_saved历史和成员A/I目录分别组合；当前Q无新保存记录。
 F15-01|需组合|12,14|state/delivery_state/usage/validation分开展示；none与缺值不同。
 F16-02|需组合|14,13|读取当前和comparison_result_id两份结果；新启动可指定同案比较对象，不自动改历史。
@@ -146,11 +153,11 @@ F13-07|可用|51,28,30|对明确所选告警整体保存管理修改，各项带
 F13-08|需组合|3,12|保存后读scope_revision/pending_run_id；提示范围更新，自动跟随/调度未实现。
 F19-01|需组合|3,30,14,15|当前成员对象组合底图，已存图按graph_artifact_id读取并标历史轮次。
 F19-02|仅前端/部分|30,15|布局/筛选/聚焦前端处理；节点详情来自原料，正式交互未接。
-F25-01|未实现|30|related_alerts仅参考，不符合D05完整候选/窗口/来源校验能力。
-F25-02|未实现||无探索查询、扩展、撤销状态服务。
-F25-03|未实现||无保存恢复API，未使用探索表已删除，不能据此恢复旧表。
-F25-04|部分实现|3,8|已确认真实候选可复用关联命令；候选产生和图到命令闭环缺失。
-F26-01|未实现|19|对象范围问答尚501，scope字段未实现。
+F25-01|已实现（候选查询）|66,28,30,31|按当前成员或指定真实告警/对象查候选；给时间范围、逐对来源依据和当前归属，不代表攻击因果。
+F25-02|已实现，需组合|66,30,67,68,69|E66逐层查询，E30回查对象；画布由调用方渲染，E68/E69保存恢复展开、撤销后的状态。
+F25-03|已实现，需组合|67,68,69|E67取底图，E68保存固定底图/展开/画布，E69恢复；新调查不替换旧保存，无Run或成员写入。
+F25-04|已实现，需组合|66,3,8|E66查候选→E03读最新范围版本→明确E08加入→E03读回；原案归属保留，不启动调查。
+F26-01|暂缓（未实现）|19|对象范围问答尚501，scope字段未实现。负责人已暂缓各页面AI对话。
 F21-01|需组合|3,30,5|遍历成员objects→按命名空间/类型/键聚合，连接evidence；无Case对象聚合端点。
 F21-02|需组合|10,12,14,15|选择历史Run→其工件与结果，保留当轮范围。
 F21-03|需组合|5,6,15|读取evidence及对应工件；发布已有目录用E06，非自动生成证据。
@@ -161,18 +168,18 @@ F22-04|可用|41,3,40|完整带回TaskFields和双版本后PUT，取消为state=
 F22-05|可用|41,3,40|completed需正文及有效result_scope；完成不会自动改调查判定。
 F22-06|需组合|41,42,43|当前完成人/时间及修改历史按固定revision_id读取。
 F22-07|可用|40,41,3|409保留用户输入→读最新版本→显示差异再确认；不能自动覆盖重试。
-F22-08|部分实现|40,11,13|保存H仅生成修订；显式下一轮冻结新版本；自动C6复核和故事/Q仍未接。
+F22-08|部分实现|40,11,13|保存H仅生成修订；显式下一轮冻结新版本；E65读取已完成人工修订；自动C6复核未接，Q对话暂缓。
 F23-05|可用|17|读取匹配活动与目标前后值，按next_offset分页。
 F24-01|已实现|58,59,17|E58追加普通评论，E59分页读取，E17查提交活动；不当作调查事实。
 F24-02|本服务已实现|61,62|附件目录/信息可读，file_id供业务后端下载；本服务不探测文件实时存在性，文件下载由业务后端承接。
 F24-03|本服务已实现|60,61,62|业务后端上传成功后调用E60登记案件关联，再用E61/E62读回；上传与文件保存由业务后端承接。
-F26-02|未实现|19|无正式会话目录/历史读写；预留结构不算可用。
-F26-03|未实现|19|产品范围选择尚无DTO字段，当前多传scope将422。
-F26-04|未实现||无建议问题生成API。
-F26-05|未实现|19|发送返回501，无真实工具或模型调度。
-F26-06|未实现|19|问答执行和人工续接未实现；现有任务不自动恢复Q。
-F26-07|未实现|20|save返回501，不会保存/采用/重跑。
-F26-08|未实现|19,20|尚无冻结Q引用与连续追问服务。
+F26-02|暂缓（未实现）|19|无正式会话目录/历史读写；预留结构不算可用。负责人已暂缓各页面AI对话。
+F26-03|暂缓（未实现）|19|产品范围选择尚无DTO字段，当前多传scope将422。负责人已暂缓各页面AI对话。
+F26-04|暂缓（未实现）||无建议问题生成API。负责人已暂缓各页面AI对话。
+F26-05|暂缓（未实现）|19|发送返回501，无真实工具或模型调度。负责人已暂缓各页面AI对话。
+F26-06|暂缓（未实现）|19|问答执行和人工续接未实现；现有任务不自动恢复Q。负责人已暂缓各页面AI对话。
+F26-07|暂缓（未实现）|20|save返回501，不会保存/采用/重跑。负责人已暂缓各页面AI对话。
+F26-08|暂缓（未实现）|19,20|尚无冻结Q引用与连续追问服务。负责人已暂缓各页面AI对话。
 F14-07|需组合|26,27,2,22,23,10|分页枚举有权读取主体→各分析/历史→按真实run_id去重；无全局Run接口，不能保证未编目运行的全量覆盖。
 F15-02|需组合|22,23,10,12|统计已聚合目录并标范围/观察时间，不能声称全系统统计。
 F16-03|需组合|14,15,24,25|按主体读正式结果/交付原件，questions随本轮结论；系统收尾和业务判断分开。
@@ -187,7 +194,7 @@ F28-01|需组合|12,32,15,33|步骤中的工具调用与输入/输出工件组�
 F28-02|需组合|15,33|按真实工具回执分未查/失败/成功空/有结果；HTTP200不等于查询成功。
 F18-02|需组合|15,16,18,31,33,34,35|引用→所属原件读取，保留摘要与完整正文的差别。
 F19-03|需组合|14,15|graph_artifact_id→历史图，标冻结范围且只读。
-F19-04|未实现||当前探索服务未实现；不能在历史图上偷偷改Case成员。
+F19-04|需组合|66,30,31|沿历史图来源回查当前对象后，以真实告警/对象ID进入E66；旧材料对象409；历史图保持只读，切换由调用方处理。
 F16-04|需组合|14,15|report_artifact_id及delivery正文→报告，系统closing_note独立显示。
 F18-03|仅前端/组合|14,15|读取已保存报告content_text→浏览器Blob下载；无单独文件下载API，不调用模型重写。
 F27-02|需组合|14,15,24,25|按本轮recommendations展示建议目标/依据，不能显示为已执行。

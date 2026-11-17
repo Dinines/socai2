@@ -84,7 +84,9 @@ def test_dynamic_scope_matrix_and_equivalent_provider_aliases(protocol, profile)
     for change in changes:
         negative = copy.deepcopy(value)
         negative["followups"][0].update(change)
-        assert not validator.is_valid(negative), change
+        # vLLM free-text length checks run in the unchanged local contract;
+        # its grammar otherwise excludes valid escaped quotes and newlines.
+        assert validator.is_valid(negative) is (profile == "vllm_grammar_v1" and "objective" in change), change
         with pytest.raises(contract.AnalysisRejected):
             contract.parse(json.dumps(negative), packet["source_map"], context, packet["coverage"], bindings=bindings)
     duplicate = copy.deepcopy(value)

@@ -1,0 +1,193 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_actual_nested_routing_metadata_is_omitted_without_mutating_original[A] __
+
+stage = 'A'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112465d30>
+
+    @pytest.mark.parametrize('stage', ['A', 'I', 'C3'])
+    def test_actual_nested_routing_metadata_is_omitted_without_mutating_original(stage, monkeypatch):
+        rows = json.loads((SAVED / 'out/ai-pg-01.json').read_text())['rows']
+        kind = 'alert_basic' if stage == 'A' else 'incident_diagnosis'
+        run = next(r for r in rows['runs'] if r['kind'] == kind)
+        source = next(a['content_json'] for a in rows['artifacts'] if a['id'] == run['input_artifact_id'])
+        policy = runtime_policy.load_policy(ROOT / 'deploy/local-investigation/investigation-policy-case-v1.toml')
+        monkeypatch.setattr(runtime_policy, 'active_policy', lambda: policy)
+        material = source['members'][0]['material']
+        record = material['raw_json']['raw_event']['telemetry'][0]
+        record.update(packet_count=0, connection_reset=False, dns_answers=[],
+                      business={'source': 'business-source-kept', 'id': 'business-id-kept', 'note': '原文照录。'})
+        material['raw_json']['raw_event']['telemetry'].append(copy.deepcopy(record))
+        # The wildcard must only match list indices, not similarly named business branches.
+        material['raw_json']['raw_event']['other'] = {'source': 'other-business-source-kept', 'tenant_id': 'business-tenant-kept'}
+        before = copy.deepcopy(source)
+        if stage == 'A':
+            queries = [(a['id'], a['content_json']) for a in rows['artifacts']
+                       if a['run_id'] == run['id'] and a['kind'] == 'tool_response']
+>           prepared = alert_model_boundary.build(source, run['input_artifact_id'], queries, policy.alert_io)[-1]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_nested_transport_metadata.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/alert_model_boundary.py:9: in build
+    _, source_map, data = legacy.build(source, input_id, queries, execution_time=execution_time,
+services/api/app/socai2/alert_basic_contract.py:242: in build
+    data["program_facts"] = stage_facts(source, input_id, execution_time, queries=queries)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:134: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:382: StoreError
+_ test_actual_nested_routing_metadata_is_omitted_without_mutating_original[I] __
+
+stage = 'I'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1124ac980>
+
+    @pytest.mark.parametrize('stage', ['A', 'I', 'C3'])
+    def test_actual_nested_routing_metadata_is_omitted_without_mutating_original(stage, monkeypatch):
+        rows = json.loads((SAVED / 'out/ai-pg-01.json').read_text())['rows']
+        kind = 'alert_basic' if stage == 'A' else 'incident_diagnosis'
+        run = next(r for r in rows['runs'] if r['kind'] == kind)
+        source = next(a['content_json'] for a in rows['artifacts'] if a['id'] == run['input_artifact_id'])
+        policy = runtime_policy.load_policy(ROOT / 'deploy/local-investigation/investigation-policy-case-v1.toml')
+        monkeypatch.setattr(runtime_policy, 'active_policy', lambda: policy)
+        material = source['members'][0]['material']
+        record = material['raw_json']['raw_event']['telemetry'][0]
+        record.update(packet_count=0, connection_reset=False, dns_answers=[],
+                      business={'source': 'business-source-kept', 'id': 'business-id-kept', 'note': '原文照录。'})
+        material['raw_json']['raw_event']['telemetry'].append(copy.deepcopy(record))
+        # The wildcard must only match list indices, not similarly named business branches.
+        material['raw_json']['raw_event']['other'] = {'source': 'other-business-source-kept', 'tenant_id': 'business-tenant-kept'}
+        before = copy.deepcopy(source)
+        if stage == 'A':
+            queries = [(a['id'], a['content_json']) for a in rows['artifacts']
+                       if a['run_id'] == run['id'] and a['kind'] == 'tool_response']
+            prepared = alert_model_boundary.build(source, run['input_artifact_id'], queries, policy.alert_io)[-1]
+            visible = prepared['user'];omissions = prepared['omissions']
+        elif stage == 'I':
+>           prepared = incident_model_boundary.build(source, run['input_artifact_id'], policy.incident_io)[-1]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_nested_transport_metadata.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/incident_model_boundary.py:141: in build
+    "program_facts": stage_facts(source, input_id, execution_time)}
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:134: in stage_facts
+    members = [member_facts(m, source_id, f"$.members.{index}") for index, m in enumerate(source["members"])]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:81: in member_facts
+    result["detection_labels"] = labels(detection if isinstance(detection, dict) and not blocked(detection) else {})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/program_facts.py:27: in labels
+    policy = active_policy()
+             ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:382: StoreError
+_ test_actual_nested_routing_metadata_is_omitted_without_mutating_original[C3] _
+
+stage = 'C3'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1124c4fe0>
+
+    @pytest.mark.parametrize('stage', ['A', 'I', 'C3'])
+    def test_actual_nested_routing_metadata_is_omitted_without_mutating_original(stage, monkeypatch):
+        rows = json.loads((SAVED / 'out/ai-pg-01.json').read_text())['rows']
+        kind = 'alert_basic' if stage == 'A' else 'incident_diagnosis'
+        run = next(r for r in rows['runs'] if r['kind'] == kind)
+        source = next(a['content_json'] for a in rows['artifacts'] if a['id'] == run['input_artifact_id'])
+        policy = runtime_policy.load_policy(ROOT / 'deploy/local-investigation/investigation-policy-case-v1.toml')
+        monkeypatch.setattr(runtime_policy, 'active_policy', lambda: policy)
+        material = source['members'][0]['material']
+        record = material['raw_json']['raw_event']['telemetry'][0]
+        record.update(packet_count=0, connection_reset=False, dns_answers=[],
+                      business={'source': 'business-source-kept', 'id': 'business-id-kept', 'note': '原文照录。'})
+        material['raw_json']['raw_event']['telemetry'].append(copy.deepcopy(record))
+        # The wildcard must only match list indices, not similarly named business branches.
+        material['raw_json']['raw_event']['other'] = {'source': 'other-business-source-kept', 'tenant_id': 'business-tenant-kept'}
+        before = copy.deepcopy(source)
+        if stage == 'A':
+            queries = [(a['id'], a['content_json']) for a in rows['artifacts']
+                       if a['run_id'] == run['id'] and a['kind'] == 'tool_response']
+            prepared = alert_model_boundary.build(source, run['input_artifact_id'], queries, policy.alert_io)[-1]
+            visible = prepared['user'];omissions = prepared['omissions']
+        elif stage == 'I':
+            prepared = incident_model_boundary.build(source, run['input_artifact_id'], policy.incident_io)[-1]
+            visible = prepared['user'];omissions = prepared['omissions']
+        else:
+            omissions = []
+>           selected = material_entries(source['members'][0]['alert']['id'], material, policy.case_io.business,
+                                        omissions, policy.case_io.config['c3_input_selection'])
+
+services/api/tests/test_socai2_nested_transport_metadata.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+aid = '42f446b5-7093-56d2-851a-e6573033a6ef'
+material = {'id': '913eeea0-1b41-55f6-ad84-12c5648d1bc4', 'sha256': 'a7ed84ad0f8ca1e803646106ae73b692af8d112b79d2baf2ad32056a415e...6ef', 'raw_json': {'id': '42f446b5-7093-56d2-851a-e6573033a6ef', 'url': None, 'tags': [], 'title': '网络连接观察', ...}, ...}
+config = {'version': 'socai2.incident-boundary.v1', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, 'render': {'r...现、问题或限制时相应列表为空。\n\n所有正文保持简短、具体，有关来源和成员只在指定数组引用。程序生成发现和问题编号并保存映射。保留原始发现范围，不宣称建议已执行、事件已关闭或完整调查已完成。结构校验与合法引用不保证正文主张为真。\n'}
+omissions = [{'material_id': '913eeea0-1b41-55f6-ad84-12c5648d1bc4', 'path': '$.raw_json.id', 'reason': 'configured_backend_field', 'value_sha256': '617a535a6334043e520076f55e0f4ed348656ff99c83d9a46b97d002396916db'}]
+candidate = {'version': 'c3-business-input-v4', 'material_field_aliases': {'$.raw_json.hostname': 'device.name', '$.raw_json.usern...d_paths': ['$.raw_json.source'], 'history_catalog_fields': ['title', 'severity', 'event_time', 'original_vendor'], ...}
+
+    def material_entries(aid, material, config, omissions, candidate=None):
+        """Use received structure, including unknown branches; never sample names."""
+        if material.get("material_state") != "complete":
+            return []
+        cfg = config["render"]
+        envelope = cfg["raw_alert_envelope"]
+        raw = material.get("raw_json")
+        known_envelope = isinstance(raw, dict) and all(type(raw.get(k)).__name__ == typ
+                                                      for k, typ in envelope["required_fields"].items())
+        result = []
+        for name in ("raw_text", "ocsf_json", "raw_json", "detection", "enrichment", "source_scope"):
+            value = material.get(name)
+            rows = [("$." + name, value)] if name in {"detection", "enrichment", "source_scope"} else fields(value, "$." + name)
+            for path, original in rows:
+                if original is None or original == "":
+                    continue
+                administrative = any(matches(pattern, path) for pattern in cfg["metadata_paths"]) or known_envelope and any(
+                    path == "$.raw_json." + key or path.startswith("$.raw_json." + key + ".")
+                    for key in envelope["backend_fields"])
+                if administrative:
+                    omissions.append({"material_id": material["id"], "path": path,
+                                      "reason": "configured_backend_field", "value_sha256": digest(original)})
+                    continue
+                projected = original
+                if candidate and known_envelope and (path in candidate["material_backend_paths"] or
+>                       path in candidate["material_optional_paths"] and original in ([], {})):
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       KeyError: 'material_optional_paths'
+
+services/api/app/socai2/case_input_text.py:88: KeyError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_nested_transport_metadata.py::test_actual_nested_routing_metadata_is_omitted_without_mutating_original[A]
+FAILED services/api/tests/test_socai2_nested_transport_metadata.py::test_actual_nested_routing_metadata_is_omitted_without_mutating_original[I]
+FAILED services/api/tests/test_socai2_nested_transport_metadata.py::test_actual_nested_routing_metadata_is_omitted_without_mutating_original[C3]
+3 failed in 0.41s

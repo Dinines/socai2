@@ -45,14 +45,49 @@ def test_observed_statement_is_original_fields_and_model_cannot_supply_it(sample
     parsed = receive(answer)
     sid = member["evidence_ids"][0]
     literal = prepared["case_boundary"]["observation_literals"][sid]
-    assert literal["path"] in parsed.findings[0].statement
+    assert literal.get("field", literal["path"]) in parsed.findings[0].statement
     assert json.dumps(literal["value"], ensure_ascii=False, separators=(",", ":")) in parsed.findings[0].statement
     assert answer == before
+    legacy = copy.deepcopy(prepared["case_boundary"])
+    legacy["program_output"] = "socai2.case-program-output.v1"
+    assert program.enabled(legacy)
+    old_text = program.observed_text(finding, legacy)
+    assert f"[{literal['group']}｜{sid}] {literal['path']}=" in old_text
     finding["statement"] = "Unsupported model-authored direction must not be replaced and accepted."
     with pytest.raises(SchemaError):
         Draft202012Validator(fmt["json_schema"]["schema"]).validate(answer)
     with pytest.raises(AnalysisRejected, match="observed_statement_is_program_owned"):
         receive(answer)
+
+
+def test_observation_grouping_keeps_record_scope_typed_values_and_every_reference():
+    roots = ("$.ocsf_json.", "$.raw_json.raw_event.ocsf_event.")
+    rows = []
+    for sid, material, members, path, value in [
+        ("S1", "one", ["a"], roots[0] + "dst.port", 443),
+        ("S2", "one", ["a"], roots[1] + "dst.port", 443),
+        ("S3", "one", ["a"], roots[0] + "src.port", 443),
+        ("S4", "two", ["a"], roots[0] + "dst.port", 443),
+        ("S5", "one", ["b"], roots[0] + "dst.port", 443),
+        ("S6", "one", ["a"], roots[0] + "dst.port", "443"),
+        ("S7", "one", ["a"], "$.unknown.zero", 0),
+        ("S8", "one", ["a"], "$.unknown.zero", False),
+        ("S9", "one", ["a"], "$.unknown.zero", []),
+    ]:
+        rows.append({"id": sid, "alert_ids": members, "value": value,
+            "ref": {"type": "alert_material", "id": material, "role": "observation", "source_path": path}})
+    before = copy.deepcopy(rows)
+    literals = program.observation_literals(rows, {"a": "A1", "b": "A2"}, event_roots=roots)
+    text = program.observed_text({"support_ids": [r["id"] for r in rows]},
+                                {"program_output": program.VERSION, "observation_literals": literals})
+    assert '[S1,S2] dst.port=443' in text and '[S3] src.port=443' in text
+    assert text.count('dst.port=443') == 3  # Separate record and member scope.
+    assert '[S6] dst.port="443"' in text
+    assert all(part in text for part in ('[S7] $.unknown.zero=0', '[S8] $.unknown.zero=false', '[S9] $.unknown.zero=[]'))
+    assert rows == before
+    assert all(literals[r["id"]]["path"] == r["ref"]["source_path"]
+               and type(literals[r["id"]]["value"]) is type(r["value"])
+               and literals[r["id"]]["value"] == r["value"] for r in rows)
 
 
 def test_overlong_original_is_rejected_and_partial_retains_independent_units(sample):
@@ -74,39 +109,77 @@ def test_overlong_original_is_rejected_and_partial_retains_independent_units(sam
     assert json.loads(raw) == answer
 
 
-def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample):
+@pytest.mark.parametrize("stage", ["C3", "C6"])
+def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample, stage):
     context, base_input = base.prepared_sample(sample)
     for i, (tool, state, count) in enumerate([("assets", "completed", 0), ("history", "skipped", None)]):
-        base_input["input_ledger"]["records"].append({"id": f"receipt-{i}", "block": "background_query",
+        row = {"id": f"receipt-{i}", "block": "background_query",
             "value": {"tool_name": tool, "state": state, "outcome": "empty" if count == 0 else "not_queried",
                       "returned_rows": count, "truncated": False}, "alert_ids": list(context.alerts),
             "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
-                    "source_path": None, "external": None, "row_keys": []}})
+                    "source_path": None, "external": None, "row_keys": []}}
+        row["original_value"] = copy.deepcopy(row["value"])
+        base_input["input_ledger"]["records"].append(row)
+        base_input["source_map"][row["id"]] = {"ref": row["ref"], "alert_ids": row["alert_ids"]}
     comparison = {"state": "initial", "result_id": None}
-    prepared = inputs.build("C6", context, base_input, {}, extra={"comparison": comparison,
-        "followup_execution": {"routes": [{"state": "handoff", "question_id": "authorization"}]}})
-    answer = followup.final_answer(prepared, context, comparison)
-    assert len(answer["analysis"]["questions"]) == 5
-    parsed = final.parse_final(json.dumps(answer), prepared, context, comparison)
-    assert len(parsed.analysis.questions) == 6
-    coverage = next(q for q in parsed.analysis.questions if q.id == "coverage")
+    if stage == "C3":
+        prepared = base_input
+        prepared["case_boundary"]["coverage_facts"] = program.initial_coverage(prepared["input_ledger"], len(context.alerts))
+        assert len(prepared["case_boundary"]["coverage_facts"]["queries"]) == 2  # Excludes nine prior A receipts.
+        assert "coverage：" not in prepared["messages"][1]["content"]
+        assert "coverage_facts" not in inputs.build("Deep", context, base_input, {}, question_id="authorization")["case_boundary"]
+        answer = base.answer_for(prepared, context)
+        receive = lambda value: initial.parse(json.dumps(value), prepared, context, {})
+        review = initial.CaseReview(prepared, context, {})
+        fmt = initial.output_format(prepared, context, {})
+    else:
+        prepared = inputs.build("C6", context, base_input, {}, extra={"comparison": comparison,
+            "followup_execution": {"routes": [{"state": "handoff", "question_id": "authorization"}]}})
+        answer = followup.final_answer(prepared, context, comparison)
+        receive = lambda value: final.parse_final(json.dumps(value), prepared, context, comparison).analysis
+        review = final.FinalReview(prepared, context, comparison)
+        fmt = final.final_format(prepared, context, comparison)
+    root = answer if stage == "C3" else answer["analysis"]
+    assert len(root["questions"]) == 5
+    Draft202012Validator(fmt["json_schema"]["schema"]).validate(answer)
+    parsed = receive(answer)
+    assert len(parsed.questions) == 6
+    coverage = next(q for q in parsed.questions if q.id == "coverage")
     assert 'state="completed"' in coverage.answer and "returned_rows=0" in coverage.answer
     assert 'state="skipped"' in coverage.answer and "returned_rows=null" in coverage.answer
-    assert "handoff" in coverage.answer and len(coverage.evidence_ids) == 2
+    assert ("handoff" in coverage.answer) == (stage == "C6")
+    assert "unrecorded=3" in coverage.answer and len(coverage.evidence_ids) == 2
     invalid = copy.deepcopy(answer)
-    invalid["analysis"]["questions"].append(coverage.model_dump(mode="json"))
+    (invalid if stage == "C3" else invalid["analysis"])["questions"].append(coverage.model_dump(mode="json"))
+    with pytest.raises(SchemaError):
+        Draft202012Validator(fmt["json_schema"]["schema"]).validate(invalid)
     with pytest.raises(AnalysisRejected, match="coverage_question_is_program_owned"):
-        final.parse_final(json.dumps(invalid), prepared, context, comparison)
-    answer["analysis"]["members"][0]["evidence_ids"] = ["not-present"]
-    review = final.FinalReview(prepared, context, comparison)
-    assert review.partial(json.dumps(answer)) is None
+        receive(invalid)
+    if stage == "C3":
+        invalid = copy.deepcopy(answer)
+        invalid["followups"] = [{"question_id": "coverage", "alert_ids": [root["members"][0]["alert_id"]],
+            "mode": "human", "objective": "Check reads", "required_evidence": "Receipt", "source_ids": [],
+            "object_keys": [], "binding_id": None, "priority": "supporting"}]
+        with pytest.raises(SchemaError):
+            Draft202012Validator(fmt["json_schema"]["schema"]).validate(invalid)
+        with pytest.raises(AnalysisRejected, match="coverage_followup_is_program_owned"):
+            receive(invalid)
+    root["members"][0]["evidence_ids"] = ["not-present"]
+    partial = review.partial(json.dumps(answer))
     retained = review.details["retained_analysis"]
+    assert partial.model_dump(mode="json") == retained if stage == "C3" else partial is None
     assert "not_analyzed=1" in next(q["answer"] for q in retained["questions"] if q["id"] == "coverage")
     assert review.details["conclusion_adoptable"] is False
 
 
 def test_historical_boundary_keeps_authored_observation_and_six_questions(sample):
     context, prepared = base.prepared_sample(sample)
+    prepared["case_boundary"].pop("coverage_facts")
+    # Original v2 C3 boundaries still accepted model-authored coverage.
+    answer = base.answer_for(prepared, context)
+    assert len(answer["questions"]) == 6
+    Draft202012Validator(initial.output_format(prepared, context, {})["json_schema"]["schema"]).validate(answer)
+    assert len(initial.parse(json.dumps(answer), prepared, context, {}).questions) == 6
     prepared["case_boundary"].pop("program_output")
     answer = base.answer_for(prepared, context)
     member = answer["members"][0]

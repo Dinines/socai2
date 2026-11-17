@@ -1,0 +1,65 @@
+{
+  "id": "C05",
+  "title": "可疑外联但日志源不可用",
+  "status": "partial",
+  "checks": [
+    "FAIL/incomplete; review saved exchanges"
+  ],
+  "reference": {
+    "expected_verdict": "needs_review",
+    "rationale": "events未接入、authorization查询失败；graph成功空结果仅涵盖窄范围。无法核实行为或授权。",
+    "must_not_claim": [
+      "查询失败不是零事件",
+      "空图不是全网安全",
+      "缺证不能判规则误报"
+    ],
+    "decisive_refs": [],
+    "review_questions": [
+      "关键事实是否引用实际已查询的材料？",
+      "事实、假设、缺口是否区分？",
+      "授权、恶意性、检测有效性是否分开？",
+      "报告是否保留查询失败和未完成状态？",
+      "响应是否仅为建议？"
+    ],
+    "reference_type": "authored synthetic expectation; manual review, not observed ground truth"
+  },
+  "trace": [
+    {
+      "stage": "triage",
+      "validation": "structure_passed",
+      "content": "{\n  \"verdict\": \"true_positive\",\n  \"confidence\": 1.0,\n  \"rationale\": \"The rule condition 'anomalous outbound session; raw packet details absent' was met, indicating an unusual encrypted egress. The event time falls within the rule's time window, suggesting the detection is valid. While the absence of raw packet details may indicate a missing field, the presence of the event time supports the detection's correctness. This aligns with the benign_true_positive category as the detection is valid and non-malicious.\"\n}"
+    },
+    {
+      "stage": "recon",
+      "validation": "pending",
+      "content": "{\n  \"iocs\": [\n    {\n      \"type\": \"ip\",\n      \"value\": \"192.0.2.20\"\n    }\n  ],\n  \"mitre_techniques\": [\n    \"T1566\"\n  ],\n  \"threat_actors\": [\n    \"APT28\"\n  ],\n  \"attack_surface\": {\n    \"affected_systems\": [\n      \"ops-17\",\n      \"svc_patch\"\n    ],\n    \"data_at_risk\": [\n      \"outbound traffic\",\n      \"system logs\"\n    ]\n  },\n  \"summary\": \"An unusual encrypted egress detected from ops-17 via IP 192.0.2.20, likely via APT28's infrastructure. The MITRE ATT&CK technique T1566 indicates anomalous outbound traffic, and APT28 is a probable threat actor. The attack surface includes the systems involved and the data points.\"\n}"
+    }
+  ],
+  "stopped_stage": "recon",
+  "error": "$.attack_surface.data_at_risk: expected string",
+  "actual": {
+    "completed_stages": [
+      {
+        "stage": "triage",
+        "validation": "structure_passed",
+        "content": "{\n  \"verdict\": \"true_positive\",\n  \"confidence\": 1.0,\n  \"rationale\": \"The rule condition 'anomalous outbound session; raw packet details absent' was met, indicating an unusual encrypted egress. The event time falls within the rule's time window, suggesting the detection is valid. While the absence of raw packet details may indicate a missing field, the presence of the event time supports the detection's correctness. This aligns with the benign_true_positive category as the detection is valid and non-malicious.\"\n}"
+      },
+      {
+        "stage": "recon",
+        "validation": "pending",
+        "content": "{\n  \"iocs\": [\n    {\n      \"type\": \"ip\",\n      \"value\": \"192.0.2.20\"\n    }\n  ],\n  \"mitre_techniques\": [\n    \"T1566\"\n  ],\n  \"threat_actors\": [\n    \"APT28\"\n  ],\n  \"attack_surface\": {\n    \"affected_systems\": [\n      \"ops-17\",\n      \"svc_patch\"\n    ],\n    \"data_at_risk\": [\n      \"outbound traffic\",\n      \"system logs\"\n    ]\n  },\n  \"summary\": \"An unusual encrypted egress detected from ops-17 via IP 192.0.2.20, likely via APT28's infrastructure. The MITRE ATT&CK technique T1566 indicates anomalous outbound traffic, and APT28 is a probable threat actor. The attack surface includes the systems involved and the data points.\"\n}"
+      }
+    ]
+  },
+  "measurements": {
+    "requests": 2,
+    "http_duration_seconds": 7.856,
+    "known_total_tokens": 3410,
+    "missing_token_usage_requests": 0,
+    "cost": "unpriced",
+    "statuses": [
+      "responded",
+      "responded"
+    ]
+  }
+}

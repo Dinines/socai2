@@ -1,0 +1,27 @@
+{
+  "schema_version": "socai2.acceptance-conversion.v1",
+  "source_format": "streaming-v2",
+  "scenario": {
+    "schema_version": "socai2.acceptance-scenario.v1",
+    "scenario_id": "login-process-network",
+    "title": "登录、进程与外联的分段验收",
+    "parts": [
+      {"id": "part1", "check_level": "case", "context_required": true},
+      {"id": "part2", "check_level": "case", "context_required": true}
+    ],
+    "cases": [
+      {
+        "key": "incident-case", "title": "整事件调查", "create_after_part": "part1",
+        "scope": "incident", "alert_refs": ["part1/alerts/001.json"], "check_after_parts": ["part2"]
+      },
+      {
+        "key": "single-alert-case", "title": "固定告警调查", "create_after_part": "part1",
+        "scope": "alerts", "alert_refs": ["part1/alerts/001.json"], "check_after_parts": ["part2"]
+      }
+    ]
+  },
+  "parts": [
+    {"id": "part1", "alerts": ["S01/alerts.jsonl"], "context": ["S01/context-events.jsonl"]},
+    {"id": "part2", "alerts": ["S04/alerts.jsonl"], "context": ["S04/context-events.jsonl"]}
+  ]
+}

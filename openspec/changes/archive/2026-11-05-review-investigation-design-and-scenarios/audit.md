@@ -1,6 +1,6 @@
 # 两轮设计审计交付回执
 
-本批按用户选择完成设计审计，再完成设计与场景评估。[报告](../../../../docs/investigation/design-audit-and-scenario-evaluation-20261105.md)基于 `a1be19316105ad9176afcadba8c4463fc50c96b1`，提出四项问题、页面功能/字段对接表、18个场景和成熟度判断；不另立产品设计版本，不实施建议。
+本批按用户选择完成设计审计，再完成设计与场景评估。[报告](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-audit-and-scenario-evaluation-20261105.md)基于 `a1be19316105ad9176afcadba8c4463fc50c96b1`，提出四项问题、页面功能/字段对接表、18个场景和成熟度判断；不另立产品设计版本，不实施建议。
 
 ## 直接核验
 

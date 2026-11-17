@@ -1,0 +1,40 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires_fragments": [
+    "deploy/http-service/case-initial-release-fragment.json",
+    "deploy/local-investigation/analysis-case-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/investigation_http/main.py": "investigation_http/main.py",
+    "services/api/investigation_http/analysis_submission_contracts.py": "investigation_http/analysis_submission_contracts.py",
+    "services/api/investigation_http/adapters/analysis_submissions.py": "investigation_http/adapters/analysis_submissions.py",
+    "services/api/investigation_http/external_routes/analysis_submissions.py": "investigation_http/external_routes/analysis_submissions.py",
+    "services/api/investigation_http/external_routes/cases.py": "investigation_http/external_routes/cases.py",
+    "services/api/investigation_http/record_links.py": "investigation_http/record_links.py",
+    "services/api/investigation_http/run_record_contracts.py": "investigation_http/run_record_contracts.py",
+    "services/api/investigation_http/adapters/identity.py": "investigation_http/adapters/identity.py",
+    "services/api/investigation_http/adapters/runtime.py": "investigation_http/adapters/runtime.py"
+  },
+  "candidate_openapi": "docs/operations/evidence/case-update-http-20261115-01/candidate-openapi.json",
+  "swagger_directory": "docs/operations/evidence/case-update-http-20261115-01/swagger",
+  "expected_business_operations": 80,
+  "prerequisites": [
+    "Use the same frozen core version and its updated analysis-case fragment, including CaseComparison, frozen readers and the Case scanner. Schema128/129 remain prerequisites; step7 adds no migration.",
+    "Keep explicit database read/write targets, SOCAI2_HTTP_CONTEXT_FILE, SOCAI2_ANALYSIS_TASKS_CONFIG_FILE, SOCAI2_CASE_ALLOCATION_CONFIG_FILE and Run directory/record policies from the existing HTTP profile.",
+    "The separate execution service selects explicit Case scan_batch_size and lifecycle policy; keep one A/I/Case dispatcher. HTTP does not own the dispatcher or model lifecycle."
+  ],
+  "notes": [
+    "Mount Case investigations POST with operation_key and mode=check/rerun; respond202 with original task receipt. Terminal same-key replay creates no task or Run.",
+    "E12/E14 expose previous_run_url and comparison_result_url from the core's typed frozen comparison_context; do not reselect from current history or accepted judgment.",
+    "F1 scope readback passed (incident-case-scope-fix-20261115-01/http-read-03.json): 22 GETs and unchanged 19-table tenant snapshots. Include case_incident_scope.py and the C1 schema/readers from the required core fragment; existing HTTP routes/DTOs are unchanged.",
+    "F2 metadata readback passed (case-input-metadata-fix-20261115-01/http-read-01.json): 24 GETs and unchanged 17-table tenant snapshots. Use the matching stage_inputs/baseline_context/case_query_snapshot core update; public A historical freshness is unchanged, while C1 preserves usable same-material prior A and queries.",
+    "F3 retry readback passed (case-retry-fix-20261115-01/http-read-01.json): 52 GETs and unchanged 15-table tenant snapshots. Deploy the matching baseline_failure, execution/closing and dispatch core changes together; preserve the same task across one retry and unknown Run history. Whole-change acceptance remains open; freeze final artifacts after completion, without rewriting prior snapshots.",
+    "F4 independent trigger/retry-guard readback passed (case-trigger-fix-20261115-01/http-readback.md): 78 + 11 GETs, unchanged 19/10-table tenant snapshots. Keep distinct requests independent, check material at execution, preserve manual historical-I scope, and follow active whole-event Case only after usable I changes. Use the matching dispatcher/scanner/input-scope core fragment and explicit allocation policy. No HTTP DTO changes; old failures remain.",
+    "F5 current-contract readback passed (execution-contract-fix-20261115-01/http-read-01.json): 90 GETs, 3 tasks/Runs, 25 steps, 69 artifacts and unchanged 19-table tenant snapshots. Include trusted identity/runtime assembly as well as the matching A/I/Case execution-profile enforcement. HTTP does not start executors; public OpenAPI remains 80 operations. This fragment still requires a complete explicit candidate profile and packaged source/config inventory before TCP validation.",
+    "No login, Token or role validation; configured tenant and recording actor identify the trusted business context.",
+    "Keep external E11/E13/E36 retired and internal investigation calls separate. Steps8-10 remain deferred.",
+    "Validated with isolated PG/Redis and explicit model/source substitutes. Final candidate TCP, real-model tests and independent end audit remain separate whole-change acceptance work.",
+    "This fragment is not executable by manage.py and does not deploy, restart, activate consumers, or authorize Git operations."
+  ]
+}

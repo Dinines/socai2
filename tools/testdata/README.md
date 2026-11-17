@@ -1,8 +1,10 @@
-**2026-10-24 main统一审计：** 数据评估与调查469e9467已整合；[双方意见与数据湖协作](../../docs/operations/data-investigation-integration-audit-20261024.md)统一现有fixture/单批写湖复用、scope/query/采用和评分分工。原工具代码/测试保持，兼容及评分问题待各分支续接。
+**当前入口（2026-11-16）：** 新数据使用 [v2 生成器与模型透明规则](CATALOG.md)；[本轮材料核对](../../docs/operations/evidence/model-blind-data-20261116-01/README.md)已完成，未投递或调用模型。历史测试存储已按负责人授权整表清空。S01/S04/W2–W5 的旧回执保留历史意义，当前真实 4177 按 HTTP 读取空状态。下文历史命令和旧评估语料不直接用于新盲测。
+
+**2026-10-24 main统一审计：** 数据评估与调查469e9467已整合；[双方意见与数据湖协作](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/data-investigation-integration-audit-20261024.md)统一现有fixture/单批写湖复用、scope/query/采用和评分分工。原工具代码/测试保持，兼容及评分问题待各分支续接。
 
 # 有界合成告警工具
 
-**2026-11-05 上下文扩充：** 新增 `context_fixture.py`，复用现有确定身份/时间及 JSON/hash/答案分离工具，围绕已有固定告警生成网络五元组和收发字节/包数、进程、认证及主机/时间范围对照。只离线生成，默认不联网、不创建告警或 Case；不同目的地址仍属于主机窗口查询上下文。一次实际 40 条 Kafka→Fusion→新湖、18 正式 Tool 查询与 96 计数值核对结果见[完整流程验收](../../docs/investigation/kafka-to-conclusion-validation-20261105.md)。原 fixture 和上游生成器保持。
+**2026-11-05 上下文扩充：** 新增 `context_fixture.py`，复用现有确定身份/时间及 JSON/hash/答案分离工具，围绕已有固定告警生成网络五元组和收发字节/包数、进程、认证及主机/时间范围对照。只离线生成，默认不联网、不创建告警或 Case；不同目的地址仍属于主机窗口查询上下文。一次实际 40 条 Kafka→Fusion→新湖、18 正式 Tool 查询与 96 计数值核对结果见[完整流程验收](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/kafka-to-conclusion-validation-20261105.md)。原 fixture 和上游生成器保持。
 
 ```powershell
 .venv/Scripts/python.exe tools/testdata/context_fixture.py --plan <固定告警计划.json> --out .local/testdata/<新目录> --run-id <新批次>
@@ -10,11 +12,11 @@
 
 输出 `events.json` 和独立 `expected.json`，manifest 记录原计划及文件 hash。仅适配明确带两条进程/网络告警、Case 主机和原两分钟时间窗的计划；不猜生产字段，不把 expected 交给 Kafka 或模型。新批次真实投放由 `docs/operations/run_socai2_context_20261105.py` 固定实例完成，该 k4 已结束，脚本会拒绝重派；不要为重试删除 attempt 文件。新增 Tool 计数投影已本地及真实诊断进程验证，常驻 n14 尚未同步。
 
-2026-10-24代码审查与待处理项见[分支审计](../../docs/operations/data-evaluation-audit-20261024.md)：MCC非法分类边界、批次冻结/一对执行及证据截断尚未修复；现状合入不代表完整评测通过。
+2026-10-24代码审查与待处理项见[分支审计](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/data-evaluation-audit-20261024.md)：MCC非法分类边界、批次冻结/一对执行及证据截断尚未修复；现状合入不代表完整评测通过。
 
-后续数据/评估设计与E0离线入口见[评估设计](../../docs/operations/data-evaluation-design-20261023.md)。本轮工具位于隔离工作区/分支`codex/data-evaluation`；不改变调查实现。原迁移回执继续适用于原范围。
+后续数据/评估设计与E0离线入口见[评估设计](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/data-evaluation-design-20261023.md)。本轮工具位于隔离工作区/分支`codex/data-evaluation`；不改变调查实现。原迁移回执继续适用于原范围。
 
-2026-10-23已按[迁移修订计划](../../docs/operations/testdata-migration-plan-20261023.md)补场景选择、正式Kafka wire/发送与结果观察，保留原HTTP工具。逐步实际验证及限制见[本批回执](../../docs/operations/testdata-migration-execution-20261023.md)。
+2026-10-23已按[迁移修订计划](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-migration-plan-20261023.md)补场景选择、正式Kafka wire/发送与结果观察，保留原HTTP工具。逐步实际验证及限制见[本批回执](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-migration-execution-20261023.md)。
 
 `alert_scenarios.py` 将固定上游的场景生成器输出转换成当前 `POST /api/v1/alert-ingress` 的**已有告警**合同。默认只生成本地文件，不发送网络请求。稳定 `run-id + tenant + scenario-id` 产生稳定 UUID；相同输入生成相同字节。`event-time` 必须显式含时区，数量为 1–20（默认 3），输出目录拒绝覆盖。
 
@@ -47,7 +49,7 @@
 .local/conda-envs/socai2/bin/python -m pytest -q tools/testdata/tests
 ```
 
-实际验证与边界见[测试工具回执](../../docs/operations/testdata-tools-20261022.md)：2026-10-22的3条新隔离输入已通过真实入口/Kafka/Fusion/PG，未进入模型或调查；离线/替身结果单独列出。逐步恢复及原失败见[执行记录](../../docs/operations/two-projects-resume-20261022.md)。
+实际验证与边界见[测试工具回执](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-tools-20261022.md)：2026-10-22的3条新隔离输入已通过真实入口/Kafka/Fusion/PG，未进入模型或调查；离线/替身结果单独列出。逐步恢复及原失败见[执行记录](../../docs/operations/two-projects-resume-20261022.md)。
 
 ## Git提交与运行材料
 
@@ -165,7 +167,7 @@ python tools/testdata/verify_tool_handoff.py \
 
 核对原probe的model-request/response与tool-request/result文件；同tenant/Run/Alert内，用原响应call_id、名称/参数及串行顺序匹配，再检查后续实际请求内对应ToolMessage和原渲染内容。原执行回执没有call_id，所以只标`ordered_signature`关联；重复次数不齐、顺序冲突或材料歧义均未核。没有后续请求不能记作模型已经看到。报告哈希仅证明所供文件内部一致，不独立证明原文件真实性。
 
-分别报告模型提议数、执行回执数、返回可用/不可用/error及进入后续请求数；调用过不等于数据源成功查询，available也不等于返回证据相关。model-request由发送前hook记录，核对通过只证明已记录的后续请求正文包含该结果，不证明提供方成功接收或模型语义采用。实际本批结果见[执行回执](../../docs/operations/data-evaluation-execution-20261023.md)。
+分别报告模型提议数、执行回执数、返回可用/不可用/error及进入后续请求数；调用过不等于数据源成功查询，available也不等于返回证据相关。model-request由发送前hook记录，核对通过只证明已记录的后续请求正文包含该结果，不证明提供方成功接收或模型语义采用。实际本批结果见[执行回执](../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/data-evaluation-execution-20261023.md)。
 
 ## 小批量给定证据评测与发送前预检
 

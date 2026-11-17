@@ -25,19 +25,20 @@ def test_profile_option_cannot_be_overridden_by_abbreviation(monkeypatch):
 
 def profile_file(tmp_path):
     policy = tmp_path / "policy.toml"
-    policy.write_bytes((ROOT / "deploy/local-investigation/investigation-policy.toml").read_bytes())
+    policy.write_bytes((ROOT / "deploy/local-investigation/investigation-policy-case-v1.toml").read_bytes())
     transport = tmp_path / "transport.env"
     transport.write_text("OPENAI_API_KEY=synthetic-unit-credential\nDATABASE_URL=not-used\nOPENAI_BASE_URL=not-used\n")
-    ca = tmp_path / "ca.crt"
-    ca.write_text("synthetic certificate fixture")
     private = tmp_path / "private"
     private.mkdir()
+    for name in ("analysis-projection.json", "analysis-tasks.json"):
+        (tmp_path / name).write_text("{}")
     source = (HERE / "production-profile.example.toml").read_text()
     replacements = {"sha256:REPLACE_WITH_VERIFIED_IMAGE_DIGEST": "sha256:" + "b" * 64,
+        "/opt/sting-aisoc-socai2/private/analysis-projection.json": str(tmp_path / "analysis-projection.json"),
+        "/opt/sting-aisoc-socai2/private/analysis-tasks.json": str(tmp_path / "analysis-tasks.json"),
         "/opt/sting-aisoc-socai2/config/investigation-policy.toml": str(policy),
         "/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env": str(transport),
         "/opt/sting-aisoc-socai2/private/processing-production": str(private),
-        "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt": str(ca),
         'database = "aisoc"': 'database = "synthetic_configured"',
         'host = "192.168.1.21"': 'host = "configured.example"',
         'port = 5432': 'port = 25439', 'port = 9000': 'port = 29009',
@@ -64,6 +65,8 @@ def test_required_profile_has_no_implicit_model_database_or_policy(tmp_path):
     assert env["AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS"] == str(profile.policy["model"]["max_prepared_bytes"])
     assert env["SOCAI2_PROCESSING_PROFILE_SHA256"] == hashlib.sha256(path.read_bytes()).hexdigest()
     assert "OPENAI_API_KEY" not in env and "DATABASE_URL" not in env
+    assert env["PGSSLMODE"] == "require"
+    assert not {"PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "SSL_CERT_FILE"} & env.keys()
 
 
 def test_knowledge_profile_is_explicit_and_mount_matches_runtime(tmp_path):
@@ -82,7 +85,7 @@ def test_knowledge_profile_is_explicit_and_mount_matches_runtime(tmp_path):
 
 
 @pytest.mark.parametrize("before,after", [
-    ('port = 25439', 'port = true'), ('tls_mode = "verify-full"', 'tls_mode = "disable"'),
+    ('port = 25439', 'port = true'), ('tls_mode = "require"', 'tls_mode = "verify-full"'),
     ('alias = "aisoc-investigation"', 'alias = "wrong-model"'),
     ('["litellm", "192.168.1.43"]', '["litellm"]'),
     ('processor_role = "synthetic_processor"', 'processor_role = "invalid;role"'),
@@ -98,6 +101,8 @@ def test_missing_or_inconsistent_profile_fails_before_actions(tmp_path, before, 
 
 
 def test_installer_and_job_use_same_profile_and_readonly_policy_mount(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("PGSSLROOTCERT", "/missing/old-client-ca.crt")
+    monkeypatch.setenv("SSL_CERT_FILE", "/missing/old-client-ca.crt")
     profile = launcher.select_profile(profile_file(tmp_path))
     monkeypatch.setattr(launcher, "secure_file", lambda _: None)
     monkeypatch.setattr(launcher, "pg_credential", lambda *_: "f" * 64)
@@ -107,7 +112,10 @@ def test_installer_and_job_use_same_profile_and_readonly_policy_mount(tmp_path, 
     env = dict(line.split("=", 1) for line in (launcher.PRIVATE / "runtime.env").read_text().splitlines())
     dsn = urlsplit(env["DATABASE_URL"])
     assert (dsn.hostname, dsn.port, dsn.path, dsn.username) == ("configured.example", 25439, "/synthetic_configured", "synthetic_processor")
-    assert parse_qs(dsn.query) == {"sslmode": ["verify-full"]}
+    assert parse_qs(dsn.query) == {"sslmode": ["require"]}
+    for filename in ("runtime.env", "ingress.env"):
+        assert not any(key + "=" in (launcher.PRIVATE / filename).read_text()
+                       for key in ("PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "SSL_CERT_FILE"))
     assert env["OPENAI_BASE_URL"] == profile.model.base_url and env["OPENAI_API_KEY"] == "synthetic-unit-credential"
     commands = []
     def run(args, **kwargs):
@@ -119,6 +127,7 @@ def test_installer_and_job_use_same_profile_and_readonly_policy_mount(tmp_path, 
     assert args[args.index("--network") + 1] == "configured_network"
     assert "--memory=3g" in args and "--pids-limit=144" in args and profile.image.id in args
     assert f"type=bind,src={profile.paths.policy_file},dst={profile.paths.policy_mount},readonly" in args
+    assert not any("ca.crt" in value or "/run/certs" in value for value in args)
     assert kwargs["input"] == "" and "synthetic-unit-credential" not in capsys.readouterr().out
     # A changed policy cannot run against an old generated env file.
     Path(profile.paths.policy_file).write_text(Path(profile.paths.policy_file).read_text() + "\n# changed\n")
@@ -147,7 +156,7 @@ def test_ingress_uses_configured_identity_and_rejects_mismatched_host(tmp_path, 
     profile = load(profile_file(tmp_path))
     for key, value in runtime_values(profile).items():
         monkeypatch.setenv(key, value)
-    dsn = "postgresql+asyncpg://synthetic_ingress:synthetic@configured.example:25439/synthetic_configured?sslmode=verify-full"
+    dsn = "postgresql+asyncpg://synthetic_ingress:synthetic@configured.example:25439/synthetic_configured?sslmode=require"
     monkeypatch.setenv("DATABASE_URL", dsn)
     assert ingress.database_url() == dsn.replace("postgresql+asyncpg:", "postgresql:")
     monkeypatch.setenv("DATABASE_URL", dsn.replace("configured.example", "wrong.example"))
@@ -163,6 +172,33 @@ def test_job_probe_requires_profile_before_transport(monkeypatch):
     spec.loader.exec_module(probe)
     with pytest.raises(ValueError, match="processing_profile_file_required"):
         probe.remote({"transport": {}}, {"mode": "job"})
+
+
+@pytest.mark.asyncio
+async def test_ingress_child_has_password_connection_without_certificate_env(monkeypatch):
+    from unittest.mock import AsyncMock
+
+    import processing_job
+
+    configured = {"SOCAI2_PROJECTION_CONFIG_FILE": "/config/projection.json",
+        "SOCAI2_INGRESS_URL": "postgresql+asyncpg://fixture:fixture@database:5432/selected?sslmode=require",
+        "SOCAI2_PROCESSING_FUSION_PYTHONPATH": "/opt/processor/smoke-fusion",
+        "PGSSLMODE": "require", "SOCAI2_SERVICE_DATABASE_NAME": "selected",
+        "SOCAI2_PROCESSING_INGRESS_ROLE": "fixture", "SOCAI2_PROCESSING_DB_HOST": "database",
+        "SOCAI2_PROCESSING_DB_PORT": "5432"}
+    for key, value in configured.items():
+        monkeypatch.setenv(key, value)
+    for key in ("PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "SSL_CERT_FILE"):
+        monkeypatch.delenv(key, raising=False)
+    child = SimpleNamespace(returncode=0, communicate=AsyncMock(return_value=(b"{}", b"")))
+    spawn = AsyncMock(return_value=child)
+    monkeypatch.setattr(processing_job.asyncio, "create_subprocess_exec", spawn)
+    await processing_job.prepare_production_subjects(
+        SimpleNamespace(command="case-create", alert_id=[uuid4()], incident_id=[]), uuid4())
+    env = spawn.call_args.kwargs["env"]
+    assert env["DATABASE_URL"] == configured["SOCAI2_INGRESS_URL"]
+    assert env["PGSSLMODE"] == "require"
+    assert not {"PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY", "SSL_CERT_FILE"} & env.keys()
 
 
 def test_invalid_policy_rejected_before_any_install_action(tmp_path, monkeypatch):

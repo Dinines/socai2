@@ -246,7 +246,8 @@ class SessionStore:
         )
 
         try:
-            async with self._pool.acquire() as conn:
+            async with self._pool.acquire() as conn, conn.transaction():
+                await conn.execute("SELECT set_config('app.current_tenant_id', $1, true)", tenant_id)
                 await conn.execute(
                     _UPSERT_SQL,
                     sid,
@@ -328,13 +329,14 @@ class SessionStore:
         try:
             async with self._pool.acquire() as conn:
                 if tenant_id is not None:
-                    result = await conn.execute(_CLOSE_IDLE_SQL, tenant_id, float(idle_seconds))
-                    return _rows_affected(result)
-
-                rows = await conn.fetch(_IDLE_TENANTS_SQL, float(idle_seconds))
+                    rows = [{"tenant_id": tenant_id}]
+                else:
+                    rows = await conn.fetch(_IDLE_TENANTS_SQL, float(idle_seconds))
                 closed = 0
                 for row in rows:
-                    result = await conn.execute(_CLOSE_IDLE_SQL, row["tenant_id"], float(idle_seconds))
+                    async with conn.transaction():
+                        await conn.execute("SELECT set_config('app.current_tenant_id', $1, true)", str(row["tenant_id"]))
+                        result = await conn.execute(_CLOSE_IDLE_SQL, row["tenant_id"], float(idle_seconds))
                     closed += _rows_affected(result)
                 return closed
         except Exception as exc:  # noqa: BLE001 — same reasoning as record_event

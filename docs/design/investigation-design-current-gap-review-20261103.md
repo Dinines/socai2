@@ -1,14 +1,14 @@
 # 调查模块：当前实现与差距
 
-**最新实现与验收（2026-11-05）：** [后续项范围、C6计划关联与预算](../investigation/socai2-m2-followup-fix-20261104.md)末节。声明对象必须属于所选成员，最终报告绑定原计划工件/序号，必要内容保留且最新建议不套旧状态。5不同隔离PG方法最新通过（首批4过1预算失败，C6独立提示修正后定向2过）；45不同纯检查最新过。请求18871→17657B，原预算/事实/Schema保持，无DDL。模型湖替身，不代表真实质量已过。n13固定未部署，线上最近n9，网络已恢复；m4额外1次授权及真实整链/独审归档仍待。
+**最新实现与验收（2026-11-05）：** [后续项范围、C6计划关联与预算](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m2-followup-fix-20261104.md)末节。声明对象必须属于所选成员，最终报告绑定原计划工件/序号，必要内容保留且最新建议不套旧状态。5不同隔离PG方法最新通过（首批4过1预算失败，C6独立提示修正后定向2过）；45不同纯检查最新过。请求18871→17657B，原预算/事实/Schema保持，无DDL。模型湖替身，不代表真实质量已过。n13固定未部署，线上最近n9，网络已恢复；m4额外1次授权及真实整链/独审归档仍待。
 
-**最新兼容结论（2026-11-04，m3）：** [实测及n11修复](../investigation/socai2-deepseek-union-fix-20261104.md)。m3授权后两次400定位anyOf裸引用缺type及object类型数组不支持；本地只展开DeepSeek anyOf引用，44纯+2隔离PG方法通过，真实接收仍待m4新增1次许可。n11固定未部署，线上n9；下方“400具体原因未知”为较早时点，不替代本条。
+**最新兼容结论（2026-11-04，m3）：** [实测及n11修复](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-deepseek-union-fix-20261104.md)。m3授权后两次400定位anyOf裸引用缺type及object类型数组不支持；本地只展开DeepSeek anyOf引用，44纯+2隔离PG方法通过，真实接收仍待m4新增1次许可。n11固定未部署，线上n9；下方“400具体原因未知”为较早时点，不替代本条。
 
-**最新本地修复及口径（2026-11-04）：** [m2后修复明细](../investigation/socai2-m2-followup-fix-20261104.md)。I检测组优先级与A/I/C3/Deep/C6有界错误回执已完成本地/隔离PG验证，无DDL、新真实模型或部署；Deep A400具体参数及语义缺陷仍待。用户确认仅良恶相反计误判，needs_review可接受并单列，无真值不算准确率；旧“误判”描述按无据定性理解。下方m2仍为结束批次的事实。
+**最新本地修复及口径（2026-11-04）：** [m2后修复明细](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m2-followup-fix-20261104.md)。I检测组优先级与A/I/C3/Deep/C6有界错误回执已完成本地/隔离PG验证，无DDL、新真实模型或部署；Deep A400具体参数及语义缺陷仍待。用户确认仅良恶相反计误判，needs_review可接受并单列，无真值不算准确率；旧“误判”描述按无据定性理解。下方m2仍为结束批次的事实。
 
-**最新实测（2026-11-04，m2）：** [8次真实请求结果](../investigation/socai2-model-evaluation-m2-20261104.md)确认拦截改善但整体未过。Deep A HTTP400具体拒绝原因因错误体未保存尚不明；I预算省略已有网络detection整组（内部投影问题）；来源角色检查仍不能证明授权，Deep已接受文字仍有活动成功/后续范围偏差。小C3 408/45.136秒，网关时限归属待查。n10/r7保本地，先修上述缺口再新批；下方较早“下一完整验收”不能跳过已知失败。
+**最新实测（2026-11-04，m2）：** [8次真实请求结果](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-model-evaluation-m2-20261104.md)确认拦截改善但整体未过。Deep A HTTP400具体拒绝原因因错误体未保存尚不明；I预算省略已有网络detection整组（内部投影问题）；来源角色检查仍不能证明授权，Deep已接受文字仍有活动成功/后续范围偏差。小C3 408/45.136秒，网关时限归属待查。n10/r7保本地，先修上述缺口再新批；下方较早“下一完整验收”不能跳过已知失败。
 
-**当前状态（2026-11-04，m1 后修正）：** 主目录分支 `codex/case-baseline-history-20261103`，无本任务开发工作树。A/I/C/H、页面字段出口、事件Case关系及必要来源适配已接，本地验证分批留痕；Q仅501。独立新服务线上最近核验为n9，原版保持。m1实测暴露的Schema、历史编号、双份引用、时间/领域与定性依据合同已[本地修正](../investigation/socai2-m1-contract-fix-20261104.md)，56纯/11个不同PG方法最新通过，v4尚未部署，无新增真实模型调用。29表459列不变，工件JSON增加兼容属性；仍缺真实完整链质量验收、结束独审和归档（OpenSpec13/16）。下方各批进展及“下一步”均保留发生时点，不替代本段。
+**当前状态（2026-11-04，m1 后修正）：** 主目录分支 `codex/case-baseline-history-20261103`，无本任务开发工作树。A/I/C/H、页面字段出口、事件Case关系及必要来源适配已接，本地验证分批留痕；Q仅501。独立新服务线上最近核验为n9，原版保持。m1实测暴露的Schema、历史编号、双份引用、时间/领域与定性依据合同已[本地修正](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m1-contract-fix-20261104.md)，56纯/11个不同PG方法最新通过，v4尚未部署，无新增真实模型调用。29表459列不变，工件JSON增加兼容属性；仍缺真实完整链质量验收、结束独审和归档（OpenSpec13/16）。下方各批进展及“下一步”均保留发生时点，不替代本段。
 
 2026-11-04事件Case关系已接通：[25项字段、完整流程和4例](../investigation/socai2-case-relations-20261104.md)。显式事件/成员并集、双Case移动、同事务pending/活动、幂等与冻结历史保护已实现；12新+7PG回归最新通过，首4夹具和1断言失败保留。增量124仅补Case固定source_namespace，29表459列；命名空间不是未提供的来源环境，不猜测。页面/生产未切换，下一H人工写读和引用冻结，随后外部来源及迁移/真实质量；Q仅预留，r13暂停。下方各批保留其发生时点。
 
@@ -22,7 +22,7 @@
 
 当前A/I进展（2026-11-04）：[28项存储字段](../investigation/socai2-stage-results-20261104.md)与[20项读取字段/四接口](../investigation/socai2-stage-reader-20261104.md)已实现。C1同快照检查新鲜度，新Run不向模型提供过期/无法验证分析，旧冻结Run保持。读取批7新+6回归最新通过。**实际A/I执行器、调用回执/步骤/用量和完整告警事件页面DTO仍待**；下文“实际产物写入待接”指执行到存储接线，不能再称完全没有结果存储或读取服务。接口默认关闭，无生产切换。
 
-更新说明：2026-11-03用户允许新建独立库表，当前物理模型为socai2 schema。29表已在21独立验证库创建。后续已在最新后台实现新表Case存储服务，17项服务/PG检查最终通过；[实现、字段来源和未接通部分](../investigation/socai2-baseline-storage-20261103.md)。下文“Case主路径”仍指旧HTTP实际调用链，不能把新服务的完成状态混入旧链路。
+更新说明：2026-11-03用户允许新建独立库表，当前物理模型为socai2 schema。29表已在21独立验证库创建。后续已在最新后台实现新表Case存储服务，17项服务/PG检查最终通过；[实现、字段来源和未接通部分](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-baseline-storage-20261103.md)。下文“Case主路径”仍指旧HTTP实际调用链，不能把新服务的完成状态混入旧链路。
 
 最新进展：[Fusion新writer、53字段与Case衔接](../investigation/socai2-fusion-ingestion-20261104.md)已可选接入：告警/材料/来源/对象/事件成员/首结果同事务，材料版本与人工值保持，原文与C1背景分离。9writer/worker+1Case桥接及10旧路径回归最新通过。此前[新Case九路径及36字段](../investigation/socai2-case-api-20261104.md)仍可用。A基本查询/分诊及I诊断的实际产物写入、新告警/事件读取、显式事件Case关系、外部来源/H/Q和真实质量仍待。Fusion默认public、新Case接口默认关闭，页面/生产未切换；不能把归并说明当诊断。
 
@@ -84,7 +84,7 @@
 
 范围记录/并发控制已完成两层：旧122方案保留本地代码及53通过/25跳过的历史记录，未部署；当前新123方案的物理约束及Python存储事务已经在独立PG实测，包括先启动后加成员、先改成员再启动、重复领取只派发一次、提交失败不派发。**不再把新方案列为缺真实并发验证。** 新统一执行器与HTTP已接这些事务；读取使用只读可重复读快照，GET不写业务时间。不要求先部署旧122方案才能使用新123存储，生产切换另行实施。
 
-R06沿用 [85项字段表](../investigation/page-field-support-matrix-20261102.md) T02/T05/T06/T08–T11 的必要消费问题；缺少上游输入仍排除。R08沿用 [r13报告验收](../operations/investigation-r13-report-validation-20261101.json)：A截断失败、B执行完成但语义不合格，原批次结束，不重跑。
+R06沿用 [85项字段表](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/page-field-support-matrix-20261102.md) T02/T05/T06/T08–T11 的必要消费问题；缺少上游输入仍排除。R08沿用 [r13报告验收](../operations/investigation-r13-report-validation-20261101.json)：A截断失败、B执行完成但语义不合格，原批次结束，不重跑。
 
 
 ## 3. 建议实施顺序

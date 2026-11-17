@@ -233,17 +233,38 @@ async def run_checks(engine, record, only=None):
         result = await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
         assert result["result"]["error"]["code"] == "tool_budget_exhausted" and gateway.calls == 0
 
-    async def test_c4_empty_truncated_and_storage_omission_are_distinct():
+    async def test_c4_empty_bounded_and_large_originals_are_distinct():
         for count, mutate, expected, truncated in [(0, None, 0, False), (2, None, 1, True),
-            (1, lambda row: row.update(ocsf_json=json.dumps({"large": "x" * 70000})), 0, True)]:
+            (1, lambda row: row.update(ocsf_json=json.dumps({"large": "x" * (1048576 + 1)})), 1, False)]:
             cid, rid, _, _, _, q = await fixture(limit=1)
             _, bid = await prepare(cid, rid)
             result = await service.query_evidence(T, cid, rid, bid, q, gateway=SyntheticLake(count, mutate=mutate))
             assert result["result"]["returned_rows"] == expected and result["result"]["truncated"] == truncated
             assert result["projection"]["observed_rows_in_bounded_fetch"] == count
             assert "empty_query_is_not_counterevidence" in result["projection"]["limitations"]
-            if count and not expected:
-                assert "retained_row_bytes_limit" in result["projection"]["omissions"]
+            assert len(result["result"]["overflow_rows"]) == max(0, count - 1)
+            assert len(result["projection"]["rows"]) == expected
+            if mutate:
+                assert json.loads(result["result"]["rows"][0]["ocsf_json"])["large"] == "x" * (1048576 + 1)
+
+    async def test_c4_original_survives_projection_failure():
+        cid, rid, _, _, _, q = await fixture()
+        _, bid = await prepare(cid, rid)
+        gateway = SyntheticLake()
+        with patch.object(tools, "row_projection", side_effect=ValueError("synthetic_projection_failure")):
+            try:
+                await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
+            except ValueError as exc:
+                assert str(exc) == "synthetic_projection_failure"
+            else:
+                raise AssertionError("projection_failure_not_propagated")
+        async with service.transaction(T, readonly=True) as store:
+            run = await store.one(select(R).where(*store.where(R, R.c.case_id == cid, R.c.id == rid)))
+            step = await store.one(select(c4.S).where(c4.S.c.run_id == rid, c4.S.c.stage_code == "C4.query"))
+            raw = await store.one(select(F).where(F.c.id == step["output_artifact_id"]))
+        assert run["state"] == step["state"] == "unknown" and gateway.calls == 1
+        assert raw["content_json"]["state"] == "completed" and raw["content_json"]["returned_rows"] == 1
+        assert raw["content_json"]["rows"] and raw["retention"]["truncated"] is False
 
     async def test_c4_cancel_and_bad_scope_hold_unknown_slot():
         for mode in ("cancel", "bad_scope", "timeout"):
@@ -363,7 +384,8 @@ async def run_checks(engine, record, only=None):
     checks = [test_c4_material_projection_paths_guard_and_conflicts,
         test_c4_freezes_material_and_scope_and_replays, test_c4_real_ledger_query_contract_view_and_no_adoption,
         test_c4_concurrent_claim_is_committed_before_dispatch, test_c4_budget_missing_window_and_source_skip,
-        test_c4_empty_truncated_and_storage_omission_are_distinct, test_c4_cancel_and_bad_scope_hold_unknown_slot,
+        test_c4_empty_bounded_and_large_originals_are_distinct, test_c4_original_survives_projection_failure,
+        test_c4_cancel_and_bad_scope_hold_unknown_slot,
         test_c4_binding_question_tenant_and_reference_guards, test_c4_lake_adapter_fixed_sql_and_new_columns,
         test_c4_request_commit_failure_does_not_dispatch, test_c4_view_budget_defaults_and_publication_citation_paths]
     for check in checks:

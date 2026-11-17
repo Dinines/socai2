@@ -1,0 +1,60 @@
+{
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/case-knowledge-20261111-01/environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "http_base_url": "http://local.validation",
+  "batch": "stage1-original-retention-20261114-01",
+  "fixture_text_characters": 524321,
+  "fixture_text_pattern": "原",
+  "real_model_calls": 0,
+  "model_substitute_calls": 0,
+  "external_source_calls": 0,
+  "deployment": false,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_KNOWLEDGE_PROFILE": "",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "false",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "false",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false"
+  },
+  "checks": {
+    "test_socai2_baseline_context": [
+      "test_c1_large_original_and_tenant",
+      "test_c1_source_versions_survive_edits",
+      "test_c1_legacy_does_not_reconstruct_live"
+    ],
+    "test_socai2_baseline_enrichment": [
+      "test_c2_large_original_and_roles",
+      "test_c2_row_limit_and_missing_window"
+    ],
+    "test_socai2_baseline_evidence": [
+      "test_c4_empty_bounded_and_large_originals_are_distinct"
+    ],
+    "test_socai2_case_api": [
+      "test_artifact_scope_integrity_and_external_reference_not_exposed"
+    ]
+  },
+  "reference_exports": [
+    "docs/operations/evidence/fixed-investigation-20261114-01/flow/C01/export/database.json",
+    "docs/operations/evidence/stage1-followup-routing-20261114-01/attempt02/database.json",
+    "docs/operations/evidence/stage1-followup-routing-20261114-01/attempt01/database.json",
+    "docs/operations/evidence/stage1-c3-completion-20261114-01/attempt04/database.json"
+  ],
+  "fixture_writer": "configured_isolated_database_admin",
+  "followup_checks": {
+    "test_socai2_baseline_enrichment": [
+      "test_c2_probe_row_retained_without_model"
+    ]
+  },
+  "projection_checks": {
+    "test_socai2_baseline_evidence": [
+      "test_c4_original_survives_projection_failure",
+      "test_c4_empty_bounded_and_large_originals_are_distinct"
+    ]
+  }
+}

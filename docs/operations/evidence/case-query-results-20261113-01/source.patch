@@ -1,0 +1,183 @@
+--- before/services/api/app/socai2/case_c3_input_selection.py
++++ after/services/api/app/socai2/case_c3_input_selection.py
+@@ -99,6 +99,11 @@
+                 "human_statement" if ref["role"] == "human_statement" else "knowledge" if row.get("knowledge") else "history")
+         elif kind == "material":
+             kind = path[2:] if path in {"$.source_scope", "$.detection"} else "material"
++        elif (kind in {"query", "background_query"} and path.startswith("$.rows.")
++              and path.removeprefix("$.rows.").isdigit()):
++            query_kind = f"query_{tools.get(ref['id'])}"
++            if query_kind in policy["hierarchy"]:
++                kind = query_kind
+         value = project(value, kind, policy, omissions, row["id"])
+         program_limits = policy.get("incident_program_limitations", [])
+         if program_limits and row["block"] in {"incident", "finding", "question"}:
+--- before/services/api/app/socai2/case-input-v1.json
++++ after/services/api/app/socai2/case-input-v1.json
+@@ -1730,6 +1730,66 @@
+           "action": "omit",
+           "reason": "administrative_source_not_case_behavior"
+         }
++      ],
++      "query_assets": [
++        {
++          "path": "/match_basis",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        }
++      ],
++      "query_threat_intel": [
++        {
++          "path": "/match_basis",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/confidence_provenance",
++          "action": "constant",
++          "value": "stored_score_calculation_unverified",
++          "reason": "query_calculation_marker_role_already_labelled"
++        }
++      ],
++      "query_ueba": [
++        {
++          "path": "/match_basis",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/profile_id",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/score_provenance",
++          "action": "constant",
++          "value": "stored_prior_analysis_calculation_unverified",
++          "reason": "query_calculation_marker_role_already_labelled"
++        }
++      ],
++      "query_graph": [
++        {
++          "path": "/match_basis",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/imported_at",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/imported_at_status",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        },
++        {
++          "path": "/record/imported_at_raw_sha256",
++          "action": "omit",
++          "reason": "query_backend_field_not_business_result"
++        }
+       ]
+     },
+     "query_names": {
+--- before/services/api/tests/test_socai2_case_followup_boundary.py
++++ after/services/api/tests/test_socai2_case_followup_boundary.py
+@@ -43,6 +43,97 @@
+     if outputs.restored_comparison(prepared, comparison) is None:
+         result["comparison"] = {"kind": "not_comparable", "summary": "No selected comparison.", "support_ids": []}
+     return result
++
++
++def background_query_example(context):
++    """Synthetic nonempty rows matching the four current background contracts."""
++    from app.socai2.baseline_enrichment import citation_roles
++
++    stamp = "2026-11-13T01:00:00+00:00"
++    records = {
++        "assets": {"name": "example-host", "criticality": "high", "ip_addresses": ["192.0.2.10"],
++                   "first_seen": stamp, "last_seen": stamp},
++        "threat_intel": {"ioc_type": "ip", "value": "192.0.2.20", "severity": "medium",
++                        "source": "Synthetic intelligence", "source_ref": "example-ioc-1", "last_seen": stamp,
++                        "confidence_provenance": "stored_score_calculation_unverified"},
++        "ueba": {"profile_id": "internal-profile", "external_user_ref": "example-user", "risk_score": 0,
++                 "risk_tier": "low", "failed_auth_24h": 0, "last_evaluated_at": stamp,
++                 "score_provenance": "stored_prior_analysis_calculation_unverified"},
++        "graph": {"account": "example-user", "provider": "example-provider", "employee": "Example Analyst",
++                  "department": "Operations", "is_active": False, "employee_linked": True, "start_date": "2026-01-01",
++                  "relationship_source": {"employee_identity": "AUTHENTICATES_AS"},
++                  "imported_at": stamp, "imported_at_status": "native", "imported_at_raw_sha256": "internal-hash"},
++    }
++    result = []
++    for index, (tool, record) in enumerate(records.items(), 1):
++        # Same names at other business paths must not be scrubbed recursively.
++        record["extension"] = {"match_basis": "Original business statement.", "profile_id": "business-profile",
++                               "imported_at": "Business import event.", "count": 0, "enabled": False, "items": []}
++        selector = {"object_key": "synthetic:" + tool, "namespace": "synthetic-example",
++                    "alert_ids": sorted(context.alerts)}
++        body = {"tool_name": tool, "state": "completed", "returned_rows": 1, "truncated": False,
++                "actual_args": {"scope": context.scope.model_dump(mode="json"), "parameters": {"selectors": [selector]}},
++                "rows": [{"object_key": selector["object_key"], "namespace": selector["namespace"],
++                          "record_id": str(UUID(int=index)), "match_basis": "exact_match", "record": record}]}
++        if tool == "threat_intel":
++            other = copy.deepcopy(body["rows"][0])
++            other["record"]["confidence_provenance"] = "Original source-specific qualification."
++            body["rows"].append(other)
++            body["returned_rows"] = 2
++        result.append((str(UUID(int=1000 + index)), body, citation_roles(body)))
++    return result
++
++
++def test_background_query_business_rows_keep_values_and_refs_across_stages(sample):
++    from app.socai2.baseline_context import Context
++
++    context = Context.model_validate(sample["context"])
++    enrichment = background_query_example(context)
++    original = copy.deepcopy(enrichment)
++    base = base_tests.boundary.build(context, sample["context_id"], enrichment, [], sample["materials"])
++    assert base["ready"], base["reason"]
++    identities = {identity for identity, _, _ in enrichment}
++    query_rows = [r for r in base["input_ledger"]["records"] if r["ref"]["id"] in identities
++                  and r["ref"]["source_path"]]
++    assert len(query_rows) == 5
++    answer = answer_for(base, context)
++    answer["questions"][0]["evidence_ids"] = [r["id"] for r in query_rows]
++    prior = {"analysis": json.loads(case_output_adapter.restore(json.dumps(answer), base["case_boundary"])),
++             "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
++    stages = [(base, "input_ledger")]
++    for stage in ("Deep", "C6"):
++        prepared = inputs.build(stage, context, base, {}, previous=prior, prior_id=UUID(int=2000),
++                                question_id=context.questions[0].id if stage == "Deep" else None)
++        assert prepared["ready"], prepared["reason"]
++        stages.append((prepared, "followup_boundary"))
++    for prepared, ledger in stages:
++        for row in query_rows:
++            current = next(r for r in prepared[ledger]["records"] if r["ref"] == row["ref"])
++            body = next(body for identity, body, _ in enrichment if identity == row["ref"]["id"])
++            raw = body["rows"][int(row["ref"]["source_path"].rsplit(".", 1)[-1])]
++            value = current["value"]
++            assert "match_basis" not in value and row["original_value"] == raw
++            record = value["record"]
++            assert record["extension"] == raw["record"]["extension"]
++            assert "[" + current["id"] + "]" in prepared["messages"][1]["content"]
++            assert prepared["source_map"][current["id"]]["ref"] == row["ref"]
++            assert current["alert_ids"] == row["alert_ids"]
++            if body["tool_name"] == "ueba":
++                assert "profile_id" not in record and "score_provenance" not in record
++                assert record["risk_score"] == record["failed_auth_24h"] == 0
++                assert record["last_evaluated_at"] == raw["record"]["last_evaluated_at"]
++                assert current["ref"]["role"] == "prior_analysis"
++            elif body["tool_name"] == "graph":
++                assert not set(record) & {"imported_at", "imported_at_status", "imported_at_raw_sha256"}
++                assert record["is_active"] is False and record["employee_linked"] is True
++                assert record["start_date"] == raw["record"]["start_date"]
++            elif body["tool_name"] == "threat_intel":
++                assert record["source_ref"] == raw["record"]["source_ref"]
++                assert record.get("confidence_provenance") == (None if row["ref"]["source_path"].endswith(".0")
++                    else "Original source-specific qualification.")
++            else:
++                assert record == raw["record"]
++    assert enrichment == original
+ 
+ 
+ def test_final_selects_prior_and_preserves_support_counter_dependencies(sample):

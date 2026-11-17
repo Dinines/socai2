@@ -2,48 +2,54 @@ version = "socai2.investigation-policy.v1.2"
 single_model_timeout_seconds = 300
 final_reserve_seconds = 300
 
-# Candidate capacity allocation for V1.2. Validate complete saved requests
-# before issuing a separately recorded real test batch.
+# Capacity allocation within the verified 65536-token serving window.
+# Per-Run totals cover the configured number of full-window calls; actual
+# requests still pass backend tokenization and the shared remaining budget.
 [case]
 max_model_calls = 6
 max_tool_calls = 4
-max_total_tokens = 131072
+max_total_tokens = 393216
 max_rows_per_query = 200
 deadline_seconds = 1500
 
 [alert_basic]
-# One initial answer and at most one citation correction; token/deadline caps stay fixed.
+# One initial answer and at most one citation correction; calls/deadline stay fixed.
 max_model_calls = 2
 max_tool_calls = 3
-max_total_tokens = 24000
+max_total_tokens = 131072
 max_rows_per_query = 200
 deadline_seconds = 300
 
 [incident_diagnosis]
 max_model_calls = 2
 max_tool_calls = 0
-max_total_tokens = 24000
+max_total_tokens = 131072
 max_rows_per_query = 0
 deadline_seconds = 300
+
+# Original JSON/text is stored in PostgreSQL without an application byte cut.
+# Only the derived C5 graph view uses this allowance.
+[views]
+max_graph_bytes = 1048576
 
 [model]
 alias = "aisoc-investigation"
 protocol = "chat_completions"
 schema_profile = "vllm_grammar_v1"
 context_tokens = 65536
-# This bounds preparation/storage, not model admission. The full final request
+# This bounds model-view preparation, not original storage or model admission. The full final request
 # is measured by the actual backend tokenizer, including its chat template.
-max_prepared_bytes = 262144
-max_artifact_bytes = 1048576
-final_reserved_input_tokens = 16384
+max_prepared_bytes = 1048576
+# C6: 48128 input + 16384 output + 1024 safety = 65536 per reserved call.
+final_reserved_input_tokens = 48128
 final_reserved_calls = 2
 
 [model.output_tokens]
-A = 3000
-I = 3000
-C3 = 4096
-Deep = 3000
-C6 = 8192
+A = 8192
+I = 8192
+C3 = 16384
+Deep = 8192
+C6 = 16384
 
 [model.tokenizer]
 endpoint = "http://192.168.1.43:8000/tokenize"

@@ -1,0 +1,1607 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis-tasks/f7e2faea-4a67-4e88-91b8-e356b79f9bdf",
+    "status": 200,
+    "body": {
+      "task_id": "f7e2faea-4a67-4e88-91b8-e356b79f9bdf",
+      "status_url": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis-tasks/f7e2faea-4a67-4e88-91b8-e356b79f9bdf",
+      "subject_type": "alert",
+      "subject_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+      "kind": "alert_triage",
+      "intent": "initial",
+      "source": "ingress",
+      "status": "completed",
+      "reason_code": null,
+      "submitted_at": "2026-11-16T12:29:05.424185Z",
+      "started_at": "2026-11-16T12:29:05.492900Z",
+      "ended_at": "2026-11-16T12:29:13.257851Z",
+      "request": {},
+      "retry_count": 0,
+      "next_retry_at": null,
+      "latest_run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+      "attempts": [
+        {
+          "attempt_no": 1,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "run_url": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis/runs/547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "started_at": "2026-11-16T12:29:05.492900Z",
+          "local_ended_at": "2026-11-16T12:29:13.257851Z",
+          "interruption_observed_at": null,
+          "local_state": "ended",
+          "outcome": "completed",
+          "failed_at": null,
+          "error_code": null,
+          "error_stage": null,
+          "error_detail": null,
+          "retryable": false
+        }
+      ],
+      "results": [
+        {
+          "result_type": "alert_assessment",
+          "id": "ca533247-7727-5415-a27c-ae883f2d4b7d",
+          "source_run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "kind": "triage",
+          "url": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis/runs/547af3ba-3f1b-5cde-8b89-35d11f88d212"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis/runs/547af3ba-3f1b-5cde-8b89-35d11f88d212",
+    "status": 200,
+    "body": {
+      "run": {
+        "id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+        "kind": "alert_basic",
+        "state": "completed",
+        "requested_at": "2026-11-16T12:29:05.502618Z",
+        "requested_by": null,
+        "started_at": "2026-11-16T12:29:05.502618Z",
+        "ended_at": "2026-11-16T12:29:13.224431Z",
+        "executor_version": "socai2.alert-basic-executor.v4",
+        "input_artifact_id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+        "stop_reason": "stage_output_saved",
+        "delivery_state": "complete"
+      },
+      "freshness": "current",
+      "is_current_pointer": true,
+      "valid_for_current_input": true,
+      "result": {
+        "id": "ca533247-7727-5415-a27c-ae883f2d4b7d",
+        "input_material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+        "source_run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+        "verdict": "needs_review",
+        "rationale": "告警显示进程 curl 成功发起 HEAD 请求至 198.51.100.81，但当前材料中缺乏该 IP 的威胁情报匹配、恶意域名特征或异常行为上下文。同时，未提供该账号或主机的业务授权依据，也未见人工反馈确认其合法性。根据判定标准，名称、来源标签或查空/无 TI 结果不能单独支持确定性判定，且证据不足以区分是正常运维探测还是恶意侦察。",
+        "confidence": null,
+        "score_state": "not_computed",
+        "recommendations": [
+          {
+            "id": "R1",
+            "reason": "核实该 IP (198.51.100.81) 是否为业务已知的外部服务地址（如健康检查端点、API 网关等），以排除误报。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.process.cmd_line"
+              },
+              {
+                "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.src_endpoint.ip"
+              }
+            ],
+            "approval_requirement": "unknown"
+          },
+          {
+            "id": "R2",
+            "reason": "确认账号 svc-app-bc3b4605 及主机 host-app-3f979d56 是否有执行 curl 命令进行外部探测的授权或业务需求。",
+            "targets": [],
+            "action_type": "verify",
+            "limitations": [
+              "recommendation_only_not_executed"
+            ],
+            "source_refs": [
+              {
+                "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.actor.user.name"
+              },
+              {
+                "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                "role": "observation",
+                "type": "alert_material",
+                "external": null,
+                "row_keys": [],
+                "source_path": "$.ocsf_json.device.name"
+              }
+            ],
+            "approval_requirement": "unknown"
+          }
+        ],
+        "producer": "socai2.alert-basic-executor.v4",
+        "actor": {
+          "type": "service",
+          "user_id": null,
+          "service_name": "socai2.alert-basic-executor.v4",
+          "name_snapshot": null,
+          "service_version": "socai2.stage-result.v1"
+        },
+        "assessed_at": "2026-11-16T12:29:13.224431Z"
+      },
+      "explanation": {
+        "artifact_id": "83602ce9-ed00-5036-887a-81172da55966",
+        "available": true,
+        "reason": null,
+        "content": {
+          "body": "进程=\"curl\"；process.pid=4101；process.uid=\"8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e\"；完整命令行=\"curl --head https://198.51.100.81/status\"；process.parent_process.pid=4100；process.parent_process.uid=\"9bbbb672-6766-5818-ac37-8f1a3f6486ec\"；活动账号=\"svc-app-bc3b4605\"；活动主机=\"host-app-3f979d56\"；src_endpoint.hostname=\"host-app-3f979d56\"；源IP=\"192.0.2.81\"；动作=进程启动（process_start）；该动作的结果=成功（success）；日志活动时间=\"2026-11-16T05:46:12+00:00\"；2026-11-16T05:46:12Z\n分析原文：告警显示进程 curl 成功发起 HEAD 请求至 198.51.100.81，但当前材料中缺乏该 IP 的威胁情报匹配、恶意域名特征或异常行为上下文。同时，未提供该账号或主机的业务授权依据，也未见人工反馈确认其合法性。根据判定标准，名称、来源标签或查空/无 TI 结果不能单独支持确定性判定，且证据不足以区分是正常运维探测还是恶意侦察。",
+          "limitations": [
+            "basic_alert_analysis_not_full_case_investigation",
+            "structure_sources_checked_not_truth_proven",
+            "model_view_has_omitted_fields",
+            "assets:completed:returned",
+            "history:completed:returned",
+            "threat_intel:completed:returned"
+          ],
+          "source_refs": [
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.hostname"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time"
+            }
+          ],
+          "generated_at": "2026-11-16T12:29:13.224431+00:00",
+          "program_facts": {
+            "members": [
+              {
+                "alert": {
+                  "id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                  "title": "process_start observation",
+                  "severity": "medium",
+                  "event_time": "2026-11-16T05:46:12+00:00",
+                  "ingested_at": "2026-11-16T12:29:05.344857+00:00",
+                  "original_vendor": null,
+                  "source_alert_id": null,
+                  "event_time_source": "source"
+                },
+                "objects": [
+                  {
+                    "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                    "raw_value": "host-app-3f979d56",
+                    "object_role": "entity",
+                    "object_type": "host",
+                    "normalized_value": "host-app-3f979d56",
+                    "asset_match_state": "not_checked"
+                  },
+                  {
+                    "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                    "raw_value": "192.0.2.81",
+                    "object_role": "both",
+                    "object_type": "ip",
+                    "normalized_value": "192.0.2.81",
+                    "asset_match_state": "not_checked"
+                  },
+                  {
+                    "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                    "raw_value": "svc-app-bc3b4605",
+                    "object_role": "entity",
+                    "object_type": "user",
+                    "normalized_value": "svc-app-bc3b4605",
+                    "asset_match_state": "not_checked"
+                  }
+                ],
+                "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                "alert_source": {
+                  "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+                  "role": "source_label",
+                  "type": "artifact",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.members.0.alert"
+                },
+                "log_severity": [
+                  {
+                    "value": 1,
+                    "source": {
+                      "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "role": "source_label",
+                      "type": "alert_material",
+                      "external": null,
+                      "row_keys": [],
+                      "source_path": "$.ocsf_json.severity_id"
+                    }
+                  },
+                  {
+                    "value": "Informational",
+                    "source": {
+                      "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "role": "source_label",
+                      "type": "alert_material",
+                      "external": null,
+                      "row_keys": [],
+                      "source_path": "$.ocsf_json.severity"
+                    }
+                  }
+                ],
+                "activity_times": [
+                  {
+                    "kind": "activity_time",
+                    "unit": "iso8601_with_offset",
+                    "value": "2026-11-16T05:46:12+00:00",
+                    "source": {
+                      "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "role": "observation",
+                      "type": "alert_material",
+                      "external": null,
+                      "row_keys": [],
+                      "source_path": "$.ocsf_json.time"
+                    }
+                  }
+                ],
+                "objects_source": {
+                  "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+                  "role": "source_label",
+                  "type": "artifact",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.members.0.objects"
+                },
+                "material_source": {
+                  "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                  "role": "source_label",
+                  "type": "alert_material",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": null
+                },
+                "detection_labels": {
+                  "role": "source_label",
+                  "entries": [],
+                  "policy_sha256": "8f3af10ff9f4e5a99b747a522ae72ce560b27b12dbcbfa7f9344f6a5ec9b93ed",
+                  "dictionary_version": "socai2.attack-labels.20261107",
+                  "does_not_establish_observed_attack": true
+                },
+                "unavailable_fields": [],
+                "activity_time_state": "available",
+                "material_received_at": "2026-11-16T12:29:05.344857+00:00"
+              }
+            ],
+            "time_rule": "activity_time != alert.event_time != ingested_at != execution_started_at",
+            "query_statuses": [
+              {
+                "state": "completed",
+                "reason": null,
+                "source": "assets",
+                "outcome": "empty",
+                "receipt": {
+                  "id": "a35f1afb-ffd6-4b7e-a5dd-c6b077156e8c",
+                  "role": "execution_receipt",
+                  "type": "artifact",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": null
+                },
+                "statement": "本次查询成功，在该查询范围内返回0行；不能据此证明行为安全或检测错误。",
+                "truncated": false,
+                "returned_rows": 0
+              },
+              {
+                "state": "completed",
+                "reason": null,
+                "source": "history",
+                "outcome": "data",
+                "receipt": {
+                  "id": "a6613e9d-a6e6-4011-b8fa-f10cd242b058",
+                  "role": "execution_receipt",
+                  "type": "artifact",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": null
+                },
+                "statement": "本次查询保留3行；仅适用于回执中的对象、时间和来源范围。",
+                "truncated": false,
+                "returned_rows": 3
+              },
+              {
+                "state": "completed",
+                "reason": null,
+                "source": "threat_intel",
+                "outcome": "empty",
+                "receipt": {
+                  "id": "210a0020-bd99-4658-b632-8e937ad16352",
+                  "role": "execution_receipt",
+                  "type": "artifact",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": null
+                },
+                "statement": "本次查询成功，在该查询范围内返回0行；不能据此证明行为安全或检测错误。",
+                "truncated": false,
+                "returned_rows": 0
+              }
+            ],
+            "schema_version": "socai2.program-facts.v1.2",
+            "execution_started_at": "2026-11-16T12:29:05.502618+00:00"
+          },
+          "schema_version": "socai2.stage-result.v1",
+          "recommendations": [
+            {
+              "id": "R1",
+              "reason": "核实该 IP (198.51.100.81) 是否为业务已知的外部服务地址（如健康检查端点、API 网关等），以排除误报。",
+              "targets": [],
+              "action_type": "verify",
+              "limitations": [
+                "recommendation_only_not_executed"
+              ],
+              "source_refs": [
+                {
+                  "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                  "role": "observation",
+                  "type": "alert_material",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.ocsf_json.process.cmd_line"
+                },
+                {
+                  "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                  "role": "observation",
+                  "type": "alert_material",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.ocsf_json.src_endpoint.ip"
+                }
+              ],
+              "approval_requirement": "unknown"
+            },
+            {
+              "id": "R2",
+              "reason": "确认账号 svc-app-bc3b4605 及主机 host-app-3f979d56 是否有执行 curl 命令进行外部探测的授权或业务需求。",
+              "targets": [],
+              "action_type": "verify",
+              "limitations": [
+                "recommendation_only_not_executed"
+              ],
+              "source_refs": [
+                {
+                  "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                  "role": "observation",
+                  "type": "alert_material",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.ocsf_json.actor.user.name"
+                },
+                {
+                  "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                  "role": "observation",
+                  "type": "alert_material",
+                  "external": null,
+                  "row_keys": [],
+                  "source_path": "$.ocsf_json.device.name"
+                }
+              ],
+              "approval_requirement": "unknown"
+            }
+          ],
+          "generation_method": "template"
+        }
+      },
+      "partial_analysis": null
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/socai2/alerts/c2af7cb3-df6b-49f5-a02f-ae341ec612c6/analysis/runs/547af3ba-3f1b-5cde-8b89-35d11f88d212/trace",
+    "status": 200,
+    "body": {
+      "steps_url": "/api/v1/socai2/analysis-runs/547af3ba-3f1b-5cde-8b89-35d11f88d212/steps",
+      "artifacts_url": "/api/v1/socai2/analysis-runs/547af3ba-3f1b-5cde-8b89-35d11f88d212/artifacts",
+      "run": {
+        "id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+        "kind": "alert_basic",
+        "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+        "incident_id": null,
+        "case_id": null,
+        "title": "告警基本分析",
+        "purpose": "source-scoped analysis",
+        "trigger": "refresh",
+        "scope_revision": null,
+        "scope_updated_at": null,
+        "scope_kind": null,
+        "window_start": null,
+        "window_end": null,
+        "state": "completed",
+        "retry_of_run_id": null,
+        "comparison_result_id": null,
+        "input_artifact_id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+        "executor_version": "socai2.alert-basic-executor.v4",
+        "requested_at": "2026-11-16T12:29:05.502618Z",
+        "requested_by": null,
+        "started_at": "2026-11-16T12:29:05.502618Z",
+        "ended_at": "2026-11-16T12:29:13.224431Z",
+        "stop_reason": "stage_output_saved",
+        "stop_detail": null,
+        "delivery_state": "complete",
+        "limits": {
+          "max_tokens": 131072,
+          "deadline_at": "2026-11-16T12:34:05.502618Z",
+          "max_tool_calls": 3,
+          "policy_version": "socai2.investigation-policy.v1.2:8f3af10ff9f4",
+          "max_model_calls": 2,
+          "max_rows_per_query": 200
+        },
+        "row_version": 3
+      },
+      "steps": [
+        {
+          "id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "seq": 1,
+          "parent_step_id": null,
+          "retry_of_step_id": null,
+          "kind": "stage",
+          "stage_code": "A",
+          "question_id": null,
+          "state": "completed",
+          "name": "alert_basic_analysis",
+          "provider": null,
+          "implementation_version": "socai2.alert-basic-executor.v4",
+          "started_at": "2026-11-16T12:29:05.526742Z",
+          "ended_at": "2026-11-16T12:29:13.224431Z",
+          "input_artifact_id": null,
+          "output_artifact_id": "3682635c-1be4-59b7-a83d-94715f385d80",
+          "reused_artifact_id": null,
+          "actual_args": null,
+          "returned_rows": null,
+          "usage": null,
+          "error": null
+        },
+        {
+          "id": "415a272b-d836-4d4a-a6e6-ce5e136cd697",
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "seq": 2,
+          "parent_step_id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "retry_of_step_id": null,
+          "kind": "tool",
+          "stage_code": "A",
+          "question_id": null,
+          "state": "completed",
+          "name": "assets",
+          "provider": "postgresql",
+          "implementation_version": "socai2.alert-basic-executor.v4",
+          "started_at": "2026-11-16T12:29:05.534114Z",
+          "ended_at": "2026-11-16T12:29:05.543251Z",
+          "input_artifact_id": "84406d80-2aeb-41b7-bcc6-c08f126fb19e",
+          "output_artifact_id": "a35f1afb-ffd6-4b7e-a5dd-c6b077156e8c",
+          "reused_artifact_id": null,
+          "actual_args": {
+            "limit": 200,
+            "scope": {
+              "kind": "selected_alerts",
+              "alert_ids": [
+                "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+              ],
+              "window_end": "2026-11-16T05:46:12+00:00",
+              "limitations": [],
+              "object_keys": [
+                "[\"host\",\"host-app-3f979d56\"]",
+                "[\"ip\",\"192.0.2.81\"]"
+              ],
+              "window_start": "2026-11-15T05:46:12+00:00"
+            },
+            "tool_name": "assets",
+            "parameters": {
+              "selectors": [
+                {
+                  "value": "host-app-3f979d56",
+                  "ioc_type": "host",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"host\",\"host-app-3f979d56\"]",
+                  "object_type": "host",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "4d362852-4ca5-4f94-b431-2b1fd5b072a0",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.hostname"
+                    }
+                  ]
+                },
+                {
+                  "value": "192.0.2.81",
+                  "ioc_type": "ip",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"ip\",\"192.0.2.81\"]",
+                  "object_type": "ip",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "7b3efcb2-b295-40d9-b5f7-67d7147078ca",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.src_ip"
+                    }
+                  ]
+                }
+              ],
+              "source_scope": "tenant_only"
+            },
+            "contract_version": "socai2.c2-db.v1"
+          },
+          "returned_rows": 0,
+          "usage": null,
+          "error": null
+        },
+        {
+          "id": "9ef2d0b4-ea4d-41a6-881a-06a4ed5cfcaf",
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "seq": 3,
+          "parent_step_id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "retry_of_step_id": null,
+          "kind": "tool",
+          "stage_code": "A",
+          "question_id": null,
+          "state": "completed",
+          "name": "history",
+          "provider": "postgresql",
+          "implementation_version": "socai2.alert-basic-executor.v4",
+          "started_at": "2026-11-16T12:29:05.548891Z",
+          "ended_at": "2026-11-16T12:29:05.559680Z",
+          "input_artifact_id": "59666b57-c1fa-49e0-a01e-f45454536e66",
+          "output_artifact_id": "a6613e9d-a6e6-4011-b8fa-f10cd242b058",
+          "reused_artifact_id": null,
+          "actual_args": {
+            "limit": 200,
+            "scope": {
+              "kind": "selected_alerts",
+              "alert_ids": [
+                "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+              ],
+              "window_end": "2026-11-16T05:46:12+00:00",
+              "limitations": [
+                "history_24h_before_alert_time"
+              ],
+              "object_keys": [
+                "[\"host\",\"host-app-3f979d56\"]",
+                "[\"ip\",\"192.0.2.81\"]",
+                "[\"user\",\"svc-app-bc3b4605\"]"
+              ],
+              "window_start": "2026-11-15T05:46:12+00:00"
+            },
+            "tool_name": "history",
+            "parameters": {
+              "selectors": [
+                {
+                  "value": "host-app-3f979d56",
+                  "ioc_type": "host",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"host\",\"host-app-3f979d56\"]",
+                  "object_type": "host",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "4d362852-4ca5-4f94-b431-2b1fd5b072a0",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.hostname"
+                    }
+                  ]
+                },
+                {
+                  "value": "192.0.2.81",
+                  "ioc_type": "ip",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"ip\",\"192.0.2.81\"]",
+                  "object_type": "ip",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "7b3efcb2-b295-40d9-b5f7-67d7147078ca",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.src_ip"
+                    }
+                  ]
+                },
+                {
+                  "value": "svc-app-bc3b4605",
+                  "ioc_type": "user",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"user\",\"svc-app-bc3b4605\"]",
+                  "object_type": "user",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "9944c54e-88c4-4469-85df-c9ff1da1e3fd",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.username"
+                    }
+                  ]
+                }
+              ],
+              "source_scope": "tenant_only"
+            },
+            "contract_version": "socai2.c2-db.v1"
+          },
+          "returned_rows": 3,
+          "usage": null,
+          "error": null
+        },
+        {
+          "id": "66fafed7-988d-4ddd-a7b1-4b91f1d5427f",
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "seq": 4,
+          "parent_step_id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "retry_of_step_id": null,
+          "kind": "tool",
+          "stage_code": "A",
+          "question_id": null,
+          "state": "completed",
+          "name": "threat_intel",
+          "provider": "postgresql",
+          "implementation_version": "socai2.alert-basic-executor.v4",
+          "started_at": "2026-11-16T12:29:05.564969Z",
+          "ended_at": "2026-11-16T12:29:05.572887Z",
+          "input_artifact_id": "38b56335-15c3-490e-9e12-516c9c2ff56b",
+          "output_artifact_id": "210a0020-bd99-4658-b632-8e937ad16352",
+          "reused_artifact_id": null,
+          "actual_args": {
+            "limit": 200,
+            "scope": {
+              "kind": "selected_alerts",
+              "alert_ids": [
+                "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+              ],
+              "window_end": "2026-11-16T05:46:12+00:00",
+              "limitations": [],
+              "object_keys": [
+                "[\"ip\",\"192.0.2.81\"]"
+              ],
+              "window_start": "2026-11-15T05:46:12+00:00"
+            },
+            "tool_name": "threat_intel",
+            "parameters": {
+              "selectors": [
+                {
+                  "value": "192.0.2.81",
+                  "ioc_type": "ip",
+                  "alert_ids": [
+                    "c2af7cb3-df6b-49f5-a02f-ae341ec612c6"
+                  ],
+                  "namespace": "connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef",
+                  "object_key": "[\"ip\",\"192.0.2.81\"]",
+                  "object_type": "ip",
+                  "source_paths": [
+                    {
+                      "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+                      "object_id": "7b3efcb2-b295-40d9-b5f7-67d7147078ca",
+                      "material_id": "31cc390a-611a-4c63-a301-cb10213575fc",
+                      "source_path": "$.raw_json.src_ip"
+                    }
+                  ]
+                }
+              ],
+              "source_scope": "tenant_only"
+            },
+            "contract_version": "socai2.c2-db.v1"
+          },
+          "returned_rows": 0,
+          "usage": null,
+          "error": null
+        },
+        {
+          "id": "5df61812-86b1-4906-bbf8-d4617b3e1a9c",
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "seq": 5,
+          "parent_step_id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "retry_of_step_id": null,
+          "kind": "model",
+          "stage_code": "A",
+          "question_id": null,
+          "state": "completed",
+          "name": "alert_triage_and_explanation",
+          "provider": "chat_completions",
+          "implementation_version": "socai2.alert-basic-executor.v4",
+          "started_at": "2026-11-16T12:29:05.901904Z",
+          "ended_at": "2026-11-16T12:29:13.205251Z",
+          "input_artifact_id": "566d865c-0965-4647-a9fc-9d5ad2697429",
+          "output_artifact_id": "77cb51ea-d7b2-4b10-b71a-d5b97dc7fd0c",
+          "reused_artifact_id": null,
+          "actual_args": null,
+          "returned_rows": null,
+          "usage": {
+            "cost": null,
+            "currency": null,
+            "cost_state": "unpriced",
+            "request_id": "chatcmpl-8b6fa981d5c57bcf",
+            "usage_state": "reported",
+            "input_tokens": 1348,
+            "total_tokens": 1696,
+            "output_tokens": 348,
+            "price_version": null,
+            "reasoning_tokens": 0,
+            "cached_input_tokens": null
+          },
+          "error": null
+        }
+      ],
+      "steps_total": 5,
+      "steps_truncated": false,
+      "artifacts": [
+        {
+          "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": null,
+          "kind": "input_snapshot",
+          "schema_version": "socai2.stage-result.v1",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "1a35b3b568168918d0188438e7d4f28ae5476583867054685dc7922875f5461f",
+          "size_bytes": 11334,
+          "captured_at": "2026-11-16T12:29:05.502618Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "89ffe52e-2d68-56f6-8d97-e6cf0f9bcfad",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "1a35b3b568168918d0188438e7d4f28ae5476583867054685dc7922875f5461f",
+            "retained_sha256": "1a35b3b568168918d0188438e7d4f28ae5476583867054685dc7922875f5461f",
+            "original_size_bytes": 11334,
+            "retained_size_bytes": 11334
+          },
+          "created_by": null
+        },
+        {
+          "id": "89ffe52e-2d68-56f6-8d97-e6cf0f9bcfad",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": null,
+          "kind": "source_snapshot",
+          "schema_version": "socai2.runtime-policy.v1",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "aae7a9b8a11fbcd81619b08b1dad8859e7f73fbb74c9cf8e53e970009e16e89c",
+          "size_bytes": 148552,
+          "captured_at": "2026-11-16T12:29:05.502618Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "aae7a9b8a11fbcd81619b08b1dad8859e7f73fbb74c9cf8e53e970009e16e89c",
+            "retained_sha256": "aae7a9b8a11fbcd81619b08b1dad8859e7f73fbb74c9cf8e53e970009e16e89c",
+            "original_size_bytes": 148552,
+            "retained_size_bytes": 148552
+          },
+          "created_by": null
+        },
+        {
+          "id": "84406d80-2aeb-41b7-bcc6-c08f126fb19e",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "415a272b-d836-4d4a-a6e6-ce5e136cd697",
+          "kind": "tool_request",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "63bf5ab675a45e9adb06e938bdb647fcf9aa1811dd829f0fd7f59667475922a8",
+          "size_bytes": 1253,
+          "captured_at": "2026-11-16T12:29:05.535239Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "63bf5ab675a45e9adb06e938bdb647fcf9aa1811dd829f0fd7f59667475922a8",
+            "retained_sha256": "63bf5ab675a45e9adb06e938bdb647fcf9aa1811dd829f0fd7f59667475922a8",
+            "original_size_bytes": 1253,
+            "retained_size_bytes": 1253
+          },
+          "created_by": null
+        },
+        {
+          "id": "a35f1afb-ffd6-4b7e-a5dd-c6b077156e8c",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "415a272b-d836-4d4a-a6e6-ce5e136cd697",
+          "kind": "tool_response",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "bc062dd4e26765ecf6d702eb9b5e7761e7326ccdf2534d95723169b372e16d97",
+          "size_bytes": 1803,
+          "captured_at": "2026-11-16T12:29:05.542304Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "bc062dd4e26765ecf6d702eb9b5e7761e7326ccdf2534d95723169b372e16d97",
+            "retained_sha256": "bc062dd4e26765ecf6d702eb9b5e7761e7326ccdf2534d95723169b372e16d97",
+            "original_size_bytes": 1803,
+            "retained_size_bytes": 1803
+          },
+          "created_by": null
+        },
+        {
+          "id": "59666b57-c1fa-49e0-a01e-f45454536e66",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "9ef2d0b4-ea4d-41a6-881a-06a4ed5cfcaf",
+          "kind": "tool_request",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "45d775c3ddb898197be2e28172ad7811f68a00b5ab1adfdd3b659e3ea24a7d16",
+          "size_bytes": 1757,
+          "captured_at": "2026-11-16T12:29:05.549571Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "45d775c3ddb898197be2e28172ad7811f68a00b5ab1adfdd3b659e3ea24a7d16",
+            "retained_sha256": "45d775c3ddb898197be2e28172ad7811f68a00b5ab1adfdd3b659e3ea24a7d16",
+            "original_size_bytes": 1757,
+            "retained_size_bytes": 1757
+          },
+          "created_by": null
+        },
+        {
+          "id": "a6613e9d-a6e6-4011-b8fa-f10cd242b058",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "9ef2d0b4-ea4d-41a6-881a-06a4ed5cfcaf",
+          "kind": "tool_response",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "e4bc823287697937325a0ac67cb1c1c155690f4d84a6105773a3458dfa8cca4f",
+          "size_bytes": 3712,
+          "captured_at": "2026-11-16T12:29:05.558322Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "e4bc823287697937325a0ac67cb1c1c155690f4d84a6105773a3458dfa8cca4f",
+            "retained_sha256": "e4bc823287697937325a0ac67cb1c1c155690f4d84a6105773a3458dfa8cca4f",
+            "original_size_bytes": 3712,
+            "retained_size_bytes": 3712
+          },
+          "created_by": null
+        },
+        {
+          "id": "38b56335-15c3-490e-9e12-516c9c2ff56b",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "66fafed7-988d-4ddd-a7b1-4b91f1d5427f",
+          "kind": "tool_request",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "75d9fca78a3d918c0ec671ae42e1de26968913360cca039fd24acc41bb92afd1",
+          "size_bytes": 784,
+          "captured_at": "2026-11-16T12:29:05.565569Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "75d9fca78a3d918c0ec671ae42e1de26968913360cca039fd24acc41bb92afd1",
+            "retained_sha256": "75d9fca78a3d918c0ec671ae42e1de26968913360cca039fd24acc41bb92afd1",
+            "original_size_bytes": 784,
+            "retained_size_bytes": 784
+          },
+          "created_by": null
+        },
+        {
+          "id": "210a0020-bd99-4658-b632-8e937ad16352",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "66fafed7-988d-4ddd-a7b1-4b91f1d5427f",
+          "kind": "tool_response",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "7da4713b9114ffb4d4afd1fddbc00498d1b36c278375aef46fa1173d2fe08220",
+          "size_bytes": 1316,
+          "captured_at": "2026-11-16T12:29:05.572213Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "7da4713b9114ffb4d4afd1fddbc00498d1b36c278375aef46fa1173d2fe08220",
+            "retained_sha256": "7da4713b9114ffb4d4afd1fddbc00498d1b36c278375aef46fa1173d2fe08220",
+            "original_size_bytes": 1316,
+            "retained_size_bytes": 1316
+          },
+          "created_by": null
+        },
+        {
+          "id": "566d865c-0965-4647-a9fc-9d5ad2697429",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "5df61812-86b1-4906-bbf8-d4617b3e1a9c",
+          "kind": "model_request",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "0a4a167a0c3ea15f80369557c6ec4210babec2f3184f743c6f3c2879a1a289ae",
+          "size_bytes": 30630,
+          "captured_at": "2026-11-16T12:29:05.902944Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "0a4a167a0c3ea15f80369557c6ec4210babec2f3184f743c6f3c2879a1a289ae",
+            "retained_sha256": "0a4a167a0c3ea15f80369557c6ec4210babec2f3184f743c6f3c2879a1a289ae",
+            "original_size_bytes": 30630,
+            "retained_size_bytes": 30630
+          },
+          "created_by": null
+        },
+        {
+          "id": "1247eeab-3628-45fa-8387-af736f8f1d20",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "5df61812-86b1-4906-bbf8-d4617b3e1a9c",
+          "kind": "source_snapshot",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "542c077667825de14fae80ced9eb1e6df45164e78d3cd695b2d7b5b11c6b18b5",
+          "size_bytes": 2090,
+          "captured_at": "2026-11-16T12:29:13.178825Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "542c077667825de14fae80ced9eb1e6df45164e78d3cd695b2d7b5b11c6b18b5",
+            "retained_sha256": "542c077667825de14fae80ced9eb1e6df45164e78d3cd695b2d7b5b11c6b18b5",
+            "original_size_bytes": 2090,
+            "retained_size_bytes": 2090
+          },
+          "created_by": null
+        },
+        {
+          "id": "77cb51ea-d7b2-4b10-b71a-d5b97dc7fd0c",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "5df61812-86b1-4906-bbf8-d4617b3e1a9c",
+          "kind": "model_response",
+          "schema_version": "socai2.alert-basic-executor.v4",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "c7b8416e64cf6f77e9d30b616bd347bea9e98f4d8b6d79ba8d056c7ac9eb3a2f",
+          "size_bytes": 7780,
+          "captured_at": "2026-11-16T12:29:13.192572Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "125a414c-172e-4f62-9c3b-5f9b400d165d",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "c7b8416e64cf6f77e9d30b616bd347bea9e98f4d8b6d79ba8d056c7ac9eb3a2f",
+            "retained_sha256": "c7b8416e64cf6f77e9d30b616bd347bea9e98f4d8b6d79ba8d056c7ac9eb3a2f",
+            "original_size_bytes": 7780,
+            "retained_size_bytes": 7780
+          },
+          "created_by": null
+        },
+        {
+          "id": "b7c7327e-c49f-4c66-a255-0cc92438ee3a",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": "e38a6d9d-4df0-444b-ae40-830e6799fd57",
+          "kind": "source_snapshot",
+          "schema_version": "socai2.stage-delivery.v1",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "0603a7af94f116851c3509d1e89dd6de4f2c71e8b601054a31a60fba5c6a1067",
+          "size_bytes": 10206,
+          "captured_at": "2026-11-16T12:29:13.198243Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "566d865c-0965-4647-a9fc-9d5ad2697429",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            },
+            {
+              "id": "1247eeab-3628-45fa-8387-af736f8f1d20",
+              "role": "execution_receipt",
+              "type": "artifact",
+              "external": null,
+              "row_keys": [],
+              "source_path": null
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "0603a7af94f116851c3509d1e89dd6de4f2c71e8b601054a31a60fba5c6a1067",
+            "retained_sha256": "0603a7af94f116851c3509d1e89dd6de4f2c71e8b601054a31a60fba5c6a1067",
+            "original_size_bytes": 10206,
+            "retained_size_bytes": 10206
+          },
+          "created_by": null
+        },
+        {
+          "id": "3682635c-1be4-59b7-a83d-94715f385d80",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": null,
+          "kind": "source_snapshot",
+          "schema_version": "socai2.stage-result.v1",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "0bb4b443788c29741dc34ddac8203e498193458166fd5957552a3bf2dd96caac",
+          "size_bytes": 5591,
+          "captured_at": "2026-11-16T12:29:13.224431Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.hostname"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time"
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "0bb4b443788c29741dc34ddac8203e498193458166fd5957552a3bf2dd96caac",
+            "retained_sha256": "0bb4b443788c29741dc34ddac8203e498193458166fd5957552a3bf2dd96caac",
+            "original_size_bytes": 5591,
+            "retained_size_bytes": 5591
+          },
+          "created_by": null
+        },
+        {
+          "id": "83602ce9-ed00-5036-887a-81172da55966",
+          "alert_id": "c2af7cb3-df6b-49f5-a02f-ae341ec612c6",
+          "incident_id": null,
+          "case_id": null,
+          "run_id": "547af3ba-3f1b-5cde-8b89-35d11f88d212",
+          "step_id": null,
+          "kind": "alert_explanation",
+          "schema_version": "socai2.stage-result.v1",
+          "mime_type": "application/json",
+          "file_name": null,
+          "sha256": "5f4edeed638a8c563bb6913635f8b500e2a8a7adfdff969459b0cdcd0378b590",
+          "size_bytes": 8782,
+          "captured_at": "2026-11-16T12:29:13.224431Z",
+          "event_time": null,
+          "material_state": "complete",
+          "source_refs": [
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.cmd_line"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.outcome"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.actor.user.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.device.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.name"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.pid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.process.parent_process.uid"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.hostname"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.src_endpoint.ip"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.activity.action"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.ocsf_json.time"
+            },
+            {
+              "id": "31cc390a-611a-4c63-a301-cb10213575fc",
+              "role": "observation",
+              "type": "alert_material",
+              "external": null,
+              "row_keys": [],
+              "source_path": "$.raw_json.event_time"
+            }
+          ],
+          "retention": {
+            "reason": null,
+            "truncated": false,
+            "omitted_paths": [],
+            "original_sha256": "5f4edeed638a8c563bb6913635f8b500e2a8a7adfdff969459b0cdcd0378b590",
+            "retained_sha256": "5f4edeed638a8c563bb6913635f8b500e2a8a7adfdff969459b0cdcd0378b590",
+            "original_size_bytes": 8782,
+            "retained_size_bytes": 8782
+          },
+          "created_by": null
+        }
+      ],
+      "artifacts_total": 14,
+      "artifacts_truncated": false,
+      "usage": {
+        "model_calls": 1,
+        "known_total_tokens": 1696,
+        "unknown_token_calls": 0,
+        "total_tokens": 1696,
+        "costs_by_currency_and_price_version": [],
+        "unpriced_model_calls": 1
+      },
+      "tool_calls": 3,
+      "duration_seconds": 7.721813,
+      "last_recorded_at": "2026-11-16T12:29:13.224431Z",
+      "observed_at": "2026-11-16T12:30:20.637125Z"
+    }
+  }
+]

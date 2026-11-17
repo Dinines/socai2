@@ -1,6 +1,6 @@
 # v1.0.0 生产接入与已发布结果
 
-[返回总指引](README.md)。2026-10-22 已在21发布 API `5a1e1fd8`、Agents `49643b84`，两服务标签均为 `v1.0.0`；模型沿用现有配置，Fusion及共享基础设施保持原配置。[完整发布回执及回退步骤](../../operations/service-v1-release-20261022.md)
+[返回总指引](README.md)。2026-10-22 已在21发布 API `5a1e1fd8`、Agents `49643b84`，两服务标签均为 `v1.0.0`；模型沿用现有配置，Fusion及共享基础设施保持原配置。[完整发布回执及回退步骤](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)
 
 ## 1. 上游必须使用的参数
 
@@ -59,7 +59,7 @@ curl --fail --silent --show-error \
 
 响应是JSON，Markdown位于 `content`。告警ID、Run ID、工件ID各有用途，不能互换。
 
-本Run的模型/工具顺序如下。Deep每轮请求由固定调查提示、告警/当时上下文、已有对话及工具说明组成，模型回复后代码执行 `tool_calls` 并回填ToolMessage；表内是本次实际记录，不表示所有调查都要查这些工具。完整查询合同见[工具说明](../../architecture/investigation-tool-catalog.md)。
+本Run的模型/工具顺序如下。Deep每轮请求由固定调查提示、告警/当时上下文、已有对话及工具说明组成，模型回复后代码执行 `tool_calls` 并回填ToolMessage；表内是本次实际记录，不表示所有调查都要查这些工具。完整查询合同见[工具说明](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)。
 
 | 调用 | 本轮新增输入 / 目的 | 可见回复 / 代码随后采用 |
 | --- | --- | --- |

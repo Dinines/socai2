@@ -9,10 +9,13 @@ from pydantic import Field, ValidationError
 from . import baseline_analysis_contract as analysis
 from .baseline_contracts import Contract
 from .baseline_model_view import blocked
+from .case_citation_quality import normalized, reject_or_record
 from .case_source_scope import knowledge_context
+from .citation_quality import record_references
 from .structured_output import response_format
 
-SCHEMA = "socai2.baseline-delivery.v1"
+SCHEMA = "socai2.baseline-delivery.v2"
+READ_SCHEMAS = {"socai2.baseline-delivery.v1", SCHEMA}
 Text, Refs = analysis.Text, analysis.Refs
 
 
@@ -57,6 +60,14 @@ class Delivery(Contract):
     recommendations: list[Recommendation] = Field(max_length=12)
 
 
+def comparable_source_ids(source_map, comparison):
+    """The designated accepted Result, never a current intermediate judgment."""
+    if comparison["state"] != "eligible":
+        return set()
+    return {sid for sid, src in source_map.items() if src["ref"]["type"] == "result"
+            and src["ref"]["id"] == comparison["result_id"]}
+
+
 def constrain_recommendations(fmt):
     """Tighten generation without breaking partial recovery of invalid replies."""
     schema = fmt["json_schema"]["schema"]
@@ -86,9 +97,10 @@ def delivery_format(sources, context, comparison):
     return constrain_recommendations(fmt)
 
 
-def parse(content, source_map, context, coverage, comparison):
+def parse(content, source_map, context, coverage, comparison, *, citation_review=None):
+    path = "$"
     def fail(code):
-        raise analysis.AnalysisRejected(code)
+        reject_or_record(citation_review, code, path)
 
     def unique(pairs):
         result = {}
@@ -100,14 +112,16 @@ def parse(content, source_map, context, coverage, comparison):
 
     try:
         raw = json.loads(content, object_pairs_hook=unique, parse_constant=lambda _: fail("invalid_json_number"))
+        raw = normalized(raw, citation_review)
         if blocked(raw):
             fail("delivery_output_guard_blocked")
         def nonblank(item):
             if isinstance(item, str) and not item.strip():
                 fail("delivery_blank_text")
             if isinstance(item, dict):
-                for v in item.values():
-                    nonblank(v)
+                for key, v in item.items():
+                    if key not in {"evidence_ids", "source_ids", "support_ids", "counter_ids", "finding_ids"}:
+                        nonblank(v)
             if isinstance(item, list):
                 for v in item:
                     nonblank(v)
@@ -117,7 +131,8 @@ def parse(content, source_map, context, coverage, comparison):
         if isinstance(exc, analysis.AnalysisRejected):
             raise
         raise analysis.AnalysisRejected("delivery_shape_invalid") from None
-    analysis.parse(json.dumps(raw["analysis"]), source_map, context, coverage)
+    analysis.parse(json.dumps(raw["analysis"]), source_map, context, coverage,
+                   citation_review=citation_review, root_path="$.analysis")
 
     def scope(ids):
         ids = list(map(str, ids))
@@ -125,11 +140,12 @@ def parse(content, source_map, context, coverage, comparison):
             fail("delivery_scope_outside_run_or_duplicate")
         return set(ids)
 
-    def refs(ids, aids=(), *, direct=False):
+    def refs(ids, aids=(), *, direct=False, field="support_ids"):
+        record_references(citation_review, ids, source_map, path + "." + field, sorted(aids), required=bool(aids))
         if len(ids) != len(set(ids)) or not set(ids) <= set(source_map):
             fail("delivery_source_not_visible_or_duplicate")
         owned = set()
-        for sid in ids:
+        for sid in (sid for sid in ids if sid in source_map):
             src = source_map[sid]
             if src["ref"]["role"] == "execution_receipt":
                 fail("execution_receipt_not_conclusion_evidence")
@@ -141,6 +157,7 @@ def parse(content, source_map, context, coverage, comparison):
         if not set(aids) <= owned:
             fail("delivery_source_coverage_missing")
 
+    path = "$.conclusion"
     covered = scope(value.conclusion.alert_ids)
     refs(value.conclusion.support_ids, covered, direct=value.conclusion.state == "supported")
     members = {str(m.alert_id): m for m in value.analysis.members}
@@ -148,30 +165,32 @@ def parse(content, source_map, context, coverage, comparison):
         fail("unanalysed_member_in_conclusion")
     if value.conclusion.state == "uncertain" and not value.conclusion.limitations:
         fail("uncertain_conclusion_needs_limits")
+    path = "$.comparison"
     refs(value.comparison.support_ids)
-    baseline_ids = {sid for sid, src in source_map.items() if src["ref"]["type"] == "result"
-        and src["ref"]["id"] == comparison["result_id"]}
-    comparable = comparison["state"] == "eligible" and bool(baseline_ids)
+    baseline_ids = comparable_source_ids(source_map, comparison)
     if not comparison["result_id"] and comparison["state"] == "initial":
         if value.comparison.kind != "initial" or value.comparison.summary is not None or value.comparison.support_ids:
             fail("initial_delivery_must_not_invent_comparison")
-    elif not comparable:
+    elif not baseline_ids:
         if value.comparison.kind != "not_comparable" or not value.comparison.summary:
             fail("comparison_not_available")
-    elif (value.comparison.kind == "initial" or not value.comparison.summary
-            or not (baseline_ids & set(value.comparison.support_ids))
+    elif value.comparison.kind == "initial" or not value.comparison.summary:
+        raise analysis.AnalysisRejected("comparison_needs_selected_baseline_and_current_sources")
+    elif (not (baseline_ids & set(value.comparison.support_ids))
             or (value.comparison.kind != "not_comparable" and not (set(value.comparison.support_ids) - baseline_ids))):
         fail("comparison_needs_selected_baseline_and_current_sources")
+    path = "$.impact"
     affected = scope(value.impact.alert_ids)
     refs(value.impact.support_ids, affected, direct=bool(value.impact.supported_changes))
     if value.impact.supported_changes and not affected:
         fail("supported_impact_needs_member_scope")
     seen = set()
-    for item in value.recommendations:
+    for index, item in enumerate(value.recommendations):
+        path = f"$.recommendations.{index}"
         if item.id in seen or not set(item.object_keys) <= set(context.scope.object_keys):
             fail("recommendation_identity_or_target_invalid")
         seen.add(item.id)
-        refs(item.source_ids)
+        refs(item.source_ids, field="source_ids")
         if not item.source_ids:
             fail("recommendation_needs_sources")
     return value

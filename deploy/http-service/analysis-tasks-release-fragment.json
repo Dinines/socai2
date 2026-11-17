@@ -1,0 +1,37 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires_fragments": [
+    "deploy/local-investigation/analysis-lifecycle-release-fragment.json",
+    "deploy/http-service/run-records-release-fragment.json",
+    "deploy/local-investigation/analysis-incident-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/investigation_http/analysis_task_contracts.py": "investigation_http/analysis_task_contracts.py",
+    "services/api/investigation_http/adapters/analysis_tasks.py": "investigation_http/adapters/analysis_tasks.py",
+    "services/api/investigation_http/external_routes/analysis_tasks.py": "investigation_http/external_routes/analysis_tasks.py",
+    "services/api/investigation_http/adapters/services.py": "investigation_http/adapters/services.py",
+    "services/api/investigation_http/dependencies.py": "investigation_http/dependencies.py",
+    "services/api/investigation_http/errors.py": "investigation_http/errors.py",
+    "services/api/investigation_http/ports.py": "investigation_http/ports.py",
+    "services/api/investigation_http/main.py": "investigation_http/main.py",
+    "services/api/investigation_http/analysis_submission_contracts.py": "investigation_http/analysis_submission_contracts.py",
+    "services/api/investigation_http/adapters/analysis_submissions.py": "investigation_http/adapters/analysis_submissions.py",
+    "services/api/investigation_http/external_routes/analysis_submissions.py": "investigation_http/external_routes/analysis_submissions.py",
+    "services/api/investigation_http/contracts.py": "investigation_http/contracts.py",
+    "services/api/investigation_http/external_routes/analysis.py": "investigation_http/external_routes/analysis.py",
+    "services/api/investigation_http/external_routes/stage_execution.py": "investigation_http/external_routes/stage_execution.py",
+    "services/api/app/socai2/stage_reader.py": "app/socai2/stage_reader.py",
+    "services/api/app/socai2/stage_read_contracts.py": "app/socai2/stage_read_contracts.py",
+    "services/api/app/socai2/incident_inputs.py": "app/socai2/incident_inputs.py"
+  },
+  "environment_by_target": {
+    "local": {
+      "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "<absolute-frozen-runtime>/config/analysis-tasks.json"
+    },
+    "aisoc21": {
+      "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "/app/config/analysis-tasks.json"
+    }
+  },
+  "notes": "Merge with finalized core/R1/R3 and trusted-context fragments after migration128. Use the explicit shared task policy and configured tenant/recording actor. I async POST is mounted in source and passed admission, actual A/I dispatcher consumption and HTTP readback; Case submission is mounted and verified via the dependent case-update HTTP fragment; include that fragment for the current step7 candidate. E36 and synchronous E37 execution paths are removed. Package incident_inputs.py with event reader/types. Core results supply result_type/id/source_run_id/kind without legacy aliases. Not executable by manage.py; does not deploy or enable a scheduler, model or consumer. Formal profiles remain unchanged pending whole-change acceptance."
+}

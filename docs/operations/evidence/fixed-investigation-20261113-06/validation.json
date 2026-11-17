@@ -1,0 +1,71 @@
+{
+  "scope": "three_predefined_real_scenarios_and_unavailable_comparison_offline_fix",
+  "real_execution": "comparison.json",
+  "original_replay_materials": "replay-manifest.json",
+  "checks": [
+    {
+      "kind": "openspec",
+      "command": "openspec validate complete-socai2-investigation-chain --strict --no-interactive",
+      "before_implementation": "passed",
+      "after_implementation": "passed"
+    },
+    {
+      "kind": "targeted_pytest",
+      "command": "PYTHONPATH=.:services/api .local/conda-envs/socai2/bin/python -m pytest -q services/api/tests/test_socai2_case_followup_boundary.py::test_final_restores_original_contract_without_model_owned_known_fields services/api/tests/test_socai2_case_followup_boundary.py::test_historical_comparison_keeps_old_scope_without_offering_historical_targets",
+      "exit_code": 0,
+      "output": "4 passed in 1.33s",
+      "executions": 1
+    },
+    {
+      "kind": "offline_frozen_answer",
+      "script": "replay_comparison.py",
+      "exit_code": 0,
+      "receipt": "comparison-fix/summary.json"
+    },
+    {
+      "kind": "comparison",
+      "script": "compare.py",
+      "exit_code": 0,
+      "receipt": "comparison.json",
+      "note": "Initial offline run lacked the legacy B01 intent plan_file; now resolves its original plan.json and verifies saved hash. No business operation occurred."
+    },
+    {
+      "kind": "ruff",
+      "exit_code": 0,
+      "files": [
+        "services/api/app/socai2/baseline_delivery_contract.py",
+        "services/api/app/socai2/case_followup_output.py",
+        "services/api/app/socai2/case_citation_feedback.py",
+        "services/api/tests/test_socai2_case_followup_boundary.py",
+        "docs/operations/evidence/fixed-investigation-20261113-06/run.py",
+        "docs/operations/evidence/fixed-investigation-20261113-06/summarize.py",
+        "docs/operations/evidence/fixed-investigation-20261113-06/replay_comparison.py",
+        "docs/operations/evidence/fixed-investigation-20261113-06/compare.py"
+      ],
+      "note": "One local compare.py dictionary iteration style issue fixed, then targeted lint passed."
+    },
+    {
+      "kind": "local_4177_static_update",
+      "exit_code": 0,
+      "receipt": "processing-audit-update.json"
+    }
+  ],
+  "limits": [
+    "No full repository regression or fault matrix",
+    "No extra model generation for driver or comparison fixes",
+    "New comparison feedback not model-tested",
+    "All real Results remain rejected; model quality NOT_PASSED",
+    "No HTTP field, table or deployment change"
+  ],
+  "source_sha256": {
+    "services/api/app/socai2/baseline_delivery_contract.py": "239a7317db9a515907a01a4432ef761cbc4c7e95aca70b5b361be7f0adcb86c0",
+    "services/api/app/socai2/case_followup_output.py": "fb9ed2e48ba7e2137203106c18fc529b005c2e6425e864fb1d5271f63eaa95a8",
+    "services/api/app/socai2/case_citation_feedback.py": "5e8da30ef592ac0e0ba559a480b5b33d32096f10acd67bebf07ea5ceb601ffda",
+    "services/api/tests/test_socai2_case_followup_boundary.py": "bc9c93c0742e3e6d59c4cfa27a3e28edfd7288ae3658341012ac21fac274829c",
+    "docs/operations/evidence/fixed-investigation-20261113-06/run.py": "ccf49e1cbbcb9caeafb512108d7272c3824c16f4e96b667a4f05836a5cdbd386",
+    "docs/operations/evidence/fixed-investigation-20261113-06/summarize.py": "5c0b1036f7f98eddf9e3bc9de4b6362e85eeb63eb447777cc2186ba47575c808",
+    "docs/operations/evidence/fixed-investigation-20261113-06/replay_comparison.py": "849f5c5ac4c6c05764b077e964849cdb478092838329f44d874d4042edd2b21e",
+    "docs/operations/evidence/fixed-investigation-20261113-06/compare.py": "6216e5888bba69a0f52e7e0c999409fdeca7a14d3e4b1d36f67b7834286ffb10",
+    "docs/operations/evidence/fixed-investigation-20261113-06/comparison.md": "2bbac01f1ca4902a83123f492ba30860c0b06a5f5fd76f8ee80326a629fd4ff6"
+  }
+}

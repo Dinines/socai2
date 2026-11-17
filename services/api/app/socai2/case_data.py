@@ -6,7 +6,7 @@ from sqlalchemy import select, update
 
 from app.models import socai2 as m
 
-from .baseline_store import C, F, StoreError, digest, encoded
+from .baseline_store import C, F, StoreError, digest
 from .case_data_contracts import (
     KIND,
     SCHEMA,
@@ -318,7 +318,6 @@ async def export_page_data(tables):
 
 async def save_index(store, cas, index, *, actor_id, now, run_id=None, step_id=None):
     """Shared validation/storage for manual and normal C6 publication."""
-    from .runtime_policy import retention_limit
     current, case_id = cas["current_evidence_artifact_id"], cas["id"]
     if index.supersedes_artifact_id != current:
         raise StoreError("case_evidence_version_conflict")
@@ -334,8 +333,6 @@ async def save_index(store, cas, index, *, actor_id, now, run_id=None, step_id=N
             raise StoreError("evidence_previous_index_invalid", 422)
     await validate_sources(index, store.tenant_id, case_id, lookup, await object_map(store, index))
     payload = index.model_dump(mode="json")
-    if len(encoded(payload)) > retention_limit():
-        raise StoreError("evidence_index_too_large", 422)
     identity = uuid4()
     refs = [r.model_dump(mode="json") for e in index.entries for r in e.source_refs]
     await store.save_input_artifact(case_id, run_id, identity, payload, kind=KIND, schema=SCHEMA,

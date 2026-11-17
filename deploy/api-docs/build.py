@@ -9,7 +9,7 @@ SOURCE=ROOT/'deliverables/investigation-validation-20261106'
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output',type=Path,default=SOURCE/'http-handoff')
 OUT=parser.parse_args().output.resolve()
-VERSION='2026-11-13.docs13'
+VERSION='2026-11-14.docs20-candidate'
 BASE=ROOT/'docs/design/socai2-independent-api-v2.openapi.json'
 DOC=json.loads(BASE.read_text())
 DOC['paths']={k:v for k,v in DOC['paths'].items() if k.startswith('/api/v1/socai2')}
@@ -48,7 +48,8 @@ DESC={
 'raw_text':'保留的原始文本。','raw_json':'保留的原始JSON。','ocsf_json':'标准化事件正文。','enrichment':'已有富化内容。','detection':'实际检测信息及分数/ATT&CK标签。','source_scope':'原材料来源范围合同。','retention':'保留/截断说明。','sha256':'原件内容摘要；不等于业务结论验证。',
 }
 for name,s in SC.items():
- if name in ['GroupingQuery','GroupingSummary','CaseCommentCreate','CaseCommentView','CaseCommentPage','CaseAttachmentCreate','CaseAttachmentView','CaseAttachmentPage']:continue
+ if name.startswith(('Exploration','AlertReview','AlertHost')):continue
+ if name in ['GroupingQuery','GroupingSummary','CaseCommentCreate','CaseCommentView','CaseCommentPage','CaseAttachmentCreate','CaseAttachmentView','CaseAttachmentPage','StoryEntry','StoryPage']:continue
  for field,p in s.get('properties',{}).items():
   if field in DESC:p['description']=DESC[field]
   elif field.endswith('_truncated'):p['description']='集合是否被读取上限截断；true时不能声称全量。'
@@ -134,7 +135,7 @@ SECTIONS={
 'related_alerts':('RecordAlert','同类型、同命名空间、同对象键的其他告警，排除当前成员，可跨Case。'),
 'responses':('RecordResponse','现有响应关联；ID本身不证明审批/执行成功。'),
 }
-DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='64 个现有 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。2个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。当前服务需Authorization: Bearer <已有有效凭据>。')
+DOC['info'].update(title='调查服务 HTTP 交接 · 125 项功能',version='2026-11-12.docs1',description='71 个 HTTP 操作，125 项功能逐项映射。\n\n[打开功能清单、调用流程与边界](/handoff/index.html) · [下载完整示例](/handoff/examples.json) · [原JSON业务合同](/handoff/json-contracts.json)\n\n示例均为合成合同示例，不是线上数据或执行证据。可用指现有HTTP能力，不代表产品页面或模型质量验收通过。2个AI预留操作返回501；21独立正式服务手动A/I执行已启用，真实模型质量另行验收。后端通过HTTP对接，无需连接调查数据库或照搬旧AiSOC表。本候选按内部可信调用，不需要登录、Token或角色权限。')
 DOC['servers']=[
  {'url':'http://192.168.1.21:18024','description':'21正式独立服务；数据库aisoc，内网HTTP对接使用此入口。'},
  {'url':'http://127.0.0.1:28024','description':'本机SSH转发到21正式服务；需已开启relay.json对应转发。'},
@@ -238,7 +239,7 @@ EX['SubjectMutationReceipt']['facts'].update(id=ID['alert'],row_version=2,handli
 EX['SubjectBatchReceipt']={'operation_key':ID['operation'],'items':[EX['SubjectMutationReceipt']],'changed_count':1}
 
 # 清晰区分代码标识、输入、输出与错误；示例不执行。
-SC['CaseCommentView']['properties']['author_name_snapshot']['description']+=' 当前认证适配以登录邮箱作为作者名称保存。'
+SC['CaseCommentView']['properties']['author_name_snapshot']['description']+=' 当前可信适配按服务配置的actor_name保存作者名称，不表示认证过实际操作者。'
 EX['CaseCommentCreate']={'operation_key':ID['operation'],'body':'请运维核实维护窗口；本条为协作说明，尚未核实。'}
 EX['CaseCommentView']={'id':ID['comment'],'case_id':ID['case'],'body':EX['CaseCommentCreate']['body'],'author_id':ID['user'],'author_name_snapshot':'analyst@example.invalid','created_at':DATE,'edited_at':None,'edited_by':None,'row_version':1}
 EX['CaseCommentPage']={'items':[copy.deepcopy(EX['CaseCommentView'])],'total':1,'next_offset':None,'observed_at':DATE}
@@ -246,7 +247,49 @@ EX['CaseAttachmentCreate']={'operation_key':ID['operation'],'file_id':'synthetic
 EX['CaseAttachmentView']={'id':ID['artifact'],'case_id':ID['case'],**{k:v for k,v in EX['CaseAttachmentCreate'].items() if k!='operation_key'},'created_by':ID['user'],'created_at':DATE,'file_owner':'business_backend','availability':'managed_by_backend'}
 EX['CaseAttachmentPage']={'items':[copy.deepcopy(EX['CaseAttachmentView'])],'total':1,'next_offset':None,'observed_at':DATE}
 
+# E66新增字段使用本功能语义，避免沿用旧统计接口的通用说明。
+exploration_descriptions={
+ 'ExplorationPage':{'items':'本页去重候选告警；按共享对象数降序、匹配起点时间差升序、告警ID升序。','scope':'本次实际起点、事件时间范围、案件成员版本与排除对象说明。'},
+ 'ExplorationScope':{'seed_kind':'case为当前成员起点，alert为指定告警，object为指定当前材料对象。','case_scope_revision':'本次读取的Case成员范围版本；变化时旧游标409。','window_basis':'explicit为调用方明确窗口；seed_event_times为实际起点时间加配置窗口；no_seeds为无可用起点。'},
+ 'ExplorationObject':{'alert_id':'此对象所属的原告警UUID。','object_type':'原对象类型；本接口匹配host/user/ip/domain/url/hash。'},
+ 'ExplorationExcludedObject':{'object_id':'未参与匹配的起点对象UUID。','reason':'unsupported_object_type为本批不支持类型；hash_algorithm_or_value_invalid为未给/不支持算法或哈希格式不合法。'},
+}
+for model,fields in exploration_descriptions.items():
+ for name,description in fields.items():SC[model]['properties'][name]['description']=description
+
 adoption.examples(EX, ID, DATE)
+EX['StoryPage']={'items':[
+ dict(id='alert:'+ID['alert'],kind='alert',occurred_at=DATE,time_source='event_time',alert=base('AlertFacts'),run=None,results=[],task_revision=None,is_current_task_revision=None),
+ dict(id='investigation:'+ID['run'],kind='investigation',occurred_at=None,time_source='unknown',alert=None,run=copy.deepcopy(EX['RunView']),results=[],task_revision=None,is_current_task_revision=None)
+], 'total':2,'next_cursor':None,'observed_at':DATE}
+EX['StoryPage']['items'][0]['alert'].update(id=ID['alert'],event_time=DATE,event_time_source='source')
+EX['StoryPage']['items'][1].update(occurred_at=DATE,time_source='ended_at',run=copy.deepcopy(EX['ResultAdoptionPreview']['source_run']),results=[copy.deepcopy(EX['ResultAdoptionPreview']['candidate'])])
+revision=copy.deepcopy(EX['TaskRevisionView'])
+revision.update(state='completed',completed_at=DATE,completed_by=ID['user'],result_text='合成示例：人工确认来自维护作业，仍需核实授权范围。',result_scope=EX['Scope'])
+EX['StoryPage']['items'].insert(0,dict(id='human_result:'+ID['revision'],kind='human_result',occurred_at=DATE,time_source='completed_at',alert=None,run=None,results=[],task_revision=revision,is_current_task_revision=False))
+EX['StoryPage']['total']=3
+EX['StoryPage']['items'].sort(key=lambda v:v['id'],reverse=True)
+
+
+# 候选输出为合成合同示例；两端引用保留不同对象/材料身份。
+seed_object={'id':ID['artifact'],'alert_id':ID['alert'],'material_id':ID['material'],'object_type':'host','namespace':'example-connector','object_key':'host:HOST-A','raw_value':'HOST-A','normalized_value':'HOST-A','source_path':'$.raw_json.hostname','algorithm':None}
+candidate_object={**seed_object,'id':ID['revision'],'alert_id':ID['target'],'material_id':ID['comment']}
+candidate_alert=base('AlertFacts');candidate_alert.update(id=ID['target'],source_namespace='example',title='合成候选告警',latest_material_id=ID['comment'],event_time='2026-11-12T08:20:00Z',event_time_source='source')
+EX['ExplorationPage']={'items':[{'alert':candidate_alert,'shared_object_count':1,'time_delta_seconds':1200.0,'already_in_case':False,'case_ids':[],'incident_ids':[],'matches':[{'basis':'same_source_value','seed':seed_object,'candidate':candidate_object}]}],'total':1,'next_cursor':None,'scope':{'seed_kind':'alert','seed_alert_ids':[ID['alert']],'source_namespace':'example','case_scope_revision':1,'time_from':'2026-11-11T08:00:00Z','time_to':'2026-11-13T08:00:00Z','window_basis':'seed_event_times','excluded_objects':[]},'observed_at':'2026-11-12T08:30:00Z'}
+
+
+EX['ExplorationSources']={'alerts':[],'objects':[]}
+EX['ExplorationBase']={'kind':'members','case_id':ID['case'],'run_id':None,'result_id':None,'graph_artifact_id':None,'scope_revision':1,'delivery_state':None,'graph_state':'members','graph':None,'sources':EX['ExplorationSources'],'fingerprint':'a'*64}
+EX['ExplorationSave']={'operation_key':ID['operation'],'expected_snapshot_id':None,'base_run_id':None,'base_fingerprint':'a'*64,'expanded_links':[],'view_state':{'positions':{},'selected':[],'zoom':1}}
+EX['ExplorationSnapshot']={'id':ID['artifact'],'case_id':ID['case'],'created_at':DATE,'created_by':ID['user'],'base':EX['ExplorationBase'],'expanded_links':[],'expanded_sources':EX['ExplorationSources'],'view_state':EX['ExplorationSave']['view_state']}
+EX['ExplorationSaved']={'snapshot':EX['ExplorationSnapshot']}
+
+review_alert=copy.deepcopy(candidate_alert)
+review_alert['event_time']='2026-11-11T08:00:00Z'
+review_match={'rule':'same_host_and_tactic','seed':copy.deepcopy(seed_object),'candidate':copy.deepcopy(candidate_object),'shared_tactics':[{'label':'Execution','seed_source_paths':['$.detection.tactics[0]'],'candidate_source_paths':['$.detection.tactics[0]']}]}
+EX['AlertReviewPage']={'items':[{'alert':review_alert,'matched_rules':['same_host_and_tactic'],'time_delta_seconds':86400.0,'matches':[review_match],'incident_ids':[],'case_ids':[]}],'total':1,'next_cursor':None,'scope':{'source_alert_id':ID['alert'],'source_material_id':ID['material'],'source_event_time':DATE,'source_namespace':'example','time_from':'2026-10-13T08:00:00Z','time_to':DATE,'window_basis':'seed_lookback','unavailable_rules':['same_ip','same_hash_algorithm_and_value'],'excluded_objects':[]},'observed_at':DATE}
+
+EX['AlertHostPage']={'items':[{'alert':copy.deepcopy(candidate_alert),'matches':[{'seed':copy.deepcopy(seed_object),'candidate':copy.deepcopy(candidate_object)}]}],'total':1,'limit':7,'source_alert_id':ID['alert'],'source_material_id':ID['material'],'source_namespace':'example','source_hosts':[copy.deepcopy(seed_object)],'observed_at':'2026-11-12T08:30:00Z'}
 
 features=[]
 lookup={}
@@ -264,7 +307,7 @@ for l in (SOURCE/'frontend-feature-list.md').read_text().splitlines():
  status,ops,notes=lookup[fid]
  features.append(dict(id=fid,group=group,page=page,title=title,purpose=cells[1],result=cells[2],implementation_status=cells[3],backend_status=cells[4],http_status=status,operations=[f'E{x:02}' for x in ops],notes=notes))
 if len(features)!=125 or set(lookup)!={f['id'] for f in features}:raise RuntimeError('功能清单与注释不一致，停止生成')
-common='所有UUID用真实返回身份；时间带时区。已有身份以 Authorization: Bearer <token> 传入，JSON写请求使用Content-Type: application/json。401/403沿既有登录/身份处理，不增加权限设计。额外body字段会422。'
+common='所有UUID用真实返回身份；时间带时区。内部调用无需认证头；JSON写请求使用Content-Type: application/json。租户和记录操作人由服务配置，业务参数和版本规则保持。额外body字段会422。'
 endpoints=[]; examples={}; i=0
 for path,methods in DOC['paths'].items():
  for method,op in methods.items():
@@ -284,6 +327,7 @@ for path,methods in DOC['paths'].items():
    if 54<=i<=56 and p['name']=='sort_by':p['description']+=' 默认'+{54:'ingested_at',55:'created_at',56:'business_updated_at'}[i]+'。'
    if i==57 and p['name']=='source_namespace':p['description']='告警来源命名空间精确匹配，区分大小写；省略为全部来源；空白拒绝422。'
    if i==57 and p['name'] in ['time_from','time_to']:p['description']='告警真实event_time的带时区范围：起点包含、终点不含；允许单边；范围内不包含未知时间。省略时间条件则包含未知时间。'
+   if i==67 and p['name']=='run_id':p['description']='可选：本案已完成基础调查Run ID；省略选最新completed；缺图不会回退其他轮。'
    if i==59 and p['name']=='limit':p['description']='每页评论数，默认20，1–100。'
    if i==59 and p['name']=='offset':p['description']='跳过已读取评论数，默认0，0–100000；按next_offset续页。'
    if i==61 and p['name']=='limit':p['description']='每页附件引用数，默认20，1–100。'
@@ -297,6 +341,18 @@ for path,methods in DOC['paths'].items():
    params.append(p)
   if i in [2,26,27]:
    pv.update(q='需要核实',sort_by='severity',sort_order='desc',time_from='2026-11-10T00:00:00Z',time_to='2026-11-11T00:00:00Z')
+  if i==65:
+   pv={'case_id':ID['case'],'limit':20}
+   for p in params:
+    p['description']={'q':'字面子串搜索；告警标题/说明/最新主机账号，调查标题/目的/结论/变化，人工任务标题/说明/结果。','severity':'仅筛选告警等级；调查及人工完成结果保留作上下文。','cursor':'上页next_cursor，绑定Case与筛选；变更条件需清空。'}.get(p['name'],p['description'])
+  if i==66:
+   pv={'case_id':ID['case'],'limit':20}
+   for p in params:
+    p['description']={'alert_id':'可选起点告警ID，与object_id互斥；必须同Case来源范围，可用已读候选逐层查询。','object_id':'可选起点的alert_objects.id，来自E30 objects或E66 matches；必须最新材料，不是图内部节点ID。','time_from':'显式窗口起点（包含），带时区，和time_to一起传；省略用起点发生时间范围前后各配置24小时。','time_to':'显式窗口终点（不包含），带时区，必须晚于time_from；未知时间候选不返回。','cursor':'原样传next_cursor；案件/起点/查询范围或起点材料变化409，需从首页读取。'}.get(p['name'],p['description'])
+  if i==70:
+   pv={'alert_id':ID['alert'],'limit':5}
+   for p in params:
+    p['description']={'alert_id':'正在复核的真实告警ID，无需Case；排除自身。','time_from':'显式候选发生时间下界（包含），带时区且与time_to一起提供；省略默认起点前配置30天。','time_to':'显式上界（不包含），必须晚于time_from；默认起点event_time，起点缺时需明确窗口。','limit':'每页候选告警数，默认5，1–100；先按真实发生时间倒序。','cursor':'原样使用next_cursor；绑定起点材料/对象/战术与窗口，变化409。'}.get(p['name'],p['description'])
   body=op.get('requestBody',{}).get('content',{}).get('application/json')
   req=sample(body['schema']) if body else None
   if body:body['examples']={'contract':{'summary':'合成请求示例；UUID与版本必须换成真实值','value':req}}
@@ -342,6 +398,12 @@ for path,methods in DOC['paths'].items():
   if i in [15,16,33,34,35]:
    out['artifact' if i in [15,16] else 'metadata']={'id':ID['artifact'],'run_id':ID['run'] if i in [15,33] else None,'material_state':'complete'}
   resp['examples']={'contract':{'summary':'合成响应示例；独立场景，非线上执行证据','value':out}}
+  if i==71:
+   empty=copy.deepcopy(out);empty.update(items=[],total=0)
+   resp['examples']['empty']={'summary':'有主机但没有已知发生时间的其他匹配告警；不代表安全','value':empty}
+  if i==70:
+   empty=copy.deepcopy(out);empty.update(items=[],total=0,next_cursor=None)
+   resp['examples']['empty']={'summary':'该窗口内无候选，仍保留起点和规则可用情况；不代表安全','value':empty}
   if i==30:
    op['description']+='\n\n分区项类型：\n'+''.join(f'- `{s}` → `{nm}`：{nt}\n' for s,(nm,nt) in SECTIONS.items())+'- `source_artifacts` → 工件元数据和content_url，仅非Run来源工件。\n'
    op['x-section-schemas']={s:{'$ref':'#/components/schemas/'+nm} for s,(nm,_) in SECTIONS.items()}
@@ -349,7 +411,7 @@ for path,methods in DOC['paths'].items():
     val=sample({'$ref':'#/components/schemas/'+nm})
     resp['examples'][s]={'summary':f'{s}分区的空集合示例；非空字段见对应Record Schema','value':{'items':[],'total':0,'next_offset':None,'observed_at':DATE,'limitations':[]}}
   errorlist=[]
-  defaults={'401':[('not_authenticated',{'detail':'Not authenticated'},'缺少有效已有凭据')],'403':[('identity',{'detail':('subject_user_actor_required' if 48<=i<=53 else 'case_user_actor_required') if i<22 or i>=38 else 'Permission denied: alerts:read'},'现有身份/访问条件不符')],'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
+  defaults={'422':[('validation',{'detail':[{'type':'uuid_parsing','loc':['path','case_id' if i<=21 or i>=38 else 'identity'],'msg':'Input should be a valid UUID','input':'not-a-uuid'}]},'UUID、枚举、长度、额外字段或跨字段约束不符')],'503':[]}
   # 校验错误示例必须引用该操作实际存在的入参，列表不能虚构path.identity。
   error_param=next((p for p in params if p['in']=='path' and p['schema'].get('format')=='uuid'),None)
   if error_param:
@@ -361,15 +423,9 @@ for path,methods in DOC['paths'].items():
   defaults['422'][0][1]['detail']=[error_item]
   if 54<=i<=56:
    defaults['422'][0][1]['detail']='export_columns_invalid'
-   defaults['403']=[('permission_denied',{'detail':'Permission denied: '+('cases:read' if i==56 else 'alerts:read')},'现有读取条件不符')]
   if i==57:
    defaults['422'][0][1]['detail']=[{'type':'value_error','loc':[],'msg':'Value error, time_from_must_precede_time_to'}]
-   defaults['403']=[('permission_denied',{'detail':'Permission denied: alerts:read'},'现有读取条件不符')]
-  if i in [21,58,59,60,61,62,63,64]:
-   defaults['403']=[('permission_denied',{'detail':'Permission denied: '+('cases:write' if i in [21,58,60] else 'cases:read')},'缺少对应Case操作能力')]
-  if i==2:
-   defaults['403']=[('permission_denied',{'detail':'Permission denied: cases:read'},'缺少Case读取能力')]
-  flag='socai2_page_read_not_enabled' if i in [54,55,57] else 'socai2_subject_write_not_enabled' if 48<=i<=53 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
+  flag='socai2_page_read_not_enabled' if i in [54,55,57,70,71] else 'socai2_subject_write_not_enabled' if 48<=i<=53 else 'socai2_case_api_not_enabled' if i<=21 or i>=38 else 'socai2_analysis_read_not_enabled' if i in [22,23,24,25] else 'socai2_stage_execution_not_enabled' if i in [36,37] else 'socai2_page_read_not_enabled'
   defaults['503'].append(('feature_disabled',{'detail':flag},'服务对应功能开关关闭'))
   if i in [2,26,27]:
    defaults['422'].append(('invalid_time_window',{'detail':[{'type':'value_error','loc':[],'msg':'Value error, time_from_must_precede_time_to'}]},'起点不早于终点；无时区、非法排序或枚举同样422'))
@@ -426,7 +482,7 @@ def mdtable(headers,rows):
 def schema_table(s):
  if '$ref'in s:return schema_table(SC[s['$ref'].rsplit('/',1)[-1]])
  return mdtable(['字段','OpenAPI required','类型与约束','默认值','含义'],[[k,'是' if k in s.get('required',[]) else '否',typ(v),json.dumps(v['default'],ensure_ascii=False) if 'default'in v else '无（可空不等于可省略）',v.get('description',v.get('title',k)).split('\n\n')[0]+(' [完整语义]('+v['x-audit-url']+')' if 'x-audit-url' in v else '')] for k,v in s.get('properties',{}).items()])
-epmd='# 调查HTTP接口目录（64项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
+epmd='# 调查HTTP接口目录（71项）\n\n[共同约定与调用流程](README.md) · [嵌套Schema](schemas.md) · [合成示例JSON](examples.json)\n\n参数来自现有OpenAPI，附加业务校验来自现有实现。以下错误列出调用方直接处理的典型分支；未枚举的5xx仍按未知处理，不伪造成功。示例独立，不可将示例UUID当真实数据发送。\n'
 for e in endpoints:
  epmd+=f"\n<a id=\"{e['id'].lower()}\"></a>\n\n## {e['id']} {e['title']}\n\n`{e['method']} {e['path']}`\n\n状态：**{e['status']}**。分类：{e['tag']}。\n\n{e['description']}\n"
  if int(e['id'][1:])<54 and e['id']!='E21':epmd+=f'\n[本接口用途及完整输出字段审计](audit/interfaces.html#{e["id"].lower()}) · [动态投影与差异](audit/dynamic-fields.html)\n'
@@ -445,7 +501,7 @@ OUT.mkdir(parents=True,exist_ok=True)
 for name,obj in [('openapi.json',DOC),('examples.json',examples)]: (OUT/name).write_text(dump(obj))
 for name,txt in [('endpoints.md',epmd),('schemas.md',schmd)]: (OUT/name).write_text(txt.rstrip()+"\n")
 (OUT/'json-contracts.json').write_bytes((ROOT/'docs/design/socai2-json-contracts-20261103.schema.json').read_bytes())
-(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':655,'dynamic_structures':35,'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
+(OUT/'manifest.json').write_text(dump({'version':VERSION,'features':len(features),'feature_groups':{g:sum(f['group']==g for f in features) for g in ['告警','事件','调查']},'operations':len(endpoints),'schemas':len(SC),'fixed_output_fields':668+sum(len(v.get('properties',{})) for k,v in SC.items() if k.startswith(('Exploration','AlertReview','AlertHost')) and k not in {'ExplorationSave','ExplorationLinkInput'}),'dynamic_structures':35,'exploration_display_json_fields':['ExplorationBase.graph','ExplorationSave.view_state','ExplorationSnapshot.view_state'],'source_openapi':str(BASE.relative_to(ROOT)),'source_sha256':hashlib.sha256(BASE.read_bytes()).hexdigest(),'audit_sources':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (SOURCE/'http-handoff-audit').iterdir() if p.is_file()},'examples':'synthetic_not_execution_evidence','business_api_called':False}))
 # 自包含静态功能页；无CDN，无线上校验或业务API调用。
 styles='body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}'
 def esc(x):return html.escape(str(x))

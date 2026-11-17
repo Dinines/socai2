@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.052" timestamp="2026-11-13T19:32:10.529660+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_case_followup_boundary" name="test_fixed_h_feedback_keeps_revision_scope_and_real_refs_in_c3_c6" time="0.165"><failure message="KeyError: '0143d41a-aa3e-45df-b000-c54d61ed04c6'">sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+
+    def test_fixed_h_feedback_keeps_revision_scope_and_real_refs_in_c3_c6(sample):
+        _, initial = prepared_sample(sample)
+        evidence = next(r for r in initial["input_ledger"]["records"] if r["ref"]["type"] == "alert_material"
+                        and r["ref"]["role"] == "observation")
+        aid, tid, vid, older_id = evidence["alert_ids"][0], str(uuid4()), str(uuid4()), str(uuid4())
+        raw = sample["context"]
+        revision = {"id": vid, "task_id": tid, "revision": 2, "state": "completed",
+            "title": "核对本次操作授权", "description": "保留业务反证，不作事实推断。",
+            "result_text": "本次操作未得到业务授权；请核对审批记录。", "completed_by": "internal-user-id",
+            "result_scope": {**raw["scope"], "alert_ids": [aid]},
+            "source_refs": [evidence["ref"], inputs.reference("artifact", uuid4(), "observation")],
+            "business_extension": {"count": 0, "authorized": False, "exceptions": []}}
+        older = {**copy.deepcopy(revision), "id": older_id, "revision": 1, "result_text": "旧版本曾认为操作已获授权。"}
+        raw["tasks"][tid] = {"task_id": tid, "revision": revision, "usable_feedback": True, "limitations": []}
+        raw["adopted_task_revisions"].update({vid: copy.deepcopy(revision), older_id: older})
+        raw["current_assessment"] = {"id": str(uuid4()), "conclusion": "当前采用判断仍需结合新反馈复核。",
+            "origin": "human", "validity": "accepted", "reason": "复核原始材料",
+            "formed_at": "2026-11-01T00:00:00Z", "adopted_by": "internal-adopter",
+            "actor": {"user_id": "internal-actor"}, "operation_key": "internal-adoption-operation"}
+        removed = str(uuid4())
+        raw["assessment_members"] = [{"alert_id": aid}, {"alert_id": removed}]
+        raw["citation_roles"]["$.current_assessment"] = "prior_analysis"
+        raw["citation_roles"].update({f"$.tasks.{tid}.revision": "human_statement",
+            f"$.adopted_task_revisions.{vid}": "human_statement", f"$.adopted_task_revisions.{older_id}": "human_statement"})
+        before = copy.deepcopy(raw)
+        context, base = prepared_sample(sample)
+        analysis = json.loads(case_output_adapter.restore(json.dumps(answer_for(base, context)), base["case_boundary"]))
+        final = inputs.build("C6", context, base, {}, previous={"analysis": analysis,
+            "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}, prior_id=uuid4())
+        deep = inputs.build("Deep", context, base, {}, previous={"analysis": analysis,
+            "source_map": base["source_map"], "validation": "structure_scope_sources_checked"},
+            prior_id=uuid4(), question_id="authorization")
+        for prepared, rows in ((base, base["input_ledger"]["records"]), (deep, deep["followup_boundary"]["records"]),
+                               (final, final["followup_boundary"]["records"])):
+            assert prepared["ready"]
+            text = prepared["messages"][1]["content"]
+            assert text.count(revision["result_text"]) == text.count(older["result_text"]) == 1
+            assert "internal-user-id" not in text
+            assessment = next(r for r in rows if r.get("context_kind") == "current_assessment")
+            assert set(assessment["value"]) == {"conclusion", "origin", "validity", "reason", "declared_scope"}
+            assert assessment["alert_ids"] == [aid] and assessment["ref"]["role"] == "prior_analysis"
+            assert assessment["original_scope"] == {"alert_ids": sorted([aid, removed])}
+            aliases = prepared["case_boundary"]["member_aliases"]
+&gt;           assert aliases[removed].startswith("X")
+                   ^^^^^^^^^^^^^^^^
+E           KeyError: '0143d41a-aa3e-45df-b000-c54d61ed04c6'
+
+services/api/tests/test_socai2_case_followup_boundary.py:871: KeyError</failure></testcase></testsuite></testsuites>

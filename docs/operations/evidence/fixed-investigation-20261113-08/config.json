@@ -1,0 +1,82 @@
+{
+  "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+  "environment_file": ".local/case-knowledge-20261111-01/environment.json",
+  "expected_database": "v12_upgrade_dev",
+  "sslmode": "disable",
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "actor_id": "00000000-0000-0000-0000-000000000003",
+  "actor_name": "local-material-review@example.invalid",
+  "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+  "window_padding_seconds": 300,
+  "runtime_overrides": {
+    "AISOC_DISABLE_CLICKHOUSE": "true",
+    "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+    "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+    "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+    "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false",
+    "SOCAI2_KNOWLEDGE_PROFILE": "/Users/lychee/Documents/project/socai2/docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+    "AISOC_AIRGAPPED": "false"
+  },
+  "transport_config": "tools/testdata/alert_io_eval/config.json",
+  "preflight_timeout_seconds": 30,
+  "expected_route": {
+    "model": "aisoc-investigation",
+    "upstream_model": "openai/aisoc-test-investigation",
+    "upstream_base": "http://192.168.1.43:8000/v1"
+  },
+  "hidden_message_fields": [
+    "reasoning_content",
+    "reasoning",
+    "thinking",
+    "analysis",
+    "reasoning_details"
+  ],
+  "knowledge_profile": "docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+  "http_base_url": "http://local.validation",
+  "http_timeout_seconds": 1600,
+  "batch": "fixed-investigation-20261113-08",
+  "output": "docs/operations/evidence/fixed-investigation-20261113-08/flow",
+  "previous_flow": "docs/operations/evidence/fixed-investigation-20261112-05/flow",
+  "snapshot": "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/workbench-export/database.json",
+  "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/fixed-investigation-20261113-08",
+  "limitations": [
+    "Two scenarios, one new isolated Case and at most two new fixed-scope Runs. Original A/I reused; old Runs never redispatched.",
+    "B01 is the no-H baseline. H01 is a new fixed Run on that Case after the original material-review text; new accepted C3 feeds C6.",
+    "Synthetic materials and assistant-authored material review, not independent ground truth or business authorization.",
+    "H, designated historical result and query time differ between scenarios; no controlled A/B or accuracy claim.",
+    "Existing per-Run limits and bounded correction only. Known repeated prose-quality issues remain NOT_PASSED; no sampling to chase success.",
+    "Knowledge forward held for each complete Run. No model deployment, migration, HTTP contract change, consumer or streaming update."
+  ],
+  "scenarios": [
+    {
+      "key": "B01",
+      "kind": "baseline",
+      "title": "固定调查对比：无H基线",
+      "expectation": [
+        "三成员原事实进入输入；无授权或损害证据时保留待核。",
+        "知识仅作解释/取证参考，历史材料不得当当前成员的独立观察。"
+      ]
+    },
+    {
+      "key": "H01",
+      "kind": "review_same_case",
+      "depends_on": "B01",
+      "title": "材料核查反馈后再调查",
+      "human_text": "本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。\n1. 本案包含登录、进程启动及出站连接三类记录；请分别核对，不因登录A未形成有效判断而忽略原始登录事实。\n2. process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。\n3. 登录来源IP和出站连接源IP属于不同记录上下文；同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。\n4. 不能从主机名、用户名推断已获批的自动化流程。现有材料未提供审批、白名单、文件传输或受损证明；请据此复核结论和待核事项，不把本反馈当成行为合法或恶意的证明。",
+      "expectation": [
+        "H原文/版本/范围/附件在输入和引用中保持。",
+        "与B01比较，检查事实遗漏、理由和待核事项是否响应反馈；不要求翻转结论。",
+        "B01结果仅在程序判定可比时参与比较，拒收基线不得被模型恢复为有效结论。"
+      ]
+    }
+  ],
+  "local_services": "tools/testdata/case_knowledge/local-services.json",
+  "ssh_connect_timeout_seconds": 10,
+  "ssh_keepalive_seconds": 10,
+  "tunnel_ready_timeout_seconds": 15,
+  "forward_driver": "docs/operations/evidence/fixed-investigation-20261113-07/run.py",
+  "prior_evidence": [
+    "docs/operations/evidence/fixed-investigation-20261113-07",
+    "docs/operations/evidence/case-task-input-20261113-01"
+  ]
+}

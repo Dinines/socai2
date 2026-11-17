@@ -1,0 +1,1537 @@
+{
+  "components": {
+    "schemas": {
+      "Batch": {
+        "additionalProperties": false,
+        "properties": {
+          "environment": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Environment",
+            "type": "string"
+          },
+          "execution_state": {
+            "enum": [
+              "planned",
+              "preparing",
+              "running",
+              "finished",
+              "blocked",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Execution State",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "live",
+              "archive"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "live_execution",
+              "saved_evidence",
+              "synthetic_fixture"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "quality_status": {
+            "enum": [
+              "not_assessed",
+              "issues_recorded",
+              "assessed_no_issues"
+            ],
+            "title": "Quality Status",
+            "type": "string"
+          },
+          "scenario_version": {
+            "minLength": 1,
+            "title": "Scenario Version",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "environment",
+          "title",
+          "scenario_version",
+          "execution_state",
+          "mode",
+          "provenance",
+          "updated_at",
+          "quality_status"
+        ],
+        "title": "Batch",
+        "type": "object"
+      },
+      "BatchListItem": {
+        "additionalProperties": false,
+        "properties": {
+          "batch": {
+            "$ref": "#/components/schemas/Batch"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "detail_url": {
+            "title": "Detail Url",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "batch",
+          "counts",
+          "detail_url"
+        ],
+        "title": "BatchListItem",
+        "type": "object"
+      },
+      "BatchView": {
+        "additionalProperties": false,
+        "properties": {
+          "batch": {
+            "$ref": "#/components/schemas/Batch"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "detail_url": {
+            "title": "Detail Url",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceView"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "links": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Links",
+            "type": "object"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "batch",
+          "counts",
+          "detail_url",
+          "links",
+          "evidence"
+        ],
+        "title": "BatchView",
+        "type": "object"
+      },
+      "BusinessMapping": {
+        "additionalProperties": false,
+        "properties": {
+          "result_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
+          },
+          "result_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "alert_assessment",
+                  "incident_diagnosis",
+                  "case_result"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Type"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "required": [
+          "subject_type",
+          "subject_id"
+        ],
+        "title": "BusinessMapping",
+        "type": "object"
+      },
+      "Capabilities": {
+        "additionalProperties": false,
+        "properties": {
+          "document_schema_versions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Document Schema Versions",
+            "type": "array"
+          },
+          "environment_label": {
+            "title": "Environment Label",
+            "type": "string"
+          },
+          "investigation_http": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvestigationHTTP"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_preparation_observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Preparation Observed At"
+          },
+          "read_only": {
+            "const": true,
+            "title": "Read Only",
+            "type": "boolean"
+          },
+          "service_version": {
+            "title": "Service Version",
+            "type": "string"
+          },
+          "test_api_schema": {
+            "const": "socai2.test-api.v1",
+            "title": "Test Api Schema",
+            "type": "string"
+          },
+          "viewer_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewer Version"
+          }
+        },
+        "required": [
+          "service_version",
+          "test_api_schema",
+          "document_schema_versions",
+          "environment_label",
+          "read_only",
+          "latest_preparation_observed_at"
+        ],
+        "title": "Capabilities",
+        "type": "object"
+      },
+      "EvidenceView": {
+        "additionalProperties": false,
+        "properties": {
+          "content_url": {
+            "title": "Content Url",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "metadata_url": {
+            "title": "Metadata Url",
+            "type": "string"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size": {
+            "minimum": 0.0,
+            "title": "Size",
+            "type": "integer"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "mime_type",
+          "size",
+          "sha256",
+          "metadata_url",
+          "content_url"
+        ],
+        "title": "EvidenceView",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InvestigationHTTP": {
+        "additionalProperties": false,
+        "properties": {
+          "contract_sha256": {
+            "title": "Contract Sha256",
+            "type": "string"
+          },
+          "environment_label": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Environment Label",
+            "type": "string"
+          },
+          "get_operations": {
+            "title": "Get Operations",
+            "type": "integer"
+          },
+          "read_only": {
+            "const": true,
+            "title": "Read Only",
+            "type": "boolean"
+          },
+          "runtime_verified": {
+            "const": false,
+            "title": "Runtime Verified",
+            "type": "boolean"
+          },
+          "tenant_id": {
+            "format": "uuid",
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "environment_label",
+          "tenant_id",
+          "contract_sha256",
+          "get_operations",
+          "read_only",
+          "runtime_verified"
+        ],
+        "title": "InvestigationHTTP",
+        "type": "object"
+      },
+      "Operation": {
+        "additionalProperties": false,
+        "properties": {
+          "case_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "execution_state": {
+            "enum": [
+              "planned",
+              "accepted",
+              "running",
+              "completed",
+              "failed",
+              "unknown",
+              "skipped"
+            ],
+            "title": "Execution State",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "intent": {
+            "minLength": 1,
+            "title": "Intent",
+            "type": "string"
+          },
+          "mappings": {
+            "items": {
+              "$ref": "#/components/schemas/BusinessMapping"
+            },
+            "title": "Mappings",
+            "type": "array"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "intent",
+          "execution_state"
+        ],
+        "title": "Operation",
+        "type": "object"
+      },
+      "Page_BatchListItem_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BatchListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at"
+        ],
+        "title": "Page[BatchListItem]",
+        "type": "object"
+      },
+      "Page_Operation_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at"
+        ],
+        "title": "Page[Operation]",
+        "type": "object"
+      },
+      "Page_QualityIssue_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QualityIssue"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at"
+        ],
+        "title": "Page[QualityIssue]",
+        "type": "object"
+      },
+      "Page_TestCase_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TestCase"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at"
+        ],
+        "title": "Page[TestCase]",
+        "type": "object"
+      },
+      "Preparation": {
+        "additionalProperties": false,
+        "properties": {
+          "cleanup_mode": {
+            "enum": [
+              "no_cleanup",
+              "planned",
+              "executed"
+            ],
+            "title": "Cleanup Mode",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "resources": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Resources",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "not_run",
+              "planned",
+              "inspected",
+              "prepared",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "cleanup_mode",
+          "summary"
+        ],
+        "title": "Preparation",
+        "type": "object"
+      },
+      "PreparationView": {
+        "additionalProperties": false,
+        "properties": {
+          "preparation": {
+            "$ref": "#/components/schemas/Preparation"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "preparation"
+        ],
+        "title": "PreparationView",
+        "type": "object"
+      },
+      "QualityIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "affects_flow": {
+            "title": "Affects Flow",
+            "type": "boolean"
+          },
+          "case_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "category": {
+            "minLength": 1,
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "stage": {
+            "minLength": 1,
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "deferred",
+              "resolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "stage",
+          "category",
+          "description",
+          "status",
+          "affects_flow",
+          "evidence_ids"
+        ],
+        "title": "QualityIssue",
+        "type": "object"
+      },
+      "TestCase": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Actual",
+            "type": "array"
+          },
+          "evidence_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "expected": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Expected",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "operation_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "type": "string"
+            },
+            "title": "Operation Ids",
+            "type": "array"
+          },
+          "scenario_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "not_run",
+              "blocked",
+              "passed",
+              "failed",
+              "deferred",
+              "not_covered"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "use_case_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+            "title": "Use Case Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "use_case_id",
+          "scenario_id",
+          "status",
+          "expected"
+        ],
+        "title": "TestCase",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Investigation test records",
+    "version": "0.4.1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/test-api/v1/batches": {
+      "get": {
+        "operationId": "batches_test_api_v1_batches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "planned",
+                    "preparing",
+                    "running",
+                    "finished",
+                    "blocked",
+                    "failed",
+                    "interrupted"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_BatchListItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batches"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}": {
+      "get": {
+        "operationId": "batch_test_api_v1_batches__batch_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batch"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}/cases": {
+      "get": {
+        "operationId": "cases_test_api_v1_batches__batch_id__cases_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scenario_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scenario Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "not_run",
+                    "blocked",
+                    "passed",
+                    "failed",
+                    "deferred",
+                    "not_covered"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_TestCase_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cases"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}/evidence/{evidence_id}": {
+      "get": {
+        "operationId": "evidence_test_api_v1_batches__batch_id__evidence__evidence_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "metadata",
+              "enum": [
+                "metadata",
+                "content"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceView"
+                }
+              }
+            },
+            "description": "Metadata by default; registered original bytes with format=content"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evidence"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}/operations": {
+      "get": {
+        "operationId": "operations_test_api_v1_batches__batch_id__operations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "use_case_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Use Case Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Operation_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Operations"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}/preparation": {
+      "get": {
+        "operationId": "preparation_test_api_v1_batches__batch_id__preparation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparationView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preparation"
+      }
+    },
+    "/test-api/v1/batches/{batch_id}/quality-issues": {
+      "get": {
+        "operationId": "quality_test_api_v1_batches__batch_id__quality_issues_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "use_case_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Use Case Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_QualityIssue_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quality"
+      }
+    },
+    "/test-api/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities_test_api_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities"
+      }
+    }
+  }
+}

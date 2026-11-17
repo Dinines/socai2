@@ -1,0 +1,27 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_typed_projection_keeps_conflicting_names_and_original_paths _______
+
+    def test_typed_projection_keeps_conflicting_names_and_original_paths():
+        mat = {"id": uuid4(), "alert_id": uuid4(), "material_state": "complete", "ocsf_json": {
+            "class_uid": 1007, "actor": {"user": {"name": "actor-one"}}, "user": {"name": "user-two"},
+            "device": {"hostname": "device-three"}, "network": {"protocol_name": "tcp"},
+            "process": {"pid": 5, "cmd_line": "x" * 3000}}}
+        output = material_projection(mat)
+        names = [v for v in output["fields"] if v["name"] == "user_name"]
+        assert {(v["source_path"], v["value"]) for v in names} == {
+            ("$.ocsf_json.actor.user.name", "actor-one"), ("$.ocsf_json.user.name", "user-two")}
+        assert all(v["conflict"] for v in names)
+        command = next(v for v in output["fields"] if v["source_path"] == "$.ocsf_json.process.cmd_line")
+        assert command["value"] == mat["ocsf_json"]["process"]["cmd_line"]
+        mat["ocsf_json"]["process"]["cmd_line"] = "x" * field_limit()
+        output = material_projection(mat)
+>       assert any(v["source_path"] == "$.ocsf_json.process.cmd_line" and v["reason"] == "whole_field_exceeds_budget"
+                   for v in output["omissions"])
+E       assert False
+E        +  where False = any(<generator object test_typed_projection_keeps_conflicting_names_and_original_paths.<locals>.<genexpr> at 0x109b68790>)
+
+services/api/tests/test_socai2_stage_quality.py:47: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_stage_quality.py::test_typed_projection_keeps_conflicting_names_and_original_paths
+1 failed, 1 passed, 6 deselected in 0.29s

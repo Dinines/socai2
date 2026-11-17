@@ -1,6 +1,6 @@
 ## Why
 
-当前 Case 实测暴露三个相互关联的流程缺口：查询发起成员被当作返回记录主体、成员／发现引用错误没有针对性有限纠正、背景工具固定优先级使知识及其他缺失背景持续跳过。归因证据见[实测分析](../../complete-socai2-investigation-chain/case-current-flow-20261110.md#流程与模型问题归因)。
+当前 Case 实测暴露三个相互关联的流程缺口：查询发起成员被当作返回记录主体、成员／发现引用错误没有针对性有限纠正、背景工具固定优先级使知识及其他缺失背景持续跳过。归因证据见[实测分析](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md#流程与模型问题归因)。
 
 用户要求继续修正，并明确一个 OpenSpec change 在本地走完完整流程后统一发布、推送一次。本 change 只收口上述关联修复，承接主调查 change 的 F02/F03/F04 和 M02 受影响部分；主调查的模型总体质量、页面操作和自动消费继续保留，不复制其任务树。
 

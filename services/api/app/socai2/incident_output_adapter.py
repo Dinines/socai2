@@ -114,9 +114,13 @@ def canonical(content, prepared):
     return body
 
 
-def parse(content, prepared, *, diagnostics=None):
+def parse(content, prepared, *, diagnostics=None, citation_review=None):
+    if citation_review is not None:
+        citation_review["path_mapping"] = {"$.evidence_ids": "$.diagnosis.source_ids",
+            "$.summary": "$.diagnosis.summary", "$.conclusion": "$.diagnosis.conclusion",
+            "$.limitations": "$.diagnosis.limitations"}
     return legacy.parse(json.dumps(canonical(content, prepared), ensure_ascii=False),
-                        prepared["source_map"], prepared["data"], diagnostics=diagnostics)
+                        prepared["source_map"], prepared["data"], diagnostics=diagnostics, citation_review=citation_review)
 
 
 def review(content, prepared):

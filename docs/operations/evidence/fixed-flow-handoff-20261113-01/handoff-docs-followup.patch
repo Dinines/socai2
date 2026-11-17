@@ -1,0 +1,43 @@
+--- docs/investigation/model-input-output-current-20261109.md (after first alignment)
++++ docs/investigation/model-input-output-current-20261109.md
+@@ -58,7 +58,7 @@
+ 
+ 程序负责关联原告警/Run/材料、真实查询状态、来源还原、验证及存储；原解释字段由事实模板和模型理由装配，模型不再生成独立完整报告或后台身份。当前 `evidence_ids` 至少 1 项；确定性定性的主引用限原始观察或人工陈述，引用合法仍不能保证理由正确。
+ 
+-实际：[网络告警输入](../operations/evidence/model-io-inventory-20261109-01/A-network/input.txt) · [原答](../operations/evidence/model-io-inventory-20261109-01/A-network/output-original.txt)。登录截断、进程引用失败也在[目录](../operations/evidence/model-io-inventory-20261109-01/README.md)，不只展示成功例子。
++历史实际：[网络告警输入](../operations/evidence/model-io-inventory-20261109-01/A-network/input.txt) · [原答](../operations/evidence/model-io-inventory-20261109-01/A-network/output-original.txt)。登录截断、进程引用失败也在[目录](../operations/evidence/model-io-inventory-20261109-01/README.md)，不只展示成功例子。
+ 
+ 依据：[输入边界](../../services/api/app/socai2/alert_model_boundary.py)、[输出适配](../../services/api/app/socai2/alert_output_adapter.py)、[配置与指令](../../services/api/app/socai2/alert-input-v1.json)。
+ 
+@@ -164,6 +164,7 @@
+ 七块结构和四领域沿用既有Case职责；模型输出五问，程序补齐保存六问。observed发现由模型选择必要原始依据，字段原文由程序装配；推断和未决正文仍由模型判断。保留后的局部结果重新计算coverage，不用完整原答的覆盖追认被拒部分。
+ 
+ 最新实际：[10批完整请求（全部消息/Schema）](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-01-C3-full-input.txt) · [业务输入](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-01-C3-input.txt) · [原答](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-01-C3-answer.txt)。五问接收及六问装配已验证；名称推断自动化等正文质量仍未通过。
++
+ 依据：[输入边界](../../services/api/app/socai2/case_model_boundary.py)、[输出合同](../../services/api/app/socai2/baseline_analysis_contract.py)、[身份适配](../../services/api/app/socai2/case_output_adapter.py)。
+ 
+ ## 4. Deep：一个问题的补查决策
+@@ -191,6 +192,7 @@
+ 四项输出已经接入执行器，程序绑定 `question_id` 后沿原校验、保存和读取路径。生成 Schema 的支持／反证来源排除 `execution_receipt`，查询状态与来源映射仍完整保留。每个 query／answer／handoff 分支分别带齐必填项和限制，避免供应商语法丢失公共约束；handoff 必须给出未决答案及限制。r6 参照批次 `case-evidence-roles-20261110-real-01` 的真实 handoff／answer 均完整并通过生成 Schema 和接收校验；query 分支有离线合同检查，没有新增真实 query 采样。各轮截断、缺字段及拒收原答保留。
+ 
+ 最新实际：[授权问题完整请求](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-02-C4-deep-full-input.txt)/[业务输入](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-02-C4-deep-input.txt)/[原答](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-02-C4-deep-answer.txt)；[影响问题完整请求](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-03-C4-deep-full-input.txt)/[原答](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-03-C4-deep-answer.txt)。前者handoff/unresolved有效，后者重复引用拒收，不作为C6有效判断。授权问题不默认附加可选知识，已被必要前序明确依赖的来源仍恢复。没有为验证query分支新增真实调用。
++
+ 依据：[输入构建](../../services/api/app/socai2/case_followup_input.py)、[输出恢复](../../services/api/app/socai2/case_followup_output.py)、[Deep 执行](../../services/api/app/socai2/baseline_deep.py)。
+ 
+ ## 5. C6：最终案件判断与报告内容
+@@ -237,13 +239,14 @@
+ 存在重复风险：`analysis`、最终结论、影响、建议部分可重复表达。当前先补交接，保原合同；后续再比较逐项保留/修订/撤销/新增，不可静默沿用未复核的前序条目。**这一部分尚未达到全部优化要求。**
+ 
+ 最新实际：[C6完整请求](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-04-C6-full-input.txt) · [业务输入](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-04-C6-input.txt) · [首答](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-04-C6-answer.txt) · [一次纠正请求](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-05-C6-full-input.txt) · [纠正原答](../operations/evidence/fixed-investigation-20261113-10/flow/R01/review/call-05-C6-answer.txt)。仅将impact成员范围纠正到其有据成员，最终accepted/uncertain/partial并成为第3版current；影响Deep的拒收和所有原答保留。程序接受/采用不等于正文质量通过。
++
+ 依据：[当前输入筛选](../../services/api/app/socai2/case_followup_selection.py)、[输入装配](../../services/api/app/socai2/case_followup_input.py)、[最终输出合同](../../services/api/app/socai2/baseline_delivery_contract.py)、[保存和报告](../../services/api/app/socai2/baseline_delivery.py)。
+ 
+ ## 6. C3.reanalysis：可选的补证后再分析
+ 
+ 这个入口目前存在，但默认 C3 → 补查 → C5 → C6 链不额外执行它。不能把“代码里有模型调用”说成“每轮都调用”。
+ 
+-输入：冻结基础视图、新证据、前序分析摘要/补查需求、Deep 回答和图等，使用 JSON 装配。输出：基础 `Analysis` 七块，字段同 C3，但 `followups` 不含 `binding_id/priority`。它只形成新的初步分析版本，不发布最终案件结果。
++输入：冻结基础视图、新证据、前序分析摘要/补查需求、Deep 回答和图等，使用 JSON 装配。输出：基础`Analysis`七块，仍按该可选旧入口的六问合同；不能套用当前C3模型五问/程序coverage边界，`followups`不含`binding_id/priority`。它只形成新的初步分析版本，不发布最终案件结果。
+ 
+ 该可选入口不在本次固定链验收范围，未适配为上述任务筛选合同，也没有新的真实样例。未来若启用，须先整理输入和前序引用；不能把固定链已收口写成仓库所有可选模型入口均已整理。
+ 

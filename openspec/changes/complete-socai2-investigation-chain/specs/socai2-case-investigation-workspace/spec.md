@@ -12,6 +12,28 @@
 - **WHEN** 用户切换模块/轮次或选择没有记录的节点
 - **THEN** 清除上一节点内容并显示所选轮次的空态，不把其他轮次输入输出留在详情区；节点可通过键盘选择，原件仍可单独查阅
 
+### Requirement: Internal audit views separate business conclusions from execution and citation quality
+
+4177 SHALL 优先展示当前source_run_id实际保存的A判断/理由、I摘要/诊断及Case结论，运行状态、交付完整性、引用质量、材料缺口和采用状态分别呈现。stage_output_saved SHALL 表示正常保存结束，不作为错误或业务结论。模型原答、程序派生输出和当前采用判断须角色明确；纯引用错误不隐藏原业务结论，历史失败状态不追认为成功。
+
+#### Scenario: A saved stage finishes normally with citation diagnostics
+- **WHEN** A/I/C结果正常保存且有独立引用问题
+- **THEN** 同Run原结论可直接读取，质量问题并列显示，正常结束不报错；未采用分析不冒充当前判断
+
+#### Scenario: A selected Run has no saved business result
+- **WHEN** 所选Run没有同主体且source_run_id匹配的已保存业务结果，或只留下没有结论正文的取消/未完成记录
+- **THEN** 明确显示本轮没有已保存业务结论，保留该Run原答/错误/空态入口，不用其他Run、当前采用或模型原答推断替代
+- **AND** 采用状态分别说明保存时回执和快照中的当前采用；缺少当前判断来源时显示未核对，不推断已采用或未采用
+- **AND** 已存在的取消/未完成记录仍展示其原状态，不把记录存在解释成已有业务结论
+
+#### Scenario: C3 needed a section completion
+- **WHEN** 同C3阶段保存初答、补答及合并结果
+- **THEN** 每次实际输入/请求/原答和程序合并分别可查，字段来源可追溯，失败及未补字段如实显示
+
+#### Scenario: Large module input is opened
+- **WHEN** 用户展开超过预览长度的本Run原件
+- **THEN** 沿原件入口读取完整内容，折叠只影响展示，不裁剪原件；切换Run清空旧详情，读取无业务写入或模型调用
+
 ### Requirement: Page data readiness is independent of investigation workflow maturity
 
 本轮页面数据合同 SHALL 以字段可持久保存/回查、来源关联及确定派生规则验收，允许通过真实数据库读回与导出交接，不要求先完成模型质量、VPN对照、实时页面写表或跨域接线。已有字段但当前无样例 SHALL 标为未产生数据，不当成结构缺口。原页面模板保持，允许必要字段绑定及缺值呈现适配；缓存、示例文案和演示值不能作为唯一业务数据来源。

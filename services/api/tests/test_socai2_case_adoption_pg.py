@@ -125,7 +125,8 @@ async def exercise(service, tenant, actor, record, *, continuation=None):
 
         ready = await service.preview_result_adoption(tenant, cid, first)
         assert ready.can_adopt and len(ready.unfinished_tasks) == 1
-        assert {row["state"] for row in ready.unfinished_runs} == {"running", "pending_update"}
+        assert {row["state"] for row in ready.unfinished_runs} == {"running"}
+        assert pending_run not in {row["run_id"] for row in ready.unfinished_runs}
         request = ResultAdoptionRequest(operation_key=uuid4(), expected_review_token=ready.review_token,
             reason="Retain the uncertain conclusion while the human task remains open.")
         await refused("result_adoption_pending_work_confirmation_required", first, request)

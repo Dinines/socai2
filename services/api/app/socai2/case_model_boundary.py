@@ -1,10 +1,11 @@
-"""Build only C3's configured text input; downstream legacy views remain separate."""
+"""Build C3's configured business input and preserve its frozen source mapping."""
 import copy
 
 from pydantic_core import to_jsonable_python
 
 from . import baseline_analysis_contract as contract
 from . import baseline_model_view as legacy
+from . import case_context_input
 from . import knowledge_model_input as knowledge
 from .baseline_context import reference
 from .baseline_store import StoreError, encoded
@@ -21,8 +22,13 @@ SCHEMA = "socai2.case-model-input.v1"
 
 
 def selected_profile(context):
-    profile = active_policy().case_io
-    if profile is None or context.case_input_profile != profile.identity:
+    policy = active_policy()
+    try:
+        policy.require_execution_profiles("case_io")
+    except ValueError:
+        raise StoreError("investigation_execution_contract_required", 503) from None
+    profile = policy.case_io
+    if context.case_input_profile != profile.identity:
         raise StoreError("case_input_profile_changed", 422)
     return profile
 
@@ -49,7 +55,8 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
         if legacy.blocked(item["original"]):
             rejected.append({"source": ref, "reason": "input_guard", "required": item["required"]})
             continue
-        data["items"].append({"source": ref, "value": item["value"], "limitations": item["limitations"]})
+        value = item["original"] if case_context_input.kind(ref) else item["value"]
+        data["items"].append({"source": ref, "value": value, "limitations": item["limitations"]})
         source_map[str(index)] = {"ref": ref, "alert_ids": source_members(context, ref, {})}
     additional, tool_payloads = [], {str(identity): body for identity, body, _ in enrichment}
     for identity, body, _ in enrichment:
@@ -93,13 +100,16 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     if rejected:
         prepared["user"] += "\n部分背景原文被输入检查排除；不能视作完整材料。"
     output = profile.config["c3_output"]
-    from .case_program_output import observation_literals
+    from .case_program_output import initial_coverage, observation_literals
     system = legacy.SYSTEM + "\n" + "\n".join(line for line in contract.PROMPT.splitlines()
         if not line.startswith(("followups只提需求", "仅返回符合response_format"))) + "\n" + contract.EXECUTION_PROMPT + "\n" + profile.config["system_suffix"]
     for replacement in profile.config["system_replacements"]:
         system = system.replace(replacement["old"], replacement["new"])
     system += "\n" + profile.config["citation_instruction"]
-    system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"]))
+    system += "\n" + profile.config["followup_routing"]["C3"]
+    completion_system = system + "\n" + profile.config["program_output"]["instruction"]
+    system += "\n" + output["instruction"].replace("{max_followups}", str(output["max_followups"])).replace(
+        "{max_findings}", str(output["max_findings"]))
     system += "\n" + profile.config["program_output"]["instruction"]
     messages = [{"role": "system", "content": system}, {"role": "user", "content": prepared["user"]}]
     optional = [r["knowledge"]["identity"] for r in prepared["records"] if r.get("knowledge")]
@@ -112,10 +122,17 @@ def build(context, context_id, enrichment, states, materials, *, execution_time=
     prepared.pop("query_supplement")
     return {"schema_version": SCHEMA, "ready": reason is None, "reason": reason,
         "messages": messages if reason is None else [], "source_map": prepared["source_map"],
+        **({"unsent_messages": messages} if reason == "case_input_exceeds_prepared_limit" else {}),
         "coverage": prepared["coverage"], "omissions": prepared["omissions"],
         "source_state_ledger": states, "case_boundary": {"profile": profile.identity, "max_followups": output["max_followups"],
+            "c3_output": {key: output[key] for key in ("version", "max_findings")},
+            "c3_completion": {**profile.config["c3_completion"], "system": completion_system},
+            "followup_routing": copy.deepcopy(profile.config["followup_routing"]),
             "program_output": profile.config["program_output"]["version"],
-            "observation_literals": observation_literals(prepared["records"], prepared["member_aliases"]),
+            **({"coverage_facts": initial_coverage(prepared, len(context.alerts))}
+               if profile.config["program_output"].get("c3_coverage") else {}),
+            "observation_literals": observation_literals(prepared["records"], prepared["member_aliases"],
+                                                        event_roots=profile.business["render"]["event_roots"]),
             "member_aliases": prepared["member_aliases"], "object_aliases": prepared["object_aliases"]},
         "input_ledger": prepared, "bytes": len(encoded(messages)),
         "limitations": ["structured_sources_and_frozen_query_copies_not_a_full_raw_review",
@@ -141,6 +158,9 @@ def messages(prepared, context, options):
     presentation["original_catalog"] = catalog
     prepared["tool_presentation"] = presentation
     output.append({"role": "user", "content": presentation["text"]})
-    if len(encoded(output)) > draft_limit() or any(legacy.blocked(m["content"]) for m in output):
+    if len(encoded(output)) > draft_limit():
+        prepared["unsent_messages"] = output
+        raise StoreError("case_input_exceeds_prepared_limit", 422)
+    if any(legacy.blocked(m["content"]) for m in output):
         raise StoreError("analysis_input_contract_or_size", 422)
     return output, prepared["source_map"]

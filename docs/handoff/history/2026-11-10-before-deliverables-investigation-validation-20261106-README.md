@@ -12,7 +12,7 @@
 
 ## 调查运行记录页
 
-2026-11-08最新A/I批次已在21统一r5上接通读取：3告警、1事件、4模型、0Case，51原GET及1,910项核对通过；失败和部分内容按原Run展示，模型质量仍未通过。[部署与对比报告](../../investigation/ai-production-rollout-20261108.md) · [本轮事件记录](http://127.0.0.1:4177/subjects/a488c95a916724472edbf9595767ea533fc60de19f041309ebbd9aa7b980668f.html)。在线7登记、本机23登记分别保留；最终读取快照仅更新同批索引，旧文件和其他批次不删除。
+2026-11-08最新A/I批次已在21统一r5上接通读取：3告警、1事件、4模型、0Case，51原GET及1,910项核对通过；失败和部分内容按原Run展示，模型质量仍未通过。[部署与对比报告](2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md) · [本轮事件记录](http://127.0.0.1:4177/subjects/a488c95a916724472edbf9595767ea533fc60de19f041309ebbd9aa7b980668f.html)。在线7登记、本机23登记分别保留；最终读取快照仅更新同批索引，旧文件和其他批次不删除。
 
 [打开本机调查工作台](http://127.0.0.1:4177/)。调查人员可以在这里查看处理过程、重建当时的输入输出，或把某个步骤的日志文件交给同事。
 
@@ -44,7 +44,7 @@ python docs/operations/serve_processing_workbench.py --source aisoc
 
 首页“告警输入输出对比”进入模型测试批次列表，当前包含[事件新版输入实测](http://127.0.0.1:4177/comparisons/incident-input-validation-20261108-01/index.html)与[告警整理版五字段指令测试](http://127.0.0.1:4177/comparisons/alert-prompt-validation-20261108-01/index.html)。实际用户正文、任务指令、输出格式、模型原答、程序校验和装配结果均可展开，每次完整请求/响应/校验JSON可下载。
 
-事件批次为同一三告警事件的一次请求：44.12秒，1784输入/2236输出tokens；四块Schema、引用和成员映射通过，但扩大进程启动效果、沿用旧情报查空说法及攻击链解释偏强，正文质量未通过。见[事件回执](../../operations/evidence/incident-input-validation-20261108-01/summary.json)。告警批次为九个已有样例各一次，没有旧指令对照组；格式9/9通过，正文质量未通过，详见[告警报告](../../../openspec/changes/complete-socai2-investigation-chain/alert-prompt-validation-20261108.md)。
+事件批次为同一三告警事件的一次请求：44.12秒，1784输入/2236输出tokens；四块Schema、引用和成员映射通过，但扩大进程启动效果、沿用旧情报查空说法及攻击链解释偏强，正文质量未通过。见[事件回执](../../operations/evidence/incident-input-validation-20261108-01/summary.json)。告警批次为九个已有样例各一次，没有旧指令对照组；格式9/9通过，正文质量未通过，详见[告警报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/alert-prompt-validation-20261108.md)。
 
 按用户要求，旧36调用和24调用两批静态对照已退出站点；本机归档在`.local/workbench-archive/alert-prompt-validation-20261108-01/`，21归档路径由[当前发布配置](../../../deploy/aisoc21/workbench-alert-validation-20261108.json)的`deployment.archive`确定。184份文件hash保持，原始证据仍在`docs/operations/evidence`，没有删除业务调查或原答。
 
@@ -106,7 +106,7 @@ python -m http.server 4179 --bind 127.0.0.1 --directory deliverables/investigati
 
 前端开发按[联调取数说明](../../investigation/investigation-test-handoff-20261106.md#前后端联调从这里开始)从本包提取 48 份真实保存的 GET 响应体和 4 份字段样例。仓库中的离线检查可复核后端取值和原页面显示，使用既有案例即可开始。
 
-本目录是2026-11-06已完成测试材料的分发入口，随`codex/case-baseline-history-20261103`提交。先读[测试结果、F01—F28字段对应及下一轮计划](../../investigation/investigation-test-handoff-20261106.md)，再按[提交范围与剩余问题](../../../openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)继续推进。
+本目录是2026-11-06已完成测试材料的分发入口，随`codex/case-baseline-history-20261103`提交。先读[测试结果、F01—F28字段对应及下一轮计划](../../investigation/investigation-test-handoff-20261106.md)，再按[提交范围与剩余问题](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)继续推进。
 
 [下载交接包](../../../deliverables/investigation-validation-20261106/socai2-investigation-tests-20261106.zip)：10,079,558字节，1272文件，SHA256：
 

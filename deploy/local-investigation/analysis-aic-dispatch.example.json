@@ -1,0 +1,35 @@
+{
+  "enabled": false,
+  "tenant_id": "00000000-0000-0000-0000-000000000001",
+  "database_url_file": "/run/secrets/analysis-database-url",
+  "database_connect_args": {
+    "ssl": "require",
+    "timeout": 5,
+    "server_settings": {
+      "statement_timeout": "10000",
+      "lock_timeout": "5000"
+    }
+  },
+  "database_pool_size": 5,
+  "redis_url_file": "/run/secrets/analysis-redis-url",
+  "redis_socket_timeout_seconds": 5,
+  "redis_connect_timeout_seconds": 5,
+  "lifecycle_policy_file": "/app/config/analysis-tasks.json",
+  "executor_factory": "app.socai2.analysis_case_executor:executors",
+  "executor_config_file": "/app/config/analysis-aic-executors.json",
+  "dispatch": {
+    "namespace": "socai2-analysis",
+    "max_running_tasks": 1,
+    "poll_interval_seconds": 60,
+    "execution_timeout_seconds": 3600,
+    "replenish_limit": 100,
+    "priorities": [
+      "case_investigation",
+      "alert_triage",
+      "incident_diagnosis",
+      "knowledge_sync"
+    ],
+    "receipt_directory": "/app/state/analysis-completions",
+    "lock_file": "/app/state/analysis-dispatch.lock"
+  }
+}

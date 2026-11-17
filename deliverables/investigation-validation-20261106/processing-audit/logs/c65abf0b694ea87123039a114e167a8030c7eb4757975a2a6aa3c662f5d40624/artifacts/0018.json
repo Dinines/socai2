@@ -1,0 +1,93 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-15T13:22:43.158596+00:00",
+  "case_id": "58194401-03ca-5383-83b4-ac82886a5acd",
+  "content_json": {
+    "raw": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "content": "{\n  \"analysis\": {\n    \"summary\": \"本轮复核确认了三个标记为 `synthetic` 的告警（A1 登录、A2 进程启动、A3 网络流）在时间、主机和账号上的高度关联性。所有原始记录均明确声明“授权和意图未知”，且无审批流程证据。虽然存在进程启动（curl）与网络流的时间先后顺序，但缺乏命令执行结果（如 HTTP 响应内容）和网络载荷的确切证据，无法证实数据外传或具体业务目的。历史判定为 `benign` 缺乏独立事实支撑，主要基于重复的文本描述。资产信息（owner_email）缺失进一步增加了授权判断的不确定性。\",\n    \"members\": [\n      {\n        \"alert_id\": \"A1\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录了一次成功的网络登录（logon），用户为 svc-report-s01-ingress-20261115-02，主机为 host-app-s01-ingress-20261115-02。\",\n        \"evidence_ids\": [\"N2_S2\", \"N2_S3\", \"N2_S4\", \"N2_S5\", \"N2_S6\", \"N2_S7\", \"N2_S19\", \"N2_S20\", \"N2_S46\", \"N2_S47\", \"N2_S49\"],\n        \"limitations\": [\"原始记录明确声明授权和意图未知\", \"无审批流程记录\", \"资产 owner_email 为空\"]\n      },\n      {\n        \"alert_id\": \"A2\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录了进程 `curl` 的启动，命令为 `curl --head https://198.51.100.20/status`，由同一用户在同一主机上执行。\",\n        \"evidence_ids\": [\"N2_S51\", \"N2_S52\", \"N2_S54\", \"N2_S55\", \"N2_S56\", \"N2_S57\", \"N2_S60\", \"N2_S61\", \"N2_S72\", \"N2_S73\", \"N2_S103\", \"N2_S104\", \"N2_S106\"],\n        \"limitations\": [\"仅记录进程启动，未记录命令执行结果或返回内容\", \"无法确认是否成功获取了目标状态信息\"]\n      },\n      {\n        \"alert_id\": \"A3\",\n        \"state\": \"unresolved\",\n        \"summary\": \"记录了从主机到 198.51.100.20:443 的 TCP 网络流观察，时间晚于 curl 命令启动约 4 分钟。\",\n        \"evidence_ids\": [\"N2_S107\", \"N2_S108\", \"N2_S109\", \"N2_S110\", \"N2_S111\", \"N2_S112\", \"N2_S115\", \"N2_S116\", \"N2_S128\", \"N2_S129\", \"N2_S130\", \"N2_S131\", \"N2_S132\", \"N2_S169\", \"N2_S170\", \"N2_S172\"],\n        \"limitations\": [\"outcome 字段为 unknown\", \"无网络载荷（Payload）数据，无法确认传输内容\", \"与 curl 命令启动时间存在时间差，因果关系未证实\"]\n      }\n    ],\n    \"findings\": [\n      {\n        \"id\": \"F1\",\n        \"state\": \"observed\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N2_S46\", \"N2_S103\", \"N2_S169\", \"N2_S4\", \"N2_S51\", \"N2_S108\"],\n        \"counter_ids\": [],\n        \"alternatives\": [],\n        \"limitations\": [\"所有记录均标记为 synthetic，需确认是否为真实环境测试或模拟数据。\", \"原始记录明确声明授权和意图未知。\"]\n      },\n      {\n        \"id\": \"F2\",\n        \"state\": \"observed\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N2_S3\", \"N2_S52\", \"N2_S109\", \"N2_S20\", \"N2_S73\", \"N2_S132\"],\n        \"counter_ids\": [],\n        \"alternatives\": [],\n        \"limitations\": [\"三个告警涉及同一账号、同一主机，时间间隔短，但无直接证据证明 A1 导致 A2，A2 导致 A3。\"]\n      },\n      {\n        \"id\": \"F3\",\n        \"state\": \"inferred\",\n        \"statement\": \"A2 中的 curl 命令意图查询 198.51.100.20 的状态，A3 中的网络流指向同一目标 IP，时间上存在先后顺序，暗示可能存在关联。\",\n        \"alert_ids\": [\"A2\", \"A3\"],\n        \"support_ids\": [\"N2_S57\", \"N2_S128\", \"N2_S201\", \"N2_S235\"],\n        \"counter_ids\": [\"N2_S116\"],\n        \"alternatives\": [\"A2 的 curl 命令可能因网络超时或权限拒绝而失败，未产生实际流量；A3 的流量可能属于其他无关进程。\"],\n        \"limitations\": [\"命令文本与网络流的时间差（4 分钟）存在不确定性，无法确证因果关系。\", \"outcome 为 unknown，无法确认命令是否执行完成。\"]\n      },\n      {\n        \"id\": \"F4\",\n        \"state\": \"unresolved\",\n        \"statement\": \"历史分诊判定为 benign 但缺乏独立证据支持，主要依据为重复的文本描述，未提供实质性授权证明。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N2_S293\", \"N2_S294\", \"N2_S295\", \"N2_S296\"],\n        \"counter_ids\": [\"N2_S47\", \"N2_S104\", \"N2_S170\"],\n        \"alternatives\": [\"分诊可能基于上游合成标签的默认策略，而非对具体行为的深入分析。\"],\n        \"limitations\": [\"分诊结论不能替代当前对未知意图的核实。\", \"无审批流程记录。\"]\n      },\n      {\n        \"id\": \"F5\",\n        \"state\": \"unresolved\",\n        \"statement\": \"资产库存查询显示主机 O1 的 owner_email 为空，且 last_seen 时间晚于案件结束时间，表明资产信息不完整或存在延迟。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"support_ids\": [\"N2_S175\", \"N2_S176\", \"N2_S181\", \"N2_S182\", \"N2_S186\", \"N2_S187\", \"N2_S190\", \"N2_S191\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"owner_email 为空可能是数据录入问题，不代表主机不可信。\"],\n        \"limitations\": [\"无法确认主机 O1 的合法归属人，影响授权判断。\"]\n      }\n    ],\n    \"questions\": [\n      {\n        \"id\": \"detection_facts\",\n        \"state\": \"answered\",\n        \"answer\": \"检测到登录（A1）、进程启动（A2）和网络流观察（A3）。所有关键结果字段（如命令输出、传输内容）缺失。\",\n        \"evidence_ids\": [\"N2_S5\", \"N2_S60\", \"N2_S115\", \"N2_S57\", \"N2_S128\", \"N2_S116\"]\n      ,\n      \"limitations\": [\"仅凭动作记录无法构建完整攻击链。\"]\n      },\n      {\n        \"id\": \"member_relationships\",\n        \"state\": \"answered\",\n        \"answer\": \"成员间存在时间、主机、账号的高度关联性，但缺乏直接的行为因果证据。\",\n        \"evidence_ids\": [\"N2_S3\", \"N2_S52\", \"N2_S109\", \"N2_S7\", \"N2_S58\", \"N2_S250\"]\n      ,\n        \"limitations\": [\"无法排除巧合或并发操作的可能性。\"]\n      },\n      {\n        \"id\": \"behavior_nature\",\n        \"state\": \"unresolved\",\n        \"answer\": \"行为性质待定。可能是正常的报告应用测试（synthetic 标签暗示），也可能是恶意侦察。\",\n        \"evidence_ids\": [\"N2_S297\", \"N2_S49\", \"N2_S13\"]\n      ,\n        \"limitations\": [\"缺乏上下文判断是测试还是攻击。\", \"无威胁情报匹配。\"]\n      },\n      {\n        \"id\": \"authorization\",\n        \"state\": \"unresolved\",\n        \"answer\": \"无明确授权证据。所有记录均声明授权未知，且无审批流程记录。\",\n        \"evidence_ids\": [\"N2_S47\", \"N2_S104\", \"N2_S170\", \"N2_S296\"]\n      ,\n        \"limitations\": [\"需人工确认该账号是否有执行此类操作的常规权限。\", \"资产 owner_email 为空。\"]\n      },\n      {\n        \"id\": \"impact\",\n        \"state\": \"unresolved\",\n        \"answer\": \"观察到进程启动和网络连接，但未观察到数据外传或系统配置变更的确切结果。\",\n        \"evidence_ids\": [\"N2_S57\", \"N2_S128\", \"N2_S111\", \"N2_S112\"]\n      ,\n        \"limitations\": [\"无法确认 curl 是否获取了敏感数据，也无法确认流量内容。\", \"outcome 为 unknown。\"]\n      }\n    ],\n    \"domains\": [\n      {\n        \"name\": \"identity\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及用户登录和进程执行主体。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"finding_ids\": [\"F1\", \"F2\", \"F5\"],\n        \"limitations\": [\"用户名为服务账号，授权状态未知。\"]\n      },\n      {\n        \"name\": \"cloud\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及主机资产信息和网络流量。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"finding_ids\": [\"F2\", \"F3\", \"F5\"],\n        \"limitations\": [\"资产信息不完整，owner_email 为空。\"]\n      },\n      {\n        \"name\": \"phishing\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"无钓鱼邮件、链接或凭证窃取迹象。\",\n        \"alert_ids\": [],\n        \"finding_ids\": []\n      ,\n        \"limitations\": [\"仅基于现有日志，未发现相关特征。\"]\n      },\n      {\n        \"name\": \"insider\",\n        \"applicability\": \"undetermined\",\n        \"reason\": \"无法判断内部人员恶意行为，因授权未知且无历史违规记录。\",\n        \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n        \"finding_ids\": [\"F4\"],\n        \"limitations\": [\"需结合人员背景调查。\"]\n      }\n    ],\n    \"conflicts\": [\n      {\n        \"id\": \"C1\",\n        \"finding_ids\": [\"F4\", \"F1\"],\n        \"state\": \"unresolved\",\n        \"explanation\": \"历史分诊判定为 benign (F4) 与原始记录明确声明授权意图未知 (F1) 之间存在解释冲突。历史判定缺乏独立证据，而原始记录提供了明确的未知状态声明。\",\n        \"evidence_ids\": [\"N2_S29\", \"N2_S46\", \"N2_S103\", \"N2_S169\", \"N2_S4\", \"N2_S51\", \"N2_S108\"]\n      }\n    ],\n    \"followups\": [\n      {\n        \"question_id\": \"behavior_nature\",\n        \"alert_ids\": [\"A2\", \"A3\"],\n        \"mode\": \"deep\",\n        \"objective\": \"验证 curl 命令的实际执行结果及网络传输内容，以区分测试与真实攻击。\",\n        \"required_evidence\": \"进程输出日志、网络包载荷、会话关联信息。\"\n      ,\n        \"source_ids\": [\"N2_S57\", \"N2_S128\"]\n      ,\n        \"object_keys\": [\"O1\", \"O2\", \"O3\"]\n      }\n    ]\n  },\n  \"conclusion\": {\n    \"text\": \"当前案件状态为未决（Unresolved）。现有证据证实了登录、进程启动（curl）和网络连接的发生，且所有记录均标记为 `synthetic` 并声明授权未知。虽然存在时间上的逻辑关联，但缺乏命令执行结果和网络载荷的确切证据，无法确认是否发生了数据外传或恶意侦察。历史判定为 `benign` 缺乏独立事实支撑。需进一步深度查询以获取进程输出和网络载荷，并人工确认账号权限。\",\n    \"state\": \"uncertain\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n    \"support_ids\": [\"N2_S47\", \"N2_S104\", \"N2_S170\", \"N2_S57\", \"N2_S116\"],\n    \"limitations\": [\"关键结果字段缺失\", \"授权状态未知\", \"资产信息不完整\"]\n  },\n  \"closing_note\": \"本轮确认了三个 synthetic 告警的关联性，但核心问题（授权、意图、实际影响）仍无定论。历史 benign 判定无效。必须获取 curl 命令的实际输出和网络载荷才能区分测试与攻击。资产 owner_email 缺失需补查。\",\n  \"impact\": {\n    \"summary\": \"已观察到进程启动和网络连接动作，但未观察到数据外传或系统配置变更的确切结果。影响范围仅限于动作本身，具体业务影响未知。\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n    \"support_ids\": [\"N2_S57\", \"N2_S128\", \"N2_S111\", \"N2_S112\"],\n    \"supported_changes\": []\n  ,\n    \"cannot_generalize\": [\"无法确认 curl 是否获取了敏感数据\", \"无法确认流量内容是否包含敏感信息\", \"无法确认操作是否被业务授权\"]\n  ,\n    \"next_steps\": [\"获取进程输出\", \"获取网络载荷\", \"人工确认权限\"]\n  }\n  ,\n  \"recommendations\": [\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\", \"O2\", \"O3\"],\n      \"reason\": \"需验证 curl 命令的实际执行结果及网络传输内容，以区分测试与真实攻击。\",\n      \"source_ids\": [\"N2_S57\", \"N2_S128\"]\n    ,\n      \"limitations\": [\"需确保查询权限覆盖进程输出和网络包载荷。\"]\n    },\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\"],\n      \"reason\": \"获取主机 O1 在案件时间窗口内的完整进程活动列表，确认 curl 是否为唯一异常进程。\",\n      \"source_ids\": [\"N2_S51\", \"N2_S58\"]\n    ,\n      \"limitations\": [\"需确认进程列表的完整性。\"]\n    },\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\"],\n      \"reason\": \"补查主机 O1 的资产信息，特别是 owner_email 和审批流程记录，以辅助授权判断。\",\n      \"source_ids\": [\"N2_S175\", \"N2_S176\"]\n    ,\n      \"limitations\": [\"资产数据库可能存在延迟或数据缺失。\"]\n    },\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\", \"O2\", \"O3\"],\n      \"reason\": \"人工确认账号 svc-report-s01-ingress-20261115-02 是否有执行此类操作的常规权限。\",\n      \"source_ids\": [\"N2_S47\", \"N2_S104\", \"N2_S170\"]\n    ,\n      \"limitations\": [\"需依赖人工反馈。\"]\n    }\n  ]\n}",
+            "provider_specific_fields": {
+              "reasoning": null,
+              "refusal": null
+            },
+            "role": "assistant"
+          },
+          "provider_specific_fields": {
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        }
+      ],
+      "created": 1794748883,
+      "id": "chatcmpl-afdd2e3cc9e63fdc",
+      "model": "aisoc-investigation",
+      "object": "chat.completion",
+      "system_fingerprint": "vllm-0.30.0-76652a79",
+      "usage": {
+        "completion_tokens": 3908,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 11798,
+        "total_tokens": 15706
+      }
+    },
+    "request_artifact_id": "4884f862-f218-499c-87a9-8e3f3d6f645d",
+    "schema_version": "socai2.baseline-delivery.v2",
+    "stage": "C6",
+    "type": "model_original_response",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 11798,
+      "output_tokens": 3908,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-afdd2e3cc9e63fdc",
+      "total_tokens": 15706,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "a745100d-0bad-5c24-a9e2-5cdab10a0963",
+  "event_time": null,
+  "file_name": null,
+  "id": "653dab55-2fca-40dd-b3bb-f0e8e9831698",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "bd1967a85a2557e73d3f159cce0ab5627b0517284d4025c8fe98299919472193",
+    "original_size_bytes": 14362,
+    "reason": null,
+    "retained_sha256": "bd1967a85a2557e73d3f159cce0ab5627b0517284d4025c8fe98299919472193",
+    "retained_size_bytes": 14362,
+    "truncated": false
+  },
+  "run_id": "d1b17106-0ee7-4265-ac84-beb9ebf048eb",
+  "schema_version": "socai2.baseline-delivery.v2",
+  "sha256": "bd1967a85a2557e73d3f159cce0ab5627b0517284d4025c8fe98299919472193",
+  "size_bytes": 14362,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "4884f862-f218-499c-87a9-8e3f3d6f645d",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "de892d1f-1886-4b6c-930c-74ec197f0e8f",
+  "tenant_id": "fa031e01-0c89-5b35-88e7-37c1d5cf078b"
+}

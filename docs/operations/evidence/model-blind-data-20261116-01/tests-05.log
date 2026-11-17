@@ -1,0 +1,22 @@
+......................................................F.....                                                  [100%]
+=================================== FAILURES ===================================
+_ LakeFixtureProbeTest.test_fail_soft_insert_is_unknown_not_success_and_never_retried _
+
+self = <test_lake_fixture_probe.LakeFixtureProbeTest testMethod=test_fail_soft_insert_is_unknown_not_success_and_never_retried>
+
+    def test_fail_soft_insert_is_unknown_not_success_and_never_retried(self):
+        self.backend.insert_error = True
+        result = self.run_probe()
+        self.assertEqual(result["status"], "failed_outcome_unknown")
+        self.assertEqual(result["error"]["check"], "writer_flush_not_confirmed")
+>       self.assertEqual(result["writer_metrics"], {"rows_written": 0, "flush_failures": 1, "buffered": 0})
+E       AssertionError: {'rows_written': 0, 'rows_dropped': 3, 'flush_failures': 1, 'buffered': 0} != {'rows_written': 0, 'flush_failures': 1, 'buffered': 0}
+E       - {'buffered': 0, 'flush_failures': 1, 'rows_dropped': 3, 'rows_written': 0}
+E       ?                                     -------------------
+E       
+E       + {'buffered': 0, 'flush_failures': 1, 'rows_written': 0}
+
+tools/testdata/tests/test_lake_fixture_probe.py:199: AssertionError
+=========================== short test summary info ============================
+FAILED tools/testdata/tests/test_lake_fixture_probe.py::LakeFixtureProbeTest::test_fail_soft_insert_is_unknown_not_success_and_never_retried
+1 failed, 59 passed, 35 subtests passed in 0.60s

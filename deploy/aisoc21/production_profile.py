@@ -12,7 +12,8 @@ from uuid import UUID
 import tomllib
 
 SECTIONS = {
-    "paths": {"private_dir", "transport_env_file", "ca_file", "ca_mount", "policy_file", "policy_mount"},
+    "paths": {"private_dir", "transport_env_file", "policy_file", "policy_mount",
+              "projection_file", "projection_mount", "analysis_tasks_file", "analysis_tasks_mount"},
     "image": {"tag", "id", "user"},
     "postgres": {"container", "admin_user", "database", "host", "port", "processor_role", "ingress_role", "tls_mode"},
     "lake": {"container", "database", "host", "port", "reader_role"},
@@ -64,7 +65,7 @@ def load(path):
         need(type(data[section]["port"]) is int and 0 < data[section]["port"] < 65536, "processing_profile_port_invalid")
         need(isinstance(data[section]["host"], str) and re.fullmatch(r"[A-Za-z0-9.-]+", data[section]["host"]),
              "processing_profile_host_invalid")
-    need(data["postgres"]["tls_mode"] == "verify-full", "processing_profile_verified_tls_required")
+    need(data["postgres"]["tls_mode"] == "require", "processing_profile_password_tls_required")
     need(re.fullmatch(r"sha256:[0-9a-f]{64}", data["image"]["id"]), "processing_profile_image_digest_required")
     need(re.fullmatch(r"[1-9][0-9]*:[1-9][0-9]*", data["image"]["user"]), "processing_profile_image_user_invalid")
     need(type(data["docker"]["pids_limit"]) is int and data["docker"]["pids_limit"] > 0, "processing_profile_pid_limit_invalid")
@@ -108,7 +109,7 @@ def load(path):
 
 def runtime_values(profile):
     p, db, lake = profile, profile.postgres, profile.lake
-    return {**p.runtime, "PGSSLMODE": db.tls_mode, "PGSSLROOTCERT": p.paths.ca_mount, "SSL_CERT_FILE": p.paths.ca_mount,
+    return {**p.runtime, "PGSSLMODE": db.tls_mode,
         "OPENAI_BASE_URL": p.model.base_url, "OPENAI_MODEL": p.model.alias,
         "CLICKHOUSE_HOST": lake.host, "CLICKHOUSE_PORT": str(lake.port), "CLICKHOUSE_DATABASE": lake.database,
         "CLICKHOUSE_USER": lake.reader_role, "SOCAI2_SERVICE_DATABASE_NAME": db.database,
@@ -119,5 +120,7 @@ def runtime_values(profile):
         "SOCAI2_MODEL_SCHEMA_PROFILE": p.model.schema_profile, "PYTHONPATH": p.docker.api_pythonpath,
         "SOCAI2_PROCESSING_FUSION_PYTHONPATH": p.docker.fusion_pythonpath,
         "SOCAI2_INVESTIGATION_POLICY": p.paths.policy_mount,
+        "SOCAI2_PROJECTION_CONFIG_FILE": p.paths.projection_mount,
+        "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": p.paths.analysis_tasks_mount,
         "SOCAI2_INVESTIGATION_POLICY_SHA256": p.policy_sha256, "SOCAI2_PROCESSING_PROFILE_SHA256": p.sha256,
         "AISOC_AGENTS_LLM_CONTRACT_MAX_CHARS": str(p.policy["model"]["max_prepared_bytes"])}

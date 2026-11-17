@@ -6,8 +6,11 @@ from pydantic import Field, ValidationError
 
 from .baseline_analysis_contract import AnalysisRejected, Refs, Text
 from .baseline_contracts import Contract
+from .case_citation_quality import normalized, reject_or_record
+from .citation_quality import record_references
 
-SCHEMA = "socai2.baseline-deep.v1"
+SCHEMA = "socai2.baseline-deep.v2"
+READ_SCHEMAS = {"socai2.baseline-deep.v1", SCHEMA}
 
 
 class Answer(Contract):
@@ -27,9 +30,28 @@ class Decision(Contract):
     answer: Answer | None
 
 
-def parse(content, source_map, bindings, question_id):
+def validate_answer(answer, source_map, *, citation_review=None):
+    """An answer can be retained independently of an incomplete control decision."""
+    for field, ids in (("support_ids", answer.support_ids), ("counter_ids", answer.counter_ids)):
+        path = "$.answer." + field
+        record_references(citation_review, ids, source_map, path,
+            required=field == "support_ids" and answer.state == "supported")
+        if len(ids) != len(set(ids)) or not set(ids) <= set(source_map):
+            reject_or_record(citation_review, "source_not_in_model_input_or_duplicate", path)
+        if any(source_map[s]["ref"]["role"] == "execution_receipt" for s in ids if s in source_map):
+            reject_or_record(citation_review, "execution_receipt_is_not_evidence", path)
+    if set(answer.support_ids) & set(answer.counter_ids):
+        reject_or_record(citation_review, "same_source_as_support_and_counterevidence", "$.answer")
+    if answer.state == "supported" and not answer.support_ids:
+        reject_or_record(citation_review, "supported_answer_needs_sources", "$.answer")
+    if answer.state == "unresolved" and not answer.limitations:
+        reject_or_record(citation_review, "unresolved_answer_needs_limitations", "$.answer")
+
+
+def parse(content, source_map, bindings, question_id, *, citation_review=None):
+    path = "$"
     def fail(code):
-        raise AnalysisRejected(code)
+        reject_or_record(citation_review, code, path)
 
     def pairs(items):
         result = {}
@@ -40,8 +62,8 @@ def parse(content, source_map, bindings, question_id):
         return result
 
     try:
-        value = Decision.model_validate(json.loads(content, object_pairs_hook=pairs,
-            parse_constant=lambda _: fail("invalid_json_number")))
+        raw = json.loads(content, object_pairs_hook=pairs, parse_constant=lambda _: fail("invalid_json_number"))
+        value = Decision.model_validate(normalized(raw, citation_review))
     except (ValueError, TypeError, ValidationError) as exc:
         if isinstance(exc, AnalysisRejected):
             raise
@@ -55,17 +77,8 @@ def parse(content, source_map, bindings, question_id):
         if value.binding_id is not None or value.answer is None:
             fail("answer_contract_invalid")
         answer = value.answer
-        for ids in (answer.support_ids, answer.counter_ids):
-            if len(ids) != len(set(ids)) or not set(ids) <= set(source_map):
-                fail("source_not_in_model_input_or_duplicate")
-            if any(source_map[s]["ref"]["role"] == "execution_receipt" for s in ids):
-                fail("execution_receipt_is_not_evidence")
-        if set(answer.support_ids) & set(answer.counter_ids):
-            fail("same_source_as_support_and_counterevidence")
-        if answer.state == "supported" and not answer.support_ids:
-            fail("supported_answer_needs_sources")
-        if answer.state == "unresolved" and not answer.limitations:
-            fail("unresolved_answer_needs_limitations")
+        validate_answer(answer, source_map, citation_review=citation_review)
+        path = "$.answer"
         if value.action == "handoff" and answer.state != "unresolved":
             fail("handoff_must_remain_unresolved")
     return value

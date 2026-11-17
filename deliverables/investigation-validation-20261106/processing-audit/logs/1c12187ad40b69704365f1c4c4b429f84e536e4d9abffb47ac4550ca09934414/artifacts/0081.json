@@ -1,0 +1,93 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-16 14:59:48.157702+00:00",
+  "case_id": "eeba7c9b-502c-56a7-b7dc-db247a3e99f6",
+  "content_json": {
+    "raw": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "content": "{\n  \"summary\": \"本案核心事实为服务账号 svc-app-bc3b4605 在主机 host-app-3f979d56 上登录并启动 curl 进程访问外部 IP 198.51.100.81，伴随两次网络流量记录。现有材料无法建立 curl 启动与后续流量的直接因果链，且缺乏授权确认、资产基线及威胁情报，导致行为性质（正常业务 vs 恶意侦察）无法定性。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录服务账号 svc-app-bc3b4605 于 2026-11-16T05:40:12Z 成功登录主机 host-app-3f979d56，源 IP 为 192.0.2.81。\",\n      \"evidence_ids\": [\"N1_S12\", \"N1_S13\", \"N1_S14\", \"N1_S15\", \"N1_S16\", \"N1_S27\", \"N1_S28\", \"N1_S53\"],\n      \"limitations\": [\"缺乏登录后的具体操作上下文，无法确认登录目的。\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录服务账号 svc-app-bc3b4605 于 2026-11-16T05:46:12Z 在主机 host-app-3f979d56 上成功启动 curl 进程，命令行指向 https://198.51.100.81/status。\",\n      \"evidence_ids\": [\"N1_S59\", \"N1_S60\", \"N1_S61\", \"N1_S64\", \"N1_S65\", \"N1_S68\", \"N1_S69\", \"N1_S78\", \"N1_S79\", \"N1_S108\"],\n      \"limitations\": [\"仅证明进程启动，未证明命令执行完成或数据已读取。\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录主机 host-app-3f979d56 于 2026-11-16T06:05:12Z 产生网络流量，源 IP 192.0.2.81 向目的 IP 198.51.100.81:443 发送数据。\",\n      \"evidence_ids\": [\"N1_S114\", \"N1_S115\", \"N1_S116\", \"N1_S121\", \"N1_S122\", \"N1_S126\", \"N1_S132\", \"N1_S133\", \"N1_S134\", \"N1_S135\", \"N1_S136\", \"N1_S172\"],\n      \"limitations\": [\"流量时间晚于 curl 启动时间，但早于 A4 流量时间，且无进程关联证据。\"]\n    },\n    {\n      \"alert_id\": \"A4\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录主机 host-app-3f979d56 于 2026-11-16T05:50:12Z 产生网络流量，源 IP 192.0.2.81 向目的 IP 198.51.100.81:443 发送数据。\",\n      \"evidence_ids\": [\"N1_S178\", \"N1_S179\", \"N1_S180\", \"N1_S185\", \"N1_S186\", \"N1_S190\", \"N1_S196\", \"N1_S197\", \"N1_S198\", \"N1_S199\", \"N1_S200\", \"N1_S236\"],\n      \"limitations\": [\"流量时间早于 curl 进程启动时间，无法证明该流量由 curl 命令产生。\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"support_ids\": [\"N1_S13\", \"N1_S60\", \"N1_S115\", \"N1_S179\"],\n      \"counter_ids\": [],\n      \"alternatives\": [],\n      \"limitations\": [\"无法确认账号 svc-app-bc3b4605 的授权范围。\", \"无法确认主机 host-app-3f979d56 的资产基线。\", \"无法确认目的 IP 198.51.100.81 的业务用途。\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"存在两次向同一目的 IP 198.51.100.81 的网络流量，但无法确定其与 curl 进程的因果关系。\",\n      \"alert_ids\": [\"A2\", \"A3\", \"A4\"],\n      \"support_ids\": [\"N1_S59\", \"N1_S114\", \"N1_S178\"],\n      \"counter_ids\": [\"N1_S178\", \"N1_S59\"],\n      \"alternatives\": [\"流量可能由其他未记录进程产生。\", \"流量可能为定时任务或遗留连接。\"],\n      \"limitations\": [\"缺乏进程与网络流量的关联日志。\", \"时间顺序上 A4 早于 A2，A3 晚于 A2，因果链断裂。\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"unresolved\",\n      \"statement\": \"行为性质（恶意、正常或误操作）无法判定。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"support_ids\": [],\n      \"counter_ids\": [],\n      \"alternatives\": [\"正常业务通信（如健康检查）。\", \"恶意侦察（如端口扫描或信息收集）。\", \"误报（如 IP 地址段特殊）。\"],\n      \"limitations\": [\"缺乏授权确认。\", \"缺乏威胁情报匹配。\", \"缺乏资产基线。\"]\n    },\n    {\n      \"id\": \"F4\",\n      \"state\": \"unresolved\",\n      \"statement\": \"未观察到明确的数据外传或系统受损证据。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"support_ids\": [\"N1_S122\", \"N1_S186\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"数据可能已传输但未记录。\", \"系统可能已受损但未检测。\"],\n      \"limitations\": [\"仅观察到流量动作，未观察到数据内容或业务状态变化。\"]\n    },\n    {\n      \"id\": \"F5\",\n      \"state\": \"unresolved\",\n      \"statement\": \"未确认任何授权行为。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"support_ids\": [],\n      \"counter_ids\": [],\n      \"alternatives\": [\"存在未记录的授权审批。\", \"属于默认允许的业务行为。\"],\n      \"limitations\": [\"未提供审批文件或人工确认记录。\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"answered\",\n      \"answer\": \"检测到服务账号登录、curl 进程启动及两次网络流量。\",\n      \"evidence_ids\": [\"N1_S12\", \"N1_S59\", \"N1_S114\", \"N1_S178\"]\n    ,\n      \"limitations\": [\"无法确认命令执行结果及流量内容。\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"answered\",\n      \"answer\": \"A1 与 A2 存在账号与进程的时间邻近关系；A2 与 A3/A4 存在时间邻近但因果不明；A3 与 A4 存在同对象同目的 IP 的时间邻近关系。\",\n      \"evidence_ids\": [\"N1_S59\", \"N1_S114\", \"N1_S178\"]\n    ,\n      \"limitations\": [\"缺乏进程与流量的直接关联证据。\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"无法定性，需补充授权、基线及情报。\",\n      \"evidence_ids\": []\n    ,\n      \"limitations\": [\"当前材料不足以排除正常业务或确认恶意。\"]\n    },\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"未观察到任何授权确认。\",\n      \"evidence_ids\": []\n    ,\n      \"limitations\": [\"未提供审批或人工反馈。\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"未观察到实际影响，仅存在潜在风险。\",\n      \"evidence_ids\": []\n    ,\n      \"limitations\": [\"无法确认数据是否外传或系统是否受损。\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及服务账号登录及权限使用。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"finding_ids\": [\"F1\", \"F3\", \"F5\"],\n      \"limitations\": [\"缺乏账号基线及授权范围信息。\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机资源及网络配置。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F4\"],\n      \"limitations\": [\"缺乏资产基线及配置信息。\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"未发现钓鱼邮件、链接或附件相关证据。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无相关告警或日志。\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及服务账号的数据访问及潜在外传。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"finding_ids\": [\"F2\", \"F4\", \"F5\"],\n      \"limitations\": [\"无法确认行为基线及授权。\"]\n    }\n  ],\n  \"conflicts\": [],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"mode\": \"human\",\n      \"objective\": \"核实服务账号 svc-app-bc3b4605 及主机 host-app-3f979d56 在 2026-11-16T05:40:12Z 至 2026-11-16T07:05:12Z 期间的授权业务场景。\",\n      \"required_evidence\": \"审批文件、业务文档或人工确认记录。\"\n    ,\n      \"source_ids\": []\n    ,\n      \"object_keys\": [\"O1\", \"O4\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"decision_critical\"\n    },\n    {\n      \"question_id\": \"behavior_nature\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\", \"A4\"],\n      \"mode\": \"human\",\n      \"objective\": \"核实目的 IP 198.51.100.81 的归属、业务用途及是否为已知合作伙伴或测试地址。\",\n      \"required_evidence\": \"IP 归属记录、业务合作伙伴列表或威胁情报更新。\"\n    ,\n      \"source_ids\": []\n    ,\n      \"object_keys\": [\"O3\"]\n    ,\n      \"binding_id\": null\n    ,\n      \"priority\": \"supporting\"\n    }\n  ]\n}",
+            "provider_specific_fields": {
+              "reasoning": null,
+              "refusal": null
+            },
+            "role": "assistant"
+          },
+          "provider_specific_fields": {
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        }
+      ],
+      "created": 1794841131,
+      "id": "chatcmpl-a5c0ba734b192aab",
+      "model": "aisoc-investigation",
+      "object": "chat.completion",
+      "system_fingerprint": "vllm-0.30.0-76652a79",
+      "usage": {
+        "completion_tokens": 2976,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 6524,
+        "total_tokens": 9500
+      }
+    },
+    "request_artifact_id": "b42db6b4-6157-4eee-a7a1-9a965918e041",
+    "schema_version": "socai2.baseline-analysis.v3",
+    "stage": "C3",
+    "type": "model_original_response",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 6524,
+      "output_tokens": 2976,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-a5c0ba734b192aab",
+      "total_tokens": 9500,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": null,
+  "event_time": null,
+  "file_name": null,
+  "id": "daab0dd1-8e61-4ba6-8e25-06ba5e56148f",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "532eb606f19cd274a931cb68e3866ba9c46129df5ea6918c18b502410d72e854",
+    "original_size_bytes": 10087,
+    "reason": null,
+    "retained_sha256": "532eb606f19cd274a931cb68e3866ba9c46129df5ea6918c18b502410d72e854",
+    "retained_size_bytes": 10087,
+    "truncated": false
+  },
+  "run_id": "7e0d7394-da06-485d-bdf2-01376f4c63e1",
+  "schema_version": "socai2.baseline-analysis.v3",
+  "sha256": "532eb606f19cd274a931cb68e3866ba9c46129df5ea6918c18b502410d72e854",
+  "size_bytes": 10087,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "b42db6b4-6157-4eee-a7a1-9a965918e041",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "d88b407d-ec46-4203-b75f-09ef268a4d6e",
+  "tenant_id": "7c092f15-5be5-4c8f-bb28-1fa6b7e4eb59"
+}

@@ -6,7 +6,10 @@ BEGIN;
 SELECT current_database() = :'expected_database'
  AND EXISTS (SELECT FROM pg_roles WHERE rolname=:'reader_role'
    AND rolcanlogin AND NOT (rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb))
- AND (SELECT count(*)=29 AND bool_and(relrowsecurity AND relforcerowsecurity)
+ AND (SELECT count(*)=(29
+       - CASE WHEN EXISTS(SELECT FROM public.aisoc_schema_migrations WHERE name='127_socai2_remove_unused_graph_table.sql') THEN 1 ELSE 0 END
+       + CASE WHEN EXISTS(SELECT FROM public.aisoc_schema_migrations WHERE name='128_socai2_analysis_lifecycle.sql') THEN 3 ELSE 0 END)
+       AND bool_and(relrowsecurity AND relforcerowsecurity)
       FROM pg_class WHERE relnamespace='socai2'::regnamespace AND relkind='r')
  AS application_reader_target_matches \gset
 \if :application_reader_target_matches

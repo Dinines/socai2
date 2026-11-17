@@ -1,0 +1,218 @@
+......................................................F.F.FF                                                  [100%]
+=================================== FAILURES ===================================
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='08fab564-ea5d-558b-adcf-c3030ef31534') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+                self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["product_name"])
+                raw = json.loads(row["raw_payload"])
+                self.assertEqual(raw["event_id"], row["event_id"])
+                self.assertEqual(raw["tenant_id"], row["tenant_id"])
+                self.assertEqual(raw["event_time"], stamp + "+00:00")
+                self.assertEqual(raw["hostname"], row["src_hostname"])
+                for key in ("source_ip", "dest_ip", "src_port", "dst_port", "protocol", "action", "outcome"):
+                    self.assertEqual(raw[key], row[key])
+                self.assertEqual(raw["source"], fixture.SOURCE_PROFILE["connector_type"])
+                self.assertEqual(sha256(row["raw_payload"].encode()), record["raw_payload_sha256"])
+                stored = json.loads(row["ocsf_json"])
+                metadata = stored.pop("_socai2_storage")
+                self.assertFalse(metadata["raw_payload"]["truncated"])
+                self.assertEqual(metadata["raw_payload"]["sha256"], record["raw_payload_sha256"])
+                self.assertEqual(sha256(json_bytes(stored)), record["ocsf_source_sha256"])
+                self.assertEqual(stored, event["ocsf_event"])
+>               self.assertEqual(str(lake._to_ip_obj(row["source_ip"])), "::ffff:c000:246")
+E               AssertionError: '::ffff:192.0.2.70' != '::ffff:c000:246'
+E               - ::ffff:192.0.2.70
+E               + ::ffff:c000:246
+
+tools/testdata/tests/test_investigation_fixture.py:105: AssertionError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='a9439119-320d-51a9-aed5-ab3b913c3275') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+                self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["product_name"])
+                raw = json.loads(row["raw_payload"])
+                self.assertEqual(raw["event_id"], row["event_id"])
+                self.assertEqual(raw["tenant_id"], row["tenant_id"])
+                self.assertEqual(raw["event_time"], stamp + "+00:00")
+                self.assertEqual(raw["hostname"], row["src_hostname"])
+                for key in ("source_ip", "dest_ip", "src_port", "dst_port", "protocol", "action", "outcome"):
+                    self.assertEqual(raw[key], row[key])
+                self.assertEqual(raw["source"], fixture.SOURCE_PROFILE["connector_type"])
+                self.assertEqual(sha256(row["raw_payload"].encode()), record["raw_payload_sha256"])
+                stored = json.loads(row["ocsf_json"])
+                metadata = stored.pop("_socai2_storage")
+                self.assertFalse(metadata["raw_payload"]["truncated"])
+                self.assertEqual(metadata["raw_payload"]["sha256"], record["raw_payload_sha256"])
+                self.assertEqual(sha256(json_bytes(stored)), record["ocsf_source_sha256"])
+                self.assertEqual(stored, event["ocsf_event"])
+>               self.assertEqual(str(lake._to_ip_obj(row["source_ip"])), "::ffff:c000:246")
+E               AssertionError: '::ffff:192.0.2.70' != '::ffff:c000:246'
+E               - ::ffff:192.0.2.70
+E               + ::ffff:c000:246
+
+tools/testdata/tests/test_investigation_fixture.py:105: AssertionError
+_ InvestigationFixtureTest.test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown (event='32b24b28-6154-5d2e-8217-91e5ed52366f') _
+
+self = <test_investigation_fixture.InvestigationFixtureTest testMethod=test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown>
+
+    def test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown(self):
+        self.generate()
+        manifest, alerts, events = fixture.load_fixture(self.batch, tenant=TENANT)
+        alert = alerts[0]
+        parsed = raw_alert_model().model_validate(alert)
+        self.assertEqual(str(parsed.tenant_id), TENANT)
+        self.assertTrue(schema.validate_raw_alert(alert).ok)
+        self.assertEqual(alert["source_event_ids"], [events[0]["id"]])
+        self.assertEqual(len({UUID(e["id"]) for e in events}), 3)
+        for event, record, stamp, dest in zip(events, manifest["events"],
+                ("2026-10-23T10:01:00", "2026-10-23T10:02:00", "2026-10-23T09:59:00"),
+                ("198.51.100.70", "198.51.100.71", "198.51.100.70")):
+            with self.subTest(event=event["id"]):
+                verdict = schema.validate_raw_event(event)
+                self.assertTrue(verdict.ok)
+                self.assertEqual(verdict.tenant_id, TENANT)
+                self.assertEqual(verdict.source_event_id, event["id"])
+                row = lake.event_to_row(event)
+                self.assertEqual(row["event_id"], event["id"])
+                self.assertEqual(row["tenant_id"], TENANT)
+                self.assertEqual(row["event_time"], datetime.fromisoformat(stamp))
+                self.assertEqual((row["class_uid"], row["category_uid"], row["activity_id"]), (4001, 4, 0))
+                self.assertEqual((row["source_ip"], row["dest_ip"], row["dst_port"], row["protocol"]),
+                                 ("192.0.2.70", dest, 443, "TCP"))
+                self.assertEqual(row["src_hostname"], manifest["query_context"]["hostname"])
+                self.assertEqual((row["action"], row["outcome"]), ("network_connection_observed", "unknown"))
+                self.assertEqual(row["connector_type"], fixture.SOURCE_PROFILE["product_name"])
+                raw = json.loads(row["raw_payload"])
+                self.assertEqual(raw["event_id"], row["event_id"])
+                self.assertEqual(raw["tenant_id"], row["tenant_id"])
+                self.assertEqual(raw["event_time"], stamp + "+00:00")
+                self.assertEqual(raw["hostname"], row["src_hostname"])
+                for key in ("source_ip", "dest_ip", "src_port", "dst_port", "protocol", "action", "outcome"):
+                    self.assertEqual(raw[key], row[key])
+                self.assertEqual(raw["source"], fixture.SOURCE_PROFILE["connector_type"])
+                self.assertEqual(sha256(row["raw_payload"].encode()), record["raw_payload_sha256"])
+                stored = json.loads(row["ocsf_json"])
+                metadata = stored.pop("_socai2_storage")
+                self.assertFalse(metadata["raw_payload"]["truncated"])
+                self.assertEqual(metadata["raw_payload"]["sha256"], record["raw_payload_sha256"])
+                self.assertEqual(sha256(json_bytes(stored)), record["ocsf_source_sha256"])
+                self.assertEqual(stored, event["ocsf_event"])
+>               self.assertEqual(str(lake._to_ip_obj(row["source_ip"])), "::ffff:c000:246")
+E               AssertionError: '::ffff:192.0.2.70' != '::ffff:c000:246'
+E               - ::ffff:192.0.2.70
+E               + ::ffff:c000:246
+
+tools/testdata/tests/test_investigation_fixture.py:105: AssertionError
+_ LakeFixtureProbeTest.test_fail_soft_insert_is_unknown_not_success_and_never_retried _
+
+self = <test_lake_fixture_probe.LakeFixtureProbeTest testMethod=test_fail_soft_insert_is_unknown_not_success_and_never_retried>
+
+    def test_fail_soft_insert_is_unknown_not_success_and_never_retried(self):
+        self.backend.insert_error = True
+        result = self.run_probe()
+>       self.assertEqual(result["status"], "failed_outcome_unknown")
+E       AssertionError: 'failed_before_write' != 'failed_outcome_unknown'
+E       - failed_before_write
+E       + failed_outcome_unknown
+
+tools/testdata/tests/test_lake_fixture_probe.py:197: AssertionError
+_ LakeFixtureProbeTest.test_false_success_result_is_rejected_and_keeps_actual_difference _
+
+self = <test_lake_fixture_probe.LakeFixtureProbeTest testMethod=test_false_success_result_is_rejected_and_keeps_actual_difference>
+
+    def test_false_success_result_is_rejected_and_keeps_actual_difference(self):
+        self.backend.corrupt_readback = True
+        result = self.run_probe()
+>       self.assertEqual(result["status"], "failed_verification")
+E       AssertionError: 'failed_before_write' != 'failed_verification'
+E       - failed_before_write
+E       + failed_verification
+
+tools/testdata/tests/test_lake_fixture_probe.py:210: AssertionError
+_ LakeFixtureProbeTest.test_success_is_single_original_flush_and_independent_field_readback _
+
+self = <test_lake_fixture_probe.LakeFixtureProbeTest testMethod=test_success_is_single_original_flush_and_independent_field_readback>
+
+    def test_success_is_single_original_flush_and_independent_field_readback(self):
+        result = self.run_probe()
+>       self.assertEqual(result["status"], "passed")
+E       AssertionError: 'failed_before_write' != 'passed'
+E       - failed_before_write
+E       + passed
+
+tools/testdata/tests/test_lake_fixture_probe.py:132: AssertionError
+______ LakeFixtureProbeTest.test_wrong_tenant_query_result_prevents_pass _______
+
+self = <test_lake_fixture_probe.LakeFixtureProbeTest testMethod=test_wrong_tenant_query_result_prevents_pass>
+
+    def test_wrong_tenant_query_result_prevents_pass(self):
+        self.backend.control_leak = True
+        result = self.run_probe()
+>       self.assertEqual(result["status"], "failed_verification")
+E       AssertionError: 'failed_before_write' != 'failed_verification'
+E       - failed_before_write
+E       + failed_verification
+
+tools/testdata/tests/test_lake_fixture_probe.py:220: AssertionError
+=========================== short test summary info ============================
+SUBFAILED(event='08fab564-ea5d-558b-adcf-c3030ef31534') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+SUBFAILED(event='a9439119-320d-51a9-aed5-ab3b913c3275') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+SUBFAILED(event='32b24b28-6154-5d2e-8217-91e5ed52366f') tools/testdata/tests/test_investigation_fixture.py::InvestigationFixtureTest::test_original_envelopes_rawalert_and_writer_preserve_fields_and_unknown
+FAILED tools/testdata/tests/test_lake_fixture_probe.py::LakeFixtureProbeTest::test_fail_soft_insert_is_unknown_not_success_and_never_retried
+FAILED tools/testdata/tests/test_lake_fixture_probe.py::LakeFixtureProbeTest::test_false_success_result_is_rejected_and_keeps_actual_difference
+FAILED tools/testdata/tests/test_lake_fixture_probe.py::LakeFixtureProbeTest::test_success_is_single_original_flush_and_independent_field_readback
+FAILED tools/testdata/tests/test_lake_fixture_probe.py::LakeFixtureProbeTest::test_wrong_tenant_query_result_prevents_pass
+7 failed, 56 passed, 32 subtests passed in 0.63s

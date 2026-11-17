@@ -1,0 +1,48 @@
+{
+  "model": "qwen3:0.6b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful SOC analyst. Distinguish observations, hypotheses and unknowns. No actual response actions can be executed."
+    },
+    {
+      "role": "user",
+      "content": "请调用echo_probe，参数准确使用 {\"text\":\"hello\",\"numbers\":[17,25],\"enabled\":true}。拿到工具结果后，只回复text和两个数字的和。"
+    }
+  ],
+  "temperature": 0.0,
+  "max_tokens": 2048,
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "echo_probe",
+        "description": "Return this exact structured payload unchanged; this is a local test fixture.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "numbers": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "text",
+            "numbers",
+            "enabled"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}

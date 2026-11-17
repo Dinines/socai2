@@ -16,15 +16,20 @@ def main():
     out = args.output
     out.mkdir(parents=True, exist_ok=False)
     root = Path(__file__).resolve().parents[2]
-    credentials = json.loads((root / cfg['credential']['file']).read_text())
-    if cfg['credential']['kind'] == 'existing_login':
+    credential = cfg.get('credential', {'kind': 'trusted_internal'})
+    headers = {'Content-Type': 'application/json'}
+    if credential['kind'] != 'trusted_internal':
+        credentials = json.loads((root / credential['file']).read_text())
+    if credential['kind'] == 'existing_login':
         req = urllib.request.Request(cfg['credential']['login_url'], method='POST',
             data=json.dumps({k: credentials[k] for k in ['email', 'password']}).encode(),
             headers={'Content-Type': 'application/json'})
         with urllib.request.urlopen(req, timeout=cfg['timeout_seconds']) as response:
             token = json.load(response)['access_token']
-    else:
+    elif credential['kind'] != 'trusted_internal':
         token = credentials['api_key']
+    if credential['kind'] != 'trusted_internal':
+        headers['Authorization'] = 'Bearer '+token
     receipts = []
 
     def request(method, path, body=None, code=200, save=True):
@@ -33,7 +38,7 @@ def main():
                 {'method': method, 'path': path, 'input': body}, ensure_ascii=False, indent=2)+'\n')
         req = urllib.request.Request(cfg['base_url'] + path, method=method,
             data=json.dumps(body).encode() if body is not None else None,
-            headers={'Authorization': 'Bearer '+token, 'Content-Type': 'application/json'})
+            headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=cfg['timeout_seconds']) as response:
                 status, data = response.status, json.load(response)

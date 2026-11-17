@@ -1,0 +1,52 @@
+<!doctype html><meta charset="utf-8"><title>模型部署前验证</title><style>body{font:16px system-ui;margin:32px auto;max-width:1400px;padding:0 20px;color:#243040;background:#f4f6fa}article{background:white;padding:24px;margin:20px 0;border:1px solid #d8deea;border-radius:12px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6}section{min-width:0}h2{color:#2357a5}@media(max-width:800px){.pair{display:block}}@media print{details{display:block}article{break-inside:avoid}}</style><h1>模型部署前验证</h1><p>自动结果只检查协议与结构；参考是合成场景的人工判断依据。模型自报 confidence 不是质量分。响应中的 reasoning 不落盘。请求/响应/工具明细在各样例目录。</p><article><h2>C05</h2><p>执行：partial；协议/结构：[&#x27;FAIL/incomplete; review saved exchanges&#x27;]</p><pre>$.attack_surface.data_at_risk: expected string</pre><details><summary>请求数、耗时、用量</summary><pre>{
+  &quot;requests&quot;: 2,
+  &quot;http_duration_seconds&quot;: 7.89,
+  &quot;known_total_tokens&quot;: 3410,
+  &quot;missing_token_usage_requests&quot;: 0,
+  &quot;cost&quot;: &quot;unpriced&quot;,
+  &quot;statuses&quot;: [
+    &quot;responded&quot;,
+    &quot;responded&quot;
+  ]
+}</pre></details><div class="pair"><section><h3>实际输出</h3><pre>{
+  &quot;completed_stages&quot;: [
+    {
+      &quot;stage&quot;: &quot;triage&quot;,
+      &quot;content&quot;: &quot;{\n  \&quot;verdict\&quot;: \&quot;true_positive\&quot;,\n  \&quot;confidence\&quot;: 1.0,\n  \&quot;rationale\&quot;: \&quot;The rule condition &#x27;anomalous outbound session; raw packet details absent&#x27; was met, indicating an unusual encrypted egress. The event time falls within the rule&#x27;s time window, suggesting the detection is valid. While the absence of raw packet details may indicate a missing field, the presence of the event time supports the detection&#x27;s correctness. This aligns with the benign_true_positive category as the detection is valid and non-malicious.\&quot;\n}&quot;,
+      &quot;validation&quot;: &quot;structure_passed&quot;
+    },
+    {
+      &quot;stage&quot;: &quot;recon&quot;,
+      &quot;content&quot;: &quot;{\n  \&quot;iocs\&quot;: [\n    {\n      \&quot;type\&quot;: \&quot;ip\&quot;,\n      \&quot;value\&quot;: \&quot;192.0.2.20\&quot;\n    }\n  ],\n  \&quot;mitre_techniques\&quot;: [\n    \&quot;T1566\&quot;\n  ],\n  \&quot;threat_actors\&quot;: [\n    \&quot;APT28\&quot;\n  ],\n  \&quot;attack_surface\&quot;: {\n    \&quot;affected_systems\&quot;: [\n      \&quot;ops-17\&quot;,\n      \&quot;svc_patch\&quot;\n    ],\n    \&quot;data_at_risk\&quot;: [\n      \&quot;outbound traffic\&quot;,\n      \&quot;system logs\&quot;\n    ]\n  },\n  \&quot;summary\&quot;: \&quot;An unusual encrypted egress detected from ops-17 via IP 192.0.2.20, likely via APT28&#x27;s infrastructure. The MITRE ATT&amp;CK technique T1566 indicates anomalous outbound traffic, and APT28 is a probable threat actor. The attack surface includes the systems involved and the data points.\&quot;\n}&quot;,
+      &quot;validation&quot;: &quot;pending&quot;
+    }
+  ]
+}</pre></section><section><h3>人工参考（未发送给模型）</h3><pre>{
+  &quot;expected_verdict&quot;: &quot;needs_review&quot;,
+  &quot;rationale&quot;: &quot;events未接入、authorization查询失败；graph成功空结果仅涵盖窄范围。无法核实行为或授权。&quot;,
+  &quot;must_not_claim&quot;: [
+    &quot;查询失败不是零事件&quot;,
+    &quot;空图不是全网安全&quot;,
+    &quot;缺证不能判规则误报&quot;
+  ],
+  &quot;decisive_refs&quot;: [],
+  &quot;review_questions&quot;: [
+    &quot;关键事实是否引用实际已查询的材料？&quot;,
+    &quot;事实、假设、缺口是否区分？&quot;,
+    &quot;授权、恶意性、检测有效性是否分开？&quot;,
+    &quot;报告是否保留查询失败和未完成状态？&quot;,
+    &quot;响应是否仅为建议？&quot;
+  ],
+  &quot;reference_type&quot;: &quot;authored synthetic expectation; manual review, not observed ground truth&quot;
+}</pre></section></div><p>人工记录：结论正确 □　证据充分 □　工具有效 □　无虚构 □　需复查 □</p><details><summary>各阶段与工具记录</summary><pre>[
+  {
+    &quot;stage&quot;: &quot;triage&quot;,
+    &quot;content&quot;: &quot;{\n  \&quot;verdict\&quot;: \&quot;true_positive\&quot;,\n  \&quot;confidence\&quot;: 1.0,\n  \&quot;rationale\&quot;: \&quot;The rule condition &#x27;anomalous outbound session; raw packet details absent&#x27; was met, indicating an unusual encrypted egress. The event time falls within the rule&#x27;s time window, suggesting the detection is valid. While the absence of raw packet details may indicate a missing field, the presence of the event time supports the detection&#x27;s correctness. This aligns with the benign_true_positive category as the detection is valid and non-malicious.\&quot;\n}&quot;,
+    &quot;validation&quot;: &quot;structure_passed&quot;
+  },
+  {
+    &quot;stage&quot;: &quot;recon&quot;,
+    &quot;content&quot;: &quot;{\n  \&quot;iocs\&quot;: [\n    {\n      \&quot;type\&quot;: \&quot;ip\&quot;,\n      \&quot;value\&quot;: \&quot;192.0.2.20\&quot;\n    }\n  ],\n  \&quot;mitre_techniques\&quot;: [\n    \&quot;T1566\&quot;\n  ],\n  \&quot;threat_actors\&quot;: [\n    \&quot;APT28\&quot;\n  ],\n  \&quot;attack_surface\&quot;: {\n    \&quot;affected_systems\&quot;: [\n      \&quot;ops-17\&quot;,\n      \&quot;svc_patch\&quot;\n    ],\n    \&quot;data_at_risk\&quot;: [\n      \&quot;outbound traffic\&quot;,\n      \&quot;system logs\&quot;\n    ]\n  },\n  \&quot;summary\&quot;: \&quot;An unusual encrypted egress detected from ops-17 via IP 192.0.2.20, likely via APT28&#x27;s infrastructure. The MITRE ATT&amp;CK technique T1566 indicates anomalous outbound traffic, and APT28 is a probable threat actor. The attack surface includes the systems involved and the data points.\&quot;\n}&quot;,
+    &quot;validation&quot;: &quot;pending&quot;
+  }
+]</pre></details></article>

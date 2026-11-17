@@ -8,7 +8,7 @@ SELECT current_database() = :'expected_database'
    AND rolcanlogin AND NOT (rolsuper OR rolbypassrls OR rolcreaterole OR rolcreatedb))
  AS target_matches \gset
 \if :target_matches
-GRANT SELECT ON public.assets, public.users TO :"reader_role";
+GRANT SELECT ON public.assets, public.users, public.aisoc_kb_documents TO :"reader_role";
 COMMIT;
 \else
 ROLLBACK;

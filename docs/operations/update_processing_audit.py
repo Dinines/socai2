@@ -43,7 +43,7 @@ def renderer_revision():
     folder = Path(__file__).parent
     names = ("processing_audit_detail.py", "processing_audit_flow.py", "processing_audit_inspector.py",
              "processing_audit_index.py", "processing_audit_delivery.py", "processing_audit_logs.py",
-             "processing_audit_subjects.py")
+             "processing_audit_subjects.py", "processing_audit_view.json")
     return sha(b"".join(name.encode() + b"\0" + (folder / name).read_bytes() for name in names))
 
 

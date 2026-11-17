@@ -1,0 +1,73 @@
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> docs/operations/evidence/stage1-viewer-20261114-01/verify_snapshots.py:11:42
+   |
+ 9 | ROOT = Path(__file__).resolve().parents[4]
+10 | sys.path.insert(0, str(ROOT / "docs/operations"))
+11 | import update_processing_audit as audit  # noqa: E402
+   |                                          ^^^^^^^^^^^^
+12 | from processing_audit_delivery import run_delivery  # noqa: E402
+   |
+help: Remove unused `noqa` directive
+   |
+10 | sys.path.insert(0, str(ROOT / "docs/operations"))
+   - import update_processing_audit as audit  # noqa: E402
+11 + import update_processing_audit as audit
+12 | from processing_audit_delivery import run_delivery  # noqa: E402
+   |
+
+RUF100 [*] Unused `noqa` directive (non-enabled: `E402`)
+  --> docs/operations/evidence/stage1-viewer-20261114-01/verify_snapshots.py:12:53
+   |
+10 | sys.path.insert(0, str(ROOT / "docs/operations"))
+11 | import update_processing_audit as audit  # noqa: E402
+12 | from processing_audit_delivery import run_delivery  # noqa: E402
+   |                                                     ^^^^^^^^^^^^
+13 |
+14 | HERE = Path(__file__).parent
+   |
+help: Remove unused `noqa` directive
+   |
+11 | import update_processing_audit as audit  # noqa: E402
+   - from processing_audit_delivery import run_delivery  # noqa: E402
+12 + from processing_audit_delivery import run_delivery
+13 |
+   |
+
+FURB167 [*] Use of regular expression alias `re.S`
+  --> docs/operations/evidence/stage1-viewer-20261114-01/verify_snapshots.py:79:83
+   |
+77 |         assert len(actual) == len(expected)
+78 |         assert all(actual[r["id"]] == r for r in expected)
+79 |         views = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.S)[1])["runs"]
+   |                                                                                   ^^^^
+80 |         assert views == {r["id"]: run_delivery(r, data) for r in data["runs"]}
+81 |         assert old[record["id"]]["run_states"] == record["run_states"]
+   |
+help: Replace with `re.DOTALL`
+   |
+78 |         assert all(actual[r["id"]] == r for r in expected)
+   -         views = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.S)[1])["runs"]
+79 +         views = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.DOTALL)[1])["runs"]
+80 |         assert views == {r["id"]: run_delivery(r, data) for r in data["runs"]}
+   |
+
+FURB167 [*] Use of regular expression alias `re.S`
+  --> docs/operations/test_processing_audit_delivery.py:71:85
+   |
+69 |         page = render_case_detail(key="x", title="x", batch="x", data=data, extras={})
+70 |         self.assertNotIn(self.result["rationale"], page)
+71 |         summary = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.S)[1])
+   |                                                                                     ^^^^
+72 |         self.assertEqual(summary["runs"]["r"]["results"][0]["fields"]["rationale"], self.result["rationale"])
+73 |         self.assertIn(raw, page)
+   |
+help: Replace with `re.DOTALL`
+   |
+70 |         self.assertNotIn(self.result["rationale"], page)
+   -         summary = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.S)[1])
+71 +         summary = json.loads(re.search(r'id="inspector-data">(.*?)</script>', page, re.DOTALL)[1])
+72 |         self.assertEqual(summary["runs"]["r"]["results"][0]["fields"]["rationale"], self.result["rationale"])
+   |
+
+Found 4 errors.
+[*] 4 fixable with the `--fix` option.

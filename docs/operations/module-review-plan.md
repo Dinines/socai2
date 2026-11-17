@@ -2,13 +2,13 @@
 
 **当前链/图模块工作卡：** [攻击链与Attack Path接入计划](attack-chain-path-integration-plan.md)已把已有开关/函数、缺数据投影、Case/tenant交接、三种编排实际消费及Run输出分开。先已有Case调查，原算法/编排保留、只补接线，未开始实现或启用；自动无Case沿原seed算法薄Alert入口和既有邻居/影响范围，Case专用路径not_linked，不隐式建Case。
 
-**调查交接粒度进一步明确：** 用户要求每次模型调用均按目的→实际输入→输出格式→代码采用/下游交接说明，并展开预处理和工具是否/如何调用。[专篇](../architecture/investigation-preprocessing-tools.md)给Router/默认四节点/Deep逐模型表、schema与请求/结果示意，标明嵌套alerts不会自动flatten、Router无工具循环、Deep只响应结构化tool_calls、通用registry无完整schema运行时校验及各查询真实时间默认。当前仅源码/文档交接，未据此改造字段/校验框架或新增模型/复杂验证。
+**调查交接粒度进一步明确：** 用户要求每次模型调用均按目的→实际输入→输出格式→代码采用/下游交接说明，并展开预处理和工具是否/如何调用。[专篇](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)给Router/默认四节点/Deep逐模型表、schema与请求/结果示意，标明嵌套alerts不会自动flatten、Router无工具循环、Deep只响应结构化tool_calls、通用registry无完整schema运行时校验及各查询真实时间默认。当前仅源码/文档交接，未据此改造字段/校验框架或新增模型/复杂验证。
 
-**Router讨论结论已交接：** [配置/流程对照](../architecture/investigation.md#5-router及full-graph的差异)明确Case `/investigate`的旧四节点/Router二选一，开关不控制Kafka graph/deep；专业分支各一次领域模型而非各走四节点，Router响应仅摘要、报告由代码渲染，功能/产物不能当等价替换。[设计评价](../architecture/investigation-design-review.md)同步“演进并存≠官方已确定淘汰旧链”和“graph外层固定、deep内部选择查询”。本次仅记录已解释事实，不据此启用、裁剪、合并或新增测试任务。
+**Router讨论结论已交接：** [配置/流程对照](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md#5-router及full-graph的差异)明确Case `/investigate`的旧四节点/Router二选一，开关不控制Kafka graph/deep；专业分支各一次领域模型而非各走四节点，Router响应仅摘要、报告由代码渲染，功能/产物不能当等价替换。[设计评价](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)同步“演进并存≠官方已确定淘汰旧链”和“graph外层固定、deep内部选择查询”。本次仅记录已解释事实，不据此启用、裁剪、合并或新增测试任务。
 
-**调查设计先评清楚（用户最新强调）：** 在选择/修改编排前，先对比默认Case四节点与graph/deep的目的、输入输出、官方历史依据和四Agent实际价值/限制，见[设计评价](../architecture/investigation-design-review.md)。自动/人工触发和固定/工具循环是两个维度；按固定官方资料可证明多代实现并存，不足以证明必须串跑的互补双层架构。评价结合已有人工R01/自动C2质量失败，不新增模型比较，暂不裁剪/合并原编排。
+**调查设计先评清楚（用户最新强调）：** 在选择/修改编排前，先对比默认Case四节点与graph/deep的目的、输入输出、官方历史依据和四Agent实际价值/限制，见[设计评价](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)。自动/人工触发和固定/工具循环是两个维度；按固定官方资料可证明多代实现并存，不足以证明必须串跑的互补双层架构。评价结合已有人工R01/自动C2质量失败，不新增模型比较，暂不裁剪/合并原编排。
 
-**当前推进分诊，并细拆调查调用（2026-10-21）：** [分诊工作卡](../architecture/triage.md)先交接支持项/默认、字段与上下文、规则/模型、关闭/升级及真实C1/C2对比；用户进一步要求调查每一步、智能体每次调用都详细讲清。沿[调查说明](../architecture/investigation.md)逐层写触发→节点→模型轮次→工具/服务与参数→结果采用→分支/结束→审计/持久输出，分别说明自动graph、人工四节点及Router/full入口，不能只罗列Agent名。源码支持、当前配置、已实测与缺源/未验分别列；复用已有Run逐调用实例，不为讲解新发模型。先分析并讨论取舍，再做当前功能所需的最小修改/测试；本地先测、阶段发布和可用性专项后置保持。当前无业务代码/运行变更，原15项任务及5/15不变。
+**当前推进分诊，并细拆调查调用（2026-10-21）：** [分诊工作卡](../architecture/triage.md)先交接支持项/默认、字段与上下文、规则/模型、关闭/升级及真实C1/C2对比；用户进一步要求调查每一步、智能体每次调用都详细讲清。沿[调查说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)逐层写触发→节点→模型轮次→工具/服务与参数→结果采用→分支/结束→审计/持久输出，分别说明自动graph、人工四节点及Router/full入口，不能只罗列Agent名。源码支持、当前配置、已实测与缺源/未验分别列；复用已有Run逐调用实例，不为讲解新发模型。先分析并讨论取舍，再做当前功能所需的最小修改/测试；本地先测、阶段发布和可用性专项后置保持。当前无业务代码/运行变更，原15项任务及5/15不变。
 
 **Fusion阶段收口（2026-10-21）：** 已有告警主链的职责、默认规则、输入输出及UEBA真实联合结果已明确，当前可继续下游分诊；结论及限制见[Fusion小结](../architecture/fusion.md#六当前阶段小结可以转入下游分诊)。下一步先梳理fused字段/上下文、规则与模型、关闭/升级条件和逐步审计，再讨论取舍；本次没有开始分诊改造、模型测试或部署。原细化待办是导航，不以全部解决作为前置。
 
@@ -211,4 +211,4 @@ P为阅读版原文段落号，不是页码。需求见[正文](../requirements/
 
 文档校验：未参与文档实现者api_auth_review独审ACCEPT；本change strict及本次本地引用检查通过。只确认设计与源码/证据边界相符，不是功能实施通过，记录见[execution](../../openspec/changes/archive/2026-10-24-restore-alert-investigation-integrity/execution.md)。
 
-当前调查批次已完成[本地模型/工具实测](investigation-functional-20261021.md)，原四节点、Router、Deep按成功/兜底/部分结果分别交接；两处接口合同最小本地修正未发布，其余质量/可用性问题沿原登记后置，不预定合并编排。
+当前调查批次已完成[本地模型/工具实测](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)，原四节点、Router、Deep按成功/兜底/部分结果分别交接；两处接口合同最小本地修正未发布，其余质量/可用性问题沿原登记后置，不预定合并编排。

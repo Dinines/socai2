@@ -97,6 +97,6 @@ API直接组109 passed、7个原有live-PG用例skipped；Agents必要兼容组1
 
 源码保留为本地版本；未发布、未重启21容器、未开启worker、未发正式Kafka消息、未操作旧unknown/积压、未执行厂商动作、未提交/推送Git。未参与实现者deep_functional_tests结束独审限定ACCEPT，无本批阻塞；独立复跑22项通过，与原组重叠不累加。原MERGE不清理解绑后的旧关系，持续同步未验；本批只验证新Case准备及消费，不扩历史同步结论。测试进程和专用隧道已停止。完整change仍5/15，不归档。
 
-2026-10-22补齐本地保版定位：`.local/versions/attack-chain-path-20261022/manifest.json`及同目录源码归档，保存本批最终链图相关文件、直接测试和原回执；不含私有环境或HTTP观察凭据。它是Git基线上的选定文件快照，不是完整独立源码包、已审发布包或部署镜像；未终审的早前C2修改也不因同文件被保存而获得发布验收。阶段状态见[交接表](investigation-stage-handoff-20261022.md)，未新增业务验证或改写本批原结果。
+2026-10-22补齐本地保版定位：`.local/versions/attack-chain-path-20261022/manifest.json`及同目录源码归档，保存本批最终链图相关文件、直接测试和原回执；不含私有环境或HTTP观察凭据。它是Git基线上的选定文件快照，不是完整独立源码包、已审发布包或部署镜像；未终审的早前C2修改也不因同文件被保存而获得发布验收。阶段状态见[交接表](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-stage-handoff-20261022.md)，未新增业务验证或改写本批原结果。
 
 API109项结果保留于实施工具回执，未另存日志；命令为`PYTHONPATH=services/api /tmp/sting-investigation-functional-20261021/bin/python -m pytest -q -rs services/api/tests/test_investigation_attack_context.py services/api/tests/test_attack_chain.py services/api/tests/test_graph_tenant_isolation.py services/api/tests/test_investigation_payload.py services/api/tests/test_inventory_route_permissions.py`。7个skip是既有test_investigation_payload集成项要求已迁移live PG，未改测试。Agents日志在`.local/aisoc21/investigation-functional-20261021/attack-context-compatibility-tests.txt`，最终合同在`.local/aisoc21/attack-context-20261021/agents-final-contract-tests.txt`。

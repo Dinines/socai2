@@ -1,6 +1,6 @@
 # v1 调查入口、逐步输出和结论读取
 
-[返回入口](README.md)。本篇给业务后端“每一步输入什么、产出什么、到哪里读”。内部节点不等于独立HTTP接口，节点数也不等于模型调用数。[完整机制](../../architecture/investigation.md)、[实际模型/工具输入输出](../../architecture/investigation-preprocessing-tools.md)
+[返回入口](README.md)。本篇给业务后端“每一步输入什么、产出什么、到哪里读”。内部节点不等于独立HTTP接口，节点数也不等于模型调用数。[完整机制](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)、[实际模型/工具输入输出](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)
 
 ## 1. 入口与编排选择
 
@@ -36,7 +36,7 @@ Case创建：`POST /api/v1/cases`，至少title，关联传canonical UUID数组`
 
 一次模型回复可能包含最终文字，也可能包含`tool_calls`。真正工具执行必须有工具名称、实际参数、返回/错误以及下一轮采用的ToolMessage记录；工具名称列表或报告自称“已查询”不足以证明执行。后端从交换材料核对`prompt/response/tool_calls/tool results`及关联事件；旧Run不保证每项工具完整原文都存在，缺记录应标为不可回查，不能补造。
 
-工具的HTTP目标和输入参数见[工具目录](../../architecture/investigation-tool-catalog.md)、[HTTP检索合同](../../architecture/third-party-search-contract.md)。`available=false`、成功零行、查询失败、截断分别呈现；不由200或空rows自动得到“无异常”。
+工具的HTTP目标和输入参数见[工具目录](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)、[HTTP检索合同](../../architecture/third-party-search-contract.md)。`available=false`、成功零行、查询失败、截断分别呈现；不由200或空rows自动得到“无异常”。
 
 ## 3. 人工默认四节点：逐步输入输出
 
@@ -93,7 +93,7 @@ curl --fail-with-body -H "Authorization: Bearer $STINGAISOC_API_TOKEN" \
 - **后续graph**：graph_result事件的`payload.completion=completed|partial`、status/verdict/result_sha256；同名工件中读findings/confidence/verdict/investigation_depth等实际state。`graph_usage`是后续图用量，Run总量可能另含首次分诊，不重复相加。
 - **业务落地**：Alert disposition/status/resolved_at、Case status、报告中的建议分别表达；Run completed可能只说明首次分诊已落账，不能单独解释成后续graph完整、事实已确认或业务已结案。
 
-[示例payload](examples/result-events.json)只说明结构，不是实际Run、真实模型或质量通过证明。当前没有独立统一`/conclusion`接口，也没有全编排统一结构化“证据→finding→结论”输出合同；四个共享合同仍是[建议](../../architecture/investigation-product-engineering-roadmap-20261022.md)。
+[示例payload](examples/result-events.json)只说明结构，不是实际Run、真实模型或质量通过证明。当前没有独立统一`/conclusion`接口，也没有全编排统一结构化“证据→finding→结论”输出合同；四个共享合同仍是[建议](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-product-engineering-roadmap-20261022.md)。
 
 本轮真实例子另确认：外层graph使用低seq、工具使用10000+，高seq工具可先入库、低seq graph_result后入库。`since`不是严格写入时间游标，运行中只追max(seq)可能漏后写的低seq。取得调查交付后须从不带since的首页重新分页补齐，按(run_id,seq)去重；首屏不传since才能包含-1。完整读取与留存边界见[数据盘点](page-data-mapping.md#5-给后端的读取顺序与分页约束)。
 

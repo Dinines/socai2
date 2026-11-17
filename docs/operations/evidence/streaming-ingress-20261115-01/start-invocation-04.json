@@ -1,0 +1,132 @@
+{
+  "script": "\"\"\"Connect with ordinary candidate credentials, then start the frozen native consumer.\"\"\"\nimport hashlib\nimport json\nimport secrets\nimport subprocess\nimport sys\nfrom datetime import datetime, timezone\nfrom pathlib import Path\n\nc = json.load(sys.stdin)\nroot = Path(c[\"root\"])\nk = c[\"kafka\"]\nout = {\"candidate_id\": c[\"candidate_id\"], \"status\": \"running\", \"model_calls\": 0,\n       \"kafka_messages_sent\": 0, \"started_at\": datetime.now(timezone.utc).isoformat()}\nstage = \"ordinary_connections\"\n\n\ndef run(args, body=None):\n    result = subprocess.run(args, input=body, text=True, capture_output=True,\n                            timeout=c[\"timeout_seconds\"], check=False)\n    if result.returncode:\n        # SQL errors and transport diagnostics can contain credentials.\n        p = root / \"private\" / (\"ingress-start-error-\" + stage + \"-\" + secrets.token_hex(4) + \".txt\")\n        with p.open(\"x\") as f:\n            p.chmod(0o600)\n            f.write(result.stderr + \"\\n\" + result.stdout)\n        raise RuntimeError(\"command_exit_\" + str(result.returncode) + \"; private_detail=\" + str(p))\n    return result.stdout\n\n\ndocker_base = [\"docker\", \"run\", \"--network\", c[\"network\"], \"--workdir\", c[\"fusion_workdir\"],\n               \"--env-file\", str(root / \"private/fusion.env\"),\n               \"--mount\", \"type=bind,src=\" + k[\"ca_source\"] + \",dst=\" + k[\"ca_target\"] + \",readonly\",\n               \"--mount\", \"type=bind,src=\" + str(root / \"initial-task-policy.json\") + \",dst=/run/config/initial-task-policy.json,readonly\"]\nprobe = '''import asyncio,json,os,uuid\nimport asyncpg\nimport redis.asyncio as redis\nfrom aiokafka import AIOKafkaConsumer, TopicPartition\nfrom clickhouse_driver import Client\nfrom app.core.config import settings as s\nfrom app.core.kafka_security import kafka_client_kwargs\nimport app.main\n\nasync def main():\n result={\"module\":app.main.__file__}\n conn=await asyncpg.connect(s.database_url.replace(\"postgresql+asyncpg://\",\"postgresql://\"))\n try:\n  result[\"postgres\"]=dict(await conn.fetchrow(\"SELECT current_database() AS database,current_user AS role,ssl,version FROM pg_stat_ssl WHERE pid=pg_backend_pid()\"))\n  tx=conn.transaction(); await tx.start()\n  try:\n   await conn.execute(\"SELECT set_config('app.current_tenant_id',$1,true)\",os.environ[\"PROBE_TENANT\"])\n   for table in (\"sessions\",\"aisoc_ai_assets\"):\n    await conn.fetch(\"SELECT * FROM public.\"+table+\" LIMIT 0\")\n   await conn.execute(\"INSERT INTO public.aisoc_dead_letters(tenant_id,topic,reason) VALUES ($1,$2,$3)\",uuid.UUID(os.environ[\"PROBE_TENANT\"]),s.kafka_topic_alerts_raw,\"candidate_connection_probe_rollback\")\n  finally: await tx.rollback()\n  result[\"postgres\"][\"rolled_back_support_write\"]=True\n finally: await conn.close()\n r=redis.from_url(s.redis_url)\n try: result[\"redis\"]={\"ping\":await r.ping(),\"keys\":await r.dbsize()}\n finally: await r.aclose()\n lake=Client(host=s.clickhouse_host,port=s.clickhouse_port,database=s.clickhouse_database,user=s.clickhouse_user,password=s.clickhouse_password)\n try:\n  result[\"clickhouse\"]={\"database\":s.clickhouse_database,\"user\":lake.execute(\"SELECT currentUser()\")[0][0],\"rows\":lake.execute(\"SELECT count(*) FROM raw_events\")[0][0]}\n finally: lake.disconnect()\n consumer=AIOKafkaConsumer(*json.loads(os.environ[\"PROBE_TOPICS\"]),bootstrap_servers=s.kafka_bootstrap_servers,group_id=None,enable_auto_commit=False,**kafka_client_kwargs())\n await consumer.start()\n try:\n  await consumer.topics()\n  result[\"kafka\"]={}\n  for topic in json.loads(os.environ[\"PROBE_TOPICS\"]):\n   parts=[TopicPartition(topic,p) for p in consumer.partitions_for_topic(topic) or []]\n   assert parts\n   begins=await consumer.beginning_offsets(parts); ends=await consumer.end_offsets(parts)\n   result[\"kafka\"][topic]=[{\"partition\":p.partition,\"begin\":begins[p],\"end\":ends[p]} for p in parts]\n   assert all(begins[p]==ends[p]==0 for p in parts)\n finally: await consumer.stop()\n print(json.dumps(result))\nasyncio.run(main())\n'''\ntry:\n    identity = c[\"identity\"]\n    # The probe joins no consumer group and cannot change the new group's offset.\n    command = [*docker_base, \"--rm\", \"-i\", \"--env\", \"PROBE_TENANT=\" + identity[\"tenant_id\"],\n               \"--env\", \"PROBE_TOPICS=\" + json.dumps(list(k[\"topics\"].values())),\n               \"--entrypoint\", \"python\", c[\"processing_image\"], \"-\"]\n    out[\"connections\"] = json.loads(run(command, probe).splitlines()[-1])\n    assert out[\"connections\"][\"postgres\"][\"database\"] == c[\"postgres\"][\"database\"]\n    assert out[\"connections\"][\"postgres\"][\"role\"] == c[\"postgres\"][\"writer\"]\n    assert out[\"connections\"][\"postgres\"][\"ssl\"] is True\n    assert out[\"connections\"][\"redis\"][\"keys\"] == 0\n    assert out[\"connections\"][\"clickhouse\"][\"rows\"] == 0\n    stage = \"consumer_start\"\n    out[\"container_id\"] = run([*docker_base, \"-d\", \"--name\", c[\"fusion_container\"], \"--restart\", \"no\",\n                               \"--entrypoint\", \"python\", c[\"processing_image\"], \"-m\", \"uvicorn\", \"app.main:app\",\n                               \"--host\", \"0.0.0.0\", \"--port\", str(c[\"fusion_http_port\"])]).strip()\n    out[\"image_id\"] = c[\"processing_image\"]\n    out[\"status\"] = \"started_awaiting_readback\"\n    out[\"config_sha256\"] = hashlib.sha256(json.dumps(c,sort_keys=True).encode()).hexdigest()\nexcept Exception as exc:  # noqa: BLE001 -- preserve a failed one-shot deployment receipt\n    out[\"status\"] = \"failed\"\n    out[\"failure_stage\"] = stage\n    out[\"error\"] = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__\nfinally:\n    out[\"ended_at\"] = datetime.now(timezone.utc).isoformat()\n    print(json.dumps(out,ensure_ascii=False,indent=2))\nsys.exit(1 if out[\"status\"] == \"failed\" else 0)\n",
+  "sha256": "5aafd6ad7573955869affcd67906d98a277e6e6d861b328fd87c8ec68fc1f60e",
+  "input": {
+    "candidate_id": "streaming-20261115-01",
+    "ssh_target": "sting-infra21",
+    "root": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01",
+    "network": "socai2_default",
+    "timeout_seconds": 45,
+    "identity_file": "deploy/aisoc21/streaming-candidate-20261115-01/identity.json",
+    "processing_image": "sha256:01900f1dd10a96070eb56884fc6c5e86ab42de64c8d13cebb93e07d273b4d6db",
+    "fusion_container": "socai2-streaming-fusion-20261115",
+    "fusion_workdir": "/opt/processor/smoke-fusion",
+    "fusion_http_port": 8003,
+    "postgres": {
+      "container": "spirithub-postgres-1",
+      "admin_role": "spirithub",
+      "database": "socai2_streaming_20261115",
+      "owner": "socai2_streaming_20261115",
+      "writer": "socai2_streaming_20261115_writer",
+      "reader": "socai2_streaming_20261115_reader",
+      "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/http-runtime.json",
+      "lock_timeout_seconds": 3,
+      "statement_timeout_seconds": 30
+    },
+    "kafka": {
+      "container": "sting-infra21-kafka-1",
+      "metadata_bootstrap": "kafka:29092",
+      "bootstrap": "192.168.1.21:19093",
+      "security_protocol": "SSL",
+      "ca_source": "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt",
+      "ca_target": "/run/certs/ca.crt",
+      "group": "socai2-streaming-20261115-fusion",
+      "partitions": 1,
+      "replication_factor": 1,
+      "retention_ms": 604800000,
+      "topics": {
+        "raw": "socai2.testdata.streaming-20261115-01.raw",
+        "fused": "socai2.testdata.streaming-20261115-01.fused",
+        "raw_events": "socai2.testdata.streaming-20261115-01.raw_events",
+        "dlq": "socai2.testdata.streaming-20261115-01.dlq"
+      },
+      "offset_reset": "latest",
+      "start_requirement": "empty_topics_and_assignment_before_first_send"
+    },
+    "redis": {
+      "container": "socai2-streaming-redis-20261115",
+      "image": "sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499",
+      "port": 6379,
+      "fusion_db": 0,
+      "reserved_dispatch_db": 1,
+      "data_directory": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/redis/data",
+      "config_path": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/redis/redis.conf",
+      "appendonly": true,
+      "host_ports": [],
+      "password_required": true,
+      "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/redis-runtime.json"
+    },
+    "clickhouse": {
+      "container": "sting-infra21-clickhouse-1",
+      "host": "192.168.1.21",
+      "native_port": 9000,
+      "http_port": 8123,
+      "database": "socai2_streaming_20261115",
+      "table": "raw_events",
+      "schema_source": "aisoc.raw_events",
+      "writer": "socai2_streaming_20261115_writer",
+      "reader": "socai2_streaming_20261115_reader",
+      "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/clickhouse-runtime.json"
+    },
+    "fusion_env": {
+      "ENVIRONMENT": "production",
+      "LOG_LEVEL": "INFO",
+      "AISOC_ALERT_STORE_SCHEMA": "socai2",
+      "AISOC_ALERT_SINK_ENABLED": "true",
+      "AISOC_LAKE_WRITER_ENABLED": "true",
+      "AISOC_EVENT_PROMOTION_ENABLED": "false",
+      "AISOC_DETECTION_ENGINE_ENABLED": "false",
+      "AISOC_WINDOWED_DETECTION_ENABLED": "false",
+      "AISOC_UEBA_FUSION_ENABLED": "false",
+      "AISOC_FUSION_MEMORY_NUDGE": "false",
+      "AISOC_FUSE_ENRICHMENT": "false",
+      "AISOC_TENANT_IOC_MATCH": "false",
+      "AISOC_FEATURE_RBA": "true",
+      "AISOC_FEATURE_CONFIDENCE": "true",
+      "AISOC_ATTACK_CHAIN_GROUPING_ENABLED": "true",
+      "CORRELATION_WINDOW_SECONDS": "86400",
+      "ATTACK_CHAIN_WINDOW_SECONDS": "86400",
+      "DEDUP_WINDOW_SECONDS": "300",
+      "MAX_ALERTS_PER_INCIDENT": "500",
+      "AISOC_LAKE_BATCH_SIZE": "100",
+      "AISOC_LAKE_BATCH_MAX_AGE_SECONDS": "2"
+    },
+    "initial_task_policy": {
+      "retry_limit": 1,
+      "retry_delay_seconds": 5
+    },
+    "dispatcher_enabled": false,
+    "models_enabled": false,
+    "identity": {
+      "candidate_id": "streaming-20261115-01",
+      "state": "candidate_database_http_ready_sources_pending",
+      "ssh_target": "sting-infra21",
+      "root": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01",
+      "network": "socai2_default",
+      "platform": "linux/amd64",
+      "tenant_id": "fa031e01-0c89-5b35-88e7-37c1d5cf078b",
+      "actor_id": "a745100d-0bad-5c24-a9e2-5cdab10a0963",
+      "actor_name": "streaming-acceptance",
+      "postgres": {
+        "container": "spirithub-postgres-1",
+        "admin_role": "spirithub",
+        "database": "socai2_streaming_20261115",
+        "host": "192.168.1.21",
+        "port": 5432,
+        "owner": "socai2_streaming_20261115",
+        "reader": "socai2_streaming_20261115_reader",
+        "writer": "socai2_streaming_20261115_writer",
+        "tls_mode": "require"
+      },
+      "http": {
+        "container": "socai2-streaming-http-20261115",
+        "project": "socai2-streaming-http-20261115",
+        "host": "192.168.1.21",
+        "port": 18424,
+        "swagger_port": 18480
+      },
+      "runtime_profile_ready": false,
+      "credentials_created": true
+    }
+  }
+}

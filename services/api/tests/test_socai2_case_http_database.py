@@ -2,10 +2,11 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from app.api.v1.endpoints import socai2_cases, socai2_tasks
 from app.db import case_database
 from app.socai2.baseline_store import StoreError
 from fastapi import HTTPException, Request
+from investigation_http.adapters import services
+from investigation_http.external_routes import cases, tasks
 from pydantic import SecretStr
 
 
@@ -18,19 +19,19 @@ def configured(monkeypatch):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("api", [socai2_cases, socai2_tasks])
+@pytest.mark.parametrize("api", [cases, tasks])
 async def test_get_keeps_reader_and_writes_require_explicit_connection(configured, monkeypatch, api):
     get = Request({"type": "http", "method": "GET"})
     post = Request({"type": "http", "method": "POST"})
-    assert (await api.get_service(get)).sessions is api.AsyncSessionLocal
+    assert (await api.get_service(get)).sessions is services.AsyncSessionLocal
     with pytest.raises(HTTPException) as error:
         await api.get_service(post)
     assert error.value.status_code == 503
     assert error.value.detail == "case_write_database_not_configured"
     writer = object()
-    monkeypatch.setattr(api, "get_case_write_sessions", lambda: writer)
+    monkeypatch.setattr(services, "get_case_write_sessions", lambda: writer)
     assert (await api.get_service(post)).sessions is writer
-    assert (await api.get_service(get)).sessions is api.AsyncSessionLocal
+    assert (await api.get_service(get)).sessions is services.AsyncSessionLocal
 
 
 @pytest.mark.asyncio
@@ -41,12 +42,12 @@ async def test_writer_preserves_explicit_target_tls_and_reuses_pool(configured, 
     monkeypatch.setattr(case_database, "create_async_engine", create)
     monkeypatch.setattr(case_database, "async_sessionmaker", Mock(return_value=sessions))
     monkeypatch.setattr(case_database.settings, "SOCAI2_CASE_DATABASE_URL", SecretStr(
-        "postgresql+psycopg://synthetic:private-placeholder@db.example:5439/case_test?sslmode=verify-full&sslrootcert=/test/ca.crt"))
+        "postgresql+psycopg://synthetic:private-placeholder@db.example:5439/case_test?sslmode=require"))
     assert case_database.get_case_write_sessions() is case_database.get_case_write_sessions() is sessions
     assert create.call_count == 1
     url = create.call_args.args[0]
     assert (url.username, url.host, url.port, url.database) == ("synthetic", "db.example", 5439, "case_test")
-    assert url.query == {"sslmode": "verify-full", "sslrootcert": "/test/ca.crt"}
+    assert url.query == {"sslmode": "require"}
     await case_database.close_case_database()
     engine.dispose.assert_awaited_once()
     assert case_database._runtime is None

@@ -4,16 +4,26 @@ import re
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field, StrictStr, ValidationError
+from pydantic import (
+    Field,
+    StrictStr,
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+)
 
 from .baseline_contracts import Contract
+from .case_citation_quality import accepted, normalized, reject_or_record
 from .case_source_scope import knowledge_context
+from .citation_quality import record_references
 
 SCHEMA = "socai2.baseline-analysis.v1"
-EXECUTION_SCHEMA = "socai2.baseline-analysis.v2"
-READ_SCHEMAS = {SCHEMA, EXECUTION_SCHEMA}
+EXECUTION_SCHEMA = "socai2.baseline-analysis.v3"
+READ_SCHEMAS = {SCHEMA, "socai2.baseline-analysis.v2", EXECUTION_SCHEMA}
 DOMAINS = ("identity", "cloud", "phishing", "insider")
 Text = Annotated[StrictStr, Field(min_length=1, max_length=1200)]
+ObservationText = Annotated[StrictStr, Field(min_length=1)]
 Refs = Annotated[list[StrictStr], Field(max_length=32)]
 Members = Annotated[list[UUID], Field(min_length=1, max_length=200)]
 
@@ -21,12 +31,19 @@ Members = Annotated[list[UUID], Field(min_length=1, max_length=200)]
 class Finding(Contract):
     id: Text
     state: Literal["observed", "inferred", "unresolved"]
-    statement: Text
+    # Observations are reconstructed from frozen fields, not generated prose.
+    # Keep the generation contract unchanged; enforce its cap on model prose.
+    statement: ObservationText = Field(json_schema_extra=TypeAdapter(Text).json_schema())
     alert_ids: Members
     support_ids: Refs
     counter_ids: Refs
     alternatives: list[Text] = Field(max_length=8)
     limitations: list[Text] = Field(max_length=12)
+
+    @field_validator("statement")
+    @classmethod
+    def model_statement_limit(cls, value: str, info: ValidationInfo) -> str:
+        return TypeAdapter(Text).validate_python(value) if info.data.get("state") != "observed" else value
 
 
 class Member(Contract):
@@ -56,7 +73,7 @@ class Domain(Contract):
 
 class Conflict(Contract):
     id: Text
-    finding_ids: Refs = Field(min_length=2, json_schema_extra={"uniqueItems": True})
+    finding_ids: Refs = Field(json_schema_extra={"minItems": 2, "uniqueItems": True})
     state: Literal["resolved", "unresolved"]
     explanation: Text
     evidence_ids: Refs
@@ -101,9 +118,9 @@ def time_context(ref):
 
 
 def citation_roles(payload):
-    if payload.get("validation") == "structure_scope_sources_checked" and payload.get("analysis"):
+    if accepted(payload) and payload.get("analysis"):
         return {"$.analysis": "prior_analysis", **{f"$.analysis.findings.{i}": "prior_analysis"
-            for i, _ in enumerate(payload["analysis"]["findings"])},
+            for i, _ in enumerate(payload["analysis"].get("findings", []))},
             **{f"$.analysis.followups.{i}": "prior_analysis"
                 for i, _ in enumerate(payload["analysis"].get("followups", []))}}
     if payload.get("domain") in DOMAINS:
@@ -112,9 +129,10 @@ def citation_roles(payload):
     return {}
 
 
-def parse(content, source_map, context, coverage, *, bindings=None):
+def parse(content, source_map, context, coverage, *, bindings=None, citation_review=None, root_path="$"):
+    path = root_path
     def fail(code):
-        raise AnalysisRejected(code)
+        reject_or_record(citation_review, code, path)
 
     def pairs(items):
         result = {}
@@ -127,13 +145,26 @@ def parse(content, source_map, context, coverage, *, bindings=None):
     try:
         raw = json.loads(content, object_pairs_hook=pairs,
             parse_constant=lambda _: fail("invalid_json_number"))
+        raw = normalized(raw, citation_review, root_path)
         analysis = (Analysis if bindings is None else ExecutionAnalysis).model_validate(raw)
     except (ValueError, TypeError, ValidationError) as exc:
         if isinstance(exc, AnalysisRejected):
             raise
         raise AnalysisRejected("analysis_shape_invalid") from None
+    return validate_analysis(analysis, source_map, context, coverage, bindings=bindings,
+                             citation_review=citation_review, root_path=root_path)
+
+
+def validate_analysis(analysis, source_map, context, coverage, *, bindings=None, citation_review=None,
+                      root_path="$", sections=None, question_ids=None):
+    """The same identity/execution checks also validate complete retained C3 sections."""
+    path = root_path
+    sections = set(Analysis.model_fields) if sections is None else set(sections)
     member_ids = set(context.alerts)
-    question_ids = {q.id for q in context.questions}
+    question_ids = {q.id for q in context.questions} if question_ids is None else set(question_ids)
+
+    def fail(code):
+        reject_or_record(citation_review, code, path)
 
     def unique(values, code):
         if len(values) != len(set(values)):
@@ -146,12 +177,14 @@ def parse(content, source_map, context, coverage, *, bindings=None):
             fail("member_outside_run")
         return set(ids)
 
-    def refs(ids, members=None, require_coverage=False):
+    def refs(ids, members=None, require_coverage=False, field="evidence_ids"):
+        record_references(citation_review, ids, source_map, path + "." + field,
+                          sorted(members) if members is not None else None, required=require_coverage)
         unique(ids, "duplicate_source")
         if not set(ids) <= set(source_map):
             fail("source_not_in_model_input")
         available = set()
-        for sid in ids:
+        for sid in (sid for sid in ids if sid in source_map):
             source = source_map[sid]
             owned = set(source["alert_ids"]) if not source.get("knowledge") else set()
             if members and not (owned & members) and not knowledge_context(source, members):
@@ -162,9 +195,10 @@ def parse(content, source_map, context, coverage, *, bindings=None):
 
     ids = [str(m.alert_id) for m in analysis.members]
     unique(ids, "duplicate_member_delivery")
-    if set(ids) != member_ids:
+    if "members" in sections and set(ids) != member_ids:
         fail("member_delivery_incomplete")
-    for item in analysis.members:
+    for index, item in enumerate(analysis.members):
+        path = f"{root_path}.members.{index}"
         aid = str(item.alert_id)
         refs(item.evidence_ids, {aid}, item.state != "not_analyzed")
         if coverage[aid]["included"] == 0 and item.state != "not_analyzed":
@@ -173,9 +207,10 @@ def parse(content, source_map, context, coverage, *, bindings=None):
             fail("member_limitations_required")
     ids = [q.id for q in analysis.questions]
     unique(ids, "duplicate_question")
-    if set(ids) != question_ids:
+    if "questions" in sections and set(ids) != question_ids:
         fail("question_coverage_incomplete")
-    for item in analysis.questions:
+    for index, item in enumerate(analysis.questions):
+        path = f"{root_path}.questions.{index}"
         refs(item.evidence_ids)
         if item.state == "answered" and not item.evidence_ids:
             fail("answered_question_needs_sources")
@@ -183,31 +218,33 @@ def parse(content, source_map, context, coverage, *, bindings=None):
             fail("question_limitations_required")
     finding_ids = [f.id for f in analysis.findings]
     unique(finding_ids, "duplicate_finding")
-    for item in analysis.findings:
+    for index, item in enumerate(analysis.findings):
+        path = f"{root_path}.findings.{index}"
         members = scope(item.alert_ids)
-        refs(item.support_ids, members, item.state != "unresolved")
-        refs(item.counter_ids, members)
+        refs(item.support_ids, members, item.state != "unresolved", "support_ids")
+        refs(item.counter_ids, members, field="counter_ids")
         if set(item.support_ids) & set(item.counter_ids):
             fail("same_source_as_support_and_counterevidence")
         if item.state == "observed":
-            observations = [s for s in item.support_ids if source_map[s]["ref"]["role"] == "observation"]
+            observations = [s for s in item.support_ids if s in source_map and source_map[s]["ref"]["role"] == "observation"]
             if any(source_map[s]["ref"]["role"] != "observation" and not time_context(source_map[s]["ref"])
-                    for s in item.support_ids):
+                    for s in item.support_ids if s in source_map):
                 fail("non_observation_promoted_to_observed")
             # A timestamp is context, never the observation that proves a claim.
             if not observations:
                 fail("observed_requires_activity_source")
-            refs(observations, members, True)
-        if item.state == "observed" and any(source_map[s].get("membership_basis") == "query_binding_only" for s in item.support_ids):
+            refs(observations, members, True, "support_ids")
+        if item.state == "observed" and any(source_map[s].get("membership_basis") == "query_binding_only" for s in item.support_ids if s in source_map):
             fail("direct_alert_membership_not_proven")
         if item.state == "unresolved" and not item.limitations:
             fail("finding_limitations_required")
     names = [d.name for d in analysis.domains]
     unique(names, "duplicate_domain")
-    if set(names) != set(DOMAINS):
+    if "domains" in sections and set(names) != set(DOMAINS):
         fail("domain_coverage_incomplete")
     finding_lookup = {f.id: f for f in analysis.findings}
-    for item in analysis.domains:
+    for index, item in enumerate(analysis.domains):
+        path = f"{root_path}.domains.{index}"
         members = scope(item.alert_ids)
         unique(item.finding_ids, "duplicate_domain_finding")
         if not set(item.finding_ids) <= set(finding_ids):
@@ -216,22 +253,24 @@ def parse(content, source_map, context, coverage, *, bindings=None):
             fail("applicable_domain_needs_scope")
         if item.applicability != "applicable" and not item.limitations:
             fail("unapplied_domain_needs_limitations")
-        for fid in item.finding_ids:
+        for fid in (fid for fid in item.finding_ids if fid in finding_lookup):
             # Domain focus and the underlying finding's scope are independent.
             # A relevant multi-member finding keeps its original full scope.
             if not set(map(str, finding_lookup[fid].alert_ids)) & members:
                 fail("domain_finding_scope_mismatch")
     unique([c.id for c in analysis.conflicts], "duplicate_conflict")
-    for item in analysis.conflicts:
+    for index, item in enumerate(analysis.conflicts):
+        path = f"{root_path}.conflicts.{index}"
         unique(item.finding_ids, "duplicate_conflict_finding")
         if len(item.finding_ids) < 2 or not set(item.finding_ids) <= set(finding_ids):
             fail("invalid_conflict_findings")
         refs(item.evidence_ids)
         if item.state == "resolved" and not item.evidence_ids:
             fail("resolved_conflict_needs_sources")
-    for item in analysis.followups:
+    for index, item in enumerate(analysis.followups):
+        path = f"{root_path}.followups.{index}"
         members = scope(item.alert_ids)
-        refs(item.source_ids, members)
+        refs(item.source_ids, members, field="source_ids")
         if item.question_id not in question_ids:
             fail("followup_question_outside_run")
         if not set(item.object_keys) <= set(context.scope.object_keys):
@@ -266,5 +305,5 @@ PROMPT = f"""执行C3初始主分析，不出终报、不结案、不调工具�
 四领域：identity核认证/MFA/会话/权限及授权范围；cloud核控制面、资源/IAM/配置及影响；phishing核邮件身份/头、链接/附件、投递/点击/执行；insider核数据访问/外传、数量/目的地/时间、行为基线及授权，不凭作息或角色定恶意。
 保留替代解释与未决；conflicts仅列至少两条已有发现的实际矛盾，缺证据不算矛盾，不编造发现凑数。未提供审批、查空、未接通不构成不存在或反证；省略不同于未发生。端口不能证明HTTPS/TLS等应用协议。
 followups只提需求：一次补查用query、按返回继续查用deep、关系核验用graph、人工确认用human；不生成SQL或扩范围。正文仅涉及alert_ids，object_keys须属于这些成员；跨成员核验须列全相关成员。
-仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多3个核心findings、2个必要followups，成员/六问题/四领域完整。目标1800输出tokens，不复制原文或内部限制代码，不宣称全文已读。
+仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；findings和followups按Schema数量上限输出，成员/六问题/四领域完整。不复制原文或内部限制代码，不宣称全文已读。
 """

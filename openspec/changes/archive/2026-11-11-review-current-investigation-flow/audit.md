@@ -4,7 +4,7 @@
 
 ## 交付
 
-- [完整报告](../../../../docs/investigation/investigation-flow-review-20261111.md)：四类总体判断、实际入口/流程、需求对照、四项发现、验证限制和最小推进顺序。
+- [完整报告](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/investigation-flow-review-20261111.md)：四类总体判断、实际入口/流程、需求对照、四项发现、验证限制和最小推进顺序。
 - [证据入口](../../../../docs/operations/evidence/investigation-audit-20261111-01/README.md)：基线、探针、56 项定向检查、历史真实原答复查和保护文件核对；缺陷断言通过不代表功能通过。
 - [独立回执](../../../../docs/operations/evidence/investigation-audit-20261111-01/independent-audit.md)：未参与报告编写者复核，ACCEPT，0 项未解决必须修正。唯一必须修正文档问题为 direct query/Deep 流程图分流，已修正并复审。
 - [问题清单](../../../../docs/investigation/current-issues.md)及 PROGRESS 已原位更新。M01/M02 沿用，增加 A02；A03/A04 仅在保留 Hunt 范围。主调查 31/41 不变，模型质量 NOT_PASSED。

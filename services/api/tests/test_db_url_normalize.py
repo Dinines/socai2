@@ -6,6 +6,8 @@ silently breaks every database call in production, so we keep the cases
 explicit here.
 """
 
+import ssl
+
 from app.db.database import _normalize_async_pg_url
 
 
@@ -27,10 +29,16 @@ def test_explicit_driver_left_alone():
     assert args == {}
 
 
-def test_sslmode_require_translated_to_ssl_kwarg():
+def test_sslmode_require_needs_no_client_certificate_or_ca(monkeypatch):
+    monkeypatch.setenv("PGSSLROOTCERT", "/missing/old-ca.crt")
+    monkeypatch.setenv("PGSSLCERT", "/missing/old-client.crt")
+    monkeypatch.setenv("PGSSLKEY", "/missing/old-client.key")
     url, args = _normalize_async_pg_url("postgresql://u:p@h/db?sslmode=require")
     assert url == "postgresql+asyncpg://u:p@h/db"
-    assert args == {"ssl": "require"}
+    assert isinstance(args["ssl"], ssl.SSLContext)
+    assert args["ssl"].verify_mode == ssl.CERT_NONE
+    assert args["ssl"].check_hostname is False
+    assert args["ssl"].get_ca_certs() == []
 
 
 def test_sslmode_disable_translated_to_false():
@@ -49,4 +57,10 @@ def test_other_query_params_preserved():
 def test_channel_binding_stripped():
     url, args = _normalize_async_pg_url("postgresql://u:p@h/db?sslmode=require&channel_binding=require")
     assert "channel_binding" not in url
-    assert args == {"ssl": "require"}
+    assert args["ssl"].verify_mode == ssl.CERT_NONE
+
+
+def test_explicit_psycopg_password_connection_preserves_require():
+    original = "postgresql+psycopg://u:p@h:5432/db?sslmode=require"
+    url, args = _normalize_async_pg_url(original)
+    assert url == original and args == {}

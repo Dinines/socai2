@@ -1,0 +1,117 @@
+{
+  "script": "import json,subprocess,sys\nfrom datetime import datetime,timezone\nv=json.load(sys.stdin);c=v['config'];s=v['source'];p=c['postgres']\nsql=\"\"\"BEGIN;\nSET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='30s';\nINSERT INTO public.connectors(id,tenant_id,name,connector_type,category,is_enabled,auth_config,connector_config,health_status,events_ingested,events_dropped,error_count,oauth_provisioned,oauth_refresh_failures,tags,created_at,updated_at)\nVALUES (:'connector_id'::uuid,:'tenant_id'::uuid,:'name',:'connector_type',:'category',:'is_enabled'::boolean,'{}'::jsonb,:'connector_config'::jsonb,:'health_status',0,0,0,false,0,'[]'::jsonb,now(),now());\nCOMMIT;\nBEGIN READ ONLY;\nSET LOCAL ROLE :\"writer_role\";\nSELECT set_config('app.current_tenant_id',:'tenant_id',true);\nSELECT json_build_object('connector_id',id,'tenant_id',tenant_id,'name',name,'connector_type',connector_type,'health_status',health_status,'is_enabled',is_enabled) FROM public.connectors WHERE id=:'connector_id'::uuid AND tenant_id=:'tenant_id'::uuid;\nROLLBACK;\n\"\"\"\nargs=['docker','exec','-i',p['container'],'psql','-XwAtq','-v','ON_ERROR_STOP=1','-U',p['admin_role'],'-d',p['database'],'-v','writer_role='+p['writer']]\nfor k,x in s.items():\n if k in {'connector_id','tenant_id','name','connector_type','category','is_enabled','connector_config','health_status'}:args+=['-v',k+'='+(json.dumps(x) if isinstance(x,(dict,bool)) else x)]\nr=subprocess.run(args,input=sql,capture_output=True,text=True,timeout=c['timeout_seconds'],check=False)\nif r.returncode:raise RuntimeError('connector_provision_failed:'+r.stderr[-600:])\nactual=json.loads(r.stdout.strip().splitlines()[-1]);assert actual['connector_id']==s['connector_id'] and actual['tenant_id']==s['tenant_id']\nprint(json.dumps({'status':'passed','observed_at':datetime.now(timezone.utc).isoformat(),'batch_id':s['batch_id'],'candidate_id':s['candidate_id'],'database':p['database'],'read_as':p['writer'],'source':actual,'business_analysis_records_written':0,'model_calls':0},indent=2))\n",
+  "input": {
+    "config": {
+      "candidate_id": "streaming-20261115-01",
+      "ssh_target": "sting-infra21",
+      "root": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01",
+      "network": "socai2_default",
+      "timeout_seconds": 45,
+      "identity_file": "deploy/aisoc21/streaming-candidate-20261115-01/identity.json",
+      "processing_image": "sha256:01900f1dd10a96070eb56884fc6c5e86ab42de64c8d13cebb93e07d273b4d6db",
+      "fusion_container": "socai2-streaming-fusion-20261115",
+      "fusion_workdir": "/opt/processor/smoke-fusion",
+      "fusion_http_port": 8003,
+      "postgres": {
+        "container": "spirithub-postgres-1",
+        "admin_role": "spirithub",
+        "database": "socai2_streaming_20261115",
+        "owner": "socai2_streaming_20261115",
+        "writer": "socai2_streaming_20261115_writer",
+        "reader": "socai2_streaming_20261115_reader",
+        "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/http-runtime.json",
+        "lock_timeout_seconds": 3,
+        "statement_timeout_seconds": 30
+      },
+      "kafka": {
+        "container": "sting-infra21-kafka-1",
+        "metadata_bootstrap": "kafka:29092",
+        "bootstrap": "192.168.1.21:19093",
+        "security_protocol": "SSL",
+        "ca_source": "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt",
+        "ca_target": "/run/certs/ca.crt",
+        "group": "socai2-streaming-20261115-fusion",
+        "partitions": 1,
+        "replication_factor": 1,
+        "retention_ms": 604800000,
+        "topics": {
+          "raw": "socai2.testdata.streaming-20261115-01.raw",
+          "fused": "socai2.testdata.streaming-20261115-01.fused",
+          "raw_events": "socai2.testdata.streaming-20261115-01.raw_events",
+          "dlq": "socai2.testdata.streaming-20261115-01.dlq"
+        },
+        "offset_reset": "latest",
+        "start_requirement": "empty_topics_and_assignment_before_first_send"
+      },
+      "redis": {
+        "container": "socai2-streaming-redis-20261115",
+        "image": "sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499",
+        "port": 6379,
+        "fusion_db": 0,
+        "reserved_dispatch_db": 1,
+        "data_directory": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/redis/data",
+        "config_path": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/redis/redis.conf",
+        "appendonly": true,
+        "host_ports": [],
+        "password_required": true,
+        "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/redis-runtime.json"
+      },
+      "clickhouse": {
+        "container": "sting-infra21-clickhouse-1",
+        "host": "192.168.1.21",
+        "native_port": 9000,
+        "http_port": 8123,
+        "database": "socai2_streaming_20261115",
+        "table": "raw_events",
+        "schema_source": "aisoc.raw_events",
+        "writer": "socai2_streaming_20261115_writer",
+        "reader": "socai2_streaming_20261115_reader",
+        "private_runtime": "/opt/sting-aisoc-socai2/candidates/streaming-20261115-01/private/clickhouse-runtime.json"
+      },
+      "fusion_env": {
+        "ENVIRONMENT": "production",
+        "LOG_LEVEL": "INFO",
+        "AISOC_ALERT_STORE_SCHEMA": "socai2",
+        "AISOC_ALERT_SINK_ENABLED": "true",
+        "AISOC_LAKE_WRITER_ENABLED": "true",
+        "AISOC_EVENT_PROMOTION_ENABLED": "false",
+        "AISOC_DETECTION_ENGINE_ENABLED": "false",
+        "AISOC_WINDOWED_DETECTION_ENABLED": "false",
+        "AISOC_UEBA_FUSION_ENABLED": "false",
+        "AISOC_FUSION_MEMORY_NUDGE": "false",
+        "AISOC_FUSE_ENRICHMENT": "false",
+        "AISOC_TENANT_IOC_MATCH": "false",
+        "AISOC_FEATURE_RBA": "true",
+        "AISOC_FEATURE_CONFIDENCE": "true",
+        "AISOC_ATTACK_CHAIN_GROUPING_ENABLED": "true",
+        "CORRELATION_WINDOW_SECONDS": "86400",
+        "ATTACK_CHAIN_WINDOW_SECONDS": "86400",
+        "DEDUP_WINDOW_SECONDS": "300",
+        "MAX_ALERTS_PER_INCIDENT": "500",
+        "AISOC_LAKE_BATCH_SIZE": "100",
+        "AISOC_LAKE_BATCH_MAX_AGE_SECONDS": "2"
+      },
+      "initial_task_policy": {
+        "retry_limit": 1,
+        "retry_delay_seconds": 5
+      },
+      "dispatcher_enabled": false,
+      "models_enabled": false
+    },
+    "source": {
+      "candidate_id": "streaming-20261115-01",
+      "batch_id": "s01-ingress-20261115-01",
+      "tenant_id": "fa031e01-0c89-5b35-88e7-37c1d5cf078b",
+      "connector_id": "0ebc3dd7-dd0f-5471-b651-6e6bd1f89c02",
+      "name": "s01-ingress-20261115-01 Kafka fixture source",
+      "connector_type": "socai2-streaming-fixture",
+      "category": "custom",
+      "health_status": "unknown",
+      "is_enabled": true,
+      "connector_config": {
+        "source": "testdata Kafka",
+        "batch_id": "s01-ingress-20261115-01"
+      }
+    }
+  }
+}

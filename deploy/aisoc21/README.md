@@ -1,38 +1,33 @@
-# 21 调查服务部署
+# 21部署：当前运行与统一交付
 
-当前主发布为 `v1.2-20261112-r5`，处理镜像 `processing-20261112-r3`；已加载新采用 A 分诊提交后的历史知识同步，开启／120 秒，原 C2 三目的筛选和模型知识视图保持。API／工作台各切换一次，其余四项容器身份及关闭的消费者保持。[交付回执](../../docs/operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)区分本地端到端与生产加载；本轮没有生产新 Run／嵌入／模型。r4 因 Compose 基线路径错误在 preflight 被拒，未 rollout；按实际路径修正后冻结 r5，原失败保留。
+2026-11-17。负责人明确要求“先部署到21 清除历史数据 然后再测试数据”。[acceptance-release-20261117-01](acceptance-release-20261117-01/release.json)已完成完整服务发布、受控备份与明确历史清理；[实际就绪](../../docs/operations/evidence/acceptance-release-20261117-01/deployment-ready.json)核五服务、源码/配置、合同和空态。后端采用3c.2真实正常两段所验的完整组合，工作台1/2及3a–3d入口已发布。[新两段测试](../../docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)已完成：2告警/3上下文、同事件/同Case两轮、477份HTTP回执和8次真实模型均stop。5项模型质量问题后置；4b后续按明确指令已[发布0.6.1/r8与验收工具并验实际链接](../../docs/operations/evidence/workbench-4b-release-20261117-01/README.md)，仅更新4177，不再清理或发告警。D5a异常存取及整个change不据此核销。
 
-## 发布来源与步骤
+## 当前资源
 
-[统一清单](release-v1.2.json)给源码、固定镜像、Compose 来源和变化服务；[传输配置](current-rollout.json)给目标、独立目录和证据位置；[生产 profile](production-v1.2.toml)选择模型、库和[调查策略](../local-investigation/investigation-policy-case-v1.toml)。凭据只从已有 private 文件生成。
+| 服务 | 当前实际入口 |
+| --- | --- |
+| PostgreSQL | aisoc，32表521列，普通密码及TLS require；本轮无迁移 |
+| 入站/处理 | socai2-production-fusion-20261117-r1、socai2-production-dispatch-20261117-r1，同一processing镜像、N=1 |
+| HTTP | [18024](http://192.168.1.21:18024)，socai2-production-http-acceptance-http-20261117-r1，80业务操作，无鉴权 |
+| Swagger | [18080](http://192.168.1.21:18080/)，同版合同及告警/事件/调查三组 |
+| 查阅 | [4177](http://127.0.0.1:4177/viewer/)，21的0.6.1/r8容器，经本机SSH隧道访问 |
 
-工作树已为[对外HTTP代码分离](../../docs/design/investigation-http-boundary.md)补充主API构建的 `additional_packages.investigation_http`；发布器会一并冻结、复制和核验这个独立包。该源配置供下一次新release使用，不代表已发布r5镜像含有本轮代码，也不要复用已完成release目录。处理组件直接调用调查核心，不增加对外HTTP运行依赖；独立18024已发布 `http-boundary-20261113-r1`，见[专用部署说明](../http-service/README.md)。
+发布位于21 `/opt/sting-aisoc-socai2/deployments/acceptance-release-20261117-01`。连接、凭据和处理挂载明确沿用release中的prior_runtime_root，没有静默改库或加载旧候选短周期配置。I4h、Case6h、7天窗口及65536上下文预算保持，详见[配置索引](../../docs/operations/configuration.md)。旧消费者、旧r3和旧HTTP/展示入口停止，禁止同时恢复。
 
-当前固定流程修复仍在本地：Case 策略的 A/I 最多两次模型调用（首答及一次引用纠正），总 token 24000／时限300秒不变，Case 预算不变；历史重复展示合并及实际消息检查随服务代码打包。未进行本轮构建/发布，21 运行值仍以 r5 回执为准。收口后统一打包、核实际加载与读回，不因小修单独发布。
+## 本轮执行顺序
 
-1. 处理组件有实际变化时使用 `prepare_processing_release.py --profile <构建配置>` 冻结，再执行 `rollout_transport.py --config <传输配置> processing upload/build`；把镜像和 manifest 回执填入清单。知识 change 的处理代码有变化，按 processing-build-case-v1.toml 构建并核验固定镜像。
-2. `release_12.py freeze --config <发布清单> --directory <独立目录>`；通过传输入口执行 `unified upload`、`build`、`preflight`、`prepare`。
-3. 知识 change 一次发布内依次执行 `unified rollout --project main --service api` 和 `unified rollout --project workbench --service workbench`；其他四项服务沿用已有容器，自动消费者保持暂停。
-4. 执行 `unified activate`，其已包含源码／配置及服务核验；仅在有新的核验需要时另行 `verify`，不重复全量检查。再完成本次功能的生产写读回执。每个 change 收口后只统一发布一次。
+1. 按[OpenSpec §12.14](../../openspec/changes/schedule-streaming-investigation-updates/test-service-and-4177-http-20261115.md#1214-负责人明确要求先发布21清历史再测试2026-11-17)冻结来源。完整HTTP730来源、处理742包文件；670共有runtime逐字相同，286份API/Fusion与3c.2已验冻结一致；同包HTTP80操作/181schemas未变。
+2. 新包上传和镜像构建期间旧服务保持。处理镜像禁网自检、新4177及3d04验收镜像原生amd64内容核对通过；未触发业务/模型。
+3. 核无在途任务及待写回执后停止旧五服务，沿[精确清理清单](acceptance-release-20261117-01/cleanup-scope.json)备份并清理：84业务表521行、湖15条、Redis13键、4Topic25消息、24账本文件核零；127未选表和Schema不变。
+4. 启动唯一新版HTTP、调度、Fusion、Swagger及4177，核处理741运行文件（含策略）、HTTP730来源、三类业务/账本空态。新工作台浏览器默认Case空态通过。
+5. 最终3d04容器准入后，由协调方在确认尚未发送并保存接管回执后作为唯一执行者完成run首段→检查点→只读TTL→append。测试模块与HTTP模块限定独审通过；同一整事件Case实际1→2成员，R2比较真实R1，8次模型调用均stop。4177三类主体/两轮/HTTP/领域/原答及5项问题已核；随后4b已完成新验收工具/工作台发布；最终报告精确首轮/后轮链接和按冻结来源显示紫色通过实际4177浏览器及26GET核对。
 
-构建使用已缓存固定基础镜像，不拉取外网依赖。`prepare` 保存有效 Compose 和处理配置到受控 private 目录；不输出其内容。回退执行该冻结目录的 `release_12.py rollback --directory <目录>`，保留所有业务数据、原答和验收任务。发布不执行 DDL、清库或重派历史 Run。
+[本轮操作与备份](../../docs/operations/evidence/acceptance-release-20261117-01/README.md)保留清理、发布、首次核对失败及修正回执。不得直接重放此批清理或重发已执行段。数据库新装/升级见[CURRENT](../database/CURRENT.md)，本轮无迁移。清理前部署说明见[历史快照](../../docs/handoff/history/2026-11-17-acceptance-release/deploy/aisoc21/README.md)。
 
-## Case/H 功能配置
+## 回退边界
 
-正式库为 `aisoc.socai2`，迁移 127 后 28 表、450 列；当前安装/增量/核验见[数据库入口](../database/CURRENT.md)。新装沿[建表及安装入口](../database/install_aisoc21_v1.py)完成既有库和处理 profile 后，升级沿既有 profile 复用连接；知识同步批次没有额外迁移或角色；知识维护仅对既有处理身份增加 KB INSERT，见下节。
+旧包、容器和受控备份保留。本轮已产生新C1/Run/Result，不适用“无新业务写入”的直接应用回退前提；仍保持单一执行入口，不自动恢复已清历史或重放Kafka。
 
-统一清单明确启用 `SOCAI2_CASE_API_ENABLED=true`，把处理 runtime.env 的 `DATABASE_URL` 映射为 API 的 `SOCAI2_CASE_DATABASE_URL`。同时传入该 profile 的四项可选来源开关及 SOCAI2_LAKE_DATABASE；只复制已列出的键，通用 API DATABASE_URL 和已有湖连接保持；原 TLS 证书挂载直接复用。运行值存入 21 private 的 api-model.env 和有效 Compose，仓库仅保留映射。[配置示例](case-http.env.example)也适用于本地显式配置。
+新版C1含analysis_material，旧r3 Context Schema已实证拒绝该字段。产生新C1/Run后，不直接回退旧核心或HTTP；保留新读侧及记录，暂停新工作后修复当前版本。不能删新字段、改写Run、降级DDL或并行启动旧消费者。
 
-Case/H 非 GET 使用现有处理连接，GET 保持原读取连接；缺写入配置返回明确 503，不猜另一数据库。API 的 `AISOC_STARTUP_SCHEMA_MIGRATIONS=false`。权限专项不是功能前置，现有读写接线随功能处理。
-
-后续操作使用原接口：[Case/H 交接](../../openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md)。建案→start→人工完成/修订→prepare/start 后轮，人工保存本身不触发模型。生产验收入口 [production.py](../../tools/testdata/case_human_http/production.py)只在新建的明确验收 Case 保存和修订一项任务，再读取比对；正常登录使用既有账号，初始 Run 保持 pending_update，无生产模型调用。
-
-## C2 知识与工作台
-
-知识功能已接通技术解释、取证指导与历史案例参考。生产配置在 API 与处理入口挂载相同的 [knowledge-profile.json](../local-investigation/knowledge-profile.json)，使用已有 Ollama 本地 qwen3-embedding:0.6b/1024 和独立 Qdrant 集合，原情报/组织记忆集合保留。受控 key 来自既有 vector-1d 私密配置，只通过 knowledge 配置指定的文件挂载，不进镜像/Git。新装/升级步骤与字段见[知识交接](../../docs/investigation/case-knowledge-handoff.md)及[历史卡片交接](../../docs/investigation/historical-alert-knowledge-handoff.md)。原 Case/H 写连接及告警合同保持；后续迁移 127 仅清理未用探索表。分诊保存后同步已完成本地验收、独审及实际加载读回；开启 profile 后仅新提交且采用的 A 结果触发，原显式维护仍可用。新装知识表 INSERT 已并入既有脚本，现有安装执行 `knowledge_history_write_access.sql`，参数由生产 profile 提供；保持消费者关闭。
-
-4177 沿 [Mac SSH 接入](../../docs/operations/mac-ssh-relay-20261107.md)访问。知识 change 的工作台源码随统一 API/处理发布切换，根源码挂载与两个既有单文件挂载同步指向同一 release。通过[静态配置](workbench-current.json)追加已保存案例并读回；该知识批次未额外重启工作台。后续空表清理已通过[当前 runtime 配置](workbench-runtime-current.json)仅发布一次工作台 `workbench-20261112-graph-cleanup-r1`，5 个查询/导入文件适配当前 28 表并保留旧快照兼容；API/处理服务仍为 r5。下一次统一发布须从该实际工作台 Compose/挂载核基线，不重放 r5 的旧工作台配置。
-
-前批技术解释/取证指导的本地实际 6 条知识查询/8 条命中、5 次模型请求及保存读回；C6 duplicate_source 仍失败。20 项直接检查与一次浏览器功能查看通过，质量 NOT_PASSED，未做复杂测试或新生产调查。生产验收工具 [production.py](../../tools/testdata/case_knowledge/production.py)以该批临时 scope key 导入/索引两份有来源资料，读回块元数据，再使用已保存查询文本做只读 C2 adapter 检索；不建 Case、不写 Run、不调用分析模型。与本地完整链路证据合并说明接线边界，不把探针当成生产完整调查。[前批验收](../../openspec/changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)
-
-前批两目的知识与历史卡片的生产回执保留在各自归档中。前序用途筛选批次的历史已有卡 3 次业务 HTTP、方法资料 4 次业务 HTTP，通过显式入库／索引／GET；3 个只读目的查询返回 5 行（历史 1 卡、两个目的各 2 个方法块）。验收入口 [production.py](../../tools/testdata/knowledge_selection/production.py)及[配置](../../tools/testdata/knowledge_selection/production.json)复用既有路径；没有生产 Case／Run／分析模型，临时 key 撤销并核 401。4177 从实际 38→39 份，79 文件／80 静态 HTTP 读回，静态发布不重启服务。浏览器查看候选筛除及合并出处通过；原答及模型质量 NOT_PASSED 保留。
+总体状态见[PROGRESS](../../PROGRESS.md)，发布前文档见[历史快照](../../docs/handoff/history/2026-11-16-release-r4/deploy/aisoc21/README.md)。本次不含Git提交、推送或整个change归档。

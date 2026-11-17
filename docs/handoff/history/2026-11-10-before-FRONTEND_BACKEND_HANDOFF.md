@@ -14,7 +14,7 @@
 
 ## 1 从哪里开始
 
-**2026-11-09 本地 Case 接入补充：** C1/C3 新增配置选择的文本模型输入、同 A 回执冻结和短号恢复。告警/事件/Case 既有业务字段、关联和读取 DTO 保持；新增映射与回执放在已有工件 JSON 中，不新增表列。4 个新隔离 PG 方法、2 个旧方法和原 Case/Run/历史服务读回通过；完整 Deep/C6 衔接及远端部署未做。当前正式环境仍以本指南 8.6 的 r5 为准。见[接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)；4177 新增条目明确是模型/工具替身测试，不作为模型质量或完整调查成功样例。
+**2026-11-09 本地 Case 接入补充：** C1/C3 新增配置选择的文本模型输入、同 A 回执冻结和短号恢复。告警/事件/Case 既有业务字段、关联和读取 DTO 保持；新增映射与回执放在已有工件 JSON 中，不新增表列。4 个新隔离 PG 方法、2 个旧方法和原 Case/Run/历史服务读回通过；完整 Deep/C6 衔接及远端部署未做。当前正式环境仍以本指南 8.6 的 r5 为准。见[接入报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)；4177 新增条目明确是模型/工具替身测试，不作为模型质量或完整调查成功样例。
 
 | 接手工作 | 入口与用途 |
 | --- | --- |
@@ -184,7 +184,7 @@ V1 已经人工确认。新增、删除或修改表、字段、类型、默认�
 
 第二条输出目录须尚不存在；没有本机 Conda 环境时使用可用的 Python 3.9+，该检查脚本仅使用标准库。生成的 `index.json` 标明响应出处、路径与身份。先用保存响应做前端绑定，再用目标环境同权限 API 对账，不能把旧快照当作实时接口返回。
 
-本机新测试过程通常保存在 `.local/local-investigation/validation/<批次>/`，包含计划、导出和回执；21 三案的公开原件已在 `docs/operations/evidence/ie-audit-20261106-a1/`。这些私有工作目录不随 Git 自动交接，需使用上述已提交的包。后续复测创建新的批次和操作键，保留旧失败、unknown 和用量未知；按 [后续计划](../../../openspec/changes/complete-socai2-investigation-chain/publication-20261106.md) 先明确范围与额度。
+本机新测试过程通常保存在 `.local/local-investigation/validation/<批次>/`，包含计划、导出和回执；21 三案的公开原件已在 `docs/operations/evidence/ie-audit-20261106-a1/`。这些私有工作目录不随 Git 自动交接，需使用上述已提交的包。后续复测创建新的批次和操作键，保留旧失败、unknown 和用量未知；按 [后续计划](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/publication-20261106.md) 先明确范围与额度。
 
 ## 7 本地查看页面
 
@@ -232,7 +232,7 @@ python3 -m http.server 4174 --bind 127.0.0.1 --directory prototypes/security-pag
 | 模型结果质量 | 21 三案 C3 均 HTTP 408，已有系统收尾和当前待核判断，正式模型 Result 为 0；历史 DeepSeek 存在范围拒收和效果扩大。模型质量单独回归，不更改旧原答或伪造结果。 |
 | 服务接入 | 21 区分告警接入进程、按需处理命令和 4177 只读工作台。联调应分别记录 Kafka 接入成功的告警/事件 ID，以及显式启动的 A/I/Case 的 Run ID。产品业务 HTTP 的接线由业务后端负责。 |
 
-[完整测试交接及责任边界](../../investigation/investigation-test-handoff-20261106.md) · [三案问题证据](../../../deliverables/investigation-validation-20261106/processing-functional-audit.md) · [后续修复与模型计划](../../../openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)
+[完整测试交接及责任边界](../../investigation/investigation-test-handoff-20261106.md) · [三案问题证据](../../../deliverables/investigation-validation-20261106/processing-functional-audit.md) · [后续修复与模型计划](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/publication-20261106.md)
 
 ### 8.1 2026-11-07 正式库数据库与 GET 核对
 
@@ -253,9 +253,9 @@ python3 -m http.server 4174 --bind 127.0.0.1 --directory prototypes/security-pag
 
 交接时从以下路径取数据，统一加 `/api/v1/socai2` 前缀和受控 Bearer 身份：Case 详情 `/cases/{C}`，成员告警 `/alerts/{A}`，事件成员 `/incidents/{I}/records/members`，A/I 分析目录 `/{alerts或incidents}/{主体ID}/analysis`，Case 历史 `/cases/{C}/history`，本轮 `/cases/{C}/runs/{R}`，结果 `/cases/{C}/results/{result_id}`，工件 `/cases/{C}/runs/{R}/artifacts/{artifact_id}`。具体请求、所需 ID 和原始响应已逐项保存，不用按标题或时间猜关联。
 
-- [本轮结论及 F01–F28 数据状态](../../operations/evidence/database-handoff-review-20261107/review.json)
-- [实际 135 条请求](../../operations/evidence/database-handoff-review-20261107/readback-20261107T071822Z/request-plan.json) · [原始响应](../../operations/evidence/database-handoff-review-20261107/readback-20261107T071822Z/api-responses.json) · [数据库快照](../../operations/evidence/database-handoff-review-20261107/readback-20261107T071822Z/database.json)
-- [两函数增量授权](../../../deploy/database/reader_freshness_access_20261107.sql) · [授权前后核对](../../operations/evidence/database-handoff-review-20261107/grant-verification.json) · [资产权限诊断](../../operations/evidence/database-handoff-review-20261107/assets-permission-diagnosis.json)
+- [本轮结论及 F01–F28 数据状态](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/review.json)
+- [实际 135 条请求](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/readback-20261107T071822Z/request-plan.json) · [原始响应](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/readback-20261107T071822Z/api-responses.json) · [数据库快照](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/readback-20261107T071822Z/database.json)
+- [两函数增量授权](../../../deploy/database/reader_freshness_access_20261107.sql) · [授权前后核对](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/grant-verification.json) · [资产权限诊断](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/assets-permission-diagnosis.json)
 
 复验只读请求使用以下命令；连接参数来自文件，新增读回单独保存，不触发调查或调用模型。当前资产查询未修，核对程序会保留失败详情并返回退出码 1。
 
@@ -275,11 +275,11 @@ python3 -m http.server 4174 --bind 127.0.0.1 --directory prototypes/security-pag
 | 非 Run 来源正文 | 增加 `/alerts/{A}/artifacts/{artifact_id}`、`/incidents/{I}/artifacts/{artifact_id}`、`/cases/{C}/artifacts/{artifact_id}`；统一 `/api/v1/socai2` 前缀。原有 Run 工件路径保持。 |
 | Case 证据与活动 | C6 在结果事务内从登记材料/H生成证据目录，复用 `current_evidence_artifact_id`；相同材料多字段不重复计数，未知性质不猜。人工/撤回目录保持，未生成、成功查空、失败分开。Case 活动读取合并并去重已有执行关联。 |
 
-三份 JSON 合同已同步可选事实字段与 `diagnosis.partial`；局部诊断必须关联原答、`conclusion=null`，正常诊断保持原 `source_refs` 必填。A/I/C6 实际落库正文通过完整合同验证，详见[续修验证](../../operations/evidence/v1.2-implementation-20261107)。页面交接继续按 F01—F28 字段/关系/请求核对，不要求实现导航或填补不存在的业务结果。
+三份 JSON 合同已同步可选事实字段与 `diagnosis.partial`；局部诊断必须关联原答、`conclusion=null`，正常诊断保持原 `source_refs` 必填。A/I/C6 实际落库正文通过完整合同验证，详见[续修验证](2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107)。页面交接继续按 F01—F28 字段/关系/请求核对，不要求实现导航或填补不存在的业务结果。
 
 ### 8.3 统一 1.2 发布后的新批数据核对（2026-11-07）
 
-21已激活 `v1.2-20261107-r3` 的正式按需入口；本机 `18022` 按原只读profile重启并加载当前读取路由。使用新批 `production-multialert-20261107-02`，3条明确标识的演练告警经实际Fusion形成1事件，再手动建Case并运行一次调查。Case为 `1db4d62b-2dfc-5321-bba8-99b8f9c3b35d`，Run为 `54829ddf-290b-42ab-af55-01e07307cc2c`；输入、DB快照、API原文及[汇总](../../operations/evidence/production-multialert-20261107-02/summary.json)均保留。主API生产socai2 HTTP开关仍未开启，本批读取验证来自本机只读入口及4177，不能当作生产业务HTTP全部接线。
+21已激活 `v1.2-20261107-r3` 的正式按需入口；本机 `18022` 按原只读profile重启并加载当前读取路由。使用新批 `production-multialert-20261107-02`，3条明确标识的演练告警经实际Fusion形成1事件，再手动建Case并运行一次调查。Case为 `1db4d62b-2dfc-5321-bba8-99b8f9c3b35d`，Run为 `54829ddf-290b-42ab-af55-01e07307cc2c`；输入、DB快照、API原文及[汇总](2026-11-14-investigation-cleanup/evidence/production-multialert-20261107-02/summary.json)均保留。主API生产socai2 HTTP开关仍未开启，本批读取验证来自本机只读入口及4177，不能当作生产业务HTTP全部接线。
 
 | 本批内容 | 实际数据与读取结果 |
 | --- | --- |
@@ -289,7 +289,7 @@ python3 -m http.server 4174 --bind 127.0.0.1 --directory prototypes/security-pag
 | API读取 | 126项原有GET加5项新增读取，共131个请求：126正常200、5错误父归属预期404；5,484批量及5项新增检查通过，3个非Run原件正文与6条去重活动读取准确。 |
 | 4177记录 | 本机与21均登记5Run/29Step/59工件，ID集合与DB完全相同，旧批保留。当前[本案工作台](http://127.0.0.1:4177/cases/b46daf2dbc4a1ca6ef3cfeafcee4e8912c90e7af15dd54c02648e12724646f50.html)按实际Run展示unknown/none。 |
 
-完整调查仍未通过：网关实际45秒未对齐应用300秒，I和C3均408；A2/A3判断依据冲突，A2把TI跳过误述为查空，另有上述报告状态差异。见[四项问题](../../operations/evidence/production-multialert-20261107-02/problems.json)。模型决定的C4/Deep、C6模型总结、H后轮及证据目录生产均未在本批验证；预先C4.materials步骤实际已完成。数据读取通过与模型质量不通过分别结算，未补造数据填空。
+完整调查仍未通过：网关实际45秒未对齐应用300秒，I和C3均408；A2/A3判断依据冲突，A2把TI跳过误述为查空，另有上述报告状态差异。见[四项问题](2026-11-14-investigation-cleanup/evidence/production-multialert-20261107-02/problems.json)。模型决定的C4/Deep、C6模型总结、H后轮及证据目录生产均未在本批验证；预先C4.materials步骤实际已完成。数据读取通过与模型质量不通过分别结算，未补造数据填空。
 
 ### 8.4 1.2 续修后的有值结果与读取（2026-11-08）
 
@@ -328,7 +328,7 @@ Case `2b37f5b3-862b-52cc-84bd-86db50dd3ad4`，Run `8d53cdb1-1cba-4df3-8ac2-f2724
 
 `delivery_assessment.schema_version=socai2.incident-delivery.v1`。`unresolved`表示已经分析但尚待核实，可与完整交付并列；`not_reviewed`表示明确没完成该成员分析，应标部分交付。失败轮可以有部分有效内容，但不会覆盖原当前诊断。缺少新增JSON的历史结果按实际Run显示，不能把旧partial自动改成complete，也不能把缺字段当“无待核事项”。
 
-[本批证据](../../operations/evidence/incident-delivery-validation-20261108-01/summary.json)：7个真实隔离PG方法、15个实际ASGI GET与本机静态页核对通过，使用模型/工具替身。5事件/10告警/19Run原件及空态、原答均保留；未新增Case或真实模型调用。工作台显示源代码与部署文件清单已同步，尚未发布到21的在线4177。告警A的交付状态及A五字段生产接入另行推进，不由本节宣称完成。
+[本批证据](2026-11-14-investigation-cleanup/evidence/incident-delivery-validation-20261108-01/summary.json)：7个真实隔离PG方法、15个实际ASGI GET与本机静态页核对通过，使用模型/工具替身。5事件/10告警/19Run原件及空态、原答均保留；未新增Case或真实模型调用。工作台显示源代码与部署文件清单已同步，尚未发布到21的在线4177。告警A的交付状态及A五字段生产接入另行推进，不由本节宣称完成。
 
 ### 8.6 告警与事件正式接入21（2026-11-08）
 
@@ -338,7 +338,7 @@ Case `2b37f5b3-862b-52cc-84bd-86db50dd3ad4`，Run `8d53cdb1-1cba-4df3-8ac2-f2724
 
 本批3条明确标记的合成告警经现有Fusion成为1事件，4次真实模型调用、0重试、0Case。登录A失败/none（输出截断），进程A失败/none（重复引用），网络A完成/complete但needs_review；I失败/partial，局部内容在本Run下可查，总诊断未采用。失败A当前分诊为空，事件当前诊断为空，不能因有原答工件填成有效结果。网络A的当前分诊、原解释、引用均可通过既有接口取回。
 
-数据源在21正式 `aisoc` 库；3份材料和35份工件内容与DB原件完全一致，首次与最终29表快照逐值不变。Case总数仍为3，旧样本不回填。51次首轮503和后续成功读取分别保留。4177本批独立展示实际输入/输出及错误，其他批次不删除。[完整分析](../../investigation/ai-production-rollout-20261108.md) · [GET核对](../../operations/evidence/ai-production-validation-20261108-01/api-final-verification.json) · [本轮事件](http://127.0.0.1:4177/subjects/a488c95a916724472edbf9595767ea533fc60de19f041309ebbd9aa7b980668f.html)。模型质量后续迭代，本次接入完成不代表1.2整体通过。
+数据源在21正式 `aisoc` 库；3份材料和35份工件内容与DB原件完全一致，首次与最终29表快照逐值不变。Case总数仍为3，旧样本不回填。51次首轮503和后续成功读取分别保留。4177本批独立展示实际输入/输出及错误，其他批次不删除。[完整分析](2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md) · [GET核对](../../operations/evidence/ai-production-validation-20261108-01/api-final-verification.json) · [本轮事件](http://127.0.0.1:4177/subjects/a488c95a916724472edbf9595767ea533fc60de19f041309ebbd9aa7b980668f.html)。模型质量后续迭代，本次接入完成不代表1.2整体通过。
 
 ## 9 Git 发布与父项目引用
 

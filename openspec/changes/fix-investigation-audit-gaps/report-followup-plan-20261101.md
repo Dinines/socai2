@@ -1,16 +1,16 @@
 # 调查报告后续交付计划
 
-**最新优先级调整（2026-11-01）：** 用户要求先保留r13报告问题、转向告警/事件字段对齐，并逐项确认空缺、异议和疑问。报告修复暂缓；下文“P3等报告达标”的原先顺序不再阻断字段确认，但5.3仍未完成。当前以[字段逐项确认记录](../../../docs/investigation/field-alignment-confirmations-20261101.md)为入口，当前先按远端页面需求从Fusion输入/入库追踪到API及调查使用，定位数据/功能断点后再确认未决语义；不自动实施全部管理功能、不重跑报告批次。
+**最新优先级调整（2026-11-01）：** 用户要求先保留r13报告问题、转向告警/事件字段对齐，并逐项确认空缺、异议和疑问。报告修复暂缓；下文“P3等报告达标”的原先顺序不再阻断字段确认，但5.3仍未完成。当前以[字段逐项确认记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/field-alignment-confirmations-20261101.md)为入口，当前先按远端页面需求从Fusion输入/入库追踪到API及调查使用，定位数据/功能断点后再确认未决语义；不自动实施全部管理功能、不重跑报告批次。
 
 2026-11-01。先验证当前修复能否交付有依据的真实报告，再处理告警/事件字段接缝。沿用Case/Run账本和有界上下文，不新增独立记忆系统。用户继续后P1完成，P2已执行并结束：r12已部署，A/B各一次均failed/partial，C因A未通过而跳过，P3未开始。见[真实回执](../../../docs/operations/investigation-r12-report-validation-20261101.json)及[原因分析](../../../docs/operations/evidence/investigation-r12-20261101/review.md)。下列P1/P2步骤保留原批次计划，不授权重复本批。
 
-**最新执行（r13）：** 来源值等窄修复已部署，A输出3000tokens后截断，B completed/partial但仍有空查询反证化、审批语义和Tool编号偏差；C跳过。4真实查询/6模型20334tokens，旧数据与报告保持，原17项直接用例复用。见[回执](../../../docs/operations/investigation-r13-report-validation-20261101.json)及[分析](../../../docs/operations/evidence/investigation-r13-20261101/review.md)。r13批次结束不重试，P3/5.3未完成；下面P1/P2及r12状态保留历史，不覆盖本段。下一只处理报告截断的既有一次纠错路径及本批具体语义错误。
+**最新执行（r13）：** 来源值等窄修复已部署，A输出3000tokens后截断，B completed/partial但仍有空查询反证化、审批语义和Tool编号偏差；C跳过。4真实查询/6模型20334tokens，旧数据与报告保持，原17项直接用例复用。见[回执](../../../docs/operations/investigation-r13-report-validation-20261101.json)及[分析](../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/investigation-r13-20261101/review.md)。r13批次结束不重试，P3/5.3未完成；下面P1/P2及r12状态保留历史，不覆盖本段。下一只处理报告截断的既有一次纠错路径及本批具体语义错误。
 
 ## r12起点与原计划
 
 - 本地报告上下文、纠错隔离、协议误拒及三处漏放已经修复；最新一批22个直接方法结果通过，其中4个新增。首轮14项与本批有5项重叠，跨两批共31个不同方法，不是一次31项全量重跑。源码指纹、失败及复核记录见[补充评估回执](../../../docs/operations/investigation-report-context-evaluation-20261101.json)。
 - 最近已核实部署为r12，候选来自未提交工作区快照；472应用源码hash一致。A/B共8模型、4真实查询、0复用、25783tokens，8调用未定价。两组raw各在4轮完整，报告仍失败；输入保留和拒收坏报告不等于交付成功。
-- 剩余重点是[问题登记](../../../docs/investigation/review-guide-20261101.md)中的来源/无源推测、关系证据强度及空查询解释。r12还确认源字段未声明/无法确认句式误拒，以及纠错后的占位乱码；隔离反馈已生效但未解决输出质量。原change保持16/17，5.3不提前完成。
+- 剩余重点是[问题登记](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/review-guide-20261101.md)中的来源/无源推测、关系证据强度及空查询解释。r12还确认源字段未声明/无法确认句式误拒，以及纠错后的占位乱码；隔离反馈已生效但未解决输出质量。原change保持16/17，5.3不提前完成。
 
 ## P1 固化候选版本与验证材料
 
@@ -50,7 +50,7 @@ A和B各只执行一次；B不依赖A结果。A不合格则C不派发，记为�
 
 ## P3 报告达标后处理已确认数据接缝
 
-按[告警/事件对照报告](../../../docs/investigation/frontend-alert-incident-data-gaps-20261101.md)逐项推进，每项只做必要实现与直接验证。对照基于远端`48f54abd`，进入本阶段时只核对该字段合同之后的变化。
+按[告警/事件对照报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/frontend-alert-incident-data-gaps-20261101.md)逐项推进，每项只做必要实现与直接验证。对照基于远端`48f54abd`，进入本阶段时只核对该字段合同之后的变化。
 
 | 顺序 | 范围 | 交付判据 |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ A和B各只执行一次；B不依赖A结果。A不合格则C不派发，记为�
 
 ## r12阶段执行记录（r13最新结果见顶部）
 
-P2后本地修复已完成：来源值校验、具体协议误拒、已知空查询原因及占位拒收、一次纠错错误聚合，17个不同直接方法最新通过。该本地阶段线上为r12，随后r13候选与真实批次已完成；结果见顶部，旧批次不重跑。详见[修复说明](../../../docs/investigation/report-grounding-fix-20261101.md)，P3及5.3继续等待报告达标。
+P2后本地修复已完成：来源值校验、具体协议误拒、已知空查询原因及占位拒收、一次纠错错误聚合，17个不同直接方法最新通过。该本地阶段线上为r12，随后r13候选与真实批次已完成；结果见顶部，旧批次不重跑。详见[修复说明](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/report-grounding-fix-20261101.md)，P3及5.3继续等待报告达标。
 
 P1已完成：[准备回执](../../../docs/operations/investigation-r12-preparation-20261101.json)与固定请求保持准备时原件。r12源码快照基于`b758351`工作区，未新建Git提交；以包/清单hash固定内容。
 

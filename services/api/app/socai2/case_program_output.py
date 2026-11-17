@@ -4,17 +4,19 @@ from collections import Counter
 
 from pydantic import TypeAdapter, ValidationError
 
-from .baseline_analysis_contract import AnalysisRejected, Text
+from .baseline_analysis_contract import AnalysisRejected, ObservationText, Text
 
-VERSION = "socai2.case-program-output.v1"
+VERSION = "socai2.case-program-output.v2"
+READ_VERSIONS = {"socai2.case-program-output.v1", VERSION}
 PENDING = "原始观察尚未通过装配校验。"
+UNBOUND_OBSERVATION = "本发现未绑定可读取的原始观察；模型声明与引用问题保留在原答及诊断中。"
 
 
 def enabled(boundary):
-    return boundary.get("program_output") == VERSION
+    return boundary.get("program_output") in READ_VERSIONS
 
 
-def observation_literals(records, aliases):
+def observation_literals(records, aliases, *, event_roots=()):
     result, groups = {}, {}
     for row in records:
         ref = row["ref"]
@@ -25,66 +27,101 @@ def observation_literals(records, aliases):
         if key not in groups:
             groups[key] = len(groups) + 1
         value = row.get("original_value", row["value"])
+        path = ref.get("source_path") or "$"
         result[row["id"]] = {"group": f"{'、'.join(members) or '共同范围'}/原记录{groups[key]}",
-            "path": ref.get("source_path") or "$", "value": value}
+            "path": path, "value": value}
+        if event_roots:
+            result[row["id"]]["field"] = next((path[len(root):] for root in event_roots if path.startswith(root)), path)
     return result
 
 
-def observed_text(finding, boundary):
+def observed_text(finding, boundary, *, citation_review=None, path="$"):
     literals = boundary["observation_literals"]
-    parts = []
+    parts, groups = [], {}
     for sid in finding["support_ids"]:
         if sid not in literals:
-            raise AnalysisRejected("observed_original_field_unavailable")
+            if citation_review is None:
+                raise AnalysisRejected("observed_original_field_unavailable")
+            from .citation_quality import issue
+            issue(citation_review, "observed_original_field_unavailable", path + ".support_ids", source_id=sid,
+                  action="unbound_observation_not_invented")
+            continue
         row = literals[sid]
         value = json.dumps(row["value"], ensure_ascii=False, separators=(",", ":"))
-        parts.append(f"[{row['group']}｜{sid}] {row['path']}={value}")
-    text = "\n".join(parts)
+        if boundary.get("program_output") == VERSION:
+            # Only identical typed values of one field in one original record
+            # share display. Every selected reference keeps its frozen path.
+            key = (row.get("field", row["path"]), value)
+            groups.setdefault(row["group"], {}).setdefault(key, []).append(sid)
+        else:
+            parts.append(f"[{row['group']}｜{sid}] {row['path']}={value}")
+    for group, fields in groups.items():
+        parts.append(f"[{group}]")
+        parts.extend(f"[{','.join(ids)}] {field}={value}" for (field, value), ids in fields.items())
+    text = "\n".join(parts) if parts else UNBOUND_OBSERVATION if citation_review is not None else ""
     try:
-        TypeAdapter(Text).validate_python(text)
+        TypeAdapter(ObservationText).validate_python(text)
     except ValidationError:
-        raise AnalysisRejected("observed_original_fields_exceed_statement_contract") from None
+        raise AnalysisRejected("observed_original_field_unavailable") from None
     return text
 
 
-def restore_observed(root, boundary):
+def restore_observed(root, boundary, *, citation_review=None, path="$"):
     if not enabled(boundary):
         return
-    for finding in root["findings"]:
+    for index, finding in enumerate(root["findings"]):
         if finding["state"] != "observed":
             continue
         if "statement" in finding:
             raise AnalysisRejected("observed_statement_is_program_owned")
         try:
-            finding["statement"] = observed_text(finding, boundary)
+            finding["statement"] = observed_text(finding, boundary, citation_review=citation_review,
+                                                  path=f"{path}.findings.{index}")
         except AnalysisRejected:
             # A typed placeholder only enables the existing per-unit review.
             # validate_program rejects it; it can never be adopted as a fact.
             finding["statement"] = PENDING
 
 
-def program_errors(root, boundary):
+def program_errors(root, boundary, *, citation_review=None, path="$"):
     if not enabled(boundary):
         return []
     errors = []
     for i, finding in enumerate(root["findings"]):
         if finding["state"] == "observed":
             try:
-                observed_text(finding, boundary)
+                observed_text(finding, boundary, citation_review=citation_review, path=f"{path}.findings.{i}")
             except AnalysisRejected as exc:
                 errors.append({"path": ["findings", i, "support_ids"], "code": str(exc),
-                    "subject_id": finding["id"], "reason": "原字段不可得或超出既有文字容量；选取本发现必需的原字段，不能删掉必要事实、编造内容或换状态掩盖错误。"})
+                    "subject_id": finding["id"], "reason": "原字段不可得；只能引用本次可读取的原字段，不能删掉必要事实、编造内容或换状态掩盖错误。"})
     return errors
 
 
-def validate_program(root, boundary):
-    errors = program_errors(root, boundary)
+def validate_program(root, boundary, *, citation_review=None, path="$"):
+    errors = program_errors(root, boundary, citation_review=citation_review, path=path)
     if errors:
         raise AnalysisRejected(errors[0]["code"])
     if enabled(boundary):
-        for finding in root["findings"]:
-            if finding["state"] == "observed" and finding["statement"] != observed_text(finding, boundary):
+        for i, finding in enumerate(root["findings"]):
+            if finding["state"] == "observed" and finding["statement"] != observed_text(
+                    finding, boundary, citation_review=citation_review, path=f"{path}.findings.{i}"):
                 raise AnalysisRejected("observed_program_text_mismatch")
+
+
+def owns_coverage(boundary):
+    return enabled(boundary) and "coverage_facts" in boundary
+
+
+def initial_coverage(prepared, total_members):
+    # Only this Case's C2 receipts; prior A queries are historical context.
+    queries = [{**{k: row["value"][k] for k in
+        ("tool_name", "state", "outcome", "returned_rows", "truncated") if k in row["value"]},
+        "source_ids": [row["id"]]} for row in prepared["records"]
+        if row["block"] == "background_query" and row["ref"]["role"] == "execution_receipt"
+        and isinstance(row["value"], dict)]
+    return {"visible_members": sum(row["included"] > 0 for row in prepared["coverage"].values()),
+        "total_members": total_members, "omission_count": len(prepared["omissions"]),
+        "queries": queries, "material_reads": {}, "material_source_ids": [], "execution_states": {}}
 
 
 def coverage_question(root, boundary):
@@ -119,7 +156,7 @@ def coverage_question(root, boundary):
 
 
 def restore_coverage(root, boundary):
-    if not enabled(boundary) or "coverage_facts" not in boundary:
+    if not owns_coverage(boundary):
         return
     if any(row["id"] == "coverage" for row in root["questions"]):
         raise AnalysisRejected("coverage_question_is_program_owned")

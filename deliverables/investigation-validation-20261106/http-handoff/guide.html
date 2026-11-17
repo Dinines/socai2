@@ -1,23 +1,25 @@
 <html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="调查服务-http-api">调查服务 HTTP API</h1>
-<p>合同版本：2026-11-13.docs13。对应本机18024版本为 <code>case-result-adoption-20261113-r1-local</code>，21正式18024为 <code>case-result-adoption-20261113-r1</code>；合同含64操作，实际发布状态见部署回执，本机使用 <code>v12_upgrade_dev</code>，21使用 <code>aisoc</code>。</p>
-<p>本轮实现E21采用已有调查结果，增加E63预览及E64判断历史，原其他61操作合同保持。先预览候选、覆盖与未完工作，再提交摘要和理由；采用不结束任务、取消调查或结案。文件上传/下载仍由业务后端负责。</p>
-<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。共64个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。</p>
+<p>&gt; 2026-11-14：本轮接口按默认内部可信改动，以下调用示例无需认证信息；本机候选已验证。正式两端18024及在线Swagger仍为上一发布版本，尚未统一切换；本轮不涉及Git提交。</p>
+<p>候选合同版本：2026-11-14.docs20-candidate，71个HTTP操作。对应本机18024 <code>investigation-sync-20261113-r1-local</code>、21正式18024 <code>investigation-sync-20261113-r1</code>。数据库分别为v12_upgrade_dev与aisoc，记录ID不可混用；实际发布回执见总交接（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）。</p>
+<p>本轮同步已发布调查核心<code>v1.2-20261113-r1</code>。E36分析告警、E37诊断事件、E13启动调查的地址和输入输出保持；内部使用新版分析逻辑。C3模型处理五项问题，程序补充覆盖说明，保存和读取仍六问。调用方继续先取得主体/Run ID，按原operation_key和范围版本调用，再读取运行状态和结果；超时先读原Run，不换key重启。本轮只做现有记录的接口读回，没有新增模型验收，正文质量问题仍后置。</p>
+<p>本轮新增<a href="/handoff/sources/alert-review-http.html">E70告警相似历史复核</a>：同主机且同战术、同IP或合法算法哈希，默认按所选告警发生时间回看30天、每页5条；返回具体匹配依据，不自动复制判定。已完成本机23次功能GET及10表只读核对，正式本机8GET命中3条，21既有记录5GET为空候选。E65故事、E66候选及E67–E69保存恢复沿既有验收。AI对话暂缓，E19/E20返回501。</p>
+<p>标准Swagger入口：<a href="http://127.0.0.1:18080/">本地</a>、<a href="http://192.168.1.21:18080/">21内网</a>。按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现，70为去重后的操作数。</p>
 <h2 id="每个接口怎么看">每个接口怎么看</h2>
 <p>展开接口即可查看：用途、输入参数、输出结构、操作后的结果、实现状态、请求/响应示例和错误。固定字段解释在Schema中；随分区或工件类型变化的字段在Responses说明中。示例是合成合同示例，需要替换为实际ID和版本。</p>
 <p>• <b>已实现</b>：接口逻辑已提供。执行结果及结论是否有效以返回状态为准。</p>
 <p>• <b>未实现</b>：E19发送问题、E20保存回答目前返回501，不产生对应业务结果。</p>
 <p>• E36告警分诊、E37事件诊断在21独立正式服务已挂载并启用；由业务后端显式调用，可以来自页面操作或后端业务逻辑。调用后程序执行该次模型流程，返回Run及实际结果状态。</p>
-<p>当前64个操作中62已实现、2预留501。采用预览→确认→保存→详情/历史/活动的真实HTTP与SQL证据见本轮交付回执；本地程序构造Result不代表模型分析质量。其他接口沿既有验收，模型质量仍未通过。本次合同对应采用版本；实际上线状态以总交接（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）与部署回执为准。</p>
+<p>当前71个操作中69已实现、2问答暂缓且预留501。采用预览→确认→保存→详情/历史/活动的真实HTTP与SQL证据见本轮交付回执；本地程序构造Result不代表模型分析质量。其他接口沿既有验收，模型质量仍未通过。故事已通过本机30次HTTP功能检查及补充1次GET/11表真实行核对，原快照脚本错误保留。实际上线状态以总交接（来源：<code>FRONTEND_BACKEND_HANDOFF.md</code>）与部署回执为准。</p>
 <h2 id="http接入">HTTP接入</h2>
 <p>业务路径前缀为<code>/api/v1/socai2</code>。Swagger的Servers按实际调用环境选择；18080只提供文档。</p>
 <table>
 <tr><th>使用环境</th><th>API根地址</th><th>数据目标</th></tr>
-<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>case-result-adoption-20261113-r1</code>，64操作</td></tr>
+<tr><td>后端内网对接</td><td><code>http://192.168.1.21:18024</code></td><td>正式<code>aisoc</code>；版本<code>investigation-sync-20261113-r1</code>，71操作</td></tr>
 <tr><td>本机转发到21</td><td><code>http://127.0.0.1:28024</code></td><td>同一正式库；需开启<code>deploy/http-service/relay.json</code>对应转发</td></tr>
 <tr><td>本机开发验收</td><td><code>http://127.0.0.1:18024</code></td><td>隔离<code>v12_upgrade_dev</code>；本地记录ID与21不通用</td></tr>
 </table>
 <p>旧主API18000和旧独立API18020保持运行；后者仍是旧隔离库，不作为本次对接入口。对外查询和业务操作由独立HTTP包维护，调查内部步骤及组件HTTP保持原归属，见代码与调用边界（来源：<code>docs/design/investigation-http-boundary.md</code>）。本轮没有启动消费者或自动调查。</p>
-<p>JSON请求使用<code>Content-Type: application/json</code>，身份沿用现有<code>Authorization: Bearer &lt;有效凭据&gt;</code>。后端通过HTTP对接，资产基础资料和人员目录由业务后端负责。</p>
+<p>JSON请求使用<code>Content-Type: application/json</code>；内部默认可信，不需要认证头，租户和记录操作人由服务配置提供。后端通过HTTP对接，资产基础资料和人员目录由业务后端负责。</p>
 <h2 id="常见调用顺序">常见调用顺序</h2>
 <p>1. 告警：列表E26 → 详情E28 → 分诊目录E22 → 指定Run E24 → 步骤E32/工件E33。</p>
 <p>2. 事件：列表E27 → 详情E29 → 诊断目录E23 → 指定Run E25 → 步骤E32/工件E33。</p>
@@ -25,6 +27,8 @@
 <p>4. 人工任务：读取案件版本E03 → 创建E38；更新前读任务E41，完整提交E40；历史版本读取E42/E43。</p>
 <p>5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。</p>
 <p>6. 采用结果：E63预览 → E21提交预览摘要/理由/必要未完确认 → E03当前判断、E64判断历史、E17活动。旧E21占位体expected_scope_revision已停用；完整字段与错误见<a href="/handoff/sources/result-adoption-http.html">采用操作指南</a>。</p>
+<p>7. 案件探索：E66查询候选 → E28/E30/E31核对详情、全部对象及材料 → E03读最新范围版本 → 明确E08加入 → E03/E66读回；保存画布使用E67读取底图→E68保存→E69恢复；不必加入成员。</p>
+<p>8. 相似历史复核：E70查候选 → E28打开候选、E31按材料ID核原件 → 用户确认后E48/E49反馈；当前判定不会自动应用到候选。</p>
 <p>管理字段省略保持；可空字段传null清空，标签[]清空。关闭时running/unknown禁止操作；未完任务须明确确认及理由，任务保留。重开恢复处理中，不自动启动调查。</p>
 <h2 id="返回和错误">返回和错误</h2>
 <p>• 查询参数、必填项、默认值、枚举及空值要求见对应操作；不要加入未声明字段。</p>
@@ -55,13 +59,12 @@
 <p>CSV中的null写为<code>\N</code>，空字符串留空，数组/对象为JSON。实际以反斜杠开头的字符串加一个反斜杠，以单引号开头或可能成为公式的字符串加一个单引号；CSV解析后先识别精确<code>\N</code>为空值，再对上述转义去掉一个前缀，按字段类型还原。中文、引号和换行按标准CSV引用规则保留，不能按逗号或换行直接拆文件。</p>
 <p>当前最多10000行、16MiB，超限返回413（<code>export_row_limit_exceeded</code>或<code>export_size_limit_exceeded</code>）；SQL限时30秒，超时503 <code>export_query_timeout</code>，不返回截断的成功文件。错误仍为JSON。调整筛选后重新下载；接口只读取，不保存文件、不建任务、不调用模型。限制由服务的<code>list_export.json</code>配置。</p>
 <pre>curl --fail-with-body --get &quot;$API/api/v1/socai2/alerts/export&quot; \
-  -H &quot;Authorization: Bearer $TOKEN&quot; \
   --data-urlencode &#x27;severity=high&#x27; \
   --data-urlencode &#x27;sort_by=event_time&#x27; \
   --data-urlencode &#x27;sort_order=desc&#x27; \
   --data-urlencode &#x27;columns=facts.id,facts.title,facts.severity,facts.event_time&#x27; \
   --output alerts.csv</pre>
-<p><code>API</code>选择上述实际环境，<code>TOKEN</code>使用已有凭据；先检查HTTP状态，失败保存的内容是错误JSON，不能作为CSV交付。此下载流程不需要先翻页列表。</p>
+<p><code>API</code>选择上述实际环境；先检查HTTP状态，失败保存的内容是错误JSON，不能作为CSV交付。此下载流程不需要先翻页列表。</p>
 <h2 id="事件归并统计">事件归并统计</h2>
 <p><code>E57 GET /api/v1/socai2/incidents/grouping-summary</code>用于事件页顶部的“处理中”和“队列压缩”，不修改任何归并关系，也不启动模型。</p>
 <p>输入只支持<code>source_namespace</code>、<code>time_from</code>、<code>time_to</code>，都可省略。来源按告警来源精确匹配、区分大小写；时间按告警真实发生时间，须带时区，起点包含、终点不含，允许单边。时间筛选排除未知时间，无时间筛选则包含。它不接收事件表格的q、负责人、状态、排序或分页，额外参数返回422；不把两个列表统计拼接起来。</p>
@@ -79,8 +82,7 @@
 </table>
 <p>例如6条告警中4条归为2个事件、2条未归并，压缩比例为0.5，即“4条成员告警归为2个事件，压缩50%；另有2条未归并”。不能说全部6条都压缩了50%。该比例不是准确率、误报率或解决率。</p>
 <p>跨时间或来源的事件只计算范围内成员，事件去重计一次；已解决事件仍属于归并数量，处理中只按实际in_progress计算。无范围内成员的事件不计；Case/Run状态不参与。无命中返回各数量0和比例null，不是404。</p>
-<pre>GET /api/v1/socai2/incidents/grouping-summary?source_namespace=example&amp;time_from=2026-11-13T00%3A00%3A00Z&amp;time_to=2026-11-14T00%3A00%3A00Z
-Authorization: Bearer &lt;有效凭据&gt;</pre>
+<pre>GET /api/v1/socai2/incidents/grouping-summary?source_namespace=example&amp;time_from=2026-11-13T00%3A00%3A00Z&amp;time_to=2026-11-14T00%3A00%3A00Z</pre>
 <p>非法日期、空白来源、起点不早于终点或不支持的参数返回422；读取功能关闭、依赖缺失/结构不符返回503。错误与完整示例见E57的Swagger Responses。</p>
 <h2 id="case普通评论">Case普通评论</h2>
 <p>E58 <code>POST /api/v1/socai2/cases/{case_id}/comments</code> 输入真实Case ID和JSON：</p>
@@ -96,4 +98,5 @@ Authorization: Bearer &lt;有效凭据&gt;</pre>
 <p>3. E61 <code>GET</code>同路径按<code>limit/offset</code>读取目录；E62 <code>GET /api/v1/socai2/cases/{case_id}/attachments/{attachment_id}</code>读取单项元数据。E17读取登记活动和回执。</p>
 <p>4. 用户下载时，由业务后端根据<code>file_id</code>提供文件；文件失效也由业务后端处理。本服务不保存或返回下载URL，不抓取文件。</p>
 <p>大小、类型和哈希按业务后端提供的值保存；<code>availability=managed_by_backend</code>只表示由后端管理，不代表本服务探测文件存在或下载成功。<code>created_by/created_at</code>由服务端记录，是登记人/时间。未知哈希返回null；零字节文件允许size_bytes=0。</p>
-<p>同key同作者同元数据重试返回原记录；改意图409，同案同file_id另key重复登记409，读取目录获取原关联。文件内容变化须使用新file_id；本批没有附件修改、删除或自动分析。空白/非法元数据422，错误或跨案附件404；正文和任务结论保持。附件登记成功后可以查看关联，不代表上传和下载完整链路已经验收。</p></main></html>
+<p>同key同作者同元数据重试返回原记录；改意图409，同案同file_id另key重复登记409，读取目录获取原关联。文件内容变化须使用新file_id；本批没有附件修改、删除或自动分析。空白/非法元数据422，错误或跨案附件404；正文和任务结论保持。附件登记成功后可以查看关联，不代表上传和下载完整链路已经验收。</p>
+<p><a href="/handoff/sources/alert-host-http.html">E71同主机最近7条</a>：仅输入alert_id，无时间窗或分页参数，按当前已存记录发生时间排序，返回原告警和双方主机来源。不同战术仍可匹配；E70相似复核规则保持。</p></main></html>

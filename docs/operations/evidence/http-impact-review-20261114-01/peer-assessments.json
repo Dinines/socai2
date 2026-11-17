@@ -1,0 +1,28 @@
+[
+  {
+    "thread_id": "01a1d887-6fd1-7bb3-8073-591802e919c0",
+    "title": "阶段一实施",
+    "observed_date": "2026-11-14",
+    "messages": [
+      {
+        "phase": "commentary",
+        "text": "供接口侧汇总的阶段一影响评估如下，范围是步骤1–6已验实现及步骤7展示，不包含可信认证调整：\n\n1. **受影响入口**：执行入口 E13 `/cases/{case_id}/runs/{run_id}/start`、E36 `/alerts/{alert_id}/analyze`、E37 `/incidents/{incident_id}/diagnose`；结果读取 E12/E14、E22–E25；工件及材料读取 E15/E16、E31–E35。E03、E21/E63/E64沿现有采用链间接受影响。路径均按既有业务前缀使用，未新增操作。\n2. **固定 Schema 保持，业务语义和动态内容有变化**：引用问题不再隐式删除或改判原结论，`accepted/已采用`仍不代表引用或正文质量通过。工件增加独立原答、`citation_review`、C3补答计划/合并及`field_origins`、补查`activity`、`overflow_rows`和配置快照关联。原件详情取消旧1 MiB拒读限制，列表仍是元数据。具体字段位置已记录在[交接指南阶段一说明](/Users/lychee/Documents/project/socai2/FRONTEND_BACKEND_HANDOFF.md:182)。\n3. **调用规则保持**：E13/E36/E37仍同步等待；幂等键、超时后先查原Run、显式采用及人工选择保护保持。C3最多一次补缺仍受当前Run预算和C6预留限制。human建议不自动建任务；本阶段不改变采用、关闭、重开或自动调度规则。\n4. **发布与兼容边界**：步骤1–6已本地保存读取验收，步骤7正在完成浏览器验收，均未发布到核心或18024。已阅读接口侧的[同快照对比证据](/Users/lychee/Documents/project/socai2/docs/operations/evidence/http-impact-review-20261114-01/freshness-compatibility.json)：旧reader判`stale`、新reader判`current`；旧reader的大原件门槛也会造成混版拒读。因此应同步核心和独立API读侧，不能仅凭OpenAPI固定字段相同判断兼容。主要代码入口是`stage_inputs.py`、`citation_quality.py`、`case_c3_completion_flow.py`、`runtime_policy.py`及工件读取器。\n5. **仍属规划**：流式受理、自动首轮、周期检查、H触发C6复核及重试调度尚未实施，不计入当前71操作。流式任务表仍有“首轮明确启动”的旧表述，与新2.2“建Case自动首轮”不一致；未来任务对已结束unknown占用的调整也不能套用到现行关闭规则。接口侧应同步动态工件示例、读取关联、状态解释和版本依赖，待流式规格统一后再更新新增合同。\n\n步骤7只改内部静态查阅页；不据此宣称产品页面已接通或模型质量通过。\n"
+      },
+      {
+        "phase": "commentary",
+        "text": "第七步的浏览器验证已完成：21项检查通过，包括结论与状态分开、引用问题保留、C3三份输出区分、52万余字符原件完整展开，以及宽窄屏、键盘和切换空态。现在补齐最终检查和文档回执；本轮没有新增模型调用或业务写入。\n"
+      }
+    ]
+  },
+  {
+    "thread_id": "01a1d815-c721-7b12-9823-69b5a67b6b7c",
+    "title": "规划后续实施阶段目标",
+    "observed_date": "2026-11-14",
+    "messages": [
+      {
+        "phase": "final_answer",
+        "text": "已更新到设计：**调度器默认每 60 秒轮询一次 task／pending，使用独立配置 `dispatch.poll_interval_seconds`**。\n\n- 每轮按剩余并发名额领取，不是每分钟只执行一个。\n- 与事件 4 小时、Case 6 小时的材料检查分别配置。\n- 与失败重试等待 60 秒分别配置。\n- 调用超时收尾后释放名额，继续队列，不增加人工核实或解锁。:codex-annotation{index=\"1\" id=\"d282252e-c234-4437-a23e-45286a269f40\"}\n\n[队列设计](/Users/lychee/Documents/project/socai2/openspec/changes/schedule-streaming-investigation-updates/queue-dispatch-design-20261114.md:20)已更新，OpenSpec 校验通过，**尚未实施或修改运行配置**。\n\n接口对接聊天请求的[HTTP 影响评估](/Users/lychee/Documents/project/socai2/openspec/changes/schedule-streaming-investigation-updates/core-business-flow-review-20261114.md:371)也已补齐，主要结论是：\n\n- **E01 建案**：将自动排首轮。设计方向是复用返回的 `pending_run_id`；内部请求 ID、重试 Run 的映射和查询合同尚未定稿。\n- **E13/E36/E37 执行**：保持原同步返回语义，同时接统一门控；排队等待、已被自动领取时如何兼容旧调用，仍待明确。\n- **成员、人工结果及反馈接口**：保存后的有效变化将进入后续检查；保存接口本身不等待新调查。\n- **E44/E46 关闭判断**：已结束的 unknown 不再代表正在运行，因此即使字段不变，`can_close`、`blocking_runs` 的判断也会变化。\n- **读取与采用**：保留原件和历史，新增调度状态读取合同待定；动态工件、执行记录及上一轮比较内容会变化，不能宣称返回内容完全不变。\n\n新调度全部属于规划；阶段一本地成果、接口侧 docs20 候选均不能算作调度已交付。旧文档中的 H-only、首次另行启动等文字已标明冲突，实施及更新 Swagger 前还要统一收口。"
+      }
+    ]
+  }
+]

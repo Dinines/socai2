@@ -4,35 +4,66 @@ Only this adapter knows concrete services, database factories and feature flags.
 Internal workers continue to call the core directly and never import this package.
 """
 
-from uuid import uuid5
-
 from app.core.config import settings
 from app.db.case_database import get_case_write_sessions
 from app.db.database import AsyncSessionLocal
+from app.socai2.alert_hosts import AlertHostService
+from app.socai2.alert_review import AlertReviewService
 from app.socai2.baseline_store import StoreError
 from app.socai2.case_attachments import CaseAttachmentService
 from app.socai2.case_comments import CaseCommentService
 from app.socai2.case_management import manage_case, read_management
 from app.socai2.case_service import CaseService
+from app.socai2.case_story import CaseStoryService
+from app.socai2.exploration import ExplorationService
+from app.socai2.exploration_state import ExplorationStateService
 from app.socai2.grouping_summary import GroupingSummaryService
 from app.socai2.human_task_service import HumanTaskService
 from app.socai2.list_export import ListExportService
 from app.socai2.page_reader import PageReadService
 from app.socai2.stage_reader import StageReadService
-from app.socai2.stage_results import StageResultService
 from app.socai2.subject_management import SubjectManagementService
 
+from investigation_http.adapters.analysis_submissions import AnalysisSubmissionBackend
+from investigation_http.adapters.analysis_tasks import AnalysisTaskBackend
+from investigation_http.adapters.case_allocation import (
+    allocation_call,
+    allocation_urls,
+    member_change_urls,
+    related_case_urls,
+)
+from investigation_http.adapters.run_directory import RunDirectoryBackend
+from investigation_http.adapters.run_records import RunRecordBackend
 from investigation_http.ports import (
     AnalysisReads,
     CaseOperations,
     PageReads,
-    StageExecution,
     SubjectManagement,
     TaskOperations,
 )
 
 
 class CaseBackend(CaseService):
+    async def create_case(self, tenant_id, request, *, actor):
+        receipt = await allocation_call(super().create_case(tenant_id, request, actor=actor))
+        return allocation_urls(receipt)
+
+    async def associate(self, tenant_id, case_id, request, *, actor):
+        receipt = await allocation_call(super().associate(tenant_id, case_id, request, actor=actor))
+        return allocation_urls(receipt)
+
+    async def change_members(self, tenant_id, case_id, request, *, actor):
+        receipt = await allocation_call(super().change_members(tenant_id, case_id, request, actor=actor))
+        return member_change_urls(receipt)
+
+    async def move_members(self, tenant_id, case_id, request, *, actor):
+        receipt = await allocation_call(super().move_members(tenant_id, case_id, request, actor=actor))
+        return member_change_urls(receipt)
+
+    async def read_related_cases(self, tenant_id, case_id, *, limit=None, cursor=None):
+        page = await allocation_call(super().read_related_cases(tenant_id, case_id, limit=limit, cursor=cursor))
+        return related_case_urls(page)
+
     async def read_management(self, tenant_id, case_id):
         return await read_management(self, tenant_id, case_id)
 
@@ -40,22 +71,6 @@ class CaseBackend(CaseService):
         return await manage_case(
             self, tenant_id, case_id, request, actor, action=action
         )
-
-
-class ExecutionBackend:
-    def __init__(self, sessions):
-        self._execution = StageResultService(sessions)
-        self._reader = StageReadService(sessions)
-
-    async def execute(self, tenant_id, kind, identity, operation_key, *, requested_by):
-        action = (
-            self._execution.execute_alert
-            if kind == "alert_basic"
-            else self._execution.execute_incident
-        )
-        await action(tenant_id, identity, operation_key, requested_by=requested_by)
-        run_id = uuid5(tenant_id, "socai2.stage:" + str(operation_key))
-        return await self._reader.read_entry(tenant_id, kind, identity, run_id)
 
 
 def require_case_enabled():
@@ -85,6 +100,14 @@ def attachments(method):
     return CaseAttachmentService(case_sessions(method))
 
 
+def story():
+    return CaseStoryService(case_sessions("GET"))
+
+
+def exploration():
+    return ExplorationService(case_sessions("GET"))
+
+
 def tasks(method) -> TaskOperations:
     return HumanTaskService(case_sessions(method))
 
@@ -101,16 +124,32 @@ def analysis() -> AnalysisReads:
     return StageReadService(AsyncSessionLocal)
 
 
+def run_records():
+    if not settings.SOCAI2_ANALYSIS_READ_ENABLED:
+        raise StoreError("service_unavailable", 503)
+    return RunRecordBackend(AsyncSessionLocal)
+
+
+def run_directory():
+    if not settings.SOCAI2_ANALYSIS_READ_ENABLED:
+        raise StoreError("service_unavailable", 503)
+    return RunDirectoryBackend(AsyncSessionLocal)
+
+
+def analysis_tasks():
+    if not settings.SOCAI2_ANALYSIS_READ_ENABLED:
+        raise StoreError("service_unavailable", 503)
+    return AnalysisTaskBackend(AsyncSessionLocal)
+
+
+def analysis_submissions():
+    return AnalysisSubmissionBackend(case_sessions("POST"))
+
+
 def subjects() -> SubjectManagement:
     if not settings.SOCAI2_CASE_API_ENABLED:
         raise StoreError("socai2_subject_write_not_enabled", 503)
     return SubjectManagementService(get_case_write_sessions())
-
-
-def execution() -> StageExecution:
-    if not settings.SOCAI2_STAGE_EXECUTION_ENABLED:
-        raise StoreError("socai2_stage_execution_not_enabled", 503)
-    return ExecutionBackend(get_case_write_sessions())
 
 
 class ExportBackend(ListExportService):
@@ -130,3 +169,19 @@ def grouping():
     if not settings.SOCAI2_PAGE_READ_ENABLED:
         raise StoreError("socai2_page_read_not_enabled", 503)
     return GroupingSummaryService(AsyncSessionLocal)
+
+
+def exploration_state(method):
+    return ExplorationStateService(case_sessions(method))
+
+
+def alert_review():
+    if not settings.SOCAI2_PAGE_READ_ENABLED:
+        raise StoreError("socai2_page_read_not_enabled", 503)
+    return AlertReviewService(AsyncSessionLocal)
+
+
+def alert_hosts():
+    if not settings.SOCAI2_PAGE_READ_ENABLED:
+        raise StoreError("socai2_page_read_not_enabled", 503)
+    return AlertHostService(AsyncSessionLocal)

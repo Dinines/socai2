@@ -1,0 +1,476 @@
+{
+  "status": "target_contract_not_mounted",
+  "method": "GET",
+  "path": "/api/v1/socai2/analysis-runs",
+  "input": {
+    "$defs": {
+      "RunState": {
+        "enum": [
+          "pending_update",
+          "running",
+          "unknown",
+          "completed",
+          "failed",
+          "cancelled"
+        ],
+        "title": "RunState",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "subject_type": {
+        "anyOf": [
+          {
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Subject Type"
+      },
+      "subject_id": {
+        "anyOf": [
+          {
+            "format": "uuid",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Subject Id"
+      },
+      "run_kind": {
+        "anyOf": [
+          {
+            "enum": [
+              "alert_basic",
+              "incident_diagnosis",
+              "baseline",
+              "ai_question",
+              "targeted"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Run Kind"
+      },
+      "intent": {
+        "anyOf": [
+          {
+            "enum": [
+              "initial",
+              "check",
+              "rerun",
+              "targeted",
+              "synthesis"
+            ],
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Intent"
+      },
+      "state": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/RunState"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "time_from": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Time From"
+      },
+      "time_to": {
+        "anyOf": [
+          {
+            "format": "date-time",
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Time To"
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "minimum": 1,
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Limit"
+      },
+      "cursor": {
+        "anyOf": [
+          {
+            "maxLength": 4096,
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Cursor"
+      }
+    },
+    "title": "RunDirectoryQuery",
+    "type": "object"
+  },
+  "output": {
+    "$defs": {
+      "Delivery": {
+        "enum": [
+          "none",
+          "partial",
+          "complete",
+          "unknown"
+        ],
+        "title": "Delivery",
+        "type": "string"
+      },
+      "DirectoryResultRef": {
+        "additionalProperties": false,
+        "properties": {
+          "result_type": {
+            "enum": [
+              "case_result",
+              "alert_assessment",
+              "incident_diagnosis"
+            ],
+            "title": "Result Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_run_id": {
+            "format": "uuid",
+            "title": "Source Run Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result_type",
+          "id",
+          "source_run_id",
+          "kind",
+          "url"
+        ],
+        "title": "DirectoryResultRef",
+        "type": "object"
+      },
+      "RunDirectoryItem": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "subject_type": {
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type",
+            "type": "string"
+          },
+          "subject_id": {
+            "format": "uuid",
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "subject_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Title"
+          },
+          "run_kind": {
+            "enum": [
+              "alert_basic",
+              "incident_diagnosis",
+              "baseline",
+              "ai_question",
+              "targeted"
+            ],
+            "title": "Run Kind",
+            "type": "string"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "enum": [
+                  "initial",
+                  "check",
+                  "rerun",
+                  "targeted",
+                  "synthesis"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "state": {
+            "$ref": "#/$defs/RunState"
+          },
+          "delivery_state": {
+            "$ref": "#/$defs/Delivery"
+          },
+          "requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "input_member_count": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Member Count"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/$defs/DirectoryResultRef"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "detail_url": {
+            "title": "Detail Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "subject_type",
+          "subject_id",
+          "subject_title",
+          "run_kind",
+          "intent",
+          "task_id",
+          "state",
+          "delivery_state",
+          "requested_at",
+          "started_at",
+          "ended_at",
+          "input_member_count",
+          "results",
+          "detail_url"
+        ],
+        "title": "RunDirectoryItem",
+        "type": "object"
+      },
+      "RunDirectoryStatistics": {
+        "additionalProperties": false,
+        "properties": {
+          "total_runs": {
+            "minimum": 0,
+            "title": "Total Runs",
+            "type": "integer"
+          },
+          "by_state": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/$defs/RunState"
+            },
+            "title": "By State",
+            "type": "object"
+          },
+          "by_delivery_state": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/$defs/Delivery"
+            },
+            "title": "By Delivery State",
+            "type": "object"
+          },
+          "without_related_case_count": {
+            "minimum": 0,
+            "title": "Without Related Case Count",
+            "type": "integer"
+          },
+          "related_case_count": {
+            "minimum": 0,
+            "title": "Related Case Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_runs",
+          "by_state",
+          "by_delivery_state",
+          "without_related_case_count",
+          "related_case_count"
+        ],
+        "title": "RunDirectoryStatistics",
+        "type": "object"
+      },
+      "RunState": {
+        "enum": [
+          "pending_update",
+          "running",
+          "unknown",
+          "completed",
+          "failed",
+          "cancelled"
+        ],
+        "title": "RunState",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "items": {
+        "items": {
+          "$ref": "#/$defs/RunDirectoryItem"
+        },
+        "title": "Items",
+        "type": "array"
+      },
+      "total": {
+        "minimum": 0,
+        "title": "Total",
+        "type": "integer"
+      },
+      "next_cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Next Cursor"
+      },
+      "observed_at": {
+        "format": "date-time",
+        "title": "Observed At",
+        "type": "string"
+      },
+      "statistics": {
+        "$ref": "#/$defs/RunDirectoryStatistics"
+      }
+    },
+    "required": [
+      "items",
+      "total",
+      "next_cursor",
+      "observed_at",
+      "statistics"
+    ],
+    "title": "RunDirectoryPage",
+    "type": "object"
+  }
+}

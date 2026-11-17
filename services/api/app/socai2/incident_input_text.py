@@ -223,8 +223,9 @@ def prepare(data, source_map, config):
                 omit(path, original, "same_frozen_alert_field")
                 omissions[-1]["source_id"] = sid
                 continue
-        if path is not None and (path in cfg["metadata_paths"] or any(matches(p, path) for p in cfg["out_of_task_paths"])):
-            omit(path, original, "out_of_task" if path not in cfg["metadata_paths"] else "program_metadata")
+        program_metadata = path is not None and any(matches(p, path) for p in cfg["metadata_paths"])
+        if path is not None and (program_metadata or any(matches(p, path) for p in cfg["out_of_task_paths"])):
+            omit(path, original, "program_metadata" if program_metadata else "out_of_task")
             omissions[-1]["source_id"] = sid
             continue
         value = history_values[sid] if sid in history_values else select(original, path, owners) if path is not None else original

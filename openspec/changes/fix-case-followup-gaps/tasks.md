@@ -1,6 +1,6 @@
 **当前实际结果：** [r4/r5共享回执](../../../docs/operations/investigation-functional-followup-20261031.json)已完成常驻更新及定向追加验证：原预算内纠错、原生指定Tool、历史复用、原报告保持和结果读回已验，本change任务5/5。报告语义质量局限仍在当前审计change中保留；不据此宣称完整调查判断正确或自动归档。
 
-2026-10-31执行补充：[审计修复实施](../../../docs/investigation/audit-fixes-implementation-20261031.md)已完成包含新材料的组合验证，Office纠错16929/17018，原报告保持；required/reuse/correction组合通过。当前候选tag为20261031-r3，未部署；下列最后任务继续待办，不以新本地数字替代真实模型复验。
+2026-10-31执行补充：[审计修复实施](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-fixes-implementation-20261031.md)已完成包含新材料的组合验证，Office纠错16929/17018，原报告保持；required/reuse/correction组合通过。当前候选tag为20261031-r3，未部署；下列最后任务继续待办，不以新本地数字替代真实模型复验。
 
 - [x] Implement compact follow-up model view and recorded-budget reconstruction.
 - [x] Add explicit required_tools/native tool_choice with compatible empty intent.

@@ -1,55 +1,41 @@
-# 独立调查 HTTP 服务
+# 独立调查 HTTP 部署
 
-当前64个告警/事件/调查操作，其中62已实现、2预留501。原Case管理、告警/事件管理、三类列表查询和完整CSV已交付。前批[E57归并统计](../../openspec/changes/archive/2026-11-13-summarize-incident-grouping/validation.md)按同一告警来源/发生时间范围返回归并数量和明确比例。
+2026-11-16。21当前为 **streaming-http-20261116-r4**，入口[18024](http://192.168.1.21:18024)，正式库aisoc，80个业务操作，内部可信、无登录/Token要求。应用为`investigation_http.main:app`；HTTP受理并保存任务，独立调度器执行，GET不启动模型。
 
-| 环境 | Profile | 数据目标 | 入口 |
-| --- | --- | --- | --- |
-| 本机ARM64 Python | `local.json` | 本机隔离库`v12_upgrade_dev` | `http://127.0.0.1:18024` |
-| 21 AMD64 Docker | `aisoc21.json` | 正式库`aisoc` | `http://192.168.1.21:18024`，本批已发布，64操作 |
+## 当前包与运行
 
-两个环境共享HTTP合同，记录ID各属本环境。21原主API18000、旧独立API18020及其旧隔离库保持。新的正式入口不启动消费者、不自动执行调查；业务后端显式调用分析接口后仍会按现有业务执行模型，结果质量按响应及独立验收记录判断。
+- [完整profile](../aisoc21/streaming-release-20261116-04/http-profile.json)冻结729来源：721个app/investigation_http文件及8个配置/合同文件。六个新增核心模块、输入JSON与C1 Schema均进入同一镜像。
+- [启动回执](../../docs/operations/evidence/streaming-release-20261116-04/http-start-01.json)核镜像、版本、80操作及完整raw OpenAPI；[发布读回](../../docs/operations/evidence/streaming-release-20261116-04/deployment-ready.json)核729运行文件和三个业务空列表。
+- [Swagger 18080](http://192.168.1.21:18080/)使用同版[展示包](../api-docs/streaming-release-20261116-04/handoff/manifest.json)。tags/examples增强与raw合同分开，不能拿增强Swagger直接作manage.verify期望。
+- [新02验收](../../docs/operations/evidence/streaming-fullflow-20261116-02/README.md)负责Kafka、异步建案/更新及同源结果读取；就绪不等于整链或模型质量通过。
 
-对外HTTP与内部调查调用的代码边界见[架构说明](../../docs/design/investigation-http-boundary.md)。两端18024使用独立入口 `investigation_http.main:app`；当前21发布 `case-result-adoption-20261113-r1`，本机为同源 `case-result-adoption-20261113-r1-local`，根profile与case-attachments目录一致。新增归并统计只读、不触发调查；内部HTTP应用和组件客户端保持独立。
+运行目录为21 `/opt/sting-aisoc-socai2/deployments/streaming-release-20261116-04/http/releases/streaming-http-20261116-r4`，容器socai2-production-http-20261116-r4，旧HTTP停止。I4h、Case6h、7天窗口、1次/60秒重试保持；不再加载旧候选20秒/30秒、1天窗口覆盖。
 
-本机访问21使用`relay.json`的28024；验收正常登录使用`auth-relay.json`的28025转到原主服务认证入口。旧28000转发本轮返回空503，未修改；新转发与原账号正常登录已实际验证。过期旧key未续期或改权，认证token不写入公共证据。
+## 显式配置
 
-21本轮从已发布case-comments镜像派生，仅叠加case-attachments/aisoc21.json列出的8个文件。本机从同一已部署源码冻结后覆盖相同8文件，位于`../socai2-http-runtime/case-result-adoption-20261113-r1`。实际源码/镜像以本批回执为准，未带入并行模型修改，无迁移。
+字段说明见[配置字典](CONFIGURATION.md)，取值以本批profile为准。reader/writer来自明确指定的受控runtime_environment_file，本轮沿r2正式配置；prepare核host/port/database一致，使用普通密码及TLS require，不要求PG客户端CA/证书/私钥。秘密不进Git或日志。
 
-本机启动：
+tenant/actor沿正式[context](../aisoc21/streaming-release-20261116-02/context.json)，调用方不提交后台身份。包内policy、lifecycle、case-allocation、run-records和共享核心完整冻结。HTTP不直连Kafka、Redis或模型，内部阶段执行及自动迁移关闭。
+
+## 打包、构建和切换
+
+以下用于后续明确授权的新批次，不重放已结束发布。先按完整源码生成精确patches与hash；源码变化重新冻结整个包，不只复制路由或新模块。
 
 ```sh
-python3 deploy/http-service/manage.py --profile deploy/http-service/local.json local
+python3 deploy/http-service/manage.py --profile <新批HTTP-profile.json> package --output <新且不存在的目录>
 ```
 
-根local profile记录本机实际路径，换电脑时先复制为自己的profile，显式填写已准备的源码目录、Python路径、私密环境文件和目标数据库，再启动；不要直接使用原机器的绝对路径或静默切换数据库。当前本机18024已经运行，不需重复启动。
-
-21先在本机`package --output <新目录>`生成无凭据候选，传至profile的`root/releases/<release>`；在21按`prepare`、`build`、限定独审、`start`、`verify`顺序执行。构建使用显式本地镜像标签和已核对ID，`DOCKER_BUILDKIT=0`，不拉取基础镜像。每次新发布使用独立release目录和与当前运行基底一致的profile，不重复执行已完成批次的prepare。
+新镜像整体替换/app/app及/app/investigation_http，基镜像只供锁定依赖；构建使用`--pull=false --network none`。上传后可先build，无需提前停旧HTTP。切换前核无在途并停旧写入口，再在新解包目录执行：
 
 ```sh
 python3 manage.py --profile profile.json prepare
-python3 manage.py --profile profile.json build
 python3 manage.py --profile profile.json start
-python3 manage.py --profile profile.json verify
 ```
 
-私密环境只在主机`private/<release>/runtime.env`，权限0600；不进Git或文档。其他容器身份/镜像/启动时间在prepare时保存，verify逐值核对。当前18024是替换已有独立API容器；若需退回，使用上一release保留的compose、镜像和环境重新启动该API，并核对实际版本与数据目标，单纯停止新容器不会恢复旧版。18000/18020其他入口一直保留，数据库不回退或清空。
+prepare要求端口可绑定，生成0600私密env、Compose和其他容器快照。start核readyz、版本、完整raw合同、80操作、镜像及其他容器未变化；因此先完成HTTP start/verify，再启动本次其他新服务。不能在预期新服务已经启动后，用旧“其他容器不变”快照误报故障。
 
-[直接验证](../../openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)区分本机TCP、受限写连接、实际SQL读回和21发布观察；历史真实模型失败不因入口通过而关闭。HTTP操作验证用`verify_flow.py`及环境专属profile，一次新Case/H，意图和响应逐步保存，不自动重试POST、不启动Run。
+同批再核真实受理、attempt/Run、全分页步骤/工件及content_url。Case创建使用当前真实告警/事件；旧UUID不能重放到空库。唯一投放及业务操作由测试执行，独立审查复用同批证据。
 
-前批[归并统计验收](../../openspec/changes/archive/2026-11-13-summarize-incident-grouping/validation.md)包含新批次本机真实TCP/PG、原56操作合同保持和21既有合成范围只读复验；该批Swagger docs10同步，其他服务/消费者保持。18026仅作候选验收，正式入口18024。
+新C1写入后不可盲目切回旧r3核心或HTTP，见[回退边界](../aisoc21/README.md#回退边界)。旧18424/18480候选及逐批回执只作[历史追溯](../../docs/handoff/history/2026-11-16-release-r4/deploy/http-service/README.md)。
 
-本轮替换已有18024服务的profile显式设`replace_existing=true`，先核原镜像及端口；`expected_operations=64`用于读回。`case-result-adoption/preview.json`的18026仅作本机验收，正式本机使用根local.json的18024。`verify_management.py`按环境专属profile新建验收Case，记录意图及响应，不自动重试写入或启动模型。
-
-告警／事件验收使用 `verify_subject_management.py` 和 `subject-management/verify-*.json`，只操作本批明确标记的合成主体；`subject_management_fixture.py`提供受控新样本与SQL读回。`SOCAI2_MANAGEMENT_CONFIG_FILE`显式指定批量配置，默认交付`max_batch_items=100`，变更后重启本项服务。人工写入复用`SOCAI2_CASE_API_ENABLED`及既有调查写连接，关闭时新接口返回`503 socai2_subject_write_not_enabled`。
-
-三类列表验收脚本为verify_list_query.py，配置在list-query/；seed仅允许本机隔离库，一批只建一次，verify仅GET及只读SQL，不重派分析。发布后复验脚本和回执保存在本批证据目录。
-
-CSV导出配置为`app/socai2/list_export.json`，用`SOCAI2_EXPORT_CONFIG_FILE`显式选择；max_rows=10000、max_bytes=16777216、statement_timeout_ms=30000。启动时检查配置，错误不回落。完整只读CSV验证为`verify_list_export.py`及`list-export/verify-local.json`；发布后通过独立读取SQL核对。
-
-归并统计直接验收使用`verify_grouping.py`和`grouping-summary/verify-*.json`；seed仅允许明确本机验证库，一批一次，verify/http只读且不调用模型。E57无新增可变运行配置，复用页面读取开关、数据库与既有只读事务。
-
-本批普通评论E58/E59及验收见[Case评论](../../openspec/changes/archive/2026-11-13-add-case-comments/validation.md)。`case-comments/`保留评论批次profile，`verify_comments.py`新批次只创建明确标记的Case/H/评论，不启动Run；`--read-existing`只读复验。发布SQL脚本在容器内只读事务运行；只读rootfs拒绝docker cp时，保持配置，用docker exec标准输入执行，不放宽容器。
-
-当前附件引用E60–E62见[验收](../../openspec/changes/archive/2026-11-13-link-case-attachments/validation.md)；`case-attachments/`保留附件批次profile，`verify_attachments.py`只创建本批合成Case/H/文件引用，`--read-existing`只读复验。真实文件上传/下载由业务后端承接；测试使用明确合成file_id，不调用文件平台。21仅叠加8文件，无迁移，源码/配置及其他36容器已核对。
-
-当前采用发布使用`case-result-adoption/`，从附件基底叠加7文件；E21/E63/E64复用核心，本机20次HTTP/SQL通过。21只读已有判断、预览和历史；生产采用写入未实测。详细[本批验收](../../openspec/changes/archive/2026-11-13-adopt-investigation-results/validation.md)，测试不调用模型。
+[前后端交接](../../FRONTEND_BACKEND_HANDOFF.md) · [异步提交](../../docs/integration/analysis-submission-http.md) · [Case首轮](../../docs/integration/case-initial-http.md) · [步骤及原件](../../docs/integration/run-records-http.md)

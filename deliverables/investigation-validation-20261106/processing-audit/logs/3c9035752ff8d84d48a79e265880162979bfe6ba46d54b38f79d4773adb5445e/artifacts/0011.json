@@ -1,0 +1,98 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-14T01:38:40.293547+00:00",
+  "case_id": "06480fc3-706a-5a00-b687-4754a693d0b4",
+  "content_json": {
+    "captured_at": "2026-11-14T01:38:40.292921+00:00",
+    "direction": "response",
+    "model": "aisoc-investigation",
+    "payload": {
+      "raw": {
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "index": 0,
+            "message": {
+              "content": "{\n  \"summary\": \"本案涉及主机 socai2-flow-20261107-01 上用户 flow-observer 在 2026-11-07T06:33:27Z 至 06:44:07Z 期间的登录、出站连接及 PowerShell 进程启动行为。现有证据显示行为具有自动化流程特征（主机名/用户名含'flow'），但缺乏业务授权、演练标签或人工确认，无法排除恶意利用自动化名义进行隐蔽操作的可能性。所有成员均处于待复核状态，关键缺口在于业务授权记录的缺失。\",\n  \"members\": [\n    {\n      \"alert_id\": \"A1\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录显示用户 flow-observer 于 2026-11-07T06:38:27Z 从 IP 203.0.113.77 成功登录主机 socai2-flow-20261107-01，类别为身份认证。\",\n      \"evidence_ids\": [\"N3_S7\", \"N3_S8\", \"N3_S9\", \"N3_S10\", \"N3_S11\", \"N3_S12\", \"N3_S13\", \"N3_S14\", \"N3_S15\", \"N3_S18\", \"N3_S19\", \"N3_S20\", \"N3_S21\", \"N3_S22\", \"N3_S23\", \"N3_S24\", \"N3_S25\", \"N3_S26\", \"N3_S27\", \"N3_S28\"],\n      \"limitations\": [\"缺乏有效分诊判断，无法确认登录行为的业务上下文。\", \"未提供同次分诊的可核对查询回执，不能推断查询结果。\"]\n    },\n    {\n      \"alert_id\": \"A2\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录显示用户 flow-observer 于 2026-11-07T06:39:07Z 从 IP 192.0.2.77 成功建立出站 TCP 连接至 198.51.100.77:443，类别为网络活动。\",\n      \"evidence_ids\": [\"N3_S32\", \"N3_S33\", \"N3_S34\", \"N3_S35\", \"N3_S36\", \"N3_S37\", \"N3_S38\", \"N3_S39\", \"N3_S40\", \"N3_S41\", \"N3_S42\", \"N3_S43\", \"N3_S46\", \"N3_S47\", \"N3_S48\", \"N3_S49\", \"N3_S50\", \"N3_S51\", \"N3_S52\", \"N3_S53\", \"N3_S54\", \"N3_S55\", \"N3_S56\", \"N3_S57\", \"N3_S58\", \"N3_S59\", \"N3_S100\"],\n      \"limitations\": [\"缺乏业务授权记录或演练标签以证实连接合法性。\", \"威胁情报查询无结果，历史告警存在但性质未定。\"]\n    },\n    {\n      \"alert_id\": \"A3\",\n      \"state\": \"unresolved\",\n      \"summary\": \"记录显示用户 flow-observer 于 2026-11-07T06:38:47Z 在主机 socai2-flow-20261107-01 上成功启动 powershell.exe 并执行 Get-LocalUser 命令，类别为进程活动。\",\n      \"evidence_ids\": [\"N3_S64\", \"N3_S65\", \"N3_S66\", \"N3_S67\", \"N3_S68\", \"N3_S69\", \"N3_S70\", \"N3_S71\", \"N3_S72\", \"N3_S73\", \"N3_S76\", \"N3_S77\", \"N3_S78\", \"N3_S79\", \"N3_S80\", \"N3_S81\", \"N3_S82\", \"N3_S83\", \"N3_S84\", \"N3_S85\", \"N3_S86\", \"N3_S87\"],\n      \"limitations\": [\"缺乏业务授权记录或演练标签以证实进程启动的合法性。\", \"命令虽具信息收集特征，但缺乏恶意行为确凿证据。\"]\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"state\": \"observed\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N3_S8\", \"N3_S33\", \"N3_S65\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"行为可能属于预期的自动化监控或验证流程。\", \"行为可能为恶意攻击者利用自动化账号进行隐蔽操作。\"],\n      \"limitations\": [\"现有材料未提供业务授权、演练标签或人工确认来证实该自动化流程的合法性。\", \"所有成员均缺乏证实行为合法性的授权材料或演练标签。\"]\n    },\n    {\n      \"id\": \"F2\",\n      \"state\": \"inferred\",\n      \"statement\": \"三个告警在时间上紧密相连（间隔约 40 秒），且涉及同一主机和同一用户，行为序列（登录->进程启动->出站连接）符合典型的自动化脚本执行模式。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N3_S7\", \"N3_S32\", \"N3_S64\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"三个事件可能由不同来源独立触发，无逻辑关联。\"],\n      \"limitations\": [\"时间邻近和共同对象不能直接证明因果或影响；需进一步取证确认行为间的逻辑依赖。\"]\n    },\n    {\n      \"id\": \"F3\",\n      \"state\": \"unresolved\",\n      \"statement\": \"无法确定行为性质（良性/恶意/误操作），因缺乏关键授权证据。\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"support_ids\": [\"N3_S93\", \"N3_S94\", \"N3_S95\", \"N3_S96\", \"N3_S97\", \"N3_S98\", \"N3_S99\"],\n      \"counter_ids\": [],\n      \"alternatives\": [\"若存在业务授权或演练标签，则判定为良性；若存在恶意意图证据（如数据外传），则判定为恶意。\"],\n      \"limitations\": [\"未提供审批、查空、未接通不构成不存在或反证；省略不同于未发生。\"]\n    }\n  ],\n  \"questions\": [\n    {\n      \"id\": \"authorization\",\n      \"state\": \"unresolved\",\n      \"answer\": \"目前没有任何成员提供明确的业务授权材料、演练标签或人工确认记录来证实 flow-observer 用户在主机 socai2-flow-20261107-01 上的登录、进程启动及出站连接行为是合法的。\",\n      \"evidence_ids\": [\"N3_S93\", \"N3_S94\", \"N3_S95\", \"N3_S96\", \"N3_S97\", \"N3_S98\", \"N3_S99\"],\n      \"limitations\": [\"未提供审批、查空、未接通不构成不存在或反证；省略不同于未发生。历史案例卡的授权状态不继承至本案。\"]\n    },\n    {\n      \"id\": \"behavior_nature\",\n      \"state\": \"unresolved\",\n      \"answer\": \"行为性质无法定性。虽然主机名和用户名为'flow'暗示自动化流程，但缺乏确凿的良性证据（授权/演练）排除恶意利用自动化名义进行隐蔽操作的可能性。同时，现有证据也不足以证明存在恶意行为（如数据外传或横向移动）。\",\n      \"evidence_ids\": [\"N3_S93\", \"N3_S94\", \"N3_S95\", \"N3_S96\", \"N3_S97\", \"N3_S98\", \"N3_S99\"],\n      \"limitations\": [\"标签（如 synthetic）不证明对应行为发生或授权；不以单个标签或分数定性。\"]\n    },\n    {\n      \"id\": \"member_relationships\",\n      \"state\": \"unresolved\",\n      \"answer\": \"成员间存在时间邻近和共同对象（主机、用户）的关联，行为序列（登录->枚举->出站）在逻辑上可能构成一个完整的自动化任务。但无直接证据（如进程调用链、网络会话关联）证明 A1 的登录直接导致了 A3 的进程启动或 A2 的连接。\",\n      \"evidence_ids\": [\"N3_S7\", \"N3_S32\", \"N3_S64\", \"N3_S8\", \"N3_S33\", \"N3_S65\"],\n      \"limitations\": [\"共同对象、时间接近和图可达不能直接当成因果或影响；不以标签或分数定性。\"]\n    },\n    {\n      \"id\": \"impact\",\n      \"state\": \"unresolved\",\n      \"answer\": \"已观察到动作包括登录成功、进程启动成功、网络连接成功。尚未观察到具体的业务影响（如数据是否被读取、配置是否被修改、系统是否受损）。命令内容（Get-LocalUser）仅表示意图，未证明已读取信息或产生作用。\",\n      \"evidence_ids\": [\"N3_S11\", \"N3_S36\", \"N3_S70\"],\n      \"limitations\": [\"仅有命令内容/启动或连接记录时，明确结果与影响尚未确认；只有实际返回内容、作用结果或业务确认才能陈述已取得信息、修改状态或造成损失。\"]\n    },\n    {\n      \"id\": \"detection_facts\",\n      \"state\": \"unresolved\",\n      \"answer\": \"原始记录支持以下事实：A1 记录身份认证登录；A2 记录网络活动出站连接；A3 记录进程活动启动 PowerShell。所有记录均标记为 synthetic 和 production-multialert-20261107-01。\",\n      \"evidence_ids\": [\"N3_S12\", \"N3_S14\", \"N3_S15\", \"N3_S37\", \"N3_S42\", \"N3_S43\", \"N3_S71\", \"N3_S72\", \"N3_S73\"],\n      \"limitations\": [\"检测标签本身不是攻击事实；标签不证明授权或良性。\"]\n    }\n  ],\n  \"domains\": [\n    {\n      \"name\": \"identity\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及用户登录、认证及会话管理。\",\n      \"alert_ids\": [\"A1\"],\n      \"finding_ids\": [\"F1\", \"F3\"],\n      \"limitations\": [\"缺乏有效分诊判断，无法确认登录行为的业务上下文。\"]\n    },\n    {\n      \"name\": \"cloud\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及主机资源、网络配置及出站连接。\",\n      \"alert_ids\": [\"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"缺乏业务授权记录或演练标签以证实连接/进程启动的合法性。\"]\n    },\n    {\n      \"name\": \"phishing\",\n      \"applicability\": \"not_applicable\",\n      \"reason\": \"无邮件、链接、附件或投递相关证据。\",\n      \"alert_ids\": [],\n      \"finding_ids\": [],\n      \"limitations\": [\"无相关发现填[]。\"]\n    },\n    {\n      \"name\": \"insider\",\n      \"applicability\": \"applicable\",\n      \"reason\": \"涉及数据访问（枚举本地用户）及潜在外传（出站连接），需核实行为基线及授权。\",\n      \"alert_ids\": [\"A2\", \"A3\"],\n      \"finding_ids\": [\"F1\", \"F2\", \"F3\"],\n      \"limitations\": [\"不凭作息或角色定恶意；缺乏业务授权记录或演练标签以证实进程启动的合法性。\"]\n    }\n  ],\n  \"conflicts\": [],\n  \"followups\": [\n    {\n      \"question_id\": \"authorization\",\n      \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n      \"mode\": \"deep\",\n      \"objective\": \"查询业务授权文档、演练计划表或人工确认记录，以证实 flow-observer 用户在主机 socai2-flow-20261107-01 上的行为合法性。\",\n      \"required_evidence\": \"业务授权文档、演练计划表或人工确认记录。\"\n    ,\n    \"source_ids\": [\"N3_S99\"]\n  ,\n  \"object_keys\": [\"O1\", \"O5\"]\n  ,\n  \"binding_id\": null\n  ,\n  \"priority\": \"decision_critical\"\n  }\n  ,\n  {\n    \"question_id\": \"behavior_nature\",\n    \"alert_ids\": [\"A1\", \"A2\", \"A3\"],\n    \"mode\": \"deep\",\n    \"objective\": \"查询威胁情报、历史告警详情及资产库存，以辅助判断行为是已知良性自动化流程还是恶意活动。\",\n    \"required_evidence\": \"威胁情报匹配结果、历史告警关联分析、资产角色定义。\"\n  ,\n  \"source_ids\": [\"N3_S100\", \"N3_S232\", \"N3_S233\", \"N3_S300\"]\n  ,\n  \"object_keys\": [\"O1\", \"O2\", \"O3\", \"O4\", \"O5\"]\n  ,\n  \"binding_id\": null\n  ,\n  \"priority\": \"supporting\"\n  }\n  ]\n}",
+              "provider_specific_fields": {
+                "reasoning": null,
+                "refusal": null
+              },
+              "role": "assistant"
+            },
+            "provider_specific_fields": {
+              "routed_experts": null,
+              "stop_reason": null,
+              "token_ids": null
+            }
+          }
+        ],
+        "created": 1794620254,
+        "id": "chatcmpl-a77ece362bfdddf1",
+        "model": "aisoc-investigation",
+        "object": "chat.completion",
+        "system_fingerprint": "vllm-0.30.0-76652a79",
+        "usage": {
+          "completion_tokens": 3272,
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_tokens": 6653,
+          "total_tokens": 9925
+        }
+      },
+      "validation_error": null
+    },
+    "provider": "chat_completions",
+    "request_id": "chatcmpl-a77ece362bfdddf1",
+    "schema_version": "socai2.baseline-analysis.v2",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 6653,
+      "output_tokens": 3272,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-a77ece362bfdddf1",
+      "total_tokens": 9925,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "00000000-0000-0000-0000-000000000003",
+  "event_time": null,
+  "file_name": null,
+  "id": "618ebad8-dedd-4ebf-84e7-f598e54d2843",
+  "incident_id": null,
+  "kind": "model_response",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "a850144c1d63b9322754a26f5ee1abf35147e8ee0776726fc02114adf7c41662",
+    "original_size_bytes": 11600,
+    "reason": null,
+    "retained_sha256": "a850144c1d63b9322754a26f5ee1abf35147e8ee0776726fc02114adf7c41662",
+    "retained_size_bytes": 11600,
+    "truncated": false
+  },
+  "run_id": "aa400704-28ab-4abb-b99b-10a038d8d203",
+  "schema_version": "socai2.baseline-analysis.v2",
+  "sha256": "a850144c1d63b9322754a26f5ee1abf35147e8ee0776726fc02114adf7c41662",
+  "size_bytes": 11600,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "7c7c84ba-1af2-425a-ba97-423f8c0b6e76",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "049f0daf-1bb3-4590-b8ea-9afc5e6ac1ce",
+  "tenant_id": "00000000-0000-0000-0000-000000000001"
+}

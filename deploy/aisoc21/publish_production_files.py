@@ -65,7 +65,8 @@ if __name__ == "__main__":
     else:
         files = ["deploy/aisoc21/" + name for name in
                  ("production_processing.py", "production_profile.py", "production-profile.example.toml", "processing_job.py", "production_ingress.py",
-                  "production_projection.py", "compose.production-projection.yml", "compose.projection-activate.yml")]
+                  "production_projection.py", "projection_config.py", "analysis-projection.example.json",
+                  "compose.production-projection.yml", "compose.projection-activate.yml")]
         files.append("deploy/local-investigation/investigation-policy.toml")
         files.append("services/api/app/socai2/runtime_policy.py")
     publish(component, files)

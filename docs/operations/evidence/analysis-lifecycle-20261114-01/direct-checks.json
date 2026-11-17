@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-14",
+  "scope": "step1 local lifecycle; no model, Redis, deployment or public task GET",
+  "checks": [
+    {
+      "name": "configuration_and_installer_pytest",
+      "passed": true,
+      "count": 12,
+      "deselected": 3,
+      "command": "PYTHONPATH=services/api .local/conda-envs/socai2/bin/pytest -q services/api/tests/test_socai2_analysis_task_policy.py deploy/database/test_reader_install.py -k \"not installed and (policy or profile or missing_connection or one_increment or lifecycle)\""
+    },
+    {
+      "name": "migration128_local_apply_and_repeat",
+      "passed": true,
+      "database": "v12_upgrade_dev",
+      "mode": "analysis-lifecycle",
+      "new_tables": 3,
+      "new_columns": 61,
+      "resulting_tables": 31,
+      "resulting_columns": 511,
+      "receipt_source": "observed installer tool outputs; initial syntax failure retained in migration-02.txt"
+    },
+    {
+      "name": "reader_install_verify",
+      "passed": true,
+      "stdout": "verified_socai2_v1_2_reader",
+      "database": "v12_upgrade_dev"
+    },
+    {
+      "name": "PG_final",
+      "passed": true,
+      "file": "pg-05.json",
+      "checks": 12,
+      "source_changed_during_run": false
+    },
+    {
+      "name": "edited_document_links_fences_whitespace",
+      "passed": true,
+      "links": 284,
+      "files": [
+        "PROGRESS.md",
+        "FRONTEND_BACKEND_HANDOFF.md",
+        "docs/operations/configuration.md",
+        "deploy/database/CURRENT.md",
+        "docs/investigation/investigation-implementation-plan-20261114.md",
+        "openspec/changes/schedule-streaming-investigation-updates/tasks.md",
+        "openspec/changes/schedule-streaming-investigation-updates/storage-and-runtime-design-20261114.md",
+        "openspec/changes/schedule-streaming-investigation-updates/validation.md",
+        "docs/operations/evidence/analysis-lifecycle-20261114-01/README.md"
+      ]
+    },
+    {
+      "name": "changed_python_ruff",
+      "passed": true
+    },
+    {
+      "name": "openspec_strict",
+      "passed": true,
+      "change": "schedule-streaming-investigation-updates"
+    },
+    {
+      "name": "HTTP_peer_handoff_readback",
+      "passed": true,
+      "source": "../run-directory-http-20261114-01/README.md",
+      "ASGI_requests": 32,
+      "base_reads": 10,
+      "public_task_GET": "not_implemented",
+      "not_rerun_by_core_chat": true
+    }
+  ],
+  "v1_and_previous_migration_sha256": {
+    "services/api/migrations/124_socai2_case_source_binding.sql": "9e63d49879fb726fd5b160d676732c2cbab637b1322c49f463dea99d6ca5632d",
+    "services/api/migrations/127_socai2_remove_unused_graph_table.sql": "ea5e58f7cbe66cbf00d689ccbd17690691f0478dd2956b8b81402ba4eefed832",
+    "services/api/migrations/125_socai2_baseline_input_freshness.sql": "262bc3343d7751b36b9c3ee69046ed858533dd8fc7ecf58c4a24f8e714d5473f",
+    "services/api/migrations/123_socai2_page_data_model.sql": "b9b10bad0131e279b802fb5c3e02ef16cf9be856398fe5be57366b00826f653b",
+    "services/api/migrations/126_socai2_case_page_data.sql": "37cea51691ca89de7fce19cd67a040f2bb77da1310f2f02366adb20f3b6ac063"
+  },
+  "phase1_sha256": "cd2217f3b7bffd3e1ce71a4bbd2d32bc14a081dbc14c0b5ec35c1e1b1325a2f2",
+  "tasks": {
+    "complete-socai2-investigation-chain": {
+      "completed": 31,
+      "total": 41
+    },
+    "schedule-streaming-investigation-updates": {
+      "completed": 1,
+      "total": 11
+    }
+  },
+  "fresh_database_initialization": "not_rerun",
+  "model_quality": "NOT_PASSED"
+}

@@ -80,7 +80,7 @@ def payloads(policy):
             files[f"{prefix}/{relative.as_posix()}"] = source_bytes(path)
         if f"{prefix}/__init__.py" not in files:
             raise ValueError("Missing application package")
-    for name in ("processing_job.py", "production_ingress.py", "build_processing_image.py"):
+    for name in ("processing_job.py", "production_ingress.py", "production_projection.py", "projection_config.py", "build_processing_image.py"):
         files[name] = source_bytes(DEPLOY / name)
     files["Dockerfile"] = source_bytes(DEPLOY / "processing.Dockerfile")
     files["investigation-policy.toml"] = policy

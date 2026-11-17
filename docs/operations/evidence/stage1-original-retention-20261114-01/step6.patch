@@ -1,0 +1,870 @@
+--- services/api/app/socai2/baseline_context.py before step6
++++ services/api/app/socai2/baseline_context.py after step6
+@@ -10,9 +10,6 @@
+ from sqlalchemy import text
+ 
+ from .baseline_contracts import Contract, Question, Scope
+-from .runtime_policy import (
+-    retention_limit as retention_limit,  # noqa: PLC0414 - reader compatibility
+-)
+ from .stage_inputs import Freshness, freshness_sql
+ 
+ SCHEMA = "socai2.baseline-context.v1"
+--- services/api/app/socai2/stage_reader.py before step6
++++ services/api/app/socai2/stage_reader.py after step6
+@@ -5,7 +5,6 @@
+ 
+ from .baseline_service import BaselineService
+ from .baseline_store import StoreError, digest, encoded
+-from .runtime_policy import retention_limit
+ from .stage_inputs import freshness_sql
+ from .stage_read_contracts import StageEntry, StagePage, StageRunView
+ from .stage_results import AS, D, F, R, parent
+@@ -44,8 +43,6 @@
+             reason = None
+             if art["material_state"] != "complete" or art["blob_ref"] is not None:
+                 reason = "external_or_incomplete_content"
+-            elif len(encoded(body)) > retention_limit():
+-                reason = "content_exceeds_read_limit"
+             elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
+                 reason = "content_integrity_mismatch"
+             return {"artifact_id": art["id"], "available": reason is None, "reason": reason,
+@@ -70,8 +67,6 @@
+                 if body is not None and art["blob_ref"] is None:
+                     if art["material_state"] != "complete":
+                         reason = "material_" + art["material_state"]
+-                    elif len(encoded(body)) > retention_limit():
+-                        reason = "content_exceeds_read_limit"
+                     elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
+                         reason = "content_integrity_mismatch"
+                     else:
+--- services/api/app/socai2/baseline_graph_projection.py before step6
++++ services/api/app/socai2/baseline_graph_projection.py after step6
+@@ -7,9 +7,10 @@
+ from collections import Counter
+ from uuid import UUID
+ 
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_model_view import blocked, field_limit
+ from .baseline_store import StoreError, digest, encoded
++from .runtime_policy import graph_limit
+ 
+ SCHEMA = "socai2.baseline-graph.v1"
+ MAX_NODES, MAX_EDGES = 200, 400
+@@ -60,8 +61,8 @@
+         self.edges.update({e["id"]: e for e in edges})
+         self.records.append(record)
+         if (len(self.nodes) > MAX_NODES or len(self.edges) > MAX_EDGES
+-                or len(encoded(self.graph())) > retention_limit() - 8192
+-                or len(encoded(self.records)) > retention_limit() - 16384):
++                or len(encoded(self.graph())) > graph_limit() - 8192
++                or len(encoded(self.records)) > graph_limit() - 16384):
+             self.nodes, self.edges, self.records = before
+             if mandatory:
+                 raise StoreError("graph_member_anchors_exceed_retention_limit", 422)
+@@ -203,7 +204,7 @@
+     graph = p.graph()
+     return graph, {"records": p.records, "coverage": coverage, "queries": queries,
+         "omissions": dict(p.omissions), "limits": {"nodes": MAX_NODES, "edges": MAX_EDGES,
+-            "artifact_bytes": retention_limit()}, "limitations": LIMITATIONS + [
++            "artifact_bytes": graph_limit()}, "limitations": LIMITATIONS + [
+             "query_binding_does_not_prove_alert_membership", "empty_query_does_not_disprove_relationship",
+             "missing_or_omitted_edge_does_not_disprove_relationship"]}
+ 
+--- services/api/app/socai2/case_data.py before step6
++++ services/api/app/socai2/case_data.py after step6
+@@ -6,7 +6,7 @@
+ 
+ from app.models import socai2 as m
+ 
+-from .baseline_store import C, F, StoreError, digest, encoded
++from .baseline_store import C, F, StoreError, digest
+ from .case_data_contracts import (
+     KIND,
+     SCHEMA,
+@@ -318,7 +318,6 @@
+ 
+ async def save_index(store, cas, index, *, actor_id, now, run_id=None, step_id=None):
+     """Shared validation/storage for manual and normal C6 publication."""
+-    from .runtime_policy import retention_limit
+     current, case_id = cas["current_evidence_artifact_id"], cas["id"]
+     if index.supersedes_artifact_id != current:
+         raise StoreError("case_evidence_version_conflict")
+@@ -334,8 +333,6 @@
+             raise StoreError("evidence_previous_index_invalid", 422)
+     await validate_sources(index, store.tenant_id, case_id, lookup, await object_map(store, index))
+     payload = index.model_dump(mode="json")
+-    if len(encoded(payload)) > retention_limit():
+-        raise StoreError("evidence_index_too_large", 422)
+     identity = uuid4()
+     refs = [r.model_dump(mode="json") for e in index.entries for r in e.source_refs]
+     await store.save_input_artifact(case_id, run_id, identity, payload, kind=KIND, schema=SCHEMA,
+--- services/api/app/socai2/runtime_policy.py before step6
++++ services/api/app/socai2/runtime_policy.py after step6
+@@ -233,6 +233,8 @@
+     model: object
+     tools: object
+     labels: object
++    views: object
++    raw: bytes
+     incident_io: object = None
+     alert_io: object = None
+     case_io: object = None
+@@ -241,11 +243,25 @@
+     def identity(self):
+         return self.version + ":" + self.sha256[:12]
+ 
++    def snapshot(self):
++        """Validated configuration only, never process environment or secrets."""
++        profiles = {}
++        for name in ("alert_io", "incident_io", "case_io"):
++            profile = getattr(self, name)
++            if profile is not None:
++                profiles[name] = {"sha256": profile.sha256, "json_text": profile.raw.decode("utf-8")}
++                if isinstance(profile, CaseProfile):
++                    profiles[name]["business"] = {
++                        "sha256": hashlib.sha256(profile.business_raw).hexdigest(),
++                        "json_text": profile.business_raw.decode("utf-8")}
++        return {"schema_version": "socai2.runtime-policy.v1", "policy_id": self.identity,
++                "sha256": self.sha256, "toml_text": self.raw.decode("utf-8"), "profiles": profiles}
++
+ 
+ def load_policy(path):
+     raw = Path(path).read_bytes()
+     data = tomllib.loads(raw.decode("utf-8"))
+-    if set(data) - {"incident_io", "alert_io", "case_io"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels"}:
++    if set(data) - {"incident_io", "alert_io", "case_io"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels", "views"}:
+         raise ValueError("investigation_policy_configuration_incomplete")
+     if not isinstance(data["version"], str) or not data["version"].strip() or len(data["version"]) > 100:
+         raise ValueError("investigation_policy_version_invalid")
+@@ -281,6 +297,10 @@
+                 or urlsplit(spec["source_url"]).scheme != "https"):
+             raise ValueError("investigation_policy_label_entry_invalid")
+     incident_io = None
++    views = data["views"]
++    if (not isinstance(views, dict) or set(views) != {"max_graph_bytes"}
++            or type(views["max_graph_bytes"]) is not int or views["max_graph_bytes"] <= 16384):
++        raise ValueError("investigation_policy_view_capacity_invalid")
+     if "incident_io" in data:
+         incident_io = load_incident_profile(data["incident_io"])
+     alert_io = load_alert_profile(data["alert_io"]) if "alert_io" in data else None
+@@ -288,6 +308,7 @@
+     return InvestigationPolicy(version=data["version"], sha256=hashlib.sha256(raw).hexdigest(), incident_io=incident_io, alert_io=alert_io, case_io=case_io,
+         single_model_timeout_seconds=data["single_model_timeout_seconds"],
+         final_reserve_seconds=data["final_reserve_seconds"], model=ModelPolicy.parse(data["model"]),
++        views=MappingProxyType(views), raw=raw,
+         tools=MappingProxyType({k: MappingProxyType(v) for k, v in tools.items()}),
+         labels=MappingProxyType({"version": labels["version"], "entries": MappingProxyType({
+             k: MappingProxyType(v) for k, v in labels["entries"].items()})}), **stages)
+@@ -300,7 +321,6 @@
+     schema_profile: str
+     context_tokens: int
+     max_prepared_bytes: int
+-    max_artifact_bytes: int
+     final_reserved_input_tokens: int
+     final_reserved_calls: int
+     output_tokens: object
+@@ -315,7 +335,7 @@
+                 raise ValueError("model_policy_identity_invalid")
+         if values["protocol"] != "chat_completions":
+             raise ValueError("model_policy_token_meter_protocol_not_supported")
+-        for key in ("context_tokens", "max_prepared_bytes", "max_artifact_bytes", "final_reserved_input_tokens", "final_reserved_calls"):
++        for key in ("context_tokens", "max_prepared_bytes", "final_reserved_input_tokens", "final_reserved_calls"):
+             if type(values[key]) is not int or values[key] <= 0:
+                 raise ValueError("model_policy_capacity_invalid")
+         outputs, tokenizer = values["output_tokens"], values["tokenizer"]
+@@ -350,7 +370,7 @@
+ 
+ 
+ def draft_limit():
+-    """Preparation/storage ceiling; final token measurement decides model fit."""
++    """Model-view preparation ceiling; never an original storage/read limit."""
+     return active_policy().model.max_prepared_bytes
+ 
+ 
+@@ -359,5 +379,6 @@
+     return draft_limit()
+ 
+ 
+-def retention_limit():
+-    return active_policy().model.max_artifact_bytes
++def graph_limit():
++    """Derived C5 view allowance; retained originals are stored independently."""
++    return active_policy().views["max_graph_bytes"]
+--- services/api/app/socai2/baseline_store.py before step6
++++ services/api/app/socai2/baseline_store.py after step6
+@@ -245,8 +245,6 @@
+         if not context.alerts:
+             raise StoreError("baseline_scope_empty")
+         payload = context.model_dump(mode="json")
+-        if len(encoded(payload)) > c1.retention_limit():
+-            raise StoreError("baseline_context_too_large", 422)
+         rows = [{key: UUID(a.alert[key]) if a.alert[key] else None
+                  for key in ["id", "latest_material_id", "latest_triage_id", "latest_feedback_id"]}
+                 for a in context.alerts.values()]
+@@ -256,9 +254,15 @@
+         await self.save_input_artifact(case_id, run_id, context_id, payload, kind="source_snapshot",
+             schema=c1.SCHEMA, captured_at=now, refs=refs, actor_id=actor.user_id)
+         context_ref = c1.reference("artifact", context_id, "execution_receipt")
++        from .runtime_policy import active_policy
++        policy_id = uuid4()
++        await self.save_input_artifact(case_id, run_id, policy_id, active_policy().snapshot(),
++            kind="source_snapshot", schema="socai2.runtime-policy.v1", captured_at=now,
++            refs=[], actor_id=actor.user_id)
++        policy_ref = c1.reference("artifact", policy_id, "execution_receipt")
+         snapshot = {"schema_version": "socai2.page-model.v1", "run_kind": "baseline",
+             "scope_revision": cas["scope_revision"], "scope": context.scope.model_dump(mode="json"),
+-            "source_materials": [context_ref, *refs],
++            "source_materials": [context_ref, policy_ref, *refs],
+             "prior_results": sorted(context.prior_results),
+             "task_revisions": sorted({r["id"] for r in refs if r["type"] == "task_revision"}),
+             "comparison_result_id": str(request.comparison_result_id) if request.comparison_result_id else None,
+@@ -266,7 +270,7 @@
+             "omissions": [{"source_ref": context_ref, "reason": f"{o.section}:{o.source_id or '-'}:{o.reason}"}
+                           for o in context.omissions], "captured_at": now.isoformat()}
+         await self.save_input_artifact(case_id, run_id, artifact_id, snapshot, kind="input_snapshot",
+-            schema="socai2.page-model.v1", captured_at=now, refs=[context_ref, *refs], actor_id=actor.user_id)
++            schema="socai2.page-model.v1", captured_at=now, refs=[context_ref, policy_ref, *refs], actor_id=actor.user_id)
+         await self.db.execute(update(R).where(*self.where(R, R.c.id == run_id)).values(
+             state="running", input_artifact_id=artifact_id, operation_key=str(request.operation_key),
+             request_hash=intent, executor_version=executor_version, limits=limits.model_dump(mode="json"),
+--- services/api/app/socai2/baseline_delivery.py before step6
++++ services/api/app/socai2/baseline_delivery.py after step6
+@@ -12,7 +12,7 @@
+ from . import baseline_graph_projection as graph_contract
+ from .baseline_analysis import domain_block
+ from .baseline_analysis_model import TenantChatGateway
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Scope
+ from .baseline_delivery_compat import normalize as normalize_delivery
+ from .baseline_delivery_projection import make_publication, markdown
+@@ -231,8 +231,6 @@
+                 "input_artifact_ids": prepared["input_artifact_ids"], "domain_artifact_ids": domains,
+                 "execution": execution, "limitations": limits + ["structure_scope_checked_citations_recorded_not_truth_proven"],
+                 "captured_at": now.isoformat()}
+-            if len(encoded(report)) > retention_limit():
+-                raise StoreError("delivery_artifact_exceeds_retention_limit", 422)
+             detail_id = await self.save(store, run, stage_id, report, "source_snapshot", refs)
+             report_core = {"schema_version": contract.SCHEMA, "result_id": str(result_id),
+                 "citation_review": report["citation_review"],
+@@ -263,8 +261,6 @@
+ 
+     async def save_markdown(self, store, run, step_id, text, report_id, detail_id):
+         body = text.encode("utf-8")
+-        if len(body) > retention_limit():
+-            raise StoreError("delivery_markdown_exceeds_retention_limit", 422)
+         identity, sha = uuid4(), hashlib.sha256(body).hexdigest()
+         await store.db.execute(insert(F).values(id=identity, tenant_id=store.tenant_id,
+             case_id=run["case_id"], run_id=run["id"], step_id=step_id, kind="report_markdown",
+--- services/api/app/socai2/page_reader.py before step6
++++ services/api/app/socai2/page_reader.py after step6
+@@ -6,10 +6,12 @@
+ 
+ from app.models import socai2 as m
+ 
++from . import list_query as lists
+ from .baseline_service import BaselineService
+ from .baseline_store import StoreError, encoded
+ from .case_contracts import project
+ from .case_reader import ARTIFACT_FIELDS, usage_totals
++from .list_query_contracts import AlertListQuery, IncidentListQuery
+ from .page_contracts import (
+     AlertFacts,
+     IncidentFacts,
+@@ -21,12 +23,9 @@
+ from .read_sources import ReadSources, lookup_error
+ from .stage_inputs import freshness_sql
+ from .stage_reader import StageReader
+-from . import list_query as lists
+-from .list_query_contracts import AlertListQuery, IncidentListQuery
+ 
+ A, I, M, O, L, R, S, F = (x.__table__ for x in (m.Alerts, m.Incidents, m.AlertMaterials,
+     m.AlertObjects, m.IncidentAlerts, m.Runs, m.RunSteps, m.Artifacts))
+-from .runtime_policy import retention_limit
+ 
+ MAX_STEPS = 1000
+ MAX_ARTIFACTS = 200
+@@ -340,8 +339,6 @@
+         if not row:
+             raise StoreError("alert_material_not_found", 404)
+         out = {"metadata": public(row), "availability": "content_exceeds_read_limit", "content_json": None, "content_text": None}
+-        if row["content_bytes"] > retention_limit():
+-            return out
+         body = await self.store.one(select(M.c.raw_json, M.c.raw_text, M.c.ocsf_json, M.c.enrichment).where(*filters))
+         return {**out, "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"],
+             "content_json": {k: body[k] for k in ("raw_json", "ocsf_json", "enrichment")}, "content_text": body["raw_text"]}
+@@ -380,7 +377,7 @@
+         out = {"metadata": public(row, "external"), "availability": "unavailable", "content_json": None, "content_text": None}
+         if row["external"]:
+             return {**out, "availability": "external_content_not_loaded"}
+-        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
++        if row["size_bytes"] is None:
+             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
+         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
+         value = body["content_json"]
+--- services/api/app/socai2/baseline_reasoning.py before step6
++++ services/api/app/socai2/baseline_reasoning.py after step6
+@@ -10,7 +10,7 @@
+ from .baseline_analysis import budget_reason, reserved_calls
+ from .baseline_analysis_model import usage
+ from .baseline_capacity import final_wire_reason, remaining_seconds, reservation_for
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_contracts import Limits
+ from .baseline_enrichment import S, error
+ from .baseline_evidence import BaselineEvidence
+@@ -118,8 +118,6 @@
+         self.schema = schema
+ 
+     async def save(self, store, run, step, payload, kind, refs=()):
+-        if len(encoded(payload)) > retention_limit():
+-            raise StoreError("reasoning_artifact_exceeds_retention_limit", 422)
+         identity = uuid4()
+         await store.save_input_artifact(run["case_id"], run["id"], identity, payload, kind=kind,
+             schema=self.schema, captured_at=await store.now(), refs=list(refs), actor_id=run["requested_by"], step_id=step)
+--- services/api/app/socai2/baseline_enrichment.py before step6
++++ services/api/app/socai2/baseline_enrichment.py after step6
+@@ -13,7 +13,7 @@
+ 
+ from . import baseline_enrichment_sources as sources
+ from .baseline_context import SCHEMA as C1_SCHEMA
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Limits
+ from .baseline_optional_sources import SourceUnavailable
+ from .baseline_store import F, StoreError, digest, encoded
+@@ -201,6 +201,7 @@
+             await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(input_artifact_id=request_id))
+         state, rows, captured, truncated = "skipped", None, now, False
+         observed_rows, truncation_reasons = None, []
++        overflow_rows = []
+         source_metadata = {}
+         if reason is None:
+             try:
+@@ -215,13 +216,7 @@
+                 if source_metadata.get("source_truncated_count", 0):
+                     truncated = True
+                     truncation_reasons.append("upstream_row_limit")
+-                rows = rows[:args["limit"]]
+-                # Whole rows only. Mark omitted rows; never clip JSON or a fact.
+-                if len(encoded(rows)) > retention_limit():
+-                    truncation_reasons.append("retained_row_bytes_limit")
+-                while rows and len(encoded(rows)) > retention_limit():
+-                    rows.pop()
+-                    truncated = True
++                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
+                 state = "completed"
+             except TimeoutError:
+                 state, reason, rows = "timeout", "source_deadline_exceeded", None
+@@ -241,6 +236,8 @@
+                 raise StoreError("baseline_not_running")
+             result = {"schema_version": SCHEMA, "tool_name": source, "contract_version": sources.VERSION,
+                 "actual_args": args, "state": state, "rows": rows,
++                "overflow_rows": overflow_rows, "observed_rows_in_bounded_fetch": observed_rows,
++                "truncation_reasons": truncation_reasons, "source_metadata": source_metadata,
+                 "returned_rows": len(rows) if rows is not None else None, "truncated": truncated,
+                 "query_id": "local-step:" + str(step_id) if state != "skipped" else None,
+                 "error": error(reason, await store.now()) if reason else None, "captured_at": captured.isoformat()}
+--- services/api/app/socai2/baseline_evidence.py before step6
++++ services/api/app/socai2/baseline_evidence.py after step6
+@@ -10,7 +10,7 @@
+ from sqlalchemy import func, insert, null, select, update
+ 
+ from . import baseline_evidence_tools as tools
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_contracts import Limits
+ from .baseline_enrichment import S, error
+ from .baseline_model_view import SYSTEM, blocked, draft_limit
+@@ -48,8 +48,6 @@
+ 
+     async def artifact(self, store, run, payload, *, kind="source_snapshot", step=None, refs=None):
+         identity = uuid4()
+-        if len(encoded(payload)) > retention_limit():
+-            raise StoreError("evidence_artifact_exceeds_retention_limit", 422)
+         await store.save_input_artifact(run["case_id"], run["id"], identity, payload,
+             kind=kind, schema=SCHEMA, captured_at=await store.now(), refs=refs or [],
+             actor_id=run["requested_by"], step_id=step)
+@@ -188,6 +186,7 @@
+             deadline = asyncio.get_running_loop().time() + remaining
+         try:
+             rows, state, observed, truncated, omitted = None, "skipped", None, False, []
++            overflow_rows = []
+             if reason is None and deadline - asyncio.get_running_loop().time() < 1:
+                 reason = "insufficient_query_time"
+             if reason is None:
+@@ -206,12 +205,7 @@
+                 observed, truncated = len(rows), len(rows) > args["limit"]
+                 if truncated:
+                     omitted.append("row_limit")
+-                rows = rows[:args["limit"]]
+-                if len(encoded(rows)) > retention_limit() // 2:
+-                    omitted.append("retained_row_bytes_limit")
+-                while rows and len(encoded(rows)) > retention_limit() // 2:
+-                    rows.pop()
+-                    truncated = True
++                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
+                 state = "completed"
+             async with self.service.transaction(tenant_id) as store:
+                 run = await self.locked(store, case_id, run_id)
+@@ -220,9 +214,19 @@
+                 captured = await store.now()
+                 raw = {"schema_version": SCHEMA, "tool_name": args["tool_name"], "contract_version": tools.VERSION,
+                     "actual_args": args, "state": state, "rows": rows, "returned_rows": len(rows) if rows is not None else None,
++                    "overflow_rows": overflow_rows, "observed_rows_in_bounded_fetch": observed,
++                    "truncation_reasons": omitted,
+                     "truncated": truncated, "query_id": query_id if state != "skipped" else None,
+                     "error": error(reason, captured) if reason else None, "captured_at": captured.isoformat()}
+                 raw_id = await self.artifact(store, run, raw, kind="tool_response", step=step_id, refs=refs)
++                # Commit the received original before deriving a business view.
++                # A projection failure must not roll back an acquired response.
++                await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(
++                    output_artifact_id=raw_id))
++            async with self.service.transaction(tenant_id) as store:
++                run = await self.locked(store, case_id, run_id)
++                if run["state"] != "running":
++                    raise StoreError("baseline_not_running")
+                 projected = {"schema_version": SCHEMA, "type": "query_projection", "run_id": str(run_id),
+                     "binding_id": binding_id, "question_id": question_id, "alert_ids": binding["alert_ids"],
+                     "receipt_id": str(raw_id), "state": state, "reason": reason,
+@@ -231,12 +235,8 @@
+                     "limitations": binding["limitations"], "captured_at": captured.isoformat()}
+                 if binding["tool_name"] == "product_host_details":
+                     projected["source_role"] = "source_label"
+-                # Semantic projections are independently bounded; preserve raw rows.
+-                while projected["rows"] and len(encoded(projected)) > retention_limit():
+-                    projected["rows"].pop()
+-                    projected["truncated"] = True
+-                    if "semantic_projection_bytes_limit" not in projected["omissions"]:
+-                        projected["omissions"].append("semantic_projection_bytes_limit")
++                # Full business projection is retained. Model-view selection
++                # happens later under the independent preparation/token caps.
+                 await self.artifact(store, run, projected, step=step_id,
+                     refs=[reference("artifact", raw_id, "execution_receipt")])
+                 await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(
+--- services/api/app/socai2/alert_basic_executor.py before step6
++++ services/api/app/socai2/alert_basic_executor.py after step6
+@@ -11,7 +11,7 @@
+ from . import baseline_enrichment_sources as sources
+ from .baseline_analysis import budget_reason
+ from .baseline_analysis_model import TenantChatGateway, usage
+-from .baseline_context import reference, retention_limit
++from .baseline_context import reference
+ from .baseline_contracts import Limits
+ from .baseline_enrichment import S, error
+ from .baseline_store import StoreError, digest, encoded
+@@ -267,6 +267,7 @@
+             deadline = asyncio.get_running_loop().time() + (limits.deadline_at - now).total_seconds() if not reason else None
+         rows, state, captured, observed = None, "skipped", now, None
+         truncation = []
++        overflow_rows = []
+         if not reason:
+             try:
+                 async with asyncio.timeout_at(deadline):
+@@ -274,11 +275,9 @@
+                 observed = len(rows)
+                 if observed > args["limit"]:
+                     truncation.append("row_limit")
+-                rows = rows[:args["limit"]]
+-                if len(encoded(rows)) > retention_limit():
+-                    truncation.append("retained_row_bytes_limit")
+-                while rows and len(encoded(rows)) > retention_limit():
+-                    rows.pop()
++                # Keep every received row. Only the bounded business rows are
++                # used downstream; the fetch sentinel remains in the receipt.
++                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
+                 state = "completed"
+             except TimeoutError:
+                 state, reason = "timeout", "source_deadline_exceeded"
+@@ -291,6 +290,7 @@
+             payload = {"schema_version": VERSION, "tool_name": name, "contract_version": sources.VERSION,
+                 "state": state, "reason": reason, "actual_args": args, "rows": rows,
+                 "returned_rows": len(rows) if rows is not None else None, "observed_rows_in_bounded_fetch": observed,
++                "overflow_rows": overflow_rows,
+                 "truncated": bool(truncation), "truncation_reasons": truncation, "captured_at": captured.isoformat(),
+                 "query_id": "local-step:" + str(step) if state != "skipped" else None,
+                 "limitations": sources.LIMITATIONS[name]}
+--- services/api/app/socai2/case_reader.py before step6
++++ services/api/app/socai2/case_reader.py after step6
+@@ -10,7 +10,7 @@
+ 
+ from app.models import socai2 as m
+ 
+-from .baseline_context import retention_limit
++from . import list_query as lists
+ from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest, encoded
+ from .case_contracts import (
+     CaseBaselineRecord,
+@@ -32,9 +32,8 @@
+     project,
+ )
+ from .case_data import read_page_data
++from .list_query_contracts import EXTENDED_CASE_FIELDS
+ from .page_contracts import RecordPage
+-from . import list_query as lists
+-from .list_query_contracts import EXTENDED_CASE_FIELDS
+ 
+ S = m.RunSteps.__table__
+ TASKS, TASK_REVISIONS = m.Tasks.__table__, m.TaskRevisions.__table__
+@@ -392,7 +391,7 @@
+         out = {"artifact": meta, "content_json": None, "content_text": None, "availability": "unavailable"}
+         if external:
+             return {**out, "availability": "external_content_not_loaded"}
+-        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
++        if row["size_bytes"] is None:
+             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
+         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
+         value = body["content_json"]
+--- services/api/app/socai2/baseline_evidence_tools.py before step6
++++ services/api/app/socai2/baseline_evidence_tools.py after step6
+@@ -89,8 +89,7 @@
+ 
+ 
+ def normalize_rows(rows):
+-    # Ledger is lossless for JSON-compatible driver values; byte limits are
+-    # applied later to whole rows, with explicit omissions.
++    # Lossless JSON representation of driver values; no retention byte cut.
+     return json.loads(json.dumps(rows, default=lambda v: v.isoformat() if isinstance(v, datetime) else str(v),
+                                 ensure_ascii=False, allow_nan=False))
+ 
+--- services/api/app/socai2/stage_results.py before step6
++++ services/api/app/socai2/stage_results.py after step6
+@@ -13,7 +13,6 @@
+ from .baseline_contracts import Limits
+ from .baseline_service import BaselineService
+ from .baseline_store import StoreError, digest, encoded
+-from .runtime_policy import retention_limit
+ from .stage_inputs import SOURCE_SQL, VERSION, incident_source_sql
+ from .stage_result_contracts import (
+     ALERT_EXECUTOR_VERSION,
+@@ -42,8 +41,6 @@
+ 
+ async def artifact(store, run, identity, kind, value, now, refs, *, step_id=None, schema_version=VERSION):
+     body = encoded(value)
+-    if len(body) > retention_limit():
+-        raise StoreError("stage_artifact_too_large", 422)
+     sha = digest(value)
+     _, key = parent(run["kind"])
+     await store.db.execute(insert(F).values(id=identity, tenant_id=store.tenant_id,
+@@ -172,7 +169,12 @@
+                 policy = active_policy()
+                 limits = getattr(policy, kind).limits(now, policy.identity)
+             run = {"id": rid, "kind": kind, key: identity}
+-            await artifact(store, run, input_id, "input_snapshot", source, now, [])
++            policy_id = uuid5(rid, "runtime-policy")
++            from .baseline_context import reference
++            await artifact(store, run, policy_id, "source_snapshot", active_policy().snapshot(), now, [],
++                schema_version="socai2.runtime-policy.v1")
++            await artifact(store, run, input_id, "input_snapshot", source, now,
++                [reference("artifact", policy_id, "execution_receipt")])
+             await store.db.execute(insert(R).values(**run, tenant_id=tenant_id,
+                 title="告警基本分析" if kind == "alert_basic" else "事件诊断", purpose="source-scoped analysis",
+                 trigger="refresh", state="running", operation_key=str(operation_key), request_hash=intent,
+--- deploy/local-investigation/investigation-policy.toml before step6
++++ deploy/local-investigation/investigation-policy.toml after step6
+@@ -25,15 +25,19 @@
+ max_rows_per_query = 0
+ deadline_seconds = 300
+ 
++# Original JSON/text is stored in PostgreSQL without an application byte cut.
++# Only the derived C5 graph view uses this allowance.
++[views]
++max_graph_bytes = 1048576
++
+ [model]
+ alias = "aisoc-investigation"
+ protocol = "chat_completions"
+ schema_profile = "vllm_grammar_v1"
+ context_tokens = 65536
+-# This bounds preparation/storage, not model admission. The full final request
++# This bounds model-view preparation, not original storage or model admission. The full final request
+ # is measured by the actual backend tokenizer, including its chat template.
+ max_prepared_bytes = 262144
+-max_artifact_bytes = 1048576
+ final_reserved_input_tokens = 16384
+ final_reserved_calls = 2
+ 
+--- deploy/local-investigation/investigation-policy-incident-v1.toml before step6
++++ deploy/local-investigation/investigation-policy-incident-v1.toml after step6
+@@ -25,15 +25,19 @@
+ max_rows_per_query = 0
+ deadline_seconds = 300
+ 
++# Original JSON/text is stored in PostgreSQL without an application byte cut.
++# Only the derived C5 graph view uses this allowance.
++[views]
++max_graph_bytes = 1048576
++
+ [model]
+ alias = "aisoc-investigation"
+ protocol = "chat_completions"
+ schema_profile = "vllm_grammar_v1"
+ context_tokens = 65536
+-# This bounds preparation/storage, not model admission. The full final request
++# This bounds model-view preparation, not original storage or model admission. The full final request
+ # is measured by the actual backend tokenizer, including its chat template.
+ max_prepared_bytes = 262144
+-max_artifact_bytes = 1048576
+ final_reserved_input_tokens = 16384
+ final_reserved_calls = 2
+ 
+--- deploy/local-investigation/investigation-policy-ai-v1.toml before step6
++++ deploy/local-investigation/investigation-policy-ai-v1.toml after step6
+@@ -26,15 +26,19 @@
+ max_rows_per_query = 0
+ deadline_seconds = 300
+ 
++# Original JSON/text is stored in PostgreSQL without an application byte cut.
++# Only the derived C5 graph view uses this allowance.
++[views]
++max_graph_bytes = 1048576
++
+ [model]
+ alias = "aisoc-investigation"
+ protocol = "chat_completions"
+ schema_profile = "vllm_grammar_v1"
+ context_tokens = 65536
+-# This bounds preparation/storage, not model admission. The full final request
++# This bounds model-view preparation, not original storage or model admission. The full final request
+ # is measured by the actual backend tokenizer, including its chat template.
+ max_prepared_bytes = 262144
+-max_artifact_bytes = 1048576
+ final_reserved_input_tokens = 16384
+ final_reserved_calls = 2
+ 
+--- deploy/local-investigation/investigation-policy-case-v1.toml before step6
++++ deploy/local-investigation/investigation-policy-case-v1.toml after step6
+@@ -26,15 +26,19 @@
+ max_rows_per_query = 0
+ deadline_seconds = 300
+ 
++# Original JSON/text is stored in PostgreSQL without an application byte cut.
++# Only the derived C5 graph view uses this allowance.
++[views]
++max_graph_bytes = 1048576
++
+ [model]
+ alias = "aisoc-investigation"
+ protocol = "chat_completions"
+ schema_profile = "vllm_grammar_v1"
+ context_tokens = 65536
+-# This bounds preparation/storage, not model admission. The full final request
++# This bounds model-view preparation, not original storage or model admission. The full final request
+ # is measured by the actual backend tokenizer, including its chat template.
+ max_prepared_bytes = 262144
+-max_artifact_bytes = 1048576
+ final_reserved_input_tokens = 16384
+ final_reserved_calls = 2
+ 
+--- services/api/tests/test_socai2_case_api.py before step6
++++ services/api/tests/test_socai2_case_api.py after step6
+@@ -334,11 +334,10 @@
+         await request("GET", f"{BASE}/{cid}/history", params={"limit": 101}, code=422)
+ 
+     async def test_artifact_scope_integrity_and_external_reference_not_exposed():
+-        from app.socai2.baseline_context import retention_limit
+         out, _ = await create()
+         cid, rid = UUID(out["case_id"]), UUID(out["pending_run_id"])
+         bad, external, large = uuid4(), uuid4(), uuid4()
+-        large_text = "x" * (retention_limit() + 1)
++        large_text = "x" * (1048576 + 1)
+         async with service.transaction(T) as store:
+             now = await store.now()
+             for identity, extra in ((bad, {"content_json": {"synthetic": True}, "size_bytes": 18}),
+@@ -352,7 +351,7 @@
+         loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{external}")
+         assert loaded["availability"] == "external_content_not_loaded" and "private-path" not in json.dumps(loaded)
+         loaded = await request("GET", f"{BASE}/{cid}/runs/{rid}/artifacts/{large}")
+-        assert loaded["content_text"] is None and loaded["availability"] == "content_exceeds_read_limit_or_size_unknown"
++        assert loaded["content_text"] == large_text and loaded["availability"] == "available"
+ 
+     async def test_run_last_record_uses_all_artifacts_when_directory_truncated():
+         out, _ = await create()
+--- services/api/tests/test_socai2_runtime_policy.py before step6
++++ services/api/tests/test_socai2_runtime_policy.py after step6
+@@ -1,6 +1,8 @@
+ """Configured time limits apply at admission, reservation and actual dispatch."""
+ 
+ import asyncio
++import hashlib
++import json
+ from datetime import UTC, datetime, timedelta
+ from pathlib import Path
+ from types import SimpleNamespace
+@@ -10,6 +12,24 @@
+ from app.socai2 import runtime_policy as policy
+ 
+ FILE = Path(__file__).resolve().parents[3] / "deploy/local-investigation/investigation-policy.toml"
++
++
++@pytest.mark.parametrize("filename", ["investigation-policy.toml", "investigation-policy-ai-v1.toml",
++    "investigation-policy-incident-v1.toml", "investigation-policy-case-v1.toml"])
++def test_original_retention_is_independent_and_config_is_recoverable(filename):
++    path = FILE.with_name(filename)
++    settings = policy.load_policy(path)
++    snapshot = settings.snapshot()
++    assert snapshot["toml_text"].encode() == path.read_bytes()
++    assert hashlib.sha256(snapshot["toml_text"].encode()).hexdigest() == snapshot["sha256"]
++    assert settings.views["max_graph_bytes"] == 1048576
++    assert settings.model.max_prepared_bytes == 262144
++    assert not hasattr(settings.model, "max_artifact_bytes")
++    for name, profile in snapshot["profiles"].items():
++        assert json.loads(profile["json_text"]) == getattr(settings, name).config
++        assert hashlib.sha256(profile["json_text"].encode()).hexdigest() == profile["sha256"]
++        if "business" in profile:
++            assert json.loads(profile["business"]["json_text"]) == settings.case_io.business
+ 
+ 
+ def test_selected_policy_is_fingerprinted_and_has_independent_stage_deadlines():
+--- services/api/tests/test_socai2_baseline_context.py before step6
++++ services/api/tests/test_socai2_baseline_context.py after step6
+@@ -309,14 +309,17 @@
+         out = await service.publish(T, cid, rid, result(ctx, [good]))
+         assert out["adoption"]["state"] == "adopted"
+ 
+-    async def test_c1_size_limit_atomic_and_tenant():
++    async def test_c1_large_original_and_tenant():
+         cid, _aids, mids, rid = await fixture(1)
+         await reject("frozen_material_not_found", service.read_material(T, cid, rid, mids[0]))
+         async with service.transaction(T) as store:
+-            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * c1.retention_limit()))
+-        await reject("baseline_context_too_large", start(cid, rid))
+-        assert (await one(select(R.c.state).where(R.c.id == rid)))["state"] == "pending_update"
+-        assert await one(select(F.c.id).where(F.c.run_id == rid)) is None
++            await store.db.execute(update(C).where(C.c.id == cid).values(description="X" * (1048576 + 1)))
++        claim = await start(cid, rid)
++        ctx = await service.read_context(T, cid, rid)
++        assert ctx.case["description"] == "X" * (1048576 + 1)
++        manifest = await one(select(F).where(F.c.id == claim.input_artifact_id))
++        policy = await one(select(F).where(F.c.run_id == rid, F.c.schema_version == "socai2.runtime-policy.v1"))
++        assert any(r["id"] == str(policy["id"]) for r in manifest["source_refs"])
+         await reject("case_not_found", service.read_context(OTHER, cid, rid))
+ 
+     async def test_c1_legacy_does_not_reconstruct_live():
+@@ -353,7 +356,7 @@
+         test_c1_same_statement_pointer_selection, test_c1_incomplete_and_wider_scope,
+         test_c1_paired_triage_and_feedback, test_c1_adopted_old_task_and_current_revision,
+         test_c1_explicit_comparison_not_latest, test_c1_citation_role_and_path,
+-        test_c1_size_limit_atomic_and_tenant, test_c1_legacy_does_not_reconstruct_live,
++        test_c1_large_original_and_tenant, test_c1_legacy_does_not_reconstruct_live,
+         test_c1_json_null_and_truncated_material]
+     for check in checks:
+         if only is not None and check.__name__ not in only:
+--- services/api/tests/test_socai2_baseline_evidence.py before step6
++++ services/api/tests/test_socai2_baseline_evidence.py after step6
+@@ -233,17 +233,38 @@
+         result = await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
+         assert result["result"]["error"]["code"] == "tool_budget_exhausted" and gateway.calls == 0
+ 
+-    async def test_c4_empty_truncated_and_storage_omission_are_distinct():
++    async def test_c4_empty_bounded_and_large_originals_are_distinct():
+         for count, mutate, expected, truncated in [(0, None, 0, False), (2, None, 1, True),
+-            (1, lambda row: row.update(ocsf_json=json.dumps({"large": "x" * 70000})), 0, True)]:
++            (1, lambda row: row.update(ocsf_json=json.dumps({"large": "x" * (1048576 + 1)})), 1, False)]:
+             cid, rid, _, _, _, q = await fixture(limit=1)
+             _, bid = await prepare(cid, rid)
+             result = await service.query_evidence(T, cid, rid, bid, q, gateway=SyntheticLake(count, mutate=mutate))
+             assert result["result"]["returned_rows"] == expected and result["result"]["truncated"] == truncated
+             assert result["projection"]["observed_rows_in_bounded_fetch"] == count
+             assert "empty_query_is_not_counterevidence" in result["projection"]["limitations"]
+-            if count and not expected:
+-                assert "retained_row_bytes_limit" in result["projection"]["omissions"]
++            assert len(result["result"]["overflow_rows"]) == max(0, count - 1)
++            assert len(result["projection"]["rows"]) == expected
++            if mutate:
++                assert json.loads(result["result"]["rows"][0]["ocsf_json"])["large"] == "x" * (1048576 + 1)
++
++    async def test_c4_original_survives_projection_failure():
++        cid, rid, _, _, _, q = await fixture()
++        _, bid = await prepare(cid, rid)
++        gateway = SyntheticLake()
++        with patch.object(tools, "row_projection", side_effect=ValueError("synthetic_projection_failure")):
++            try:
++                await service.query_evidence(T, cid, rid, bid, q, gateway=gateway)
++            except ValueError as exc:
++                assert str(exc) == "synthetic_projection_failure"
++            else:
++                raise AssertionError("projection_failure_not_propagated")
++        async with service.transaction(T, readonly=True) as store:
++            run = await store.one(select(R).where(*store.where(R, R.c.case_id == cid, R.c.id == rid)))
++            step = await store.one(select(c4.S).where(c4.S.c.run_id == rid, c4.S.c.stage_code == "C4.query"))
++            raw = await store.one(select(F).where(F.c.id == step["output_artifact_id"]))
++        assert run["state"] == step["state"] == "unknown" and gateway.calls == 1
++        assert raw["content_json"]["state"] == "completed" and raw["content_json"]["returned_rows"] == 1
++        assert raw["content_json"]["rows"] and raw["retention"]["truncated"] is False
+ 
+     async def test_c4_cancel_and_bad_scope_hold_unknown_slot():
+         for mode in ("cancel", "bad_scope", "timeout"):
+@@ -363,7 +384,8 @@
+     checks = [test_c4_material_projection_paths_guard_and_conflicts,
+         test_c4_freezes_material_and_scope_and_replays, test_c4_real_ledger_query_contract_view_and_no_adoption,
+         test_c4_concurrent_claim_is_committed_before_dispatch, test_c4_budget_missing_window_and_source_skip,
+-        test_c4_empty_truncated_and_storage_omission_are_distinct, test_c4_cancel_and_bad_scope_hold_unknown_slot,
++        test_c4_empty_bounded_and_large_originals_are_distinct, test_c4_original_survives_projection_failure,
++        test_c4_cancel_and_bad_scope_hold_unknown_slot,
+         test_c4_binding_question_tenant_and_reference_guards, test_c4_lake_adapter_fixed_sql_and_new_columns,
+         test_c4_request_commit_failure_does_not_dispatch, test_c4_view_budget_defaults_and_publication_citation_paths]
+     for check in checks:
+--- services/api/tests/test_socai2_baseline_enrichment.py before step6
++++ services/api/tests/test_socai2_baseline_enrichment.py after step6
+@@ -285,24 +285,44 @@
+         outcome = await service.publish(T, cid, rid, publication([ref]))
+         assert outcome["adoption"]["state"] == "not_eligible"
+ 
+-    async def test_c2_byte_omission_is_not_empty_and_roles():
++    async def test_c2_large_original_and_roles():
+         cid, rid, *_ = await fixture()
+         original = sources.query
+         async def large(*args):
+             if args[2] == "assets":
+                 async with service.transaction(T) as store:
+-                    return [{"record": {"tags": ["x" * 131073]}}], await store.now()
++                    return [{"record": {"tags": ["x" * (1048576 + 1)]}}], await store.now()
+             return await original(*args)
+         with patch.object(sources, "query", large):
+             summary = await service.enrich(T, cid, rid)
+         asset = summary["sources"][0]
+-        assert asset["outcome"] == "omitted" and asset["returned_rows"] == 0
++        assert asset["outcome"] == "data" and asset["returned_rows"] == 1
+         assert asset["observed_rows_in_bounded_fetch"] == 1
+-        assert asset["truncation_reasons"] == ["retained_row_bytes_limit"]
++        assert asset["truncation_reasons"] == []
++        receipt = (await rows(select(F).where(F.c.id == UUID(asset["artifact_id"]))))[0]
++        assert receipt["content_json"]["rows"][0]["record"]["tags"] == ["x" * (1048576 + 1)]
++        assert receipt["size_bytes"] > 1048576 and not receipt["retention"]["truncated"]
+         roles = c2.citation_roles({"state": "completed", "tool_name": "history", "rows": [
+             {"record": {"triage": {"confidence_value": None}, "feedback": {"decision": "false_positive"}}}]})
+         assert roles == {"$.rows.0": "source_label", "$.rows.0.record.triage": "prior_analysis",
+                          "$.rows.0.record.feedback": "human_statement"}
++
++    async def test_c2_probe_row_retained_without_model():
++        cid, rid, *_ = await fixture(row_limit=1)
++        original = sources.query
++        received = [{"record": {"tags": ["bounded"]}}, {"record": {"tags": ["probe"]}}]
++        async def query(*args):
++            if args[2] == "assets":
++                async with service.transaction(T) as store:
++                    return received, await store.now()
++            return await original(*args)
++        with patch.object(sources, "query", query):
++            summary = await service.enrich(T, cid, rid)
++        asset = next(s for s in summary["sources"] if s["source"] == "assets")
++        receipt = (await rows(select(F).where(F.c.id == UUID(asset["artifact_id"]))))[0]["content_json"]
++        assert receipt["rows"] + receipt["overflow_rows"] == received
++        assert receipt["returned_rows"] == 1 and receipt["observed_rows_in_bounded_fetch"] == 2
++        assert receipt["truncation_reasons"] == ["row_limit"]
+ 
+     async def test_c2_existing_tool_use_and_missing_objects():
+         cid, rid, *_ = await fixture(calls=1)
+@@ -335,7 +355,8 @@
+         test_c2_timeout_unavailable_and_unknown, test_c2_row_limit_and_missing_window,
+         test_model_view_whole_case_and_original_guard, test_model_view_budget_and_roles,
+         test_publish_cannot_race_active_steps_or_forge_c2_role,
+-        test_c2_byte_omission_is_not_empty_and_roles, test_c2_existing_tool_use_and_missing_objects]
++        test_c2_large_original_and_roles, test_c2_probe_row_retained_without_model,
++        test_c2_existing_tool_use_and_missing_objects]
+     for check in checks:
+         if only is not None and check.__name__ not in only:
+             continue

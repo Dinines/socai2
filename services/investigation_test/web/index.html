@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>调查执行工作台</title>
+  <link rel="stylesheet" href="/viewer/assets/viewer.css">
+  <script type="module" src="/viewer/assets/viewer.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div><span class="eyebrow">SOCAI2 · 只读工作台</span><h1>调查执行工作台</h1></div>
+    <details class="connection-info"><summary>连接信息 · 只读</summary><div id="service-info" class="service-info">正在连接测试服务…</div></details>
+  </header>
+  <div id="global-error" class="notice error" role="alert" hidden></div>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="调查对象">
+      <nav id="subject-types" class="subject-types" aria-label="对象类型">
+        <button type="button" data-subject-type="case" aria-pressed="true">Case</button>
+        <button type="button" data-subject-type="incident" aria-pressed="false">事件</button>
+        <button type="button" data-subject-type="alert" aria-pressed="false">告警</button>
+      </nav>
+      <div class="section-heading"><h2 id="subject-list-title">Case 列表</h2><button id="reload-subjects" type="button">刷新</button></div>
+      <div id="subject-list" aria-live="polite"></div>
+      <button id="more-subjects" class="more" type="button" hidden>加载更多</button>
+      <details id="test-records" class="batch-meta"><summary>测试记录与来源</summary>
+        <p id="test-source-status" class="muted small">测试标识按已保存来源关联，业务列表直接读取调查 HTTP。</p>
+        <button id="reload-batches" type="button">刷新测试记录</button>
+        <div id="batch-list" aria-live="polite"></div>
+        <button id="more-batches" class="more" type="button" hidden>加载更多记录</button>
+        <div id="batch-tags" class="tags"></div><h2 id="batch-title"></h2><p id="batch-observation" class="muted small"></p>
+      </details>
+      <p class="muted small">页面仅查阅已保存记录。刷新不会启动调查。</p>
+    </aside>
+    <section class="main-panel" aria-label="对象与执行详情">
+      <div id="empty-selection" class="empty"><h2>正在读取案例与执行记录</h2><p>先选案例，再点执行流程中的节点查看数据。</p></div>
+      <div id="batch-panel" hidden>
+        <div class="view-heading"><nav class="primary-tabs" aria-label="工作台视图"><button id="show-executions" type="button" aria-pressed="true">执行详情</button><button id="show-management" type="button" aria-pressed="false">测试记录</button></nav><button id="refresh-selection" type="button">刷新当前记录</button></div>
+        <div id="read-status" class="notice" role="status" hidden></div>
+        <div id="management-panel" hidden><p class="view-intro">这里保存测试计划、发起记录和核对材料。查看业务对象，请切回“执行详情”。</p>
+        <nav id="batch-tabs" class="tabs" aria-label="批次内容">
+          <button type="button" data-tab="cases" aria-selected="true">测试计划</button>
+          <button type="button" data-tab="operations">发起记录</button>
+          <button type="button" data-tab="preparation">环境与材料</button>
+          <button type="button" data-tab="quality">质量问题</button>
+          <button type="button" data-tab="evidence">核对记录</button>
+        </nav><p id="tab-help" class="muted"></p></div>
+        <div id="tab-content" aria-live="polite"></div>
+        <button id="more-records" class="more" type="button" hidden>加载更多</button>
+        <section id="inspection" class="inspection" aria-label="调查记录详情" hidden>
+          <div class="section-heading"><h2 id="inspection-title"></h2><button id="close-inspection" type="button">收起详情</button></div>
+          <div id="inspection-body" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <footer><span id="viewer-version"></span><span>执行、交付、当前有效性和模型质量分别记录。</span></footer>
+</body>
+</html>

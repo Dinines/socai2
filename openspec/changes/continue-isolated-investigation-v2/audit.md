@@ -1,10 +1,10 @@
 ## 2026-10-25 事件概况与调查业务流程一轮评审
 
-独立评审`flow_plan_review`核对[业务流程](../../../docs/architecture/incident-investigation-flow-20261025.md)及[实现计划](../../../docs/investigation/incident-investigation-implementation-plan-20261025.md)，发现1处例子自动触发语义偏差：原worker对所有未自动关闭的告警进入升级判断，不能改述为只有“建议升级”才调查。已同步修正文档例子及F5条件，其余未发现必须修改项；记录见计划第5节。只静态查文档/必要源码，未跑测试或访问真实环境；不新增评审回合，不将设计评审当成功能交付，权限专项仍暂停，2.2/2.3不勾。
+独立评审`flow_plan_review`核对[业务流程](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/incident-investigation-flow-20261025.md)及[实现计划](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/incident-investigation-implementation-plan-20261025.md)，发现1处例子自动触发语义偏差：原worker对所有未自动关闭的告警进入升级判断，不能改述为只有“建议升级”才调查。已同步修正文档例子及F5条件，其余未发现必须修改项；记录见计划第5节。只静态查文档/必要源码，未跑测试或访问真实环境；不新增评审回合，不将设计评审当成功能交付，权限专项仍暂停，2.2/2.3不勾。
 
 ## 2026-10-25 设计与实现对照后的阶段收尾
 
-基线7908f73的[对照报告](../../../docs/investigation/design-implementation-review-20261025.md)已经独立设计/代码审阅及报告窄复核，未确认新增必修业务代码缺陷；主审124项离线合同通过、公开证据核对见报告。本次按用户要求直接复用这些结果，不再追加审计轮或可用性/恢复/故障注入/冗余测试。只保存文档及[证据](../../../docs/operations/evidence/investigation-design-implementation-review-20261025.json)，已实现范围阶段收尾；权限实施暂停，未实现能力及2.2/2.3保持未完成，不归档整个change，不部署/合main。
+基线7908f73的[对照报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-implementation-review-20261025.md)已经独立设计/代码审阅及报告窄复核，未确认新增必修业务代码缺陷；主审124项离线合同通过、公开证据核对见报告。本次按用户要求直接复用这些结果，不再追加审计轮或可用性/恢复/故障注入/冗余测试。只保存文档及[证据](../../../docs/operations/evidence/investigation-design-implementation-review-20261025.json)，已实现范围阶段收尾；权限实施暂停，未实现能力及2.2/2.3保持未完成，不归档整个change，不部署/合main。
 
 ## 2026-10-25 M8a4.4a实际结束独审
 
@@ -156,7 +156,7 @@ fresh_design_audit指出完成政策变更需独立版本，实施前补completi
 
 ## 2026-10-24 新一轮独立总体审计
 
-基线7b7bb6b，fresh_design_audit/fresh_code_audit/fresh_evidence_audit三位新审阅者分别核原设计演进、实现和证据，不承接原review_response_audit结论。140项合同通过，另25项为重叠复核；39个回执hash条目一致。新增离线反例确认A1 mapped IPv6归一化导致合法结果误拒，P2未修；A2子窗口ready与A3无模型路径的模型投影限制交叉裁定为后续合同边界，不报告为越权或既有I1/I2回归。总体架构可保留，完整调查质量不予追认，详见[审计与逐步计划](../../../docs/investigation/independent-audit-20261024.md)及[观察回执](../../../docs/operations/investigation-independent-audit-20261024.json)。本轮只改报告/索引和公开离线probe，无功能修改、真实业务访问、模型、部署或合main；历史ACCEPT按原范围保留，新发现进入续接门。
+基线7b7bb6b，fresh_design_audit/fresh_code_audit/fresh_evidence_audit三位新审阅者分别核原设计演进、实现和证据，不承接原review_response_audit结论。140项合同通过，另25项为重叠复核；39个回执hash条目一致。新增离线反例确认A1 mapped IPv6归一化导致合法结果误拒，P2未修；A2子窗口ready与A3无模型路径的模型投影限制交叉裁定为后续合同边界，不报告为越权或既有I1/I2回归。总体架构可保留，完整调查质量不予追认，详见[审计与逐步计划](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/independent-audit-20261024.md)及[观察回执](../../../docs/operations/investigation-independent-audit-20261024.json)。本轮只改报告/索引和公开离线probe，无功能修改、真实业务访问、模型、部署或合main；历史ACCEPT按原范围保留，新发现进入续接门。
 
 ## 2026-10-24 M6.1纯固定政策结束窄审
 
@@ -198,7 +198,7 @@ M1以7e84fe7保存放行后才做本块，先精确规格/设计/预期及strict
 
 用户要求拉取最新main、判断调查意见是否合理/采用并制定后续计划，允许新建调查分支。已fetch至`541511ce`，本地main快进后从其建立`codex/investigation-review-20261024`；普通根目录原先clean，原调查469e9467已在main中，未复制旧树、修改Windows分支或合回main。
 
-[评审响应](../../../docs/investigation/review-response-20261024.md)逐项区分独立评审I1—I4与整合审计同名编号，I1/I2采纳修复，I3限定采用，I4落实程序确定性路径与按需Deep分别验收。原架构保留；profile后先补两处材料接缝，再独立v2查询及M6/M7/M8a有限交付，Deep/Case/领域/自动政策分步。tasks的2.1—2.3仅细化计划、保持未勾，未增加业务规格或宣布修复完成；精确spec调整留实际实施前。
+[评审响应](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/review-response-20261024.md)逐项区分独立评审I1—I4与整合审计同名编号，I1/I2采纳修复，I3限定采用，I4落实程序确定性路径与按需Deep分别验收。原架构保留；profile后先补两处材料接缝，再独立v2查询及M6/M7/M8a有限交付，Deep/Case/领域/自动政策分步。tasks的2.1—2.3仅细化计划、保持未勾，未增加业务规格或宣布修复完成；精确spec调整留实际实施前。
 
 新增[断网反例脚本](probes/review_material_contracts.py)与[机器回执](../../../docs/operations/investigation-review-validation-20261024.json)。Python3.12.4实跑：短文成功，513ASCII/对象message整视图失败；10条视图7882B、messages14194B>12288B，7/8条跨界；DurableAnalysis在fake预留/模型调用前拒绝。仅备注不同的两个来源版本保相同字段，但Q1 supported拒绝、Q2/Q5保留。exit0仅表示反例重现，不是修复/质量通过；首次guard误拦Windows内部socketpair的脚本exit1及修正已披露。原运行源码/旧测试不改，0真实业务/模型/写湖/部署；M5.2、新HTTP及分层仍未交付，原迁移归档/失败/unknown保持。
 
@@ -206,13 +206,13 @@ M1以7e84fe7保存放行后才做本块，先精确规格/设计/预期及strict
 
 ## 2026-10-24 重新独立设计评审
 
-用户要求重新客观审查设计、不改代码。以main a82346dd为基线，从原需求、当前设计及源码重新建立判断，数据与调查由未参与实现者分别审阅，主审复核关键原文和纯内存反例，见[详细评审](../../../docs/operations/independent-design-review-20261024.md)。保留两profile共享内核、来源与判断分离、Case继承及同版发布方向；调查可选正文整视图失败、视图与完整模型消息预算不一致两项P2接缝已复现，命题冲突粒度和模型业务增益另列建议。数据标签可判定性、配对评价与非法分类指标问题分别由数据线后续讨论。
+用户要求重新客观审查设计、不改代码。以main a82346dd为基线，从原需求、当前设计及源码重新建立判断，数据与调查由未参与实现者分别审阅，主审复核关键原文和纯内存反例，见[详细评审](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/independent-design-review-20261024.md)。保留两profile共享内核、来源与判断分离、Case继承及同版发布方向；调查可选正文整视图失败、视图与完整模型消息预算不一致两项P2接缝已复现，命题冲突粒度和模型业务增益另列建议。数据标签可判定性、配对评价与非法分类指标问题分别由数据线后续讨论。
 
 本轮未改设计正文、源码、测试、配置或tasks，不将待实现能力判为设计错误，不给全模块ACCEPT；所有建议未实施。评审只做静态分析和纯内存反例，无真实模型、业务查询/数据写入或部署；用户随后要求提交并推送本次报告、PROGRESS入口及本条引用，其他工作保持。
 
 ## 2026-10-24 合并后的双方总审计与协作交接独立复核
 
-用户要求先合并、不影响原开发设计，再统一最新进度与数据湖协作。root在main5c1202b5后编写[统一审计](../../../docs/operations/data-investigation-integration-audit-20261024.md)；未参与编写的merge_audit只读核对后限定ACCEPT、0必须改文档项。确认A1/A2/A3、Python3.11 is_junction兼容、IPv6文本测试失败、新v2未注册及M5.2/v4分层未交付均准确；共享fixture/写湖与scope/query/采用/评分分工保留原设计，不改写原贡献或验收。
+用户要求先合并、不影响原开发设计，再统一最新进度与数据湖协作。root在main5c1202b5后编写[统一审计](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/data-investigation-integration-audit-20261024.md)；未参与编写的merge_audit只读核对后限定ACCEPT、0必须改文档项。确认A1/A2/A3、Python3.11 is_junction兼容、IPv6文本测试失败、新v2未注册及M5.2/v4分层未交付均准确；共享fixture/写湖与scope/query/采用/评分分工保留原设计，不改写原贡献或验收。
 
 额外确认X2：原fixture的告警telemetry已含匹配事件正文，只适合作来源关联与范围验证，不能单凭该夹具声称E3必须补查或工具增益；新盲测预期后续另定，保原判据。root实际合并工具测试112 passed/58 subtests passed/3 failed（同一测试的3个IPv6子项）、exit1，文档未称全绿；85新Agents/8新API独审断网通过，未新跑PG/湖/模型。原源码与测试仍逐字保持，修复留各分支后续。
 
@@ -310,7 +310,7 @@ audit_contracts最终明确：**M4本批不通过，修订候选限定ACCEPT/0�
 
 未参与本轮编写的audit_contracts只读审阅工具数据规划、M0回执及相关Git/源码，给出**限定ACCEPT，0项本轮必须修订**；仅接受来源盘点与待讨论方案，不构成M0放行或M1实施验收。另由m0_source_map/search_backends分别核最新main测试工具和检索后端，均未业务访问或改源码。用户最新要求涉及工具方案先讨论，故当前首场景/工具数据范围未定，M0尚未放行；不会绕过该门槛实现后续代码。
 
-本批主方案[工具数据建议](../../../docs/architecture/investigation-tool-data-plan.md) SHA256 `c698c0945376d4fbe38867f6a0726544c8f098b77a3d368f9bf4c7721bc221f2`；[逐步记录](../../../docs/operations/unified-investigation-implementation.md) SHA256 `2a3cfb65d17794c9ff3c8aeaeff3f2db6d6d63c90556d661f7e28f84086c5c70`。两份文档12处本地链接及36条表格数据行结构通过、来源JSON可解析且明确M0待讨论；git diff --check通过。OpenSpec1.13.0在调查worktree执行`validate restore-alert-investigation-integrity --strict --no-interactive`有效，list仍5/15、R02 0/17；新增M1规格是目标而非已交付。
+本批主方案[工具数据建议](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-data-plan.md) SHA256 `c698c0945376d4fbe38867f6a0726544c8f098b77a3d368f9bf4c7721bc221f2`；[逐步记录](../../../docs/operations/unified-investigation-implementation.md) SHA256 `2a3cfb65d17794c9ff3c8aeaeff3f2db6d6d63c90556d661f7e28f84086c5c70`。两份文档12处本地链接及36条表格数据行结构通过、来源JSON可解析且明确M0待讨论；git diff --check通过。OpenSpec1.13.0在调查worktree执行`validate restore-alert-investigation-integrity --strict --no-interactive`有效，list仍5/15、R02 0/17；新增M1规格是目标而非已交付。
 
 真实新增检查仅为测试tenant中旧合成湖事件的只读核查：15字段/1行，外联字段缺失。沙箱阻止及本轮探针UUID别名错误/修正均保留于回执；未把它归为旧network_connections根因。无新业务数据、模型、部署或Git提交推送；下方v3原hash与当时CLI未发现记录保留为历史，不追认旧失败。
 

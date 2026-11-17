@@ -110,7 +110,7 @@ async def process_alert(alert: RawAlert, principal: ScopedPrincipal) -> FusedAle
         raise HTTPException(status_code=503, detail="Fusion worker not ready")
     scoped_tenant_or_403(principal, alert.tenant_id)
     try:
-        return await _worker_ref.process_alert(alert, source_event_id=str(alert.id))
+        return await _worker_ref.process_alert(alert)
     except DeliveryHold as exc:
         raise HTTPException(status_code=503, detail="Fusion delivery unconfirmed; inspect before retrying") from exc
 

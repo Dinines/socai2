@@ -1,0 +1,175 @@
+{
+  "summary": "本案核心事实为服务账号 svc-app-1afa1f56 于 2026-11-17 09:16:44 在主机 host-app-7e78aefa 上成功启动 curl 进程发起 HEAD 请求至 198.51.100.171，随后在 09:35:44 观测到对应网络流量。现有证据链在‘意图’与‘结果’间存在断裂，缺乏目的 IP 属性、账号授权基线及连接实际结果数据，无法区分正常运维探测与恶意扫描。",
+  "members": [
+    {
+      "alert_id": "A1",
+      "state": "analyzed",
+      "summary": "记录 09:35:44 的网络流量观测，源为主机 host-app-7e78aefa，目的 IP 198.51.100.171:443，协议 TCP，字节数 2048/128，状态标记为未知。",
+      "evidence_ids": ["N2_S8", "N2_S9", "N2_S10", "N2_S15", "N2_S16", "N2_S20", "N2_S26", "N2_S27", "N2_S28", "N2_S29", "N2_S30", "N2_S13", "N2_S14", "N2_S70", "N2_S71", "N2_S129"],
+      "limitations": ["网络流量结果标记为未知，无法确认连接是否建立成功或数据传输内容", "缺乏目的 IP 的业务归属及账号授权依据"]
+    },
+    {
+      "alert_id": "A2",
+      "state": "analyzed",
+      "summary": "记录 09:16:44 的进程启动事件，账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上成功启动 curl 进程，命令行为 curl --head https://198.51.100.171/status。",
+      "evidence_ids": ["N2_S73", "N2_S74", "N2_S75", "N2_S76", "N2_S77", "N2_S78", "N2_S82", "N2_S83", "N2_S92", "N2_S93", "N2_S122", "N2_S127", "N2_S128", "N2_S130"],
+      "limitations": ["进程启动成功仅证明启动动作，不证明命令执行完成、结果返回或信息已被读取", "缺乏目的 IP 的威胁情报或资产关联信息"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "state": "observed",
+      "alert_ids": ["A2"],
+      "support_ids": ["N2_S73", "N2_S74", "N2_S75", "N2_S78", "N2_S82", "N2_S83"],
+      "counter_ids": [],
+      "alternatives": [],
+      "limitations": ["无法确认 curl 命令是否完整执行完毕或获取了响应内容", "无法确认该进程启动是否由人工授权触发"]
+    },
+    {
+      "id": "F2",
+      "state": "observed",
+      "alert_ids": ["A1"],
+      "support_ids": ["N2_S8", "N2_S9", "N2_S10", "N2_S15", "N2_S16", "N2_S26", "N2_S27", "N2_S28"],
+      "counter_ids": [],
+      "alternatives": [],
+      "limitations": ["流量观测结果标记为未知，无法确认连接状态", "无法确认流量内容是否包含敏感数据"]
+    },
+    {
+      "id": "F3",
+      "state": "inferred",
+      "statement": "A2 中的进程启动行为与 A1 中的网络流量观测在时间（间隔约 20 分钟）、主机、账号及目标 IP 上高度一致，推断两者属于同一业务会话或关联操作序列。",
+      "alert_ids": ["A1", "A2"],
+      "support_ids": ["N2_S73", "N2_S8", "N2_S74", "N2_S9", "N2_S26", "N2_S28", "N2_S130"],
+      "counter_ids": [],
+      "alternatives": ["两次事件可能无直接关联，例如 A1 为其他无关流量，或 A2 进程启动后未产生 A1 所示流量"],
+      "limitations": ["时间间隔较长，不能直接证明因果", "缺乏会话保持或中间状态证据"]
+    },
+    {
+      "id": "F4",
+      "state": "unresolved",
+      "statement": "目的 IP 198.51.100.100.171 的性质未定，既无威胁情报命中，也无资产库存记录，无法确认是恶意扫描目标、未知第三方服务还是内部业务系统。",
+      "alert_ids": ["A1", "A2"],
+      "support_ids": ["N2_S136", "N2_S143", "N2_S144", "N2_S145", "N2_S147", "N2_S149"],
+      "counter_ids": [],
+      "alternatives": ["该 IP 可能是合法的合作伙伴接口、CDN 节点或内部测试环境"],
+      "limitations": ["知识库查询无结果，未查询威胁情报和历史告警"]
+    },
+    {
+      "id": "F5",
+      "state": "unresolved",
+      "statement": "账号 svc-app-1afa1f56 访问外部 IP 198.51.100.171 的授权状态未定，缺乏权限基线文档或运维审批记录支持。",
+      "alert_ids": ["A1", "A2"],
+      "support_ids": ["N2_S132", "N2_S127", "N2_S133"],
+      "counter_ids": [],
+      "alternatives": ["该账号可能拥有默认的外部访问权限，或该操作属于临时授权的运维任务"],
+      "limitations": ["未提供账号权限策略文档，未查询审批记录"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "detection_facts",
+      "state": "answered",
+      "answer": "已确认服务账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上启动 curl 进程探测 198.51.100.171，并观测到后续网络流量。",
+      "evidence_ids": ["N2_S73", "N2_S78", "N2_S8", "N2_S26", "N2_S27"]
+    ,
+    "limitations": ["无法确认命令执行结果及流量具体内容"]
+    },
+    {
+      "id": "member_relationships",
+      "state": "answered",
+      "answer": "A1 与 A2 通过相同的主机、账号、目标 IP 和时间邻近性建立关联，推断为同一会话。",
+      "evidence_ids": ["N2_S73", "N2_S8", "N2_S74", "N2_S9", "N2_S26", "N2_S28", "N2_S130"]
+    ,
+    "limitations": ["时间间隔 20 分钟，非实时连续，因果推断存在不确定性"]
+    },
+    {
+      "id": "behavior_nature",
+      "state": "unresolved",
+      "answer": "行为性质无法定性。支持恶意的证据不足（无威胁情报、无异常基线）；支持正常的证据不足（无授权记录、无业务上下文）。",
+      "evidence_ids": ["N2_S127", "N2_S133", "N2_S135"]
+    ,
+    "limitations": ["缺乏目的 IP 信誉数据，缺乏账号操作基线"]
+    },
+    {
+      "id": "authorization",
+      "state": "unresolved",
+      "answer": "无明确授权证据。未找到审批记录、权限基线或业务需求文档。",
+      "evidence_ids": ["N2_S132", "N2_S127"]
+    ,
+    "limitations": ["未提供授权材料，不能因未提供而断定无授权"]
+    },
+    {
+      "id": "impact",
+      "state": "unresolved",
+      "answer": "未观察到实际影响。进程启动成功不代表数据外传，流量结果未知不代表数据泄露。",
+      "evidence_ids": ["N2_S16", "N2_S83"]
+    ,
+    "limitations": ["无法确认连接是否建立，无法确认是否读取了敏感数据"]
+    }
+  ],
+  "domains": [
+    {
+      "name": "identity",
+      "applicability": "applicable",
+      "reason": "涉及服务账号 svc-app-1afa1f56 的认证与权限使用。",
+      "alert_ids": ["A1", "A2"],
+      "finding_ids": ["F5"],
+      "limitations": ["缺乏账号权限基线文档"]
+    },
+    {
+      "name": "cloud",
+      "applicability": "applicable",
+      "reason": "涉及主机 host-app-7e78aefa 上的进程与网络活动。",
+      "alert_ids": ["A1", "A2"],
+      "finding_ids": ["F1", "F2", "F3"],
+      "limitations": ["无法确认云资源配置或网络策略限制"]
+    },
+    {
+      "name": "phishing",
+      "applicability": "not_applicable",
+      "reason": "无邮件、链接或附件相关证据。",
+      "alert_ids": [],
+      "finding_ids": []
+    ,
+    "limitations": ["案件范围不包含邮件投递"]
+    },
+    {
+      "name": "insider",
+      "applicability": "applicable",
+      "reason": "涉及服务账号的数据访问与潜在外传风险。",
+      "alert_ids": ["A1", "A2"],
+      "finding_ids": ["F4", "F5"],
+      "limitations": ["无法确认数据是否外传"]
+    }
+  ],
+  "conflicts": [],
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2"],
+      "mode": "query",
+      "objective": "查询主机 host-app-7e78aefa 在案件时间窗口内的认证活动，确认 svc-app-1afa1f56 的登录来源及会话上下文。",
+      "required_evidence": "authentication_activity 工具返回的登录账号、来源 IP、时间及结果。",
+      "source_ids": ["N2_S148", "N2_S152"],
+      "object_keys": ["O1"]
+    ,
+    "binding_id": "B3"
+    ,
+    "priority": "decision_critical"
+    },
+    {
+      "question_id": "impact",
+      "alert_ids": ["A1", "A2"],
+      "mode": "query",
+      "objective": "查询主机 host-app-7e78aefa 在案件时间窗口内的网络连接详情，确认与 198.51.100.171 的连接状态、端口及流量特征。",
+      "required_evidence": "network_connections 工具返回的连接端点、协议、时间、结果及流量计数。",
+      "source_ids": ["N2_S148", "N2_S152"],
+      "object_keys": ["O1", "O1"]
+    ,
+    "binding_id": "B1"
+    ,
+    "priority": "supporting"
+    }
+  ]
+}

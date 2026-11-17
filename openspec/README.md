@@ -1,28 +1,12 @@
 # OpenSpec 实施说明
 
-本项目使用 `spec-driven`。主调查变更为 [complete-socai2-investigation-chain](changes/complete-socai2-investigation-chain/tasks.md)，实际部署见 [PROGRESS](../PROGRESS.md)。当前 [Case/H HTTP 操作交付](changes/archive/2026-11-11-enable-case-human-http-flow/validation.md)已完成本地功能、限定独审和一次 21 r2 发布，并已归档；主调查整体仍 31/41，模型质量、产品页面和未验范围不由局部功能核销。
+本项目使用`spec-driven`。当前调查范围见[主调查设计](changes/complete-socai2-investigation-chain/design.md)及[任务](changes/complete-socai2-investigation-chain/tasks.md)；主调查31/41，后续[流式更新](changes/schedule-streaming-investigation-updates/tasks.md)第1–7步及五项审计修复已完成本机程序联验，尚未部署。第8–10步后置，当前进入第11步候选资源与测试配套准备，21从Kafka开始的真实整链及结束审计尚未完成。实际部署、已交付能力和当前问题统一从[PROGRESS](../PROGRESS.md)与[交接指南](../FRONTEND_BACKEND_HANDOFF.md)进入。
 
-已有[独立流程审查](changes/archive/2026-11-11-review-current-investigation-flow/audit.md)及[有据结论程序修正](changes/archive/2026-11-11-ground-case-conclusions/validation.md)继续作为证据。持续模型问题按负责人决定后置并保持 NOT_PASSED，不重复采样追求通过。
-
-[按目标的 Case 知识与 4177](changes/archive/2026-11-11-enable-purpose-aware-case-knowledge/validation.md)及[历史告警知识与模型消费](changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)均已完成限定功能、独审、发布读回和归档；历史知识已完成 Git／父项目同步。后续 [refine-purpose-aware-knowledge-use](changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)已完成用途／条件筛选、模型去重／任务选择及显式历史版本更新，经一次本地直接流程和独审后发布 `v1.2-20261112-r3`，实际配置、知识写读及 4177 已核验并归档，封后状态见任务和审计。模型质量 NOT_PASSED、产品页面 P01–P04及自动处理继续保留；只做最少直接验证，不新增权限专项或复杂可用性测试。
-
-[sync-saved-alert-knowledge](changes/archive/2026-11-12-sync-saved-alert-knowledge/tasks.md)已完成新采用 A 分诊提交后同步、本地一次直接流程、独审及 21 r5 实际加载读回；知识回执独立，旧请求不重派。生产未新增分析 Run，消费者保持关闭；发布审计及归档已完成，主调查完成数不变。
-
-[独立HTTP入口](changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已统一21:18024的43操作和正式数据目标，Case/H真实TCP及SQL读回通过、docs5同步两端；仅发布入口/写连接两文件，不包含并行模型修改。后续业务按[HTTP实施计划](../docs/investigation/http-implementation-plan-20261112.md)逐项推进，主调查31/41保持。
-
-[Case基本管理](changes/archive/2026-11-12-manage-investigation-cases/validation.md)已完成E44–E47、两端各20次HTTP及SQL、限定独审和一次服务/Swagger发布；该批为47操作、docs6。随后[告警/事件管理](changes/archive/2026-11-13-manage-alert-incident-operations/validation.md)已完成E48–E53及两端各86次HTTP、SQL逐值读回，服务和docs7均已发布；该批53操作、50已实现/3预留501，主调查31/41保持。
-
-[对外HTTP代码分离](changes/archive/2026-11-13-separate-investigation-http/validation.md)已完成两端18024发布、直接读回、限定独审及归档。对外查询和业务操作由独立HTTP包维护，调查内部步骤及必要内部HTTP保持原归属，53操作合同不变；本机真实保存读取、21既有数据只读复验，Swagger保留一致的docs7。[列表查询增量](changes/archive/2026-11-13-query-investigation-lists/design.md)已完成三类列表筛选、排序和分页，仅告警/事件封套新增获准两键；15项离线检查及117次候选HTTP/PG通过，两端服务与docs8已同步，发布只读复验和独审见本change。
-
-[完整CSV导出](changes/archive/2026-11-13-export-investigation-lists/validation.md)已完成E54–E56及两端docs9。当前[事件归并统计](changes/archive/2026-11-13-summarize-incident-grouping/validation.md)补E57/F06-06，同一只读范围计数和明确压缩比例；已完成两端发布、实际读回和独立结束审计，Swagger docs10同步；发布事实以PROGRESS及本批验收为准。
-
-[Case普通评论](changes/archive/2026-11-13-add-case-comments/validation.md)已完成E58提交、E59分页读取，本机/21真实HTTP与SQL读回通过，Swagger docs11共59操作；原57合同及任务/Run保持。发布后独立复核及归档按本change记录，采用规则由调查模块统一，该评论批不包含附件。
-
-[Case附件引用](changes/archive/2026-11-13-link-case-attachments/validation.md)完成E60登记、E61目录、E62单项，两端真实HTTP/SQL及Swagger docs12同步，原59合同保持。文件上传/保存/下载已由负责人确认交业务后端，本服务不抓取文件或触发调查；独立结束审计及归档按本change记录。
+已结束功能的规格、验收及独审在[change归档](changes/archive/)；此前逐批发布说明保留在[11-14整理前记录](../docs/handoff/history/2026-11-14-investigation-cleanup/snapshots/openspec/README.md)。旧批次的版本、授权和完成声明不替代当前状态；模型质量后置仍为NOT_PASSED，局部交付不核销主调查整体。
 
 ## 文档职责
 
-当前优先级为[固定范围调查收口](changes/complete-socai2-investigation-chain/fixed-flow-plan.md)；[schedule-streaming-investigation-updates](changes/schedule-streaming-investigation-updates/proposal.md)已规划更新触发、队列合并、反馈复核和知识使用，按负责人最新指令在固定流程完成后实施，尚未改变运行行为。
+当前优先级为[固定范围调查收口](changes/complete-socai2-investigation-chain/fixed-flow-plan.md)与[流式更新交付](changes/schedule-streaming-investigation-updates/proposal.md)；当前目标采用独立任务排队、执行前检查及事件驱动Case更新，跨task合并已取消。反馈复核沿已确认范围，人工定向及知识后台异步维护后置，正式运行行为尚未切换。
 
 | 内容 | 维护位置 |
 | --- | --- |
@@ -39,14 +23,30 @@
 
 这里的完整流程指本次功能从输入、处理到保存、读取的业务闭环。验收复用已有证据，只补正常路径及直接受影响的结果；不以测试数量、全量字段对账、多轮模型比较或可用性专项作为功能交付前置。每次只展开下一项功能，不为后续全部模块提前建立测试工程。
 
+## 阶段规划与分步执行
+
+这是全项目的实施约束，适用于后续智能体、会话和各个阶段。每个阶段开始修改前，先在所属 change 的现有设计和任务中理清整体安排；已经写清的内容复用，不另建平行任务树。
+
+| 实施前必须写清 | 所需内容 |
+| --- | --- |
+| 阶段目标与范围 | 本阶段解决的问题、纳入和排除的范围、完成后用户或调用方会看到的具体效果 |
+| 步骤及依赖 | 分成哪些可验证步骤、先后关系、本轮只做哪一步，以及该步的完成边界 |
+| 必要测试 | 复用哪些已有测试/原答/快照，本次只补哪些直接行为；区分离线、替身、真实数据库、真实模型、实际来源及页面查看 |
+| 验证与判据 | 如何沿输入→处理→保存→读取核对原值和关系，预期结果是什么，用什么证据判断通过；哪些失败或未验状态必须保留 |
+| 收口与下一步 | 本步结果记录到哪里，哪些条件满足后才能进入依赖步骤，阶段完整验收还缺什么 |
+
+先向用户说明整体阶段安排及本轮落点，再在已有授权范围内实施。每轮执行一个明确步骤，完成修改后立即做该步直接验证，记录并回报实际结果；发现阻断先定向修复和复验。不得把整个阶段包装成一个大任务，在同一会话执行中同时修改所有独立问题，再把验证集中到最后。整体计划说明必要验证，不要求提前建设后续步骤的测试工程。
+
+分步执行与一个 change 统一交付并行适用：步骤通过不等于整个阶段/change完成，也不触发发布、推送或归档；授权范围内不新增逐步审批。用户明确调整本轮范围时，先同步当前任务落点，保留未验证草稿及其状态，不记为已交付。
+
 ## 工作流
 
 实施以功能完整、结果正确为先，采用最小必要适配。所有一体模块/依赖可整体原样迁入，不额外修改或测试；不为拆分暂缓模块、统一架构或补齐专项而增加工作。冗余设计及服务可用性测试/修复登记后置，OpenSpec只追踪本次实际功能变化和最少验证，不引入另一套完整性/恢复框架。未专项验证如实标记，历史失败不改写。
 
 1. 读取根AGENTS、上述权威文档及相关完整规格；运行 `openspec list` 和 `openspec list --specs`，复用合适的活动change。
-2. 新变更运行 `openspec new change <name>`，形成proposal、必要规格增量、简短design和tasks。设计仅说明本次影响及必要边界，不默认增加抽象层；原样一体迁入不新增独立改测任务。纯工具/文档/重构且无规格级行为变化时在 `.openspec.yaml` 设置 `skip_specs: true`，不创建空的规格增量。
+2. 新变更运行 `openspec new change <name>`，形成proposal、必要规格增量、简短design和tasks；已有change原位补齐。按上述阶段规划先明确整体目标、预期效果、分步范围、必要测试及验收证据，再选择本轮一步。设计仅说明本次影响及必要边界，不默认增加抽象层；原样一体迁入不新增独立改测任务。纯工具/文档/重构且无规格级行为变化时在 `.openspec.yaml` 设置 `skip_specs: true`，不创建空的规格增量。
 3. 运行 `openspec validate <name> --strict --no-interactive`，沿用已有受控授权/运行边界，只核本次实际操作必要条件。旧批全量冻结、逐项计数及恢复清单不自动变成新功能前置；旧R02仍暂缓。没有明确运行范围时不改变运行开关，不新增常规逐批用户确认。
-4. 按tasks实施和直接验证，留下输入→实际中间产品/调用→最终值/关系。每完成一项再勾选，失败与unknown保留；校验通过仅证明结构，不证明业务通过。
+4. 按tasks只实施本轮选定的一步，随即直接验证并记录输入→实际中间产品/调用→保存/读取的最终值与关系；本步完成并回报后再推进下一步，不提前同时铺开后续独立修改。每完成一项再勾选，失败与unknown保留；校验通过仅证明结构，不证明业务通过。
 5. 由未参与实现者做结束审计，将结论/限制/证据写入change的 `audit.md` 或链接专用审计回执；补回执、来源清单及PROGRESS。发现本批阻塞先修并复审。
 6. 所有实施任务和独审完成后运行 `openspec archive <name> --yes`；工具/文档change加 `--skip-specs`。复核 `openspec validate --all --strict --no-interactive` 与 `openspec validate --archived --strict --no-interactive`，检查新主规格没有把计划写成已交付。tasks只勾选已完成的归档前条件，归档操作与封后校验写入audit记录，避免提前勾选尚未发生的归档。
 
@@ -54,5 +54,3 @@
 
 
 归档记录保存在 `changes/archive/`；各批授权和结论只适用于对应范围。当前操作按用户指令、AGENTS 与相关活动 change 执行。
-
-[人工采用调查结果](changes/archive/2026-11-13-adopt-investigation-results/validation.md)交付E21采用、E63预览、E64判断历史。两端独立服务和Swagger docs13已同步；本机工作树与冻结7文件各20HTTP/SQL通过，21只读既有判断/预览/历史，生产采用写入未实测。任务/Run/Case处理状态保持，其他61操作合同保持，核心规则不在HTTP复制；模型质量和主调查31/41不由此核销。

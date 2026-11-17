@@ -1,14 +1,14 @@
 ## 2026-10-27 审计文档补全
 
-源码基线6044615，新增[审计导航](../../../docs/investigation/audit-guide-20261027.md)、[当前实现详解](../../../docs/investigation/current-implementation-reference-20261027.md)、[历史证据全目录](../../../docs/investigation/evidence-catalog-20261027.md)，补正现有说明的路径/验证范围。F1/F2与F3第一版分别有代码及替身直接验证；Incident只汇总/概况，Case承担深入分析；F4/F5未交付。本次无业务源码变化、业务测试、数据库/模型调用、任务启用或部署，不改任务勾选。
+源码基线6044615，新增[审计导航](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-guide-20261027.md)、[当前实现详解](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-implementation-reference-20261027.md)、[历史证据全目录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/evidence-catalog-20261027.md)，补正现有说明的路径/验证范围。F1/F2与F3第一版分别有代码及替身直接验证；Incident只汇总/概况，Case承担深入分析；F4/F5未交付。本次无业务源码变化、业务测试、数据库/模型调用、任务启用或部署，不改任务勾选。
 
 ## 2026-10-25 业务流程落文档与功能规划
 
-按用户最新要求保存[告警—事件概况—调查流程](../../../docs/architecture/incident-investigation-flow-20261025.md)和[评审与实现规划](../../../docs/investigation/incident-investigation-implementation-plan-20261025.md)。本轮不编码，围绕事件汇总/AI概况与调查深入分析的分工做一轮评审；后续按五个可交付功能批次推进。权限专项及冗余测试继续暂停，历史未完成项不核销，2.2/2.3不勾；无业务调用、配置改变、部署或合main。
+按用户最新要求保存[告警—事件概况—调查流程](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/incident-investigation-flow-20261025.md)和[评审与实现规划](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/incident-investigation-implementation-plan-20261025.md)。本轮不编码，围绕事件汇总/AI概况与调查深入分析的分工做一轮评审；后续按五个可交付功能批次推进。权限专项及冗余测试继续暂停，历史未完成项不核销，2.2/2.3不勾；无业务调用、配置改变、部署或合main。
 
 ## 2026-10-25 当前范围收尾
 
-用户要求以功能完成为准、减少可用性和冗余测试，权限相关继续暂停。保存[设计—实现—证据对照及收尾决定](../../../docs/investigation/design-implementation-review-20261025.md)，复用上一轮124项合同和独立审阅，不增加代码、业务测试或真实调用；仅做文档差异检查及阶段提交推送。现有手动有限来源核对/持久发布读取按已实现范围结束本阶段，Case/Deep/自动政策和新启动真实整链等未完成项保持原状，2.2/2.3不勾、不归档、不部署或合main。
+用户要求以功能完成为准、减少可用性和冗余测试，权限相关继续暂停。保存[设计—实现—证据对照及收尾决定](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-implementation-review-20261025.md)，复用上一轮124项合同和独立审阅，不增加代码、业务测试或真实调用；仅做文档差异检查及阶段提交推送。现有手动有限来源核对/持久发布读取按已实现范围结束本阶段，Case/Deep/自动政策和新启动真实整链等未完成项保持原状，2.2/2.3不勾、不归档、不部署或合main。
 
 ## 2026-10-25 M8a4.4a实际PG原子准入/锁竞争
 
@@ -226,7 +226,7 @@ M2经临时localhost最小FastAPI挂原graph router，保真实认证/权限/dis
 
 执行前固定[验收卡](../../../docs/operations/unified-investigation-implementation.md)。M0仅核测试tenant的一条已知合成事件和15个指定字段；初次被沙箱socket/文件权限阻止，获准相同只读操作后元数据通过，事件查询因探针SELECT别名覆盖UUID类型失败。取回code386后保原失败、修正探针，09:54:48 UTC回查1行，主机/进程吻合，目标IP为::，不能支持外联。见[净化JSON](../../../docs/operations/unified-investigation-m0-source.json)。无业务数据写入、模型调用或运行变更。
 
-两路只读源码审计核测试数据/存储和工具边界后形成[待讨论建议](../../../docs/architecture/investigation-tool-data-plan.md)。M0来源盘点已完成，但场景/工具/数据计划未确认，M0未放行，M1源码与后续模块均未实现。OpenSpec1.13.0在当前工作树可直接运行（原Windows wrapper会切回原目录，未采用）；此前v3批未发现CLI为历史事实。原tasks 5/15不变，strict/静态/结束审计见audit最新段，不把规格结构通过当业务通过。
+两路只读源码审计核测试数据/存储和工具边界后形成[待讨论建议](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-data-plan.md)。M0来源盘点已完成，但场景/工具/数据计划未确认，M0未放行，M1源码与后续模块均未实现。OpenSpec1.13.0在当前工作树可直接运行（原Windows wrapper会切回原目录，未采用）；此前v3批未发现CLI为历史事实。原tasks 5/15不变，strict/静态/结束审计见audit最新段，不把规格结构通过当业务通过。
 
 ## 2026-10-23 调查统一设计v3文档修订
 

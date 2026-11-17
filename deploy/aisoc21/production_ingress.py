@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 import asyncpg
+from projection_config import load_profile
 
 SOURCE = """
 SELECT id,tenant_id,source_incident_id,snapshot
@@ -50,13 +51,13 @@ def source_delivery(row, tenant, subject, by_incident):
     return fused, snapshot
 
 
-async def sync_subject(conn, sink, tenant, subject, by_incident, *, expected_incident=None):
+async def sync_subject(conn, sink, tenant, subject, by_incident, *, source_prefetch, expected_incident=None):
     from app.services.alert_sink import PersistOutcome
     from app.services.socai2_projection import snapshot_id
 
     found = False
     projected = 0
-    async for row in conn.cursor(SOURCE, tenant, subject, by_incident, prefetch=1):
+    async for row in conn.cursor(SOURCE, tenant, subject, by_incident, prefetch=source_prefetch):
         found = True
         fused, snapshot = source_delivery(row, tenant, subject, by_incident)
         if expected_incident is not None and fused.incident_id != expected_incident:
@@ -104,24 +105,25 @@ async def check_identity(conn, tenant):
         raise IngressError("invalid_ingress_database")
 
 
-async def project(tenant, alerts, incidents, *, expected_incident=None):
+async def project(tenant, alerts, incidents, *, config, expected_incident=None):
+    from app.services.socai2_analysis_tasks import load_policy
     from app.services.socai2_sink import Socai2AlertSink
 
     dsn = database_url()
-    conn = await asyncpg.connect(dsn, timeout=10, command_timeout=60)
+    conn = await asyncpg.connect(dsn, timeout=config["connect_timeout_seconds"], command_timeout=config["command_timeout_seconds"])
     try:
         # All requested members are visible together, or the transaction rolls back.
         async with conn.transaction():
             await check_identity(conn, tenant)
-            await conn.execute("SET LOCAL lock_timeout='15s'")
+            await conn.execute("SELECT set_config('lock_timeout',$1,true)", str(config["lock_timeout_ms"]) + "ms")
             await conn.execute("SELECT pg_advisory_xact_lock(hashtext('socai2 production snapshot ingest'),hashtext($1))",
                                str(tenant))
             projected = 0
-            sink = Socai2AlertSink(dsn)
+            sink = Socai2AlertSink(dsn, analysis_policy=load_policy(config["analysis_policy_file"]))
             for by_incident, ids in ((False, alerts), (True, incidents)):
                 for subject in sorted(set(ids)):
                     projected += await sync_subject(conn, sink, tenant, subject, by_incident,
-                                                    expected_incident=expected_incident)
+                        source_prefetch=config["source_prefetch"], expected_incident=expected_incident)
     finally:
         await conn.close()
     return {"status": "ready", "source": os.environ["SOCAI2_SERVICE_DATABASE_NAME"], "alert_ids_requested": len(set(alerts)),
@@ -130,16 +132,19 @@ async def project(tenant, alerts, incidents, *, expected_incident=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--profile", required=True)
     parser.add_argument("--tenant", type=UUID, required=True)
     parser.add_argument("--alert-id", action="append", type=UUID, default=[])
     parser.add_argument("--incident-id", action="append", type=UUID, default=[])
     args = parser.parse_args()
     if not args.alert_id and not args.incident_id:
         parser.error("select one or more alerts or incidents")
-    if Path("/opt/processor/smoke-fusion").is_dir():
-        sys.path.insert(0, "/opt/processor/smoke-fusion")
+    config = load_profile(args.profile)
+    if not Path(config["source_pythonpath"]).is_dir():
+        raise IngressError("source_runtime_unavailable")
+    sys.path.insert(0, config["source_pythonpath"])
     try:
-        response = asyncio.run(project(args.tenant, args.alert_id, args.incident_id))
+        response = asyncio.run(project(args.tenant, args.alert_id, args.incident_id, config=config))
     except IngressError as exc:
         print(json.dumps(exc.receipt))
         return 1

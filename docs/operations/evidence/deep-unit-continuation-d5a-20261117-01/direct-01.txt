@@ -1,0 +1,27 @@
+.................................................F...................    [100%]
+=================================== FAILURES ===================================
+___ test_history_duplicate_presentation_preserves_c3_and_final_dependencies ____
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+
+    def test_history_duplicate_presentation_preserves_c3_and_final_dependencies(sample):
+        row = next(row for alert in sample["context"]["alerts"].values() for row in alert["queries"]
+                   if row["content_json"]["tool_name"] == "history" and row["content_json"].get("rows"))
+        body = row["content_json"]
+        original = copy.deepcopy(body["rows"][0])
+        duplicate = copy.deepcopy(original)
+        duplicate["object_key"] = "same-record-another-object"
+        body.update(rows=[original, duplicate], returned_rows=2)
+        row.update(sha256=digest(body), size_bytes=len(encoded(body)))
+        sample["context"]["citation_roles"].update(base_tests.queries.roles(sample["context"]))
+        context, base = prepared_sample(sample)
+        selected = [r for r in base["input_ledger"]["records"] if r.get("original_reference", {}).get("id") == row["id"]
+                    and (r["original_reference"]["source_path"] or "").count(".") == 2]
+>       assert len(selected) == 2 and selected[0]["id"] != selected[1]["id"]
+E       assert (0 == 2)
+E        +  where 0 = len([])
+
+services/api/tests/test_socai2_case_followup_boundary.py:770: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_followup_boundary.py::test_history_duplicate_presentation_preserves_c3_and_final_dependencies
+1 failed, 68 passed in 7.37s

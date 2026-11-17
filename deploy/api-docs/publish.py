@@ -8,6 +8,11 @@ GROUPS = {'告警': ('alerts', 22), '事件': ('incidents', 15), '调查': ('inv
 AUDIT_REL = Path('deliverables/investigation-validation-20261106/http-handoff-audit')
 SOURCES = [
     'docs/integration/result-adoption-http.md',
+    'docs/integration/case-story-http.md',
+    'docs/integration/case-exploration-http.md',
+    'docs/integration/case-exploration-save-http.md',
+    'docs/integration/alert-review-http.md',
+    'docs/integration/alert-host-http.md',
     'docs/investigation/socai2-page-data-handoff-20261106.md',
     'docs/design/socai2-data-contract-current.json',
     'docs/design/socai2-independent-api-v2.openapi.json',
@@ -15,6 +20,8 @@ SOURCES = [
 ]
 
 RESULTS = {
+71:'返回同主机最新7条其他告警及全部主机来源；total为完整匹配数，不要求同战术，不改变判定或调查。',
+70:'返回按时间排序的相似历史候选、逐对匹配依据及当前判定/归属；不复制反馈，不改变告警或触发调查。',
 1:'创建Case并保存所选告警/事件关系，返回案件ID、范围版本和待启动Run ID；创建本身不执行调查。',
 2:'按指定条件和顺序返回案件列表、筛选总数total和next_cursor；metrics保留租户整体指标。',
 3:'返回指定案件的资料、当前成员、关联事件、已采用判断和调查记录引用。',
@@ -80,6 +87,11 @@ RESULTS = {
 62:'返回本Case单个附件引用信息，供业务后端按file_id提供下载；不返回文件内容或下载地址。',
 63:'返回采用资格、比较内容及review_token；不写入判断、不执行调查。',
 64:'返回按版本倒序的采用判断及来源；total/next_offset支持继续读取历史。',
+67:'返回当前或指定完成调查底图及指纹，缺图如实保留；只读。',
+68:'保存固定底图、真实展开关系和画布状态，返回不可变保存ID；不产生调查或加入成员。',
+69:'恢复本案最近保存，未保存时snapshot为null；内容不随新调查替换。',
+66:'返回案件一层候选告警及逐对匹配原件、共享对象数、时间差、归属和分页；不修改图、案件成员或调查。',
+65:'返回本案故事条目、筛选总数及下一页游标；保留原始身份、正文、状态和时间，可跳回原告警/Run/结果/任务修订。',
 }
 
 
@@ -156,8 +168,8 @@ def enrich_contract(root, doc, features, endpoints, version):
     doc['info']['title'] = '调查服务 HTTP API'
     doc['info']['description'] = (
         '后端HTTP接口，按告警、事件、调查分类。展开接口查看用途、输入参数、输出字段、示例、操作结果和错误。'
-        '\n\n状态标明接口逻辑是否实现；E19/E20为未实现预留接口，返回501。'
-        '对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。'
+        '\n\n状态标明接口逻辑是否实现；E19/E20为暂缓的AI对话预留接口，未实现并返回501。'
+        '本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。'
         '原43操作经本机原路由/真实隔离库检查；执行模型和外部查询用测试替身。新增4个Case管理操作经本机TCP及21正式HTTP完成修改、结案、重开及SQL读回；原Case/H流程证据保留；未调用真实模型，模型质量仍未通过。'
         '新增六个告警/事件管理操作复用现有字段，单条和批量均支持，测试不调用模型。'
         '示例为合成数据，实际执行和结论状态以响应字段为准。'
@@ -170,7 +182,7 @@ def enrich_contract(root, doc, features, endpoints, version):
     all_ops = {o['operationId']: o for methods in doc['paths'].values() for o in methods.values() if isinstance(o, dict) and 'operationId' in o}
     for e in endpoints:
         eid = e['id']; number = int(eid[1:]); op = all_ops[eid]
-        if number in [48,49,50,51,54]:
+        if number in [48,49,50,51,54,70,71]:
             tags = ['告警']
         elif number in [52,53,55,57]:
             tags = ['事件']
@@ -201,7 +213,7 @@ def enrich_contract(root, doc, features, endpoints, version):
                 + '\n\n**输入：** '+'；'.join(inputs)+'。'
                 + f'\n\n**输出：** HTTP {e["example"]["response_status"]}，`{response}`；完整字段和示例见Responses。'
                 + '\n\n**结果：** '+RESULTS[number]+'\n\n**规则与限制：** '+e['note'])
-        verification = ('采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。' if number in [21,63,64] else '本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。' if number in [60,61,62] else '本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。' if number in [58,59] else '本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。' if number==57 else '本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。' if 54<=number<=56 else '已确认返回501，功能未实现。' if number in [19,20] else
+        verification = ('本机20条独立合成告警的17次GET通过：9条候选正确取最新7条、16对主机来源回查、不同战术匹配、未知时间/空态/隔离/错误及4表原行保持。0模型/0生产写入。' if number==71 else '本机20条独立合成告警/事件/Case的23HTTP验证通过，10表查询前后原行相同；随后独立夹具材料更新验证旧游标409。无模型或生产业务写入。' if number==70 else '本机真实PG与HTTP保存恢复、撤销、幂等/冲突、来源错误和新调查不替换旧底图已直接验证；7张业务表保存前后保持。合成历史图构造失败已保留，修正构造后完成剩余验证；0模型/0生产写入。' if number in [67,68,69] else '本机30次真实HTTP核对匹配、哈希算法、时间、分页、来源回查及明确加入；查询前后10表原行一致，原案归属保留。0模型/0生产写入。' if number==66 else '本机30次真实TCP功能检查及补充1次GET/11表原行核对通过；原快照脚本错误保留，正式本机和21各7次只读GET核对版本、故事和源记录通过。无模型调用或数据库迁移。' if number==65 else '采用预览、显式提交、未完确认、幂等和历史读取的真实HTTP/SQL验收见本轮回执；程序构造结果不代表模型质量。' if number in [21,63,64] else '本机25次真实TCP及独立SQL完成附件引用登记、分页、单项、重放/冲突和跨案404；任务/Run/判断保持。合成文件ID仅验引用，不代表业务后端文件上传/下载通过；两端正式发布见回执。' if number in [60,61,62] else '本机21次真实TCP已完成提交/原文/分页/幂等与冲突，SQL读回一致；未完人工任务、待启动Run及案件判断保持。两端正式发布另见回执。' if number in [58,59] else '本机新8告警/4事件/6关系，13次真实TCP与独立SQL计算一致；覆盖已归并/未归并、跨来源、日期及未知时间、空事件和422；查询前后数据保持。两端正式发布另有读回回执。' if number==57 else '本机62次真实TCP及PG核对：55条告警超过旧单页范围，三类104个公开列与列表逐值一致，行上限413，查询前后数据不变；发布读回见本批回执。' if 54<=number<=56 else '已确认返回501，功能未实现。' if number in [19,20] else
             '本机真实PostgreSQL和TCP完成三类列表117次请求：筛选、九种排序双向分页、旧游标兼容及查询前后行不变；21发布读回见本批回执。' if number in [2,26,27] else
             '本机六项单条/批量HTTP、状态联动、幂等/冲突及SQL读回已验；21发布和验收见本批部署回执。' if 48 <= number <= 53 else
             '本机及21正式HTTP完成管理读取/局部更新、结案与重开，SQL读回一致；任务/Run保持，版本冲突和未完任务确认已验证。' if number >= 44 else
@@ -209,10 +221,10 @@ def enrich_contract(root, doc, features, endpoints, version):
             '本机TCP及21正式HTTP已完成本批Case/H直接操作；保存值与SQL读回一致，Run未启动。' if number in [1,3,12,38,40,41,42,43,44,45,46,47] else
             '本机原路由及真实隔离库直接检查通过；21已核对路由和结构，本轮未重复调用此操作。')
         desc += '\n\n**验证结果（列表更新于2026-11-13；其他沿既有验收）：** '+verification
-        desc += '\n\n**部署情况：** '+'对应本机18024版本为case-result-adoption-20261113-r1-local，21正式18024为case-result-adoption-20261113-r1；合同含64操作，实际发布见部署回执，本机使用v12_upgrade_dev，21使用aisoc。'
+        desc += '\n\n**部署情况：** '+'本候选按内部可信对接，不需要登录、Token、API Key或角色校验。服务配置指定租户和记录操作人，71业务操作和业务字段保持。已完成本机无凭据20次管理请求及保存读取；不启动模型。当前正式两端18024/Swagger仍为investigation-sync-20261113-r1/docs19，可信版本尚未统一发布；本文档为docs20候选。'
         response_notes = adoption.field_notes() if number in [21,63,64] else ''
-        if number==57:
-            for model in ('GroupingSummary','GroupingQuery'):
+        if number in [57,65,66]:
+            for model in (('GroupingSummary','GroupingQuery') if number==57 else ('StoryPage','StoryEntry') if number==65 else ('ExplorationPage','ExplorationScope','ExplorationCandidate','ExplorationMatch','ExplorationObject','ExplorationExcludedObject')):
                 response_notes+='\n\n### '+model+'\n\n| 字段 | 含义 |\n| --- | --- |\n'
                 for field,prop in sc[model]['properties'].items():
                     response_notes+='| `'+field+'` | '+prop.get('description', '固定合同版本socai2.incident-grouping.v1').replace('\n',' ')+' |\n'
@@ -275,8 +287,8 @@ def publish_pages(root, out, doc, features, endpoints, version, render, head, in
     for name in ['README', 'interfaces', 'response-fields', 'dynamic-fields']:
         source = audit / (name + '.md'); text = source.read_text()
         # 保留审计原件的历史结论；线上附上当前发布注记。
-        notice = f'<p class="badge">本页保留既有JSON接口字段审计原文（原文的47/53操作和当前仅指原审计时点）。{version}总计64操作；新增CSV接口及104个可选列见<a href="/handoff/endpoints.html#e54">E54–E56</a>。E57新增归并统计和12个固定字段，见<a href="/handoff/endpoints.html#e57">E57</a>。E58/E59新增Case评论22个固定输出字段位置，E60–E62新增附件引用37个固定输出字段位置；E21/E63/E64新增采用42个固定字段及7组动态说明；旧审计不替代新接口验收。</p>'
-        (out / 'audit' / source.name).write_text('> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前64操作，CSV接口/104列见[E54–E56](../endpoints.md#e54)；新增统计/12字段见[E57](../endpoints.md#e57)。\n\n'+text)
+        notice = f'<p class="badge">本页保留既有JSON接口字段审计原文（原文的47/53操作和当前仅指原审计时点）。{version}总计71操作；新增CSV接口及104个可选列见<a href="/handoff/endpoints.html#e54">E54–E56</a>。E57新增归并统计和12个固定字段，见<a href="/handoff/endpoints.html#e57">E57</a>。E58/E59新增Case评论22个固定输出字段位置，E60–E62新增附件引用37个固定输出字段位置；E21/E63/E64新增采用42个固定字段及7组动态说明；旧审计不替代新接口验收。</p>'
+        (out / 'audit' / source.name).write_text('> 既有JSON接口字段审计原文；原文47/53操作仅指原审计时点。本批当前71操作，CSV接口/104列见[E54–E56](../endpoints.md#e54)；新增统计/12字段见[E57](../endpoints.md#e57)。\n\n'+text)
         (out / 'audit' / (('guide' if name == 'README' else name) + '.html')).write_text(
             head + nav + notice + render(links(root, source, text)) + '</main></html>')
     (out / 'audit/coverage.json').write_bytes((audit / 'coverage.json').read_bytes())

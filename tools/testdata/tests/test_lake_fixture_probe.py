@@ -133,7 +133,7 @@ class LakeFixtureProbeTest(unittest.TestCase):
         self.assertEqual(result["write_outcome"], "three_rows_verified")
         self.assertEqual((self.backend.inserts, self.backend.writer_starts, self.backend.writer_stops,
                           self.backend.reader_stops), (1, 1, 1, 1))
-        self.assertEqual(result["writer_metrics"], {"rows_written": 3, "flush_failures": 0, "buffered": 0})
+        self.assertEqual(result["writer_metrics"], {"rows_written": 3, "rows_dropped": 0, "flush_failures": 0, "buffered": 0})
         self.assertEqual(result["discarded_buffer_on_cleanup"], 0)
         self.assertEqual(result["matched_event_ids"], [self.manifest["events"][0]["event_id"]])
         self.assertEqual(len(result["comparisons"]), 3)
@@ -196,7 +196,7 @@ class LakeFixtureProbeTest(unittest.TestCase):
         result = self.run_probe()
         self.assertEqual(result["status"], "failed_outcome_unknown")
         self.assertEqual(result["error"]["check"], "writer_flush_not_confirmed")
-        self.assertEqual(result["writer_metrics"], {"rows_written": 0, "flush_failures": 1, "buffered": 0})
+        self.assertEqual(result["writer_metrics"], {"rows_written": 0, "rows_dropped": 3, "flush_failures": 1, "buffered": 0})
         self.assertEqual(self.backend.inserts, 1)
         self.assertNotIn("readback", [q["stage"] for q in result["queries"]])
         self.assertNotIn("secret-do-not-print", (self.out / "receipt.json").read_text())

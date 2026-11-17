@@ -1,0 +1,38 @@
+......F...                                                               [100%]
+=================================== FAILURES ===================================
+______ test_complete_release_generates_and_validates_outside_source_tree _______
+
+release = (PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-220/test-release0/out/tes...-01'), {'status': 'passed', 'release': 'test-service-0.6.0-20261116-01', 'service_version': '0.6.0', 'files': 62, ...})
+tmp_path = PosixPath('/private/var/folders/4b/cp3192516pv4v_9vf45t06cc0000gn/T/pytest-of-lychee/pytest-220/test_complete_release_generate0')
+
+    def test_complete_release_generates_and_validates_outside_source_tree(release, tmp_path):
+        package, receipt = release
+        assert builder.verify(package)['status'] == 'passed'
+        assert receipt['archive_sha256'] == builder.sha(receipt['archive'])
+        cfg = json.loads((package/'tools/testdata/streaming-fixture.example.json').read_text())
+        cfg['batch_id'] = 'w4-package-offline-fixture'
+        config = tmp_path/'fixture.json'
+        config.write_text(json.dumps(cfg))
+        env = {**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'}
+        env.pop('PYTHONPATH', None)
+        def run(*args):
+            result = subprocess.run([sys.executable, *map(str, args)], cwd=tmp_path,
+                                    env=env, capture_output=True, text=True, timeout=30, check=True)
+            return result.stdout
+        script = package/'tools/testdata/streaming_fixture.py'
+        generated = json.loads(run(script, 'generate', '--config', config, '--out', tmp_path/'materials'))
+        checked = json.loads(run(script, 'validate', '--input', tmp_path/'materials'))
+        assert generated == checked and checked['status'] == 'passed_offline'
+        assert checked['business_connections'] == checked['model_calls'] == checked['kafka_sends'] == 0
+        assert 'prepare' in run(package/'tools/testdata/streaming_send.py', '--help')
+        manifest = json.loads((package/'compatibility.json').read_text())
+>       assert manifest['service_version'] == manifest['viewer_version'] == '0.5.1'
+E       AssertionError: assert '0.6.0' == '0.5.1'
+E         
+E         - 0.5.1
+E         + 0.6.0
+
+deploy/investigation-test/test_build.py:51: AssertionError
+=========================== short test summary info ============================
+FAILED services/investigation_test::test_complete_release_generates_and_validates_outside_source_tree
+1 failed, 9 passed in 0.69s

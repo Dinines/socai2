@@ -1,0 +1,39 @@
+name: ${ACCEPTANCE_PROJECT:?set an explicit project name}
+
+services:
+  acceptance:
+    image: ${ACCEPTANCE_IMAGE:?set the verified acceptance image reference}
+    platform: ${ACCEPTANCE_PLATFORM:?set the verified image platform}
+    pull_policy: never
+    user: ${ACCEPTANCE_USER:?set a non-root uid and gid with results access}
+    network_mode: ${ACCEPTANCE_NETWORK:?select none for offline use or an explicit business network}
+    read_only: true
+    init: true
+    stdin_open: true
+    tty: true
+    restart: "no"
+    cpus: ${ACCEPTANCE_CPUS:?set the CPU limit}
+    mem_limit: ${ACCEPTANCE_MEMORY:?set the memory limit}
+    pids_limit: ${ACCEPTANCE_PIDS:?set the process limit}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,mode=1777,size=${ACCEPTANCE_TMPFS_SIZE:?set the temporary memory limit}
+    volumes:
+      - type: bind
+        source: ${ACCEPTANCE_MATERIALS_DIR:?set an existing read-only material directory}
+        target: ${ACCEPTANCE_MATERIALS_TARGET:?set the stable container material path}
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ACCEPTANCE_CONFIG_DIR:?set an existing private configuration directory}
+        target: ${ACCEPTANCE_CONFIG_TARGET:?set the stable container configuration path}
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ACCEPTANCE_RESULTS_DIR:?set an existing persistent output directory}
+        target: ${ACCEPTANCE_RESULTS_TARGET:?set the stable container output path}
+        bind:
+          create_host_path: false

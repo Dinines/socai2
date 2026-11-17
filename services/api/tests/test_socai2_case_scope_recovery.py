@@ -96,10 +96,18 @@ def test_scope_and_local_finding_feedback_does_not_repair_answer(sample):
     context, prepared = base_tests.prepared_sample(sample)
     answer = base_tests.answer_for(prepared, context)
     answer["members"][0]["evidence_ids"] += answer["members"][1]["evidence_ids"]
+    scope_only = json.dumps(answer)
+    scoped = case_output_adapter.CaseReview(prepared, context, {}).feedback(scope_only)
+    assert {e["code"] for e in scoped["errors"]} == {"source_member_mismatch"}
+    assert all(e["current_values"] == answer["members"][0]["evidence_ids"] for e in scoped["errors"])
+    assert all(e["actual_role"] for e in scoped["errors"])
+    assert scoped["allowed_sources"] == scoped["local_findings"] == scoped["observed_support_ids"] == []
+    assert json.dumps(answer) == scope_only
     answer["domains"][0]["finding_ids"] = ["F3", "authorization"]
     original = json.dumps(answer)
     result = case_output_adapter.CaseReview(prepared, context, {}).feedback(original)
     assert {e.get("code") for e in result["errors"]} >= {"source_member_mismatch", "unknown_local_finding"}
+    assert result["allowed_sources"]  # Mixed errors keep the existing complete diagnostics.
     assert result["local_findings"] == [] and json.dumps(answer) == original
     assert all(a.startswith("A") for s in result["allowed_sources"] for a in s["alert_ids"])
     answer["members"][1]["alert_id"] = answer["members"][0]["alert_id"]

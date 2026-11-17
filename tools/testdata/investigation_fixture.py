@@ -13,11 +13,11 @@ from pathlib import Path
 from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-from alert_scenarios import RUN_ID, SOURCE, _event_time, _load_payloads, _without_answers, json_bytes, sha256
+from alert_scenarios import RUN_ID, SOURCE, SOURCE_PROFILE, _event_time, _load_payloads, _without_answers, json_bytes, sha256
 from alert_kafka import source_wire
 
-FIXTURE_KIND = "socai2-investigation-network-observation/v1"
-CONNECTOR = "socai2-investigation-fixture"
+FIXTURE_KIND = "socai2-investigation-network-observation/v2"
+CONNECTOR = SOURCE_PROFILE["connector_type"]
 SCENARIO = "network-observation"
 SOURCE_IP = "192.0.2.70"
 DEST_IP = "198.51.100.70"
@@ -42,7 +42,7 @@ def _identity(tenant: str, run_id: str, role: str) -> str:
 
 def _build(*, run_id: str, tenant: str, window_start: str) -> tuple[dict[str, Any], dict[str, bytes]]:
     tenant, start = _parameters(run_id, tenant, window_start)
-    hostname = f"{run_id}-host"
+    hostname = f"{SOURCE_PROFILE['host_prefix']}-{_identity(tenant, run_id, 'host')[:8]}"
     connector_id = _identity(tenant, run_id, "connector")
     alert_id = _identity(tenant, run_id, "alert")
     events = []
@@ -55,7 +55,7 @@ def _build(*, run_id: str, tenant: str, window_start: str) -> tuple[dict[str, An
         when = (start + timedelta(minutes=minutes)).isoformat()
         raw = {
             "event_id": event_id, "tenant_id": tenant, "event_time": when,
-            "source": CONNECTOR, "connector_id": connector_id, "synthetic": True,
+            "source": CONNECTOR, "connector_id": connector_id,
             "hostname": hostname, "source_ip": SOURCE_IP, "dest_ip": destination,
             "src_port": 51470, "dst_port": 443, "protocol": "TCP",
             "action": ACTION, "outcome": "unknown",
@@ -64,8 +64,8 @@ def _build(*, run_id: str, tenant: str, window_start: str) -> tuple[dict[str, An
             "uid": event_id, "tenant_uid": tenant, "time": when,
             "class_uid": 4001, "category_uid": 4, "activity_id": 0,
             "severity_id": 1, "severity": "Informational",
-            "metadata": {"uid": event_id, "product": {"name": CONNECTOR,
-                         "vendor_name": "socai2 synthetic fixture"}},
+            "metadata": {"uid": event_id, "product": {"name": SOURCE_PROFILE["product_name"],
+                         "vendor_name": SOURCE_PROFILE["vendor_name"]}},
             "device": {"name": hostname},
             "src_endpoint": {"ip": SOURCE_IP, "hostname": hostname, "port": 51470},
             "dst_endpoint": {"ip": destination, "port": 443}, "protocol": "TCP",
@@ -77,15 +77,14 @@ def _build(*, run_id: str, tenant: str, window_start: str) -> tuple[dict[str, An
                        "ocsf_event": ocsf})
     payload = {
         "schema_version": "v1", "id": alert_id, "tenant_id": tenant, "source": SOURCE,
-        "title": "Synthetic network observation requiring fact verification",
-        "description": "A synthetic source reported a network observation; its outcome is unknown.",
+        "title": "网络连接观察",
+        "description": "",
         "severity": "medium", "event_time": events[0]["ocsf_event"]["time"],
         "created_at": events[0]["ocsf_event"]["time"],
         "hostname": hostname, "src_ip": SOURCE_IP, "dst_ip": DEST_IP,
         "connector_id": connector_id, "connector_type": CONNECTOR, "ocsf_class_uid": 4001,
-        "source_event_ids": [events[0]["id"]], "tags": ["synthetic", f"run:{run_id}"],
-        "raw_event": {"synthetic": True, "run_id": run_id, "scenario_id": SCENARIO,
-                      "telemetry": [json.loads(events[0]["ocsf_event"]["raw_data"])]},
+        "source_event_ids": [events[0]["id"]], "tags": [],
+        "raw_event": {"telemetry": [json.loads(events[0]["ocsf_event"]["raw_data"])]},
     }
     _without_answers(payload)
     source_wire(payload, tenant)  # Validate the actual RawAlert/source-v1 contract, offline.
@@ -107,15 +106,15 @@ def _build(*, run_id: str, tenant: str, window_start: str) -> tuple[dict[str, An
         event_records.append({
             "event_id": event["id"], "event": path, "event_sha256": sha256(files[path]),
             "raw_payload_sha256": sha256(event["ocsf_event"]["raw_data"].encode("utf-8")),
-            # Match the original LakeWriter's exact JSON serialization, not json_bytes.
-            "ocsf_json_sha256": sha256(json.dumps(json.loads(files[path])["ocsf_event"],
-                                                   default=str).encode("utf-8")),
+            # Source integrity is independent of writer-added storage metadata.
+            "ocsf_source_sha256": sha256(json_bytes(event["ocsf_event"])),
         })
     manifest = {
-        "schema_version": "socai2-existing-alert-fixtures/v1", "fixture_kind": FIXTURE_KIND,
+        "schema_version": "socai2-existing-alert-fixtures/v2", "fixture_kind": FIXTURE_KIND,
         "run_id": run_id, "tenant_id": tenant, "event_time": payload["event_time"],
         "count": 1, "event_count": 3, "mode": "synthetic-existing-alerts",
-        "source": {"generator": "tools/testdata/investigation_fixture.py", "version": "v1"},
+        "source_namespace": SOURCE, "test_identity_model_visible": False,
+        "source": {"generator": "tools/testdata/investigation_fixture.py", "version": "v2"},
         "records": [{"scenario_id": SCENARIO, "alert_id": alert_id,
                      "payload": "payloads/001.json", "payload_sha256": sha256(files["payloads/001.json"]),
                      "expected": "expected/001.json", "expected_sha256": sha256(files["expected/001.json"])}],
@@ -179,7 +178,7 @@ def load_fixture(input_dir: Path, *, tenant: str | None = None
     if tenant is not None and str(UUID(tenant)) != manifest["tenant_id"]:
         raise ValueError("fixture differs from explicit test tenant")
     if manifest != canonical:
-        raise ValueError("fixture manifest differs from the bounded v1 recipe")
+        raise ValueError("fixture manifest differs from the bounded v2 recipe")
     for name, expected_data in files.items():
         if not name.startswith("expected/") and _read_file(input_dir, name) != expected_data:
             raise ValueError(f"fixture content/hash mismatch: {name}")

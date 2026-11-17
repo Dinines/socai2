@@ -5,11 +5,34 @@ Freshness = Literal["current", "stale", "unverified", "unavailable"]
 VERSION = "socai2.stage-result.v1"
 TRIAGE_VALIDATION_VERSION = "socai2.incident-triage.v1"
 QUERY_RECEIPTS_VERSION = "socai2.incident-queries.v1"
+TRIAGE_CITATION_VERSION = "socai2.incident-triage-citation.v1"
+
+
+def same_material_triage_sql(alert_sql, assessment_sql):
+    """Downstream A usability, separate from exact A request freshness.
+
+    A completed triage describes its immutable material. Ownership, tags and a
+    later human decision do not invalidate it; feedback is a separate source.
+    Arguments are server-owned SQL expressions, never caller-provided text.
+    """
+    return f"""COALESCE((SELECT CASE WHEN paired_run.state='completed'
+        AND paired_triage.input_material_id=paired_alert.latest_material_id
+        THEN 'current' ELSE 'unavailable' END
+      FROM socai2.alerts paired_alert
+      JOIN socai2.alert_assessments paired_triage ON paired_triage.tenant_id=paired_alert.tenant_id
+        AND paired_triage.alert_id=paired_alert.id AND paired_triage.kind='triage'
+        AND paired_triage.id=CAST({assessment_sql} AS uuid)
+      JOIN socai2.runs paired_run ON paired_run.tenant_id=paired_triage.tenant_id
+        AND paired_run.id=paired_triage.source_run_id AND paired_run.alert_id=paired_alert.id
+        AND paired_run.kind='alert_basic'
+      WHERE paired_alert.tenant_id=:tenant AND paired_alert.id=CAST({alert_sql} AS uuid)), 'unavailable')"""
+
+
 # Read the entire input in one statement. Own output pointers and ingestion clocks
 # are excluded so publishing a result does not make that result stale immediately.
 SOURCE_SQL = """SELECT jsonb_build_object('version',CAST(:version AS text),'kind',CAST(:kind AS text),
  'parent',CASE WHEN :kind='alert_basic' THEN NULL ELSE
-   (SELECT to_jsonb(i)-ARRAY['latest_diagnosis_id','row_version','business_updated_at']
+   (SELECT to_jsonb(i)-ARRAY['latest_diagnosis_id','row_version','business_updated_at','active_case_id']
     FROM socai2.incidents i WHERE i.tenant_id=:tenant AND i.id=:id) END,
  'members',coalesce((SELECT jsonb_agg(jsonb_build_object(
    'alert',to_jsonb(a)-ARRAY['latest_triage_id','latest_explanation_id','row_version','business_updated_at','source_updated_at'],
@@ -37,7 +60,14 @@ def freshness_sql(kind, subject_sql, run_sql):
     source = SOURCE_SQL
     if kind == "incident_diagnosis":
         # Old frozen inputs remain comparable under their original contract.
-        source = f"SELECT CASE WHEN sf.content_json->>'query_receipts_version'='{QUERY_RECEIPTS_VERSION}' THEN ({incident_source_sql(with_queries=True)}) WHEN sf.content_json->>'triage_validation_version'='{TRIAGE_VALIDATION_VERSION}' THEN ({incident_source_sql()}) ELSE ({SOURCE_SQL}) END"
+        legacy = f"CASE WHEN sf.content_json->>'query_receipts_version'='{QUERY_RECEIPTS_VERSION}' THEN ({incident_source_sql(with_queries=True)}) WHEN sf.content_json->>'triage_validation_version'='{TRIAGE_VALIDATION_VERSION}' THEN ({incident_source_sql()}) ELSE ({SOURCE_SQL}) END"
+        source = f"SELECT CASE WHEN sf.content_json->>'triage_citation_quality_version'='{TRIAGE_CITATION_VERSION}' THEN CASE WHEN sf.content_json ? 'query_receipts_version' THEN ({incident_source_sql(with_queries=True, with_citation_quality=True)}) ELSE ({incident_source_sql(with_citation_quality=True)}) END ELSE {legacy} END"
+    selected_freshness = ""
+    if kind == "incident_diagnosis":
+        from .incident_inputs import SELECTION_VERSION
+        selected = incident_source_sql(selection_limit="CAST(sf.content_json->'input_selection'->>'limit' AS integer)")
+        selected = selected.replace(":kind", "'incident_diagnosis'").replace(":id", "st.sid").replace(":version", "'" + VERSION + "'")
+        selected_freshness = f"WHEN sf.content_json->>'selection_version'='{SELECTION_VERSION}' THEN CASE WHEN sf.content_json->'change_view'=(({selected})->'change_view') THEN 'current' ELSE 'stale' END"
     source = source.replace(":kind", "'" + kind + "'").replace(":id", "st.sid").replace(":version", "'" + VERSION + "'")
     return f"""COALESCE((SELECT CASE
        WHEN sf.id IS NULL OR sf.material_state<>'complete' OR sf.content_json IS NULL THEN 'unavailable'
@@ -45,6 +75,8 @@ def freshness_sql(kind, subject_sql, run_sql):
        WHEN sf.content_json->>'kind' IS DISTINCT FROM '{kind}' THEN 'unverified'
        WHEN sf.content_json ? 'triage_validation_version' AND sf.content_json->>'triage_validation_version'<>'{TRIAGE_VALIDATION_VERSION}' THEN 'unverified'
        WHEN sf.content_json ? 'query_receipts_version' AND sf.content_json->>'query_receipts_version'<>'{QUERY_RECEIPTS_VERSION}' THEN 'unverified'
+       WHEN sf.content_json ? 'triage_citation_quality_version' AND sf.content_json->>'triage_citation_quality_version'<>'{TRIAGE_CITATION_VERSION}' THEN 'unverified'
+       {selected_freshness}
        WHEN sf.content_json=({source}) THEN 'current' ELSE 'stale' END
       FROM (SELECT CAST({subject_sql} AS uuid) AS sid, CAST(({run_sql}) AS uuid) AS rid) st
       JOIN socai2.runs sr ON sr.id=st.rid AND sr.{key}=st.sid
@@ -53,13 +85,20 @@ def freshness_sql(kind, subject_sql, run_sql):
       WHERE sr.tenant_id=:tenant AND sr.kind='{kind}'), 'unavailable')"""
 
 
-def incident_source_sql(*, with_queries=False):
+def incident_source_sql(*, with_queries=False, with_citation_quality=False, selection_limit=None):
     """Freeze paired A validity and I members in the same statement snapshot.
 
     No Alert locks: publication retains the established Alert -> Incident order.
     The nested freshness expression uses only the unchanged A source contract.
     """
     fresh = freshness_sql("alert_basic", "a.id", "t.source_run_id")
+    source_sql = SOURCE_SQL
+    if selection_limit is not None:
+        from .incident_inputs import selected_source_sql
+        source_sql = selected_source_sql(SOURCE_SQL, selection_limit)
+        # I consumes the completed A as historical analysis of the same material.
+        # Operator metadata and a later human statement do not invalidate it.
+        fresh = "CASE WHEN r.state='completed' AND t.input_material_id=a.latest_material_id THEN 'current' ELSE 'unavailable' END"
     sql = f"""SELECT frozen.body || jsonb_build_object(
       'triage_validation_version','{TRIAGE_VALIDATION_VERSION}',
       'triage_validation',coalesce((SELECT jsonb_object_agg(a.id::text,jsonb_build_object(
@@ -73,7 +112,28 @@ def incident_source_sql(*, with_queries=False):
         LEFT JOIN socai2.runs r ON r.tenant_id=a.tenant_id AND r.alert_id=a.id
           AND r.id=t.source_run_id AND r.kind='alert_basic'
         CROSS JOIN LATERAL (SELECT {fresh} AS value) f),'{{}}'::jsonb))
-      FROM ({SOURCE_SQL}) frozen(body)"""
+      FROM ({source_sql}) frozen(body)"""
+    if with_citation_quality:
+        # Only the paired A Run's completed model-step output supplies quality.
+        # Freeze a short receipt, never copy the diagnostic ledger into prompts.
+        sql = f"""SELECT paired.body || jsonb_build_object(
+          'triage_citation_quality_version','{TRIAGE_CITATION_VERSION}',
+          'triage_citation_quality',coalesce((SELECT jsonb_object_agg(v.key,jsonb_build_object(
+            'source_run_id',v.value->>'source_run_id','artifact_id',quality.id,
+            'artifact_sha256',quality.sha256,'state',quality.content_json->'citation_review'->>'state') ORDER BY v.key)
+            FROM jsonb_each(paired.body->'triage_validation') v
+            JOIN LATERAL (SELECT f.id,f.sha256,f.content_json FROM socai2.artifacts f
+              JOIN socai2.run_steps s ON s.tenant_id=f.tenant_id AND s.run_id=f.run_id
+                AND s.id=f.step_id AND s.output_artifact_id=f.id
+              WHERE f.tenant_id=:tenant AND f.alert_id=CAST(v.key AS uuid)
+                AND f.run_id=CAST(v.value->>'source_run_id' AS uuid)
+                AND f.kind='model_response' AND f.material_state='complete'
+                AND s.kind='model' AND s.state='completed' AND f.content_json ? 'citation_review'
+              ORDER BY f.captured_at DESC,f.id DESC LIMIT 1) quality ON true
+            WHERE v.value->>'usable'='true'),'{{}}'::jsonb)) FROM ({sql}) paired(body)"""
+    if selection_limit is not None:
+        from .incident_inputs import change_view_sql
+        sql = f"SELECT selected.body || jsonb_build_object('change_view', {change_view_sql('selected.body')}) FROM ({sql}) selected(body)"
     if not with_queries:
         return sql
     # One statement snapshot, using the exact adopted and validated A Run.

@@ -1,0 +1,96 @@
+{
+  "recorded_at": "2026-11-16T11:20:08.010814+00:00",
+  "source_sha256": {
+    "services/api/app/socai2/case_incident_scope.py": "f76ba12b1e9eb39f9d92a01a54dde029fca670785ffc7702c404937c2a09b0eb",
+    "services/api/app/socai2/stage_inputs.py": "e25b94689810d69b9efb5775cb3a7881fa26e3ba0725b514e5edf14de812069d",
+    "services/api/app/socai2/baseline_context.py": "60594c47ac58f270bec21544b2da3b8cfe52ae9dc4c4f872489a21e712e7acfe",
+    "services/api/app/socai2/case_update_inputs.py": "08de290e48bc50c5b656b3f74800650bc3de4d10ad79e1f0653fbe674822e3d3",
+    "services/api/app/socai2/baseline_failure.py": "2c4b31846c3887c55e8eb039340ef9bcab87f02482d4ccba7d8caeffb96c462a",
+    "services/api/app/socai2/analysis_case_executor.py": "982177053b7e9ff8885e926192711ea05213f4df6a74c299e2dc885bb20dbc04",
+    "services/api/app/socai2/analysis_dispatch_store.py": "78ce4214c5872d397fd179dda3d4695e2debd2541a259756da1659d0cf64f545",
+    "services/api/app/socai2/runtime_policy.py": "d14cd9f64fc2f3649d428948d05be26953f28dc0f90b54d1c9571ff7d87fa1c8",
+    "services/api/tests/test_socai2_execution_contract.py": "69a072ab498898e1c5b53684847a63a4e0cb4ca47f8315cf0ec00f07252cf2fa",
+    "deploy/local-investigation/investigation-policy-case-v1.toml": "9ef4129c88b94be7cecfe3b0ad89ba545919554cf93b5ddb8c923f853ef90a8c"
+  },
+  "scope": "用户再次提交五项审计意见；核当前实现、复用既有保存读取证据、定向离线复验。",
+  "status": "limited_recheck_passed",
+  "business_implementation_changed": false,
+  "test_fixture_changed": "services/api/tests/test_socai2_execution_contract.py:test_complete_factory_and_configured_budget_remain_valid",
+  "deployment_changed": false,
+  "database_calls": 0,
+  "model_calls": 0,
+  "http_requests": 0,
+  "before": {
+    "exit_code": 1,
+    "passed": 51,
+    "failed": 1,
+    "test": "test_complete_factory_and_configured_budget_remain_valid",
+    "failure": "assert policy.model.output_tokens[\"C3\"] == 4096; actual 16384",
+    "cause": "测试用固定旧值 C3 = 8192 做文本替换；当前配置为16384，临时文件未得到4096。",
+    "evidence_basis": "本轮首次 pytest 实际工具输出。没有重跑失败批或改写20261115原回执。"
+  },
+  "fix": "只按当前解析的C3配置值定位临时TOML中的唯一预算项并替换为4096，保留现行合同/工厂构造及政策指纹检查。正式预算配置不改。",
+  "findings": [
+    {
+      "id": "F1",
+      "decision": "采纳；当前已有修复",
+      "rule": "冻结I选入范围、实际覆盖和Case交集，不以事件全量成员扩充依据",
+      "evidence": "docs/operations/evidence/incident-case-scope-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F2",
+      "decision": "采纳；当前已有修复",
+      "rule": "下游按同材料/已完成分诊取数，管理字段变化不剔除分诊；业务反馈独立比较",
+      "evidence": "docs/operations/evidence/case-input-metadata-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F3",
+      "decision": "采纳；当前已有修复，限定已知未发送且无其他未决操作",
+      "rule": "连接/池等待失败按既定额度重试；读取/写入超时保持unknown，不一律重投",
+      "evidence": "docs/operations/evidence/case-retry-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F4",
+      "decision": "采纳；当前已取消跨任务归并",
+      "rule": "不同operation_key独立排队，手动检查全部适用事件，自动仅活跃事件；同key幂等保持",
+      "evidence": "docs/operations/evidence/case-trigger-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F5",
+      "decision": "采纳合同及执行路径统一；不固定预算数值",
+      "rule": "缺现行A/I/Case合同拒绝执行，不走旧逻辑；配置额度不同不等于多套执行版本",
+      "evidence": "docs/operations/evidence/execution-contract-fix-20261115-01/README.md"
+    }
+  ],
+  "checks": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=services/api SOCAI2_INVESTIGATION_POLICY=deploy/local-investigation/investigation-policy-case-v1.toml .local/conda-envs/socai2/bin/python -m pytest -q -p no:cacheprovider services/api/tests/test_socai2_case_incident_scope.py services/api/tests/test_socai2_case_update_inputs.py services/api/tests/test_socai2_baseline_retry.py services/api/tests/test_socai2_execution_contract.py services/api/tests/test_socai2_analysis_dispatch.py",
+      "chunk_id": "8ba62d",
+      "wall_time_seconds": 0.0000135,
+      "exit_code": 0,
+      "original_token_count": 25,
+      "output": "....................................................                     [100%]\n52 passed in 1.43s\n"
+    },
+    {
+      "command": ".local/conda-envs/socai2/bin/ruff check --no-cache services/api/tests/test_socai2_execution_contract.py",
+      "chunk_id": "bb80d3",
+      "wall_time_seconds": 0.000008,
+      "exit_code": 0,
+      "original_token_count": 5,
+      "output": "All checks passed!\n"
+    },
+    {
+      "command": "openspec validate schedule-streaming-investigation-updates --strict --no-interactive",
+      "chunk_id": "d7d71d",
+      "wall_time_seconds": 0.03250525,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "Change 'schedule-streaming-investigation-updates' is valid\n"
+    }
+  ],
+  "limitations": [
+    "52项为定向离线测试，真实PG/Redis与HTTP保存读回复用既有F1–F5证据，本轮未重跑。",
+    "未复核21当前运行镜像或部署；没有修改业务配置、推送或发布。",
+    "当前D3仍由调查模块推进，模型正文质量及完整change结束审计不由本轮核销。"
+  ]
+}

@@ -34,7 +34,7 @@
 
 TLS 使用 psycopg 的 `hostaddr` 连接本机隧道，使用 `host` 和 CA 验证 21 的证书，强制 `verify-full`。启动核对实际数据库/角色、TLS、只读事务、强制 RLS、无调查表写权限及 V1 字段。此前 asyncpg 的连接行为保持兼容。依据：[SQLAlchemy 异步 psycopg](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg)、[PostgreSQL host/hostaddr](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS)。
 
-2026-11-07 首次只读实测（历史时点）：TLSv1.3，29 表/462 列；上述租户 1 告警、1 事件、0 Case、2 Run，SQL 与 HTTP 数量一致；错误证书身份拒绝、13 项 HTTP 检查通过。当时 Case 列表为空，未用非空 Case 验证详情，也未补造测试数据；首次验证后关闭了临时 API/数据库隧道。[原只读回执](../../operations/evidence/remote-readonly-20261107/verification.json)
+2026-11-07 首次只读实测（历史时点）：TLSv1.3，29 表/462 列；上述租户 1 告警、1 事件、0 Case、2 Run，SQL 与 HTTP 数量一致；错误证书身份拒绝、13 项 HTTP 检查通过。当时 Case 列表为空，未用非空 Case 验证详情，也未补造测试数据；首次验证后关闭了临时 API/数据库隧道。[原只读回执](2026-11-14-investigation-cleanup/evidence/remote-readonly-20261107/verification.json)
 
 随后按用户授权执行了一批多告警流程，并保留本机只读 API 供查询。非空 Case 详情暴露出两项函数 EXECUTE 缺失，已另经明确授权以[增量 SQL](../../../deploy/database/reader_freshness_access_20261107.sql)补齐并恢复 200；其他权限未变。新核对 135 GET 中 127 正常成功、4 错父子 ID 正确 404、4 资产读取因 `public.assets` SELECT 不足返回 500。首次连通性验证不代表所有有值分支均已验证；复验已存数据请按[交接指南第 8.1 节](../../../FRONTEND_BACKEND_HANDOFF.md#81-2026-11-07-正式库数据库与-get-核对)运行配置化只读核对程序。不要为了消除资产错误给只读角色授予全库权限。
 
@@ -54,15 +54,15 @@ python deploy/database/install_reader.py verify --profile /path/to/reader-instal
 
 新建和升级共用 [upgrade_socai2_v1_2_reader.sql](../../../deploy/database/upgrade_socai2_v1_2_reader.sql)，包含两份授权 SQL；`--print-sql` 可查看完整展开结果。升级授权可重复执行；新建入口遇到已有 schema 会明确失败，不能用于重置现有库。V1 原件不改。配置缺目标时安装器拒绝；SQL 拒绝返回非零退出码，不能把错误提示当成功。
 
-先完成授权和 `verify`，再启动新读取 API。新代码会检查资产/负责人及 Case 函数依赖；旧 profile 需显式增加示例中的 `[read_sources]`。本轮初始化/升级 7 项、本机读取/profile 20 项通过；正式库的实际复验见[实施证据](../../operations/evidence/v1.2-implementation-20261107)，不等于调查模型整链验收。
+先完成授权和 `verify`，再启动新读取 API。新代码会检查资产/负责人及 Case 函数依赖；旧 profile 需显式增加示例中的 `[read_sources]`。本轮初始化/升级 7 项、本机读取/profile 20 项通过；正式库的实际复验见[实施证据](2026-11-14-investigation-cleanup/evidence/v1.2-implementation-20261107)，不等于调查模型整链验收。
 
 ## 原本机隔离环境
 
-**2026-11-10 Case 本地候选：** 显式选择 [investigation-policy-case-v1.toml](../../../deploy/local-investigation/investigation-policy-case-v1.toml)，其中 `[case_io] profile = "case-input-v1.json"` 启用 C1 冻结、C3/Deep/C6 结构文本和输出恢复。新 C1 保存 profile 与业务字段映射指纹；同一冻结 Run 不静默换规则。Deep 四项输出由程序恢复问题号；C6 由程序恢复成员/对象、生成建议编号，首次调查的固定 comparison 不再要求模型输出。未配置 `case_io` 的 Run 继续旧 JSON/输出合同；可选 C3.reanalysis 保持旧实现。候选构建文件为 [processing-build-case-v1.toml](../../../deploy/aisoc21/processing-build-case-v1.toml)，标签 `processing-case-20261110-c2`，逐字收录规则 JSON、业务模块和策略；不是仅在线改文件。本地验证包含真实隔离 PG、模型/工具替身及同材料离线比较，**未部署或新增真实模型调用**，21 最近仍为 A/I r5。[Deep/C6 接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
+**2026-11-10 Case 本地候选：** 显式选择 [investigation-policy-case-v1.toml](../../../deploy/local-investigation/investigation-policy-case-v1.toml)，其中 `[case_io] profile = "case-input-v1.json"` 启用 C1 冻结、C3/Deep/C6 结构文本和输出恢复。新 C1 保存 profile 与业务字段映射指纹；同一冻结 Run 不静默换规则。Deep 四项输出由程序恢复问题号；C6 由程序恢复成员/对象、生成建议编号，首次调查的固定 comparison 不再要求模型输出。未配置 `case_io` 的 Run 继续旧 JSON/输出合同；可选 C3.reanalysis 保持旧实现。候选构建文件为 [processing-build-case-v1.toml](../../../deploy/aisoc21/processing-build-case-v1.toml)，标签 `processing-case-20261110-c2`，逐字收录规则 JSON、业务模块和策略；不是仅在线改文件。本地验证包含真实隔离 PG、模型/工具替身及同材料离线比较，**未部署或新增真实模型调用**，21 最近仍为 A/I r5。[Deep/C6 接入报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
 
 执行调查的 API 须显式选取 `--investigation-policy deploy/local-investigation/investigation-policy.toml`；部署进程设置同文件绝对路径为 `SOCAI2_INVESTIGATION_POLICY`。它提供已确认的 300/1500/300 秒时限、模型容量与输入输出额度；更换文件后重启进程，不能运行途中更改预算。当前容量分配仍为本地验证候选。只读 `--profile` 通过 `investigation_policy_file` 选同一文件供工件读取大小限制使用，无须重复传 CLI 参数，不因此启用调查。
 
-事件输入输出适配候选使用 [investigation-policy-incident-v1.toml](../../../deploy/local-investigation/investigation-policy-incident-v1.toml)。其`[incident_io] profile = "incident-input-v1.json"`选择随服务源码打包的结构映射和任务指令，未配置该节继续旧模式；不要仅在服务器手改提示词。构建时在既有build profile的`policy_file`选择此文件，生产profile也须选择同一策略并核包内SHA后再切换，不能沿用旧策略指纹。新Run冻结同A实际查询回执，模型短号在保存前还原原ID/字段；旧快照保持原新鲜度规则。当前仅本机隔离存取验证通过，尚未在21启用，未包含A五字段切换、I交付状态修复或Case改造。见[本轮验证摘要](../../operations/evidence/incident-boundary-integration-20261108-01/summary.json)。
+事件输入输出适配候选使用 [investigation-policy-incident-v1.toml](../../../deploy/local-investigation/investigation-policy-incident-v1.toml)。其`[incident_io] profile = "incident-input-v1.json"`选择随服务源码打包的结构映射和任务指令，未配置该节继续旧模式；不要仅在服务器手改提示词。构建时在既有build profile的`policy_file`选择此文件，生产profile也须选择同一策略并核包内SHA后再切换，不能沿用旧策略指纹。新Run冻结同A实际查询回执，模型短号在保存前还原原ID/字段；旧快照保持原新鲜度规则。当前仅本机隔离存取验证通过，尚未在21启用，未包含A五字段切换、I交付状态修复或Case改造。见[本轮验证摘要](2026-11-14-investigation-cleanup/evidence/incident-boundary-integration-20261108-01/summary.json)。
 
 1.2 候选把准备上限设为 256KiB、工件保留上限设为 1MiB；这些是字节边界。是否能发给模型由真实 `/tokenize` 计量完整消息、模板、Schema/协议包络、安全余量和输出后决定，当前目标窗口 65536 tokens。Case 候选为 6 次模型/4 次工具/131072 累计 tokens，A/I 各 1 次/24000 tokens；C3 输出 4096、C6 输出 8192，默认保留两次 C6 额度与 300 秒。空引用反馈纠正计入该额度，不在 unknown 后重发。
 

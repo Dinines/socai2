@@ -3,12 +3,9 @@
 Business DTOs remain shared with callers that execute without HTTP.
 """
 
-from uuid import UUID
-
 from app.socai2.baseline_contracts import (
     Actor,
     Contract,
-    Start,
 )
 from app.socai2.baseline_store import (
     StoreError,
@@ -24,6 +21,27 @@ from app.socai2.case_ai_contracts import (
     AskCaseAI,
     SaveCaseAIAnswer,
 )
+from app.socai2.case_allocation_contracts import (
+    CaseAllocation as CoreCaseAllocation,
+)
+from app.socai2.case_allocation_contracts import (
+    CaseAllocationReceipt as CoreCaseAllocationReceipt,
+)
+from app.socai2.case_allocation_contracts import (
+    CaseMoveReceipt as CoreCaseMoveReceipt,
+)
+from app.socai2.case_allocation_contracts import (
+    CaseReplacementReceipt as CoreCaseReplacementReceipt,
+)
+from app.socai2.case_allocation_contracts import (
+    InitialTaskReceipt as CoreInitialTaskReceipt,
+)
+from app.socai2.case_allocation_contracts import (
+    RelatedCaseItem as CoreRelatedCaseItem,
+)
+from app.socai2.case_allocation_contracts import (
+    RelatedCasePage as CoreRelatedCasePage,
+)
 from app.socai2.case_attachment_contracts import (
     CaseAttachmentCreate,
     CaseAttachmentPage,
@@ -33,7 +51,6 @@ from app.socai2.case_contracts import (
     ArtifactContent,
     AssociationReceipt,
     AssociationRequest,
-    BaselinePreparation,
     CaseCreate,
     CaseDetail,
     CaseMetric,
@@ -44,7 +61,6 @@ from app.socai2.case_contracts import (
     MoveMembers,
     MoveReceipt,
     MutationReceipt,
-    PrepareBaseline,
     ResultDetail,
     RunDetail,
 )
@@ -62,12 +78,20 @@ from app.socai2.case_management_contracts import (
     CaseManagementUpdate,
     CaseManagementView,
 )
+from app.socai2.case_story_contracts import StoryPage, StoryQuery
 from app.socai2.enums import (
     AlertStatus,
+    ArtifactKind,
     AssignmentState,
+    Delivery,
+    MaterialState,
+    RunState,
     Severity,
+    StepKind,
+    StepState,
     WorkStatus,
 )
+from app.socai2.exploration_contracts import ExplorationPage, ExplorationQuery
 from app.socai2.human_task_contracts import (
     TaskCreate,
     TaskEdit,
@@ -87,6 +111,7 @@ from app.socai2.list_query_contracts import (
 )
 from app.socai2.page_contracts import (
     ContentView,
+    IncidentSubjectView,
     RecordPage,
     Section,
     Subject,
@@ -94,7 +119,17 @@ from app.socai2.page_contracts import (
     SubjectView,
     TraceView,
 )
+from app.socai2.run_directory_contracts import (
+    AnalysisIntent,
+    DirectoryRunKind,
+    RunDirectoryQuery,
+    RunSubject,
+)
 from app.socai2.stage_read_contracts import (
+    IncidentAnalysisCoverage,
+    IncidentInputSelection,
+    IncidentStageEntry,
+    IncidentStagePage,
     StageEntry,
     StagePage,
 )
@@ -110,11 +145,6 @@ from app.socai2.subject_management_contracts import (
     SubjectMutationReceipt,
 )
 
-
-class ExecuteStage(Contract):
-    operation_key: UUID
-
-
 __all__ = [
     "AIUnavailable",
     "Actor",
@@ -125,13 +155,14 @@ __all__ = [
     "AlertManagementUpdate",
     "AlertSort",
     "AlertStatus",
+    "AnalysisIntent",
     "ArtifactContent",
+    "ArtifactKind",
     "AskCaseAI",
     "AssessmentHistory",
     "AssignmentState",
     "AssociationReceipt",
     "AssociationRequest",
-    "BaselinePreparation",
     "CaseAttachmentCreate",
     "CaseAttachmentPage",
     "CaseAttachmentView",
@@ -152,24 +183,42 @@ __all__ = [
     "Classification",
     "ContentView",
     "Contract",
+    "CoreCaseAllocation",
+    "CoreCaseAllocationReceipt",
+    "CoreCaseMoveReceipt",
+    "CoreCaseReplacementReceipt",
+    "CoreInitialTaskReceipt",
+    "CoreRelatedCaseItem",
+    "CoreRelatedCasePage",
+    "Delivery",
+    "DirectoryRunKind",
     "EvidencePublish",
-    "ExecuteStage",
+    "ExplorationPage",
+    "ExplorationQuery",
     "HistoryPage",
+    "IncidentAnalysisCoverage",
+    "IncidentInputSelection",
     "IncidentListQuery",
     "IncidentManagementBatch",
     "IncidentManagementUpdate",
     "IncidentSort",
+    "IncidentStageEntry",
+    "IncidentStagePage",
+    "IncidentSubjectView",
+    "MaterialState",
     "MemberChange",
     "MoveMembers",
     "MoveReceipt",
     "MutationReceipt",
-    "PrepareBaseline",
     "RecordPage",
     "ResultAdoptionPreview",
     "ResultAdoptionReceipt",
     "ResultAdoptionRequest",
     "ResultDetail",
     "RunDetail",
+    "RunDirectoryQuery",
+    "RunState",
+    "RunSubject",
     "SaveCaseAIAnswer",
     "Section",
     "SelectedSubject",
@@ -177,8 +226,11 @@ __all__ = [
     "SortOrder",
     "StageEntry",
     "StagePage",
-    "Start",
+    "StepKind",
+    "StepState",
     "StoreError",
+    "StoryPage",
+    "StoryQuery",
     "Subject",
     "SubjectBatchReceipt",
     "SubjectMutationReceipt",
@@ -212,3 +264,20 @@ from app.socai2.case_comment_contracts import (
 )
 
 __all__ += ["CaseCommentCreate", "CaseCommentPage", "CaseCommentView"]
+
+from app.socai2.exploration_state_contracts import (
+    ExplorationBase,
+    ExplorationSave,
+    ExplorationSaved,
+    ExplorationSnapshot,
+)
+
+__all__ += ["ExplorationBase", "ExplorationSave", "ExplorationSaved", "ExplorationSnapshot"]
+
+from app.socai2.alert_review_contracts import AlertReviewPage, AlertReviewQuery
+
+__all__ += ["AlertReviewPage", "AlertReviewQuery"]
+
+from app.socai2.alert_host_contracts import AlertHostPage
+
+__all__ += ["AlertHostPage"]

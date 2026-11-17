@@ -1,0 +1,33 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires_fragments": [
+    "deploy/http-service/analysis-tasks-release-fragment.json",
+    "deploy/local-investigation/case-allocation-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/investigation_http/contracts.py": "investigation_http/contracts.py",
+    "services/api/investigation_http/case_allocation_contracts.py": "investigation_http/case_allocation_contracts.py",
+    "services/api/investigation_http/adapters/case_allocation.py": "investigation_http/adapters/case_allocation.py",
+    "services/api/investigation_http/adapters/services.py": "investigation_http/adapters/services.py",
+    "services/api/investigation_http/ports.py": "investigation_http/ports.py",
+    "services/api/investigation_http/external_routes/cases.py": "investigation_http/external_routes/cases.py",
+    "services/api/investigation_http/external_routes/pages.py": "investigation_http/external_routes/pages.py",
+    "deploy/local-investigation/case-allocation.json": "config/case-allocation.json"
+  },
+  "environment_by_target": {
+    "local": {"SOCAI2_CASE_ALLOCATION_CONFIG_FILE": "<absolute-frozen-runtime>/config/case-allocation.json"},
+    "aisoc21": {"SOCAI2_CASE_ALLOCATION_CONFIG_FILE": "/app/config/case-allocation.json"}
+  },
+  "prerequisites": [
+    "Apply core-owned migration 129 after 128 to the selected database before loading the new ORM, CaseView and IncidentSubjectView.",
+    "Merge the matching core Case allocation, Case reader/management and incident page reader modules from the core fragment.",
+    "Keep the explicit analysis task policy, configured business tenant/recording actor and matching read/write targets from the existing HTTP profile."
+  ],
+  "notes": [
+    "E01 returns 201 and CaseAllocationReceipt; E07/E08/E09 return the new actual allocation receipts with no pending_run_id.",
+    "Add related-cases GET; Case continuation and I-only receiving fields are read from core data. Alert response contracts are unchanged.",
+    "New Case initial tasks are persisted atomically; this step does not mount Case investigations POST or enable a Case executor/consumer.",
+    "Not executable by manage.py. This fragment does not deploy, restart services, or activate background work. Use the whole-change accepted release."
+  ]
+}

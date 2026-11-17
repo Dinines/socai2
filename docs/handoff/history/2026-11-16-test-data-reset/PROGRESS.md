@@ -1,0 +1,49 @@
+# 当前进度
+
+更新于2026-11-16。第1–7步及F1–F5已完成本机程序/HTTP交付，主调查仍 **31/41**、流式change **2/11**，第8–10步后置。本轮按负责人要求完成[整体预算与S04续验](docs/operations/evidence/streaming-budget-20261116-01/README.md)：实际服务窗口65536，A/I/Deep输出8192、C3/C6输出16384，A/I总预算各131072、Case393216；新I及整事件Case第二轮均正常结束，4成员跟随、上一轮身份/链接、119项保存检查及48次GET通过。单告警案仍1成员/1轮。C3局部校验与C6两项引用问题保留，正文质量仍NOT_PASSED，不追认原3000截断或首轮10项引用问题。已补齐输入保护额度至1 MiB，同镜像替代调度容器仅created未启动，原执行容器保持exited；仓库查阅现41卡，实际4177未切换。本轮[W4独立包0.4.0](docs/operations/evidence/streaming-w4-package-20261116-01/README.md)已完成10项本机检查、17次本机GET及35次21候选GET；一次重启前后15份账本/证据保持，候选已正常停止。W5、完整change独审及统一正式发布仍待，未提交推送。
+
+## 当前运行和交付
+
+2026-11-15 17:21（北京时间），负责人允许先暂停旧服务，已停止21的9个旧调查业务容器：旧HTTP/Swagger/查阅、三类旧API、Fusion、投影及Agents。容器/数据/重启策略保持，其他29个容器未变，PG/Kafka/Redis/模型和工具依赖继续运行；无在途running/pending，3条历史unknown不改写。下表旧版本号仅表示暂停前装载版本，不能据此调用旧18024/18080/4177；[暂停证据及恢复清单](docs/operations/evidence/streaming-old-services-pause-20261115-01/README.md)。候选准备继续，尚未正式发布。
+
+| 内容 | 当前状态与证据 |
+| --- | --- |
+| 工作树 | 分支`V1.1`；保留既有源码、证据及未提交修改，本轮未提交或推送Git |
+| 可复用完整测试 | [完整规划](openspec/changes/schedule-streaming-investigation-updates/full-flow-test-plan-20261115.md)、[数据设计](openspec/changes/schedule-streaming-investigation-updates/test-data-design-20261115.md)及[接口供给](openspec/changes/schedule-streaming-investigation-updates/test-interface-readiness-20261115.md)保持唯一入口。F1–F5、S01首轮及原S04失败证据保持；本轮[S04续验](docs/operations/evidence/streaming-budget-20261116-01/outcome-summary.json)完成38项预算检查、2项输入容量检查、1项既有profile接线检查、119项保存核对及48次真实GET，更新和比较身份链路通过，正文质量未通过。W2的34GET/107项及W3的26业务/14账本GET、113项读取核对与组件验证保留其原样本范围；[W4独立包](docs/operations/evidence/streaming-w4-package-20261116-01/README.md)通过本机及21候选保存/读取/重启验证；W5及完整change独审仍待 |
+| 核心与处理 | Fusion r3及HTTP r2保持原镜像；当前8份分析配置仅policy/deployment.json变化，私密env增加与policy一致的输入字符额度。本轮2新Run/4次生成共60450tokens均stop，新I保存后自动完成整事件Case第二轮；原失败与首轮逐行保持。原调度已0在途正常停止，补齐env后的同名替代容器created未启动，旧容器改名保留。[加载与当前容器](docs/operations/evidence/streaming-budget-20261116-01/input-guard-finish-01.json) |
+| 对外HTTP | 候选[18424](http://192.168.1.21:18424)/[Swagger18480](http://192.168.1.21:18480/)保持r2同版80操作、内部可信无鉴权、普通reader/writer同库TLS。原S01、两案首轮及S04失败读取证据保留；本轮[48次真实GET](docs/operations/evidence/streaming-budget-20261116-01/http-validation.json)全200，24份正文及上一轮Run/Result链接与唯一PG快照一致。整事件Case4成员/2轮/current，单告警案1成员/1轮/stale。W2/W3原3成员来源及失败样本仍按原批展示；未改HTTP合同/镜像，旧18024/18080仍停止 |
+| 数据库合同 | 21候选`socai2_streaming_20261115`及本机隔离开发库已验128/129，socai2为32表521列；候选另补正常Fusion三张公共支撑表。正式`aisoc.socai2`及本机`socai2_local_20261105`仍28表450列，未套用候选结果。冻结V1及127原件/既有数据保留。[当前结构入口](deploy/database/CURRENT.md)、[表职责](docs/investigation/investigation-table-scope.md) |
+| 工作台与demo | [4177](http://127.0.0.1:4177/index.html)为保存快照，online=false，仅11-14三案；源码`workbench-20261112-graph-cleanup-r1`。[展示配置](deploy/aisoc21/workbench-display-current.json)、[修正回执](docs/operations/evidence/workbench-display-fix-20261114-01/README.md)。[4173](http://127.0.0.1:4173/#/cases)同步同批快照，原有样例和浏览器编辑保留。W3页面的浏览器证据保留；W4独立测试服务/页面0.4.0已在21回环18477完成35GET及重启验证，候选最终exited/0、包与账本保留，实际4177未切换。日常目标入口为测试服务`/viewer/`，沿实际HTTP读取，无SQL/静态生成旁路 |
+| 消费与队列 | 候选唯一Fusion运行，独立Topic/Redis/湖保持；本轮未重投Kafka、未重分诊A或新建Case。8新task中手动I rerun和自动Case check完成，6周期check因no_changes跳过，无重试。原调度0在途后[正常停止](docs/operations/evidence/streaming-budget-20261116-01/stop-01.json)，输入配置补齐后替代容器保持未启动。I20秒/Case30秒/活动1天、N1/轮询1秒及旧Fusion/投影/Agents停止状态保持 |
+| 知识与反馈 | 候选已真实供给1条资产及2份技术解释/取证指导，知识原文读回、真实embedding/索引/检索通过，Case C2命中4/2行且进入C3/C6。历史叙述缺真实来源而未索引，历史检索真实查空，正命中仍未覆盖；历史自动同步显式关闭。UEBA/graph/产品来源未接，不冒称已验。第10步后台异步维护仍后置。[来源回执](docs/operations/evidence/test-streaming-case-initial-20261115-01/source-acceptance-01.json) |
+
+最新[三案固定调查](docs/operations/evidence/fixed-investigation-20261114-01/README.md)在本机隔离PG新建4A/2I/3Case，共9Run、19次真实生成、140,521tokens。C01 accepted/uncertain/partial并采用；C02/C03 rejected/unavailable/partial未采用。登录A引用拒收、C02 C3截断和C6依据/范围错误、C03 C6重复引用保留。20次ASGI读回与数据库快照一致，鉴权/依赖覆盖不冒充正式TCP验收；生产无本批新增业务写入。
+
+RV12同Run结论与正常结束码展示已完成[本地修复和浏览器验证](docs/operations/evidence/stage1-viewer-20261114-01/README.md)，当时在4178完成预览；本轮本机核对该端口无监听。实际4177仍为上述已发布三案快照，尚未切换本轮修复。
+
+## 未完项与下一步
+
+最新范围：第1–7步及五项审计修复已完成本机程序联验；第8–9步人工定向分析/手动综合及第10步知识后台异步维护后置，保留设计、未完成状态和原勾选。第11步最后结合[测试对话方案](openspec/changes/schedule-streaming-investigation-updates/full-flow-test-plan-20261115.md)验证当前第1–7步完整链路，配合数据/HTTP就绪/测试服务与4177设计，明确实际覆盖、质量问题与后置场景；当前仅运行获准21候选，按最新授权协同测试、必要修复及第11步交付/结束审计，条件通过后由调查负责人统一正式发布并读回。
+
+1. **阶段一：本地验收完成，待统一发布。** [七步开发实施](openspec/changes/complete-socai2-investigation-chain/stage1-problems-and-plan-20261114.md#8-整体实施顺序预期效果与验证安排)已收口，保存读取、真实补答/补查及[步骤7展示](docs/operations/evidence/stage1-viewer-20261114-01/README.md)证据保留；该阶段当时预算记录保留，当前容量按本轮授权更新，见上方配置。仅保留[两项交付待办](openspec/changes/complete-socai2-investigation-chain/stage1-problems-and-plan-20261114.md#发布与发布后验证待办)：统一发布核心、独立HTTP读侧、配置、Swagger及4177；发布后核实际版本/配置，并读回同Run结论、引用诊断、C3初答/补答/合并、大原件和新鲜度。后续调度问题不计入阶段一待办或关闭条件。阶段一此次仅同步进度，未发布或执行发布后验证；主change结束审计及归档仍未完成，Git提交由其他对话处理。
+2. **第1–7步本机交付完成；S04更新及比较身份链路已通过，正文质量仍未通过。** 五项审计修复及既有PG/Redis/HTTP证据沿[第7步计划](openspec/changes/schedule-streaming-investigation-updates/stage7-case-updates-design-20261115.md)复用。原S04的I在3000输出额度截断，原答和失败不变；本轮新operation_key受理一次I rerun，输出4518/stop并保存4成员诊断，自动触发整事件Case扩到4成员和第二轮。比较冻结本案首轮，上一轮链接可读；单A01案固定1成员/1轮，旧判断因事件上下文变化保持stale。119项保存核对、48GET及查阅追加通过；C3两项局部校验、C6两项引用问题和原首轮10项问题保持，未全面验正文、不重采样。W2/W3已完成各自读取与本机页面子步，实际4177未切换。W4完整包0.4.0现已在包外状态目录通过本机17GET、21候选35GET和一次重启；15文件保持，候选正常停止，未新增调查执行。下一独立子步为W5实际展示入口接入与读回，完整验收/独审后才统一正式发布。本轮调查镜像未变，独立测试镜像另行冻结，9个旧业务容器仍暂停，替代调度容器未启动。
+
+   [第6步核心](docs/operations/evidence/case-initial-20261115-01/README.md)按[详细设计](openspec/changes/schedule-streaming-investigation-updates/stage6-case-execution-design-20261115.md)接A/I/Case联合工厂：最终执行事务读取最新材料，保存范围/配置及task→attempt→Run，再进入C1–C6。默认补查前后各1小时/单次50条配置化；缺时、查询失败/截断保留其他分析；容量超限保存未发送材料/计量，失败不重试并释放N。核心6Case/6Run（4完成、2容量失败），10次模型替身、0真实模型；7组主PG/Redis核验及2组早期容量断言、35项直接离线通过。另1项历史重复记录测试失败保留后置，原驱动/断言失败由只读补验完成、不改原失败。
+
+   [HTTP第6步联验](docs/operations/evidence/case-initial-http-20261115-01/README.md)39请求通过，独占新Case/initial task实际消费为1Run，2次模型替身、0真实模型；19类读取前后摘要一致。候选79操作，外部E11/E13及CLI旧prepare/start退役，内部核心能力保留；该步时Case investigations未挂载；现第7步已挂载并完成新批受理/消费、终态读取及五项审计修复联验。第6步核心/HTTP共7案快照当时已导入仓库查阅页至20张；第7步及F1–F5后曾为38张，原[导入核对](docs/operations/evidence/execution-contract-fix-20261115-01/audit-export-receipt.json)保持；本步从唯一真实快照[追加两卡](docs/operations/evidence/streaming-case-20261115-01/audit-export-01.json)，当时40张，原38卡/83历史Case文件保持；本轮[再追加整事件后轮](docs/operations/evidence/streaming-budget-20261116-01/audit-export.json)后41张，原40卡/85文件保持。实际4177未切换。无新DDL、32表521列保持；配置/发布片段/Swagger和交接对齐，未部署、启生产消费者或提交推送。
+
+   第7步接6小时检查、手动check/rerun、活跃事件成员/结果跟随、有效H及上一轮比较；第8–10步后置不作为当前验收前置。第11步依测试对话既有方案和实际就绪状态完成真实模型/TCP/4177整体验证、独立结束审计及获准统一发布。原复选仍2/11，局部完成不勾整体2.2/2.3/2.4/2.5/2.7，也不核销正文NOT_PASSED。
+
+3. 规划阶段6（质量专项）的引用正确性及其生成约束优化、模型正文准确性、反馈/知识合理使用均后置，保留问题及`NOT_PASSED`，不反复采样；真实解析、主体身份及保存读取等程序功能阻断仍需修正。AI对话、真实响应和产品页面完整接线保持各自未完成边界。详见[问题清单](docs/investigation/current-issues.md)。
+
+[内部可信HTTP](openspec/changes/trust-internal-investigation-http/tasks.md)第1步已完成本地实现与交接：无登录/Token/角色要求，租户和记录操作人配置化，71业务合同保持。下一步是该change第2步统一发布及独审收口；其可信接入验收批未调用模型或发布。当前事件第4步的两次真实模型调用另见上文，本轮仍未部署、提交推送。
+
+当前读写合同以[前后端交接](FRONTEND_BACKEND_HANDOFF.md)、[逐页功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)和[模型输入输出](docs/investigation/model-input-output-current-20261109.md)为准。产品/接口侧已从125项功能提出[数据与接口提供要求](docs/integration/product-api-data-requirements-20261114.md)：32组用途、输入输出、来源表和提供责任，向调查模块提出需求而非按现有实现缩范围；[R1统一目录HTTP](docs/integration/run-directory-http.md)已本地验收，真实task/intent关联、意图筛选及同范围统计已接通；10次基础读取、32次ASGI请求（1次503使用依赖替身）及15类记录前后摘要核对通过，迁移128由调查侧提供，本接口不修改任务表/执行器；[R3/R4完整步骤工件读取](docs/integration/run-records-http.md)已完成本地实现与66次隔离PG/ASGI验收，1001步骤/201工件全读、原件来源链接及读取前后行摘要一致，待统一发布；[分析任务列表/详情GET](docs/integration/analysis-tasks-http.md)已接通核心真实任务和结果来源，38次ASGI/14类记录只读摘要核对通过，待统一发布；人工定向/手动综合合同已按确认流程与HTTP第8节定稿；同ID新材料入口按负责人最新范围不纳入本期，原评审观察保留。普通管理、评论、附件引用、列表/CSV、归并统计、采用、案件故事、候选、探索保存及相似/同主机查询已交付，不重新列为缺口；实际文件平台由业务后端负责，模型读取附件正文未纳入原125项文件需求。各批真实HTTP、替身、生产只读和模型质量的边界保留在原回执；产品核对与合同讨论完成后，按负责人授权完成上述R1/R3/R4专用读取；HTTP侧未修改表结构、调度/执行或正式服务，未提交推送。[事件异步提交](docs/integration/analysis-submission-http.md)已从受理层接至真实I执行器，E37在候选返回202；本批103次无鉴权HTTP（91 GET、12 POST）和12项直接检查通过，check无变化不产生Run、rerun保存新诊断，范围/覆盖及失败/unknown可按同Run读回，12类记录只读摘要一致。Case新的异步POST第7步已挂载为202，当前源码80操作；当时独占新案initial/check/rerun已完成终态及HTTP读回，证据见交接指南；这些本机结果不能替代21验收；当前候选两案首轮及S04整事件Case第二轮已保存读取，单案固定范围，比较身份通过而正文质量未通过。[告警自动分诊HTTP联验](docs/operations/evidence/alert-auto-http-20261115-01/README.md)已通过：受控模型批28次GET、真实模型批最终30次GET，任务/Run/分诊/原件来源一致，十类记录前后不变；E36手动告警入口及外部A执行分支已移除，内部执行器保留。9项直接检查通过，告警业务字段不变；真实模型正文质量NOT_PASSED保留。第5步候选进一步为81操作，新增Case关联读取并切换分配回执，详见[Case HTTP回执](docs/operations/evidence/case-allocation-http-20261115-01/README.md)；E37异步202和旧A/I旁路移除保持。21旧服务停止前64操作/静态Swagger71差异保留在历史预检，当前候选18424/18480已统一为80操作，见上方运行状态，原各批验收保持其历史适用范围，2.7其余任务不勾选。
+
+## 资料整理
+
+按负责人要求统一[全模块部署入口](deploy/README.md)及[配置索引](docs/operations/configuration.md)，覆盖处理/HTTP/Swagger、LiteLLM/模型/知识、数据湖及七类存储、支持服务和测试/查阅；逐项区分部署必填、保留默认、启用时必填和程序生成。旧入口原字节保留在历史快照，不混成当前操作路径。PG目标已按最新要求取消客户端CA/证书配置，普通密码认证、默认require；处理/安装/调度/HTTP已同步，36项根直接检查、13项HTTP检查及[独立真实连接](docs/operations/evidence/pg-password-connection-20261115-01/README.md)通过。21普通reader require无CA且错误密码拒绝，本机普通writer回滚及HTTP读回通过；后者本机无TLS，不能冒称21候选写入验收。候选处理/HTTP重新冻结r2；其后新候选库及HTTP/Swagger已启动验证，9个旧业务容器按最新授权暂停，正式库认证未改；细节见[本次回执](docs/operations/evidence/pg-password-config-20261115-01/README.md)。
+
+本轮第7步开发先不部署；用户已明确第7步后协同测试和第11步整体交付，由调查负责人完成正式发布。既定[统一发布安排](openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md#814-本轮统一发布授权与执行条件)要求完整change验收、交接和独审后统一发布并同步相关Git引用，保持接口与文档/Swagger一致；第1–7步及修复的本机交付已完成；当前按后续明确授权运行21隔离候选做分步验收，未正式发布或推送，不因候选子步通过提前统一发布。
+
+按负责人要求完成[11-14历史归档](docs/handoff/history/2026-11-14-investigation-cleanup/README.md)：旧设计、评审、执行资料及32个无现行程序/配置依赖的证据批次集中归档，本机21份旧发布产物移入忽略提交的归档；原字节、失败和路径映射保留。当前配置、业务数据、4177三案及有测试依赖的历史样本保持。整理前的完整进度见[历史快照](docs/handoff/history/2026-11-14-investigation-cleanup/snapshots/PROGRESS.md)，当前保留边界见[保留清单](docs/handoff/retention-map.md)。

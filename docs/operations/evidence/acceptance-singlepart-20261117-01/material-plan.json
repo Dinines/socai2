@@ -1,0 +1,169 @@
+{
+  "business_connections": 0,
+  "connection_status": "not_checked",
+  "execution_identity": "requires_new_execution_identity",
+  "execution_status": "not_executed",
+  "kafka_sends": 0,
+  "material_sha256": {
+    "part1/alerts/001.json": "4fb2b3cc663b7a971c406e74d1400ca62bf3eb0ca8e2052296941a85a93d0a42",
+    "part1/context/001.json": "8e4af7af09e8e4b3e0d8357e07fc169940e40cf02f1e7bfcfcd865811520193c",
+    "part1/context/002.json": "aa4ce106978a2c9125eec6cd83606cf65b3a4e7051ce9e48176c8b3d40f3e72c",
+    "part2/alerts/001.json": "d60da494ccb1ffa7b306c5a50a38faa6908e830d495ddea74763ce7f9a27ea34",
+    "part2/context/001.json": "2178e45a6e506e71ef6a1b8fe4188b0ba8aad52c45e4ad98e8249593e9a53cc5"
+  },
+  "model_calls": 0,
+  "parts": [
+    {
+      "case_actions": [
+        {
+          "action": "create",
+          "key": "incident-case"
+        }
+      ],
+      "check_level": "case",
+      "context_query_verification": "planned",
+      "context_required": true,
+      "counts": {
+        "alerts": 1,
+        "context": 2
+      },
+      "execution_status": "not_executed",
+      "files": {
+        "alerts": [
+          "part1/alerts/001.json"
+        ],
+        "context": [
+          "part1/context/001.json",
+          "part1/context/002.json"
+        ]
+      },
+      "id": "part1",
+      "planned_steps": [
+        "context_publish_ack",
+        "context_lake_readback",
+        "alerts_publish_ack",
+        "alert_triage_wait",
+        "alert_saved_readback",
+        "incident_diagnosis_wait",
+        "incident_saved_readback",
+        "case_create_or_check",
+        "case_task_wait",
+        "case_saved_readback"
+      ],
+      "selected": true,
+      "source_links": [
+        {
+          "alert": "part1/alerts/001.json",
+          "context": "part1/context/002.json",
+          "material_status": "provided_not_ingested",
+          "source_event_id": "ac009391-454d-5da2-a044-5c2d6bebe98c"
+        }
+      ]
+    },
+    {
+      "case_actions": [
+        {
+          "action": "check",
+          "key": "incident-case"
+        }
+      ],
+      "check_level": "case",
+      "context_query_verification": "planned",
+      "context_required": true,
+      "counts": {
+        "alerts": 1,
+        "context": 1
+      },
+      "execution_status": "not_executed",
+      "files": {
+        "alerts": [
+          "part2/alerts/001.json"
+        ],
+        "context": [
+          "part2/context/001.json"
+        ]
+      },
+      "id": "part2",
+      "planned_steps": [
+        "context_publish_ack",
+        "context_lake_readback",
+        "alerts_publish_ack",
+        "alert_triage_wait",
+        "alert_saved_readback",
+        "incident_diagnosis_wait",
+        "incident_saved_readback",
+        "case_create_or_check",
+        "case_task_wait",
+        "case_saved_readback"
+      ],
+      "selected": false,
+      "source_links": [
+        {
+          "alert": "part2/alerts/001.json",
+          "context": "part2/context/001.json",
+          "material_status": "provided_not_ingested",
+          "source_event_id": "7a56e218-d975-51e2-aa03-441681073331"
+        }
+      ]
+    }
+  ],
+  "profile": {
+    "connection_files": {
+      "http": "/run/acceptance-config/http.json",
+      "kafka": "/run/acceptance-config/kafka.json",
+      "lake": "/run/acceptance-config/lake.json",
+      "postgres": "/run/acceptance-config/postgres.json"
+    },
+    "environment_label": "21 r4 正式服务；独立实体的一段验收",
+    "limits": {
+      "max_alerts_per_part": 1,
+      "max_context_events_per_part": 2
+    },
+    "profile_id": "aisoc21-r4-singlepart",
+    "schema_version": "socai2.acceptance-profile.v1",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "timing": {
+      "part_timeout_seconds": 3600.0,
+      "poll_interval_seconds": 5.0,
+      "send_interval_seconds": 1.0
+    }
+  },
+  "scenario": {
+    "cases": [
+      {
+        "alert_refs": [
+          "part1/alerts/001.json"
+        ],
+        "check_after_parts": [
+          "part2"
+        ],
+        "create_after_part": "part1",
+        "key": "incident-case",
+        "scope": "incident",
+        "title": "主机登录活动调查"
+      }
+    ],
+    "parts": [
+      {
+        "check_level": "case",
+        "context_required": true,
+        "id": "part1"
+      },
+      {
+        "check_level": "case",
+        "context_required": true,
+        "id": "part2"
+      }
+    ],
+    "scenario_id": "login-observation-singlepart",
+    "schema_version": "socai2.acceptance-scenario.v1",
+    "title": "登录观察的分段验收"
+  },
+  "scenario_sha256": "4e86971953428e110f5fd9c62408bb1e1a9eae7bbfb868b2444fe3228115f885",
+  "schema_version": "socai2.acceptance-plan.v1",
+  "selected_part": "part1",
+  "selection_required": false,
+  "sidecars_not_executed": [],
+  "time_policy": "preserved",
+  "validation_status": "passed"
+}

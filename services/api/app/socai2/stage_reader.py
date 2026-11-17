@@ -5,9 +5,14 @@ from sqlalchemy import and_, or_, select, text
 
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest, encoded
-from .runtime_policy import retention_limit
 from .stage_inputs import freshness_sql
-from .stage_read_contracts import StageEntry, StagePage, StageRunView
+from .stage_read_contracts import (
+    IncidentStageEntry,
+    IncidentStagePage,
+    StageEntry,
+    StagePage,
+    StageRunView,
+)
 from .stage_results import AS, D, F, R, parent
 
 
@@ -44,8 +49,6 @@ class StageReader:
             reason = None
             if art["material_state"] != "complete" or art["blob_ref"] is not None:
                 reason = "external_or_incomplete_content"
-            elif len(encoded(body)) > retention_limit():
-                reason = "content_exceeds_read_limit"
             elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
                 reason = "content_integrity_mismatch"
             return {"artifact_id": art["id"], "available": reason is None, "reason": reason,
@@ -70,8 +73,6 @@ class StageReader:
                 if body is not None and art["blob_ref"] is None:
                     if art["material_state"] != "complete":
                         reason = "material_" + art["material_state"]
-                    elif len(encoded(body)) > retention_limit():
-                        reason = "content_exceeds_read_limit"
                     elif digest(body) != art["sha256"] or len(encoded(body)) != art["size_bytes"]:
                         reason = "content_integrity_mismatch"
                     else:
@@ -87,10 +88,24 @@ class StageReader:
             public_result = {k: result[k] for k in fields}
             if self.kind == "incident_diagnosis":
                 public_result["error_code"] = (result["error"] or {}).get("code")
-        return StageEntry(run=StageRunView.model_validate({k: row[k] for k in StageRunView.model_fields}),
+        extra = {}
+        entry_type = StageEntry
+        if self.kind == "incident_diagnosis":
+            from .incident_inputs import SELECTION_VERSION, coverage
+            entry_type = IncidentStageEntry
+            art = await self.store.one(select(F).where(*self.store.where(F,
+                F.c.id == row["input_artifact_id"], F.c.run_id == row["id"],
+                F.c.incident_id == self.identity, F.c.kind == "input_snapshot")))
+            source = art["content_json"] if art else None
+            if (isinstance(source, dict) and source.get("selection_version") == SELECTION_VERSION
+                    and art["material_state"] == "complete" and art["blob_ref"] is None
+                    and digest(source) == art["sha256"] and len(encoded(source)) == art["size_bytes"]):
+                extra = {"input_selection": {**source["input_selection"], "input_artifact_id": art["id"]},
+                         "analysis_coverage": coverage(source, result["diagnosis"] if result else None)}
+        return entry_type(run=StageRunView.model_validate({k: row[k] for k in StageRunView.model_fields}),
             freshness=freshness, is_current_pointer=selected,
             valid_for_current_input=selected and accepted and freshness == "current" and row["state"] == "completed",
-            result=public_result, explanation=explanation, partial_analysis=await self.partial_analysis(row["id"]))
+            result=public_result, explanation=explanation, partial_analysis=await self.partial_analysis(row["id"]), **extra)
 
     async def page(self, *, limit=20, before_run_id=None):
         if not 1 <= limit <= 50:
@@ -111,7 +126,8 @@ class StageReader:
                 and_(R.c.requested_at == before["requested_at"], R.c.id < before["id"])))
         rows = (await self.store.db.execute(q.order_by(R.c.requested_at.desc(), R.c.id.desc()).limit(limit + 1))).mappings().all()
         entries = [await self.entry(row, subject) for row in rows[:limit]]
-        return StagePage(subject_id=self.identity, kind=self.kind, current_pointer_id=subject[self.pointer],
+        page_type = IncidentStagePage if self.kind == "incident_diagnosis" else StagePage
+        return page_type(subject_id=self.identity, kind=self.kind, current_pointer_id=subject[self.pointer],
             current=current, current_unavailable_reason=reason, entries=entries,
             next_before_run_id=rows[limit - 1]["id"] if len(rows) > limit else None)
 

@@ -54,8 +54,11 @@ for name,expected in manifest['files'].items():
  raw=p.read_bytes(); assert sha(raw)==expected,'base_source_drift'; files[name]=raw
 for name,encoded in request['files'].items():
  p=pathlib.PurePosixPath(name)
- assert not p.is_absolute() and '..' not in p.parts and name.startswith('docs/operations/') and p.suffix=='.py','invalid_override'
- raw=base64.b64decode(encoded); compile(raw,name,'exec'); files[name]=raw
+ assert not p.is_absolute() and '..' not in p.parts and name.startswith('docs/operations/') and (p.suffix=='.py' or name=='docs/operations/processing_audit_view.json'),'invalid_override'
+ raw=base64.b64decode(encoded)
+ if p.suffix=='.py': compile(raw,name,'exec')
+ else: json.loads(raw)
+ files[name]=raw
 composition=json.loads(pathlib.Path(cfg['expected_compose']).read_text())
 service=composition['services'][cfg['service']]
 assert service['container_name']==cfg['container'],'unexpected_service'

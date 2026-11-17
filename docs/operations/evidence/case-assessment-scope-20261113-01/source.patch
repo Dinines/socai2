@@ -1,0 +1,90 @@
+--- before/services/api/app/socai2/case_context_input.py
++++ after/services/api/app/socai2/case_context_input.py
+@@ -42,7 +42,7 @@
+     return result
+ 
+ 
+-def metadata(ref, original, config):
++def metadata(ref, original, config, *, assessment_members=None):
+     category = kind(ref)
+     if category is None or not isinstance(original, dict):
+         return {}
+@@ -59,6 +59,10 @@
+         # Only original membership is available here. Do not invent the old
+         # time/object scope; C6 receives that separately from frozen comparison.
+         result["original_scope"] = {"alert_ids": sorted({str(m["alert_id"]) for m in original["member_deliveries"]})}
++    if category == "current_assessment" and assessment_members is not None:
++        # Citation ownership is the current overlap; the historical judgment
++        # still covers its recorded members, including those outside this Case.
++        result["original_scope"] = {"alert_ids": sorted({str(m["alert_id"]) for m in assessment_members})}
+     return result
+ 
+ 
+--- before/services/api/app/socai2/case_input_text.py
++++ after/services/api/app/socai2/case_input_text.py
+@@ -165,7 +165,8 @@
+             continue
+         source = next(v for v in sample["request"]["source_map"].values() if v["ref"] == ref)
+         value = project_context(ref, item["value"], config, omissions)
+-        meta = case_context_input.metadata(ref, item["value"], config)
++        meta = case_context_input.metadata(ref, item["value"], config,
++                                           assessment_members=context["assessment_members"])
+         if "original_scope" in meta:
+             value[case_context_input.scope_key(meta)] = alias_scope(meta["original_scope"])
+         if value == {} and path in config["context_projection"]:
+--- before/services/api/app/socai2/case_followup_input.py
++++ after/services/api/app/socai2/case_followup_input.py
+@@ -596,7 +596,8 @@
+     for group in groups:
+         designated = [r for r in group["rows"] if r["id"] in comparison_ids]
+         row = designated[0] if designated else group["row"]
+-        members = "、".join(boundary["member_aliases"].get(a, "案件外成员") for a in row["alert_ids"]) or "共同背景/范围不明"
++        original_members = row.get("original_scope", {}).get("alert_ids", row["alert_ids"])
++        members = "、".join(boundary["member_aliases"].get(a, "案件外成员") for a in original_members) or "共同背景/范围不明"
+         block = ("case_record" if row["ref"]["type"] == "artifact" and row["ref"]["source_path"] == "$.case"
+                  else "query_receipt" if row["ref"]["role"] == "execution_receipt" else row["block"])
+         heading = block, members, row["ref"]["role"], row.get("membership_basis")
+--- before/services/api/tests/test_socai2_case_followup_boundary.py
++++ after/services/api/tests/test_socai2_case_followup_boundary.py
+@@ -844,7 +844,8 @@
+         "origin": "human", "validity": "accepted", "reason": "复核原始材料",
+         "formed_at": "2026-11-01T00:00:00Z", "adopted_by": "internal-adopter",
+         "actor": {"user_id": "internal-actor"}, "operation_key": "internal-adoption-operation"}
+-    raw["assessment_members"] = [{"alert_id": aid}]
++    removed = str(uuid4())
++    raw["assessment_members"] = [{"alert_id": aid}, {"alert_id": removed}]
+     raw["citation_roles"]["$.current_assessment"] = "prior_analysis"
+     raw["citation_roles"].update({f"$.tasks.{tid}.revision": "human_statement",
+         f"$.adopted_task_revisions.{vid}": "human_statement", f"$.adopted_task_revisions.{older_id}": "human_statement"})
+@@ -853,13 +854,29 @@
+     analysis = json.loads(case_output_adapter.restore(json.dumps(answer_for(base, context)), base["case_boundary"]))
+     final = inputs.build("C6", context, base, {}, previous={"analysis": analysis,
+         "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}, prior_id=uuid4())
+-    for prepared, rows in ((base, base["input_ledger"]["records"]), (final, final["followup_boundary"]["records"])):
++    deep = inputs.build("Deep", context, base, {}, previous={"analysis": analysis,
++        "source_map": base["source_map"], "validation": "structure_scope_sources_checked"},
++        prior_id=uuid4(), question_id="authorization")
++    for prepared, rows in ((base, base["input_ledger"]["records"]), (deep, deep["followup_boundary"]["records"]),
++                           (final, final["followup_boundary"]["records"])):
+         assert prepared["ready"]
+         text = prepared["messages"][1]["content"]
+         assert text.count(revision["result_text"]) == text.count(older["result_text"]) == 1
+         assert "internal-user-id" not in text
+         assessment = next(r for r in rows if r.get("context_kind") == "current_assessment")
+-        assert set(assessment["value"]) == {"conclusion", "origin", "validity", "reason"}
++        assert set(assessment["value"]) == {"conclusion", "origin", "validity", "reason", "declared_scope"}
++        assert assessment["alert_ids"] == [aid] and assessment["ref"]["role"] == "prior_analysis"
++        assert assessment["original_scope"] == {"alert_ids": sorted([aid, removed])}
++        aliases = {**prepared["case_boundary"]["member_aliases"],
++                   **prepared.get("input_ledger", {}).get("external_member_aliases", {})}
++        assert aliases[removed].startswith("X")
++        assert assessment["value"]["declared_scope"] == {"alert_ids": [aliases[a] for a in sorted([aid, removed])]}
++        assert prepared["source_map"][assessment["id"]]["original_scope"] == assessment["original_scope"]
++        assert assessment["value"]["conclusion"] == raw["current_assessment"]["conclusion"]
++        assert removed not in context.alerts
++        if prepared is not base:
++            heading = text[:text.index("[" + assessment["id"] + "]")].splitlines()[-1]
++            assert "原范围=" + "、".join(aliases[a] for a in sorted([aid, removed])) in heading
+         current = [r for r in rows if r.get("context_identity") == vid]
+         assert len(current) == 2 and current[0]["ref"] != current[1]["ref"]
+         for row in current:

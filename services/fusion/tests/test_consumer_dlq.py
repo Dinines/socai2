@@ -126,6 +126,36 @@ async def test_received_event_identity_reaches_both_lake_and_saved_alert():
     assert dlq.records == []
 
 
+@pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                         ids=["one-source", "multiple-sources", "unknown-sources"])
+async def test_raw_alert_preserves_explicit_source_scope_through_save_and_publish(sources):
+    from app.services.socai2_projection import project, snapshot_id
+
+    worker, dlq = _worker_with_dlq()
+    original = {"id": str(UUID(int=701)), "tenant_id": TENANT,
+        "identity_version": "source-v1", "source_alert_id": str(UUID(int=701)),
+        "source": "source-scope-fixture", "title": "Received alert",
+        "source_event_ids": sources, "raw_event": {"observation": "unchanged"}}
+    await worker._process_message(original, topic=ALERTS_RAW)
+
+    saved = worker._sink.snapshot["fused"]
+    published = worker._producer.send_and_wait.await_args.kwargs["value"]
+    assert saved["alert"]["source_event_ids"] == sources
+    assert published["alert"]["source_event_ids"] == sources
+    assert saved["alert"]["source_alert_id"] == original["id"]
+    assert saved["alert"]["raw_event"] == original["raw_event"]
+    fused = FusedAlert.model_validate(saved)
+    _, material, refs, _ = project(fused, fused.alert, snapshot_id(fused.id))
+    assert material["raw_json"]["source_event_ids"] == sources
+    assert [ref["source_event_id"] for ref in refs] == sources
+    scope = material["source_scope"]
+    assert scope["received_count"] == scope["retained_count"] == len(sources)
+    assert scope["kind"] == ("explicit_sources" if sources else "unknown")
+    assert scope["complete"] is (True if sources else None)
+    assert scope["truncated"] is False
+    assert dlq.records == []
+
+
 async def test_metrics_distinguish_buffered_written_and_dropped(monkeypatch):
     from app.api import router
     from app.services.lake_writer import LakeWriter

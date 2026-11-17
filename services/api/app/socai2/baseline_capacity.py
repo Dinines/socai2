@@ -5,6 +5,15 @@ from .runtime_policy import (
     draft_limit as draft_limit,  # noqa: PLC0414 - shared limit re-export
 )
 
+CAPACITY_FAILURES = frozenset({"model_context_capacity_exceeded", "model_token_budget_insufficient",
+    "final_context_capacity_exceeded", "final_source_dictionary_exceeds_reserved_capacity",
+    "final_wire_exceeds_reserved_capacity", "case_input_exceeds_prepared_limit"})
+
+
+def capacity_failure(steps):
+    return next(((step["error"] or {}).get("code") for step in steps
+                 if (step["error"] or {}).get("code") in CAPACITY_FAILURES), None)
+
 
 def final_reservation(gateway, context, limits=None):
     from .runtime_policy import active_policy

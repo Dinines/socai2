@@ -1,0 +1,109 @@
+{
+  "ended_at": "2026-11-17T12:31:15.978473+00:00",
+  "outcome": "returned",
+  "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/api/v1/socai2/incidents/93fbd228-68a1-4ecf-b9dc-014a269a2bf7/analysis/runs/bb1eabaa-fc49-57fa-9387-a076181202a9/artifacts/c60bbca5-1978-4f19-8735-8b3e64979bae",
+    "started_at": "2026-11-17T12:31:15.966294+00:00"
+  },
+  "response": {
+    "body": {
+      "availability": "available",
+      "content_json": {
+        "artifact_role": "model_original_response",
+        "attempt": 0,
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "message": {
+                "content": "{\n  \"members\": [\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"A2 提供了核心行为事实：进程 `curl` 于 09:16:44 成功发起 HEAD 请求至 198.51.100.171。现有分析已指出缺乏该 IP 的威胁情报或资产关联，无法区分正常运维与恶意扫描。查询结果确认无历史告警、无资产库存、无威胁情报命中。\"\n    ,\n    \"source_ids\": [\n      \"N1_S88\",\n      \"N1_S94\",\n      \"N1_S97\",\n      \"N1_S98\",\n      \"N1_S108\",\n      \"N1_S166\",\n      \"N1_S167\",\n      \"N1_S168\"\n    ]\n  ,\n      \"limitations\": [\n        \"缺乏目的 IP (198.51.100.171) 的业务上下文（如是否属于已知合作伙伴、CDN 或内部服务）\",\n        \"缺乏该账号 (svc-app-1afa1f56) 的权限基线或授权策略文档，无法验证操作合规性\"\n      ]\n    ,\n      \"alert_ref\": \"A2\"\n    }\n  ,\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"A1 记录了同一主机在 09:35:44 发生的网络流量观测，显示与 A2 中进程启动目标一致（IP 198.51.100.171, Port 443），但流量结果标记为“未知”。A1 的查询同样未命中威胁情报或资产信息，佐证了 A2 关于证据不足的判断。\"\n    ,\n      \"source_ids\": [\n        \"N1_S6\",\n        \"N1_S13\",\n        \"N1_S25\",\n        \"N1_S27\",\n        \"N1_S157\",\n        \"N1_S164\",\n        \"N1_S165\"\n      ]\n    ,\n      \"limitations\": [\n        \"网络流量观测结果不明确（未知），无法确认连接是否建立成功或数据传输内容\",\n        \"A1 与 A2 的时间间隔约 20 分钟，需确认是否存在多次探测或持续会话\"\n      ]\n    ,\n      \"alert_ref\": \"A1\"\n    }\n  ]\n,\n  \"findings\": [\n    {\n      \"statement\": \"检测到主机 host-app-7e78aefa 上的服务账号 svc-app-1afa1f56 在 2026-11-17 09:16:44 主动发起对 IP 198.51.100.171 的 HTTP HEAD 探测，随后在 09:35:44 产生对应的网络流量记录。\",\n      \"state\": \"unresolved\"\n    ,\n      \"source_ids\": [\n        \"N1_S94\",\n        \"N1_S25\",\n        \"N1_S27\"\n      ]\n    ,\n      \"limitations\": [\n        \"目的 IP 属性不明\"\n      ]\n    ,\n      \"alert_refs\": [\n        \"A1\",\n        \"A2\"\n      ]\n    }\n  ]\n,\n  \"open_questions\": [\n    {\n      \"text\": \"目的 IP 198.51.100.171 是否为业务已知资产、合作伙伴域名解析结果或受信任的第三方服务？\",\n      \"source_ids\": [\n        \"N1_S25\"\n      ]\n    ,\n      \"evidence_requirements\": [\n        \"资产库存查询结果\",\n        \"威胁情报库匹配结果\",\n        \"业务架构图或域名解析记录\"\n      ]\n    ,\n      \"alert_refs\": [\n        \"A1\",\n        \"A2\"\n      ]\n    }\n  ,\n    {\n      \"text\": \"账号 svc-app-1afa1f56 是否拥有访问该外部 IP 的明确业务授权或运维策略？\",\n      \"source_ids\": [\n        \"N1_S7\"\n      ]\n    ,\n      \"evidence_requirements\": [\n        \"账号权限基线文档\",\n        \"运维操作审批记录\"\n      ]\n    ,\n      \"alert_refs\": [\n        \"A1\",\n        \"A2\"\n      ]\n    }\n  ]\n,\n  \"diagnosis\": {\n    \"summary\": \"主机 host-app-7e78aefa 上的服务账号 svc-app-1afa1f56 于 2026-11-17 先后执行了进程启动（curl HEAD 请求）和网络流量观测，目标均为 IP 198.51.100.171。现有材料仅能确认技术行为事实，缺乏目的 IP 属性及账号授权依据。\",\n    \"conclusion\": \"事件性质暂定为‘待复核’。现有证据不足以定性为恶意扫描或数据外传，亦无法完全排除正常运维探测。主要缺口在于目的 IP 的业务归属及账号操作授权。\",\n    \"limitations\": [\n      \"目的 IP 198.51.100.171 缺乏资产关联或威胁情报支持\",\n      \"服务账号 svc-app-1afa1f56 缺乏明确的业务授权或权限基线材料\",\n      \"网络流量观测结果标记为未知，无法确认连接状态\"\n    ]\n  ,\n    \"source_ids\": [\n      \"N1_S6\",\n      \"N1_S7\",\n      \"N1_S13\",\n      \"N1_S25\",\n      \"N1_S27\",\n      \"N1_S88\",\n      \"N1_S94\",\n      \"N1_S97\",\n      \"N1_S98\",\n      \"N1_S108\",\n      \"N1_S157\",\n      \"N1_S164\",\n      \"N1_S165\",\n      \"N1_S166\",\n      \"N1_S167\",\n      \"N1_S168\"\n    ]\n  }\n}",
+                "provider_specific_fields": {
+                  "reasoning": null,
+                  "refusal": null
+                },
+                "role": "assistant"
+              },
+              "provider_specific_fields": {
+                "routed_experts": null,
+                "stop_reason": null,
+                "token_ids": null
+              }
+            }
+          ],
+          "created": 1794918364,
+          "id": "chatcmpl-ab57f3eccad18e81",
+          "model": "aisoc-investigation",
+          "object": "chat.completion",
+          "system_fingerprint": "vllm-0.30.0-76652a79",
+          "usage": {
+            "completion_tokens": 1493,
+            "completion_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "prompt_tokens": 2500,
+            "total_tokens": 3993
+          }
+        },
+        "request_artifact_id": "76f73cde-ff3f-4136-93b0-469561a30ba6",
+        "schema_version": "socai2.incident-diagnosis-executor.v4",
+        "usage": {
+          "cached_input_tokens": null,
+          "cost": null,
+          "cost_state": "unpriced",
+          "currency": null,
+          "input_tokens": 2500,
+          "output_tokens": 1493,
+          "price_version": null,
+          "reasoning_tokens": 0,
+          "request_id": "chatcmpl-ab57f3eccad18e81",
+          "total_tokens": 3993,
+          "usage_state": "reported"
+        }
+      },
+      "content_text": null,
+      "metadata": {
+        "alert_id": null,
+        "captured_at": "2026-11-17T12:26:34.235289Z",
+        "case_id": null,
+        "created_by": null,
+        "event_time": null,
+        "file_name": null,
+        "id": "c60bbca5-1978-4f19-8735-8b3e64979bae",
+        "incident_id": "93fbd228-68a1-4ecf-b9dc-014a269a2bf7",
+        "kind": "source_snapshot",
+        "material_state": "complete",
+        "mime_type": "application/json",
+        "retention": {
+          "omitted_paths": [],
+          "original_sha256": "8ed07ad473a77731cbcf3cb8d99069808232578e46189a70425fccbeb9420f2d",
+          "original_size_bytes": 5352,
+          "reason": null,
+          "retained_sha256": "8ed07ad473a77731cbcf3cb8d99069808232578e46189a70425fccbeb9420f2d",
+          "retained_size_bytes": 5352,
+          "truncated": false
+        },
+        "run_id": "bb1eabaa-fc49-57fa-9387-a076181202a9",
+        "schema_version": "socai2.incident-diagnosis-executor.v4",
+        "sha256": "8ed07ad473a77731cbcf3cb8d99069808232578e46189a70425fccbeb9420f2d",
+        "size_bytes": 5352,
+        "source_refs": [
+          {
+            "external": null,
+            "id": "2cd7d369-cfe9-414a-8691-e7dcaa0972cb",
+            "role": "execution_receipt",
+            "row_keys": [],
+            "source_path": null,
+            "type": "artifact"
+          }
+        ],
+        "step_id": "6d0f4d88-04a4-46f5-8aec-83947c1a6c08"
+      }
+    },
+    "body_file": "00159.body",
+    "sha256": "0d597534b103eee62192e517566d5d68042f10b4265064634afa1856672e4d39",
+    "status": 200
+  }
+}

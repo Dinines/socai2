@@ -1,0 +1,93 @@
+--- before/services/api/app/socai2/case_c3_input_selection.py
++++ after/services/api/app/socai2/case_c3_input_selection.py
+@@ -1,4 +1,4 @@
+-"""C3-only field selection after original guards; no prose summarization."""
++"""Case field selection after original guards; no prose summarization."""
+ import copy
+ import json
+ 
+@@ -125,6 +125,8 @@
+             if record.get("history", {}).get("schema_version") == policy["historical_card_schema"]:
+                 value["record"] = project(record, "historical_card", policy, omissions, row["id"])
+         reason = None
++        if row["block"] == "incident" and path.endswith(".diagnosis.limitations") and value == []:
++            reason = "incident_no_business_limitations"
+         if (policy.get("omit_unusable_prior_results") and row.get("context_kind") == "prior_result"
+                 and isinstance(value, dict) and not value.get("conclusion")):
+             reason = "no_historical_judgment_for_c3"
+--- before/services/api/app/socai2/case-input-v1.json
++++ after/services/api/app/socai2/case-input-v1.json
+@@ -1790,6 +1790,22 @@
+           "action": "omit",
+           "reason": "query_backend_field_not_business_result"
+         }
++      ],
++      "finding": [
++        {
++          "path": "/declared_scope/limitations/*",
++          "action": "constant",
++          "value": "frozen_incident_members_only",
++          "reason": "original_incident_members_already_preserved"
++        }
++      ],
++      "question": [
++        {
++          "path": "/declared_scope/limitations/*",
++          "action": "constant",
++          "value": "frozen_incident_members_only",
++          "reason": "original_incident_members_already_preserved"
++        }
+       ]
+     },
+     "query_names": {
+@@ -1832,7 +1848,8 @@
+       "member_coverage:summarized",
+       "member_coverage:not_reviewed",
+       "event_synthesis_not_independent_observation",
+-      "question_not_a_fact"
++      "question_not_a_fact",
++      "member_coverage:unresolved"
+     ]
+   },
+   "followup_input_selection": {
+--- before/services/api/tests/test_socai2_case_model_boundary.py
++++ after/services/api/tests/test_socai2_case_model_boundary.py
+@@ -221,17 +221,35 @@
+     limits = row("limits", "$.incidents.i.diagnosis.diagnosis.limitations",
+                  ["Original business limitation.", "structure_scope_sources_checked_not_truth_proven",
+                   "triage_not_used:member:unavailable", "Unknown limitation remains."])
+-    rows = [overview, conclusion, fallback, unavailable, cited, finding, limits]
++    empty = row("empty", "$.incidents.empty.diagnosis.diagnosis.limitations", [])
++    program_only = row("program_only", "$.incidents.program.diagnosis.diagnosis.limitations", ["member_coverage:unresolved"])
++    required_empty = row("required_empty", "$.incidents.required.diagnosis.diagnosis.limitations", [])
++    finding["original_value"]["counterevidence"].append(required_empty["ref"])
++    scope = {"alert_ids": ["member", "outside"], "object_keys": ["business-object"], "window_start": "2026-11-13T00:00:00Z",
++             "limitations": ["frozen_incident_members_only", "Original business scope."]}
++    finding["value"]["declared_scope"] = copy.deepcopy(scope)
++    finding["original_scope"] = copy.deepcopy(scope)
++    finding["value"]["limitations"] = ["member_coverage:unresolved", "member_coverage:unknown_future_state",
++                                        "原文包含 member_coverage:unresolved，不改写这句话。"]
++    business_empty = row("business_empty", "$.raw_json.business", {"items": [], "count": 0, "enabled": False}, "material")
++    rows = [overview, conclusion, fallback, unavailable, cited, finding, limits, empty, program_only, required_empty, business_empty]
+     before = copy.deepcopy(rows)
+     context = {"alerts": {"member": {"alert": {}, "triage_freshness": "unavailable"}}}
+     selected = select_rows(rows, context, configured.case_io.config, configured.case_io.business["render"], [])
+-    assert {r["id"] for r in selected} == {"conclusion", "fallback", "cited", "finding", "limits"}
++    assert {r["id"] for r in selected} == {"conclusion", "fallback", "cited", "finding", "limits", "required_empty", "business_empty"}
+     assert next(r for r in selected if r["id"] == "limits")["value"] == ["Original business limitation.", "Unknown limitation remains."]
++    kept_finding = next(r for r in selected if r["id"] == "finding")
++    assert kept_finding["value"]["declared_scope"] == {**scope, "limitations": ["Original business scope."]}
++    assert kept_finding["original_scope"] == scope
++    assert kept_finding["value"]["limitations"] == ["member_coverage:unknown_future_state",
++                                                  "原文包含 member_coverage:unresolved，不改写这句话。"]
++    assert next(r for r in selected if r["id"] == "business_empty")["value"] == business_empty["value"]
+     assert all(r["original_value"] == next(o for o in before if o["id"] == r["id"])["original_value"] for r in selected)
+     # An explicit retained H attachment overrides the optional overview omission.
+     kept = select_rows(copy.deepcopy(before), context, configured.case_io.config,
+-                       configured.case_io.business["render"], [], required_refs=[overview["ref"]])
++                       configured.case_io.business["render"], [], required_refs=[overview["ref"], program_only["ref"]])
+     assert any(r["id"] == "overview" for r in kept)
++    assert next(r for r in kept if r["id"] == "program_only")["value"] == []
+ 
+ 
+ def test_c3_history_selection_keeps_cited_catalog_and_opposing_feedback(configured):

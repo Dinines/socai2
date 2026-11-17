@@ -51,11 +51,11 @@ attempt02于23:22执行：3条新合成输入经本地最小认证API发布独�
 
 ## 2026-10-22 用户授权两例真实测试与数据交接
 
-正式v1新raw Kafka输入2条，自动关闭及自动调查分别实跑；新增21步骤事件/21工件，正文长度/hash、event关联及8回复31788tokens成本可核。用户随后要求做好表/数据盘点，22:56只读核生产租户25表428字段/约束及实际行数，23:09实际只读执行交接SQL9个SELECT成功。新增[数据盘点](../../../../docs/integration/v1/page-data-mapping.md)、字段/JSON/SQL、[两例回执](../../../../docs/operations/service-v1-functional-20261022.md)；完整逐步原文留存/质量不通过，原5/15保持。未改业务代码/模型配置/预算，不重放旧输入，不部署或Git提交。结束独审限定ACCEPT，范围为本轮测试及交接。
+正式v1新raw Kafka输入2条，自动关闭及自动调查分别实跑；新增21步骤事件/21工件，正文长度/hash、event关联及8回复31788tokens成本可核。用户随后要求做好表/数据盘点，22:56只读核生产租户25表428字段/约束及实际行数，23:09实际只读执行交接SQL9个SELECT成功。新增[数据盘点](../../../../docs/integration/v1/page-data-mapping.md)、字段/JSON/SQL、[两例回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)；完整逐步原文留存/质量不通过，原5/15保持。未改业务代码/模型配置/预算，不重放旧输入，不部署或Git提交。结束独审限定ACCEPT，范围为本轮测试及交接。
 
 ## 2026-10-22 v1.0.0实际发布结果
 
-API/Agents已按固定候选ID定向替换，生产租户/最小身份/生产预算及新组起点就绪，worker与升级开启、模型摘要不变。新raw Kafka告警自动取得Run/partial graph/Markdown，15事件/14工件及提交offset/读取200可回查；7回复28216tokens，质量及原软预算限制保留。未重放旧输入、修改旧group/unknown/预算或启真实响应，未Git提交/推送。详见[发布回执](../../../../docs/operations/service-v1-release-20261022.md)。原5/15不改，结束独审另记。
+API/Agents已按固定候选ID定向替换，生产租户/最小身份/生产预算及新组起点就绪，worker与升级开启、模型摘要不变。新raw Kafka告警自动取得Run/partial graph/Markdown，15事件/14工件及提交offset/读取200可回查；7回复28216tokens，质量及原软预算限制保留。未重放旧输入、修改旧group/unknown/预算或启真实响应，未Git提交/推送。详见[发布回执](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)。原5/15不改，结束独审另记。
 
 ## 2026-10-22 后端对接发布指引v1（文档增量）
 
@@ -205,7 +205,7 @@ API返回统一的有界attack_context：明确Case/Alert锚点、原链、CaseP
 
 真实定位两原版接口合同，依前置strict校验后仅修API IPv6非空过滤与Agents单IOC字段；局部测试及本地原函数借21真实只读API/增强验证通过，未部署。另UEBA失效连接/Forensic连接错误、原IOC regex、Router缺证/Deep空结果及软预算/原占位能力登记后置，无恢复/模型矩阵。源码与原结果保留；自动审批拒绝lake.env导出未执行，改现有只读API验证成功。
 
-公开逐步回执见[实测说明](../../../../docs/operations/investigation-functional-20261021.md)及[机器摘要](../../../../docs/handoff/investigation-functional-20261021.json)，原2.1/3.1/3.3/3.4/4.1只记部分成果，5/15不变。全部组件无DB DSN，只保存本地工件，不创建线上Case/Run、不代验Kafka触发/PG持久。没有部署、Git提交/推送、常驻启用、旧unknown/输入重放或厂商响应动作。未参与源码/报告实现的case_source_review结束独审ACCEPT，核原调用、tool_call_id、计数、边界及无公开凭据/非空隐藏推理，0阻塞、未追加模型/业务SQL。本地13文件增量快照（Git基线/hash，无凭据）已实际保存于.local/versions/investigation-functional-20261021/，不是完整镜像。
+公开逐步回执见[实测说明](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)及[机器摘要](../../../../docs/handoff/investigation-functional-20261021.json)，原2.1/3.1/3.3/3.4/4.1只记部分成果，5/15不变。全部组件无DB DSN，只保存本地工件，不创建线上Case/Run、不代验Kafka触发/PG持久。没有部署、Git提交/推送、常驻启用、旧unknown/输入重放或厂商响应动作。未参与源码/报告实现的case_source_review结束独审ACCEPT，核原调用、tool_call_id、计数、边界及无公开凭据/非空隐藏推理，0阻塞、未追加模型/业务SQL。本地13文件增量快照（Git基线/hash，无凭据）已实际保存于.local/versions/investigation-functional-20261021/，不是完整镜像。
 
 本批默认调查另真实复现单项IOC增强HTTP400：Agents发送type，原Go服务要求ioc_type。沿3.1同批只修这一请求字段（保原工具签名/返回/固定增强流程），复用已有直接工具测试并以一个保留文档域名经现有无provider服务验证HTTP合同；不重跑模型、不改IOC提取算法、默认端口或开启厂商来源。原400及报告保持，单项/批量增强分别记录。
 
@@ -225,7 +225,7 @@ API返回统一的有界attack_context：明确Case/Alert锚点、原链、CaseP
 
 ## 预处理、逐模型输入输出和工具执行文档（2026-10-21）
 
-按用户要求写明预处理怎样做、模型如何判断并请求工具及后端怎样执行，随后补充“每次调用目的、输入、输出”，新增[专篇](../../../../docs/architecture/investigation-preprocessing-tools.md)，连回调查说明、评价及文档导航。逐模型覆盖Router分诊/四领域、默认人工四节点、Deep每轮；工具部分区分代码固定预取与结构化tool_calls，给schema→调用→HTTP身份/固定查询→ToolResult→ToolMessage的静态示意，示例不是新实测。
+按用户要求写明预处理怎样做、模型如何判断并请求工具及后端怎样执行，随后补充“每次调用目的、输入、输出”，新增[专篇](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)，连回调查说明、评价及文档导航。逐模型覆盖Router分诊/四领域、默认人工四节点、Deep每轮；工具部分区分代码固定预取与结构化tool_calls，给schema→调用→HTTP身份/固定查询→ToolResult→ToolMessage的静态示意，示例不是新实测。
 
 只读核到Case发嵌套alerts、Router未flatten/预取Bundle，模型字段投影与实际可见材料不能混同；registry没有完整JSON-schema运行时验证，认证工具函数默认168小时而shared hours描述24。已按真实源码记录/更正文档并登记，未改输入映射、函数、配置或新建验证框架。沿2.1/4.1部分交付，原15任务及5/15不变；本次0业务测试/模型/线上操作/部署，不重调旧样例，不归档/提交。
 
@@ -237,13 +237,13 @@ API返回统一的有界attack_context：明确Case/Alert锚点、原链、CaseP
 
 该说明增量strict/diff检查通过，未参与文档编辑的router_official_guidance一次定向结束复核ACCEPT；官方建议、比较对象及工程判断的区分准确，无需更正或新增验证。
 
-按用户要求将刚刚讨论的说明写入[调查调用说明第5节](../../../../docs/architecture/investigation.md#5-router及full-graph的差异)及[设计评价](../../../../docs/architecture/investigation-design-review.md)，同步模块计划、AGENTS/PROGRESS及本change设计。内容包括：默认四节点/graph-deep/Router三者关系；无明确旧链弃用计划；Case `/investigate`开关二选一而非串跑，且不影响Kafka graph/deep；专业分支每个一次领域模型而非内部四节点；响应仅摘要、报告由renderer生成；graph外层固定、deep仅在受限工具内选择补查。
+按用户要求将刚刚讨论的说明写入[调查调用说明第5节](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md#5-router及full-graph的差异)及[设计评价](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)，同步模块计划、AGENTS/PROGRESS及本change设计。内容包括：默认四节点/graph-deep/Router三者关系；无明确旧链弃用计划；Case `/investigate`开关二选一而非串跑，且不影响Kafka graph/deep；专业分支每个一次领域模型而非内部四节点；响应仅摘要、报告由renderer生成；graph外层固定、deep仅在受限工具内选择补查。
 
 本增量仅文档，没有更改源码、开关、规格级行为或既有任务，不增加业务测试/模型/部署，不创建重复change。原R01/C2失败、运行OFF和未部署修正边界保持；原15任务及5/15不变。OpenSpec strict、diff空白及7份文档286个本地文件引用校验通过；未参与编辑的router_docs_review完成一次定向结束独审，结论ACCEPT，新增源码引用/锚点及上述解释准确，无需更正或追加业务验证。不归档、不自动Git提交/推送。
 
 ## 分诊规划、调查逐调用及设计评价（2026-10-21）
 
-用户同意Fusion后继续下一模块，先规划并以同样方式分析；追加要求调查每步/每次Agent调用详细说明，并强调自动与默认人工调查的目的、输出、设计依据和四Agent客观评价。已形成[分诊工作卡](../../../../docs/architecture/triage.md)、[调查逐调用说明](../../../../docs/architecture/investigation.md)、[设计评价](../../../../docs/architecture/investigation-design-review.md)，同步路线/AGENTS/PROGRESS及本change设计/任务上下文。沿原2.1/4.1部分交接及3.3/3.4准备，原15任务与5/15保持，不新建重复任务树。
+用户同意Fusion后继续下一模块，先规划并以同样方式分析；追加要求调查每步/每次Agent调用详细说明，并强调自动与默认人工调查的目的、输出、设计依据和四Agent客观评价。已形成[分诊工作卡](../../../../docs/architecture/triage.md)、[调查逐调用说明](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)、[设计评价](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-design-review.md)，同步路线/AGENTS/PROGRESS及本change设计/任务上下文。沿原2.1/4.1部分交接及3.3/3.4准备，原15任务与5/15保持，不新建重复任务树。
 
 并行只读核分诊规则/关闭与升级、人工四节点、graph/router/deep/ledger及固定上游官方历史，复用原C2工件复原六轮工具选择，不新查线上或发送模型。明确默认Case四节点与graph/deep产物侧重、graph可手动发起、四Agent不等于独立复核；官方路线/变更日志支持多代演进并存，不足以证明严格互补双架构。记录route_to字段消费、单项IOC增强字段、Router bundle及审计持久边界，未擅自修复/合并/裁剪。旧人工R01/C2质量失败、工作区修正未部署及当前worker OFF保持。
 
@@ -408,7 +408,7 @@ C2质量失败STOP后已确认两个有限窗口退出、0活动有限容器。c
 本批结束：未参与实现者api_auth_review最终限定ACCEPT，无新增功能接通阻塞；仅更新本批回执，未额外验证/归档或勾选总change未完成项。
 # 2026-10-22 服务 v1.0 发布增量（执行前登记）
 
-用户已授权开启Kafka自动分诊和自动调查、模型沿用现有配置、新建独立生产租户。按[服务发布计划](../../../../docs/operations/service-v1-release-20261022.md)复用既有19文件候选镜像；仅生产租户新增服务身份/预算及新消费组起点，定向发布API/Agents，做一条全新合成告警代表验证和结束独审。不重调旧输入，不覆盖旧unknown/预算/消费组，不扩真实响应或Git推送。本文先登记授权/计划，执行结果另附；原5/15及旧质量失败不据此改写。
+用户已授权开启Kafka自动分诊和自动调查、模型沿用现有配置、新建独立生产租户。按[服务发布计划](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)复用既有19文件候选镜像；仅生产租户新增服务身份/预算及新消费组起点，定向发布API/Agents，做一条全新合成告警代表验证和结束独审。不重调旧输入，不覆盖旧unknown/预算/消费组，不扩真实响应或Git推送。本文先登记授权/计划，执行结果另附；原5/15及旧质量失败不据此改写。
 
 
 ## 2026-10-23 V1页面字段对接说明与实值核验

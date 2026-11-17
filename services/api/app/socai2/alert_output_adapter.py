@@ -16,7 +16,7 @@ class Answer(Contract):
     verdict: Literal["true_positive", "false_positive", "benign", "needs_review"]
     confidence: float | None = Field(ge=0, le=1, allow_inf_nan=False)
     rationale: legacy.Text
-    evidence_ids: list[legacy.Alias] = Field(min_length=1, max_length=30)
+    evidence_ids: list[legacy.Alias] = Field(max_length=30, json_schema_extra={"minItems": 1})
     recommendations: list[legacy.Advice] = Field(max_length=5)
 
 
@@ -63,9 +63,13 @@ def canonical(content):
     return body
 
 
-def parse(content, prepared, *, diagnostics=None):
+def parse(content, prepared, *, diagnostics=None, citation_review=None):
+    if citation_review is not None:
+        citation_review["path_mapping"] = {"$.decision_basis.source_ids": "$.evidence_ids",
+            "$.decision_basis.claim": "$.rationale", "$.explanation": "$.rationale"}
     body = canonical(content)
-    result = legacy.parse(json.dumps(body, ensure_ascii=False), prepared["source_map"], prepared["data"], diagnostics=diagnostics)
+    result = legacy.parse(json.dumps(body, ensure_ascii=False), prepared["source_map"], prepared["data"],
+                          diagnostics=diagnostics, citation_review=citation_review)
     return assemble(result, prepared)
 
 

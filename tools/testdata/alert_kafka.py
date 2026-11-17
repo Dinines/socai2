@@ -1,13 +1,13 @@
 """Explicit source-v1 wire preparation and bounded Kafka transport for test fixtures."""
 from __future__ import annotations
 
-import importlib.util
 import asyncio
+import importlib.util
 import json
 import os
-from pathlib import Path
 import sys
 import tempfile
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -144,8 +144,25 @@ async def send_kafka(*, wire_dir: Path, tenant: str, topic: str, receipt: Path,
     manifest, values = load_wire(Path(wire_dir), tenant)
     if topic != f"socai2.testdata.{manifest['run_id']}.raw":
         raise ValueError("topic must be socai2.testdata.<run-id>.raw")
+    records = [{key: record[key] for key in ("alert_id", "predicted_canonical_alert_id", "wire_sha256")}
+               for record in manifest["records"]]
+    return await send_records(records=records, values=values, tenant=tenant, topic=topic, receipt=receipt,
+        config=config, timeout=timeout, request_timeout_ms=min(int(timeout * 1000), 10000),
+        identity={"schema_version": "socai2-kafka-send/v1", "run_id": manifest["run_id"],
+                  "wire_manifest_sha256": sha256((Path(wire_dir) / "manifest.json").read_bytes())},
+        producer_factory=producer_factory)
+
+
+async def send_records(*, records, values, tenant, topic, receipt, config, timeout,
+                       request_timeout_ms, identity, producer_factory=None):
+    """Shared bounded ACK loop. Callers validate their frozen stage and target first."""
     if not 0 < timeout <= 60:
         raise ValueError("timeout must be 0..60 seconds")
+    if type(request_timeout_ms) is not int or not 0 < request_timeout_ms <= timeout * 1000:
+        raise ValueError("invalid producer request timeout")
+    if not records or len(records) != len(values) or any(
+            record.get("wire_sha256") != sha256(value) for record, value in zip(records, values)):
+        raise ValueError("validated records and wire bytes must match")
     if not config.get("bootstrap_servers") or not config.get("security_protocol"):
         raise ValueError("Kafka transport must be explicit")
     if producer_factory is None:
@@ -154,10 +171,8 @@ async def send_kafka(*, wire_dir: Path, tenant: str, topic: str, receipt: Path,
     receipt = Path(receipt)
     fd = os.open(receipt, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     os.close(fd)
-    state = {"schema_version": "socai2-kafka-send/v1", "run_id": manifest["run_id"],
-             "tenant_id": manifest["tenant_id"], "topic": topic, "requested": len(values),
+    state = {**identity, "tenant_id": tenant, "topic": topic, "requested": len(values),
              "accepted": 0, "not_attempted": len(values), "processing_confirmed": False,
-             "wire_manifest_sha256": sha256((Path(wire_dir) / "manifest.json").read_bytes()),
              "transport": {"bootstrap_servers": config["bootstrap_servers"],
                            "security_protocol": config["security_protocol"]},
              "status": "starting", "records": [], "cleanup_errors": []}
@@ -165,13 +180,11 @@ async def send_kafka(*, wire_dir: Path, tenant: str, topic: str, receipt: Path,
     producer = None
     try:
         producer = producer_factory(**config, acks="all", enable_idempotence=True,
-                                    request_timeout_ms=min(int(timeout * 1000), 10000))
+                                    request_timeout_ms=request_timeout_ms)
         await asyncio.wait_for(producer.start(), timeout)
         state["status"] = "running"
-        for record, value in zip(manifest["records"], values):
-            item = {"alert_id": record["alert_id"],
-                    "predicted_canonical_alert_id": record["predicted_canonical_alert_id"],
-                    "wire_sha256": record["wire_sha256"], "state": "started_outcome_unknown"}
+        for record, value in zip(records, values):
+            item = {**record, "state": "started_outcome_unknown"}
             state["records"].append(item)
             state["not_attempted"] -= 1
             _save_receipt(receipt, state)
@@ -196,7 +209,7 @@ async def send_kafka(*, wire_dir: Path, tenant: str, topic: str, receipt: Path,
         if producer is not None:
             try:
                 await asyncio.wait_for(producer.stop(), timeout)
-            except BaseException as exc:
+            except BaseException as exc:  # noqa: BLE001 - preserve delivery outcome if cleanup is interrupted
                 state["cleanup_errors"].append(type(exc).__name__)
         _save_receipt(receipt, state)
     return state

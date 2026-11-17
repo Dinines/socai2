@@ -1,0 +1,88 @@
+...........FF                                                            [100%]
+=================================== FAILURES ===================================
+_ test_both_transports_capture_one_failure_without_retry_or_fallback[deepseek_responses-complete_deepseek] _
+
+provider = 'deepseek_responses', target = 'complete_deepseek'
+
+    @pytest.mark.parametrize("provider,target", [(DEEPSEEK_PROTOCOL, "complete_deepseek"),
+        ("chat_completions", "safe_chat_completions_request")])
+    def test_both_transports_capture_one_failure_without_retry_or_fallback(provider, target):
+        gateway = TenantChatGateway()
+        gateway.provider = provider
+        gateway.config = LlmConfig(True, DEEPSEEK_BASE, "deepseek-flash", "synthetic-key", "environment", "")
+        call = AsyncMock(side_effect=http_error({"error": {"message": "schema rejected", "param": "text.format.schema"}}))
+        with patch("app.socai2.baseline_analysis_model." + target, call), pytest.raises(ModelCallError) as caught:
+>           asyncio.run(gateway.complete(canonical(), 2))
+
+services/api/tests/test_socai2_model_errors.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_analysis_model.py:42: in complete
+    timeout = min(timeout, active_policy().single_model_timeout_seconds)
+                           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:365: StoreError
+_ test_both_transports_capture_one_failure_without_retry_or_fallback[chat_completions-safe_chat_completions_request] _
+
+provider = 'chat_completions', target = 'safe_chat_completions_request'
+
+    @pytest.mark.parametrize("provider,target", [(DEEPSEEK_PROTOCOL, "complete_deepseek"),
+        ("chat_completions", "safe_chat_completions_request")])
+    def test_both_transports_capture_one_failure_without_retry_or_fallback(provider, target):
+        gateway = TenantChatGateway()
+        gateway.provider = provider
+        gateway.config = LlmConfig(True, DEEPSEEK_BASE, "deepseek-flash", "synthetic-key", "environment", "")
+        call = AsyncMock(side_effect=http_error({"error": {"message": "schema rejected", "param": "text.format.schema"}}))
+        with patch("app.socai2.baseline_analysis_model." + target, call), pytest.raises(ModelCallError) as caught:
+>           asyncio.run(gateway.complete(canonical(), 2))
+
+services/api/tests/test_socai2_model_errors.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.local/conda-envs/socai2/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_analysis_model.py:42: in complete
+    timeout = min(timeout, active_policy().single_model_timeout_seconds)
+                           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:365: StoreError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_model_errors.py::test_both_transports_capture_one_failure_without_retry_or_fallback[deepseek_responses-complete_deepseek]
+FAILED services/api/tests/test_socai2_model_errors.py::test_both_transports_capture_one_failure_without_retry_or_fallback[chat_completions-safe_chat_completions_request]
+2 failed, 11 passed in 0.50s

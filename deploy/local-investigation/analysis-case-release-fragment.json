@@ -1,0 +1,94 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "local_validation_only_not_a_deployed_profile",
+  "requires": [
+    "case-allocation-release-fragment.json"
+  ],
+  "patches": {
+    "services/api/app/socai2/analysis_case_executor.py": "app/socai2/analysis_case_executor.py",
+    "services/api/app/socai2/case_execution_input.py": "app/socai2/case_execution_input.py",
+    "services/api/app/socai2/baseline_context.py": "app/socai2/baseline_context.py",
+    "services/api/app/socai2/baseline_store.py": "app/socai2/baseline_store.py",
+    "services/api/app/socai2/baseline_evidence.py": "app/socai2/baseline_evidence.py",
+    "services/api/app/socai2/baseline_evidence_tools.py": "app/socai2/baseline_evidence_tools.py",
+    "services/api/app/socai2/baseline_capacity.py": "app/socai2/baseline_capacity.py",
+    "services/api/app/socai2/baseline_reasoning.py": "app/socai2/baseline_reasoning.py",
+    "services/api/app/socai2/baseline_delivery.py": "app/socai2/baseline_delivery.py",
+    "services/api/app/socai2/baseline_dispatch.py": "app/socai2/baseline_dispatch.py",
+    "services/api/app/socai2/baseline_executor.py": "app/socai2/baseline_executor.py",
+    "deploy/aisoc21/processing_job.py": "processing_job.py",
+    "services/api/app/socai2/baseline_analysis.py": "app/socai2/baseline_analysis.py",
+    "services/api/app/socai2/case_model_boundary.py": "app/socai2/case_model_boundary.py",
+    "services/api/app/socai2/case_update_inputs.py": "app/socai2/case_update_inputs.py",
+    "services/api/app/socai2/case_update_scanner.py": "app/socai2/case_update_scanner.py",
+    "services/api/app/socai2/case_comparison.py": "app/socai2/case_comparison.py",
+    "services/api/app/socai2/analysis_dispatch_types.py": "app/socai2/analysis_dispatch_types.py",
+    "services/api/app/socai2/analysis_dispatch_store.py": "app/socai2/analysis_dispatch_store.py",
+    "services/api/app/socai2/analysis_task_store.py": "app/socai2/analysis_task_store.py",
+    "services/api/app/socai2/case_contracts.py": "app/socai2/case_contracts.py",
+    "services/api/app/socai2/case_reader.py": "app/socai2/case_reader.py",
+    "services/api/app/socai2/case_story.py": "app/socai2/case_story.py",
+    "services/api/app/socai2/case_adoption.py": "app/socai2/case_adoption.py",
+    "services/api/app/socai2/case_incident_scope.py": "app/socai2/case_incident_scope.py",
+    "services/api/app/socai2/case_input_text.py": "app/socai2/case_input_text.py",
+    "services/api/app/socai2/model_input_view.py": "app/socai2/model_input_view.py",
+    "services/api/app/socai2/baseline_context.schema.json": "app/socai2/baseline_context.schema.json",
+    "services/api/app/socai2/stage_inputs.py": "app/socai2/stage_inputs.py",
+    "services/api/app/socai2/case_query_snapshot.py": "app/socai2/case_query_snapshot.py",
+    "services/api/app/socai2/baseline_failure.py": "app/socai2/baseline_failure.py",
+    "services/api/app/socai2/baseline_deep.py": "app/socai2/baseline_deep.py",
+    "services/api/app/socai2/baseline_reanalysis.py": "app/socai2/baseline_reanalysis.py",
+    "services/api/app/socai2/baseline_closing.py": "app/socai2/baseline_closing.py",
+    "services/api/app/socai2/analysis_dispatcher.py": "app/socai2/analysis_dispatcher.py",
+    "services/api/app/socai2/analysis_dispatch_redis.py": "app/socai2/analysis_dispatch_redis.py",
+    "services/api/app/socai2/case_input_hierarchy.py": "app/socai2/case_input_hierarchy.py",
+    "services/api/app/socai2/case-input-v1.json": "app/socai2/case-input-v1.json",
+    "services/api/app/socai2/runtime_policy.py": "app/socai2/runtime_policy.py",
+    "services/api/app/socai2/analysis_dispatch_runtime.py": "app/socai2/analysis_dispatch_runtime.py",
+    "services/api/app/socai2/analysis_alert_executor.py": "app/socai2/analysis_alert_executor.py",
+    "services/api/app/socai2/analysis_incident_executor.py": "app/socai2/analysis_incident_executor.py",
+    "services/api/app/socai2/alert_basic_executor.py": "app/socai2/alert_basic_executor.py",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "app/socai2/incident_diagnosis_executor.py",
+    "services/api/app/socai2/baseline_service.py": "app/socai2/baseline_service.py",
+    "services/api/app/socai2/stage_results.py": "app/socai2/stage_results.py"
+  },
+  "schema": {
+    "prerequisite": "129_socai2_case_allocation.sql",
+    "new_migration": null
+  },
+  "executor_factory": "app.socai2.analysis_case_executor:executors",
+  "registered_kinds": [
+    "case_investigation",
+    "alert_triage",
+    "incident_diagnosis"
+  ],
+  "case_intents": [
+    "initial",
+    "check",
+    "rerun"
+  ],
+  "default_enabled": false,
+  "config_files": {
+    "deploy/local-investigation/analysis-aic-dispatch.example.json": "config/analysis-aic-dispatch.example.json",
+    "deploy/local-investigation/analysis-aic-executors.example.json": "config/analysis-aic-executors.example.json"
+  },
+  "host_launchers": [
+    "deploy/aisoc21/production_processing.py"
+  ],
+  "notes": [
+    "Replace the A/I factory in the sole dispatcher with the combined A/I/Case factory; do not start a second dispatcher.",
+    "Select the investigation/lifecycle/Case-allocation policies explicitly. Query preparation is frozen with each Run; defaults are 3600 seconds before/after and 50 rows per log query, bounded by the Run policy.",
+    "Case initial creates and claims an internal pending Run then binds the attempt in one PG transaction. E01 callers only receive accepted tasks.",
+    "Retire external E11/E13 together with the HTTP adapter/Swagger. Mount asynchronous Case check/rerun; freeze comparison_context and previous actual Run once before C1-C6. Keep internal core primitives.",
+    "Case scan_batch_size is explicit (example 100); lifecycle defaults stay 6 hours / 7 days. Service actors follow only the unique active event receiver, including capacity continuations. HTTP comparison links are adapter-owned.",
+    "Legacy CLI case-prepare/case-start are removed from the candidate host/job entry points; case-create only accepts tasks.",
+    "Steps8-10 are deferred; current knowledge behavior is not replaced by this fragment.",
+    "Enabled dispatch requires all current A/I/Case handlers and IO contracts; absent or old contracts fail before consumption. Historical policies and artifacts remain readable but never select an old model path. Budgets remain configurable.",
+    "This fragment does not authorize deployment, production restarts, consumer activation, Git push or old data cleanup."
+  ],
+  "required_execution_profiles": [
+    "alert_io",
+    "incident_io",
+    "case_io"
+  ]
+}

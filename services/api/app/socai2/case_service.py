@@ -1,19 +1,16 @@
 """New Case writers and manual execution adapter; no legacy table fallback."""
-from uuid import UUID, uuid4, uuid5
+from uuid import uuid4
 
-from sqlalchemy import column, select, table, update
+from sqlalchemy import column, select, table
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.dialects.postgresql import insert
 
 from . import case_relations
 from .baseline_contracts import Actor
 from .baseline_service import BaselineService
-from .baseline_store import C, R, StoreError, digest
+from .baseline_store import R, StoreError, digest
 from .case_contracts import (
-    AssociationReceipt,
-    AssociationRequest,
     BaselinePreparation,
-    MutationReceipt,
 )
 
 USERS = table("users", column("id", PGUUID(as_uuid=True)), column("tenant_id", PGUUID(as_uuid=True)), schema="public")
@@ -51,53 +48,47 @@ class CaseService(BaselineService):
         if not exists:
             raise StoreError("case_actor_not_in_tenant", 403)
 
-    async def create_case(self, tenant_id: UUID, request, *, actor: Actor):
-        # The caller chooses an operation key, never a Case ID. A concurrent
-        # replay locks the same identity and verifies the recorded intent.
-        cid = uuid5(tenant_id, "socai2.case.create:" + str(request.operation_key))
-        body = request.model_dump(mode="json")
-        if not body["incident_ids"]:
-            body.pop("incident_ids")  # preserve original alert-only create keys
-        intent = digest({"actor": str(actor.user_id), "request": body})
+    def allocation_policies(self):
+        from .analysis_task_policy import AnalysisTaskPolicy
+        from .case_allocation_policy import CaseAllocationPolicy
+        return CaseAllocationPolicy.load(), AnalysisTaskPolicy.load()
+
+    async def create_case(self, tenant_id, request, *, actor: Actor):
+        policy, tasks = self.allocation_policies()
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
-            inserted = (await store.db.execute(insert(C).values(id=cid, tenant_id=tenant_id,
-                title=request.title, description=request.description, severity=request.severity,
-                severity_source="manual" if request.severity else None, tags=request.tags,
-                created_by=actor.user_id).on_conflict_do_nothing(index_elements=[C.c.id]).returning(C.c.id))).scalar_one_or_none()
-            await store.case(cid)
-            if inserted is None:
-                receipt = await store.receipt(cid, request.operation_key, "case_created")
-                if not receipt or receipt["request_hash"] != intent:
-                    raise StoreError("operation_key_conflict")
-                return AssociationReceipt.model_validate(receipt["outcome"])
-            linked = await case_relations.associate(store, cid, AssociationRequest(
-                operation_key=request.operation_key, expected_scope_revision=0,
-                alert_ids=request.alert_ids, incident_ids=request.incident_ids), actor)
-            changed = linked.model_dump(mode="json")
-            await store.db.execute(update(R).where(*store.where(R, R.c.id == UUID(changed["pending_run_id"])))
-                .values(trigger="case_created", purpose="建立案件的初始分析"))
-            await store.event(cid, request.operation_key, actor.snapshot(), "case_created",
-                {"request_hash": intent, "outcome": changed}, [("case_id", cid, None,
-                    {"title": request.title, "scope_revision": changed["scope_revision"]})])
-        return AssociationReceipt.model_validate(changed)
+            return await case_relations.create(store, request, actor, policy, tasks)
 
     async def associate(self, tenant_id, case_id, request, *, actor):
+        policy, tasks = self.allocation_policies()
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
-            return await case_relations.associate(store, case_id, request, actor)
+            return await case_relations.associate(store, case_id, request, actor, policy, tasks)
 
     async def move_members(self, tenant_id, case_id, request, *, actor):
+        policy, tasks = self.allocation_policies()
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
-            return await case_relations.move(store, case_id, request, actor)
+            return await case_relations.move(store, case_id, request, actor, policy, tasks)
 
     async def change_members(self, tenant_id, case_id, request, *, actor):
+        policy, tasks = self.allocation_policies()
         async with self.transaction(tenant_id) as store:
             await self.actor(store, actor)
-            out = await store.replace_members(case_id, set(request.alert_ids),
-                expected_revision=request.expected_scope_revision, actor=actor, operation_id=request.operation_key)
-        return MutationReceipt.model_validate(out)
+            return await case_relations.replace(store, case_id, request, actor, policy, tasks)
+
+    async def follow_incident(self, tenant_id, case_id, request, *, actor):
+        policy, tasks = self.allocation_policies()
+        async with self.transaction(tenant_id) as store:
+            await self.actor(store, actor)
+            return await case_relations.follow(store, case_id, request.incident_id, request, actor, policy, tasks)
+
+    async def read_related_cases(self, tenant_id, case_id, *, limit=None, cursor=None):
+        from .case_allocation_policy import CaseAllocationPolicy
+        from .case_relationship_reader import related_cases
+        policy = CaseAllocationPolicy.load()
+        async with self.transaction(tenant_id, readonly=True) as store:
+            return await related_cases(store, case_id, limit=policy.page_size(limit), cursor=cursor)
 
     async def start_case(self, tenant_id, case_id, run_id, request, *, actor):
         async with self.transaction(tenant_id) as store:

@@ -17,6 +17,7 @@ class TestProductionProjection(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         from app.services.delivery_recovery import make_snapshot
 
+        self.config = worker.load_profile(str(Path(__file__).with_name("analysis-projection.example.json")))
         self.fused = fixtures()[0][1][0]
         self.tenant, self.alert, self.incident = self.fused.tenant_id, self.fused.id, self.fused.incident_id
         self.row = {"tenant_id": self.tenant, "id": self.alert, "source_incident_id": str(self.incident),
@@ -41,13 +42,13 @@ class TestProductionProjection(unittest.IsolatedAsyncioTestCase):
     async def test_commit_follows_projection_and_failure_holds(self):
         consumer = AsyncMock()
         with patch.object(worker, "project", new_callable=AsyncMock) as project:
-            await worker.handle(consumer, self.record)
-            project.assert_awaited_once_with(self.tenant, [self.alert], [], expected_incident=self.incident)
-            consumer.commit.assert_awaited_once_with({TopicPartition(worker.TOPIC, 2): 22})
+            await worker.handle(consumer, self.record, self.config)
+            project.assert_awaited_once_with(self.tenant, [self.alert], [], expected_incident=self.incident, config=self.config)
+            consumer.commit.assert_awaited_once_with({TopicPartition(self.config["topic"], 2): 22})
             consumer.commit.reset_mock()
             project.side_effect = IngressError("source_subject_absent")
             with self.assertRaises(IngressError):
-                await worker.handle(consumer, self.record)
+                await worker.handle(consumer, self.record, self.config)
             consumer.commit.assert_not_awaited()
 
     async def test_malformed_packet_cannot_acknowledge(self):
@@ -55,7 +56,7 @@ class TestProductionProjection(unittest.IsolatedAsyncioTestCase):
         for bad in ({"alert_row_id": str(UUID(int=1))}, {"persist_outcome": "failed"}, {"incident_id": None}):
             self.record.value = json.dumps(self.packet | bad)
             with self.assertRaises(IngressError):
-                await worker.handle(consumer, self.record)
+                await worker.handle(consumer, self.record, self.config)
         consumer.commit.assert_not_awaited()
 
     async def test_existing_native_subject_only_suffices_for_manual_jobs(self):
@@ -63,9 +64,9 @@ class TestProductionProjection(unittest.IsolatedAsyncioTestCase):
             for row in []:
                 yield row
         conn = SimpleNamespace(cursor=empty, fetchval=AsyncMock(return_value=True))
-        self.assertEqual(await sync_subject(conn, None, self.tenant, self.alert, False), 0)
+        self.assertEqual(await sync_subject(conn, None, self.tenant, self.alert, False, source_prefetch=self.config["source_prefetch"]), 0)
         with self.assertRaisesRegex(IngressError, "source_subject_absent"):
-            await sync_subject(conn, None, self.tenant, self.alert, False, expected_incident=self.incident)
+            await sync_subject(conn, None, self.tenant, self.alert, False, expected_incident=self.incident, source_prefetch=self.config["source_prefetch"])
 
     async def test_conflicting_existing_snapshot_or_event_never_enters_sink(self):
         async def cursor(*_args, **_kwargs):
@@ -73,26 +74,27 @@ class TestProductionProjection(unittest.IsolatedAsyncioTestCase):
         conn = SimpleNamespace(cursor=cursor, fetchval=AsyncMock(return_value="another_hash"))
         sink = SimpleNamespace(_write=AsyncMock())
         with self.assertRaisesRegex(IngressError, "source_identity_mismatch"):
-            await sync_subject(conn, sink, self.tenant, self.alert, False)
+            await sync_subject(conn, sink, self.tenant, self.alert, False, source_prefetch=self.config["source_prefetch"])
         with self.assertRaisesRegex(IngressError, "notification_incident_mismatch"):
-            await sync_subject(conn, sink, self.tenant, self.alert, False, expected_incident=UUID(int=1))
+            await sync_subject(conn, sink, self.tenant, self.alert, False, expected_incident=UUID(int=1), source_prefetch=self.config["source_prefetch"])
         sink._write.assert_not_awaited()
 
     async def test_activate_fixes_start_and_never_advances_existing_offset(self):
         consumer = MagicMock(commit=AsyncMock())
         pos = {"0": {"begin": 0, "end": 4, "committed": None}}
-        with tempfile.TemporaryDirectory() as folder, patch.object(worker, "BOUNDARY", Path(folder) / "start.json"):
-            first = await worker.activate(consumer, pos)
-            consumer.assign.assert_called_once_with([TopicPartition(worker.TOPIC, 0)])
-            consumer.commit.assert_awaited_once_with({TopicPartition(worker.TOPIC, 0): 4})
+        with tempfile.TemporaryDirectory() as folder:
+            self.config["activation_file"] = str(Path(folder) / "start.json")
+            first = await worker.activate(consumer, pos, self.config)
+            consumer.assign.assert_called_once_with([TopicPartition(self.config["topic"], 0)])
+            consumer.commit.assert_awaited_once_with({TopicPartition(self.config["topic"], 0): 4})
             consumer.commit.reset_mock()
             pos["0"].update(end=20, committed=11)
-            self.assertEqual(await worker.activate(consumer, pos), first)
+            self.assertEqual(await worker.activate(consumer, pos, self.config), first)
             consumer.commit.assert_not_awaited()
             pos["0"]["committed"] = None
             with self.assertRaisesRegex(IngressError, "offset_missing"):
-                worker.validate_offsets(pos, first)
+                worker.validate_offsets(pos, first, self.config)
             pos["0"]["begin"] = 15
             with self.assertRaisesRegex(IngressError, "out_of_range"):
-                await worker.activate(consumer, pos)
+                await worker.activate(consumer, pos, self.config)
             consumer.commit.assert_not_awaited()

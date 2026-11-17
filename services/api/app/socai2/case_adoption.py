@@ -5,6 +5,8 @@ from sqlalchemy import func, insert, select, update
 
 from app.models import socai2 as m
 
+from .analysis_task_store import T as ANALYSIS_TASKS
+from .analysis_task_store import active_case_work
 from .baseline_store import RES, RESM, RM, C, R, StoreError, digest
 from .case_adoption_contracts import (
     AdoptedAssessment,
@@ -12,7 +14,8 @@ from .case_adoption_contracts import (
     ResultAdoptionPreview,
     ResultAdoptionReceipt,
 )
-from .case_contracts import ResultView, RunView, project
+from .case_comparison import project_comparison
+from .case_contracts import ResultView, RunView
 
 ASSESS, SOURCES, COVER = (m.CaseAssessments.__table__, m.CaseAssessmentSources.__table__,
                          m.CaseAssessmentMembers.__table__)
@@ -35,7 +38,7 @@ async def assessment_view(store, case_id, assessment):
         RES.c.id.in_([s["result_id"] for s in sources if s["result_id"]]))).order_by(RES.c.id))
     return AdoptedAssessment(**{k: assessment[k] for k in AdoptedAssessment.model_fields
         if k not in {"sources", "members", "results"}}, sources=sources, members=members,
-        results=[project(ResultView, row) for row in results])
+        results=[await project_comparison(store, ResultView, row) for row in results])
 
 
 async def preview(store, case, result_id):
@@ -68,9 +71,16 @@ async def preview(store, case, result_id):
             & (REVISION.c.task_id == TASK.c.id) & (REVISION.c.id == TASK.c.current_revision_id))
         .where(*store.where(TASK, TASK.c.case_id == cid),
                REVISION.c.state.in_(["not_started", "in_progress"])).order_by(TASK.c.id))
+    _, active = await active_case_work(store, cid)
     runs = await rows(store, select(R.c.id.label("run_id"), R.c.kind, R.c.state, R.c.row_version)
-        .where(*store.where(R, R.c.case_id == cid,
-            R.c.state.in_(["pending_update", "running", "unknown"]))).order_by(R.c.id))
+        .where(*store.where(R, R.c.id.in_([r["id"] for r in active]))).order_by(R.c.id))
+    analysis = await rows(store, select(ANALYSIS_TASKS.c.id.label("task_id"), ANALYSIS_TASKS.c.intent,
+        ANALYSIS_TASKS.c.state.label("status")).where(*store.where(ANALYSIS_TASKS,
+            ANALYSIS_TASKS.c.subject_type == "case", ANALYSIS_TASKS.c.subject_id == cid,
+            ANALYSIS_TASKS.c.state.in_(["accepted", "waiting", "running"]))).order_by(ANALYSIS_TASKS.c.id))
+    for task in analysis:
+        if task["status"] == "waiting":
+            task["status"] = "accepted"
     freshness = (await store.input_freshness(run["id"]) if run["kind"] == "baseline"
                  else {"state": "unverified", "reasons": ["not_baseline_result"]})
     reasons = []
@@ -91,11 +101,11 @@ async def preview(store, case, result_id):
         reasons.append("result_input_not_current")
     value = ResultAdoptionPreview(case_id=cid, case_row_version=case["row_version"],
         scope_revision=case["scope_revision"], handling_status=case["handling_status"],
-        review_token="0" * 64, current_assessment=current, candidate=project(ResultView, result),
-        source_run=project(RunView, run), current_alert_ids=sorted(actual), members=members,
+        review_token="0" * 64, current_assessment=current, candidate=await project_comparison(store, ResultView, result),
+        source_run=await project_comparison(store, RunView, run), current_alert_ids=sorted(actual), members=members,
         uncovered_alert_ids=sorted(actual - covered), outside_alert_ids=sorted(delivered - actual),
-        input_freshness=freshness, unfinished_tasks=tasks, unfinished_runs=runs,
-        requires_pending_work_acknowledgement=bool(tasks or runs), can_adopt=not reasons, refusal_reasons=reasons)
+        input_freshness=freshness, unfinished_tasks=tasks, unfinished_runs=runs, unfinished_analysis_tasks=analysis,
+        requires_pending_work_acknowledgement=bool(tasks or runs or analysis), can_adopt=not reasons, refusal_reasons=reasons)
     return value.model_copy(update={"review_token": digest(value.model_dump(mode="json", exclude={"review_token"}))})
 
 

@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="52" time="5.577" timestamp="2026-11-16T20:28:01.416597+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/a-duplicate-verdict.expected]" time="0.158"><failure message="AssertionError: assert {'$.rationale...endations[1]'} &lt;= set()&#10;  &#10;  Extra items in the left set:&#10;  '$.recommendations[1]'&#10;  '$.recommendations[0]'&#10;  '$.rationale'">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/boundaries-01/a-duplicate-verdict.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+&gt;       assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+E       AssertionError: assert {'$.rationale...endations[1]'} &lt;= set()
+E         
+E         Extra items in the left set:
+E         '$.recommendations[1]'
+E         '$.recommendations[0]'
+E         '$.rationale'
+
+services/api/tests/test_socai2_d4_units_independent.py:138: AssertionError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/a-explicit-empty-recommendations.expected]" time="0.169"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/boundaries-01/a-explicit-empty-recommendations.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': '007fd5fc-0eba-5025-8cde-55aeee84b3e3', ...}
+originals = {'9f56849b-3c92-5bff-ba39-f5b49f327657': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/a-rationale-only.expected]" time="0.153" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/i-duplicate-member.expected]" time="0.211" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/i-question-original-index.expected]" time="0.155" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[boundaries-01/i-unknown-member.expected]" time="0.159" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/complete-length.expected]" time="0.153"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/fixtures-02/A/complete-length.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': '7df50b43-aa29-525f-9fb3-5405baaa573a', ...}
+originals = {'e69afbdd-3a3b-5743-a17c-9fd442d6471b': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/complete-stop.expected]" time="0.166"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/fixtures-02/A/complete-stop.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': '02373531-7b1a-5375-90d2-0bcca7d18d34', ...}
+originals = {'01db50af-1d91-54b8-b1b8-1f228dde450b': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/empty.expected]" time="0.151" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/random-1.expected]" time="0.149" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/random-2.expected]" time="0.149" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/random-3.expected]" time="0.201"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/fixtures-02/A/random-3.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': '82959aba-df45-5b0e-9cf6-79a4ca4b844d', ...}
+originals = {'7815c996-c5ac-5b89-b59b-2c2e5aa04770': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/rationale-closed.expected]" time="0.153" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/recommendation-1-closed-2-partial.expected]" time="0.168"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/fixtures-02/A/recommendation-1-closed-2-partial.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': 'bb696bcc-f99e-5d5e-9769-365d3a92c320', ...}
+originals = {'da91c0f6-836a-57a5-8742-aadc0ecaeef5': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/root-close-missing.expected]" time="0.162"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery&#10;quality.path_mapping&#10;  Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden">current_prepared = {'A': ({'user': '本轮只判断这一条告警的恶意、良性、误报或待复核性质及其依据。描述、历史分析和人工反馈原文未经改写。未提供的信息视为未知。\n[N1_S1｜原始记录] 活动账号="svc-app-bc3b4605"\n[...000-0000-0000-0000-000000000001', 'alert_id': None, 'incident_id': '9bfedca6-43d7-45d5-8788-f0cf58eed8bb', ...}, ...})}
+fixture = PosixPath('/Users/lychee/Documents/project/socai2/docs/operations/evidence/test-ai-continuation-d4-20261116-01/fixtures-02/A/root-close-missing.expected.json')
+
+    @pytest.mark.parametrize("fixture", FIXTURES, ids=[p.parent.name + "/" + p.stem for p in FIXTURES])
+    def test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies(current_prepared, fixture):
+        expected = read(fixture)
+        stage, name = expected["stage"], expected["name"]
+        prepared, request, frozen = current_prepared[stage]
+        fragment = fixture.with_name(name + ".txt").read_text()
+        assert hashlib.sha256(fragment.encode()).hexdigest() == expected["fragment_sha256"]
+        original_id, request_id = identity(stage + "/" + name + "/original"), identity(stage + "/" + name + "/request")
+        payload = copy.deepcopy(frozen["original"]["content_json"]["raw"])
+        payload["choices"][0]["message"]["content"] = fragment
+        payload["choices"][0]["finish_reason"] = expected["finish_reason"]
+        before = copy.deepcopy(prepared)
+        received = ai_delivery_store.receive_payload(stage, payload, prepared, original_id, usage(payload), request)
+        assert prepared == before
+        actual = {u["path"]: u for u in received["retained_units"]}
+        invalid = {u["path"] for u in received["invalid_units"]}
+        oracle = {u["path"]: u for u in expected.get("complete_candidate_units", expected.get("complete_value_catalog", []))}
+        if "complete_candidate_units" in expected:
+            assert set(actual) == set(oracle)
+            assert not invalid
+        assert set(expected.get("must_retain_paths", [])) &lt;= set(actual)
+        assert set(expected.get("must_reject_paths", [])) &lt;= invalid
+        assert not set(expected.get("must_reject_paths", [])) &amp; set(actual)
+        assert received["delivery"]["state"] == expected["expected_delivery"]
+        assert (received["result"] is not None) == expected["expected_usable_result"]
+        assert received["use"]["conclusion_available"] == expected["expected_usable_result"]
+        assert received["use"]["dispatch_paths"] == []
+        assert not received["use"]["adoption_eligible"] and not received["use"]["comparison_eligible"]
+        assert received["quality"]["prose_quality"] == "not_checked"
+        for field in expected.get("must_not_create_fields", []):
+            assert field not in received["analysis"]
+        for path, unit in actual.items():
+            start, end = unit["value_span"]
+            assert json.loads(fragment[start:end]) == unit["value"]
+            assert hashlib.sha256(fragment[start:end].encode()).hexdigest() == unit["value_sha256"]
+            if path in oracle:
+                assert (unit["value"], unit["value_span"], unit["value_sha256"]) == (
+                    oracle[path]["value"], oracle[path]["value_span"], oracle[path]["value_sha256"])
+            assert unit["original_artifact_id"] == original_id
+            for ref in unit["resolved_refs"]:
+                source = prepared["source_map"][ref["source_id"]]
+                assert ref["ref"] == source["ref"] and ref["alert_ids"] == source.get("alert_ids", [])
+            if isinstance(unit["value"], dict) and "alert_refs" in unit["value"]:
+                assert unit["declared_scope"] == {"alert_refs": unit["value"]["alert_refs"]}
+        if stage == "I":
+            aliases = prepared["member_aliases"]
+            admitted = [aliases[m["alert_id"]] for m in received["validated_members"]]
+            if "expected_original_member_aliases" in expected:
+                assert admitted == expected["expected_original_member_aliases"]
+            if "expected_question_ids" in expected:
+                assert [q.id for q in received["result"].open_questions] == expected["expected_question_ids"]
+        if received["result"] is not None:
+            if stage == "A":
+                assert received["result"].rationale == received["analysis"]["rationale"]
+            else:
+                assert received["result"].conclusion == received["analysis"]["diagnosis"]["conclusion"]
+            if received["delivery"]["state"] == "partial":
+                assert "stage_output_incomplete_see_stage_delivery" in received["result"].limitations
+        originals = {original_id: {"raw": payload}, request_id: request}
+        receipt = {"schema_version": stage_delivery.VERSION, "type": "stage_delivery", "stage": stage,
+            "run_id": identity(stage + "/" + name + "/run"), "step_id": identity(stage + "/" + name + "/step"),
+            "input_artifact_id": frozen["run"]["input_artifact_id"],
+            "originals": [{"artifact_id": key, "kind": "response" if key == original_id else "request", "sha256": digest(body)}
+                          for key, body in originals.items()],
+            "execution": {"kind": "model", "call_state": "completed", "local_state": "ended",
+                "local_ended_at": "2026-11-16T12:00:00Z", "request_dispatched": True, "finish_reason": expected["finish_reason"],
+                "error": None, "retry_allowed": False, "retry_reason": "offline_controlled_response_no_real_dispatch"},
+            **{k: received[k] for k in ("parse", "delivery", "retained_units", "missing_units", "invalid_units", "quality", "use")}}
+&gt;       stage_delivery.validate_sources(receipt, originals)
+
+services/api/tests/test_socai2_d4_units_independent.py:186: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+receipt = {'schema_version': 'socai2.stage-delivery.v1', 'type': 'stage_delivery', 'stage': 'A', 'run_id': '126f2129-012d-5868-af76-9a4622b146a0', ...}
+originals = {'9dac9935-b20d-59eb-9090-7ca59a57ca17': {'raw': {'id': 'chatcmpl-9cf3fc2e32435f41', 'model': 'aisoc-investigation', '...ss-input-v2', 'output_validation': {'prose_alias_format': 'namespaced_v1'}, ...}, 'reserved_token_upper_bound': 11398}}
+
+    def validate_sources(receipt, originals):
+        """Check the saved source bodies, not a normalized copy of their JSON."""
+&gt;       value = StageDelivery.model_validate(receipt)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for StageDelivery
+E       quality.path_mapping
+E         Extra inputs are not permitted [type=extra_forbidden, input_value={'$.decision_basis.source...anation': '$.rationale'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden
+
+services/api/app/socai2/stage_delivery.py:153: ValidationError</failure></testcase><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[A/verdict-only.expected]" time="0.154" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/complete-length.expected]" time="0.158" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/complete-stop.expected]" time="0.159" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/diagnosis-summary-closed-conclusion-partial.expected]" time="0.162" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/empty.expected]" time="0.195" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/finding-closed-question-partial.expected]" time="0.162" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/member-1-closed-2-partial.expected]" time="0.157" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/random-1.expected]" time="0.148" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/random-2.expected]" time="0.158" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/random-3.expected]" time="0.160" /><testcase classname="tests.test_socai2_d4_units_independent" name="test_current_ai_receive_preserves_frozen_units_scope_and_core_dependencies[I/root-close-missing.expected]" time="0.215" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[duplicate-member-key]" time="0.023" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[duplicate-members-section]" time="0.022" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[explicit-empty-followups]" time="0.027" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[followups-without-retained-question]" time="0.043" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[half-unicode-escape]" time="0.034" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[missing-followups]" time="0.030" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[string-brackets-escaped-complete]" time="0.030" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[unknown-member]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[unterminated-number]" time="0.023" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[whitespace]" time="0.024" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[complete-length]" time="0.029" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[complete-stop]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[empty]" time="0.024" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[f1-closed-f2-partial]" time="0.026" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[random-1]" time="0.024" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[random-2]" time="0.051" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[random-3]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[root-close-missing]" time="0.030" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[domains-before-findings]" time="0.039" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[duplicate-finding-id]" time="0.030" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_independent_frozen_units_and_business_boundaries[six-findings]" time="0.031" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_receipt_cannot_claim_unavailable_or_changed_originals[foreign_original]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_receipt_cannot_claim_unavailable_or_changed_originals[wrong_content_path]" time="0.030" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_receipt_cannot_claim_unavailable_or_changed_originals[out_of_range_span]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_receipt_cannot_claim_unavailable_or_changed_originals[changed_original]" time="0.028" /><testcase classname="tests.test_socai2_d3_units_independent" name="test_receipt_cannot_claim_unavailable_or_changed_originals[unretained_dispatch]" time="0.029" /></testsuite></testsuites>

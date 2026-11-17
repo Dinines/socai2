@@ -1,0 +1,79 @@
+{
+  "schema_version": "socai2.acceptance-authored-selection.v1",
+  "generator_config": {
+    "account_prefix": "svc-app",
+    "base_time": "2026-11-17T09:10:44+00:00",
+    "batch_id": "acceptance-fullflow-20261117-01",
+    "candidate_identity": "deploy/aisoc21/streaming-release-20261116-04/identity.json",
+    "dataset_version": "socai2-streaming-s01-s04/v2",
+    "destination_ip": "198.51.100.171",
+    "host_prefix": "host-app",
+    "other_destination_ip": "198.51.100.172",
+    "product_name": "Endpoint Collector",
+    "source_ip": "192.0.2.171",
+    "source_namespace": "telemetry-channel-02",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "vendor_name": "Internal Telemetry"
+  },
+  "registered_connector_id": "34411091-9934-5a5e-b116-3868e76a90cd",
+  "scenario": {
+    "schema_version": "socai2.acceptance-scenario.v1",
+    "scenario_id": "process-followed-by-network",
+    "title": "进程活动及后续外联",
+    "parts": [
+      {
+        "id": "part1",
+        "check_level": "case",
+        "context_required": true
+      },
+      {
+        "id": "part2",
+        "check_level": "case",
+        "context_required": true
+      }
+    ],
+    "cases": [
+      {
+        "key": "incident-case",
+        "title": "进程活动及后续外联调查",
+        "create_after_part": "part1",
+        "scope": "incident",
+        "alert_refs": [
+          "part1/alerts/001.json"
+        ],
+        "check_after_parts": [
+          "part2"
+        ]
+      }
+    ]
+  },
+  "selection": [
+    {
+      "source": "S01/alerts.jsonl",
+      "line": 2,
+      "target": "part1/alerts/001.json"
+    },
+    {
+      "source": "S01/context-events.jsonl",
+      "line": 3,
+      "target": "part1/context/001.json"
+    },
+    {
+      "source": "S01/context-events.jsonl",
+      "line": 4,
+      "target": "part1/context/002.json"
+    },
+    {
+      "source": "S04/alerts.jsonl",
+      "line": 1,
+      "target": "part2/alerts/001.json"
+    },
+    {
+      "source": "S04/context-events.jsonl",
+      "line": 1,
+      "target": "part2/context/001.json"
+    }
+  ],
+  "purpose": "Fresh authored business observations; controls and expectation are not sent to models. Registered connector must be verified against actual target before admission.",
+  "execution_id": "acceptance-fullflow-20261117-01"
+}

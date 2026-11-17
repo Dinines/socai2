@@ -1,0 +1,223 @@
+{
+  "analysis": {
+    "summary": "本案核心事实为服务账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上成功启动 curl 进程发起 HTTP HEAD 探测请求至外部 IP 198.51.100.171，约 20 分钟后观测到对应的网络流量（TCP/443）。现有证据链在‘意图’与‘结果’之间存在断裂：进程启动成功不代表命令执行完毕或获取了响应；网络流量观测结果标记为 unknown，无法确认连接是否建立、是否读取了敏感数据或是否造成系统影响。目的 IP 属性不明（无资产关联、无威胁情报），账号授权状态未定（无审批记录、无权限基线）。A1 与 A2 告警通过相同主机、账号、目标 IP 及时间邻近性建立关联，推断为同一业务会话，但时间间隔较长，因果推断存在不确定性。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "analyzed",
+        "summary": "记录显示服务账号 svc-app-1afa1f56 在 host-app-7e78aefa 上观测到发往 198.51.100.171:443 的网络流量。",
+        "evidence_ids": ["N4_S3", "N4_S4", "N4_S5", "N4_S10", "N4_S11", "N4_S21", "N4_S22", "N4_S23", "N4_S59"],
+        "limitations": ["activity.outcome=unknown，无法确认连接状态及数据流向", "缺乏 DNS 解析记录", "缺乏流量载荷分析"]
+      },
+      {
+        "alert_id": "A2",
+        "state": "analyzed",
+        "summary": "记录显示服务账号 svc-app-1afa1f56 在 host-app-7e78aefa 上成功启动 curl 进程，命令为 curl --head https://198.51.100.171/status。",
+        "evidence_ids": ["N4_S63", "N4_S64", "N4_S65", "N4_S68", "N4_S72", "N4_S73", "N4_S82", "N4_S83", "N4_S110"],
+        "limitations": ["仅记录进程启动动作，未记录命令执行结果或返回数据", "无法确认请求是否成功或已获取响应"]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "observed",
+        "alert_ids": ["A2"],
+        "support_ids": ["N4_S63", "N4_S64", "N4_S65", "N4_S68", "N4_S72", "N4_S73"],
+        "counter_ids": [],
+        "alternatives": [],
+        "limitations": ["仅记录进程启动动作，未记录命令执行结果或返回数据", "无法确认 curl 命令是否完整执行完毕或获取了响应内容"]
+      },
+      {
+        "id": "F2",
+        "state": "observed",
+        "alert_ids": ["A1"],
+        "support_ids": ["N4_S3", "N4_S4", "N4_S5", "N4_S10", "N4_S11", "N4_S21", "N4_S22", "N4_S23"],
+        "counter_ids": [],
+        "alternatives": [],
+        "limitations": ["流量观测结果标记为 unknown，无法确认连接状态", "无法确认流量内容是否包含敏感数据"]
+      },
+      {
+        "id": "F3",
+        "state": "inferred",
+        "statement": "A2 中的进程启动行为与 A1 中的网络流量观测在时间（间隔约 20 分钟）、主机、账号及目标 IP 上高度一致，推断两者属于同一业务会话或关联操作序列。",
+        "alert_ids": ["A1", "A2"],
+        "support_ids": ["N4_S63", "N4_S3", "N4_S64", "N4_S4", "N4_S21", "N4_S23"],
+        "counter_ids": [],
+        "alternatives": ["两次事件可能无直接关联，例如 A1 为其他无关流量，或 A2 进程启动后未产生 A1 所示流量"],
+        "limitations": ["时间间隔较长，不能直接证明因果", "缺乏会话保持或中间状态证据"]
+      },
+      {
+        "id": "F4",
+        "state": "unresolved",
+        "statement": "目的 IP 198.51.100.171 的性质未定，既无威胁情报命中，也无资产库存记录，无法确认是恶意扫描目标、未知第三方服务还是内部业务系统。",
+        "alert_ids": ["A1", "A2"],
+        "support_ids": ["N4_S113", "N4_S114", "N4_S115", "N4_S116", "N4_S118", "N4_S120"],
+        "counter_ids": [],
+        "alternatives": ["该 IP 可能是合法的合作伙伴接口、CDN 节点或内部测试环境"],
+        "limitations": ["知识库查询无结果", "未查询威胁情报和历史告警"]
+      },
+      {
+        "id": "F5",
+        "state": "unresolved",
+        "statement": "账号 svc-app-1afa1f56 访问外部 IP 198.51.100.171 的授权状态未定，缺乏权限基线文档或运维审批记录支持。",
+        "alert_ids": ["A1", "A2"],
+        "support_ids": ["N4_S146", "N4_S147", "N4_S148"],
+        "counter_ids": [],
+        "alternatives": ["该账号可能拥有默认的外部访问权限，或该操作属于临时授权的运维任务"],
+        "limitations": ["未提供账号权限策略文档", "未查询审批记录"]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "已确认服务账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上启动 curl 进程探测 198.51.100.171，并观测到后续网络流量。",
+        "evidence_ids": ["N4_S63", "N4_S68", "N4_S3", "N4_S21", "N4_S22"],
+        "limitations": ["无法确认命令执行结果及流量具体内容"]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "A1 与 A2 通过相同的主机、账号、目标 IP 和时间邻近性建立关联，推断为同一会话。",
+        "evidence_ids": ["N4_S63", "N4_S3", "N4_S64", "N4_S4", "N4_S21", "N4_S23"],
+        "limitations": ["时间间隔 20 分钟，非实时连续，因果推断存在不确定性"]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "行为性质无法定性。支持恶意的证据不足（无威胁情报、无异常基线）；支持正常的证据不足（无授权记录、无业务上下文）。",
+        "evidence_ids": ["N4_S147", "N4_S148", "N4_S149"],
+        "limitations": ["缺乏目的 IP 信誉数据", "缺乏账号操作基线"]
+      },
+      {
+        "id": "authorization",
+        "state": "unresolved",
+        "answer": "无明确授权证据。未找到审批记录、权限基线或业务需求文档。",
+        "evidence_ids": ["N4_S146", "N4_S147"],
+        "limitations": ["未提供授权材料，不能因未提供而断定无授权"]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "未观察到实际影响。进程启动成功不代表数据外传，流量结果未知不代表数据泄露。",
+        "evidence_ids": ["N4_S11", "N4_S73"],
+        "limitations": ["无法确认连接是否建立", "无法确认是否读取了敏感数据"]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及服务账号 svc-app-1afa1f56 的行为及授权状态。",
+        "alert_ids": ["A1", "A2"]
+      ,
+      "finding_ids": ["F5"]
+      ,
+      "limitations": ["缺乏账号权限基线文档或运维审批记录"]
+      },
+      {
+        "name": "cloud",
+        "applicability": "not_applicable",
+        "reason": "当前材料未涉及云环境配置、资源变更或云原生攻击特征。",
+        "alert_ids": ["A1", "A2"]
+      ,
+      "finding_ids": []
+      ,
+      "limitations": ["无相关证据"]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "当前材料未涉及钓鱼邮件、恶意链接点击或凭证窃取行为。",
+        "alert_ids": ["A1", "A2"]
+      ,
+      "finding_ids": []
+      ,
+      "limitations": ["无相关证据"]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及服务账号（可能代表内部系统或自动化运维）对外发起探测的行为性质判断。",
+        "alert_ids": ["A1", "A2"]
+      ,
+      "finding_ids": ["F1", "F2", "F3", "F4", "F5"]
+      ,
+      "limitations": ["无法区分是正常运维探测还是恶意内部扫描"]
+      }
+    ],
+    "conflicts": []
+  ,
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2"],
+      "mode": "human",
+      "objective": "确认服务账号 svc-app-1afa1f56 是否有访问外部 IP 198.51.100.171 的业务授权或运维策略。",
+      "required_evidence": "账号权限基线文档、运维操作审批记录或业务需求说明。"
+    ,
+    "source_ids": ["N4_S146", "N4_S147"]
+    ,
+    "object_keys": ["O2", "O4"]
+    }
+    ,
+    {
+      "question_id": "impact",
+      "alert_ids": ["A1", "A2"],
+      "mode": "query",
+      "objective": "查询主机 host-app-7e78aefa 在案件时间窗口内的网络连接详情，确认与 198.51.100.171 的连接状态、端口及流量特征。",
+      "required_evidence": "network_connections 工具返回的连接端点、协议、时间、结果及流量计数。",
+      "source_ids": ["N4_S119", "N4_S123"]
+    ,
+    "object_keys": ["O1", "O2"]
+    }
+  ]
+  },
+  "conclusion": {
+    "text": "本案确认为一次由服务账号 svc-app-1afa1f56 发起的进程启动事件，意图探测外部 IP 198.51.100.171。由于缺乏命令执行结果、网络连接数据流及授权审批记录，无法判定该行为是正常运维探测还是恶意扫描，也无法确认是否造成了数据泄露或系统影响。当前证据链在‘意图’与‘结果’之间存在断裂。",
+    "state": "uncertain",
+    "alert_ids": ["A1", "A2"]
+  ,
+  "support_ids": ["N4_S63", "N4_S68", "N4_S3", "N4_S11", "N4_S147", "N4_S148"]
+  ,
+  "limitations": ["无法确认 curl 命令是否完整执行完毕或获取了响应内容", "无法确认连接是否建立，无法确认是否读取了敏感数据", "缺乏目的 IP 信誉数据，缺乏账号操作基线"]
+  },
+  "closing_note": "本次材料未提供账号权限策略文档及审批记录，授权状态未知；未查询到威胁情报及资产关联信息，目的 IP 属性不明；网络流量观测结果为 unknown，无法确认实际影响。需人工确认授权依据并补充网络连接详情。",
+  "comparison": {
+    "kind": "withdrawn",
+    "summary": "本轮新增成员 A1 的网络流量观测记录（N4_S3 等），证实了进程启动后确实产生了网络流量，但结果仍为 unknown。与基线 N4_S151 相比，事实范围从仅‘进程启动’扩展至‘进程启动 + 流量观测’，但核心结论（无法定性、证据链断裂）未变。",
+    "support_ids": ["N4_S151", "N4_S3", "N4_S11"]
+  },
+  "impact": {
+    "summary": "已观察到进程启动动作及后续网络流量观测，但未观察到实际的数据外传、系统配置变更或业务中断。影响范围完全取决于目标 IP 的业务属性及命令的实际执行结果，目前均为未知。",
+    "alert_ids": ["A1", "A2"]
+  ,
+  "support_ids": ["N4_S11", "N4_S73"]
+  ,
+  "supported_changes": []
+  ,
+  "cannot_generalize": ["无法确认是否读取了敏感信息", "无法确认是否建立了有效连接", "无法确认目标 IP 是否为高价值资产"]
+  ,
+  "next_steps": ["需人工确认授权依据", "需补充网络连接详情"]
+  }
+  ,
+  "recommendations": [
+    {
+      "action_type": "investigate",
+      "object_keys": ["O2", "O4"],
+      "reason": "需核实服务账号 svc-app-1afa1f56 访问外部 IP 198.51.100.171 的授权状态，以排除误报或确认业务合法性。",
+      "source_ids": ["N4_S146", "N4_S147"]
+    ,
+    "limitations": ["未提供账号权限策略文档", "未查询审批记录"]
+    }
+    ,
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O2"],
+      "reason": "需查询主机 host-app-7e78aefa 在案件时间窗口内的网络连接详情，确认与 198.51.100.171 的连接状态、端口及流量特征，以评估实际影响。",
+      "source_ids": ["N4_S11", "N4_S73"]
+    ,
+    "limitations": ["当前流量观测结果为 unknown"]
+    }
+  ]
+}

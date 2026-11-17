@@ -2,7 +2,7 @@
 
 本功能由[历史卡片 OpenSpec](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)交付，并由[用途筛选与当前版本选择](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)补齐资格与模型选取，当前部署以 [PROGRESS](../../PROGRESS.md) 为准。技术解释／取证指导共用配置和来源链见[知识交接](case-knowledge-handoff.md)。历史案例参考不改变原 C2 `history` 的同对象／事件窗口查询。
 
-21 `v1.2-20261112-r5` 已实际加载分诊后同步：新提交且采用的 A 分诊按开启／120 秒配置维护当前卡片和索引，处理身份知识表 INSERT 已读回。自动触发端到端证据为一次本地流程，生产本轮只核配置／代码／连接与静态原件，没有新增 A／Case Run、知识写入或分析模型。4177 由 39→40 份，旧批保持，消费者关闭；模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)。
+分诊后同步最初随21 `v1.2-20261112-r5`加载，当前核心r1继续沿用：新提交且采用的 A 分诊按开启／120 秒配置维护当前卡片和索引，处理身份知识表 INSERT 已读回。自动触发端到端证据为一次本地流程，该历史发布批次生产只核配置／代码／连接与静态原件，没有新增 A／Case Run、知识写入或分析模型。该批4177当时39→40份；现已按负责人要求只展示10批，旧展示备份、原件保持，消费者关闭；模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)。
 
 ## 功能与接口
 
@@ -20,7 +20,7 @@
 
 导入时机是有效分诊或人工反馈提交成功后。[分诊保存后同步](../../openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)已在 21 r5 实际加载：开启 `history.sync_after_adopted_triage` 时，仅本次新保存、提交并采用的 A 分诊自动入库和索引。原始告警刚到达、未采用、失败／unknown、I／Case／H 均不触发，旧 operation key 重读不补派。材料／判断新版本形成新快照；旧卡不能代替尚未索引的新版本。
 
-人工反馈仍通过显式入库／索引维护；正式告警级人工反馈写入口尚未接线，Case H 不替代它。没有全库扫描、定时任务或自动消费者；Case 关闭和人工良性判断不自动生成已核实误报规则。
+告警级人工反馈E48/E49已交付并保存原判断/理由；更新历史知识仍通过显式入库/索引，不因反馈保存而自动同步。Case H保留自己的任务版本和适用范围，不替代告警反馈。没有全库扫描、定时任务或自动消费者；Case 关闭和人工良性判断不自动生成已核实误报规则。
 
 同步使用独立会话，不持有分诊事务／行锁等待网络。`history.sync_timeout_seconds` 是启用时必填的总时限，当前实际 profile 为 120 秒，类型缺省关闭。知识表 `SELECT/INSERT` 随既有处理身份配置；新装脚本已同步，升级执行 [knowledge_history_write_access.sql](../../deploy/database/knowledge_history_write_access.sql)，参数 `expected_database`、`processing_role` 来自当前 profile。不要重跑会撤销已有 API 读权限的全量初始化；不增加 UPDATE/DELETE 或表结构。
 
@@ -54,9 +54,9 @@ C2 请求仍在 `actual_args.parameters.selectors[]`；历史目的的 `filters`
 | 环节 | 实际输入和要求 |
 | --- | --- |
 | C2 | 程序构造查询并冻结卡片；没有模型生成的历史事实 |
-| C3 | 本案材料与历史卡片并列；原历史观察/来源标签为非本案观察，分诊与人工正文各自独立引用。比较相同条件和缺失条件，形成解释及最多两项问题 |
-| Deep | 复用已冻结且可见的卡片，结合当前问题/工具结果参考验证方法；不因历史内容扩大查询实体、时间或工具参数 |
-| C6 | 用本案证据决定本案结论，历史只供对比与建议；明确不适用及未验证条件，不能继承历史判定、授权或已执行状态 |
+| C3 | 本案材料与历史卡片并列；原历史观察/来源标签为非本案观察，分诊与人工正文各自独立引用。比较相同条件和缺失条件，形成解释及最多两项必要补查 |
+| Deep | 按当前问题选择已冻结卡片和必要引用依赖，授权问题默认不追加可选知识；不因历史内容扩大查询实体、时间或工具参数 |
+| C6 | 按业务问题与原适用成员选择知识，用本案证据决定结论，历史只供对比与建议；明确不适用及未验证条件，不能继承历史判定、授权或已执行状态 |
 
 模型视图去掉相似分/hash 和重复序列化正文，保留可读结构与原文。引用路径为知识工件 `$.rows.N`、`$.rows.N.record.triage`、`$.rows.N.record.feedback`；角色分别 source_label/prior_analysis/human_statement。`record_alert_ids` 指向原历史告警，`query_alert_ids` 只说明本次查询由哪些成员产生，不能互换。
 

@@ -7,8 +7,8 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .baseline_contracts import Contract, Finding, Impact, Question, Recommendation
-from .case_data_contracts import Classification, CasePageData
-from .list_query_contracts import CaseSort, DatedQuery
+from .case_allocation_contracts import CaseContinuation
+from .case_data_contracts import CasePageData, Classification
 from .enums import (
     AssignmentState,
     ChangeKind,
@@ -24,6 +24,7 @@ from .enums import (
     Validation,
     WorkStatus,
 )
+from .list_query_contracts import CaseSort, DatedQuery
 
 Label = Annotated[str, Field(min_length=1, max_length=200)]
 
@@ -133,6 +134,7 @@ class MoveReceipt(Contract):
 
 
 class CaseView(Contract):
+    continuation: CaseContinuation | None = None
     id: UUID
     source_namespace: str | None
     title: str
@@ -164,6 +166,13 @@ class CaseView(Contract):
     row_version: int
 
 
+class CaseComparison(Contract):
+    previous_run_id: UUID | None
+    comparison_result_id: UUID | None
+    state: Literal["initial", "eligible", "unavailable"]
+    reason_code: str | None
+
+
 class RunView(Contract):
     id: UUID
     case_id: UUID
@@ -178,6 +187,7 @@ class RunView(Contract):
     window_end: datetime | None
     state: RunState
     comparison_result_id: UUID | None
+    comparison_context: CaseComparison | None = None
     input_artifact_id: UUID | None
     executor_version: str | None
     requested_at: datetime
@@ -204,6 +214,7 @@ class ResultSummary(Contract):
     validation_state: Validation
     closing_note: str
     comparison_result_id: UUID | None
+    comparison_context: CaseComparison | None = None
     change_kind: ChangeKind
     change_summary: str | None
     input_artifact_id: UUID

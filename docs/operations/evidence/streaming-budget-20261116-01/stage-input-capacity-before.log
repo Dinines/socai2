@@ -1,0 +1,98 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_typed_projection_keeps_conflicting_names_and_original_paths _______
+
+    def test_typed_projection_keeps_conflicting_names_and_original_paths():
+        mat = {"id": uuid4(), "alert_id": uuid4(), "material_state": "complete", "ocsf_json": {
+            "class_uid": 1007, "actor": {"user": {"name": "actor-one"}}, "user": {"name": "user-two"},
+            "device": {"hostname": "device-three"}, "network": {"protocol_name": "tcp"},
+            "process": {"pid": 5, "cmd_line": "x" * 3000}}}
+>       output = material_projection(mat)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_stage_quality.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/baseline_semantics.py:221: in material_projection
+    output = project(value, root=root)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_semantics.py:167: in project
+    why = scalar_reason(name, original)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_semantics.py:86: in scalar_reason
+    if len(encoded(value)) > field_limit():
+                             ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:405: in field_limit
+    return draft_limit()
+           ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:391: in draft_limit
+    return active_policy().model.max_prepared_bytes
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:382: StoreError
+_________ test_incident_projection_round_robins_facts_before_metadata __________
+
+    def test_incident_projection_round_robins_facts_before_metadata():
+        frozen = source()
+        first = frozen["members"][0]
+        second = copy.deepcopy(first)
+        second["alert"]["id"], second["material"]["id"] = str(uuid4()), str(uuid4())
+        first["material"]["ocsf_json"] = {"metadata": {"notes": "received annotation " * 250},
+            "class_uid": 1007, "process": {"pid": 7, "cmd_line": "task --read"}, "user": {"name": "first-only"}}
+        second["material"]["ocsf_json"] = {"metadata": {"notes": "received annotation " * 250},
+            "class_uid": 4001, "dst_endpoint": {"ip": "198.51.100.44", "port": 443},
+            "src_endpoint": {"ip": "192.0.2.44", "port": 50100}, "network": {"protocol_name": "tcp"}}
+        frozen["members"].append(second)
+>       messages, mapping, data = incident.build(frozen, uuid4())
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_stage_quality.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/incident_diagnosis_contract.py:112: in build
+    preferred = semantic_fields(material, aid)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/alert_basic_contract.py:154: in semantic_fields
+    projected = material_projection({**material, "alert_id": alert_id})
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_semantics.py:221: in material_projection
+    output = project(value, root=root)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_semantics.py:167: in project
+    why = scalar_reason(name, original)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/baseline_semantics.py:86: in scalar_reason
+    if len(encoded(value)) > field_limit():
+                             ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:405: in field_limit
+    return draft_limit()
+           ^^^^^^^^^^^^^
+services/api/app/socai2/runtime_policy.py:391: in draft_limit
+    return active_policy().model.max_prepared_bytes
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @lru_cache(maxsize=1)
+    def active_policy():
+        # Policy cannot change midway through a process/Run. Select a file and
+        # restart the process to activate another reviewed configuration.
+        from .baseline_store import StoreError
+        path = os.environ.get("SOCAI2_INVESTIGATION_POLICY")
+        if not path or not Path(path).is_absolute():
+>           raise StoreError("investigation_policy_file_required", 503)
+E           app.socai2.baseline_store.StoreError: investigation_policy_file_required
+
+services/api/app/socai2/runtime_policy.py:382: StoreError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_stage_quality.py::test_typed_projection_keeps_conflicting_names_and_original_paths
+FAILED services/api/tests/test_socai2_stage_quality.py::test_incident_projection_round_robins_facts_before_metadata
+2 failed, 6 deselected in 0.29s

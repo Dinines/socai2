@@ -1,6 +1,6 @@
 # 新增调查 Tool 的接入与流程验证指南
 
-**2026-10-28实现例子：** 当前Case已接通[来源绑定的产品主机详情](product-host-tool-20261028.md)，包含实际schema、HTTP映射、Tool消息、证据及报告的直接验证。本指南下方的进程查询HTTP仍为假定接口示例，不是已实现的产品端点。
+**2026-10-28实现例子：** 当前Case已接通[来源绑定的产品主机详情](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/product-host-tool-20261028.md)，包含实际schema、HTTP映射、Tool消息、证据及报告的直接验证。本指南下方的进程查询HTTP仍为假定接口示例，不是已实现的产品端点。
 
 2026-10-25。用户要的是指导后续新增 Tool 并验证整条调查流程的方法。本轮只保存接入步骤、具体接口例子和验收办法，不编写模拟服务/测试程序、不运行模型或业务调用。权限专项、压力、恢复、故障注入矩阵均不在本指南范围。
 
@@ -33,7 +33,7 @@ sequenceDiagram
 
 ## 2. 当前仓库怎么接
 
-**2026-10-27路径说明：** 下表的ToolRegistry、scoped_customer_tools和run_with_tools属于原Agents实现。当前F3 Case在API v2中直接用[CaseTools.schemas/execute](../../services/api/app/investigation_v2/case_analysis_tools.py)、[模型协议包装](../../services/api/app/investigation_v2/case_analysis_models.py)和[Case循环](../../services/api/app/investigation_v2/case_analysis.py)组装/执行工具，目前只有进程和网络查询。新增能力必须进入目标路径实际提供的schema及执行分派；只在旧registry登记不会自动出现在F3。详细调用关系见[当前实现详解](current-implementation-reference-20261027.md)。
+**2026-10-27路径说明：** 下表的ToolRegistry、scoped_customer_tools和run_with_tools属于原Agents实现。当前F3 Case在API v2中直接用[CaseTools.schemas/execute](../../services/api/app/investigation_v2/case_analysis_tools.py)、[模型协议包装](../../services/api/app/investigation_v2/case_analysis_models.py)和[Case循环](../../services/api/app/investigation_v2/case_analysis.py)组装/执行工具，目前只有进程和网络查询。新增能力必须进入目标路径实际提供的schema及执行分派；只在旧registry登记不会自动出现在F3。详细调用关系见[当前实现详解](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-implementation-reference-20261027.md)。
 
 | 环节 | 当前代码 | 后续新增时检查什么 |
 | --- | --- | --- |
@@ -236,4 +236,4 @@ sequenceDiagram
 
 提交一张接入卡、一套告警/产品数据及预期请求、对应适配与注册实现，以及上述三个场景的流程记录。读记录能回答：**为什么这个工具适用、模型是否真的看到并选择了它、向哪里查了什么、产品返回了什么、程序如何解释、模型最终采用了哪些事实。**
 
-指定目标如果是新 v2 调查，就必须从 v2 实际入口验到保存结果；只跑旧 Deep 或独立 `run_with_tools`只能证明相应路径。当前 v2 的通用 Tool 接线仍属于[实现规划 F3](incident-investigation-implementation-plan-20261025.md)，本指南没有把它标为已完成。
+指定目标如果是新 v2 调查，就必须从 v2 实际入口验到保存结果；只跑旧 Deep 或独立 `run_with_tools`只能证明相应路径。当前 v2 的通用 Tool 接线仍属于[实现规划 F3](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/incident-investigation-implementation-plan-20261025.md)，本指南没有把它标为已完成。

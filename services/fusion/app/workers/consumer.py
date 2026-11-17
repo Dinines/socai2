@@ -466,7 +466,11 @@ class FusionWorker:
                 )
                 return
 
-        await self.process_alert(alert, source_event_id=validation.source_event_id, session=session)
+        # A vendor alert's envelope ID identifies the finding, not an underlying
+        # raw event. Only the normalized-event topic supplies an extra event
+        # reference; vendor alerts already carry their explicit source_event_ids.
+        source_event_id = validation.source_event_id if topic == settings.kafka_topic_raw_events else None
+        await self.process_alert(alert, source_event_id=source_event_id, session=session)
 
     async def process_alert(
         self, alert: RawAlert, *, source_event_id: str | None = None, session: SessionRef | None = None,
@@ -476,6 +480,8 @@ class FusionWorker:
         Callers receive the durable first result only after the fused message
         is acknowledged. Kafka owns its offset commit separately; HTTP must
         authenticate the tenant before invoking this state-changing method.
+        source_event_id, when supplied, identifies an observed normalized event,
+        never a vendor finding or canonical alert.
         """
         return await self._fuse_and_persist(alert, source_event_id=source_event_id, session=session)
 

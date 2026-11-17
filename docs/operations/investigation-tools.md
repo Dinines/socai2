@@ -2,7 +2,7 @@
 
 2026-10-21。面向当前告警调查二开，按工作区源码说明如何使用。用户目前没有待接的实际第三方SIEM；本文及[SIEM接入示例](siem-tool-integration.md)中的地址、凭据和数据都是占位。**本次只更新文档，没有连接SIEM、调用模型、修改配置或发布。** 本地尚未发布的代码不能由21现有服务的结果代证。
 
-配套阅读：[精确工具目录](../architecture/investigation-tool-catalog.md)列参数、默认值、输出和源码；[逐模型输入输出](../architecture/investigation-preprocessing-tools.md)解释预处理；[已有实测](investigation-functional-20261021.md)保留原始结果；[攻击链/图实测](attack-chain-path-local-20261021.md)说明固定上下文接入。
+配套阅读：[精确工具目录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)列参数、默认值、输出和源码；[逐模型输入输出](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)解释预处理；[已有实测](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)保留原始结果；[攻击链/图实测](attack-chain-path-local-20261021.md)说明固定上下文接入。
 
 后续设计：[外部HTTP接口与Tool执行验证](../architecture/third-party-search-contract.md)针对厂商已有GET/POST接口，说明请求/结果映射、新Tool注册和固定调用→脚本模型→实际模型的最少验证判据，仅设计未实施。
 
@@ -16,7 +16,7 @@
 | 自动升级的Graph | 外层代码固定节点，Deep内部模型选工具 | triage→enrichment→investigation→attack_path；investigation可进入Deep多轮查询 |
 | Deep | 模型输出结构化调用，应用执行 | 仅能调用该tenant这次注册的工具；结果交回下一轮模型 |
 
-Graph、Router和Deep不是同一个开关。Case调查打开Router不会自动获得Deep工具循环；自动升级也不是再调用Case默认四节点。入口详见[调查说明](../architecture/investigation.md#1-先选对入口几套调查并非同一流程)。当前常驻worker仍OFF。
+Graph、Router和Deep不是同一个开关。Case调查打开Router不会自动获得Deep工具循环；自动升级也不是再调用Case默认四节点。入口详见[调查说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md#1-先选对入口几套调查并非同一流程)。当前常驻worker仍OFF。
 
 攻击链、Attack Path、图邻居、blast radius、UEBA基线和KB主要由代码预取/处理后交给模型。**当前默认16工具里没有图查询或攻击链查询工具**；接通图上下文不等于模型能任意遍历图。响应动作另走Actions/提案/审批，不包含在下表的默认只读Deep工具里。
 
@@ -33,7 +33,7 @@ Graph、Router和Deep不是同一个开关。Case调查打开Router不会自动�
 
 默认16＝3＋2＋7＋4。customer/MCP不是无条件额外可用。`GET /api/v1/graph/investigate/tools`只列API的11个typed查询原语，**不是本次Deep完整目录**；完整目录应看该Run组装结果及coverage。
 
-`authentication_events`当前查询按账号、时间和非空来源IP过滤，并没有严格的认证事件类别过滤；名称不代表每一行都是登录证据。各工具的原始查询和局限见[目录](../architecture/investigation-tool-catalog.md)。
+`authentication_events`当前查询按账号、时间和非空来源IP过滤，并没有严格的认证事件类别过滤；名称不代表每一行都是登录证据。各工具的原始查询和局限见[目录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)。
 
 ## 3. 模型如何选择，程序如何执行
 
@@ -117,7 +117,7 @@ export AISOC_AGENT_KAFKA_DISABLE=true
 
 SIEM完整操作见[第三方SIEM接入与测试](siem-tool-integration.md)。当前是tenant的PG connector实例＋API联邦查询＋独立connector查询服务；当前仓库未迁入该独立服务，不是填URL后立即能跑。支持的类型为Splunk/Sentinel/Elastic/QRadar，其他HTTP产品须补适配器、可查询类型允许列表及指标字段映射。
 
-其余customer工具经后端发现和Actions只读能力开放；`mock/dry_run/executed=false`不代表真实厂商读取成功。MCP的registry token为`AISOC_AGENTS_SERVICE_TOKEN`或`AISOC_SERVICE_TOKEN`，与API工具读token不是同一配置名；配置传输、认证、允许工具及超时/返回大小后才可发现注册。stdio默认关闭。具体合同和限制见[目录](../architecture/investigation-tool-catalog.md)，本轮不连接MCP或执行厂商动作。
+其余customer工具经后端发现和Actions只读能力开放；`mock/dry_run/executed=false`不代表真实厂商读取成功。MCP的registry token为`AISOC_AGENTS_SERVICE_TOKEN`或`AISOC_SERVICE_TOKEN`，与API工具读token不是同一配置名；配置传输、认证、允许工具及超时/返回大小后才可发现注册。stdio默认关闭。具体合同和限制见[目录](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-tool-catalog.md)，本轮不连接MCP或执行厂商动作。
 
 ## 5. 怎么直接测试后端，不先花模型调用
 
@@ -196,7 +196,7 @@ PYTHONPATH=services/agents python3 -m pytest -q services/agents/tests/test_custo
 | Deep Run `9e0b1ae9-e0d1-4b9e-aeea-29d85c3f851e` | 本地组件、公开叙述派生的合成账号；6次真实模型、7次工具执行、21540 tokens。认证查询当时LakeQueryError；3次占位缺源；3次真实查询0条；最后请求network_connections因预算没有执行 | 证明真实模型选工具与逐轮ToolMessage交接；没有正样本命中、最终narrative为空且truncated，不是完整调查成功，也不是API持久Run |
 | Case `82b1246f-9f34-463c-8c2d-27d2b075c741` / API Run `e998308a-a353-4647-99f6-10f94ced0ecf` | 默认四节点4次模型18388 tokens，共享3490字符摘要；PG候选链与Neo4j11节点15边上下文进入四prompt，MD及工件已读 | 证明固定图/链上下文交接，不证明Deep自主图查询；未证明模型深入利用了所有图关系，原报告表述问题保留 |
 
-详见[调查原回执](investigation-functional-20261021.md)与[链/图原回执](attack-chain-path-local-20261021.md)。旧失败、未执行请求和来源为空保持；没有用本次说明追认其质量。
+详见[调查原回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)与[链/图原回执](attack-chain-path-local-20261021.md)。旧失败、未执行请求和来源为空保持；没有用本次说明追认其质量。
 
 ## 9. 后续新增能力最少改哪些地方
 

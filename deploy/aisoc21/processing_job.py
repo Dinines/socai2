@@ -1,8 +1,8 @@
-"""On-demand internal investigation processing. No HTTP listener or background dispatch.
+"""Explicit profile checks and asynchronous Case creation; no direct model start.
 
 Run with services/api on PYTHONPATH and the processing image's dependencies.
-Writes require the tenant user's scoped API key through the configured stream. Keep the
-same subject, scope revision, run and operation key when checking a previous attempt.
+Case creation accepts initial tasks; the sole configured dispatcher executes them.
+Use the returned task identity to inspect attempts and Runs.
 """
 import argparse
 import asyncio
@@ -211,16 +211,15 @@ def case_start_receipt(record):
 
 
 async def prepare_production_subjects(args, tenant):
-    if args.command not in {"alert", "incident", "case-create"}:
+    if args.command != "case-create":
         return
-    params = ["--tenant", str(tenant)]
+    params = ["--profile", os.environ["SOCAI2_PROJECTION_CONFIG_FILE"], "--tenant", str(tenant)]
     for subject in ("alert", "incident"):
-        ids = [args.subject] if args.command == subject else getattr(args, subject + "_id", [])
+        ids = getattr(args, subject + "_id", [])
         for uid in ids:
             params.extend(("--" + subject + "-id", str(uid)))
     env = {"DATABASE_URL": os.environ["SOCAI2_INGRESS_URL"], "PYTHONPATH": os.environ["SOCAI2_PROCESSING_FUSION_PYTHONPATH"],
-           "PYTHONDONTWRITEBYTECODE": "1", "PGSSLROOTCERT": os.environ["PGSSLROOTCERT"],
-           "PGSSLMODE": os.environ["PGSSLMODE"], "SSL_CERT_FILE": os.environ["SSL_CERT_FILE"]}
+           "PYTHONDONTWRITEBYTECODE": "1", "PGSSLMODE": os.environ["PGSSLMODE"]}
     for key in ("SOCAI2_SERVICE_DATABASE_NAME", "SOCAI2_PROCESSING_INGRESS_ROLE", "SOCAI2_PROCESSING_DB_HOST", "SOCAI2_PROCESSING_DB_PORT"):
         env[key] = os.environ[key]
     proc = await asyncio.create_subprocess_exec(sys.executable, "-B", "/opt/processor/production_ingress.py",
@@ -237,10 +236,9 @@ async def prepare_production_subjects(args, tenant):
 
 async def process(args):
     from app.db.database import AsyncSessionLocal, engine
-    from app.socai2.baseline_contracts import Actor, Start
-    from app.socai2.case_contracts import CaseCreate, PrepareBaseline
+    from app.socai2.baseline_contracts import Actor
+    from app.socai2.case_contracts import CaseCreate
     from app.socai2.case_service import CaseService
-    from app.socai2.stage_results import StageResultService
 
     try:
         database, role, tenant, actor = await verify_target()
@@ -249,14 +247,9 @@ async def process(args):
             return {"database": database, "db_role": role, "tenant_id": tenant, "actor_id": actor,
                     "check": "schema_identity_and_source_readback", "database_writes": 0, "model_calls": 0,
                     **await check_dependencies(config)}
-        stage = args.command in {"alert", "incident"}
-        user = await principal(tenant, actor, "alerts:write" if stage else "cases:write")
+        user = await principal(tenant, actor, "cases:write")
         if production_profile():
             await prepare_production_subjects(args, tenant)
-        if stage:
-            service = StageResultService(AsyncSessionLocal)
-            execute = service.execute_alert if args.command == "alert" else service.execute_incident
-            return await execute(tenant, args.subject, args.operation_key, requested_by=user.user_id)
         service = CaseService(AsyncSessionLocal)
         identity = Actor(user_id=user.user_id, name=user.email)
         if args.command == "case-create":
@@ -264,13 +257,7 @@ async def process(args):
                                  incident_ids=args.incident_id)
             receipt = await service.create_case(tenant, request, actor=identity)
             return receipt.model_dump(mode="json")
-        fields = {"expected_scope_revision": args.scope_revision, "operation_key": args.operation_key}
-        if args.command == "case-prepare":
-            receipt = await service.prepare_baseline(tenant, args.subject, PrepareBaseline(**fields), actor=identity)
-            return receipt.model_dump(mode="json")
-        start = Start(**fields, window_start=args.window_start, window_end=args.window_end,
-                      comparison_result_id=args.comparison_result_id)
-        return case_start_receipt(await service.start_case(tenant, args.subject, args.run_id, start, actor=identity))
+        raise Refused("unsupported_processing_command")
     finally:
         await engine.dispose()
 
@@ -280,25 +267,12 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("check", help="check target identity, schema and model configuration without dispatch")
     commands.add_parser("self-test", help="compute a two-alert C6 fallback entirely in memory")
-    for name in ("alert", "incident", "case-create", "case-prepare", "case-start"):
-        command = commands.add_parser(name)
-        command.add_argument("--operation-key", type=UUID, required=True, help="stable caller-supplied operation UUID")
-        if name == "case-create":
-            command.add_argument("--title", required=True)
-            command.add_argument("--alert-id", type=UUID, action="append", default=[])
-            command.add_argument("--incident-id", type=UUID, action="append", default=[])
-        else:
-            command.add_argument("--subject", type=UUID, required=True, help="alert, incident or case ID")
-        if name in {"case-prepare", "case-start"}:
-            command.add_argument("--scope-revision", type=int, required=True)
-        if name == "case-start":
-            command.add_argument("--run-id", type=UUID, required=True)
-            command.add_argument("--window-start", help="optional ISO 8601 timestamp including offset")
-            command.add_argument("--window-end", help="optional ISO 8601 timestamp including offset")
-            command.add_argument("--comparison-result-id", type=UUID)
+    command = commands.add_parser("case-create", help="create Case and accept its initial task; execution is asynchronous")
+    command.add_argument("--operation-key", type=UUID, required=True, help="stable caller-supplied operation UUID")
+    command.add_argument("--title", required=True)
+    command.add_argument("--alert-id", type=UUID, action="append", default=[])
+    command.add_argument("--incident-id", type=UUID, action="append", default=[])
     args = parser.parse_args()
-    if getattr(args, "scope_revision", 0) < 0:
-        parser.error("scope revision must be non-negative")
     if args.command == "case-create" and not (args.alert_id or args.incident_id):
         parser.error("case-create requires at least one --alert-id or --incident-id")
     try:
@@ -314,8 +288,6 @@ def main():
             result["operation_key"] = args.operation_key
         if hasattr(args, "subject"):
             result["subject"] = args.subject
-        if args.command == "case-start":
-            result["requested_run_id"] = args.run_id
         print(json.dumps(result, default=str))
         return 1
     print(json.dumps(result, ensure_ascii=False, default=str))

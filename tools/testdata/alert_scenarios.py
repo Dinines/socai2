@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+from fnmatch import fnmatchcase
 import hashlib
 import importlib.util
 import ipaddress
@@ -19,8 +21,11 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 HERE = Path(__file__).resolve().parent
-SOURCE = "socai2-synthetic-eval"
+SOURCE_PROFILE = json.loads((HERE / "material-source.json").read_text())
+SOURCE = SOURCE_PROFILE["source_namespace"]
 ANSWER_FIELDS = frozenset({"expected_tactics", "expected_techniques", "response_class", "evidence_keywords"})
+MANAGEMENT_FIELDS = frozenset({"synthetic", "is_test", "scenario_id", "run_id", "batch_id",
+                              "expected_disposition", "expected_verdict", "decisive_evidence"})
 MAX_COUNT = 20
 RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -60,13 +65,44 @@ def _event_time(value: str) -> str:
 
 def _without_answers(value: Any) -> None:
     if isinstance(value, dict):
-        if ANSWER_FIELDS.intersection(value):
-            raise ValueError("answer fields must remain outside the request payload")
+        if (ANSWER_FIELDS | MANAGEMENT_FIELDS).intersection(value):
+            raise ValueError("answer and test management fields must remain outside the request payload")
         for child in value.values():
             _without_answers(child)
     elif isinstance(value, list):
         for child in value:
             _without_answers(child)
+    elif isinstance(value, str) and value.lstrip().startswith(('{', '[')):
+        try:
+            nested = json.loads(value)
+        except json.JSONDecodeError:
+            return
+        _without_answers(nested)
+
+
+def _authored_identifiers(telemetry: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Neutral identifiers for authored templates only; never edit received records.
+
+    Apply the same configured field rule to all templates. Preserve repeated
+    identity/equality and keep the original name in the separate control file.
+    Commands, permissions, outcome fields and source labels are not rewritten.
+    """
+    rule = SOURCE_PROFILE["authored_identifiers"]
+    changes = []
+
+    def visit(value, path):
+        if isinstance(value, dict):
+            return {key: visit(child, path + "." + key) for key, child in value.items()}
+        if isinstance(value, list):
+            return [visit(child, (path + "." if path else "") + str(index)) for index, child in enumerate(value)]
+        if isinstance(value, str) and value and any(fnmatchcase(path, pattern) for pattern in rule["container_image_paths"]):
+            identity = uuid5(NAMESPACE_URL, "socai2:authored-container-image:" + value).hex[:16]
+            shown = f"{rule['container_image_prefix']}/{identity}:{rule['container_image_tag']}"
+            changes.append({"path": path, "original": value, "generated": shown})
+            return shown
+        return value
+
+    return visit(copy.deepcopy(telemetry), ""), changes
 
 
 def _entities(telemetry: list[dict[str, Any]]) -> dict[str, str]:
@@ -124,20 +160,22 @@ def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int | No
     for index, scenario in enumerate(scenarios, 1):
         scenario_id = scenario["id"]
         alert_id = str(uuid5(NAMESPACE_URL, f"socai2:testdata:{tenant}:{run_id}:{scenario_id}"))
+        telemetry, identifier_changes = _authored_identifiers(scenario["telemetry"])
         payload = {
             "schema_version": "v1", "id": alert_id, "tenant_id": tenant,
-            "source": SOURCE, "title": scenario["title"], "description": scenario["description"],
+            "source": SOURCE, "title": "关联遥测活动", "description": "",
             "severity": scenario["severity"], "event_time": event_time, "created_at": event_time,
-            "source_event_ids": [f"{run_id}:{scenario_id}:event:{n}" for n, _ in enumerate(scenario["telemetry"], 1)],
-            "tags": ["synthetic", f"run:{run_id}"],
-            "raw_event": {"synthetic": True, "run_id": run_id, "scenario_id": scenario_id,
-                          "telemetry": scenario["telemetry"]},
-            **_entities(scenario["telemetry"]),
+            "source_event_ids": [str(uuid5(NAMESPACE_URL, f"{alert_id}:event:{n}")) for n, _ in enumerate(scenario["telemetry"], 1)],
+            "tags": [],
+            "raw_event": {"telemetry": telemetry},
+            **_entities(telemetry),
         }
         _without_answers(payload)
         expected = {
             "scenario_id": scenario_id, "alert_id": alert_id, "template_id": scenario["template_id"],
             "synthetic": True, "expectation_source": "upstream synthetic template; not observed results",
+            "authored_title": scenario["title"], "authored_description": scenario["description"],
+            "authored_identifier_changes": identifier_changes,
             **{key: scenario[key] for key in sorted(ANSWER_FIELDS)},
         }
         materials.append((index, payload, expected))
@@ -153,13 +191,14 @@ def generate_batch(*, run_id: str, tenant: str, event_time: str, count: int | No
         records.append({"scenario_id": expected["scenario_id"], "alert_id": payload["id"],
                         "payload": payload_name, "payload_sha256": sha256(payload_data),
                         "expected": expected_name, "expected_sha256": sha256(expected_data)})
-    manifest = {"schema_version": "socai2-existing-alert-fixtures/v1", "run_id": run_id,
+    manifest = {"schema_version": "socai2-existing-alert-fixtures/v2", "run_id": run_id,
                 "tenant_id": tenant, "event_time": event_time, "count": count,
                 "source": {"repository": upstream["repository"], "commit": upstream["commit"],
                            "generator_sha256": generator_hash},
                 "mode": "synthetic-existing-alerts", "records": records,
+                "source_namespace": SOURCE, "test_identity_model_visible": False,
                 "limitations": ["No detection, model or business request runs during generation.",
-                                "Template narratives contain authored conclusions; this is not a blind quality corpus.",
+                                "Authored template narratives and answers are retained only in the expected sidecar.",
                                 "No case/incident membership or attack-chain ground truth is supplied."]}
     if template_ids is not None:
         manifest["selected_template_ids"] = template_ids
@@ -175,7 +214,7 @@ class NoRedirect(HTTPRedirectHandler):
 def _load_payloads(input_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     manifest = json.loads((input_dir / "manifest.json").read_text())
     records = manifest.get("records", [])
-    if manifest.get("schema_version") != "socai2-existing-alert-fixtures/v1":
+    if manifest.get("schema_version") != "socai2-existing-alert-fixtures/v2":
         raise ValueError("unsupported fixture manifest")
     if not isinstance(records, list) or not 1 <= len(records) <= MAX_COUNT or manifest.get("count") != len(records):
         raise ValueError("a send batch must contain 1..20 manifest records")
@@ -192,8 +231,9 @@ def _load_payloads(input_dir: Path) -> tuple[dict[str, Any], list[dict[str, Any]
         payload = json.loads(data)
         _without_answers(payload)
         if (payload.get("id") != record.get("alert_id") or payload.get("tenant_id") != manifest.get("tenant_id")
-                or payload.get("source") != SOURCE or "synthetic" not in payload.get("tags", [])
-                or payload.get("raw_event", {}).get("synthetic") is not True):
+                or payload.get("source") != SOURCE or manifest.get("source_namespace") != SOURCE
+                or "synthetic" in payload.get("tags", [])
+                or {"synthetic", "run_id", "scenario_id"}.intersection(payload.get("raw_event", {}))):
             raise ValueError("payload does not match the synthetic batch identity")
         UUID(payload["id"])
         payloads.append(payload)

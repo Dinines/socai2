@@ -1,5 +1,6 @@
 # 后端联调：测试数据与操作步骤
 
+> 2026-11-15：测试目标改为21。本次只读预检发现18024实际64操作，缺7项既有功能，无凭据读取仍401；[问题与回执](../operations/evidence/http-test-alignment-20261115-01/README.md)。以下无凭据示例是目标调用方式，尚不能按当前21运行状态完成，不追加登录/Token步骤；本机历史验证不替代21验收。
 2026-11-13。适用21独立 API `http://192.168.1.21:18024`，Swagger `http://192.168.1.21:18080/`。Mac 已配置转发时可用 `http://127.0.0.1:28024`。本机18024是另一个隔离库，不能混用以下ID。
 
 ## 1. 可直接读取的三条测试告警
@@ -16,20 +17,19 @@
 | 管理验收 Case | `d5ef9c5a-00c9-564a-9fcb-fdb5810f890e` | 管理读取、关闭/重开历史、未完任务 |
 | 管理验收 Case 的 Run | `45ea262b-9ee3-41b0-963e-6b99fbcff1bd` | `pending_update`、尚未启动；不应出现伪造调查结论 |
 
-机器可读清单：[live-21-fixtures.json](examples/current/live-21-fixtures.json)。这些ID需要同一联调租户的有效凭据；其他租户返回404时先核账号，不将其解释成接口未实现。
+机器可读清单：[live-21-fixtures.json](examples/current/live-21-fixtures.json)。这些ID属于21联调数据；服务配置的租户必须与该数据一致，404先检查环境和记录ID。
 
 ## 2. 先跑读取
 
-以下在终端执行；替换凭据值，或在 Swagger Authorize 中填写同一值。curl不受浏览器CORS影响。
+目标版本就绪后在终端按以下方式执行，无需登录或Token；当前21返回401的问题仍待发布修复，不将其判成样例数据为空。curl不受浏览器CORS影响。
 
 ```sh
 SOCAI2_API=http://192.168.1.21:18024
-SOCAI2_TOKEN='<现有有效Bearer凭据>'
-curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/alerts/09e91978-d201-5435-901e-b6a40368b921" -H "Authorization: Bearer $SOCAI2_TOKEN"
-curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/alerts/09e91978-d201-5435-901e-b6a40368b921/analysis" -H "Authorization: Bearer $SOCAI2_TOKEN"
-curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/incidents/06f82d36-1964-4186-aed3-4c7b9ab1a375" -H "Authorization: Bearer $SOCAI2_TOKEN"
-curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/incidents/06f82d36-1964-4186-aed3-4c7b9ab1a375/records/members" -H "Authorization: Bearer $SOCAI2_TOKEN"
-curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/cases/9c1b65d3-e7e7-5b99-8bf1-eea8ebd8283c" -H "Authorization: Bearer $SOCAI2_TOKEN"
+curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/alerts/09e91978-d201-5435-901e-b6a40368b921"
+curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/alerts/09e91978-d201-5435-901e-b6a40368b921/analysis"
+curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/incidents/06f82d36-1964-4186-aed3-4c7b9ab1a375"
+curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/incidents/06f82d36-1964-4186-aed3-4c7b9ab1a375/records/members"
+curl --fail-with-body -sS "$SOCAI2_API/api/v1/socai2/cases/9c1b65d3-e7e7-5b99-8bf1-eea8ebd8283c"
 ```
 
 预期：HTTP200；告警的 `facts.id` 与请求一致，`facts.tags` 含 synthetic；详情的 `analysis_url/section_urls` 给后续取数路径；Case `member_count=3`。字段为空就按未提供处理，`current_assessment=null` 不代表接口失败。分诊目录的当前结果和失败尝试分别读取，不挑最近一条冒充有效判断。
@@ -57,7 +57,7 @@ mkdir -p .local/backend-integration
 cp docs/integration/examples/current/management-profile.json .local/backend-integration/profile.json
 ```
 
-编辑 profile 的 `base_url`、标题及凭据文件路径。在 `.local/backend-integration/credentials.json` 保存 `{"api_key":"现有有效Bearer值"}`（这个工具的字段名叫api_key，也可存已取得的用户Bearer值）；不要提交凭据。选用正常用户身份，Case写入需要真实用户。然后运行：
+编辑 profile 的 `base_url` 和标题；不配置凭据文件，脚本默认不发送认证头。租户和记录操作人由服务端配置。然后运行：
 
 ```sh
 python3 deploy/http-service/verify_management.py --profile .local/backend-integration/profile.json --output .local/backend-integration/run-001
@@ -78,7 +78,7 @@ python3 deploy/http-service/verify_management.py --profile .local/backend-integr
 | E13 Case启动 | 自己创建的pending Run，`operation_key/expected_scope_revision`；可选成对时间窗 | E12 → 返回的结果ID → E14；核执行、交付、校验及结论，不能只判断200 |
 | 反馈后再调查 | E11 prepare带范围版本和key → E13 start | 新Run冻结任务当前版本，旧Run保留 |
 
-这些调用会真正查询和调用模型，返回可能partial/failed/unknown。现有模型质量NOT_PASSED仍保留；超时或未知先GET原Run，不换key重跑。联调脚本的“通过”不代表所有模型结论质量通过。E19–E21仍501。
+这些调用会真正查询和调用模型，返回可能partial/failed/unknown。现有模型质量NOT_PASSED仍保留；超时或未知先GET原Run，不换key重跑。联调脚本的“通过”不代表所有模型结论质量通过。E19/E20问答仍501并暂缓；E21采用已有调查结果已实现，不调用模型，按E63预览→E21提交→E64历史读取。
 
 ## 5. 想从 Kafka 造自己的数据
 
@@ -169,7 +169,6 @@ E26告警、E27事件、E02调查列表已经支持全库查询。先用本页�
 
 ```sh
 curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
-  -H "Authorization: Bearer $TOKEN" \
   --data-urlencode 'q=SYNTHETIC subject management a0735538-3c99-40a8-8af0-f1f6e14a0641' \
   --data-urlencode 'columns=facts.id,facts.title,facts.handling_status,facts.disposition' \
   --output synthetic-alerts.csv
@@ -183,7 +182,6 @@ curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
 
 ```sh
 curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
-  -H "Authorization: Bearer $TOKEN" \
   --data-urlencode 'source_namespace=synthetic-subject-management'
 ```
 
@@ -206,3 +204,21 @@ curl --fail-with-body --get "$API/api/v1/socai2/incidents/grouping-summary" \
 ## 采用已有调查结果
 
 使用[采用操作指南](result-adoption-http.md)：E63预览→E21提交理由、预览摘要及必要未完确认→E03/E64/E17读回。21已只读核验Case `2b37f5b3-862b-52cc-84bd-86db50dd3ad4`、Result `88c45e26-0715-4225-99cf-c3925e90ebe7`，可用于读取预览和历史；不要修改这批已验收记录。写入联调使用自己的Case，先取得符合资格的已完成基础Result。程序构造的本机结果仅用于接口存取验收，不是模型质量证明；21生产采用写入未实测。
+
+
+## 相似历史复核 E70
+
+规则、参数和跳转见[专门指南](alert-review-http.md)。以下记录只用于读取测试，数据库之间不能混用：
+
+| 环境 | 告警 ID | 本轮实际结果 |
+| --- | --- | --- |
+| 本机18024/v12_upgrade_dev | `69245fc4-23c8-4327-9a2f-b2e8c92dd8cf` | 默认窗口3个候选，limit=1可验证next_cursor续页 |
+| 21:18024/aisoc | `65e2a5f9-3b00-5def-9547-c21f1b9cc4bf` | 本轮默认窗口0条；缺主机战术/合法哈希条件，可用IP规则但窗口内无匹配 |
+
+调用 `GET /api/v1/socai2/alerts/{上述ID}/review-candidates?limit=1`。有候选时检查matched_rules和matches；点击alert.id用E28读取，seed/candidate的alert_id+material_id用E31回查。空结果保留scope，不能显示为安全。E70不会提交反馈；需要修改时必须按E48/E49另行明确操作。
+
+## E71同主机最近告警
+
+本机用告警`1516bfa6-24e4-457f-a7d5-4e52aa8830bf`请求`GET /api/v1/socai2/alerts/{alert_id}/same-host-alerts`，本批应total=9、items=7、limit=7；其中不同战术仍匹配，沿alert.id用E28打开、matches双方材料用E31回查。不要添加limit或时间查询参数。
+
+21既有告警`65e2a5f9-3b00-5def-9547-c21f1b9cc4bf`实际读回total=2、items=2、source_hosts=1。这是本次生产观察，不是合成正例；没有候选时正常显示空列表。本轮未向21写入测试告警。完整字段和错误见[对接说明](alert-host-http.md)。

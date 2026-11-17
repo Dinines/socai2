@@ -1,0 +1,56 @@
+<html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>调查服务 HTTP 对接</title><style>body{margin:0;background:#f6f8fb;color:#182337;font:15px/1.7 system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:36px 28px}a{color:#1a58ad}header{background:#112a46;color:white;padding:28px;border-radius:16px}header a{color:#bce2ff}nav{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.toolbar{position:sticky;top:0;background:#f6f8fb;padding:12px 0;display:flex;gap:12px}input{padding:12px;width:100%;font:inherit;border:1px solid #b5c6da;border-radius:8px}article{background:white;border:1px solid #dae2ec;border-radius:10px;padding:20px;margin:18px 0}h2{margin:0 0 8px}p{margin:8px 0}.meta{color:#53667c}.badge{background:#e6edf6;padding:3px 10px;border-radius:14px;font-size:13px}code{background:#eef2f6;padding:2px 4px}details{margin:10px 0}pre{overflow:auto;background:#17263b;color:#e7f0fa;padding:15px;border-radius:8px;line-height:1.5}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid #dce3ed;padding:7px;text-align:left}h1{font-size:28px}section{padding:15px 0}</style><main><nav><a href="/">Swagger HTTP接口</a><a href="/handoff/openapi.json">下载OpenAPI</a><a href="/handoff/guide.html">接入说明</a></nav><h1 id="告警页相似历史告警复核">告警页：相似历史告警复核</h1>
+<p>E70 用于人工判定前后查找值得对照的历史告警。返回的是候选及匹配依据，不自动把当前判定应用到其他告警，不调用模型。</p>
+<p><code>GET /api/v1/socai2/alerts/{alert_id}/review-candidates</code></p>
+<table>
+<tr><th>输入</th><th>必填/默认</th><th>用途</th></tr>
+<tr><td><code>alert_id</code> 路径参数</td><td>必填 UUID</td><td>当前查看的告警；候选排除它本身</td></tr>
+<tr><td><code>time_from</code> / <code>time_to</code></td><td>可选，必须同时提供且带时区</td><td>按候选真实发生时间筛选，[起点,终点)</td></tr>
+<tr><td><code>limit</code></td><td>默认5，1–100</td><td>每页候选告警数量</td></tr>
+<tr><td><code>cursor</code></td><td>默认不传</td><td>上页 <code>next_cursor</code> 原样续页；改变条件清空</td></tr>
+</table>
+<p>未传时间窗时，以当前告警真实 <code>event_time</code> 为终点，默认向前30天。这个时长在 <code>alert-review-query.json</code> 的 <code>default_lookback_days</code> 配置，通过 <code>SOCAI2_ALERT_REVIEW_CONFIG_FILE</code> 可指定配置文件。当前告警没有真实发生时间时返回422，需明确选择时间窗，不用入库时间替代。显式窗口可包含当前告警之后的记录，响应标明 <code>window_basis=explicit</code>。</p>
+<h2 id="为什么匹配">为什么匹配</h2>
+<p>三个规则取并集；一条告警只出现一次，同时保留所有依据。按候选发生时间倒序、告警 ID 倒序排列，优先查看最近记录。</p>
+<table>
+<tr><th><code>matches[].rule</code></th><th>规则</th><th>返回依据</th></tr>
+<tr><td><code>same_host_and_tactic</code></td><td>host对象值相同，且至少一个检测战术标签相同</td><td>双方主机对象与材料路径；共同标签及双方 <code>detection.tactics[index]</code> 路径</td></tr>
+<tr><td><code>same_ip</code></td><td>ip对象值相同</td><td>双方 IP 对象、值与材料路径</td></tr>
+<tr><td><code>same_hash_algorithm_and_value</code></td><td>明确算法及有效哈希值相同</td><td>双方 hash 对象、算法、原值与材料路径</td></tr>
+</table>
+<p>同租户、同告警 <code>source_namespace</code>，双方对象 <code>namespace</code> 也必须一致。只查双方最新材料。主机/IP按已存 <code>normalized_value</code> 精确匹配；战术按原字符串精确匹配，大小写、名称/编码不互转，不从技术编号推战术。单独同主机、单独同战术不命中。</p>
+<p>哈希支持明确的 MD5/SHA1/SHA256/SHA512，规范化算法写法并核对十六进制长度；哈希值忽略大小写。不猜算法，不按文件名匹配。只有哈希来源时不额外推断文件名称或恶意性。战术是检测标签，共有对象也不是攻击因果。</p>
+<p>可以返回已关闭、已有人工反馈，以及属于其他事件或 Case 的告警；保持原状态、判定和归属，逐条复核后再决定是否修改。发生时间未知的候选不进入时间窗。</p>
+<h2 id="输出字段">输出字段</h2>
+<table>
+<tr><th>字段</th><th>含义与使用方式</th></tr>
+<tr><td><code>items[].alert</code></td><td>原 <code>AlertFacts</code>；名称、严重程度、发生时间、状态、判定、版本及原关联 ID，字段不改写</td></tr>
+<tr><td><code>items[].matched_rules</code></td><td>该候选满足的去重规则名称，不是风险评分</td></tr>
+<tr><td><code>items[].time_delta_seconds</code></td><td>与当前告警真实发生时间相差的绝对秒数，起点时间未知时null</td></tr>
+<tr><td><code>items[].matches[].seed/candidate</code></td><td>实际对象 ID、告警/材料 ID、类型、namespace、原值/规范值、字段路径、哈希算法；沿 E31 回查对应版本</td></tr>
+<tr><td><code>items[].matches[].shared_tactics</code></td><td>同主机规则的标签原值及双方数组路径；IP/哈希规则为空数组</td></tr>
+<tr><td><code>items[].incident_ids/case_ids</code></td><td>当前所属事件/案件；点击后分别 E29/E03读取，不改变成员</td></tr>
+<tr><td><code>total</code> / <code>next_cursor</code></td><td>全部去重匹配告警数/下一页；空页不表示告警安全</td></tr>
+<tr><td><code>scope.source_alert_id/source_material_id/source_event_time/source_namespace</code></td><td>本次实际起点告警、最新材料、真实时间及来源范围</td></tr>
+<tr><td><code>scope.time_from/time_to/window_basis</code></td><td>实际查询窗口及默认回看或显式窗口口径</td></tr>
+<tr><td><code>scope.unavailable_rules</code></td><td>起点缺少所需对象或有效战术，哪些规则无法使用</td></tr>
+<tr><td><code>scope.excluded_objects</code></td><td>本功能不支持的对象、缺少/非法算法或值的哈希对象及原因</td></tr>
+<tr><td><code>observed_at</code></td><td>本次数据库只读一致快照时间；跨请求不冻结结果集</td></tr>
+</table>
+<h2 id="调用与跳转">调用与跳转</h2>
+<p>1. 从告警详情取真实 <code>alert_id</code>，调用 E70。</p>
+<p>2. 显示候选名称、等级、时间、当前判定/处理状态和 <code>matched_rules</code>；展开 <code>matches</code> 显示具体依据。</p>
+<p>3. 点击候选 <code>alert.id</code> → E28告警详情；点击来源 → E31 <code>/alerts/{alert_id}/materials/{material_id}</code>。这两个 ID 必须来自同一 <code>seed</code> 或 <code>candidate</code>，不能混用。</p>
+<p>4. 用户阅读理由后才决定反馈；E48单条或E49明确勾选批量提交时，重新取各目标当前 <code>row_version</code>。不因同IP或同哈希自动复制判定。</p>
+<pre>GET /api/v1/socai2/alerts/&lt;真实告警UUID&gt;/review-candidates?limit=5</pre>
+<p>没有候选时 <code>items:[]</code>、<code>total:0</code>、<code>next_cursor:null</code>，仍返回scope说明窗口及规则可用情况。完整成功/空态结构及错误示例见 Swagger E70。</p>
+<table>
+<tr><th>错误</th><th>调用方处理</th></tr>
+<tr><td>404 <code>alert_review_source_not_found</code></td><td>告警不存在或不在当前租户，检查 ID</td></tr>
+<tr><td>409 <code>alert_review_cursor_scope_changed</code></td><td>起点材料/对象/战术或时间范围变化；清空游标重读</td></tr>
+<tr><td>422 <code>alert_review_explicit_window_required</code></td><td>起点时间未知或默认窗口无法生成；明确时间范围</td></tr>
+<tr><td>422 <code>invalid_alert_review_cursor</code></td><td>游标格式不合法，不自行拼接</td></tr>
+<tr><td>422 字段校验 / <code>alert_review_query_parameter_not_supported</code></td><td>处理无时区、单边/逆向时间窗、非法limit、未知或重复查询参数</td></tr>
+<tr><td>503 <code>invalid_alert_review_configuration</code> / <code>socai2_page_read_not_enabled</code></td><td>修正服务配置，不能将失败显示成无候选</td></tr>
+</table>
+<p>本次实现 F03-05 的专项候选查询，人工反馈沿用 E48/E49。详情区域“同主机最近7条”由<a href="/handoff/sources/alert-host-http.html">E71</a>独立提供，不要求战术相同；E30一般对象关联和E66案件探索保持各自原口径。没有新增表、写入、自动调查或AI对话。</p>
+<p>本轮实际验证与发布状态见验收记录（来源：<code>docs/operations/evidence/alert-review-20261113-01/README.md</code>）。</p></main></html>

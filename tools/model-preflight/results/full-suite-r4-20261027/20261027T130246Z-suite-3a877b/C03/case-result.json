@@ -1,0 +1,70 @@
+{
+  "id": "C03",
+  "title": "办公主机凭据访问及远程执行链",
+  "status": "partial",
+  "checks": [
+    "FAIL/incomplete; review saved exchanges"
+  ],
+  "reference": {
+    "expected_verdict": "true_positive",
+    "rationale": "E1凭据读取、E2远程执行、E3文件破坏形成有时间顺序的链路，A1明确拒绝对应行为。影响仅证实所列两个端点。",
+    "must_not_claim": [
+      "不能虚构外传或APT归属",
+      "不能将建议隔离写成已执行",
+      "不能外推组织内全部主机"
+    ],
+    "decisive_refs": [
+      "E1",
+      "E2",
+      "E3",
+      "A1"
+    ],
+    "review_questions": [
+      "关键事实是否引用实际已查询的材料？",
+      "事实、假设、缺口是否区分？",
+      "授权、恶意性、检测有效性是否分开？",
+      "报告是否保留查询失败和未完成状态？",
+      "响应是否仅为建议？"
+    ],
+    "reference_type": "authored synthetic expectation; manual review, not observed ground truth"
+  },
+  "trace": [
+    {
+      "stage": "triage",
+      "validation": "structure_passed",
+      "content": "{\n  \"verdict\": \"true_positive\",\n  \"confidence\": 1.0,\n  \"rationale\": \"The alert correctly detected the LSASS read plus remote service creation condition. The event time falls within the scope, and all entities involved are present. The detection is valid and does not require further review. The rule's condition was met, and the alert is based on untrusted evidence, indicating a true positive.\"\n}"
+    },
+    {
+      "stage": "recon",
+      "validation": "pending",
+      "content": "{\n  \"iocs\": [\n    {\n      \"type\": \"ip\",\n      \"value\": \"192.0.2.20\"\n    },\n    {\n      \"type\": \"domain\",\n      \"value\": \"\"\n    },\n    {\n      \"type\": \"url\",\n      \"value\": \"\"\n    }\n  ],\n  \"mitre_techniques\": [\n    \"T1566\",\n    \"T1568\"\n  ],\n  \"threat_actors\": [\n    \"APT28\"\n  ],\n  \"attack_surface\": {\n    \"affected_systems\": [\n      \"ops-17\",\n      \"svc_patch\",\n      \"192.0.2.20\"\n    ],\n    \"data_at_risk\": [\n      \"LSASS credentials\",\n      \"remote service configurations\"\n    ]\n  },\n  \"summary\": \"The alert detected a high-risk event involving APT28, which exploits remote code execution capabilities. The attack surface includes systems with LSASS credentials and remote service configurations, indicating potential compromise of critical infrastructure.\"\n}"
+    }
+  ],
+  "stopped_stage": "recon",
+  "error": "$.attack_surface.data_at_risk: expected string",
+  "actual": {
+    "completed_stages": [
+      {
+        "stage": "triage",
+        "validation": "structure_passed",
+        "content": "{\n  \"verdict\": \"true_positive\",\n  \"confidence\": 1.0,\n  \"rationale\": \"The alert correctly detected the LSASS read plus remote service creation condition. The event time falls within the scope, and all entities involved are present. The detection is valid and does not require further review. The rule's condition was met, and the alert is based on untrusted evidence, indicating a true positive.\"\n}"
+      },
+      {
+        "stage": "recon",
+        "validation": "pending",
+        "content": "{\n  \"iocs\": [\n    {\n      \"type\": \"ip\",\n      \"value\": \"192.0.2.20\"\n    },\n    {\n      \"type\": \"domain\",\n      \"value\": \"\"\n    },\n    {\n      \"type\": \"url\",\n      \"value\": \"\"\n    }\n  ],\n  \"mitre_techniques\": [\n    \"T1566\",\n    \"T1568\"\n  ],\n  \"threat_actors\": [\n    \"APT28\"\n  ],\n  \"attack_surface\": {\n    \"affected_systems\": [\n      \"ops-17\",\n      \"svc_patch\",\n      \"192.0.2.20\"\n    ],\n    \"data_at_risk\": [\n      \"LSASS credentials\",\n      \"remote service configurations\"\n    ]\n  },\n  \"summary\": \"The alert detected a high-risk event involving APT28, which exploits remote code execution capabilities. The attack surface includes systems with LSASS credentials and remote service configurations, indicating potential compromise of critical infrastructure.\"\n}"
+      }
+    ]
+  },
+  "measurements": {
+    "requests": 2,
+    "http_duration_seconds": 4.657,
+    "known_total_tokens": 2728,
+    "missing_token_usage_requests": 0,
+    "cost": "unpriced",
+    "statuses": [
+      "responded",
+      "responded"
+    ]
+  }
+}

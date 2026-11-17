@@ -74,3 +74,49 @@ def test_meter_uses_remaining_stage_time_and_never_runs_after_deadline():
     with pytest.raises(StoreError, match="token_measurement_deadline_reached"):
         asyncio.run(measure_with_deadline(gateway, {}, "C3", 0.01))
     assert gateway.calls == 1
+
+
+@pytest.mark.parametrize("stage", ["A", "I", "C3", "Deep", "C6"])
+@pytest.mark.parametrize("excess", [0, 1])
+def test_expanded_policy_admits_only_input_plus_output_inside_serving_window(stage, excess):
+    policy = load_policy(FILE.with_name("investigation-policy-case-v1.toml")).model
+    body = {**request(policy), "max_tokens": policy.output_tokens[stage]}
+    input_limit = policy.context_tokens - policy.output_tokens[stage] - policy.tokenizer["safety_tokens"]
+
+    def handle(req):
+        value = json.loads(req.content)
+        count = input_limit - 64 + excess if "messages" in value else 64
+        return httpx.Response(200, json={"count": count, "max_model_len": policy.context_tokens})
+
+    result = asyncio.run(BackendTokenMeter(policy, transport=httpx.MockTransport(handle)).measure(body, stage))
+    assert result["reserved_total_tokens"] == policy.context_tokens + excess
+    assert result["context_fits"] == (excess == 0)
+    assert result["body_sha256"] == digest(body)
+
+
+def test_expanded_run_budget_keeps_two_full_c6_calls_available(monkeypatch):
+    from datetime import UTC, datetime
+
+    from app.socai2 import runtime_policy
+    from app.socai2.baseline_analysis import budget_reason
+    from app.socai2.baseline_capacity import final_reservation
+
+    policy = load_policy(FILE.with_name("investigation-policy-case-v1.toml"))
+    monkeypatch.setattr(runtime_policy, "active_policy", lambda: policy)
+    now = datetime.now(UTC)
+    window = policy.model.context_tokens
+    measurement = {"context_fits": True, "reserved_total_tokens": window}
+    reservation = final_reservation(None, None)
+    assert reservation["reserved_tokens"] == 2 * window
+    for name in ("alert_basic", "incident_diagnosis", "case"):
+        configured = getattr(policy, name)
+        limits = configured.limits(now, policy.identity)
+        steps = []
+        for index in range(configured.max_model_calls):
+            keep_final = name == "case" and index < configured.max_model_calls - 2
+            assert budget_reason(steps, limits, 0, now, measurement=measurement,
+                                 reserve_calls=2 if keep_final else 0,
+                                 reservation=reservation if keep_final else None) is None
+            steps.append({"kind": "model", "state": "completed",
+                          "usage": {"usage_state": "reported", "total_tokens": window}})
+        assert budget_reason(steps, limits, 0, now, measurement=measurement) == "model_call_budget_exhausted"

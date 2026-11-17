@@ -62,16 +62,35 @@ def provider_schema(body, profile):
     if profile == "standard":
         return body
     output = deepcopy(body)
+
     def visit(node):
-        if isinstance(node, dict):
-            # m1 proved this keyword is rejected by the configured grammar.
-            # Duplicate IDs remain errors in every local contract parser.
-            node.pop("uniqueItems", None)
-            for child in node.values():
+        if not isinstance(node, dict):
+            return
+        # xgrammar 0.2.8 treats pattern as a full match: \S permits one
+        # character, not a nonblank sentence. Its length grammar also rejects
+        # escaped quotes/newlines. Keep these checks in the canonical parser.
+        if (node.get("type") == "string" and "enum" not in node and "const" not in node
+                and node.get("pattern") in (None, r"\S")):
+            for key in ("minLength", "maxLength"):
+                node.pop(key, None)
+            if node.get("pattern") == r"\S":
+                node.pop("pattern")
+        # Duplicate IDs remain errors in every local contract parser.
+        node.pop("uniqueItems", None)
+        # Visit schema positions only: properties and literal data may use
+        # the same names as schema keywords without being constraints.
+        for key in ("$defs", "definitions", "properties", "patternProperties", "dependentSchemas"):
+            for child in node.get(key, {}).values():
                 visit(child)
-        elif isinstance(node, list):
-            for child in node:
+        for key in ("allOf", "anyOf", "oneOf", "prefixItems"):
+            for child in node.get(key, []):
                 visit(child)
+        for key in ("items", "additionalItems", "contains", "additionalProperties",
+                    "unevaluatedItems", "unevaluatedProperties", "propertyNames", "not", "if", "then", "else"):
+            child = node.get(key)
+            for schema in child if isinstance(child, list) else (child,):
+                visit(schema)
+
     visit(output["response_format"]["json_schema"]["schema"])
     return output
 
@@ -133,3 +152,11 @@ def response_choices(payload):
     complete = payload.get("status") == "completed" and message.get("status") == "completed"
     return [{"finish_reason": "stop" if complete else "incomplete",
         "message": {"content": part["text"], "refusal": payload.get("error")}}]
+
+
+def response_content_path(payload):
+    """Original location of the already validated single text message."""
+    if payload.get("object") == "response":
+        index = next(i for i, item in enumerate(payload["output"]) if item.get("type") == "message")
+        return f"$.raw.output[{index}].content[0].text"
+    return "$.raw.choices[0].message.content"

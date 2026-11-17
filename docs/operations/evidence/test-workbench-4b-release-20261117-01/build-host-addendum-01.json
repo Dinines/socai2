@@ -1,0 +1,85 @@
+{
+  "status": "passed_local_export_identity_target_load_pending",
+  "observed_at": "2026-11-17T15:14:13.256072+00:00",
+  "change": "21验收镜像构建依赖下载失败，改由本机使用同一冻结包、同一Dockerfile和已缓存锁定依赖构建；工作台镜像仍在21构建",
+  "preserved_failures": [
+    {
+      "path": "docs/operations/evidence/workbench-4b-release-20261117-01/build-images-02.json",
+      "exit": 1,
+      "sha256": "27deb1428e14dbf3cf0d9f254ffdca27860e74cc6ad87ccd928f2a6cba1a0b23",
+      "reason": "回执明确构建失败；PyPI wheel连续超时原因由协调方说明，本文件未重取远端构建日志"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-4b-release-20261117-01/build-images-03.json",
+      "exit": 1,
+      "sha256": "4e137a709c31efe214c09624e5d830fc864f66517d6aece5542790549a4dec9f",
+      "reason": "回执明确构建失败；PyPI wheel连续超时原因由协调方说明，本文件未重取远端构建日志"
+    }
+  ],
+  "local_build": {
+    "receipt": "docs/operations/evidence/workbench-4b-release-20261117-01/local-acceptance-build-01.json",
+    "receipt_sha256": "0272cee9f8c9948009b02719c2ed12d8380e7831bfbeed4551af5c6edce386f1",
+    "exit": 0,
+    "command": [
+      "docker",
+      "build",
+      "--pull=false",
+      "--network=default",
+      "--platform",
+      "linux/amd64",
+      "-f",
+      "Dockerfile.acceptance",
+      "-t",
+      "socai2-investigation-acceptance:20261117-4b01",
+      "."
+    ],
+    "cached_steps": [
+      "#6 CACHED",
+      "#7 CACHED",
+      "#8 CACHED",
+      "#9 CACHED",
+      "#10 CACHED"
+    ],
+    "note": "构建命令network=default但相关依赖步骤使用缓存；不把本机构建写成禁网运行验收"
+  },
+  "immutable_inputs": {
+    "package_manifest_sha256": "cd655d03dea2d58bc603672473afb47862ba7dd51ba0dd2f910653edda02e3a2",
+    "files": {
+      "Dockerfile.acceptance": "9a154cf8c91fca32e5164d1df851dee558e533534c4029e6511b338ff726a1b7",
+      "deploy/investigation-test/acceptance-requirements.lock": "7ad97671bf0cb9f83983e8dc92879108bd2a00808e84d1d06c39c7eb1e841b48",
+      "deploy/investigation-test/acceptance-image.json": "65c2add2833d1ccdd55a0e8c1e8b5b99f5ca8235b83eb83ed57a9246e2e9ac44"
+    }
+  },
+  "export_verification": {
+    "archive": ".local/investigation-test-release/workbench-4b-20261117-01-acceptance-image.tar",
+    "sha256": "58778e80105c2249b9300d2b2db903e650521a181c43d375e3753b3eaa5753b2",
+    "bytes": 61052416,
+    "root_index_digest": "sha256:e22e7417292dd82d6ba8b69b155903cc11c5e51ccfece3b9a906b22b0e002aa5",
+    "linux_amd64_manifest_digest": "sha256:509041c59170d713d80bacb766dd70f5cf5a35cd922b4af3f4a51576a06ad890",
+    "config_digest": "sha256:9e0a60e3d42c150f02654df10fe5fd10743a1ab2b90e293a41bbfdb0dbb9a0b8",
+    "platform": "linux/amd64",
+    "user": "10001:10001",
+    "entrypoint": [
+      "python",
+      "tools/testdata/acceptance.py"
+    ],
+    "default_command": [
+      "--help"
+    ],
+    "method": "本机读取原始镜像tar，重算归档及index→amd64 manifest→config原始blob摘要；未运行Docker或修改镜像"
+  },
+  "required_next_evidence": [
+    "21收到的归档SHA及实际docker load/inspect身份，与本机导出的索引/平台/config对应，不能仅按tag",
+    "21两镜像内119文件及manifest核对",
+    "21验收容器network=none、旧材料/结果只读、无连接秘密挂载，仅report实际执行",
+    "后续r8实际4177和报告/浏览器轮次/来源及核心/账本保持"
+  ],
+  "scope": "不改变前步包审结论；本文件只确认本机导出身份，尚不判21加载/运行或发布通过",
+  "reviewer_actions": {
+    "remote_reads": 0,
+    "docker_build_or_run": 0,
+    "deployments": 0,
+    "business_writes": 0,
+    "model_calls": 0
+  }
+}

@@ -1,0 +1,982 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Run records local candidate only",
+    "version": "20261114-r3-local"
+  },
+  "paths": {
+    "/api/v1/socai2/analysis-runs/{run_id}/steps": {
+      "get": {
+        "tags": [
+          "socai2-run-records"
+        ],
+        "summary": "完整分页读取调查步骤",
+        "description": "返回真实步骤、输入/输出/复用原件来源。kind=tool仅列工具步骤；不启动分析或查询工具。",
+        "operationId": "steps_api_v1_socai2_analysis_runs__run_id__steps_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "单页数量；省略使用profile默认值，上限由同一profile配置。",
+              "title": "Limit"
+            },
+            "description": "单页数量；省略使用profile默认值，上限由同一profile配置。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "上一页next_cursor；保持Run和筛选条件一致。",
+              "title": "Cursor"
+            },
+            "description": "上一页next_cursor；保持Run和筛选条件一致。"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StepKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunStepPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "run_not_found / step_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Steps Api V1 Socai2 Analysis Runs  Run Id  Steps Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/analysis-runs/{run_id}/steps/{step_id}": {
+      "get": {
+        "tags": [
+          "socai2-run-records"
+        ],
+        "summary": "定位单个调查步骤",
+        "description": "按父Run核对步骤归属；包含实际参数、执行状态、错误及原件引用。",
+        "operationId": "step_api_v1_socai2_analysis_runs__run_id__steps__step_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "step_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Step Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunStepView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "run_not_found / step_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Step Api V1 Socai2 Analysis Runs  Run Id  Steps  Step Id  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/analysis-runs/{run_id}/artifacts": {
+      "get": {
+        "tags": [
+          "socai2-run-records"
+        ],
+        "summary": "完整分页读取调查原件目录",
+        "description": "返回元数据及content_url。step_id包括本Run中该步骤产生及引用的原件；跨Run复用沿步骤来源链接读取。",
+        "operationId": "artifacts_api_v1_socai2_analysis_runs__run_id__artifacts_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "单页数量；省略使用profile默认值，上限由同一profile配置。",
+              "title": "Limit"
+            },
+            "description": "单页数量；省略使用profile默认值，上限由同一profile配置。"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "上一页next_cursor；保持Run和筛选条件一致。",
+              "title": "Cursor"
+            },
+            "description": "上一页next_cursor；保持Run和筛选条件一致。"
+          },
+          {
+            "name": "step_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Step Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunArtifactPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "run_not_found / step_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "invalid_input / invalid_cursor，或字段校验detail数组",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecordError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RecordValidationError"
+                    }
+                  ],
+                  "title": "Response 422 Artifacts Api V1 Socai2 Analysis Runs  Run Id  Artifacts Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "service_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArtifactKind": {
+        "type": "string",
+        "enum": [
+          "input_snapshot",
+          "model_request",
+          "model_response",
+          "tool_request",
+          "tool_response",
+          "domain_analysis",
+          "deep_analysis",
+          "attack_chain",
+          "attack_path",
+          "alert_graph",
+          "report_json",
+          "report_markdown",
+          "attachment",
+          "source_snapshot",
+          "handoff",
+          "query_plan",
+          "alert_explanation",
+          "case_evidence_index"
+        ],
+        "title": "ArtifactKind"
+      },
+      "ArtifactReference": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "input",
+              "output",
+              "reused"
+            ],
+            "title": "Role"
+          },
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Artifact Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "content_url": {
+            "type": "string",
+            "title": "Content Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "artifact_id",
+          "run_id",
+          "subject_type",
+          "subject_id",
+          "content_url"
+        ],
+        "title": "ArtifactReference"
+      },
+      "MaterialState": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "truncated",
+          "summary_only",
+          "unavailable"
+        ],
+        "title": "MaterialState"
+      },
+      "RecordError": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/RecordErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "RecordError"
+      },
+      "RecordErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "context"
+        ],
+        "title": "RecordErrorDetail"
+      },
+      "RecordValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "RecordValidationError"
+      },
+      "RunArtifactPage": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunArtifactView"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "subject_type",
+          "subject_id",
+          "total",
+          "next_cursor",
+          "observed_at",
+          "items"
+        ],
+        "title": "RunArtifactPage"
+      },
+      "RunArtifactView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "material_state": {
+            "$ref": "#/components/schemas/MaterialState"
+          },
+          "content_url": {
+            "type": "string",
+            "title": "Content Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "step_id",
+          "kind",
+          "schema_version",
+          "mime_type",
+          "file_name",
+          "size_bytes",
+          "sha256",
+          "captured_at",
+          "material_state",
+          "content_url"
+        ],
+        "title": "RunArtifactView"
+      },
+      "RunStepPage": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "incident",
+              "case"
+            ],
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunStepView"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "subject_type",
+          "subject_id",
+          "total",
+          "next_cursor",
+          "observed_at",
+          "items"
+        ],
+        "title": "RunStepPage"
+      },
+      "RunStepView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "parent_step_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Step Id"
+          },
+          "retry_of_step_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry Of Step Id"
+          },
+          "stage_code": {
+            "type": "string",
+            "title": "Stage Code"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StepKind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "state": {
+            "$ref": "#/components/schemas/StepState"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "implementation_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Implementation Version"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "actual_args": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Args"
+          },
+          "returned_rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returned Rows"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          },
+          "input_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Artifact Id"
+          },
+          "output_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Artifact Id"
+          },
+          "reused_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reused Artifact Id"
+          },
+          "artifact_refs": {
+            "items": {
+              "$ref": "#/components/schemas/ArtifactReference"
+            },
+            "type": "array",
+            "title": "Artifact Refs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "run_id",
+          "seq",
+          "parent_step_id",
+          "retry_of_step_id",
+          "stage_code",
+          "kind",
+          "name",
+          "state",
+          "provider",
+          "implementation_version",
+          "question_id",
+          "started_at",
+          "ended_at",
+          "actual_args",
+          "returned_rows",
+          "error",
+          "usage",
+          "input_artifact_id",
+          "output_artifact_id",
+          "reused_artifact_id",
+          "artifact_refs"
+        ],
+        "title": "RunStepView"
+      },
+      "StepKind": {
+        "type": "string",
+        "enum": [
+          "stage",
+          "model",
+          "tool",
+          "graph",
+          "render"
+        ],
+        "title": "StepKind"
+      },
+      "StepState": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "running",
+          "completed",
+          "failed",
+          "timeout",
+          "cancelled",
+          "skipped",
+          "unknown"
+        ],
+        "title": "StepState"
+      }
+    }
+  }
+}

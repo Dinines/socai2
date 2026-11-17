@@ -20,16 +20,83 @@ def test_one_increment_is_shared_by_new_and_existing_installs():
         install_reader.render("../../secret.sql")
 
 
+def test_password_profile_runs_without_inherited_certificate_configuration(monkeypatch):
+    from types import SimpleNamespace
+    cfg = install_reader.load_profile(install_reader.HERE / "reader-install.example.toml")
+    assert cfg["environment"]["PGSSLMODE"] == "require"
+    monkeypatch.setenv("PGSSLROOTCERT", "/missing/old-ca.crt")
+    monkeypatch.setenv("PGSSLCERT", "/missing/old-client.crt")
+    monkeypatch.setenv("PGSSLKEY", "/missing/old-client.key")
+    calls = []
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        return SimpleNamespace(returncode=0)
+    monkeypatch.setattr(install_reader.subprocess, "run", run)
+    assert install_reader.execute(cfg, "verify").returncode == 0
+    command, kwargs = calls[0]
+    assert command[command.index("-d") + 1] == cfg["database"]
+    assert kwargs["env"]["PGSSLMODE"] == "require"
+    assert not {"PGSSLROOTCERT", "PGSSLCERT", "PGSSLKEY"} & kwargs["env"].keys()
+
+
 @pytest.mark.parametrize("change", [{"environment": {}}, {"transport": ""}, {"psql_argv": ["psql"]}])
 def test_missing_connection_never_uses_libpq_defaults(tmp_path, change):
     import tomllib
     raw = tomllib.loads((install_reader.HERE / "reader-install.example.toml").read_text())
     raw.update(change)
     path = tmp_path / "profile.toml"
-    path.write_text("\n".join(f"{k} = {json.dumps(v)}" for k, v in raw.items() if k != "environment")
-                    + "\n[environment]\n" + "\n".join(f"{k} = {json.dumps(v)}" for k, v in raw["environment"].items()))
+    sections = {"environment", "cleanup", "analysis", "analysis_ingress"}
+    body = "\n".join(f"{k} = {json.dumps(v)}" for k, v in raw.items() if k not in sections)
+    for key in sections:
+        if key in raw:
+            body += f"\n[{key}]\n" + "\n".join(f"{k} = {json.dumps(v)}" for k, v in raw[key].items())
+    path.write_text(body)
     with pytest.raises(ValueError):
         install_reader.load_profile(path)
+
+
+def test_lifecycle_new_and_upgrade_share_guarded_increment():
+    increment = install_reader.render(install_reader.ANALYSIS_MIGRATION)
+    for entry in ("analysis_lifecycle.sql", "init_socai2_current.sql", "init_socai2_current_reader.sql"):
+        body = install_reader.render(entry)
+        assert body.count(increment) == 1
+        assert "socai2.migration.expected_database" in body
+        assert ":'analysis_lock_timeout'" in body and ":'analysis_statement_timeout'" in body
+    cfg = install_reader.load_profile(install_reader.HERE / "reader-install.example.toml")
+    cfg.pop("analysis")
+    with pytest.raises(ValueError, match="analysis_migration_configuration_required"):
+        install_reader.execute(cfg, "analysis-lifecycle")
+
+
+def test_initial_task_ingress_requires_explicit_role_and_same_new_install_grants():
+    grants = install_reader.render("analysis_ingress_access.sql")
+    assert install_reader.render("init_socai2_current_reader.sql").count(grants) == 1
+    assert "GRANT SELECT,INSERT ON socai2.analysis_tasks,socai2.analysis_subject_state" in grants
+    cfg = install_reader.load_profile(install_reader.HERE / "reader-install.example.toml")
+    cfg.pop("analysis_ingress")
+    with pytest.raises(ValueError, match="analysis_ingress_configuration_required"):
+        install_reader.execute(cfg, "analysis-ingress")
+
+
+def test_native_fusion_support_preserves_source_tables_without_legacy_alert_store():
+    sql = install_reader.render(install_reader.ENTRIES["fusion-support"])
+    sources = install_reader.HERE.parent.parent / "services/api/migrations"
+    assert (sources / "053_dead_letters.sql").read_text() in sql
+    assert (sources / "110_ai_assets.sql").read_text().split("DO $$")[0] in sql
+    sessions = (sources / "102_sessions.sql").read_text()
+    assert sessions.split("-- The alert side. Additive:")[0] in sql
+    policy = sessions[sessions.index("-- Written out rather than looped"):]
+    policy = policy[:policy.index("    IF EXISTS")] + "END\n$$;\n"
+    assert policy in sql
+    assert "aisoc_app" not in sql
+    assert "REVOKE" not in sql
+    assert "ALTER TABLE alerts" not in sql
+    assert "CREATE TABLE IF NOT EXISTS alerts" not in sql
+    assert "fusion_support_target_invalid" in sql
+    cfg = install_reader.load_profile(install_reader.HERE / "reader-install.example.toml")
+    cfg.pop("analysis_ingress")
+    with pytest.raises(ValueError, match="analysis_ingress_configuration_required"):
+        install_reader.execute(cfg, "fusion-support")
 
 
 @pytest.fixture(scope="module")
@@ -141,3 +208,17 @@ def test_lookup_read_and_existing_schema_not_reset(installed, database_key):
     assert sql(cfg, db, catalog()).stdout == before
     # Grants are safe to repeat; this never replays V1 or creates helper functions.
     assert install_reader.execute(profile(cfg, db), "upgrade").returncode == 0
+
+
+def test_case_allocation_upgrade_and_new_install_share_increment():
+    increment = install_reader.render(install_reader.CASE_MIGRATION)
+    for entry in ('case_allocation.sql', 'init_socai2_current.sql', 'init_socai2_current_reader.sql'):
+        body = install_reader.render(entry)
+        assert body.count(increment) == 1
+        assert 'case_allocation_migration_target_mismatch' in body
+        assert 'incidents_active_case_link_fk' in body
+        assert 'GRANT SELECT ON socai2.case_alert_exclusions' in body
+    cfg = install_reader.load_profile(install_reader.HERE / 'reader-install.example.toml')
+    cfg.pop('analysis')
+    with pytest.raises(ValueError, match='analysis_migration_configuration_required'):
+        install_reader.execute(cfg, 'case-allocation')

@@ -1,7 +1,7 @@
 """Transactional Case baseline persistence for the new socai2 schema.
 
-Opt-in only: no legacy writer, scheduler, HTTP route, or executor is registered.
-All methods use the caller's transaction. Lock order is Case -> Run. Do not
+All methods use the caller's transaction; registration belongs to the explicit
+executor factory and service adapters. Lock order is Case -> Run. Do not
 perform model/Tool I/O until the claim transaction has committed.
 """
 import hashlib
@@ -211,7 +211,8 @@ class BaselineStore:
                 "reason": None, "omitted_paths": []}))
 
     async def claim(self, case_id: UUID, run_id: UUID, request: Start, *,
-                    actor: Actor, executor_version: str, limits: Limits) -> Claim:
+                    actor: Actor, executor_version: str, limits: Limits, attempt_id: UUID | None = None,
+                    query_policy=None, update_context=None) -> Claim:
         cas = await self.case(case_id)
         run = await self.run(case_id, run_id)
         intent = digest({"case_id": str(case_id), "actor": str(actor.user_id),
@@ -226,9 +227,17 @@ class BaselineStore:
             raise StoreError("resolved_case_start_policy_not_enabled")
         if cas["scope_revision"] != request.expected_scope_revision or run["scope_revision"] != cas["scope_revision"]:
             raise StoreError("baseline_scope_revision_conflict")
-        active = await self.one(select(R.c.id).where(*self.where(R, R.c.case_id == case_id,
-            R.c.kind == "baseline", R.c.state.in_(["running", "unknown"]))))
-        if active:
+        from .analysis_task_store import A as ANALYSIS_ATTEMPTS
+        from .analysis_task_store import active_case_work
+
+        if attempt_id is not None and not await self.one(select(ANALYSIS_ATTEMPTS.c.id).where(
+                *self.where(ANALYSIS_ATTEMPTS, ANALYSIS_ATTEMPTS.c.id == attempt_id,
+                    ANALYSIS_ATTEMPTS.c.subject_type == "case", ANALYSIS_ATTEMPTS.c.subject_id == case_id,
+                    ANALYSIS_ATTEMPTS.c.kind == "case_investigation", ANALYSIS_ATTEMPTS.c.local_state == "running",
+                    ANALYSIS_ATTEMPTS.c.run_id.is_(None)))):
+            raise StoreError("analysis_attempt_not_active")
+        actual, active = await active_case_work(self, case_id, excluding_attempt_id=attempt_id)
+        if actual or active:
             raise StoreError("baseline_already_active")
         other = await self.one(select(R.c.id).where(*self.where(R, R.c.kind == "baseline",
             R.c.operation_key == str(request.operation_key))))
@@ -244,9 +253,14 @@ class BaselineStore:
         context = await c1.capture(self.db, self.tenant_id, case_id, request)
         if not context.alerts:
             raise StoreError("baseline_scope_empty")
+        if query_policy is not None:
+            from .case_execution_input import prepare
+            context = prepare(context, query_policy, limits)
+        if update_context is not None:
+            from .case_update_inputs import business_view
+            context = context.model_copy(update={"update_context": {
+                **update_context, "business_view": business_view(context)}})
         payload = context.model_dump(mode="json")
-        if len(encoded(payload)) > c1.retention_limit():
-            raise StoreError("baseline_context_too_large", 422)
         rows = [{key: UUID(a.alert[key]) if a.alert[key] else None
                  for key in ["id", "latest_material_id", "latest_triage_id", "latest_feedback_id"]}
                 for a in context.alerts.values()]
@@ -256,22 +270,33 @@ class BaselineStore:
         await self.save_input_artifact(case_id, run_id, context_id, payload, kind="source_snapshot",
             schema=c1.SCHEMA, captured_at=now, refs=refs, actor_id=actor.user_id)
         context_ref = c1.reference("artifact", context_id, "execution_receipt")
+        from .runtime_policy import active_policy
+        policy_id = uuid4()
+        policy_snapshot = active_policy().snapshot()
+        if query_policy is not None:
+            policy_snapshot["case_execution"] = query_policy.snapshot()
+        await self.save_input_artifact(case_id, run_id, policy_id, policy_snapshot,
+            kind="source_snapshot", schema="socai2.runtime-policy.v1", captured_at=now,
+            refs=[], actor_id=actor.user_id)
+        policy_ref = c1.reference("artifact", policy_id, "execution_receipt")
         snapshot = {"schema_version": "socai2.page-model.v1", "run_kind": "baseline",
             "scope_revision": cas["scope_revision"], "scope": context.scope.model_dump(mode="json"),
-            "source_materials": [context_ref, *refs],
+            "source_materials": [context_ref, policy_ref, *refs],
             "prior_results": sorted(context.prior_results),
             "task_revisions": sorted({r["id"] for r in refs if r["type"] == "task_revision"}),
             "comparison_result_id": str(request.comparison_result_id) if request.comparison_result_id else None,
             "projection_version": c1.PROJECTION,
             "omissions": [{"source_ref": context_ref, "reason": f"{o.section}:{o.source_id or '-'}:{o.reason}"}
                           for o in context.omissions], "captured_at": now.isoformat()}
+        if update_context is not None:
+            snapshot["comparison_context"] = update_context["comparison_context"]
         await self.save_input_artifact(case_id, run_id, artifact_id, snapshot, kind="input_snapshot",
-            schema="socai2.page-model.v1", captured_at=now, refs=[context_ref, *refs], actor_id=actor.user_id)
+            schema="socai2.page-model.v1", captured_at=now, refs=[context_ref, policy_ref, *refs], actor_id=actor.user_id)
         await self.db.execute(update(R).where(*self.where(R, R.c.id == run_id)).values(
             state="running", input_artifact_id=artifact_id, operation_key=str(request.operation_key),
             request_hash=intent, executor_version=executor_version, limits=limits.model_dump(mode="json"),
-            started_at=now, requested_by=actor.user_id, window_start=request.window_start,
-            window_end=request.window_end, comparison_result_id=request.comparison_result_id,
+            started_at=now, requested_by=actor.user_id, window_start=context.scope.window_start,
+            window_end=context.scope.window_end, comparison_result_id=request.comparison_result_id,
             row_version=R.c.row_version + 1))
         await self.event(case_id, request.operation_key, actor.snapshot(), "baseline_started",
             {"run_id": str(run_id), "scope_revision": cas["scope_revision"]},
@@ -350,14 +375,14 @@ class BaselineStore:
                     context_roles[row["id"]][path + ".event_time"] = "source_label"
         prepared = (await self.db.execute(select(F.c.id, F.c.schema_version, F.c.content_json)
             .where(*self.where(F, F.c.run_id == run["id"],
-                              F.c.schema_version.in_([c2.SCHEMA, *view.READ_SCHEMAS, *c3.READ_SCHEMAS, c4.SCHEMA, deep.SCHEMA, c5.SCHEMA, c6.SCHEMA,
+                              F.c.schema_version.in_([c2.SCHEMA, *view.READ_SCHEMAS, *c3.READ_SCHEMAS, c4.SCHEMA, *deep.READ_SCHEMAS, c5.SCHEMA, *c6.READ_SCHEMAS,
                                   "socai2.baseline-executor.v1", "socai2.baseline-executor.v2"]))))).mappings().all()
         for row in prepared:
-            if row["schema_version"] == c6.SCHEMA:
+            if row["schema_version"] in c6.READ_SCHEMAS:
                 context_roles[row["id"]] = c6.citation_roles(row["content_json"])
             elif row["schema_version"] == c5.SCHEMA:
                 context_roles[row["id"]] = c5.citation_roles(row["content_json"])
-            elif row["schema_version"] == deep.SCHEMA:
+            elif row["schema_version"] in deep.READ_SCHEMAS:
                 context_roles[row["id"]] = deep.citation_roles(row["content_json"])
             elif row["schema_version"] == c4.SCHEMA:
                 context_roles[row["id"]] = c4.citation_roles(row["content_json"])

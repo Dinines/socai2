@@ -48,7 +48,7 @@ def coalesce(entries):
     return result, omissions
 
 
-def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=()):
+def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=(), question_id=None, question_scopes=None):
     groups, retained, omissions = {}, [], []
     for entry in entries:
         item = entry.get("knowledge")
@@ -59,6 +59,11 @@ def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=()):
     budget = policy["stage_max_characters"][stage]
     used = sum(len(encoded(r["value"]).decode()) for r in entries
                if r.get("knowledge", {}).get("identity") in dependencies)
+    question_purposes = policy.get("deep_question_purposes", {}).get(question_id) if stage == "Deep" else None
+    final_questions = None
+    if stage == "C6" and "final_question_purposes" in policy and question_scopes is not None:
+        final_questions = [(policy["final_question_purposes"].get(qid, policy["stage_purposes"][stage]), set(members))
+                           for qid, members in question_scopes.items()]
     for identity, rows in groups.items():
         if identity in dependencies:
             retained.extend(rows)
@@ -66,10 +71,18 @@ def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=()):
         origins = [o for r in rows for o in r["knowledge"]["origins"]]
         stage_origins = [o for o in origins if o["purpose"] in policy["stage_purposes"][stage]]
         purpose_allowed = bool(stage_origins)
-        related = any(set(o["query_alert_ids"]) & set(allowed) for o in stage_origins)
+        question_origins = stage_origins if question_purposes is None else [
+            o for o in stage_origins if o["purpose"] in question_purposes]
+        if final_questions is not None:
+            question_origins = [o for o in stage_origins if any(o["purpose"] in purposes for purposes, _ in final_questions)]
+            related = any(o["purpose"] in purposes and set(o["query_alert_ids"]) & members & set(allowed)
+                          for o in question_origins for purposes, members in final_questions)
+        else:
+            related = any(set(o["query_alert_ids"]) & set(allowed) for o in question_origins)
         size = sum(len(encoded(r["value"]).decode()) for r in rows)
         reason = ("knowledge_input_capacity" if identity in excluded else
                   "knowledge_purpose_not_for_stage" if not purpose_allowed else
+                  "knowledge_purpose_not_for_question" if not question_origins else
                   "knowledge_outside_task_scope" if not related else
                   "knowledge_optional_budget" if used + size > budget else None)
         if reason:

@@ -1,0 +1,163 @@
+{
+  "status": "passed_limited_local_report_and_page_review",
+  "observed_at": "2026-11-17T13:56:28.224342+00:00",
+  "scope": "统一设计§12.16；4b报告精确打开已保存主体/Run，本机限定独立复核",
+  "reviewer_role": "未参与报告/页面产品实现；仅添加独立检查驱动、计划与证据",
+  "findings": [
+    {
+      "id": "R-IPv6",
+      "severity": "P2",
+      "status": "fixed_and_directly_retested",
+      "problem": "合法IPv6工作台地址被整URL编码破坏",
+      "fix": "保留scheme/netloc，编码path后urlunsplit",
+      "evidence": "independent-report-review-02.json"
+    }
+  ],
+  "open_findings": [],
+  "checks": [
+    {
+      "name": "报告与交互菜单",
+      "result": "6个已存Run/4主体身份与环境正确；真实report/session CLI、旧无配置报告、无Run记录及源环境拒绝通过",
+      "evidence": "report-attempt01/independent-report-review.json"
+    },
+    {
+      "name": "地址修正",
+      "result": "IPv4/IPv6/括号path三种地址各6链接通过，原发现关闭；定向7项通过",
+      "evidence": "independent-report-review-02.json"
+    },
+    {
+      "name": "实际页面入口离线复核",
+      "result": "5组实际start/读取/渲染函数回放通过，含首页外目标、两页Run目录、R1/R2冻结1/2、刷新/重载/隐藏恢复、显式换轮及无效目标不latest",
+      "evidence": "boot-review-02.json"
+    },
+    {
+      "name": "已有链接与来源直接检查",
+      "result": "10组Node检查通过，lyc/混合/未知/旧登记仍按所选Run隔离；未重跑输入模型请求",
+      "evidence": "direct-test-results-01.json"
+    },
+    {
+      "name": "实际浏览器证据核对",
+      "result": "协调实现者记录8项实际58482浏览器检查；独立核其Run/冻结范围/前轮比较与原件一致；本人未操作该浏览器",
+      "evidence": "docs/operations/evidence/workbench-deeplink-20261117-01/browser-verification.json"
+    },
+    {
+      "name": "配置及打包交接",
+      "result": "capabilities目标环境与报告配置一致；当前Schema等于ReportConfig；独立检查现有打包条目/根目录包含新增文件，使用指南已说明新参数和未部署边界",
+      "evidence": "package-entry-review-01.json"
+    },
+    {
+      "name": "原件与版本保持",
+      "result": "1036原文件SHA逐一保持，24份模型导出字节不变，报告和页面已审源码与当前相同；模型质量结论未改写"
+    }
+  ],
+  "evidence_semantics": {
+    "real_saved_material": "acceptance-fullflow-21-20261117-01；当时真实模型/业务回执复用，本步不重新生成",
+    "controlled_tests": "目录分页、首页排除、缺失和外主体目标为明确内存派生；最小DOM不代表浏览器视觉验收",
+    "browser": "由协调实现者本机预览经现有4177代理只读21；审计只核已存浏览器记录",
+    "first_driver_failure": "boot-review-01为驱动realm接线错误，原件及勘误保留；其network_calls=0无效，可能访问replay.invalid的尝试数量未知，不能据此宣称零网络。02两realm均绑定内存回放并通过，不涉及21或模型执行。",
+    "test_counts": "各组存在覆盖交叉，不相加为独立业务场景数"
+  },
+  "boundaries": {
+    "new_ingress": 0,
+    "new_model_calls": 0,
+    "new_business_writes": 0,
+    "product_changes_by_reviewer": 0,
+    "image_builds": 0,
+    "deployments": 0,
+    "commits_or_pushes": 0
+  },
+  "remaining_limits": [
+    "仅收口4b本机报告/页面功能；21仍为此前r7，需统一发布新工具和工作台后才能实际使用新深链合同",
+    "实际浏览器本轮重点Case；事件/告警精确链接及身份为直接离线检查",
+    "旧来源临时显式允许用于复用历史数据，未发送新lyc材料；原件来源不追改",
+    "模型正文质量后置，原4项自动问题及另存1项人工问题保留；不报质量通过",
+    "D5/D6、整个change结束审计及发布未由本步完成"
+  ],
+  "source_sha256": {
+    "tools/testdata/acceptance.py": "048823ab5bf1557104df5e9518e198f29ada27603ed3a98e1577427059b66ea1",
+    "tools/testdata/acceptance_console.py": "72c0b30b7084d7f04efa524b7a34c22917d2aceed136399b1c939d0ed619dfb3",
+    "tools/testdata/acceptance_report.py": "71756be4cb502e5f6fce39cbc10aa980a36cedf655cae0d9a4a05dba4c6af09c",
+    "tools/testdata/acceptance_report_render.py": "626d5e380c43e282a02c69d089213d7ce74bfe66d6de0e5a1cb67176ca49c469",
+    "tools/testdata/acceptance_report_links.py": "14cce00e319d39a9d41396d96d126a36d0185305f0b944774992e7fc205d167a",
+    "services/investigation_test/web/viewer.js": "3448912fac4f71136cf510e4efb3bcc22f05d5f64d8a126388cb605e98c51601",
+    "services/investigation_test/web/viewer_state.mjs": "7a4ff32562a2f82bbe96e625e646f9bbdedb1eced64baa93c3444908b073004e",
+    "services/investigation_test/web/execution_flow.mjs": "5bc7e848da14f4c5135ad31b19e515127d0af43e71eb54b8b4691d6757ef7ec2",
+    "services/investigation_test/web/frozen_sources.mjs": "cc50798fe305f2a5babc372adc36a9bc79918d47707987d3ce2ba41031d23435",
+    "services/investigation_test/web/test_sources.mjs": "eff35ec85eff18b275ad6012a9bb07e3f81be1adbc535bd736e568223097b3bb",
+    "services/investigation_test/web/viewer_links.mjs": "a7ace52272e836eea984033a3de7b05f7627c6c35890a7682372fb7a56d9f1f4"
+  },
+  "evidence": [
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/direct-check-plan-01.json",
+      "sha256": "7465a71fcb6a713404068c45307c52d2a1c439dc010c94ac20c51cbb842c698b"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/direct-test-results-01.json",
+      "sha256": "274e094c245c755faf6ad5d9dcabbcb00c79f7225742c933993a58048d686b32"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/report-attempt01/independent-report-review.json",
+      "sha256": "5380a8cc9d6d37ac6a3db7335eaa5c49269f6a8e59c805086cb1bb82b08cf1a1"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/independent-report-review-02.json",
+      "sha256": "442f938e75ed79a63a23012f6cec97b1bdd0866524c9e59b3798d802af5df8d9"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/boot-review-01.json",
+      "sha256": "f91cfe1900a59f0cafd1310bb8739cba2a0419203f8f6d2510159459e853015a"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/boot-review-01-erratum.json",
+      "sha256": "85ad9825acdd14c4d5b0cf988ad913becdbd721a66c323bb210d1cfdd4fa4321"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/boot-review-02.json",
+      "sha256": "6c342525497a90d7f5b64e168d948aaaceed0ba680c2bcc6711d906f86e73e49"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/package-entry-review-01.json",
+      "sha256": "b1a3f3899bc84a2474c11ef80339f6a463eb298a77a24467ceaa8b35d31bf542"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/review_report.py",
+      "sha256": "226779c93b415bd4be7ba027b3b532378635422fe6fc9f44e5a45cf63b2cf628"
+    },
+    {
+      "path": "docs/operations/evidence/test-workbench-deeplink-20261117-01/review_boot.mjs",
+      "sha256": "d2bd7f8cd3164c3e9019ca373c146184bce7f68fe66d032069b82e8e68841dea"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/browser-verification.json",
+      "sha256": "ede9216c5427ecb88ff8e421765c57e92d843d37772c2d496a32cbd07050e0c7"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/http/capabilities.json",
+      "sha256": "6668641cbfdff6a47fd8ce85f65dbcbf26f4d5ecab3bbe5262ac004a4ef62b7c"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/http/case-detail.json",
+      "sha256": "13f02ba79d901bc394029c029bc0f2d1067728299fb2688b4b474447c6ed4403"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/report-config.json",
+      "sha256": "0e988cca2ec3e46b43354ed377a8efcc4ba1bbd93a27c98af87d14d675606a1b"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/report-01/report.json",
+      "sha256": "93dddbf2f4c8cf108c70b7eae8350adc9d73005af5e61967576e0d9f245c2bd2"
+    },
+    {
+      "path": "docs/operations/evidence/workbench-deeplink-20261117-01/report-01/manifest.json",
+      "sha256": "463160444940b9f957f46f45e36e4bfe07668b90ba753f8180500894ddd428be"
+    },
+    {
+      "path": "tools/testdata/ACCEPTANCE.md",
+      "sha256": "74020923372cfc8a97d57ceff33054ae202df55e4069e8c0c4b631594dc9eb12"
+    },
+    {
+      "path": "deploy/investigation-test/README.md",
+      "sha256": "eb62262cb513dc32238aaf5de7cc2ae10425fb9cf58be0170676df842901dfbc"
+    }
+  ]
+}

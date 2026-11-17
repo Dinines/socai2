@@ -11,6 +11,23 @@ psql_argv = ["psql", "-X", "-w"]
 [environment]
 PGHOST = "replace_host"
 PGPORT = "5432"
-PGSSLMODE = "verify-full"
-PGSSLROOTCERT = "/replace/private/ca.crt"
+# Password authentication with TLS, no client certificate setup.
+PGSSLMODE = "require"
 PGPASSFILE = "/replace/private/pgpass"
+
+# Required by initialize-current (127) and remove-unused-graph only.
+[cleanup]
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30
+
+# Required for analysis-ingress and fusion-support; initialize-current uses ingress grants when selected.
+[analysis_ingress]
+role = "replace_ingress"
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30
+
+# Required by analysis-lifecycle and initialize-current; select an existing writer.
+[analysis]
+writer_role = "replace_processor"
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30

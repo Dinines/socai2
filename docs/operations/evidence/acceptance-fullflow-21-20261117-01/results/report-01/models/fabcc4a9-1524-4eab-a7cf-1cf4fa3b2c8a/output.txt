@@ -1,0 +1,126 @@
+{
+  "summary": "本案核心事实为服务账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上成功启动 curl 进程，对 IP 198.51.100.171 发起 HEAD 请求。现有证据仅覆盖技术动作（进程启动、命令内容），缺乏目标 IP 业务属性、授权依据及执行结果（是否读取数据）的确认。威胁情报、历史告警及资产库存查询均为空，无法区分正常运维探测与恶意扫描。",
+  "members": [
+    {
+      "alert_id": "A1",
+      "state": "unresolved",
+      "summary": "服务账号 svc-app-1afa1f56 于 2026-11-17T09:16:44Z 在主机 host-app-7e78aefa 上成功启动 curl 进程，执行命令 curl --head https://198.51.100.171/status。",
+      "evidence_ids": ["N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S8", "N2_S9", "N2_S10", "N2_S11", "N2_S12", "N2_S13", "N2_S14", "N2_S23", "N2_S24", "N2_S53"],
+      "limitations": ["仅确认进程启动成功，未确认命令执行完成或数据读取结果", "缺乏目标 IP 198.51.100.171 的业务归属或授权记录", "威胁情报、历史告警及资产关联查询无结果", "无法区分正常运维探测与恶意扫描意图"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "state": "observed",
+      "alert_ids": ["A1"],
+      "support_ids": ["N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S8", "N2_S9", "N2_S10", "N2_S13", "N2_S14"],
+      "counter_ids": [],
+      "alternatives": [],
+      "limitations": ["命令执行结果未知", "目标 IP 属性不明", "无授权证据"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "detection_facts",
+      "state": "answered",
+      "answer": "原始记录支持：服务账号 svc-app-1afa1f56 在主机 host-app-7e78aefa 上成功启动 curl 进程（PID 4101），执行 HEAD 请求至 198.51.100.171。",
+      "evidence_ids": ["N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S8", "N2_S9", "N2_S10", "N2_S13", "N2_S14"]
+    ,
+      "limitations": ["无法确认请求是否成功返回数据", "无法确认是否读取了敏感信息"]
+    },
+    {
+      "id": "member_relationships",
+      "state": "answered",
+      "answer": "成员 A1 内部无多告警关联，仅单条进程活动记录。与对象 O2 (192.0.2.171) 存在源 IP 关联，但无因果证明。",
+      "evidence_ids": ["N2_S23", "N2_S24"]
+    ,
+      "limitations": ["无其他告警形成行为链", "源 IP 192.0.2.171 与目标 IP 198.51.100.171 关系未明"]
+    },
+    {
+      "id": "behavior_nature",
+      "state": "unresolved",
+      "answer": "当前无法定性。技术事实显示为 HTTP HEAD 探测，既可能是正常健康检查，也可能是恶意扫描。",
+      "evidence_ids": []
+    ,
+      "limitations": ["缺乏威胁情报支持", "缺乏历史基线对比", "缺乏业务上下文"]
+    },
+    {
+      "id": "authorization",
+      "state": "unresolved",
+      "answer": "无明确授权证据。现有材料未包含审批记录、工单或策略配置证明该探测行为被允许。",
+      "evidence_ids": []
+    ,
+      "limitations": ["未提供审批文件", "未查询到相关策略"]
+    },
+    {
+      "id": "impact",
+      "state": "unresolved",
+      "answer": "观察到进程启动，未观察到数据外传或系统受损。影响范围取决于目标 IP 属性及命令执行结果，目前均为未知。",
+      "evidence_ids": []
+    ,
+      "limitations": ["命令执行结果未确认", "目标 IP 业务价值未知", "无数据流记录证明外传"]
+    }
+  ],
+  "domains": [
+    {
+      "name": "identity",
+      "applicability": "applicable",
+      "reason": "涉及服务账号 svc-app-1afa1f56 的进程启动权限及潜在的网络访问授权。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F1"],
+      "limitations": ["无认证日志证明本次操作合法性", "无会话信息"]
+    },
+    {
+      "name": "cloud",
+      "applicability": "applicable",
+      "reason": "涉及主机 host-app-7e78aefa 上的进程活动及网络目标 IP 198.51.100.171 的资产归属。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F1"],
+      "limitations": ["资产库存查询无结果", "目标 IP 非已知云资源"]
+    },
+    {
+      "name": "phishing",
+      "applicability": "not_applicable",
+      "reason": "行为为进程发起 HTTP 请求，非邮件投递或钓鱼链接点击，无钓鱼特征。",
+      "alert_ids": [],
+      "finding_ids": [],
+      "limitations": ["无邮件头信息", "无钓鱼附件"]
+    },
+    {
+      "name": "insider",
+      "applicability": "applicable",
+      "reason": "涉及服务账号的数据访问意图及潜在外传风险，需核实是否越权访问。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F1"],
+      "limitations": ["无数据访问记录", "无外传目的地证据"]
+    }
+  ],
+  "conflicts": [],
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1"],
+      "mode": "query",
+      "objective": "核实主机 host-app-7e78aefa 在案件时间窗口内的认证活动，确认 svc-app-1afa1f56 账号的登录来源及会话状态，辅助判断操作合法性。",
+      "required_evidence": "authentication_activity 工具返回的登录账号、来源 IP、时间及结果。",
+      "source_ids": ["N2_S5", "N2_S6"],
+      "object_keys": ["O1"],
+      "binding_id": "B2"
+    ,
+      "priority": "decision_critical"
+    },
+    {
+      "question_id": "impact",
+      "alert_ids": ["A1"],
+      "mode": "query",
+      "objective": "调查主机 host-app-7e78aefa 在案件时间窗口内的网络连接详情，确认是否成功连接目标 IP 198.51.100.171 及传输数据量。",
+      "required_evidence": "network_connections 工具返回的连接端点、端口、协议、时间及流量计数。",
+      "source_ids": ["N2_S10", "N2_S23"],
+      "object_keys": ["O1", "O1"],
+      "binding_id": "B3"
+    ,
+      "priority": "decision_critical"
+    }
+  ]
+}

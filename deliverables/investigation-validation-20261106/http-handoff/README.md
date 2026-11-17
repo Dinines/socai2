@@ -1,10 +1,12 @@
 # 调查服务 HTTP API
 
-合同版本：2026-11-13.docs13。对应本机18024版本为 `case-result-adoption-20261113-r1-local`，21正式18024为 `case-result-adoption-20261113-r1`；合同含64操作，实际发布状态见部署回执，本机使用 `v12_upgrade_dev`，21使用 `aisoc`。
+> 2026-11-14：本轮接口按默认内部可信改动，以下调用示例无需认证信息；本机候选已验证。正式两端18024及在线Swagger仍为上一发布版本，尚未统一切换；本轮不涉及Git提交。
+候选合同版本：2026-11-14.docs20-candidate，71个HTTP操作。对应本机18024 `investigation-sync-20261113-r1-local`、21正式18024 `investigation-sync-20261113-r1`。数据库分别为v12_upgrade_dev与aisoc，记录ID不可混用；实际发布回执见[总交接](../../../FRONTEND_BACKEND_HANDOFF.md)。
 
-本轮实现E21采用已有调查结果，增加E63预览及E64判断历史，原其他61操作合同保持。先预览候选、覆盖与未完工作，再提交摘要和理由；采用不结束任务、取消调查或结案。文件上传/下载仍由业务后端负责。
+本轮同步已发布调查核心`v1.2-20261113-r1`。E36分析告警、E37诊断事件、E13启动调查的地址和输入输出保持；内部使用新版分析逻辑。C3模型处理五项问题，程序补充覆盖说明，保存和读取仍六问。调用方继续先取得主体/Run ID，按原operation_key和范围版本调用，再读取运行状态和结果；超时先读原Run，不换key重启。本轮只做现有记录的接口读回，没有新增模型验收，正文质量问题仍后置。
+本轮新增[E70告警相似历史复核](../../../docs/integration/alert-review-http.md)：同主机且同战术、同IP或合法算法哈希，默认按所选告警发生时间回看30天、每页5条；返回具体匹配依据，不自动复制判定。已完成本机23次功能GET及10表只读核对，正式本机8GET命中3条，21既有记录5GET为空候选。E65故事、E66候选及E67–E69保存恢复沿既有验收。AI对话暂缓，E19/E20返回501。
 
-标准Swagger入口：[本地](http://127.0.0.1:18080/)、[21内网](http://192.168.1.21:18080/)。共64个HTTP操作，按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现。
+标准Swagger入口：[本地](http://127.0.0.1:18080/)、[21内网](http://192.168.1.21:18080/)。按告警、事件、调查分类；适用于告警和事件的共用读取接口会在两组中出现，70为去重后的操作数。
 
 ## 每个接口怎么看
 
@@ -14,7 +16,7 @@
 - **未实现**：E19发送问题、E20保存回答目前返回501，不产生对应业务结果。
 - E36告警分诊、E37事件诊断在21独立正式服务已挂载并启用；由业务后端显式调用，可以来自页面操作或后端业务逻辑。调用后程序执行该次模型流程，返回Run及实际结果状态。
 
-当前64个操作中62已实现、2预留501。采用预览→确认→保存→详情/历史/活动的真实HTTP与SQL证据见本轮交付回执；本地程序构造Result不代表模型分析质量。其他接口沿既有验收，模型质量仍未通过。本次合同对应采用版本；实际上线状态以[总交接](../../../FRONTEND_BACKEND_HANDOFF.md)与部署回执为准。
+当前71个操作中69已实现、2问答暂缓且预留501。采用预览→确认→保存→详情/历史/活动的真实HTTP与SQL证据见本轮交付回执；本地程序构造Result不代表模型分析质量。其他接口沿既有验收，模型质量仍未通过。故事已通过本机30次HTTP功能检查及补充1次GET/11表真实行核对，原快照脚本错误保留。实际上线状态以[总交接](../../../FRONTEND_BACKEND_HANDOFF.md)与部署回执为准。
 
 ## HTTP接入
 
@@ -22,13 +24,13 @@
 
 | 使用环境 | API根地址 | 数据目标 |
 | --- | --- | --- |
-| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`case-result-adoption-20261113-r1`，64操作 |
+| 后端内网对接 | `http://192.168.1.21:18024` | 正式`aisoc`；版本`investigation-sync-20261113-r1`，71操作 |
 | 本机转发到21 | `http://127.0.0.1:28024` | 同一正式库；需开启`deploy/http-service/relay.json`对应转发 |
 | 本机开发验收 | `http://127.0.0.1:18024` | 隔离`v12_upgrade_dev`；本地记录ID与21不通用 |
 
 旧主API18000和旧独立API18020保持运行；后者仍是旧隔离库，不作为本次对接入口。对外查询和业务操作由独立HTTP包维护，调查内部步骤及组件HTTP保持原归属，见[代码与调用边界](../../../docs/design/investigation-http-boundary.md)。本轮没有启动消费者或自动调查。
 
-JSON请求使用`Content-Type: application/json`，身份沿用现有`Authorization: Bearer <有效凭据>`。后端通过HTTP对接，资产基础资料和人员目录由业务后端负责。
+JSON请求使用`Content-Type: application/json`；内部默认可信，不需要认证头，租户和记录操作人由服务配置提供。后端通过HTTP对接，资产基础资料和人员目录由业务后端负责。
 
 ## 常见调用顺序
 
@@ -39,6 +41,10 @@ JSON请求使用`Content-Type: application/json`，身份沿用现有`Authorizat
 5. Case管理：E44读取版本和结案条件 → E45局部修改；E46结案、E47重开 → E03/E44读回；历史理由和前后值通过E17读取。
 
 6. 采用结果：E63预览 → E21提交预览摘要/理由/必要未完确认 → E03当前判断、E64判断历史、E17活动。旧E21占位体expected_scope_revision已停用；完整字段与错误见[采用操作指南](../../../docs/integration/result-adoption-http.md)。
+
+7. 案件探索：E66查询候选 → E28/E30/E31核对详情、全部对象及材料 → E03读最新范围版本 → 明确E08加入 → E03/E66读回；保存画布使用E67读取底图→E68保存→E69恢复；不必加入成员。
+
+8. 相似历史复核：E70查候选 → E28打开候选、E31按材料ID核原件 → 用户确认后E48/E49反馈；当前判定不会自动应用到候选。
 
 管理字段省略保持；可空字段传null清空，标签[]清空。关闭时running/unknown禁止操作；未完任务须明确确认及理由，任务保留。重开恢复处理中，不自动启动调查。
 
@@ -84,7 +90,6 @@ CSV中的null写为`\N`，空字符串留空，数组/对象为JSON。实际以�
 
 ```sh
 curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
-  -H "Authorization: Bearer $TOKEN" \
   --data-urlencode 'severity=high' \
   --data-urlencode 'sort_by=event_time' \
   --data-urlencode 'sort_order=desc' \
@@ -92,7 +97,7 @@ curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
   --output alerts.csv
 ```
 
-`API`选择上述实际环境，`TOKEN`使用已有凭据；先检查HTTP状态，失败保存的内容是错误JSON，不能作为CSV交付。此下载流程不需要先翻页列表。
+`API`选择上述实际环境；先检查HTTP状态，失败保存的内容是错误JSON，不能作为CSV交付。此下载流程不需要先翻页列表。
 
 ## 事件归并统计
 
@@ -118,7 +123,6 @@ curl --fail-with-body --get "$API/api/v1/socai2/alerts/export" \
 
 ```http
 GET /api/v1/socai2/incidents/grouping-summary?source_namespace=example&time_from=2026-11-13T00%3A00%3A00Z&time_to=2026-11-14T00%3A00%3A00Z
-Authorization: Bearer <有效凭据>
 ```
 
 非法日期、空白来源、起点不早于终点或不支持的参数返回422；读取功能关闭、依赖缺失/结构不符返回503。错误与完整示例见E57的Swagger Responses。
@@ -151,3 +155,5 @@ E59 `GET /api/v1/socai2/cases/{case_id}/comments?limit=20&offset=0` 只读本案
 大小、类型和哈希按业务后端提供的值保存；`availability=managed_by_backend`只表示由后端管理，不代表本服务探测文件存在或下载成功。`created_by/created_at`由服务端记录，是登记人/时间。未知哈希返回null；零字节文件允许size_bytes=0。
 
 同key同作者同元数据重试返回原记录；改意图409，同案同file_id另key重复登记409，读取目录获取原关联。文件内容变化须使用新file_id；本批没有附件修改、删除或自动分析。空白/非法元数据422，错误或跨案附件404；正文和任务结论保持。附件登记成功后可以查看关联，不代表上传和下载完整链路已经验收。
+
+[E71同主机最近7条](../../../docs/integration/alert-host-http.md)：仅输入alert_id，无时间窗或分页参数，按当前已存记录发生时间排序，返回原告警和双方主机来源。不同战术仍可匹配；E70相似复核规则保持。

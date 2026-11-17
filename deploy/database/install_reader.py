@@ -14,13 +14,17 @@ ENTRIES = {"initialize": "init_socai2_v1_2_reader.sql",
            "upgrade": "upgrade_socai2_v1_2_reader.sql", "verify": "verify_socai2_v1_2_reader.sql",
            "enable-api": "api_read_access_20261108.sql",
            "initialize-current": "init_socai2_current_reader.sql",
-           "remove-unused-graph": "remove_unused_graph_table.sql"}
+           "remove-unused-graph": "remove_unused_graph_table.sql",
+           "analysis-lifecycle": "analysis_lifecycle.sql", "analysis-ingress": "analysis_ingress_access.sql", "case-allocation": "case_allocation.sql",
+           "fusion-support": "fusion_public_support_20261115.sql"}
 GRAPH_MIGRATION = "../../services/api/migrations/127_socai2_remove_unused_graph_table.sql"
+ANALYSIS_MIGRATION = "../../services/api/migrations/128_socai2_analysis_lifecycle.sql"
+CASE_MIGRATION = "../../services/api/migrations/129_socai2_case_allocation.sql"
 
 
 def render(name, parents=()):
     """Inline repository-owned includes so local/SSH/container psql sees identical SQL."""
-    if (not re.fullmatch(r"[a-z0-9_]+\.sql", name) and name != GRAPH_MIGRATION) or name in parents:
+    if (not re.fullmatch(r"[a-z0-9_]+\.sql", name) and name not in {GRAPH_MIGRATION, ANALYSIS_MIGRATION, CASE_MIGRATION}) or name in parents:
         raise ValueError("invalid_sql_include")
     lines = []
     for line in (HERE / name).read_text(encoding="utf-8").splitlines():
@@ -34,13 +38,25 @@ def render(name, parents=()):
 def load_profile(path):
     with Path(path).open("rb") as f:
         cfg = tomllib.load(f)
-    if set(cfg) - {"cleanup"} != {"database", "admin_role", "function_owner", "reader_role", "timeout_seconds", "psql_argv", "environment", "transport"}:
+    if set(cfg) - {"cleanup", "analysis", "analysis_ingress"} != {"database", "admin_role", "function_owner", "reader_role", "timeout_seconds", "psql_argv", "environment", "transport"}:
         raise ValueError("reader_install_configuration_incomplete")
     if "cleanup" in cfg:
         cleanup = cfg["cleanup"]
         if (not isinstance(cleanup, dict) or set(cleanup) != {"lock_timeout_seconds", "statement_timeout_seconds"}
                 or any(type(v) is not int or v <= 0 for v in cleanup.values())):
             raise ValueError("reader_cleanup_limits_invalid")
+    if "analysis" in cfg:
+        value = cfg["analysis"]
+        if (not isinstance(value, dict) or set(value) != {"writer_role", "lock_timeout_seconds", "statement_timeout_seconds"}
+                or not isinstance(value["writer_role"], str) or not re.fullmatch(r"[a-z_][a-z0-9_]{0,62}", value["writer_role"])
+                or any(type(value[k]) is not int or value[k] <= 0 for k in ("lock_timeout_seconds", "statement_timeout_seconds"))):
+            raise ValueError("analysis_migration_configuration_invalid")
+    if "analysis_ingress" in cfg:
+        value = cfg["analysis_ingress"]
+        if (not isinstance(value, dict) or set(value) != {"role", "lock_timeout_seconds", "statement_timeout_seconds"}
+                or not isinstance(value["role"], str) or not re.fullmatch(r"[a-z_][a-z0-9_]{0,62}", value["role"])
+                or any(type(value[k]) is not int or value[k] <= 0 for k in ("lock_timeout_seconds", "statement_timeout_seconds"))):
+            raise ValueError("analysis_ingress_configuration_invalid")
     for key in ("database", "admin_role", "function_owner", "reader_role"):
         if not isinstance(cfg[key], str) or not re.fullmatch(r"[a-z_][a-z0-9_]{0,62}", cfg[key]):
             raise ValueError("reader_install_identifier_invalid")
@@ -48,7 +64,7 @@ def load_profile(path):
         raise ValueError("reader_install_timeout_invalid")
     if not isinstance(cfg["psql_argv"], list) or not cfg["psql_argv"] or not all(isinstance(x, str) and x for x in cfg["psql_argv"]):
         raise ValueError("reader_install_command_invalid")
-    allowed = {"PGHOST", "PGHOSTADDR", "PGPORT", "PGSSLMODE", "PGSSLROOTCERT", "PGPASSFILE"}
+    allowed = {"PGHOST", "PGHOSTADDR", "PGPORT", "PGSSLMODE", "PGPASSFILE"}
     if not isinstance(cfg["environment"], dict) or set(cfg["environment"]) - allowed:
         raise ValueError("reader_install_environment_invalid")
     if not all(isinstance(x, str) for x in cfg["environment"].values()):
@@ -63,7 +79,7 @@ def load_profile(path):
             raise ValueError("reader_install_libpq_target_incomplete")
         if len(command) != 3 or command[1:] != ["-X", "-w"] or not env["PGPORT"].isdigit():
             raise ValueError("reader_install_libpq_target_invalid")
-        if env["PGSSLMODE"] not in {"verify-full", "disable"} or (env["PGSSLMODE"] == "verify-full" and not env.get("PGSSLROOTCERT")):
+        if env["PGSSLMODE"] not in {"require", "disable"}:
             raise ValueError("reader_install_tls_configuration_invalid")
     else:
         raise ValueError("reader_install_transport_invalid")
@@ -73,12 +89,24 @@ def load_profile(path):
 def execute(cfg, mode):
     if mode in {"initialize-current", "remove-unused-graph"} and "cleanup" not in cfg:
         raise ValueError("reader_cleanup_limits_required")
+    if mode in {"initialize-current", "analysis-lifecycle", "case-allocation"} and "analysis" not in cfg:
+        raise ValueError("analysis_migration_configuration_required")
+    if mode in {"analysis-ingress", "fusion-support"} and "analysis_ingress" not in cfg:
+        raise ValueError("analysis_ingress_configuration_required")
     command = [*cfg["psql_argv"], "-U", cfg["admin_role"], "-d", cfg["database"],
                "-v", "ON_ERROR_STOP=1", "-v", "expected_database=" + cfg["database"],
                "-v", "reader_role=" + cfg["reader_role"], "-v", "function_owner=" + cfg["function_owner"]]
     if "cleanup" in cfg:
         command += ["-v", "cleanup_lock_timeout=" + str(cfg["cleanup"]["lock_timeout_seconds"]) + "s",
                     "-v", "cleanup_statement_timeout=" + str(cfg["cleanup"]["statement_timeout_seconds"]) + "s"]
+    if "analysis" in cfg:
+        command += ["-v", "analysis_writer_role=" + cfg["analysis"]["writer_role"],
+                    "-v", "analysis_lock_timeout=" + str(cfg["analysis"]["lock_timeout_seconds"]) + "s",
+                    "-v", "analysis_statement_timeout=" + str(cfg["analysis"]["statement_timeout_seconds"]) + "s"]
+    if "analysis_ingress" in cfg:
+        command += ["-v", "analysis_ingress_role=" + cfg["analysis_ingress"]["role"],
+            "-v", "analysis_ingress_lock_timeout=" + str(cfg["analysis_ingress"]["lock_timeout_seconds"]) + "s",
+            "-v", "analysis_ingress_statement_timeout=" + str(cfg["analysis_ingress"]["statement_timeout_seconds"]) + "s"]
     # Never inherit a different PG target/password from the parent environment.
     environment = {k: v for k, v in os.environ.items() if not k.startswith(("PG", "DOCKER_"))}
     environment.update(cfg["environment"])

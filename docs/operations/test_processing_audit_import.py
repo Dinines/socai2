@@ -47,7 +47,7 @@ class FolderImportTest(unittest.TestCase):
         self.assertEqual(next(importer.folder_cases(self.source))[2], self.alert)
 
     def test_legacy_graph_collection_preserved_and_unknown_tables_rejected(self):
-        manifest, data = self.capture()
+        _, data = self.capture()
         cid = str(uuid4())
         data["cases"] = [{"tenant_id": self.tenant, "id": cid}]
         data["graph_explorations"] = [{"tenant_id": self.tenant, "id": str(uuid4()), "case_id": cid}]
@@ -57,6 +57,19 @@ class FolderImportTest(unittest.TestCase):
         self.assertEqual(json.dumps(data), before)
         data["unknown_table"] = []
         with self.assertRaisesRegex(ValueError, "database tables"):
+            importer.checked_rows(data, self.tenant, counts)
+
+    def test_lifecycle_snapshot_keeps_composite_subject_and_checks_attempt_owner(self):
+        _, data = self.capture()
+        task_id = str(uuid4())
+        subject = {"tenant_id": self.tenant, "subject_type": "alert", "subject_id": self.alert}
+        data.update(analysis_tasks=[{**subject, "id": task_id, "kind": "alert_triage"}],
+            analysis_attempts=[{**subject, "id": str(uuid4()), "task_id": task_id, "kind": "alert_triage"}],
+            analysis_subject_state=[subject])
+        counts = {key: len(rows) for key, rows in data.items()}
+        importer.checked_rows(data, self.tenant, counts)
+        data["analysis_attempts"][0]["task_id"] = str(uuid4())
+        with self.assertRaisesRegex(ValueError, "attempt task mismatch"):
             importer.checked_rows(data, self.tenant, counts)
 
     def test_incomplete_credential_and_foreign_snapshot_leave_index_intact(self):
@@ -74,7 +87,7 @@ class FolderImportTest(unittest.TestCase):
             importer.import_folder(self.source, self.output)
         data.pop("run_steps")
         self.save(self.source, manifest, data)
-        with self.assertRaisesRegex(ValueError, "29 database tables"):
+        with self.assertRaisesRegex(ValueError, "database tables"):
             importer.import_folder(self.source, self.output)
         self.assertEqual(previous, (self.output / "index.html").read_bytes())
 

@@ -26,15 +26,19 @@ max_total_tokens = 24000
 max_rows_per_query = 0
 deadline_seconds = 300
 
+# Original JSON/text is stored in PostgreSQL without an application byte cut.
+# Only the derived C5 graph view uses this allowance.
+[views]
+max_graph_bytes = 1048576
+
 [model]
 alias = "aisoc-investigation"
 protocol = "chat_completions"
 schema_profile = "vllm_grammar_v1"
 context_tokens = 65536
-# This bounds preparation/storage, not model admission. The full final request
+# This bounds model-view preparation, not original storage or model admission. The full final request
 # is measured by the actual backend tokenizer, including its chat template.
 max_prepared_bytes = 262144
-max_artifact_bytes = 1048576
 final_reserved_input_tokens = 16384
 final_reserved_calls = 2
 

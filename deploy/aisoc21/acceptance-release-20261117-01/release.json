@@ -1,0 +1,170 @@
+{
+  "release": "acceptance-release-20261117-01",
+  "ssh_target": "sting-infra21",
+  "root": "/opt/sting-aisoc-socai2/deployments/acceptance-release-20261117-01",
+  "network": "socai2_default",
+  "user": "10001:10001",
+  "command_timeout_seconds": 55,
+  "stop_timeout_seconds": 30,
+  "startup_timeout_seconds": 50,
+  "restart": "unless-stopped",
+  "processing_image_tag": "socai2-processing:processing-20261117-r1",
+  "database": {
+    "name": "aisoc",
+    "host": "192.168.1.21",
+    "port": 5432,
+    "sslmode": "require",
+    "container": "spirithub-postgres-1",
+    "admin": "spirithub",
+    "owner": "aisoc",
+    "reader": "aisoc_app",
+    "processor": "socai2_prod_processor",
+    "ingress": "socai2_prod_ingress",
+    "steps": [
+      "verify"
+    ]
+  },
+  "identity": {
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "a5c41f91-21c8-4dfc-8f6c-cd4c71b41dc5",
+    "actor_name": "业务后端（内部可信）"
+  },
+  "private_sources": {
+    "runtime": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+    "ingress": "/opt/sting-aisoc-socai2/private/processing-production/ingress.env",
+    "processor_password": "/opt/sting-aisoc-socai2/private/processing-production/db-password",
+    "ingress_password": "/opt/sting-aisoc-socai2/private/processing-production/ingress-password",
+    "lake_password": "/opt/sting-aisoc-socai2/private/processing-production/lake-password",
+    "qdrant_key": "/opt/sting-aisoc-socai2/private/processing-production/knowledge-qdrant-key",
+    "http_container": {
+      "name": "socai2-http-api",
+      "id": "6af5597a4bbec3353f8a02b097851b78ba4ec09e6b6830606d15a4d8bcdf6629"
+    },
+    "fusion_container": {
+      "name": "socai2-fusion-1",
+      "id": "bf0ed98ea2a1be3f943e5107d5105ce30fb70d754300b9421987b5f730767d5b"
+    }
+  },
+  "secret_env_keys": [
+    "SECRET_KEY",
+    "JWT_SECRET",
+    "METRICS_TOKEN",
+    "AISOC_CREDENTIAL_KEY",
+    "AISOC_REALTIME_JWT_SECRET"
+  ],
+  "model": {
+    "key_name": "OPENAI_API_KEY",
+    "base_url": "http://litellm:4000/v1",
+    "alias": "aisoc-investigation",
+    "service_context_tokens": 65536
+  },
+  "fusion": {
+    "name": "socai2-production-fusion-20261117-r1",
+    "workdir": "/opt/processor/smoke-fusion",
+    "memory": "1g",
+    "pids_limit": 128,
+    "bind": "127.0.0.1",
+    "port": 18003,
+    "container_port": 8003,
+    "ca_source": "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt",
+    "ca_target": "/run/certs/ca.crt",
+    "redis_db": 9,
+    "redis_host": "192.168.1.21",
+    "redis_port": 6379,
+    "redis_user": "socai2"
+  },
+  "analysis": {
+    "name": "socai2-production-dispatch-20261117-r1",
+    "workdir": "/app",
+    "memory": "2g",
+    "pids_limit": 128,
+    "redis_db": 8,
+    "redis_host": "192.168.1.21",
+    "redis_port": 6379,
+    "redis_user": "socai2"
+  },
+  "http_profile": "http-profile.json",
+  "swagger": {
+    "container": "socai2-production-swagger-acceptance-http-20261117-r1",
+    "project": "socai2-production-swagger-acceptance-http-20261117-r1",
+    "image": "sha256:95b2555796efa9171c00a281c096499d28261adc24e80856fc11571276251b9c",
+    "bind": "192.168.1.21",
+    "port": 18080,
+    "container_port": 8080,
+    "platform": "linux/amd64",
+    "upstream": "http://192.168.1.21:18024",
+    "source_directory": "deploy/api-docs/acceptance-release-20261117-01/handoff"
+  },
+  "viewer": {
+    "old": "socai2-investigation-test-4177-r6",
+    "old_id": "a4ddd02cfbc7444b77861148a868379607b73647e56eb167f134d746e233d02b",
+    "name": "socai2-investigation-test-4177-r7",
+    "image": "socai2-investigation-test:0.6.0-20261117-r7",
+    "old_config": "/opt/sting-aisoc-socai2/deployments/streaming-release-20261116-04/viewer/config",
+    "state_root": "/opt/sting-aisoc-socai2/data/investigation-test-4177",
+    "upstream": "http://192.168.1.21:18024",
+    "bind": "127.0.0.1",
+    "port": 4177,
+    "container_port": 14178,
+    "memory": "512m",
+    "pids_limit": 128,
+    "tmpfs": "/tmp:rw,nosuid,nodev,size=64m,mode=1777"
+  },
+  "must_remain_stopped": [
+    "socai2-agents-1",
+    "socai2-api-1",
+    "socai2-api-docs-swagger-1",
+    "socai2-fusion-1",
+    "socai2-http-api",
+    "socai2-investigation-api",
+    "socai2-investigation-projection",
+    "socai2-investigation-test-4177-r5",
+    "socai2-investigation-test-4177-r6",
+    "socai2-next-api",
+    "socai2-production-dispatch-20261116",
+    "socai2-production-dispatch-20261116-r3",
+    "socai2-production-dispatch-20261116-r4",
+    "socai2-production-fusion-20261116",
+    "socai2-production-fusion-20261116-r3",
+    "socai2-production-fusion-20261116-r4",
+    "socai2-production-http-20261116",
+    "socai2-production-http-20261116-r4",
+    "socai2-production-swagger-20261116",
+    "socai2-production-swagger-20261116-r4",
+    "socai2-production-workbench",
+    "socai2-streaming-dispatch-20261115",
+    "socai2-streaming-dispatch-20261115-ai-stopped",
+    "socai2-streaming-dispatch-20261115-before-budget-20261116",
+    "socai2-streaming-fusion-20261115",
+    "socai2-streaming-fusion-20261115-r2-stopped"
+  ],
+  "rollback": {
+    "before_new_business_writes": "restore_previous_images_only_after_idle_check",
+    "after_new_business_writes": "retain_new_reader_and_data_then_fix_current_version",
+    "schema_downgrade": false,
+    "restore_deleted_data": false,
+    "replay_requests": false
+  },
+  "prior_runtime_root": "/opt/sting-aisoc-socai2/deployments/streaming-release-20261116-02",
+  "state": "prepared_not_deployed",
+  "stop_before_cleanup": [
+    "socai2-production-fusion-20261116-r4",
+    "socai2-production-http-20261116-r4",
+    "socai2-production-dispatch-20261116-r4",
+    "socai2-investigation-test-4177-r6",
+    "socai2-production-swagger-20261116-r4"
+  ],
+  "expected_old_container_ids": {
+    "socai2-production-fusion-20261116-r4": "1dd1f11e1789de028341f0cde97bb044aa00649404d888607b8317994d745e27",
+    "socai2-production-dispatch-20261116-r4": "c81c9a377b5c31fee4ea0abb806bae222eef5ae430cea85fec8997565b946d75",
+    "socai2-production-http-20261116-r4": "fad7e3d6c9a78865011301ffc0115e6b56de1f05f5a25ff66df0ccab738b8702",
+    "socai2-production-swagger-20261116-r4": "6771d0b87839bd1a51224a35821b468fcedb8c54e5806e7cd8fee8081fcf2439",
+    "socai2-investigation-test-4177-r6": "a4ddd02cfbc7444b77861148a868379607b73647e56eb167f134d746e233d02b"
+  },
+  "acceptance": {
+    "image_reference": "socai2-investigation-acceptance@sha256:6504fdad4ed0e965d16ee027302ddd0d666d2f13172ffa70108876dfd7bb5297",
+    "platform_image_id": "sha256:d43e94a27e7d1e313bc9283a64a56ca6caa98a3582d43014c149133bf02e553c",
+    "source_package": ".local/investigation-test-release/test-service-0.6.0-20261117-3d04",
+    "platform": "linux/amd64"
+  }
+}

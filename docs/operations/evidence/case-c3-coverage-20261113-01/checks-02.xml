@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="7" time="1.376" timestamp="2026-11-13T22:13:10.585423+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_case_program_output" name="test_observed_statement_is_original_fields_and_model_cannot_supply_it[C3]" time="0.094" /><testcase classname="tests.test_socai2_case_program_output" name="test_observed_statement_is_original_fields_and_model_cannot_supply_it[C6]" time="0.100" /><testcase classname="tests.test_socai2_case_program_output" name="test_overlong_original_is_rejected_and_partial_retains_independent_units" time="0.052" /><testcase classname="tests.test_socai2_case_program_output" name="test_program_coverage_keeps_zero_unqueried_and_actual_retained_states[C3]" time="0.051"><failure message="KeyError: 'original_value'">sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'C3'
+
+    @pytest.mark.parametrize("stage", ["C3", "C6"])
+    def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample, stage):
+        context, base_input = base.prepared_sample(sample)
+        for i, (tool, state, count) in enumerate([("assets", "completed", 0), ("history", "skipped", None)]):
+            row = {"id": f"receipt-{i}", "block": "background_query",
+                "value": {"tool_name": tool, "state": state, "outcome": "empty" if count == 0 else "not_queried",
+                          "returned_rows": count, "truncated": False}, "alert_ids": list(context.alerts),
+                "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
+                        "source_path": None, "external": None, "row_keys": []}}
+            base_input["input_ledger"]["records"].append(row)
+            base_input["source_map"][row["id"]] = {"ref": row["ref"], "alert_ids": row["alert_ids"]}
+        comparison = {"state": "initial", "result_id": None}
+        if stage == "C3":
+            prepared = base_input
+            prepared["case_boundary"]["coverage_facts"] = program.initial_coverage(prepared["input_ledger"], len(context.alerts))
+            assert len(prepared["case_boundary"]["coverage_facts"]["queries"]) == 2  # Excludes nine prior A receipts.
+            assert "coverage：" not in prepared["messages"][1]["content"]
+&gt;           assert "coverage_facts" not in inputs.build("Deep", context, base_input, {}, question_id="authorization")["case_boundary"]
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+services/api/tests/test_socai2_case_program_output.py:129: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/case_followup_input.py:386: in build
+    selected_records = selection.records(base, context, cfg, profile.business, required, selection_omissions)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/case_followup_selection.py:63: in records
+    selected = select_rows(rows, context.model_dump(mode="json"), config, business["render"], omissions,
+services/api/app/socai2/case_c3_input_selection.py:64: in select_rows
+    refs = [*prior_refs(rows), *required_refs]
+             ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = [{'ref': {'type': 'alert_material', 'id': 'a33e4af8-47dc-54db-8f4e-ca8c7ab02e97', 'external': None, 'source_path': '$....ss_uid', ...}, 'alert_ids': ['09e91978-d201-5435-901e-b6a40368b921'], 'value': 3002, 'original_value': 3002, ...}, ...]
+
+    def prior_refs(rows):
+        result = []
+        for row in rows:
+&gt;           value = row["original_value"]
+                    ^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'original_value'
+
+services/api/app/socai2/case_c3_input_selection.py:22: KeyError</failure></testcase><testcase classname="tests.test_socai2_case_program_output" name="test_program_coverage_keeps_zero_unqueried_and_actual_retained_states[C6]" time="0.046"><failure message="KeyError: 'original_value'">sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+stage = 'C6'
+
+    @pytest.mark.parametrize("stage", ["C3", "C6"])
+    def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample, stage):
+        context, base_input = base.prepared_sample(sample)
+        for i, (tool, state, count) in enumerate([("assets", "completed", 0), ("history", "skipped", None)]):
+            row = {"id": f"receipt-{i}", "block": "background_query",
+                "value": {"tool_name": tool, "state": state, "outcome": "empty" if count == 0 else "not_queried",
+                          "returned_rows": count, "truncated": False}, "alert_ids": list(context.alerts),
+                "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
+                        "source_path": None, "external": None, "row_keys": []}}
+            base_input["input_ledger"]["records"].append(row)
+            base_input["source_map"][row["id"]] = {"ref": row["ref"], "alert_ids": row["alert_ids"]}
+        comparison = {"state": "initial", "result_id": None}
+        if stage == "C3":
+            prepared = base_input
+            prepared["case_boundary"]["coverage_facts"] = program.initial_coverage(prepared["input_ledger"], len(context.alerts))
+            assert len(prepared["case_boundary"]["coverage_facts"]["queries"]) == 2  # Excludes nine prior A receipts.
+            assert "coverage：" not in prepared["messages"][1]["content"]
+            assert "coverage_facts" not in inputs.build("Deep", context, base_input, {}, question_id="authorization")["case_boundary"]
+            answer = base.answer_for(prepared, context)
+            receive = lambda value: initial.parse(json.dumps(value), prepared, context, {})
+            review = initial.CaseReview(prepared, context, {})
+            fmt = initial.output_format(prepared, context, {})
+        else:
+&gt;           prepared = inputs.build("C6", context, base_input, {}, extra={"comparison": comparison,
+                "followup_execution": {"routes": [{"state": "handoff", "question_id": "authorization"}]}})
+
+services/api/tests/test_socai2_case_program_output.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/api/app/socai2/case_followup_input.py:386: in build
+    selected_records = selection.records(base, context, cfg, profile.business, required, selection_omissions)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/api/app/socai2/case_followup_selection.py:63: in records
+    selected = select_rows(rows, context.model_dump(mode="json"), config, business["render"], omissions,
+services/api/app/socai2/case_c3_input_selection.py:64: in select_rows
+    refs = [*prior_refs(rows), *required_refs]
+             ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+rows = [{'ref': {'type': 'alert_material', 'id': 'a33e4af8-47dc-54db-8f4e-ca8c7ab02e97', 'external': None, 'source_path': '$....ss_uid', ...}, 'alert_ids': ['09e91978-d201-5435-901e-b6a40368b921'], 'value': 3002, 'original_value': 3002, ...}, ...]
+
+    def prior_refs(rows):
+        result = []
+        for row in rows:
+&gt;           value = row["original_value"]
+                    ^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'original_value'
+
+services/api/app/socai2/case_c3_input_selection.py:22: KeyError</failure></testcase><testcase classname="tests.test_socai2_case_program_output" name="test_historical_boundary_keeps_authored_observation_and_six_questions" time="0.053" /><testcase classname="tests.test_socai2_case_program_output" name="test_c4_receipts_preserve_material_read_states_and_pass_actual_save_gate" time="0.103" /></testsuite></testsuites>

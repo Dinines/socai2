@@ -1,4 +1,4 @@
-**2026-11-01当前状态：** r11/a543ad6（功能49a04eb）已部署并核对472源码。用户授权的新synthetic正向样本唯一Run为failed/partial，4模型/2真实非空查询/0复用/12728tokens；完整raw、JSON Schema、成员引用已验，报告仍有协议误拒和语义问题。见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)及[当前审阅指南](../../../docs/investigation/review-guide-20261101.md)。用户现要求保留问题，只更新文档；复用7项直接结果，无业务测试/新调用，5.3继续未完成。
+**2026-11-01当前状态：** r11/a543ad6（功能49a04eb）已部署并核对472源码。用户授权的新synthetic正向样本唯一Run为failed/partial，4模型/2真实非空查询/0复用/12728tokens；完整raw、JSON Schema、成员引用已验，报告仍有协议误拒和语义问题。见[r11回执](../../../docs/operations/investigation-r11-positive-fixture-20261101.json)及[当前审阅指南](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/review-guide-20261101.md)。用户现要求保留问题，只更新文档；复用7项直接结果，无业务测试/新调用，5.3继续未完成。
 
 以下按批次保留当时验证状态；“未部署/下一步”不覆盖上方现状。文档严格校验不等同完整报告验收。
 
@@ -20,7 +20,7 @@
 
 # 实施阶段校验（2026-10-31）
 
-用户“推进执行”后，本地实现与必要直接验证已执行，不能再沿规划阶段validation.md的“未测试/未实现”解释当前工作区。完整范围、失败、当前版本和未完成事项见[实施记录](../../../docs/investigation/audit-fixes-implementation-20261031.md)及[机器回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。
+用户“推进执行”后，本地实现与必要直接验证已执行，不能再沿规划阶段validation.md的“未测试/未实现”解释当前工作区。完整范围、失败、当前版本和未完成事项见[实施记录](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-fixes-implementation-20261031.md)及[机器回执](../../../docs/operations/investigation-audit-fixes-20261031.json)。
 
 - Case API/synthesis/product/navigation 26项通过；H1缺口保留修正后只重查受影响6项并通过。Incident受影响5项最终通过，其中模式失败用例初次2个subtest为时间格式断言失败，改datetime等值后通过；原失败日志保留。去重31项，不累加阶段运行数。
 - Office原冻结错误响应及usage进入当前执行器＋HTTP模型替身，实际纠错16929≤17018，余89；新增来源与完整历史gaps保留。不是新真实模型结果。

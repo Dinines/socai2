@@ -1,0 +1,77 @@
+{
+  "schema_version": "socai2.independent-report-review.v1",
+  "reviewed_at": "2026-11-17T07:22:15.823877+00:00",
+  "status": "changes_requested",
+  "scope": "3c.3 step 1 report; report-freeze-02; IR01-03/report and package/output protection only",
+  "freeze": "report-freeze-02/manifest.json",
+  "freeze_sha256": "744f5c8aca074293d70ea1e897825c388c388a34587475f0d92e7322e8663bba",
+  "current_workspace_note": "Owner started fixes during review; probe imports frozen report modules. This review does not assess later revisions.",
+  "findings": [
+    {
+      "id": "RP-R1",
+      "priority": "P2",
+      "file": "tools/testdata/acceptance_report.py",
+      "line": 219,
+      "title": "按主体读取本轮实际范围",
+      "evidence": "Both incident Runs are displayed with 0 frozen alerts; each Run input_artifact_id points to input_selection with selected_count 1 and 2. Alert Runs also display 0 although each has one alert_id. run_members is Case-specific.",
+      "required_change": "Use Run.alert_id for A, frozen incident input_selection for I, and run_members for Case; absent evidence must be unknown, not zero.",
+      "probe": "independent-report-data-02/results.json#/incident_scope_mismatch"
+    },
+    {
+      "id": "RP-R2",
+      "priority": "P2",
+      "file": "tools/testdata/acceptance_report_models.py",
+      "line": 40,
+      "title": "坏消息字段不能中止全部报告",
+      "evidence": "On a byte-copy of actual02, only a new second-part request messages[0].role is replaced with an object. Frozen report raises TypeError and saves no report.",
+      "required_change": "Validate nested role type and record a fixed model-input diagnostic while preserving independent requests, outputs and readable facts.",
+      "probe": "independent-report-data-02/malformed-message-patch.json"
+    },
+    {
+      "id": "RP-R3",
+      "priority": "P2",
+      "file": "tools/testdata/acceptance_report.py",
+      "line": 218,
+      "title": "保留执行尝试自身终态",
+      "evidence": "Actual report includes attempt IDs/count but no local_state/outcome/end observation for its 8 attempts. A completed Run or saved Result cannot substitute for execution attempt outcome.",
+      "required_change": "Export attempts local_state/outcome/end or interruption observation, and display alongside each associated Run; retain unknown separately.",
+      "probe": "independent-report-data-02/results.json#/attempt_outcomes_exported"
+    }
+  ],
+  "passed_checks": {
+    "actual_02_counts": "2A/1I/2Case/9task/8attempt/8Run/83step/245artifact/4Result",
+    "models": "13 request artifacts; 69894 prompt + 40101 completion = 109995 tokens; 13 stop; unknown cost",
+    "quality": "C6 9/C3 6/I 2 from original stage receipts; 17 total; step errors/skips 16 separate",
+    "actual_01": "missing snapshot => totals unknown; http_status_503 retained; no outside snapshot fallback",
+    "prefix": "4Run/2Result/6requests; next part2",
+    "exports": "41 files plus manifest; source pointers and output bytes/hashes verified",
+    "originals_unchanged": {
+      "02": 2750,
+      "01": 19
+    },
+    "network_or_credentials_attempted": 0,
+    "controlled_missing_usage_whitespace_privacy": "passed",
+    "local_checks": "11 passed, Ruff passed, OpenSpec strict passed; independent-report-local-checks-01.json"
+  },
+  "evidence": [
+    "independent-report-probe-02.py",
+    "independent-report-data-02/results.json",
+    "independent-report-data-02/source-hashes.json",
+    "independent-report-data-02/quality-source-details.json",
+    "independent-report-local-checks-01.json"
+  ],
+  "reviewer_driver_notes": [
+    "independent-report-driver-note-01.json",
+    "independent-report-driver-note-02.json"
+  ],
+  "business_writes": 0,
+  "new_model_calls": 0,
+  "not_covered": [
+    "interactive menu",
+    "Docker3d",
+    "task4",
+    "21 deployment",
+    "model body correctness"
+  ],
+  "next": "Recheck the owner report-freeze-03 fixes; retain this freeze02 failure."
+}

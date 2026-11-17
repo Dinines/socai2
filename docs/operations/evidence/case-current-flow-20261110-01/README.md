@@ -1,6 +1,6 @@
 # Case 流程实测证据
 
-本批使用两组已有演练材料，新建两个 Case、三个 Run，包含助手依用户要求补充的材料完整性核查 H。结论与范围见[实测报告](../../../../openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)。
+本批使用两组已有演练材料，新建两个 Case、三个 Run，包含助手依用户要求补充的材料完整性核查 H。结论与范围见[实测报告](../../../handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md)。
 
 - `run-config.json` 固定真实调用的发布、身份、来源与预算；私密 API key 不在本目录。
 - `execution-summary.json` 定位 8 次真实模型请求／原答／用量和步骤状态。模型质量 NOT_PASSED，三个 Run 均部分交付，最终结论未采用。

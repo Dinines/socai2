@@ -1,6 +1,6 @@
 # 当前实施与验证记录
 
-实施位于主目录分支 `codex/case-baseline-history-20261103`。流程说明以[当前执行账本](../../../docs/investigation/current-execution-ledger.md)为准，问题和逐项验证以[审计与修复](../../../docs/investigation/current-investigation-audit-20261105.md)为准。文档原位更新，不另建并行设计版本。
+实施位于主目录分支 `codex/case-baseline-history-20261103`。流程说明以[当前执行账本](../../../docs/investigation/current-execution-ledger.md)为准，问题和逐项验证以[审计与修复](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-investigation-audit-20261105.md)为准。文档原位更新，不另建并行设计版本。
 
 ## 已落实的修复
 

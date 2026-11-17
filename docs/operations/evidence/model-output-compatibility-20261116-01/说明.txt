@@ -1,0 +1,45 @@
+连续空白输出核查与一次定向重试（2026-11-16）
+
+结论
+当前 vLLM 0.30.0 / xgrammar 0.2.8 与提供端正文约束不兼容。
+原 pattern: \S 的本地含义是“至少含一个非空白字符”，实际生成语法却要求整串匹配，只容许一个非空白字符。这解释了 A 的“告”和 I 的“A”。
+在这一约束下，原 I 在写出 "assessment": "A" 后继续输出空白，直到8192额度耗尽；JSON字段间空白仍为语法所允许。离线复现加同输入重试将问题定位到这组生成约束，而非输入太长。未观测模型内部logits，不声称精确证明了每一步采样的内部原因。
+仅移除pattern也不充分：当前长度语法仍拒绝含换行/引号转义的正常正文。提供端兼容转换省略自由正文的这些关键字，本地原合同仍校验非空和长度。
+
+实际对照（经同一21网关到43模型；只有一次新增生成）
+                           原失败                 候选重试
+输入tokens                 1239                   1239
+输出上限                   8192                   8192
+实际输出tokens             8192                   1166
+结束原因                   length                 stop
+输出字符数                 8238                   2335
+非空白字符数               50                     1559
+末尾连续空白字符数         8163                   0
+模型/temperature           相同                   相同
+实际后端fingerprint        vllm-0.30.0-76652a79，两次相同
+输出完整JSON               否                     是
+原非空/长度及完整Schema    无法完成               通过
+
+重试耗时22.90秒；费用未知，不能记零。输入、system提示、model、temperature及max_tokens逐值相同，仅改变 /$defs/CompactString0 下 pattern、minLength、maxLength 三项。没有换模型、扩大额度、重投Kafka或改写原失败task/Run。诊断没有新建业务Run，没有将结果自动采用为业务诊断。
+
+文件
+input.txt：按角色展开的实际输入。
+original-request.json：原请求，含完整Schema；与原保存文件字节摘要相同。
+candidate-request.json：本次实际候选请求，含完整Schema。
+out/output.txt：本次模型可见输出，逐字保留，不裁剪空白、不重新排版。
+out/response.json：原始提供端回执，包含usage/finish_reason。
+comparison.json：前后对照及校验。
+grammar-checks.json / grammar-invocation.json：43实际环境的零生成语法复现，包括原警告。
+preparation.json / manifest.json / upload.json / launch.json / container-final.json：冻结、发送和容器身份。
+out/intent.json：发送前独占保存的意图；保留最初started_outcome_unknown，不覆盖为成功，最终结论见out/outcome.json。
+
+本地修正及验证
+services/api/app/socai2/model_protocol.py 的 vllm_grammar_v1 适配已修正；原非空/长度/引用/成员合同不改，standard不改。仅遍历Schema位置，保留同名业务属性和字面量，专用格式pattern及枚举保持。
+定向检查24项通过（targeted-tests.log），修改文件Ruff通过；实际I适配结果与成功重试请求完全相同。
+扩展选择的31项中27通过、4失败；换回修改前provider_schema后，同一delivery文件仍4失败/3通过（baseline-delivery-tests.log）。失败涉及旧领域范围及delivery_format预期，本步未修这些既有测试，也不声称全仓测试通过。
+
+边界与下一步
+此修正目前在本地源码，尚未冻结部署新版处理镜像。正式Fusion/调度仍停止；HTTP/Swagger/4177可读。原I失败与A单字结果保持，Case首轮未执行，当前4177账本仍0批。
+本次仅证明生成约束修正有效；正文真实性、引用充分性、旧Case质量问题未全面验收，不能算全部质量通过。
+为隔离原因，本次保留原输入；其中telemetry.source固定中性来源及嵌套后台字段排除问题仍待处理，不能宣称新材料已全面通过透明性验收。
+后续先修实际模型视图中的后台来源泄露，再将必要修正统一冻结/复审，发布后通过新业务请求验证I、Case和4177。不要重派原失败任务、覆盖旧结果或反复采样追认质量。

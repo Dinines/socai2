@@ -2,7 +2,7 @@
 from .baseline_enrichment import citation_roles
 from .baseline_store import StoreError, digest, encoded
 from .stage_inputs import QUERY_RECEIPTS_VERSION
-from .stage_result_contracts import ALERT_EXECUTOR_VERSION
+from .stage_result_contracts import ALERT_QUERY_RECEIPT_VERSIONS
 
 
 def receipts(source):
@@ -23,7 +23,7 @@ def receipts(source):
             body = row["content_json"]
             if (row["id"] in seen or row["alert_id"] != aid or row["tenant_id"] != member["alert"]["tenant_id"]
                     or row["run_id"] != triage["source_run_id"] or row["kind"] != "tool_response"
-                    or row["schema_version"] != ALERT_EXECUTOR_VERSION or row["material_state"] != "complete"
+                    or row["schema_version"] not in ALERT_QUERY_RECEIPT_VERSIONS or row["material_state"] != "complete"
                     or row.get("blob_ref") is not None or not isinstance(body, dict)
                     or digest(body) != row["sha256"] or len(encoded(body)) != row["size_bytes"]):
                 raise StoreError("incident_query_receipt_invalid", 422)

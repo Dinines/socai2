@@ -38,10 +38,15 @@ def conflict_errors(root, sources):
     return errors
 
 
-def validate_conflicts(root, sources):
+def validate_conflicts(root, sources, *, citation_review=None, path="$"):
     errors = conflict_errors(root, sources)
     if errors:
-        raise AnalysisRejected(errors[0]["code"])
+        if citation_review is None:
+            raise AnalysisRejected(errors[0]["code"])
+        from .citation_quality import issue
+        for error in errors:
+            issue(citation_review, error["code"], path + "." + ".".join(map(str, error["path"])),
+                  **{k: v for k, v in error.items() if k not in {"path", "code"}})
 
 
 def constrain_findings(fmt, sources, members, *, program_owned=False):

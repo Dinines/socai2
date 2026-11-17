@@ -126,6 +126,48 @@
 | feedback | 是 | [FeedbackFields](schemas.md#feedbackfields) | 无（可空不等于可省略） | 应用于全部明确选中告警的人工判定及理由。 |
 
 
+<a id="alerthostitem"></a>
+
+## AlertHostItem
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| alert | 是 | [AlertFacts](schemas.md#alertfacts) | 无（可空不等于可省略） | 原告警事实，含名称、等级、真实发生时间、处理状态和判定；点击alert.id用E28打开。 |
+| matches | 是 | array <[AlertHostMatch](schemas.md#alerthostmatch)> | 无（可空不等于可省略） | 全部同主机对象对，按起点/候选对象ID排序；不要求战术一致，不代表攻击因果。 |
+
+
+<a id="alerthostmatch"></a>
+
+## AlertHostMatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| seed | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 起点最新材料中的主机对象，保留ID、namespace、原值/规范值和字段路径；algorithm为null。 |
+| candidate | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 候选最新材料中与起点namespace及规范主机值完全相同的主机对象；沿材料ID用E31回查。 |
+
+
+<a id="alerthostpage"></a>
+
+## AlertHostPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[AlertHostItem](schemas.md#alerthostitem)> | 无（可空不等于可省略） | 去重后按event_time倒序、alert.id倒序的最近记录；排除起点及发生时间未知的候选。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 完整匹配范围的去重告警数，不受本次返回上限影响。 |
+| limit | 是 | integer; minimum=1.0; maximum=100.0 | 无（可空不等于可省略） | 本次配置的返回条数上限，当前7；7是条数，不是天数，无分页参数。 |
+| source_alert_id | 是 | string (uuid) | 无（可空不等于可省略） | 当前查看的起点告警ID；它自身不在items中。 |
+| source_material_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 实际读取的起点latest_material_id，没有材料时null。 |
+| source_namespace | 是 | string | 无（可空不等于可省略） | 告警来源范围，候选必须相同；主机对象namespace另逐对核对。 |
+| source_hosts | 是 | array <[ExplorationObject](schemas.md#explorationobject)> | 无（可空不等于可省略） | 起点最新材料内非空的host对象；多个主机取并集，不从IP/资产ID推断。空列表时items为空。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次数据库只读一致快照时间。查询已保存的最新发生记录，不限定在起点之前或最近若干天。 |
+
+
 <a id="alertmanagementbatch"></a>
 
 ## AlertManagementBatch
@@ -167,6 +209,83 @@
 | tags | 否 | array <string; minLength=1; maxLength=128>; maxLength=50 | 无（可空不等于可省略） | 标签列表，不替代资产标签。 |
 | reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 |
 | handling_status | 否 | string new, in_progress, completed | 无（可空不等于可省略） | 主体业务处理状态，与Run执行状态分开。 |
+
+
+<a id="alertreviewcandidate"></a>
+
+## AlertReviewCandidate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| alert | 是 | [AlertFacts](schemas.md#alertfacts) | 无（可空不等于可省略） | 原告警事实，含名称/严重程度/发生时间及当前处理状态/判定/版本；点击 alert.id 用 E28 打开。 |
+| matched_rules | 是 | array <string same_host_and_tactic, same_ip, same_hash_algorithm_and_value> | 无（可空不等于可省略） | 该候选满足的去重规则；多规则命中仍只返回一条告警。 |
+| time_delta_seconds | 是 | number / null | 无（可空不等于可省略） | 候选与起点真实发生时间之差的绝对秒数；起点时间未知时 null。 |
+| matches | 是 | array <[AlertReviewMatch](schemas.md#alertreviewmatch)> | 无（可空不等于可省略） | 全部匹配对象对及具体依据，按双方对象 ID 排序，不将条数当作恶意分数。 |
+| incident_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 候选当前所属事件 ID；可由 E29 回查。 |
+| case_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 候选当前所属 Case ID；可由 E03 回查，本查询不增删成员。 |
+
+
+<a id="alertreviewmatch"></a>
+
+## AlertReviewMatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| rule | 是 | string same_host_and_tactic, same_ip, same_hash_algorithm_and_value | 无（可空不等于可省略） | 同主机且同战术，或同IP，或同明确算法哈希；仅是人工复核依据。 |
+| seed | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 起点当前材料中实际参与匹配的对象。 |
+| candidate | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 候选当前材料中实际参与匹配的对象，保留原件 ID/值/字段路径。 |
+| shared_tactics | 是 | array <[AlertReviewTactic](schemas.md#alertreviewtactic)> | 无（可空不等于可省略） | 同主机规则必有共同检测战术及双方来源；IP/哈希规则为空数组。 |
+
+
+<a id="alertreviewpage"></a>
+
+## AlertReviewPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[AlertReviewCandidate](schemas.md#alertreviewcandidate)> | 无（可空不等于可省略） | 按event_time倒序、alert.id倒序的当前页；空数组仅表示该范围无匹配。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 完整时间范围去重后的候选告警数，不受分页影响。 |
+| next_cursor | 是 | string / null | 无（可空不等于可省略） | 相同起点与窗口下一页，null结束；起点材料或范围变化409，坏游标422。 |
+| scope | 是 | [AlertReviewScope](schemas.md#alertreviewscope) | 无（可空不等于可省略） | 本次实际起点、时间窗与不可用规则。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 单次只读一致快照的数据库时间；跨请求不冻结候选集合。 |
+
+
+<a id="alertreviewscope"></a>
+
+## AlertReviewScope
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| source_alert_id | 是 | string (uuid) | 无（可空不等于可省略） | 本次复核起点告警 ID；结果排除它自身。 |
+| source_material_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 实际读取的起点 latest_material_id；没有材料时 null。 |
+| source_event_time | 是 | string (date-time) / null | 无（可空不等于可省略） | 起点真实发生时间，未知为 null，不用入库时间代替。 |
+| source_namespace | 是 | string | 无（可空不等于可省略） | 起点告警来源范围，候选必须完全相同；对象 namespace 另逐对核对。 |
+| time_from | 是 | string (date-time) | 无（可空不等于可省略） | 实际候选事件时间下界，包含。 |
+| time_to | 是 | string (date-time) | 无（可空不等于可省略） | 实际候选事件时间上界，不包含。 |
+| window_basis | 是 | string seed_lookback, explicit | 无（可空不等于可省略） | 默认回看配置30天至起点发生时刻；explicit为调用方明确范围，可包含起点之后的记录。 |
+| unavailable_rules | 是 | array <string same_host_and_tactic, same_ip, same_hash_algorithm_and_value> | 无（可空不等于可省略） | 起点缺少所需对象或有效战术时列出无法使用的规则；不是查询失败。 |
+| excluded_objects | 是 | array <[ExplorationExcludedObject](schemas.md#explorationexcludedobject)> | 无（可空不等于可省略） | 不支持对象及算法/格式非法hash，不把这些对象当作可匹配线索。 |
+
+
+<a id="alertreviewtactic"></a>
+
+## AlertReviewTactic
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| label | 是 | string | 无（可空不等于可省略） | 双方 detection.tactics 中完全相同的非空原标签；不是已确认的攻击行为。 |
+| seed_source_paths | 是 | array <string> | 无（可空不等于可省略） | 起点材料中的 $.detection.tactics[index] 路径，保留重复标签各位置。 |
+| candidate_source_paths | 是 | array <string> | 无（可空不等于可省略） | 候选材料中的同标签数组路径；材料 ID 见所属 match.candidate.material_id。 |
 
 
 <a id="alertstatus"></a>
@@ -427,7 +546,7 @@ string unassigned, assigned, unresolved
 | case_id | 是 | string (uuid) | 无（可空不等于可省略） | 评论所属Case；不因共享告警混入其他案件。 |
 | body | 是 | string | 无（可空不等于可省略） | 完整普通评论原文；调用方按纯文本显示，不作为已核实事实。 |
 | author_id | 是 | string (uuid) | 无（可空不等于可省略） | 认证用户的实际作者ID，由服务端保存。 |
-| author_name_snapshot | 是 | string | 无（可空不等于可省略） | 提交时作者显示名快照，不随人员目录后续改名而改写。 当前认证适配以登录邮箱作为作者名称保存。 |
+| author_name_snapshot | 是 | string | 无（可空不等于可省略） | 提交时作者显示名快照，不随人员目录后续改名而改写。 当前可信适配按服务配置的actor_name保存作者名称，不表示认证过实际操作者。 |
 | created_at | 是 | string (date-time) | 无（可空不等于可省略） | 服务端保存时间。 |
 | edited_at | 是 | string (date-time) / null | 无（可空不等于可省略） | 历史记录的实际编辑时间；本接口只追加，不提供编辑，新增为null。 |
 | edited_by | 是 | string (uuid) / null | 无（可空不等于可省略） | 历史记录的实际编辑人；新增评论为null。 |
@@ -902,6 +1021,192 @@ string true_positive, false_positive, benign, needs_review
 | content | 是 | object / null | 无（可空不等于可省略） | 可用时的已保存结构化正文；不可用时null，按具体工件schema版本解释。 [完整语义](/handoff/audit/response-fields.html#explanationview) |
 
 
+<a id="explorationbase"></a>
+
+## ExplorationBase
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| kind | 是 | string members, investigation | 无（可空不等于可省略） | members 为无完成调查时的成员关系；investigation 为指定完成调查。 |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 底图所属案件。 |
+| run_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 固定的已完成基础调查 ID；成员底图为 null。 |
+| result_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 该调查的基础结果 ID；缺结果为 null。 |
+| graph_artifact_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 该结果关联的图原件 ID；结果未关联图时 null；已有引用但内容不可用时保留 ID，查看 graph_state。 |
+| scope_revision | 是 | integer | 无（可空不等于可省略） | 底图成员范围版本；调查图使用该 Run 的版本。 |
+| delivery_state | 是 | string / null | 无（可空不等于可省略） | 原调查交付状态，partial 保留；成员图为 null。 |
+| graph_state | 是 | string | 无（可空不等于可省略） | members 或原图材料状态；缺图为 unavailable，不能借用其他轮图。 |
+| graph | 是 | [JsonValue](schemas.md#jsonvalue) | 无（可空不等于可省略） | 原调查图 JSON 原样保留；成员底图或缺图时为 null。 |
+| sources | 是 | [ExplorationSources](schemas.md#explorationsources) | 无（可空不等于可省略） | 成员或 Run 成员的告警与指定材料对象；图原文仍以 graph 为准。 |
+| fingerprint | 是 | string | 无（可空不等于可省略） | 当前返回内容的摘要；首次保存/重置原样送回，来源变化返回409。 |
+
+
+<a id="explorationcandidate"></a>
+
+## ExplorationCandidate
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| alert | 是 | [AlertFacts](schemas.md#alertfacts) | 无（可空不等于可省略） | 原告警事实DTO；E28按alert.id回查。 |
+| shared_object_count | 是 | integer; minimum=1.0 | 无（可空不等于可省略） | 去重后的共享对象数，重复来源路径不重复计数。 |
+| time_delta_seconds | 否 | number; minimum=0.0 / null | 无（可空不等于可省略） | 候选距任一匹配起点告警已知event_time的最短秒数；起点时间全未知为null。 |
+| already_in_case | 是 | boolean | 无（可空不等于可省略） | 该告警当前是否已为本案正式成员；展开/预览不会加入。 |
+| case_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 该告警当前所属Case ID，保留其他案件归属。 |
+| incident_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 该告警当前所属事件ID。 |
+| matches | 是 | array <[ExplorationMatch](schemas.md#explorationmatch)> | 无（可空不等于可省略） | 所有匹配对象对及原始材料依据；按对象ID稳定排序。 |
+
+
+<a id="explorationexcludedobject"></a>
+
+## ExplorationExcludedObject
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| object_id | 是 | string (uuid) | 无（可空不等于可省略） | 未参与匹配的起点对象UUID。 |
+| reason | 是 | string unsupported_object_type, hash_algorithm_or_value_invalid | 无（可空不等于可省略） | unsupported_object_type为本批不支持类型；hash_algorithm_or_value_invalid为未给/不支持算法或哈希格式不合法。 |
+
+
+<a id="explorationlinkinput"></a>
+
+## ExplorationLinkInput
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| seed_object_id | 是 | string (uuid) | 无（可空不等于可省略） | E66 matches.seed.id；必须连到当前底图或前序展开告警。 |
+| candidate_object_id | 是 | string (uuid) | 无（可空不等于可省略） | E66 matches.candidate.id；按实际保存对象版本核对，不要求仍是最新材料。 |
+
+
+<a id="explorationmatch"></a>
+
+## ExplorationMatch
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| basis | 是 | string same_source_value, same_hash_algorithm_and_value | 无（可空不等于可省略） | 前者为同来源同类型值，后者还核对明确哈希算法和格式；均不证明攻击因果。 |
+| seed | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 起点中的实际对象记录。 |
+| candidate | 是 | [ExplorationObject](schemas.md#explorationobject) | 无（可空不等于可省略） | 候选告警中的实际匹配对象记录。 |
+
+
+<a id="explorationobject"></a>
+
+## ExplorationObject
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | alert_objects原对象ID，可作为下一次object_id；不是图内部节点ID。 |
+| alert_id | 是 | string (uuid) | 无（可空不等于可省略） | 此对象所属的原告警UUID。 |
+| material_id | 是 | string (uuid) | 无（可空不等于可省略） | 匹配时的最新材料ID；E31按此版本回查原文。 |
+| object_type | 是 | string | 无（可空不等于可省略） | 原对象类型；本接口匹配host/user/ip/domain/url/hash。 |
+| namespace | 是 | string | 无（可空不等于可省略） | 原对象身份范围；本次双方必须完全相同，不表示统一资产身份。 |
+| object_key | 是 | string | 无（可空不等于可省略） | 原对象键，未改写。 |
+| raw_value | 是 | string | 无（可空不等于可省略） | 收到的原对象值。 |
+| normalized_value | 是 | string | 无（可空不等于可省略） | 原存储值；普通类型按此值精确比较，不追加模糊或别名归并。 |
+| source_path | 是 | string | 无（可空不等于可省略） | 对应材料中实际来源字段路径。 |
+| algorithm | 否 | string / null | 无（可空不等于可省略） | hash的明确算法按MD5/SHA1/SHA256/SHA512规范显示；其他类型null。原属性在原对象/材料读取。 |
+
+
+<a id="explorationpage"></a>
+
+## ExplorationPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[ExplorationCandidate](schemas.md#explorationcandidate)> | 无（可空不等于可省略） | 本页去重候选告警；按共享对象数降序、匹配起点时间差升序、告警ID升序。 |
+| total | 是 | integer; minimum=0.0 | 无（可空不等于可省略） | 整个查询范围命中告警数；SQL先去重统计再分页。 |
+| next_cursor | 是 | string / null | 无（可空不等于可省略） | 相同查询下一页；null结束。起点或范围变化409，需重新查询。 |
+| scope | 是 | [ExplorationScope](schemas.md#explorationscope) | 无（可空不等于可省略） | 本次实际起点、事件时间范围、案件成员版本与排除对象说明。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本请求同一只读数据库快照的观察时间；不保证跨请求快照不变。 |
+
+
+<a id="explorationsave"></a>
+
+## ExplorationSave
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| operation_key | 是 | string (uuid) | 无（可空不等于可省略） | 本次保存幂等键；相同用户/请求重试返回原快照，改请求409。 |
+| expected_snapshot_id | 是 | string (uuid) / null | 无（可空不等于可省略） | 最近读到的保存 ID，首次必须明确 null；并发变化409。 |
+| base_snapshot_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 继续已存探索时填该快照 ID，固定复制其底图；首次或重置为 null。 |
+| base_run_id | 否 | string (uuid) / null | 无（可空不等于可省略） | 首次/重置的底图 Run ID；成员图为 null；复制快照时不可填。 |
+| base_fingerprint | 否 | string; pattern=^[0-9a-f]{64}$ / null | 无（可空不等于可省略） | 首次/重置必填 GET 底图指纹；复制快照时不可填。 |
+| expanded_links | 是 | array <[ExplorationLinkInput](schemas.md#explorationlinkinput)> | 无（可空不等于可省略） | 按展开先后排列的所有保留关系；撤销需去除后续悬空分支。 |
+| view_state | 是 | object | 无（可空不等于可省略） | 客户端画布位置、选择、隐藏、视角等 JSON，原样保存返回；不当作业务事实或成员。 |
+
+
+<a id="explorationsaved"></a>
+
+## ExplorationSaved
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| snapshot | 是 | [ExplorationSnapshot](schemas.md#explorationsnapshot) / null | 无（可空不等于可省略） | 本案最近一次保存；从未保存时 null，不能伪装成空图。 |
+
+
+<a id="explorationscope"></a>
+
+## ExplorationScope
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| seed_kind | 是 | string case, alert, object | 无（可空不等于可省略） | case为当前成员起点，alert为指定告警，object为指定当前材料对象。 |
+| seed_alert_ids | 是 | array <string (uuid)> | 无（可空不等于可省略） | 本次实际查询起点告警；候选不重复返回这些告警。 |
+| source_namespace | 是 | string / null | 无（可空不等于可省略） | Case绑定的告警来源范围，候选必须相同。 |
+| case_scope_revision | 是 | integer | 无（可空不等于可省略） | 本次读取的Case成员范围版本；变化时旧游标409。 |
+| time_from | 是 | string (date-time) / null | 无（可空不等于可省略） | 实际事件时间起点，包含；无起点且未指定窗口时null。 |
+| time_to | 是 | string (date-time) / null | 无（可空不等于可省略） | 实际事件时间终点，不包含；无起点且未指定窗口时null。 |
+| window_basis | 是 | string explicit, seed_event_times, no_seeds | 无（可空不等于可省略） | explicit为调用方明确窗口；seed_event_times为实际起点时间加配置窗口；no_seeds为无可用起点。 |
+| excluded_objects | 是 | array <[ExplorationExcludedObject](schemas.md#explorationexcludedobject)> | 无（可空不等于可省略） | 多对象起点中未参与查询的对象和原因；不悄悄当作无关联。 |
+
+
+<a id="explorationsnapshot"></a>
+
+## ExplorationSnapshot
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string (uuid) | 无（可空不等于可省略） | 不可变探索保存 ID；下一次保存作为 expected_snapshot_id。 |
+| case_id | 是 | string (uuid) | 无（可空不等于可省略） | 所属案件 ID。 |
+| created_at | 是 | string (date-time) | 无（可空不等于可省略） | 数据库保存时间。 |
+| created_by | 是 | string (uuid) | 无（可空不等于可省略） | 实际保存用户 ID。 |
+| base | 是 | [ExplorationBase](schemas.md#explorationbase) | 无（可空不等于可省略） | 固定的底图内容及来源，新结果不会替换。 |
+| expanded_links | 是 | array <[ExplorationMatch](schemas.md#explorationmatch)> | 无（可空不等于可省略） | 经真实对象核对的共有对象关系；不表示攻击因果。 |
+| expanded_sources | 是 | [ExplorationSources](schemas.md#explorationsources) | 无（可空不等于可省略） | 展开告警及其匹配材料对象快照；已保存记录继续沿用原内容。 |
+| view_state | 是 | object | 无（可空不等于可省略） | 客户端保存的展示状态原样返回。 |
+
+
+<a id="explorationsources"></a>
+
+## ExplorationSources
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| alerts | 是 | array <[AlertFacts](schemas.md#alertfacts)> | 无（可空不等于可省略） | 保存时的告警事实；继续旧快照保留原值，不代表实时状态。 |
+| objects | 是 | array <[ExplorationObject](schemas.md#explorationobject)> | 无（可空不等于可省略） | 对应明确材料版本的原始对象；保留原件 ID 和字段路径。 |
+
+
 <a id="feedbackfields"></a>
 
 ## FeedbackFields
@@ -1100,6 +1405,14 @@ string true_positive, false_positive, benign, needs_review
 | severity_override_reason | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 设置人工等级覆盖必填理由；须与severity_override一起提交。 |
 | resolution_note | 否 | string; minLength=1; maxLength=20000 / null | 无（可空不等于可省略） | 将事件改为resolved必填；须与handling_status=resolved一起提交。 |
 
+
+<a id="jsonvalue"></a>
+
+## JsonValue
+
+
+
+object
 
 <a id="memberchange"></a>
 
@@ -1643,6 +1956,39 @@ string info, low, medium, high, critical
 | --- | --- | --- | --- | --- |
 | can_start | 是 | boolean | 无（可空不等于可省略） | 服务给出的启动资格，不由前端从状态猜测。 [完整语义](/handoff/audit/response-fields.html#startavailability) |
 | reason | 是 | string ready, not_pending, resolved_case, scope_changed, empty_scope, baseline_active | 无（可空不等于可省略） | 服务返回原因；不代表adopt已有reason请求参数。 [完整语义](/handoff/audit/response-fields.html#startavailability) |
+
+
+<a id="storyentry"></a>
+
+## StoryEntry
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| id | 是 | string | 无（可空不等于可省略） | 稳定条目键：alert/investigation/human_result加源记录UUID。 |
+| kind | 是 | string alert, investigation, human_result | 无（可空不等于可省略） | 告警事实、基础调查或人工完成修订；不包含AI对话。 |
+| occurred_at | 是 | string (date-time) / null | 无（可空不等于可省略） | 该条目的实际业务时间；未知为null并排在最后，不以读取时间补齐。 |
+| time_source | 是 | string event_time, started_at, ended_at, completed_at, unknown | 无（可空不等于可省略） | occurred_at对应的源时间字段；缺失为unknown。 |
+| alert | 否 | [AlertFacts](schemas.md#alertfacts) / null | 无（可空不等于可省略） | 告警条目复用原告警事实合同；其他类型为null。E28按id回查，战术/库存用E31/E30。 |
+| run | 否 | [RunView](schemas.md#runview) / null | 无（可空不等于可省略） | 调查条目的原Run；其他类型为null。E12按case_id/id回查。 |
+| results | 否 | array <[ResultView](schemas.md#resultview)> | 无（可空不等于可省略） | 终态Run已保存的baseline结果，按saved_at/id升序；活跃或无结果为空，不代表没有风险。E14按结果id回查。 |
+| task_revision | 否 | [TaskRevisionView](schemas.md#taskrevisionview) / null | 无（可空不等于可省略） | 人工完成条目的不可变原修订；其他类型为null。E43按case/task/revision回查。 |
+| is_current_task_revision | 否 | boolean / null | 无（可空不等于可省略） | 此完成修订是否仍为任务当前修订；false仍保留历史事实，不能据此判断当前待办。其他类型为null。 |
+
+
+<a id="storypage"></a>
+
+## StoryPage
+
+
+
+| 字段 | OpenAPI required | 类型与约束 | 默认值 | 含义 |
+| --- | --- | --- | --- | --- |
+| items | 是 | array <[StoryEntry](schemas.md#storyentry)> | 无（可空不等于可省略） | 本页故事条目；按真实时间倒序、未知时间最后，同时间按稳定id倒序。 |
+| total | 是 | integer | 无（可空不等于可省略） | 整个Case内筛选命中的故事条目数，不是当前页数或告警数。 |
+| next_cursor | 是 | string / null | 无（可空不等于可省略） | 原样用于相同Case和筛选的下一页；null结束，条件改变须清空。 |
+| observed_at | 是 | string (date-time) | 无（可空不等于可省略） | 本次数据库读取时间；每请求一致快照，跨页源数据变化后应刷新。 |
 
 
 <a id="subjectbatchreceipt"></a>

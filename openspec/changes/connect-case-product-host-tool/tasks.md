@@ -2,4 +2,4 @@
 - [x] Execute and normalize the existing Actions host read into Case evidence and reports.
 - [x] Verify normal, empty and failed reads with direct examples; document the actual tested boundary.
 
-Evidence: `docs/investigation/product-host-tool-20261028.md`. API examples: 2 passed (including empty/failure subcases); vendor HTTP mapping: 3 passed; affected existing Case examples: 7 passed. Real dependencies remain unverified. OpenSpec CLI is unavailable in this shell; strict validation and archival were not performed.
+Evidence: [docs/investigation/product-host-tool-20261028.md](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/product-host-tool-20261028.md). API examples: 2 passed (including empty/failure subcases); vendor HTTP mapping: 3 passed; affected existing Case examples: 7 passed. Real dependencies remain unverified. OpenSpec CLI is unavailable in this shell; strict validation and archival were not performed.

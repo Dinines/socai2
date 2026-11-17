@@ -37,10 +37,28 @@ class RecordingConn:
         # What `SELECT DISTINCT tenant_id` returns. asyncpg hands back
         # mapping-like Records, so a dict is the honest stand-in.
         self._tenants = tenants if tenants is not None else []
+        self.tenant_context = None
+        self.in_transaction = False
+
+    @asynccontextmanager
+    async def transaction(self):
+        assert not self.in_transaction
+        self.in_transaction = True
+        try:
+            yield
+        finally:
+            self.tenant_context = None
+            self.in_transaction = False
 
     async def execute(self, sql: str, *args):
         if self._fail is not None:
             raise self._fail
+        if "set_config('app.current_tenant_id'" in sql:
+            assert self.in_transaction
+            self.tenant_context = args[0]
+        elif "INSERT INTO sessions" in sql or "UPDATE sessions" in sql:
+            tenant = args[1] if "INSERT INTO sessions" in sql else args[0]
+            assert self.in_transaction and self.tenant_context == str(tenant)
         self.calls.append((sql, args))
         return "INSERT 0 1"
 
@@ -101,6 +119,7 @@ async def test_a_vendor_session_is_upserted_with_its_kind():
     assert args[3] == "vendor_credential"
     assert json.loads(args[10]) == ["human"]
     assert json.loads(args[11]) == ["203.0.113.10"]
+    assert conn.tenant_context is None and not conn.in_transaction
 
 
 @pytest.mark.asyncio
@@ -225,6 +244,7 @@ async def test_an_unreachable_store_degrades_the_alert_and_does_not_block_it():
     store = SessionStore(RecordingPool(conn))
 
     assert await store.record_event(TENANT, event({"key": "s1", "key_kind": "vendor_session"})) is None
+    assert conn.tenant_context is None and not conn.in_transaction
 
 
 @pytest.mark.asyncio
@@ -262,6 +282,7 @@ async def test_the_idle_sweep_never_issues_an_update_without_a_tenant():
     for sql, _ in updates:
         assert "tenant_id = $1" in sql
     assert closed == 2
+    assert conn.tenant_context is None and not conn.in_transaction
 
 
 @pytest.mark.asyncio

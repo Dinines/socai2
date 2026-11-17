@@ -99,7 +99,14 @@ def source_members(context, ref, tool_payloads):
     if len(path) > 2 and path[1] == "alerts":
         return sorted(members & {path[2]})
     if len(path) > 2 and path[1] == "incidents":
-        return list(map(str, context.incidents[path[2]].case_member_ids))
+        item = context.incidents[path[2]]
+        if len(path) > 3 and path[3] == "analysis_material":
+            from .case_incident_material import source_members as material_members
+            return material_members(item.analysis_material, ref["source_path"], members)
+        if len(path) > 3 and path[3] == "diagnosis":
+            from .case_incident_scope import source_members as diagnosis_members
+            return diagnosis_members(item, ref["source_path"], members)
+        return list(map(str, item.case_member_ids))
     if len(path) > 2 and path[1] in {"tasks", "adopted_task_revisions"}:
         revision = (context.tasks[path[2]].revision if path[1] == "tasks"
                     else context.adopted_task_revisions[path[2]])

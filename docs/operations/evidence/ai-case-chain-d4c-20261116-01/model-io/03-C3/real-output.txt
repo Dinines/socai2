@@ -1,0 +1,171 @@
+{
+  "summary": "本案包含 svc-app-bc3b4605 在 host-app-3f979d56 上的登录、进程启动及两次网络流量记录，时间跨度约 25 分钟，所有告警等级均为 Informational，当前综合等级为中，但缺乏人工确认、资产库存及威胁情报支持，无法直接定性为恶意或正常业务。",
+  "members": [
+    {
+      "alert_id": "A1",
+      "state": "unresolved",
+      "summary": "记录 svc-app-bc3b4605 于 05:40:12 从 192.0.2.81 成功登录 host-app-3f979d56，会话 ID 已生成，原始等级为 Informational，缺乏人工确认是否为预期行为。",
+      "evidence_ids": ["N2_S10", "N2_S11", "N2_S12", "N2_S13", "N2_S14", "N2_S25", "N2_S51", "N2_S55", "N2_S239"],
+      "limitations": ["缺乏人工陈述或上游分析确认该登录是否为预期业务行为", "无资产库存或威胁情报佐证", "无历史告警或行为基线对比"]
+    },
+    {
+      "alert_id": "A2",
+      "state": "unresolved",
+      "summary": "记录 svc-app-bc3b4605 于 05:46:12 在 host-app-3f979d56 上启动 curl 进程，目标为 198.51.100.81 的/status 接口，原始等级为 Informational，仅证明进程启动未证明命令执行结果。",
+      "evidence_ids": ["N2_S57", "N2_S58", "N2_S59", "N2_S62", "N2_S63", "N2_S76", "N2_S106", "N2_S110"],
+      "limitations": ["仅记录进程启动，未证明命令完成或数据读取", "无资产库存或威胁情报佐证", "无父进程上下文或行为基线"]
+    },
+    {
+      "alert_id": "A3",
+      "state": "unresolved",
+      "summary": "记录 host-app-3f979d56 于 06:05:12 向 198.51.100.81:443 发起 TCP 流量，源 IP 192.0.2.81，原始等级为 Informational，动作结果未知，无法确认是否对应 curl 命令执行。",
+      "evidence_ids": ["N2_S112", "N2_S113", "N2_S114", "N2_S119", "N2_S124", "N2_S130", "N2_S132", "N2_S170", "N2_S174"],
+      "limitations": ["动作结果标记为未知", "无法直接关联至 A2 的 curl 命令执行", "无资产库存或威胁情报佐证"]
+    },
+    {
+      "alert_id": "A4",
+      "state": "unresolved",
+      "summary": "记录 host-app-3f979d56 于 05:50:12 向 198.51.100.81:443 发起 TCP 流量，源 IP 192.0.2.81，原始等级为 Informational，动作结果未知，时间早于 A2 进程启动，关联性存疑。",
+      "evidence_ids": ["N2_S176", "N2_S177", "N2_S178", "N2_S183", "N2_S188", "N2_S194", "N2_S196", "N2_S234", "N2_S238"],
+      "limitations": ["动作结果标记为未知", "时间早于 A2 进程启动，可能为独立事件或预连接", "无资产库存或威胁情报佐证"]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "state": "observed",
+      "alert_ids": ["A1"],
+      "support_ids": ["N2_S10", "N2_S11", "N2_S12", "N2_S13", "N2_S14", "N2_S25", "N2_S51"],
+      "counter_ids": [],
+      "alternatives": ["可能是预期的服务间认证登录", "可能是异常凭证被盗用登录"],
+      "limitations": ["缺乏人工确认授权状态", "缺乏资产基线判断是否异常"]
+    },
+    {
+      "id": "F2",
+      "state": "observed",
+      "alert_ids": ["A2"],
+      "support_ids": ["N2_S57", "N2_S58", "N2_S59", "N2_S62", "N2_S63", "N2_S76"],
+      "counter_ids": [],
+      "alternatives": ["可能是正常的健康检查或数据拉取", "可能是恶意侦察或 C2 通信尝试"],
+      "limitations": ["仅证明进程启动，未证明命令执行结果", "无法确认目标 IP 安全性"]
+    },
+    {
+      "id": "F3",
+      "state": "inferred",
+      "statement": "A2 的 curl 命令与 A3/A4 的网络流量可能存在时序关联，但 A4 时间早于 A2，A3 时间晚于 A2，无法确证因果链条。",
+      "alert_ids": ["A2", "A3", "A4"],
+      "support_ids": ["N2_S57", "N2_S112", "N2_S176"],
+      "counter_ids": ["N2_S176"],
+      "alternatives": ["A4 可能是独立的定时任务或遗留连接", "A3 可能是 curl 命令执行后的流量"],
+      "limitations": ["缺乏应用层日志关联", "无法确认流量内容"]
+    }
+  ],
+  "questions": [
+    {
+      "id": "detection_facts",
+      "state": "answered",
+      "answer": "已确认 svc-app-bc3b4605 在 host-app-3f979d56 上的登录、curl 进程启动及两次向 198.51.100.81 的 TCP 流量，具体见 members 及 findings 中的 evidence_ids。",
+      "evidence_ids": ["N2_S10", "N2_S11", "N2_S12", "N2_S13", "N2_S14", "N2_S57", "N2_S58", "N2_S59", "N2_S62", "N2_S63", "N2_S112", "N2_S113", "N2_S114", "N2_S176", "N2_S177", "N2_S178"]
+    ,
+    "limitations": ["无资产库存、威胁情报、历史告警或行为分析数据支持定性"]
+    },
+    {
+      "id": "member_relationships",
+      "state": "answered",
+      "answer": "A1 与 A2 存在同一账号同一主机的时序关联；A2 与 A3 存在目标 IP 和时序上的潜在关联，但 A4 时间早于 A2，关联性不明确。",
+      "evidence_ids": ["N2_S11", "N2_S58", "N2_S113", "N2_S177", "N2_S130", "N2_S194"]
+    ,
+      "limitations": ["无法确证 A4 与 A2/A3 的因果", "无法确证 A3 与 A2 的因果"]
+    },
+    {
+      "id": "behavior_nature",
+      "state": "unresolved",
+      "answer": "当前无法定性为恶意、正常或误操作，所有告警等级均为 Informational，且缺乏人工确认和外部情报。",
+      "evidence_ids": ["N2_S19", "N2_S71", "N2_S125", "N2_S189"]
+    ,
+      "limitations": ["标签不证明行为性质", "缺乏基线对比", "缺乏人工反馈"]
+    },
+    {
+      "id": "authorization",
+      "state": "unresolved",
+      "answer": "无明确授权材料，未提供人工确认或审批记录，不能推断为未授权或已授权。",
+      "evidence_ids": []
+    ,
+      "limitations": ["未提供不等于不存在", "需人工补充确认"]
+    },
+    {
+      "id": "impact",
+      "state": "unresolved",
+      "answer": "观察到登录成功和进程启动，但未观察到数据外传、配置修改或业务损失，影响范围未知。",
+      "evidence_ids": ["N2_S14", "N2_S67"]
+    ,
+      "limitations": ["仅命令内容不证明效果", "无业务结果确认", "无数据流向确认"]
+    }
+  ],
+  "domains": [
+    {
+      "name": "identity",
+      "applicability": "applicable",
+      "reason": "涉及账号登录、会话生成及源 IP 认证，需核实验证登录是否预期。",
+      "alert_ids": ["A1"],
+      "finding_ids": ["F1"],
+      "limitations": ["缺乏身份基线", "缺乏人工确认"]
+    },
+    {
+      "name": "cloud",
+      "applicability": "applicable",
+      "reason": "涉及主机资源、进程活动及网络配置，需核实资源归属及进程合法性。",
+      "alert_ids": ["A2", "A3", "A4"],
+      "finding_ids": ["F2", "F3"],
+      "limitations": ["无资产库存", "无配置基线"]
+    },
+    {
+      "name": "phishing",
+      "applicability": "not_applicable",
+      "reason": "无邮件、链接或附件相关记录，不涉及钓鱼场景。",
+      "alert_ids": [],
+      "finding_ids": []
+    ,
+      "limitations": ["无相关数据"]
+    },
+    {
+      "name": "insider",
+      "applicability": "applicable",
+      "reason": "涉及服务账号的数据访问意图（curl 请求），需核实是否越权或异常外传。",
+      "alert_ids": ["A2", "A3", "A4"],
+      "finding_ids": ["F2", "F3"],
+      "limitations": ["无法确认数据内容", "无法确认访问目的"]
+    }
+  ],
+  "conflicts": [],
+  "followups": [
+    {
+      "question_id": "authorization",
+      "alert_ids": ["A1", "A2", "A3", "A4"],
+      "mode": "human",
+      "objective": "确认 svc-app-bc3b4605 登录 host-app-3f979d56 及访问 198.51.100.81 是否为预期业务行为，获取人工授权确认或排除依据。",
+      "required_evidence": "人工陈述、审批记录、业务文档或运维日志确认",
+      "source_ids": []
+    ,
+      "object_keys": ["O1", "O2", "O3", "O4"]
+    ,
+      "binding_id": null
+    ,
+      "priority": "decision_critical"
+    },
+    {
+      "question_id": "impact",
+      "alert_ids": ["A2", "A3", "A4"],
+      "mode": "deep",
+      "objective": "核实 curl 命令是否成功执行并获取数据，确认是否有数据外传或配置修改。",
+      "required_evidence": "应用层日志、网络包捕获内容、目标服务器响应记录",
+      "source_ids": []
+    ,
+      "object_keys": ["O2", "O3"]
+    ,
+      "binding_id": null
+    ,
+      "priority": "supporting"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+--- docs/investigation/case-knowledge-handoff.md (before)
++++ docs/investigation/case-knowledge-handoff.md
+@@ -1,8 +1,8 @@
+ # Case 知识检索与使用交接
+ 
+-更新于 2026-11-12。本功能由 C2 执行检索；C3、Deep、C6 消费对应 Run 的冻结片段。用途／条件筛选、模型去重和按任务选取已随 21 `v1.2-20261112-r3` 发布并读回，见[前批用途筛选验收](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)及 [PROGRESS](../../PROGRESS.md)。
++更新于 2026-11-13。本功能由 C2 执行检索；C3、Deep、C6 消费对应 Run 的冻结片段。用途／条件筛选、模型去重和按任务选取已随 21 `v1.2-20261112-r3` 发布并读回，见[前批用途筛选验收](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/validation.md)及 [PROGRESS](../../PROGRESS.md)。
+ 
+-当前 r5 的分诊后同步及本地／生产证据边界由[历史知识交接](historical-alert-knowledge-handoff.md)补充，与技术解释／取证指导共用存储，通过目的标签及适用条件隔离选择；不需要为每个用途新建物理知识库。
++当前核心`v1.2-20261113-r1`已发布按任务整理的知识输入与新导入完整JSON分块，见[核心回执](../operations/evidence/fixed-investigation-release-20261113-01/README.md)；独立HTTP同步状态以PROGRESS为准。沿用原r5分诊后同步，其本地／生产证据边界由[历史知识交接](historical-alert-knowledge-handoff.md)补充，与技术解释／取证指导共用存储，通过目的标签及适用条件隔离选择；不需要为每个用途新建物理知识库。
+ 
+ ## 输入、检索与消费
+ 
+@@ -10,19 +10,22 @@
+ | --- | --- | --- |
+ | C2 技术解释 | 冻结材料中的命令、进程、动作；标题/规则明确标为 source_label；使用 technical_explanation 模板、资料类型与目的标签 | 技术功能、适用条件及解释边界的片段；不证明本案发生、恶意或授权 |
+ | C2 取证指导 | 同一冻结材料，使用 investigation_guidance 模板及独立类型/标签过滤 | 日志、字段、上下文及验证方法片段；模型建议仍只能用当前合法候选执行 |
+-| C3 | 本轮检索片段、用途、原文引用及真实来源状态 | 有依据的解释、未知与最多两项补查；引用不等于合理使用 |
++| C2 历史案例参考 | 冻结事件时间、主题、排除本案成员，按historical_case_reference独立筛选 | 原历史范围内的观察、判断和人工原文，不能证明本案事实 |
++| C3 | 按当前问题选取本轮片段及必要原文引用 | 有依据的解释、未知与最多两项补查；引用不等于合理使用 |
+ | Deep | 当前问题与依赖可见的本轮片段 | 回答、交接或合法候选选择；本次不新增动态再检索 |
+-| C6 | 本轮材料、知识用途、前序结果及真实执行回执 | 结论/建议和引用；失败结论保持未采用，知识不成为独立案件观察 |
++| C6 | 必要事实、对应业务问题的知识、有效前序及其依据；工具只给业务结果 | 结论/建议和引用；失败结论保持未采用，知识不成为独立案件观察 |
+ 
+ 已部署的[用途筛选与任务选取](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)：每个有主题的成员三个目的，相同目的／文本／命名空间／过滤范围与适用字段合并，最多 12 条查询；每次最多获取 8 个候选，技术／方法最多各 2 块，历史最多 1 卡，余弦阈值保持 0.45。相似度只排序候选，不能绕过适用条件。C2 复用原工具额度与来源排序，不循环补搜；无主题、未接入、未查、原始查空、全部筛除、失败分别记录。
+ 
+ 文档沿原入口使用 `knowledge:<目的>` 与 `applies:<字段语义键>=<值>` 标签。例如 `applies:ocsf.process.name=powershell.exe`，路径与规范化由 profile 定义。至少一个主题条件匹配且无冲突；声明条件缺失时排除，明确带 `applicability:generic` 的技术／方法资料可保留未知条件，但仍须主题匹配且无冲突。旧文档不自动改标，仍可直接读回。
+ 
+-C3／Deep／C6 按块身份和内容版本去重，原检索行保持；`source_map[].knowledge.origins` 记录所有原路径和用途。Deep 的可选目的为取证指导／历史参考，按问题成员与原查询主题映射选取，历史空成员范围不代表全案通用；前序引用的卡片及其分诊／反馈原角色优先恢复。C6 只补未决问题的可选知识。知识上限分别为 12,000／8,000／8,000 字符，预算不足省略整条可选内容，不裁正文；必要依赖仍受现有整体输入上限约束。
++C3／Deep／C6 按块身份和内容版本去重，原检索行保持；`source_map[].knowledge.origins` 记录所有原路径和用途。Deep 的可选目的为取证指导／历史参考，按问题成员与原查询主题映射选取，历史空成员范围不代表全案通用；前序引用的卡片及其分诊／反馈原角色优先恢复。C6按同一业务问题的用途和原成员选择未决问题的可选知识；Deep/C6授权问题默认不追加可选知识，前序必要引用仍恢复。知识上限分别为 12,000／8,000／8,000 字符，预算不足省略整条可选内容，不裁正文；必要依赖仍受现有整体输入上限约束。
+ 
+-本地固定流程修复（尚未发布）：已选知识按查询适用成员作辅助参考，所有知识都不计入本案成员/结论/影响覆盖；C3/C6 接收和纠错一致。合并条目的目的与成员范围须来自同一 origin，必要前序引用依赖保留。一次新批知识原引用已保存并由 GET 读回，但 C6 仍因建议缺依据拒收，生成 Schema 已补齐最少一个来源；合理使用和整体固定流程尚未通过。见[固定流程验证](../../openspec/changes/complete-socai2-investigation-chain/fixed-flow-validation-20261112.md)。
++固定流程知识筛选和接收修复已随核心r1发布：已选知识按适用成员作参考，不计本案成员/结论/影响的直接观察覆盖；C3/C6接收与纠错一致。合并条目的目的、成员范围来自同一origin，必要前序引用依赖保留。[05批](../operations/evidence/fixed-investigation-20261112-05/README.md)已有实际导入/索引、知识引用保存读取，C6拒收原答不追认；[10批](../operations/evidence/fixed-investigation-20261113-10/README.md)已保存并采用C6，但知识合理使用仍未通过。
+ 
+-本地知识正文整理（尚未发布）：新导入的完整 JSON 对象/数组保留一个原文块，普通文本仍按既有规则分段；超过现有索引配置上限仍拒绝索引，不扩大预算。C3/Deep/C6 在原件检查后共用结构化业务字段投影，已识别技术知识保留说明、平台、日志及核查方法原文，内部对象引用/版本字段留后台，普通正文与未知结构不语义改写。实际样例845字符原文生成448字符[模型正文](../operations/evidence/model-input-selection-20261112-05/knowledge-model-content.txt)；[离线回执](../operations/evidence/model-input-selection-20261112-05/README.md)明确没有导入/索引/模型调用。旧碎片不自动合并或重写，后续使用完整原件重新导入/索引；本步不改变 HTTP 字段、关联、存储列或表结构，新导入返回的块数量可能变化。下一次整体发布需同时包含 API 分块代码与处理侧正文投影；知识正文整理尚未发布。随后 [Deep/C6](../operations/evidence/model-input-selection-20261112-06/README.md)已完成本地按任务筛选及知识卡外壳清理，保留原用途/成员条件、知识版本和前序必要依赖；本批仅复用旧冻结材料，旧 JSON 切片未改。合理使用质量和完整固定流程仍未通过。
++知识正文整理已包含在核心r1：新导入可无损解析的完整JSON对象/数组保留一个原文块，普通文本仍沿既有分段，超过索引上限仍拒绝、不扩大预算。C3/Deep/C6按已识别结构选择说明、平台、日志及核查方法原文，内部对象/版本字段留后台；普通正文及未知结构不做语义改写。845字符原文生成448字符[模型正文](../operations/evidence/model-input-selection-20261112-05/knowledge-model-content.txt)的旧离线记录保持；随后05批的实际导入/索引与10批的实际消费分别有独立证据。
++
++旧碎片不自动合并或重写；完整原件需显式重新导入/索引。HTTP字段、关联和存储表不变，新导入返回块数可能变化。API分块与处理侧投影已经一同进入已发布核心，独立HTTP沿冻结来源同步。最新10批中C3、影响Deep、C6各选入一张448字符卡，授权Deep没有附加可选卡；进入输入不等于正确使用，NOT_PASSED保持。
+ 
+ ## 数据与字段对应
+ 
+@@ -30,7 +33,7 @@
+ 
+ | 信息 | 保存和读取位置 |
+ | --- | --- |
+-| 文档原文 | `public.aisoc_kb_documents`：`id/tenant_id/title/doc_kind/source_url/tags/chunk_index/chunk_total/content/created_at/updated_at`；线上仍按原正文分块，本地新导入完整 JSON 的完整块规则尚未发布，字段与旧数据保持 |
++| 文档原文 | `public.aisoc_kb_documents`：`id/tenant_id/title/doc_kind/source_url/tags/chunk_index/chunk_total/content/created_at/updated_at`；核心r1新导入完整JSON按上述规则保留完整块，普通文本沿原分段；字段与旧数据保持 |
+ | 索引 | 独立 Qdrant 集合，point ID 为 PG 块 ID；payload 为 `tenant_id/doc_id/content_sha256/doc_kind/purposes/embedding_model/dimension`。hash 覆盖原文和身份/分类元数据 |
+ | C2 实际请求 | `run_steps.actual_args` 及 `tool_request/tool_response.actual_args.parameters.selectors[]`：`purpose/purpose_label/value/source_paths/filters/limit/score_threshold/use/profile_sha256`，仍保留成员与 object_key |
+ | C2 命中 | `tool_response.rows[]`：`record_id/object_key/namespace/purpose/purpose_label/use/similarity/content_sha256/limitations/record`；record 为当时 PG 回读原文，模型视图不使用 similarity/hash 作为业务依据 |
+--- docs/investigation/historical-alert-knowledge-handoff.md (before)
++++ docs/investigation/historical-alert-knowledge-handoff.md
+@@ -2,7 +2,7 @@
+ 
+ 本功能由[历史卡片 OpenSpec](../../openspec/changes/archive/2026-11-12-use-historical-alert-knowledge/tasks.md)交付，并由[用途筛选与当前版本选择](../../openspec/changes/archive/2026-11-12-refine-purpose-aware-knowledge-use/tasks.md)补齐资格与模型选取，当前部署以 [PROGRESS](../../PROGRESS.md) 为准。技术解释／取证指导共用配置和来源链见[知识交接](case-knowledge-handoff.md)。历史案例参考不改变原 C2 `history` 的同对象／事件窗口查询。
+ 
+-21 `v1.2-20261112-r5` 已实际加载分诊后同步：新提交且采用的 A 分诊按开启／120 秒配置维护当前卡片和索引，处理身份知识表 INSERT 已读回。自动触发端到端证据为一次本地流程，生产本轮只核配置／代码／连接与静态原件，没有新增 A／Case Run、知识写入或分析模型。4177 由 39→40 份，旧批保持，消费者关闭；模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)。
++分诊后同步最初随21 `v1.2-20261112-r5`加载，当前核心r1继续沿用：新提交且采用的 A 分诊按开启／120 秒配置维护当前卡片和索引，处理身份知识表 INSERT 已读回。自动触发端到端证据为一次本地流程，该历史发布批次生产只核配置／代码／连接与静态原件，没有新增 A／Case Run、知识写入或分析模型。该批4177当时39→40份；现已按负责人要求只展示10批，旧展示备份、原件保持，消费者关闭；模型质量仍为 NOT_PASSED，见[交付回执](../operations/evidence/knowledge-sync-20261112-01/delivery-summary.json)。
+ 
+ ## 功能与接口
+ 
+@@ -20,7 +20,7 @@
+ 
+ 导入时机是有效分诊或人工反馈提交成功后。[分诊保存后同步](../../openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)已在 21 r5 实际加载：开启 `history.sync_after_adopted_triage` 时，仅本次新保存、提交并采用的 A 分诊自动入库和索引。原始告警刚到达、未采用、失败／unknown、I／Case／H 均不触发，旧 operation key 重读不补派。材料／判断新版本形成新快照；旧卡不能代替尚未索引的新版本。
+ 
+-人工反馈仍通过显式入库／索引维护；正式告警级人工反馈写入口尚未接线，Case H 不替代它。没有全库扫描、定时任务或自动消费者；Case 关闭和人工良性判断不自动生成已核实误报规则。
++告警级人工反馈E48/E49已交付并保存原判断/理由；更新历史知识仍通过显式入库/索引，不因反馈保存而自动同步。Case H保留自己的任务版本和适用范围，不替代告警反馈。没有全库扫描、定时任务或自动消费者；Case 关闭和人工良性判断不自动生成已核实误报规则。
+ 
+ 同步使用独立会话，不持有分诊事务／行锁等待网络。`history.sync_timeout_seconds` 是启用时必填的总时限，当前实际 profile 为 120 秒，类型缺省关闭。知识表 `SELECT/INSERT` 随既有处理身份配置；新装脚本已同步，升级执行 [knowledge_history_write_access.sql](../../deploy/database/knowledge_history_write_access.sql)，参数 `expected_database`、`processing_role` 来自当前 profile。不要重跑会撤销已有 API 读权限的全量初始化；不增加 UPDATE/DELETE 或表结构。
+ 
+@@ -54,9 +54,9 @@
+ | 环节 | 实际输入和要求 |
+ | --- | --- |
+ | C2 | 程序构造查询并冻结卡片；没有模型生成的历史事实 |
+-| C3 | 本案材料与历史卡片并列；原历史观察/来源标签为非本案观察，分诊与人工正文各自独立引用。比较相同条件和缺失条件，形成解释及最多两项问题 |
+-| Deep | 复用已冻结且可见的卡片，结合当前问题/工具结果参考验证方法；不因历史内容扩大查询实体、时间或工具参数 |
+-| C6 | 用本案证据决定本案结论，历史只供对比与建议；明确不适用及未验证条件，不能继承历史判定、授权或已执行状态 |
++| C3 | 本案材料与历史卡片并列；原历史观察/来源标签为非本案观察，分诊与人工正文各自独立引用。比较相同条件和缺失条件，形成解释及最多两项必要补查 |
++| Deep | 按当前问题选择已冻结卡片和必要引用依赖，授权问题默认不追加可选知识；不因历史内容扩大查询实体、时间或工具参数 |
++| C6 | 按业务问题与原适用成员选择知识，用本案证据决定结论，历史只供对比与建议；明确不适用及未验证条件，不能继承历史判定、授权或已执行状态 |
+ 
+ 模型视图去掉相似分/hash 和重复序列化正文，保留可读结构与原文。引用路径为知识工件 `$.rows.N`、`$.rows.N.record.triage`、`$.rows.N.record.feedback`；角色分别 source_label/prior_analysis/human_statement。`record_alert_ids` 指向原历史告警，`query_alert_ids` 只说明本次查询由哪些成员产生，不能互换。
+ 

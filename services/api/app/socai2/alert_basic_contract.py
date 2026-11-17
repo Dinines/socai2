@@ -6,7 +6,7 @@ from copy import deepcopy
 from itertools import chain, zip_longest
 from typing import Annotated, Literal
 
-from pydantic import Field, StringConstraints, ValidationError
+from pydantic import Field, StrictStr, StringConstraints, ValidationError
 
 from .answer_validation import Checks, literal_source_name
 from .baseline_context import reference
@@ -23,13 +23,13 @@ from .baseline_store import StoreError, digest, encoded
 from .model_input_view import LIMITATIONS, compact, size, source_prefix
 from .stage_result_contracts import AlertOutput
 
-Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
-Alias = Annotated[str, StringConstraints(pattern=r"^(?:N[1-9][0-9]*_)?S[1-9][0-9]*$")]
+Text = Annotated[str, StringConstraints(min_length=1, max_length=4000, pattern=r"\S")]
+Alias = StrictStr
 
 
 class Advice(Contract):
     reason: Text
-    source_ids: list[Alias] = Field(min_length=1, max_length=30)
+    source_ids: list[Alias] = Field(max_length=30, json_schema_extra={"minItems": 1})
 
 
 class LegacyAnswer(Contract):
@@ -37,7 +37,7 @@ class LegacyAnswer(Contract):
     confidence: float | None = Field(ge=0, le=1, allow_inf_nan=False)
     rationale: Text
     explanation: Text
-    evidence_ids: list[Alias] = Field(min_length=1, max_length=60)
+    evidence_ids: list[Alias] = Field(max_length=60, json_schema_extra={"minItems": 1})
     recommendations: list[Advice] = Field(max_length=5)
     limitations: list[Text] = Field(max_length=20)
 
@@ -45,7 +45,7 @@ class LegacyAnswer(Contract):
 class DecisionBasis(Contract):
     kind: Literal["malicious_behavior", "authorized_or_expected_behavior", "refuted_detection"]
     claim: Text
-    source_ids: list[Alias] = Field(min_length=1, max_length=30)
+    source_ids: list[Alias] = Field(max_length=30, json_schema_extra={"minItems": 1})
 
 
 class Answer(LegacyAnswer):
@@ -281,8 +281,8 @@ def build(source, input_id, queries, *, execution_time=None, complete_material=F
     return messages, source_map, data
 
 
-def parse(content, source_map, data, *, diagnostics=None):
-    checks = Checks(diagnostics)
+def parse(content, source_map, data, *, diagnostics=None, citation_review=None):
+    checks = Checks(diagnostics, citation_review=citation_review)
     def bad(code):
         checks.add(code, "$", "shape")
         checks.add("source_checks_not_run", "$", "source", "info", "not_checked")
@@ -298,6 +298,9 @@ def parse(content, source_map, data, *, diagnostics=None):
 
     try:
         raw = json.loads(content, object_pairs_hook=pairs, parse_constant=lambda _: bad("alert_answer_nonfinite"))
+        if citation_review is not None:
+            from .citation_quality import normalize
+            raw = normalize(raw, citation_review)
         model = Answer if data.get("citations") == "structured_v3" else LegacyAnswer
         answer = model.model_validate(raw)
     except (ValueError, TypeError, ValidationError):
@@ -305,7 +308,14 @@ def parse(content, source_map, data, *, diagnostics=None):
     if blocked(raw):
         bad("alert_answer_guard")
     def refs(ids, path):
+        from .citation_quality import record_references
+        record_references(citation_review, ids, source_map, path)
+        checks.require(bool(ids), "alert_answer_source_missing", path)
         checks.require(len(ids) == len(set(ids)) and set(ids) <= set(source_map), "alert_answer_source_invalid", path)
+        if citation_review is not None and set(ids) - set(source_map):
+            from .citation_quality import issue
+            issue(citation_review, "unbound_source_ids", path, source_ids=ids,
+                  unresolved_ids=sorted(set(ids) - set(source_map)))
         return [source_map[sid]["ref"] for sid in ids if sid in source_map]
 
     evidence = refs(answer.evidence_ids, "$.evidence_ids")

@@ -1,0 +1,23 @@
+# Apply only to this new candidate database. Management socket is not an app login test.
+database = "socai2_streaming_20261115"
+admin_role = "spirithub"
+function_owner = "socai2_streaming_20261115"
+reader_role = "socai2_streaming_20261115_reader"
+timeout_seconds = 120
+transport = "docker_socket"
+psql_argv = ["docker", "--context", "default", "exec", "-i", "spirithub-postgres-1", "psql", "-XwAtq"]
+environment = {}
+
+[cleanup]
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30
+
+[analysis_ingress]
+role = "socai2_streaming_20261115_writer"
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30
+
+[analysis]
+writer_role = "socai2_streaming_20261115_writer"
+lock_timeout_seconds = 3
+statement_timeout_seconds = 30

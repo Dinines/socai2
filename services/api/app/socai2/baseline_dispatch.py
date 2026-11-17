@@ -4,6 +4,7 @@ from datetime import datetime
 from .baseline_evidence_tools import TOOLS
 from .baseline_semantics import EVENT_KINDS
 from .baseline_store import encoded
+from .followup_activity import activity, query_record
 from .runtime_policy import active_policy
 
 
@@ -61,18 +62,29 @@ def offered_bindings(catalog, limits, now, steps, lake, *, members=None):
     return options, mapping, excluded
 
 
-async def dispatch_followups(service, tenant_id, case_id, run_id, followups, bindings, *, gateway, lake):
+async def dispatch_followups(service, tenant_id, case_id, run_id, followups, bindings, *, gateway, lake,
+                             allowed_indices=None):
+    from .baseline_capacity import CAPACITY_FAILURES
     routes, by_binding, by_question = [], {}, {}
+    capacity_reason = None
     ordered = sorted(enumerate(followups), key=lambda pair: (
         pair[1]["priority"] != "decision_critical", {"query": 0, "deep": 1}.get(pair[1]["mode"], 2), pair[0]))
     for order, (index, item) in enumerate(ordered):
         qid, mode = item["question_id"], item["mode"]
         route = {"followup_index": index, "execution_order": order, "question_id": qid,
             "mode": mode, "priority": item["priority"], "binding_id": item["binding_id"]}
+        if allowed_indices is not None and index not in allowed_indices:
+            routes.append({**route, "state": "skipped", "reason": "c3_followup_dependency_unavailable"})
+            continue
+        if capacity_reason:
+            routes.append({**route, "state": "skipped", "reason": capacity_reason})
+            continue
         if mode == "human":
-            route.update(state="handoff", reason="human_confirmation_required_no_task_created")
+            route.update(state="handoff", reason="human_confirmation_required_no_task_created",
+                         activity=activity("material_handoff", disposition="no_task_created"))
         elif mode == "graph":
-            route.update(state="scheduled", reason="C5_retained_evidence_graph_only")
+            route.update(state="scheduled", reason="C5_retained_evidence_graph_only",
+                         activity=activity("retained_graph"))
         elif mode == "query":
             bid = bindings[item["binding_id"]]["binding_id"]
             route["resolved_binding_id"] = bid
@@ -85,14 +97,24 @@ async def dispatch_followups(service, tenant_id, case_id, run_id, followups, bin
                 receipt = result["result"]
                 by_binding[bid] = {"state": receipt["state"], "reason": result["projection"].get("reason"),
                     "query_artifact_id": result["artifact_id"], "projection_id": result["projection_id"],
-                    "answer_available": False}
+                    "answer_available": False, "activity": activity("source_query", [query_record(result)])}
             route.update(by_binding[bid])
+            if route["reused"]:
+                records = [{**row, "reused": True} for row in route["activity"]["queries"]]
+                route["activity"] = activity("source_query", records)
         else:
             route["reused"] = qid in by_question
             if qid not in by_question:
                 result = await service.deepen(tenant_id, case_id, run_id, qid, gateway=gateway, lake=lake)
                 by_question[qid] = {"state": result["state"], "reason": result["stop_reason"],
-                    "deep_artifact_id": result["deep_artifact_id"], "answer_available": result["answer"] is not None}
+                    "deep_artifact_id": result["deep_artifact_id"], "answer_available": result["answer"] is not None,
+                    **({"activity": result["activity"]} if "activity" in result else {})}
             route.update(by_question[qid])
+            if route["reused"] and "activity" in route:
+                records = [{**row, "reused": True} for row in route["activity"]["queries"]]
+                route["activity"] = activity(route["activity"]["kind"], records,
+                                             disposition=route["activity"]["disposition"])
         routes.append(route)
+        if route.get("reason") in CAPACITY_FAILURES:
+            capacity_reason = route["reason"]
     return routes

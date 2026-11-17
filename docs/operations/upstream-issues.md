@@ -1,14 +1,14 @@
 **2026-10-24收尾后的维护口径：** 迁移基线按[收尾回执](migration-closeout-20261024.md)交付；以下全部旧失败和未解决项保持，不因归档改成通过。测试背景事件入湖及调查查询/设计由独立调查开发承接，本会话不再重复或代验；LakeQueryError、IPv6比较、promotion执行门、字段缺失/占位及预算/报告问题仍为原证据，独立方自行核对应版本。其他后续工作只在收尾第5节按本问题表归类规划，待讨论后另立对应增量，不自动开工。
 
-**2026-10-23测试工具两例新增观察（后续讨论，不在迁移中改设计）：** 新隔离两例已实际自动关闭/调查，6回复26492tokens；B分诊理由利用synthetic和CONTROL-B场景标记推断可能演练，说明合成样本不适合作盲测质量结论。B调查4轮21796/20000按原轮后软预算停止，报告Summary running与持久Run completed/调查partial仍不同；原heuristic隔离建议未执行。最新本地小修已把8项unavailable/error工具逐次持久留存并在MD交接，但没有真实补查命中。见[回执](testdata-migration-execution-20261023.md)。用户要求需要改后续调查设计时先讨论；本批不改角色/prompt/IO/编排/预算，不重投这两条。
+**2026-10-23测试工具两例新增观察（后续讨论，不在迁移中改设计）：** 新隔离两例已实际自动关闭/调查，6回复26492tokens；B分诊理由利用synthetic和CONTROL-B场景标记推断可能演练，说明合成样本不适合作盲测质量结论。B调查4轮21796/20000按原轮后软预算停止，报告Summary running与持久Run completed/调查partial仍不同；原heuristic隔离建议未执行。最新本地小修已把8项unavailable/error工具逐次持久留存并在MD交接，但没有真实补查命中。见[回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-migration-execution-20261023.md)。用户要求需要改后续调查设计时先讨论；本批不改角色/prompt/IO/编排/预算，不重投这两条。
 
-**2026-10-22 两例实测新增明确留存/读取边界（后置完善）：** 两条新raw Kafka已自动关闭/调查，数据及现有工件正文可持久读取；不是所有步骤原文完整归档。3个graph_step仅node且input/output_hash为null，graph_result.messages为空、工具仅200字符preview；首次和Deep后4轮prompt副本截断。当前工具seq10000+先写、graph_result低seq后写，而API since按seq筛选，单追max(seq)可能漏后写结果；后端交付后从无since首页分页补齐。例2network_connections是LakeQueryError，process_tree缺父进程字段，不能统称未接入。depth tokens=0/over_budget=false与graph27697/20000软预算停止不一致，narrative仍为末工具JSON。见[本批回执](service-v1-functional-20261022.md)及[对接指引](../integration/v1/page-data-mapping.md)。只记真实边界，不补造旧材料/重发模型/新建任务树，原质量失败保持。
+**2026-10-22 两例实测新增明确留存/读取边界（后置完善）：** 两条新raw Kafka已自动关闭/调查，数据及现有工件正文可持久读取；不是所有步骤原文完整归档。3个graph_step仅node且input/output_hash为null，graph_result.messages为空、工具仅200字符preview；首次和Deep后4轮prompt副本截断。当前工具seq10000+先写、graph_result低seq后写，而API since按seq筛选，单追max(seq)可能漏后写结果；后端交付后从无since首页分页补齐。例2network_connections是LakeQueryError，process_tree缺父进程字段，不能统称未接入。depth tokens=0/over_budget=false与graph27697/20000软预算停止不一致，narrative仍为末工具JSON。见[本批回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)及[对接指引](../integration/v1/page-data-mapping.md)。只记真实边界，不补造旧材料/重发模型/新建任务树，原质量失败保持。
 
-**2026-10-22 v1发布代表Run增补（后置评估）：** 新生产合成告警Run `39dd7fba-5f42-5b4e-9653-ae7de5fce32c` 自动接通并交付partial，7回复28216tokens（分诊2048/graph26168），未重调旧输入。旧六轮/软20k预算、末ToolMessage作为narrative、Deep局部tokens=0/over_budget=false与外层超预算、Run completed/报告running差异再次出现；旧质量不追认通过。首次模型把缺授权材料/`curl|sh`泛化为C2/高置信恶意，报告“无恶意命中→benign prior”“Unknown→单阶段攻击”；Deep一轮把T1059.004称作PowerShell。来源边界另有TI归因401、UEBA HTTPStatusError、processing-context四维BufferError及3类not_ingested；这些为本次实际来源结果，不由healthy宣称可用。分诊前PG投影success、链图上下文及工件已发布生效，不能再把此接缝全称未部署。材料见[发布回执](service-v1-release-20261022.md)与原Run交换工件；质量/配套按原问题表后置，不扩新任务树/模型矩阵。
+**2026-10-22 v1发布代表Run增补（后置评估）：** 新生产合成告警Run `39dd7fba-5f42-5b4e-9653-ae7de5fce32c` 自动接通并交付partial，7回复28216tokens（分诊2048/graph26168），未重调旧输入。旧六轮/软20k预算、末ToolMessage作为narrative、Deep局部tokens=0/over_budget=false与外层超预算、Run completed/报告running差异再次出现；旧质量不追认通过。首次模型把缺授权材料/`curl|sh`泛化为C2/高置信恶意，报告“无恶意命中→benign prior”“Unknown→单阶段攻击”；Deep一轮把T1059.004称作PowerShell。来源边界另有TI归因401、UEBA HTTPStatusError、processing-context四维BufferError及3类not_ingested；这些为本次实际来源结果，不由healthy宣称可用。分诊前PG投影success、链图上下文及工件已发布生效，不能再把此接缝全称未部署。材料见[发布回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)与原Run交换工件；质量/配套按原问题表后置，不扩新任务树/模型矩阵。
 
 **标书评估静态补记（2026-10-22，迁移后定向完善）：** [本次评估](tender-requirements-assessment-20261022.md)对照原件P169/P293，确认当前 `GET /alerts` 声明 `search` 但未用于filters，且缺来源、资产与时间区间参数（`services/api/app/api/v1/endpoints/alerts.py:787–906`）；已对固定上游同函数，属于继承原版。另UEBA上下文先读取同tenant/type最近50条再客户端匹配实体（`services/agents/app/context/bundle.py:813–845`、`services/ueba/app/api/routes.py:184–197`），目标不在该50条会漏取，固定原版同样如此。两项均为源码确认、未新发HTTP/规模样例，不表示已发生生产漏读或新增当前候选接线阻塞；后续按告警查询/实际实体读取需求补最小合同，不能用现有小样本验收宣称完整筛选或实体覆盖。本轮不修代码、不加任务树，不改变发布/worker或旧失败。
 
-**Kafka入口联合补记（2026-10-22，非阻塞后置）：** 当前Alert直接邻域5节点4边已真实核；原GET的blast_radius另返14个可达候选，含同tenant历史测试Alert/Case。原遍历允许经共享Technique继续扩展；可达不是本案确认受影响，也不是本次新增节点。当前Alert本身无Case关联，不据候选为其自动建Case。沿已有图语义/算法二开取舍后再评估，本轮只保数据/来源及限定表述，不扩算法或质量专项，见[回执](kafka-graph-joint-20261022.md)。
+**Kafka入口联合补记（2026-10-22，非阻塞后置）：** 当前Alert直接邻域5节点4边已真实核；原GET的blast_radius另返14个可达候选，含同tenant历史测试Alert/Case。原遍历允许经共享Technique继续扩展；可达不是本案确认受影响，也不是本次新增节点。当前Alert本身无Case关联，不据候选为其自动建Case。沿已有图语义/算法二开取舍后再评估，本轮只保数据/来源及限定表述，不扩算法或质量专项，见[回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-joint-20261022.md)。
 
 链图后续限制补记：原MERGE只增/更新，不清理Case解绑或字段变化后的旧关系；持续同步尚未验证。本批新Case正常图/消费通过，不外推旧关系撤销已实现。沿现有模块二开需求再评估，不建同步/恢复框架。
 
@@ -19,7 +19,7 @@
 
 ## 调查本地实测更新（2026-10-21）
 
-[逐步回执](investigation-functional-20261021.md)保留13次真实可见回复与1次无回复、原78项直接测试和新工具结果，不由完成标签追认质量。
+[逐步回执](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)保留13次真实可见回复与1次无回复、原78项直接测试和新工具结果，不由完成标签追认质量。
 
 | 问题 | 本批证据 / 归属 | 状态 |
 | --- | --- | --- |
@@ -45,12 +45,12 @@
 | UEBA→Fusion本地真实接缝已验；常驻融合关闭及缓存丢引用仍保留。非文件漏迁 | [真实联合](../handoff/ueba-fusion-joint-20261021.json)已核原服务实际生成三档异常、Kafka/Redis及5个告警对照；21常驻flag仍false，未发布。缓存只保实体/score/risk，未保anomaly_id/source_event_id，普通结果不能精确定位唯一异常源 | 不再把“本地联合未证”当阻塞，沿阶段发布；精确引用和时间语义按后续需求取舍，不借本次验证改算法或旧记录 |
 | Fusion候选链与声明参数的能力边界；原实现保留 | 候选链仅按共享实体/固定MITRE阶段与处理时间组织，不确认因果；TA编号未映射、已有两链不完整合并。0.85相似阈值及72小时关闭仅声明，没有对应执行逻辑 | [总结](../architecture/fusion.md#六当前阶段小结可以转入下游分诊)如实交接，不当作已实现的语义聚类、真实攻击路径或自动关闭。不阻塞接入分诊；具体改动待业务取舍，不擅自裁剪或扩测试 |
 | 分诊业务规则的下游字段消费不完整；静态接缝，非本轮裁剪 | 规则支持写route_to/tags，但build_state未完整投影它们及category，worker不据route_to切Router；severity实际会进入state，tag还能影响同轮后续规则 | [分诊工作卡](../architecture/triage.md)列待讨论：先明确是否需要规则改变调查路径，不把规则引擎支持当端到端生效，不预定统一编排或当前修复 |
-| 单项IOC增强包装器与Go请求字段不一致；tools.py与固定上游相同 | Recon及deep enrich_ioc发送value/type，Go /enrich要求value/ioc_type；默认8080也与bulk包装器8082不同。bulk接通不能证明单项接通 | [调查说明](../architecture/investigation.md)保留静态事实，尚未新复现线上400；使用该工具时核实际URL/字段和必要身份，按直接接线最小处理，不扩外部情报后端/数据量 |
+| 单项IOC增强包装器与Go请求字段不一致；tools.py与固定上游相同 | Recon及deep enrich_ioc发送value/type，Go /enrich要求value/ioc_type；默认8080也与bulk包装器8082不同。bulk接通不能证明单项接通 | [调查说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation.md)保留静态事实，尚未新复现线上400；使用该工具时核实际URL/字段和必要身份，按直接接线最小处理，不扩外部情报后端/数据量 |
 | Router专业Agent的bundle及持久出口差异；原调用边界 | 四专业函数支持可选bundle，但当前Router调用未传入；Case /triage的run没有stream同等逐步ledger/Markdown持久流程 | 分别说明支持和实际采用，不用默认人工Bundle或Router stream证据代验；本次仅登记，不把全部兄弟入口改造设为分诊前置 |
-| Case到Router专业字段的嵌套接缝；静态，非本轮裁剪 | Case API实际发raw_alert.alerts（最多3条）；stream_kwargs不flatten，领域路由与专项投影主要读顶层；嵌套内容可能仅由summary/Additional fields有限送达，不能说username/MFA/原正文已完整采用 | [预处理专篇](../architecture/investigation-preprocessing-tools.md)按真实输入说明，尚未新模型复现或改字段；后续确需专业分析时再讨论最小映射，不先展开统一标准化 |
+| Case到Router专业字段的嵌套接缝；静态，非本轮裁剪 | Case API实际发raw_alert.alerts（最多3条）；stream_kwargs不flatten，领域路由与专项投影主要读顶层；嵌套内容可能仅由summary/Additional fields有限送达，不能说username/MFA/原正文已完整采用 | [预处理专篇](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md)按真实输入说明，尚未新模型复现或改字段；后续确需专业分析时再讨论最小映射，不先展开统一标准化 |
 | Lake归档启用后promotion执行门缺失；固定上游同样存在，非本地新增 | `consumer.py`订阅条件含Lake，但raw_events分支仍无条件调用promoter；promotion=false也可能把高危/Finding转为新告警。现有一条Medium未提升不能证明关闭有效 | 静态发现、未用高危样例复现；回Fusion批讨论最小执行门，直接验证lake开/promotion关仍归档但不造告警，不扩原始检测平台 |
 | 自动调查到AttackPath的目标/身份/图材料接缝；当前源码可见，归属不笼统当裁剪 | 自动state无真实Case链接，agent只认case_id/caseId/TI.case_id；旧AGENTS_API_TOKEN及未传tenant仍需对齐；仅显式upsert API未证明自动投影。当前C2未走到该节点，不能写实际skip故障已复现 | 先对比真实Case关联与Alert起点两方案，再按合同实施；复用已有tenant reader和真实关系，不把Fusion incident或PG两节点回退当完整事件图 |
-| 历史调查范围表达不足；原typed工具按当前时间回看 | 部分查询用now()-hours/days，不能完整表达某条历史告警前后UTC窗口；共享hours schema描述默认24，但authentication_events函数实际默认168小时，不能统一解释全部工具 | 在事件补查模块先核输入范围与字段合同；[实际默认表](../architecture/investigation-preprocessing-tools.md#8-工具输出是什么模型如何使用)已更正说明，示例显式传24。本次仅文档，不改函数默认、不重放告警或增加采集 |
+| 历史调查范围表达不足；原typed工具按当前时间回看 | 部分查询用now()-hours/days，不能完整表达某条历史告警前后UTC窗口；共享hours schema描述默认24，但authentication_events函数实际默认168小时，不能统一解释全部工具 | 在事件补查模块先核输入范围与字段合同；[实际默认表](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/architecture/investigation-preprocessing-tools.md#8-工具输出是什么模型如何使用)已更正说明，示例显式传24。本次仅文档，不改函数默认、不重放告警或增加采集 |
 
 ## 2026-10-21最新优先规则：问题登记与迁移分开
 

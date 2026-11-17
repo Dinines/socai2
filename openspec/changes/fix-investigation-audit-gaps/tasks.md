@@ -1,10 +1,10 @@
 # 实施任务
 
-**用户最新安排：** 保留r13报告问题并暂缓修复，以[远端告警/事件需求](../../../docs/investigation/field-alignment-confirmations-20261101.md)核对从Fusion入库到API、调查输入、Tool与报告的完整实现，先查缺口再问未决语义；已确认第1—15项保留。不再用报告达标作为字段确认的前置；以下5.3和16/17状态保持，未确认字段尚未实施。下方“下一只处理报告”属于本次优先级调整前的记录。
+**用户最新安排：** 保留r13报告问题并暂缓修复，以[远端告警/事件需求](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/field-alignment-confirmations-20261101.md)核对从Fusion入库到API、调查输入、Tool与报告的完整实现，先查缺口再问未决语义；已确认第1—15项保留。不再用报告达标作为字段确认的前置；以下5.3和16/17状态保持，未确认字段尚未实施。下方“下一只处理报告”属于本次优先级调整前的记录。
 
 状态：r13已部署，473应用源码与固定候选一致。A输出截断failed/partial，B completed/partial但空查询/审批/Tool编号语义未过，C未派发；4真实查询1/1/0/0行、0复用，6模型20334tokens，6调用未定价。见[最新回执](../../../docs/operations/investigation-r13-report-validation-20261101.json)。完成16/17，5.3未满足，本批结束不重试、不归档。
 
-部署前[来源值等窄修复](../../../docs/investigation/report-grounding-fix-20261101.md)17个不同方法最新通过，本批全部复用，五项源码/测试指纹未变。下一只处理[本批具体问题](../../../docs/operations/evidence/investigation-r13-20261101/review.md)：报告长度截断的原一次纠错处理、空查询不构成反证、未提供不等于不存在及Tool标注一致性。保持预算，不拼接残稿或扩框架；[后续计划](report-followup-plan-20261101.md)P3继续等待报告达标，不改变以下17项勾选。
+部署前[来源值等窄修复](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/report-grounding-fix-20261101.md)17个不同方法最新通过，本批全部复用，五项源码/测试指纹未变。下一只处理[本批具体问题](../../../docs/handoff/history/2026-11-14-investigation-cleanup/evidence/investigation-r13-20261101/review.md)：报告长度截断的原一次纠错处理、空查询不构成反证、未提供不等于不存在及Tool标注一致性。保持预算，不拼接残稿或扩框架；[后续计划](report-followup-plan-20261101.md)P3继续等待报告达标，不改变以下17项勾选。
 
 ## 1. B1 — 修正进程证据类型（A01）
 

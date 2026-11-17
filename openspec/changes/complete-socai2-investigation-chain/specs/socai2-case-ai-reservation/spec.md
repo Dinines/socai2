@@ -2,14 +2,14 @@
 
 ### Requirement: Deferred case AI operations have explicit reserved endpoints
 
-系统 SHALL 预留Case AI发送问题、将答复保存到正式调查记录、明确采用结果的三个POST入口及最小类型合同；Q业务暂缓期间，有效请求 MUST 返回HTTP501和`case_ai_not_implemented`。系统不得返回模拟答复、成功Run/Result ID或声称保存/采用已完成。
+系统 SHALL 预留Case AI发送问题、将答复保存到正式调查记录的两个POST入口及最小类型合同；Q业务暂缓期间，有效请求 MUST 返回HTTP501和`case_ai_not_implemented`。预留接口不得返回模拟答复、成功Run/Result ID或声称保存/采用已完成。已保存基础调查结果的明确采用由独立核心用例与HTTP操作承担，不启用Q发送或保存。
 
 #### Scenario: An authorized user sends a question
 - **WHEN** Case API开关开启且有写权限的用户向`/{case_id}/ai/messages`提交合法问题
 - **THEN** 返回501及明确未实现说明，不生成答复或执行记录
 
-#### Scenario: A user requests saving or adopting an answer
-- **WHEN** 用户调用`/{case_id}/ai/messages/{message_id}/save`或`/{case_id}/results/{result_id}/adopt`
+#### Scenario: A user requests saving an answer
+- **WHEN** 用户调用`/{case_id}/ai/messages/{message_id}/save`
 - **THEN** 合法请求返回相同501合同，不保存正式结果、不更改Case当前判断，也不据此确认目标实体存在
 
 ### Requirement: Reserved operations preserve access controls without execution

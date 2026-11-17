@@ -4,6 +4,8 @@ SELECT current_database() = :'expected_database' AS current_target_matches \gset
 \if :current_target_matches
 \ir init_socai2_v1.sql
 \ir remove_unused_graph_table.sql
+\ir analysis_lifecycle.sql
+\ir case_allocation.sql
 \else
 DO $failure$ BEGIN RAISE EXCEPTION 'current_install_target_mismatch'; END $failure$;
 \endif

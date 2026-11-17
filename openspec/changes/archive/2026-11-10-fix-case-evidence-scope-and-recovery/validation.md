@@ -1,6 +1,6 @@
 # Case 来源、有限纠正与背景取证验收
 
-本 change 对应问题 F03、F04 和 F02 的调度部分，承接[此前归因](../../complete-socai2-investigation-chain/case-current-flow-20261110.md#流程与模型问题归因)。按用户要求，整个 change 先完成本地实现、流程测试、交接及独审，再统一发布 21 并推送 Git／父项目。模型总体质量、生产知识实际使用、产品页面操作和自动消费仍在主调查任务中跟踪。
+本 change 对应问题 F03、F04 和 F02 的调度部分，承接[此前归因](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-current-flow-20261110.md#流程与模型问题归因)。按用户要求，整个 change 先完成本地实现、流程测试、交接及独审，再统一发布 21 并推送 Git／父项目。模型总体质量、生产知识实际使用、产品页面操作和自动消费仍在主调查任务中跟踪。
 
 ## 实现与合同
 

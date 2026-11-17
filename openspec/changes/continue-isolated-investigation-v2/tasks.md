@@ -1,4 +1,4 @@
-**2026-10-27状态澄清：** 新F1/F2及API v2 F3 Case首版代码/替身直接验证见[当前实现详解](../../../docs/investigation/current-implementation-reference-20261027.md)；F4成员转Case和F5自动接线未实现。F3并未逐项证明满足本文既有M3/manifest/owned合同，真实模型与PG/CH整链未验。本次只补审计文档，2.2/2.3保持未勾，旧“下一b权限”不覆盖用户暂停决定。完整链接见[审计导航](../../../docs/investigation/audit-guide-20261027.md)。
+**2026-10-27状态澄清：** 新F1/F2及API v2 F3 Case首版代码/替身直接验证见[当前实现详解](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/current-implementation-reference-20261027.md)；F4成员转Case和F5自动接线未实现。F3并未逐项证明满足本文既有M3/manifest/owned合同，真实模型与PG/CH整链未验。本次只补审计文档，2.2/2.3保持未勾，旧“下一b权限”不覆盖用户暂停决定。完整链接见[审计导航](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/audit-guide-20261027.md)。
 
 **2026-10-25 M8a4.4a限定通过：** 147直接/独立同147和实际PG锁竞争/回滚/ACK，13source/28新旧工件核同，[回执](../../../docs/operations/investigation-program-admission-pg-20261025.json)及[失败原件](../../../docs/operations/investigation-program-admission-pg-failure-20261025.json)。normal0tool partial5/11、ACK2/3 ready只读、roles清；下一已审b真实JWT/RBAC保存后实施，c/Case/Deep/2.2/2.3不勾。
 
@@ -75,7 +75,7 @@
 
 **2026-10-24 A1修复续接：** 已按规格/strict→实现→测试→独审完成新版地址身份接缝，111项直接通过、独立83项/7hash/反例限定ACCEPT，见[回执](../../../docs/operations/investigation-network-identity-20261024.json)。本块只修A1；A2/A3合同和M6.2—M9待推进，不新增勾选或核销2.2/2.3。下段A1未修是前一审计基线事实。
 
-**2026-10-24独立总审计续接：** [报告](../../../docs/investigation/independent-audit-20261024.md)登记A1地址归一化误拒（P2待修），A2完成/窗口与A3投影阻断合同须在M6.2前确定；先修接缝，再运行/同版交付/显式入口，Case整体与自动政策前验证语义和Deep收益。此处只登记审计计划，不新增或勾选任务，2.2/2.3保持未完；功能代码未改，历史限域验收保留。
+**2026-10-24独立总审计续接：** [报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/independent-audit-20261024.md)登记A1地址归一化误拒（P2待修），A2完成/窗口与A3投影阻断合同须在M6.2前确定；先修接缝，再运行/同版交付/显式入口，Case整体与自动政策前验证语义和Deep收益。此处只登记审计计划，不新增或勾选任务，2.2/2.3保持未完；功能代码未改，历史限域验收保留。
 
 2026-10-24 main集成说明：本change接收远端调查`469e9467`的独立v2开发基线及原记录，保留双方已有设计和实现。旧restore迁移已在main限定核销归档，不恢复其活动目录；下述历史原文中的“沿原restore/5/15/不提交”等按原日期解释。D1—M4限定成果、M5.1与未完成M5.2分列，新HTTP未注册，M6—M9和v4分层未交付。当前只合并和审计，不启动后续业务实施、真实测试或部署。
 
@@ -86,7 +86,7 @@
 
 ## 2. 后续逐块推进（M1 profile合同已获实施授权）
 
-- [x] 2.1 先确定profile合同并纯合同验证；随后按[评审响应](../../../docs/investigation/review-response-20261024.md)依次补可选正文局部降级、完整messages预算合同及直接测试。2026-10-24 M1纯绑定11新＋8兼容、I1正文45项、I2预算6新＋15模型合同及各自结束独审均限定通过；证据见[实施记录](../../../docs/operations/unified-investigation-implementation.md)及三份机器回执。仅核销这三个前置，不表示profile接执行器、真实新版入口或自动分组已交付。
+- [x] 2.1 先确定profile合同并纯合同验证；随后按[评审响应](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/review-response-20261024.md)依次补可选正文局部降级、完整messages预算合同及直接测试。2026-10-24 M1纯绑定11新＋8兼容、I1正文45项、I2预算6新＋15模型合同及各自结束独审均限定通过；证据见[实施记录](../../../docs/operations/unified-investigation-implementation.md)及三份机器回执。仅核销这三个前置，不表示profile接执行器、真实新版入口或自动分组已交付。
 - [ ] 2.2 逐小步完成M5.2模型步骤与Deep循环；用独立v2接缝验证，不改旧入口。原固定首例只验接缝，另以结果确会改变后续查询的有界场景评价Deep增量价值。
 - [ ] 2.3 推进M6—M9、同版交付、告警与Case入口及领域能力，每块保原验收顺序和边界。固定查询/有限事实路径不强制等待M5选工具模型；需要Deep的路径仍须2.2通过。M7先同版发布/读取，再M8显式入口，Case及自动政策后续分别验证。具体顺序见评审响应第4节，实施前补精确规格增量。
 

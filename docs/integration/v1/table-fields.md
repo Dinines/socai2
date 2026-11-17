@@ -1421,7 +1421,7 @@ ROLLBACK;
 
 当前若干RLS policy包含`current_tenant_id() IS NULL`兼容分支，部分内部角色还可绕过RLS；**未设置变量不能当作自动拒绝跨tenant查询**。直查沿用已授权的只读身份和表范围，并显式绑定/过滤租户；连接凭据由运维交接，不把runtime/owner作为后端管理员发放。[RLS实际实现](../../../services/api/app/db/rls.py)、[初始policy](../../../services/api/migrations/002_rls.sql)、[补充policy](../../../services/api/migrations/060_rls_coverage.sql)
 
-可交给数据后端的完整只读样例见[read-results.sql](examples/read-results.sql)：Alert→常见自动Run→步骤→工件摘要，以及独立Case关系读取。样例只读、不执行DDL/INSERT/UPDATE/DELETE，不修改历史步骤或报告。另有[本轮两个真实Run SQL](examples/production-two-examples.sql)，按实际字段整理；实际定向PG查询及正文校验见[核验回执](../../operations/service-v1-functional-20261022.md)。
+可交给数据后端的完整只读样例见[read-results.sql](examples/read-results.sql)：Alert→常见自动Run→步骤→工件摘要，以及独立Case关系读取。样例只读、不执行DDL/INSERT/UPDATE/DELETE，不修改历史步骤或报告。另有[本轮两个真实Run SQL](examples/production-two-examples.sql)，按实际字段整理；实际定向PG查询及正文校验见[核验回执](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-functional-20261022.md)。
 
 
 

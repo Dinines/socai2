@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     ForeignKeyConstraint,
+    Integer,
     Numeric,
     Text,
     UniqueConstraint,
@@ -229,6 +230,7 @@ class Incidents(Socai2Base):
     id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     source_namespace: Mapped[str] = mapped_column(Text, nullable=False)
+    active_case_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     source_incident_id: Mapped[str] = mapped_column(Text, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -338,6 +340,9 @@ class Cases(Socai2Base):
     tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     # Added by incremental migration 124; migration 123 remains a fixed baseline.
     source_namespace: Mapped[str | None] = mapped_column(Text, nullable=True)
+    continuation_root_case_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    previous_case_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    receiving_case_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     handling_status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'new'"))
@@ -1047,3 +1052,93 @@ class ResponseLinks(Socai2Base):
         {'schema': 'socai2'},
     )
 
+
+
+class AnalysisTasks(Socai2Base):
+    """Internal lifecycle rows introduced by migration 128."""
+    __tablename__ = 'analysis_tasks'
+    tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    subject_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    operation_key: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    submitted_by: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    merged_into_task_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_run_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_result_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    subject_type: Mapped[str] = mapped_column(Text, nullable=False)
+    intent: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(Text, nullable=False)
+    request_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'accepted'"))
+    reason_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observed_input_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
+    request_payload: Mapped[object] = mapped_column(JSONB, nullable=False)
+    error_detail: Mapped[object | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    retry_limit: Mapped[int] = mapped_column(Integer, nullable=False)
+    retry_delay_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    next_retry_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_enqueued_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    __table_args__ = ({"schema": "socai2"},)
+
+
+class AnalysisAttempts(Socai2Base):
+    """Internal lifecycle rows introduced by migration 128."""
+    __tablename__ = 'analysis_attempts'
+    tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    task_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    subject_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    run_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_run_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    input_artifact_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    previous_run_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    comparison_result_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    policy_artifact_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    subject_type: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    local_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'running'"))
+    outcome: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_stage: Mapped[str | None] = mapped_column(Text, nullable=True)
+    input_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    local_ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    interruption_observed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    error_detail: Mapped[object | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    retryable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    __table_args__ = ({"schema": "socai2"},)
+
+
+class AnalysisSubjectState(Socai2Base):
+    """Internal lifecycle rows introduced by migration 128."""
+    __tablename__ = 'analysis_subject_state'
+    tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    subject_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    subject_type: Mapped[str] = mapped_column(Text, primary_key=True)
+    registered_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    next_check_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_normal_completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_completed_attempt_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    last_attempt_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    stopped_task_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    stopped_input_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
+    automatic_stop_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    __table_args__ = ({"schema": "socai2"},)
+
+
+class CaseAlertExclusions(Socai2Base):
+    __tablename__ = 'case_alert_exclusions'
+    tenant_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    case_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    alert_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    excluded_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    excluded_by: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    operation_key: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    __table_args__ = ({'schema': 'socai2'},)

@@ -1,0 +1,205 @@
+{"consumer": "/private/tmp/socai2-source-scope-r2-tju0duw8/app/workers/consumer.py", "router": "/private/tmp/socai2-source-scope-r2-tju0duw8/app/api/router.py"}
+.FFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[one-source] _
+
+sources = ['event-one']
+
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_raw_alert_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, dlq = _worker_with_dlq()
+        original = {"id": str(UUID(int=701)), "tenant_id": TENANT,
+            "identity_version": "source-v1", "source_alert_id": str(UUID(int=701)),
+            "source": "source-scope-fixture", "title": "Received alert",
+            "source_event_ids": sources, "raw_event": {"observation": "unchanged"}}
+        await worker._process_message(original, topic=ALERTS_RAW)
+    
+        saved = worker._sink.snapshot["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert saved["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['event-one',...0000000002bd'] == ['event-one']
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-0000000002bd'
+E         Use -v to get more diff
+
+services/fusion/tests/test_consumer_dlq.py:143: AssertionError
+_ test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[multiple-sources] _
+
+sources = ['event-one', 'event-two']
+
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_raw_alert_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, dlq = _worker_with_dlq()
+        original = {"id": str(UUID(int=701)), "tenant_id": TENANT,
+            "identity_version": "source-v1", "source_alert_id": str(UUID(int=701)),
+            "source": "source-scope-fixture", "title": "Received alert",
+            "source_event_ids": sources, "raw_event": {"observation": "unchanged"}}
+        await worker._process_message(original, topic=ALERTS_RAW)
+    
+        saved = worker._sink.snapshot["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert saved["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['event-one',...0000000002bd'] == ['event-one', 'event-two']
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-0000000002bd'
+E         Use -v to get more diff
+
+services/fusion/tests/test_consumer_dlq.py:143: AssertionError
+_ test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[unknown-sources] _
+
+sources = []
+
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_raw_alert_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, dlq = _worker_with_dlq()
+        original = {"id": str(UUID(int=701)), "tenant_id": TENANT,
+            "identity_version": "source-v1", "source_alert_id": str(UUID(int=701)),
+            "source": "source-scope-fixture", "title": "Received alert",
+            "source_event_ids": sources, "raw_event": {"observation": "unchanged"}}
+        await worker._process_message(original, topic=ALERTS_RAW)
+    
+        saved = worker._sink.snapshot["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert saved["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['00000000-00...0000000002bd'] == []
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-0000000002bd'
+E         Use -v to get more diff
+
+services/fusion/tests/test_consumer_dlq.py:143: AssertionError
+_ test_http_process_preserves_explicit_source_scope_through_save_and_publish[one-source] _
+
+sources = ['event-one']
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_http_process_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, sink, _ = worker_fixture()
+        original = {**payload("source-v1"), "source_event_ids": sources}
+        async with client_for(worker) as client:
+            response = await client.post("/process", json=original)
+        assert response.status_code == 200
+        assert len(sink.rows) == 1
+        saved = next(iter(sink.rows.values()))["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert response.json()["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['event-one',...00000000012e'] == ['event-one']
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-00000000012e'
+E         Use -v to get more diff
+
+services/fusion/tests/test_process_delivery.py:161: AssertionError
+----------------------------- Captured stdout call -----------------------------
+2026-11-15 19:28:13 [debug    ] Alert fingerprint registered   alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb fingerprint=dca814a4ab78127652a33c9fdc9bc93a7440e5ccaeb087f8aafd05853d7e4389 ttl_seconds=300
+2026-11-15 19:28:13 [info     ] New incident created from alert alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb correlation_key='00000000-0000-0000-0000-00000000012d:entity-v2:["host","b1-i3-host",null]' incident_id=8c81ab68-c698-497c-ad1e-3411973df69d
+2026-11-15 19:28:13 [debug    ] confidence_scored              alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb label=low score=0.0
+2026-11-15 19:28:13 [info     ] Alert fusion complete          alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb anomaly_score=0.0 confidence=low decision=new_incident incident_alert_count=1 incident_id=8c81ab68-c698-497c-ad1e-3411973df69d narrative_present=True priority_score=0.0
+_ test_http_process_preserves_explicit_source_scope_through_save_and_publish[multiple-sources] _
+
+sources = ['event-one', 'event-two']
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_http_process_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, sink, _ = worker_fixture()
+        original = {**payload("source-v1"), "source_event_ids": sources}
+        async with client_for(worker) as client:
+            response = await client.post("/process", json=original)
+        assert response.status_code == 200
+        assert len(sink.rows) == 1
+        saved = next(iter(sink.rows.values()))["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert response.json()["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['event-one',...00000000012e'] == ['event-one', 'event-two']
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-00000000012e'
+E         Use -v to get more diff
+
+services/fusion/tests/test_process_delivery.py:161: AssertionError
+----------------------------- Captured stdout call -----------------------------
+2026-11-15 19:28:13 [debug    ] Alert fingerprint registered   alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb fingerprint=dca814a4ab78127652a33c9fdc9bc93a7440e5ccaeb087f8aafd05853d7e4389 ttl_seconds=300
+2026-11-15 19:28:13 [info     ] New incident created from alert alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb correlation_key='00000000-0000-0000-0000-00000000012d:entity-v2:["host","b1-i3-host",null]' incident_id=1341dea9-08d3-403f-8cf1-f557bd81352f
+2026-11-15 19:28:13 [debug    ] confidence_scored              alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb label=low score=0.0
+2026-11-15 19:28:13 [info     ] Alert fusion complete          alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb anomaly_score=0.0 confidence=low decision=new_incident incident_alert_count=1 incident_id=1341dea9-08d3-403f-8cf1-f557bd81352f narrative_present=True priority_score=0.0
+_ test_http_process_preserves_explicit_source_scope_through_save_and_publish[unknown-sources] _
+
+sources = []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("sources", [["event-one"], ["event-one", "event-two"], []],
+                             ids=["one-source", "multiple-sources", "unknown-sources"])
+    async def test_http_process_preserves_explicit_source_scope_through_save_and_publish(sources):
+        from app.services.socai2_projection import project, snapshot_id
+    
+        worker, sink, _ = worker_fixture()
+        original = {**payload("source-v1"), "source_event_ids": sources}
+        async with client_for(worker) as client:
+            response = await client.post("/process", json=original)
+        assert response.status_code == 200
+        assert len(sink.rows) == 1
+        saved = next(iter(sink.rows.values()))["fused"]
+        published = worker._producer.send_and_wait.await_args.kwargs["value"]
+>       assert response.json()["alert"]["source_event_ids"] == sources
+E       AssertionError: assert ['00000000-00...00000000012e'] == []
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-00000000012e'
+E         Use -v to get more diff
+
+services/fusion/tests/test_process_delivery.py:161: AssertionError
+----------------------------- Captured stdout call -----------------------------
+2026-11-15 19:28:13 [debug    ] Alert fingerprint registered   alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb fingerprint=dca814a4ab78127652a33c9fdc9bc93a7440e5ccaeb087f8aafd05853d7e4389 ttl_seconds=300
+2026-11-15 19:28:13 [info     ] New incident created from alert alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb correlation_key='00000000-0000-0000-0000-00000000012d:entity-v2:["host","b1-i3-host",null]' incident_id=0d51aa3d-d6d7-4ee3-9de8-482e1209d0ef
+2026-11-15 19:28:13 [debug    ] confidence_scored              alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb label=low score=0.0
+2026-11-15 19:28:13 [info     ] Alert fusion complete          alert_id=2569d366-c15f-5e38-8857-d0370eaa4deb anomaly_score=0.0 confidence=low decision=new_incident incident_alert_count=1 incident_id=0d51aa3d-d6d7-4ee3-9de8-482e1209d0ef narrative_present=True priority_score=0.0
+=============================== warnings summary ===============================
+.local/conda-envs/socai2/lib/python3.12/site-packages/_pytest/config/__init__.py:1345
+  /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/_pytest/config/__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; anyio
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+tests/test_consumer_dlq.py::test_received_event_identity_reaches_both_lake_and_saved_alert
+tests/test_consumer_dlq.py::test_received_event_identity_reaches_both_lake_and_saved_alert
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[one-source]
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[one-source]
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+  /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/main.py:280: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[one-source]
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+  /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/main.py:790: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return cls.__pydantic_validator__.validate_python(
+
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[one-source]
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+  /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/lib/python3.12/site-packages/pydantic/type_adapter.py:410: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return self.validator.validate_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED services/fusion/tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[one-source]
+FAILED services/fusion/tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+FAILED services/fusion/tests/test_consumer_dlq.py::test_raw_alert_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+FAILED services/fusion/tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[one-source]
+FAILED services/fusion/tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[multiple-sources]
+FAILED services/fusion/tests/test_process_delivery.py::test_http_process_preserves_explicit_source_scope_through_save_and_publish[unknown-sources]
+6 failed, 1 passed, 14 deselected, 15 warnings in 0.10s

@@ -4,12 +4,13 @@ import re
 
 from .baseline_closing import statement
 from .baseline_contracts import Publication
+from .case_citation_quality import links
 
 
 def make_publication(value, context, members, prepared, comparison, graph, operation_key, reason):
     source_map = prepared.get("source_map", {})
-    def refs(ids):
-        return [source_map[i]["ref"] for i in ids]
+    def refs(ids, **options):
+        return links(ids, source_map, **options)
 
     def scope(ids):
         result = context.scope.model_dump(mode="json")
@@ -46,7 +47,7 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
             limitations.append("unresolved_conflicts")
         for item in analysis.findings:
             findings.append({"id": item.id, "state": item.state, "statement": item.statement,
-                "scope": scope(item.alert_ids), "support": refs(item.support_ids), "counterevidence": refs(item.counter_ids),
+                "scope": scope(item.alert_ids), "support": refs(item.support_ids, observed=item.state == "observed"), "counterevidence": refs(item.counter_ids),
                 "limitations": item.limitations + ["替代解释：" + a for a in item.alternatives]})
         question_map = {q.id: q for q in context.questions}
         for item in analysis.questions:
@@ -64,7 +65,7 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
         for item in value.recommendations if value else []:
             recommendations.append({"id": item.id, "action_type": item.action_type,
                 "targets": [{"object_key": k, "display_name": k} for k in item.object_keys], "reason": item.reason,
-                "approval_requirement": "unknown", "source_refs": refs(item.source_ids),
+                "approval_requirement": "unknown", "source_refs": refs(item.source_ids, evidence_only=True),
                 "limitations": item.limitations + ["recommendation_only_no_approval_or_execution"]})
         impact = {"summary": value.impact.summary, "supported_changes": value.impact.supported_changes,
             "cannot_generalize": value.impact.cannot_generalize, "affected_scope": scope(value.impact.alert_ids),
@@ -122,7 +123,7 @@ def markdown(report):
     for member in data["members"]:
         lines += ["- " + esc(member["alert_id"]) + "：" + esc(member["assessment_state"]) +
             "；纳入结论=" + str(member["conclusion_covered"]), "  " + esc(member["assessment"] or "无最终逐成员判断"),
-            "  " + esc(member["limitations"] or "无额外限制")]
+            "  " + esc(member["limitations"] or "未记录限制说明")]
     for label, key, text_key in [("发现", "findings", "statement"), ("问题", "questions", "answer"),
             ("建议（未执行）", "recommendations", "reason")]:
         lines += ["", "## " + label, ""]
@@ -143,6 +144,14 @@ def markdown(report):
         lines += ["", "## 引用校验", "", "无效主张已排除，原答保留在模型响应工件中。"]
         for item in report["validation_review"]["diagnostics"]:
             lines += ["- " + esc(".".join(map(str, item["path"])) + "：" + item["code"])]
+    if report.get("citation_review"):
+        has_explanation_gaps = any(item.get("category") == "explanation_completeness"
+                                  for item in report["citation_review"]["issues"])
+        title = "分析与引用质量记录" if has_explanation_gaps else "引用质量记录"
+        note = ("原结论与原判定保留；限制说明缺失及引用等问题单独记录，采用不代表质量通过。"
+                if has_explanation_gaps else "原结论与原判定保留；引用诊断不证明正文正确，采用不代表质量通过。")
+        lines += ["", "## " + title, "", note]
+        lines += ["- " + esc(item["path"] + "：" + item["code"]) for item in report["citation_review"]["issues"]]
     lines += ["", "## 执行用量", "", "模型调用：" + str(report["execution"]["model_calls"]),
         "Tool调用：" + str(report["execution"]["tool_calls"]), "Token总量：" + (
             str(report["execution"]["total_tokens"]) if report["execution"]["total_tokens"] is not None else "未知")]

@@ -1,5 +1,6 @@
 """Database connection management."""
 
+import ssl
 from collections.abc import AsyncGenerator
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -61,7 +62,16 @@ def _normalize_async_pg_url(url: str) -> tuple[str, dict[str, Any]]:
             mode = value.lower().strip()
             if mode in _SSLMODE_PASSTHROUGH:
                 # asyncpg understands the libpq mode names via `ssl=`.
-                connect_args["ssl"] = mode if mode != "disable" else False
+                if mode == "require":
+                    # The current deployment authenticates with a password.
+                    # Do not let asyncpg discover a caller's old CA/client files
+                    # and silently turn require into certificate verification.
+                    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+                    connect_args["ssl"] = context
+                else:
+                    connect_args["ssl"] = mode if mode != "disable" else False
             continue
         if key == "channel_binding":
             # libpq-only; asyncpg negotiates SCRAM channel binding itself.

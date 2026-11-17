@@ -14,6 +14,7 @@ from investigation_http.contracts import (
     ContentView,
     IncidentListQuery,
     IncidentSort,
+    IncidentSubjectView,
     RecordPage,
     Section,
     Severity,
@@ -21,7 +22,6 @@ from investigation_http.contracts import (
     Subject,
     SubjectPage,
     SubjectView,
-    TraceView,
     WorkStatus,
 )
 from investigation_http.dependencies import CurrentUser, require_permission
@@ -31,6 +31,8 @@ from investigation_http.external_routes.subject_management import (
     router as management_router,
 )
 from investigation_http.ports import PageReads
+from investigation_http.record_links import directory_links
+from investigation_http.run_record_contracts import TraceWithDirectories
 
 User = Annotated[CurrentUser, Depends(require_permission("alerts:read"))]
 Service = Annotated[PageReads, Depends(get_service)]
@@ -103,8 +105,9 @@ async def alert(alert_id: UUID, user: User, service: Service):
     return await invoke(service.read(user.tenant_id, "alerts", alert_id, "view"))
 
 
-@router.get("/incidents/{incident_id}", response_model=SubjectView)
+@router.get("/incidents/{incident_id}", response_model=IncidentSubjectView)
 async def incident(incident_id: UUID, user: User, service: Service):
+    """事件事实及case_receiving：唯一接收Case、当前自动接收资格和no_target/closed/auto_window_expired原因。"""
     return await invoke(service.read(user.tenant_id, "incidents", incident_id, "view"))
 
 
@@ -118,6 +121,7 @@ async def records(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0, le=100000)] = 0,
 ):
+    """读取分区完整分页。仅incidents的cases行增加is_active_receiver，标明真实接收者；告警行保持原字段。"""
     if section == "cases":
         await require_permission("cases:read")(user)
     return await invoke(
@@ -147,14 +151,15 @@ async def material(alert_id: UUID, material_id: UUID, user: User, service: Servi
 
 
 @router.get(
-    "/{subject}/{identity}/analysis/runs/{run_id}/trace", response_model=TraceView
+    "/{subject}/{identity}/analysis/runs/{run_id}/trace", response_model=TraceWithDirectories
 )
 async def trace(
     subject: Subject, identity: UUID, run_id: UUID, user: User, service: Service
 ):
-    return await invoke(
+    detail = await invoke(
         service.read(user.tenant_id, subject, identity, "trace", run_id=run_id)
     )
+    return {**detail, **directory_links(run_id)}
 
 
 @router.get(

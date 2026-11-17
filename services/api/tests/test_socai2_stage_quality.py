@@ -8,6 +8,7 @@ from app.socai2 import alert_basic_contract as alert
 from app.socai2 import incident_diagnosis_contract as incident
 from app.socai2.baseline_semantics import material_projection
 from app.socai2.baseline_store import StoreError
+from app.socai2.runtime_policy import draft_limit, field_limit
 
 
 def source():
@@ -39,8 +40,15 @@ def test_typed_projection_keeps_conflicting_names_and_original_paths():
     assert {(v["source_path"], v["value"]) for v in names} == {
         ("$.ocsf_json.actor.user.name", "actor-one"), ("$.ocsf_json.user.name", "user-two")}
     assert all(v["conflict"] for v in names)
+    command = next(v for v in output["fields"] if v["source_path"] == "$.ocsf_json.process.cmd_line")
+    assert command["value"] == mat["ocsf_json"]["process"]["cmd_line"]
+    # Cross the configured byte ceiling without crossing the character guard.
+    unit = "示例参数 "
+    mat["ocsf_json"]["process"]["cmd_line"] = unit * (field_limit() // len(unit.encode()) + 1)
+    output = material_projection(mat)
     assert any(v["source_path"] == "$.ocsf_json.process.cmd_line" and v["reason"] == "whole_field_exceeds_budget"
                for v in output["omissions"])
+    assert not any(v["source_path"] == "$.ocsf_json.process.cmd_line" for v in output["fields"])
 
 
 def test_incident_projection_round_robins_facts_before_metadata():
@@ -48,9 +56,11 @@ def test_incident_projection_round_robins_facts_before_metadata():
     first = frozen["members"][0]
     second = copy.deepcopy(first)
     second["alert"]["id"], second["material"]["id"] = str(uuid4()), str(uuid4())
-    first["material"]["ocsf_json"] = {"metadata": {"notes": "received annotation " * 250},
+    unit = "来源说明 "
+    annotation = unit * (field_limit() // len(unit.encode()) + 1)
+    first["material"]["ocsf_json"] = {"metadata": {"notes": annotation},
         "class_uid": 1007, "process": {"pid": 7, "cmd_line": "task --read"}, "user": {"name": "first-only"}}
-    second["material"]["ocsf_json"] = {"metadata": {"notes": "received annotation " * 250},
+    second["material"]["ocsf_json"] = {"metadata": {"notes": annotation},
         "class_uid": 4001, "dst_endpoint": {"ip": "198.51.100.44", "port": 443},
         "src_endpoint": {"ip": "192.0.2.44", "port": 50100}, "network": {"protocol_name": "tcp"}}
     frozen["members"].append(second)
@@ -60,9 +70,13 @@ def test_incident_projection_round_robins_facts_before_metadata():
     assert visible["$.ocsf_json.process.cmd_line"]["value"] == "task --read"
     assert visible["$.ocsf_json.user.name"]["alert_ids"] == [first["alert"]["id"]]
     assert visible["$.ocsf_json.dst_endpoint.port"]["alert_ids"] == [second["alert"]["id"]]
-    assert len([o for o in data["omission_details"] if o["source"]["source_path"] == "$.ocsf_json.metadata.notes"]) == 2
+    assert len([o for o in data["omission_details"] if o["source"]["source_path"] == "$.ocsf_json.metadata.notes"
+                and o["reason"] == "field_size"]) == 2
+    assert "$.ocsf_json.metadata.notes" not in visible
+    assert first["material"]["ocsf_json"]["metadata"]["notes"] == annotation
+    assert second["material"]["ocsf_json"]["metadata"]["notes"] == annotation
     assert "omission_details" not in json.loads(messages[1]["content"])
-    assert len(messages[1]["content"].encode()) <= 8192
+    assert len(json.dumps(messages, ensure_ascii=False).encode()) <= draft_limit()
     assert all(mapping[x["id"]]["ref"]["type"] == "alert_material" for x in data["items"][:2])
 
 

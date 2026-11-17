@@ -10,8 +10,8 @@ from uuid import UUID, uuid4
 from sqlalchemy import func, insert, null, select, update
 
 from . import baseline_evidence_tools as tools
-from .baseline_context import reference, retention_limit
-from .baseline_contracts import Limits
+from .baseline_context import reference
+from .baseline_contracts import Limits, Scope
 from .baseline_enrichment import S, error
 from .baseline_model_view import SYSTEM, blocked, draft_limit
 from .baseline_optional_sources import SourceUnavailable
@@ -48,8 +48,6 @@ class BaselineEvidence:
 
     async def artifact(self, store, run, payload, *, kind="source_snapshot", step=None, refs=None):
         identity = uuid4()
-        if len(encoded(payload)) > retention_limit():
-            raise StoreError("evidence_artifact_exceeds_retention_limit", 422)
         await store.save_input_artifact(run["case_id"], run["id"], identity, payload,
             kind=kind, schema=SCHEMA, captured_at=await store.now(), refs=refs or [],
             actor_id=run["requested_by"], step_id=step)
@@ -151,10 +149,11 @@ class BaselineEvidence:
             from .baseline_capacity import remaining_seconds, reservation_for
             reservation = await reservation_for(store, run, steps)
             remaining = remaining_seconds(limits, now, reservation)
-            if binding["tool_name"] != "product_host_details" and (not context.scope.window_start or not context.scope.window_end):
+            query_scope = Scope.model_validate(binding["scope"])
+            if binding["tool_name"] != "product_host_details" and (not query_scope.window_start or not query_scope.window_end):
                 reason = "query_window_not_defined"
             elif (binding["tool_name"] != "product_host_details"
-                    and context.scope.window_start >= context.scope.window_end):
+                    and query_scope.window_start >= query_scope.window_end):
                 reason = "query_window_empty"
             elif hasattr(gateway, "unavailable_reason") and gateway.unavailable_reason(binding):
                 reason = gateway.unavailable_reason(binding)
@@ -167,8 +166,10 @@ class BaselineEvidence:
             elif remaining < 1:
                 reason = "final_model_time_reserved" if reservation else "insufficient_query_time"
             step_id, query_id = uuid4(), str(uuid4())
+            row_limit = min(limits.max_rows_per_query or 0,
+                (context.query_preparation or {}).get("effective_max_rows_per_query", limits.max_rows_per_query or 0))
             args = {"tool_name": binding["tool_name"], "contract_version": tools.VERSION,
-                "scope": binding["scope"], "limit": min(limits.max_rows_per_query or 0, 50),
+                "scope": binding["scope"], "limit": row_limit, "row_limit": row_limit,
                 "parameters": {"tenant_id": str(tenant_id), "hostname": binding["hostname"],
                     "binding_id": binding_id, "alert_ids": binding["alert_ids"], "query_id": query_id}}
             if binding["tool_name"] == "product_host_details":
@@ -188,6 +189,7 @@ class BaselineEvidence:
             deadline = asyncio.get_running_loop().time() + remaining
         try:
             rows, state, observed, truncated, omitted = None, "skipped", None, False, []
+            overflow_rows = []
             if reason is None and deadline - asyncio.get_running_loop().time() < 1:
                 reason = "insufficient_query_time"
             if reason is None:
@@ -206,12 +208,7 @@ class BaselineEvidence:
                 observed, truncated = len(rows), len(rows) > args["limit"]
                 if truncated:
                     omitted.append("row_limit")
-                rows = rows[:args["limit"]]
-                if len(encoded(rows)) > retention_limit() // 2:
-                    omitted.append("retained_row_bytes_limit")
-                while rows and len(encoded(rows)) > retention_limit() // 2:
-                    rows.pop()
-                    truncated = True
+                rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
                 state = "completed"
             async with self.service.transaction(tenant_id) as store:
                 run = await self.locked(store, case_id, run_id)
@@ -220,9 +217,19 @@ class BaselineEvidence:
                 captured = await store.now()
                 raw = {"schema_version": SCHEMA, "tool_name": args["tool_name"], "contract_version": tools.VERSION,
                     "actual_args": args, "state": state, "rows": rows, "returned_rows": len(rows) if rows is not None else None,
+                    "overflow_rows": overflow_rows, "observed_rows_in_bounded_fetch": observed,
+                    "truncation_reasons": omitted,
                     "truncated": truncated, "query_id": query_id if state != "skipped" else None,
                     "error": error(reason, captured) if reason else None, "captured_at": captured.isoformat()}
                 raw_id = await self.artifact(store, run, raw, kind="tool_response", step=step_id, refs=refs)
+                # Commit the received original before deriving a business view.
+                # A projection failure must not roll back an acquired response.
+                await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(
+                    output_artifact_id=raw_id))
+            async with self.service.transaction(tenant_id) as store:
+                run = await self.locked(store, case_id, run_id)
+                if run["state"] != "running":
+                    raise StoreError("baseline_not_running")
                 projected = {"schema_version": SCHEMA, "type": "query_projection", "run_id": str(run_id),
                     "binding_id": binding_id, "question_id": question_id, "alert_ids": binding["alert_ids"],
                     "receipt_id": str(raw_id), "state": state, "reason": reason,
@@ -231,12 +238,8 @@ class BaselineEvidence:
                     "limitations": binding["limitations"], "captured_at": captured.isoformat()}
                 if binding["tool_name"] == "product_host_details":
                     projected["source_role"] = "source_label"
-                # Semantic projections are independently bounded; preserve raw rows.
-                while projected["rows"] and len(encoded(projected)) > retention_limit():
-                    projected["rows"].pop()
-                    projected["truncated"] = True
-                    if "semantic_projection_bytes_limit" not in projected["omissions"]:
-                        projected["omissions"].append("semantic_projection_bytes_limit")
+                # Full business projection is retained. Model-view selection
+                # happens later under the independent preparation/token caps.
                 await self.artifact(store, run, projected, step=step_id,
                     refs=[reference("artifact", raw_id, "execution_receipt")])
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(

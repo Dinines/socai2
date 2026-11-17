@@ -15,6 +15,7 @@ TABLE_LABELS = {
     "incident_diagnoses": "各版诊断", "incident_alerts": "事件成员关系", "case_alerts": "Case 成员关系",
     "case_incidents": "Case 事件关系", "runs": "执行轮次", "run_steps": "执行步骤", "artifacts": "输入、输出和工件",
     "activities": "操作记录", "activity_targets": "操作影响", "comments": "评论", "response_links": "处置关联",
+    "analysis_tasks": "分析任务", "analysis_attempts": "任务执行记录", "analysis_subject_state": "分析更新状态",
 }
 
 
@@ -38,6 +39,8 @@ def subject_rows(data, kind, subject):
     result["run_steps"] = [r for r in rows("run_steps") if r.get("run_id") in run_ids]
     result["artifacts"] = [r for r in rows("artifacts") if r.get("run_id") in run_ids
                            or (r.get("run_id") is None and r.get(owner) == sid)]
+    for table in ("analysis_tasks", "analysis_attempts", "analysis_subject_state"):
+        result[table] = [r for r in rows(table) if r.get("subject_type") == kind and r.get("subject_id") == sid]
     result["activity_targets"] = [r for r in rows("activity_targets") if r.get(owner) == sid or r.get("run_id") in run_ids]
     activity_ids = {r["activity_id"] for r in result["activity_targets"]}
     result["activities"] = [r for r in rows("activities") if r.get("subject_" + owner) == sid or r["id"] in activity_ids]

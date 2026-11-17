@@ -1,7 +1,7 @@
 """Versioned C1 copies of the selected A Run's receipts; no tool calls or DDL."""
 from sqlalchemy import text
 
-from .stage_inputs import QUERY_RECEIPTS_VERSION, freshness_sql
+from .stage_inputs import QUERY_RECEIPTS_VERSION, same_material_triage_sql
 
 VERSION = "socai2.case-queries.v1"
 
@@ -85,7 +85,7 @@ def roles(context):
 
 def freshness_statement():
     queries = query_rows_sql("v.key", "v.value->'triage'->>'source_run_id'")
-    current_a = freshness_sql("alert_basic", "v.key", "SELECT v.value->'triage'->>'source_run_id'")
+    current_a = same_material_triage_sql("v.key", "v.value->'triage'->>'id'")
     return f"""WITH frozen AS MATERIALIZED (
       SELECT f.content_json AS body FROM socai2.artifacts f JOIN socai2.runs r
         ON r.tenant_id=f.tenant_id AND r.id=f.run_id AND r.case_id=f.case_id

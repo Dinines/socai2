@@ -1,0 +1,89 @@
+Reproduce unchanged delivery tests with pre-change provider_schema; no working-tree overwrite.
+..F.FFF                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_narrow_domain_can_leave_a_cross_member_finding_in_the_case_only _____
+
+    def test_narrow_domain_can_leave_a_cross_member_finding_in_the_case_only():
+        packet, context, value = candidate()
+        case_analysis = value["analysis"]
+        finding = next(f for f in case_analysis["findings"] if len(f["alert_ids"]) > 1)
+        domain = case_analysis["domains"][0]
+        domain["alert_ids"] = finding["alert_ids"][:1]
+        domain["finding_ids"] = [finding["id"]]
+>       with pytest.raises(analysis.AnalysisRejected, match="^domain_finding_scope_mismatch$"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AnalysisRejected
+
+services/api/tests/test_socai2_delivery_shape_rejections.py:75: Failed
+_ test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[chat_completions-standard] _
+
+provider = 'chat_completions', profile = 'standard'
+
+    @pytest.mark.parametrize("provider,profile", [("chat_completions", "standard"),
+        ("chat_completions", "vllm_grammar_v1"), (DEEPSEEK_PROTOCOL, "standard")])
+    def test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema(provider, profile):
+        packet, context, value = candidate()
+        sources = packet["source_map"]
+        gateway = SimpleNamespace(model="synthetic", provider=provider, schema_profile=profile)
+        generic = response_format(delivery.Delivery, sources, members=context.alerts,
+            questions=[q.id for q in context.questions], objects=context.scope.object_keys)
+        for state, rid in (("eligible", "prior"), ("unavailable", "prior"), ("not_selected", None)):
+>           assert delivery.delivery_format(sources, context, {"state": state, "result_id": rid}) == generic
+E           AssertionError: assert {'type': 'jso...ions'], ...}}} == {'type': 'jso...ions'], ...}}}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing items:
+E             {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}} != {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}}
+E             Use -v to get more diff
+
+services/api/tests/test_socai2_delivery_shape_rejections.py:110: AssertionError
+_ test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[chat_completions-vllm_grammar_v1] _
+
+provider = 'chat_completions', profile = 'vllm_grammar_v1'
+
+    @pytest.mark.parametrize("provider,profile", [("chat_completions", "standard"),
+        ("chat_completions", "vllm_grammar_v1"), (DEEPSEEK_PROTOCOL, "standard")])
+    def test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema(provider, profile):
+        packet, context, value = candidate()
+        sources = packet["source_map"]
+        gateway = SimpleNamespace(model="synthetic", provider=provider, schema_profile=profile)
+        generic = response_format(delivery.Delivery, sources, members=context.alerts,
+            questions=[q.id for q in context.questions], objects=context.scope.object_keys)
+        for state, rid in (("eligible", "prior"), ("unavailable", "prior"), ("not_selected", None)):
+>           assert delivery.delivery_format(sources, context, {"state": state, "result_id": rid}) == generic
+E           AssertionError: assert {'type': 'jso...ions'], ...}}} == {'type': 'jso...ions'], ...}}}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing items:
+E             {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}} != {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}}
+E             Use -v to get more diff
+
+services/api/tests/test_socai2_delivery_shape_rejections.py:110: AssertionError
+_ test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[deepseek_responses-standard] _
+
+provider = 'deepseek_responses', profile = 'standard'
+
+    @pytest.mark.parametrize("provider,profile", [("chat_completions", "standard"),
+        ("chat_completions", "vllm_grammar_v1"), (DEEPSEEK_PROTOCOL, "standard")])
+    def test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema(provider, profile):
+        packet, context, value = candidate()
+        sources = packet["source_map"]
+        gateway = SimpleNamespace(model="synthetic", provider=provider, schema_profile=profile)
+        generic = response_format(delivery.Delivery, sources, members=context.alerts,
+            questions=[q.id for q in context.questions], objects=context.scope.object_keys)
+        for state, rid in (("eligible", "prior"), ("unavailable", "prior"), ("not_selected", None)):
+>           assert delivery.delivery_format(sources, context, {"state": state, "result_id": rid}) == generic
+E           AssertionError: assert {'type': 'jso...ions'], ...}}} == {'type': 'jso...ions'], ...}}}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing items:
+E             {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}} != {'json_schema': {'name': 'socai2_delivery', 'strict': True, 'schema': {'$defs': {'Analysis': {'additionalProperties': ...ison'}, ...}, 'required': ['analysis', 'conclusion', 'closing_note', 'comparison', 'impact', 'recommendations'], ...}}}
+E             Use -v to get more diff
+
+services/api/tests/test_socai2_delivery_shape_rejections.py:110: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_delivery_shape_rejections.py::test_narrow_domain_can_leave_a_cross_member_finding_in_the_case_only
+FAILED services/api/tests/test_socai2_delivery_shape_rejections.py::test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[chat_completions-standard]
+FAILED services/api/tests/test_socai2_delivery_shape_rejections.py::test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[chat_completions-vllm_grammar_v1]
+FAILED services/api/tests/test_socai2_delivery_shape_rejections.py::test_initial_schema_fits_existing_reservation_and_other_rounds_keep_their_schema[deepseek_responses-standard]
+4 failed, 3 passed in 0.82s

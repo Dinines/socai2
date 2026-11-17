@@ -1,29 +1,25 @@
 ## MODIFIED Requirements
 
 ### Requirement: Model knowledge inputs are deduplicated and selected for the current task
-C3、Deep、C6 SHALL 使用本 Run 冻结且适合当前任务的知识，按原知识身份/版本去重并保留所有查询出处和独立角色；反馈复核可将所选原调查的相关知识及必要引用冻结进新 Run，保留原 Run/版本，不称为本轮新检索或当前最新版。模型输入 MUST 先满足本案必要材料、反馈及前序引用，再按配置容量选择完整可选条目；不得改写正文、把同卡多命中计为多份证据，或丢弃仍需使用的前序/相反依据。
+C3、Deep、C6 SHALL 使用本Run冻结且适合本步骤的知识，按真实身份/版本去重并保留查询出处与独立角色。模型输入 SHALL 先满足本案必要材料、人工反馈、反证及前序引用，再按配置容量选完整可选条目；MUST NOT 改写正文、将同卡多命中计为独立证据或丢弃必要来源凑容量。Case自动更新和用户完整重跑仍走完整C1–C6，不新增反馈专用C6-only路径；人工定向后的手动综合按case-human-http-flow执行，复用知识仍须恢复真实来源和必要依据。
 
 #### Scenario: Multiple queries retrieve the same historical card
-- **WHEN** 多个成员或目的命中同一知识块/历史快照
-- **THEN** 原检索行保留，模型只接收一份正文及其用途/出处；历史分诊和人工正文各自角色可定位，不混合不同版本或主体
+- **WHEN** 多个成员/目的命中同一知识块
+- **THEN** 原检索记录保留，模型收到一份正文及用途/出处，主体/版本和人工角色仍可定位
 
 #### Scenario: A Deep question or final delivery needs prior knowledge
-- **WHEN** 当前问题或前序结论引用了本轮知识，另一些知识与本步无关
-- **THEN** 优先恢复必要依赖，仅选择相关可选知识，记录排除原因；C6 不重新检索最新正文
-
-#### Scenario: Feedback review reuses knowledge from an earlier investigation
-- **WHEN** C6-only 复核依赖原调查的某个技术解释/历史参考
-- **THEN** 冻结该片段原文、原 Run/知识身份与版本并恢复引用，注明历史参考，不重新检索整库或冒充新观察
+- **WHEN** Deep或C6依赖本轮前序使用的知识，另有无关候选
+- **THEN** 优先恢复必要依据，只选择适用条目并记录排除原因；不再次检索或用旧结论取代真实依赖
 
 ## ADDED Requirements
 
-### Requirement: Stage templates keep reference knowledge separate from current evidence
-固定阶段母版 SHALL 定义本步目标、来源角色和输出内容，由程序装配当前范围/观察、前序判断、人工陈述、实际查询状态及必要知识。完整 Case SHALL 沿现有 C2 三目的检索向 C3/Deep/C6 提供技术解释、取证指导和历史比较；反馈复核只复用相关冻结条目。本项 MUST NOT 为 A/I 新增知识检索、增加知识总结模型、按用途新建物理库，或用知识/相似度替代本案事实和授权。
+### Requirement: Stage templates distinguish knowledge from current evidence
+母版 SHALL 说明本步目标、输入角色和输出，由程序装配本轮观察、前序分析、人工陈述与必要知识。工具只提供任务所需业务结果，未查询只写未查询，执行台账留原工件。完整Case SHALL 复用C2技术解释/取证指导/历史参考三目的检索；A/I不新增检索，MUST NOT 增加知识总结模型、按用途另建物理库或用历史相似度证明本案结论。
 
-#### Scenario: Retrieval returns more material than a stage can use
-- **WHEN** C2 候选较多或有重复/不适用条目
-- **THEN** 沿现有用途/条件过滤与配置预算选入完整条目，保留原候选/遗漏原因；必要证据优先，无法容纳时明确受限，不循环补搜或语义改写凑容量
+#### Scenario: Retrieval exceeds a stage's useful capacity
+- **WHEN** C2候选较多、重复或不适用
+- **THEN** 按目的/条件与配置筛选完整条目，保留原候选及遗漏原因；必要输入放不下则明确受限，不语义改写或循环补搜
 
-#### Scenario: Method guidance suggests a query
-- **WHEN** 模型用取证指导提出应查日志或参考历史案例解释差异
-- **THEN** 建议仍由现有问题/工具派发约束控制；实际查询与知识建议分别保存，不能因引用合法就认定事实或处置成立
+#### Scenario: A knowledge entry recommends a query
+- **WHEN** 模型参考条目提出查询建议
+- **THEN** 仍受现有问题/工具能力约束，实际查询与知识建议分别保存，引用合法不等于本案事实成立

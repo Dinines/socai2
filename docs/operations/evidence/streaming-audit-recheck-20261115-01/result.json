@@ -1,0 +1,73 @@
+{
+  "recorded_at": "2026-11-15T13:25:41.849251+00:00",
+  "scope": "用户提交的五项审计意见复核；检查当前实现及既有证据，不重复实施已有修复",
+  "status": "limited_recheck_passed",
+  "implementation_changed": false,
+  "deployment_changed": false,
+  "generation_calls": 0,
+  "database_calls": 0,
+  "whole_change_audit": "pending",
+  "findings": [
+    {
+      "id": "F1",
+      "decision": "采纳，当前已有修复",
+      "rule": "I 原选入范围、实际覆盖和 Case 交集分别冻结；不得以事件全量成员冒充诊断覆盖",
+      "evidence": "docs/operations/evidence/incident-case-scope-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F2",
+      "decision": "采纳，当前已有修复",
+      "rule": "真实 C1/配对取数按同原材料及已完成分诊判断可用性，管理编辑不剔除分诊，人工反馈另行保留比较",
+      "evidence": "docs/operations/evidence/case-input-metadata-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F3",
+      "decision": "采纳，当前已有修复；仅限确定未发送的暂时故障",
+      "rule": "同 Run 无其他未决操作才允许记已知失败并按配置重试一次；响应/写入超时仍 unknown，不统一重投",
+      "evidence": "docs/operations/evidence/case-retry-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F4",
+      "decision": "采纳，当前已有修复",
+      "rule": "不同 operation_key 独立排队，同主体串行，手动全适用范围与自动活跃范围分开；同 key 幂等保留",
+      "evidence": "docs/operations/evidence/case-trigger-fix-20261115-01/README.md"
+    },
+    {
+      "id": "F5",
+      "decision": "采纳合同统一要求，额度不是版本门槛；当前已有修复",
+      "rule": "执行入口缺现行 A/I/Case 合同明确拒绝，历史只读不用于执行回退；4096/8192 仍是可配置预算",
+      "evidence": "docs/operations/evidence/execution-contract-fix-20261115-01/README.md"
+    }
+  ],
+  "current_checks": {
+    "pytest": {
+      "command": "PYTHONPATH=services/api SOCAI2_INVESTIGATION_POLICY=deploy/local-investigation/investigation-policy-case-v1.toml .local/conda-envs/socai2/bin/python -m pytest -q services/api/tests/test_socai2_case_incident_scope.py services/api/tests/test_socai2_case_update_inputs.py services/api/tests/test_socai2_baseline_retry.py services/api/tests/test_socai2_execution_contract.py services/api/tests/test_socai2_analysis_dispatch.py",
+      "exit_code": 0,
+      "output": "52 passed in 1.51s",
+      "kind": "offline; does not replace real PG/Redis integration or real model acceptance"
+    },
+    "openspec": {
+      "command": "openspec validate schedule-streaming-investigation-updates --strict --no-interactive",
+      "exit_code": 0,
+      "output": "Change 'schedule-streaming-investigation-updates' is valid"
+    }
+  },
+  "limitations": [
+    "本轮未重跑已有真实隔离 PG/Redis 集成批次，其原件/失败与验证范围保持",
+    "当前真实候选 Case 整链由调查与测试对话继续验证，不以此复核提前判整个 change 审计通过",
+    "模型正文质量原 NOT_PASSED 不变"
+  ],
+  "source_sha256": {
+    "services/api/app/socai2/case_incident_scope.py": "f76ba12b1e9eb39f9d92a01a54dde029fca670785ffc7702c404937c2a09b0eb",
+    "services/api/app/socai2/incident_inputs.py": "920e4253b81882dce982bdc092fc6d4cb695064e66d81aaf8fe36002f5b79f83",
+    "services/api/app/socai2/stage_inputs.py": "e25b94689810d69b9efb5775cb3a7881fa26e3ba0725b514e5edf14de812069d",
+    "services/api/app/socai2/baseline_context.py": "60594c47ac58f270bec21544b2da3b8cfe52ae9dc4c4f872489a21e712e7acfe",
+    "services/api/app/socai2/case_update_inputs.py": "08de290e48bc50c5b656b3f74800650bc3de4d10ad79e1f0653fbe674822e3d3",
+    "services/api/app/socai2/baseline_failure.py": "2c4b31846c3887c55e8eb039340ef9bcab87f02482d4ccba7d8caeffb96c462a",
+    "services/api/app/socai2/baseline_closing.py": "182d552e13e4ce718ec768924b39c44ffb1833ca67e2b3ee0a04f0841a22a315",
+    "services/api/app/socai2/baseline_executor.py": "ba44a6e745dd4918a70109d00298a4af6477f0e2aa4aa5c7262f23d176f6a125",
+    "services/api/app/socai2/analysis_case_executor.py": "982177053b7e9ff8885e926192711ea05213f4df6a74c299e2dc885bb20dbc04",
+    "services/api/app/socai2/analysis_dispatch_store.py": "78ce4214c5872d397fd179dda3d4695e2debd2541a259756da1659d0cf64f545",
+    "services/api/app/socai2/runtime_policy.py": "d14cd9f64fc2f3649d428948d05be26953f28dc0f90b54d1c9571ff7d87fa1c8"
+  }
+}

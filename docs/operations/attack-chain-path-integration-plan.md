@@ -16,7 +16,7 @@
 | Graph开关和身份 | Agents `AISOC_GRAPH_ENABLED`；API full层Neo4j disable=false；已有tenant reader机制 | 配置是必要条件之一；查各调用路径的reader/tenant和真实消费，不为图读取扩大模型/只读服务的写权限 |
 | 调查消费 | 默认四节点已有ContextBundle；Router专业函数支持可选bundle；自动Graph末端有attack_path节点 | bundle无Case链/路径字段；Router未传bundle；Deep未读bundle/findings；末端查询不能倒算已进入前面模型 |
 
-源码：[链算法](../../services/api/app/services/attack_chain.py)、[链API](../../services/api/app/api/v1/endpoints/attack_chain.py)、[图服务](../../services/api/app/services/graph_service.py)、[图API](../../services/api/app/api/v1/endpoints/graph.py)、[AttackPath agent](../../services/agents/app/agents/attack_path_agent.py)。旧配套状态见[full回执](full-support-migration.md)，上批真实调查边界见[逐步案例](investigation-functional-20261021.md)。
+源码：[链算法](../../services/api/app/services/attack_chain.py)、[链API](../../services/api/app/api/v1/endpoints/attack_chain.py)、[图服务](../../services/api/app/services/graph_service.py)、[图API](../../services/api/app/api/v1/endpoints/graph.py)、[AttackPath agent](../../services/agents/app/agents/attack_path_agent.py)。旧配套状态见[full回执](full-support-migration.md)，上批真实调查边界见[逐步案例](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/investigation-functional-20261021.md)。
 
 ## 2. 这次怎样接：Case优先，自动告警沿Alert起点
 

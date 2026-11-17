@@ -133,15 +133,15 @@ V06沿下文既有小批范围与当前有效授权形成新批卡，明确候�
 
 ## 11月4日批次边界（历史）
 
-当前m2已授权且8次结束：[实际结果](../../../docs/investigation/socai2-model-evaluation-m2-20261104.md)。5原答/2HTTP400/1HTTP408，程序2接受但质量仍有缺口，0业务采纳。n10/r7继续仅本地准备，不部署已知A请求失败的候选；先解错误留痕/协议、I检测投影及语义边界，再新批验证。原审批拒绝已解除，以下“等待m2授权”均为历史状态，不重问，不重派。
+当前m2已授权且8次结束：[实际结果](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-model-evaluation-m2-20261104.md)。5原答/2HTTP400/1HTTP408，程序2接受但质量仍有缺口，0业务采纳。n10/r7继续仅本地准备，不部署已知A请求失败的候选；先解错误留痕/协议、I检测投影及语义边界，再新批验证。原审批拒绝已解除，以下“等待m2授权”均为历史状态，不重问，不重派。
 
-2026-11-04用户要求“进行验证”：m2固定8次当前合同双后端对照、n10候选及r7最多11模型完整链计划见[本批范围](../../../docs/investigation/socai2-contract-validation-plan-20261104.md)。m2首次上传被自动审批拒绝，需本批到21传输授权；已询问，0上传/模型。n10只有本地固定包，r7未派发。授权后先m2，不在其运行中部署；m2结束核对后再按独立服务阶段推进。下方为历史状态，m1/r6不可重派。
+2026-11-04用户要求“进行验证”：m2固定8次当前合同双后端对照、n10候选及r7最多11模型完整链计划见[本批范围](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-contract-validation-plan-20261104.md)。m2首次上传被自动审批拒绝，需本批到21传输授权；已询问，0上传/模型。n10只有本地固定包，r7未派发。授权后先m2，不在其运行中部署；m2结束核对后再按独立服务阶段推进。下方为历史状态，m1/r6不可重派。
 
-2026-11-04最新：m1两后端固定对照已结束，12请求/11原答/1HTTP400，37506已报tokens，0业务Run/Tool/采纳；见[逐项实测](../../../docs/investigation/socai2-model-evaluation-m1-20261104.md)。确认9B标签误判仍在及Schema兼容、双份/历史引用、时间/领域合同问题，先修本地合同再新批完整链。n9在线，本地v3只构造固定C3真实请求，未部署；Deep/C6/H/第二C仍未通过，不能核销3.7。m1和r6均不重派。r6原3模型11380tokens及C准备失败保留[原验收](../../../docs/operations/socai2-next-r6-validation-20261104.md)，以下为更早历史时点。
+2026-11-04最新：m1两后端固定对照已结束，12请求/11原答/1HTTP400，37506已报tokens，0业务Run/Tool/采纳；见[逐项实测](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-model-evaluation-m1-20261104.md)。确认9B标签误判仍在及Schema兼容、双份/历史引用、时间/领域合同问题，先修本地合同再新批完整链。n9在线，本地v3只构造固定C3真实请求，未部署；Deep/C6/H/第二C仍未通过，不能核销3.7。m1和r6均不重派。r6原3模型11380tokens及C准备失败保留[原验收](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/socai2-next-r6-validation-20261104.md)，以下为更早历史时点。
 
-最新优先事项：用户要求先区分自身设计与模型问题。r4已结束，r5只收取已发出的三次A/I，不继续新增Case/模型。按[七份原件归因审计](../../../docs/investigation/socai2-deepseek-root-cause-audit-20261104.md)先确认输入必需字段/预算取舍/实际可见性、事件背景与成员证据引用、格式/事实/交付错误分层；不以换模型或增加提示代替设计。固定原件离线验证完成并固化新候选后，再另立真实验收批。以下ergouzi等待描述属于历史，当前已按用户选择仅独立新服务接DeepSeek，原配置保持。
+最新优先事项：用户要求先区分自身设计与模型问题。r4已结束，r5只收取已发出的三次A/I，不继续新增Case/模型。按[七份原件归因审计](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-deepseek-root-cause-audit-20261104.md)先确认输入必需字段/预算取舍/实际可见性、事件背景与成员证据引用、格式/事实/交付错误分层；不以换模型或增加提示代替设计。固定原件离线验证完成并固化新候选后，再另立真实验收批。以下ergouzi等待描述属于历史，当前已按用户选择仅独立新服务接DeepSeek，原配置保持。
 
-r1/r2/r3均已结束未通过；本地驱动对旧三批仅开放证据导出。最新[r3逐项结果](../../../docs/operations/socai2-next-r3-validation-20261104.md)保留“结构接受但语义失败”的A1，不能删除其历史分诊来改善后续输入。
+r1/r2/r3均已结束未通过；本地驱动对旧三批仅开放证据导出。最新[r3逐项结果](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/socai2-next-r3-validation-20261104.md)保留“结构接受但语义失败”的A1，不能删除其历史分诊来改善后续输入。
 
 用户允许使用ergouzi API。r4在API入口/凭据含义明确、独立新服务配置固定并验证后才派发；当前只是本地驱动准备。复用原两告警和两湖事件，先逐字段核对，新Case/操作编号，不重写原样本、不增加预算、不换共享网关或旧服务配置。旧字段/判断继续按原角色和新鲜度规则读取。
 

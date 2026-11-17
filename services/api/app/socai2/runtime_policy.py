@@ -73,6 +73,23 @@ class CaseProfile(IncidentProfile):
                 "business_sha256": hashlib.sha256(self.business_raw).hexdigest()}
 
 
+C3_COMPLETION_VERSION = "socai2.c3-completion.v1"
+C3_SECTIONS = ("summary", "members", "findings", "questions", "domains", "conflicts", "followups")
+
+
+def validate_c3_completion(policy, *, frozen=False):
+    keys = {"version", "max_attempts", "instruction", "dependencies"} | ({"system"} if frozen else set())
+    if (not isinstance(policy, dict) or set(policy) != keys or policy.get("version") != C3_COMPLETION_VERSION
+            or type(policy.get("max_attempts")) is not int or policy["max_attempts"] not in {0, 1}
+            or not isinstance(policy.get("instruction"), str) or "{missing}" not in policy["instruction"]
+            or not isinstance(policy.get("dependencies"), dict) or set(policy["dependencies"]) != set(C3_SECTIONS)
+            or any(not isinstance(v, list) or any(k not in C3_SECTIONS for k in v) or len(v) != len(set(v))
+                   for v in policy["dependencies"].values())
+            or (frozen and (not isinstance(policy.get("system"), str) or not policy["system"].strip()))):
+        raise ValueError("case_c3_completion_policy_invalid")
+
+
+
 def load_case_profile(selection):
     if not isinstance(selection, dict) or set(selection) != {"profile"}:
         raise ValueError("case_profile_selection_invalid")
@@ -96,16 +113,44 @@ def load_case_profile(selection):
                                                      for k, v in questions.items())):
         raise ValueError("case_context_meaning_policy_invalid")
     output = data.get("c3_output")
-    if (not isinstance(output, dict) or set(output) != {"max_followups", "instruction"}
+    if (not isinstance(output, dict) or set(output) != {"version", "max_findings", "max_followups", "instruction"}
+            or output["version"] != "socai2.c3-output.v1"
+            or type(output["max_findings"]) is not int or not 0 <= output["max_findings"] <= 24
             or type(output["max_followups"]) is not int or not 0 <= output["max_followups"] <= 12
-            or not isinstance(output["instruction"], str) or "{max_followups}" not in output["instruction"]):
-        # 12 is the existing storage contract's capacity, not a runtime default.
+            or not isinstance(output["instruction"], str)
+            or any(field not in output["instruction"] for field in ("{max_findings}", "{max_followups}"))):
+        # 24/12 are existing storage capacities, not runtime defaults.
         raise ValueError("case_c3_output_policy_invalid")
+    validate_c3_completion(data.get("c3_completion"))
+    routing = data.get("followup_routing")
+    if (not isinstance(routing, dict) or set(routing) != {"version", "C3", "Deep"}
+            or routing["version"] != "socai2.followup-routing.v1"
+            or any(not isinstance(routing[k], str) or not routing[k].strip() for k in ("C3", "Deep"))):
+        raise ValueError("case_followup_routing_policy_invalid")
     program = data.get("program_output")
-    if (not isinstance(program, dict) or set(program) != {"version", "instruction"}
-            or program["version"] != "socai2.case-program-output.v1"
+    if (not isinstance(program, dict) or not {"version", "instruction"} <= set(program)
+            or set(program) - {"version", "instruction", "c3_coverage"}
+            or ("c3_coverage" in program and type(program["c3_coverage"]) is not bool)
+            or program["version"] not in {"socai2.case-program-output.v1", "socai2.case-program-output.v2"}
             or not isinstance(program["instruction"], str) or not program["instruction"].strip()):
         raise ValueError("case_program_output_policy_invalid")
+    comparison = data.get("fixed_comparison")
+    if comparison is not None and (not isinstance(comparison, dict)
+            or set(comparison) != {"version", "summary", "instruction"}
+            or comparison["version"] != "socai2.case-fixed-comparison.v1"
+            or any(not isinstance(comparison[k], str) or not comparison[k].strip()
+                   for k in ("summary", "instruction")) or len(comparison["summary"]) > 1200):
+        raise ValueError("case_fixed_comparison_policy_invalid")
+    comparison_input = data.get("comparison_input_selection")
+    if comparison_input is not None and (not isinstance(comparison_input, dict)
+            or set(comparison_input) != {"version", "omit", "question_states", "exclude_questions", "instruction"}
+            or comparison_input["version"] != "fixed-comparison-business-v1"
+            or not isinstance(comparison_input["omit"], dict)
+            or set(comparison_input["omit"]) != {"findings", "questions", "case_impact"}
+            or any(not isinstance(v, list) or any(not isinstance(k, str) for k in v)
+                   for v in [*comparison_input["omit"].values(), comparison_input["question_states"], comparison_input["exclude_questions"]])
+            or not isinstance(comparison_input["instruction"], str) or not comparison_input["instruction"].strip()):
+        raise ValueError("case_comparison_input_policy_invalid")
     enrichment = data.get("enrichment")
     if (not isinstance(enrichment, dict) or set(enrichment) != {
             "version", "reserved_tool_calls", "paired_source_penalty", "priorities"}
@@ -118,6 +163,15 @@ def load_case_profile(selection):
             or not isinstance(data.get("citation_instruction"), str) or not data["citation_instruction"].strip()):
         raise ValueError("case_profile_enrichment_or_citation_invalid")
     followup = data.get("followup")
+    c3_selection, c6_selection = data.get("c3_input_selection", {}), data.get("followup_input_selection", {})
+    if (any(key in c3_selection and type(c3_selection[key]) is not bool
+            for key in ("omit_unusable_prior_results", "prefer_incident_conclusion"))
+            or "defer_prior_context" in c6_selection and type(c6_selection["defer_prior_context"]) is not bool
+            or not isinstance(c6_selection.get("final_prior_omit", []), list)
+            or any(v not in {"members", "domains"} for v in c6_selection.get("final_prior_omit", []))
+            or not isinstance(c6_selection.get("graph_directory_relations", []), list)
+            or any(v != "source_reports_object" for v in c6_selection.get("graph_directory_relations", []))):
+        raise ValueError("case_task_input_selection_invalid")
     knowledge = data.get("knowledge_selection", {}).get("stage_max_characters")
     if (not isinstance(knowledge, dict) or set(knowledge) != {"C3", "Deep", "C6"}
             or any(type(v) is not int or v < 0 for v in knowledge.values())):
@@ -127,6 +181,13 @@ def load_case_profile(selection):
             or any(not isinstance(v, list) or not v or not set(v) <= {
                 "technical_explanation", "investigation_guidance", "historical_case_reference"} for v in purposes.values())):
         raise ValueError("case_knowledge_stage_purposes_invalid")
+    for stage, key in (("Deep", "deep_question_purposes"), ("C6", "final_question_purposes")):
+        question_purposes = data["knowledge_selection"].get(key, {})
+        if (not isinstance(question_purposes, dict)
+                or any(not isinstance(k, str) or not k.strip() or not isinstance(v, list)
+                       or any(not isinstance(p, str) or p not in purposes[stage] for p in v)
+                       for k, v in question_purposes.items())):
+            raise ValueError("case_knowledge_question_purposes_invalid")
     if (not isinstance(followup, dict) or followup.get("version") != "socai2.case-followup.v1"
             or any(not isinstance(followup.get(k), str) or not followup[k].strip() for k in ("Deep", "C6", "common"))
             or any(not isinstance(followup.get(k), list) or any(not isinstance(v, str) for v in followup[k])
@@ -172,6 +233,8 @@ class InvestigationPolicy:
     model: object
     tools: object
     labels: object
+    views: object
+    raw: bytes
     incident_io: object = None
     alert_io: object = None
     case_io: object = None
@@ -180,11 +243,42 @@ class InvestigationPolicy:
     def identity(self):
         return self.version + ":" + self.sha256[:12]
 
+    def require_execution_profiles(self, *names):
+        """Historical policies can be read, but cannot select old execution contracts."""
+        for name in names or ("alert_io", "incident_io", "case_io"):
+            profile = getattr(self, name, None)
+            if profile is None:
+                raise ValueError("execution_profile_required:" + name)
+            if name in {"alert_io", "incident_io"}:
+                if profile.config.get("output_validation") != {"prose_alias_format": "namespaced_v1"}:
+                    raise ValueError("execution_profile_not_current:" + name)
+            elif name == "case_io":
+                program = profile.config["program_output"]
+                if program["version"] != "socai2.case-program-output.v2" or program.get("c3_coverage") is not True:
+                    raise ValueError("execution_profile_not_current:" + name)
+            else:
+                raise ValueError("execution_profile_unknown:" + name)
+        return self
+
+    def snapshot(self):
+        """Validated configuration only, never process environment or secrets."""
+        profiles = {}
+        for name in ("alert_io", "incident_io", "case_io"):
+            profile = getattr(self, name)
+            if profile is not None:
+                profiles[name] = {"sha256": profile.sha256, "json_text": profile.raw.decode("utf-8")}
+                if isinstance(profile, CaseProfile):
+                    profiles[name]["business"] = {
+                        "sha256": hashlib.sha256(profile.business_raw).hexdigest(),
+                        "json_text": profile.business_raw.decode("utf-8")}
+        return {"schema_version": "socai2.runtime-policy.v1", "policy_id": self.identity,
+                "sha256": self.sha256, "toml_text": self.raw.decode("utf-8"), "profiles": profiles}
+
 
 def load_policy(path):
     raw = Path(path).read_bytes()
     data = tomllib.loads(raw.decode("utf-8"))
-    if set(data) - {"incident_io", "alert_io", "case_io"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels"}:
+    if set(data) - {"incident_io", "alert_io", "case_io"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels", "views"}:
         raise ValueError("investigation_policy_configuration_incomplete")
     if not isinstance(data["version"], str) or not data["version"].strip() or len(data["version"]) > 100:
         raise ValueError("investigation_policy_version_invalid")
@@ -220,6 +314,10 @@ def load_policy(path):
                 or urlsplit(spec["source_url"]).scheme != "https"):
             raise ValueError("investigation_policy_label_entry_invalid")
     incident_io = None
+    views = data["views"]
+    if (not isinstance(views, dict) or set(views) != {"max_graph_bytes"}
+            or type(views["max_graph_bytes"]) is not int or views["max_graph_bytes"] <= 16384):
+        raise ValueError("investigation_policy_view_capacity_invalid")
     if "incident_io" in data:
         incident_io = load_incident_profile(data["incident_io"])
     alert_io = load_alert_profile(data["alert_io"]) if "alert_io" in data else None
@@ -227,6 +325,7 @@ def load_policy(path):
     return InvestigationPolicy(version=data["version"], sha256=hashlib.sha256(raw).hexdigest(), incident_io=incident_io, alert_io=alert_io, case_io=case_io,
         single_model_timeout_seconds=data["single_model_timeout_seconds"],
         final_reserve_seconds=data["final_reserve_seconds"], model=ModelPolicy.parse(data["model"]),
+        views=MappingProxyType(views), raw=raw,
         tools=MappingProxyType({k: MappingProxyType(v) for k, v in tools.items()}),
         labels=MappingProxyType({"version": labels["version"], "entries": MappingProxyType({
             k: MappingProxyType(v) for k, v in labels["entries"].items()})}), **stages)
@@ -239,7 +338,6 @@ class ModelPolicy:
     schema_profile: str
     context_tokens: int
     max_prepared_bytes: int
-    max_artifact_bytes: int
     final_reserved_input_tokens: int
     final_reserved_calls: int
     output_tokens: object
@@ -254,7 +352,7 @@ class ModelPolicy:
                 raise ValueError("model_policy_identity_invalid")
         if values["protocol"] != "chat_completions":
             raise ValueError("model_policy_token_meter_protocol_not_supported")
-        for key in ("context_tokens", "max_prepared_bytes", "max_artifact_bytes", "final_reserved_input_tokens", "final_reserved_calls"):
+        for key in ("context_tokens", "max_prepared_bytes", "final_reserved_input_tokens", "final_reserved_calls"):
             if type(values[key]) is not int or values[key] <= 0:
                 raise ValueError("model_policy_capacity_invalid")
         outputs, tokenizer = values["output_tokens"], values["tokenizer"]
@@ -289,8 +387,17 @@ def active_policy():
 
 
 def draft_limit():
-    """Preparation/storage ceiling; final token measurement decides model fit."""
+    """Model-view preparation ceiling; never an original storage/read limit."""
     return active_policy().model.max_prepared_bytes
+
+
+def execution_policy(*profiles):
+    from .baseline_store import StoreError
+    policy = active_policy()
+    try:
+        return policy.require_execution_profiles(*profiles)
+    except ValueError:
+        raise StoreError("investigation_execution_contract_required", 503) from None
 
 
 def field_limit():
@@ -298,5 +405,6 @@ def field_limit():
     return draft_limit()
 
 
-def retention_limit():
-    return active_policy().model.max_artifact_bytes
+def graph_limit():
+    """Derived C5 view allowance; retained originals are stored independently."""
+    return active_policy().views["max_graph_bytes"]

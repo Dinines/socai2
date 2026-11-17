@@ -65,14 +65,14 @@ class CaseCloseRequest(CaseLifecycleRequest):
 
 class CaseBlockingRun(Contract):
     id: UUID = Field(description="阻止结案的本案Run ID。")
-    state: Literal["running", "unknown"] = Field(description="running正在执行；unknown执行结果未明确，两者均阻止结案。")
+    state: Literal["running", "unknown"] = Field(description="真实仍在运行的Run结果状态；已本地结束的unknown不在此列表。")
 
 
 class CaseManagementView(Contract):
     case: CaseView = Field(description="当前已保存的Case管理字段和行版本，与Case详情一致。")
     open_task_count: int = Field(ge=0, description="当前修订为not_started/in_progress的人工任务数；历史版本不重复计数。")
-    blocking_runs: list[CaseBlockingRun] = Field(description="本案running/unknown Run；空列表表示没有执行状态阻塞，不表示没有待办。")
-    can_close: bool = Field(description="案件未结案且无阻塞Run；如requires_open_task_confirmation为true仍须确认及理由。")
+    blocking_runs: list[CaseBlockingRun] = Field(description="本案实际活动的Run；准备期尚无Run时此列表可空，以can_close及分析任务状态为准。")
+    can_close: bool = Field(description="案件未结案且无实际活动执行（包括尚无Run的准备阶段）；人工任务确认规则保持。")
     can_reopen: bool = Field(description="当前案件是否已解决，可由人显式重开。")
     requires_open_task_confirmation: bool = Field(description="未结案且存在未完人工任务；关闭请求须确认并提供理由。")
 

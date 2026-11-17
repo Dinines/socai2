@@ -1,0 +1,34 @@
+{
+  "id": "chatcmpl-a253b77f340ed63a",
+  "model": "aisoc-investigation",
+  "usage": {
+    "total_tokens": 6511,
+    "prompt_tokens": 4835,
+    "completion_tokens": 1676,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"members\": [\n    {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录 svc-app-98f92a5e 账号在 host-app-57881714 上成功启动 curl 进程并访问 198.51.100.91。现有分析指出缺乏授权记录、威胁情报匹配及历史告警关联，无法区分业务行为与潜在威胁。查询未返回资产或威胁情报信息。\"\n    ,\n    \"source_ids\": [\n      \"N2_S2\",\n      \"N2_S4\",\n      \"N2_S304\",\n      \"N2_S305\",\n      \"N2_S306\"\n    ]\n  ,\n    \"limitations\": [\n      \"缺乏明确的业务授权记录以证实行为合法性。\"\n    ]\n  ,\n    \"alert_ref\": \"A1\"\n  },\n  {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录同一账号发起的 TCP 网络流量（目的 IP 198.51.100.91:443）。现有分析认为证据不足以判定性质，缺乏恶意或良性行为的明确佐证。查询未返回资产信息，但历史告警有结果。\"\n    ,\n      \"source_ids\": [\n        \"N2_S75\",\n        \"N2_S77\",\n        \"N2_S313\",\n        \"N2_S314\",\n        \"N2_S335\"\n      ]\n    ,\n      \"limitations\": [\n        \"前序模型分析引用存在质量问题，不能视为已核实事实。\"\n      ]\n    ,\n      \"alert_ref\": \"A2\"\n    },\n  {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录同一账号发起的另一条 TCP 网络流量（目的 IP 198.51.100.91:443，时间略早于 A2）。现有分析结论与 A2 一致，缺乏授权记录及威胁情报支持，无法定性。查询未返回资产或威胁情报信息。\"\n    ,\n      \"source_ids\": [\n        \"N2_S157\",\n        \"N2_S159\",\n        \"N2_S336\",\n        \"N2_S337\",\n        \"N2_S338\"\n      ]\n    ,\n      \"limitations\": [\n        \"缺乏授权记录以排除正常业务活动。\"\n      ]\n    ,\n      \"alert_ref\": \"A3\"\n    },\n  {\n      \"state\": \"summarized\",\n      \"assessment\": \"记录 svc-app-98f92a5e 账号从 192.0.2.91 成功登录 host-app-57881714。现有分析指出无授权记录、无威胁情报匹配、无历史告警关联，且查询结果为空，无法区分正常登录与潜在威胁。\"\n    ,\n      \"source_ids\": [\n      \"N2_S239\",\n      \"N2_S241\",\n      \"N2_S351\",\n      \"N2_S352\",\n      \"N2_S353\"\n    ]\n  ,\n      \"limitations\": [\n        \"查询结果为空，无法通过历史数据辅助判断。\"\n      ]\n    ,\n      \"alert_ref\": \"A4\"\n    }\n  ],\n  \"findings\": [\n    {\n      \"statement\": \"事件链显示 svc-app-98f92a5e 账号先成功登录，随后启动 curl 进程并建立两条指向 198.51.100.91:443 的网络连接，时间跨度约 20 分钟。\",\n      \"state\": \"unresolved\"\n    ,\n      \"source_ids\": [\n        \"N2_S239\",\n        \"N2_S243\",\n        \"N2_S2\",\n        \"N2_S75\",\n        \"N2_S157\"\n      ]\n    ,\n      \"limitations\": [\n        \"缺乏业务上下文确认该账号及目标 IP 的合规性。\"\n      ]\n    ,\n      \"alert_refs\": [\n        \"A1\",\n        \"A2\",\n        \"A3\",\n        \"A4\"\n      ]\n    }\n  ],\n  \"open_questions\": [\n    {\n      \"text\": \"svc-app-98f92a5e 账号访问 198.51.100.91 是否有明确的业务授权记录或配置策略支持？\",\n      \"source_ids\": [\n        \"N2_S2\",\n        \"N2_S75\",\n        \"N2_S157\",\n        \"N2_S239\"\n      ]\n    ,\n      \"evidence_requirements\": [\n        \"业务授权文档、配置管理记录或白名单列表。\"\n      ]\n    ,\n      \"alert_refs\": [\n        \"A1\",\n        \"A2\",\n        \"A3\",\n        \"A4\"\n      ]\n    }\n  ],\n  \"diagnosis\": {\n    \"summary\": \"检测到 svc-app-98f92a5e 账号在 host-app-57881714 上完成登录，并依次启动 curl 进程及发起两条至 198.51.100.91:443 的网络连接。所有告警当前均被标记为待复核，主要因缺乏授权记录、威胁情报匹配及有效的历史告警关联，无法区分是正常业务活动还是潜在威胁。\",\n    \"conclusion\": \"整体判断为‘待复核’。现有证据链完整记录了登录、进程启动及网络通信行为，但关键证据（业务授权）缺失，且外部查询（威胁情报、资产库存）多为空或无结果，导致无法排除合法业务场景，亦无法确认恶意意图。\",\n    \"limitations\": [\n      \"缺乏明确的业务授权记录以证实行为合法性。\",\n      \"部分历史分析引用存在质量问题，需重新核实。\",\n      \"查询结果为空，限制了通过历史数据辅助判断的能力。\"\n    ],\n    \"source_ids\": [\n      \"N2_S2\",\n      \"N2_S4\",\n      \"N2_S75\",\n      \"N2_S77\",\n      \"N2_S157\",\n      \"N2_S159\",\n      \"N2_S239\",\n      \"N2_S241\",\n      \"N2_S304\",\n      \"N2_S305\",\n      \"N2_S306\",\n      \"N2_S313\",\n      \"N2_S314\",\n      \"N2_S335\",\n      \"N2_S336\",\n      \"N2_S337\",\n      \"N2_S338\",\n      \"N2_S351\",\n      \"N2_S352\",\n      \"N2_S353\"\n    ]\n  }\n}",
+        "provider_specific_fields": {
+          "refusal": null,
+          "reasoning": null
+        }
+      },
+      "finish_reason": "stop",
+      "provider_specific_fields": {
+        "token_ids": null,
+        "stop_reason": null,
+        "routed_experts": null
+      }
+    }
+  ],
+  "created": 1794873125,
+  "system_fingerprint": "vllm-0.30.0-76652a79"
+}

@@ -1,6 +1,6 @@
 ## Why
 
-已完成的[独立审查](../../../../docs/investigation/investigation-flow-review-20261111.md)确认当前 Case 主线的两个直接缺口：Deep 将缺少演练/审批材料写作反证、混淆本次验收与原业务环境；C6 的查询状态摘要及影响表述仍需准确对应依据（A01/M01/M02）。C3 提示最多两项补查，但生成/接收允许 12 项，三项可以进入派发器（A02）。
+已完成的[独立审查](../../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/investigation-flow-review-20261111.md)确认当前 Case 主线的两个直接缺口：Deep 将缺少演练/审批材料写作反证、混淆本次验收与原业务环境；C6 的查询状态摘要及影响表述仍需准确对应依据（A01/M01/M02）。C3 提示最多两项补查，但生成/接收允许 12 项，三项可以进入派发器（A02）。
 
 本 change 承接[主调查](../../complete-socai2-investigation-chain/tasks.md)3.10/3.30 的当前子范围，基线为 `V1.1@45063c97`、最近核验发布 21 r6。复用本次审计及来源角色、冻结/保存/读取的已有证据，不重复全项目审计。此前 `correct-invalid-case-conclusion` / `fix-case-followup-gaps` 属于已完成的早期执行链，保留原记录，不把它们重新打开替代当前实现。
 

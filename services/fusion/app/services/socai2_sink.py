@@ -37,6 +37,11 @@ async def insert(conn, table, values, *, conflict=False):
 
 
 class Socai2AlertSink(AlertSink):
+    def __init__(self, *args, analysis_policy=None, **kwargs):
+        from app.services.socai2_analysis_tasks import load_policy
+        super().__init__(*args, **kwargs)
+        self.analysis_policy = analysis_policy if analysis_policy is not None else load_policy()
+
     async def lookup_delivery(self, alert):
         pool = await self._ensure_pool()
         if pool is None:
@@ -136,8 +141,9 @@ class Socai2AlertSink(AlertSink):
             first_seen_at=least(first_seen_at,$5),last_seen_at=greatest(last_seen_at,$5)
             WHERE tenant_id=$1 AND id=$2""", tenant, aid, mid, now, fields["event_time"])
         link = await conn.fetchrow("SELECT incident_id FROM socai2.incident_alerts WHERE tenant_id=$1 AND alert_id=$2", tenant, aid)
+        incident_inserted = None
         if link is None:
-            await insert(conn, "incidents", {"id": fused.incident_id, "tenant_id": tenant,
+            incident_inserted = await insert(conn, "incidents", {"id": fused.incident_id, "tenant_id": tenant,
                 "source_namespace": p.STORE_NAMESPACE, "source_incident_id": str(fused.incident_id),
                 "title": "关联事件 · " + fused.alert.title}, conflict=True)
             inc = await conn.fetchrow("SELECT source_namespace,source_incident_id FROM socai2.incidents WHERE tenant_id=$1 AND id=$2 FOR UPDATE", tenant, fused.incident_id)
@@ -151,4 +157,9 @@ class Socai2AlertSink(AlertSink):
         incident_id = link["incident_id"] if link else fused.incident_id
         await conn.execute("""UPDATE socai2.incidents SET business_updated_at=greatest(business_updated_at,$3),row_version=row_version+1
             WHERE tenant_id=$1 AND id=$2""", tenant, incident_id, now)
+        if inserted is not None:
+            from app.services.socai2_analysis_tasks import register_initial
+            await register_initial(conn, tenant, aid, now, self.analysis_policy)
+            if incident_inserted is not None:
+                await register_initial(conn, tenant, incident_id, now, self.analysis_policy, subject_type="incident")
         return PersistOutcome.INSERTED if inserted is not None else PersistOutcome.DUPLICATE

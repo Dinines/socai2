@@ -1,5 +1,6 @@
 """Standalone route/lifespan guards without any database or model call."""
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -12,7 +13,7 @@ from pydantic import SecretStr
 
 def test_only_new_service_routes_and_no_legacy_startup():
     paths = set(standalone.app.openapi()["paths"]) | {r.path for r in standalone.app.routes if hasattr(r, "path")}
-    assert "/api/v1/socai2/alerts/{alert_id}/analyze" in paths
+    assert "/api/v1/socai2/alerts/{alert_id}/analyze" not in paths
     assert "/api/v1/socai2/incidents/{incident_id}/diagnose" in paths
     assert "/api/v1/socai2/cases/{case_id}/members/move" in paths
     assert "/api/v1/alerts" not in paths and "/api/v1/actions" not in paths
@@ -57,17 +58,19 @@ def test_formal_target_requires_matching_explicit_writer(monkeypatch):
         runtime.configured_database_name()
 
 
-def test_manual_stage_service_uses_explicit_writer(monkeypatch):
-    from app.api.v1.endpoints import socai2_stage_execution as api
+def test_async_submission_uses_explicit_writer(monkeypatch):
     from app.socai2.baseline_store import StoreError
     from fastapi import HTTPException
+    from investigation_http.dependencies import analysis_submission_service
     sessions = object()
-    monkeypatch.setattr(backends.settings, "SOCAI2_STAGE_EXECUTION_ENABLED", True)
+    monkeypatch.setattr(backends.settings, "SOCAI2_CASE_API_ENABLED", True)
+    monkeypatch.setenv("SOCAI2_ANALYSIS_TASKS_CONFIG_FILE", str(
+        Path(__file__).resolve().parents[3] / "deploy/local-investigation/analysis-tasks.json"))
     monkeypatch.setattr(backends, "get_case_write_sessions", lambda: sessions)
-    assert api.get_execution_service()._execution.sessions is sessions
+    assert analysis_submission_service().service.sessions is sessions
     def absent():
         raise StoreError("case_write_database_not_configured", 503)
     monkeypatch.setattr(backends, "get_case_write_sessions", absent)
     with pytest.raises(HTTPException) as error:
-        api.get_execution_service()
-    assert error.value.status_code == 503 and error.value.detail == "case_write_database_not_configured"
+        analysis_submission_service()
+    assert error.value.status_code == 503 and error.value.detail['code'] == "service_unavailable"

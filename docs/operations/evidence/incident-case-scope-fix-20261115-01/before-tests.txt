@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_diagnosis_of_one_member_is_not_associated_with_all_three _________
+
+sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+
+    def test_diagnosis_of_one_member_is_not_associated_with_all_three(sample):
+        iid, item = next(iter(sample["context"]["incidents"].items()))
+        selected = [item["member_ids"][0]]
+        body = item["diagnosis"]["diagnosis"]
+        body["delivery_assessment"] = {
+            "member_coverage": {"expected_ids": selected, "analyzed_ids": selected,
+                                "not_reviewed_ids": [], "missing_ids": []},
+            "review_items": {"unresolved_member_ids": selected}, "reasons": [],
+        }
+        # This is a controlled input variation, never a rewrite of the saved source.
+        original = copy.deepcopy(sample)
+        context, prepared = base.prepared_sample(sample)
+        conclusion = next(row for row in prepared["source_map"].values()
+                          if row["ref"]["source_path"] == f"$.incidents.{iid}.diagnosis.diagnosis.conclusion")
+        assert len(context.alerts) == 3
+>       assert conclusion["alert_ids"] == selected
+E       AssertionError: assert ['09e91978-d2...c21f1b9cc4bf'] == ['09e91978-d2...b6a40368b921']
+E         
+E         Left contains 2 more items, first extra item: '3fde9da5-8ff1-5c42-8c91-b72fdc77dbd3'
+E         Use -v to get more diff
+
+services/api/tests/test_socai2_case_incident_scope.py:24: AssertionError
+=========================== short test summary info ============================
+FAILED services/api/tests/test_socai2_case_incident_scope.py::test_diagnosis_of_one_member_is_not_associated_with_all_three
+1 failed in 0.98s

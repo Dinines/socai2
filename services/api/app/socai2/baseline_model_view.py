@@ -106,7 +106,11 @@ def candidates(context, context_id, enrichment, materials=None):
         if context.citation_roles[path] == "human_statement":
             yield item(path, revision, compact_feedback(revision), required=True)
     for iid, incident in sorted(context.incidents.items()):
-        if incident.diagnosis_usable:
+        if incident.analysis_material:
+            for index, unit in enumerate(incident.analysis_material["units"]):
+                yield item(f"$.incidents.{iid}.analysis_material.units.{index}.value", unit["value"],
+                    limitations=incident.limitations, required=True)
+        elif incident.diagnosis_usable:
             diagnosis = incident.diagnosis.get("diagnosis") or {}
             yield item(f"$.incidents.{iid}.diagnosis", incident.diagnosis,
                 {"summary": incident.diagnosis.get("summary"),

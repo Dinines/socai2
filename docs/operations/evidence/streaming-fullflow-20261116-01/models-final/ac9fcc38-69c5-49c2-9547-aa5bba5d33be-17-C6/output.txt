@@ -1,0 +1,182 @@
+{
+  "analysis": {
+    "summary": "本轮针对成员 A1 在时间窗口 [2026-11-16T04:40:12Z, 2026-11-16T06:40:12Z] 内的行为进行了复核。核心事实为服务账号 svc-app-bc3b4605 于 05:40:12 成功登录主机 host-app-3f979d56。补查获取了该账号在登录前后（05:38-05:41）的认证活动详情，以及登录成功后（05:50-05:52）的网络连接记录。威胁情报、资产库存及历史告警查询均无结果或未执行。前序判断中关于'curl 进程启动'及'数据外传'的具体指控缺乏本轮直接证据支持，且部分关联基于案件外成员推断，不可直接作为本案定论。",
+    "members": [
+      {
+        "alert_id": "A1",
+        "state": "unresolved",
+        "summary": "服务账号 svc-app-bc3b4605 成功登录主机 host-app-3f979d56，随后发起网络流量。缺乏授权记录、业务上下文及进程/流量载荷细节，无法定性。",
+        "evidence_ids": ["N2_S2", "N2_S3", "N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S18", "N2_S19", "N2_S21", "N2_S23", "N2_S25", "N2_S26", "N2_S27", "N2_S28", "N2_S29", "N2_S30", "N2_S31", "N2_S32", "N2_S33", "N2_S34", "N2_S35", "N2_S36", "N2_S37", "N2_S38", "N2_S39", "N2_S40", "N2_S41", "N2_S42", "N2_S43", "N2_S44", "N2_S45", "N2_S46"],
+        "limitations": ["缺乏账号权限配置表或业务审批单以验证登录合法性", "未获取进程启动的具体命令行参数（如 curl 参数）", "未获取网络流量的实际载荷（Payload）以确认通信内容", "威胁情报与资产库查询无结果，无法佐证 IP 性质", "历史告警未查询，缺乏行为基线对比"]
+      }
+    ],
+    "findings": [
+      {
+        "id": "F1",
+        "state": "observed",
+        "alert_ids": ["A1"],
+        "support_ids": ["N2_S2", "N2_S3", "N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S18", "N2_S19", "N2_S21", "N2_S23", "N2_S25", "N2_S26", "N2_S27", "N2_S28", "N2_S29", "N2_S30", "N2_S3", "N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S18", "N2_S19", "N2_S21", "N2_S23", "N2_S25", "N2_S26", "N2_S27", "N2_S28", "N2_S29", "N2_S30"],
+        "counter_ids": [],
+        "alternatives": [],
+        "limitations": ["日志等级为 Informational，不足以直接定性为安全事件"]
+      },
+      {
+        "id": "F2",
+        "state": "inferred",
+        "statement": "基于补查结果，账号 svc-app-bc3b4605 在登录前后存在认证活动，但无法确认是否包含前序判断中提及的'curl 进程启动'。",
+        "alert_ids": ["A1"],
+        "support_ids": ["N2_S55", "N2_S56", "N2_S57", "N2_S58", "N2_S59", "N2_S60", "N2_S61", "N2_S62", "N2_S63", "N2_S64", "N2_S71", "N2_S72", "N2_S73", "N2_S74", "N2_S76", "N2_S82", "N2_S83", "N2_S84"],
+        "counter_ids": [],
+        "alternatives": ["登录行为可能为正常业务自动触发", "登录行为可能为未记录的运维操作"],
+        "limitations": ["补查结果未明确显示'curl'进程或相关命令行参数，前序判断中的具体进程指控缺乏本轮直接证据支持"]
+      },
+      {
+        "id": "F3",
+        "state": "inferred",
+        "statement": "账号登录成功后，主机发起了至外部 IP 198.51.100.81 和 198.51.100.82 的网络连接，但流量载荷未知。",
+        "alert_ids": ["A1"],
+        "support_ids": ["N2_S85", "N2_S86", "N2_S87", "N2_S88", "N2_S89", "N2_S90", "N2_S91", "N2_S92", "N2_S93", "N2_S94", "N2_S95", "N2_S96", "N2_S97", "N2_S98", "N2_S99", "N2_S100", "N2_S101", "N2_S107", "N2_S108", "N2_S109", "N2_S110", "N2_S117", "N2_S118", "N2_S125", "N2_S130", "N2_S131", "N2_S132", "N2_S133", "N2_S134", "N2_S135"],
+        "counter_ids": [],
+        "alternatives": ["网络流量可能为常规业务通信（如 DNS 解析、API 调用）", "网络流量可能为心跳检测或更新机制"],
+        "limitations": ["未查询到流量载荷（Payload），无法确认传输内容是否敏感或恶意", "未查询到目标 IP 的资产信息，无法判断其业务相关性"]
+      },
+      {
+        "id": "F4",
+        "state": "unresolved",
+        "statement": "无法确认 svc-app-bc3b4605 账号对主机 host-app-3f979d56 及外部 IP 的访问是否拥有明确业务授权。",
+        "alert_ids": ["A1"],
+        "support_ids": ["N2_S139", "N2_S145"],
+        "counter_ids": [],
+        "alternatives": ["账号可能拥有该主机的管理权限", "外部 IP 可能为白名单内的业务服务器"],
+        "limitations": ["缺乏权限配置表、审批单或运维操作记录作为直接证据"]
+      },
+      {
+        "id": "F5",
+        "state": "unresolved",
+        "statement": "事件呈现'登录 - 网络活动'的时间序列，但各环节间的因果联系及最终影响尚未证实。",
+        "alert_ids": ["A1"],
+        "support_ids": ["N2_S147"],
+        "counter_ids": [],
+        "alternatives": ["各环节可能由不同业务逻辑独立触发", "时间邻近不等于因果关联"],
+        "limitations": ["缺少会话上下文、设备指纹及行为基线"]
+      }
+    ],
+    "questions": [
+      {
+        "id": "detection_facts",
+        "state": "answered",
+        "answer": "原始记录支持 svc-app-bc3b4605 账号于 2026-11-16T05:40:12Z 从 192.0.2.81 成功登录 host-app-3f979d56。补查确认了登录前后的认证活动及登录后的网络连接记录（至 198.51.100.81/82）。",
+        "evidence_ids": ["N2_S2", "N2_S3", "N2_S4", "N2_S5", "N2_S6", "N2_S7", "N2_S18", "N2_S19", "N2_S21", "N2_S23", "N2_S25", "N2_S26", "N2_S27", "N2_S28", "N2_S29", "N2_S30", "N2_S31", "N2_S32", "N2_S33", "N2_S34", "N2_S35", "N2_S36", "N2_S37", "N2_S38", "N2_S39", "N2_S40", "N2_S41", "N2_S42", "N2_S43", "N2_S44", "N2_S45", "N2_S46"],
+        "limitations": ["日志等级为 Informational，不足以直接定性"]
+      },
+      {
+        "id": "member_relationships",
+        "state": "answered",
+        "answer": "成员 A1 内部仅包含单条登录告警，无多告警关联。与案件外背景（X1/X2）的关联基于时间邻近和逻辑推断，无直接证据链证明因果。",
+        "evidence_ids": ["N2_S147"],
+        "limitations": ["时间接近和图可达不能直接当成因果或影响"]
+      },
+      {
+        "id": "behavior_nature",
+        "state": "unresolved",
+        "answer": "恶意：无直接证据；正常：无授权记录或业务文档支持；误操作：无具体操作描述。当前状态为待复核。",
+        "evidence_ids": ["N2_S139", "N2_S140", "N2_S141", "N2_S142", "N2_S147"],
+        "limitations": ["查空、未接通不构成反证；标签不证明行为发生"]
+      },
+      {
+        "id": "authorization",
+        "state": "unresolved",
+        "answer": "无明确授权材料。人工反馈建议核实账号权限及业务需求，但未提供审批单、权限配置表或运维记录。",
+        "evidence_ids": ["N2_S139", "N2_S145"],
+        "limitations": ["未提供审批不等于不存在，需人工确认"]
+      },
+      {
+        "id": "impact",
+        "state": "unresolved",
+        "answer": "观察到：登录成功。已确认影响：无。待核影响：是否发生数据外传、系统被控或配置篡改。现有材料仅显示进程启动（未确认具体进程）和网络连接计数，未显示载荷或业务结果。",
+        "evidence_ids": ["N2_S143", "N2_S144", "N2_S146"],
+        "limitations": ["进程启动成功不证明脚本完成或数据外传；连接成功不证明业务完成"]
+      }
+    ],
+    "domains": [
+      {
+        "name": "identity",
+        "applicability": "applicable",
+        "reason": "涉及账号登录行为及权限验证",
+        "alert_ids": ["A1"],
+        "finding_ids": ["F1", "F4"]
+      ,
+      "limitations": ["缺乏账号基线及授权记录"]
+      },
+      {
+        "name": "cloud",
+        "applicability": "not_applicable",
+        "reason": "无云环境特定配置或 API 调用证据",
+        "alert_ids": ["A1"],
+        "finding_ids": []
+      ,
+      "limitations": ["无相关数据"]
+      },
+      {
+        "name": "phishing",
+        "applicability": "not_applicable",
+        "reason": "无钓鱼邮件、凭证窃取或社会工程学特征",
+        "alert_ids": ["A1"],
+        "finding_ids": []
+      ,
+      "limitations": ["无相关数据"]
+      },
+      {
+        "name": "insider",
+        "applicability": "applicable",
+        "reason": "涉及服务账号的潜在未授权访问或异常行为",
+        "alert_ids": ["A1"],
+        "finding_ids": ["F2", "F3", "F4", "F5"]
+      ,
+      "limitations": ["无法区分是内部误操作还是恶意行为"]
+      }
+    ],
+    "conflicts": [],
+    "followups": [
+      {
+        "question_id": "authorization",
+        "alert_ids": ["A1"],
+        "mode": "human",
+        "objective": "人工确认 svc-app-bc3b4605 账号的权限配置及业务用途，核实登录行为是否属于计划内运维操作。"
+      ,
+      "required_evidence": "权限配置表、业务审批单或运维操作记录"
+      ,
+      "source_ids": ["N2_S145"]
+      ,
+      "object_keys": ["O1", "O3"]
+      }
+    ]
+  },
+  "conclusion": {
+    "text": "成员 A1 的登录行为已证实，但行为性质、授权情况及具体影响尚未确定。现有证据不足以支持'恶意'或'正常'的定性判断。主要缺口在于缺乏账号授权记录、进程具体参数及网络流量载荷。",
+    "state": "uncertain",
+    "alert_ids": ["A1"],
+    "support_ids": ["N2_S139", "N2_S145"],
+    "limitations": ["缺乏授权记录、进程参数及流量载荷"]
+  },
+  "closing_note": "本案核心缺口为授权验证与载荷分析。前序判断中关于'curl 进程'的具体指控缺乏本轮直接证据，需人工介入核实账号权限及业务上下文。威胁情报与资产库查空结果不能作为排除风险的依据。",
+  "impact": {
+    "summary": "已观察到登录成功及网络连接建立，但未观察到数据外传、系统被控或配置篡改的确切结果。",
+    "alert_ids": ["A1"],
+    "support_ids": ["N2_S5", "N2_S6", "N2_S94", "N2_S95"],
+    "supported_changes": [],
+    "cannot_generalize": ["数据外传", "系统被控", "配置篡改", "恶意命令执行"]
+  ,
+    "next_steps": ["人工确认授权", "获取流量载荷"]
+  },
+  "recommendations": [
+    {
+      "action_type": "investigate",
+      "object_keys": ["O1", "O3"],
+      "reason": "需人工确认 svc-app-bc3b4605 账号的权限配置及业务用途，核实登录行为是否属于计划内运维操作。",
+      "source_ids": ["N2_S145"]
+    ,
+      "limitations": ["依赖人工反馈"]
+    }
+  ]
+}

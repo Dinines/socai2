@@ -1,0 +1,364 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>告警 · process_start observation</title><style>
+*{box-sizing:border-box}html{color-scheme:light}body{margin:0;color:#17372e;background:white;
+font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1000px;margin:auto;padding:24px clamp(12px,3vw,32px)}
+h1{line-height:1.25;font-size:clamp(22px,4vw,32px);margin:.2em 0}h2{font-size:20px;margin:0 0 10px}
+h3{font-size:16px;margin:16px 0 4px}h4{margin:.7em 0 .2em}section{border-top:1px solid #d9e5dd;margin-top:22px;padding-top:16px}
+p{margin:.4em 0}.quiet,dt{color:#50645d}.missing{color:#8a5423}a{color:#0a6652;text-underline-offset:3px}
+summary{cursor:pointer;padding:.25em 0;color:#184e3f}details{margin:.28em 0;overflow-wrap:anywhere}
+details[open]>summary{font-weight:650}details.run,details.step{border:1px solid #d6e2da;padding:7px 12px;border-radius:5px}
+details.run{margin:8px 0}details.step{margin:6px 0;background:#fcfdfc}code{font-size:.85em;color:#315c4e}
+dl{display:grid;grid-template-columns:minmax(6em,10em) minmax(0,1fr);gap:2px 10px;margin:.4em 0 1em}
+dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}pre{background:#f2f6f3;border-radius:4px;padding:10px;
+white-space:pre-wrap;overflow-wrap:anywhere;max-height:32em;overflow:auto;font:12px/1.55 Consolas,monospace}
+.record:target{outline:2px solid #439079;outline-offset:1px}.record{padding:2px 6px}
+.files-head,.subject-links,.recent-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 14px}
+.files-head{justify-content:space-between}.files-head h2{margin:0}.recent-line{padding:4px 0}
+.recent-line time,.subject-links{font-size:13px;color:#50645d}
+.recent-line time{font-variant-numeric:tabular-nums}.recent-line a,.subject-links a{overflow-wrap:anywhere}
+details.run:target,details.step:target{outline:2px solid #39836f;outline-offset:2px}
+.source-note{margin-top:.85em}.flow-modules{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0}
+.flow-modules button,.flow-choice select{font:inherit;color:#23473d;background:white;border:1px solid #a4b8ad;border-radius:5px;padding:5px 9px}
+.flow-modules button{cursor:pointer}.flow-modules button[aria-pressed=true]{background:#234f42;color:white;border-color:#234f42}
+.flow-choice{color:#425a51;font-size:13px}.flow-choice select{max-width:100%;font-size:13px;padding:3px}
+.flow-legend{display:flex;gap:6px 13px;flex-wrap:wrap;color:#43564f;font-size:12px;margin:10px 0}
+.flow-legend span::before{content:"";display:inline-block;width:.72em;height:.72em;background:var(--fill);border:1px solid var(--stroke);border-radius:2px;margin-right:4px}
+.is-success{--fill:#def3e7;--stroke:#77b492;--ink:#17472e}
+.is-failed{--fill:#fbe1df;--stroke:#cf8986;--ink:#792b29}
+.is-unknown,.is-active{--fill:#fff1d6;--stroke:#c7a563;--ink:#674911}
+.is-idle{--fill:#fff;--stroke:#c8d2ce;--ink:#55635b}
+.flow-lanes{list-style:none;margin:0;padding:0;--spine:#afc6ba}
+.flow-lane{position:relative;display:grid;grid-template-columns:minmax(135px,36%) minmax(0,1fr);align-items:center;padding:5px 0;gap:16px}
+.flow-lane:not(:last-child)::after{content:"";position:absolute;left:18%;width:2px;top:50%;bottom:-50%;background:var(--spine);pointer-events:none}
+.flow-main,.flow-branches{z-index:1;display:flex;flex-wrap:wrap;gap:4px}.flow-main{flex-direction:column}
+.flow-branches{position:relative;padding:3px 0 3px 9px;border-left:1px solid var(--spine)}
+.flow-deep-actions{display:flex;flex:1 1 100%;flex-wrap:wrap;gap:4px}
+.flow-branches::before{content:"";position:absolute;left:-17px;top:50%;width:16px;height:1px;background:var(--spine)}
+.flow-node{display:inline-block;max-width:100%;padding:4px 8px;border:1px solid var(--stroke);border-radius:5px;background:var(--fill);color:var(--ink);font-size:13px;line-height:1.5;overflow-wrap:anywhere;text-decoration:none}
+.flow-main .flow-node{padding:6px 8px}.flow-node:is(.is-failed,.is-success,.is-active,.is-unknown){font-weight:650}
+a.flow-node:hover,a.flow-node:focus-visible{text-decoration:underline;outline:2px solid var(--ink);outline-offset:1px}
+[hidden]{display:none!important}.flow-panel{margin:8px 0 0}.flow-panel:focus-visible{outline:2px solid #396e60}
+@media(max-width:520px){.flow-lane{grid-template-columns:minmax(95px,37%) minmax(0,1fr);gap:10px}.flow-node{font-size:12px;padding:3px 5px}.flow-branches{padding-left:6px}.flow-branches::before{left:-11px;width:10px}}
+@media(max-width:440px){main{padding:13px 9px}dl{grid-template-columns:5.5em minmax(0,1fr)}details.run,details.step{padding:5px 7px}}
+</style></head><body><main><header><p class="quiet">告警 · c3-unit-continuation-d3-20261116-01-pghttp01 / 1576d3fa-a518-5db2-9781-33347eec1fa2</p><h1>process_start observation</h1></header><dl><dt>告警 ID</dt><dd>9e1d2593-05e1-4654-bc4e-f19eae3867fa</dd><dt>来源系统 ID</dt><dd>未记录</dd><dt>处理状态</dt><dd>new</dd><dt>严重性</dt><dd>medium</dd><dt>类别</dt><dd>未记录</dd><dt>发生时间（北京）</dt><dd>2026-11-16 13:46:12</dd></dl><p></p><section><h2>当前已发布分诊</h2><p>此快照没有已发布的记录。</p></section><section><h2>所属事件</h2><p>此快照没有成员关系。</p><p><a target="_top" href="../index.html#e6a643164f00825f91e327052f0055932d27b867e6eddc82dfe01103146cac40">查看关联 Case 调查过程</a></p></section><section><h2>执行记录</h2><p>此快照没有该主体的执行轮次。</p></section><section><h2>数据库原始记录</h2><details><summary>告警基本信息 · alerts（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;source_namespace&quot;: &quot;fusion.v1&quot;,
+    &quot;source_alert_id&quot;: null,
+    &quot;vendor_alert_id&quot;: null,
+    &quot;connector_id&quot;: null,
+    &quot;connector_type&quot;: null,
+    &quot;original_vendor&quot;: null,
+    &quot;source_identity_key&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;title&quot;: &quot;process_start observation&quot;,
+    &quot;description&quot;: null,
+    &quot;category&quot;: null,
+    &quot;severity&quot;: &quot;medium&quot;,
+    &quot;severity_raw&quot;: &quot;medium&quot;,
+    &quot;event_time&quot;: &quot;2026-11-16 05:46:12+00:00&quot;,
+    &quot;event_time_source&quot;: &quot;source&quot;,
+    &quot;first_seen_at&quot;: null,
+    &quot;last_seen_at&quot;: null,
+    &quot;ingested_at&quot;: &quot;2026-11-16 11:51:29.072878+00:00&quot;,
+    &quot;source_updated_at&quot;: &quot;2026-11-16 11:51:29.072878+00:00&quot;,
+    &quot;business_updated_at&quot;: &quot;2026-11-16 11:51:29.072878+00:00&quot;,
+    &quot;handling_status&quot;: &quot;new&quot;,
+    &quot;disposition&quot;: null,
+    &quot;owner_id&quot;: null,
+    &quot;assignment_state&quot;: &quot;unassigned&quot;,
+    &quot;owner_source_value&quot;: null,
+    &quot;assigned_at&quot;: null,
+    &quot;tags&quot;: [],
+    &quot;priority_value&quot;: null,
+    &quot;priority_state&quot;: &quot;not_provided&quot;,
+    &quot;priority_source&quot;: null,
+    &quot;priority_basis&quot;: null,
+    &quot;closed_at&quot;: null,
+    &quot;closed_by&quot;: null,
+    &quot;reopened_at&quot;: null,
+    &quot;latest_material_id&quot;: &quot;99f126c0-6a53-42bb-9d74-f2900808a0b5&quot;,
+    &quot;latest_triage_id&quot;: null,
+    &quot;latest_feedback_id&quot;: null,
+    &quot;row_version&quot;: 1,
+    &quot;latest_explanation_id&quot;: null
+  }
+]</pre></details><details><summary>各版告警材料 · alert_materials（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;99f126c0-6a53-42bb-9d74-f2900808a0b5&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;alert_id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;revision&quot;: 1,
+    &quot;received_at&quot;: &quot;2026-11-16 11:51:29.072878+00:00&quot;,
+    &quot;source_version&quot;: null,
+    &quot;raw_text&quot;: &quot;{\n  \&quot;activity\&quot;: {\n    \&quot;action\&quot;: \&quot;process_start\&quot;,\n    \&quot;outcome\&quot;: \&quot;success\&quot;\n  },\n  \&quot;activity_id\&quot;: 0,\n  \&quot;actor\&quot;: {\n    \&quot;user\&quot;: {\n      \&quot;name\&quot;: \&quot;svc-app-bc3b4605\&quot;\n    }\n  },\n  \&quot;category_uid\&quot;: 1,\n  \&quot;class_uid\&quot;: 1007,\n  \&quot;device\&quot;: {\n    \&quot;name\&quot;: \&quot;host-app-3f979d56\&quot;\n  },\n  \&quot;metadata\&quot;: {\n    \&quot;product\&quot;: {\n      \&quot;name\&quot;: \&quot;Endpoint Collector\&quot;,\n      \&quot;vendor_name\&quot;: \&quot;Internal Telemetry\&quot;\n    },\n    \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n  },\n  \&quot;process\&quot;: {\n    \&quot;cmd_line\&quot;: \&quot;curl --head https://198.51.100.81/status\&quot;,\n    \&quot;name\&quot;: \&quot;curl\&quot;,\n    \&quot;parent_process\&quot;: {\n      \&quot;pid\&quot;: 4100,\n      \&quot;uid\&quot;: \&quot;9bbbb672-6766-5818-ac37-8f1a3f6486ec\&quot;\n    },\n    \&quot;pid\&quot;: 4101,\n    \&quot;uid\&quot;: \&quot;8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e\&quot;\n  },\n  \&quot;severity\&quot;: \&quot;Informational\&quot;,\n  \&quot;severity_id\&quot;: 1,\n  \&quot;src_endpoint\&quot;: {\n    \&quot;hostname\&quot;: \&quot;host-app-3f979d56\&quot;,\n    \&quot;ip\&quot;: \&quot;192.0.2.81\&quot;\n  },\n  \&quot;tenant_uid\&quot;: \&quot;00000000-0000-0000-0000-000000000001\&quot;,\n  \&quot;time\&quot;: \&quot;2026-11-16T05:46:12+00:00\&quot;,\n  \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n}\n&quot;,
+    &quot;raw_json&quot;: {
+      &quot;id&quot;: &quot;08929b81-fafa-572b-a366-e1b269ce6375&quot;,
+      &quot;url&quot;: null,
+      &quot;tags&quot;: [],
+      &quot;title&quot;: &quot;process_start observation&quot;,
+      &quot;domain&quot;: null,
+      &quot;dst_ip&quot;: null,
+      &quot;source&quot;: &quot;telemetry-channel-01&quot;,
+      &quot;src_ip&quot;: &quot;192.0.2.81&quot;,
+      &quot;status&quot;: &quot;new&quot;,
+      &quot;rule_id&quot;: null,
+      &quot;hostname&quot;: &quot;host-app-3f979d56&quot;,
+      &quot;severity&quot;: &quot;medium&quot;,
+      &quot;username&quot;: &quot;svc-app-bc3b4605&quot;,
+      &quot;file_hash&quot;: null,
+      &quot;raw_event&quot;: {
+        &quot;ocsf_event&quot;: {
+          &quot;uid&quot;: &quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47&quot;,
+          &quot;time&quot;: &quot;2026-11-16T05:46:12+00:00&quot;,
+          &quot;actor&quot;: {
+            &quot;user&quot;: {
+              &quot;name&quot;: &quot;svc-app-bc3b4605&quot;
+            }
+          },
+          &quot;device&quot;: {
+            &quot;name&quot;: &quot;host-app-3f979d56&quot;
+          },
+          &quot;process&quot;: {
+            &quot;pid&quot;: 4101,
+            &quot;uid&quot;: &quot;8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e&quot;,
+            &quot;name&quot;: &quot;curl&quot;,
+            &quot;cmd_line&quot;: &quot;curl --head https://198.51.100.81/status&quot;,
+            &quot;parent_process&quot;: {
+              &quot;pid&quot;: 4100,
+              &quot;uid&quot;: &quot;9bbbb672-6766-5818-ac37-8f1a3f6486ec&quot;
+            }
+          },
+          &quot;activity&quot;: {
+            &quot;action&quot;: &quot;process_start&quot;,
+            &quot;outcome&quot;: &quot;success&quot;
+          },
+          &quot;metadata&quot;: {
+            &quot;uid&quot;: &quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47&quot;,
+            &quot;product&quot;: {
+              &quot;name&quot;: &quot;Endpoint Collector&quot;,
+              &quot;vendor_name&quot;: &quot;Internal Telemetry&quot;
+            }
+          },
+          &quot;raw_data&quot;: &quot;{\n  \&quot;activity\&quot;: {\n    \&quot;action\&quot;: \&quot;process_start\&quot;,\n    \&quot;outcome\&quot;: \&quot;success\&quot;\n  },\n  \&quot;activity_id\&quot;: 0,\n  \&quot;actor\&quot;: {\n    \&quot;user\&quot;: {\n      \&quot;name\&quot;: \&quot;svc-app-bc3b4605\&quot;\n    }\n  },\n  \&quot;category_uid\&quot;: 1,\n  \&quot;class_uid\&quot;: 1007,\n  \&quot;device\&quot;: {\n    \&quot;name\&quot;: \&quot;host-app-3f979d56\&quot;\n  },\n  \&quot;metadata\&quot;: {\n    \&quot;product\&quot;: {\n      \&quot;name\&quot;: \&quot;Endpoint Collector\&quot;,\n      \&quot;vendor_name\&quot;: \&quot;Internal Telemetry\&quot;\n    },\n    \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n  },\n  \&quot;process\&quot;: {\n    \&quot;cmd_line\&quot;: \&quot;curl --head https://198.51.100.81/status\&quot;,\n    \&quot;name\&quot;: \&quot;curl\&quot;,\n    \&quot;parent_process\&quot;: {\n      \&quot;pid\&quot;: 4100,\n      \&quot;uid\&quot;: \&quot;9bbbb672-6766-5818-ac37-8f1a3f6486ec\&quot;\n    },\n    \&quot;pid\&quot;: 4101,\n    \&quot;uid\&quot;: \&quot;8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e\&quot;\n  },\n  \&quot;severity\&quot;: \&quot;Informational\&quot;,\n  \&quot;severity_id\&quot;: 1,\n  \&quot;src_endpoint\&quot;: {\n    \&quot;hostname\&quot;: \&quot;host-app-3f979d56\&quot;,\n    \&quot;ip\&quot;: \&quot;192.0.2.81\&quot;\n  },\n  \&quot;tenant_uid\&quot;: \&quot;00000000-0000-0000-0000-000000000001\&quot;,\n  \&quot;time\&quot;: \&quot;2026-11-16T05:46:12+00:00\&quot;,\n  \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n}\n&quot;,
+          &quot;severity&quot;: &quot;Informational&quot;,
+          &quot;class_uid&quot;: 1007,
+          &quot;tenant_uid&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+          &quot;activity_id&quot;: 0,
+          &quot;severity_id&quot;: 1,
+          &quot;category_uid&quot;: 1,
+          &quot;src_endpoint&quot;: {
+            &quot;ip&quot;: &quot;192.0.2.81&quot;,
+            &quot;hostname&quot;: &quot;host-app-3f979d56&quot;
+          }
+        }
+      },
+      &quot;rule_name&quot;: null,
+      &quot;tenant_id&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+      &quot;created_at&quot;: &quot;2026-11-16T05:46:13Z&quot;,
+      &quot;event_time&quot;: &quot;2026-11-16T05:46:12Z&quot;,
+      &quot;risk_score&quot;: null,
+      &quot;description&quot;: &quot;&quot;,
+      &quot;external_id&quot;: null,
+      &quot;connector_id&quot;: &quot;8025cfe8-3bf0-535e-a5dc-5abd4c13deef&quot;,
+      &quot;mitre_tactics&quot;: [],
+      &quot;connector_type&quot;: &quot;telemetry-channel-01&quot;,
+      &quot;field_metadata&quot;: {},
+      &quot;ocsf_class_uid&quot;: 1007,
+      &quot;identity_origin&quot;: null,
+      &quot;source_alert_id&quot;: &quot;5874499e-c372-5f39-afe8-f3039d6c668d&quot;,
+      &quot;identity_version&quot;: &quot;source-v1&quot;,
+      &quot;mitre_techniques&quot;: [],
+      &quot;source_event_ids&quot;: [
+        &quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47&quot;
+      ],
+      &quot;identity_event_id&quot;: null
+    },
+    &quot;ocsf_json&quot;: {
+      &quot;uid&quot;: &quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47&quot;,
+      &quot;time&quot;: &quot;2026-11-16T05:46:12+00:00&quot;,
+      &quot;actor&quot;: {
+        &quot;user&quot;: {
+          &quot;name&quot;: &quot;svc-app-bc3b4605&quot;
+        }
+      },
+      &quot;device&quot;: {
+        &quot;name&quot;: &quot;host-app-3f979d56&quot;
+      },
+      &quot;process&quot;: {
+        &quot;pid&quot;: 4101,
+        &quot;uid&quot;: &quot;8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e&quot;,
+        &quot;name&quot;: &quot;curl&quot;,
+        &quot;cmd_line&quot;: &quot;curl --head https://198.51.100.81/status&quot;,
+        &quot;parent_process&quot;: {
+          &quot;pid&quot;: 4100,
+          &quot;uid&quot;: &quot;9bbbb672-6766-5818-ac37-8f1a3f6486ec&quot;
+        }
+      },
+      &quot;activity&quot;: {
+        &quot;action&quot;: &quot;process_start&quot;,
+        &quot;outcome&quot;: &quot;success&quot;
+      },
+      &quot;metadata&quot;: {
+        &quot;uid&quot;: &quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47&quot;,
+        &quot;product&quot;: {
+          &quot;name&quot;: &quot;Endpoint Collector&quot;,
+          &quot;vendor_name&quot;: &quot;Internal Telemetry&quot;
+        }
+      },
+      &quot;raw_data&quot;: &quot;{\n  \&quot;activity\&quot;: {\n    \&quot;action\&quot;: \&quot;process_start\&quot;,\n    \&quot;outcome\&quot;: \&quot;success\&quot;\n  },\n  \&quot;activity_id\&quot;: 0,\n  \&quot;actor\&quot;: {\n    \&quot;user\&quot;: {\n      \&quot;name\&quot;: \&quot;svc-app-bc3b4605\&quot;\n    }\n  },\n  \&quot;category_uid\&quot;: 1,\n  \&quot;class_uid\&quot;: 1007,\n  \&quot;device\&quot;: {\n    \&quot;name\&quot;: \&quot;host-app-3f979d56\&quot;\n  },\n  \&quot;metadata\&quot;: {\n    \&quot;product\&quot;: {\n      \&quot;name\&quot;: \&quot;Endpoint Collector\&quot;,\n      \&quot;vendor_name\&quot;: \&quot;Internal Telemetry\&quot;\n    },\n    \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n  },\n  \&quot;process\&quot;: {\n    \&quot;cmd_line\&quot;: \&quot;curl --head https://198.51.100.81/status\&quot;,\n    \&quot;name\&quot;: \&quot;curl\&quot;,\n    \&quot;parent_process\&quot;: {\n      \&quot;pid\&quot;: 4100,\n      \&quot;uid\&quot;: \&quot;9bbbb672-6766-5818-ac37-8f1a3f6486ec\&quot;\n    },\n    \&quot;pid\&quot;: 4101,\n    \&quot;uid\&quot;: \&quot;8d4a1fe1-abf5-5da4-9df2-c3a34a7bbd8e\&quot;\n  },\n  \&quot;severity\&quot;: \&quot;Informational\&quot;,\n  \&quot;severity_id\&quot;: 1,\n  \&quot;src_endpoint\&quot;: {\n    \&quot;hostname\&quot;: \&quot;host-app-3f979d56\&quot;,\n    \&quot;ip\&quot;: \&quot;192.0.2.81\&quot;\n  },\n  \&quot;tenant_uid\&quot;: \&quot;00000000-0000-0000-0000-000000000001\&quot;,\n  \&quot;time\&quot;: \&quot;2026-11-16T05:46:12+00:00\&quot;,\n  \&quot;uid\&quot;: \&quot;6a47cd86-ca1d-5aea-a1b1-4287acafee47\&quot;\n}\n&quot;,
+      &quot;severity&quot;: &quot;Informational&quot;,
+      &quot;class_uid&quot;: 1007,
+      &quot;tenant_uid&quot;: &quot;00000000-0000-0000-0000-000000000001&quot;,
+      &quot;activity_id&quot;: 0,
+      &quot;severity_id&quot;: 1,
+      &quot;category_uid&quot;: 1,
+      &quot;src_endpoint&quot;: {
+        &quot;ip&quot;: &quot;192.0.2.81&quot;,
+        &quot;hostname&quot;: &quot;host-app-3f979d56&quot;
+      }
+    },
+    &quot;detection&quot;: {
+      &quot;rule_id&quot;: null,
+      &quot;tactics&quot;: [],
+      &quot;rule_name&quot;: null,
+      &quot;techniques&quot;: [],
+      &quot;score_source&quot;: &quot;fusion&quot;,
+      &quot;ocsf_class_uid&quot;: 1007,
+      &quot;labels_provided&quot;: false,
+      &quot;confidence_label&quot;: &quot;low&quot;,
+      &quot;confidence_state&quot;: &quot;available&quot;,
+      &quot;confidence_value&quot;: 27.400000000000002,
+      &quot;confidence_rationale&quot;: [
+        &quot;{\&quot;contribution\&quot;:-0.8,\&quot;factor\&quot;:\&quot;ml_anomaly\&quot;,\&quot;label\&quot;:\&quot;ML anomaly score\&quot;,\&quot;value\&quot;:\&quot;0.10\&quot;,\&quot;weight\&quot;:0.18}&quot;,
+        &quot;{\&quot;contribution\&quot;:-1.0,\&quot;factor\&quot;:\&quot;upstream_risk\&quot;,\&quot;label\&quot;:\&quot;Upstream provided risk score (source unverified)\&quot;,\&quot;value\&quot;:\&quot;not supplied; numeric feature baseline only\&quot;,\&quot;weight\&quot;:0.08}&quot;,
+        &quot;{\&quot;contribution\&quot;:0.3999999999999999,\&quot;factor\&quot;:\&quot;ml_priority\&quot;,\&quot;label\&quot;:\&quot;ML priority rank\&quot;,\&quot;value\&quot;:\&quot;0.70\&quot;,\&quot;weight\&quot;:0.18}&quot;,
+        &quot;{\&quot;contribution\&quot;:-0.4,\&quot;factor\&quot;:\&quot;mitre_coverage\&quot;,\&quot;label\&quot;:\&quot;MITRE technique coverage\&quot;,\&quot;value\&quot;:\&quot;0 techniques\&quot;,\&quot;weight\&quot;:0.14}&quot;,
+        &quot;{\&quot;contribution\&quot;:-0.3,\&quot;factor\&quot;:\&quot;threat_intel\&quot;,\&quot;label\&quot;:\&quot;Threat-intel match\&quot;,\&quot;value\&quot;:\&quot;no TI match\&quot;,\&quot;weight\&quot;:0.16}&quot;,
+        &quot;{\&quot;contribution\&quot;:0.5,\&quot;factor\&quot;:\&quot;ioc_density\&quot;,\&quot;label\&quot;:\&quot;IOC density\&quot;,\&quot;value\&quot;:\&quot;3 populated fields\&quot;,\&quot;weight\&quot;:0.06}&quot;,
+        &quot;{\&quot;contribution\&quot;:0.0,\&quot;factor\&quot;:\&quot;severity\&quot;,\&quot;label\&quot;:\&quot;Alert severity\&quot;,\&quot;value\&quot;:\&quot;medium\&quot;,\&quot;weight\&quot;:0.2}&quot;
+      ]
+    },
+    &quot;enrichment&quot;: {
+      &quot;items&quot;: [
+        {
+          &quot;kind&quot;: &quot;first_fusion_result_reference&quot;,
+          &quot;value&quot;: {
+            &quot;artifact_id&quot;: &quot;8ecfae34-cd3d-50e3-8465-681a8dad8c58&quot;,
+            &quot;same_material_input&quot;: true
+          },
+          &quot;source&quot;: &quot;fusion&quot;,
+          &quot;source_path&quot;: &quot;$.fused&quot;,
+          &quot;collected_at&quot;: null
+        },
+        {
+          &quot;kind&quot;: &quot;fusion_session&quot;,
+          &quot;value&quot;: {
+            &quot;session_id&quot;: null,
+            &quot;session_key_kind&quot;: null,
+            &quot;originating_human&quot;: null
+          },
+          &quot;source&quot;: &quot;fusion&quot;,
+          &quot;source_path&quot;: &quot;$.fused&quot;,
+          &quot;collected_at&quot;: null
+        }
+      ],
+      &quot;schema_version&quot;: &quot;socai2.fusion-material.v1&quot;
+    },
+    &quot;source_scope&quot;: {
+      &quot;kind&quot;: &quot;explicit_sources&quot;,
+      &quot;complete&quot;: true,
+      &quot;truncated&quot;: false,
+      &quot;window_end&quot;: null,
+      &quot;window_start&quot;: null,
+      &quot;received_count&quot;: 1,
+      &quot;retained_count&quot;: 1,
+      &quot;omission_reason&quot;: null
+    },
+    &quot;material_state&quot;: &quot;complete&quot;,
+    &quot;sha256&quot;: &quot;901e2d9a868e9474c4e41ad6ea969ad5f00dd76c5e2902a862aace765da97136&quot;,
+    &quot;retention&quot;: {
+      &quot;reason&quot;: null,
+      &quot;truncated&quot;: false,
+      &quot;omitted_paths&quot;: [],
+      &quot;original_sha256&quot;: &quot;901e2d9a868e9474c4e41ad6ea969ad5f00dd76c5e2902a862aace765da97136&quot;,
+      &quot;retained_sha256&quot;: &quot;901e2d9a868e9474c4e41ad6ea969ad5f00dd76c5e2902a862aace765da97136&quot;,
+      &quot;original_size_bytes&quot;: 7729,
+      &quot;retained_size_bytes&quot;: 7729
+    }
+  }
+]</pre></details><details><summary>来源引用 · alert_source_refs（0 条）</summary><pre>[]</pre></details><details><summary>关联对象 · alert_objects（3 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;1d3ae043-141e-426a-9026-3f2f49f360fe&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;alert_id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;material_id&quot;: &quot;99f126c0-6a53-42bb-9d74-f2900808a0b5&quot;,
+    &quot;object_key&quot;: &quot;[\&quot;ip\&quot;,\&quot;192.0.2.81\&quot;]&quot;,
+    &quot;object_type&quot;: &quot;ip&quot;,
+    &quot;source_type&quot;: &quot;telemetry-channel-01&quot;,
+    &quot;object_role&quot;: &quot;both&quot;,
+    &quot;namespace&quot;: &quot;connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef&quot;,
+    &quot;raw_value&quot;: &quot;192.0.2.81&quot;,
+    &quot;normalized_value&quot;: &quot;192.0.2.81&quot;,
+    &quot;source_path&quot;: &quot;$.raw_json.src_ip&quot;,
+    &quot;attributes&quot;: {
+      &quot;original_path&quot;: null,
+      &quot;received_field&quot;: &quot;src_ip&quot;
+    },
+    &quot;asset_match_state&quot;: &quot;not_checked&quot;,
+    &quot;asset_ref&quot;: null,
+    &quot;match_basis&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;69fa8592-69b5-4c6b-af49-c4af6d4899fd&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;alert_id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;material_id&quot;: &quot;99f126c0-6a53-42bb-9d74-f2900808a0b5&quot;,
+    &quot;object_key&quot;: &quot;[\&quot;host\&quot;,\&quot;host-app-3f979d56\&quot;]&quot;,
+    &quot;object_type&quot;: &quot;host&quot;,
+    &quot;source_type&quot;: &quot;telemetry-channel-01&quot;,
+    &quot;object_role&quot;: &quot;entity&quot;,
+    &quot;namespace&quot;: &quot;connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef&quot;,
+    &quot;raw_value&quot;: &quot;host-app-3f979d56&quot;,
+    &quot;normalized_value&quot;: &quot;host-app-3f979d56&quot;,
+    &quot;source_path&quot;: &quot;$.raw_json.hostname&quot;,
+    &quot;attributes&quot;: {
+      &quot;original_path&quot;: null,
+      &quot;received_field&quot;: &quot;hostname&quot;
+    },
+    &quot;asset_match_state&quot;: &quot;not_checked&quot;,
+    &quot;asset_ref&quot;: null,
+    &quot;match_basis&quot;: null
+  },
+  {
+    &quot;id&quot;: &quot;78abf3ef-33e6-4d53-ba9e-e73e9dc4aa3d&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;alert_id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;material_id&quot;: &quot;99f126c0-6a53-42bb-9d74-f2900808a0b5&quot;,
+    &quot;object_key&quot;: &quot;[\&quot;user\&quot;,\&quot;svc-app-bc3b4605\&quot;]&quot;,
+    &quot;object_type&quot;: &quot;user&quot;,
+    &quot;source_type&quot;: &quot;telemetry-channel-01&quot;,
+    &quot;object_role&quot;: &quot;entity&quot;,
+    &quot;namespace&quot;: &quot;connector:8025cfe8-3bf0-535e-a5dc-5abd4c13deef&quot;,
+    &quot;raw_value&quot;: &quot;svc-app-bc3b4605&quot;,
+    &quot;normalized_value&quot;: &quot;svc-app-bc3b4605&quot;,
+    &quot;source_path&quot;: &quot;$.raw_json.username&quot;,
+    &quot;attributes&quot;: {
+      &quot;original_path&quot;: null,
+      &quot;received_field&quot;: &quot;username&quot;
+    },
+    &quot;asset_match_state&quot;: &quot;not_checked&quot;,
+    &quot;asset_ref&quot;: null,
+    &quot;match_basis&quot;: null
+  }
+]</pre></details><details><summary>分诊与人工反馈 · alert_assessments（0 条）</summary><pre>[]</pre></details><details><summary>事件成员关系 · incident_alerts（0 条）</summary><pre>[]</pre></details><details><summary>Case 成员关系 · case_alerts（1 条）</summary><pre>[
+  {
+    &quot;id&quot;: &quot;99bbc182-6400-46d7-9f80-94bf76763691&quot;,
+    &quot;tenant_id&quot;: &quot;527e9fe1-6e48-4cdd-b0fe-ce75a8c34149&quot;,
+    &quot;case_id&quot;: &quot;1576d3fa-a518-5db2-9781-33347eec1fa2&quot;,
+    &quot;alert_id&quot;: &quot;9e1d2593-05e1-4654-bc4e-f19eae3867fa&quot;,
+    &quot;added_at&quot;: &quot;2026-11-16 11:51:29.110115+00:00&quot;,
+    &quot;added_by&quot;: &quot;43322895-b5ad-43de-a1c2-988c64bbea7a&quot;,
+    &quot;membership_source&quot;: &quot;manual&quot;,
+    &quot;source_operation_id&quot;: &quot;b52b088c-87cd-4a68-b88f-515693876a71&quot;
+  }
+]</pre></details><details><summary>执行轮次 · runs（0 条）</summary><pre>[]</pre></details><details><summary>执行步骤 · run_steps（0 条）</summary><pre>[]</pre></details><details><summary>输入、输出和工件 · artifacts（0 条）</summary><pre>[]</pre></details><details><summary>操作记录 · activities（0 条）</summary><pre>[]</pre></details><details><summary>操作影响 · activity_targets（0 条）</summary><pre>[]</pre></details><details><summary>评论 · comments（0 条）</summary><pre>[]</pre></details><details><summary>处置关联 · response_links（0 条）</summary><pre>[]</pre></details><details><summary>分析任务 · analysis_tasks（0 条）</summary><pre>[]</pre></details><details><summary>任务执行记录 · analysis_attempts（0 条）</summary><pre>[]</pre></details><details><summary>分析更新状态 · analysis_subject_state（0 条）</summary><pre>[]</pre></details></section></main></body></html>

@@ -6,11 +6,11 @@
 
 当前调整已进入实施：[OpenSpec设计](../../openspec/changes/complete-socai2-investigation-chain/design.md)中的完整请求容量/C6预留、query直接查询、Case集合读取及既有页面服务接线已有代码。用户批准新完整C使用48000保守单位，仍为4模型／4工具／120秒；旧Run及A/I不回写。用户侧以“本轮调查依据未变化／调查依据已更新／暂无法核对调查依据”表达受跟踪输入状态，与成员覆盖分开。代码、隔离PG与真实模型质量分别验收，实际进度以[任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)为准，未完成整链不作完成承诺。
 
-当前验证拓扑见[本机优先与VPN模型窗口](../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)。2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 原页面以真实导出回查；[修改与后续评审](../investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)保留事实扩大、H容量和未实际消费知识等问题。
+当前验证拓扑见[本机优先与VPN模型窗口](../../openspec/changes/complete-socai2-investigation-chain/local-first-validation-plan-20261105.md)。2026-11-05当前进度：19/26项完成；本机累计48/50次模型尝试。C6已不依赖C3成功，并将案件业务判断与执行原因分字段保存；g首轮及新增三组案例均形成模型Case判断，原页面可回查。三组新增15次DeepSeek，最终均accepted/partial/uncertain；03有事实扩大，模型质量不通过。H后容量、知识实际消费、语义约束、完整页面闭环、远端模型对照及结束审计仍待。用户已授权提交推送到origin/codex/case-baseline-history-20261103；不部署、不归档、不核销旧失败。 原页面以真实导出回查；[修改与后续评审](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/design-audit-and-scenario-evaluation-20261105.md#9-实施变更与后续评审记录2026-11-05提交快照)保留事实扩大、H容量和未实际消费知识等问题。
 
 2026-11-04范围更新：设计和后台现统一在主目录`E:/aisoc/socai2`、分支`codex/case-baseline-history-20261103`。[当前OpenSpec任务](../../openspec/changes/complete-socai2-investigation-chain/tasks.md)区分已有实现、待完成和暂缓项。Q（AI问答）业务暂缓，仅预留接口，本文Q的流程仍是产品目标，不表示已执行或已交付；A/I/C/H职责和既定数据语义保持。
 
-当前落地边界：新版单开服务，不替换原版。C以领取时的完整冻结快照分析；当前判断的成员覆盖不等于已读取后来更新的材料或H反馈，相同成员的新反馈由用户显式prepare/start形成下一轮。H保存本身不触发调查。完整C2在原4次工具总额度内最多使用2次，为C4保留2次；未查询来源明确显示预算跳过，不宣称所有来源每轮都已查询。详见[人工反馈](../investigation/socai2-human-tasks-20261104.md)、[来源限制](../investigation/socai2-external-sources-20261104.md)和[独立服务方案](../operations/socai2-next-service-plan-20261104.md)。
+当前落地边界：新版单开服务，不替换原版。C以领取时的完整冻结快照分析；当前判断的成员覆盖不等于已读取后来更新的材料或H反馈，相同成员的新反馈由用户显式prepare/start形成下一轮。H保存本身不触发调查。完整C2在原4次工具总额度内最多使用2次，为C4保留2次；未查询来源明确显示预算跳过，不宣称所有来源每轮都已查询。详见[人工反馈](../investigation/socai2-human-tasks-20261104.md)、[来源限制](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-external-sources-20261104.md)和[独立服务方案](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/socai2-next-service-plan-20261104.md)。
 
 后续建议的对象须属于声明成员，跨成员关系核验显式列出所有相关成员。C6按原计划工件与建议序号关联执行状态，最新再分析提议不接管旧状态；原计划必要内容不能因压缩消失后仍猜测执行含义。C6使用独立最终交付规则和单一输出目标，共享来源/活动语义不重复堆叠；预算不足明确停止，不扩大额度。具体实现与验证见[当前差距](../design/investigation-design-current-gap-review-20261103.md)。
 
@@ -142,7 +142,7 @@ Deep负责具体问题内的下一步补查，不独立拥有整案预算或结�
 
 ### 4.3 模型输入与输出精简
 
-2026-11-04在DeepSeek七份原答归因后，用户要求优先参考开源版本精简输入。无损分组、必需组优先、A/I可见性与分类校验、C3/Deep/C6提示精简已本地实施，真实新批验收另报，不能把本地通过当模型质量通过。实施范围与剩余项见[本批修复明细](../investigation/socai2-compact-input-fix-20261104.md)。开源具体做法及最初排布实验见[开源版本第7节](opensource-investigation-implementation.md#7-输入怎样精简对小模型到底有什么帮助)；问题原件见[根因审计](../investigation/socai2-deepseek-root-cause-audit-20261104.md)。
+2026-11-04在DeepSeek七份原答归因后，用户要求优先参考开源版本精简输入。无损分组、必需组优先、A/I可见性与分类校验、C3/Deep/C6提示精简已本地实施，真实新批验收另报，不能把本地通过当模型质量通过。实施范围与剩余项见[本批修复明细](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-compact-input-fix-20261104.md)。开源具体做法及最初排布实验见[开源版本第7节](opensource-investigation-implementation.md#7-输入怎样精简对小模型到底有什么帮助)；问题原件见[根因审计](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-deepseek-root-cause-audit-20261104.md)。
 
 核心是：完整原件留库，模型每次接收服务端按任务生成的紧凑材料；模型生成认识、疑问和下一步，服务端负责身份、引用映射、覆盖计算、执行状态及报告排版。精简不意味着把C改成简单摘要，也不以小模型为由取消Deep、领域检查、工具取证和最终整案分析。
 
@@ -168,11 +168,11 @@ Deep负责具体问题内的下一步补查，不独立拥有整案预算或结�
 
 首轮保留A/I一次模型、C现有主分析/Deep/最终综合的编排和预算，不为每个领域新增Agent/调用。外层完整流程保持，内部每次只承担该阶段任务。先按原额度核对实际请求（system、材料、Schema、工具定义和输出预留），不能把节省字节直接当已节省tokens或判断质量已改善。
 
-模型后端能力用显式配置表达。默认standard保留完整Schema；已确认不支持uniqueItems的后端可选vllm_grammar_v1，只在发送前移除此关键字，本地重复/范围检查保持。转换后的实际请求再计量、持久化并发送，不失败重试或回退自由JSON。配置选择和真实请求均留工件；原共享LiteLLM及服务配置保持。当前修复尚未部署，见[m1后合同修正](../investigation/socai2-m1-contract-fix-20261104.md)。
+模型后端能力用显式配置表达。默认standard保留完整Schema；已确认不支持uniqueItems的后端可选vllm_grammar_v1，只在发送前移除此关键字，本地重复/范围检查保持。转换后的实际请求再计量、持久化并发送，不失败重试或回退自由JSON。配置选择和真实请求均留工件；原共享LiteLLM及服务配置保持。当前修复尚未部署，见[m1后合同修正](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m1-contract-fix-20261104.md)。
 
 ### 4.4 可见性、引用和结果采纳
 
-当前实证差距见[m2真实验证](../investigation/socai2-model-evaluation-m2-20261104.md)。[随后本地修复](../investigation/socai2-m2-followup-fix-20261104.md)已调整I检测组优先级并增加安全有界错误回执；[m3定位与修复](../investigation/socai2-deepseek-union-fix-20261104.md)确认DeepSeek拒绝anyOf裸引用及object类型数组，本地改为有type的完整分支、不弱化约束，新表达真实接收尚待验证。线上仍n9、n11未部署；role不能证明授权、成功含义与后续项文字范围偏差仍需复核。按用户最新口径，仅良恶相反计误判，needs_review可接受且单列待复核，无独立真值不算准确率；事实/范围错误仍单独验收。以下目标合同不等于程序接受或必需视图完整即可证明真实质量。
+当前实证差距见[m2真实验证](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-model-evaluation-m2-20261104.md)。[随后本地修复](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-m2-followup-fix-20261104.md)已调整I检测组优先级并增加安全有界错误回执；[m3定位与修复](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/socai2-deepseek-union-fix-20261104.md)确认DeepSeek拒绝anyOf裸引用及object类型数组，本地改为有type的完整分支、不弱化约束，新表达真实接收尚待验证。线上仍n9、n11未部署；role不能证明授权、成功含义与后续项文字范围偏差仍需复核。按用户最新口径，仅良恶相反计误判，needs_review可接受且单列待复核，无独立真值不算准确率；事实/范围错误仍单独验收。以下目标合同不等于程序接受或必需视图完整即可证明真实质量。
 
 精简配套下面的合同。当前A/I与C准备视图将覆盖信息保存在版本化工件；A/I模型回执增加分类诊断，已有工件读取接口可取。C输出校验仍返回首个错误；Deep按问题进一步筛选背景、专用覆盖/告警DTO及大Case分批不在本批实现。下表同时说明目标语义，不能据此声称这些剩余项已经完成。无新增数据库列或旧快照回填。
 

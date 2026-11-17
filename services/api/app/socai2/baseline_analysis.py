@@ -14,10 +14,9 @@ from .baseline_context import reference
 from .baseline_contracts import FULL_EXECUTOR_VERSION, FULL_EXECUTOR_VERSIONS, Limits
 from .baseline_dispatch import offered_bindings
 from .baseline_enrichment import S, error
-from .baseline_execution_schema import compact_execution_wire, execution_format
+from .baseline_execution_schema import compact_execution_wire
 from .baseline_store import RM, F, StoreError, digest, encoded
 from .model_input_view import case_model_data
-from .structured_output import response_format
 
 SCHEMA = contract.SCHEMA
 
@@ -88,6 +87,7 @@ def budget_reason(steps, limits, request_bytes, now, *, reserve_calls=0, reserva
 
 
 def domain_block(domain, analysis, source_map, context):
+    from .case_citation_quality import links
     findings = []
     for item in analysis.findings:
         if item.id not in domain.finding_ids:
@@ -97,8 +97,8 @@ def domain_block(domain, analysis, source_map, context):
         # Object-level attribution requires its own explicit evidence.
         scope.update(kind="selected_alerts", alert_ids=list(map(str, item.alert_ids)), object_keys=[])
         findings.append({"id": item.id, "statement": item.statement, "state": item.state,
-            "scope": scope, "support": [source_map[s]["ref"] for s in item.support_ids],
-            "counterevidence": [source_map[s]["ref"] for s in item.counter_ids],
+            "scope": scope, "support": links(item.support_ids, source_map, observed=item.state == "observed"),
+            "counterevidence": links(item.counter_ids, source_map),
             "limitations": item.limitations})
     focus = context.scope.model_dump(mode="json")
     focus.update(kind="selected_alerts", alert_ids=list(map(str, domain.alert_ids)), object_keys=[])
@@ -132,8 +132,9 @@ class BaselineAnalysis:
         bindings, options, excluded = None, None, []
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
-            if run["executor_version"] == FULL_EXECUTOR_VERSION:
-                self.schema = contract.EXECUTION_SCHEMA
+            if run["executor_version"] != FULL_EXECUTOR_VERSION:
+                raise StoreError("full_executor_claim_required")
+            self.schema = contract.EXECUTION_SCHEMA
             prior = await store.one(select(S).where(*store.where(S, S.c.run_id == run_id,
                 S.c.kind == "stage", S.c.stage_code == "C3")))
             if prior:
@@ -150,11 +151,10 @@ class BaselineAnalysis:
                     S.c.state.in_(["planned", "running", "unknown"]))).limit(1)):
                 raise StoreError("baseline_step_in_progress")
             context = await store.read_context(case_id, run_id)
-            use_boundary = context.case_input_profile is not None
-            prepared = await store.prepare_model_view(case_id, run_id, case_boundary=use_boundary)
-            if use_boundary:
-                self.schema = contract.EXECUTION_SCHEMA
-                bindings, options = {}, []
+            from . import case_model_boundary, case_output_adapter
+            case_model_boundary.selected_profile(context)
+            prepared = await store.prepare_model_view(case_id, run_id, case_boundary=True)
+            bindings, options = {}, []
             if run["executor_version"] == FULL_EXECUTOR_VERSION:
                 from .baseline_evidence import BaselineEvidence
                 from .baseline_evidence_tools import LakeGateway
@@ -166,7 +166,6 @@ class BaselineAnalysis:
                 *store.where(F, F.c.run_id == run_id, F.c.kind == "tool_response")))).mappings().all()
             if any(digest(r["content_json"]) != r["sha256"] for r in tool_rows):
                 raise StoreError("enrichment_receipt_invalid")
-            tool_payloads = {str(r["id"]): r["content_json"] for r in tool_rows}
             stage_id = uuid4()
             await store.db.execute(insert(S).values(id=stage_id, tenant_id=tenant_id, run_id=run_id,
                 seq=await self.next_seq(store, run_id), kind="stage", stage_code="C3", state="running",
@@ -178,63 +177,70 @@ class BaselineAnalysis:
         try:
             if not prepared["ready"]:
                 return await self.finish(tenant_id, case_id, run_id, stage_id, None,
-                    "skipped", "model_view_not_ready", refs)
+                    "skipped", prepared.get("reason") or "model_view_not_ready", refs)
             try:
-                if use_boundary:
-                    from . import case_model_boundary, case_output_adapter
-                    prompt, source_map = case_model_boundary.messages(prepared, context, options)
-                else:
-                    prompt, source_map = messages(prepared, context, tool_payloads, options)
+                prompt, source_map = case_model_boundary.messages(prepared, context, options)
                 if bindings is not None:
                     offered = {o["binding_id"] for o in options}
                     excluded.extend({"binding_id": b["binding_id"], "reason": "binding_catalog_input_limit"}
                         for alias, b in bindings.items() if alias not in offered)
                     bindings = {alias: b for alias, b in bindings.items() if alias in offered}
-            except StoreError:
+            except StoreError as exc:
+                if exc.code == "case_input_exceeds_prepared_limit":
+                    async with self.service.transaction(tenant_id) as store:
+                        run = await self.locked(store, case_id, run_id)
+                        await self.artifact(store, run, stage_id, {"schema_version": self.schema,
+                            "type": "capacity_preflight", "stage": "C3", "dispatch_state": "not_sent",
+                            "reason": exc.code, "messages": prepared["unsent_messages"],
+                            "source_map": prepared["source_map"], "tool_presentation": prepared.get("tool_presentation")},
+                            "source_snapshot", refs)
                 return await self.finish(tenant_id, case_id, run_id, stage_id, None,
-                    "skipped", "analysis_input_contract_or_size", refs)
-            from .analysis_review import Review
+                    "skipped", exc.code, refs)
             from .baseline_reasoning import ModelSteps
-            fmt = response_format(contract.Analysis if bindings is None else contract.ExecutionAnalysis, source_map,
-                members=context.alerts, questions=[q.id for q in context.questions],
-                objects=context.scope.object_keys, bindings=bindings or ())
-            if bindings is not None:
-                fmt = execution_format(fmt, bindings)
+            fmt = case_output_adapter.output_format(prepared, context, bindings)
             call_input = {"ready": True, "messages": prompt, "source_map": source_map,
                 "binding_map": bindings, "input_artifact_ids": [prepared["artifact_id"]],
                 "input_view_id": prepared["artifact_id"], "omissions": prepared.get("omissions", []),
                 "coverage": prepared["coverage"], "unoffered_bindings": excluded}
-            review = Review("C3", source_map, context, prepared["coverage"], bindings=bindings)
-            parser = lambda content: contract.parse(content, source_map, context, prepared["coverage"], bindings=bindings)
-            if use_boundary:
-                fmt = case_output_adapter.output_format(prepared, context, bindings)
-                call_input["case_boundary"] = prepared["case_boundary"]
-                call_input["tool_presentation"] = prepared["tool_presentation"]
-                review = case_output_adapter.CaseReview(prepared, context, bindings)
-                parser = lambda content: case_output_adapter.parse(content, prepared, context, bindings)
+            from .citation_quality import new_review
+            citation_review = call_input["citation_review"] = new_review()
+            call_input["case_boundary"] = prepared["case_boundary"]
+            call_input["tool_presentation"] = prepared["tool_presentation"]
+            from . import case_c3_delivery
+            parser = case_c3_delivery.parser(call_input, context, bindings)
             phase = "model_dispatch_and_review"
-            analysis, rejection, model_id, response_id = await ModelSteps(self.service, self.schema).call(
+            outcome = await ModelSteps(self.service, self.schema).call(
                 tenant_id, case_id, run_id, stage_id, "C3", call_input, gateway, parser,
-                output_format=fmt, wire_transform=compact_execution_wire if bindings is not None else None, review=review)
+                output_format=fmt, wire_transform=compact_execution_wire if bindings is not None else None,
+                allow_correction=False)
+            from .case_c3_completion_flow import complete_sections
+            outcome = await complete_sections(self.service, tenant_id, case_id, run_id, stage_id,
+                call_input, context, bindings, fmt, gateway, outcome, schema=self.schema)
+            analysis, rejection, model_id, response_id = outcome
             phase = "response_publication"
             return await self.finish(tenant_id, case_id, run_id, stage_id, model_id,
-                "completed" if analysis else "failed" if model_id else "skipped", rejection, refs,
+                "completed", rejection, refs,
                 analysis=analysis, source_map=source_map, context=context, response_id=response_id,
                 basis={"binding_map": bindings, "unoffered_bindings": excluded,
+                    "citation_review": citation_review,
+                    **({"section_completion": call_input["section_completion_result"]}
+                       if "section_completion_result" in call_input else {}),
+                    "stage_delivery": call_input["stage_delivery_result"],
                     "validation_review": call_input.get("validation_review"),
                     "correction_result": call_input.get("correction_result")})
         except (Exception, asyncio.CancelledError) as exc:
-            # No retry after transport/commit uncertainty. Retain the active Run.
+            from .baseline_failure import settle_unsent
             async with self.service.transaction(tenant_id) as store:
-                await self.locked(store, case_id, run_id)
-                failure = error("analysis_dispatch_uncertain", await store.now())
-                # Exception messages may contain provider URLs, keys or source
-                # data. Persist only a code-owned phase and exception type.
-                failure["message"] = f"{phase}:{type(exc).__name__}"
-                await store.db.execute(update(S).where(*store.where(S, S.c.run_id == run_id,
-                    S.c.stage_code == "C3", S.c.state == "running")).values(state="unknown",
-                        error=failure))
-                await store.mark_unknown(case_id, run_id)
+                run = await self.locked(store, case_id, run_id)
+                if not await settle_unsent(store, run, exc):
+                    failure = error("analysis_dispatch_uncertain", await store.now())
+                    # Exception messages may contain provider URLs, keys or source
+                    # data. Persist only a code-owned phase and exception type.
+                    failure["message"] = f"{phase}:{type(exc).__name__}"
+                    await store.db.execute(update(S).where(*store.where(S, S.c.run_id == run_id,
+                        S.c.stage_code == "C3", S.c.state == "running")).values(state="unknown",
+                            error=failure))
+                    await store.mark_unknown(case_id, run_id)
             raise
 
     async def finish(self, tenant_id, case_id, run_id, stage_id, model_id, state, reason, refs,
@@ -264,12 +270,14 @@ class BaselineAnalysis:
                     # Do not change read_state to read or claim final coverage.
                     await store.db.execute(update(RM).where(*store.where(RM, RM.c.run_id == run_id,
                         RM.c.alert_id == member.alert_id)).values(analysis_state=member.state))
+            from .case_citation_quality import VALIDATION
             summary = {"schema_version": self.schema, "case_id": str(case_id), "run_id": str(run_id),
                 "stage": phase, "state": state, "reason": reason,
-                "validation": "structure_scope_sources_checked" if analysis else "not_accepted",
+                "validation": (VALIDATION if basis and basis.get("citation_review") is not None
+                               else "structure_scope_sources_checked") if analysis else "not_accepted",
                 "analysis": analysis.model_dump(mode="json") if analysis else None,
                 "source_map": source_map or {}, "domain_artifact_ids": domain_artifacts,
-                "domains_not_executed": [] if analysis else list(contract.DOMAINS),
+                "domains_not_executed": [name for name in contract.DOMAINS if name not in domain_artifacts],
                 "limitations": ["initial_shared_model_pass" if phase == "C3_initial" else "post_evidence_shared_model_pass", "semantic_accuracy_not_proven",
                     "raw_material_not_fully_read", "not_full_baseline_delivery",
                     "only_offered_query_bindings_executable" if self.schema == contract.EXECUTION_SCHEMA

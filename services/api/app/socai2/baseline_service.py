@@ -52,7 +52,8 @@ class BaselineService:
                 await executor(claimed)
             except (Exception, asyncio.CancelledError):
                 # A transport/cancellation error cannot prove the executor did
-                # no work. Keep the active slot; there is no automatic retry.
+                # no work. Keep its unknown outcome; local execution has ended.
+                # The task executor records its own local end separately.
                 async with self.transaction(tenant_id) as store:
                     await store.mark_unknown(case_id, run_id)
                 raise
@@ -70,10 +71,11 @@ class BaselineService:
         """
         from .baseline_contracts import FULL_EXECUTOR_VERSION
         from .baseline_executor import BaselineExecutor
-        from .runtime_policy import active_policy
+        from .runtime_policy import execution_policy
+        policy = execution_policy("case_io")
         async with self.transaction(tenant_id) as store:
             now = await store.now()
-            if not active_policy().case.allows(limits, now):
+            if not policy.case.allows(limits, now):
                 raise StoreError("full_executor_limits_outside_policy", 422)
         return await self.start(tenant_id, case_id, run_id, request, actor=actor, limits=limits,
             executor_version=FULL_EXECUTOR_VERSION,

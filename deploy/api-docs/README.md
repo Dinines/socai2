@@ -1,129 +1,112 @@
-# Swagger HTTP接口文档服务
+# Swagger HTTP接口文档部署
 
-当前文档版本docs13，以标准Swagger展示64个后端HTTP操作，按告警、事件、调查归类。每个接口写明用途、输入、输出、结果、实现状态和错误；保留完整Schema及示例。旧功能目录URL转入Swagger，产品演示和页面接线进度不在当前接口入口展示。
+2026-11-16。当前21为streaming-http-20261116-r4，**80个业务操作，告警/事件/调查三组，无登录、Token或角色校验**。[同版文档包](streaming-release-20261116-04/handoff/manifest.json)已在18080加载，API为18024。[实际回执](../../docs/operations/evidence/streaming-release-20261116-04/switch-swagger-01.json)核合同、三组和CORS；新业务验收见[02批](../../docs/operations/evidence/streaming-fullflow-20261116-02/README.md)，不把文档200当模型质量通过。
 
-| 环境 | Swagger | 平台 |
+| 目标 | 当前配置 | 状态 |
 | --- | --- | --- |
-| 本地 | http://127.0.0.1:18080/ | linux/arm64 |
-| 21内网 | http://192.168.1.21:18080/ | linux/amd64 |
-
-`/handoff/openapi.json`可下载导入后端工具。18080只提供文档；21正式独立API为`http://192.168.1.21:18024`，本机SSH转发为28024，本机隔离服务为18024。Swagger Servers明确选择数据目标，记录ID不得跨库混用。
+| 21 Swagger 18080 | [aisoc21.env](streaming-release-20261116-04/aisoc21.env)，linux/amd64 | [实际运行](http://192.168.1.21:18080/)；新r4容器，旧展示入口停止 |
+| 21 API 18024 | [完整HTTP profile](../aisoc21/streaming-release-20261116-04/http-profile.json) | 正式aisoc，80操作及空态已验 |
+| 个人文档18081 | [local.env.example](streaming-release-20261116-04/local.env.example) | 示例须生成本机绝对路径；不宣称已在个人机器启动 |
 
 ## 后端在自己电脑启动 Swagger
 
-需要 Python 3、Docker 和 Docker Compose v2。只启动文档，无需数据库、Kafka、模型服务或 Node。以下命令在 **socai2 仓库根目录**执行；如果使用 SpiritHub，先进入 `server/`。本例用独立项目名和 `18081`，不占已有 `18080`。
+需要Python 3、Docker及Docker Compose v2。以下在socai2仓库根执行，SpiritHub用户先进入server。只操作个人文档容器，使用18081避开已有18080。配置示例按ARM64；Intel/AMD将DOCS_PLATFORM改为linux/amd64。
 
-1. 生成个人文档副本：
-
-```sh
-python3 deploy/api-docs/build.py --output .local/api-docs/developer/handoff
-```
-
-2. 选择 Docker 引擎的架构，再生成本机配置。Apple Silicon 通常为 `linux/arm64`，Intel/AMD 通常为 `linux/amd64`；以 `docker info --format '{{.Architecture}}'` 为准。下例是 ARM64，x86 机器只需改第一行：
+先生成带本机绝对目录的env文件：
 
 ```sh
-SOCAI2_DOCS_PLATFORM=linux/arm64
-SOCAI2_DOCS_IMAGE=docker.swagger.io/swaggerapi/swagger-ui@sha256:59ee9021a8884437c7fd8aae79e0a46ee6b6dd3afd7f24a587c4501585fde53b
-cat > .local/api-docs/developer.env <<EOF
-COMPOSE_PROJECT_NAME=socai2-api-docs-dev
-SWAGGER_IMAGE=$SOCAI2_DOCS_IMAGE
-DOCS_PLATFORM=$SOCAI2_DOCS_PLATFORM
-DOCS_BIND=127.0.0.1
-DOCS_PORT=18081
-DOCS_CONTAINER_PORT=8080
-DOCS_CONTENT=$(pwd)/.local/api-docs/developer/handoff
-EOF
-docker pull --platform "$SOCAI2_DOCS_PLATFORM" "$SOCAI2_DOCS_IMAGE"
-docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml config --quiet
-docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml up -d
+mkdir -p .local/api-docs/streaming-release-20261116-04
+python3 - <<'PYCONFIG'
+from pathlib import Path
+source = Path('deploy/api-docs/streaming-release-20261116-04/local.env.example').read_text()
+Path('.local/api-docs/streaming-release-20261116-04/local.env').write_text(
+    source.replace('<absolute-current-checkout>', str(Path.cwd())))
+PYCONFIG
 ```
 
-镜像首次需要拉取；Compose 的 `pull_policy: never` 不会自动下载。内网离线环境由运维提供**对应架构**的镜像包，用 `docker load -i <镜像包.tar>` 导入，并将 `SWAGGER_IMAGE` 改为导入后实际存在的标签或摘要。不要把本机 ARM64 镜像直接用于 21 AMD64。上述源摘要与 21 离线导入后的摘要不同，21 当前值保留在 `aisoc21.env`。
+核对配置中的架构、镜像和端口后执行：
 
-`DOCS_CONTENT` 必须是本机生成目录的绝对路径；路径含空格时在 env 文件中给整个值加双引号。不要复制维护者 `local.env` 中的 `/Users/lychee/...` 路径。端口冲突时改 `DOCS_PORT` 后重建该文档容器。
+```sh
+docker compose --env-file .local/api-docs/streaming-release-20261116-04/local.env \
+  -f deploy/api-docs/compose.yml config --quiet
+docker compose --env-file .local/api-docs/streaming-release-20261116-04/local.env \
+  -f deploy/api-docs/compose.yml pull
+docker compose --env-file .local/api-docs/streaming-release-20261116-04/local.env \
+  -f deploy/api-docs/compose.yml up -d
+```
 
-3. 打开 [个人本地 Swagger](http://127.0.0.1:18081/)，下载地址为 `/handoff/openapi.json`。检查：
+首次显式pull取得所选架构镜像；Compose运行配置为pull_policy=never，不在up时自动更新镜像。离线环境由部署方提供对应架构镜像，`docker load -i <镜像文件>`后把SWAGGER_IMAGE设为实际已导入的固定摘要/标签，不能把ARM64镜像给21使用。
+
+打开 [本机Swagger](http://127.0.0.1:18081/)。下载合同的路径是 `/handoff/openapi.json`：
 
 ```sh
 curl --fail http://127.0.0.1:18081/handoff/manifest.json
-docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml ps
+curl --fail http://127.0.0.1:18081/handoff/swagger-config.json
+docker compose --env-file .local/api-docs/streaming-release-20261116-04/local.env \
+  -f deploy/api-docs/compose.yml ps
 ```
 
-当前应显示 `2026-11-13.docs13`、62 操作、告警/事件/调查三组。62 是去重后的操作数，共用接口会在多个业务组显示。
+预期manifest为streaming-http-20261116-r4、80操作、告警/事件/调查三组。共用接口可在多组显示，不能把重复显示相加算业务操作数。例子来自隔离验证已保存记录，UUID不是21当前现成数据；调用前换成目标环境实际ID。
 
-### 选择调用哪个 API
+## 当前配置全部字段
 
-Swagger 页面的 **Servers** 下拉框选择：
+### Compose env文件
 
-| 选项 | 用途 |
-| --- | --- |
-| `http://192.168.1.21:18024` | 可访问 21 内网的后端联调，正式 `aisoc` 数据 |
-| `http://127.0.0.1:28024` | 当前电脑通过 SSH 转发访问同一正式服务 |
-| `http://127.0.0.1:18024` | 当前电脑自己运行的隔离 API；仅装 Swagger 不会启动它 |
+配置类别沿HTTP的四类约定：**部署必填**确认目标，**保留默认**保留模板字段和值（不代表可以删键），**启用时必填**在使用该能力时供给，**程序生成**据实生成/核对。Swagger静态服务的7项env当前全部提供；没有数据库、认证或模型的条件配置。
 
-用已有 SSH 接入配置时，转发命令为：
+以下7项在当前env中全部显式填写；`${...:?}`字段缺失会在Compose解析时拒绝。env文件选择用`--env-file`，不会自动使用其他环境文件。修改后重新执行所选项目的up -d；不重启API。
 
-```sh
-ssh -N -o ExitOnForwardFailure=yes -L 28024:192.168.1.21:18024 sting-infra21
-```
+| 字段 | 配置类别 | 类型／候选值 | 用途、默认与验证 |
+| --- | --- | --- | --- |
+| `COMPOSE_PROJECT_NAME` | 部署必填 | string；21为`socai2-streaming-swagger-20261115`，个人为`socai2-streaming-swagger-local` | 项目隔离；本部署显式必填，避免复用正式文档项目。用compose ps核项目 |
+| `SWAGGER_IMAGE` | 程序生成 | image reference；21摘要`95b255…51b9c`、个人示例摘要`59ee90…de53b`，完整值在对应env | 选择已有/显式取得的Swagger UI镜像；up不拉新版本。核容器实际image与架构 |
+| `DOCS_PLATFORM` | 部署必填 | string；21 linux/amd64，个人示例linux/arm64 | 目标CPU；无本部署默认，用Docker引擎实际架构选择 |
+| `DOCS_BIND` | 部署必填 | IP string；21 192.168.1.21、个人127.0.0.1 | 宿主监听地址；必填；个人示例只本机可访问 |
+| `DOCS_PORT` | 部署必填 | integer string；21 18080、个人18081 | 宿主端口；冲突时显式改个人配置，不挤占正式18080 |
+| `DOCS_CONTAINER_PORT` | 保留默认 | integer string；8080 | 容器PORT及端口映射目标；两处由同一变量生成 |
+| `DOCS_CONTENT` | 部署必填 | absolute host path | 当前handoff目录，含openapi.json/swagger-config.json/manifest.json；只读挂到`/usr/share/nginx/html/handoff`。本机不能照抄维护者路径；含空格时在env中给值加双引号 |
 
-`sting-infra21` 是维护者的 SSH 别名；其他电脑先按实际账号/跳板配置 SSH，见[接入说明](../../docs/operations/mac-ssh-relay-20261107.md)。转发应保持运行；已有 28024 时不重复启动。
+Compose内部固定 `pull_policy: never`、`restart: unless-stopped`、只读内容挂载；无数据库卷或应用secret。
 
-若需要自己的 API 地址，编辑**个人副本** `.local/api-docs/developer/handoff/openapi.json` 的顶层 `servers`：
+### compose.yml的Swagger环境与展示配置
 
-```json
-"servers": [
-  {"url": "http://192.168.1.21:18024", "description": "21 调查 API"},
-  {"url": "http://127.0.0.1:18024", "description": "本机隔离 API"}
-]
-```
+[compose.yml](compose.yml)读取以上env后设置下列容器环境。它们是当前部署显式值，改变镜像/展示配置须核实际返回；不改变业务API合同。
 
-URL 不带 `/api/v1/socai2`，每条 OpenAPI path 已含这个前缀。保存后刷新浏览器；重新 build 会恢复仓库默认 Servers，需重新应用个人地址。
+| 项 | 配置类别 | 当前类型／值 | 用途与验证 |
+| --- | --- | --- | --- |
+| `PORT` | 程序生成 | string；来自DOCS_CONTAINER_PORT | Swagger Web监听端口，核HTTP可访问 |
+| `SWAGGER_JSON_URL` | 保留默认 | string；`/handoff/openapi.json` | API合同位置，下载核版本与80操作 |
+| `CONFIG_URL` | 保留默认 | string；`/handoff/swagger-config.json` | 浏览器加载展示选项的位置，核此文件200 |
+| `VALIDATOR_URL` | 保留默认 | string；none | 不向外部Swagger校验器发送合同 |
+| `DOC_EXPANSION` | 保留默认 | string；none | 默认折叠操作，按业务组展开 |
+| `DISPLAY_OPERATION_ID` | 保留默认 | boolean string；true | 显示接口编号/operationId便于检索 |
+| `PERSIST_AUTHORIZATION` | 保留默认 | boolean string；false | 不保存授权信息；当前API本身没有鉴权方案 |
+| `TRY_IT_OUT_ENABLED` | 保留默认 | boolean string；false | 默认不进入试调编辑模式；不是禁止用户手动执行请求 |
 
-点击 Authorize 填入现有有效凭据，再使用 Try it out/Execute。示例 UUID 是合成占位值，必须使用[测试数据和操作指南](../../docs/integration/backend-test-guide.md)中的同环境真实 ID。调用 start/analyze/diagnose 会实际运行分析，不能当文档预览。
+[swagger-config.json](streaming-release-20261116-04/handoff/swagger-config.json)也明确以下全部字段，由浏览器加载。值与Compose保持一致；更改只读挂载文件后刷新浏览器，改挂载路径需重建文档容器。
 
-浏览器的请求由**打开 Swagger 的电脑**发出，`127.0.0.1` 也指该电脑。出现 Failed to fetch 而命令行可连时，核对 API 的 `AISOC_CORS_ORIGINS` 是否包含文档页面实际 origin（如 `http://127.0.0.1:18081`）；这属于部署配置。HTTPS 页面调用 HTTP 还可能被浏览器阻止，可改用本地 HTTP 文档或同源代理。后端程序直接 HTTP 调用不受浏览器 CORS 限制。
+| JSON字段 | 配置类别 | 类型／当前值 | 用途 |
+| --- | --- | --- | --- |
+| `url` | 保留默认 | string；`/handoff/openapi.json` | 同源读取合同 |
+| `filter` | 保留默认 | boolean；true | 提供搜索过滤 |
+| `validatorUrl` | 保留默认 | null | 不调用外部合同校验器 |
+| `docExpansion` | 保留默认 | string；none | 默认折叠 |
+| `displayOperationId` | 保留默认 | boolean；true | 显示接口标识 |
+| `persistAuthorization` | 保留默认 | boolean；false | 不保留授权数据 |
+| `tryItOutEnabled` | 保留默认 | boolean；false | 默认不打开试调模式 |
 
-### 更新、停止和排查
+### API地址及文档manifest
 
-拉取同一交付版本后，重新运行 build 到个人目录并刷新页面即可，静态目录已挂载；修改 env/镜像/端口后再执行同一 Compose `up -d`。不要直接把业务服务原生 `/openapi.json` 替换交接版，它不包含本项目补充的字段含义、实现状态和功能说明。
+`servers[].url` 属于**部署必填**，必须选择实际目标；`description`保留对应环境说明。OpenAPI顶层 `servers` 为数组，每项 `url` 是API根地址（不含/api/v1/socai2），`description`为展示说明。当前唯一目标是 `http://192.168.1.21:18024`，已启动并完成空态与合同读取，新02业务整链正在验证。示例ID来自此前隔离记录，不是当前正式库对象。后端要改自己的API地址时复制个人handoff目录、修改个人openapi.json的servers，再把DOCS_CONTENT指向该副本，不能改冻结交付包。
 
-```sh
-docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml logs --tail 50 swagger
-docker compose --env-file .local/api-docs/developer.env -f deploy/api-docs/compose.yml down
-```
+浏览器跨域需要API的AISOC_CORS_ORIGINS包含文档页面origin，当前HTTP含21:18080和127.0.0.1:18081。这是浏览器读取规则，不是登录或角色验证。后端服务器直接HTTP调用无需Swagger或浏览器CORS。
 
-这里的 down 只针对 `socai2-api-docs-dev` 文档项目，不删除数据卷。页面能开但接口列表失败时检查 `/handoff/openapi.json` 是否 200、`DOCS_CONTENT` 是否正确；镜像缺失/架构不符则按第二步处理。
+manifest全部字段属于**程序生成**的回执，**不控制服务行为**：`version`发行号、`operations`去重操作数、`groups`三类展示、`state`已验API合同及空态、`api_target`目标、`authentication_required=false`、`business_api_called=true`（本批实际GET）、`business_http_write_verified=false`、`whole_flow_verified=false`、`runtime_evidence`本批证据目录、`source`来源包、`files`两份内容摘要、`examples`样例适用范围。state以实际回执为依据，不能把文档可用等同业务整链通过。
 
-## 文档来源与构建
+## 后续更新及本轮边界
 
-原OpenAPI是结构来源，catalog.py保存操作说明，publish.py合并已审计字段并补操作结果；build.py生成静态包。125项原功能范围及历史审计保留在仓库，不据现有接口反向扩展产品。
+本轮已按[21发布流程](../aisoc21/README.md)在新目录部署并读回，配置和handoff来自同一r4冻结。后续变更需新的显式批次，核实际HTTP版本/80操作/无鉴权，再核Swagger方法、路径、参数和请求响应Schema一致；tags/examples/description是展示层差异，不能作为原始HTTP合同严格比较的输入。
 
-```sh
-python3 deploy/api-docs/build.py --output /tmp/socai2-docs-preview
-```
+不使用旧publish.py重新生成包含已退役E11/E13/E36的另一版文档。当前manifest版本、runtime_evidence和文件hash必须指向实际批次。新业务/模型验收、完整change独审及归档各自记录，不能由Swagger成功代替。旧18424/18480候选记录见[历史快照](../../docs/handoff/history/2026-11-16-release-r4/deploy/api-docs/README.md)。
 
-先检查暂存包、完成限定文档独审，再将同一包保存到仓库交接目录及两个profile的DOCS_CONTENT。运行挂载采用不可变版本目录，构建不会直接覆盖在线文档。
-
-## 独立发布
-
-Compose项目为socai2-api-docs，容器为socai2-api-docs-swagger-1。只复制静态包、compose.yml及目标profile，不同步业务代码、私密配置或数据。
-
-- 本地：local.env，内容路径`.local/api-docs/releases/20261113-docs13/handoff`。
-- 21：aisoc21.env，内容路径`/opt/socai2-api-docs/releases/20261113-docs13/handoff`。
-
-两端继续使用既有官方Swagger镜像：多架构来源摘要sha256:59ee9021a8884437c7fd8aae79e0a46ee6b6dd3afd7f24a587c4501585fde53b；21单平台导入摘要sha256:95b2555796efa9171c00a281c096499d28261adc24e80856fc11571276251b9c。profile显式指定不同架构，本次不重新拉镜像或修改Docker代理。
-
-本机发布：
-
-```sh
-docker compose --env-file deploy/api-docs/local.env -f deploy/api-docs/compose.yml up -d
-```
-
-21发布（SSH别名sting-infra21）：
-
-```sh
-docker compose --env-file /opt/socai2-api-docs/aisoc21.env -f /opt/socai2-api-docs/compose.yml up -d
-```
-
-发布后只读文档版本、内容摘要、容器状态和架构；不调用业务API、数据库或模型。当前结果见deployment-receipt.json，历史结果见receipts目录。文档发布不代表Git远端或SpiritHub引用已同步。
+[HTTP配置](../http-service/CONFIGURATION.md) · [前后端交接](../../FRONTEND_BACKEND_HANDOFF.md)

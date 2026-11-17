@@ -1,0 +1,1070 @@
+{
+  "config": {
+    "database_profile": ".local/v1.2-reader-validation/config-dev.json",
+    "environment_file": ".local/case-knowledge-20261111-01/environment.json",
+    "expected_database": "v12_upgrade_dev",
+    "sslmode": "disable",
+    "tenant_id": "00000000-0000-0000-0000-000000000001",
+    "actor_id": "00000000-0000-0000-0000-000000000003",
+    "actor_name": "local-material-review@example.invalid",
+    "policy": "deploy/local-investigation/investigation-policy-case-v1.toml",
+    "window_padding_seconds": 300,
+    "runtime_overrides": {
+      "AISOC_DISABLE_CLICKHOUSE": "true",
+      "SOCAI2_SOURCE_KNOWLEDGE_ENABLED": "true",
+      "SOCAI2_SOURCE_UEBA_ENABLED": "true",
+      "SOCAI2_SOURCE_GRAPH_ENABLED": "false",
+      "SOCAI2_SOURCE_PRODUCT_HOST_ENABLED": "false",
+      "SOCAI2_KNOWLEDGE_PROFILE": "/Users/lychee/Documents/project/socai2/docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+      "AISOC_AIRGAPPED": "false"
+    },
+    "transport_config": "tools/testdata/alert_io_eval/config.json",
+    "preflight_timeout_seconds": 30,
+    "expected_route": {
+      "model": "aisoc-investigation",
+      "upstream_model": "openai/aisoc-test-investigation",
+      "upstream_base": "http://192.168.1.43:8000/v1"
+    },
+    "hidden_message_fields": [
+      "reasoning_content",
+      "reasoning",
+      "thinking",
+      "analysis",
+      "reasoning_details"
+    ],
+    "knowledge_profile": "docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json",
+    "http_base_url": "http://local.validation",
+    "http_timeout_seconds": 1600,
+    "batch": "fixed-investigation-20261113-08",
+    "output": "docs/operations/evidence/fixed-investigation-20261113-08/flow",
+    "previous_flow": "docs/operations/evidence/fixed-investigation-20261112-05/flow",
+    "snapshot": "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/workbench-export/database.json",
+    "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/fixed-investigation-20261113-08",
+    "limitations": [
+      "Two scenarios, one new isolated Case and at most two new fixed-scope Runs. Original A/I reused; old Runs never redispatched.",
+      "B01 is the no-H baseline. H01 is a new fixed Run on that Case after the original material-review text; new accepted C3 feeds C6.",
+      "Synthetic materials and assistant-authored material review, not independent ground truth or business authorization.",
+      "H, designated historical result and query time differ between scenarios; no controlled A/B or accuracy claim.",
+      "Existing per-Run limits and bounded correction only. Known repeated prose-quality issues remain NOT_PASSED; no sampling to chase success.",
+      "Knowledge forward held for each complete Run. No model deployment, migration, HTTP contract change, consumer or streaming update."
+    ],
+    "scenarios": [
+      {
+        "key": "B01",
+        "kind": "baseline",
+        "title": "固定调查对比：无H基线",
+        "expectation": [
+          "三成员原事实进入输入；无授权或损害证据时保留待核。",
+          "知识仅作解释/取证参考，历史材料不得当当前成员的独立观察。"
+        ]
+      },
+      {
+        "key": "H01",
+        "kind": "review_same_case",
+        "depends_on": "B01",
+        "title": "材料核查反馈后再调查",
+        "human_text": "本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。\n1. 本案包含登录、进程启动及出站连接三类记录；请分别核对，不因登录A未形成有效判断而忽略原始登录事实。\n2. process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。\n3. 登录来源IP和出站连接源IP属于不同记录上下文；同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。\n4. 不能从主机名、用户名推断已获批的自动化流程。现有材料未提供审批、白名单、文件传输或受损证明；请据此复核结论和待核事项，不把本反馈当成行为合法或恶意的证明。",
+        "expectation": [
+          "H原文/版本/范围/附件在输入和引用中保持。",
+          "与B01比较，检查事实遗漏、理由和待核事项是否响应反馈；不要求翻转结论。",
+          "B01结果仅在程序判定可比时参与比较，拒收基线不得被模型恢复为有效结论。"
+        ]
+      }
+    ],
+    "local_services": "tools/testdata/case_knowledge/local-services.json",
+    "ssh_connect_timeout_seconds": 10,
+    "ssh_keepalive_seconds": 10,
+    "tunnel_ready_timeout_seconds": 15,
+    "forward_driver": "docs/operations/evidence/fixed-investigation-20261113-07/run.py",
+    "prior_evidence": [
+      "docs/operations/evidence/fixed-investigation-20261113-07",
+      "docs/operations/evidence/case-task-input-20261113-01"
+    ],
+    "transport": {
+      "ssh_binary": "ssh",
+      "ssh_target": "sting-infra21",
+      "remote_python": "python3",
+      "connect_timeout_seconds": 8,
+      "command_timeout_seconds": 340,
+      "gateway_base_url": "http://127.0.0.1:14000/v1",
+      "runtime_env_file": "/opt/sting-aisoc-socai2/private/processing-production/runtime.env",
+      "key_variable": "OPENAI_API_KEY",
+      "model_variable": "OPENAI_MODEL",
+      "expected_model": "aisoc-investigation",
+      "remote_evidence_dir": "/opt/sting-aisoc-socai2/evidence/fixed-investigation-20261113-08"
+    },
+    "plan_file": "readback-plan.json"
+  },
+  "members": [
+    {
+      "source_alert_id": "51382dcd-deac-54f5-9fa5-e7724f935402",
+      "alert_id": "2a009408-8329-5eef-ab03-337b870b0615",
+      "material_id": "039eb111-9dd9-5f7d-8b81-4b9a9ea4e448",
+      "alert": {
+        "title": "Account logon observed",
+        "description": null,
+        "event_time": "2026-11-07T06:38:27+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "51382dcd-deac-54f5-9fa5-e7724f935402",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Account logon observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "8486fd46-f6d3-4574-86a0-f885b8a82c3d",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:38:27+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "activity": {
+                "action": "logon",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+              "class_uid": 3002,
+              "src_endpoint": {
+                "ip": "203.0.113.77"
+              }
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:38:27Z",
+          "event_time": "2026-11-07T06:38:27Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 3002,
+          "identity_origin": null,
+          "source_alert_id": "38689fff-ce4d-4923-b4e9-b90ea6a89b86",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "8486fd46-f6d3-4574-86a0-f885b8a82c3d",
+            "38689fff-ce4d-4923-b4e9-b90ea6a89b86"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:38:27+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "activity": {
+            "action": "logon",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:38:27+00:00\",\"class_uid\":3002,\"activity\":{\"action\":\"logon\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"203.0.113.77\"}}",
+          "class_uid": 3002,
+          "src_endpoint": {
+            "ip": "203.0.113.77"
+          }
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 3002,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "2dc0dae5-3b41-55df-bbd2-d939557949d9",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "e7e13fc40554f0bf435c19a9c1238647c02f2f45395fb313c6c83c797eb94ca8",
+          "retained_sha256": "e7e13fc40554f0bf435c19a9c1238647c02f2f45395fb313c6c83c797eb94ca8",
+          "original_size_bytes": 3294,
+          "retained_size_bytes": 3294
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"203.0.113.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "203.0.113.77",
+          "normalized_value": "203.0.113.77",
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "attributes": {
+            "original_path": "src_endpoint.ip"
+          }
+        },
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        }
+      ]
+    },
+    {
+      "source_alert_id": "7211654f-4b65-5efc-8f10-b8464f2560b2",
+      "alert_id": "14e51c11-f996-5818-afa4-d5525ecfe8c2",
+      "material_id": "3e192b1d-bb37-52dd-8d65-4ffea783ce51",
+      "alert": {
+        "title": "Outbound connection observed",
+        "description": null,
+        "event_time": "2026-11-07T06:39:07+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "7211654f-4b65-5efc-8f10-b8464f2560b2",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Outbound connection observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "888fcea7-ce97-45d7-b577-6ea70d5e7ea8",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:39:07+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "activity": {
+                "action": "network_connection",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+              "class_uid": 4001,
+              "dst_endpoint": {
+                "ip": "198.51.100.77",
+                "port": 443
+              },
+              "src_endpoint": {
+                "ip": "192.0.2.77"
+              },
+              "connection_info": {
+                "protocol_name": "TCP"
+              }
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:39:07Z",
+          "event_time": "2026-11-07T06:39:07Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 4001,
+          "identity_origin": null,
+          "source_alert_id": "0442dd3a-13e7-4f91-97c2-c49488e7ec30",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "888fcea7-ce97-45d7-b577-6ea70d5e7ea8",
+            "0442dd3a-13e7-4f91-97c2-c49488e7ec30"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:39:07+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "activity": {
+            "action": "network_connection",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:39:07+00:00\",\"class_uid\":4001,\"activity\":{\"action\":\"network_connection\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"src_endpoint\":{\"ip\":\"192.0.2.77\"},\"dst_endpoint\":{\"ip\":\"198.51.100.77\",\"port\":443},\"connection_info\":{\"protocol_name\":\"TCP\"}}",
+          "class_uid": 4001,
+          "dst_endpoint": {
+            "ip": "198.51.100.77",
+            "port": 443
+          },
+          "src_endpoint": {
+            "ip": "192.0.2.77"
+          },
+          "connection_info": {
+            "protocol_name": "TCP"
+          }
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 4001,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "e0ae0c68-29ae-5a18-a7b9-cd8b339680c0",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "3415659b603030c00939369644332d61e995a455d20b92c2c1f9b429f7ced37b",
+          "retained_sha256": "3415659b603030c00939369644332d61e995a455d20b92c2c1f9b429f7ced37b",
+          "original_size_bytes": 3852,
+          "retained_size_bytes": 3852
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        },
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"198.51.100.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "198.51.100.77",
+          "normalized_value": "198.51.100.77",
+          "source_path": "$.ocsf_json.dst_endpoint.ip",
+          "attributes": {
+            "original_path": "dst_endpoint.ip"
+          }
+        },
+        {
+          "object_type": "ip",
+          "object_role": "both",
+          "object_key": "[\"ip\",\"192.0.2.77\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "192.0.2.77",
+          "normalized_value": "192.0.2.77",
+          "source_path": "$.ocsf_json.src_endpoint.ip",
+          "attributes": {
+            "original_path": "src_endpoint.ip"
+          }
+        }
+      ]
+    },
+    {
+      "source_alert_id": "f8513c4d-5f58-55d2-bda1-983f60b83bb0",
+      "alert_id": "be8f0fbb-15b6-5a18-a900-b6c46c2e9e91",
+      "material_id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+      "alert": {
+        "title": "Process start observed",
+        "description": null,
+        "event_time": "2026-11-07T06:38:47+00:00",
+        "event_time_source": "source",
+        "severity": "medium",
+        "original_vendor": "LabTelemetry"
+      },
+      "material": {
+        "raw_json": {
+          "id": "f8513c4d-5f58-55d2-bda1-983f60b83bb0",
+          "url": null,
+          "tags": [
+            "synthetic",
+            "production-multialert-20261107-01"
+          ],
+          "title": "Process start observed",
+          "domain": null,
+          "dst_ip": null,
+          "source": "socai2-flow-acceptance",
+          "src_ip": null,
+          "status": "new",
+          "rule_id": null,
+          "hostname": "socai2-flow-20261107-01",
+          "severity": "medium",
+          "username": "flow-observer",
+          "file_hash": null,
+          "raw_event": {
+            "event_id": "da81fda2-5305-474d-87af-391360e19eed",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "ocsf_event": {
+              "time": "2026-11-07T06:38:47+00:00",
+              "actor": {
+                "user": {
+                  "name": "flow-observer"
+                }
+              },
+              "device": {
+                "name": "socai2-flow-20261107-01"
+              },
+              "process": {
+                "name": "powershell.exe",
+                "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+              },
+              "activity": {
+                "action": "process_start",
+                "outcome": "success"
+              },
+              "raw_data": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+              "class_uid": 1007
+            },
+            "connector_type": "validation",
+            "schema_version": "v1",
+            "original_vendor": "LabTelemetry"
+          },
+          "rule_name": null,
+          "tenant_id": "00000000-0000-0000-0000-000000000001",
+          "created_at": "2026-11-07T06:38:47Z",
+          "event_time": "2026-11-07T06:38:47Z",
+          "risk_score": null,
+          "description": "",
+          "external_id": null,
+          "connector_id": null,
+          "mitre_tactics": [],
+          "connector_type": "validation",
+          "field_metadata": {},
+          "ocsf_class_uid": 1007,
+          "identity_origin": null,
+          "source_alert_id": "8657ba9c-f6dd-4853-9733-633964da64a9",
+          "identity_version": "source-v1",
+          "mitre_techniques": [],
+          "source_event_ids": [
+            "da81fda2-5305-474d-87af-391360e19eed",
+            "8657ba9c-f6dd-4853-9733-633964da64a9"
+          ],
+          "identity_event_id": null
+        },
+        "raw_text": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+        "ocsf_json": {
+          "time": "2026-11-07T06:38:47+00:00",
+          "actor": {
+            "user": {
+              "name": "flow-observer"
+            }
+          },
+          "device": {
+            "name": "socai2-flow-20261107-01"
+          },
+          "process": {
+            "name": "powershell.exe",
+            "cmd_line": "powershell.exe -NoProfile -Command Get-LocalUser"
+          },
+          "activity": {
+            "action": "process_start",
+            "outcome": "success"
+          },
+          "raw_data": "{\"time\":\"2026-11-07T06:38:47+00:00\",\"class_uid\":1007,\"activity\":{\"action\":\"process_start\",\"outcome\":\"success\"},\"actor\":{\"user\":{\"name\":\"flow-observer\"}},\"device\":{\"name\":\"socai2-flow-20261107-01\"},\"process\":{\"name\":\"powershell.exe\",\"cmd_line\":\"powershell.exe -NoProfile -Command Get-LocalUser\"}}",
+          "class_uid": 1007
+        },
+        "detection": {
+          "rule_id": null,
+          "tactics": [],
+          "rule_name": null,
+          "techniques": [],
+          "score_source": "fusion",
+          "ocsf_class_uid": 1007,
+          "labels_provided": false,
+          "confidence_label": null,
+          "confidence_state": "not_computed",
+          "confidence_value": null,
+          "confidence_rationale": null
+        },
+        "enrichment": {
+          "items": [
+            {
+              "kind": "first_fusion_result_reference",
+              "value": {
+                "artifact_id": "adabdb03-71cf-5aab-8792-73dc65cd6f4e",
+                "same_material_input": true
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            },
+            {
+              "kind": "fusion_session",
+              "value": {
+                "session_id": null,
+                "session_key_kind": null,
+                "originating_human": null
+              },
+              "source": "fusion",
+              "source_path": "$.fused",
+              "collected_at": null
+            }
+          ],
+          "schema_version": "socai2.fusion-material.v1"
+        },
+        "source_scope": {
+          "kind": "explicit_sources",
+          "complete": true,
+          "truncated": false,
+          "window_end": null,
+          "window_start": null,
+          "received_count": 2,
+          "retained_count": 2,
+          "omission_reason": null
+        },
+        "retention": {
+          "reason": null,
+          "truncated": false,
+          "omitted_paths": [],
+          "original_sha256": "f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062",
+          "retained_sha256": "f84810966ccc2dcdb4672ab86ec10f31223ffebecc62a2db7922ea207aa07062",
+          "original_size_bytes": 3651,
+          "retained_size_bytes": 3651
+        },
+        "material_state": "complete"
+      },
+      "objects": [
+        {
+          "object_type": "host",
+          "object_role": "entity",
+          "object_key": "[\"host\",\"socai2-flow-20261107-01\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "socai2-flow-20261107-01",
+          "normalized_value": "socai2-flow-20261107-01",
+          "source_path": "$.raw_json.hostname",
+          "attributes": {
+            "original_path": null,
+            "received_field": "hostname"
+          }
+        },
+        {
+          "object_type": "user",
+          "object_role": "entity",
+          "object_key": "[\"user\",\"flow-observer\"]",
+          "namespace": "source:socai2-flow-acceptance",
+          "raw_value": "flow-observer",
+          "normalized_value": "flow-observer",
+          "source_path": "$.raw_json.username",
+          "attributes": {
+            "original_path": null,
+            "received_field": "username"
+          }
+        }
+      ]
+    }
+  ],
+  "scope": {
+    "kind": "whole_case",
+    "alert_ids": [
+      "2a009408-8329-5eef-ab03-337b870b0615",
+      "14e51c11-f996-5818-afa4-d5525ecfe8c2",
+      "be8f0fbb-15b6-5a18-a900-b6c46c2e9e91"
+    ],
+    "object_keys": [],
+    "window_start": "2026-11-07T06:33:27Z",
+    "window_end": "2026-11-07T06:44:07Z",
+    "limitations": []
+  },
+  "scenarios": [
+    {
+      "key": "B01",
+      "kind": "baseline",
+      "title": "固定调查对比：无H基线",
+      "expectation": [
+        "三成员原事实进入输入；无授权或损害证据时保留待核。",
+        "知识仅作解释/取证参考，历史材料不得当当前成员的独立观察。"
+      ],
+      "human_request": null,
+      "operation_keys": {
+        "create": "5b51ef23-f753-5f3b-b3fe-3b4a2b23fd57",
+        "prepare": "a7745dd8-9c70-58a9-b4aa-d12df12e50c4",
+        "start": "d1f718cf-fa19-530a-95b4-3006401bbbb3"
+      }
+    },
+    {
+      "key": "H01",
+      "kind": "review_same_case",
+      "depends_on": "B01",
+      "title": "材料核查反馈后再调查",
+      "human_text": "本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。\n1. 本案包含登录、进程启动及出站连接三类记录；请分别核对，不因登录A未形成有效判断而忽略原始登录事实。\n2. process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。\n3. 登录来源IP和出站连接源IP属于不同记录上下文；同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。\n4. 不能从主机名、用户名推断已获批的自动化流程。现有材料未提供审批、白名单、文件传输或受损证明；请据此复核结论和待核事项，不把本反馈当成行为合法或恶意的证明。",
+      "expectation": [
+        "H原文/版本/范围/附件在输入和引用中保持。",
+        "与B01比较，检查事实遗漏、理由和待核事项是否响应反馈；不要求翻转结论。",
+        "B01结果仅在程序判定可比时参与比较，拒收基线不得被模型恢复为有效结论。"
+      ],
+      "human_request": {
+        "title": "材料核查反馈后再调查",
+        "description": "明确标注的演练反馈；不代表新增现场证据或实际人员授权。",
+        "assignee_id": null,
+        "due_at": null,
+        "state": "completed",
+        "result_text": "本条是助手依据已有演练材料代拟的核查反馈，不是业务人员授权确认或新采集证据。\n1. 本案包含登录、进程启动及出站连接三类记录；请分别核对，不因登录A未形成有效判断而忽略原始登录事实。\n2. process_start 的 success 只证明记录中的进程启动成功，不能证明命令执行完成或已枚举出用户。\n3. 登录来源IP和出站连接源IP属于不同记录上下文；同主机、账号及时间邻近不能直接证明同一会话、因果链或攻击链。\n4. 不能从主机名、用户名推断已获批的自动化流程。现有材料未提供审批、白名单、文件传输或受损证明；请据此复核结论和待核事项，不把本反馈当成行为合法或恶意的证明。",
+        "result_scope": {
+          "kind": "whole_case",
+          "alert_ids": [
+            "2a009408-8329-5eef-ab03-337b870b0615",
+            "14e51c11-f996-5818-afa4-d5525ecfe8c2",
+            "be8f0fbb-15b6-5a18-a900-b6c46c2e9e91"
+          ],
+          "object_keys": [],
+          "window_start": "2026-11-07T06:33:27Z",
+          "window_end": "2026-11-07T06:44:07Z",
+          "limitations": []
+        },
+        "source_refs": [
+          {
+            "type": "alert_material",
+            "id": "039eb111-9dd9-5f7d-8b81-4b9a9ea4e448"
+          },
+          {
+            "type": "alert_material",
+            "id": "3e192b1d-bb37-52dd-8d65-4ffea783ce51"
+          },
+          {
+            "type": "alert_material",
+            "id": "2109bbb3-2fc8-5662-ba09-803963517ff0"
+          }
+        ],
+        "operation_key": "6197f163-b9bb-5ff8-9ab3-7f11bca0ca9c",
+        "expected_scope_revision": 1,
+        "origin_result_id": null,
+        "origin_finding_id": null
+      },
+      "operation_keys": {
+        "create": "b6583db6-96b1-5cf7-8818-0ba9f10f2c1d",
+        "prepare": "36fbf4d2-071d-5529-8a0d-6bed6ec3f66b",
+        "start": "76d2dc4a-77bc-53bd-af33-7fa9aeb31f66"
+      }
+    }
+  ],
+  "incident_id": "29603d79-aa4e-5fb5-89b3-5264df926793",
+  "prior_stage_run_ids": [
+    "575e97bd-a659-5e59-aa4f-3217c4027520",
+    "be4ee7f2-634c-5199-9c76-e46b6c5b1cdc",
+    "5af4233b-67de-5392-aade-032bd07f72fb",
+    "1f5703ae-a570-5252-85ca-7f0aad1659d9"
+  ],
+  "expected_alert_pointers": {
+    "14e51c11-f996-5818-afa4-d5525ecfe8c2": {
+      "latest_material_id": "3e192b1d-bb37-52dd-8d65-4ffea783ce51",
+      "latest_triage_id": "177d8950-082c-5b5b-984f-5541e17d96cc",
+      "latest_feedback_id": null
+    },
+    "2a009408-8329-5eef-ab03-337b870b0615": {
+      "latest_material_id": "039eb111-9dd9-5f7d-8b81-4b9a9ea4e448",
+      "latest_triage_id": null,
+      "latest_feedback_id": null
+    },
+    "be8f0fbb-15b6-5a18-a900-b6c46c2e9e91": {
+      "latest_material_id": "2109bbb3-2fc8-5662-ba09-803963517ff0",
+      "latest_triage_id": "c806e695-e121-5b06-8c73-d2fa2a4310a9",
+      "latest_feedback_id": null
+    }
+  },
+  "expected_incident_pointers": {
+    "29603d79-aa4e-5fb5-89b3-5264df926793": "fa6c7cd2-4c12-54ab-9aef-82a4404ae36b"
+  },
+  "max_model_calls_per_run": 6,
+  "new_runs_at_most": 2,
+  "source_sha256": {
+    "docs/operations/evidence/fixed-investigation-20261113-08/config.json": "39e1d6099ef2bdf70c4b584456822e625975633d05bcde1dc893e46005dba0f4",
+    "docs/operations/evidence/fixed-investigation-20261113-08/run.py": "24b9c2b41567a7383172b75dd1d54e8a3add2b20dd8b72acb55353633b8b6d1c",
+    "docs/operations/evidence/fixed-investigation-20261112-05/flow/plan.json": "9b5cd8c644392dddbf3ce90e0919aa8438973b60b4125caa58c05f64fa32fe15",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/workbench-export/database.json": "85bb917809750c3d716bb28c6ddae13c48d6b346ac3cda015804a8fb6837ddc6",
+    "deploy/local-investigation/investigation-policy-case-v1.toml": "a3298006f954f0a811e76a95bb26a1fbab866dd44260662a10af2bb4bc88d9d8",
+    "docs/operations/evidence/fixed-investigation-20261112-05/knowledge-profile.json": "bd4cb1f8df4da76df919eb0d89608cc97ff65128de923bda8273e40949330029",
+    "docs/operations/evidence/fixed-investigation-20261113-07/run.py": "3625b64313d1bbd607d28aa40d9659bc1a6eeb71de7bc4b685feb67747a9a2a0",
+    "tools/testdata/case_knowledge/local-services.json": "91c5f3ff1c076ed570f7b3f2be4b5bb312c562c7fea5b1f0875a011d05821c1b",
+    "services/api/app/socai2/baseline_deep.py": "1eb5df08fc0fe5162253629551c18ab13436e67b3cae1e9d6e3a4c3792ce1d57",
+    "services/api/app/socai2/structured_output.py": "0fbc461d263047bd3334877642cd44aeb71e6b678a5d87bad0010231648943c8",
+    "services/api/app/socai2/read_sources.py": "3e1ea79061aecec216e66c5f6f405abe15c50934809a34b14dba0f24bf9d693f",
+    "services/api/app/socai2/subject_management_contracts.py": "dba2412212e459a1e49ee00b2c74914cfb91c4c263e7bf2ec1ddf835aa9f1989",
+    "services/api/app/socai2/case_output_adapter.py": "75eee67f1e03b1b53f56bbc328ce83321f83b92e10240b49a1c9f133a36cda00",
+    "services/api/app/socai2/baseline_delivery_projection.py": "f1c23598d8fcfb56d357e3516f7811493befbdc21925d4b3e3c541ef9c23eb77",
+    "services/api/app/socai2/baseline_analysis_contract.py": "f246bb397b766f10fd98f2207a80bdad88439d5a16693fdefb12dd1add969503",
+    "services/api/app/socai2/baseline_deep.schema.json": "38142132085e9c65bef2fc70cd5ef67aacef67d8195299bf0b3b4015ebcd69b4",
+    "services/api/app/socai2/baseline_context.py": "ada7df2cc87a328f00ffc72128998fa592dce663f9a42e5d9bc271055f4212fb",
+    "services/api/app/socai2/stage_reader.py": "02b7a33e4a4559f578fe43cdc60445587ad7e5fe602cd9f832d3bd0d026c95d1",
+    "services/api/app/socai2/case_followup_selection.py": "99f0ff292ade20f6f77b0e06ab2322222283579680b9d9d3ee7cc8f3a3a5c9ca",
+    "services/api/app/socai2/incident_output_adapter.py": "3020629e529acdb2ba44512318cb60d981a83c20dd95f6cf04fe9e045cdd03b5",
+    "services/api/app/socai2/baseline_graph_projection.py": "5729152ffe6a4c6ae03c5b0d9f21013a77feff27415ba83589a091cc57a6e643",
+    "services/api/app/socai2/case_input_text.py": "565984bcad728616842ac9114654c49fa227d8e5834ecb61d396192d2787bd2a",
+    "services/api/app/socai2/program_facts.py": "83cd74c5ab739b944087e033c19ff879fdb3bc98505c06998bd349f9c7e2f1cb",
+    "services/api/app/socai2/case_model_boundary.py": "32ac23256fd8985f57866c036ac888830ac57c819cf2b92ffbf3f502fe6a148a",
+    "services/api/app/socai2/stage_inputs.py": "3389e63d7886e0b278836b452564bc9ff14e8478db35e78f7598f5ad39d4c4db",
+    "services/api/app/socai2/incident_model_boundary.py": "d3c533be6e56d077f40b1dc6aea6f89e127c0509480a947cf376916b8b2aedc7",
+    "services/api/app/socai2/case_finding_schema.py": "9884ec719f6d52020323854e9f5b0b71ac1464447c463758d2e3b2ed98646860",
+    "services/api/app/socai2/enums.py": "552b4e6c7945737d277cac28d4b21047b15dfb854400dc4849a6e5f83c178ce4",
+    "services/api/app/socai2/case_data.py": "f8cf1a2b8c83e938d81ed2a9c7cf1bd4d1d3a00236c6ed35f51a4939fbdd5c56",
+    "services/api/app/socai2/baseline_followup_projection.py": "1a0d0ed80bf514e70b07475a31880b68c4b7cb784f6e409e0d21fc63856cc676",
+    "services/api/app/socai2/baseline_tool_catalog.py": "da8ba5003b8cf2027997ee405951c8b500f1e3a09fbbd5ab41c4102b01349e1c",
+    "services/api/app/socai2/baseline_graph.py": "199baa715abcb9bcf76b7c2eb4220d525c13ba6df3d341eca7f4c7ac1bebfa6d",
+    "services/api/app/socai2/token_budget.py": "2d0c73c52221e9782b8a02b4c3f7f85e1e812f66a7e641b81a01d4b5424e91bc",
+    "services/api/app/socai2/knowledge_config.py": "fa5a319f6ea0fea432c49d5cad41453240c05d4ab390ee16fe73806519221597",
+    "services/api/app/socai2/incident_input_text.py": "7e81c175181bcfe7b4ca54471d2e0018d4c126f531ba1af2657f3f31866392fa",
+    "services/api/app/socai2/baseline_delivery_contract.py": "239a7317db9a515907a01a4432ef761cbc4c7e95aca70b5b361be7f0adcb86c0",
+    "services/api/app/socai2/baseline_dispatch.py": "29b71cb8fa68f0a9512904484f36bd552f26590e64d44b6294feb6e9a3c74bb2",
+    "services/api/app/socai2/case_source_scope.py": "2051197f1fa3b3915d0a8e0b234d5e81fea0f6301507dafd1b27f94f17a735d4",
+    "services/api/app/socai2/baseline_reanalysis.py": "efc639e310315d81d11692071dc11ee002d7102cdce95b4b1e0c5e2a9330947e",
+    "services/api/app/socai2/case_management.py": "c435ea0d608e64ca845503052b476aa9e03cf9c64c748f5bb0158cc64024ec25",
+    "services/api/app/socai2/case_contracts.py": "152356f843d76c3dc8706635e2beba9988605d48aa252155ef024cf0345ac6a5",
+    "services/api/app/socai2/knowledge_model_input.py": "5df1497360f161fc6a08ffe7f10c6cb1e1d49a89e2d074a5e71da482aa3a9d1c",
+    "services/api/app/socai2/baseline_enrichment_sources.py": "dc192007527834dcc8c2004b577b9c46f9dc7d8c1661ab535363778a2902b890",
+    "services/api/app/socai2/incident_delivery.py": "fcf9c698258388b145201800f616cac78e26040302bc1b70bde1a6cc634262bb",
+    "services/api/app/socai2/baseline_analysis_model.py": "d9ef5a3601e3175dc162a6d36f794e7f0d58a4b0937426875916e13ee19d7229",
+    "services/api/app/socai2/case_data_contracts.py": "12e077052a0502fbac890589a8171305e3977c1768cdef00d6f745bf9212f005",
+    "services/api/app/socai2/runtime_policy.py": "ca2fd3d7aa1ac36c6cd2a706b82312e60d3b7e7d103b474c4527f5b9b3c059de",
+    "services/api/app/socai2/baseline_delivery.schema.json": "998ce709ade453b6bb2f6b35ba61c2b40dabee504df68efffbb463dd542cb448",
+    "services/api/app/socai2/case_citation_feedback.py": "52f16dc47263edd9abe32dd44aaea0cf608820d4d7da400d20f166e8be97d742",
+    "services/api/app/socai2/case_input_hierarchy.py": "6e9d863be86a2e0585232099ee379f6aa1faafbc39f414358b2dfe7bf0b5cc8a",
+    "services/api/app/socai2/baseline_analysis.py": "a033526a611a66d816d73215bef524c05a84999f3ab4f6d3f6e3a0f4d5ef5a5f",
+    "services/api/app/socai2/stage_answer_review.py": "3d24e0a10d08f131f2e0dc07181c75c9a5065b52584c2c8972e5ffdad30d0046",
+    "services/api/app/socai2/baseline_delivery_compat.py": "62e5adf16700beeb2534ea6a0e262aa967499da10bdac645ab849d5046f416da",
+    "services/api/app/socai2/case_management_contracts.py": "33ddb7950f44a3a506c7d84ec78f336cb3134ae7a2b98bfc00f61d1b04f2fa2e",
+    "services/api/app/socai2/baseline_context.schema.json": "9bc48df6c3e0bb2654b9cb188ceb18161800a3842cea46acddcec8f65f6882f8",
+    "services/api/app/socai2/baseline_deep_contract.py": "768986d150ab10541670735b32f64be59c9eecd7368e22278e6a2406b955655b",
+    "services/api/app/socai2/baseline_analysis.schema.json": "68e0b6dbddc64b32093b781375311306839d6d088e4655eac5c31fc4d62d764a",
+    "services/api/app/socai2/__init__.py": "be2d94f704e700c50cb5408ac582c0426fa36043d48662e429820f2b49798acf",
+    "services/api/app/socai2/knowledge_vectors.py": "6f04c3ef77e4bea53f894c0230df6198650efafd75080e047af47cd819d46fee",
+    "services/api/app/socai2/case_query_snapshot.py": "a9f196be7ed44087d836b63dd41f01323592edf3c56402a6e0877d1d764922ac",
+    "services/api/app/socai2/baseline_capacity.py": "eafffb04e12546efe28763242ef21ee135c406cbef5d782495149cbdb40cb9cc",
+    "services/api/app/socai2/case_service.py": "52b938845c98815b519672a90b08dd5e0c9fae67d7abaa8bac592a099fff4a58",
+    "services/api/app/socai2/alert_input_text.py": "d2e85b1c29d18eb43b103118f33451e68e6d65dc1f1b33f359a552b1d508e6a6",
+    "services/api/app/socai2/baseline_store.py": "6c1490ac39b516ef298b27777b653f7cda69b737fc0dd32500f1c9ed63426447",
+    "services/api/app/socai2/baseline_semantics.py": "a13c22c526f7744845c9ad083fc2b96dd7a8916fba2e9ef9f17bbe250d53b2fc",
+    "services/api/app/socai2/baseline_delivery.py": "6c53aa4d39646c65aebd8a8c20c79f733bf01fbbb289a1a91aa0ac4a5cd34b24",
+    "services/api/app/socai2/contracts.schema.json": "43ad06df1ba858331a784a9ca5295010465c013247ee759539b8ccb599290260",
+    "services/api/app/socai2/baseline_model_view.py": "0178ecf8a7987b680987dfe58afe75028d4f1b0005cb2a81ed5191ee0e6ff1e2",
+    "services/api/app/socai2/baseline_executor.py": "0a1c2be89ea41993ddf82d7a10fec462b74a746d889eeb55be384d65e9da6a32",
+    "services/api/app/socai2/baseline_service.py": "321cff69376f61bfaa7224191f7437fa78e773dc139ea49f38e12a3d26828c4b",
+    "services/api/app/socai2/page_reader.py": "b7e0b3d5f33b98536fa32737d965a0865c95e855c91c3244af8814760f0ffcf8",
+    "services/api/app/socai2/baseline_reasoning.py": "e6f4cec797d47baa98d2906ad64c1fd822c97bb56d5593d989f23b02dd37b0ca",
+    "services/api/app/socai2/baseline_optional_sources.py": "f18f82cdc80c678df0e0b3f7ba5fa7d7ff74f957859ba0b189e091d9c1a18e3a",
+    "services/api/app/socai2/baseline_evidence_index.py": "840b7a4be1d6deb7f4e592a0ca16d6428bcea3128fd36145f7f30b35a12f7ecd",
+    "services/api/app/socai2/baseline_contracts.py": "4336ab263ef455b44770ba3f19ad7f1153bfc47e68f00353e77982889124b728",
+    "services/api/app/socai2/baseline_enrichment.py": "bbdfa1b1b3089af4eb6991e739b5daa48573e16444dee79639e6e297b8c6bb23",
+    "services/api/app/socai2/alert_model_boundary.py": "070ace14cb473c2c4c7711bf1cd923b6d9fe265f8f8639d904254d5940649bd8",
+    "services/api/app/socai2/case_ai_contracts.py": "086d1b626ac5ab60618d4de7891b55acc9b983a7146e9d72863ca5401a4a46c4",
+    "services/api/app/socai2/baseline_evidence.py": "1d3c5fd5ba8f124fa225f69ce56f6adb64bdca1133bf5c004b141865898e99a2",
+    "services/api/app/socai2/analysis_review.py": "d94f4c3a6ca32c1c37de837edfebe3a8047d5fc8a678bf6eff1191e0a39b4ec8",
+    "services/api/app/socai2/alert_output_adapter.py": "3720d9cc2e70c769ca7454b62b832d85f0ca858f8ae244039514dce8746fb6d6",
+    "services/api/app/socai2/case_followup_input.py": "37566e84abe98a8560cdded761de41f004bc807ba0aa27239cbddf885ea13dbc",
+    "services/api/app/socai2/page_contracts.py": "9fbd796f707a30494a2506525b93b995cd95a943ac72bd728354ebe5d1e871c5",
+    "services/api/app/socai2/alert_basic_executor.py": "70a4187eb165976d2673c7f4e5b4eeaa8090f171bf310a16df27b2c00274e533",
+    "services/api/app/socai2/knowledge_history.py": "5e9cf82c52011d3cb9189c9e607aed7c88ca5baa4f70cdf86ace53e6ebd25a29",
+    "services/api/app/socai2/case_reader.py": "982d9a9af23452d8ab25610ab497f64e2d6b13f2876970151b02e79f69912aae",
+    "services/api/app/socai2/subject_management.py": "624289a2355ad277dc153645a698b940400ecdf9604719d9aa1bccdda256b494",
+    "services/api/app/socai2/subject_management.json": "ab1ac3023743973d59d5f2c905d098180b2645713b68207083093aa7bf76b51b",
+    "services/api/app/socai2/case_evidence.schema.json": "9e9ce6f94a163be068aedc812fe4839e7328dcf1872ee8eae253b669f83c7007",
+    "services/api/app/socai2/case_followup_output.py": "cccf4eba48363ce0c226c74e7ca2e12b7901dcc65d92a5ce8926e64eaa8f0ef9",
+    "services/api/app/socai2/list_query_contracts.py": "c346527118c30f0cc17b836bfc80b7f301cf2e105d1735bdcc9bdb19ce007a74",
+    "services/api/app/socai2/human_task_service.py": "a24d3e7b186b71e68021ff4d13f1f82532f8250aad615c54b5832f357b9036cd",
+    "services/api/app/socai2/human_task_contracts.py": "5bd389f2f61948172e26fd4f7056a9f4b30ba4832ee62aeb01fb2d02a188f9b3",
+    "services/api/app/socai2/case_context_input.py": "95b51c736fb1aafc8e578717a8547ed5cbc960841307c2ba7b301054bf963f6d",
+    "services/api/app/socai2/answer_validation.py": "c954a1ccd2933245221c9eea2f0a9f0c87c3e347fc9e6ff4a40b3c02d5a02783",
+    "services/api/app/socai2/case_c3_input_selection.py": "3e40830d3c43b9eaecf15ff25d958dfb96a52fa695212841def75fd9987a44d9",
+    "services/api/app/socai2/alert_basic_contract.py": "7085e039dc0b07641f81794f49ca2a61002bfc30308caf46064ef81298a24836",
+    "services/api/app/socai2/alert-input-v1.json": "b3a5e4843e272b8d6fb95d53bf001ffdb3046f90a69595e24158a2c3b90ce8a4",
+    "services/api/app/socai2/incident_query_receipts.py": "ed3bec3fbf28f533e39c354dc0c8c63f2c716870bcc320dbc7a53c96d4dced45",
+    "services/api/app/socai2/stage_read_contracts.py": "02fec7c20d2868fa400d9723f2574eee20848934b48b6c7a7189e2ed46b34150",
+    "services/api/app/socai2/knowledge_sync.py": "d6a89b06fc7e3dec69e216486591951c67cf5b9a1c28f2632f96cbc5c2feacb5",
+    "services/api/app/socai2/incident_diagnosis_contract.py": "45c4f07d4eacecb53a152e630ef3e47af97f781c4faba2f2a4ae47f0732a93e2",
+    "services/api/app/socai2/baseline_final_evidence.py": "b4cfcf1150030d894626ac7d8d20f543fce796c265b71ad351fc7a4d90b882da",
+    "services/api/app/socai2/case-input-v1.json": "2df998862f7b950916db13be99421099677c4dc635ccddcae087a93425960ce1",
+    "services/api/app/socai2/baseline_closing.py": "5594d70d34eec7af6f8046fe9817f732a2e00aa28c6ee557839d52e26f0f0320",
+    "services/api/app/socai2/case_relations.py": "3da26e2d221d16405cb899e4ae2f19082d9bb60216878befd374e142a07fe69e",
+    "services/api/app/socai2/case_program_output.py": "561c065df90b30cd952d4db96923c01bf66af5cf36dbbd2df38ba98cefc09215",
+    "services/api/app/socai2/model_errors.py": "7862e990b1a0ed6b59ef61b7e2e8545be158bf30a9508a06b1346b606d02cd07",
+    "services/api/app/socai2/baseline_execution_schema.py": "201a31aa1e410cd84e71e90d4d99f790a6e0f1b4e95fdfde686843490f601527",
+    "services/api/app/socai2/baseline_evidence_tools.py": "0c9ac079da9c387fec23fde68018287b8ffca2eb73bc28ed868668410b82c41e",
+    "services/api/app/socai2/stage_results.py": "36472b05b771d9f0665f5366ead15d7fcb922f803dab3742e9e98093a66c78d7",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "a22317a18883d2cf44352ace6f5c95b00d5635fe9965c4009a367d819e6a3a3e",
+    "services/api/app/socai2/knowledge_applicability.py": "adcc88cd8dff6f85696e23f2088fa41c094e43fade8bf7f14759b31800c1401c",
+    "services/api/app/socai2/list_query.py": "84e163c592d8240243f51b39f5f01f74e41032610ccf76d3f8d20aec7a17ae75",
+    "services/api/app/socai2/model_protocol.py": "0c5baf503dc584bfcd55cdaaca122baf14f57f00ea5d71fa66d3437a9579eb76",
+    "services/api/app/socai2/knowledge_content.py": "2b6ba4951afff04ba86627dac890532787c5844f6bac9d24892ddfb9e653fc9d",
+    "services/api/app/socai2/case_followup_loader.py": "40eddb19a90a6ded34dc6ca3699f7a6824d534f3561df4e8da76db2d114e3c3a",
+    "services/api/app/socai2/incident-input-v1.json": "131515b66725557b375baa07e2239aca515ac016ed33a5221ef6d9445c981170",
+    "services/api/app/socai2/model_input_view.py": "e06ff39d9cab6985d6babdd9ba2432928cb0e708d980bc79691c4a500c7b35b3",
+    "services/api/app/socai2/stage_result_contracts.py": "59d20b362c8f2f61b0b0de0673fb00f667e0b9905e457d8ba9a340a18b971a52",
+    "services/api/app/socai2/knowledge_source.py": "ecb7268fa42fd31918f37b4662a6ea9bade4caec438ce951cbaae3a7c756d7e8",
+    "tools/testdata/case_scope_recovery/real_model.py": "634b833e1cb28f6c3699228f44d39b3ee0499be697aede0ce3f8eeefbeb7f930",
+    "tools/testdata/case_io_eval/model_worker.py": "0e50151d9ab48ac3688a0f4b96983294cc3ca95e4ed3a20ef9b16cb4c1c0a88b",
+    "tools/testdata/case_io_eval/model_eval.py": "97600b5c8c359be57ee845acdfce150641269102905c1ba1ff6271be0bdf29d1",
+    "tools/testdata/incident_integration/run.py": "5f78dc73a8a33be50afd9f1ee6b82d0f9ef27021a746cede5525cbfeb172d000",
+    "tools/testdata/incident_integration/gateway.py": "53fc98160c6e0c7ac43d69e0c02d5cce51e40db259b25e16332a962fe9ab190f",
+    "docs/operations/capture_processing_case.py": "00d7bf173564142f47cc11edd27eae3a7de3671400a5e0b6f4e13cb004c60ae1"
+  },
+  "original_files_sha256": {
+    "docs/operations/evidence/fixed-investigation-20261113-07/run.py": "3625b64313d1bbd607d28aa40d9659bc1a6eeb71de7bc4b685feb67747a9a2a0",
+    "docs/operations/evidence/fixed-investigation-20261113-07/source-replay.json": "d13df3bf4a4569464a9d032e1de051a4f51103be6e8c48b3a8fc62cc851f23ea",
+    "docs/operations/evidence/fixed-investigation-20261113-07/config.json": "d0357f4276199c568573b53b77b498b0e9297c92d663e6b2c75529bc9c34d798",
+    "docs/operations/evidence/fixed-investigation-20261113-07/processing-audit-update.json": "fe54055b157f7ef94cd68814c9c158d13f259b32d7fa8c8439957153ec3292e6",
+    "docs/operations/evidence/fixed-investigation-20261113-07/supplement_export.py": "9eaf662f6ee3b15f94f7667670732323fd8864c01db48ede7ec492d1943e12da",
+    "docs/operations/evidence/fixed-investigation-20261113-07/model-source.patch": "459fffb115a80f12de7f831e773058af2ed09005e3145d8cb9886ddbf9efe396",
+    "docs/operations/evidence/fixed-investigation-20261113-07/summarize.py": "2d0cc3feaabf0ce21b279cf8b53176e1364d11808f9b4bc8e5292dd017af1a18",
+    "docs/operations/evidence/fixed-investigation-20261113-07/snapshot-supplement.json": "d703077179a3f3e2afd7487594e1c0de8806d976babc5fa8aa2171a0711a3707",
+    "docs/operations/evidence/fixed-investigation-20261113-07/review.py": "8f17c6d074a049c2fd0eb46739681fd0a52ee11c0be5c18d4cf91991de3c0130",
+    "docs/operations/evidence/fixed-investigation-20261113-07/README.md": "2c51d638127a68c0825abca165eb6c05156da527852ca4d9964caf72c62185b0",
+    "docs/operations/evidence/fixed-investigation-20261113-07/review-attempt-01.json": "51407ad431d2e10ee6bf807d13e11f6128ae785108a093c4345a69c5e958f55e",
+    "docs/operations/evidence/fixed-investigation-20261113-07/validation.json": "bb06d006afb6afe59e6ed68d2893777888e6978f4d00a570ed4b3f448c10e072",
+    "docs/operations/evidence/fixed-investigation-20261113-07/manifest.json": "be69a9b44fef408d906c1f418fc5b473a6c8a2eeeaaf464e0efbe93762eec28c",
+    "docs/operations/evidence/fixed-investigation-20261113-07/original-files-before-fix.json": "7d59f00253be76c41c4914cb453fff965c4b2fd8ac0cc4e153aad35021fd9719",
+    "docs/operations/evidence/fixed-investigation-20261113-07/processing-audit-update-complete.json": "fea98760196c707ff6d477c8f4042a6d3b1cd4923f8e9e74477f5511fa7ef057",
+    "docs/operations/evidence/fixed-investigation-20261113-07/review.json": "adf03be2c787742a024fff657beda28594e06348760c8416708826078edb2000",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/plan.json": "1955d9fc13bd737fcfe18c8ceaf0069b91e7ed2d842967ece92e97dc52d4b36d",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/summary.json": "6ddbeb9bff317ac34a4592c45d74f6d99a2b94bd48fa6e53e1764a144975a462",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/model-route.json": "3df8c9a7a2e28d90f4b09a36ee9f770bc3da317e45e8e188ab9bf9d078bfe58d",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/prepared.json": "e4f8c03f13aedabf7cf2d1d562d4b24ee51428a0495b1f80c89c0b57f30a48ee",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/limits.json": "11f30a9d49eb1e297a7a30d1128db2c5f0900febf899852f30e5d3ec3126f50b",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/execute-intent.json": "13a3f978a18bf04015fc8ab127c37be6b889005932534a6608c4ce93634d8ecf",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/start-request.json": "ef515fc6233da463ff9546e07c52cfdf70aeef011f5ce852f026073364eb7f32",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/run-readback.json": "0d942406b87eda8a73af8d6458dd85abccfa6e1882b4f2b354e0b2eb016fb5b6",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/transport-result.json": "0b87a378f8689512dcfe83ea99f8e0d18dc2143c36c6900499e1f38e1761dd15",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/execution.json": "3c7e4329d310c814171974c6fe495db07a43e528149c4bc70693842b808dce2a",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/transport-intent.json": "163ce2815fac8e8237f21655bdfb914447e0bdc3b05faa7fa16f97ea5173c465",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-2-intent.json": "1237c4cb42dde046b41470b39c2d1a769ce74256d69a3d8ad1c793e93ddb200d",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-5.json": "344d726c426fc304c6aa468f106068013726ca678d00e36a8638a479784f5173",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-4.json": "34ae317c1d952ba881bb82005504d3a608e996fbb1ee14bac11bcd00535f3199",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-3.json": "a3671f62031b71ff781a67b416816908435a0310d97a8066607072a8f4defeec",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-3-receipt.json": "e9aa7d635d8e68f400439087c634bdb990399c4b073e6e2447e3e322b845c499",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-1-intent.json": "581491b6fca6b1688b882730af60a245f4b2a485adc9ca1155be8485f3d37785",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-2-receipt.json": "712040eeb6a068e69f3c944e111ea6cd2a072e33b22a97174c3e20b6bc13a9ee",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-2.json": "b5b6a8d3f1bee5b405be1ed0e9d1bd9c8fdd3b3a4af03a5bd38ca2d850187aef",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-1.json": "b9a77f1202386f2f99a9a34a6cb69bd1057e5116d0e85f864f9d786522a3ac7a",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-3-intent.json": "b01c550a98fc8d2cc916c0a6ca96bfea36f102dc90e741aaf51a5fef2e50a7c5",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/call-1-receipt.json": "43a351e46a54ba8140a21df5613ad2170c3cc37c92fa0082d3376bd7ae3ba91b",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/calls/tokenizer-6.json": "16a0f440ba7d096dd14a413e4e6111455aeb04158ad612dbc0dd6f8f68369e7b",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/delivery.json": "052804b471422f51d8d7b60c77987903f8ee77b06af4e16f8b4cbdcc318fe092",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-03-C6-answer.txt": "d5ae8d7bfb999c45be2504d0ca30400beff242abaa860495a79f8f6b2c3c2977",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-01-C3-answer.txt": "51c29ef712bfd1792a7bae7b653f503ea49344a5e36caebfc9690645e611cf0c",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-02-C6-answer.txt": "165777704fa73281634e3e0561cb25c401a96925a9e28c133b228d732cb538e8",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-03-C6-input.txt": "7aff84290ab89f3717b1723361424024df0ed24d3eca83feeff2f0e3b1e9233c",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-01-C3-input.txt": "d2b8ccf64092f4a2e4a6d09f8decef1b17a6ea49f44d0fd58f8e3bbb00ac025e",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/review/call-02-C6-input.txt": "7aff84290ab89f3717b1723361424024df0ed24d3eca83feeff2f0e3b1e9233c",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/export/http-readback.json": "53879d10297dc26e0357fa15a5b50f0b24ae13b7228686c400bf5dfa075955ad",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/export/database.json": "2a368cbf310e11da4c70a55361acc8275882aad20f5623ba87ce29666afb005f",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/export/manifest.json": "9c351bdb8f16dae38941bcdd28773f9649e8a63b2940cf91132c51ec7ad93982",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/workbench-export/database.json": "85bb917809750c3d716bb28c6ddae13c48d6b346ac3cda015804a8fb6837ddc6",
+    "docs/operations/evidence/fixed-investigation-20261113-07/flow/R01/workbench-export/manifest.json": "832d82724d87324c46736f3ee76cad945d31b6337b11d7cf45faf34735ac7cfa",
+    "docs/operations/evidence/case-task-input-20261113-01/source-replay.json": "c6031d63629d10799787407bcfc2510ca4681108da4c140621221b8ec1062fa5",
+    "docs/operations/evidence/case-task-input-20261113-01/original-files-before.json": "db03887683afe7678666a3dc7e9b101310ef3710a5873eae15d7941f326245cd",
+    "docs/operations/evidence/case-task-input-20261113-01/final-static-checks.json": "8cc834b6301ce694110a52d8234b3cd08c2207316d12b1398f25f4f88ddef314",
+    "docs/operations/evidence/case-task-input-20261113-01/preview-config.json": "11576becd0da7dce0ddbad0f84009ad3e35231260d4fa2de1fdecb6eec9977af",
+    "docs/operations/evidence/case-task-input-20261113-01/model-source.patch": "4144946016cb61725755ae1f75951512f66155180087eb9d6f6d720c7af782bf",
+    "docs/operations/evidence/case-task-input-20261113-01/README.md": "510f3b77e7a7c17b89a79c15e4598a75a604f0aad2f6a44f727ed728a36ac8d4",
+    "docs/operations/evidence/case-task-input-20261113-01/audit.md": "2ed495abe02c49f64caedd73d2181a40a19c845ab9e6b0c8466846b59e017966",
+    "docs/operations/evidence/case-task-input-20261113-01/validation.json": "a43819d30ef2812b6b5e55aae6db4a020af0dfa4d05e7a20944928cc1c73e5fb",
+    "docs/operations/evidence/case-task-input-20261113-01/manifest.json": "d73160cc1cd6ad694ba10612be2905937d35125e8a3c8a93aa62964bad28c620",
+    "docs/operations/evidence/case-task-input-20261113-01/verification.json": "e204ac78812cec40cf950144ff32c6d55d40deffe524d35db3bdf6605b4bbb74",
+    "docs/operations/evidence/case-task-input-20261113-01/verify.py": "2eb64a70443bc6c95339687d22f2f999be4dafb1ceaf43c64657f1a3aa0a534a",
+    "docs/operations/evidence/case-task-input-20261113-01/rebuild.py": "0d8927f2c7ade693c9c82a7014726cebdd46e90c78de24eb711979f36a2cca17",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/summary.json": "1e49a7b1061010b00c11dbf464eee42f0003187fd680c18e1017c97e22066311",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C6-selection.json": "30476e83a89d9b28a8526e4a272e72f8ad432160cb3cdeb812f5e98bfe8f6119",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C6-request-preview.json": "2a3279fb31d8c18cc1570f6d9b17e6eafc0b03f0515742b638d63fc299f7cf79",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C3-selection.json": "84df4ce37510e6acdc7ee4a4c93b992974ce088b2b87410c820ca7f64adcd0c4",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C6-model-input.txt": "7cec3ae19c46b3045dbad19ec51ecdbec9556426933475dfd9a4d11516adaed6",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C3-request-preview.json": "9c12734028c3a50aa0214a2f1de05b76b2d7f887a88c628aaf106285c02a576a",
+    "docs/operations/evidence/case-task-input-20261113-01/after-initial/C3-model-input.txt": "e2bd7277ad3988b7b90baa2833f0b0121008ff68ce5d333d5c35e922b11bf068",
+    "docs/operations/evidence/case-task-input-20261113-01/before/summary.json": "9035b81e3ae82569842049810f87ee30cd0ddb43a44a9ebad259c88b93140515",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C6-selection.json": "83fac72e9fdeade0f077c0e147cecc3c401ca35b5648bf9ef92569083ca8703b",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C6-request-preview.json": "5c6361aefb5aa8e3e3c814abece95334c44b7fc4446dbdd18d92e31afd5690b9",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C3-selection.json": "e0d5d020d4bcde9c6f9be703bf4a1c158d889b90fc3e525f75a7f9950db3c10a",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C6-model-input.txt": "5907de10ad3274a85eba5e892230ee5787f84912e376ed95870a961758d4bff1",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C3-request-preview.json": "bbb132a8cd3be94aeeeb1af20ffbe6608366ec674a6ee9d6b44c998e13f2907f",
+    "docs/operations/evidence/case-task-input-20261113-01/before/C3-model-input.txt": "d2b8ccf64092f4a2e4a6d09f8decef1b17a6ea49f44d0fd58f8e3bbb00ac025e",
+    "docs/operations/evidence/case-task-input-20261113-01/after/summary.json": "2b756bb8cd92b43c7a2059d53b98aac62bdcfce154230b3a0d7d16fc4bd42a24",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C6-selection.json": "51c4bbf076ff4cc8f607f7106cd500f14f2c4dc9ac43552022ef7caa89768d0e",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C6-request-preview.json": "b2790578a7183af5097e28edcc574bfe7c906aeb579f37d5ab24180fc30869dc",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C3-selection.json": "9b4ab16a9402c05b926b1afb46d921b032b762641657311934f86a3aac000c0c",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C6-model-input.txt": "e6c7d42a3d1718f8a77cc359f1018c6809303c5e65442a08a58244fa90b8021e",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C3-request-preview.json": "6a89c8f0a7f7eb3d6a57a9ef2318aed70ea34558bdf7865907b2675c98d7cca6",
+    "docs/operations/evidence/case-task-input-20261113-01/after/C3-model-input.txt": "23a232fdd8201d3cf7f4ae1ebdcfe7cf79c9c2afeb900bd0170cbe5b5aea1f2d",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/summary.json": "b39101634a7eca88eda0c273fdbf7a85801789a0c3386245284a875dbd2c6819",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C6-selection.json": "cf8c4d6c63e66a06f977d50f4e1c2d61590d6522d53c272af79464c63c2096fc",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C6-request-preview.json": "7cccad89f2e42c119b8517367ed214339ee4044ee3e23fd27f9dac5506f9934d",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C3-selection.json": "7f861185536e622161a51dfdbfe945f22eed5498b786404bd2c518eff1122385",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C6-model-input.txt": "457174e7f54c2e5c8f2c73be60828c3b92a6dadcf64cc68950d86585dfb6bd33",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C3-request-preview.json": "1e31d52238731828729fa1f576822b068a5c362dcb1829096cbbc813a32b54bd",
+    "docs/operations/evidence/case-task-input-20261113-01/after-field-review/C3-model-input.txt": "736c9990546c7d5bf481c79bc8d071eb47479b56a576baa5e1ed0111c0ddc88d"
+  },
+  "readback_only": {
+    "original_run_plan_sha256": "a7bf03f4d204a410c3769890feae52c3d0539c1be521391367ff8d239aef9a9f",
+    "scope": "Same Case/Run/Profile. Only read-only snapshot and ASGI GETs, zero model calls or business writes.",
+    "changed_sources": [
+      {
+        "path": "services/api/app/socai2/page_reader.py",
+        "frozen_sha256": "220ab79d1def1dacc709d25b6bee4c97c95454e50b2bca79d611613128d66be9",
+        "current_sha256": "b7e0b3d5f33b98536fa32737d965a0865c95e855c91c3244af8814760f0ffcf8"
+      }
+    ],
+    "case_model_sources_unchanged": true,
+    "original_run_frozen_sources": "flow/plan.json and source.patch"
+  }
+}

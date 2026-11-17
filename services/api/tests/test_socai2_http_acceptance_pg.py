@@ -16,26 +16,21 @@ from app.api.v1.endpoints import (
     socai2_analysis,
     socai2_case_ai,
     socai2_cases,
-    socai2_stage_execution,
     socai2_tasks,
 )
 from app.models import socai2 as m
 from app.socai2.baseline_store import F
 from app.socai2.human_task_service import HumanTaskService
 from app.socai2.stage_reader import StageReadService
-from app.socai2.stage_results import StageResultService
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from investigation_http.adapters.services import CaseBackend as CaseService
-from investigation_http.adapters.services import ExecutionBackend
 from jsonschema import Draft202012Validator
 from socai2_test_model_view import synthetic_measure
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
-from test_socai2_ai_boundary_pg import Gateway as AlertGateway
 from test_socai2_case_followup_boundary import final_answer
 from test_socai2_case_model_boundary import answer_for
-from test_socai2_incident_boundary_pg import Gateway as IncidentGateway
 
 TENANT, USER = UUID(int=1), UUID(int=3)
 BASE = '/api/v1/socai2/cases'
@@ -84,31 +79,14 @@ async def run_checks(engine, record, only=None):
 
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     service, tasks = CurrentCaseService(sessions), HumanTaskService(sessions)
-    async def empty_query(service, tenant, name, args):
-        async with service.transaction(tenant, readonly=True) as store:
-            return [], await store.now()
-
-    class CurrentStages(StageResultService):
-        async def execute_alert(self, tenant, aid, operation, **kwargs):
-            return await super().execute_alert(tenant, aid, operation, **kwargs,
-                gateway=AlertGateway(self, aid), query=empty_query)
-
-        async def execute_incident(self, tenant, iid, operation, **kwargs):
-            return await super().execute_incident(tenant, iid, operation, **kwargs,
-                gateway=IncidentGateway(self, iid))
-
-    stages = CurrentStages(sessions)
     app = FastAPI()
-    for api in (socai2_cases, socai2_tasks, socai2_case_ai, socai2_stage_execution, socai2_analysis):
+    for api in (socai2_cases, socai2_tasks, socai2_case_ai, socai2_analysis):
         app.include_router(api.router, prefix='/api/v1')
     principal = CurrentUser(USER, TENANT, 'admin', 'synthetic-http@example.invalid',
         scopes=['cases:read', 'cases:write', 'alerts:read', 'alerts:write'])
     app.dependency_overrides[get_current_user] = lambda: principal
     app.dependency_overrides[socai2_cases.get_service] = lambda: service
     app.dependency_overrides[socai2_tasks.get_service] = lambda: tasks
-    execution_backend = ExecutionBackend(sessions)
-    execution_backend._execution = stages  # Existing model substitute, same HTTP port.
-    app.dependency_overrides[socai2_stage_execution.get_execution_service] = lambda: execution_backend
     app.dependency_overrides[socai2_analysis.get_service] = lambda: StageReadService(sessions)
     client = AsyncClient(transport=ASGITransport(app=app), base_url='http://synthetic.local')
 
@@ -240,38 +218,18 @@ async def run_checks(engine, record, only=None):
             assert response['detail']['code'] == 'case_ai_not_implemented'
         return {'implemented':False, 'http_status':501}
 
-    async def test_http_alert_incident_execution_saved_and_replayed():
-        _, aid, _, _ = await fixture()
-        iid = uuid4()
-        async with service.transaction(TENANT) as store:
-            await store.db.execute(insert(m.Incidents).values(id=iid, tenant_id=TENANT,
-                title='Synthetic HTTP event', source_namespace='http-acceptance-20261112', source_incident_id=str(iid)))
-            await store.db.execute(insert(m.IncidentAlerts).values(id=uuid4(), tenant_id=TENANT,
-                alert_id=aid, incident_id=iid, membership_source='fusion', correlation_basis={},
-                basis_version='synthetic', source_operation_id=uuid4()))
-        runs = []
-        for endpoint in [f'/api/v1/socai2/alerts/{aid}/analyze', f'/api/v1/socai2/incidents/{iid}/diagnose']:
-            body = {'operation_key':str(uuid4())}
-            result = await request('POST', endpoint, json=body)
-            assert result['run']['state'] == 'completed' and result['result'] is not None, result
-            assert result['is_current_pointer'] and result['valid_for_current_input']
-            assert result == await request('POST', endpoint, json=body)
-            subject_path = endpoint.rsplit('/', 1)[0]
-            assert result == await request('GET', subject_path+'/analysis/runs/'+result['run']['id'])
-            runs.append(result['run']['id'])
-        return {'alert_id':str(aid), 'incident_id':str(iid), 'run_ids':runs,
-                'real_model_calls':0, 'production_flag_bypassed_only_for_isolated_logic_test':True}
+    # A/I execution now uses the task/dispatcher HTTP acceptance batch; the
+    # former synchronous endpoint workflow is retired. Case checks remain here.
 
     try:
         for check in [test_http_metadata_evidence_and_human_revision_readback,
                       test_http_current_case_start_persisted_result_and_frozen_material,
-                      test_http_reserved_functions_are_unimplemented,
-                      test_http_alert_incident_execution_saved_and_replayed]:
+                      test_http_reserved_functions_are_unimplemented]:
             if only is not None and check.__name__ not in only:
                 continue
             try:
                 record(check.__name__, True, await asyncio.wait_for(check(), 120))
-            except Exception:
+            except Exception:  # noqa: BLE001 -- retain failed workflow evidence for the PG runner
                 record(check.__name__, False, traceback.format_exc())
     finally:
         await client.aclose()

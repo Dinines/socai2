@@ -6,7 +6,7 @@
 
 后端实现位于独立分支 `codex/case-baseline-history-20261103`，从最新后台检查点 `39f4033` 创建，目录 `E:/aisoc/socai2/.local/worktrees/case-baseline-history-20261103`。本设计分支不包含这些业务源码，也未将旧后台作为修改基础。
 
-详细合同和测试见 [后端实现说明](../investigation/baseline-execution-record-20261103.md)。本次复用 investigation_runs，新增 kind/revision/scope_updated_at、允许空 started_at，提供 Case 成员触发器和按 Run ID 启动入口。没有实施原67字段方案中全部表改造。
+详细合同和测试见 [后端实现说明](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/baseline-execution-record-20261103.md)。本次复用 investigation_runs，新增 kind/revision/scope_updated_at、允许空 started_at，提供 Case 成员触发器和按 Run ID 启动入口。没有实施原67字段方案中全部表改造。
 
 同Case最多一条活跃基础调查，可另有一条下一次待更新记录。领取时在事务中锁Case和Run、提交running和冻结范围，然后才进入执行器，避免“执行器第一步还没改状态、另一条告警误更新已领取记录”。数据库分别约束唯一活跃及唯一待更新；过期范围启动返回409。未添加分布式锁、定时器或额外调度服务。
 

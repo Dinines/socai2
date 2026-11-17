@@ -188,14 +188,14 @@ async def run_probe(*, input_dir: Path, tenant: str, config: dict[str, Any], out
         state["writer_io"] = {"connect_timeout": 5, "send_receive_timeout": 5, "disable_reconnect": True}
         for event in events:
             _require(await writer.write_event(event), "writer_rejected_event")
-        _require(writer.metrics() == {"rows_written": 0, "flush_failures": 0, "buffered": 3},
+        _require(writer.metrics() == {"rows_written": 0, "rows_dropped": 0, "flush_failures": 0, "buffered": 3},
                  "buffer_before_single_flush")
         state.update(stage="single_flush", write_attempted=True, write_outcome="unknown")
         _save_receipt(receipt_path, state)
         await writer.flush()
         state["writer_metrics"] = writer.metrics()
         _save_receipt(receipt_path, state)
-        _require(state["writer_metrics"] == {"rows_written": 3, "flush_failures": 0, "buffered": 0},
+        _require(state["writer_metrics"] == {"rows_written": 3, "rows_dropped": 0, "flush_failures": 0, "buffered": 0},
                  "writer_flush_not_confirmed")
         state["write_outcome"] = "insert_acknowledged"
 
@@ -218,12 +218,14 @@ async def run_probe(*, input_dir: Path, tenant: str, config: dict[str, Any], out
             differences = [col for col in columns if _normalized(col, actual[col]) != _normalized(col, expected[col])]
             comparison = {"event_id": expected["event_id"], "columns_checked": columns, "differences": differences,
                           "raw_payload_sha256": sha256(actual["raw_payload"].encode("utf-8")),
-                          "ocsf_json_sha256": sha256(actual["ocsf_json"].encode("utf-8"))}
+                          "ocsf_json_sha256": sha256(actual["ocsf_json"].encode("utf-8")),
+                          "ocsf_source_sha256": sha256(json_bytes({k: v for k, v in json.loads(actual["ocsf_json"]).items()
+                                                                   if k != "_socai2_storage"}))}
             comparisons.append(comparison)
             state["comparisons"] = comparisons
             _save_receipt(receipt_path, state)
             _require(not differences, "readback_field_mismatch")
-            _require(all(comparison[key] == record[key] for key in ("raw_payload_sha256", "ocsf_json_sha256")),
+            _require(all(comparison[key] == record[key] for key in ("raw_payload_sha256", "ocsf_source_sha256")),
                      "readback_hash_mismatch")
         state["write_outcome"] = "three_rows_verified"
         context = manifest["query_context"]

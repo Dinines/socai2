@@ -1,5 +1,7 @@
 # 当前组件与 Kafka 对接指南
 
+**2026-11-15目标验收补充：** 下文运行值及同步调用说明保留11-12观察时点，不表示新调度候选已发布。当前环境状态以[主交接](../../FRONTEND_BACKEND_HANDOFF.md)为准。新版本最终验收必须从Kafka真投递，经实际消费/落库、告警事件归并与路由、上下文路由、A/I分析，再通过业务HTTP建案和Case首轮/持续更新，最后读取同源结果。具体查询/提交路径和身份映射见[Kafka到HTTP验收衔接](../../openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md#最终验收从kafka实际主体接入http)；独立接口测试不能替代此链。目标profile、Topic/group及TCP地址须由本期供给实际确认，不直接复用下面旧运行地址投放；当前仍在局部修复，本轮不投递、不部署。
+
 2026-11-12。与[HTTP 主交接](../../FRONTEND_BACKEND_HANDOFF.md)、[测试数据与操作](backend-test-guide.md)一起使用。本轮只读取 21 配置、Topic 和消费组元数据，没有发 Kafka 消息、提交 offset、启停服务或调用模型。[运行快照](../operations/evidence/backend-handoff-20261112-01/components.jsonl)、[Kafka 快照](../operations/evidence/backend-handoff-20261112-01/kafka.txt)。
 
 ## 1. 谁调用谁
@@ -76,7 +78,7 @@ Fusion 已解码但合同非法写 PG `aisoc_dead_letters`；无法确认持久/
 
 | 组件 | 当前地址/对象 | 调查中的用途与接入责任 |
 | --- | --- | --- |
-| HTTP API | `192.168.1.21:18024`，`/api/v1/socai2` | 业务后端的主要接入点；50已实现+3预留501，新增告警反馈和告警/事件单条及批量管理 |
+| HTTP API | `192.168.1.21:18024`，`/api/v1/socai2` | 业务后端的主要接入点；71操作：69已实现+2问答预留501；当前版本investigation-sync-20261113-r1，同步已发布调查核心，含告警/事件/调查管理与查询 |
 | Swagger | `192.168.1.21:18080` | 参数、输入输出和错误说明；[本地 Docker 配置](../../deploy/api-docs/README.md) |
 | PostgreSQL | `192.168.1.21:5432/aisoc`；当前调查 `socai2` 28表450列 | 调查状态、原件、Run/Step/Result、任务和历史；业务后端走 HTTP，不照搬 AiSOC 全表 |
 | 资产/人员基础数据 | 当前适配器读同租户 `public.assets/public.users` | 由业务后端实现资产和目录维护；当前调查服务没有资产写接口。更换库存来源需明确适配，不是假设外部库存已自动同步 |

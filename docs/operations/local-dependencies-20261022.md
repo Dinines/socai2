@@ -31,7 +31,7 @@ python deploy/aisoc21/check_local_dependencies.py --report .local/dependency-che
 
 ## Kafka联合观察仍未完成
 
-本轮依赖核验不代替[Kafka入口接线](kafka-graph-intake-20261022.md)的真实联合证明。依赖检查前，attempt1在沙箱连接预检被拒，无业务写；attempt2连接21后已留一条新合成PG Alert，但API因缺greenlet停在拒写检查，尚未创建测试topic或发布消息，本地子进程已停。attempt3的许可被用户中断，未执行。失败材料在`.local/aisoc21/kafka-graph-joint-20261022/`保留，不重写成通过。
+本轮依赖核验不代替[Kafka入口接线](../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/kafka-graph-intake-20261022.md)的真实联合证明。依赖检查前，attempt1在沙箱连接预检被拒，无业务写；attempt2连接21后已留一条新合成PG Alert，但API因缺greenlet停在拒写检查，尚未创建测试topic或发布消息，本地子进程已停。attempt3的许可被用户中断，未执行。失败材料在`.local/aisoc21/kafka-graph-joint-20261022/`保留，不重写成通过。
 
 本依赖步骤0模型、0新Kafka消息、0应用lifespan、0部署/常驻启用；旧Run/unknown/质量失败和change 5/15保持。完整包清单、安装与测试日志见本地证据目录，[机器回执](../handoff/local-dependencies-20261022.json)记录核验和独审范围；未参与实现者dependency_final_audit结束独审限定**ACCEPT，0剩余阻塞**，不扩大为业务全分支、Kafka联合或部署通过。
 

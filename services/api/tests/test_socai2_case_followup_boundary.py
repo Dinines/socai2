@@ -26,7 +26,7 @@ def fixture(sample):
     answer["findings"] = [{"id": "F1", "state": "unresolved", "statement": "Synthetic cross-member issue.",
         "alert_ids": [m["alert_id"] for m in answer["members"][:2]], "support_ids": [own],
         "counter_ids": [second], "alternatives": ["Synthetic alternative."], "limitations": ["Synthetic only."]}]
-    original = json.loads(case_output_adapter.restore(json.dumps(answer), base["case_boundary"]))
+    original = json.loads(case_output_adapter.restore_current(json.dumps(answer), base["case_boundary"]))
     previous = {"analysis": original, "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
     return context, base, previous
 
@@ -40,12 +40,103 @@ def final_answer(prepared, context, comparison):
             "support_ids": [], "supported_changes": [], "cannot_generalize": ["Synthetic only."], "next_steps": []},
         "recommendations": [{"action_type": "investigate", "object_keys": [], "reason": "Synthetic review.",
             "source_ids": [answer["members"][0]["evidence_ids"][0]], "limitations": []}]}
-    if not outputs.fixed_comparison(comparison):
+    if outputs.restored_comparison(prepared, comparison) is None:
         result["comparison"] = {"kind": "not_comparable", "summary": "No selected comparison.", "support_ids": []}
     return result
 
 
-def test_final_preserves_complete_prior_and_support_counter_dependencies(sample):
+def background_query_example(context):
+    """Synthetic nonempty rows matching the four current background contracts."""
+    from app.socai2.baseline_enrichment import citation_roles
+
+    stamp = "2026-11-13T01:00:00+00:00"
+    records = {
+        "assets": {"name": "example-host", "criticality": "high", "ip_addresses": ["192.0.2.10"],
+                   "first_seen": stamp, "last_seen": stamp},
+        "threat_intel": {"ioc_type": "ip", "value": "192.0.2.20", "severity": "medium",
+                        "source": "Synthetic intelligence", "source_ref": "example-ioc-1", "last_seen": stamp,
+                        "confidence_provenance": "stored_score_calculation_unverified"},
+        "ueba": {"profile_id": "internal-profile", "external_user_ref": "example-user", "risk_score": 0,
+                 "risk_tier": "low", "failed_auth_24h": 0, "last_evaluated_at": stamp,
+                 "score_provenance": "stored_prior_analysis_calculation_unverified"},
+        "graph": {"account": "example-user", "provider": "example-provider", "employee": "Example Analyst",
+                  "department": "Operations", "is_active": False, "employee_linked": True, "start_date": "2026-01-01",
+                  "relationship_source": {"employee_identity": "AUTHENTICATES_AS"},
+                  "imported_at": stamp, "imported_at_status": "native", "imported_at_raw_sha256": "internal-hash"},
+    }
+    result = []
+    for index, (tool, record) in enumerate(records.items(), 1):
+        # Same names at other business paths must not be scrubbed recursively.
+        record["extension"] = {"match_basis": "Original business statement.", "profile_id": "business-profile",
+                               "imported_at": "Business import event.", "count": 0, "enabled": False, "items": []}
+        selector = {"object_key": "synthetic:" + tool, "namespace": "synthetic-example",
+                    "alert_ids": sorted(context.alerts)}
+        body = {"tool_name": tool, "state": "completed", "returned_rows": 1, "truncated": False,
+                "actual_args": {"scope": context.scope.model_dump(mode="json"), "parameters": {"selectors": [selector]}},
+                "rows": [{"object_key": selector["object_key"], "namespace": selector["namespace"],
+                          "record_id": str(UUID(int=index)), "match_basis": "exact_match", "record": record}]}
+        if tool == "threat_intel":
+            other = copy.deepcopy(body["rows"][0])
+            other["record"]["confidence_provenance"] = "Original source-specific qualification."
+            body["rows"].append(other)
+            body["returned_rows"] = 2
+        result.append((str(UUID(int=1000 + index)), body, citation_roles(body)))
+    return result
+
+
+def test_background_query_business_rows_keep_values_and_refs_across_stages(sample):
+    from app.socai2.baseline_context import Context
+
+    context = Context.model_validate(sample["context"])
+    enrichment = background_query_example(context)
+    original = copy.deepcopy(enrichment)
+    base = base_tests.boundary.build(context, sample["context_id"], enrichment, [], sample["materials"])
+    assert base["ready"], base["reason"]
+    identities = {identity for identity, _, _ in enrichment}
+    query_rows = [r for r in base["input_ledger"]["records"] if r["ref"]["id"] in identities
+                  and r["ref"]["source_path"]]
+    assert len(query_rows) == 5
+    answer = answer_for(base, context)
+    answer["questions"][0]["evidence_ids"] = [r["id"] for r in query_rows]
+    prior = {"analysis": json.loads(case_output_adapter.restore_current(json.dumps(answer), base["case_boundary"])),
+             "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
+    stages = [(base, "input_ledger")]
+    for stage in ("Deep", "C6"):
+        prepared = inputs.build(stage, context, base, {}, previous=prior, prior_id=UUID(int=2000),
+                                question_id=context.questions[0].id if stage == "Deep" else None)
+        assert prepared["ready"], prepared["reason"]
+        stages.append((prepared, "followup_boundary"))
+    for prepared, ledger in stages:
+        for row in query_rows:
+            current = next(r for r in prepared[ledger]["records"] if r["ref"] == row["ref"])
+            body = next(body for identity, body, _ in enrichment if identity == row["ref"]["id"])
+            raw = body["rows"][int(row["ref"]["source_path"].rsplit(".", 1)[-1])]
+            value = current["value"]
+            assert "match_basis" not in value and row["original_value"] == raw
+            record = value["record"]
+            assert record["extension"] == raw["record"]["extension"]
+            assert "[" + current["id"] + "]" in prepared["messages"][1]["content"]
+            assert prepared["source_map"][current["id"]]["ref"] == row["ref"]
+            assert current["alert_ids"] == row["alert_ids"]
+            if body["tool_name"] == "ueba":
+                assert "profile_id" not in record and "score_provenance" not in record
+                assert record["risk_score"] == record["failed_auth_24h"] == 0
+                assert record["last_evaluated_at"] == raw["record"]["last_evaluated_at"]
+                assert current["ref"]["role"] == "prior_analysis"
+            elif body["tool_name"] == "graph":
+                assert not set(record) & {"imported_at", "imported_at_status", "imported_at_raw_sha256"}
+                assert record["is_active"] is False and record["employee_linked"] is True
+                assert record["start_date"] == raw["record"]["start_date"]
+            elif body["tool_name"] == "threat_intel":
+                assert record["source_ref"] == raw["record"]["source_ref"]
+                assert record.get("confidence_provenance") == (None if row["ref"]["source_path"].endswith(".0")
+                    else "Original source-specific qualification.")
+            else:
+                assert record == raw["record"]
+    assert enrichment == original
+
+
+def test_final_selects_prior_and_preserves_support_counter_dependencies(sample):
     context, base, prior = fixture(sample)
     evidence = next(r for r in base["input_ledger"]["records"] if r["ref"]["role"] == "observation")
     triage = next(r for r in base["input_ledger"]["records"] if r["block"] == "triage")
@@ -54,12 +145,27 @@ def test_final_preserves_complete_prior_and_support_counter_dependencies(sample)
     incident = next(r for r in base["input_ledger"]["records"] if r["block"] == "incident")
     incident["prior_reference_resolution"] = {"visible": [evidence["id"]], "not_visible": []}
     incident["incident_source_refs"] = [evidence["ref"]]
+    old_finding = next(r for r in base["input_ledger"]["records"] if r["block"] == "finding")
+    prior["analysis"]["questions"][0]["evidence_ids"] += [triage["id"], incident["id"], old_finding["id"]]
+    history_values = [{"text": "Independent human denial of authorization."},
+                      {"record": {"approved": False, "attempts": 0, "exceptions": []}}]
+    for i, (role, value) in enumerate(zip(("human_statement", "source_label"), history_values, strict=True)):
+        sid = f"history_{i}"
+        row = {"id": sid, "ref": inputs.reference("artifact", uuid4(), role, "$.rows.0"),
+               "value": value, "original_value": copy.deepcopy(value), "alert_ids": [], "block": "query",
+               "membership_basis": "history_record_outside_case", "record_alert_ids": [str(uuid4())]}
+        base["input_ledger"]["records"].append(row)
+        base["source_map"][sid] = {"ref": row["ref"], "alert_ids": []}
     before = copy.deepcopy((base, prior))
-    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4())
+    graph_id = str(uuid4())
+    graphs = [{"source": {"ref": inputs.reference("artifact", graph_id, "prior_analysis", f"$.edges.{i}"),
+                          "alert_ids": evidence["alert_ids"]}, "entry": {"value": {"relation": relation}},
+               "original": {"relation": relation}} for i, relation in enumerate(("source_reports_object", "reported_network_activity"))]
+    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4(), graphs=graphs)
     assert prepared["ready"], prepared["reason"]
     rows = prepared["followup_boundary"]["records"]
     previous = next(r for r in rows if r["block"] == "C3")
-    assert set(previous["value"]) == set(prior["analysis"])
+    assert set(previous["value"]) == set(prior["analysis"]) - {"members", "domains"}
     assert previous["value"]["summary"] == prior["analysis"]["summary"]
     assert [q["id"] for q in previous["value"]["questions"]] == [q["id"] for q in prior["analysis"]["questions"] if q["id"] != "coverage"]
     finding = previous["value"]["findings"][0]
@@ -68,16 +174,25 @@ def test_final_preserves_complete_prior_and_support_counter_dependencies(sample)
     assert all(d["visible_id"] in prepared["source_map"] for d in prepared["followup_boundary"]["dependencies"])
     assert not set(base["source_map"]) & set(prepared["source_map"])
     assert (base, prior) == before
-    assert len({r["ref"]["source_path"] for r in rows if ".diagnosis.findings." in (r["ref"]["source_path"] or "")}) == 8
+    assert len({r["ref"]["source_path"] for r in rows if ".diagnosis.findings." in (r["ref"]["source_path"] or "")}) == 1
     assert len({r["ref"]["source_path"].split(".content_json")[0] for r in rows if ".queries." in (r["ref"]["source_path"] or "")}) == 9
     current_triage = next(r for r in rows if r["ref"] == triage["ref"])
     current_incident = next(r for r in rows if r["ref"] == incident["ref"])
     for sid in [*current_triage["value"]["source_refs"], *current_incident["prior_reference_resolution"]["visible"]]:
         assert prepared["source_map"][sid]["ref"] == evidence["ref"]
-    for old in base["input_ledger"]["records"]:
-        if "original_scope" in old:
-            current = next(r for r in rows if r["ref"] == old["ref"])
+    for current in rows:
+        if "original_scope" in current:
+            old = next(r for r in base["input_ledger"]["records"] if r["ref"] == current["ref"])
             assert prepared["source_map"][current["id"]]["original_scope"] == old["original_scope"]
+    assert [r["value"]["relation"] for r in rows if r["block"] == "graph"] == ["reported_network_activity"]
+    assert len([r for r in rows if r["ref"] == triage["ref"]]) == 1
+    assert any(o["reason"] == "c6_prior_context_dependency_only" for o in prepared["omissions"])
+    assert all(any(r["value"] == value for r in rows) for value in history_values)
+    # The selected request remains a serializable frozen artifact; its sources
+    # also support the unchanged final-result restoration contract.
+    frozen = json.loads(json.dumps(prepared))
+    comparison = {"state": "initial", "result_id": None}
+    outputs.parse_final(json.dumps(final_answer(frozen, context, comparison)), frozen, context, comparison)
     assert "[材料限制]" not in prepared["messages"][1]["content"]
 
 
@@ -150,15 +265,16 @@ def test_deep_wire_and_receive_agree_on_execution_receipt_evidence(has_observati
     assert prepared == original  # keep receipt input and its original role
 
 
-@pytest.mark.parametrize("state", ["initial", "not_selected"])
+@pytest.mark.parametrize("state", ["initial", "not_selected", "unavailable"])
 def test_final_restores_original_contract_without_model_owned_known_fields(sample, state):
     context, base, prior = fixture(sample)
-    comparison = {"state": state, "result_id": None}
+    comparison = {"state": state, "result_id": str(uuid4()) if state == "unavailable" else None}
     prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4(), extra={"comparison": comparison})
     answer = final_answer(prepared, context, comparison)
     schema = outputs.final_format(prepared, context, comparison)["json_schema"]["schema"]
     assert "id" not in schema["$defs"]["Recommendation"]["properties"]
-    assert ("comparison" in schema["properties"]) == (state != "initial")
+    assert "comparison" not in schema["properties"] and "comparison" not in schema["required"]
+    assert prepared["case_boundary"]["fixed_comparison"]["selection"] == comparison
     Draft202012Validator(schema).validate(answer)
     empty_recommendation = copy.deepcopy(answer)
     empty_recommendation["recommendations"][0]["source_ids"] = []
@@ -180,6 +296,35 @@ def test_final_restores_original_contract_without_model_owned_known_fields(sampl
     assert value.recommendations[0].id == "R1"
     assert {str(m.alert_id) for m in value.analysis.members} == set(context.alerts)
     assert value.comparison.kind == ("initial" if state == "initial" else "not_comparable")
+    assert value.comparison.model_dump() == prepared["case_boundary"]["fixed_comparison"]["value"]
+    forged = copy.deepcopy(answer)
+    forged["comparison"] = {"kind": "unchanged", "summary": "Invented comparison.", "support_ids": []}
+    assert list(Draft202012Validator(schema).iter_errors(forged))
+    with pytest.raises(AnalysisRejected, match="final_boundary_shape_or_alias_invalid"):
+        outputs.parse_final(json.dumps(forged), prepared, context, comparison)
+    if state != "initial":
+        old_prepared = copy.deepcopy(prepared)
+        old_prepared["case_boundary"].pop("fixed_comparison")
+        old_answer = final_answer(old_prepared, context, comparison)
+        old_schema = outputs.final_format(old_prepared, context, comparison)["json_schema"]["schema"]
+        outputs.parse_final(json.dumps(old_answer), old_prepared, context, comparison)
+        for field, invalid_value in (("kind", "unchanged"), ("summary", None)):
+            invalid = copy.deepcopy(old_answer)
+            invalid["comparison"][field] = invalid_value
+            original = json.dumps(invalid)
+            assert list(Draft202012Validator(old_schema).iter_errors(invalid))
+            with pytest.raises(AnalysisRejected, match="comparison_not_available"):
+                outputs.parse_final(original, old_prepared, context, comparison)
+            review = outputs.FinalReview(old_prepared, context, comparison)
+            diagnostic = review.feedback(original)
+            assert len(diagnostic["errors"]) == 1
+            error = diagnostic["errors"][0]
+            assert error["path"] == ["comparison", field]
+            assert error["code"] == "comparison_not_available" and error["comparison_state"] == state
+            assert error["current_values"] == invalid_value
+            assert diagnostic["allowed_sources"] == diagnostic["local_findings"] == []
+            assert review.partial(original) is None and review.details["conclusion_adoptable"] is False
+            assert original == json.dumps(invalid)
 
 
 def test_final_feedback_and_partial_review_still_use_model_aliases(sample):
@@ -187,6 +332,18 @@ def test_final_feedback_and_partial_review_still_use_model_aliases(sample):
     comparison = {"state": "initial", "result_id": None}
     prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4())
     answer = final_answer(prepared, context, comparison)
+    duplicate = copy.deepcopy(answer)
+    refs = duplicate["recommendations"][0]["source_ids"]
+    refs.append(refs[0])
+    original = json.dumps(duplicate)
+    review = outputs.FinalReview(prepared, context, comparison)
+    feedback = review.feedback(original)
+    assert feedback["errors"] == [{"path": ["recommendations", 0, "source_ids"], "code": "duplicate_source",
+        "subject_id": None, "duplicate_ids": [refs[0]], "current_values": refs}]
+    assert feedback["allowed_sources"] == feedback["local_findings"] == feedback["observed_support_ids"] == []
+    assert json.dumps(duplicate) == original
+    with pytest.raises(AnalysisRejected, match="delivery_source_not_visible_or_duplicate"):
+        outputs.parse_final(original, prepared, context, comparison)
     answer["analysis"]["members"][0].update(state="analyzed", evidence_ids=[])
     review = outputs.FinalReview(prepared, context, comparison)
     feedback = review.feedback(json.dumps(answer))
@@ -199,6 +356,29 @@ def test_final_feedback_and_partial_review_still_use_model_aliases(sample):
     assert review.partial(json.dumps(answer)) is None
     assert review.details["conclusion_adoptable"] is False
     assert review.details["retained_analysis"]["members"][1]["state"] == "unresolved"
+
+    # Final coverage errors get only the missing members' eligible candidates.
+    final = final_answer(prepared, context, comparison)
+    final["impact"].update(alert_ids=list(prepared["case_boundary"]["member_aliases"].values()), support_ids=[])
+    original = json.dumps(final)
+    with pytest.raises(AnalysisRejected, match="delivery_source_coverage_missing"):
+        outputs.parse_final(original, prepared, context, comparison)
+    diagnostic = outputs.FinalReview(prepared, context, comparison).feedback(original)
+    assert diagnostic["allowed_sources"] == diagnostic["local_findings"] == []
+    error = diagnostic["errors"][0]
+    assert error["path"] == ["impact", "support_ids"] and error["current_values"] == []
+    assert error["declared_members"] == error["uncovered_members"] == final["impact"]["alert_ids"]
+    assert error["claim"] == final["impact"]["summary"]
+    for alias, roles in error["candidate_source_ids_by_member_role"].items():
+        aid = next(a for a, name in prepared["case_boundary"]["member_aliases"].items() if name == alias)
+        for role, ids in roles.items():
+            assert role != "execution_receipt"
+            assert all(aid in prepared["source_map"][sid]["alert_ids"] and not prepared["source_map"][sid].get("knowledge")
+                       and prepared["source_map"][sid]["ref"]["role"] == role for sid in ids)
+    assert json.dumps(final) == original
+    final["analysis"]["members"][0].update(state="analyzed", evidence_ids=[])
+    mixed = outputs.FinalReview(prepared, context, comparison).feedback(json.dumps(final))
+    assert mixed["allowed_sources"] and len(mixed["errors"]) > 1
 
 
 def test_final_evidence_slots_exclude_receipts_without_narrowing_analysis(sample):
@@ -231,6 +411,9 @@ def test_no_accepted_c3_remains_explicit_and_profile_mismatch_rejected(sample):
     context, base, _ = fixture(sample)
     prepared = inputs.build("C6", context, base, {})
     assert "没有可用的C3判断" in prepared["messages"][1]["content"]
+    visible = {encoded(r["ref"]) for r in prepared["followup_boundary"]["records"]}
+    assert all(encoded(r["ref"]) in visible for r in base["input_ledger"]["records"]
+               if r["block"] in {"triage", "incident", "finding", "question"})
     base["case_boundary"]["profile"]["sha256"] = "changed"
     with pytest.raises(StoreError, match="case_input_profile_changed"):
         inputs.build("C6", context, base, {})
@@ -258,6 +441,7 @@ def test_c6_query_rows_preserve_grouping_typed_values_and_required_behavior_guar
     aid, identity = next(iter(context.alerts)), str(uuid4())
     fields = [{"name": name, "value": value, "source_path": "$.raw." + name, "transform": "identity", "conflict": False}
               for name, value in [("dest_ip", "198.51.100.20"), ("dst_port", 443), ("is_approved", False), ("bytes_out", 0)]]
+    fields[1]["transform"] = "numeric_conversion"
     payload = {"type": "query_projection", "binding_id": "bound", "question_id": context.questions[0].id,
         "state": "completed", "reason": None, "alert_ids": [aid], "observed_rows_in_bounded_fetch": 1,
         "truncated": False, "limitations": [], "rows": [{"semantics": {"fields": fields}}]}
@@ -275,6 +459,8 @@ def test_c6_query_rows_preserve_grouping_typed_values_and_required_behavior_guar
     rows = [r for r in prepared["followup_boundary"]["records"] if r["block"] == "query"]
     assert {r["value"]["record_key"] for r in rows} == {"Q1R0"}
     assert rows[2]["value"]["value"] is False and type(rows[3]["value"]["value"]) is int
+    assert rows[1]["value"]["value"] == 443 and all("transform" not in r["value"] for r in rows)
+    assert payload["rows"][0]["semantics"]["fields"][1]["transform"] == "numeric_conversion"
     assert all(r["membership_basis"] == "query_binding_only" for r in rows)
     fields[0]["value"] = 'password="synthetic_not_a_real_password"'
     blocked = build()
@@ -390,7 +576,7 @@ def test_knowledge_deduplication_task_selection_and_prior_dependency(sample):
     assert not any(r.get("knowledge") for r in excluded["followup_boundary"]["records"])
     answer = answer_for(base, context)
     answer["questions"][0]["evidence_ids"] = [knowledge[0]["id"]]
-    prior = {"analysis": json.loads(case_output_adapter.restore(json.dumps(answer), base["case_boundary"])),
+    prior = {"analysis": json.loads(case_output_adapter.restore_current(json.dumps(answer), base["case_boundary"])),
              "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
     restored = inputs.build("Deep", context, base, {}, previous=prior, prior_id=uuid4(), question_id=question.id)
     refs = [r for r in restored["followup_boundary"]["records"] if r.get("knowledge")]
@@ -425,6 +611,56 @@ def test_knowledge_deduplication_task_selection_and_prior_dependency(sample):
     assert not selected and omissions[0]["reason"] == "knowledge_outside_task_scope"
     selected, omissions = choose(mixed, "Deep", [aid], policy)
     assert selected == mixed and not omissions
+    # The same-member guide is optional for authorization, but a selected
+    # prior citation still carries its exact source into that question.
+    guided = copy.deepcopy(body)
+    guided["rows"][1].update(purpose="investigation_guidance", purpose_label="取证指导")
+    guided_base = build(context, sample["context_id"], [(ident, guided, None)], [], sample["materials"])
+    card = next(r for r in guided_base["input_ledger"]["records"] if r.get("knowledge"))
+    authorization = inputs.build("Deep", context, guided_base, {}, question_id="authorization")
+    assert authorization["ready"], authorization["reason"]
+    assert not any(r.get("knowledge") for r in authorization["followup_boundary"]["records"])
+    assert any(o["reason"] == "knowledge_purpose_not_for_question" for o in authorization["omissions"])
+    nature = inputs.build("Deep", context, guided_base, {}, question_id="behavior_nature")
+    assert any(r.get("knowledge") for r in nature["followup_boundary"]["records"])
+    answer = answer_for(guided_base, context)
+    next(q for q in answer["questions"] if q["id"] == "authorization")["evidence_ids"] = [card["id"]]
+    prior = {"analysis": json.loads(case_output_adapter.restore_current(json.dumps(answer), guided_base["case_boundary"])),
+             "source_map": guided_base["source_map"], "validation": "structure_scope_sources_checked"}
+    required = inputs.build("Deep", context, guided_base, {}, previous=prior, prior_id=uuid4(), question_id="authorization")
+    actual = next(r for r in required["followup_boundary"]["records"] if r.get("knowledge"))
+    assert actual["block"] == "dependency" and actual["ref"] == card["ref"]
+    assert actual["value"] == card["value"] and actual["alert_ids"] == card["alert_ids"]
+    assert not any(o["reason"] == "knowledge_purpose_not_for_question" for o in required["omissions"])
+    # Final synthesis must match purpose and members on the same open question.
+    final_answer = answer_for(guided_base, context)
+    for item in final_answer["questions"]:
+        item["state"] = "unresolved" if item["id"] == "authorization" else "not_applicable"
+
+    def final_for(selected_context):
+        previous = {"analysis": json.loads(case_output_adapter.restore_current(json.dumps(final_answer), guided_base["case_boundary"])),
+                    "source_map": guided_base["source_map"], "validation": "structure_scope_sources_checked"}
+        prepared = inputs.build("C6", selected_context, guided_base, {}, previous=previous, prior_id=uuid4())
+        assert prepared["ready"], prepared["reason"]
+        return [r for r in prepared["followup_boundary"]["records"] if r.get("knowledge")]
+
+    assert final_for(context) == []  # Matching authorization members alone are insufficient.
+    nature_question = next(q for q in final_answer["questions"] if q["id"] == "behavior_nature")
+    nature_question["state"] = "unresolved"
+    assert final_for(context)[0]["value"] == card["value"]
+    narrow = context.model_copy(update={"questions": [
+        q.model_copy(update={"scope": q.scope.model_copy(update={"alert_ids": [UUID(aid)]})})
+        if q.id == "behavior_nature" else q for q in context.questions]})
+    assert final_for(narrow) == []  # Do not borrow the other member from authorization.
+    nature_question["state"] = "not_applicable"
+    next(q for q in final_answer["questions"] if q["id"] == "authorization")["evidence_ids"] = [card["id"]]
+    required_card = final_for(context)[0]
+    assert required_card["block"] == "dependency" and required_card["ref"] == card["ref"]
+    assert required_card["value"] == card["value"] and required_card["alert_ids"] == card["alert_ids"]
+    legacy = copy.deepcopy(base_tests.runtime_policy.active_policy().case_io.config["knowledge_selection"])
+    legacy.pop("final_question_purposes")
+    selected, omissions = choose([card], "C6", [other], legacy, question_scopes={"authorization": [other]})
+    assert selected == [card] and not omissions
 
 
 def test_knowledge_context_survives_c3_c6_but_cannot_cover_current_members(sample):
@@ -568,7 +804,12 @@ def test_case_message_guard_checks_actual_text_and_all_windows():
 
 def test_final_shared_display_keeps_sources_and_query_limits_in_backend(sample):
     context, base, prior = fixture(sample)
-    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4())
+    aid = next(iter(context.alerts))
+    graph_value = {"relation": "reported_parent_process", "from": "parent", "to": "child", "strength": "observed",
+                   "limitations": ["external_topology_not_queried", "derived_view_not_independent_evidence"]}
+    graphs = [{"original": graph_value, "entry": {"value": graph_value}, "source": {
+        "ref": inputs.reference("artifact", uuid4(), "prior_analysis", "$.edges.0"), "alert_ids": [aid]}}]
+    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4(), graphs=graphs)
     records = {r["id"]: r for r in prepared["followup_boundary"]["records"]}
     presentation = prepared["followup_boundary"]["presentation"]
     ids = [sid for group in presentation["groups"] for sid in group]
@@ -587,16 +828,57 @@ def test_final_shared_display_keeps_sources_and_query_limits_in_backend(sample):
     for item in presentation["shared_fields"]:
         assert all(records[sid]["value"][item["field"]] == item["value"] for sid in item["applies_to"])
         assert all(text in prepared["messages"][1]["content"] for text in item["value"])
+    graph = next(r for r in records.values() if r["block"] == "graph")
+    assert graph["value"] == {k: v for k, v in graph_value.items() if k != "limitations"}
+    assert graph["ref"]["role"] == "prior_analysis" and graph["alert_ids"] == [aid]
+    assert graph_value["limitations"] == ["external_topology_not_queried", "derived_view_not_independent_evidence"]
+    assert "execution_receipt" not in prepared["messages"][1]["content"]
+    assert "completed/empty/0" not in prepared["messages"][0]["content"]
+    options = [{"binding_id": "B1", "tool_name": "process_activity", "hostname": "synthetic-host",
+                "alert_ids": [aid], "object_keys": []}]
+    c3_base = copy.deepcopy(base)
+    c3_messages, _ = base_tests.boundary.messages(c3_base, context, options)
+    deep = inputs.build("Deep", context, base, {}, previous=prior, prior_id=uuid4(),
+                        question_id="detection_facts", options=options)
+    assert deep["ready"]
+    for messages, tool_view in ((c3_messages, c3_base["tool_presentation"]), (deep["messages"], deep["tool_presentation"])):
+        menu = messages[2]["content"]
+        assert all(text in menu for text in ("绑定=B1", "synthetic-host", "process_activity", "不能回答="))
+        assert not any(text in menu for text in ("共同限制", "schema_version", "选择原则", "可用=true", "使用范围=", "返回字段="))
+        assert all(cap["inputs"] and cap["limitations"] and cap["returned_fields"] for cap in tool_view["capabilities"])
+        assert any(row.get("reason") == "tool_execution_limits_kept_in_backend" for row in tool_view["ledger"])
 
 
 def test_historical_comparison_keeps_old_scope_without_offering_historical_targets(sample):
-    context, base, prior = fixture(sample)
-    aid, removed, rid = next(iter(context.alerts)), str(uuid4()), str(uuid4())
+    aid, removed, rid = next(iter(sample["context"]["alerts"])), str(uuid4()), str(uuid4())
     comparison = {"state": "eligible", "result_id": rid, "added_alert_ids": [], "removed_alert_ids": [removed],
         "shared_alert_ids": [aid], "prior_scope": {"kind": "whole_case", "alert_ids": [aid, removed],
             "object_keys": ["host:previous-only"], "window_start": "2026-10-01T00:00:00Z", "window_end": "2026-10-01T01:00:00Z"}}
     value = {"comparison_result_id": rid, "validation_state": "accepted", "delivery_state": "complete",
              "conclusion_state": "uncertain", "conclusion_origin": "model", "conclusion": "Old judgment unchanged."}
+    historical_ref = inputs.reference("artifact", uuid4(), "observation")
+    old = {**value, "id": rid, "member_deliveries": [{"alert_id": aid}, {"alert_id": removed}],
+           "findings": [{"id": "historical-internal-finding", "state": "inferred",
+               "statement": "Old N1_S1 suggested a shared session, without direct proof.",
+               "scope": comparison["prior_scope"], "support": [historical_ref], "counterevidence": [],
+               "limitations": ["Different sessions remain possible."], "business_extension": {"count": 0, "confirmed": False}}],
+           "questions": [
+               {"id": "authorization", "state": "unresolved", "answer": "No authorization was confirmed.",
+                "scope": comparison["prior_scope"], "limitations": ["Absence of approval is not proof of malice."],
+                "evidence_refs": [historical_ref]},
+               {"id": "coverage", "state": "unresolved", "answer": "Old execution statistics are not a business question."},
+               {"id": "detection_facts", "state": "answered", "answer": "Resolved old answer need not repeat the findings."}],
+           "case_impact": {"summary": "Transfer was not established.", "supported_changes": [],
+               "cannot_generalize": ["A connection does not establish a data transfer."],
+               "affected_scope": comparison["prior_scope"], "next_steps": ["Old action must not become current advice."]},
+           "operation_key": "internal-result-operation", "business_extension": {"count": 0, "approved": False, "exceptions": []}}
+    sample["context"]["prior_results"][rid] = old
+    sample["context"]["citation_roles"][f"$.prior_results.{rid}"] = "prior_analysis"
+    context, base, prior = fixture(sample)
+    base_row = next(r for r in base["input_ledger"]["records"] if r.get("context_identity") == rid)
+    assert "comparison_basis" not in base_row["value"]
+    assert old["findings"][0]["statement"] not in base["messages"][1]["content"]
+    prior["analysis"]["questions"][0]["evidence_ids"].append(base_row["id"])
     lead = [{"original": value, "required": True, "entry": {"value": value},
              "source": {"ref": inputs.reference("result", rid, "prior_analysis"), "alert_ids": [aid]}}]
     prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4(), extra={"comparison": comparison}, lead=lead)
@@ -608,5 +890,117 @@ def test_historical_comparison_keeps_old_scope_without_offering_historical_targe
     assert row["value"]["conclusion"] == value["conclusion"]
     assert "comparison_result_id" not in row["value"]
     schema = outputs.final_format(prepared, context, comparison)["json_schema"]["schema"]
+    assert "fixed_comparison" not in prepared["case_boundary"] and "comparison" in schema["properties"]
     assert "X1" not in schema["$defs"]["AlertId"]["enum"]
     assert "H1" not in schema["$defs"]["ObjectKey"]["enum"]
+    assert "unchanged" in schema["$defs"]["Comparison"]["properties"]["kind"]["enum"]
+    duplicates = [r for r in prepared["followup_boundary"]["records"] if r.get("context_identity") == rid]
+    assert len(duplicates) == 2 and {r["ref"]["type"] for r in duplicates} == {"artifact", "result"}
+    assert duplicates[0]["value"] == duplicates[1]["value"]
+    assert text.count(value["conclusion"]) == 1
+    assert "internal-result-operation" not in text
+    assert text.count(old["findings"][0]["statement"]) == 1
+    basis = row["value"]["comparison_basis"]
+    assert basis["findings"][0]["scope"]["alert_ids"] == [prepared["case_boundary"]["member_aliases"][aid], "X1"]
+    assert basis["findings"][0]["limitations"] == old["findings"][0]["limitations"]
+    assert basis["findings"][0]["business_extension"] == {"count": 0, "confirmed": False}
+    assert [q["id"] for q in basis["questions"]] == ["authorization"]
+    assert basis["questions"][0]["answer"] == old["questions"][0]["answer"]
+    assert basis["case_impact"]["supported_changes"] == []
+    assert basis["case_impact"]["cannot_generalize"] == old["case_impact"]["cannot_generalize"]
+    assert all(excluded not in text for excluded in (historical_ref["id"], "historical-internal-finding",
+        old["questions"][1]["answer"], old["questions"][2]["answer"], old["case_impact"]["next_steps"][0]))
+    assert context.prior_results[rid] == old
+    assert row["value"]["business_extension"] == old["business_extension"]
+    assert row["original_scope"]["alert_ids"] == sorted([aid, removed])
+    background = next(r for r in duplicates if r["ref"]["type"] == "artifact")
+    assert "指定比较基线引用=[" + row["id"] + "]" in text
+    assert "[" + row["id"] + "]（同文历史背景引用：[" + background["id"] + "]）" in text
+    assert "[" + ",".join(r["id"] for r in duplicates) + "]" not in text
+    # The display distinguishes citation duties; it does not weaken acceptance.
+    final = final_answer(prepared, context, comparison)
+    current = final["analysis"]["members"][0]["evidence_ids"][0]
+    final["comparison"] = {"kind": "unchanged", "summary": "Synthetic comparison.",
+                           "support_ids": [background["id"], current]}
+    original = json.dumps(final)
+    with pytest.raises(AnalysisRejected, match="comparison_needs_selected_baseline_and_current_sources"):
+        outputs.parse_final(original, prepared, context, comparison)
+    final["recommendations"][0]["source_ids"] *= 2
+    errors = outputs.FinalReview(prepared, context, comparison).feedback(json.dumps(final))["errors"]
+    assert {e["code"] for e in errors} == {"duplicate_source", "comparison_needs_selected_baseline_and_current_sources"}
+    error = next(e for e in errors if e["path"] == ["comparison", "support_ids"])
+    assert error["selected_baseline_ids"] == [row["id"]] and error["selected_baseline_missing"]
+    final["recommendations"][0]["source_ids"] = [current]
+    final["comparison"]["support_ids"] = [row["id"]]
+    error = outputs.FinalReview(prepared, context, comparison).feedback(json.dumps(final))["errors"][0]
+    assert error["current_source_required"] and error["current_source_missing"] and not error["selected_baseline_missing"]
+    final["comparison"]["support_ids"].append(current)
+    assert outputs.parse_final(json.dumps(final), prepared, context, comparison).comparison.kind == "unchanged"
+    assert outputs.FinalReview(prepared, context, comparison).feedback(json.dumps(final)) is None
+    sample["context"]["prior_results"][rid]["validation_state"] = "rejected"
+    _, rejected = prepared_sample(sample)
+    assert not any(r.get("context_identity") == rid for r in rejected["input_ledger"]["records"])
+    assert value["conclusion"] not in rejected["messages"][1]["content"]
+
+
+def test_fixed_h_feedback_keeps_revision_scope_and_real_refs_in_c3_c6(sample):
+    _, initial = prepared_sample(sample)
+    evidence = next(r for r in initial["input_ledger"]["records"] if r["ref"]["type"] == "alert_material"
+                    and r["ref"]["role"] == "observation")
+    aid, tid, vid, older_id = evidence["alert_ids"][0], str(uuid4()), str(uuid4()), str(uuid4())
+    raw = sample["context"]
+    revision = {"id": vid, "task_id": tid, "revision": 2, "state": "completed",
+        "title": "核对本次操作授权", "description": "保留业务反证，不作事实推断。",
+        "result_text": "本次操作未得到业务授权；请核对审批记录。", "completed_by": "internal-user-id",
+        "result_scope": {**raw["scope"], "alert_ids": [aid]},
+        "source_refs": [evidence["ref"], inputs.reference("artifact", uuid4(), "observation")],
+        "business_extension": {"count": 0, "authorized": False, "exceptions": []}}
+    older = {**copy.deepcopy(revision), "id": older_id, "revision": 1, "result_text": "旧版本曾认为操作已获授权。"}
+    raw["tasks"][tid] = {"task_id": tid, "revision": revision, "usable_feedback": True, "limitations": []}
+    raw["adopted_task_revisions"].update({vid: copy.deepcopy(revision), older_id: older})
+    raw["current_assessment"] = {"id": str(uuid4()), "conclusion": "当前采用判断仍需结合新反馈复核。",
+        "origin": "human", "validity": "accepted", "reason": "复核原始材料",
+        "formed_at": "2026-11-01T00:00:00Z", "adopted_by": "internal-adopter",
+        "actor": {"user_id": "internal-actor"}, "operation_key": "internal-adoption-operation"}
+    removed = str(uuid4())
+    raw["assessment_members"] = [{"alert_id": aid}, {"alert_id": removed}]
+    raw["citation_roles"]["$.current_assessment"] = "prior_analysis"
+    raw["citation_roles"].update({f"$.tasks.{tid}.revision": "human_statement",
+        f"$.adopted_task_revisions.{vid}": "human_statement", f"$.adopted_task_revisions.{older_id}": "human_statement"})
+    before = copy.deepcopy(raw)
+    context, base = prepared_sample(sample)
+    analysis = json.loads(case_output_adapter.restore_current(json.dumps(answer_for(base, context)), base["case_boundary"]))
+    final = inputs.build("C6", context, base, {}, previous={"analysis": analysis,
+        "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}, prior_id=uuid4())
+    deep = inputs.build("Deep", context, base, {}, previous={"analysis": analysis,
+        "source_map": base["source_map"], "validation": "structure_scope_sources_checked"},
+        prior_id=uuid4(), question_id="authorization")
+    for prepared, rows in ((base, base["input_ledger"]["records"]), (deep, deep["followup_boundary"]["records"]),
+                           (final, final["followup_boundary"]["records"])):
+        assert prepared["ready"]
+        text = prepared["messages"][1]["content"]
+        assert text.count(revision["result_text"]) == text.count(older["result_text"]) == 1
+        assert "internal-user-id" not in text
+        assessment = next(r for r in rows if r.get("context_kind") == "current_assessment")
+        assert set(assessment["value"]) == {"conclusion", "origin", "validity", "reason", "declared_scope"}
+        assert assessment["alert_ids"] == [aid] and assessment["ref"]["role"] == "prior_analysis"
+        assert assessment["original_scope"] == {"alert_ids": sorted([aid, removed])}
+        aliases = {**prepared["case_boundary"]["member_aliases"],
+                   **prepared.get("input_ledger", {}).get("external_member_aliases", {})}
+        assert aliases[removed].startswith("X")
+        assert assessment["value"]["declared_scope"] == {"alert_ids": [aliases[a] for a in sorted([aid, removed])]}
+        assert prepared["source_map"][assessment["id"]]["original_scope"] == assessment["original_scope"]
+        assert assessment["value"]["conclusion"] == raw["current_assessment"]["conclusion"]
+        assert removed not in context.alerts
+        if prepared is not base:
+            heading = text[:text.index("[" + assessment["id"] + "]")].splitlines()[-1]
+            assert "原范围=" + "、".join(aliases[a] for a in sorted([aid, removed])) in heading
+        current = [r for r in rows if r.get("context_identity") == vid]
+        assert len(current) == 2 and current[0]["ref"] != current[1]["ref"]
+        for row in current:
+            assert row["ref"]["role"] == "human_statement" and row["alert_ids"] == [aid]
+            assert row["original_scope"] == revision["result_scope"]
+            assert row["value"]["business_extension"] == revision["business_extension"]
+            assert row["value"]["revision"] == 2 and row["value"]["unavailable_prior_reference_count"] == 1
+            assert prepared["source_map"][row["value"]["source_refs"][0]]["ref"] == evidence["ref"]
+    assert raw == before

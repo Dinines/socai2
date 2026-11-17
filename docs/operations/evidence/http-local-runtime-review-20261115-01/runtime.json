@@ -1,0 +1,107 @@
+{
+  "observed_at": "2026-11-15T07:18:50.560995+00:00",
+  "read_only": true,
+  "service_changes": false,
+  "probes": {
+    "http://127.0.0.1:18024/health": {
+      "status": 404
+    },
+    "http://127.0.0.1:18024/openapi.json": {
+      "status": 200,
+      "bytes": 194543,
+      "version": "investigation-sync-20261113-r1-local",
+      "business_operations": 71,
+      "security_schemes": [
+        "HTTPBearer"
+      ],
+      "servers": []
+    },
+    "http://127.0.0.1:18024/api/v1/socai2/cases?limit=1": {
+      "status": 401
+    },
+    "http://127.0.0.1:18080/handoff/openapi.json": {
+      "status": 200,
+      "bytes": 1416191,
+      "version": "2026-11-13.docs19",
+      "business_operations": 71,
+      "security_schemes": [
+        "HTTPBearer"
+      ],
+      "servers": [
+        {
+          "url": "http://192.168.1.21:18024",
+          "description": "21正式独立服务；数据库aisoc，内网HTTP对接使用此入口。"
+        },
+        {
+          "url": "http://127.0.0.1:28024",
+          "description": "本机SSH转发到21正式服务；需已开启relay.json对应转发。"
+        },
+        {
+          "url": "http://127.0.0.1:18024",
+          "description": "本机独立测试服务；数据库v12_upgrade_dev，记录ID与21不通用。"
+        }
+      ]
+    },
+    "http://127.0.0.1:4177/index.html": {
+      "status": 200,
+      "bytes": 43354
+    }
+  },
+  "processes": [
+    {
+      "pid": 77189,
+      "summary": "77189     1 01-15:47:09 /Users/lychee/Documents/project/socai2/.local/conda-envs/socai2/bin/python",
+      "returncode": 0,
+      "selected_arguments": [
+        [
+          "-m",
+          "uvicorn"
+        ],
+        "uvicorn",
+        "investigation_http.main:app",
+        [
+          "--host",
+          "127.0.0.1"
+        ],
+        [
+          "--port",
+          "18024"
+        ]
+      ],
+      "cwd": [
+        "/Users/lychee/Documents/project/socai2-http-runtime/investigation-sync-20261113-r1"
+      ]
+    },
+    {
+      "pid": 44022,
+      "summary": "44022     1 02-07:08:22 /usr/bin/ssh",
+      "returncode": 0,
+      "selected_arguments": [
+        "sting-infra21-tunnel"
+      ],
+      "cwd": [
+        "/"
+      ]
+    }
+  ],
+  "swagger_container": {
+    "image": "docker.swagger.io/swaggerapi/swagger-ui@sha256:59ee9021a8884437c7fd8aae79e0a46ee6b6dd3afd7f24a587c4501585fde53b",
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/Users/lychee/Documents/project/socai2/.local/api-docs/releases/20261113-docs19/handoff",
+        "Destination": "/usr/share/nginx/html/handoff",
+        "RW": false
+      }
+    ],
+    "ports": {
+      "80/tcp": null,
+      "8080/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "18080"
+        }
+      ]
+    }
+  }
+}

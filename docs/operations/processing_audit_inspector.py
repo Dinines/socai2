@@ -58,6 +58,7 @@ const recordElements = [...document.querySelectorAll('[data-record-kind]')];
 const artifactElements = new Map(recordElements.filter(el => el.dataset.recordKind === 'artifact').map(el => [el.dataset.recordId, el]));
 const stepElements = new Map(recordElements.filter(el => el.dataset.recordKind === 'step').map(el => [el.dataset.recordId, el]));
 const parsedRecords = new WeakMap();
+const inspectorData = JSON.parse(document.getElementById('inspector-data').textContent);
 let selection = null;
 function savedRecord(el) {
     if (!el) return null;
@@ -86,7 +87,16 @@ function reasonDescription(value) {
 }
 function block(title, value, parent = inspectorContent) {
     if (value === undefined || value === null) return false;
-    parent.append(element('h4', title), element('pre', display(value)));
+    const text = display(value), limit = inspectorData.config.preview_characters;
+    parent.append(element('h4', title), element('pre', text.length > limit ? text.slice(0, limit) + '\n…（预览）' : text));
+    if (text.length > limit) {
+        const details = element('details');
+        details.append(element('summary', '展开完整内容（' + text.length + ' 字符）'));
+        details.addEventListener('toggle', () => {
+            if (details.open && !details.querySelector('pre')) details.append(element('pre', text));
+        });
+        parent.append(details);
+    }
     return true;
 }
 function empty(text) { inspectorContent.append(element('p', text, 'inspector-empty')); }
@@ -225,17 +235,28 @@ function showKnowledgeUsage(row, requests, responses) {
 }
 function relatedArtifacts(row, el) {
     if (el.dataset.recordKind === 'artifact') return [row];
+    const runId = el.dataset.runId;
+    const stepIds = new Set(el.dataset.recordKind === 'step' ? [row.id] : []);
+    let priorSize;
+    do {
+        priorSize = stepIds.size;
+        for (const child of stepElements.values()) {
+            if (child.dataset.runId === runId && stepIds.has(child.dataset.parentStepId)) stepIds.add(child.dataset.recordId);
+        }
+    } while (stepIds.size !== priorSize);
     const ids = new Set([row.input_artifact_id, row.output_artifact_id, row.reused_artifact_id].filter(Boolean));
     for (const [id, item] of artifactElements) {
-        if (el.dataset.recordKind === 'step' && item.dataset.stepId === row.id) ids.add(id);
+        if (item.dataset.runId !== runId) continue;
+        if (el.dataset.recordKind === 'step' && stepIds.has(item.dataset.stepId)) ids.add(id);
         if (el.dataset.recordKind === 'run' && item.dataset.runId === row.id && !item.dataset.stepId) ids.add(id);
     }
-    return [...ids].map(linkedArtifact).filter(Boolean);
+    return [...ids].map(linkedArtifact).filter(a => a && a.run_id === runId);
 }
 function modelErrors(row, artifacts, kind) {
     const errors = [];
     if (kind === 'step' && row.error != null) errors.push(['步骤错误 / 跳过原因', row.error]);
-    if (kind === 'run' && row.stop_reason != null) errors.push(['本轮停止原因', row.stop_reason]);
+    if (kind === 'run' && row.stop_reason != null && !['stage_output_saved', 'final_delivery_saved'].includes(row.stop_reason))
+        errors.push(['本轮停止原因', row.stop_reason]);
     for (const artifact of artifacts) {
         if (artifact.kind !== 'model_response') continue;
         const payload = responsePayload(artifact);
@@ -284,13 +305,75 @@ function selectNode(node, target) {
     }
     const artifacts = relatedArtifacts(row, el);
     const errors = modelErrors(row, artifacts, el.dataset.recordKind);
-    if (node.title && !errors.length) errors.push(['节点记录的原因', node.title]);
+    if (node.title && !errors.length && !['stage_output_saved', 'final_delivery_saved'].includes(node.title))
+        errors.push(['节点记录的原因', node.title]);
     selection = {el, row, artifacts, errors};
     inspectorTabs.hidden = false;
     inspectorNotice.textContent = errors.length ? '存在错误或限制，详见“概览与原因”。输入与输出以实际保存记录为准。' :
         '以下内容来自本轮已保存记录；执行状态与模型结论是否可采用分别查看。';
     inspectorNotice.className = errors.length ? 'inspector-failure' : '';
     showInspectorView('overview');
+}
+function showDelivery(el, row) {
+    const delivery = inspectorData.runs[el.dataset.runId];
+    const receipt = bodyOf(row);
+    const isResultReceipt = el.dataset.recordKind === 'artifact' &&
+        (receipt?.type === 'delivery_receipt' || delivery?.results.some(r => r.id === receipt?.outcome?.result_id));
+    if (el.dataset.recordKind !== 'run' && !isResultReceipt &&
+        !(row.kind === 'stage' && ['A', 'I', 'C6'].includes(row.stage_code))) return false;
+    inspectorContent.append(element('h4', '本轮业务结论'));
+    if (!delivery?.results.length) {
+        empty('当前快照未保存同一主体、同一 Run 的业务结果；不能据原答或其他轮次补成结论。');
+        return true;
+    }
+    const labels = {rationale:'原判定理由', summary:'诊断摘要', conclusion:'原结论'};
+    const run = savedRecord(recordElements.find(r => r.dataset.recordKind === 'run' && r.dataset.runId === el.dataset.runId));
+    for (const result of delivery.results) {
+        inspectorContent.append(element('p', result.table + ' · ' + result.id, 'quiet'));
+        if (!result.has_conclusion) empty('已保存结果记录，未保存业务判定或结论正文；保留实际记录状态。');
+        for (const [key, label] of Object.entries(labels)) block(label, result.fields[key]);
+        const outcome = result.saved_adoption?.outcome;
+        const adopted = outcome?.adopted === true ? 'adopted' : outcome?.adopted === false ? 'not_adopted' : outcome?.adoption?.state;
+        const adoptionNames = {adopted:'已采用', not_adopted:'未采用', unverified:'无法确认'};
+        const facts = element('dl');
+        for (const [label, value] of [
+            ['业务判定', result.fields.verdict ?? result.fields.conclusion_state ?? (result.has_conclusion ? '见原结论' : '未保存')],
+            ['执行状态', run?.state], ['交付状态', result.fields.delivery_state ?? run?.delivery_state],
+            ['结果记录状态', result.fields.state],
+            ['结构与保存校验', result.fields.validation_state ?? '未保存独立字段'],
+            ['引用质量', '见独立引用检查；不由执行或采用状态推断'],
+            ['待核事项', result.fields.delivery_assessment?.review_items?.state ?? '见保存原文'],
+            ['保存时采用', adoptionNames[adopted] ?? adopted ?? '无法确认'],
+            ['当前采用', adoptionNames[result.current_adoption.state] ?? result.current_adoption.state],
+            ['置信度', result.fields.confidence], ['结论来源', result.fields.conclusion_origin]]) {
+            if (value != null) facts.append(element('dt', label), element('dd', String(value)));
+        }
+        inspectorContent.append(element('h4', '分项状态'), facts);
+        block('保存时采用回执', result.saved_adoption?.outcome ?? '未保存采用回执，无法确认');
+        block('快照中的当前采用', result.current_adoption);
+        sourceLink(artifactElements.get(result.saved_adoption?.artifact_id));
+        block('材料缺口与待核事项（保存原文）', Object.keys(result.review).length ? result.review : '未保存独立待核事项字段，不能据此判断无缺口');
+        block('交付与待核记录', result.fields.delivery_assessment);
+    }
+    inspectorContent.append(element('p', '业务判定、交付完整性、引用质量与采用分别记录；本页不据保存或采用状态判定模型质量通过。', 'quiet'));
+    return true;
+}
+function showCitations(responses) {
+    inspectorContent.append(element('h4', '引用质量（独立记录）'));
+    let found = false;
+    for (const response of responses) {
+        const review = responsePayload(response)?.citation_review;
+        if (!review) continue;
+        block('引用检查 · ' + response.id, review); sourceLink(artifactElements.get(response.id)); found = true;
+    }
+    if (!found) empty('未保存独立引用检查记录，无法据此判断引用通过；历史校验错误仍保留。');
+}
+function attemptName(artifact, artifacts) {
+    const step = savedRecord(stepElements.get(artifact.step_id));
+    if (step?.stage_code !== 'C3') return '模型';
+    const request = artifacts.find(a => a.kind === 'model_request' && a.step_id === artifact.step_id);
+    const body = bodyOf(request);
+    return body?.payload?.section_completion || body?.section_completion ? 'C3 补答' : 'C3 初答';
 }
 function showInspectorView(view) {
     if (!selection) return;
@@ -299,6 +382,7 @@ function showInspectorView(view) {
     const {el, row, artifacts, errors} = selection;
     const requests = artifacts.filter(a => a.kind === 'model_request');
     const responses = artifacts.filter(a => a.kind === 'model_response');
+    const deliveryShown = ['overview', 'output'].includes(view) && showDelivery(el, row);
     if (showKnowledge(view, row, artifacts)) return;
     if (['overview', 'input', 'output'].includes(view)) showKnowledgeUsage(row, requests, responses);
     if (view === 'overview') {
@@ -314,6 +398,10 @@ function showInspectorView(view) {
             facts.append(element('dt', label), element('dd', value));
         }
         inspectorContent.append(facts);
+        if (el.dataset.recordKind === 'run') block('结束记录', row.stop_reason);
+        const citationRecords = el.dataset.recordKind === 'run' || deliveryShown ? [...artifactElements.values()]
+            .filter(a => a.dataset.runId === el.dataset.runId).map(savedRecord) : artifacts;
+        if (deliveryShown || responses.length) showCitations(citationRecords);
         for (const [label, value] of errors) {
             const box = element('div', undefined, 'inspector-error'); block(label, value, box);
             const explanation = reasonDescription(value);
@@ -339,7 +427,7 @@ function showInspectorView(view) {
         let count = 0;
         for (const request of requests) {
             const body = requestBody(request);
-            inspectorContent.append(element('h4', '模型请求 · ' + request.id));
+            inspectorContent.append(element('h4', attemptName(request, artifacts) + '请求 · ' + request.id));
             if (block('系统指令', body.instructions)) count++;
             for (const [i, message] of (Array.isArray(body.messages) ? body.messages : []).entries()) {
                 if (['system', 'developer'].includes(message.role)) {
@@ -354,7 +442,7 @@ function showInspectorView(view) {
         if (block('实际调用参数', row.actual_args)) count++;
         for (const request of requests) {
             const body = requestBody(request);
-            inspectorContent.append(element('h4', '模型输入 · ' + request.id));
+            inspectorContent.append(element('h4', attemptName(request, artifacts) + '输入 · ' + request.id));
             for (const [i, message] of (Array.isArray(body.messages) ? body.messages : []).entries()) {
                 if (!['system', 'developer'].includes(message.role)) {
                     block((message.role || '未标角色') + ' · 消息 ' + (i + 1), message.content ?? message);
@@ -368,7 +456,15 @@ function showInspectorView(view) {
             sourceLink(artifactElements.get(request.id));
         }
         const input = linkedArtifact(row.input_artifact_id);
-        if (input && input.kind !== 'model_request') { block('保存的输入', bodyOf(input)); count++; }
+        if (input && input.run_id === el.dataset.runId && input.kind !== 'model_request') { block('保存的输入', bodyOf(input)); count++; }
+        if (!input && el.dataset.recordKind === 'step') {
+            const runEl = recordElements.find(r => r.dataset.recordKind === 'run' && r.dataset.runId === el.dataset.runId);
+            const frozen = linkedArtifact(savedRecord(runEl)?.input_artifact_id);
+            if (frozen && frozen.run_id === el.dataset.runId) {
+                block('本轮冻结上下文（不代表全部送入本次模型）', bodyOf(frozen));
+                sourceLink(artifactElements.get(frozen.id)); count++;
+            }
+        }
         if (el.dataset.recordKind === 'artifact' && row.kind === 'input_snapshot') {
             block('本轮冻结输入', bodyOf(row)); count++;
         }
@@ -376,15 +472,22 @@ function showInspectorView(view) {
         if (!count) empty('此节点未绑定独立输入工件。输入是否完整需结合关联步骤和本轮冻结材料核对。');
     } else if (view === 'output') {
         let count = 0;
+        const originals = artifacts.filter(a => bodyOf(a)?.type === 'model_original_response');
+        for (const original of originals) {
+            block(attemptName(original, artifacts) + '原始答复 · ' + original.id, bodyOf(original));
+            sourceLink(artifactElements.get(original.id)); count++;
+        }
         for (const response of responses) {
             const payload = responsePayload(response);
             const raw = Object.hasOwn(payload, 'raw') ? payload.raw : payload;
-            inspectorContent.append(element('h4', '模型原答 · ' + response.id));
+            const original = originals.find(a => a.step_id === response.step_id);
+            inspectorContent.append(element('h4', attemptName(response, artifacts) +
+                (original ? '程序接收结果 · ' : '保存答复（未关联独立原答） · ') + response.id));
             if (raw == null) empty('未保存模型原答，请查看错误回执。');
             else {
                 const choices = Array.isArray(raw.choices) ? raw.choices : [];
                 if (choices.length) for (const [i, choice] of choices.entries()) {
-                    block('原始正文 · 回答 ' + (i + 1), choice.message?.content ?? choice.text);
+                    block('保存正文 · 回答 ' + (i + 1), choice.message?.content ?? choice.text);
                     block('结束原因', choice.finish_reason);
                     block('拒绝信息', choice.message?.refusal);
                 }
@@ -395,13 +498,20 @@ function showInspectorView(view) {
         }
         const output = linkedArtifact(row.output_artifact_id);
         const outputs = new Map();
-        if (output && output.kind !== 'model_response') outputs.set(output.id, output);
+        if (output && output.run_id === el.dataset.runId && output.kind !== 'model_response') outputs.set(output.id, output);
         if (el.dataset.recordKind === 'artifact' && !['input_snapshot', 'tool_request', 'model_request', 'model_response'].includes(row.kind)) outputs.set(row.id, row);
         for (const artifact of artifacts.filter(a => a.kind === 'tool_response')) outputs.set(artifact.id, artifact);
+        for (const artifact of artifacts.filter(a => bodyOf(a)?.type === 'c3_section_completion')) outputs.set(artifact.id, artifact);
         for (const artifact of outputs.values()) {
-            block('保存的输出 · ' + artifact.kind, bodyOf(artifact)); sourceLink(artifactElements.get(artifact.id)); count++;
+            const body = bodyOf(artifact);
+            if (body?.type === 'c3_section_completion' && body.state === 'merged') {
+                block('程序合并结果（非模型原答）', body.merged_sections);
+                block('合并字段的原答来源', body.field_origins);
+            } else block(body?.type === 'c3_section_completion' ? '补答计划与保留部分（' + body.state + '）' :
+                '保存的输出 · ' + artifact.kind, body);
+            sourceLink(artifactElements.get(artifact.id)); count++;
         }
-        if (!count) empty('此节点未保存独立输出。失败、跳过或未执行都不能当作返回空结果。');
+        if (!count && !deliveryShown) empty('此节点未保存独立输出。失败、跳过或未执行都不能当作返回空结果。');
     } else if (view === 'raw') {
         block('完整记录', row); sourceLink(el);
         for (const artifact of artifacts) {

@@ -1,0 +1,294 @@
+--- before/services/api/app/socai2/case-input-v1.json
++++ after/services/api/app/socai2/case-input-v1.json
+@@ -221,6 +221,10 @@
+     {
+       "old": "输入JSON和其中的文本",
+       "new": "输入材料和其中的文本"
++    },
++    {
++      "old": "覆盖全员及六问；",
++      "new": "覆盖全员及五个业务问题；"
+     }
+   ],
+   "hierarchy": {
+@@ -1150,11 +1154,12 @@
+   "business_profile": "incident-input-v1.json",
+   "c3_output": {
+     "max_followups": 2,
+-    "instruction": "仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多3个核心findings、{max_followups}个必要followups，成员/六问题/四领域完整。补查优先选择最影响当前判断的需求，无新需求填[]；数量上限由程序校验，不生成额外补查。目标1800输出tokens，不复制原文或内部限制代码，不宣称全文已读。"
++    "instruction": "仅返回符合response_format的完整JSON，不加围栏。每段一句短句，合并重复限制，引用发现避免重复叙述；最多3个核心findings、{max_followups}个必要followups，成员/五个业务问题/四领域完整。补查优先选择最影响当前判断的需求，无新需求填[]；数量上限由程序校验，不生成额外补查。目标1800输出tokens，不复制原文或内部限制代码，不宣称全文已读。"
+   },
+   "program_output": {
+     "version": "socai2.case-program-output.v2",
+-    "instruction": "直接观察的字段原文由程序负责：state=observed的finding只选择实际支持本发现的必要observation编号，不输出statement，程序将按原记录的路径和值装配；其余状态仍需statement。不要为缩短长度换状态或删掉必要事实。C3保留六个问题；C6只输出Schema要求的五个业务问题，不输出coverage，程序根据实际成员/查询/分析状态、矛盾和后续需求补齐第六问。程序记录不代表业务结论通过，模型仍需逐项核对所有自行表达的主张与原字段。"
++    "instruction": "直接观察的字段原文由程序负责：state=observed的finding只选择实际支持本发现的必要observation编号，不输出statement，程序将按原记录的路径和值装配；其余状态仍需statement。不要为缩短长度换状态或删掉必要事实。C3/C6只输出Schema要求的五个业务问题，不输出coverage，程序根据实际成员/查询/分析状态、矛盾和后续需求补齐第六问。程序记录不代表业务结论通过，模型仍需逐项核对所有自行表达的主张与原字段。",
++    "c3_coverage": true
+   },
+   "context_projection": {
+     "$.case": {
+--- before/services/api/app/socai2/case_followup_input.py
++++ after/services/api/app/socai2/case_followup_input.py
+@@ -91,6 +91,9 @@
+         self.rows, self.by_ref, self.dependencies, self.omissions = [], {}, [], copy.deepcopy(base["omissions"])
+         self.prefix = source_prefix([context.model_dump(mode="json"), base, artifacts, extra])
+         self.boundary = copy.deepcopy(base["case_boundary"])
++        # C3 source IDs belong to its own view. C6 rebuilds coverage below;
++        # Deep has no program-owned coverage answer.
++        self.boundary.pop("coverage_facts", None)
+         self.base_ids = {}
+         self.query_numbers = {}
+         records = base["input_ledger"]["records"] if records is None else records
+--- before/services/api/app/socai2/case_input_text.py
++++ after/services/api/app/socai2/case_input_text.py
+@@ -365,9 +365,11 @@
+     presentation.append({"reason": "grouped_by_member_and_role", "groups": [g["ids"] for g in groups]})
+     scope = project(alias_scope(context["scope"]), "scope", config, omissions, "context.scope")
+     blocks = [config["task"], "调查范围：" + render(scope, config), "[本轮要回答的问题]"]
+-    blocks += [q["id"] + "：" + q["text"] + "；依据要求：" + "；".join(q["evidence_requirements"]) for q in context["questions"]]
++    questions = [q for q in context["questions"]
++                 if not config.get("program_output", {}).get("c3_coverage") or q["id"] != "coverage"]
++    blocks += [q["id"] + "：" + q["text"] + "；依据要求：" + "；".join(q["evidence_requirements"]) for q in questions]
+     blocks += ["[" + q["id"] + " 的回答边界] " + config["question_instructions"][q["id"]]
+-               for q in context["questions"] if q["id"] in config["question_instructions"]]
++               for q in questions if q["id"] in config["question_instructions"]]
+     if object_aliases:
+         objects = {key: [] for key in object_aliases}
+         namespaces = {}
+--- before/services/api/app/socai2/case_model_boundary.py
++++ after/services/api/app/socai2/case_model_boundary.py
+@@ -95,7 +95,7 @@
+     if rejected:
+         prepared["user"] += "\n部分背景原文被输入检查排除；不能视作完整材料。"
+     output = profile.config["c3_output"]
+-    from .case_program_output import observation_literals
++    from .case_program_output import initial_coverage, observation_literals
+     system = legacy.SYSTEM + "\n" + "\n".join(line for line in contract.PROMPT.splitlines()
+         if not line.startswith(("followups只提需求", "仅返回符合response_format"))) + "\n" + contract.EXECUTION_PROMPT + "\n" + profile.config["system_suffix"]
+     for replacement in profile.config["system_replacements"]:
+@@ -117,6 +117,8 @@
+         "coverage": prepared["coverage"], "omissions": prepared["omissions"],
+         "source_state_ledger": states, "case_boundary": {"profile": profile.identity, "max_followups": output["max_followups"],
+             "program_output": profile.config["program_output"]["version"],
++            **({"coverage_facts": initial_coverage(prepared, len(context.alerts))}
++               if profile.config["program_output"].get("c3_coverage") else {}),
+             "observation_literals": observation_literals(prepared["records"], prepared["member_aliases"],
+                                                         event_roots=profile.business["render"]["event_roots"]),
+             "member_aliases": prepared["member_aliases"], "object_aliases": prepared["object_aliases"]},
+--- before/services/api/app/socai2/case_output_adapter.py
++++ after/services/api/app/socai2/case_output_adapter.py
+@@ -1,4 +1,4 @@
+-"""Restore C3 aliases only; the established parser and partial review judge units."""
++"""Assemble C3 program fields and aliases before the established unit review."""
+ import copy
+ import json
+ 
+@@ -26,7 +26,7 @@
+ def output_format(prepared, context, bindings):
+     boundary = prepared["case_boundary"]
+     result = response_format(contract.ExecutionAnalysis, prepared["source_map"],
+-        members=boundary["member_aliases"].values(), questions=[q.id for q in context.questions],
++        members=boundary["member_aliases"].values(), questions=model_questions(context, boundary),
+         objects=boundary["object_aliases"].values(), bindings=bindings or ())
+     aliased = {key: {**value, "alert_ids": [boundary["member_aliases"][aid] for aid in value["alert_ids"]],
+         "objects": [{**obj, "object_key": boundary["object_aliases"][obj["object_key"]]} for obj in value["objects"]]}
+@@ -34,7 +34,18 @@
+     result = constrain_findings(execution_format(result, aliased), prepared["source_map"], context.alerts,
+                                 program_owned=program.enabled(boundary))
+     result["json_schema"]["schema"]["properties"]["followups"]["maxItems"] = followup_limit(boundary)
++    if program.owns_coverage(boundary):
++        schema = result["json_schema"]["schema"]
++        questions = schema["properties"]["questions"]
++        while "$ref" in questions:
++            questions = copy.deepcopy(schema["$defs"][questions["$ref"].removeprefix("#/$defs/")])
++        schema["properties"]["questions"] = {**questions, "minItems": len(context.questions) - 1,
++                                             "maxItems": len(context.questions) - 1}
+     return result
++
++
++def model_questions(context, boundary):
++    return [q.id for q in context.questions if not program.owns_coverage(boundary) or q.id != "coverage"]
+ 
+ 
+ def followup_limit(boundary):
+@@ -51,7 +62,10 @@
+     if isinstance(value.get("followups"), list) and len(value["followups"]) > limit:
+         raise contract.AnalysisRejected("case_followup_limit_exceeded")
+     try:
++        if program.owns_coverage(boundary) and any(row["question_id"] == "coverage" for row in value["followups"]):
++            raise contract.AnalysisRejected("coverage_followup_is_program_owned")
+         program.restore_observed(value, boundary)
++        program.restore_coverage(value, boundary)
+     except (KeyError, TypeError):
+         raise contract.AnalysisRejected("case_output_shape_or_alias_invalid") from None
+     return restore(json.dumps(value, ensure_ascii=False), boundary)
+@@ -97,8 +111,14 @@
+             for key in ("alert_ids", "query_alert_ids", "record_alert_ids"):
+                 if key in item:
+                     item[key] = [self.boundary["member_aliases"].get(aid, "案件外成员") for aid in item[key]]
+-        return feedback(content, "C3", sources, self.boundary["member_aliases"].values(), [q.id for q in self.context.questions],
++        return feedback(content, "C3", sources, self.boundary["member_aliases"].values(), model_questions(self.context, self.boundary),
+                         extra_errors=program.program_errors(decode(content), self.boundary))
+ 
+     def partial(self, content):
+-        return super().partial(restore_current(content, self.boundary))
++        result = super().partial(restore_current(content, self.boundary))
++        if program.owns_coverage(self.boundary):
++            retained = self.details["retained_analysis"]
++            retained["questions"] = [row for row in retained["questions"] if row["id"] != "coverage"]
++            retained["questions"].append(program.coverage_question(retained, self.boundary))
++            result = contract.parse(json.dumps(retained), self.sources, self.context, self.coverage, bindings=self.bindings)
++        return result
+--- before/services/api/app/socai2/case_program_output.py
++++ after/services/api/app/socai2/case_program_output.py
+@@ -100,6 +100,22 @@
+                 raise AnalysisRejected("observed_program_text_mismatch")
+ 
+ 
++def owns_coverage(boundary):
++    return enabled(boundary) and "coverage_facts" in boundary
++
++
++def initial_coverage(prepared, total_members):
++    # Only this Case's C2 receipts; prior A queries are historical context.
++    queries = [{**{k: row["value"][k] for k in
++        ("tool_name", "state", "outcome", "returned_rows", "truncated") if k in row["value"]},
++        "source_ids": [row["id"]]} for row in prepared["records"]
++        if row["block"] == "background_query" and row["ref"]["role"] == "execution_receipt"
++        and isinstance(row["value"], dict)]
++    return {"visible_members": sum(row["included"] > 0 for row in prepared["coverage"].values()),
++        "total_members": total_members, "omission_count": len(prepared["omissions"]),
++        "queries": queries, "material_reads": {}, "material_source_ids": [], "execution_states": {}}
++
++
+ def coverage_question(root, boundary):
+     data = boundary["coverage_facts"]
+     member_states = Counter(row["state"] for row in root["members"])
+@@ -132,7 +148,7 @@
+ 
+ 
+ def restore_coverage(root, boundary):
+-    if not enabled(boundary) or "coverage_facts" not in boundary:
++    if not owns_coverage(boundary):
+         return
+     if any(row["id"] == "coverage" for row in root["questions"]):
+         raise AnalysisRejected("coverage_question_is_program_owned")
+--- before/services/api/app/socai2/runtime_policy.py
++++ after/services/api/app/socai2/runtime_policy.py
+@@ -102,7 +102,9 @@
+         # 12 is the existing storage contract's capacity, not a runtime default.
+         raise ValueError("case_c3_output_policy_invalid")
+     program = data.get("program_output")
+-    if (not isinstance(program, dict) or set(program) != {"version", "instruction"}
++    if (not isinstance(program, dict) or not {"version", "instruction"} <= set(program)
++            or set(program) - {"version", "instruction", "c3_coverage"}
++            or ("c3_coverage" in program and type(program["c3_coverage"]) is not bool)
+             or program["version"] not in {"socai2.case-program-output.v1", "socai2.case-program-output.v2"}
+             or not isinstance(program["instruction"], str) or not program["instruction"].strip()):
+         raise ValueError("case_program_output_policy_invalid")
+--- before/services/api/tests/test_socai2_case_model_boundary.py
++++ after/services/api/tests/test_socai2_case_model_boundary.py
+@@ -74,7 +74,7 @@
+         "questions": [{"id": q.id, "state": "unresolved", "answer": "Needs evidence.",
+                        "evidence_ids": [], "limitations": ["Synthetic only."]} for q in context.questions
+                       if not (prepared["case_boundary"].get("program_output")
+-                              and prepared["case_boundary"].get("stage") == "C6" and q.id == "coverage")],
++                              and "coverage_facts" in prepared["case_boundary"] and q.id == "coverage")],
+         "findings": [], "domains": [{"name": name, "applicability": "undetermined", "reason": "Needs evidence.",
+                                      "alert_ids": [], "finding_ids": [], "limitations": ["Synthetic only."]}
+                                     for name in contract.DOMAINS], "conflicts": [], "followups": []}
+--- before/services/api/tests/test_socai2_case_program_output.py
++++ after/services/api/tests/test_socai2_case_program_output.py
+@@ -109,39 +109,77 @@
+     assert json.loads(raw) == answer
+ 
+ 
+-def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample):
++@pytest.mark.parametrize("stage", ["C3", "C6"])
++def test_program_coverage_keeps_zero_unqueried_and_actual_retained_states(sample, stage):
+     context, base_input = base.prepared_sample(sample)
+     for i, (tool, state, count) in enumerate([("assets", "completed", 0), ("history", "skipped", None)]):
+-        base_input["input_ledger"]["records"].append({"id": f"receipt-{i}", "block": "background_query",
++        row = {"id": f"receipt-{i}", "block": "background_query",
+             "value": {"tool_name": tool, "state": state, "outcome": "empty" if count == 0 else "not_queried",
+                       "returned_rows": count, "truncated": False}, "alert_ids": list(context.alerts),
+             "ref": {"type": "artifact", "id": str(uuid4()), "role": "execution_receipt",
+-                    "source_path": None, "external": None, "row_keys": []}})
++                    "source_path": None, "external": None, "row_keys": []}}
++        row["original_value"] = copy.deepcopy(row["value"])
++        base_input["input_ledger"]["records"].append(row)
++        base_input["source_map"][row["id"]] = {"ref": row["ref"], "alert_ids": row["alert_ids"]}
+     comparison = {"state": "initial", "result_id": None}
+-    prepared = inputs.build("C6", context, base_input, {}, extra={"comparison": comparison,
+-        "followup_execution": {"routes": [{"state": "handoff", "question_id": "authorization"}]}})
+-    answer = followup.final_answer(prepared, context, comparison)
+-    assert len(answer["analysis"]["questions"]) == 5
+-    parsed = final.parse_final(json.dumps(answer), prepared, context, comparison)
+-    assert len(parsed.analysis.questions) == 6
+-    coverage = next(q for q in parsed.analysis.questions if q.id == "coverage")
++    if stage == "C3":
++        prepared = base_input
++        prepared["case_boundary"]["coverage_facts"] = program.initial_coverage(prepared["input_ledger"], len(context.alerts))
++        assert len(prepared["case_boundary"]["coverage_facts"]["queries"]) == 2  # Excludes nine prior A receipts.
++        assert "coverage：" not in prepared["messages"][1]["content"]
++        assert "coverage_facts" not in inputs.build("Deep", context, base_input, {}, question_id="authorization")["case_boundary"]
++        answer = base.answer_for(prepared, context)
++        receive = lambda value: initial.parse(json.dumps(value), prepared, context, {})
++        review = initial.CaseReview(prepared, context, {})
++        fmt = initial.output_format(prepared, context, {})
++    else:
++        prepared = inputs.build("C6", context, base_input, {}, extra={"comparison": comparison,
++            "followup_execution": {"routes": [{"state": "handoff", "question_id": "authorization"}]}})
++        answer = followup.final_answer(prepared, context, comparison)
++        receive = lambda value: final.parse_final(json.dumps(value), prepared, context, comparison).analysis
++        review = final.FinalReview(prepared, context, comparison)
++        fmt = final.final_format(prepared, context, comparison)
++    root = answer if stage == "C3" else answer["analysis"]
++    assert len(root["questions"]) == 5
++    Draft202012Validator(fmt["json_schema"]["schema"]).validate(answer)
++    parsed = receive(answer)
++    assert len(parsed.questions) == 6
++    coverage = next(q for q in parsed.questions if q.id == "coverage")
+     assert 'state="completed"' in coverage.answer and "returned_rows=0" in coverage.answer
+     assert 'state="skipped"' in coverage.answer and "returned_rows=null" in coverage.answer
+-    assert "handoff" in coverage.answer and len(coverage.evidence_ids) == 2
++    assert ("handoff" in coverage.answer) == (stage == "C6")
++    assert "unrecorded=3" in coverage.answer and len(coverage.evidence_ids) == 2
+     invalid = copy.deepcopy(answer)
+-    invalid["analysis"]["questions"].append(coverage.model_dump(mode="json"))
++    (invalid if stage == "C3" else invalid["analysis"])["questions"].append(coverage.model_dump(mode="json"))
++    with pytest.raises(SchemaError):
++        Draft202012Validator(fmt["json_schema"]["schema"]).validate(invalid)
+     with pytest.raises(AnalysisRejected, match="coverage_question_is_program_owned"):
+-        final.parse_final(json.dumps(invalid), prepared, context, comparison)
+-    answer["analysis"]["members"][0]["evidence_ids"] = ["not-present"]
+-    review = final.FinalReview(prepared, context, comparison)
+-    assert review.partial(json.dumps(answer)) is None
++        receive(invalid)
++    if stage == "C3":
++        invalid = copy.deepcopy(answer)
++        invalid["followups"] = [{"question_id": "coverage", "alert_ids": [root["members"][0]["alert_id"]],
++            "mode": "human", "objective": "Check reads", "required_evidence": "Receipt", "source_ids": [],
++            "object_keys": [], "binding_id": None, "priority": "supporting"}]
++        with pytest.raises(SchemaError):
++            Draft202012Validator(fmt["json_schema"]["schema"]).validate(invalid)
++        with pytest.raises(AnalysisRejected, match="coverage_followup_is_program_owned"):
++            receive(invalid)
++    root["members"][0]["evidence_ids"] = ["not-present"]
++    partial = review.partial(json.dumps(answer))
+     retained = review.details["retained_analysis"]
++    assert partial.model_dump(mode="json") == retained if stage == "C3" else partial is None
+     assert "not_analyzed=1" in next(q["answer"] for q in retained["questions"] if q["id"] == "coverage")
+     assert review.details["conclusion_adoptable"] is False
+ 
+ 
+ def test_historical_boundary_keeps_authored_observation_and_six_questions(sample):
+     context, prepared = base.prepared_sample(sample)
++    prepared["case_boundary"].pop("coverage_facts")
++    # Original v2 C3 boundaries still accepted model-authored coverage.
++    answer = base.answer_for(prepared, context)
++    assert len(answer["questions"]) == 6
++    Draft202012Validator(initial.output_format(prepared, context, {})["json_schema"]["schema"]).validate(answer)
++    assert len(initial.parse(json.dumps(answer), prepared, context, {}).questions) == 6
+     prepared["case_boundary"].pop("program_output")
+     answer = base.answer_for(prepared, context)
+     member = answer["members"][0]

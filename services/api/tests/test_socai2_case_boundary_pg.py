@@ -22,7 +22,7 @@ from app.socai2.baseline_contracts import (
     Start,
 )
 from app.socai2.baseline_service import BaselineService
-from app.socai2.baseline_store import A, C, F
+from app.socai2.baseline_store import RES, A, C, F, R
 from app.socai2.stage_results import StageResultService
 from jsonschema import Draft202012Validator
 from socai2_test_model_view import synthetic_measure
@@ -86,11 +86,16 @@ class Gateway:
             context = await store.read_context(self.cid, self.rid)
         assert request["body"] == body and request["case_boundary"] == frozen["case_boundary"]
         answer = answer_for(frozen, context)
-        if self.mode in {"followup", "scope_recovery", "role_recovery", "role_partial"}:
+        if self.mode in {"followup", "human_followup", "scope_recovery", "role_recovery", "role_partial"}:
             answer["followups"] = [{"question_id": context.questions[0].id,
                 "alert_ids": [m["alert_id"] for m in answer["members"]], "mode": "deep", "objective": "Synthetic one-question check.",
                 "required_evidence": "Synthetic query evidence.", "source_ids": [m["evidence_ids"][0] for m in answer["members"]],
                 "object_keys": [], "binding_id": None, "priority": "decision_critical"}]
+        if self.mode == "human_followup":
+            human_id = next(row["id"] for row in frozen["input_ledger"]["records"]
+                            if row.get("context_kind") == "human_feedback")
+            answer["questions"][0]["evidence_ids"].append(human_id)
+            answer["followups"][0]["source_ids"].append(human_id)
         if self.mode == "scope_recovery" and self.calls == 1:
             answer["members"][0]["evidence_ids"] += answer["members"][1]["evidence_ids"]
         if self.mode == "scope_recovery" and self.calls == 2:
@@ -124,11 +129,11 @@ class Gateway:
         return reply
 
 
-async def run_checks(engine, record, only=None):
+async def run_checks(engine, record, only=None, *, scenario=None):
     sessions = async_sessionmaker(engine, expire_on_commit=False)
     service, stages = BaselineService(sessions), StageResultService(sessions)
 
-    async def start(cid, rid, now, full=True):
+    async def start(cid, rid, now, full=True, comparison_result_id=None):
         limits = runtime_policy.active_policy().case.limits(now, "synthetic.case-boundary.v1")
         async def idle(claim):
             from app.socai2.baseline_capacity import final_reservation
@@ -142,6 +147,7 @@ async def run_checks(engine, record, only=None):
                     "limitations": ["Synthetic Case integration; model and tool substitutes."],
                     "final_reservation": final_reservation(None, context, limits)}, [])
         await service.start(T, cid, rid, Start(expected_scope_revision=1, operation_key=uuid4(),
+            comparison_result_id=comparison_result_id,
             window_start=now - timedelta(minutes=5) if full else None,
             window_end=now + timedelta(minutes=5) if full else None), actor=ACTOR,
             executor=idle, executor_version=FULL_EXECUTOR_VERSION, limits=limits)
@@ -151,6 +157,7 @@ async def run_checks(engine, record, only=None):
 
     async def fixture(full=False):
         cid, iid, aids, aruns = uuid4(), uuid4(), [uuid4(), uuid4()], []
+        record("fixture_planned", True, {"case_id": cid, "incident_id": iid, "alert_ids": aids})
         async with service.transaction(T) as store:
             now = await store.now()
             await store.db.execute(insert(C).values(id=cid, tenant_id=T, title="Synthetic C1/C3 test", created_by=USER))
@@ -321,18 +328,65 @@ async def run_checks(engine, record, only=None):
     async def test_case_boundary_role_repeated_error_partial_flow():
         return await followup_scenario("role_partial")
 
+    async def test_case_boundary_unavailable_comparison_storage():
+        from app.socai2.case_contracts import PrepareBaseline
+        from app.socai2.case_service import CaseService
+        from test_socai2_case_followup_pg import scenario
+        first = await followup_scenario("partial")
+        cid = first["case_id"]
+        async with service.transaction(T, readonly=True) as store:
+            old = dict(await store.one(select(RES).where(*store.where(RES, RES.c.id == first["result_id"]))))
+            assert old["validation_state"] == "rejected"
+            now = await store.now()
+        pending = await CaseService(sessions).prepare_baseline(T, cid,
+            PrepareBaseline(operation_key=uuid4(), expected_scope_revision=1), actor=ACTOR)
+        second = {**first, "run_id": pending.pending_run_id}
+        record("fixture_registered", True, second)
+        await start(cid, second["run_id"], now, comparison_result_id=old["id"])
+        initial = await service.analyze(T, cid, second["run_id"], gateway=Gateway(service, cid, second["run_id"], "followup"),
+                                        lake=SimpleNamespace(configured=lambda: True))
+        outcome = await scenario(service, second, initial, "valid")
+        async with service.transaction(T, readonly=True) as store:
+            requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == second["run_id"], F.c.kind == "model_request")))).scalars().all()
+            final = next(r["payload"] for r in requests if r["payload"].get("case_boundary", {}).get("stage") == "C6")
+            fixed = final["case_boundary"]["fixed_comparison"]
+            assert fixed["selection"] == {"state": "unavailable", "result_id": str(old["id"])}
+            assert "comparison" not in final["body"]["response_format"]["json_schema"]["schema"]["properties"]
+            result = outcome["readback"]["result"]
+            assert result["validation_state"] == "accepted"
+            assert result["change_kind"] == fixed["value"]["kind"] == "not_comparable"
+            assert result["change_summary"] == fixed["value"]["summary"]
+            assert dict(await store.one(select(RES).where(*store.where(RES, RES.c.id == old["id"])))) == old
+        return {**outcome, "old_result_id": old["id"], "fixed_comparison": fixed,
+                "old_rejected_result_unchanged": True}
+
     async def test_case_boundary_human_feedback_then_complete_next_flow():
         from app.socai2.case_contracts import PrepareBaseline
-        from app.socai2.human_task_contracts import TaskCreate
+        from app.socai2.human_task_contracts import TaskCreate, TaskEdit
         from app.socai2.human_task_service import HumanTaskService
-        from test_socai2_case_followup_pg import scenario
+        from test_socai2_case_followup_pg import human_readback, scenario
         first = await followup_scenario("valid")
         cid, old_run = first["case_id"], first["run_id"]
         human = HumanTaskService(sessions)
         context = await service.read_context(T, cid, old_run)
+        async with service.transaction(T, readonly=True) as store:
+            old_result = dict(await store.one(select(RES).where(*store.where(RES, RES.c.source_run_id == old_run))))
+            old_runs = [dict(row) for row in (await store.db.execute(select(R).where(
+                *store.where(R, R.c.case_id == cid)))).mappings()]
+        prior_note = "Synthetic preliminary feedback: execution outcome needs verification."
         note = "Synthetic material-completeness feedback only: process start does not prove command completion or authorization."
-        result = await human.write(T, cid, TaskCreate(operation_key=uuid4(), expected_scope_revision=1,
-            title="Synthetic material review", state="completed", result_text=note, result_scope=context.scope), actor=ACTOR)
+        first_task = (await human.write(T, cid, TaskCreate(operation_key=uuid4(), expected_scope_revision=1,
+            title="Synthetic material review", state="completed", result_text=prior_note,
+            result_scope=context.scope), actor=ACTOR)).task
+        material_id = UUID(next(iter(context.alerts.values())).material["id"])
+        result = await human.write(T, cid, TaskEdit(operation_key=uuid4(), expected_scope_revision=1,
+            expected_row_version=first_task.row_version, title=first_task.current.title,
+            state="completed", result_text=note, result_scope=context.scope,
+            source_refs=[{"type": "alert_material", "id": material_id}]), actor=ACTOR, task_id=first_task.id)
+        async with service.transaction(T, readonly=True) as store:
+            assert [dict(row) for row in (await store.db.execute(select(R).where(
+                *store.where(R, R.c.case_id == cid)))).mappings()] == old_runs
         pending = await human.prepare_baseline(T, cid, PrepareBaseline(operation_key=uuid4(), expected_scope_revision=1), actor=ACTOR)
         async with service.transaction(T, readonly=True) as store:
             assert (await store.input_freshness(old_run))["state"] == "stale"
@@ -340,20 +394,53 @@ async def run_checks(engine, record, only=None):
         second = {k: first[k] for k in ("case_id", "incident_id", "alert_ids", "stage_run_ids")}
         second["run_id"] = pending.pending_run_id
         record("fixture_registered", True, second)
-        await start(cid, second["run_id"], now)
-        gateway = Gateway(service, cid, second["run_id"], "followup")
+        await start(cid, second["run_id"], now, comparison_result_id=old_result["id"])
+        frozen = await service.read_context(T, cid, second["run_id"])
+        revision = frozen.tasks[str(first_task.id)].revision
+        assert revision["id"] == str(result.task.current_revision_id) and revision["revision"] == 2
+        assert revision["result_text"] == note and revision["result_scope"] == context.scope.model_dump(mode="json")
+        assert revision["source_refs"] == [ref.model_dump(mode="json") for ref in result.task.current.source_refs]
+        gateway = Gateway(service, cid, second["run_id"], "human_followup")
         initial = await service.analyze(T, cid, second["run_id"], gateway=gateway, lake=SimpleNamespace(configured=lambda: True))
-        outcome = await scenario(service, second, initial, "valid")
+        outcome = await scenario(service, second, initial, "human_followup")
+        record("fixed_human_flow_saved", True, outcome)
         async with service.transaction(T, readonly=True) as store:
             requests = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
                 F.c.run_id == second["run_id"], F.c.kind == "model_request")))).scalars().all()
             assert len(requests) == 4
-            assert all(note in json.dumps(r["payload"]["body"], ensure_ascii=False) for r in requests)
+            base = (await store.db.execute(select(F.c.content_json).where(*store.where(F,
+                F.c.run_id == second["run_id"], F.c.schema_version == case_model_boundary.SCHEMA)))).scalar_one()
+            human_refs = []
+            for request in requests:
+                payload = request["payload"]
+                body = payload["body"]["messages"][1]["content"]
+                assert body.count(note) == 1 and prior_note not in body
+                ledger = payload.get("followup_boundary", base["input_ledger"])
+                row = next(r for r in ledger["records"] if r.get("context_kind") == "human_feedback")
+                assert row["value"]["revision"] == 2 and row["value"]["source_refs"]
+                for sid in row["value"]["source_refs"]:
+                    ref = payload["source_map"][sid]["ref"]
+                    assert ref["type"] == "alert_material" and ref["id"] == str(material_id)
+                    assert ref["role"] == "observation"
+                src = payload["source_map"][row["id"]]
+                assert src["original_scope"] == revision["result_scope"]
+                assert src["ref"]["role"] == "human_statement"
+                human_refs.append(src["ref"])
+            assert all(ref == human_refs[0] for ref in human_refs)
             assert (await store.input_freshness(second["run_id"]))["state"] == "current"
-        assert (await human.read_revision(T, cid, result.task.id, result.task.current_revision_id)).result_text == note
+            assert dict(await store.one(select(RES).where(*store.where(RES, RES.c.id == old_result["id"])))) == old_result
+        readback = await human_readback(service, cid, second["run_id"], old_result["id"],
+            context.scope.model_dump(mode="json"), human_refs[0], (first_task.current, result.task.current))
         return {**outcome, "first_run_id": old_run, "human_revision_id": result.task.current_revision_id,
-                "feedback_in_all_model_requests": True, "first_stale_second_current": True}
+                "previous_human_revision_id": first_task.current_revision_id,
+                "comparison_result_id": old_result["id"], "material_id": material_id,
+                "feedback_in_all_model_requests": True, "first_stale_second_current": True,
+                "human_references_restored": True, "old_result_and_revision_unchanged": True,
+                "human_save_did_not_start_run": True, "human_revision_gets": True,
+                "human_readbacks": readback}
 
+    if scenario is not None:
+        return await scenario(service, await fixture(full=True))
     for name, check in list(locals().items()):
         if name.startswith("test_case_boundary_") and (not only or name in only):
             try:

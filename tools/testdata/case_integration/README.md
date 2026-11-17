@@ -18,7 +18,7 @@
 - 单个错误引用不丢弃其他独立有效成员结果。
 - 事务内追加一份合成回执，V1 基础检查仍 current 时，扩展检查识别 stale 并阻止采用；注入与测试发布一起回滚。
 
-只验证 C1/C2/C3 和 C4 材料准备，不执行 Deep/C6 模型。成功检查的 Case Run 以 `failed / synthetic_c3_only_test_ended` 明确收口，不能当作完整调查成功。早期失败保留实际 running/unknown 和工件，没有改写成成功；独立方法的最新结果组合说明见[接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)。
+只验证 C1/C2/C3 和 C4 材料准备，不执行 Deep/C6 模型。成功检查的 Case Run 以 `failed / synthetic_c3_only_test_ended` 明确收口，不能当作完整调查成功。早期失败保留实际 running/unknown 和工件，没有改写成成功；独立方法的最新结果组合说明见[接入报告](../../../docs/handoff/history/2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md)。
 
 已完成批次：[case-boundary-integration-20261108-01](../../../docs/operations/evidence/case-boundary-integration-20261108-01/summary.json)。原两次真实模型比较仍在[原批次](../../../docs/operations/evidence/case-model-comparison-20261108-01/summary.json)，已经结束，不再等待授权或重派。
 

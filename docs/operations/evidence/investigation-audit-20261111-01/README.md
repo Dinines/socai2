@@ -1,6 +1,6 @@
 # 调查流程审查证据
 
-2026-11-11，本地独立审查；[报告](../../../investigation/investigation-flow-review-20261111.md)。未修改业务实现，未连接数据库/模型，未部署或 Git 提交/推送。上一轮文档归档与独立未提交模型工具保持。
+2026-11-11，本地独立审查；[报告](../../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/investigation/investigation-flow-review-20261111.md)。未修改业务实现，未连接数据库/模型，未部署或 Git 提交/推送。上一轮文档归档与独立未提交模型工具保持。
 
 | 文件 | 实际含义 |
 | --- | --- |

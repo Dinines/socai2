@@ -42,19 +42,19 @@ API 角色 `aisoc_app` 的限定只读授权已获用户明确同意并应用：
 
 相对历史参照，输入 tokens 减少 54.46%、总 tokens 减少 41.50%，模型步骤总时增加 27.08%。材料、查询和前序不同，**不是受控 A/B，也不能据此认定质量或速度改善**。旧失败和原答均保留，批次已结束，不重派。
 
-详细依据：[本轮分析](../../investigation/ai-production-rollout-20261108.md)、[调用汇总](../../operations/evidence/ai-production-validation-20261108-01/summary.json)、[读取核验](../../operations/evidence/ai-production-validation-20261108-01/api-final-verification.json)、[正文问题](../../operations/evidence/ai-production-validation-20261108-01/semantic-review.json)。此前 r1 Case 已有实际保存结果；本轮不新建 Case 不代表原 Case 功能不存在。
+详细依据：[本轮分析](2026-11-14-investigation-cleanup/documents/docs/investigation/ai-production-rollout-20261108.md)、[调用汇总](../../operations/evidence/ai-production-validation-20261108-01/summary.json)、[读取核验](../../operations/evidence/ai-production-validation-20261108-01/api-final-verification.json)、[正文问题](../../operations/evidence/ai-production-validation-20261108-01/semantic-review.json)。此前 r1 Case 已有实际保存结果；本轮不新建 Case 不代表原 Case 功能不存在。
 
 ## Case 当前梳理与下一步
 
-**C1/C3 的配置化本地接入已完成，尚未部署到 21。** C1 在同一 SQL 快照中冻结所选 A Run 的工具回执，登记各条 I 发现/问题原范围与角色；C3 通过结构模板生成文本，短成员/对象号在保存前还原。新鲜度统一覆盖扩展回执，未知版本或回执变化阻止采用。未配置 `case_io` 时继续旧模式；Deep/C6 已按下述新边界本地接入。[接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md) · [候选配置](../../../deploy/local-investigation/investigation-policy-case-v1.toml)。
+**C1/C3 的配置化本地接入已完成，尚未部署到 21。** C1 在同一 SQL 快照中冻结所选 A Run 的工具回执，登记各条 I 发现/问题原范围与角色；C3 通过结构模板生成文本，短成员/对象号在保存前还原。新鲜度统一覆盖扩展回执，未知版本或回执变化阻止采用。未配置 `case_io` 时继续旧模式；Deep/C6 已按下述新边界本地接入。[接入报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-boundary-integration-20261109.md) · [候选配置](../../../deploy/local-investigation/investigation-policy-case-v1.toml)。
 
 本批 58 项离线检查、4 个新增隔离 PG 方法和 2 个旧流程 PG 方法最新通过；前三个新方法在 `pg-07`，新鲜度方法在 `pg-10`，不是首轮全过。验证了实际保存/原服务读回、一次空引用纠正、局部错误保留、回执变化阻止采用及旧视图兼容。隔离库前后 29 表、462 列不变，12 次原 Case/Run/历史服务读取成功，原采集说明与业务值保持；不冒称新增 HTTP GET 实测。[统一回执](../../operations/evidence/case-boundary-integration-20261108-01/summary.json)。
 
 上述 C1/C3 批次无真实模型/正式库/DDL/部署，测试模型和工具为替身。成功方法仅完成 C3 模块，Run 按明确的合成 C3 测试结束原因收口为 failed，不计完整调查成功；早期失败和运行状态保持，详情见原接入报告。
 
-此前两次真实 C3 对照已经结束：2 HTTP 200、24,778 tokens、0 重试，两版严格校验与正文质量均未通过。[比较分析](../../../openspec/changes/complete-socai2-investigation-chain/case-model-comparison-20261108.md)记录输入 9,663→9,044 tokens（−6.41%），输出增多使总量 +5.23%、耗时 49.04→73.73 秒。原 120 条来源含 8 条 I 发现、2 个问题、9 份同 A 回执和 53 个观察；原材料快照与调用原答保持。后续重复收到的同批授权不触发重派。
+此前两次真实 C3 对照已经结束：2 HTTP 200、24,778 tokens、0 重试，两版严格校验与正文质量均未通过。[比较分析](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-model-comparison-20261108.md)记录输入 9,663→9,044 tokens（−6.41%），输出增多使总量 +5.23%、耗时 49.04→73.73 秒。原 120 条来源含 8 条 I 发现、2 个问题、9 份同 A 回执和 53 个观察；原材料快照与调用原答保持。后续重复收到的同批授权不触发重派。
 
-**Deep/C6 的新输入及输出适配已本地接入，尚未部署或新增真实模型验证。** 共享 C3 的冻结业务材料；Deep 交接本问题的判断和依据，C6 交接完整有效 C3、Deep 支持/反证、原计划与实际执行。旧父级引用关联已呈现明细；只合并同源同值的 identity 投影，保留原范围、角色和历史正文。Deep 去固定问题号，C6 去建议编号和首次固定比较，程序恢复原保存/读取合同；可选 C3.reanalysis 暂不改。[接入与比较报告](../../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
+**Deep/C6 的新输入及输出适配已本地接入，尚未部署或新增真实模型验证。** 共享 C3 的冻结业务材料；Deep 交接本问题的判断和依据，C6 交接完整有效 C3、Deep 支持/反证、原计划与实际执行。旧父级引用关联已呈现明细；只合并同源同值的 identity 投影，保留原范围、角色和历史正文。Deep 去固定问题号，C6 去建议编号和首次固定比较，程序恢复原保存/读取合同；可选 C3.reanalysis 暂不改。[接入与比较报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
 
 同一历史材料离线对比：Deep 完整请求 33,678→41,105 B（+22.05%），C6 53,286→61,561 B（+15.53%）；补齐必要资料后输入增加，不能称压缩成功。Deep 4/4、C6 84/84 处前序引用可见，观察重复消除；旧答机械结构转换分别 −1.39%/−15.23%，正文保持、可往返，不代表新模型输出或质量。完整新版输入/Schema/旧答均在报告中逐项链接；tokens、生成耗时和新正文质量未测。
 

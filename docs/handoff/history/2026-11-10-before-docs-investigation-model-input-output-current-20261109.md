@@ -256,4 +256,4 @@ C1 冻结材料、C2 按策略查询背景、C4 直接执行已选 binding、C5 
 | 前序结论与证据完整交接 | 历史材料中 Deep 4/4、C6 84/84 处依赖可见，当前联跑有实际保存；真实模型理解待验 |
 | 改动后质量与效率有数据 | A/I、C3 有真实历史结果且质量仍未通过；Deep/C6 本轮只有离线回放，未测新质量/耗时 |
 
-本轮改动的是模型边界和程序恢复；原数据库字段、存储及读取合同保持。完整字节对比、实际验证及失败过程见 [Deep/C6 接入报告](../../../openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。
+本轮改动的是模型边界和程序恢复；原数据库字段、存储及读取合同保持。完整字节对比、实际验证及失败过程见 [Deep/C6 接入报告](2026-11-14-investigation-cleanup/documents/openspec/changes/complete-socai2-investigation-chain/case-followup-integration-20261110.md)。

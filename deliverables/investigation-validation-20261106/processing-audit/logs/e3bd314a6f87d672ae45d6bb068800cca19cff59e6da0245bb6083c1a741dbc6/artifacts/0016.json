@@ -1,0 +1,93 @@
+{
+  "alert_id": null,
+  "blob_ref": null,
+  "captured_at": "2026-11-15T13:25:01.697697+00:00",
+  "case_id": "bad63e2a-9f03-547b-8a0c-243347807c41",
+  "content_json": {
+    "raw": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+            "content": "{\n  \"analysis\": {\n    \"summary\": \"本轮针对成员 A1 进行了深度复核。核心事实确认为：主机 host-app-s01-ingress-20261115-02 (O1) 于 2026-11-15T10:14:18Z 由 IP 192.0.2.11 (O2) 成功登录账号 svc-report-s01-ingress-20261115-02 (O3)。关键定性特征为原始记录明确标注 `synthetic=true` 及 `synthetic` 标签，且描述声明 `authorization and intent are unknown`。本轮补查获取了该会话后续关联的进程活动（sh, curl）及额外两条认证活动记录（含失败与成功），但所有资产库存查询均返回字段缺失（os=null, fqdn=null）且未确认成员归属。前序判断中关于“授权未知”和“影响未定”的结论得到材料支撑，但前序关于“无关联告警”的判断因本轮发现多条同会话/同账号的关联活动记录而需修正。行为性质目前仍为待核，虽标签指向测试，但缺乏人工确认排除误用或配置错误风险。\",\n    \"members\": [\n      {\n        \"alert_id\": \"A1\",\n        \"state\": \"unresolved\",\n        \"summary\": \"确认登录动作及合成标签，但授权意图、实际业务影响及测试合规性均未核实。\",\n        \"evidence_ids\": [\"N2_S2\", \"N2_S3\", \"N2_S4\", \"N2_S5\", \"N2_S6\", \"N2_S7\", \"N2_S19\", \"N2_S21\", \"N2_S25\", \"N2_S47\", \"N2_S49\", \"N2_S63\", \"N2_S64\", \"N2_S65\", \"N2_S66\", \"N2_S67\", \"N2_S68\", \"N2_S69\", \"N2_S70\", \"N2_S71\", \"N2_S72\", \"N2_S79\", \"N2_S80\", \"N2_S81\", \"N2_S82\", \"N2_S84\", \"N2_S89\", \"N2_S90\", \"N2_S91\", \"N2_S92\", \"N2_S93\", \"N2_S94\"],\n        \"limitations\": [\"原始记录明确声明授权意图未知。\", \"资产库存查询未确认成员归属且关键字段缺失。\", \"缺乏人工确认测试场景的合规性及实际业务产出。\", \"无法区分测试环境与生产环境的边界。\"]\n      }\n    ],\n    \"findings\": [\n      {\n        \"id\": \"F1\",\n        \"state\": \"observed\",\n        \"alert_ids\": [\"A1\"],\n        \"support_ids\": [\"N2_S2\", \"N2_S3\", \"N2_S4\", \"N2_S5\", \"N2_S6\", \"N2_S7\", \"N2_S19\", \"N2_S20\"],\n        \"counter_ids\": [],\n        \"alternatives\": [],\n        \"limitations\": [\"仅确认登录动作本身，未确认会话内具体业务操作。\", \"标签 synthetic 不直接证明行为性质，需结合上下文。\"]\n      },\n      {\n        \"id\": \"F2\",\n        \"state\": \"inferred\",\n        \"statement\": \"该登录行为极可能属于预设的合成测试场景，而非真实攻击或误操作，但存在测试环境配置不当或账号被复用的风险。\",\n        \"alert_ids\": [\"A1\"],\n        \"support_ids\": [\"N2_S10\", \"N2_S11\", \"N2_S12\", \"N2_S13\", \"N2_S14\", \"N2_S15\", \"N2_S21\", \"N2_S25\", \"N2_S47\", \"N2_S49\", \"N2_S139\", \"N2_S140\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"若测试环境配置错误导致连接生产数据，则可能产生真实风险。\", \"上游标签可能仅描述数据生成方式，不代表该次登录本身是模拟的。\"],\n        \"limitations\": [\"推断基于标签和描述，缺乏对登录会话实际内容的直接观察。\", \"未提供人工确认该测试场景是否已按预期完成。\"]\n      },\n      {\n        \"id\": \"F3\",\n        \"state\": \"unresolved\",\n        \"statement\": \"无法确定该登录会话是否导致了敏感数据访问、配置变更或网络外传。\",\n        \"alert_ids\": [\"A1\"],\n        \"support_ids\": [\"N2_S47\", \"N2_S52\", \"N2_S53\", \"N2_S57\", \"N2_S58\", \"N2_S141\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"若后续有进程活动或网络连接记录，可能证实数据访问。\", \"若该账号仅用于读取公开报告，则无敏感数据风险。\"],\n        \"limitations\": [\"当前材料仅包含登录记录，无会话内操作日志、进程执行记录或网络流量详情。\", \"资产库存查询返回字段缺失，无法进一步关联上下文。\"]\n      },\n      {\n        \"id\": \"F4\",\n        \"state\": \"unresolved\",\n        \"statement\": \"该登录行为是否获得业务授权尚不明确，需人工介入确认。\",\n        \"alert_ids\": [\"A1\"],\n        \"support_ids\": [\"N2_S47\", \"N2_S49\", \"N2_S140\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"若为自动化测试脚本触发，则属于授权行为。\", \"若为人工误操作或测试账号被盗用，则属于未授权行为。\"],\n        \"limitations\": [\"原始记录明确声明 authorization unknown。\", \"无审批记录、工单或人工反馈支持授权主张。\"]\n      },\n      {\n        \"id\": \"F5\",\n        \"state\": \"unresolved\",\n        \"statement\": \"该事件对业务的具体影响（如数据泄露、服务中断）目前未知。\",\n        \"alert_ids\": [\"A1\"],\n        \"support_ids\": [\"N2_S47\", \"N2_S141\"],\n        \"counter_ids\": [],\n        \"alternatives\": [\"若测试环境隔离良好，则无实际业务影响。\", \"若测试环境连接生产数据，则可能存在数据访问风险。\"],\n        \"limitations\": [\"未观察到登录后的任何业务结果或损失证据。\", \"无法区分测试环境与生产环境的边界。\"]\n      }\n    ],\n    \"questions\": [\n      {\n        \"id\": \"detection_facts\",\n        \"state\": \"answered\",\n        \"answer\": \"原始记录支持主机 host-app-s01-ingress-20261115-02 (O1) 在 2026-11-15T10:14:18Z 由 IP 192.0.2.11 (O2) 成功登录账号 svc-report-s01-ingress-20261115-02 (O3) 的事实。补查发现该会话关联了 sh 和 curl 进程活动，以及两条额外的认证活动记录（一条失败，一条成功）。\",\n        \"evidence_ids\": [\"N2_S2\", \"N2_S3\", \"N2_S4\", \"N2_S5\", \"N2_S6\", \"N2_S7\", \"N2_S19\", \"N2_S63\", \"N2_S64\", \"N2_S65\", \"N2_S66\", \"N2_S67\", \"N2_S68\", \"N2_S69\", \"N2_S70\", \"N2_S71\", \"N2_S72\", \"N2_S79\", \"N2_S80\", \"N2_S81\", \"N2_S82\", \"N2_S84\", \"N2_S89\", \"N2_S90\", \"N2_S91\", \"N2_S92\", \"N2_S93\", \"N2_S94\", \"N2_S95\", \"N2_S96\", \"N2_S97\", \"N2_S98\"]\n      ,\n        \"limitations\": [\"未观察到登录后的具体业务操作结果。\", \"标签 synthetic 不直接证明行为性质。\"]\n      },\n      {\n        \"id\": \"member_relationships\",\n        \"state\": \"answered\",\n        \"answer\": \"当前仅有一个告警成员 A1，但补查发现该成员内部存在多条关联活动：包括同一账号的两次登录尝试（一次失败，一次成功）以及同一会话下的进程启动活动（sh -> curl）。这些活动共享相同的用户、主机和时间窗口，构成单一事件链。\",\n        \"evidence_ids\": [\"N2_S63\", \"N2_S64\", \"N2_S65\", \"N2_S66\", \"N2_S67\", \"N2_S68\", \"N2_S69\", \"N2_S70\", \"N2_S71\", \"N2_S72\", \"N2_S79\", \"N2_S80\", \"N2_S81\", \"N2_S82\", \"N2_S84\", \"N2_S89\", \"N2_S90\", \"N2_S91\", \"N2_S92\", \"N2_S93\", \"N2_S94\", \"N2_S95\", \"N2_S96\", \"N2_S97\", \"N2_S98\", \"N2_S99\", \"N2_S100\", \"N2_S101\", \"N2_S102\", \"N2_S103\", \"N2_S104\", \"N2_S105\"]\n      ,\n        \"limitations\": [\"无法判断该登录是否触发了其他独立告警或属于更大规模事件的一部分。\", \"缺乏历史告警或关联事件数据支持跨成员关系分析。\"]\n      },\n      {\n        \"id\": \"behavior_nature\",\n        \"state\": \"unresolved\",\n        \"answer\": \"基于标签 `synthetic` 和描述，最可能的解释是正常测试行为。但存在未授权测试、测试环境配置错误（如连接生产环境）或测试账号被恶意复用的风险。\",\n        \"evidence_ids\": [\"N2_S10\", \"N2_S11\", \"N2_S12\", \"N2_S13\", \"N2_S14\", \"N2_S15\", \"N2_S21\", \"N2_S25\", \"N2_S47\", \"N2_S49\", \"N2_S139\", \"N2_S140\"]\n      ,\n        \"limitations\": [\"标签不直接证明行为良性，需人工确认测试场景的合规性。\", \"无直接证据排除恶意利用测试账号的可能性。\", \"补查发现的 curl 命令访问外部 IP 需结合测试目的判断是否越权。\"]\n      },\n      {\n        \"id\": \"authorization\",\n        \"state\": \"unresolved\",\n        \"answer\": \"无明确授权材料。原始记录明确声明 `authorization and intent are unknown`。\",\n        \"evidence_ids\": [\"N2_S47\", \"N2_S49\", \"N2_S140\"]\n      ,\n        \"limitations\": [\"未提供审批记录、工单或人工反馈。\", \"无法确认该测试行为是否经过业务方授权。\"]\n      },\n      {\n        \"id\": \"impact\",\n        \"state\": \"unresolved\",\n        \"answer\": \"未观察到任何实际影响。仅确认登录动作成功及后续进程启动，未确认会话内操作、数据访问或网络外传的具体结果。\",\n        \"evidence_ids\": [\"N2_S47\", \"N2_S141\"]\n      ,\n        \"limitations\": [\"无法区分测试环境与生产环境。\", \"未观察到登录后的任何业务结果或损失证据。\", \"资产库存查询未确认成员归属且字段缺失，无法评估资产重要性。\"]\n      }\n    ],\n    \"domains\": [\n      {\n        \"name\": \"identity\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及用户登录、会话管理及账号活动。\",\n        \"alert_ids\": [\"A1\"],\n        \"finding_ids\": [\"F1\", \"F2\", \"F4\"]\n      ,\n        \"limitations\": [\"账号名称包含 'svc-report' 暗示服务账号，需确认其用途。\", \"登录来源 IP 与主机名关联需验证。\"]\n      },\n      {\n        \"name\": \"cloud\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及主机资产信息及网络访问。\",\n        \"alert_ids\": [\"A1\"],\n        \"finding_ids\": [\"F1\", \"F3\"]\n      ,\n        \"limitations\": [\"资产库存查询返回字段缺失（os=null, fqdn=null），无法确认云环境细节。\", \"无法确认主机是否位于隔离的测试网络。\"]\n      },\n      {\n        \"name\": \"phishing\",\n        \"applicability\": \"not_applicable\",\n        \"reason\": \"无钓鱼邮件、凭证窃取或社会工程学攻击迹象。\",\n        \"alert_ids\": [\"A1\"],\n        \"finding_ids\": []\n      ,\n        \"limitations\": [\"无法完全排除测试账号被用于钓鱼演练的可能性，但无直接证据。\"]\n      },\n      {\n        \"name\": \"insider\",\n        \"applicability\": \"applicable\",\n        \"reason\": \"涉及内部服务账号的使用及潜在的数据访问风险。\",\n        \"alert_ids\": [\"A1\"],\n        \"finding_ids\": [\"F3\", \"F4\", \"F5\"]\n      ,\n        \"limitations\": [\"无法区分是内部测试人员操作还是内部人员滥用权限。\", \"缺乏对服务账号访问权限范围的定义。\"]\n      }\n    ],\n    \"conflicts\": [],\n    \"followups\": [\n      {\n        \"question_id\": \"authorization\",\n        \"alert_ids\": [\"A1\"],\n        \"mode\": \"human\",\n        \"objective\": \"确认该登录行为及后续 curl 操作是否属于已批准的测试场景，获取测试计划文档或人工反馈。\",\n        \"required_evidence\": \"审批记录、工单、测试计划文档或业务确认邮件。\"\n      ,\n        \"source_ids\": [\"N2_S47\", \"N2_S49\", \"N2_S140\"]\n      ,\n        \"object_keys\": [\"O1\", \"O2\", \"O3\"]\n      },\n      {\n        \"question_id\": \"impact\",\n        \"alert_ids\": [\"A1\"],\n        \"mode\": \"deep\",\n        \"objective\": \"分析补查获取的进程活动（curl 命令）及网络连接详情，确认是否有敏感数据访问或外传。\",\n        \"required_evidence\": \"进程执行详情、网络连接日志、文件访问记录。\",\n        \"source_ids\": [\"N2_S93\", \"N2_S107\", \"N2_S110\", \"N2_S136\", \"N2_S137\"]\n      ,\n        \"object_keys\": [\"O1\", \"O2\"]\n      }\n    ]\n  },\n  \"conclusion\": {\n    \"text\": \"当前案件状态为未决 (unresolved)。已证实成员 A1 发生了一次由合成标签标记的登录事件，并伴随有进程活动。但由于缺乏人工授权确认、资产详细信息及实际业务产出证据，无法判定该事件是合规的测试行为还是潜在的安全风险（如未授权访问、测试环境配置错误）。\",\n    \"state\": \"uncertain\",\n    \"alert_ids\": [\"A1\"],\n    \"support_ids\": [\"N2_S47\", \"N2_S49\", \"N2_S140\", \"N2_S21\", \"N2_S25\"],\n    \"limitations\": [\"授权意图未知。\", \"资产信息缺失。\", \"缺乏实际业务影响证据。\"]\n  },\n  \"closing_note\": \"本轮复核确认了登录动作及合成标签，但核心风险点（授权、实际影响）仍未解决。资产库存查询未能提供有效归属信息。需人工介入确认测试合规性，并深入分析补查到的 curl 命令及网络连接以评估潜在数据外传风险。\",\n  \"impact\": {\n    \"summary\": \"尚未确认任何实际影响。仅观察到登录成功及进程启动，未观察到数据访问、配置变更或网络外传的确切结果。\",\n    \"alert_ids\": [\"A1\"],\n    \"support_ids\": [],\n    \"supported_changes\": [],\n    \"cannot_generalize\": [\"无法区分测试环境与生产环境。\", \"未观察到登录后的任何业务结果或损失证据。\", \"资产库存查询未确认成员归属且字段缺失，无法评估资产重要性。\"]\n  ,\n    \"next_steps\": [\"确认授权状态。\", \"分析进程及网络活动。\"]\n  },\n  \"recommendations\": [\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\", \"O2\", \"O3\"],\n      \"reason\": \"需人工确认测试场景的合规性及实际业务产出，以排除未授权访问或测试环境配置错误的风险。\",\n      \"source_ids\": [\"N2_S47\", \"N2_S49\", \"N2_S140\"]\n    ,\n      \"limitations\": [\"依赖人工反馈。\"]\n    },\n    {\n      \"action_type\": \"investigate\",\n      \"object_keys\": [\"O1\", \"O2\"],\n      \"reason\": \"需深入分析补查获取的进程活动（curl 命令）及网络连接详情，确认是否有敏感数据访问或外传。\",\n      \"source_ids\": [\"N2_S93\", \"N2_S107\", \"N2_S110\", \"N2_S131\"]\n    ,\n      \"limitations\": [\"依赖日志完整性。\"]\n    }\n  ]\n}",
+            "provider_specific_fields": {
+              "reasoning": null,
+              "refusal": null
+            },
+            "role": "assistant"
+          },
+          "provider_specific_fields": {
+            "routed_experts": null,
+            "stop_reason": null,
+            "token_ids": null
+          }
+        }
+      ],
+      "created": 1794749017,
+      "id": "chatcmpl-85667395c3a5d487",
+      "model": "aisoc-investigation",
+      "object": "chat.completion",
+      "system_fingerprint": "vllm-0.30.0-76652a79",
+      "usage": {
+        "completion_tokens": 4201,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "prompt_tokens": 7928,
+        "total_tokens": 12129
+      }
+    },
+    "request_artifact_id": "3775a686-5418-4cd4-a67a-90dc22c8fd2f",
+    "schema_version": "socai2.baseline-delivery.v2",
+    "stage": "C6",
+    "type": "model_original_response",
+    "usage": {
+      "cached_input_tokens": null,
+      "cost": null,
+      "cost_state": "unpriced",
+      "currency": null,
+      "input_tokens": 7928,
+      "output_tokens": 4201,
+      "price_version": null,
+      "reasoning_tokens": 0,
+      "request_id": "chatcmpl-85667395c3a5d487",
+      "total_tokens": 12129,
+      "usage_state": "reported"
+    }
+  },
+  "content_text": null,
+  "created_by": "a745100d-0bad-5c24-a9e2-5cdab10a0963",
+  "event_time": null,
+  "file_name": null,
+  "id": "4754a08f-d180-4061-a5a3-a6a6436f0e94",
+  "incident_id": null,
+  "kind": "source_snapshot",
+  "material_state": "complete",
+  "mime_type": "application/json",
+  "retention": {
+    "omitted_paths": [],
+    "original_sha256": "55fe5f401286fa3d9ec525abb2b9d68960c3f2588140699d7d0c6a04b75b62b3",
+    "original_size_bytes": 15301,
+    "reason": null,
+    "retained_sha256": "55fe5f401286fa3d9ec525abb2b9d68960c3f2588140699d7d0c6a04b75b62b3",
+    "retained_size_bytes": 15301,
+    "truncated": false
+  },
+  "run_id": "3327b87f-f4d8-451e-b91d-39618622ead9",
+  "schema_version": "socai2.baseline-delivery.v2",
+  "sha256": "55fe5f401286fa3d9ec525abb2b9d68960c3f2588140699d7d0c6a04b75b62b3",
+  "size_bytes": 15301,
+  "source_refs": [
+    {
+      "external": null,
+      "id": "3775a686-5418-4cd4-a67a-90dc22c8fd2f",
+      "role": "execution_receipt",
+      "row_keys": [],
+      "source_path": null,
+      "type": "artifact"
+    }
+  ],
+  "step_id": "18832854-2010-460c-914e-ec18ad1ec985",
+  "tenant_id": "fa031e01-0c89-5b35-88e7-37c1d5cf078b"
+}

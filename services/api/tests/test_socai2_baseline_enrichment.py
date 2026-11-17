@@ -285,24 +285,44 @@ async def run_checks(engine, record, only=None):
         outcome = await service.publish(T, cid, rid, publication([ref]))
         assert outcome["adoption"]["state"] == "not_eligible"
 
-    async def test_c2_byte_omission_is_not_empty_and_roles():
+    async def test_c2_large_original_and_roles():
         cid, rid, *_ = await fixture()
         original = sources.query
         async def large(*args):
             if args[2] == "assets":
                 async with service.transaction(T) as store:
-                    return [{"record": {"tags": ["x" * 131073]}}], await store.now()
+                    return [{"record": {"tags": ["x" * (1048576 + 1)]}}], await store.now()
             return await original(*args)
         with patch.object(sources, "query", large):
             summary = await service.enrich(T, cid, rid)
         asset = summary["sources"][0]
-        assert asset["outcome"] == "omitted" and asset["returned_rows"] == 0
+        assert asset["outcome"] == "data" and asset["returned_rows"] == 1
         assert asset["observed_rows_in_bounded_fetch"] == 1
-        assert asset["truncation_reasons"] == ["retained_row_bytes_limit"]
+        assert asset["truncation_reasons"] == []
+        receipt = (await rows(select(F).where(F.c.id == UUID(asset["artifact_id"]))))[0]
+        assert receipt["content_json"]["rows"][0]["record"]["tags"] == ["x" * (1048576 + 1)]
+        assert receipt["size_bytes"] > 1048576 and not receipt["retention"]["truncated"]
         roles = c2.citation_roles({"state": "completed", "tool_name": "history", "rows": [
             {"record": {"triage": {"confidence_value": None}, "feedback": {"decision": "false_positive"}}}]})
         assert roles == {"$.rows.0": "source_label", "$.rows.0.record.triage": "prior_analysis",
                          "$.rows.0.record.feedback": "human_statement"}
+
+    async def test_c2_probe_row_retained_without_model():
+        cid, rid, *_ = await fixture(row_limit=1)
+        original = sources.query
+        received = [{"record": {"tags": ["bounded"]}}, {"record": {"tags": ["probe"]}}]
+        async def query(*args):
+            if args[2] == "assets":
+                async with service.transaction(T) as store:
+                    return received, await store.now()
+            return await original(*args)
+        with patch.object(sources, "query", query):
+            summary = await service.enrich(T, cid, rid)
+        asset = next(s for s in summary["sources"] if s["source"] == "assets")
+        receipt = (await rows(select(F).where(F.c.id == UUID(asset["artifact_id"]))))[0]["content_json"]
+        assert receipt["rows"] + receipt["overflow_rows"] == received
+        assert receipt["returned_rows"] == 1 and receipt["observed_rows_in_bounded_fetch"] == 2
+        assert receipt["truncation_reasons"] == ["row_limit"]
 
     async def test_c2_existing_tool_use_and_missing_objects():
         cid, rid, *_ = await fixture(calls=1)
@@ -335,7 +355,8 @@ async def run_checks(engine, record, only=None):
         test_c2_timeout_unavailable_and_unknown, test_c2_row_limit_and_missing_window,
         test_model_view_whole_case_and_original_guard, test_model_view_budget_and_roles,
         test_publish_cannot_race_active_steps_or_forge_c2_role,
-        test_c2_byte_omission_is_not_empty_and_roles, test_c2_existing_tool_use_and_missing_objects]
+        test_c2_large_original_and_roles, test_c2_probe_row_retained_without_model,
+        test_c2_existing_tool_use_and_missing_objects]
     for check in checks:
         if only is not None and check.__name__ not in only:
             continue

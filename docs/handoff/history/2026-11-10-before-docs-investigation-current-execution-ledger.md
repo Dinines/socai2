@@ -2,7 +2,7 @@
 
 # 当前调查执行账本
 
-[审计与修复状态](../../investigation/current-investigation-audit-20261105.md)：输入新鲜度、明确错误终态、SHA256投影、C2来源选择已修复并验证。C6必需材料装配已修，但三份冻结样本计入先前用量后仍不足以派发最终请求，完整调查验收尚未通过。本文描述当前开发代码；常驻独立服务尚未同步本次修改。
+[审计与修复状态](2026-11-14-investigation-cleanup/documents/docs/investigation/current-investigation-audit-20261105.md)：输入新鲜度、明确错误终态、SHA256投影、C2来源选择已修复并验证。C6必需材料装配已修，但三份冻结样本计入先前用量后仍不足以派发最终请求，完整调查验收尚未通过。本文描述当前开发代码；常驻独立服务尚未同步本次修改。
 
 本文只描述当前开发分支 `codex/case-baseline-history-20261103` 的实现。按执行顺序列出触发、输入、输出、Run/Step、数据库写入与事务边界。文中的 INSERT/UPDATE/DELETE 是代码实际执行的操作类型；没有把本次阅读代码当成一次业务执行。
 

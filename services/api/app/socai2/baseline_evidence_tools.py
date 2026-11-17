@@ -24,6 +24,7 @@ LIMITATIONS = ["host_time_match_is_not_causality_or_alert_membership",
 
 
 def catalog(context, tenant_id):
+    from .case_execution_input import binding_scope
     grouped, omissions = {}, []
     for aid, alert in sorted(context.alerts.items()):
         for obj in alert.objects:
@@ -41,7 +42,7 @@ def catalog(context, tenant_id):
     for host, entry in sorted(grouped.items()):
         for tool in TOOLS:
             binding = {"tool_name": tool, "contract_version": VERSION, "tenant_id": str(tenant_id),
-                "case_id": str(context.case_id), "scope": context.scope.model_dump(mode="json"),
+                "case_id": str(context.case_id), "scope": binding_scope(context, entry["alert_ids"]),
                 "hostname": host, "alert_ids": sorted(entry["alert_ids"]), "objects": entry["objects"],
                 "source_database": optional.lake_database(),
                 "limitations": list(LIMITATIONS), "window_semantics": "start_inclusive_end_exclusive"}
@@ -68,7 +69,10 @@ def query_sql(args):
         raise ValueError("unsupported_tool_contract")
     scope = args["scope"]
     start, end = (datetime.fromisoformat(scope[k]) for k in ("window_start", "window_end"))
-    if start.tzinfo is None or end.tzinfo is None or start >= end or not 1 <= args["limit"] <= 50:
+    from .runtime_policy import active_policy
+    ceiling = args.get("row_limit", active_policy().case.max_rows_per_query)
+    if (start.tzinfo is None or end.tzinfo is None or start >= end
+            or type(ceiling) is not int or type(args["limit"]) is not int or not 1 <= args["limit"] <= ceiling):
         raise ValueError("invalid_frozen_query_scope")
     fields = ", ".join(FIELDS)
     database = optional.lake_database()
@@ -89,8 +93,7 @@ def query_sql(args):
 
 
 def normalize_rows(rows):
-    # Ledger is lossless for JSON-compatible driver values; byte limits are
-    # applied later to whole rows, with explicit omissions.
+    # Lossless JSON representation of driver values; no retention byte cut.
     return json.loads(json.dumps(rows, default=lambda v: v.isoformat() if isinstance(v, datetime) else str(v),
                                 ensure_ascii=False, allow_nan=False))
 

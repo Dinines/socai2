@@ -6,7 +6,7 @@
 
 适用范围为 PostgreSQL 16 的 `socai2` 命名空间，V1 共 29 表、462 列，建表基准为迁移 123–126。页面功能及产品验收见[三页功能清单](../../../deliverables/investigation-validation-20261106/frontend-feature-list.md)，逐列类型、可空性与约束见[字段字典](../../design/socai2-field-dictionary-20261103.md)。表设计调整须按[项目变更规则](../../../AGENTS.md#调查数据库-v1-与人工确认)登记并取得负责人明确人工确认。
 
-**2026-11-07 正式库复验：** 同一多告警 Case 的字段、材料正文、步骤工件及父子关联已按实际 GET 对照 `aisoc` 的原始行；本轮不做前端跳转。Case 详情所需两项函数权限已经人工授权并修复；资产匹配仍缺 `public.assets` SELECT，4 个请求 500。127 个正常 GET 成功，4 个错误归属请求正确拒绝；本批缺少的模型 Case 结论、归并依据与独立证据索引仍保留。见[交接指南第 8.1 节](../../../FRONTEND_BACKEND_HANDOFF.md#81-2026-11-07-正式库数据库与-get-核对)和[逐功能状态](../../operations/evidence/database-handoff-review-20261107/review.json)。下文 11 月 6 日独立测试库回执保持原来源，不能代替本次正式库。
+**2026-11-07 正式库复验：** 同一多告警 Case 的字段、材料正文、步骤工件及父子关联已按实际 GET 对照 `aisoc` 的原始行；本轮不做前端跳转。Case 详情所需两项函数权限已经人工授权并修复；资产匹配仍缺 `public.assets` SELECT，4 个请求 500。127 个正常 GET 成功，4 个错误归属请求正确拒绝；本批缺少的模型 Case 结论、归并依据与独立证据索引仍保留。见[交接指南第 8.1 节](../../../FRONTEND_BACKEND_HANDOFF.md#81-2026-11-07-正式库数据库与-get-核对)和[逐功能状态](2026-11-14-investigation-cleanup/evidence/database-handoff-review-20261107/review.json)。下文 11 月 6 日独立测试库回执保持原来源，不能代替本次正式库。
 
 ## 来源边界
 

@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from fnmatch import fnmatchcase
 
+from . import case_context_input
 from .alert_basic_contract import raw_field_role
 from .baseline_context import reference
 from .baseline_model_view import blocked
@@ -20,6 +21,7 @@ from .case_input_hierarchy import (
     translate,
 )
 from .case_source_scope import metadata, query_scope
+from .incident_input_text import matches
 from .incident_model_boundary import fields, query_items, query_record_identity
 from .incident_query_receipts import receipts
 from .model_input_view import frozen_items, source_prefix
@@ -47,7 +49,8 @@ def select(value, rule, omissions, path):
 
 def project_context(ref, value, config, omissions):
     rule = config["context_projection"].get(ref.get("source_path")) if ref["type"] == "artifact" else None
-    return select(value, rule, omissions, ref["source_path"]) if rule else value
+    value = select(value, rule, omissions, ref["source_path"]) if rule else value
+    return case_context_input.select(ref, value, config, omissions)
 
 
 def field_hint(ref, config):
@@ -73,7 +76,7 @@ def material_entries(aid, material, config, omissions, candidate=None):
         for path, original in rows:
             if original is None or original == "":
                 continue
-            administrative = path in cfg["metadata_paths"] or known_envelope and any(
+            administrative = any(matches(pattern, path) for pattern in cfg["metadata_paths"]) or known_envelope and any(
                 path == "$.raw_json." + key or path.startswith("$.raw_json." + key + ".")
                 for key in envelope["backend_fields"])
             if administrative:
@@ -148,8 +151,9 @@ def prepare(sample, config, business):
             entry["incident_source_refs"] = copy.deepcopy(incident_refs)
         if scope is not None:
             entry["original_scope"] = copy.deepcopy(scope)
-            entry["value"]["declared_scope"] = alias_scope(scope)
-            entry["value"]["outside_case_members"] = [owner_alias(a) for a in scope.get("alert_ids", []) if a not in aliases]
+            if isinstance(entry["value"], dict):
+                entry["value"]["declared_scope"] = alias_scope(scope)
+                entry["value"]["outside_case_members"] = [owner_alias(a) for a in scope.get("alert_ids", []) if a not in aliases]
         entries.append(entry)
 
     # Preserve original visible background/human sources, replacing only known
@@ -159,14 +163,18 @@ def prepare(sample, config, business):
         if ref["type"] == "alert_material":
             continue
         if ref["id"] == cid and (path.startswith("$.alerts.") and path.rsplit(".", 1)[-1] in {"alert", "triage", "material"}
-                                  or path.startswith("$.incidents.") and path.endswith(".diagnosis")):
+                                  or path.startswith("$.incidents.") and (path.endswith(".diagnosis") or ".analysis_material.units." in path)):
             continue
         source = next(v for v in sample["request"]["source_map"].values() if v["ref"] == ref)
         value = project_context(ref, item["value"], config, omissions)
+        meta = case_context_input.metadata(ref, item["value"], config,
+                                           assessment_members=context["assessment_members"])
+        if "original_scope" in meta:
+            value[case_context_input.scope_key(meta)] = alias_scope(meta["original_scope"])
         if value == {} and path in config["context_projection"]:
             continue
         entries.append({"ref": copy.deepcopy(ref), "alert_ids": source["alert_ids"], "value": value,
-                        "original_value": item["value"], "block": "background"})
+                        "original_value": item["value"], "block": "background", **meta})
 
     for aid, row in sorted(context["alerts"].items()):
         material = sample["materials"].get(aid)
@@ -183,17 +191,28 @@ def prepare(sample, config, business):
             notices.append(aliases[aid] + "：没有经确认可用的当前分诊，不能沿用旧判断。")
 
     for iid, row in sorted(context["incidents"].items()):
-        if not row["diagnosis_usable"]:
+        material = row.get("analysis_material")
+        if material:
+            for index, unit in enumerate(material["units"]):
+                path = f"$.incidents.{iid}.analysis_material.units.{index}.value"
+                add(path, unit["value"], unit["scope"]["alert_ids"], "prior_analysis", unit["kind"],
+                    scope=unit["scope"], incident_refs=unit["source_refs"])
+            if material["receipt"]["delivery"]["state"] != "complete":
+                notices.append(incident_aliases[iid] + "：事件分析不完整，仅保留已有分析；未回答部分仍需结合原告警核实。")
+            continue
+        frozen_scope = row.get("diagnosis_scope")
+        if not row["diagnosis_usable"] or not frozen_scope or not frozen_scope["case_covered_alert_ids"]:
             notices.append("相关事件诊断不可作为当前有效判断使用。")
             continue
         base, diagnosis = f"$.incidents.{iid}.diagnosis", row["diagnosis"]
-        original_scope = {"alert_ids": row["member_ids"]}
+        original_scope = {"alert_ids": frozen_scope["input_selection"]["selected_alert_ids"]}
+        owners = frozen_scope["case_covered_alert_ids"]
         overall_refs = diagnosis["diagnosis"].get("source_refs", [])
-        add(base + ".summary", diagnosis["summary"], row["case_member_ids"], "prior_analysis", "incident", incident_refs=overall_refs)
+        add(base + ".summary", diagnosis["summary"], owners, "prior_analysis", "incident", scope=original_scope, incident_refs=overall_refs)
         for key in ("conclusion", "limitations"):
             if key in diagnosis["diagnosis"]:
                 value = diagnosis["diagnosis"][key]
-                add(base + ".diagnosis." + key, value, row["case_member_ids"], "prior_analysis", "incident", incident_refs=overall_refs)
+                add(base + ".diagnosis." + key, value, owners, "prior_analysis", "incident", scope=original_scope, incident_refs=overall_refs)
         notices.append(incident_aliases[iid] + " 事件背景原范围：" + render(alias_scope(original_scope), config))
         for kind, values, path in (("finding", diagnosis["diagnosis"].get("findings", []), base + ".diagnosis.findings"),
                                    ("question", diagnosis.get("open_questions", []), base + ".open_questions")):
@@ -201,6 +220,9 @@ def prepare(sample, config, business):
                 scope = value.get("scope")
                 if not isinstance(scope, dict) or not isinstance(scope.get("alert_ids"), list):
                     raise TypeError("incident_item_scope_missing")
+                if not set(scope["alert_ids"]) <= set(original_scope["alert_ids"]):
+                    omissions.append({"path": path + f".{index}", "reason": "incident_item_outside_frozen_selection"})
+                    continue
                 selected = select(value, rules[kind], omissions, path + f".{index}")
                 add(path + f".{index}", value, scope["alert_ids"], "prior_analysis", kind, selected, scope)
 
@@ -256,6 +278,28 @@ def prepare(sample, config, business):
         return visible, missing
 
     for row in rows:
+        if row.get("context_kind") == "human_feedback":
+            resolutions = {}
+            for key, refs in case_context_input.human_refs(row["original_value"]):
+                visible, missing = resolve_prior_refs(refs)
+                unresolved = []
+                for ref in missing:
+                    # A whole-material H attachment points to its visible
+                    # fields with the same role, not a new synthetic fact.
+                    children = [r["id"] for r in rows if ref["type"] == "alert_material"
+                                and not ref.get("source_path") and not ref.get("row_keys")
+                                and r["ref"]["type"] == ref["type"] and r["ref"]["id"] == ref["id"]
+                                and r["ref"]["role"] == ref["role"]]
+                    if children:
+                        visible.extend(children)
+                    else:
+                        unresolved.append(ref)
+                row["value"][key] = list(dict.fromkeys(visible))
+                resolutions[key] = {"visible": row["value"][key], "not_visible": unresolved}
+            row["context_reference_resolution"] = resolutions
+            missing_count = sum(len(r["not_visible"]) for r in resolutions.values())
+            if missing_count:
+                row["value"]["unavailable_prior_reference_count"] = missing_count
         if row["block"] == "incident":
             visible, missing = resolve_prior_refs(row["incident_source_refs"])
             row["prior_reference_resolution"] = {"visible": visible, "not_visible": missing}
@@ -308,7 +352,10 @@ def prepare(sample, config, business):
     def heading(row):
         members = (row["value"]["declared_scope"]["alert_ids"] if row["block"] in {"finding", "question"}
                    else [aliases[a] for a in row["alert_ids"]])
-        return row["block"], tuple(members), row["ref"]["role"]
+        history_scope = row.get("membership_basis")
+        if history_scope not in {"history_record_outside_case", "history_record_identity_unverified"}:
+            history_scope = None
+        return row["block"], tuple(members), row["ref"]["role"], history_scope
 
     # Keep all references; share only exact material/history representations.
     groups, seen = [], {}
@@ -319,10 +366,13 @@ def prepare(sample, config, business):
         if row.get("query_record_identity"):
             key = ("history", tuple(row["query_record_identity"]), heading(row),
                    tuple(row.get("record_alert_ids", [])), row.get("membership_basis"), digest(row["value"]))
+        key = case_context_input.group_key(row) or key
         if key is not None and key in seen:
             seen[key]["ids"].append(row["id"])
+            if row.get("context_label"):
+                seen[key]["context_labels"].append(row["context_label"])
             continue
-        group = {"ids": [row["id"]], "row": row}
+        group = {"ids": [row["id"]], "row": row, "context_labels": [row["context_label"]] if row.get("context_label") else []}
         groups.append(group)
         if key is not None:
             seen[key] = group
@@ -331,9 +381,11 @@ def prepare(sample, config, business):
     presentation.append({"reason": "grouped_by_member_and_role", "groups": [g["ids"] for g in groups]})
     scope = project(alias_scope(context["scope"]), "scope", config, omissions, "context.scope")
     blocks = [config["task"], "调查范围：" + render(scope, config), "[本轮要回答的问题]"]
-    blocks += [q["id"] + "：" + q["text"] + "；依据要求：" + "；".join(q["evidence_requirements"]) for q in context["questions"]]
+    questions = [q for q in context["questions"]
+                 if not config.get("program_output", {}).get("c3_coverage") or q["id"] != "coverage"]
+    blocks += [q["id"] + "：" + q["text"] + "；依据要求：" + "；".join(q["evidence_requirements"]) for q in questions]
     blocks += ["[" + q["id"] + " 的回答边界] " + config["question_instructions"][q["id"]]
-               for q in context["questions"] if q["id"] in config["question_instructions"]]
+               for q in questions if q["id"] in config["question_instructions"]]
     if object_aliases:
         objects = {key: [] for key in object_aliases}
         namespaces = {}
@@ -383,7 +435,9 @@ def prepare(sample, config, business):
         row = group["row"]
         current_heading = heading(row)
         if current_heading != last:
-            owners = "、".join(current_heading[1]) or "案件背景"
+            owners = {"history_record_outside_case": "案件外历史",
+                      "history_record_identity_unverified": "主体未核实的历史"}.get(
+                          current_heading[3], "、".join(current_heading[1]) or "案件背景")
             if row["block"] in {"finding", "question"}:
                 owners = "原范围=" + owners
             role = "查询结果" if row["ref"]["role"] == "execution_receipt" else cfg['roles'][row['ref']['role']]
@@ -417,6 +471,8 @@ def prepare(sample, config, business):
             for key, original_id in prose_references.get(row["id"], {}).items():
                 value[key] = f"与 {original_id} 对应字段逐字相同，见该原文；同文不等于独立佐证"
             caption = label(row)
+            if group["context_labels"]:
+                caption = " / ".join(dict.fromkeys(group["context_labels"]))
             if row["block"] in {"query", "background_query"}:
                 path = row["ref"]["source_path"] or ""
                 parts = path.split(".")

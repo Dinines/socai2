@@ -120,6 +120,16 @@ class SubjectView(Contract):
     section_urls: dict[str, str]
 
 
+class CaseReceiving(Contract):
+    active_case_id: UUID | None
+    can_receive_automatically: bool
+    reason_code: Literal["no_target", "closed", "auto_window_expired"] | None
+
+
+class IncidentSubjectView(SubjectView):
+    case_receiving: CaseReceiving
+
+
 class SubjectPage(Contract):
     kind: Subject
     items: list[SubjectView]

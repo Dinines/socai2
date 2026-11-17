@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.014" timestamp="2026-11-13T20:31:40.198578+08:00" hostname="lycheeMac.local"><testcase classname="tests.test_socai2_case_followup_boundary" name="test_background_query_business_rows_keep_values_and_refs_across_stages" time="0.144"><failure message="KeyError: 'original_value'">sample = {'context': {'case': {'id': '2b37f5b3-862b-52cc-84bd-86db50dd3ad4', 'tags': [], 'title': '1.2 四项续修多告警验收 20261108-01', ... 'tags': ['synthetic', 'production-multialert-20261108-01'], 'title': 'Outbound connection observed', ...}, ...}}, ...}
+
+    def test_background_query_business_rows_keep_values_and_refs_across_stages(sample):
+        from app.socai2.baseline_context import Context
+    
+        context = Context.model_validate(sample["context"])
+        enrichment = background_query_example(context)
+        original = copy.deepcopy(enrichment)
+        base = base_tests.boundary.build(context, sample["context_id"], enrichment, [], sample["materials"])
+        assert base["ready"], base["reason"]
+        identities = {identity for identity, _, _ in enrichment}
+        query_rows = [r for r in base["input_ledger"]["records"] if r["ref"]["id"] in identities
+                      and r["ref"]["source_path"]]
+        assert len(query_rows) == 5
+        answer = answer_for(base, context)
+        answer["questions"][0]["evidence_ids"] = [r["id"] for r in query_rows]
+        prior = {"analysis": json.loads(case_output_adapter.restore(json.dumps(answer), base["case_boundary"])),
+                 "source_map": base["source_map"], "validation": "structure_scope_sources_checked"}
+        stages = [(base, "input_ledger")]
+        for stage in ("Deep", "C6"):
+            prepared = inputs.build(stage, context, base, {}, previous=prior, prior_id=UUID(int=2000),
+                                    question_id=context.questions[0].id if stage == "Deep" else None)
+            assert prepared["ready"], prepared["reason"]
+            stages.append((prepared, "followup_boundary"))
+        for prepared, ledger in stages:
+            for row in query_rows:
+                current = next(r for r in prepared[ledger]["records"] if r["ref"] == row["ref"])
+                body = next(body for identity, body, _ in enrichment if identity == row["ref"]["id"])
+                raw = body["rows"][int(row["ref"]["source_path"].rsplit(".", 1)[-1])]
+                value = current["value"]
+&gt;               assert "match_basis" not in value and current["original_value"] == raw
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'original_value'
+
+services/api/tests/test_socai2_case_followup_boundary.py:115: KeyError</failure></testcase></testsuite></testsuites>

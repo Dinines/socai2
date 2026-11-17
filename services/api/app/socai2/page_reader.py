@@ -6,13 +6,16 @@ from sqlalchemy.exc import DBAPIError
 
 from app.models import socai2 as m
 
+from . import list_query as lists
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, encoded
 from .case_contracts import project
 from .case_reader import ARTIFACT_FIELDS, usage_totals
+from .list_query_contracts import AlertListQuery, IncidentListQuery
 from .page_contracts import (
     AlertFacts,
     IncidentFacts,
+    IncidentSubjectView,
     RecordPage,
     SubjectPage,
     SubjectView,
@@ -21,12 +24,9 @@ from .program_facts import RANK
 from .read_sources import ReadSources, lookup_error
 from .stage_inputs import freshness_sql
 from .stage_reader import StageReader
-from . import list_query as lists
-from .list_query_contracts import AlertListQuery, IncidentListQuery
 
 A, I, M, O, L, R, S, F = (x.__table__ for x in (m.Alerts, m.Incidents, m.AlertMaterials,
     m.AlertObjects, m.IncidentAlerts, m.Runs, m.RunSteps, m.Artifacts))
-from .runtime_policy import retention_limit
 
 MAX_STEPS = 1000
 MAX_ARTIFACTS = 200
@@ -140,7 +140,14 @@ class PageReader:
                 R.c.kind == "baseline", R.c.state.in_(["running", "unknown"])), rm.c.alert_id.in_(self.member_ids())).group_by(R.c.state))
         derived["baseline_execution_counts"] = {"running": 0, "unknown": 0, **{v["state"]: v["n"] for v in progress}}
         root = f"/api/v1/socai2/{self.kind}/{self.identity}"
-        return SubjectView(kind=self.kind, facts=project(model, row), owner_name=name, owner_resolution=owner_state,
+        extra = {}
+        view_model = SubjectView
+        if self.kind == "incidents":
+            from .analysis_task_policy import AnalysisTaskPolicy
+            from .case_relationship_reader import receiving_status
+            view_model = IncidentSubjectView
+            extra["case_receiving"] = await receiving_status(self.store, row, AnalysisTaskPolicy.load())
+        return view_model(**extra, kind=self.kind, facts=project(model, row), owner_name=name, owner_resolution=owner_state,
             derived=derived, material=material, triage=triage, feedback=feedback, analysis_url=root + "/analysis",
             section_urls={key: root + "/records/" + key for key in SECTIONS
                 if not (key == "members" and self.kind == "alerts" or key == "incidents" and self.kind == "incidents")})
@@ -270,6 +277,9 @@ class PageReader:
                 c.c.id.in_(members).label("via_member_alert"),
                 (c.c.id.in_(explicit) if self.kind == "incidents" else literal(False)).label("explicit_incident_link")).where(
                 *self.store.where(c), or_(c.c.id.in_(members), c.c.id.in_(explicit) if self.kind == "incidents" else False))
+            if self.kind == "incidents":
+                event = await self.subject()
+                query = query.add_columns((c.c.id == event["active_case_id"]).label("is_active_receiver"))
             limitations.append("shared_member_does_not_imply_explicit_incident_link")
         elif section == "activities":
             acts, targets = m.Activities.__table__, m.ActivityTargets.__table__
@@ -296,7 +306,9 @@ class PageReader:
         sub = query.subquery()
         total = (await self.db.execute(select(func.count()).select_from(sub))).scalar_one()
         rows = await self.rows(select(sub).order_by(sub.c.id).offset(offset).limit(limit))
-        items = [public(r) for r in rows]
+        # Incident routing is exposed only by its dedicated E29/E30 contracts;
+        # adding an internal column must not change the alert's incident records.
+        items = [public(r, "active_case_id") for r in rows]
         if section == "source_artifacts":
             for item in items:
                 item["content_url"] = f"/api/v1/socai2/{self.kind}/{self.identity}/artifacts/{item['id']}"
@@ -340,8 +352,6 @@ class PageReader:
         if not row:
             raise StoreError("alert_material_not_found", 404)
         out = {"metadata": public(row), "availability": "content_exceeds_read_limit", "content_json": None, "content_text": None}
-        if row["content_bytes"] > retention_limit():
-            return out
         body = await self.store.one(select(M.c.raw_json, M.c.raw_text, M.c.ocsf_json, M.c.enrichment).where(*filters))
         return {**out, "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"],
             "content_json": {k: body[k] for k in ("raw_json", "ocsf_json", "enrichment")}, "content_text": body["raw_text"]}
@@ -380,7 +390,7 @@ class PageReader:
         out = {"metadata": public(row, "external"), "availability": "unavailable", "content_json": None, "content_text": None}
         if row["external"]:
             return {**out, "availability": "external_content_not_loaded"}
-        if row["size_bytes"] is None or row["size_bytes"] > retention_limit():
+        if row["size_bytes"] is None:
             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
         body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
         value = body["content_json"]

@@ -5,7 +5,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from investigation_http.contracts import StageEntry, StagePage
+from investigation_http.contracts import (
+    IncidentStageEntry,
+    IncidentStagePage,
+    StageEntry,
+    StagePage,
+)
 from investigation_http.dependencies import CurrentUser, require_permission
 from investigation_http.dependencies import analysis_service as get_service
 from investigation_http.errors import invoke
@@ -36,7 +41,7 @@ async def alert_analysis(
     )
 
 
-@router.get("/incidents/{incident_id}/analysis", response_model=StagePage)
+@router.get("/incidents/{incident_id}/analysis", response_model=IncidentStagePage)
 async def incident_analysis(
     incident_id: UUID,
     user: User,
@@ -63,7 +68,7 @@ async def alert_run(alert_id: UUID, run_id: UUID, user: User, service: Service):
 
 
 @router.get(
-    "/incidents/{incident_id}/analysis/runs/{run_id}", response_model=StageEntry
+    "/incidents/{incident_id}/analysis/runs/{run_id}", response_model=IncidentStageEntry
 )
 async def incident_run(incident_id: UUID, run_id: UUID, user: User, service: Service):
     return await invoke(

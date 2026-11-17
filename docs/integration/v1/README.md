@@ -4,7 +4,7 @@
 
 文档发布版：2026-10-22，Asia/Shanghai。面向上游告警生产者、业务后端和部署人员。正式输入以 **Kafka 已有告警** 为准；HTTP 告警接口仅用于测试辅助。查询 API 用于读取业务结果，数据库章节用于解释落库和授权查询。
 
-当前服务 v1.0.0 已在21发布：API `5a1e1fd8`、Agents `49643b84`，Fusion `c52b9aac` 保持。独立生产租户、新消费组及自动分诊/自动调查已开启，模型配置不变；一条全新Kafka合成告警已自动产生Run、链图工件和Markdown，结果为partial，内容质量未验收。完整迁移仍5/15。请先读[生产租户与实际读取样例](production.md)及[发布回执](../../operations/service-v1-release-20261022.md)。
+当前服务 v1.0.0 已在21发布：API `5a1e1fd8`、Agents `49643b84`，Fusion `c52b9aac` 保持。独立生产租户、新消费组及自动分诊/自动调查已开启，模型配置不变；一条全新Kafka合成告警已自动产生Run、链图工件和Markdown，结果为partial，内容质量未验收。完整迁移仍5/15。请先读[生产租户与实际读取样例](production.md)及[发布回执](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/service-v1-release-20261022.md)。
 
 [16:02发布前快照](runtime-snapshot.json)保留历史事实；[16:48发布后快照](service-runtime-snapshot.json)为当前脱敏容器配置，业务验证另见发布回执。
 
@@ -94,6 +94,6 @@ A5 的“分诊前统一 PG→Neo4j 写图”、Case/Alert链图接口及摘要/
 
 先发放接入网络/CA、真实 tenant/source/connector 映射和查询身份；再约定 raw payload 与稳定身份；联调时观察 raw→Fusion→PG→fused，再读取已授权 Run 事件/工件。需要开启自动分诊/调查时沿现有运行准入另行处理，不能因这份文档直接启动旧积压消费。
 
-本版已同步v1.0.0服务实际发布，生产参数见[生产接入](production.md)。真实资料覆盖及调查质量限制继续保留；密码/token通过指定受控文件交接。文档阅读包不包含可直接source的私有配置。测试数据工具已进行后续真实联测，当前结果及限制见[最新执行回执](../../operations/testdata-migration-execution-20261023.md)。
+本版已同步v1.0.0服务实际发布，生产参数见[生产接入](production.md)。真实资料覆盖及调查质量限制继续保留；密码/token通过指定受控文件交接。文档阅读包不包含可直接source的私有配置。测试数据工具已进行后续真实联测，当前结果及限制见[最新执行回执](../../handoff/history/2026-11-14-investigation-cleanup/documents/docs/operations/testdata-migration-execution-20261023.md)。
 
 本版各篇和examples可独立交接阅读；源代码、旧回执和部署文件的相对链接用于仓库内追溯。压缩阅读包保留`docs/integration/v1/`路径，放回本仓库根目录解压后这些引用完整可用；阅读包本身不包含私有env或整套源码。

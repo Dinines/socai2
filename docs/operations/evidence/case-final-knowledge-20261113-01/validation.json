@@ -1,0 +1,66 @@
+{
+  "batch": "case-final-knowledge-20261113-01",
+  "status": "OFFLINE_FUNCTIONAL_CHECKS_PASSED_MODEL_QUALITY_NOT_RETESTED",
+  "pre_implementation_openspec_strict": "passed",
+  "direct_test": {
+    "name": "test_knowledge_deduplication_task_selection_and_prior_dependency",
+    "passed": 1,
+    "attempts": 1,
+    "report": "direct-test.xml",
+    "scope": "Authorization-only exclusion; useful pending question retention; no cross-question purpose/member join; prior dependency restoration; old configuration compatibility."
+  },
+  "static_checks": [
+    {
+      "name": "ruff",
+      "cmd": ".local/conda-envs/socai2/bin/ruff check services/api/app/socai2/knowledge_model_input.py services/api/app/socai2/case_followup_input.py services/api/app/socai2/runtime_policy.py services/api/tests/test_socai2_case_followup_boundary.py docs/operations/evidence/case-final-knowledge-20261113-01/rebuild.py",
+      "exit_code": 1,
+      "output": "I001 [*] Import block is un-sorted or un-formatted\n  --> docs/operations/evidence/case-final-knowledge-20261113-01/rebuild.py:17:1\n   |\n15 |   config = json.loads((HERE / 'config.json').read_text())\n16 |   os.environ['SOCAI2_INVESTIGATION_POLICY'] = str(ROOT / config['policy'])\n17 | / from app.socai2 import case_followup_input as inputs\n18 | | from app.socai2 import case_followup_output as outputs\n19 | | from app.socai2.baseline_contracts import Scope\n20 | | from app.socai2.baseline_context import Context\n21 | | from app.socai2.baseline_followup_projection import delivery_followups\n22 | | from app.socai2.case_followup_loader import graph_candidates\n23 | | from app.socai2.model_protocol import prepare_request\n24 | | from app.socai2.runtime_policy import active_policy\n   | |___________________________________________________^\nhelp: Organize imports\n   |\n18 | from app.socai2 import case_followup_output as outputs\n19 + from app.socai2.baseline_context import Context\n20 | from app.socai2.baseline_contracts import Scope\n   - from app.socai2.baseline_context import Context\n21 | from app.socai2.baseline_followup_projection import delivery_followups\n   |\n\nFound 1 error.\n[*] 1 fixable with the `--fix` option.\n"
+    },
+    {
+      "name": "openspec_strict",
+      "cmd": "openspec validate complete-socai2-investigation-chain --strict --no-interactive",
+      "exit_code": 0,
+      "output": "Change 'complete-socai2-investigation-chain' is valid\n"
+    },
+    {
+      "name": "scoped_diff",
+      "cmd": "git diff --check -- services/api/app/socai2/knowledge_model_input.py services/api/app/socai2/case_followup_input.py services/api/app/socai2/runtime_policy.py services/api/app/socai2/case-input-v1.json services/api/tests/test_socai2_case_followup_boundary.py openspec/changes/complete-socai2-investigation-chain",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "ruff_script_import_fix": {
+    "exit_code": 0,
+    "output": "All checks passed!\n",
+    "new_tests": 0
+  },
+  "offline_rebuild": {
+    "status": "passed",
+    "report": "verification.json",
+    "failed_checks": [
+      "rebuild-attempt-01.json",
+      "rebuild-attempt-02.json"
+    ],
+    "repairs": "Reconstruct comparison key order from program contract/Scope and retain original program round; no business-source mutation.",
+    "debug_invocations": 2
+  },
+  "actual_09_C6": {
+    "complete_request_unchanged": true,
+    "characters": 13526,
+    "preserved_records": 105,
+    "preserved_dependencies": 52,
+    "knowledge_card_retained": "N5_S105",
+    "scope": "Actual frozen case replay; no new model call. Changed exclusion branches are verified by one synthetic direct test only."
+  },
+  "original_files_unchanged": 82,
+  "actual_model_calls": 0,
+  "database_calls": 0,
+  "new_Case_runs": 0,
+  "HTTP_and_table_changes": 0,
+  "old_model_quality": "NOT_PASSED",
+  "new_model_quality": "NOT_TESTED",
+  "source": "source-replay.json",
+  "audit": "audit.md",
+  "deployment": false,
+  "streaming": false
+}

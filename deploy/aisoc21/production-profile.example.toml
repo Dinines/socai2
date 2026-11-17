@@ -4,10 +4,12 @@ default_tenant = "00000000-0000-0000-0000-000000000001"
 [paths]
 private_dir = "/opt/sting-aisoc-socai2/private/processing-production"
 transport_env_file = "/opt/sting-aisoc-socai2/private/processing-handoff/runtime.env"
-ca_file = "/opt/sting-aisoc-socai2/certificates/socai2-ca.crt"
-ca_mount = "/run/certs/ca.crt"
 policy_file = "/opt/sting-aisoc-socai2/config/investigation-policy.toml"
 policy_mount = "/run/processor/investigation-policy.toml"
+projection_file = "/opt/sting-aisoc-socai2/private/analysis-projection.json"
+projection_mount = "/app/config/analysis-projection.json"
+analysis_tasks_file = "/opt/sting-aisoc-socai2/private/analysis-tasks.json"
+analysis_tasks_mount = "/app/config/analysis-tasks.json"
 
 [image]
 # Replace both with the newly built and verified 1.2 candidate. No implicit r3.
@@ -23,7 +25,9 @@ host = "192.168.1.21"
 port = 5432
 processor_role = "socai2_prod_processor"
 ingress_role = "socai2_prod_ingress"
-tls_mode = "verify-full"
+# Keep TLS encryption; authenticate with the database account/password only.
+# No client CA, certificate or private-key file is required.
+tls_mode = "require"
 
 [lake]
 container = "sting-infra21-clickhouse-1"

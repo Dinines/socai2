@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-15",
+  "source_evidence": "docs/operations/evidence/investigation-test-preflight-20261115-01/runtime.json",
+  "source_sha256": "520de8f82938351eaf6afc2eef96859bb8b656c1fa02953b60a697e587e8ad29",
+  "observed_at": "2026-11-15T03:26:30.064565+00:00",
+  "target": "sting-infra21",
+  "runtime_version": "main-a6660267-20261114",
+  "runtime_business_operations": 64,
+  "reference_contract": "deliverables/investigation-validation-20261106/http-handoff/openapi.json",
+  "reference_sha256": "d48cfe0e9ac29e3e65a2fb0d773193e300554afe5c64df164e44e46f1741ad1e",
+  "reference_business_operations": 71,
+  "current_source_business_operations": 81,
+  "current_source_security_required": false,
+  "checks": [
+    {
+      "id": "HTTP-T1-01",
+      "finding": "Seven previously delivered business operations missing from current 21 API",
+      "status": "runtime_unresolved",
+      "missing": [
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/alerts/{alert_id}/review-candidates",
+          "present_in_current_source": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/alerts/{alert_id}/same-host-alerts",
+          "present_in_current_source": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/exploration",
+          "present_in_current_source": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/exploration-base",
+          "present_in_current_source": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/exploration-candidates",
+          "present_in_current_source": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/story",
+          "present_in_current_source": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/v1/socai2/cases/{case_id}/exploration",
+          "present_in_current_source": true
+        }
+      ]
+    },
+    {
+      "id": "HTTP-T1-02",
+      "finding": "21 no-credential business reads return 401; trusted candidate not deployed",
+      "status": "runtime_unresolved",
+      "reads": [
+        {
+          "path": "/api/v1/socai2/cases?limit=1",
+          "http_status": 401,
+          "response_sha256": "cfec9feffbcc0dabaa0f92491e3609eeb1e9bc8d17625cd7f043be03b609c812"
+        },
+        {
+          "path": "/api/v1/socai2/alerts?limit=1",
+          "http_status": 401,
+          "response_sha256": "cfec9feffbcc0dabaa0f92491e3609eeb1e9bc8d17625cd7f043be03b609c812"
+        },
+        {
+          "path": "/api/v1/socai2/incidents?limit=1",
+          "http_status": 401,
+          "response_sha256": "cfec9feffbcc0dabaa0f92491e3609eeb1e9bc8d17625cd7f043be03b609c812"
+        },
+        {
+          "path": "/api/v1/socai2/cases/b72d23f0-6efd-54dd-b274-58aa554b4513",
+          "http_status": 401,
+          "response_sha256": "cfec9feffbcc0dabaa0f92491e3609eeb1e9bc8d17625cd7f043be03b609c812"
+        }
+      ]
+    },
+    {
+      "id": "HTTP-T1-03",
+      "finding": "21 runtime differs from the current handoff description; current documentation corrected separately",
+      "status": "documentation_fix_pending_verification"
+    },
+    {
+      "id": "HTTP-T1-04",
+      "finding": "21 lacks 128/129 lifecycle and allocation migrations; candidate-only capabilities are not runtime-ready",
+      "status": "dependency_not_ready"
+    }
+  ],
+  "direct_checks": {
+    "command": ".local/conda-envs/socai2/bin/python .local/v1.2-reader-validation/run_tests.py services/api/tests/test_socai2_trusted_http.py services/api/tests/test_socai2_http_boundary.py",
+    "result": "5 passed in 1.83s",
+    "kind": "offline ASGI/contract/architecture; explicit substitutes; no PG or runtime change"
+  },
+  "business_code_changed": false,
+  "network_requests_by_this_check": 0,
+  "database_writes": 0,
+  "model_calls": 0,
+  "deployed": false,
+  "git_pushed": false,
+  "source_sha256_by_file": {
+    "services/api/investigation_http/main.py": "09e5cb919346c636ada3be2572271bcafd805ea6645ed791e682d3c9c3240d02",
+    "services/api/investigation_http/adapters/identity.py": "095367b095bb948a6b92a88d186f90fa2a730154ec154e88d6402bcdceab431e",
+    "services/api/tests/test_socai2_trusted_http.py": "163848fe4bea9a8c1c31e06d0c3be04e2cf4349adb7e56a2b59e232aa7f51475",
+    "services/api/tests/test_socai2_http_boundary.py": "afe43f72084a58e05acc8ce7bdc1c94c8509e68585865005487c4434362e3f58"
+  }
+}

@@ -4,7 +4,8 @@ from fastapi import Request
 
 from investigation_http.adapters import services
 from investigation_http.adapters.identity import CurrentUser, require_permission
-from investigation_http.errors import provide
+from investigation_http.contracts import StoreError
+from investigation_http.errors import provide, record_error
 
 __all__ = [
     "CurrentUser",
@@ -12,12 +13,13 @@ __all__ = [
     "attachment_service",
     "case_service",
     "comment_service",
-    "execution_service",
+    "exploration_service",
     "export_service",
     "grouping_service",
     "page_service",
     "require_case_enabled",
     "require_permission",
+    "story_service",
     "subject_service",
     "task_service",
 ]
@@ -33,6 +35,14 @@ async def comment_service(request: Request):
 
 async def attachment_service(request: Request):
     return provide(services.attachments, request.method)
+
+
+def story_service():
+    return provide(services.story)
+
+
+def exploration_service():
+    return provide(services.exploration)
 
 
 async def task_service(request: Request):
@@ -51,10 +61,6 @@ def subject_service():
     return provide(services.subjects)
 
 
-def execution_service():
-    return provide(services.execution)
-
-
 def require_case_enabled():
     return provide(services.require_case_enabled)
 
@@ -65,3 +71,43 @@ def export_service():
 
 def grouping_service():
     return provide(services.grouping)
+
+
+async def exploration_state_service(request: Request):
+    return provide(services.exploration_state, request.method)
+
+
+def alert_review_service():
+    return provide(services.alert_review)
+
+
+def alert_host_service():
+    return provide(services.alert_hosts)
+
+
+def run_record_service():
+    try:
+        return services.run_records()
+    except StoreError as exc:
+        raise record_error("service_unavailable", 503) from exc
+
+
+def run_directory_service():
+    try:
+        return services.run_directory()
+    except StoreError as exc:
+        raise record_error("service_unavailable", 503) from exc
+
+
+def analysis_task_service():
+    try:
+        return services.analysis_tasks()
+    except StoreError as exc:
+        raise record_error("service_unavailable", 503) from exc
+
+
+def analysis_submission_service():
+    try:
+        return services.analysis_submissions()
+    except StoreError as exc:
+        raise record_error("service_unavailable", 503) from exc

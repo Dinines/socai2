@@ -2,206 +2,9 @@
   "openapi": "3.1.0",
   "info": {
     "title": "socai2 Independent Investigation API",
-    "version": "case-result-adoption-20261113-r1"
+    "version": "trusted-internal-20261114-r1-preview"
   },
   "paths": {
-    "/api/v1/auth/login": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Login",
-        "description": "Authenticate with email/password, return JWT tokens.",
-        "operationId": "login_api_v1_auth_login_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "The password was accepted and a second factor is outstanding. The body carries `mfa_token` plus either `mfa_required` (complete it at `POST /auth/mfa/verify`) or `mfa_enrollment_required` (the tenant requires a factor this account has not enrolled; enrol at `POST /auth/mfa/enroll/begin`). No session is issued.",
-            "content": {
-              "application/json": {
-                "example": {
-                  "mfa_required": true,
-                  "mfa_token": "eyJ…",
-                  "methods": [
-                    "totp",
-                    "recovery_code"
-                  ]
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/sso/status": {
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Sso Status",
-        "description": "What the login screen asks before it offers SSO. Public: it reveals\nonly that SSO is offered, under what label, and whether password sign-in\nremains open -- never issuers, client ids, endpoints or secrets.",
-        "operationId": "sso_status_api_v1_auth_sso_status_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Sso Status Api V1 Auth Sso Status Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/refresh": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Refresh Token",
-        "description": "Refresh access token using a valid refresh token.",
-        "operationId": "refresh_token_api_v1_auth_refresh_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/me": {
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Me",
-        "description": "Get current authenticated user info.",
-        "operationId": "get_me_api_v1_auth_me_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserMeResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/auth/me/preferences": {
-      "patch": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Patch Me Preferences",
-        "description": "Merge user preferences (e.g. theme) into the stored JSONB column.\n\nOnly the keys supplied in the request body are updated; all other\nexisting keys are preserved.  This lets the frontend evolve independent\npreference namespaces without overwriting each other.",
-        "operationId": "patch_me_preferences_api_v1_auth_me_preferences_patch",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PreferencesPatch"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserMeResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/socai2/cases": {
       "post": {
         "tags": [
@@ -209,11 +12,6 @@
         ],
         "summary": "Create Case",
         "operationId": "create_case_api_v1_socai2_cases_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -253,11 +51,6 @@
         ],
         "summary": "Case Queue",
         "operationId": "case_queue_api_v1_socai2_cases_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "limit",
@@ -524,11 +317,6 @@
         ],
         "summary": "Case Detail",
         "operationId": "case_detail_api_v1_socai2_cases__case_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -572,11 +360,6 @@
         ],
         "summary": "Update Page Data",
         "operationId": "update_page_data_api_v1_socai2_cases__case_id__page_data_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -628,11 +411,6 @@
         ],
         "summary": "Page Data",
         "operationId": "page_data_api_v1_socai2_cases__case_id__page_data_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -676,11 +454,6 @@
         ],
         "summary": "Publish Evidence",
         "operationId": "publish_evidence_api_v1_socai2_cases__case_id__evidence_index_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -734,11 +507,6 @@
         ],
         "summary": "Replace Members",
         "operationId": "replace_members_api_v1_socai2_cases__case_id__members_put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -792,11 +560,6 @@
         ],
         "summary": "Associate",
         "operationId": "associate_api_v1_socai2_cases__case_id__associations_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -850,11 +613,6 @@
         ],
         "summary": "Move Members",
         "operationId": "move_members_api_v1_socai2_cases__case_id__members_move_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -908,11 +666,6 @@
         ],
         "summary": "History",
         "operationId": "history_api_v1_socai2_cases__case_id__history_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -985,11 +738,6 @@
         ],
         "summary": "Prepare Baseline",
         "operationId": "prepare_baseline_api_v1_socai2_cases__case_id__baseline_prepare_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1043,11 +791,6 @@
         ],
         "summary": "Run Detail",
         "operationId": "run_detail_api_v1_socai2_cases__case_id__runs__run_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1101,11 +844,6 @@
         ],
         "summary": "Start",
         "operationId": "start_api_v1_socai2_cases__case_id__runs__run_id__start_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1169,11 +907,6 @@
         ],
         "summary": "Result Detail",
         "operationId": "result_detail_api_v1_socai2_cases__case_id__results__result_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1227,11 +960,6 @@
         ],
         "summary": "Artifact Content",
         "operationId": "artifact_content_api_v1_socai2_cases__case_id__runs__run_id__artifacts__artifact_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1295,11 +1023,6 @@
         ],
         "summary": "Case Source Artifact",
         "operationId": "case_source_artifact_api_v1_socai2_cases__case_id__artifacts__artifact_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1353,11 +1076,6 @@
         ],
         "summary": "Case Activities",
         "operationId": "case_activities_api_v1_socai2_cases__case_id__activities_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1425,11 +1143,6 @@
         ],
         "summary": "Frozen Material",
         "operationId": "frozen_material_api_v1_socai2_cases__case_id__runs__run_id__materials__material_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1491,11 +1204,6 @@
         ],
         "summary": "Reserved: send a Case AI question (not implemented)",
         "operationId": "ask_api_v1_socai2_cases__case_id__ai_messages_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1529,9 +1237,6 @@
               }
             }
           },
-          "403": {
-            "description": "Case write permission and a user actor are required"
-          },
           "503": {
             "description": "socai2 Case API is disabled"
           },
@@ -1555,11 +1260,6 @@
         ],
         "summary": "Reserved: save an AI answer as an investigation result (not implemented)",
         "operationId": "save_api_v1_socai2_cases__case_id__ai_messages__message_id__save_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1603,9 +1303,6 @@
               }
             }
           },
-          "403": {
-            "description": "Case write permission and a user actor are required"
-          },
           "503": {
             "description": "socai2 Case API is disabled"
           },
@@ -1629,11 +1326,6 @@
         ],
         "summary": "Explicitly adopt a saved whole-case result",
         "operationId": "adopt_result_api_v1_socai2_cases__case_id__results__result_id__adopt_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -1703,11 +1395,6 @@
         ],
         "summary": "Alert Analysis",
         "operationId": "alert_analysis_api_v1_socai2_alerts__alert_id__analysis_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -1780,11 +1467,6 @@
         ],
         "summary": "Incident Analysis",
         "operationId": "incident_analysis_api_v1_socai2_incidents__incident_id__analysis_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "incident_id",
@@ -1857,11 +1539,6 @@
         ],
         "summary": "Alert Run",
         "operationId": "alert_run_api_v1_socai2_alerts__alert_id__analysis_runs__run_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -1915,11 +1592,6 @@
         ],
         "summary": "Incident Run",
         "operationId": "incident_run_api_v1_socai2_incidents__incident_id__analysis_runs__run_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "incident_id",
@@ -1973,11 +1645,6 @@
         ],
         "summary": "Alerts",
         "operationId": "alerts_api_v1_socai2_alerts_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "limit",
@@ -2214,11 +1881,6 @@
         ],
         "summary": "Incidents",
         "operationId": "incidents_api_v1_socai2_incidents_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "limit",
@@ -2455,11 +2117,6 @@
         ],
         "summary": "Alert",
         "operationId": "alert_api_v1_socai2_alerts__alert_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -2503,11 +2160,6 @@
         ],
         "summary": "Incident",
         "operationId": "incident_api_v1_socai2_incidents__incident_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "incident_id",
@@ -2551,11 +2203,6 @@
         ],
         "summary": "Records",
         "operationId": "records_api_v1_socai2__subject___identity__records__section__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "subject",
@@ -2658,11 +2305,6 @@
         ],
         "summary": "Material",
         "operationId": "material_api_v1_socai2_alerts__alert_id__materials__material_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -2716,11 +2358,6 @@
         ],
         "summary": "Trace",
         "operationId": "trace_api_v1_socai2__subject___identity__analysis_runs__run_id__trace_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "subject",
@@ -2787,11 +2424,6 @@
         ],
         "summary": "Artifact",
         "operationId": "artifact_api_v1_socai2__subject___identity__analysis_runs__run_id__artifacts__artifact_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "subject",
@@ -2868,11 +2500,6 @@
         ],
         "summary": "Alert Source Artifact",
         "operationId": "alert_source_artifact_api_v1_socai2_alerts__identity__artifacts__artifact_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "identity",
@@ -2926,11 +2553,6 @@
         ],
         "summary": "Incident Source Artifact",
         "operationId": "incident_source_artifact_api_v1_socai2_incidents__identity__artifacts__artifact_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "identity",
@@ -2984,11 +2606,6 @@
         ],
         "summary": "Alert Analysis",
         "operationId": "alert_analysis_api_v1_socai2_alerts__alert_id__analyze_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -3042,11 +2659,6 @@
         ],
         "summary": "Incident Diagnosis",
         "operationId": "incident_diagnosis_api_v1_socai2_incidents__incident_id__diagnose_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "incident_id",
@@ -3100,11 +2712,6 @@
         ],
         "summary": "Create",
         "operationId": "create_api_v1_socai2_cases__case_id__tasks_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3156,11 +2763,6 @@
         ],
         "summary": "Listing",
         "operationId": "listing_api_v1_socai2_cases__case_id__tasks_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3228,11 +2830,6 @@
         ],
         "summary": "Edit",
         "operationId": "edit_api_v1_socai2_cases__case_id__tasks__task_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3294,11 +2891,6 @@
         ],
         "summary": "Detail",
         "operationId": "detail_api_v1_socai2_cases__case_id__tasks__task_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3352,11 +2944,6 @@
         ],
         "summary": "Revisions",
         "operationId": "revisions_api_v1_socai2_cases__case_id__tasks__task_id__revisions_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3434,11 +3021,6 @@
         ],
         "summary": "Revision",
         "operationId": "revision_api_v1_socai2_cases__case_id__tasks__task_id__revisions__revision_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3502,11 +3084,6 @@
         ],
         "summary": "Management",
         "operationId": "management_api_v1_socai2_cases__case_id__management_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3548,11 +3125,6 @@
         ],
         "summary": "Update Management",
         "operationId": "update_management_api_v1_socai2_cases__case_id__management_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3606,11 +3178,6 @@
         ],
         "summary": "Close Case",
         "operationId": "close_case_api_v1_socai2_cases__case_id__close_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3664,11 +3231,6 @@
         ],
         "summary": "Reopen Case",
         "operationId": "reopen_case_api_v1_socai2_cases__case_id__reopen_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -3723,11 +3285,6 @@
         ],
         "summary": "Feedback",
         "operationId": "feedback_api_v1_socai2_alerts__alert_id__feedback_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -3813,12 +3370,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/socai2/alerts/{alert_id}/management": {
@@ -3829,11 +3381,6 @@
         ],
         "summary": "Manage Alert",
         "operationId": "manage_alert_api_v1_socai2_alerts__alert_id__management_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "alert_id",
@@ -3919,12 +3466,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/socai2/incidents/{incident_id}/management": {
@@ -3935,11 +3477,6 @@
         ],
         "summary": "Manage Incident",
         "operationId": "manage_incident_api_v1_socai2_incidents__incident_id__management_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "incident_id",
@@ -4025,12 +3562,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/socai2/alerts/export": {
@@ -4040,11 +3572,6 @@
         ],
         "summary": "Export Alerts",
         "operationId": "export_alerts_api_v1_socai2_alerts_export_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "columns",
@@ -4281,11 +3808,6 @@
         ],
         "summary": "Export Incidents",
         "operationId": "export_incidents_api_v1_socai2_incidents_export_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "columns",
@@ -4522,11 +4044,6 @@
         ],
         "summary": "Export Cases",
         "operationId": "export_cases_api_v1_socai2_cases_export_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "columns",
@@ -4810,11 +4327,6 @@
         ],
         "summary": "Read Grouping Summary",
         "operationId": "read_grouping_summary_api_v1_socai2_incidents_grouping_summary_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "source_namespace",
@@ -4900,11 +4412,6 @@
         ],
         "summary": "Create Comment",
         "operationId": "create_comment_api_v1_socai2_cases__case_id__comments_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -4956,11 +4463,6 @@
         ],
         "summary": "List Comments",
         "operationId": "list_comments_api_v1_socai2_cases__case_id__comments_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5028,11 +4530,6 @@
         ],
         "summary": "Create Attachment",
         "operationId": "create_attachment_api_v1_socai2_cases__case_id__attachments_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5084,11 +4581,6 @@
         ],
         "summary": "List Attachments",
         "operationId": "list_attachments_api_v1_socai2_cases__case_id__attachments_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5156,11 +4648,6 @@
         ],
         "summary": "Read Attachment",
         "operationId": "read_attachment_api_v1_socai2_cases__case_id__attachments__attachment_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5214,11 +4701,6 @@
         ],
         "summary": "Preview adoption of a saved whole-case result",
         "operationId": "preview_result_adoption_api_v1_socai2_cases__case_id__results__result_id__adoption_preview_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5272,11 +4754,6 @@
         ],
         "summary": "Read adopted judgment versions and their saved sources",
         "operationId": "assessment_history_api_v1_socai2_cases__case_id__assessments_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "case_id",
@@ -5319,6 +4796,554 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AssessmentHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/story": {
+      "get": {
+        "tags": [
+          "socai2-case-story"
+        ],
+        "summary": "Read Story",
+        "operationId": "read_story_api_v1_socai2_cases__case_id__story_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Severity"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2048
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoryPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/exploration-candidates": {
+      "get": {
+        "tags": [
+          "socai2-case-exploration"
+        ],
+        "summary": "Candidates",
+        "operationId": "candidates_api_v1_socai2_cases__case_id__exploration_candidates_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "alert_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Alert Id"
+            }
+          },
+          {
+            "name": "object_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Object Id"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorationPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/exploration-base": {
+      "get": {
+        "tags": [
+          "socai2-case-exploration"
+        ],
+        "summary": "Read Base",
+        "operationId": "read_base_api_v1_socai2_cases__case_id__exploration_base_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorationBase"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/cases/{case_id}/exploration": {
+      "put": {
+        "tags": [
+          "socai2-case-exploration"
+        ],
+        "summary": "Save",
+        "operationId": "save_api_v1_socai2_cases__case_id__exploration_put",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplorationSave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorationSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "socai2-case-exploration"
+        ],
+        "summary": "Read",
+        "operationId": "read_api_v1_socai2_cases__case_id__exploration_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplorationSaved"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/alerts/{alert_id}/review-candidates": {
+      "get": {
+        "tags": [
+          "socai2-alert-review"
+        ],
+        "summary": "Candidates",
+        "operationId": "candidates_api_v1_socai2_alerts__alert_id__review_candidates_get",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          },
+          {
+            "name": "time_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time From"
+            }
+          },
+          {
+            "name": "time_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertReviewPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/socai2/alerts/{alert_id}/same-host-alerts": {
+      "get": {
+        "tags": [
+          "socai2-alert-hosts"
+        ],
+        "summary": "Recent",
+        "operationId": "recent_api_v1_socai2_alerts__alert_id__same_host_alerts_get",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertHostPage"
                 }
               }
             }
@@ -5951,6 +5976,124 @@
         ],
         "title": "AlertFeedbackBatch"
       },
+      "AlertHostItem": {
+        "properties": {
+          "alert": {
+            "$ref": "#/components/schemas/AlertFacts",
+            "description": "原告警事实，含名称、等级、真实发生时间、处理状态和判定；点击alert.id用E28打开。"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/AlertHostMatch"
+            },
+            "type": "array",
+            "title": "Matches",
+            "description": "全部同主机对象对，按起点/候选对象ID排序；不要求战术一致，不代表攻击因果。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alert",
+          "matches"
+        ],
+        "title": "AlertHostItem"
+      },
+      "AlertHostMatch": {
+        "properties": {
+          "seed": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "起点最新材料中的主机对象，保留ID、namespace、原值/规范值和字段路径；algorithm为null。"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "候选最新材料中与起点namespace及规范主机值完全相同的主机对象；沿材料ID用E31回查。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "seed",
+          "candidate"
+        ],
+        "title": "AlertHostMatch"
+      },
+      "AlertHostPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertHostItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "去重后按event_time倒序、alert.id倒序的最近记录；排除起点及发生时间未知的候选。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "完整匹配范围的去重告警数，不受本次返回上限影响。"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "本次配置的返回条数上限，当前7；7是条数，不是天数，无分页参数。"
+          },
+          "source_alert_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Alert Id",
+            "description": "当前查看的起点告警ID；它自身不在items中。"
+          },
+          "source_material_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Material Id",
+            "description": "实际读取的起点latest_material_id，没有材料时null。"
+          },
+          "source_namespace": {
+            "type": "string",
+            "title": "Source Namespace",
+            "description": "告警来源范围，候选必须相同；主机对象namespace另逐对核对。"
+          },
+          "source_hosts": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationObject"
+            },
+            "type": "array",
+            "title": "Source Hosts",
+            "description": "起点最新材料内非空的host对象；多个主机取并集，不从IP/资产ID推断。空列表时items为空。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本次数据库只读一致快照时间。查询已保存的最新发生记录，不限定在起点之前或最近若干天。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "source_alert_id",
+          "source_material_id",
+          "source_namespace",
+          "source_hosts",
+          "observed_at"
+        ],
+        "title": "AlertHostPage"
+      },
       "AlertManagementBatch": {
         "properties": {
           "operation_key": {
@@ -6107,6 +6250,295 @@
           "expected_row_version"
         ],
         "title": "AlertManagementUpdate"
+      },
+      "AlertReviewCandidate": {
+        "properties": {
+          "alert": {
+            "$ref": "#/components/schemas/AlertFacts",
+            "description": "原告警事实，含名称/严重程度/发生时间及当前处理状态/判定/版本；点击 alert.id 用 E28 打开。"
+          },
+          "matched_rules": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "same_host_and_tactic",
+                "same_ip",
+                "same_hash_algorithm_and_value"
+              ]
+            },
+            "type": "array",
+            "title": "Matched Rules",
+            "description": "该候选满足的去重规则；多规则命中仍只返回一条告警。"
+          },
+          "time_delta_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Delta Seconds",
+            "description": "候选与起点真实发生时间之差的绝对秒数；起点时间未知时 null。"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/AlertReviewMatch"
+            },
+            "type": "array",
+            "title": "Matches",
+            "description": "全部匹配对象对及具体依据，按双方对象 ID 排序，不将条数当作恶意分数。"
+          },
+          "incident_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Incident Ids",
+            "description": "候选当前所属事件 ID；可由 E29 回查。"
+          },
+          "case_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Case Ids",
+            "description": "候选当前所属 Case ID；可由 E03 回查，本查询不增删成员。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alert",
+          "matched_rules",
+          "time_delta_seconds",
+          "matches",
+          "incident_ids",
+          "case_ids"
+        ],
+        "title": "AlertReviewCandidate"
+      },
+      "AlertReviewMatch": {
+        "properties": {
+          "rule": {
+            "type": "string",
+            "enum": [
+              "same_host_and_tactic",
+              "same_ip",
+              "same_hash_algorithm_and_value"
+            ],
+            "title": "Rule",
+            "description": "同主机且同战术，或同IP，或同明确算法哈希；仅是人工复核依据。"
+          },
+          "seed": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "起点当前材料中实际参与匹配的对象。"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "候选当前材料中实际参与匹配的对象，保留原件 ID/值/字段路径。"
+          },
+          "shared_tactics": {
+            "items": {
+              "$ref": "#/components/schemas/AlertReviewTactic"
+            },
+            "type": "array",
+            "title": "Shared Tactics",
+            "description": "同主机规则必有共同检测战术及双方来源；IP/哈希规则为空数组。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rule",
+          "seed",
+          "candidate",
+          "shared_tactics"
+        ],
+        "title": "AlertReviewMatch"
+      },
+      "AlertReviewPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertReviewCandidate"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "按event_time倒序、alert.id倒序的当前页；空数组仅表示该范围无匹配。"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "完整时间范围去重后的候选告警数，不受分页影响。"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "相同起点与窗口下一页，null结束；起点材料或范围变化409，坏游标422。"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/AlertReviewScope",
+            "description": "本次实际起点、时间窗与不可用规则。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "单次只读一致快照的数据库时间；跨请求不冻结候选集合。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "scope",
+          "observed_at"
+        ],
+        "title": "AlertReviewPage"
+      },
+      "AlertReviewScope": {
+        "properties": {
+          "source_alert_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Alert Id",
+            "description": "本次复核起点告警 ID；结果排除它自身。"
+          },
+          "source_material_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Material Id",
+            "description": "实际读取的起点 latest_material_id；没有材料时 null。"
+          },
+          "source_event_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Event Time",
+            "description": "起点真实发生时间，未知为 null，不用入库时间代替。"
+          },
+          "source_namespace": {
+            "type": "string",
+            "title": "Source Namespace",
+            "description": "起点告警来源范围，候选必须完全相同；对象 namespace 另逐对核对。"
+          },
+          "time_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Time From",
+            "description": "实际候选事件时间下界，包含。"
+          },
+          "time_to": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Time To",
+            "description": "实际候选事件时间上界，不包含。"
+          },
+          "window_basis": {
+            "type": "string",
+            "enum": [
+              "seed_lookback",
+              "explicit"
+            ],
+            "title": "Window Basis",
+            "description": "默认回看配置30天至起点发生时刻；explicit为调用方明确范围，可包含起点之后的记录。"
+          },
+          "unavailable_rules": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "same_host_and_tactic",
+                "same_ip",
+                "same_hash_algorithm_and_value"
+              ]
+            },
+            "type": "array",
+            "title": "Unavailable Rules",
+            "description": "起点缺少所需对象或有效战术时列出无法使用的规则；不是查询失败。"
+          },
+          "excluded_objects": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationExcludedObject"
+            },
+            "type": "array",
+            "title": "Excluded Objects",
+            "description": "不支持对象及算法/格式非法hash，不把这些对象当作可匹配线索。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source_alert_id",
+          "source_material_id",
+          "source_event_time",
+          "source_namespace",
+          "time_from",
+          "time_to",
+          "window_basis",
+          "unavailable_rules",
+          "excluded_objects"
+        ],
+        "title": "AlertReviewScope"
+      },
+      "AlertReviewTactic": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "双方 detection.tactics 中完全相同的非空原标签；不是已确认的攻击行为。"
+          },
+          "seed_source_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Seed Source Paths",
+            "description": "起点材料中的 $.detection.tactics[index] 路径，保留重复标签各位置。"
+          },
+          "candidate_source_paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Candidate Source Paths",
+            "description": "候选材料中的同标签数组路径；材料 ID 见所属 match.candidate.material_id。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "seed_source_paths",
+          "candidate_source_paths"
+        ],
+        "title": "AlertReviewTactic"
       },
       "AlertStatus": {
         "type": "string",
@@ -8752,6 +9184,678 @@
         ],
         "title": "ExplanationView"
       },
+      "ExplorationBase": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "members",
+              "investigation"
+            ],
+            "title": "Kind",
+            "description": "members 为无完成调查时的成员关系；investigation 为指定完成调查。"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id",
+            "description": "底图所属案件。"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id",
+            "description": "固定的已完成基础调查 ID；成员底图为 null。"
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id",
+            "description": "该调查的基础结果 ID；缺结果为 null。"
+          },
+          "graph_artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Graph Artifact Id",
+            "description": "该结果关联的图原件 ID；结果未关联图时 null；已有引用但内容不可用时保留 ID，查看 graph_state。"
+          },
+          "scope_revision": {
+            "type": "integer",
+            "title": "Scope Revision",
+            "description": "底图成员范围版本；调查图使用该 Run 的版本。"
+          },
+          "delivery_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery State",
+            "description": "原调查交付状态，partial 保留；成员图为 null。"
+          },
+          "graph_state": {
+            "type": "string",
+            "title": "Graph State",
+            "description": "members 或原图材料状态；缺图为 unavailable，不能借用其他轮图。"
+          },
+          "graph": {
+            "$ref": "#/components/schemas/JsonValue",
+            "description": "原调查图 JSON 原样保留；成员底图或缺图时为 null。"
+          },
+          "sources": {
+            "$ref": "#/components/schemas/ExplorationSources",
+            "description": "成员或 Run 成员的告警与指定材料对象；图原文仍以 graph 为准。"
+          },
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint",
+            "description": "当前返回内容的摘要；首次保存/重置原样送回，来源变化返回409。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "case_id",
+          "run_id",
+          "result_id",
+          "graph_artifact_id",
+          "scope_revision",
+          "delivery_state",
+          "graph_state",
+          "graph",
+          "sources",
+          "fingerprint"
+        ],
+        "title": "ExplorationBase"
+      },
+      "ExplorationCandidate": {
+        "properties": {
+          "alert": {
+            "$ref": "#/components/schemas/AlertFacts",
+            "description": "原告警事实DTO；E28按alert.id回查。"
+          },
+          "shared_object_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Shared Object Count",
+            "description": "去重后的共享对象数，重复来源路径不重复计数。"
+          },
+          "time_delta_seconds": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Delta Seconds",
+            "description": "候选距任一匹配起点告警已知event_time的最短秒数；起点时间全未知为null。"
+          },
+          "already_in_case": {
+            "type": "boolean",
+            "title": "Already In Case",
+            "description": "该告警当前是否已为本案正式成员；展开/预览不会加入。"
+          },
+          "case_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Case Ids",
+            "description": "该告警当前所属Case ID，保留其他案件归属。"
+          },
+          "incident_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Incident Ids",
+            "description": "该告警当前所属事件ID。"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationMatch"
+            },
+            "type": "array",
+            "title": "Matches",
+            "description": "所有匹配对象对及原始材料依据；按对象ID稳定排序。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alert",
+          "shared_object_count",
+          "already_in_case",
+          "case_ids",
+          "incident_ids",
+          "matches"
+        ],
+        "title": "ExplorationCandidate"
+      },
+      "ExplorationExcludedObject": {
+        "properties": {
+          "object_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Object Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "unsupported_object_type",
+              "hash_algorithm_or_value_invalid"
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "object_id",
+          "reason"
+        ],
+        "title": "ExplorationExcludedObject"
+      },
+      "ExplorationLinkInput": {
+        "properties": {
+          "seed_object_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Seed Object Id",
+            "description": "E66 matches.seed.id；必须连到当前底图或前序展开告警。"
+          },
+          "candidate_object_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Object Id",
+            "description": "E66 matches.candidate.id；按实际保存对象版本核对，不要求仍是最新材料。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "seed_object_id",
+          "candidate_object_id"
+        ],
+        "title": "ExplorationLinkInput"
+      },
+      "ExplorationMatch": {
+        "properties": {
+          "basis": {
+            "type": "string",
+            "enum": [
+              "same_source_value",
+              "same_hash_algorithm_and_value"
+            ],
+            "title": "Basis",
+            "description": "前者为同来源同类型值，后者还核对明确哈希算法和格式；均不证明攻击因果。"
+          },
+          "seed": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "起点中的实际对象记录。"
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/ExplorationObject",
+            "description": "候选告警中的实际匹配对象记录。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "basis",
+          "seed",
+          "candidate"
+        ],
+        "title": "ExplorationMatch"
+      },
+      "ExplorationObject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "alert_objects原对象ID，可作为下一次object_id；不是图内部节点ID。"
+          },
+          "alert_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Alert Id"
+          },
+          "material_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Material Id",
+            "description": "匹配时的最新材料ID；E31按此版本回查原文。"
+          },
+          "object_type": {
+            "type": "string",
+            "title": "Object Type"
+          },
+          "namespace": {
+            "type": "string",
+            "title": "Namespace",
+            "description": "原对象身份范围；本次双方必须完全相同，不表示统一资产身份。"
+          },
+          "object_key": {
+            "type": "string",
+            "title": "Object Key",
+            "description": "原对象键，未改写。"
+          },
+          "raw_value": {
+            "type": "string",
+            "title": "Raw Value",
+            "description": "收到的原对象值。"
+          },
+          "normalized_value": {
+            "type": "string",
+            "title": "Normalized Value",
+            "description": "原存储值；普通类型按此值精确比较，不追加模糊或别名归并。"
+          },
+          "source_path": {
+            "type": "string",
+            "title": "Source Path",
+            "description": "对应材料中实际来源字段路径。"
+          },
+          "algorithm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Algorithm",
+            "description": "hash的明确算法按MD5/SHA1/SHA256/SHA512规范显示；其他类型null。原属性在原对象/材料读取。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "alert_id",
+          "material_id",
+          "object_type",
+          "namespace",
+          "object_key",
+          "raw_value",
+          "normalized_value",
+          "source_path"
+        ],
+        "title": "ExplorationObject"
+      },
+      "ExplorationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationCandidate"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total",
+            "description": "整个查询范围命中告警数；SQL先去重统计再分页。"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "相同查询下一页；null结束。起点或范围变化409，需重新查询。"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ExplorationScope"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本请求同一只读数据库快照的观察时间；不保证跨请求快照不变。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "scope",
+          "observed_at"
+        ],
+        "title": "ExplorationPage"
+      },
+      "ExplorationSave": {
+        "properties": {
+          "operation_key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Key",
+            "description": "本次保存幂等键；相同用户/请求重试返回原快照，改请求409。"
+          },
+          "expected_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Snapshot Id",
+            "description": "最近读到的保存 ID，首次必须明确 null；并发变化409。"
+          },
+          "base_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Snapshot Id",
+            "description": "继续已存探索时填该快照 ID，固定复制其底图；首次或重置为 null。"
+          },
+          "base_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Run Id",
+            "description": "首次/重置的底图 Run ID；成员图为 null；复制快照时不可填。"
+          },
+          "base_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Fingerprint",
+            "description": "首次/重置必填 GET 底图指纹；复制快照时不可填。"
+          },
+          "expanded_links": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationLinkInput"
+            },
+            "type": "array",
+            "title": "Expanded Links",
+            "description": "按展开先后排列的所有保留关系；撤销需去除后续悬空分支。"
+          },
+          "view_state": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "View State",
+            "description": "客户端画布位置、选择、隐藏、视角等 JSON，原样保存返回；不当作业务事实或成员。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "operation_key",
+          "expected_snapshot_id",
+          "expanded_links",
+          "view_state"
+        ],
+        "title": "ExplorationSave"
+      },
+      "ExplorationSaved": {
+        "properties": {
+          "snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplorationSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "本案最近一次保存；从未保存时 null，不能伪装成空图。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "snapshot"
+        ],
+        "title": "ExplorationSaved"
+      },
+      "ExplorationScope": {
+        "properties": {
+          "seed_kind": {
+            "type": "string",
+            "enum": [
+              "case",
+              "alert",
+              "object"
+            ],
+            "title": "Seed Kind"
+          },
+          "seed_alert_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Seed Alert Ids",
+            "description": "本次实际查询起点告警；候选不重复返回这些告警。"
+          },
+          "source_namespace": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Namespace",
+            "description": "Case绑定的告警来源范围，候选必须相同。"
+          },
+          "case_scope_revision": {
+            "type": "integer",
+            "title": "Case Scope Revision"
+          },
+          "time_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time From",
+            "description": "实际事件时间起点，包含；无起点且未指定窗口时null。"
+          },
+          "time_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time To",
+            "description": "实际事件时间终点，不包含；无起点且未指定窗口时null。"
+          },
+          "window_basis": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "seed_event_times",
+              "no_seeds"
+            ],
+            "title": "Window Basis"
+          },
+          "excluded_objects": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationExcludedObject"
+            },
+            "type": "array",
+            "title": "Excluded Objects",
+            "description": "多对象起点中未参与查询的对象和原因；不悄悄当作无关联。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "seed_kind",
+          "seed_alert_ids",
+          "source_namespace",
+          "case_scope_revision",
+          "time_from",
+          "time_to",
+          "window_basis",
+          "excluded_objects"
+        ],
+        "title": "ExplorationScope"
+      },
+      "ExplorationSnapshot": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "不可变探索保存 ID；下一次保存作为 expected_snapshot_id。"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id",
+            "description": "所属案件 ID。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "数据库保存时间。"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By",
+            "description": "实际保存用户 ID。"
+          },
+          "base": {
+            "$ref": "#/components/schemas/ExplorationBase",
+            "description": "固定的底图内容及来源，新结果不会替换。"
+          },
+          "expanded_links": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationMatch"
+            },
+            "type": "array",
+            "title": "Expanded Links",
+            "description": "经真实对象核对的共有对象关系；不表示攻击因果。"
+          },
+          "expanded_sources": {
+            "$ref": "#/components/schemas/ExplorationSources",
+            "description": "展开告警及其匹配材料对象快照；已保存记录继续沿用原内容。"
+          },
+          "view_state": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "View State",
+            "description": "客户端保存的展示状态原样返回。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "case_id",
+          "created_at",
+          "created_by",
+          "base",
+          "expanded_links",
+          "expanded_sources",
+          "view_state"
+        ],
+        "title": "ExplorationSnapshot"
+      },
+      "ExplorationSources": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertFacts"
+            },
+            "type": "array",
+            "title": "Alerts",
+            "description": "保存时的告警事实；继续旧快照保留原值，不代表实时状态。"
+          },
+          "objects": {
+            "items": {
+              "$ref": "#/components/schemas/ExplorationObject"
+            },
+            "type": "array",
+            "title": "Objects",
+            "description": "对应明确材料版本的原始对象；保留原件 ID 和字段路径。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alerts",
+          "objects"
+        ],
+        "title": "ExplorationSources"
+      },
       "FeedbackFields": {
         "properties": {
           "disposition": {
@@ -9584,25 +10688,7 @@
         ],
         "title": "IncidentManagementUpdate"
       },
-      "LoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "title": "Password"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "LoginRequest"
-      },
+      "JsonValue": {},
       "MemberChange": {
         "properties": {
           "operation_key": {
@@ -9760,21 +10846,6 @@
           "legacy"
         ],
         "title": "Origin"
-      },
-      "PreferencesPatch": {
-        "properties": {
-          "preferences": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Preferences"
-          }
-        },
-        "type": "object",
-        "required": [
-          "preferences"
-        ],
-        "title": "PreferencesPatch",
-        "description": "Partial update payload for user preferences (merged server-side)."
       },
       "PrepareBaseline": {
         "properties": {
@@ -9973,19 +11044,6 @@
           "limitations"
         ],
         "title": "RecordPage"
-      },
-      "RefreshRequest": {
-        "properties": {
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token"
-          }
-        },
-        "type": "object",
-        "required": [
-          "refresh_token"
-        ],
-        "title": "RefreshRequest"
       },
       "ResultAdoptionPreview": {
         "properties": {
@@ -11742,6 +12800,156 @@
         ],
         "title": "StartAvailability"
       },
+      "StoryEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "稳定条目键：alert/investigation/human_result加源记录UUID。"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "alert",
+              "investigation",
+              "human_result"
+            ],
+            "title": "Kind",
+            "description": "告警事实、基础调查或人工完成修订；不包含AI对话。"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At",
+            "description": "该条目的实际业务时间；未知为null并排在最后，不以读取时间补齐。"
+          },
+          "time_source": {
+            "type": "string",
+            "enum": [
+              "event_time",
+              "started_at",
+              "ended_at",
+              "completed_at",
+              "unknown"
+            ],
+            "title": "Time Source",
+            "description": "occurred_at对应的源时间字段；缺失为unknown。"
+          },
+          "alert": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertFacts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "告警条目复用原告警事实合同；其他类型为null。E28按id回查，战术/库存用E31/E30。"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "调查条目的原Run；其他类型为null。E12按case_id/id回查。"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultView"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "终态Run已保存的baseline结果，按saved_at/id升序；活跃或无结果为空，不代表没有风险。E14按结果id回查。"
+          },
+          "task_revision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRevisionView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "人工完成条目的不可变原修订；其他类型为null。E43按case/task/revision回查。"
+          },
+          "is_current_task_revision": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Current Task Revision",
+            "description": "此完成修订是否仍为任务当前修订；false仍保留历史事实，不能据此判断当前待办。其他类型为null。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "occurred_at",
+          "time_source"
+        ],
+        "title": "StoryEntry"
+      },
+      "StoryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoryEntry"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "本页故事条目；按真实时间倒序、未知时间最后，同时间按稳定id倒序。"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "整个Case内筛选命中的故事条目数，不是当前页数或告警数。"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "原样用于相同Case和筛选的下一页；null结束，条件改变须清空。"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At",
+            "description": "本次数据库读取时间；每请求一致快照，跨页源数据变化后应刷新。"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "next_cursor",
+          "observed_at"
+        ],
+        "title": "StoryPage"
+      },
       "SubjectBatchReceipt": {
         "properties": {
           "operation_key": {
@@ -12692,34 +13900,6 @@
         ],
         "title": "TimeSource"
       },
-      "TokenResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token"
-          },
-          "token_type": {
-            "type": "string",
-            "title": "Token Type",
-            "default": "bearer"
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In",
-            "default": 1800
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "refresh_token"
-        ],
-        "title": "TokenResponse"
-      },
       "TraceView": {
         "properties": {
           "run": {
@@ -12921,52 +14101,6 @@
         ],
         "title": "TriageView"
       },
-      "UserMeResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "tenant_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Tenant Id"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "username": {
-            "type": "string",
-            "title": "Username"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          },
-          "preferences": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Preferences",
-            "default": {}
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "tenant_id",
-          "email",
-          "username",
-          "role",
-          "is_active"
-        ],
-        "title": "UserMeResponse"
-      },
       "Validation": {
         "type": "string",
         "enum": [
@@ -13027,12 +14161,6 @@
           "unknown"
         ],
         "title": "WorkStatus"
-      }
-    },
-    "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
       }
     }
   }

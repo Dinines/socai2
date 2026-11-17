@@ -1,0 +1,103 @@
+--- a/services/api/app/socai2/knowledge_model_input.py
++++ b/services/api/app/socai2/knowledge_model_input.py
+@@ -48,7 +48,7 @@
+     return result, omissions
+ 
+ 
+-def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=()):
++def choose(entries, stage, allowed, policy, *, dependencies=(), excluded=(), question_id=None):
+     groups, retained, omissions = {}, [], []
+     for entry in entries:
+         item = entry.get("knowledge")
+@@ -59,6 +59,7 @@
+     budget = policy["stage_max_characters"][stage]
+     used = sum(len(encoded(r["value"]).decode()) for r in entries
+                if r.get("knowledge", {}).get("identity") in dependencies)
++    question_purposes = policy.get("deep_question_purposes", {}).get(question_id) if stage == "Deep" else None
+     for identity, rows in groups.items():
+         if identity in dependencies:
+             retained.extend(rows)
+@@ -66,10 +67,13 @@
+         origins = [o for r in rows for o in r["knowledge"]["origins"]]
+         stage_origins = [o for o in origins if o["purpose"] in policy["stage_purposes"][stage]]
+         purpose_allowed = bool(stage_origins)
+-        related = any(set(o["query_alert_ids"]) & set(allowed) for o in stage_origins)
++        question_origins = stage_origins if question_purposes is None else [
++            o for o in stage_origins if o["purpose"] in question_purposes]
++        related = any(set(o["query_alert_ids"]) & set(allowed) for o in question_origins)
+         size = sum(len(encoded(r["value"]).decode()) for r in rows)
+         reason = ("knowledge_input_capacity" if identity in excluded else
+                   "knowledge_purpose_not_for_stage" if not purpose_allowed else
++                  "knowledge_purpose_not_for_question" if not question_origins else
+                   "knowledge_outside_task_scope" if not related else
+                   "knowledge_optional_budget" if used + size > budget else None)
+         if reason:
+--- a/services/api/app/socai2/case_followup_input.py
++++ b/services/api/app/socai2/case_followup_input.py
+@@ -485,7 +485,8 @@
+     elif question.id == "coverage":
+         knowledge_scope = set()
+     selected, knowledge_omissions = knowledge.choose([r for r in selected_records if r.get("knowledge")],
+-        stage, knowledge_scope, cfg["knowledge_selection"], dependencies=dependencies, excluded=_excluded_knowledge)
++        stage, knowledge_scope, cfg["knowledge_selection"], dependencies=dependencies, excluded=_excluded_knowledge,
++        question_id=question.id if question else None)
+     reg.omissions.extend(knowledge_omissions)
+     for row in selected:
+         if row["knowledge"]["identity"] in dependencies:
+--- a/services/api/app/socai2/runtime_policy.py
++++ b/services/api/app/socai2/runtime_policy.py
+@@ -143,6 +143,12 @@
+             or any(not isinstance(v, list) or not v or not set(v) <= {
+                 "technical_explanation", "investigation_guidance", "historical_case_reference"} for v in purposes.values())):
+         raise ValueError("case_knowledge_stage_purposes_invalid")
++    question_purposes = data["knowledge_selection"].get("deep_question_purposes", {})
++    if (not isinstance(question_purposes, dict)
++            or any(not isinstance(k, str) or not k.strip() or not isinstance(v, list)
++                   or any(not isinstance(p, str) or p not in purposes["Deep"] for p in v)
++                   for k, v in question_purposes.items())):
++        raise ValueError("case_knowledge_question_purposes_invalid")
+     if (not isinstance(followup, dict) or followup.get("version") != "socai2.case-followup.v1"
+             or any(not isinstance(followup.get(k), str) or not followup[k].strip() for k in ("Deep", "C6", "common"))
+             or any(not isinstance(followup.get(k), list) or any(not isinstance(v, str) for v in followup[k])
+--- a/services/api/app/socai2/case-input-v1.json
++++ b/services/api/app/socai2/case-input-v1.json
+@@ -1160,6 +1160,9 @@
+     "impact": "回答分清：观察到的动作、有原始结果证明的作用、仍未知的影响。仅有命令内容/启动或连接记录时，明确结果与影响尚未确认；只有实际返回内容、作用结果或业务确认才能陈述已取得信息、修改状态或造成损失。此边界同时适用于本问题的 answer、reason、limitations 和最终 impact，不能靠结尾“尚待核实”抵消前面的确定断言。"
+   },
+   "knowledge_selection": {
++    "deep_question_purposes": {
++      "authorization": []
++    },
+     "stage_max_characters": {
+       "C3": 12000,
+       "Deep": 8000,
+--- a/services/api/tests/test_socai2_case_followup_boundary.py
++++ b/services/api/tests/test_socai2_case_followup_boundary.py
+@@ -517,6 +517,27 @@
+     assert not selected and omissions[0]["reason"] == "knowledge_outside_task_scope"
+     selected, omissions = choose(mixed, "Deep", [aid], policy)
+     assert selected == mixed and not omissions
++    # The same-member guide is optional for authorization, but a selected
++    # prior citation still carries its exact source into that question.
++    guided = copy.deepcopy(body)
++    guided["rows"][1].update(purpose="investigation_guidance", purpose_label="取证指导")
++    guided_base = build(context, sample["context_id"], [(ident, guided, None)], [], sample["materials"])
++    card = next(r for r in guided_base["input_ledger"]["records"] if r.get("knowledge"))
++    authorization = inputs.build("Deep", context, guided_base, {}, question_id="authorization")
++    assert authorization["ready"], authorization["reason"]
++    assert not any(r.get("knowledge") for r in authorization["followup_boundary"]["records"])
++    assert any(o["reason"] == "knowledge_purpose_not_for_question" for o in authorization["omissions"])
++    nature = inputs.build("Deep", context, guided_base, {}, question_id="behavior_nature")
++    assert any(r.get("knowledge") for r in nature["followup_boundary"]["records"])
++    answer = answer_for(guided_base, context)
++    next(q for q in answer["questions"] if q["id"] == "authorization")["evidence_ids"] = [card["id"]]
++    prior = {"analysis": json.loads(case_output_adapter.restore(json.dumps(answer), guided_base["case_boundary"])),
++             "source_map": guided_base["source_map"], "validation": "structure_scope_sources_checked"}
++    required = inputs.build("Deep", context, guided_base, {}, previous=prior, prior_id=uuid4(), question_id="authorization")
++    actual = next(r for r in required["followup_boundary"]["records"] if r.get("knowledge"))
++    assert actual["block"] == "dependency" and actual["ref"] == card["ref"]
++    assert actual["value"] == card["value"] and actual["alert_ids"] == card["alert_ids"]
++    assert not any(o["reason"] == "knowledge_purpose_not_for_question" for o in required["omissions"])
+ 
+ 
+ def test_knowledge_context_survives_c3_c6_but_cannot_cover_current_members(sample):
