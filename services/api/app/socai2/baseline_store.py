@@ -77,7 +77,8 @@ class BaselineStore:
             CA, CA.c.case_id == case_id
         )))).scalars())
 
-    async def event(self, case_id, operation_id, actor, action, detail, targets):
+    async def event(self, case_id, operation_id, actor, action, detail, targets, *,
+                    activity_reason=None, activity_notes=None, expected_version=None, actual_version=None):
         aid = uuid4()
         targets = list(targets)
         case_target = next((i for i, t in enumerate(targets) if t[0] == "case_id"), None)
@@ -90,12 +91,13 @@ class BaselineStore:
         await self.db.execute(insert(ACT).values(id=aid, tenant_id=self.tenant_id,
             operation_id=operation_id, actor=actor, action=action, subject_case_id=case_id,
             occurred_at=func.clock_timestamp(), summary=action,
-            detail={"schema_version": "activity.v1", "reason": None, "request_key": str(operation_id),
-                    "source": action, "expected_version": None, "actual_version": None, "notes": []}))
+            detail={"schema_version": "activity.v1", "reason": activity_reason, "request_key": str(operation_id),
+                    "source": action, "expected_version": expected_version, "actual_version": actual_version,
+                    "notes": activity_notes or []}))
         for field, target_id, before, after in targets:
             await self.db.execute(insert(TGT).values(id=uuid4(), tenant_id=self.tenant_id,
                 activity_id=aid, **{field: target_id}, before_value=before if before is not None else null(),
-                after_value=after if after is not None else null(), result_state="succeeded"))
+                after_value=after if after is not None else null(), result_state="succeeded", reason=activity_reason))
 
     async def receipt(self, case_id, operation_id, action):
         row = await self.one(select(TGT.c.after_value).join(ACT,
@@ -250,6 +252,8 @@ class BaselineStore:
                 RES.c.case_id == case_id, RES.c.id == request.comparison_result_id)))
             if prior is None:
                 raise StoreError("comparison_result_not_found", 404)
+        from .subject_risk_opinions import initialize_for_analysis
+        await initialize_for_analysis(self, "case", case_id)
         context = await c1.capture(self.db, self.tenant_id, case_id, request)
         if not context.alerts:
             raise StoreError("baseline_scope_empty")
@@ -257,9 +261,12 @@ class BaselineStore:
             from .case_execution_input import prepare
             context = prepare(context, query_policy, limits)
         if update_context is not None:
+            from .case_previous_analysis import freeze
             from .case_update_inputs import business_view
             context = context.model_copy(update={"update_context": {
                 **update_context, "business_view": business_view(context)}})
+            context = await freeze(self, case_id, run_id, context,
+                                   update_context["comparison_context"], actor.user_id)
         payload = context.model_dump(mode="json")
         rows = [{key: UUID(a.alert[key]) if a.alert[key] else None
                  for key in ["id", "latest_material_id", "latest_triage_id", "latest_feedback_id"]}
@@ -298,6 +305,10 @@ class BaselineStore:
             started_at=now, requested_by=actor.user_id, window_start=context.scope.window_start,
             window_end=context.scope.window_end, comparison_result_id=request.comparison_result_id,
             row_version=R.c.row_version + 1))
+        from .subject_risk_opinions import freeze
+        await freeze(self, await self.run(case_id, run_id),
+            selected_members={aid: a.material["id"] if a.material else None for aid, a in context.alerts.items()},
+            scope_kind=context.scope.kind)
         await self.event(case_id, request.operation_key, actor.snapshot(), "baseline_started",
             {"run_id": str(run_id), "scope_revision": cas["scope_revision"]},
             [("run_id", run_id, {"state": "pending_update"}, {"state": "running"})])
@@ -425,7 +436,11 @@ class BaselineStore:
     async def publish(self, case_id: UUID, run_id: UUID, publication: Publication, *, result_id: UUID | None = None):
         await self.case(case_id)
         run = await self.run(case_id, run_id)
-        payload_hash = digest(publication.model_dump(mode="json"))
+        payload = publication.model_dump(mode="json")
+        if publication.business_verdict is None:
+            # Already published pre-verdict results use the original payload hash.
+            payload.pop("business_verdict")
+        payload_hash = digest(payload)
         prior = await self.receipt(case_id, publication.operation_key, "baseline_published")
         if prior:
             if prior["payload_hash"] != payload_hash or prior["run_id"] != str(run_id):
@@ -455,8 +470,9 @@ class BaselineStore:
             state=publication.terminal_state, ended_at=now, stop_reason=publication.stop_reason,
             stop_detail=publication.stop_detail, delivery_state=publication.delivery_state,
             row_version=R.c.row_version + 1))
-        values = publication.model_dump(mode="json", exclude={"operation_key", "members", "terminal_state",
-            "stop_reason", "stop_detail", "graph_artifact_id", "report_artifact_id"})
+        excluded = {"operation_key", "members", "terminal_state", "stop_reason", "stop_detail",
+                    "graph_artifact_id", "report_artifact_id"}
+        values = {key: value for key, value in payload.items() if key not in excluded}
         await self.db.execute(insert(RES).values(id=result_id, tenant_id=self.tenant_id,
             case_id=case_id, kind="baseline", source_run_id=run_id, purpose=run["purpose"],
             input_artifact_id=run["input_artifact_id"], comparison_result_id=run["comparison_result_id"],

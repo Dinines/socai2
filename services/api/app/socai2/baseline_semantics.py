@@ -107,7 +107,7 @@ def scalar_reason(name, value):
     elif name in {"src_port", "dst_port"}:
         if type(value) is not int or not 0 <= value <= 65535:
             return "invalid_port"
-    elif name in {"source_ip", "dest_ip"}:
+    elif name in {"source_ip", "dest_ip", "device_ip"}:
         if not isinstance(value, str):
             return "invalid_ip"
         try:
@@ -121,7 +121,7 @@ def scalar_reason(name, value):
 
 def same_scalar(name, left, right):
     """Compare typed values without rewriting their retained source representation."""
-    if name in {"source_ip", "dest_ip"}:
+    if name in {"source_ip", "dest_ip", "device_ip"}:
         def address(value):
             parsed = ipaddress.ip_address(value)
             return parsed.ipv4_mapped or parsed if isinstance(parsed, ipaddress.IPv6Address) else parsed

@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models import socai2 as m
 
 from .analysis_task_store import A, AnalysisTaskStore, T
+from .analysis_task_times import attempt_timing, seconds, task_timing
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest
 
@@ -29,7 +30,7 @@ def cursor_point(cursor, fingerprint):
         raise StoreError("invalid_cursor", 422) from None
 
 
-async def project_task(store, original):
+async def project_task(store, original, observed_at):
     root = await store.task(original["merged_into_task_id"], lock=False) if original["merged_into_task_id"] else original
     if root["state"] == "merged":
         raise StoreError("analysis_task_link_invalid", 503)
@@ -48,14 +49,32 @@ async def project_task(store, original):
                 query = query.where(table.c.kind == "triage")
             rows = (await store.db.execute(query.order_by(table.c.id))).mappings()
             results.extend({"result_type": result_type, **dict(row)} for row in rows)
-    fields = ("attempt_no", "run_id", "started_at", "local_ended_at", "interruption_observed_at",
+    active_step = None
+    current = attempts[-1] if attempts else None
+    if root["state"] == "running" and current and current["local_state"] == "running" and current["run_id"]:
+        step, run = m.RunSteps.__table__, m.Runs.__table__
+        row = await store.one(select(step.c.id.label("step_id"), step.c.run_id, step.c.name, step.c.started_at)
+            .select_from(step.join(run, (run.c.tenant_id == step.c.tenant_id) & (run.c.id == step.c.run_id)))
+            .where(*store.where(step, step.c.run_id == current["run_id"], step.c.state == "running",
+                step.c.started_at.is_not(None), step.c.ended_at.is_(None), run.c.state == "running"))
+            .order_by(step.c.started_at.desc(), step.c.seq.desc()).limit(1))
+        if row:
+            anomalies = []
+            active_step = {**dict(row), "elapsed_seconds": seconds(row["started_at"], observed_at,
+                "elapsed_seconds", anomalies), "anomalies": anomalies}
+    fields = ("attempt_no", "run_id", "enqueued_at", "started_at", "local_ended_at", "interruption_observed_at",
               "local_state", "outcome", "failed_at", "error_code", "error_stage", "error_detail", "retryable")
     return {"task_id": original["id"], **{k: original[k] for k in (
-        "subject_type", "subject_id", "kind", "intent", "source", "submitted_at", "request_payload")},
+        "subject_type", "subject_id", "kind", "intent", "source", "submitted_at", "request_payload",
+        "first_enqueued_at", "last_enqueued_at")},
         "status": "accepted" if root["state"] in {"accepted", "waiting"} else root["state"],
         **{k: root[k] for k in ("reason_code", "started_at", "ended_at", "retry_count", "next_retry_at")},
         "latest_run_id": run_ids[-1] if run_ids else None,
-        "attempts": [{k: a[k] for k in fields} for a in attempts], "results": results}
+        "observed_at": observed_at, "active_step": active_step,
+        "execution_shared": original["merged_into_task_id"] is not None,
+        "timing": task_timing(original, root, attempts, observed_at),
+        "attempts": [{**{k: a[k] for k in fields}, "timing": attempt_timing(a, observed_at)} for a in attempts],
+        "results": results}
 
 
 class AnalysisTaskService(BaselineService):
@@ -90,7 +109,7 @@ class AnalysisTaskService(BaselineService):
             task = await store.task(task_id, lock=False)
             if (task["subject_type"], task["subject_id"]) != (subject_type, subject_id) or task["kind"] == "knowledge_sync":
                 raise StoreError("analysis_task_not_found", 404)
-            return await project_task(store, task)
+            return await project_task(store, task, await store.now())
 
     async def list_tasks(self, tenant_id, subject_type, subject_id, *, limit=None, cursor=None):
         limit = self.policy.page_size(limit)
@@ -111,7 +130,8 @@ class AnalysisTaskService(BaselineService):
                 last = rows[limit - 1]
                 next_cursor = base64.urlsafe_b64encode(json.dumps({"scope": fingerprint,
                     "at": last["submitted_at"].isoformat(), "id": str(last["id"])}).encode()).decode()
+            observed_at = await store.now()
             return {"subject_type": subject_type, "subject_id": subject_id,
-                "items": [await project_task(store, row) for row in rows[:limit]], "total": total,
-                "next_cursor": next_cursor, "observed_at": await store.now(),
-                "update_state": await store.automatic_status(subject_type, subject_id)}
+                "items": [await project_task(store, row, observed_at) for row in rows[:limit]], "total": total,
+                "next_cursor": next_cursor, "observed_at": observed_at,
+                "update_state": await store.automatic_status(subject_type, subject_id, observed_at=observed_at)}

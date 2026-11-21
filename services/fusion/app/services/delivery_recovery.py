@@ -15,6 +15,13 @@ from typing import Any
 
 from app.models.alert import FusedAlert, FusionDecision, RawAlert
 from app.services.event_schema import canonical_source_event_id
+from app.services.receipt_json import (
+    canonical_numbers,
+    decoded,
+    encoded,
+    lake_input,
+    model_value,
+)
 
 SNAPSHOT_VERSION = 1
 MAX_SNAPSHOT_BYTES = 1024 * 1024
@@ -33,7 +40,7 @@ class SnapshotLookup:
 
 
 def _canonical(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    return encoded(value).encode("utf-8")
 
 
 def _check_identity(fused: FusedAlert, expected: RawAlert) -> None:
@@ -51,27 +58,36 @@ def _check_identity(fused: FusedAlert, expected: RawAlert) -> None:
         raise DeliveryHold("fusion first-result snapshot identity or incident is unproven")
 
 
-def make_snapshot(fused: FusedAlert) -> dict[str, Any]:
+def make_snapshot(fused: FusedAlert, *, max_bytes=MAX_SNAPSHOT_BYTES) -> dict[str, Any]:
     _check_identity(fused, fused.alert)
-    payload = fused.model_dump(mode="json")
-    snapshot = {"version": SNAPSHOT_VERSION, "sha256": hashlib.sha256(_canonical(payload)).hexdigest(), "fused": payload}
-    if len(_canonical(snapshot)) > MAX_SNAPSHOT_BYTES:
+    payload = model_value(fused)
+    version = 2 if lake_input(fused.alert) else SNAPSHOT_VERSION
+    digest_form = canonical_numbers(payload).encode() if version == 2 else _canonical(payload)
+    snapshot = {"version": version, "sha256": hashlib.sha256(digest_form).hexdigest(), "fused": payload}
+    if len(_canonical(snapshot)) > max_bytes:
         raise DeliveryHold("fusion first-result snapshot exceeds the bounded size")
     return snapshot
 
 
-def restore_snapshot(snapshot: Any, expected: RawAlert) -> FusedAlert:
+def restore_snapshot(snapshot: Any, expected: RawAlert, *, max_bytes=MAX_SNAPSHOT_BYTES) -> FusedAlert:
     try:
         if isinstance(snapshot, (str, bytes)):
-            if len(snapshot.encode("utf-8") if isinstance(snapshot, str) else snapshot) > MAX_SNAPSHOT_BYTES:
+            if len(snapshot.encode("utf-8") if isinstance(snapshot, str) else snapshot) > max_bytes:
                 raise ValueError("oversize")
-            snapshot = json.loads(snapshot)
-        if not isinstance(snapshot, dict) or snapshot.get("version") != SNAPSHOT_VERSION:
+            snapshot = decoded(snapshot)
+        if not isinstance(snapshot, dict) or snapshot.get("version") not in {SNAPSHOT_VERSION, 2}:
             raise ValueError("version")
-        if len(_canonical(snapshot)) > MAX_SNAPSHOT_BYTES:
+        if snapshot["version"] == SNAPSHOT_VERSION:
+            # v1 hashes used Python JSON float spelling. Exact Decimal loading
+            # for lake v2 must not change that existing recovery contract.
+            snapshot = json.loads(encoded(snapshot))
+        if len(_canonical(snapshot)) > max_bytes:
             raise ValueError("oversize")
         payload = snapshot["fused"]
-        if hashlib.sha256(_canonical(payload)).hexdigest() != snapshot.get("sha256"):
+        if snapshot["version"] == 2 and not lake_input(expected):
+            raise ValueError("lake_snapshot_scope")
+        digest_form = canonical_numbers(payload).encode() if snapshot["version"] == 2 else _canonical(payload)
+        if hashlib.sha256(digest_form).hexdigest() != snapshot.get("sha256"):
             raise ValueError("hash")
         fused = FusedAlert.model_validate(payload)
         _check_identity(fused, expected)
@@ -119,9 +135,10 @@ def matches_legacy_event(fused: FusedAlert, incoming: RawAlert) -> bool:
 class DeliveryRecovery:
     """A finite-TTL first-write cache; PostgreSQL remains authoritative."""
 
-    def __init__(self, redis: Any, ttl_seconds: int) -> None:
+    def __init__(self, redis: Any, ttl_seconds: int, *, max_bytes=MAX_SNAPSHOT_BYTES) -> None:
         self._redis = redis
         self._ttl = max(1, int(ttl_seconds))
+        self._max_bytes = max_bytes
 
     @staticmethod
     def key(alert: RawAlert) -> str:
@@ -130,14 +147,14 @@ class DeliveryRecovery:
     async def load(self, alert: RawAlert) -> FusedAlert | None:
         try:
             value = await self._redis.get(self.key(alert))
-            return None if value is None else restore_snapshot(value, alert)
+            return None if value is None else restore_snapshot(value, alert, max_bytes=self._max_bytes)
         except DeliveryHold:
             raise
         except Exception as exc:
             raise DeliveryHold("fusion first-result cache cannot be read") from exc
 
     async def remember(self, fused: FusedAlert) -> FusedAlert:
-        snapshot = make_snapshot(fused)
+        snapshot = make_snapshot(fused, max_bytes=self._max_bytes)
         try:
             # NX preserves the first completed result even when two callers
             # raced before the upstream dedup marker was visible. It does

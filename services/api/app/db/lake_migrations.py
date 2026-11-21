@@ -31,21 +31,30 @@ migration that would need it rather than assumed.
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import Any
 
-logger = logging.getLogger("aisoc.lake_migrations")
+from app.db.lake_schema import (
+    COLUMNS,
+    CONSTRAINTS,
+    LakeStoragePolicy,
+    configured_policy,
+    migration_statements,
+    sql_string,
+)
 
-MIGRATION_TABLE = "aisoc._migrations"
+logger = logging.getLogger("aisoc.lake_migrations")
 
 #: Schema of the ledger itself. Pinned by a test: this table is created with
 #: the `IF NOT EXISTS` idiom the rest of this module exists to replace, which
 #: is only safe while its shape never changes.
-_LEDGER_DDL = f"""
-CREATE TABLE IF NOT EXISTS {MIGRATION_TABLE} (
+_LEDGER_DDL = """
+CREATE TABLE IF NOT EXISTS {database}._migrations (
     migration_id  String,
     description   String,
     applied_at    DateTime64(3, 'UTC') DEFAULT now64(),
@@ -212,6 +221,12 @@ MIGRATIONS: tuple[LakeMigration, ...] = (
         needs_cluster_ddl=True,
         tags=("sessions", "depth-2.4"),
     ),
+    LakeMigration(
+        id="005_lake_ingress_v1",
+        description="Adds source/device/Kafka provenance and profile-selected ingestion-time retention; preserves legacy rows and keys.",
+        needs_cluster_ddl=True,
+        tags=("lake-ingress", "retention"),
+    ),
 )
 
 
@@ -223,26 +238,79 @@ async def _execute(client: Any, sql: str, params: dict[str, Any] | None = None) 
     migration runner that only speaks one of them is a runner that silently
     does not run in half the deployments.
     """
-    if hasattr(client, "execute"):
-        return await client.execute(sql, params or {})
-    if hasattr(client, "command"):
-        return await client.command(sql)
-    raise TypeError(f"{type(client).__name__} exposes neither execute() nor command(); the lake migration runner cannot drive it")
+    method = getattr(client, "execute", None) or getattr(client, "command", None)
+    if method is None:
+        raise TypeError(f"{type(client).__name__} exposes neither execute() nor command(); the lake migration runner cannot drive it")
+    args = (sql, params) if params else (sql,)
+    if inspect.iscoroutinefunction(method):
+        return await method(*args)
+    return await asyncio.to_thread(method, *args)
 
 
-async def applied_ids(client: Any) -> set[str]:
+def _compact(value: str) -> str:
+    # Whitespace/case in string defaults and mapping names is meaningful.
+    parts = re.findall(r"'(?:\\.|[^'\\])*'|[^']+", value)
+    return "".join(part if part.startswith("'") else re.sub(r"\s+|`", "", part).lower() for part in parts)
+
+
+async def _expression(client: Any, expression: str) -> str:
+    rows = await _execute(client, f"EXPLAIN AST SELECT {expression}")
+    return _compact("\n".join(row[0] for row in rows))
+
+
+async def verify_schema(client: Any, policy: LakeStoragePolicy, *, complete: bool = False) -> None:
+    """Read structure only. Reject drift before DDL; never infer success from IF NOT EXISTS."""
+    where = f"database = {sql_string(policy.database)} AND name = 'raw_events'"
+    rows = await _execute(client, f"SELECT engine_full, partition_key, sorting_key, create_table_query FROM system.tables WHERE {where}")
+    if len(rows) != 1:
+        raise ValueError("lake raw_events baseline missing; render and apply the explicit new-install schema first")
+    engine, partition, order, create = rows[0]
+    # 23.8 engine_full includes PARTITION/ORDER/TTL/SETTINGS; partition_key
+    # renders tuples with parentheses, whereas newer adapters may spell tuple().
+    engine_name = engine.split(" PARTITION BY", 1)[0]
+    if _compact(engine_name) != "replacingmergetree(ingest_time)" or _compact(partition) not in {
+        "(toyyyymm(event_time),tenant_id)", "tuple(toyyyymm(event_time),tenant_id)",
+    }:
+        raise ValueError("lake engine or partition differs from the approved baseline")
+    if _compact(order) != "tenant_id,event_time,class_uid,event_id":
+        raise ValueError("lake sorting key differs from the approved baseline")
+    cols = await _execute(client, f"SELECT name, type, default_kind, default_expression FROM system.columns WHERE database = {sql_string(policy.database)} AND table = 'raw_events'")
+    actual = {name: (kind, default_kind, default) for name, kind, default_kind, default in cols}
+    for index, (name, kind, default, _codec) in enumerate(COLUMNS):
+        if name not in actual:
+            if complete or index < 48:
+                raise ValueError(f"lake required column missing: {name}")
+            continue
+        expected = (kind, "DEFAULT" if default else "", default)
+        if tuple(map(_compact, actual[name])) != tuple(map(_compact, expected)):
+            raise ValueError(f"lake column type/default mismatch: {name}")
+    existing = dict(re.findall(r"CONSTRAINT\s+(\w+)\s+CHECK\s+(.+?)(?=,\s*(?:CONSTRAINT|INDEX)|\)\s*ENGINE)", create, re.DOTALL))
+    for name, expression in CONSTRAINTS.items():
+        if name not in existing:
+            if complete:
+                raise ValueError(f"lake constraint missing: {name}")
+        elif await _expression(client, existing[name]) != await _expression(client, expression):
+            raise ValueError(f"lake constraint mismatch: {name}")
+    ttl = re.search(r"\bTTL\s+(.+?)(?:\s+SETTINGS\b|$)", create, re.DOTALL)
+    if not ttl:
+        raise ValueError("lake TTL missing")
+    actual_ttl = await _expression(client, ttl[1])
+    target_ttl = await _expression(client, policy.ttl)
+    legacy_ttl = await _expression(client, f"toDateTime(event_time) + toIntervalDay({policy.legacy_days})")
+    if actual_ttl != target_ttl and (complete or actual_ttl != legacy_ttl):
+        raise ValueError("lake TTL differs from the approved legacy/profile rules")
+
+
+async def applied_ids(client: Any, *, policy: LakeStoragePolicy | None = None) -> set[str]:
     """Migration ids this lake already has.
 
-    An unreadable ledger returns the empty set rather than raising, so a
-    first run on a lake with no ledger works. It is the caller's `strict`
-    flag that decides whether a *failed* migration is fatal.
+    Create a missing ledger, then read it. A failed read is a failure rather
+    than permission to replay every migration against an unknown state.
     """
-    await _execute(client, _LEDGER_DDL)
-    try:
-        rows = await _execute(client, f"SELECT migration_id FROM {MIGRATION_TABLE}")
-    except Exception as exc:  # noqa: BLE001 - an empty ledger is a normal first run
-        logger.warning("lake_migrations.ledger_unreadable error=%s", exc)
-        return set()
+    policy = policy or configured_policy()
+    await _execute(client, _LEDGER_DDL.format(database=policy.database))
+    # A fresh ledger is empty. A failed SELECT is not evidence of a first run.
+    rows = await _execute(client, f"SELECT migration_id FROM {policy.database}._migrations")
 
     ids: set[str] = set()
     for row in rows or []:
@@ -258,20 +326,17 @@ async def applied_ids(client: Any) -> set[str]:
     return ids
 
 
-async def _record(client: Any, migration: LakeMigration, statements: int) -> None:
+async def _record(client: Any, migration: LakeMigration, statements: int, policy: LakeStoragePolicy) -> None:
     await _execute(
         client,
-        f"INSERT INTO {MIGRATION_TABLE} (migration_id, description, applied_at, statements) VALUES",
-        {
-            "migration_id": migration.id,
-            "description": migration.description,
-            "applied_at": datetime.now(UTC),
-            "statements": statements,
-        },
+        f"INSERT INTO {policy.database}._migrations (migration_id, description, statements) "
+        f"SELECT {sql_string(migration.id)}, {sql_string(migration.description)}, toUInt32({statements})",
     )
+    if migration.id not in await applied_ids(client, policy=policy):
+        raise RuntimeError("lake migration ledger readback failed")
 
 
-async def run_migrations(client: Any, *, strict: bool = True) -> list[str]:
+async def run_migrations(client: Any, *, strict: bool = True, policy: LakeStoragePolicy | None = None) -> list[str]:
     """Apply every unapplied migration in order. Returns the ids applied.
 
     Stops at the first failure rather than continuing, because migration
@@ -283,7 +348,11 @@ async def run_migrations(client: Any, *, strict: bool = True) -> list[str]:
     silently-skipped schema change is the exact failure this module exists
     to remove.
     """
-    already = await applied_ids(client)
+    policy = policy or configured_policy()
+    await verify_schema(client, policy)
+    already = await applied_ids(client, policy=policy)
+    if "005_lake_ingress_v1" in already:
+        await verify_schema(client, policy, complete=True)
     applied: list[str] = []
 
     for migration in MIGRATIONS:
@@ -300,13 +369,22 @@ async def run_migrations(client: Any, *, strict: bool = True) -> list[str]:
 
         logger.info("lake_migrations.applying id=%s", migration.id)
         try:
-            for statement in migration.statements:
+            if migration.id == "005_lake_ingress_v1":
+                statements = migration_statements(policy)
+            else:
+                # Preflight has verified all 48 baseline columns and keys.
+                # Adopt their historical IDs without replaying 003's old TTL
+                # over an already-current new-install table.
+                statements = ()
+            for statement in statements:
                 await _execute(client, statement)
             if migration.backfill is not None:
                 touched = await migration.backfill(client)
                 logger.info("lake_migrations.backfill id=%s rows=%s", migration.id, touched)
-            await _record(client, migration, len(migration.statements))
-        except Exception as exc:  # noqa: BLE001 - reported, then re-raised under strict
+            if migration.id == "005_lake_ingress_v1":
+                await verify_schema(client, policy, complete=True)
+            await _record(client, migration, len(statements), policy)
+        except Exception as exc:
             logger.error("lake_migrations.failed id=%s error=%s", migration.id, exc)
             if strict:
                 raise
@@ -319,7 +397,7 @@ async def run_migrations(client: Any, *, strict: bool = True) -> list[str]:
     return applied
 
 
-async def pending_ids(client: Any) -> list[str]:
+async def pending_ids(client: Any, *, policy: LakeStoragePolicy | None = None) -> list[str]:
     """Migrations this lake has not applied. For health checks and preflight."""
-    already = await applied_ids(client)
+    already = await applied_ids(client, policy=policy)
     return [m.id for m in MIGRATIONS if m.id not in already]

@@ -25,20 +25,21 @@ IDENTITY = {"members": "alert_id", "findings": "id", "questions": "id", "domains
 
 class RetainedAnalysis:
     """Missing fields stay absent on disk; internal iterations may be empty."""
-    def __init__(self, fields):
+    def __init__(self, fields, *, types=None):
         self.fields = copy.deepcopy(fields)
+        self.types = types or TYPES
 
     def model_dump(self, **_):
         return copy.deepcopy(self.fields)
 
     def __getattr__(self, key):
         if key in TYPES and key != "summary":
-            return [TypeAdapter(TYPES[key]).validate_python(item) for item in self.fields.get(key, [])]
+            return [TypeAdapter(self.types[key]).validate_python(item) for item in self.fields.get(key, [])]
         raise AttributeError(key)
 
 
 def section(unit):
-    return unit["path"].removeprefix("$.supplement.").removeprefix("$.").split("[", 1)[0]
+    return unit["path"].removeprefix("$.supplement.").removeprefix("$.analysis.").removeprefix("$.").split("[", 1)[0]
 
 
 def identity(unit):
@@ -61,7 +62,7 @@ def merge_review(target, review):
     target["state"] = "issues_recorded" if target["issues"] else "checked"
 
 
-def typed_unit(unit, prepared, context):
+def typed_unit(unit, prepared, context, *, types=None):
     key, raw, review = section(unit), copy.deepcopy(unit["value"]), new_review()
     if blocked(raw):
         raise contract.AnalysisRejected("unit_content_blocked")
@@ -77,7 +78,7 @@ def typed_unit(unit, prepared, context):
         program.restore_observed(value, boundary, citation_review=review)
         program.validate_program(value, boundary, citation_review=review)
     output.restore_aliases(value, boundary)
-    item = TypeAdapter(TYPES[key]).validate_python(value[key][0])
+    item = TypeAdapter((types or TYPES)[key]).validate_python(value[key][0])
     if key == "members" and str(item.alert_id) not in context.alerts:
         raise contract.AnalysisRejected("member_outside_run")
     if key in {"questions", "followups"}:
@@ -87,11 +88,11 @@ def typed_unit(unit, prepared, context):
     return item, review
 
 
-def admit(scanned, prepared, context, bindings, *, prior_analysis=None):
+def admit(scanned, prepared, context, bindings, *, prior_analysis=None, types=None, root_path="$", section_limits=None):
     retained, derived, typed, quality = [], {}, {}, new_review()
     invalid = copy.deepcopy(scanned["invalid_units"])
     definitions = Counter(identity(u) for u in scanned["units"] if identity(u)[1] is not None)
-    limits = {"findings": output.finding_limit(prepared["case_boundary"]),
+    limits = section_limits if section_limits is not None else {"findings": output.finding_limit(prepared["case_boundary"]),
               "followups": output.followup_limit(prepared["case_boundary"]), "conflicts": 12}
     counts = Counter()
     # JSON property order is not a dependency order. Validate findings before
@@ -104,7 +105,7 @@ def admit(scanned, prepared, context, bindings, *, prior_analysis=None):
         try:
             if definitions.get(identity(unit), 0) > 1:
                 raise contract.AnalysisRejected("duplicate_" + key + "_definition")
-            item, review = typed_unit(unit, prepared, context)
+            item, review = typed_unit(unit, prepared, context, types=types)
             if key in limits and limits[key] is not None and counts[key] > limits[key] and unit["kind"] != "empty_array":
                 raise contract.AnalysisRejected("section_item_limit_exceeded")
             if key != "summary" and unit["kind"] != "empty_array":
@@ -152,10 +153,10 @@ def admit(scanned, prepared, context, bindings, *, prior_analysis=None):
         ("domains", {d["name"] for d in derived.get("domains", [])}, set(contract.DOMAINS)),
     ):
         if required - actual:
-            missing.append({"path": "$." + key, "reason_code": key + "_coverage_incomplete"})
+            missing.append({"path": root_path + "." + key, "reason_code": key + "_coverage_incomplete"})
     missing = [dict(p) for p in {tuple(p.items()): p for p in missing}.values()]
     all_sections = set(scanned["closed_sections"]) == set(SECTIONS)
-    complete = all_sections and not invalid and not any(m["path"] != "$" for m in missing)
+    complete = all_sections and not invalid and not any(m["path"] != root_path for m in missing)
     if complete and program.owns_coverage(prepared["case_boundary"]):
         program.restore_coverage(derived, prepared["case_boundary"])
     dispatch = []

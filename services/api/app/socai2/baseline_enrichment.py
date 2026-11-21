@@ -4,8 +4,11 @@ No scheduler, retries, model calls, or Run completion here. A committed running
 stage is a claim, not a reusable pending record. Crash uncertainty stays visible.
 """
 import asyncio
+import logging
+from app.core.operational_logging import log_exception
 from uuid import uuid4
 
+import httpx
 from sqlalchemy import func, insert, null, select, update
 from sqlalchemy.exc import DBAPIError
 
@@ -86,9 +89,8 @@ class BaselineEnrichment:
                 return saved["content_json"]
             if run["state"] != "running":
                 raise StoreError("baseline_not_running")
-            if await store.one(select(S.c.id).where(*store.where(S, S.c.run_id == run_id,
-                    S.c.state.in_(["planned", "running", "unknown"]))).limit(1)):
-                raise StoreError("baseline_step_in_progress")
+            from .baseline_failure import require_idle
+            await require_idle(store, run_id)
             context = await store.read_context(case_id, run_id)
             c1 = await store.one(select(F.c.id).where(*store.where(F, F.c.run_id == run_id,
                 F.c.schema_version == C1_SCHEMA, F.c.kind == "source_snapshot")))
@@ -203,6 +205,7 @@ class BaselineEnrichment:
         observed_rows, truncation_reasons = None, []
         overflow_rows = []
         source_metadata = {}
+        failure = None
         if reason is None:
             try:
                 async with asyncio.timeout_at(dispatch_deadline):
@@ -218,18 +221,32 @@ class BaselineEnrichment:
                     truncation_reasons.append("upstream_row_limit")
                 rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
                 state = "completed"
-            except TimeoutError:
-                state, reason, rows = "timeout", "source_deadline_exceeded", None
+            except TimeoutError as exc:
+                failure = exc
+                state, reason, rows = "unknown", "source_deadline_exceeded", None
+            except httpx.TransportError as exc:
+                failure = exc
+                from .analysis_dispatch_types import classify_failure
+                outcome = classify_failure(exc, stage="execute")
+                state, reason, rows = outcome.outcome, outcome.error_code, None
+                source_metadata = {"request_dispatched": state != "failed", "transport_error": outcome.error_detail}
             except SourceUnavailable as exc:
+                failure = exc
                 state, reason, rows = "failed", "source_unavailable", None
                 source_metadata = {**getattr(exc, "metadata", {}), "unavailable_reason": str(exc)}
             except DBAPIError as exc:
+                failure = exc
                 code = getattr(exc.orig, "sqlstate", None)
                 state, rows = "failed", None
                 reason = ("source_unavailable" if code in {"42P01", "42703", "42501"} else
                           "source_query_timeout" if code == "57014" else "source_query_failed")
                 if code == "57014":
                     state = "timeout"
+        if failure is not None:
+            log_exception(logging.getLogger(__name__), "background_query_failed",
+                error=failure, level=logging.WARNING, extra={
+                    "run_id": run_id, "step_id": step_id, "stage": "C2", "operation": "background_query",
+                    "dependency": source, "error_code": "source_query_failed", "outcome": state})
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running":
@@ -243,8 +260,13 @@ class BaselineEnrichment:
                 "error": error(reason, await store.now()) if reason else None, "captured_at": captured.isoformat()}
             result_id = await self.artifact(store, run, step_id, result, "tool_response", refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(
-                state=state, ended_at=await store.now(), output_artifact_id=result_id,
+                state=state, ended_at=None if state == "unknown" else await store.now(), output_artifact_id=result_id,
                 returned_rows=result["returned_rows"], error=result["error"] or null()))
+            if state == "unknown":
+                from .baseline_failure import local_receipt
+                step = await store.one(select(S).where(*store.where(S, S.c.id == step_id)))
+                await local_receipt(store, run, step, (request_id, args), (result_id, result),
+                    code=reason, dispatched=True)
         outcome = ("data" if rows else "empty") if state == "completed" else {
             "source_not_connected": "unavailable", "source_unavailable": "unavailable",
             "no_supported_frozen_objects": "not_applicable", "tool_budget_exhausted": "not_attempted_budget",

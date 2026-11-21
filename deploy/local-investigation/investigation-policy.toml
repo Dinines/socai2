@@ -2,6 +2,12 @@ version = "socai2.investigation-policy.v1.2"
 single_model_timeout_seconds = 300
 final_reserve_seconds = 300
 
+[query_transport]
+query_timeout_seconds = 20
+connect_timeout_seconds = 10
+send_receive_timeout_seconds = 25
+close_timeout_seconds = 5
+
 # Candidate capacity allocation for V1.2. Validate complete saved requests
 # before issuing a separately recorded real test batch.
 [case]
@@ -56,20 +62,20 @@ safety_tokens = 1024
 authentication = "none"
 
 [tools.process_activity]
-purpose = "调查主机在案件时间窗口内记录的进程活动。"
-inputs = "选择已有 binding_id；主机、租户、案件成员和时间窗口由程序冻结，不接受模型 SQL 或额外对象。"
+purpose = "调查冻结对象在案件时间窗口内记录的进程活动。"
+inputs = "选择已有 binding_id；对象、来源及时间窗口由程序冻结。selector区分设备/源端点/目的端点的主机名或IP；旧hostname候选沿用旧列语义，不接受模型SQL或额外对象。"
 can_answer = "有哪些进程启动、父子进程、命令行、用户、会话、文件或哈希记录；字段可能缺失。"
 cannot_answer = "进程启动成功不能证明脚本执行完成、业务成功或操作获批；相同主机和时间不能证明因果。"
 
 [tools.network_connections]
-purpose = "调查主机在案件时间窗口内记录的网络连接。"
-inputs = "选择已有 binding_id；按冻结源主机、租户和时间窗口查询。"
+purpose = "调查冻结对象在案件时间窗口内记录的网络连接。"
+inputs = "选择已有 binding_id；按候选中冻结的对象角色、主机名或IP及时间窗口查询，来源由程序绑定。旧hostname候选沿用旧列语义。"
 can_answer = "连接端点、端口、协议、时间、结果及已记录的流量计数；字段可能缺失。"
 cannot_answer = "连接成功不证明敏感数据外传、具体文件传输或业务授权；计数缺失不等于零，查空不是反证。"
 
 [tools.authentication_activity]
-purpose = "调查主机在案件时间窗口内记录的认证活动。"
-inputs = "选择已有 binding_id；按冻结源主机、租户和时间窗口查询，不按任意用户名扩查。"
+purpose = "调查冻结对象在案件时间窗口内记录的认证活动。"
+inputs = "选择已有 binding_id；按候选中冻结的对象角色、主机名或IP及时间窗口查询，来源由程序绑定；不按任意用户名扩查。"
 can_answer = "登录或认证尝试的账号、来源、时间、结果和已有会话信息；字段可能缺失。"
 cannot_answer = "认证日志不是审批记录，无法证明变更获批或操作被业务授权；需要审批证据时交人工确认。"
 

@@ -7,7 +7,7 @@ from . import baseline_context as c1
 from . import baseline_evidence as c4
 from . import baseline_graph_projection as projection
 from .baseline_context import reference
-from .baseline_enrichment import S
+from .baseline_enrichment import S, error
 from .baseline_reasoning import ModelSteps
 from .baseline_store import F, StoreError, digest
 
@@ -34,14 +34,25 @@ class BaselineGraph(ModelSteps):
                 S.c.stage_code == "C5", S.c.kind == "graph", S.c.name == key)))
             if prior:
                 summary = await self.read_artifact(store, run_id, prior["output_artifact_id"])
-                graph = await self.read_artifact(store, run_id, UUID(summary["graph_artifact_id"]))
+                graph = (await self.read_artifact(store, run_id, UUID(summary["graph_artifact_id"]))
+                         if summary["graph_artifact_id"] else None)
                 return {"artifact_id": str(prior["output_artifact_id"]), **summary, "graph": graph}
             if run["state"] != "running":
                 raise StoreError("baseline_not_running")
             await self.idle(store, run_id)
             # No source is fetched outside this transaction, so failure rolls
             # back all C5 writes and needs no uncertain-dispatch recovery state.
-            graph, detail = projection.build(context, context_id, bases)
+            reason = None
+            try:
+                graph, detail = projection.build(context, context_id, bases)
+            except StoreError as exc:
+                if exc.code != projection.CAPACITY_FAILURE:
+                    raise
+                reason, graph = exc.code, None
+                detail = {"reason": reason, "records": [], "coverage": {}, "queries": [],
+                    "limits": {"nodes": projection.MAX_NODES, "edges": projection.MAX_EDGES,
+                        "artifact_bytes": projection.graph_limit()},
+                    "limitations": [*projection.LIMITATIONS, "graph_unavailable_no_nodes_or_edges_retained"]}
             step, now = uuid4(), await store.now()
             inputs = [str(context_id), *[str(r["id"]) for r in bases]]
             refs = [reference("artifact", i, "execution_receipt") for i in inputs]
@@ -49,12 +60,14 @@ class BaselineGraph(ModelSteps):
                 seq=await self.seq(store, run_id), kind="graph", stage_code="C5", name=key,
                 state="running", implementation_version=projection.SCHEMA, started_at=now,
                 input_artifact_id=context_id))
-            graph_id = await self.save(store, run, step, graph, "alert_graph", refs)
+            graph_id = await self.save(store, run, step, graph, "alert_graph", refs) if graph is not None else None
             summary = {"schema_version": projection.SCHEMA, "type": "graph_snapshot", "run_id": str(run_id),
                 "scope": context.scope.model_dump(mode="json"), "evidence_set_key": key,
-                "input_artifact_ids": inputs, "graph_artifact_id": str(graph_id),
-                "state": "completed", "delivery_state": "partial", "captured_at": now.isoformat(), **detail}
+                "input_artifact_ids": inputs, "graph_artifact_id": str(graph_id) if graph_id else None,
+                "state": "failed" if reason else "completed", "delivery_state": "none" if reason else "partial",
+                "captured_at": now.isoformat(), **detail}
             summary_id = await self.save(store, run, step, summary, "source_snapshot", refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == step)).values(
-                state="completed", ended_at=await store.now(), output_artifact_id=summary_id))
+                state=summary["state"], ended_at=await store.now(), output_artifact_id=summary_id,
+                **({"error": error(reason, now)} if reason else {})))
         return {"artifact_id": str(summary_id), **summary, "graph": graph}

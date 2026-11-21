@@ -21,7 +21,8 @@ async def originals_for(service, steps, tenant, case_id, run_id, model_id, respo
     async with service.transaction(tenant) as store:
         await steps.locked(store, case_id, run_id)
         model = await store.one(select(S).where(*store.where(S, S.c.run_id == run_id, S.c.id == model_id)))
-        if not model or model["state"] not in {"completed", "failed"}:
+        from .baseline_failure import locally_ended
+        if not model or not await locally_ended(store, run_id, model):
             raise StoreError("c3_model_receipt_not_terminal")
 
         async def read(identity):
@@ -33,6 +34,7 @@ async def originals_for(service, steps, tenant, case_id, run_id, model_id, respo
         request_id = str(model["input_artifact_id"])
         originals = {request_id: await read(request_id)}
         response = await read(response_id)
+        originals[str(response_id)] = response
         original_id = (response["payload"].get("citation_review") or {}).get("original_response_artifact_id")
         if original_id:
             original = await read(original_id)
@@ -65,7 +67,7 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
     if missing:
         if policy["max_attempts"] == 0:
             record.update(state="disabled", reason="c3_supplement_disabled")
-        elif request is None or "unit_delivery" not in prepared:
+        elif request is None or "unit_delivery" not in prepared or first["state"] == "unknown":
             record.update(state="skipped", reason=reason or "initial_response_not_admitted")
         else:
             try:
@@ -83,7 +85,8 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
                     wire_transform=compact_execution_wire, allow_correction=False)
                 record.update(attempts=int(second_id is not None), reason=failure,
                     supplement_response_artifact_id=str(second_response) if second_response else None)
-                _, more, _ = await originals_for(service, steps, tenant, case_id, run_id, second_id, second_response)
+                second, more, _ = await originals_for(service, steps, tenant, case_id, run_id, second_id, second_response)
+                record["supplement_call_state"] = second["state"] if second else "skipped"
                 originals.update(more)
                 supplement = extra.get("unit_delivery")
                 if supplement is not None:
@@ -105,9 +108,9 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
         outcome_id = await steps.save(store, run, stage_id, record, "source_snapshot", refs)
         receipt = {"schema_version": VERSION, "type": "stage_delivery", "run_id": str(run_id),
             "step_id": str(stage_id), "stage": "C3", "input_artifact_id": prepared["input_view_id"],
-            "originals": [{"artifact_id": identity, "kind": "response" if body.get("type") == "model_original_response"
+            "originals": [{"artifact_id": identity, "kind": "response" if body.get("type") == "model_original_response" or body.get("direction") == "response"
                            else "request", "sha256": digest(body)} for identity, body in originals.items()],
-            "execution": {"kind": "model", "call_state": first["state"] if first else "skipped",
+            "execution": {"kind": "model", "call_state": "unknown" if record.get("supplement_call_state") == "unknown" else first["state"] if first else "skipped",
                 "local_state": "ended", "local_ended_at": now.isoformat(), "request_dispatched": bool(first),
                 "finish_reason": prepared.get("received_finish_reason"),
                 "error": error(reason, now) if reason else None,

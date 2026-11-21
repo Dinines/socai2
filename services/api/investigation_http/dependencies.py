@@ -1,11 +1,12 @@
 """HTTP dependency assembly. Routes receive use cases, never database sessions."""
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from investigation_http.adapters import services
 from investigation_http.adapters.identity import CurrentUser, require_permission
 from investigation_http.contracts import StoreError
 from investigation_http.errors import provide, record_error
+from investigation_http.lake_contracts import LakeReadError
 
 __all__ = [
     "CurrentUser",
@@ -90,6 +91,13 @@ def run_record_service():
         return services.run_records()
     except StoreError as exc:
         raise record_error("service_unavailable", 503) from exc
+
+
+def lake_read_service():
+    try:
+        return services.lake_reads()
+    except LakeReadError as exc:
+        raise HTTPException(exc.status, {"code": exc.code, "state": exc.state}) from None
 
 
 def run_directory_service():

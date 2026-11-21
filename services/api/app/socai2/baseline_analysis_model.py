@@ -1,5 +1,7 @@
 """Tenant model adapter and budget accounting; never persist credentials."""
 import os
+import logging
+from app.core.operational_logging import log_exception
 
 import httpx
 
@@ -52,6 +54,8 @@ class TenantChatGateway:
                 max_tokens=body["max_tokens"], response_format=body["response_format"],
                 **({"temperature": body["temperature"]} if "temperature" in body else {}))
         except httpx.HTTPError as exc:
+            log_exception(logging.getLogger(__name__), "model_http_call_failed", extra={
+                "operation": "model_complete", "dependency": "model_http", "error_code": "model_transport_error"})
             raise ModelCallError(provider_error(exc, self.config.api_key)) from None
 
     async def measure(self, body, stage):

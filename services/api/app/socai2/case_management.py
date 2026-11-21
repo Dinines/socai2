@@ -3,6 +3,7 @@ from sqlalchemy import func, select, update
 
 from app.models.socai2 import TaskRevisions, Tasks
 
+from . import subject_risk_management as risk_management
 from .analysis_task_store import active_case_work
 from .baseline_store import C, StoreError, digest
 from .case_management_contracts import CaseManagementReceipt, CaseManagementView
@@ -47,7 +48,8 @@ async def manage_case(service, tenant_id, case_id, request, actor, *, action):
         now = await store.now()
         count = None
         if action == "case_management_updated":
-            values = request.model_dump(exclude_unset=True, exclude={"operation_key", "expected_row_version"})
+            values = request.model_dump(exclude_unset=True, exclude={"operation_key", "expected_row_version",
+                "severity", "severity_reason"} | risk_management.PRIORITY_FIELDS)
             if "handling_status" in values and case["handling_status"] == "resolved":
                 raise StoreError("case_reopen_required")
             if "owner_id" in values:
@@ -57,8 +59,7 @@ async def manage_case(service, tenant_id, case_id, request, actor, *, action):
                     raise StoreError("case_owner_not_in_tenant", 422)
                 values.update(assignment_state="assigned" if owner else "unassigned", owner_source_value=None)
                 values["assigned_at"] = (case["assigned_at"] if owner == case["owner_id"] else now) if owner else None
-            if "severity" in values:
-                values["severity_source"] = "manual" if values["severity"] is not None else None
+            values.update(await risk_management.values(store, "case", case, request, actor))
         elif action == "case_closed":
             if case["handling_status"] == "resolved":
                 raise StoreError("case_already_resolved")
@@ -83,9 +84,14 @@ async def manage_case(service, tenant_id, case_id, request, actor, *, action):
                 **values, row_version=C.c.row_version + 1, business_updated_at=now))
         after = await case_view(store, await store.case(case_id, lock=False))
         out = CaseManagementReceipt(case=after, changed=changed)
+        reasons = risk_management.reasons(request)
         await store.event(case_id, request.operation_key, actor.snapshot(), action,
             {"request_hash": intent, "outcome": out.model_dump(mode="json"),
              "reason": getattr(request, "reason", None), "open_task_count": count,
+             "risk_reasons": reasons,
              "acknowledge_open_tasks": getattr(request, "acknowledge_open_tasks", None)},
-            [("case_id", case_id, before.model_dump(mode="json"), after.model_dump(mode="json"))])
+            [("case_id", case_id, before.model_dump(mode="json"), after.model_dump(mode="json"))],
+            activity_reason=next(iter(reasons.values()), None), activity_notes=[
+                f"{field}: {reason}" for field, reason in reasons.items()],
+            expected_version=request.expected_row_version, actual_version=after.row_version)
         return out

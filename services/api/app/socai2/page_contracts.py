@@ -8,6 +8,7 @@ from pydantic import Field
 
 from .baseline_contracts import Contract
 from .enums import (
+    BusinessVerdict,
     AlertStatus,
     AssignmentState,
     Disposition,
@@ -16,6 +17,7 @@ from .enums import (
     TimeSource,
     WorkStatus,
 )
+from .subject_risk_contracts import SubjectRisk
 
 Subject = Literal["alerts", "incidents"]
 Section = Literal["members", "incidents", "objects", "sources", "source_artifacts", "assets", "cases", "comments", "activities", "related_alerts", "responses"]
@@ -66,6 +68,7 @@ class AlertFacts(SharedFacts):
 
 
 class IncidentFacts(SharedFacts):
+    risk: SubjectRisk | None = Field(default=None, description="已保存的当前等级、初值、每轮意见链接及系统优先级；旧记录为null，不由GET补算，意见不等于已生效。")
     source_incident_id: str
     handling_status: WorkStatus
     severity_override: Severity | None
@@ -126,8 +129,14 @@ class CaseReceiving(Contract):
     reason_code: Literal["no_target", "closed", "auto_window_expired"] | None
 
 
+class IncidentDerivedFields(DerivedFields):
+    severity_source: Literal["manual_override", "member_max", "model", "initial_policy", "unknown"] | None = None
+
+
 class IncidentSubjectView(SubjectView):
+    derived: IncidentDerivedFields
     case_receiving: CaseReceiving
+    business_verdict: BusinessVerdict | None = Field(default=None, description="Saved model verdict of facts.latest_diagnosis_id, or null.")
 
 
 class SubjectPage(Contract):
@@ -139,6 +148,10 @@ class SubjectPage(Contract):
     observed_at: datetime
     filtered_total: int = Field(ge=0, description="全部筛选命中数，不受当前页或游标影响；total仍是全租户总数。")
     next_cursor: str | None = Field(description="绑定租户、主体、筛选及排序的下一页游标；null表示末页。")
+
+
+class IncidentSubjectPage(SubjectPage):
+    items: list[IncidentSubjectView]
 
 
 class RecordPage(Contract):

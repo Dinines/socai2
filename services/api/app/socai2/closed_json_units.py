@@ -33,9 +33,23 @@ class Reader:
         self.targets = self.fields | self.arrays
         self.values, self.spans, self.units = {}, {}, []
         self.invalid, self.closed_sections = [], []
+        self.rejected_paths = set()
 
     def peek(self):
         return self.text[self.pos:self.pos + 1]
+
+    def affected_branch(self):
+        """Select the enclosing requested field/item, including nested arrays."""
+        for target in sorted(self.targets, key=len, reverse=True):
+            if self.path[:len(target)] == target:
+                end = len(target)
+                if target in self.arrays and len(self.path) > end and isinstance(self.path[end], int):
+                    end += 1
+                return self.path[:end]
+        for end in range(len(self.path), -1, -1):
+            if any(t[:end] == self.path[:end] for t in self.targets):
+                return self.path[:end + 1]
+        return self.path
 
     def space(self):
         while self.peek() and self.peek() in " \t\r\n":
@@ -119,8 +133,13 @@ class Reader:
         return value
 
     def emit(self, path, value, start, kind):
+        if self.rejected(unit_path(path)):
+            return
         self.units.append({"path": unit_path(path), "kind": kind, "value": value,
                            "value_span": [start, self.pos]})
+
+    def rejected(self, label):
+        return any(label == root or label.startswith((root + "[", root + ".")) for root in self.rejected_paths)
 
     def value(self, path):
         self.path = path
@@ -182,15 +201,19 @@ class Reader:
             key = self.string()
             self.path = (*path, key)
             if key in result:
-                conflict = unit_path(branch(self.path))
+                conflict = unit_path(self.affected_branch())
+                self.rejected_paths.add(conflict)
                 self.units = [u for u in self.units if u["path"] != conflict and not u["path"].startswith((conflict + "[", conflict + "."))]
-                if not path:
-                    for label in list(self.values):
-                        if label == conflict or label.startswith((conflict + "[", conflict + ".")):
-                            self.values.pop(label, None)
-                            self.spans.pop(label, None)
-                            self.closed_sections.remove(label)
-                raise AnalysisRejected("duplicate_json_key")
+                for label in list(self.values):
+                    if label == conflict or label.startswith((conflict + "[", conflict + ".")):
+                        self.values.pop(label, None)
+                        self.spans.pop(label, None)
+                        self.closed_sections.remove(label)
+                problem = {"path": conflict, "reason_code": "duplicate_json_key"}
+                if problem not in self.invalid:
+                    self.invalid.append(problem)
+                # The key's boundary is known. Parse its value and subsequent
+                # syntax strictly, but never emit either conflicting definition.
             self.need(":")
             self.space()
             start = self.pos
@@ -198,8 +221,10 @@ class Reader:
             selected = (*path, key)
             if selected in self.targets:
                 label = unit_path(selected)
-                self.values[label], self.spans[label] = result[key], [start, self.pos]
-                self.closed_sections.append(label)
+                if not self.rejected(label):
+                    if not any(root.startswith((label + "[", label + ".")) for root in self.rejected_paths):
+                        self.values[label], self.spans[label] = result[key], [start, self.pos]
+                    self.closed_sections.append(label)
                 if selected in self.fields or not isinstance(result[key], list):
                     self.emit(selected, result[key], start, str(key))
             elif any(target[:len(selected)] == selected for target in self.targets):
@@ -236,16 +261,17 @@ def read_units(content, *, fields, arrays):
     except Incomplete:
         truncated = True
         reasons.append("json_incomplete")
-        missing.append({"path": unit_path(branch(reader.path)), "reason_code": "json_incomplete"})
+        missing.append({"path": unit_path(reader.affected_branch()), "reason_code": "json_incomplete"})
     except (AnalysisRejected, ValueError, RecursionError) as exc:
         reason = str(exc) if isinstance(exc, AnalysisRejected) else "json_syntax_invalid"
         reasons.append(reason)
-        reader.invalid.append({"path": unit_path(branch(reader.path)), "reason_code": reason})
+        reader.invalid.append({"path": unit_path(reader.affected_branch()), "reason_code": reason})
         complete = False
     for target in (*fields, *arrays):
         key = unit_path(target)
         if key not in reader.closed_sections and not any(u["path"].startswith(key) for u in missing):
             missing.append({"path": key, "reason_code": "section_not_complete"})
+    reasons = list(dict.fromkeys([*reasons, *(item["reason_code"] for item in reader.invalid)]))
     return {"units": reader.units, "closed_sections": reader.closed_sections, "missing_units": missing,
             "invalid_units": reader.invalid, "parse_state": "complete_json" if complete else "closed_units" if reader.units else "unusable",
             "truncated": truncated, "reasons": reasons, "retained": reader.values, "value_spans": reader.spans}

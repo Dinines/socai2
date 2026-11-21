@@ -34,6 +34,7 @@ from app.services.sessions import DERIVED_IDLE_SECONDS, SessionRef, SessionStore
 from app.services.tenant_overlay import OverlayCache
 from app.services.ueba_signal import UebaSignalCache
 from app.services.windowed_detection import WindowedDetectionEngine
+from app.workers.lake_consumer import LakeConsumer, LakeConsumerProfile
 
 logger = structlog.get_logger()
 
@@ -82,6 +83,7 @@ class FusionWorker:
         overlays: OverlayCache | None = None,
         sessions: SessionStore | None = None,
         ai_assets: AiAssetRecorder | None = None,
+        lake_consumer_profile: LakeConsumerProfile | None = None,
     ) -> None:
         self._engine = engine
         self._sink = sink
@@ -111,6 +113,16 @@ class FusionWorker:
         self._running = False
         self._attached = False
         self._flush_task: asyncio.Task | None = None
+        self._lake_consumer: LakeConsumer | None = None
+        self._lake_consumer_task: asyncio.Task | None = None
+        if lake_consumer_profile is not None and lake_consumer_profile.enabled:
+            if lake is None or lake.ingress_profile is None:
+                raise ValueError("enabled lake consumption requires lake writer and ingress profile")
+            if lake_consumer_profile.group_id == settings.kafka_consumer_group or set(lake.ingress_profile.topics) & {
+                settings.kafka_topic_raw_events, settings.kafka_topic_alerts_raw, settings.kafka_topic_ueba_anomalies,
+            }:
+                raise ValueError("bare lake input must use a separate topic and consumer group")
+            self._lake_consumer = LakeConsumer(lake, lake_consumer_profile)
 
     @property
     def engine(self) -> FusionEngine:
@@ -125,7 +137,7 @@ class FusionWorker:
         a fire-and-forget task and ``/readyz`` latched to 200 next to it, so a
         loop that exited left the service reporting ready forever.
         """
-        return self._attached
+        return self._attached and (self._lake_consumer is None or self._lake_consumer.attached)
 
     async def start(self) -> None:
         topics = [settings.kafka_topic_alerts_raw]
@@ -161,6 +173,9 @@ class FusionWorker:
         if self._lake is not None or self._sessions is not None:
             if self._lake is not None:
                 await self._lake.start()
+            if self._lake_consumer is not None:
+                self._lake_consumer_task = asyncio.create_task(self._lake_consumer.run())
+                self._lake_consumer_task.add_done_callback(self._lake_consumer_done)
             # Low-traffic safety net: a single buffered event would otherwise
             # wait for the NEXT message before flush_if_stale runs. A background
             # ticker guarantees the lake batch flushes by age even when idle.
@@ -182,6 +197,11 @@ class FusionWorker:
             lake_writer=self._lake is not None,
         )
         await self._consume_loop()
+
+    def _lake_consumer_done(self, task: asyncio.Task) -> None:
+        if not task.cancelled():
+            task.exception()  # Retrieve; never log received bodies via exception text.
+        logger.warning("lake_consumer.stopped", status=self._lake_consumer.status())
 
     async def _periodic_flush(self) -> None:
         interval = max(0.5, settings.lake_batch_max_age_seconds)
@@ -212,6 +232,12 @@ class FusionWorker:
 
     async def stop(self) -> None:
         self._running = False
+        if self._lake_consumer_task is not None:
+            self._lake_consumer_task.cancel()
+            # Native I/O and diagnostic readback settle before lake.disconnect.
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await self._lake_consumer_task
+            self._lake_consumer_task = None
         if self._flush_task is not None:
             self._flush_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

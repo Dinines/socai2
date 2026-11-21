@@ -4,6 +4,7 @@ import json
 
 from pydantic import ValidationError, create_model
 
+from . import business_verdict
 from . import incident_diagnosis_contract as legacy
 from .baseline_store import StoreError
 from .stage_answer_review import review_incident
@@ -73,6 +74,9 @@ def candidate_schema(prepared, *, constrain=True):
     props["diagnosis"] = {"type": "object", "additionalProperties": False,
                           "properties": diagnosis, "required": list(diagnosis)}
     schema["required"] = ["diagnosis", "members", "findings", "open_questions"]
+    from .severity_opinion import extend_schema
+    extend_schema(schema, prepared)
+    business_verdict.extend_schema(schema, prepared)
     return schema
 
 
@@ -91,6 +95,11 @@ def decode(content):
 def canonical(content, prepared):
     try:
         answer = decode(content)
+        from .severity_opinion import enabled
+        if enabled(prepared):
+            answer.pop("severity_opinion", None)  # Independently admitted by the unit receiver.
+        if business_verdict.enabled(prepared):
+            answer.pop(business_verdict.FIELD, None)
         BoundaryAnswer.model_validate(answer, strict=True)
     except (ValueError, TypeError, ValidationError) as exc:
         raise StoreError("incident_answer_shape_invalid", 422) from exc

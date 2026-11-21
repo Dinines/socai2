@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .baseline_contracts import Contract, EvidenceRef
+from .enums import BusinessVerdict
 
 SCHEMA = "socai2.case-evidence.v1"
 KIND = "case_evidence_index"
@@ -127,6 +128,7 @@ class AssessmentPageView(Contract):
     conclusion: str
     origin: Literal["model", "human", "system", "legacy"]
     validity: str
+    business_verdict: BusinessVerdict | None = Field(default=None, description="Model verdict of the uniquely adopted Result, or null.")
     scope_revision: int
     formed_at: AwareDatetime
     adopted_at: AwareDatetime

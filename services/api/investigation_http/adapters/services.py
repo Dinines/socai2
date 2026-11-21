@@ -43,6 +43,11 @@ from investigation_http.ports import (
 )
 
 
+def lake_reads():
+    from investigation_http.adapters.lake import LakeReadBackend
+    return LakeReadBackend()
+
+
 class CaseBackend(CaseService):
     async def create_case(self, tenant_id, request, *, actor):
         receipt = await allocation_call(super().create_case(tenant_id, request, actor=actor))

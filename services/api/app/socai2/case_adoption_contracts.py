@@ -6,7 +6,8 @@ from uuid import UUID
 from pydantic import Field, StringConstraints
 
 from .baseline_contracts import Contract
-from .case_contracts import ResultView, RunView
+from .case_contracts import AssessmentSourceReference, ResultView, RunView
+from .enums import BusinessVerdict
 
 ReviewToken = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
 
@@ -19,12 +20,13 @@ class AdoptedAssessment(Contract):
     conclusion: str
     origin: str
     validity: str
+    business_verdict: BusinessVerdict | None = Field(default=None, description="Saved verdict of the adopted model Result, or null.")
     formed_at: datetime
     adopted_at: datetime
     adopted_by: UUID | None
     actor: dict[str, Any]
     reason: str | None
-    sources: list[dict[str, Any]]
+    sources: list[AssessmentSourceReference]
     members: list[dict[str, Any]]
     results: list[ResultView]
 

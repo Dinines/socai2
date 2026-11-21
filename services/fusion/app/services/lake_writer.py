@@ -6,6 +6,11 @@ events to Kafka and fusion promotes a subset into Postgres alerts, but
 its read API (``/api/v1/lake/sql``) existed with no writer, so every hunt/query
 ran against an empty warehouse.
 
+The historical ``write_event`` path below has those fail-soft buffer semantics.
+The explicit ``write_ocsf_batch`` entry added in lake 3c instead saves original
+bare records synchronously and returns receipts only after INSERT confirmation.
+The explicit lake consumer uses those receipts for partition commits (lake 3d).
+
 This module closes that gap. Fusion already deserializes every ``aisoc.raw_events``
 Kafka message (for promotion), so it is the natural place to also archive each
 event into the lake. Archival is independent of the promotion decision: a
@@ -40,12 +45,20 @@ import ipaddress
 import re
 import time
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 import structlog
 
 from app.services.event_schema import resolve_source_event_id
+from app.services.lake_ingress import (
+    NEW_COLUMNS,
+    IngressProfile,
+    KafkaPosition,
+    adapt_ocsf,
+    datetime_milliseconds,
+)
 from app.services.lake_material import bounded_material
 from app.services.received_fields import activity_block, received_time, source_labels
 
@@ -115,6 +128,7 @@ _COLUMNS = (
 _INSERT_SQL = f"INSERT INTO aisoc.raw_events ({', '.join(_COLUMNS)}) VALUES"
 _DEFAULT_ID_COLUMNS = tuple(column for column in _COLUMNS if column != "event_id")
 _INSERT_DEFAULT_ID_SQL = f"INSERT INTO aisoc.raw_events ({', '.join(_DEFAULT_ID_COLUMNS)}) VALUES"
+_INGRESS_COLUMNS = (*_COLUMNS, *NEW_COLUMNS)
 
 # ClickHouse IPv6 columns reject empty/invalid strings; "::" is the safe null.
 _NULL_IP = "::"
@@ -187,6 +201,62 @@ def _to_ip_obj(value: str) -> ipaddress.IPv6Address:
     if isinstance(addr, ipaddress.IPv4Address):
         return ipaddress.IPv6Address("::ffff:" + str(addr))
     return addr
+
+
+def _insert_rows(client, sql, group, *, millisecond_dates=False):
+    rows = []
+    for row in group:
+        out = {k: v for k, v in row.items() if not (k == "event_id" and v is None)}
+        out["source_ip"] = _to_ip_obj(row["source_ip"])
+        out["dest_ip"] = _to_ip_obj(row["dest_ip"])
+        if millisecond_dates:
+            out["device_ip"] = _to_ip_obj(row["device_ip"]) if row["device_ip"] is not None else None
+            # DateTime64(3) native driver integers are raw millisecond ticks.
+            # Avoid datetime.timestamp() float/negative-epoch rounding.
+            for column in ("event_time", "kafka_timestamp"):
+                if row[column] is not None:
+                    out[column] = datetime_milliseconds(row[column])
+        rows.append(out)
+    kwargs = {"settings": {"async_insert": 0}} if millisecond_dates else {}
+    client.execute(sql, rows, types_check=True, **kwargs)
+
+
+@dataclass(frozen=True)
+class LakeWriteReceipt:
+    event_id: str
+    source_version: str
+    parse_status: str
+    position: KafkaPosition
+    issues: tuple[str, ...]
+    persisted: bool = True
+
+
+class LakePersistenceError(RuntimeError):
+    """No success receipt; an attempted INSERT may already have reached the server."""
+
+    def __init__(self, outcome: str, cause_type: str):
+        self.outcome = outcome
+        self.cause_type = cause_type
+        super().__init__(f"lake ingress persistence {outcome}: {cause_type}")
+
+
+async def _settled_thread(call, *args, **kwargs):
+    """Cancellation must not release the connection lock before native I/O ends."""
+    task = asyncio.create_task(asyncio.to_thread(call, *args, **kwargs))
+    cancelled = False
+    while not task.done():
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            cancelled = True
+        except Exception:  # noqa: BLE001 - retrieve the original result below
+            break
+    if cancelled:
+        # Retrieve a possible native error without leaking query/body contents.
+        if not task.cancelled():
+            task.exception()
+        raise asyncio.CancelledError
+    return task.result()
 
 
 def _tenant_uuid(message: dict[str, Any], ocsf: dict[str, Any]) -> str | None:
@@ -397,12 +467,24 @@ class LakeWriter:
         password: str = "",
         batch_size: int = 100,
         batch_max_age_seconds: float = 2.0,
+        ingress_profile: IngressProfile | None = None,
+        connect_timeout_seconds: float = 10.0,
+        send_receive_timeout_seconds: float = 300.0,
     ) -> None:
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", database):
             raise ValueError("invalid_clickhouse_database")
         self._host = host
         self._port = port
         self._database = database
+        if ingress_profile is not None and ingress_profile.database != database:
+            raise ValueError("ingress profile/database mismatch")
+        self._ingress_profile = ingress_profile
+        self._connect_timeout = connect_timeout_seconds
+        self._send_receive_timeout = send_receive_timeout_seconds
+        if min(connect_timeout_seconds, send_receive_timeout_seconds) <= 0:
+            raise ValueError("ClickHouse timeouts must be positive")
+        self._ingress_insert_sql = f"INSERT INTO {database}.raw_events ({', '.join(_INGRESS_COLUMNS)}) VALUES"
+        self._insert_lock = asyncio.Lock()
         self._insert_sql = _INSERT_SQL.replace("aisoc.raw_events", f"{database}.raw_events")
         self._insert_default_id_sql = _INSERT_DEFAULT_ID_SQL.replace("aisoc.raw_events", f"{database}.raw_events")
         self._user = user
@@ -431,7 +513,8 @@ class LakeWriter:
                 database=self._database,
                 user=self._user,
                 password=self._password or "",
-                connect_timeout=10,
+                connect_timeout=self._connect_timeout,
+                send_receive_timeout=self._send_receive_timeout,
             )
             logger.info("lake_writer.started", host=self._host, database=self._database)
         except ImportError:
@@ -445,10 +528,89 @@ class LakeWriter:
         await self.flush()
         if self._client is not None:
             try:
-                await asyncio.to_thread(self._client.disconnect)
+                async with self._insert_lock:
+                    await _settled_thread(self._client.disconnect)
             except Exception as exc:  # noqa: BLE001
                 logger.warning("lake_writer.disconnect_failed", error=str(exc))
             self._client = None
+
+    async def write_ocsf_batch(self, records: list[tuple[bytes | None, KafkaPosition]]) -> tuple[LakeWriteReceipt, ...]:
+        """Persist explicit bare records without the legacy buffer or preview.
+
+        This is an internal save boundary. Kafka scheduling and offset commits
+        are not performed here. Errors/unknown outcomes are not auto-retried.
+        """
+        if self._ingress_profile is None:
+            raise ValueError("bare OCSF ingress profile is not configured")
+        adapted = [adapt_ocsf(body, profile=self._ingress_profile, position=position) for body, position in records]
+        if not adapted:
+            return ()
+        async with self._insert_lock:
+            if self._disabled or self._client is None:
+                raise LakePersistenceError("not_attempted", "client_unavailable")
+            try:
+                await _settled_thread(_insert_rows, self._client, self._ingress_insert_sql,
+                                        [record.row for record in adapted], millisecond_dates=True)
+            except Exception as exc:  # noqa: BLE001 - no original/query text in the public error
+                self.flush_failures += 1
+                raise LakePersistenceError("unknown", type(exc).__name__) from None
+        self.rows_written += len(adapted)
+        return tuple(LakeWriteReceipt(record.row["event_id"], record.row["source_version"], record.row["parse_status"], position, record.issues)
+                     for record, (_, position) in zip(adapted, records, strict=True))
+
+    @property
+    def ingress_profile(self) -> IngressProfile | None:
+        return self._ingress_profile
+
+    async def check_ingress_ready(self) -> None:
+        """Read-only startup gate; actual schema/cleanup rollout remains a release prerequisite."""
+        if self._ingress_profile is None:
+            raise ValueError("bare OCSF ingress profile is not configured")
+        async with self._insert_lock:
+            if self._disabled or self._client is None:
+                raise LakePersistenceError("not_attempted", "client_unavailable")
+            try:
+                rows = await _settled_thread(self._client.execute,
+                    f"SELECT migration_id FROM {self._database}._migrations WHERE migration_id = %(id)s",
+                    {"id": "005_lake_ingress_v1"})
+                if not rows:
+                    raise ValueError("migration_missing")
+                # Resolves the real named columns without reading business rows.
+                await _settled_thread(self._client.execute,
+                    f"SELECT {', '.join(_INGRESS_COLUMNS)}, ingest_time FROM {self._database}.raw_events LIMIT 0")
+            except Exception as exc:  # noqa: BLE001 - safe structural startup error
+                raise LakePersistenceError("not_attempted", type(exc).__name__) from None
+
+    async def inspect_ocsf_batch(self, records: list[tuple[bytes | None, KafkaPosition]]) -> tuple[str, ...]:
+        """Diagnostic readback only. Neither a retry nor permission to commit.
+
+        Look for stable identity AND both complete stored materials. A missing
+        row is 'not_observed', not proof that a server-side INSERT cannot finish.
+        """
+        import hashlib
+
+        if self._ingress_profile is None:
+            raise ValueError("bare OCSF ingress profile is not configured")
+        rows = [adapt_ocsf(body, profile=self._ingress_profile, position=pos).row for body, pos in records]
+        if not rows:
+            return ()
+        async with self._insert_lock:
+            if self._disabled or self._client is None:
+                return tuple("unknown" for _ in rows)
+            try:
+                found = await _settled_thread(self._client.execute,
+                    f"SELECT event_id, source_version, hex(SHA256(ocsf_json)), hex(SHA256(raw_payload)) "
+                    f"FROM {self._database}.raw_events WHERE tenant_id = %(tenant)s "
+                    "AND source_namespace = %(source)s AND mapping_version = %(mapping)s AND event_id IN %(ids)s",
+                    {"tenant": self._ingress_profile.tenant_id, "source": self._ingress_profile.source_namespace,
+                     "mapping": self._ingress_profile.mapping_version, "ids": tuple(row["event_id"] for row in rows)})
+            except Exception:  # noqa: BLE001 - query failure is an unknown observation
+                return tuple("unknown" for _ in rows)
+        saved = {(str(event_id), version, ocsf_hash, raw_hash) for event_id, version, ocsf_hash, raw_hash in found}
+        return tuple("present" if (row["event_id"], row["source_version"],
+                     hashlib.sha256(row["ocsf_json"].encode()).hexdigest().upper(),
+                     hashlib.sha256(row["raw_payload"].encode()).hexdigest().upper()) in saved else "not_observed"
+                     for row in rows)
 
     async def write_event(self, message: dict[str, Any]) -> bool:
         """Return True if accepted into the buffer or a triggered insert succeeded.
@@ -485,18 +647,6 @@ class LakeWriter:
             self.flush_failures += 1
             return False
 
-        def _insert(sql: str, group: list[dict[str, Any]]) -> None:
-            # clickhouse-driver executes INSERT ... VALUES with a list of dicts.
-            # A DEFAULT applies only when the column is absent from the SQL as
-            # well as the row. Keep valid-ID rows separate from that fallback.
-            rows: list[dict[str, Any]] = []
-            for row in group:
-                out = {k: v for k, v in row.items() if not (k == "event_id" and v is None)}
-                out["source_ip"] = _to_ip_obj(row["source_ip"])
-                out["dest_ip"] = _to_ip_obj(row["dest_ip"])
-                rows.append(out)
-            client.execute(sql, rows, types_check=True)
-
         succeeded = True
         groups = (
             (self._insert_sql, [row for row in batch if row["event_id"] is not None]),
@@ -506,7 +656,8 @@ class LakeWriter:
             if not group:
                 continue
             try:
-                await asyncio.to_thread(_insert, sql, group)
+                async with self._insert_lock:
+                    await _settled_thread(_insert_rows, client, sql, group)
                 self.rows_written += len(group)
             except Exception as exc:  # noqa: BLE001 — retain the existing fail-soft policy
                 succeeded = False

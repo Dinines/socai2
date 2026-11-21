@@ -1,10 +1,12 @@
 """Read only this Run's verified frozen sources for configured followups."""
+
 from datetime import datetime
 
 from sqlalchemy import select
 
 from .baseline_contracts import Limits
 from .baseline_enrichment import S
+from .baseline_evidence_tools import binding_subject
 from .baseline_store import F, StoreError, digest
 from .case_followup_input import build
 
@@ -59,7 +61,7 @@ async def deep(owner, tenant, case, run_id, question_id, previous, prior_id, lak
             continue
         alias = "B" + str(len(options) + 1)
         mapping[alias] = bid
-        options.append({"binding_id": alias, "tool_name": binding["tool_name"], "hostname": binding["hostname"],
+        options.append({"binding_id": alias, "tool_name": binding["tool_name"], **binding_subject(binding),
                         "alert_ids": binding["alert_ids"], "object_keys": sorted({o["object_key"] for o in binding["objects"]})})
     prepared = build("Deep", context, base, artifacts, previous=previous, prior_id=prior_id,
         question_id=question_id, material=material, projections=projections, options=options, binding_map=mapping)
@@ -67,10 +69,8 @@ async def deep(owner, tenant, case, run_id, question_id, previous, prior_id, lak
 
 
 def graph_candidates(bases, artifacts):
-    snapshots = [r["content_json"] for r in bases if r["content_json"].get("type") == "graph_snapshot"]
-    snapshot = max(snapshots, key=lambda r: r["captured_at"]) if snapshots else None
-    current = {str(r["id"]) for r in bases if r["content_json"].get("type") in {"materials", "query_projection"}}
-    state = "not_built" if snapshot is None else "available" if current <= set(snapshot["input_artifact_ids"]) else "stale"
+    from .baseline_graph_projection import selected_snapshot
+    state, snapshot = selected_snapshot(bases)
     graphs = []
     if state == "available":
         from .baseline_context import reference

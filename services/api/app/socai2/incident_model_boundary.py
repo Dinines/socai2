@@ -198,7 +198,11 @@ def build(source, input_id, profile, *, execution_time=None):
         "output_validation": {"prose_alias_format": data["prose_alias_format"]},
         "render_revision": cfg["render"]["revision"], "member_aliases": prepared["member_aliases"],
         "structural_omissions": structural, "full_source": reference("artifact", input_id, "execution_receipt")}
-    messages = [{"role": "system", "content": cfg["system_prompt"]}, {"role": "user", "content": prepared["user"]}]
+    from .business_verdict import INCIDENT_RULE
+    from .severity_opinion import PROMPT, VERSION
+    prepared["severity_opinion_version"] = VERSION
+    messages = [{"role": "system", "content": cfg["system_prompt"] + PROMPT + INCIDENT_RULE},
+                {"role": "user", "content": prepared["user"]}]
     if not prepared["source_map"] or blocked(messages):
         raise StoreError("incident_model_view_unavailable", 422)
     if len(encoded(messages)) > draft_limit():

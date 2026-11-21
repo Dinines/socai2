@@ -7,7 +7,9 @@ from collections import Counter
 from pydantic import TypeAdapter, ValidationError
 
 from . import alert_output_adapter as alert
+from . import business_verdict
 from . import incident_output_adapter as incident
+from . import severity_opinion
 from .answer_validation import Checks
 from .baseline_contracts import Scope
 from .baseline_model_view import blocked
@@ -101,7 +103,12 @@ def project_incident(key, item, index, refs):
 
 
 def receive(stage, content, prepared, original_artifact_id, *, finish_reason="stop", original_content_path=CONTENT_PATH):
-    scanned = read_units(content, **selection(stage))
+    selected = selection(stage)
+    if stage == "I" and severity_opinion.enabled(prepared):
+        selected["fields"] = (*selected["fields"], ("severity_opinion",))
+    if stage == "I" and business_verdict.enabled(prepared):
+        selected["fields"] = (*selected["fields"], (business_verdict.FIELD,))
+    scanned = read_units(content, **selected)
     retained, analysis, quality = [], {}, new_review()
     invalid, missing = copy.deepcopy(scanned["invalid_units"]), copy.deepcopy(scanned["missing_units"])
     sources = prepared["source_map"]
@@ -116,6 +123,19 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
         path, raw = unit["path"], unit["value"]
         key, before = key_of(path), len(quality["issues"])
         try:
+            if key == business_verdict.FIELD:
+                record = business_verdict.receive_unit(unit, content, original_artifact_id, original_content_path)
+                retained.append(record)
+                analysis[key] = record["value"]
+                continue
+            if key == "severity_opinion":
+                value, record, review = severity_opinion.receive_unit(
+                    unit, content, prepared, original_artifact_id, original_content_path)
+                retained.append(record)
+                analysis[key] = value
+                for field in ("issues", "references", "processing"):
+                    quality[field].extend(review[field])
+                continue
             counts[key] += unit["kind"] != "empty_array"
             if key in limits and counts[key] > limits[key]:
                 raise StoreError("section_item_limit_exceeded", 422)
@@ -181,6 +201,7 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
             limits_out += [f"triage_not_used:{m['alert_id']}:{m['triage_freshness']}" for m in prepared["data"]["members"]
                           if not m.get("triage_eligible", m.get("triage_usable"))]
             result = IncidentOutput(summary=diagnosis["summary"], conclusion=diagnosis["conclusion"],
+                business_verdict=analysis.get(business_verdict.FIELD),
                 findings=projected["members"] + projected["findings"], source_refs=[r["ref"] for r in refs],
                 open_questions=projected["open_questions"], limitations=limits_out)
     elif set(A_FIELDS) <= set(analysis):

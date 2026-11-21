@@ -11,6 +11,7 @@ from .case_allocation_contracts import CaseContinuation
 from .case_data_contracts import CasePageData, Classification
 from .enums import (
     AssignmentState,
+    BusinessVerdict,
     ChangeKind,
     ConclusionState,
     Delivery,
@@ -25,6 +26,7 @@ from .enums import (
     WorkStatus,
 )
 from .list_query_contracts import CaseSort, DatedQuery
+from .subject_risk_contracts import SubjectRisk
 
 Label = Annotated[str, Field(min_length=1, max_length=200)]
 
@@ -134,6 +136,7 @@ class MoveReceipt(Contract):
 
 
 class CaseView(Contract):
+    risk: SubjectRisk | None = Field(default=None, description="已持久保存的当前等级、初值、每轮意见链接及系统优先级；历史记录无此状态时为null，读取不回填，意见不等于已生效。")
     continuation: CaseContinuation | None = None
     id: UUID
     source_namespace: str | None
@@ -212,6 +215,7 @@ class ResultSummary(Contract):
     conclusion_state: ConclusionState
     conclusion_origin: Origin
     validation_state: Validation
+    business_verdict: BusinessVerdict | None = Field(default=None, description="Saved model verdict of this Result, or null.")
     closing_note: str
     comparison_result_id: UUID | None
     comparison_context: CaseComparison | None = None
@@ -314,7 +318,18 @@ class CaseQueuePage(Contract):
 
 
 def project(model, row):
-    return model.model_validate({key: row[key] for key in model.model_fields if key in row})
+    values = {key: row[key] for key in model.model_fields if key in row}
+    if "risk" in model.model_fields:
+        values["risk"] = row.get("risk_metadata", row.get("risk"))
+    return model.model_validate(values)
+
+
+class AssessmentSourceReference(Contract):
+    result_id: UUID | None
+    task_revision_id: UUID | None
+    artifact_id: UUID | None
+    task_id: UUID | None = Field(default=None, description="Task owning the frozen task_revision_id; null for other source types.")
+    run_id: UUID | None = Field(default=None, description="Run owning artifact_id; null for a Case-level artifact or another source type.")
 
 
 class CaseDetail(Contract):
@@ -325,7 +340,7 @@ class CaseDetail(Contract):
     linked_incidents: list[dict[str, Any]]
     linked_incident_count: int
     linked_incidents_truncated: bool
-    current_assessment: dict[str, Any] | None
+    current_assessment: dict[str, Any] | None = Field(description="Saved adoption with sources and business_verdict from its unique accepted model Result, or null. Each source preserves result_id/task_revision_id/artifact_id and adds task_id for the frozen human revision and run_id for a Run-level artifact; never resolves through the current task version.")
     baseline_records: list[dict[str, Any]]
     page_data: CasePageData | None = None
 

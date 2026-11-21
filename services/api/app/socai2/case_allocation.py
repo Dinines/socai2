@@ -110,7 +110,7 @@ class Allocator:
         await self.s.db.execute(insert(C).values(id=cid, tenant_id=self.s.tenant_id,
             continuation_root_case_id=self.root, previous_case_id=current,
             source_namespace=prior['source_namespace'], title=prior['title'], description=prior['description'],
-            severity=prior['severity'], severity_source=prior['severity_source'], tags=prior['tags'],
+            tags=prior['tags'],
             created_by=self.actor.user_id))
         await self.item(cid, created=True)
         await self.s.db.execute(update(C).where(*self.s.where(C, C.c.id == self.root)).values(receiving_case_id=cid))
@@ -198,6 +198,9 @@ class Allocator:
             row = await self.s.case(cid)
             changes = {'scope_revision': row['scope_revision'], 'linked_incident_ids': sorted(set(item.linked_incident_ids))}
             if item.created:
+                from .subject_risk import initialize
+                await initialize(self.s, cid, manual_level=row['severity'] if row['severity_source'] == 'manual' else None,
+                    actor_id=self.actor.user_id)
                 task = await task_store.accept(kind='case_investigation', subject_id=cid, intent='initial',
                     source='case_create', operation_key=uuid5(cid, 'initial-investigation'), submitted_by=self.actor.user_id)
                 changes['initial_task'] = InitialTaskReceipt(task_id=task['id'], subject_id=cid)

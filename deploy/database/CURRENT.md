@@ -1,6 +1,6 @@
 # 当前调查数据库入口
 
-2026-11-16，21正式aisoc已为 **32表、521列**（123–129），[本次r4实际读回](../../docs/operations/evidence/streaming-release-20261116-04/deployment-ready.json)再次确认。D1–D4c本轮未改结构、未重跑迁移；历史业务清理使用明确84表清单，Schema及127张未选表内容保持。基线[调查表职责](../../docs/investigation/investigation-table-scope.md)和[机器字典](../../docs/design/socai2-data-contract-current.json)须结合128/129增量阅读，不能拿旧28表450列记载否定当前实库。
+2026-11-21，21 正式 `aisoc.socai2` 已原位应用 130–134，实际为 **35 张表、565 列**。现有 HTTP 读写和调度继续使用同一正式库。正式湖表由 005 升至 62 列。[正式读回](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
 
 128新增analysis_tasks/attempts/subject_state，129增加Case分配字段及排除表，规格见[存储设计](../../openspec/changes/schedule-streaming-investigation-updates/storage-and-runtime-design-20261114.md)。独立候选socai2_streaming_20261115及本机v12_upgrade_dev已有各自32/521验证；本机其他旧库本轮未操作。资产、用户和租户沿业务后端基础数据。
 ## 任务生命周期增量128

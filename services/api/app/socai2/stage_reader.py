@@ -88,6 +88,7 @@ class StageReader:
             public_result = {k: result[k] for k in fields}
             if self.kind == "incident_diagnosis":
                 public_result["error_code"] = (result["error"] or {}).get("code")
+                public_result["business_verdict"] = result["business_verdict"]
         extra = {}
         entry_type = StageEntry
         if self.kind == "incident_diagnosis":

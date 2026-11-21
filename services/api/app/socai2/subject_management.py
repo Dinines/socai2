@@ -9,6 +9,7 @@ from sqlalchemy import func, insert, select, text, update
 
 from app.models.socai2 import AlertAssessments, IncidentAlerts, Incidents
 
+from . import subject_risk_management as risk_management
 from .baseline_service import BaselineService
 from .baseline_store import ACT, TGT, A, StoreError, digest
 from .case_contracts import project
@@ -66,6 +67,9 @@ class SubjectManagementService(BaselineService):
             # Calculate/validate all requested transitions before the first write.
             updates = [self.feedback_values(row, changes, actor, now) if feedback else
                        self.management_values(kind, row, changes, actor, now) for row in rows]
+            if kind == "incidents" and not feedback:
+                for row, values in zip(rows, updates, strict=True):
+                    values.update(await risk_management.values(store, "incident", row, changes, actor))
             outcomes = []
             for row, values in zip(rows, updates, strict=True):
                 feedback_id = None
@@ -93,21 +97,27 @@ class SubjectManagementService(BaselineService):
                         row_version=I.c.row_version + 1, business_updated_at=func.greatest(I.c.business_updated_at, now)))
             result = SubjectBatchReceipt(operation_key=operation_key, items=outcomes,
                                          changed_count=sum(o.changed for o in outcomes))
+            reasons = risk_management.reasons(changes)
+            reason = next(iter(reasons.values()), None)
             await store.db.execute(insert(ACT).values(id=activity_id, tenant_id=tenant_id, operation_id=operation_key,
                 actor=actor.snapshot(), action=action, **{"subject_" + target_key: rows[0]["id"]},
                 occurred_at=now, summary=action, detail={"schema_version": "activity.v1",
-                    "reason": change_values.get("reason") or change_values.get("resolution_note"),
+                    "reason": reason,
                     "request_key": str(operation_key), "source": action,
-                    "expected_version": None, "actual_version": None, "notes": []}))
+                    "expected_version": None, "actual_version": None,
+                    "notes": [f"{field}: {value}" for field, value in reasons.items()]
+                        if kind == "incidents" else []}))
             for index, (row, outcome) in enumerate(zip(rows, outcomes, strict=True)):
                 after = outcome.facts.model_dump(mode="json")
                 if index == 0:
                     after["operation_receipt"] = {"request_hash": intent, "outcome": result.model_dump(mode="json")}
+                    if kind == "incidents":
+                        after["operation_receipt"]["risk_reasons"] = reasons
                 await store.db.execute(insert(TGT).values(
                     id=receipt_target_id if index == 0 else uuid5(activity_id, str(row["id"])),
                     tenant_id=tenant_id, activity_id=activity_id, **{target_key: row["id"]},
                     before_value=project(facts_model, row).model_dump(mode="json"), after_value=after,
-                    result_state="succeeded", reason=change_values.get("reason") or change_values.get("resolution_note")))
+                    result_state="succeeded", reason=reason))
             return result
 
     @staticmethod
@@ -122,7 +132,8 @@ class SubjectManagementService(BaselineService):
     @staticmethod
     def management_values(kind, row, changes, actor, now):
         values = changes.model_dump(exclude_unset=True, exclude={"operation_key", "expected_row_version",
-                    "reason", "resolution_note", "severity_override_reason"})
+                    "reason", "resolution_note", "severity_override_reason", "severity_override"}
+                    | risk_management.PRIORITY_FIELDS)
         if "owner_id" in values:
             owner = values["owner_id"]
             values.update(assignment_state="assigned" if owner else "unassigned", owner_source_value=None)
@@ -139,13 +150,6 @@ class SubjectManagementService(BaselineService):
                 elif row["handling_status"] == "completed":
                     values.update(closed_at=None, closed_by=None, reopened_at=now)
         else:
-            if "severity_override" in values:
-                severity = values["severity_override"]
-                # A reason edit is a real manual revision; an identical request is a no-op.
-                if severity != row["severity_override"] or changes.severity_override_reason != row["severity_override_reason"]:
-                    values.update(severity_override_reason=changes.severity_override_reason if severity else None,
-                                  severity_override_by=actor.user_id if severity else None,
-                                  severity_override_at=now if severity else None)
             if status == "resolved" and "handling_status" in values:
                 values["resolution_note"] = changes.resolution_note
                 if row["handling_status"] != "resolved":

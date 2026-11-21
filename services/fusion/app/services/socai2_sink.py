@@ -4,9 +4,12 @@ No dual write or fallback to public.alerts. The first delivery stays immutable;
 different received material creates a new immutable revision, never a rewrite.
 """
 import json
+import os
+from pathlib import Path
 from uuid import uuid5
 
 import structlog
+from app.core.operational_logging import exception_fields
 
 from app.models.alert import FusionDecision
 from app.services import socai2_projection as p
@@ -18,14 +21,11 @@ from app.services.delivery_recovery import (
     make_snapshot,
     restore_snapshot,
 )
+from app.services.receipt_json import decoded, model_value
 
 logger = structlog.get_logger()
 JSON_FIELDS = frozenset({"raw_json", "ocsf_json", "detection", "enrichment", "source_scope", "retention",
     "attributes", "correlation_basis", "content_json", "source_refs"})
-
-
-def decoded(value):
-    return json.loads(value) if isinstance(value, str) else value
 
 
 async def insert(conn, table, values, *, conflict=False):
@@ -37,10 +37,14 @@ async def insert(conn, table, values, *, conflict=False):
 
 
 class Socai2AlertSink(AlertSink):
-    def __init__(self, *args, analysis_policy=None, **kwargs):
+    def __init__(self, *args, analysis_policy=None, material_max_bytes=MAX_SNAPSHOT_BYTES,
+                 snapshot_max_bytes=MAX_SNAPSHOT_BYTES, **kwargs):
         from app.services.socai2_analysis_tasks import load_policy
         super().__init__(*args, **kwargs)
         self.analysis_policy = analysis_policy if analysis_policy is not None else load_policy()
+        if any(type(v) is not int or v <= 0 for v in (material_max_bytes, snapshot_max_bytes)):
+            raise ValueError("invalid_delivery_byte_budget")
+        self.material_max_bytes, self.snapshot_max_bytes = material_max_bytes, snapshot_max_bytes
 
     async def lookup_delivery(self, alert):
         pool = await self._ensure_pool()
@@ -58,11 +62,13 @@ class Socai2AlertSink(AlertSink):
                     return SnapshotLookup(False)
                 snapshot = decoded(row["content_json"])
                 if snapshot is not None:
-                    restore_snapshot(snapshot, alert)
+                    restore_snapshot(snapshot, alert, max_bytes=self.snapshot_max_bytes)
                 return SnapshotLookup(True, snapshot, str(row["id"]))
         except DeliveryHold:
             raise
         except Exception as exc:
+            logger.error("socai2_sink.lookup_failed", **exception_fields(), operation="lookup_delivery",
+                         stage="lookup", dependency="postgres", error_code="service_unavailable")
             raise DeliveryHold("socai2 delivery lookup failed") from exc
 
     async def persist(self, fused, *, replay=None, delivery_snapshot=None):
@@ -74,11 +80,11 @@ class Socai2AlertSink(AlertSink):
         if pool is None:
             return PersistResult(PersistOutcome.UNAVAILABLE, str(fused.id))
         try:
-            snapshot = delivery_snapshot if delivery_snapshot is not None else make_snapshot(fused)
-            restored = restore_snapshot(snapshot, fused.alert)
+            snapshot = delivery_snapshot if delivery_snapshot is not None else make_snapshot(fused, max_bytes=self.snapshot_max_bytes)
+            restored = restore_snapshot(snapshot, fused.alert, max_bytes=self.snapshot_max_bytes)
             if restored.model_dump(mode="json") != fused.model_dump(mode="json"):
                 raise DeliveryHold("socai2 snapshot differs from fused result")
-            if len(p.encoded(alert.model_dump(mode="json")).encode("utf-8")) > MAX_SNAPSHOT_BYTES:
+            if len(p.encoded(model_value(alert)).encode("utf-8")) > self.material_max_bytes:
                 raise DeliveryHold("socai2 received material exceeds delivery bound")
             async with pool.acquire() as conn, conn.transaction():
                 await conn.execute("SELECT set_config('app.current_tenant_id',$1,true)", str(alert.tenant_id))
@@ -86,7 +92,9 @@ class Socai2AlertSink(AlertSink):
             # Return durable only after COMMIT (including deferred checks).
             return PersistResult(outcome, str(fused.id))
         except Exception as exc:  # noqa: BLE001 -- one row failure is observable, never a durable duplicate
-            logger.error("socai2_sink.persist_failed", error_type=type(exc).__name__)
+            logger.error("socai2_sink.persist_failed", **exception_fields(exc),
+                         operation="persist_alert_and_register_tasks", stage="persist", dependency="postgres",
+                         subject_type="alert", subject_id=str(fused.id), error_code="save_unconfirmed")
             return PersistResult(PersistOutcome.FAILED)
 
     async def persist_many(self, fused_batch):
@@ -112,15 +120,15 @@ class Socai2AlertSink(AlertSink):
                 raise DeliveryHold("socai2 existing alert has no first delivery")
             # First committed result wins. A replay cannot change incident,
             # scores, narrative or the recoverable outbound result.
-            fused = restore_snapshot(decoded(saved), alert)
+            fused = restore_snapshot(decoded(saved), alert, max_bytes=self.snapshot_max_bytes)
         else:
-            retention = p.retained(snapshot)
+            retention = p.retained(snapshot, numeric_canonical=snapshot["version"] == 2)
             await insert(conn, "artifacts", {"id": sid, "tenant_id": tenant, "alert_id": aid,
-                "kind": "source_snapshot", "schema_version": "fusion.first-result.v1", "content_json": snapshot,
+                "kind": "source_snapshot", "schema_version": f"fusion.first-result.v{snapshot['version']}", "content_json": snapshot,
                 "mime_type": "application/json", "sha256": retention["retained_sha256"],
                 "size_bytes": retention["retained_size_bytes"], "captured_at": now, "material_state": "complete",
                 "source_refs": [], "retention": retention})
-        mid = uuid5(aid, p.VERSION + ":" + p.digest(p.input_value(alert)))
+        mid = p.material_id(alert)
         if await conn.fetchval("SELECT 1 FROM socai2.alert_materials WHERE tenant_id=$1 AND alert_id=$2 AND id=$3", tenant, aid, mid):
             return PersistOutcome.DUPLICATE
         fields, material, refs, objects = p.project(fused, alert, sid)
@@ -154,6 +162,14 @@ class Socai2AlertSink(AlertSink):
                 "linked_at": now, "membership_source": "fusion", "correlation_basis": p.correlation(fused, sid),
                 "basis_version": fused.correlation_basis.policy_version if fused.correlation_basis else "unrecorded",
                 "source_operation_id": sid})
+        if incident_inserted is not None:
+            # Explicit file, shared database algorithm; never initialize old rows on retry.
+            path = Path(os.environ["SOCAI2_SUBJECT_RISK_CONFIG_FILE"])
+            if not path.is_absolute():
+                raise ValueError("absolute subject risk profile required")
+            policy = json.loads(path.read_text())
+            await conn.fetchval("SELECT socai2.initialize_subject_risk($1,'incident',$2,$3::jsonb)",
+                tenant, fused.incident_id, p.encoded(policy))
         incident_id = link["incident_id"] if link else fused.incident_id
         await conn.execute("""UPDATE socai2.incidents SET business_updated_at=greatest(business_updated_at,$3),row_version=row_version+1
             WHERE tenant_id=$1 AND id=$2""", tenant, incident_id, now)

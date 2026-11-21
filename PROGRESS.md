@@ -1,6 +1,8 @@
 # 当前进度
 
-更新于2026-11-18。**21完整服务和两段流程测试已完成；4b工作台0.6.1/r8及验收工具现已发布，指定Case/轮次与紫色来源实际查阅通过。** [发布/核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，最终3d04验收容器发送2告警/3上下文，形成同一事件、同一Case的两轮结果，成员1→2，后轮比较实际首轮。7任务、6Run、48步骤、142工件及477次HTTP成功回执已核；8次真实模型均stop，共45207tokens，实际并发峰值1、结束时无在途。[本轮完整回执](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)与[输入输出报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)可查。
+更新于 2026-11-21。正式 21 已切换为 c173-release-20261121-03，HTTP 与 Swagger 有 82 个业务操作。同一条真实告警完成独立候选联验，正式服务及数据库读回通过。[联验和正式回执](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+
+2026-11-18 历史记录。**21完整服务和两段流程测试已完成；4b工作台0.6.1/r8及验收工具现已发布，指定Case/轮次与紫色来源实际查阅通过。** [发布/核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，最终3d04验收容器发送2告警/3上下文，形成同一事件、同一Case的两轮结果，成员1→2，后轮比较实际首轮。7任务、6Run、48步骤、142工件及477次HTTP成功回执已核；8次真实模型均stop，共45207tokens，实际并发峰值1、结束时无在途。[本轮完整回执](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)与[输入输出报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)可查。
 
 本轮按[§12.14](openspec/changes/schedule-streaming-investigation-updates/test-service-and-4177-http-20261115.md#1214-负责人明确要求先发布21清历史再测试2026-11-17)执行明确分阶段发布。测试模块与HTTP模块分别完成10组、11组限定独立复核；4177已核三类主体、首轮201/后轮202、冻结输入、具体领域、原答与5项问题。后台tenant/来源关系保留，8份实际模型输入未带控制身份。两轮Case均accepted/uncertain/partial；4项自动引用诊断及1项人工比较正文问题后置，不冒称模型质量通过。
 
@@ -10,7 +12,7 @@
 
 | 内容 | 当前实际状态与证据 |
 | --- | --- |
-| 当前已发布版本 | processing-20261117-r1、acceptance-http-20261117-r1、同版Swagger与4177 r8（0.6.1）；[核心原发布](docs/operations/evidence/acceptance-release-20261117-01/deployment-ready.json)核源码/配置及80操作，4177沿[本次r8就绪](docs/operations/evidence/workbench-4b-release-20261117-01/deployment-ready.json)。[新两段正常链](docs/operations/evidence/acceptance-fullflow-21-20261117-01/final-validation.json)已通过19项直接核对 |
+| 当前已发布版本 | `c173-release-20261121-03`。HTTP、Swagger、Fusion 与联合调度同版，82 个业务操作，调查库 35 表 565 列，湖表 62 列。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
 | 日常展示 | [4177](http://127.0.0.1:4177/viewer/)为21的0.6.1/r8，经现有SSH隧道访问；默认Case“进程活动及后续外联调查”，可选两轮，事件/告警独立列表。紫色测试来源按所选Run冻结告警直接识别；[最终报告](docs/operations/evidence/workbench-4b-release-20261117-01/report-02/report.md)可精确打开两轮，[本次浏览器](docs/operations/evidence/workbench-4b-release-20261117-01/browser-verification.json)通过。HTTP接入、领域和原答沿原批[浏览器](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-browser-01.json)及[13GET读回](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-http-verification.json)通过；历史业务未回灌 |
 | 本轮需求落点 | 21部署与新两段测试已完成；4b来源识别在本机完成并限定独审，20项模型输入边界检查通过。4b报告指定Run跳转已完成本机验证、21发布及实际读回，新配置/页面/验收工具已上线；D5/D6保持待办 |
 | 历史数据清理 | 本轮明确84业务表521行、湖15条、Redis13键、4个指定Kafka主题25条、24账本文件核零；127非目标表和Schema不变，4向量集合原为0。[核零](docs/operations/evidence/acceptance-release-20261117-01/cleanup-zero.json)；旧批UUID现在不可从正式库读取，离线原答和受控备份保留 |

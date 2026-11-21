@@ -1,12 +1,12 @@
 """Fixed read-only C4 lake contracts. No model SQL or caller-supplied filters."""
 import json
-import re
 from datetime import UTC, datetime
 from uuid import UUID
 
 from . import baseline_optional_sources as optional
 from .baseline_semantics import project, same_scalar, scalar_reason
 from .baseline_store import digest
+from .lake_hostname import supported_hostname
 
 VERSION = "socai2.c4-lake.v1"
 TOOLS = {"process_activity": 1007, "network_connections": 4001, "authentication_activity": 3002}
@@ -24,6 +24,23 @@ LIMITATIONS = ["host_time_match_is_not_causality_or_alert_membership",
 
 
 def catalog(context, tenant_id):
+    from app.core.config import settings
+    legacy = _legacy_catalog(context, tenant_id)
+    if not settings.SOCAI2_LAKE_QUERY_PROFILE_FILE:
+        return legacy
+    from . import lake_evidence_v2
+    value = lake_evidence_v2.catalog(context, tenant_id)
+    value["bindings"].update({key: binding for key, binding in legacy["bindings"].items()
+                              if binding["tool_name"] == "product_host_details"})
+    return value
+
+
+def binding_subject(binding):
+    from .lake_evidence_v2 import subject
+    return subject(binding)
+
+
+def _legacy_catalog(context, tenant_id):
     from .case_execution_input import binding_scope
     grouped, omissions = {}, []
     for aid, alert in sorted(context.alerts.items()):
@@ -31,7 +48,7 @@ def catalog(context, tenant_id):
             if obj["object_type"] != "host":
                 continue
             host = obj["normalized_value"]
-            if not isinstance(host, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,253}", host):
+            if not supported_hostname(host):
                 omissions.append({"alert_id": aid, "object_id": obj["id"], "reason": "unsupported_hostname"})
                 continue
             entry = grouped.setdefault(host, {"alert_ids": set(), "objects": []})
@@ -64,6 +81,9 @@ def catalog(context, tenant_id):
 
 
 def query_sql(args):
+    if args["contract_version"] == "socai2.c4-lake.v2":
+        from .lake_evidence_v2 import query_sql as query_v2
+        return query_v2(args)
     name, params = args["tool_name"], args["parameters"]
     if name not in TOOLS or args["contract_version"] != VERSION:
         raise ValueError("unsupported_tool_contract")
@@ -99,6 +119,9 @@ def normalize_rows(rows):
 
 
 def validate_rows(rows, args):
+    if args["contract_version"] == "socai2.c4-lake.v2":
+        from .lake_evidence_v2 import validate_rows as validate_v2
+        return validate_v2(rows, args)
     if len(rows) > args["limit"] + 1:
         raise ValueError("query_returned_beyond_sentinel_limit")
     if args["tool_name"] == "product_host_details":
@@ -163,6 +186,9 @@ def row_projection(row):
             value["fields"].append({"name": name, "value": original, "source_path": "$." + name,
                 "transform": "identity", "conflict": conflict})
     value["limitations"].append("flattened_defaults_not_promoted_to_observations")
+    if "mapping_version" in row:
+        from .lake_evidence_v2 import project_roles
+        return project_roles(value, row)
     return value
 
 
@@ -180,6 +206,15 @@ class LakeGateway:
         from app.core.config import settings
         if not settings.CLICKHOUSE_HOST or settings.AISOC_DISABLE_CLICKHOUSE:
             return "lake_not_configured"
+        if binding.get("contract_version") == "socai2.c4-lake.v2":
+            from .lake_queries import active_profile
+            from .lake_query_contracts import LakeReadError
+            try:
+                profile = active_profile()
+                profile.require_scope(binding["tenant_id"], binding["source_namespace"], binding["mapping_version"])
+                return None if binding["source_database"] == profile.database and binding["query_profile_digest"] == profile.digest else "frozen_lake_query_profile_changed"
+            except LakeReadError as exc:
+                return exc.code
         if binding.get("source_database", "aisoc") != optional.lake_database():
             return "frozen_lake_database_changed"
         return None
@@ -189,12 +224,42 @@ class LakeGateway:
             if not optional.enabled("product_host") or self.service is None:
                 raise optional.SourceUnavailable("product_source_not_enabled")
             return await optional.product_query(self.service, args, timeout)
+        if args["contract_version"] == "socai2.c4-lake.v2":
+            from .lake_evidence_v2 import query as query_v2
+            from .lake_query_contracts import LakeReadError
+            try:
+                return await query_v2(args, query_id, timeout)
+            except LakeReadError as exc:
+                if exc.state == "unknown":
+                    raise QueryInterrupted(exc.code, exc.rows) from None
+                raise optional.SourceUnavailable(exc.code) from None
         from app.db.clickhouse import execute_lake_query
+        from app.db.clickhouse_owned import LakeQueryInterrupted, LakeQueryRejected
+
+        from .baseline_store import StoreError
+        from .runtime_policy import active_policy
+        policy = active_policy().query_transport
+        if policy is None:
+            raise StoreError("query_transport_policy_required", 422)
         if timeout < 1:
             # execute_lake_query floors seconds; zero would disable its server cap.
             raise ValueError("insufficient_query_time")
         sql, params = query_sql(args)
-        result = await execute_lake_query(sql, params=params, query_id=query_id,
-            timeout_seconds=min(timeout, 20), extra_settings={"max_result_rows": args["limit"] + 1})
+        try:
+            result = await execute_lake_query(sql, params=params, query_id=query_id,
+                timeout_seconds=timeout, owned_policy=policy,
+                extra_settings={"max_result_rows": args["limit"] + 1})
+        except LakeQueryInterrupted as exc:
+            rows = normalize_rows([dict(zip(exc.columns, row, strict=True)) for row in exc.rows])
+            raise QueryInterrupted(exc.code, rows) from None
+        except LakeQueryRejected as exc:
+            raise optional.SourceUnavailable(str(exc)) from None
         names = [c["name"] if isinstance(c, dict) else c for c in result.columns]
         return normalize_rows([dict(zip(names, row, strict=True)) for row in result.rows])
+
+
+class QueryInterrupted(RuntimeError):
+    """Only an adapter that has joined its local worker may supply received rows."""
+    def __init__(self, code, rows=None):
+        super().__init__(code)
+        self.code, self.rows = code, rows

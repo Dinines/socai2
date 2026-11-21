@@ -12,6 +12,10 @@ def task_view(row):
     detail = {k: value for k, value in row.items() if k not in {"request_payload", "attempts", "results"}}
     detail["status_url"] = f"/api/v1/socai2/{kind}s/{identity}/analysis-tasks/{row['task_id']}"
     detail["request"] = row["request_payload"]
+    if row["active_step"]:
+        step = row["active_step"]
+        detail["active_step"] = {**step,
+            "url": f"/api/v1/socai2/analysis-runs/{step['run_id']}/steps/{step['step_id']}"}
     detail["attempts"] = [{**attempt, "run_url": run_url(kind, identity, attempt["run_id"])
                            if attempt["run_id"] else None} for attempt in row["attempts"]]
     detail["results"] = [{**result, "url": f"/api/v1/socai2/cases/{identity}/results/{result['id']}"

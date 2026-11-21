@@ -12,9 +12,12 @@ from .baseline_store import StoreError, encoded
 from .case_contracts import project
 from .case_reader import ARTIFACT_FIELDS, usage_totals
 from .list_query_contracts import AlertListQuery, IncidentListQuery
+from .material_json import canonical_numbers
+from .material_json import loads as exact_json_loads
 from .page_contracts import (
     AlertFacts,
     IncidentFacts,
+    IncidentSubjectPage,
     IncidentSubjectView,
     RecordPage,
     SubjectPage,
@@ -24,6 +27,7 @@ from .program_facts import RANK
 from .read_sources import ReadSources, lookup_error
 from .stage_inputs import freshness_sql
 from .stage_reader import StageReader
+from .subject_risk import incident_effective
 
 A, I, M, O, L, R, S, F = (x.__table__ for x in (m.Alerts, m.Incidents, m.AlertMaterials,
     m.AlertObjects, m.IncidentAlerts, m.Runs, m.RunSteps, m.Artifacts))
@@ -117,11 +121,11 @@ class PageReader:
                 func.count().filter(A.c.severity.is_(None)).label("unknown_severities")).where(
                 *self.store.where(A, A.c.id.in_(self.member_ids())))))[0]
             auto = REVERSE_RANK.get(agg["rank"])
-            effective = row["severity_override"] or auto
+            effective, source = incident_effective(row, auto)
             derived = {"member_count": agg["members"], "first_activity_at": agg["first_activity_at"],
                 "last_activity_at": agg["last_activity_at"], "unknown_event_time_count": agg["unknown_times"],
                 "unknown_severity_count": agg["unknown_severities"], "severity_auto": auto, "severity_effective": effective,
-                "severity_source": "manual_override" if row["severity_override"] else "member_max" if auto else None,
+                "severity_source": source,
                 "severity_group": band(effective), "updated_at": max(t for t in (row["business_updated_at"], agg["member_updated_at"]) if t)}
         params = {"tenant": self.store.tenant_id, "id": self.identity}
         predicate = "a.id=:id" if self.kind == "alerts" else "EXISTS(SELECT 1 FROM socai2.incident_alerts l WHERE l.tenant_id=a.tenant_id AND l.alert_id=a.id AND l.incident_id=:id)"
@@ -147,6 +151,11 @@ class PageReader:
             from .case_relationship_reader import receiving_status
             view_model = IncidentSubjectView
             extra["case_receiving"] = await receiving_status(self.store, row, AnalysisTaskPolicy.load())
+            if row["latest_diagnosis_id"] is not None:
+                diagnosis = m.IncidentDiagnoses.__table__
+                extra["business_verdict"] = (await self.db.execute(select(diagnosis.c.business_verdict).where(
+                    *self.store.where(diagnosis, diagnosis.c.incident_id == self.identity,
+                        diagnosis.c.id == row["latest_diagnosis_id"], diagnosis.c.state == "completed")))).scalar_one_or_none()
         return view_model(**extra, kind=self.kind, facts=project(model, row), owner_name=name, owner_resolution=owner_state,
             derived=derived, material=material, triage=triage, feedback=feedback, analysis_url=root + "/analysis",
             section_urls={key: root + "/records/" + key for key in SECTIONS
@@ -172,7 +181,8 @@ class PageReader:
             member_scope = [L.c.tenant_id == tenant, L.c.incident_id == I.c.id]
             maximum = select(func.max(lists.severity_rank(A.c.severity))).select_from(members).where(
                 *member_scope).correlate(I).scalar_subquery()
-            rank = func.coalesce(lists.severity_rank(I.c.severity_override), maximum)
+            rank = case((I.c.risk_metadata.is_not(None), lists.severity_rank(I.c.severity)),
+                else_=func.coalesce(lists.severity_rank(I.c.severity_override), maximum))
             last_time = select(func.max(A.c.event_time)).select_from(members).where(
                 *member_scope).correlate(I).scalar_subquery()
             clocks = {"created_at": I.c.created_at, "last_activity_at": last_time}
@@ -206,7 +216,8 @@ class PageReader:
         more = len(rows) > limit
         next_cursor = lists.write_cursor(tenant, self.kind, query, sort_by,
             rows[limit - 1]["id"], rows[limit - 1]["_list_sort_value"]) if more else None
-        return SubjectPage(kind=self.kind, items=[await self.view(row) for row in rows[:limit]], total=stats["total"],
+        page_model = IncidentSubjectPage if self.kind == "incidents" else SubjectPage
+        return page_model(kind=self.kind, items=[await self.view(row) for row in rows[:limit]], total=stats["total"],
             next_before_id=rows[limit - 1]["id"] if more and query.legacy else None,
             filtered_total=filtered_total, next_cursor=next_cursor, overall_stats=stats, observed_at=await self.store.now())
 
@@ -236,9 +247,10 @@ class PageReader:
                 WHERE l.tenant_id=i.tenant_id AND l.incident_id=i.id AND a.event_time>=transaction_timestamp()-interval '24 hours'
                   AND a.event_time<=transaction_timestamp())"""), {"tenant": self.store.tenant_id})).scalar_one()
             out["high_severity"] = (await self.db.execute(text("""SELECT count(*) FROM socai2.incidents i WHERE i.tenant_id=:tenant AND
-                (i.severity_override IN ('critical','high') OR (i.severity_override IS NULL AND EXISTS
+                (CASE WHEN i.risk_metadata IS NOT NULL THEN i.severity IN ('critical','high') ELSE
+                 (i.severity_override IN ('critical','high') OR (i.severity_override IS NULL AND EXISTS
                  (SELECT 1 FROM socai2.incident_alerts l JOIN socai2.alerts a ON a.tenant_id=l.tenant_id AND a.id=l.alert_id
-                  WHERE l.tenant_id=i.tenant_id AND l.incident_id=i.id AND a.severity IN ('critical','high'))))"""),
+                  WHERE l.tenant_id=i.tenant_id AND l.incident_id=i.id AND a.severity IN ('critical','high')))) END)"""),
                 {"tenant": self.store.tenant_id})).scalar_one()
         return out
 
@@ -352,9 +364,10 @@ class PageReader:
         if not row:
             raise StoreError("alert_material_not_found", 404)
         out = {"metadata": public(row), "availability": "content_exceeds_read_limit", "content_json": None, "content_text": None}
-        body = await self.store.one(select(M.c.raw_json, M.c.raw_text, M.c.ocsf_json, M.c.enrichment).where(*filters))
+        body = await self.store.one(select(M.c.raw_text, *[
+            cast(M.c[k],String).label(k) for k in ("raw_json","ocsf_json","enrichment")]).where(*filters))
         return {**out, "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"],
-            "content_json": {k: body[k] for k in ("raw_json", "ocsf_json", "enrichment")}, "content_text": body["raw_text"]}
+            "content_json": {k: exact_json_loads(body[k]) for k in ("raw_json", "ocsf_json", "enrichment")}, "content_text": body["raw_text"]}
 
     async def trace(self, run_id):
         reader = StageReader(self.store, "alert_basic" if self.kind == "alerts" else "incident_diagnosis", self.identity)
@@ -392,9 +405,14 @@ class PageReader:
             return {**out, "availability": "external_content_not_loaded"}
         if row["size_bytes"] is None:
             return {**out, "availability": "content_exceeds_read_limit_or_size_unknown"}
-        body = await self.store.one(select(F.c.content_json, F.c.content_text).where(*filters))
+        precise = row["schema_version"] == "fusion.first-result.v2"
+        body = await self.store.one(select((cast(F.c.content_json,String) if precise else F.c.content_json).label("content_json"), F.c.content_text).where(*filters))
+        body = dict(body)
+        if precise:
+            body["content_json"] = exact_json_loads(body["content_json"])
         value = body["content_json"]
-        raw = encoded(value) if value is not None else body["content_text"].encode() if body["content_text"] is not None else None
+        raw = ((canonical_numbers(value).encode() if precise else encoded(value)) if value is not None
+               else body["content_text"].encode() if body["content_text"] is not None else None)
         if raw is None or hashlib.sha256(raw).hexdigest() != row["sha256"] or len(raw) != row["size_bytes"]:
             return {**out, "availability": "content_integrity_mismatch"}
         return {**out, "availability": "available" if row["material_state"] == "complete" else "retained_" + row["material_state"], **dict(body)}

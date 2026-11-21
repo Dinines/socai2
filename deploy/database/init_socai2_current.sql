@@ -6,6 +6,13 @@ SELECT current_database() = :'expected_database' AS current_target_matches \gset
 \ir remove_unused_graph_table.sql
 \ir analysis_lifecycle.sql
 \ir case_allocation.sql
+\ir subject_risk.sql
+\ir analysis_task_times.sql
+\ir business_verdict.sql
+\if :{?analysis_ingress_role}
+\ir lake_alert_receipts.sql
+\ir lake_alert_deliveries.sql
+\endif
 \else
 DO $failure$ BEGIN RAISE EXCEPTION 'current_install_target_mismatch'; END $failure$;
 \endif

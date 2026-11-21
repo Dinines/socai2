@@ -1,6 +1,8 @@
 # 告警、事件与 Case 前后端交接
 
-2026-11-17。21已部署processing-20261117-r1、完整HTTP `acceptance-http-20261117-r1`、同版Swagger及4177 r8（0.6.1）。**正式API为[18024](http://192.168.1.21:18024)，Swagger为[18080](http://192.168.1.21:18080/)，80个业务操作，无登录或Token要求，公共告警字段合同不变。** 正式aisoc仍32表521列；调查历史按授权备份清理，账号/租户/来源配置保留。[发布与核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，已完成[新两段完整测试](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)。
+**正式 21 已于 2026-11-21 切到 `c173-release-20261121-03`。** HTTP 18024 和 Swagger 18080 共 82 个业务操作，原告警字段合同沿用。调查库、湖查询、联合调度及 Fusion 的正式读回见[本批回执](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+
+2026-11-17 历史记录。21 当时部署processing-20261117-r1、完整HTTP `acceptance-http-20261117-r1`、同版Swagger及4177 r8（0.6.1）。**当时正式 API 为[18024](http://192.168.1.21:18024)，Swagger为[18080](http://192.168.1.21:18080/)，80个业务操作，无登录或Token要求，公共告警字段合同不变。** 正式aisoc仍32表521列；调查历史按授权备份清理，账号/租户/来源配置保留。[发布与核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，已完成[新两段完整测试](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)。
 
 本批2告警/3上下文形成1事件、1Case各两轮。477份HTTP成功回执、142份累计工件、真实首轮201建案和后轮202检查及比较身份已核；[HTTP模块11组独立复核](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-http-review.json)通过。8次模型均stop，4项自动引用问题和1项人工比较正文问题仍保留，两轮Case均accepted/uncertain/partial。质量问题不阻断合法下游，程序通过不代表模型质量通过。
 

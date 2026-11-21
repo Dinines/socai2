@@ -7,6 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 from .enums import (
     AnalysisState,
+    BusinessVerdict,
     ChangeKind,
     ConclusionState,
     Delivery,
@@ -161,6 +162,7 @@ class Publication(Contract):
     conclusion_state: ConclusionState
     conclusion_origin: Origin
     validation_state: Validation
+    business_verdict: BusinessVerdict | None = None
     closing_note: str
     findings: list[Finding]
     questions: list[Question]
@@ -179,6 +181,9 @@ class Publication(Contract):
             raise ValueError("conclusion and availability disagree")
         if self.conclusion is not None and not self.conclusion.strip():
             raise ValueError("blank conclusion")
+        if self.business_verdict is not None and (self.terminal_state != "completed" or self.conclusion is None
+                or self.conclusion_origin != "model" or self.validation_state != "accepted"):
+            raise ValueError("business verdict requires an accepted model conclusion")
         if len({m.alert_id for m in self.members}) != len(self.members):
             raise ValueError("duplicate member delivery")
         if self.delivery_state == "complete" and any(

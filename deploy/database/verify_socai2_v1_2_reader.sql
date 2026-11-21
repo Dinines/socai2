@@ -7,14 +7,36 @@ WITH revision AS (
    EXISTS(SELECT FROM public.aisoc_schema_migrations
    WHERE name='128_socai2_analysis_lifecycle.sql') AS lifecycle,
    EXISTS(SELECT FROM public.aisoc_schema_migrations
-   WHERE name='129_socai2_case_allocation.sql') AS allocation
+   WHERE name='129_socai2_case_allocation.sql') AS allocation,
+   EXISTS(SELECT FROM public.aisoc_schema_migrations
+   WHERE name='130_socai2_lake_alert_receipts.sql') AS lake_receipts,
+   EXISTS(SELECT FROM public.aisoc_schema_migrations
+   WHERE name='131_socai2_lake_alert_deliveries.sql') AS lake_deliveries,
+   EXISTS(SELECT FROM public.aisoc_schema_migrations
+   WHERE name='132_socai2_subject_risk.sql') AS subject_risk,
+   EXISTS(SELECT FROM public.aisoc_schema_migrations
+   WHERE name='133_socai2_analysis_task_times.sql') AS task_times,
+   EXISTS(SELECT FROM public.aisoc_schema_migrations
+   WHERE name='134_socai2_business_verdict.sql') AS business_verdict
 )
 SELECT current_database() = :'expected_database'
  AND (to_regclass('socai2.graph_explorations') IS NULL)=cleaned
- AND (SELECT count(*) FROM pg_class WHERE relnamespace='socai2'::regnamespace AND relkind='r')=CASE WHEN cleaned THEN 28 ELSE 29 END + CASE WHEN lifecycle THEN 3 ELSE 0 END + CASE WHEN allocation THEN 1 ELSE 0 END
+ AND (to_regclass('socai2.lake_alert_receipts') IS NOT NULL)=lake_receipts
+ AND (to_regclass('socai2.lake_alert_deliveries') IS NOT NULL)=lake_deliveries
+ AND (to_regclass('socai2.lake_alert_delivery_attempts') IS NOT NULL)=lake_deliveries
+ AND (SELECT count(*) FROM pg_class WHERE relnamespace='socai2'::regnamespace AND relkind='r')=CASE WHEN cleaned THEN 28 ELSE 29 END + CASE WHEN lifecycle THEN 3 ELSE 0 END + CASE WHEN allocation THEN 1 ELSE 0 END + CASE WHEN lake_receipts THEN 1 ELSE 0 END + CASE WHEN lake_deliveries THEN 2 ELSE 0 END
  AND (SELECT count(*) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid
       WHERE c.relnamespace='socai2'::regnamespace AND c.relkind='r'
-        AND a.attnum>0 AND NOT a.attisdropped)=CASE WHEN cleaned THEN 450 ELSE 462 END + CASE WHEN lifecycle THEN 61 ELSE 0 END + CASE WHEN allocation THEN 10 ELSE 0 END
+        AND a.attnum>0 AND NOT a.attisdropped)=CASE WHEN cleaned THEN 450 ELSE 462 END + CASE WHEN lifecycle THEN 61 ELSE 0 END + CASE WHEN allocation THEN 10 ELSE 0 END + CASE WHEN lake_receipts THEN 10 ELSE 0 END + CASE WHEN lake_deliveries THEN 25 ELSE 0 END + CASE WHEN subject_risk THEN 4 ELSE 0 END + CASE WHEN task_times THEN 3 ELSE 0 END + CASE WHEN business_verdict THEN 2 ELSE 0 END
+ AND (NOT task_times OR (SELECT count(*)=3 AND bool_and(a.atttypid='timestamptz'::regtype AND NOT a.attnotnull)
+     FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid
+     WHERE c.relnamespace='socai2'::regnamespace AND a.attnum>0 AND NOT a.attisdropped
+       AND ((c.relname='analysis_tasks' AND a.attname IN ('first_enqueued_at','next_attempt_enqueued_at'))
+         OR (c.relname='analysis_attempts' AND a.attname='enqueued_at'))))
+ AND (NOT business_verdict OR (SELECT count(*)=2 AND bool_and(a.atttypid='text'::regtype AND NOT a.attnotnull AND NOT a.atthasdef)
+     FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid
+     WHERE c.relnamespace='socai2'::regnamespace AND a.attnum>0 AND NOT a.attisdropped
+       AND c.relname IN ('incident_diagnoses','results') AND a.attname='business_verdict'))
  AND has_schema_privilege(:'reader_role','socai2','USAGE')
  AND NOT has_schema_privilege(:'reader_role','socai2','CREATE')
  AND has_table_privilege(:'reader_role','public.assets','SELECT')

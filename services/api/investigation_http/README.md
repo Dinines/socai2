@@ -14,10 +14,10 @@
 | `adapters/identity.py` | 独立应用默认内部可信，用配置上下文；保留旧主API自己的身份依赖 |
 | `adapters/runtime.py` | HTTP所需连接、健康及配置，不启动主API或后台消费者 |
 
-调查核心留在 `app/socai2/`，不依赖本包。事件`diagnose`只持久受理并返回202，后台调度再执行；HTTP不启动消费者、不调用模型或创建Run。告警改由正常入站自动分诊，对外`analyze`已移除；旧stage_execution路由为空，不保留同步旁路。Case建案登记首轮任务，实际调度及公开读取已联验；外部prepare/start已移除，内部核心原语保留。Case check/rerun提交尚未挂载，待第7步。程序内部阶段仍通过业务方法调用。
+调查核心留在 `app/socai2/`，不依赖本包。事件`diagnose`只持久受理并返回202，后台调度再执行；HTTP不启动消费者、不调用模型或创建Run。告警由正常入站自动分诊，对外`analyze`已移除；旧stage_execution路由为空，不保留同步旁路。Case建案登记首轮任务；外部prepare/start已移除，内部核心原语保留。当前源码已挂载`POST /api/v1/socai2/cases/{case_id}/investigations`，按`mode=check/rerun`持久受理，再沿`status_url`读取实际任务/attempt/Run。程序内部阶段仍通过业务方法调用，现场是否可执行须核同版核心、配置与共享调度器。
 
 [完整边界及内部HTTP清单](../../../docs/design/investigation-http-boundary.md) · [交接指南](../../../FRONTEND_BACKEND_HANDOFF.md) · [独立OpenSpec](../../../openspec/changes/archive/2026-11-13-separate-investigation-http/design.md)。
 
 独立HTTP不挂载登录路由、不验证Token或角色。启动时通过绝对路径`SOCAI2_HTTP_CONTEXT_FILE`读取JSON：`tenant_id`、`actor_id`、`actor_name`；对应本环境的租户和记录身份。该上下文仅用于业务归属/保存关系，不表示实际调用者已认证。配置缺失启动报错，不采用演示身份。
 
-Case四个写入口通过`adapters/case_allocation.py`只做错误及URL装配，实际容量分配/关系/任务保存由核心用例完成。`case_allocation_contracts.py`在核心业务DTO上增加HTTP导航；不在路由计算接收目标。第5步已完成[无鉴权保存与读取联验](../../../docs/integration/case-allocation-http.md)，需增量129和显式Case分配配置，尚未发布；Case新异步执行入口仍未挂载。
+Case四个写入口通过`adapters/case_allocation.py`只做错误及URL装配，实际容量分配/关系/任务保存由核心用例完成。`case_allocation_contracts.py`在核心业务DTO上增加HTTP导航；不在路由计算接收目标。历史联验见[无鉴权保存与读取](../../../docs/integration/case-allocation-http.md)，当前源码的异步受理由`adapters/analysis_submissions.py`接任务核心。当前接通工作见[现有HTTP与真实数据](../../../openspec/changes/complete-socai2-investigation-chain/http-real-data-connection-20261120.md)；S4有限runner没有挂全部受理/执行链，不能用于证明本应用已完整接通。

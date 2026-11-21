@@ -7,6 +7,7 @@ from sqlalchemy import select, update
 from app.models import socai2 as m
 
 from .baseline_store import C, F, StoreError, digest
+from .case_assessment_sources import adopted_result_id, adopted_verdict, source_query
 from .case_data_contracts import (
     KIND,
     SCHEMA,
@@ -271,9 +272,11 @@ async def read_page_data(store, cas):
         covered = await store.db.execute(select(cover.c.alert_id).where(
             *store.where(cover, cover.c.assessment_id == row["id"], cover.c.case_id == cas["id"])))
         assessment["alert_ids"] = sorted(covered.scalars(), key=str)
-        sources = await store.db.execute(select(source).where(
+        sources = await store.db.execute(source_query().where(
             *store.where(source, source.c.assessment_id == row["id"], source.c.case_id == cas["id"])))
         assessment["sources"] = sorted([dict(r) for r in sources.mappings()], key=lambda r: str(r["id"]))
+        rid = adopted_result_id(row, assessment["sources"])
+        assessment["business_verdict"] = adopted_verdict(row, rid, await lookup("result", rid) if rid else None)
     return CasePageData(classification=cas.get("classification"), due_at=cas.get("due_at"),
         determination=assessment["conclusion"] if assessment else None, assessment=assessment, evidence=view)
 
@@ -308,6 +311,16 @@ async def export_page_data(tables):
             assessment = {k: row[k] for k in ("id", "conclusion", "origin", "validity", "scope_revision", "formed_at", "adopted_at")}
             assessment["alert_ids"] = sorted([r["alert_id"] for r in owned("case_assessment_members") if str(r["assessment_id"]) == str(row["id"])], key=str)
             assessment["sources"] = sorted([r for r in owned("case_assessment_sources") if str(r["assessment_id"]) == str(row["id"])], key=lambda r: str(r["id"]))
+            projected_sources = []
+            for ref in assessment["sources"]:
+                revision = await lookup("task_revision", ref["task_revision_id"]) if ref.get("task_revision_id") else None
+                artifact_source = await lookup("artifact", ref["artifact_id"]) if ref.get("artifact_id") else None
+                projected_sources.append({**ref,
+                    "task_id": revision["task_id"] if revision and str(revision["case_id"]) == str(cid) else None,
+                    "run_id": artifact_source["run_id"] if artifact_source and str(artifact_source["case_id"]) == str(cid) else None})
+            assessment["sources"] = projected_sources
+            rid = adopted_result_id(row, projected_sources)
+            assessment["business_verdict"] = adopted_verdict(row, rid, await lookup("result", rid) if rid else None)
         page = CasePageData(classification=cas.get("classification"), due_at=cas.get("due_at"),
             determination=assessment["conclusion"] if assessment else None, assessment=assessment, evidence=evidence)
         outputs.append({"tenant_id": str(tenant), "case_id": str(cid), "case_row_version": cas["row_version"],

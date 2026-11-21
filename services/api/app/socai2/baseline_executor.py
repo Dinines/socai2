@@ -102,7 +102,9 @@ class BaselineExecutor(ModelSteps):
         graph = await self.service.build_graph(tenant_id, case_id, run_id)
         for route in routes:
             if route["mode"] == "graph" and route["state"] == "scheduled":
-                route.update(state="completed", graph_artifact_id=graph["graph_artifact_id"])
+                route.update(state=graph["state"], graph_artifact_id=graph["graph_artifact_id"])
+                if graph.get("reason"):
+                    route["reason"] = graph["reason"]
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             if run["state"] != "running":
@@ -120,6 +122,6 @@ class BaselineExecutor(ModelSteps):
                     "unexecuted_or_human_followups_remain_unresolved"],
             }, [reference("artifact", plan_id, "execution_receipt"),
                 reference("artifact", stage["output_artifact_id"], "execution_receipt"),
-                reference("artifact", graph["graph_artifact_id"], "execution_receipt")])
+                reference("artifact", graph["artifact_id"], "execution_receipt")])
         # C6 performs post-evidence synthesis and report generation in one call.
         return await self.service.finalize(tenant_id, case_id, run_id, gateway=self.gateway)

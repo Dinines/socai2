@@ -71,8 +71,15 @@ def budget_reason(steps, limits, request_bytes, now, *, reserve_calls=0, reserva
     for step in attempts:
         reported = step["usage"] or {}
         total = reported.get("total_tokens")
+        detail = step.get("error") or {}
+        if {detail.get("code"), detail.get("usage_issue")} & {"provider_usage_exceeds_reservation", "provider_usage_inconsistent"}:
+            return "prior_model_usage_invalid"
         if reported.get("usage_state") != "reported" or type(total) is not int or total < 0:
-            return "prior_model_usage_unknown"
+            if step.get("not_executed"):
+                continue
+            total = step.get("reserved_tokens")
+            if type(total) is not int or total <= 0:
+                return "prior_model_usage_unknown"
         used += total
     if measurement is not None and not measurement["context_fits"]:
         return "model_context_capacity_exceeded"
@@ -147,9 +154,8 @@ class BaselineAnalysis:
                 return artifact["content_json"]
             if run["state"] != "running":
                 raise StoreError("baseline_not_running")
-            if await store.one(select(S.c.id).where(*store.where(S, S.c.run_id == run_id,
-                    S.c.state.in_(["planned", "running", "unknown"]))).limit(1)):
-                raise StoreError("baseline_step_in_progress")
+            from .baseline_failure import require_idle
+            await require_idle(store, run_id)
             context = await store.read_context(case_id, run_id)
             from . import case_model_boundary, case_output_adapter
             case_model_boundary.selected_profile(context)

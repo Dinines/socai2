@@ -111,6 +111,7 @@ from app.socai2.list_query_contracts import (
 )
 from app.socai2.page_contracts import (
     ContentView,
+    IncidentSubjectPage,
     IncidentSubjectView,
     RecordPage,
     Section,
@@ -204,6 +205,7 @@ __all__ = [
     "IncidentSort",
     "IncidentStageEntry",
     "IncidentStagePage",
+    "IncidentSubjectPage",
     "IncidentSubjectView",
     "MaterialState",
     "MemberChange",
@@ -281,3 +283,15 @@ __all__ += ["AlertReviewPage", "AlertReviewQuery"]
 from app.socai2.alert_host_contracts import AlertHostPage
 
 __all__ += ["AlertHostPage"]
+
+from app.socai2.lake_query_contracts import (
+    LakeEventView,
+    LakeMaterial,
+    LakeModel,
+    LakeReadError,
+    LakeRecordRef,
+    LakeSearch,
+    LakeSearchResult,
+)
+
+__all__ += ["LakeEventView", "LakeMaterial", "LakeModel", "LakeReadError", "LakeRecordRef", "LakeSearch", "LakeSearchResult"]

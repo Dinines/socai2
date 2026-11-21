@@ -3,15 +3,17 @@ import hashlib
 import json
 from uuid import uuid5
 
+from app.services.receipt_json import (
+    canonical_numbers,
+    encoded,
+    lake_input,
+    model_value,
+)
 from app.services.received_fields import activity_block, nested, parse_received_time
 
 VERSION = "socai2.fusion-material.v1"
 STORE_NAMESPACE = "fusion.v1"
 MAX_REFS = 200
-
-
-def encoded(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
 def digest(value):
@@ -21,15 +23,20 @@ def digest(value):
 def input_value(alert):
     # id and created_at may be generated again on replay. Preserve the first
     # received values in the material, but do not use arrival clocks as identity.
-    return alert.model_dump(mode="json", exclude={"id", "created_at"})
+    return {k: v for k, v in model_value(alert).items() if k not in {"id", "created_at"}}
+
+
+def material_id(alert):
+    return uuid5(alert.deterministic_id(), VERSION + ":" + digest(input_value(alert)))
 
 
 def namespace(alert):
     return "connector:" + str(alert.connector_id) if alert.connector_id else "source:" + alert.source
 
 
-def retained(value):
-    size, sha = len(encoded(value).encode("utf-8")), digest(value)
+def retained(value, *, numeric_canonical=False):
+    raw = (canonical_numbers(value) if numeric_canonical else encoded(value)).encode("utf-8")
+    size, sha = len(raw), hashlib.sha256(raw).hexdigest()
     return {"original_size_bytes": size, "retained_size_bytes": size, "original_sha256": sha,
         "retained_sha256": sha, "truncated": False, "reason": None, "omitted_paths": []}
 
@@ -67,8 +74,11 @@ def source_scope(alert):
     scope = {"kind": kind, "received_count": len(ids), "retained_count": min(len(ids), MAX_REFS),
         "complete": complete, "truncated": truncated, "window_start": time("window_start"), "window_end": time("window_end"),
         "omission_reason": "source_reference_limit" if truncated else "window_candidates_not_complete_activity" if window else None}
-    return scope, [{"source_namespace": namespace(alert), "source_event_id": identity, "relation_kind": relation,
-        "observed_at": None, "source_path": f"$.raw_json.source_event_ids[{alert.source_event_ids.index(identity)}]"}
+    lake = lake_input(alert)
+    return scope, [{"source_namespace": lake["lake_ref"]["source_namespace"] if lake else namespace(alert),
+        "source_event_id": identity, "relation_kind": relation,
+        "observed_at": alert.event_time if lake else None,
+        "source_path": "$.raw_json.raw_event.ocsf_event.metadata.uid" if lake else f"$.raw_json.source_event_ids[{alert.source_event_ids.index(identity)}]"}
         for identity in ids[:MAX_REFS]]
 
 
@@ -101,10 +111,10 @@ def project(fused, alert, snapshot_id):
         "confidence_label": fused.confidence_label.value if available else None,
         "confidence_rationale": [encoded(f.model_dump(mode="json")) for f in fused.confidence_rationale] if available else None,
         "score_source": "fusion" if same_input else None, "ocsf_class_uid": alert.ocsf_class_uid}
-    value = {"raw_text": ocsf.get("raw_data") if ocsf and isinstance(ocsf.get("raw_data"), str) else None,
-        "raw_json": alert.model_dump(mode="json"), "ocsf_json": ocsf, "detection": detection, "enrichment": body, "source_scope": scope}
-    # Preserve received payloads in full. The existing one-MiB delivery limit
-    # is enforced by the sink; over-limit inputs fail, never slice invalid JSON.
+    value = {"raw_text": raw["source_ocsf_json"] if lake_input(alert) else
+             ocsf.get("raw_data") if ocsf and isinstance(ocsf.get("raw_data"), str) else None,
+        "raw_json": model_value(alert), "ocsf_json": ocsf, "detection": detection, "enrichment": body, "source_scope": scope}
+    # Preserve complete received values; the sink checks its selected byte budget.
     value.update(sha256=digest(value), retention=retained(value), material_state="complete")
     objects = []
     for field, typ, role in (("hostname", "host", "entity"), ("username", "user", "entity"),
@@ -127,7 +137,8 @@ def project(fused, alert, snapshot_id):
     # Index additional explicit OCSF endpoints without collapsing them to the
     # single hostname/IP slots in RawAlert. The unmodified envelope stays above.
     seen = {(o["object_type"], o["raw_value"]) for o in objects}
-    for path, typ, role in (("device.name", "host", "entity"), ("src_endpoint.hostname", "host", "entity"),
+    for path, typ, role in (("device.hostname", "host", "entity"), ("device.name", "host", "entity"),
+            ("device.ip", "ip", "both"), ("src_endpoint.hostname", "host", "entity"),
             ("dst_endpoint.hostname", "host", "entity"), ("src_endpoint.ip", "ip", "both"),
             ("dst_endpoint.ip", "ip", "both"), ("actor.user.name", "user", "entity")):
         value_at = nested(ocsf, *path.split("."))

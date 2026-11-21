@@ -14,10 +14,12 @@ def incident_level(parent, alerts, member_ids):
     missing = sorted(expected - set(known))
     values = [v for v in known.values() if v in RANK]
     auto = max(values, key=RANK.get) if values and not missing else None
+    from .subject_risk import incident_effective
+    effective, source = incident_effective(parent, auto)
     override = parent.get("severity_override")
     return {"severity_auto": auto, "severity_override": override,
-        "severity_effective": override if override in RANK else auto,
-        "severity_source": "manual_override" if override in RANK else "member_max" if auto else None,
+        "severity_effective": effective,
+        "severity_source": source,
         "member_severities": known, "missing_member_ids": missing,
         "unknown_severity_count": sum(v not in RANK for v in known.values()) + len(missing),
         "state": "partial_member_scope" if missing else "complete_member_scope"}

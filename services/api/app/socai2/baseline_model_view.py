@@ -135,6 +135,9 @@ def candidates(context, context_id, enrichment, materials=None):
         yield item("$.current_assessment", context.current_assessment)
     for rid, result in sorted(context.prior_results.items()):
         yield item(f"$.prior_results.{rid}", result)
+    from .case_previous_analysis import PREFIX
+    for index, unit in enumerate((context.update_context or {}).get("previous_analysis_material", {}).get("units", [])):
+        yield item(PREFIX + str(index) + ".value", unit["value"])
     for artifact_id, payload, roles in enrichment:
         for i, row in enumerate(payload.get("rows") or []):
             # Keep paired prior decisions separately, with their original roles.

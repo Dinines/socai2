@@ -52,9 +52,10 @@ class IncidentTaskExecutor:
         source["capacity_profile"] = self.capacity_profile()
         state = await store.one(select(S).where(*store.where(S, S.c.subject_type == "incident", S.c.subject_id == subject_id)))
         changed = False
-        if state and state["automatic_stop_reason"] == "capacity_exceeded" and state["last_attempt_id"]:
+        if state and state["automatic_stop_reason"] == "capacity_exceeded" and state["stopped_task_id"]:
             old = await store.one(select(F.c.content_json).select_from(A.join(R, R.c.id == A.c.run_id)
-                .join(F, F.c.id == R.c.input_artifact_id)).where(*store.where(A, A.c.id == state["last_attempt_id"])))
+                .join(F, F.c.id == R.c.input_artifact_id)).where(*store.where(A,
+                    A.c.task_id == state["stopped_task_id"])).order_by(A.c.attempt_no.desc()).limit(1))
             changed = bool(old and old["content_json"].get("capacity_profile") != source["capacity_profile"])
         return Material(digest(source["change_view"]), source, changed)
 

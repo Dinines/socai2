@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import Field
 
 from .baseline_contracts import Contract
-from .enums import Delivery, DiagnosisState, Disposition, RunState, ScoreState
+from .enums import BusinessVerdict, Delivery, DiagnosisState, Disposition, RunState, ScoreState
 from .stage_inputs import Freshness
 
 
@@ -44,6 +44,7 @@ class DiagnosisView(Contract):
     revision: int
     state: DiagnosisState
     summary: str | None
+    business_verdict: BusinessVerdict | None = Field(default=None, description="Saved model verdict for this diagnosis. Null if absent.")
     diagnosis: dict[str, Any] | None
     open_questions: list[dict[str, Any]] | None
     input_artifact_id: UUID

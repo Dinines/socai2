@@ -352,6 +352,9 @@ def selected_refs(context):
     refs += [reference("task_revision", tid, "human_statement") for tid in sorted(task_ids)]
     refs += [reference("result", rid, "prior_analysis") for rid in sorted(context.prior_results)]
     refs += [reference("artifact", fid, "prior_analysis") for fid in sorted(context.adopted_artifacts)]
+    previous = (context.update_context or {}).get("previous_analysis_material")
+    if previous:
+        refs.append(reference("artifact", previous["artifact_id"], "execution_receipt"))
     for incident in context.incidents.values():
         material = incident.analysis_material
         if material:

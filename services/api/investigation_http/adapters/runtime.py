@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from app._health import install_health_routes
 from app.core.config import settings
 from app.core.cors import build_cors_kwargs
+from app.core.logging import configure_logging
+from app.core.operational_logging import OperationalHTTPMiddleware
 from app.db.case_database import close_case_database, get_case_write_sessions
 from app.db.database import engine
 from app.socai2.list_export import ExportLimits
@@ -41,6 +43,7 @@ def configured_database_name():
 
 @asynccontextmanager
 async def lifespan(app):
+    configure_logging()
     expected = configured_database_name()
     app.state.business_context = load_context()
     ExportLimits.load()
@@ -71,6 +74,7 @@ async def lifespan(app):
 
 def configure_http(app):
     global mark_ready, mark_not_ready
+    app.add_middleware(OperationalHTTPMiddleware)
     app.add_middleware(
         CORSMiddleware, **build_cors_kwargs(service_name="socai2-next-api")
     )

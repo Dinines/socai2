@@ -93,6 +93,8 @@ def parser(prepared):
 async def save_receipt(owner, tenant, case_id, run_id, prepared, model_id, response_id, reason):
     if model_id is None:
         return None
+    if prepared.get("transport_stage_delivery"):
+        return prepared["transport_stage_delivery"]
     async with owner.service.transaction(tenant) as store:
         run = await owner.locked(store, case_id, run_id)
         model = await store.one(select(S).where(*store.where(S, S.c.run_id == run_id, S.c.id == model_id)))

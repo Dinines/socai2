@@ -28,6 +28,7 @@ from typing import Any
 
 import asyncpg
 import structlog
+from app.core.operational_logging import exception_fields
 
 from app.models.alert import FusedAlert, FusionDecision, RawAlert
 from app.services.delivery_recovery import DeliveryHold, SnapshotLookup, restore_snapshot
@@ -334,7 +335,9 @@ class AlertSink:
             logger.info("alert_sink.started")
         except Exception as exc:  # noqa: BLE001 — degrade, never crash the worker
             self._pool = None
-            logger.error("alert_sink.connect_failed", error=str(exc))
+            logger.error("alert_sink.connect_failed", **exception_fields(exc),
+                         operation="connect_alert_store", stage="startup", dependency="postgres",
+                         error_code="service_unavailable")
 
     async def stop(self) -> None:
         if self._pool is not None:

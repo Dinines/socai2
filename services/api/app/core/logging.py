@@ -11,6 +11,11 @@ from app.core.config import is_dev_env, settings
 
 def configure_logging() -> None:
     """Configure structlog for structured JSON logging in production."""
+    if settings.SOCAI2_LOGGING_PROFILE_FILE:
+        from app.core.operational_logging import configure_file_logging
+        configure_file_logging(settings.SOCAI2_LOGGING_PROFILE_FILE)
+        logging.getLogger("uvicorn.access").setLevel(logging.INFO if os.getenv("AISOC_ACCESS_LOG") == "1" else logging.WARNING)
+        return
     log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
 
     shared_processors: list[structlog.types.Processor] = [

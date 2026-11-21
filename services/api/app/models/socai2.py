@@ -240,6 +240,9 @@ class Incidents(Socai2Base):
     owner_source_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     assigned_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     tags: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default=text("'{}'::text[]"))
+    severity: Mapped[str | None] = mapped_column(Text, nullable=True)
+    severity_source: Mapped[str | None] = mapped_column(Text, nullable=True)
+    risk_metadata: Mapped[object | None] = mapped_column(JSONB, nullable=True)
     severity_override: Mapped[str | None] = mapped_column(Text, nullable=True)
     severity_override_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     severity_override_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
@@ -315,6 +318,7 @@ class IncidentDiagnoses(Socai2Base):
     requested_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
     generated_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     error: Mapped[object | None] = mapped_column(JSONB, nullable=True)
+    business_verdict: Mapped[str | None] = mapped_column(Text, nullable=True)
     __table_args__ = (
         UniqueConstraint('tenant_id', 'id'),
         UniqueConstraint('tenant_id', 'incident_id', 'id', name='incident_diagnoses_scope_key_0'),
@@ -326,6 +330,9 @@ class IncidentDiagnoses(Socai2Base):
         CheckConstraint('jsonb_typeof("open_questions") = \'array\'', name='incident_diagnoses_open_questions_json_type'),
         CheckConstraint('"source_fingerprint" ~ \'^[0-9a-f]{64}$\'', name='incident_diagnoses_source_fingerprint_sha'),
         CheckConstraint('jsonb_typeof("error") = \'object\'', name='incident_diagnoses_error_json_type'),
+        CheckConstraint("business_verdict IS NULL OR (business_verdict IN ('malicious','benign','false_positive','needs_review') "
+                        "AND state='completed' AND (diagnosis->>'validation_state') IS NOT DISTINCT FROM 'accepted')",
+                        name='incident_diagnoses_business_verdict'),
         ForeignKeyConstraint(['tenant_id', 'incident_id'], ['socai2.incidents.tenant_id', 'socai2.incidents.id'], name='incident_diagnoses_incident_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'source_run_id'], ['socai2.runs.tenant_id', 'socai2.runs.id'], name='incident_diagnoses_source_run_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'input_artifact_id'], ['socai2.artifacts.tenant_id', 'socai2.artifacts.id'], name='incident_diagnoses_input_artifact_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
@@ -348,6 +355,7 @@ class Cases(Socai2Base):
     handling_status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'new'"))
     severity: Mapped[str | None] = mapped_column(Text, nullable=True)
     severity_source: Mapped[str | None] = mapped_column(Text, nullable=True)
+    risk_metadata: Mapped[object | None] = mapped_column(JSONB, nullable=True)
     owner_id: Mapped[PyUUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     assignment_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'unassigned'"))
     owner_source_value: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -742,6 +750,7 @@ class Results(Socai2Base):
     operation_key: Mapped[str] = mapped_column(Text, nullable=False)
     edited_fields: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default=text("'{}'::text[]"))
     edit_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    business_verdict: Mapped[str | None] = mapped_column(Text, nullable=True)
     __table_args__ = (
         UniqueConstraint('tenant_id', 'id'),
         UniqueConstraint('tenant_id', 'case_id', 'id', name='results_scope_key_0'),
@@ -765,6 +774,9 @@ class Results(Socai2Base):
         CheckConstraint('comparison_result_id IS DISTINCT FROM id AND supersedes_result_id IS DISTINCT FROM id', name='results_comparison_self'),
         CheckConstraint("change_kind<>'initial' OR comparison_result_id IS NULL", name='results_initial_comparison'),
         CheckConstraint("NOT ('conclusion'=ANY(edited_fields)) OR conclusion_origin='human'", name='results_human_edit'),
+        CheckConstraint("business_verdict IS NULL OR (business_verdict IN ('malicious','benign','false_positive','needs_review') "
+                        "AND kind='baseline' AND conclusion_origin='model' AND validation_state='accepted' "
+                        "AND conclusion_state IN ('supported','uncertain'))", name='results_business_verdict'),
         ForeignKeyConstraint(['tenant_id', 'case_id'], ['socai2.cases.tenant_id', 'socai2.cases.id'], name='results_case_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'source_run_id'], ['socai2.runs.tenant_id', 'socai2.runs.id'], name='results_source_run_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'source_answer_id'], ['socai2.messages.tenant_id', 'socai2.messages.id'], name='results_source_answer_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
@@ -1083,6 +1095,8 @@ class AnalysisTasks(Socai2Base):
     started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     last_enqueued_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    first_enqueued_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    next_attempt_enqueued_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     __table_args__ = ({"schema": "socai2"},)
 
 
@@ -1108,6 +1122,7 @@ class AnalysisAttempts(Socai2Base):
     error_stage: Mapped[str | None] = mapped_column(Text, nullable=True)
     input_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    enqueued_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     local_ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     interruption_observed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     failed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)

@@ -1,5 +1,6 @@
 """A: three bounded background queries and one model; no legacy side effects."""
 import asyncio
+from app.core.operational_logging import log_context
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
@@ -122,8 +123,9 @@ class AlertBasicExecutor:
                 return await self.outcome(tenant, claim)
             # Both exact request and running claim have committed before I/O.
             try:
-                async with asyncio.timeout_at(deadline):
-                    payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
+                with log_context(run_id=rid, step_id=model, stage="A", operation="model_complete"):
+                    async with asyncio.timeout_at(deadline):
+                        payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
             except ModelCallError as exc:
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)

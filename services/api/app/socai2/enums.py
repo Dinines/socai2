@@ -1,5 +1,9 @@
 # Generated from the reviewed data contract.
 from enum import StrEnum
+from typing import Literal
+
+
+BusinessVerdict = Literal["malicious", "benign", "false_positive", "needs_review"]
 
 class Severity(StrEnum):
     INFO = 'info'

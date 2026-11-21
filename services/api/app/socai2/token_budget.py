@@ -1,6 +1,8 @@
 """Measure the final model request with the selected backend's tokenizer."""
 
 import asyncio
+import logging
+from app.core.operational_logging import log_exception
 
 import httpx
 
@@ -54,6 +56,9 @@ class BackendTokenMeter:
                         raise StoreError("token_meter_capacity_or_response_mismatch", 503)
                     counts.append(value["count"])
         except (httpx.HTTPError, ValueError):
+            log_exception(logging.getLogger(__name__), "token_meter_call_failed", extra={
+                "operation": "measure_tokens", "stage": stage, "dependency": "tokenizer_http",
+                "error_code": "token_meter_unavailable"})
             raise StoreError("token_meter_unavailable", 503) from None
         estimated_input = sum(counts) + config["safety_tokens"]
         total = estimated_input + policy.output_tokens[stage]

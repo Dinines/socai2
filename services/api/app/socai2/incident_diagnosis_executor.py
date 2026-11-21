@@ -1,5 +1,6 @@
 """One I synthesis over frozen members; no A queries, Case runs, or actions."""
 import asyncio
+from app.core.operational_logging import log_context
 from uuid import uuid4, uuid5
 
 from sqlalchemy import func, insert, null, select, update
@@ -62,6 +63,8 @@ class IncidentDiagnosisExecutor:
                 ended_at=None if state == "unknown" else now, stop_reason=code, row_version=R.c.row_version + 1))
             await store.db.execute(update(D).where(*store.where(D, D.c.source_run_id == rid)).values(
                 state=state, error={"code": code}))
+            from .subject_risk_opinions import apply_saved
+            await apply_saved(store, run)
 
     async def execute(self, tenant, incident_id, operation_key, *, requested_by=None, dispatch_context=None, frozen_source=None):
         profile = execution_policy("incident_io").incident_io
@@ -90,10 +93,11 @@ class IncidentDiagnosisExecutor:
                 await self.stop(tenant, rid, "failed", "model_not_configured")
                 return await self.outcome(tenant, claim)
             attempt = 0
-            body = {"model": self.gateway.model, "messages": messages, "max_tokens": active_policy().model.output_tokens["I"], "temperature": 0,
-                    "response_format": {"type": "json_schema", "json_schema": {"name": "socai2_incident_boundary",
+            model_policy = active_policy().model
+            body = {"model": self.gateway.model, "messages": messages, "max_tokens": model_policy.output_tokens["I"], "temperature": 0,
+                    "response_format": {"type": "json_schema", "json_schema": {"name": "socai2_incident_boundary_verdict_v1",
                         "strict": True, "schema": incident_output_adapter.candidate_schema(prepared)}}}
-            body = prepare_request(self.gateway, body)
+            body = prepare_request(self.gateway, body, max_structure_whitespace=model_policy.incident_max_structure_whitespace)
             async with self.service.transaction(tenant) as store:
                 meter_run, _ = await self.locked(store, rid)
                 meter_seconds = (Limits.model_validate(meter_run["limits"]).deadline_at - await store.now()).total_seconds()
@@ -119,6 +123,8 @@ class IncidentDiagnosisExecutor:
                     "reserved_token_upper_bound": measurement["reserved_total_tokens"], "token_measurement": measurement,
                     "correction": None, "preflight_error": reason, "preflight_passed": not bool(reason)}
                 request["incident_boundary"] = prepared["boundary"]
+                request["severity_opinion_version"] = prepared["severity_opinion_version"]
+                request["business_verdict_version"] = prepared["business_verdict_version"]
                 request_id = await self.save(store, run, model, "model_request", request)
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
                     input_artifact_id=request_id, provider=self.gateway.provider))
@@ -127,8 +133,9 @@ class IncidentDiagnosisExecutor:
                 await self.stop(tenant, rid, "failed", reason)
                 return await self.outcome(tenant, claim)
             try:
-                async with asyncio.timeout_at(deadline):
-                    payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
+                with log_context(run_id=rid, step_id=model, stage="I", operation="model_complete"):
+                    async with asyncio.timeout_at(deadline):
+                        payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
             except ModelCallError as exc:
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)

@@ -13,6 +13,7 @@ from .case_citation_feedback import feedback
 from .case_citation_quality import normalized
 from .case_finding_schema import constrain_findings, validate_conflicts
 from .structured_output import response_format
+from . import business_verdict
 
 
 def deep_format(prepared):
@@ -125,12 +126,22 @@ def final_format(prepared, context, comparison):
             questions = schema["$defs"][questions["$ref"].removeprefix("#/$defs/")]
         schema["$defs"]["Analysis"]["properties"]["questions"] = {**copy.deepcopy(questions),
             "minItems": len(context.questions) - 1, "maxItems": len(context.questions) - 1}
+    from .severity_opinion import extend_schema
+    extend_schema(schema, prepared)
+    business_verdict.extend_schema(schema, prepared)
+    fmt["json_schema"]["name"] += "_verdict_v1"
     return constrain_findings(delivery.constrain_recommendations(fmt), prepared["source_map"], context.alerts,
                               program_owned=program.enabled(boundary))
 
 
 def restore_final(content, prepared, comparison, *, citation_review=None):
     value = normalized(decode(content), citation_review)
+    from .severity_opinion import enabled
+    if enabled(prepared):
+        # Admitted independently; the historical analysis validator is unchanged.
+        value.pop("severity_opinion", None)
+    if business_verdict.enabled(prepared):
+        value.pop(business_verdict.FIELD, None)
     boundary = prepared["case_boundary"]
     members = {v: k for k, v in boundary["member_aliases"].items()}
     objects = {v: k for k, v in boundary["object_aliases"].items()}

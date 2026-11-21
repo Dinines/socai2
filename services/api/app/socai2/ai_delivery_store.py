@@ -71,4 +71,7 @@ async def save(store, run, stage_step, request_id, original_id, received):
     await store.db.execute(update(S).where(*store.where(S, S.c.id == stage_step, S.c.run_id == run["id"])).values(output_artifact_id=identity))
     await store.db.execute(update(R).where(*store.where(R, R.c.id == run["id"])).values(delivery_state=value["delivery"]["state"],
         row_version=R.c.row_version + 1))
+    if run["kind"] == "incident_diagnosis":
+        from .subject_risk_opinions import save_candidate
+        await save_candidate(store, run, stage_step, received)
     return identity, value

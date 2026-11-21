@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from pydantic import AwareDatetime
 
+from investigation_http.adapters.material_response import material_response
 from investigation_http.contracts import (
     AlertListQuery,
     AlertSort,
@@ -14,6 +15,7 @@ from investigation_http.contracts import (
     ContentView,
     IncidentListQuery,
     IncidentSort,
+    IncidentSubjectPage,
     IncidentSubjectView,
     RecordPage,
     Section,
@@ -68,7 +70,7 @@ async def alerts(
     )
 
 
-@router.get("/incidents", response_model=SubjectPage)
+@router.get("/incidents", response_model=IncidentSubjectPage)
 async def incidents(
     user: User,
     service: Service,
@@ -139,7 +141,7 @@ async def records(
 
 @router.get("/alerts/{alert_id}/materials/{material_id}", response_model=ContentView)
 async def material(alert_id: UUID, material_id: UUID, user: User, service: Service):
-    return await invoke(
+    return await material_response(
         service.read(
             user.tenant_id,
             "alerts",
@@ -190,7 +192,7 @@ async def artifact(
 async def alert_source_artifact(
     identity: UUID, artifact_id: UUID, user: User, service: Service
 ):
-    return await invoke(
+    return await material_response(
         service.read(
             user.tenant_id,
             "alerts",
@@ -206,7 +208,7 @@ async def alert_source_artifact(
 async def incident_source_artifact(
     identity: UUID, artifact_id: UUID, user: User, service: Service
 ):
-    return await invoke(
+    return await material_response(
         service.read(
             user.tenant_id,
             "incidents",

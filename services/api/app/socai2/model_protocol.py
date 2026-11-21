@@ -95,10 +95,18 @@ def provider_schema(body, profile):
     return output
 
 
-def prepare_request(gateway, body):
+def prepare_request(gateway, body, *, max_structure_whitespace: int | None = None):
     """Convert before accounting/persistence; the saved body is sent unchanged."""
-    body = provider_schema(body, getattr(gateway, "schema_profile", "standard"))
-    if getattr(gateway, "provider", "chat_completions") != DEEPSEEK_PROTOCOL:
+    profile = getattr(gateway, "schema_profile", "standard")
+    provider = getattr(gateway, "provider", "chat_completions")
+    body = provider_schema(body, profile)
+    if max_structure_whitespace is not None:
+        if provider != "chat_completions" or profile != "vllm_grammar_v1":
+            raise ValueError("model_structure_whitespace_not_supported")
+        schema = body["response_format"]["json_schema"]["schema"]
+        return {**body, "response_format": {"type": "structural_tag", "format": {
+            "type": "json_schema", "json_schema": schema, "max_whitespace_cnt": max_structure_whitespace}}}
+    if provider != DEEPSEEK_PROTOCOL:
         return body
     fmt = body["response_format"]
     if fmt["type"] != "json_schema":

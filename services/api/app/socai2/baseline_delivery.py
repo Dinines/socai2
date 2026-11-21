@@ -14,15 +14,13 @@ from .baseline_analysis_model import TenantChatGateway
 from .baseline_capacity import CAPACITY_FAILURES, capacity_failure
 from .baseline_context import reference
 from .baseline_contracts import FULL_EXECUTOR_VERSIONS, Scope
-from .baseline_delivery_compat import normalize as normalize_delivery
 from .baseline_delivery_projection import make_publication, markdown
 from .baseline_enrichment import S, error
 from .baseline_followup_projection import delivery_followups
-from .baseline_graph import BaselineGraph
 from .baseline_model_view import blocked, field_limit
 from .baseline_reanalysis import BaselineReanalysis
 from .baseline_reasoning import ModelSteps
-from .baseline_store import RES, RM, F, StoreError, digest, encoded
+from .baseline_store import RES, RM, F, R, StoreError, digest, encoded
 
 
 class BaselineDelivery(ModelSteps):
@@ -39,12 +37,10 @@ class BaselineDelivery(ModelSteps):
             "materials", "query_projection", "deep_summary", "graph_snapshot"}], key=lambda r: str(r["id"]))
 
     def current_graph(self, bases):
-        graphs = [r["content_json"] for r in bases if r["content_json"].get("type") == "graph_snapshot"]
-        latest = max(graphs, key=lambda r: r["captured_at"]) if graphs else None
-        required = {str(r["id"]) for r in bases if r["content_json"].get("type") in {"materials", "query_projection"}}
-        if not latest or not required <= set(latest["input_artifact_ids"]):
-            raise StoreError("final_graph_stale_or_missing")
-        return latest
+        state, latest = graph_contract.selected_snapshot(bases)
+        if state == "available":
+            return latest
+        return {**(latest or {}), "state": state, "graph_artifact_id": None, "delivery_state": "none"}
 
     async def comparison(self, store, run, context):
         rid = str(run["comparison_result_id"]) if run["comparison_result_id"] else None
@@ -91,9 +87,8 @@ class BaselineDelivery(ModelSteps):
 
     async def execute(self, tenant_id, case_id, run_id, gateway=None):
         gateway = gateway or TenantChatGateway()
-        # Deterministic graph work uses no model/Tool allowance. Completed
-        # snapshots can be read after publication for an idempotent C6 replay.
-        await BaselineGraph(self.service).execute(tenant_id, case_id, run_id)
+        # C5 is optional and already settled by the full executor. Do not retry
+        # a failed graph or silently rebuild a stale one during final synthesis.
         async with self.service.transaction(tenant_id) as store:
             run = await self.locked(store, case_id, run_id)
             prior_delivery = await store.one(select(S).where(*store.where(S, S.c.run_id == run_id,
@@ -125,7 +120,8 @@ class BaselineDelivery(ModelSteps):
             previous = await self.read_artifact(store, run_id, previous_step["output_artifact_id"]) if previous_step else None
             bases = await self.bases(store, run_id)
             graph = self.current_graph(bases)
-            await self.read_artifact(store, run_id, UUID(graph["graph_artifact_id"]))
+            if graph["graph_artifact_id"]:
+                await self.read_artifact(store, run_id, UUID(graph["graph_artifact_id"]))
             comparison, lead = await self.comparison(store, run, context)
             key, stage_id = digest([str(r["id"]) for r in bases]), uuid4()
             await store.db.execute(insert(S).values(id=stage_id, tenant_id=tenant_id, run_id=run_id,
@@ -146,19 +142,20 @@ class BaselineDelivery(ModelSteps):
                     dispatch["initial_analysis_artifact_id"], str(dispatch_step["output_artifact_id"])]))
             prepared["followup_dispatch"] = dispatch
             from .citation_quality import new_review
-            citation_review = prepared["citation_review"] = new_review()
-            from .case_followup_output import FinalReview, final_format, parse_final
-            parser = lambda content: parse_final(content, prepared, context, comparison, citation_review=citation_review)
-            review = FinalReview(prepared, context, comparison)
+            prepared["citation_review"] = new_review()
+            from . import case_c6_delivery
+            from .case_followup_output import final_format
+            parser = case_c6_delivery.parser(prepared, context, comparison)
             output_format = final_format(prepared, context, comparison)
             if capacity_reason:
                 value, reason, model_id, response_id = None, capacity_reason, None, None
             else:
                 value, reason, model_id, response_id = await self.call(tenant_id, case_id, run_id,
                     stage_id, "C6", prepared, gateway, parser,
-                    response_adapter=normalize_delivery,
-                    review=review, allow_correction=False,
+                    allow_correction=False,
                     output_format=output_format)
+            prepared["stage_delivery"] = await case_c6_delivery.save_receipt(self, tenant_id, case_id, run_id,
+                prepared, context, comparison, model_id, response_id, reason)
             return await self.finish(tenant_id, case_id, run_id, stage_id, context, bases, key, graph,
                 comparison, prepared, value, reason, model_id, response_id)
         except (Exception, asyncio.CancelledError) as exc:
@@ -175,7 +172,8 @@ class BaselineDelivery(ModelSteps):
             current = await self.bases(store, run_id)
             if digest([str(r["id"]) for r in current]) != key or self.current_graph(current)["graph_artifact_id"] != graph["graph_artifact_id"]:
                 raise StoreError("final_evidence_changed")
-            await self.read_artifact(store, run_id, UUID(graph["graph_artifact_id"]))
+            if graph["graph_artifact_id"]:
+                await self.read_artifact(store, run_id, UUID(graph["graph_artifact_id"]))
             rows = (await store.db.execute(select(RM).where(*store.where(RM, RM.c.run_id == run_id)))).mappings().all()
             members = {r["alert_id"]: r for r in rows}
             pub, limits = make_publication(value, context, members, prepared, comparison, graph,
@@ -192,6 +190,8 @@ class BaselineDelivery(ModelSteps):
             refs = [reference("artifact", r["id"], "execution_receipt") for r in bases]
             if response_id:
                 refs.append(reference("artifact", response_id, "execution_receipt"))
+            if prepared.get("stage_delivery"):
+                refs.append(reference("artifact", prepared["stage_delivery"]["artifact_id"], "execution_receipt"))
             if prepared.get("followup_dispatch"):
                 refs.append(reference("artifact", prepared["input_artifact_ids"][-1], "execution_receipt"))
             domains = {}
@@ -208,6 +208,7 @@ class BaselineDelivery(ModelSteps):
                         "shared_final_analysis_not_independent_expert_vote", "structure_scope_checked_citations_recorded_not_truth_proven"]
                     domains[d.name] = str(await self.save(store, run, stage_id, block, "domain_analysis", refs))
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)).order_by(S.c.seq))).mappings().all()
+            uncertain = any(s["state"] == "unknown" for s in steps)
             model_steps = [s for s in steps if s["kind"] == "model" and s["state"] not in {"planned", "skipped"}]
             known_usage = all((s["usage"] or {}).get("usage_state") == "reported" for s in model_steps)
             totals = sum(s["usage"]["total_tokens"] for s in model_steps) if known_usage else None
@@ -220,10 +221,23 @@ class BaselineDelivery(ModelSteps):
                     "state": stage_state if s["id"] == stage_id else s["state"]} for s in steps]}
             report_id, result_id = uuid4(), uuid4()
             pub = pub.model_copy(update={"report_artifact_id": report_id})
+            report_result = pub.model_dump(mode="json")
+            if uncertain:
+                from .baseline_closing import interrupted_report
+                await store.mark_unknown(case_id, run_id)
+                await store.db.execute(update(R).where(*store.where(R, R.c.id == run_id)).values(delivery_state="partial"))
+                run = await store.run(case_id, run_id)
+                report_result = interrupted_report(pub, run, local_ended=True)
+                execution.update(run_state="unknown", local_state="ended",
+                    local_ended_at=now.isoformat(), adoption_eligible=False, comparison_eligible=False)
+                result_id = None
             report = {"schema_version": contract.SCHEMA, "type": "delivery_report", "run_id": str(run_id),
-                "result_id": str(result_id),
+                "result_id": str(result_id) if result_id else None,
                 "scope": context.scope.model_dump(mode="json"), "evidence_set_key": key,
-                "result": pub.model_dump(mode="json"), "delivery": value.model_dump(mode="json") if value else None,
+                "result": report_result,
+                "delivery": value.model_dump(mode="json") if isinstance(value, contract.Delivery) else None,
+                "retained_output": (prepared.get("c6_delivery") or {}).get("retained_output"),
+                "stage_delivery": prepared.get("stage_delivery"),
                 "source_map": prepared.get("source_map", {}), "comparison": comparison,
                 "validation_review": prepared.get("validation_review"), "correction_result": prepared.get("correction_result"),
                 "citation_review": prepared.get("citation_review"),
@@ -233,11 +247,14 @@ class BaselineDelivery(ModelSteps):
                 "execution": execution, "limitations": limits + ["structure_scope_checked_citations_recorded_not_truth_proven"],
                 "captured_at": now.isoformat()}
             detail_id = await self.save(store, run, stage_id, report, "source_snapshot", refs)
-            report_core = {"schema_version": contract.SCHEMA, "result_id": str(result_id),
+            report_core = {"schema_version": contract.SCHEMA, "result_id": str(result_id) if result_id else None,
                 "citation_review": report["citation_review"],
                 "program_facts": report["program_facts"],
-                **{k: report["result"][k] for k in ("title", "conclusion", "closing_note", "findings", "questions",
+                **{k: report["result"][k] for k in ("title", "conclusion", "business_verdict", "closing_note", "findings", "questions",
                     "recommendations", "case_impact")}}
+            if uncertain:
+                report_core.update({k: report_result[k] for k in ("run_state", "local_execution_state",
+                    "delivery_state", "adoption_eligible", "comparison_eligible")})
             await store.save_input_artifact(case_id, run_id, report_id, report_core, kind="report_json", schema=contract.SCHEMA,
                 captured_at=now, refs=refs, actor_id=run["requested_by"], step_id=stage_id)
             text_id = await self.save_markdown(store, run, stage_id, markdown(report), report_id, detail_id)
@@ -247,13 +264,20 @@ class BaselineDelivery(ModelSteps):
                 error=error(reason, now) if reason else null()))
             # Result, members, current judgment, reports and the C6 terminal
             # step commit together. Failure cannot publish a different report.
-            outcome = await store.publish(case_id, run_id, pub, result_id=result_id)
+            outcome = ({"run_id": str(run_id), "result_id": None,
+                "adoption": {"state": "not_eligible", "reason": "unknown_call_present"}} if uncertain
+                else await store.publish(case_id, run_id, pub, result_id=result_id))
+            from .subject_risk_opinions import apply_saved
+            await apply_saved(store, run)
             summary = {"schema_version": contract.SCHEMA, "type": "delivery_receipt", "run_id": str(run_id),
                 "state": stage_state, "reason": reason, "report_artifact_id": str(report_id),
                 "detail_artifact_id": str(detail_id),
+                "stage_delivery": prepared.get("stage_delivery"),
                 "markdown_artifact_id": str(text_id), "domain_artifact_ids": domains,
                 "evidence_directory": directory,
-                "evidence_set_key": key, "delivery_state": pub.delivery_state, "outcome": outcome,
+                "evidence_set_key": key, "delivery_state": report_result["delivery_state"], "outcome": outcome,
+                **({"run_state": "unknown", "local_execution_state": "ended", "closing_state": "saved",
+                    "adoption_eligible": False, "comparison_eligible": False} if uncertain else {}),
                 "captured_at": now.isoformat()}
             await store.save_input_artifact(case_id, run_id, summary_id, summary, kind="source_snapshot",
                 schema=contract.SCHEMA, captured_at=now, refs=[reference("artifact", report_id, "execution_receipt")],

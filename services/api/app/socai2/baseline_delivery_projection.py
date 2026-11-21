@@ -24,7 +24,9 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
         limitations.append("final_model_input_omitted_fields")
     if context.omissions:
         limitations.append("frozen_context_has_omissions")
-    if graph["delivery_state"] != "complete":
+    if graph["graph_artifact_id"] is None:
+        limitations.append("source_graph_unavailable")
+    elif graph["delivery_state"] != "complete":
         limitations.append("source_graph_partial_external_topology_not_queried")
     background = prepared.get("source_states", [])
     if not background or any(s["outcome"] not in {"data", "empty", "not_applicable"} or s["truncated"] for s in background):
@@ -34,6 +36,16 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
     retained = (prepared.get("validation_review") or {}).get("retained_analysis")
     analysis = value.analysis if value else Analysis.model_validate(retained) if retained else None
     partial = value is None and analysis is not None
+    received = prepared.get("c6_delivery")
+    recovered = received is not None and received["full_delivery"] is None
+    conclusion = value.conclusion if value else None
+    verdict = None
+    if conclusion is not None and received is not None and received["use"]["adoption_eligible"]:
+        verdict = received["retained_output"]["fields"].get("business_verdict")
+    final_impact = value.impact if value else None
+    final_comparison = value.comparison if value else None
+    if recovered:
+        limitations.append("final_output_missing_or_invalid_units")
     if partial:
         limitations.append("invalid_final_claims_excluded_valid_analysis_retained")
     if analysis:
@@ -56,46 +68,60 @@ def make_publication(value, context, members, prepared, comparison, graph, opera
                 answer=item.answer, evidence_refs=refs(item.evidence_ids), limitations=item.limitations + (
                     ["source_analysis_question_not_applicable"] if item.state == "not_applicable" else []))
             questions.append(q)
-        covered = set(value.conclusion.alert_ids) if value else set()
+        covered = set(conclusion.alert_ids) if conclusion else set()
         for item in analysis.members:
             deliveries.append({"alert_id": item.alert_id, "read_state": members[item.alert_id]["read_state"],
-                "assessment_state": item.state, "conclusion_covered": item.alert_id in covered,
+                "assessment_state": item.state, "conclusion_covered": item.alert_id in covered and item.state != "not_analyzed",
                 "assessment": item.summary, "limitations": "；".join(item.limitations + limitations) or None,
                 "evidence_refs": refs(item.evidence_ids)})
-        for item in value.recommendations if value else []:
-            recommendations.append({"id": item.id, "action_type": item.action_type,
-                "targets": [{"object_key": k, "display_name": k} for k in item.object_keys], "reason": item.reason,
-                "approval_requirement": "unknown", "source_refs": refs(item.source_ids, evidence_only=True),
-                "limitations": item.limitations + ["recommendation_only_no_approval_or_execution"]})
-        impact = {"summary": value.impact.summary, "supported_changes": value.impact.supported_changes,
-            "cannot_generalize": value.impact.cannot_generalize, "affected_scope": scope(value.impact.alert_ids),
-            "next_steps": value.impact.next_steps} if value else {
-                "summary": None, "supported_changes": [], "cannot_generalize": ["最终主张未通过校验，不能确认案件影响"],
-                "affected_scope": scope([]), "next_steps": ["核查未通过引用校验的主张"]}
     else:
         limitations.append("no_accepted_final_model_conclusion")
         for aid, row in sorted(members.items(), key=lambda pair: str(pair[0])):
             deliveries.append({"alert_id": aid, "read_state": row["read_state"],
-                "assessment_state": row["analysis_state"], "conclusion_covered": False, "assessment": None,
+                "assessment_state": "not_analyzed" if recovered else row["analysis_state"], "conclusion_covered": False, "assessment": None,
                 "limitations": "没有有效最终结论；既有步骤及中间分析保留。", "evidence_refs": []})
         questions = [q.model_copy(update={"state": "not_attempted", "limitations": [
             "final_synthesis_not_accepted_prior_question_answers_remain_in_artifacts"]}).model_dump(mode="json") for q in context.questions]
-        impact = {"summary": None, "supported_changes": [], "cannot_generalize": ["没有有效最终模型结论，不能确认案件影响"],
+    if recovered:
+        delivered = {item["alert_id"] for item in deliveries}
+        for aid, row in sorted(members.items(), key=lambda pair: str(pair[0])):
+            if aid not in delivered:
+                deliveries.append({"alert_id": aid, "read_state": row["read_state"], "assessment_state": "not_analyzed",
+                    "conclusion_covered": False, "assessment": None,
+                    "limitations": "本次最终答复未提供有效成员分析；前序内容保留在原工件。", "evidence_refs": []})
+    for item in value.recommendations if value else []:
+        recommendations.append({"id": item.id, "action_type": item.action_type,
+            "targets": [{"object_key": k, "display_name": k} for k in item.object_keys], "reason": item.reason,
+            "approval_requirement": "unknown", "source_refs": refs(item.source_ids, evidence_only=True),
+            "limitations": item.limitations + ["recommendation_only_no_approval_or_execution"]})
+    impact = {"summary": final_impact.summary, "supported_changes": final_impact.supported_changes,
+        "cannot_generalize": final_impact.cannot_generalize, "affected_scope": scope(final_impact.alert_ids),
+        "next_steps": final_impact.next_steps} if final_impact else {
+            "summary": None, "supported_changes": [], "cannot_generalize": ["本次最终答复未提供有效影响分析"],
             "affected_scope": scope([]), "next_steps": ["继续核查告警所涉行为及影响范围"]}
     result = Publication.model_validate({"operation_key": operation_key,
         "terminal_state": "completed" if value or partial else "failed",
         "stop_reason": "final_delivery_saved" if value else "partial_analysis_saved_conclusion_rejected" if partial else reason,
         "stop_detail": None, "title": "基础调查部分分析" if partial else "基础调查结果" if value else "基础调查系统交接",
-        "conclusion": value.conclusion.text if value else None if partial else statement(len(members)),
-        "conclusion_state": value.conclusion.state if value else "unavailable" if partial else "uncertain",
+        "conclusion": conclusion.text if conclusion else None if partial or recovered else statement(len(members)),
+        "conclusion_state": conclusion.state if conclusion else "unavailable" if partial or recovered else "uncertain",
         "conclusion_origin": "model" if value or partial else "system",
         "validation_state": "accepted" if value else "rejected" if partial else "system_only",
-        "closing_note": value.closing_note if value else "已保存通过校验的分析片段；最终结论未通过校验，未采用。" if partial else statement(len(members)),
+        "business_verdict": verdict,
+        "closing_note": value.closing_note if value and value.closing_note else "已保存通过校验的分析片段；最终结论未通过校验，未采用。" if partial else statement(len(members)),
         "findings": findings, "questions": questions, "recommendations": recommendations,
-        "change_kind": value.comparison.kind if value else "initial" if comparison["state"] == "initial" else "not_comparable",
-        "change_summary": value.comparison.summary if value else None if comparison["state"] == "initial" else "未形成有效最终结论，未进行判断比较。",
+        "change_kind": final_comparison.kind if final_comparison else "initial" if comparison["state"] == "initial" else "not_comparable",
+        "change_summary": final_comparison.summary if final_comparison else None if comparison["state"] == "initial" else "未收到有效比较内容，本轮判断不可比较。",
         "case_impact": impact, "graph_artifact_id": graph["graph_artifact_id"], "report_artifact_id": None,
-        "delivery_state": "partial" if limitations or not value else "complete", "members": deliveries})
+        "delivery_state": "partial" if limitations or not value else "complete", "members": deliveries,
+        **({"terminal_state": "completed" if received["use"]["adoption_eligible"] else "failed",
+            "stop_reason": "partial_final_saved" if received["use"]["adoption_eligible"] else "final_core_not_qualified",
+            "title": "基础调查部分结果" if received["retained_units"] else "基础调查系统交接",
+            "conclusion_origin": "model" if received["retained_units"] else "system",
+            "validation_state": "accepted" if received["use"]["adoption_eligible"] else "rejected" if received["retained_units"] else "system_only",
+            "closing_note": value.closing_note if value and value.closing_note else
+                "系统交付说明：最终答复不完整，已保存有效单元；具体缺项及原答见交付回执。",
+            "delivery_state": received["delivery"]["state"]} if recovered else {})})
     return result, limitations
 
 
@@ -113,7 +139,9 @@ def markdown(report):
         esc(data["change_summary"] or "无指定比较基线。"),
         esc(data["case_impact"]["summary"] or "案件影响未确认。")]
     if data.get("closing_state") == "saved":
-        lines += ["", "系统交接已保存；原调用仍未结算，不代表调查执行已结束。"]
+        lines += ["", ("本地执行已结束，远端调用结果仍未知；保留内容不可采用或用于结论比较。"
+            if data.get("local_execution_state") == "ended" else
+            "系统交接已保存；原调用仍未结算，不代表调查执行已结束。")]
     lines += ["", "不能推广："] + ["- " + esc(s) for s in data["case_impact"]["cannot_generalize"]]
     lines += ["", "有依据的影响："] + ["- " + esc(s) for s in data["case_impact"]["supported_changes"]]
     lines += ["", "后续工作："] + ["- " + esc(s) for s in data["case_impact"]["next_steps"]]
@@ -133,12 +161,13 @@ def markdown(report):
                 if item.get(role):
                     lines += ["  " + role + "：" + esc("; ".join(r["id"] + (r["source_path"] or "") for r in item[role]))]
             lines += ["  " + esc(s) for s in item["limitations"]]
-    if report["delivery"]:
-        lines += ["", "结论限制："] + ["- " + esc(s) for s in report["delivery"]["conclusion"]["limitations"]]
+    visible = report["delivery"] or (report.get("retained_output") or {}).get("fields")
+    if visible:
+        lines += ["", "结论限制："] + ["- " + esc(s) for s in (visible.get("conclusion") or {}).get("limitations", [])]
         lines += ["", "## 领域与矛盾", ""]
-        for domain in report["delivery"]["analysis"]["domains"]:
+        for domain in visible.get("analysis", {}).get("domains", []):
             lines += ["- " + esc(domain["name"] + ": " + domain["applicability"] + "；" + domain["reason"])]
-        for conflict in report["delivery"]["analysis"]["conflicts"]:
+        for conflict in visible.get("analysis", {}).get("conflicts", []):
             lines += ["- " + esc(conflict["id"] + ": " + conflict["state"] + "；" + conflict["explanation"])]
     if report.get("validation_review"):
         lines += ["", "## 引用校验", "", "无效主张已排除，原答保留在模型响应工件中。"]

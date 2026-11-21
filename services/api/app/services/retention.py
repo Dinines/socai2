@@ -14,6 +14,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from app.db.lake_schema import LakeStoragePolicy, configured_policy
 from app.services import governance
 
 MIN_DAYS = 1
@@ -28,11 +29,9 @@ MAX_DAYS = 3650  # 10 years
 #: much disk a deployment can be asked to hold is stated on its own rather
 #: than inherited from a cap meant for a different table.
 #:
-#: Raising it is two edits that must land together, which is why they are
-#: named here: this constant, and the `MODIFY TTL` migration in
-#: ``app/db/lake_migrations.py``. Changing one alone either lets a tenant
-#: choose a window ClickHouse will not honour, or holds rows nobody asked
-#: for. ``scripts/check_retention_window.py`` fails when they disagree.
+#: Existing tenant-policy API ceiling. The selected lake storage profile
+#: supplies the table's legacy ceiling and the new mapping's ingest window.
+#: New mappings do not inherit a tenant's shorter event-time window.
 MAX_LAKE_DAYS = 400
 
 # Data classes we retain, with sane defaults (days).
@@ -67,16 +66,14 @@ def resolve_policy(config: dict[str, int] | None) -> RetentionPolicy:
     )
 
 
-def build_lake_purge_sql(tenant_id: uuid.UUID, days: int) -> str:
-    """Tenant-scoped ClickHouse purge of lake events older than ``days``.
+def build_lake_purge_sql(tenant_id: uuid.UUID, days: int, *, policy: LakeStoragePolicy | None = None) -> str:
+    """Tenant-scoped purge using the same configured predicate as the preview.
 
-    Uses a lightweight ``ALTER TABLE … DELETE`` (ClickHouse mutation). The
+    Uses ``ALTER TABLE … DELETE`` (ClickHouse mutation). The
     tenant predicate is mandatory so a purge can never cross tenants; the day
     count is clamped and interpolated as an integer literal (never string)."""
-    days = _clamp(days, MAX_LAKE_DAYS)
-    tid = str(tenant_id)
-    # tenant_id is a UUID (validated by type); days is an int literal.
-    return f"ALTER TABLE aisoc.raw_events DELETE WHERE tenant_id = '{tid}' AND event_time < now() - INTERVAL {days} DAY"
+    policy = policy or configured_policy()
+    return f"ALTER TABLE {policy.table} DELETE WHERE {policy.purge_predicate(tenant_id, days)}"
 
 
 async def alerts_under_legal_hold(db: Any, tenant_id: uuid.UUID) -> list[governance.LegalHold]:

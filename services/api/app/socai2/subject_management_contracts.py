@@ -8,6 +8,7 @@ from pydantic.json_schema import SkipJsonSchema
 from .baseline_contracts import Contract
 from .enums import Disposition, Severity
 from .page_contracts import AlertFacts, IncidentFacts
+from .risk_management_contracts import PriorityManagementFields
 
 Reason = Annotated[str, Field(min_length=1, max_length=20000)]
 Tag = Annotated[str, Field(min_length=1, max_length=128)]
@@ -81,7 +82,9 @@ class ManagementFields(Contract):
     @model_validator(mode="after")
     def actual_change_fields(self):
         fields = self.model_fields_set - {"operation_key", "expected_row_version", "reason",
-                                        "resolution_note", "severity_override_reason"}
+                                        "resolution_note", "severity_override_reason", "priority_reason"}
+        if not getattr(self, "clear_priority_override", False):
+            fields.discard("clear_priority_override")
         if not fields:
             raise ValueError("at least one management field required")
         if self.tags is not None and (any(not t.strip() for t in self.tags) or len(set(self.tags)) != len(self.tags)):
@@ -102,12 +105,12 @@ class AlertManagementFields(ManagementFields):
         json_schema_extra=lambda s: s.pop('default', None))
 
 
-class IncidentManagementFields(ManagementFields):
+class IncidentManagementFields(ManagementFields, PriorityManagementFields):
     handling_status: Literal["new", "in_progress", "resolved"] | SkipJsonSchema[None] = Field(default=None,
         description="人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。",
         json_schema_extra=lambda s: s.pop('default', None))
-    severity_override: Severity | None = Field(default=None, description="人工等级覆盖；省略保持，null恢复按成员自动等级。")
-    severity_override_reason: Reason | None = Field(default=None, description="设置人工等级覆盖必填理由；须与severity_override一起提交。")
+    severity_override: Severity | None = Field(default=None, description="显式人工等级；省略保持，null恢复当前成员规则等级；两种操作均须理由，后续新轮可自动上调。")
+    severity_override_reason: Reason | None = Field(default=None, description="设置等级或null恢复成员规则均必填非空理由；须与severity_override一起提交。")
     resolution_note: Reason | None = Field(default=None, description="将事件改为resolved必填；须与handling_status=resolved一起提交。")
 
     @field_validator("severity_override_reason", "resolution_note")
@@ -121,10 +124,8 @@ class IncidentManagementFields(ManagementFields):
     def associated_notes(self):
         if "severity_override_reason" in self.model_fields_set and "severity_override" not in self.model_fields_set:
             raise ValueError("severity_override_reason requires severity_override")
-        if self.severity_override is not None and not self.severity_override_reason:
+        if "severity_override" in self.model_fields_set and not self.severity_override_reason:
             raise ValueError("severity override requires a reason")
-        if self.severity_override is None and self.severity_override_reason is not None:
-            raise ValueError("clearing override cannot include an override reason")
         if self.resolution_note is not None and self.handling_status != "resolved":
             raise ValueError("resolution_note requires resolved status")
         if self.handling_status == "resolved" and not self.resolution_note:

@@ -57,6 +57,7 @@ from app.core.config import settings
 from app.db.clickhouse import execute_lake_query
 from app.db.cross_tenant import assert_cross_tenant_session
 from app.db.database import AsyncSessionLocal
+from app.db.lake_schema import LakeStoragePolicy, configured_policy
 from app.services.retention import (
     _clamp,
     alerts_under_legal_hold,
@@ -140,17 +141,15 @@ class PurgeRun:
         return [e for t in self.tenants for e in t.errors]
 
 
-def build_lake_count_sql(tenant_id: uuid.UUID, days: int) -> str:
+def build_lake_count_sql(tenant_id: uuid.UUID, days: int, *, policy: LakeStoragePolicy | None = None) -> str:
     """Dry-run counterpart to ``build_lake_purge_sql``.
 
     Deliberately mirrors that function's predicate character for character. If
     the two drift, the dry run stops describing the delete, which is the only
     way an operator has to preview it.
     """
-    days = _clamp(days)
-    return (
-        f"SELECT count() FROM aisoc.raw_events WHERE tenant_id = '{uuid.UUID(str(tenant_id))}' AND event_time < now() - INTERVAL {days} DAY"
-    )
+    policy = policy or configured_policy()
+    return f"SELECT count() FROM {policy.table} WHERE {policy.purge_predicate(tenant_id, days)}"
 
 
 def build_alert_count_sql(days: int) -> tuple[str, dict[str, int]]:
@@ -240,13 +239,14 @@ async def _purge_lake(tenant_id: uuid.UUID, days: int, *, dry_run: bool) -> int:
     number in the audit trail — worth it for an operation whose whole risk is
     deleting more than intended.
     """
-    count_result = await execute_lake_query(build_lake_count_sql(tenant_id, days))
+    policy = configured_policy()
+    count_result = await execute_lake_query(build_lake_count_sql(tenant_id, days, policy=policy))
     doomed = int(count_result.rows[0][0]) if count_result.rows else 0
     if doomed == 0 or dry_run:
         return doomed
 
     await execute_lake_query(
-        build_lake_purge_sql(tenant_id, days),
+        build_lake_purge_sql(tenant_id, days, policy=policy),
         extra_settings=_MUTATIONS_SYNC,
     )
     return doomed

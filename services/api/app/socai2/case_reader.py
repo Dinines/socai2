@@ -13,6 +13,7 @@ from app.models import socai2 as m
 from . import list_query as lists
 from .baseline_store import CA, RES, RESM, RM, A, C, F, R, StoreError, digest, encoded
 from .case_comparison import project_comparison
+from .case_assessment_sources import source_query
 from .case_contracts import (
     CaseBaselineRecord,
     CaseQueueCursor,
@@ -259,7 +260,7 @@ class CaseReader:
                 raise StoreError("current_assessment_reference_invalid")
             covered = await self.rows(select(COVER.c.alert_id, COVER.c.coverage_note).where(*self.store.where(COVER,
                 COVER.c.case_id == case_id, COVER.c.assessment_id == row["id"])).order_by(COVER.c.alert_id).limit(201))
-            sources = await self.rows(select(SOURCES).where(*self.store.where(SOURCES,
+            sources = await self.rows(source_query().where(*self.store.where(SOURCES,
                 SOURCES.c.case_id == case_id, SOURCES.c.assessment_id == row["id"])).order_by(SOURCES.c.id).limit(201))
             complete = total <= 200 and len(covered) <= 200
             current, known = {r["alert_id"] for r in members}, {r["alert_id"] for r in covered}
@@ -285,11 +286,14 @@ class CaseReader:
                 "no_longer_current_alert_ids": sorted(known - current) if complete else None}
         from .case_relationship_reader import case_view
         view = await case_view(self.store, cas)
+        page_data = await read_page_data(self.store, cas)
+        if assessment is not None:
+            assessment["business_verdict"] = page_data.assessment.business_verdict
         return {"case": view, "members": members, "member_count": total,
             "linked_incidents": linked, "linked_incident_count": linked_count,
             "linked_incidents_truncated": linked_count > len(linked),
             "members_truncated": total > len(members), "current_assessment": assessment,
-            "page_data": await read_page_data(self.store, cas),
+            "page_data": page_data,
             "baseline_records": [{"run": await project_comparison(self.store, RunView, r), "start_eligibility": await self.eligibility(cas, r, total)} for r in baseline]}
 
     async def history(self, case_id, *, limit=20, cursor=None):

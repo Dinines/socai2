@@ -34,10 +34,7 @@ class BaselineReanalysis(ModelSteps):
             return await final(self, tenant_id, case_id, run_id, previous, prior_id, bases, extra_data, lead_candidates)
         async with self.service.transaction(tenant_id) as store:
             initial = await store.prepare_model_view(case_id, run_id)
-            snapshots = [r["content_json"] for r in bases if r["content_json"].get("type") == "graph_snapshot"]
-            newest = max(snapshots, key=lambda r: r["captured_at"]) if snapshots else None
-            current_ids = {str(r["id"]) for r in bases if r["content_json"].get("type") in {"materials", "query_projection"}}
-            graph_state = "not_built" if not newest else "available" if current_ids <= set(newest["input_artifact_ids"]) else "stale"
+            graph_state, newest = graph_contract.selected_snapshot(bases)
             graphs = [(newest, await self.read_artifact(store, run_id, UUID(newest["graph_artifact_id"])))] if graph_state == "available" else []
             rows = (await store.db.execute(select(F).where(*store.where(F, F.c.run_id == run_id,
                 F.c.kind == "tool_response")))).mappings().all()

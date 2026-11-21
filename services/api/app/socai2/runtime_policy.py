@@ -238,6 +238,7 @@ class InvestigationPolicy:
     incident_io: object = None
     alert_io: object = None
     case_io: object = None
+    query_transport: object = None
 
     @property
     def identity(self):
@@ -278,7 +279,7 @@ class InvestigationPolicy:
 def load_policy(path):
     raw = Path(path).read_bytes()
     data = tomllib.loads(raw.decode("utf-8"))
-    if set(data) - {"incident_io", "alert_io", "case_io"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels", "views"}:
+    if set(data) - {"incident_io", "alert_io", "case_io", "query_transport"} != {"version", "single_model_timeout_seconds", "final_reserve_seconds", "case", "alert_basic", "incident_diagnosis", "model", "tools", "labels", "views"}:
         raise ValueError("investigation_policy_configuration_incomplete")
     if not isinstance(data["version"], str) or not data["version"].strip() or len(data["version"]) > 100:
         raise ValueError("investigation_policy_version_invalid")
@@ -322,7 +323,14 @@ def load_policy(path):
         incident_io = load_incident_profile(data["incident_io"])
     alert_io = load_alert_profile(data["alert_io"]) if "alert_io" in data else None
     case_io = load_case_profile(data["case_io"]) if "case_io" in data else None
+    transport = data.get("query_transport")
+    if transport is not None and (not isinstance(transport, dict) or set(transport) != {
+            "query_timeout_seconds", "connect_timeout_seconds", "send_receive_timeout_seconds", "close_timeout_seconds"}
+            or any(type(v) not in {int, float} or not 0 < v < float("inf") for v in transport.values())
+            or transport["query_timeout_seconds"] < 1):
+        raise ValueError("query_transport_policy_invalid")
     return InvestigationPolicy(version=data["version"], sha256=hashlib.sha256(raw).hexdigest(), incident_io=incident_io, alert_io=alert_io, case_io=case_io,
+        query_transport=MappingProxyType(transport) if transport is not None else None,
         single_model_timeout_seconds=data["single_model_timeout_seconds"],
         final_reserve_seconds=data["final_reserve_seconds"], model=ModelPolicy.parse(data["model"]),
         views=MappingProxyType(views), raw=raw,
@@ -342,16 +350,22 @@ class ModelPolicy:
     final_reserved_calls: int
     output_tokens: object
     tokenizer: object
+    incident_max_structure_whitespace: int | None = None
 
     @classmethod
     def parse(cls, values):
-        if not isinstance(values, dict) or set(values) != set(cls.__dataclass_fields__):
+        whitespace_key = "incident_max_structure_whitespace"
+        required = set(cls.__dataclass_fields__) - {whitespace_key}
+        if not isinstance(values, dict) or set(values) - {whitespace_key} != required:
             raise ValueError("model_policy_configuration_incomplete")
         for key in ("alias", "protocol", "schema_profile"):
             if not isinstance(values[key], str) or not values[key].strip():
                 raise ValueError("model_policy_identity_invalid")
         if values["protocol"] != "chat_completions":
             raise ValueError("model_policy_token_meter_protocol_not_supported")
+        if whitespace_key in values and (type(values[whitespace_key]) is not int
+                or values[whitespace_key] < 0 or values["schema_profile"] != "vllm_grammar_v1"):
+            raise ValueError("model_policy_incident_whitespace_invalid")
         for key in ("context_tokens", "max_prepared_bytes", "final_reserved_input_tokens", "final_reserved_calls"):
             if type(values[key]) is not int or values[key] <= 0:
                 raise ValueError("model_policy_capacity_invalid")

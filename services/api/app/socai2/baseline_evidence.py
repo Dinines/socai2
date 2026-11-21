@@ -4,9 +4,12 @@ This is the execution primitive for a later question-level Deep loop, not that
 loop itself. The caller selects a server-generated binding, never SQL/filters.
 """
 import asyncio
+import logging
+from app.core.operational_logging import log_exception
 from collections import Counter
 from uuid import UUID, uuid4
 
+import httpx
 from sqlalchemy import func, insert, null, select, update
 
 from . import baseline_evidence_tools as tools
@@ -131,7 +134,8 @@ class BaselineEvidence:
             prior = await store.one(select(S).where(*store.where(S, S.c.run_id == run_id,
                 S.c.stage_code == "C4.query", S.c.name == binding_id)))
             if prior:
-                if prior["state"] in {"running", "unknown", "planned"}:
+                from .baseline_failure import locally_ended
+                if not await locally_ended(store, run_id, prior):
                     raise StoreError("evidence_query_already_claimed")
                 return {**await self.receipt(store, run, prior), "reused": True}
             if run["state"] != "running":
@@ -142,8 +146,8 @@ class BaselineEvidence:
                 if not owner or (owner["kind"], owner["stage_code"], owner["state"], owner["question_id"]) != (
                         "stage", "C4.deep", "running", question_id):
                     raise StoreError("query_owner_invalid")
-            if any(s["id"] != parent_step_id and s["state"] in {"running", "unknown", "planned"} for s in steps):
-                raise StoreError("baseline_step_in_progress")
+            from .baseline_failure import require_idle
+            await require_idle(store, run_id, steps, owner=parent_step_id)
             now, limits = await store.now(), Limits.model_validate(run["limits"])
             reason = None
             from .baseline_capacity import remaining_seconds, reservation_for
@@ -168,13 +172,18 @@ class BaselineEvidence:
             step_id, query_id = uuid4(), str(uuid4())
             row_limit = min(limits.max_rows_per_query or 0,
                 (context.query_preparation or {}).get("effective_max_rows_per_query", limits.max_rows_per_query or 0))
-            args = {"tool_name": binding["tool_name"], "contract_version": tools.VERSION,
+            if "max_rows_per_query" in binding:
+                row_limit = min(row_limit, binding["max_rows_per_query"])
+            args = {"tool_name": binding["tool_name"], "contract_version": binding.get("contract_version", tools.VERSION),
                 "scope": binding["scope"], "limit": row_limit, "row_limit": row_limit,
-                "parameters": {"tenant_id": str(tenant_id), "hostname": binding["hostname"],
+                "parameters": {"tenant_id": str(tenant_id), **tools.binding_subject(binding),
                     "binding_id": binding_id, "alert_ids": binding["alert_ids"], "query_id": query_id}}
             if binding["tool_name"] == "product_host_details":
                 args["parameters"]["case_id"] = str(case_id)
                 args["parameters"].update({k: binding[k] for k in ("connector_id", "source_alert_id")})
+            elif binding.get("contract_version") == "socai2.c4-lake.v2":
+                from .lake_evidence_v2 import parameters
+                args["parameters"].update(parameters(binding))
             elif "source_database" in binding:
                 args["parameters"]["source_database"] = binding["source_database"]
             await store.db.execute(insert(S).values(id=step_id, tenant_id=tenant_id, run_id=run_id,
@@ -182,7 +191,7 @@ class BaselineEvidence:
                 parent_step_id=parent_step_id,
                 name=binding_id, state="running" if reason is None else "planned",
                 provider="crowdstrike_via_actions" if binding["tool_name"] == "product_host_details" else "clickhouse",
-                implementation_version=tools.VERSION, started_at=now if reason is None else None, actual_args=args))
+                implementation_version=args["contract_version"], started_at=now if reason is None else None, actual_args=args))
             refs = [reference("artifact", prepared_id, "execution_receipt")]
             request_id = await self.artifact(store, run, args, kind="tool_request", step=step_id, refs=refs)
             await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(input_artifact_id=request_id))
@@ -190,17 +199,32 @@ class BaselineEvidence:
         try:
             rows, state, observed, truncated, omitted = None, "skipped", None, False, []
             overflow_rows = []
+            failure = None
             if reason is None and deadline - asyncio.get_running_loop().time() < 1:
                 reason = "insufficient_query_time"
             if reason is None:
-                # A local timeout cannot prove that the threaded CH query ended.
-                # Uncertain transport/cancellation marks unknown and retains slot.
+                # LakeGateway owns and joins its worker before returning even
+                # on cancellation. Only typed transport errors can continue.
                 try:
                     async with asyncio.timeout_at(deadline):
                         rows = await gateway.query(args, query_id, deadline - asyncio.get_running_loop().time())
                 except SourceUnavailable as exc:
+                    failure = exc
                     state, reason = "failed", str(exc)
-            if reason is None:
+                except tools.QueryInterrupted as exc:
+                    failure = exc
+                    state, reason, rows = "unknown", exc.code, exc.rows
+                except (TimeoutError, httpx.TransportError) as exc:
+                    failure = exc
+                    from .analysis_dispatch_types import classify_failure
+                    outcome = classify_failure(exc, stage="execute")
+                    state, reason = outcome.outcome, outcome.error_code
+            if failure is not None:
+                log_exception(logging.getLogger(__name__), "evidence_query_failed",
+                    error=failure, level=logging.WARNING, extra={
+                        "run_id": run_id, "step_id": step_id, "stage": "C4.query", "operation": "evidence_query",
+                        "dependency": "evidence_source", "error_code": "source_query_failed", "outcome": state})
+            if reason is None or state == "unknown" and rows is not None:
                 rows = tools.normalize_rows(rows)
                 if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
                     raise ValueError("invalid_lake_response")
@@ -209,18 +233,21 @@ class BaselineEvidence:
                 if truncated:
                     omitted.append("row_limit")
                 rows, overflow_rows = rows[:args["limit"]], rows[args["limit"]:]
-                state = "completed"
+                if state != "unknown":
+                    state = "completed"
             async with self.service.transaction(tenant_id) as store:
                 run = await self.locked(store, case_id, run_id)
                 if run["state"] != "running":
                     raise StoreError("baseline_not_running")
                 captured = await store.now()
-                raw = {"schema_version": SCHEMA, "tool_name": args["tool_name"], "contract_version": tools.VERSION,
+                raw = {"schema_version": SCHEMA, "tool_name": args["tool_name"], "contract_version": args["contract_version"],
                     "actual_args": args, "state": state, "rows": rows, "returned_rows": len(rows) if rows is not None else None,
                     "overflow_rows": overflow_rows, "observed_rows_in_bounded_fetch": observed,
                     "truncation_reasons": omitted,
                     "truncated": truncated, "query_id": query_id if state != "skipped" else None,
                     "error": error(reason, captured) if reason else None, "captured_at": captured.isoformat()}
+                if state == "unknown":
+                    raw["received_rows_json"] = encoded(rows).decode() if rows is not None else None
                 raw_id = await self.artifact(store, run, raw, kind="tool_response", step=step_id, refs=refs)
                 # Commit the received original before deriving a business view.
                 # A projection failure must not roll back an acquired response.
@@ -243,9 +270,13 @@ class BaselineEvidence:
                 await self.artifact(store, run, projected, step=step_id,
                     refs=[reference("artifact", raw_id, "execution_receipt")])
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == step_id)).values(
-                    state=state, ended_at=captured, output_artifact_id=raw_id,
-                    returned_rows=raw["returned_rows"], error=raw["error"] or null()))
+                    state=state, ended_at=None if state == "unknown" else captured, output_artifact_id=raw_id,
+                    returned_rows=raw["returned_rows"] if state == "completed" else None, error=raw["error"] or null()))
                 step = await store.one(select(S).where(*store.where(S, S.c.id == step_id)))
+                if state == "unknown":
+                    from .baseline_failure import local_receipt
+                    await local_receipt(store, run, step, (request_id, args), (raw_id, raw),
+                        code=reason, dispatched=True, rows=rows)
                 receipt = await self.receipt(store, run, step)
             return {**receipt, "reused": False}
         except (Exception, asyncio.CancelledError):
@@ -278,7 +309,7 @@ class BaselineEvidence:
                     "material_omissions": dict(Counter(o["reason"] for o in d["omissions"]))} for aid, d in prepared["members"].items()},
                 "queries": [{"artifact_id": str(sid), "state": s["state"], "reason": s["reason"],
                     "tool_name": prepared["catalog"]["bindings"][s["binding_id"]]["tool_name"],
-                    "hostname": prepared["catalog"]["bindings"][s["binding_id"]]["hostname"],
+                    **tools.binding_subject(prepared["catalog"]["bindings"][s["binding_id"]]),
                     "question_id": s["question_id"], "related_alert_ids": s["alert_ids"],
                     "window_start": s_scope["window_start"], "window_end": s_scope["window_end"],
                     "observed_rows_in_bounded_fetch": s["observed_rows_in_bounded_fetch"],

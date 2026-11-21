@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.v1.deps import CurrentUser, require_permission
 from app.db import clickhouse, database
+from app.core.logging import configure_logging
+from app.core.operational_logging import OperationalHTTPMiddleware
 from .dispatch import dispatch
 
 router = APIRouter(prefix="/api/v2/investigation", tags=["investigation-v2-query"])
@@ -32,6 +34,7 @@ async def query(request: QueryRequest,
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    configure_logging()
     # No schema initialization, broker, worker, legacy router or model startup.
     try:
         yield
@@ -44,4 +47,5 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Investigation v2 typed query", docs_url=None,
                   redoc_url=None, openapi_url=None, lifespan=_lifespan)
     app.include_router(router)
+    app.add_middleware(OperationalHTTPMiddleware)
     return app

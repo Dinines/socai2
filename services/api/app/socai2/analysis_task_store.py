@@ -96,14 +96,14 @@ class AnalysisTaskStore(BaselineStore):
         await self.register(subject_type, subject_id, now)
         return dict(row)
 
-    async def automatic_status(self, subject_type, subject_id):
+    async def automatic_status(self, subject_type, subject_id, *, observed_at=None):
         subject = await self.subject(subject_type, subject_id)
         state = await self.one(select(S).where(*self.where(S,
             S.c.subject_type == subject_type, S.c.subject_id == subject_id)))
         last = state["last_normal_completed_at"] if state else None
         created = subject["ingested_at"] if subject_type == "alert" else subject["created_at"]
         expires = (last or created) + timedelta(seconds=self.policy.automatic_window_seconds)
-        now = await self.now()
+        now = observed_at if observed_at is not None else await self.now()
         reason = ("not_periodic" if subject_type == "alert" else "not_registered" if state is None
             else "closed" if subject["handling_status"] == "resolved" else "expired" if now >= expires
             else state["automatic_stop_reason"])
@@ -157,13 +157,29 @@ class AnalysisTaskStore(BaselineStore):
             *self.where(A, A.c.task_id == task_id)))).scalar_one() + 1
         await self.db.execute(update(T).where(*self.where(T, T.c.id == task_id)).values(
             state="running", started_at=task["started_at"] or began, reason_code=None, error_detail=None,
-            next_retry_at=None, retry_count=task["retry_count"] + int(retry)))
+            next_retry_at=None, next_attempt_enqueued_at=None, retry_count=task["retry_count"] + int(retry)))
         attempt = await self.one(insert(A).values(tenant_id=self.tenant_id, id=uuid4(), task_id=task_id,
             attempt_no=attempt_no, subject_type=task["subject_type"], subject_id=task["subject_id"],
-            kind=task["kind"], started_at=began, local_state="running").returning(A))
+            kind=task["kind"], started_at=began, enqueued_at=task["next_attempt_enqueued_at"],
+            local_state="running").returning(A))
         await self.db.execute(update(S).where(*self.where(S, S.c.subject_type == task["subject_type"],
             S.c.subject_id == task["subject_id"])).values(last_attempt_id=attempt["id"]))
         return dict(attempt)
+
+    async def skip_preparation(self, attempt_id, reason):
+        """A real input check ended without a Run; it is not normal analysis completion."""
+        attempt = await self.attempt(attempt_id)
+        task = await self.task(attempt["task_id"])
+        if (task["state"] != "running" or attempt["local_state"] != "running"
+                or attempt["run_id"] is not None or attempt["input_artifact_id"] is not None
+                or reason not in {"no_changes", "automatic_attempts_stopped"}):
+            raise StoreError("analysis_preparation_not_skippable")
+        now = await self.now()
+        await self.db.execute(update(T).where(*self.where(T, T.c.id == task["id"])).values(
+            state="skipped", reason_code=reason, next_retry_at=None, ended_at=now))
+        await self.db.execute(update(A).where(*self.where(A, A.c.id == attempt_id)).values(
+            local_state="ended", local_ended_at=now, outcome="completed"))
+        # In particular, do not update last_completed_attempt_id or the auto window.
 
     async def attempt(self, attempt_id):
         row = await self.one(select(A).where(*self.where(A, A.c.id == attempt_id)).with_for_update())
@@ -263,7 +279,7 @@ class AnalysisTaskStore(BaselineStore):
             await self.db.execute(update(T).where(*self.where(T, T.c.id == task["id"])).values(
                 state="waiting" if may_retry else "failed", reason_code=reason, error_detail=error_detail,
                 next_retry_at=earliest if may_retry else None, ended_at=None if may_retry else now,
-                last_enqueued_at=None if may_retry else task["last_enqueued_at"]))
+                next_attempt_enqueued_at=None))
             if not may_retry:
                 await self.stop_subject(task, ended, reason)
         return dict(ended)

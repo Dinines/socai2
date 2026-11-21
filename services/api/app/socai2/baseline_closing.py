@@ -13,10 +13,13 @@ class InterruptedReport(Publication):
     """Artifact-only closing; never supplied to Result publication."""
     terminal_state: None
     run_state: Literal["unknown"]
-    delivery_state: Literal["none"]
+    delivery_state: Literal["none", "partial"]
     closing_state: Literal["saved"]
     closing_delivery_state: Literal["partial"]
     closing_reason: Literal["investigation_execution_uncertain"]
+    local_execution_state: Literal["ended", "unconfirmed"] = "unconfirmed"
+    adoption_eligible: Literal[False] = False
+    comparison_eligible: Literal[False] = False
 
 
 def statement(member_count):
@@ -72,12 +75,14 @@ async def record_case_closing(store, run, source_id, conclusion, *, source_kind=
     return {"state": "system_closing_saved", "assessment_id": str(identity)}
 
 
-def interrupted_report(publication, run):
+def interrupted_report(publication, run, *, local_ended=False):
     """An artifact is not a terminal Result; retain the actual unsettled Run."""
     if run["state"] != "unknown" or run["ended_at"] is not None:
         raise ValueError("interrupted_report_requires_unsettled_run")
     return InterruptedReport.model_validate({**publication.model_dump(mode="json"), "terminal_state": None,
-        "run_state": run["state"], "delivery_state": run["delivery_state"],
+        "business_verdict": None,
+        "run_state": run["state"], "delivery_state": "partial" if local_ended else run["delivery_state"],
+        "local_execution_state": "ended" if local_ended else "unconfirmed",
         "stop_reason": run["stop_reason"], "closing_state": "saved",
         "closing_delivery_state": "partial", "closing_reason": "investigation_execution_uncertain"}).model_dump(mode="json")
 
@@ -149,6 +154,8 @@ async def interrupted(service, tenant_id, case_id, run_id, *, failure=None):
         # An unresolved call remains unknown; retain its closing as an artifact
         # and link the Case directly to that artifact without inventing a Result.
         adoption = await record_case_closing(store, run, report_id, publication.conclusion, source_kind="artifact")
+        from .subject_risk_opinions import apply_saved
+        await apply_saved(store, run)
         outcome = {"run_id": str(run_id), "result_id": None, "adoption": adoption}
         summary = {"schema_version": SCHEMA, "type": "delivery_receipt", "run_id": str(run_id),
             "state": "completed", "reason": reason, "delivery_state": run["delivery_state"], "outcome": outcome,

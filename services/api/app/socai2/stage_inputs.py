@@ -6,6 +6,25 @@ VERSION = "socai2.stage-result.v1"
 TRIAGE_VALIDATION_VERSION = "socai2.incident-triage.v1"
 QUERY_RECEIPTS_VERSION = "socai2.incident-queries.v1"
 TRIAGE_CITATION_VERSION = "socai2.incident-triage-citation.v1"
+RISK_INPUT_VERSION = "socai2.incident-risk-input.v1"
+# These are this analysis's own outputs, not new observations. Manual severity
+# revisions have their independent frozen guard; other parent inputs still count.
+RISK_OUTPUT_FIELDS = ("severity", "severity_source", "risk_metadata", "priority_value",
+                      "priority_state", "priority_source", "priority_basis")
+
+
+def comparison_source(source, *, risk_version=None):
+    if "change_view" in source:
+        return source["change_view"]
+    if (risk_version or source.get("risk_input_version")) != RISK_INPUT_VERSION:
+        return source
+    return {**{k: v for k, v in source.items() if k != "risk_input_version"},
+        "parent": {k: v for k, v in source["parent"].items() if k not in RISK_OUTPUT_FIELDS}}
+
+
+def risk_comparison_sql(body):
+    excluded = ",".join("'" + key + "'" for key in RISK_OUTPUT_FIELDS)
+    return f"jsonb_set(({body})-'risk_input_version','{{parent}}',(({body})->'parent')-ARRAY[{excluded}])"
 
 
 def same_material_triage_sql(alert_sql, assessment_sql):
@@ -69,6 +88,9 @@ def freshness_sql(kind, subject_sql, run_sql):
         selected = selected.replace(":kind", "'incident_diagnosis'").replace(":id", "st.sid").replace(":version", "'" + VERSION + "'")
         selected_freshness = f"WHEN sf.content_json->>'selection_version'='{SELECTION_VERSION}' THEN CASE WHEN sf.content_json->'change_view'=(({selected})->'change_view') THEN 'current' ELSE 'stale' END"
     source = source.replace(":kind", "'" + kind + "'").replace(":id", "st.sid").replace(":version", "'" + VERSION + "'")
+    risk_freshness = (f"WHEN sf.content_json->>'risk_input_version'='{RISK_INPUT_VERSION}' THEN CASE WHEN "
+        f"{risk_comparison_sql('sf.content_json')}={risk_comparison_sql('(' + source + ')')} THEN 'current' ELSE 'stale' END"
+        if kind == "incident_diagnosis" else "")
     return f"""COALESCE((SELECT CASE
        WHEN sf.id IS NULL OR sf.material_state<>'complete' OR sf.content_json IS NULL THEN 'unavailable'
        WHEN sf.schema_version<>'{VERSION}' OR sf.content_json->>'version' IS DISTINCT FROM '{VERSION}' THEN 'unverified'
@@ -77,6 +99,7 @@ def freshness_sql(kind, subject_sql, run_sql):
        WHEN sf.content_json ? 'query_receipts_version' AND sf.content_json->>'query_receipts_version'<>'{QUERY_RECEIPTS_VERSION}' THEN 'unverified'
        WHEN sf.content_json ? 'triage_citation_quality_version' AND sf.content_json->>'triage_citation_quality_version'<>'{TRIAGE_CITATION_VERSION}' THEN 'unverified'
        {selected_freshness}
+       {risk_freshness}
        WHEN sf.content_json=({source}) THEN 'current' ELSE 'stale' END
       FROM (SELECT CAST({subject_sql} AS uuid) AS sid, CAST(({run_sql}) AS uuid) AS rid) st
       JOIN socai2.runs sr ON sr.id=st.rid AND sr.{key}=st.sid

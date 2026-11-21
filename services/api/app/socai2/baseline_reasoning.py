@@ -2,11 +2,15 @@
 import asyncio
 import copy
 import json
+import logging
 from uuid import UUID, uuid4
 
+import httpx
+from app.core.operational_logging import log_context, log_exception
 from sqlalchemy import insert, null, select, update
 
 from . import baseline_analysis_contract as analysis
+from .analysis_dispatch_types import ExecutionFailure
 from .baseline_analysis import budget_reason, reserved_calls
 from .baseline_analysis_model import usage
 from .baseline_capacity import (
@@ -129,10 +133,8 @@ class ModelSteps(BaselineEvidence):
         return identity
 
     async def idle(self, store, run_id, owner=None):
-        rows = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id,
-            S.c.state.in_(["running", "unknown", "planned"]))))).mappings().all()
-        if any(r["id"] != owner for r in rows):
-            raise StoreError("baseline_step_in_progress")
+        from .baseline_failure import require_idle
+        await require_idle(store, run_id, owner=owner)
 
     async def uncertain(self, tenant_id, case_id, run_id, stage_id, exc=None):
         from .baseline_failure import settle_unsent
@@ -166,6 +168,8 @@ class ModelSteps(BaselineEvidence):
                 raise StoreError("baseline_not_running")
             limits, now = Limits.model_validate(run["limits"]), await store.now()
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            from .baseline_failure import accounted_steps
+            steps = await accounted_steps(store, run_id, steps)
             reservation = await reservation_for(store, run, steps)
             reason = budget_reason(steps, limits, len(encoded(body)), now,
                 reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None)
@@ -188,6 +192,7 @@ class ModelSteps(BaselineEvidence):
                 raise StoreError("reasoning_owner_invalid")
             limits, now = Limits.model_validate(run["limits"]), await store.now()
             steps = (await store.db.execute(select(S).where(*store.where(S, S.c.run_id == run_id)))).mappings().all()
+            steps = await accounted_steps(store, run_id, steps)
             reservation = await reservation_for(store, run, steps)
             reason = budget_reason(steps, limits, len(encoded(body)), now,
                 reserve_calls=reserved_calls(run, stage_code), reservation=reservation if stage_code != "C6" else None,
@@ -233,38 +238,42 @@ class ModelSteps(BaselineEvidence):
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(input_artifact_id=request_id))
             deadline = asyncio.get_running_loop().time() + remaining_seconds(limits, now, reservation, stage_code)
         try:
-            async with asyncio.timeout_at(deadline):
-                payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-        except (Exception, asyncio.CancelledError) as exc:
-            from .baseline_failure import unsent_failure
-            unavailable = unsent_failure(exc)
-            if not isinstance(exc, ModelCallError) and unavailable is None:
-                raise
-            rejection = exc.rejection_code if isinstance(exc, ModelCallError) else None
+            with log_context(run_id=run_id, step_id=model_id, stage=stage_code, operation="model_complete"):
+                async with asyncio.timeout_at(deadline):
+                    payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
+        except (ModelCallError, ExecutionFailure, httpx.TransportError, TimeoutError, asyncio.CancelledError) as exc:
+            from .analysis_dispatch_types import classify_failure
+            from .baseline_failure import local_receipt
+            outcome = classify_failure(exc, stage="execute")
+            log_exception(logging.getLogger(__name__), "model_step_failed", extra={
+                "run_id": run_id, "step_id": model_id, "stage": stage_code,
+                "operation": "model_complete", "dependency": "model_http",
+                "error_code": outcome.error_code, "outcome": outcome.outcome})
+            dispatched = not (outcome.outcome == "failed" and outcome.error_code in {
+                "service_unavailable", "model_schema_rejected"})
             receipt = exc.payload() if isinstance(exc, ModelCallError) else {
-                "raw": None, "validation_error": unavailable.error_code,
-                "transport_error": unavailable.error_detail}
+                "raw": None, "validation_error": outcome.error_code, "transport_error": outcome.error_detail}
             async with self.service.transaction(tenant_id) as store:
                 run = await self.locked(store, case_id, run_id)
                 if run["state"] != "running":
                     raise StoreError("baseline_not_running")
+                now = await store.now()
                 response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                    "direction": "response", "payload": receipt, "captured_at": (await store.now()).isoformat(),
+                    "direction": "response", "payload": receipt, "captured_at": now.isoformat(),
                     "request_id": None, "usage": usage(None)}
                 response_id = await self.save(store, run, model_id, response, "model_response",
                     [reference("artifact", request_id, "execution_receipt")])
+                failure = {**error(outcome.error_code, now), "request_dispatched": dispatched}
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
-                    output_artifact_id=response_id, usage=usage(None)))
-                if rejection or unavailable:
-                    now = await store.now()
-                    failure = error(rejection or unavailable.error_code, now)
-                    if unavailable:
-                        failure.update(retryable=True, **unavailable.error_detail)
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
-                        state="failed", ended_at=now, error=failure))
-            if rejection:
-                return None, rejection, model_id, response_id
-            raise
+                    state=outcome.outcome, ended_at=now if outcome.outcome == "failed" else None,
+                    output_artifact_id=response_id, usage=usage(None), error=failure))
+                model = await store.one(select(S).where(*store.where(S, S.c.id == model_id)))
+                prepared["transport_stage_delivery"] = await local_receipt(store, run, model,
+                    (request_id, request), (response_id, response), code=outcome.error_code,
+                    dispatched=dispatched, state=outcome.outcome)
+            if isinstance(exc, asyncio.CancelledError):
+                raise
+            return None, outcome.error_code, model_id, response_id
         recorded, parsed, reason, adaptation, content = usage(payload), None, None, None, None
         citation_review = prepared.get("citation_review")
         if citation_review is not None:
@@ -279,30 +288,33 @@ class ModelSteps(BaselineEvidence):
                 request_artifact_id=str(request_id), step_id=str(model_id), stage=stage_code,
                 path_basis="restored_frozen_identities")
         original_content = None
+        usage_issue = ("model_usage_unknown_or_inconsistent" if recorded["usage_state"] != "reported" else
+            "provider_usage_exceeds_reservation" if recorded["total_tokens"] > measurement["reserved_total_tokens"] else None)
+        numbers = [recorded[k] for k in ("input_tokens", "output_tokens", "total_tokens")]
+        if all(type(n) is int for n in numbers) and numbers[0] + numbers[1] != numbers[2]:
+            usage_issue = "provider_usage_inconsistent"
         try:
-            if recorded["usage_state"] != "reported":
-                raise analysis.AnalysisRejected("model_usage_unknown_or_inconsistent")
-            if recorded["total_tokens"] > measurement["reserved_total_tokens"]:
-                raise analysis.AnalysisRejected("provider_usage_exceeds_reservation")
             choices = response_choices(payload)
             if not isinstance(choices, list) or len(choices) != 1 or not isinstance(choices[0], dict):
                 raise analysis.AnalysisRejected("model_choices_invalid")
             msg = choices[0].get("message")
             finish_reason = choices[0].get("finish_reason")
             prepared["received_finish_reason"] = finish_reason
-            if finish_reason not in ({"stop", "length"} if stage_code in {"C3", "C4.deep"} else {"stop"}):
+            if finish_reason not in ({"stop", "length"} if stage_code in {"C3", "C4.deep", "C6"} else {"stop"}):
                 raise analysis.AnalysisRejected("model_response_not_complete")
             if (not isinstance(msg, dict) or msg.get("tool_calls") or msg.get("function_call") or msg.get("refusal")
                     or not isinstance(msg.get("content"), str)):
                 raise analysis.AnalysisRejected("model_content_or_tool_protocol_invalid")
             content = msg["content"]
             original_content = content
-            if stage_code in {"C3", "C4.deep"}:
+            if stage_code in {"C3", "C4.deep", "C6"}:
                 from .model_protocol import response_content_path
                 prepared["original_content_path"] = response_content_path(payload)
             if response_adapter is not None:
                 content, adaptation = response_adapter(content)
             parsed = parser(content)
+            if stage_code == "C6":
+                adaptation = prepared.get("output_adapter")
         except analysis.AnalysisRejected as exc:
             reason = str(exc)
         feedback = None
@@ -323,7 +335,8 @@ class ModelSteps(BaselineEvidence):
                 raise StoreError("baseline_not_running")
             now = await store.now()
             response = {"schema_version": self.schema, "provider": gateway.provider, "model": gateway.model,
-                "direction": "response", "payload": {"raw": payload, "validation_error": reason},
+                "direction": "response", "payload": {"raw": payload, "validation_error": reason,
+                    "usage_issue": usage_issue},
                 "captured_at": now.isoformat(), "request_id": recorded["request_id"], "usage": recorded}
             if citation_review is not None:
                 from .citation_quality import seal
@@ -339,7 +352,8 @@ class ModelSteps(BaselineEvidence):
                 [reference("artifact", request_id, "execution_receipt")])
             await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
                 state="completed" if parsed else "failed", ended_at=now, output_artifact_id=response_id,
-                usage=recorded, error=error(reason, now) if reason else null()))
+                usage=recorded, error={**error(reason or usage_issue, now), "usage_issue": usage_issue}
+                if reason or usage_issue else null()))
         if feedback:
             corrected = copy.deepcopy(prepared)
             corrected["correction"] = {**feedback, "original_response_artifact_id": str(response_id)}

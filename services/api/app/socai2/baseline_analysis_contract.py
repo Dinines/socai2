@@ -294,7 +294,7 @@ def validate_analysis(analysis, source_map, context, coverage, *, bindings=None,
     return analysis
 
 
-EXECUTION_PROMPT = """options继承组的hostname/alert_ids/object_keys。query按binding_id取证，列全组alert_ids，对象限组内；空目录禁query。其余模式binding_id=null，deep按结果续查。priority取decision_critical或supporting。绑定不证明返回行属于告警。禁写SQL或参数。"""
+EXECUTION_PROMPT = """options继承组的hostname或selector以及alert_ids/object_keys。selector说明对象角色、主机名/IP类型和值；设备、源端点和目的端点不可混同。query按binding_id取证，列全组alert_ids，对象限组内；空目录禁query。其余模式binding_id=null，deep按结果续查。priority取decision_critical或supporting。绑定不证明返回行属于告警。禁写SQL或参数。"""
 
 
 DOMAIN_FINDING_SCOPE = "领域alert_ids表示本领域关注成员。可引用与其有成员交集的相关跨成员finding，保留finding原alert_ids；引用不把发现结论扩给整个领域，也不把发现范围缩为交集。无相关发现填[]。"

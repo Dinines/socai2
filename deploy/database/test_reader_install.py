@@ -78,6 +78,18 @@ def test_initial_task_ingress_requires_explicit_role_and_same_new_install_grants
         install_reader.execute(cfg, "analysis-ingress")
 
 
+def test_task_times_use_same_additive_migration_for_upgrade_and_fresh_install():
+    increment = install_reader.render(install_reader.TASK_TIMES_MIGRATION)
+    for entry in ("analysis_task_times.sql", "init_socai2_current.sql", "init_socai2_current_reader.sql"):
+        body = install_reader.render(entry)
+        assert body.count(increment) == 1
+        assert ":'analysis_lock_timeout'" in body and ":'analysis_statement_timeout'" in body
+    cfg = install_reader.load_profile(install_reader.HERE / "reader-install.example.toml")
+    cfg.pop("analysis")
+    with pytest.raises(ValueError, match="analysis_migration_configuration_required"):
+        install_reader.execute(cfg, "analysis-task-times")
+
+
 def test_native_fusion_support_preserves_source_tables_without_legacy_alert_store():
     sql = install_reader.render(install_reader.ENTRIES["fusion-support"])
     sources = install_reader.HERE.parent.parent / "services/api/migrations"
@@ -222,3 +234,37 @@ def test_case_allocation_upgrade_and_new_install_share_increment():
     cfg.pop('analysis')
     with pytest.raises(ValueError, match='analysis_migration_configuration_required'):
         install_reader.execute(cfg, 'case-allocation')
+
+
+def test_lake_receipt_new_and_upgrade_share_increment():
+    increment = install_reader.render(install_reader.LAKE_MIGRATION)
+    for entry in ('lake_alert_receipts.sql', 'init_socai2_current.sql', 'init_socai2_current_reader.sql'):
+        body = install_reader.render(entry)
+        assert body.count(increment) == 1
+        assert 'lake_receipt_migration_target_mismatch' in body
+        assert 'GRANT SELECT,INSERT ON socai2.lake_alert_receipts' in body
+        assert 'GRANT SELECT ON socai2.lake_alert_receipts TO :"reader_role"' in body
+    verification = install_reader.render('verify_socai2_v1_2_reader.sql')
+    assert '130_socai2_lake_alert_receipts.sql' in verification
+    assert 'CASE WHEN lake_receipts THEN 1 ELSE 0 END' in verification
+    assert 'CASE WHEN lake_receipts THEN 10 ELSE 0 END' in verification
+    cfg = install_reader.load_profile(install_reader.HERE / 'reader-install.example.toml')
+    cfg.pop('analysis_ingress')
+    with pytest.raises(ValueError, match='analysis_ingress_configuration_required'):
+        install_reader.execute(cfg, 'lake-alert-receipts')
+
+
+def test_lake_delivery_new_and_upgrade_share_increment():
+    increment = install_reader.render(install_reader.LAKE_DELIVERY_MIGRATION)
+    for entry in ('lake_alert_deliveries.sql', 'init_socai2_current.sql', 'init_socai2_current_reader.sql'):
+        body = install_reader.render(entry)
+        assert body.count(increment) == 1
+        assert 'lake_delivery_requires_committed_receipt' in body
+        assert 'GRANT SELECT ON socai2.lake_alert_deliveries,socai2.lake_alert_delivery_attempts' in body
+    verification = install_reader.render('verify_socai2_v1_2_reader.sql')
+    assert 'CASE WHEN lake_deliveries THEN 2 ELSE 0 END' in verification
+    assert 'CASE WHEN lake_deliveries THEN 25 ELSE 0 END' in verification
+    cfg = install_reader.load_profile(install_reader.HERE / 'reader-install.example.toml')
+    cfg.pop('analysis_ingress')
+    with pytest.raises(ValueError, match='analysis_ingress_configuration_required'):
+        install_reader.execute(cfg, 'lake-alert-deliveries')

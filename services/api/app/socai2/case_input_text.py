@@ -169,6 +169,12 @@ def prepare(sample, config, business):
         value = project_context(ref, item["value"], config, omissions)
         meta = case_context_input.metadata(ref, item["value"], config,
                                            assessment_members=context["assessment_members"])
+        from .case_previous_analysis import unit
+        previous = unit(context, path) if ref["id"] == cid else None
+        if previous is not None:
+            value = copy.deepcopy(value)
+            meta = {"context_kind": "previous_analysis", "context_label": "上一轮有效分析片段（历史判断）",
+                    "original_scope": copy.deepcopy(previous["declared_scope"])}
         if "original_scope" in meta:
             value[case_context_input.scope_key(meta)] = alias_scope(meta["original_scope"])
         if value == {} and path in config["context_projection"]:

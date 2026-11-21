@@ -21,15 +21,36 @@ async def select_previous(store, case_id, member_ids):
             "comparison_result_id": None, "state": "initial" if prior is None else "unavailable", "reason_code": None}
     if prior is None:
         return meta
+    if prior["state"] != "completed":
+        return {**meta, "reason_code": "previous_run_not_completed"}
     result = await store.one(select(RES).where(*store.where(RES, RES.c.case_id == case_id,
         RES.c.source_run_id == prior["id"], RES.c.kind == "baseline"))
         .order_by(RES.c.saved_at.desc(), RES.c.id.desc()).limit(1))
     if result is None:
         return {**meta, "reason_code": "previous_result_unavailable"}
     value = {key: result[key] for key in ("conclusion", "conclusion_state", "conclusion_origin", "validation_state", "delivery_state")}
-    if (result["validation_state"] != "accepted" or result["conclusion_state"] == "unavailable"
+    if (result["validation_state"] != "accepted" or result["conclusion_origin"] != "model" or result["conclusion_state"] == "unavailable"
             or not result["conclusion"] or blocked(value) or len(encoded(value)) > field_limit()):
         return {**meta, "reason_code": "previous_conclusion_unusable"}
+    from .case_previous_analysis import Sources
+    rows = (await store.db.execute(select(F).where(*store.where(F,
+        F.c.case_id == case_id, F.c.run_id == prior["id"])))).mappings().all()
+    try:
+        sources = Sources(rows, store.tenant_id, case_id, prior["id"])
+        reports = sources.bodies(lambda c: c.get("type") == "delivery_report")
+        if not reports and sources.bodies(lambda c: c.get("type") == "stage_delivery" and c.get("stage") == "C6"):
+            return {**meta, "reason_code": "previous_delivery_report_unavailable"}
+        for _, report in reports:
+            descriptor = report.get("stage_delivery")
+            if report.get("retained_output") and not descriptor:
+                return {**meta, "reason_code": "previous_recovery_not_comparable"}
+            if descriptor:
+                receipt = sources.receipt(descriptor["artifact_id"])
+                if (receipt["stage"] != "C6" or str(report["run_id"]) != str(prior["id"])
+                        or str(report["result_id"]) != str(result["id"]) or not receipt["use"]["comparison_eligible"]):
+                    return {**meta, "reason_code": "previous_recovery_not_comparable"}
+    except (KeyError, TypeError, ValueError):
+        return {**meta, "reason_code": "previous_delivery_receipt_invalid"}
     original = await store.one(select(F).where(*store.where(F, F.c.case_id == case_id,
         F.c.run_id == prior["id"], F.c.id == result["input_artifact_id"])))
     if not original or not original["content_json"] or digest(original["content_json"]) != original["sha256"]:

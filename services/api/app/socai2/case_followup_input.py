@@ -1,4 +1,5 @@
 """Frozen business sources and explicit prior dependencies for Deep/C6."""
+
 import copy
 from collections import Counter
 
@@ -9,6 +10,7 @@ from .baseline_context import reference
 from .baseline_delivery_contract import comparable_source_ids
 from .baseline_evidence import SCHEMA as EVIDENCE_SCHEMA
 from .baseline_evidence import citation_roles
+from .baseline_evidence_tools import binding_subject
 from .baseline_final_evidence import query_candidates
 from .baseline_model_view import blocked, blocked_message, draft_limit
 from .baseline_store import StoreError, digest, encoded
@@ -320,7 +322,7 @@ def query_records(registry, material, projections, *, final, excluded_fields=(),
         payload = row["content_json"]
         binding = material["catalog"]["bindings"][payload["binding_id"]]
         facts.append({"artifact_id": str(row["id"]), "state": payload["state"], "reason": payload["reason"],
-            "tool_name": binding["tool_name"], "hostname": binding["hostname"], "question_id": payload["question_id"],
+            "tool_name": binding["tool_name"], **binding_subject(binding), "question_id": payload["question_id"],
             "related_alert_ids": payload["alert_ids"], "window_start": binding["scope"]["window_start"],
             "window_end": binding["scope"]["window_end"],
             "observed_rows_in_bounded_fetch": payload["observed_rows_in_bounded_fetch"],
@@ -565,7 +567,7 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
                 + "]。comparison.support_ids需包含指定基线；比较变化还需本轮依据。同文历史背景引用仅保留前序依赖，不能替代指定基线。")
             if cfg.get("comparison_input_selection"):
                 blocks.append(cfg["comparison_input_selection"]["instruction"])
-    if metadata.get("graph_state") in {"not_built", "stale"}:
+    if metadata.get("graph_state") in {"not_built", "stale", "failed"}:
         blocks.append(cfg["followup_input_selection"]["graph_unavailable_text"] if task_selection else
                       "[图谱限制] " + metadata["graph_state"] + "；未提供可用的当前派生图，不表示没有关联。")
     if partial:
@@ -692,7 +694,11 @@ def build(stage, context, base, artifacts, *, previous=None, prior_id=None, ques
                 "material_source_ids": [material_source] if material_source else [],
                 "execution_states": dict(Counter(row["state"] for row in (execution or {}).get("routes", [])))}
     routing_instruction = boundary.get("followup_routing", {}).get(stage, "")
+    from .business_verdict import CASE_RULE
+    from .severity_opinion import PROMPT as RISK_PROMPT
     messages = [{"role": "system", "content": policy[stage] + "\n" + policy["common"] + "\n" + routing_instruction
+                + ("\n" + RISK_PROMPT if stage == "C6" else "")
+                + ("\n" + CASE_RULE if stage == "C6" else "")
                 + ("\n" + cfg["program_output"]["instruction"] if stage == "C6" else "")
                 + ("\n" + cfg["citation_instruction"] if stage == "C6" else "")},
                 {"role": "user", "content": "\n".join(blocks)}]

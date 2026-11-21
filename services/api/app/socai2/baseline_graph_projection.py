@@ -3,11 +3,13 @@
 Graph connectivity is a presentation of sources, not independent corroboration.
 Processes, sessions and endpoints are record-scoped; no PID/name/time join.
 """
+
 import copy
 from collections import Counter
 from uuid import UUID
 
 from .baseline_context import reference
+from .baseline_evidence_tools import binding_subject
 from .baseline_model_view import blocked, field_limit
 from .baseline_store import StoreError, digest, encoded
 from .runtime_policy import graph_limit
@@ -19,6 +21,24 @@ LIMITATIONS = ["derived_view_not_independent_evidence", "connectivity_does_not_p
     "no_attack_path_or_transitive_impact_inferred", "analysis_prose_not_converted_to_edges"]
 OBJECT_TYPES = {"host", "user", "ip", "domain", "url", "file", "hash", "process", "email",
     "application", "cloud_resource", "technique", "other"}
+CAPACITY_FAILURE = "graph_member_anchors_exceed_retention_limit"
+
+
+def selected_snapshot(bases):
+    """Only the newest snapshot covering current evidence can supply a graph."""
+    snapshots = [r["content_json"] for r in bases if r["content_json"].get("type") == "graph_snapshot"]
+    latest = max(snapshots, key=lambda r: r["captured_at"]) if snapshots else None
+    if latest is None:
+        return "not_built", None
+    required = {str(r["id"]) for r in bases if r["content_json"].get("type") in {"materials", "query_projection"}}
+    if not required <= set(latest["input_artifact_ids"]):
+        return "stale", latest
+    if latest.get("state", "completed") == "completed" and latest.get("graph_artifact_id"):
+        return "available", latest
+    if (latest.get("state") == "failed" and latest.get("graph_artifact_id") is None
+            and latest.get("reason") == CAPACITY_FAILURE and latest.get("delivery_state") == "none"):
+        return "failed", latest
+    raise StoreError("graph_snapshot_invalid")
 
 
 def identity(*parts):
@@ -65,7 +85,7 @@ class Projection:
                 or len(encoded(self.records)) > graph_limit() - 16384):
             self.nodes, self.edges, self.records = before
             if mandatory:
-                raise StoreError("graph_member_anchors_exceed_retention_limit", 422)
+                raise StoreError(CAPACITY_FAILURE, 422)
             self.omissions["whole_relation_bundle_exceeds_graph_limit"] += 1
             return False
         return True
@@ -190,7 +210,7 @@ def build(context, context_id, bases):
                 "observed_rows_in_bounded_fetch", "truncated")})
             queries[-1]["omission_count"] = len(payload["omissions"])
             queries[-1]["projection_id"] = str(fid)
-            queries[-1].update(tool_name=binding["tool_name"], hostname=binding["hostname"],
+            queries[-1].update(tool_name=binding["tool_name"], **binding_subject(binding),
                 related_alert_ids=payload["alert_ids"], scope=binding["scope"])
             if payload.get("source_role", "observation") != "observation":
                 p.omissions["current_snapshot_not_activity"] += len(payload["rows"])

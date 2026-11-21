@@ -21,6 +21,7 @@ from investigation_http.external_routes import (
     exploration_state,
     exports,
     grouping,
+    lake,
     pages,
     run_directory,
     run_records,
@@ -54,6 +55,7 @@ for router in (
     alert_hosts.router,
     run_records.router,
     run_directory.router,
+    lake.router,
 ):
     app.include_router(router, prefix="/api/v1")
 

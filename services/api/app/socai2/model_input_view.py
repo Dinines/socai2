@@ -91,6 +91,10 @@ def frozen_items(data):
 
 
 def source_members(context, ref, tool_payloads):
+    from .case_previous_analysis import unit
+    previous = unit(context, ref.get("source_path"))
+    if previous is not None:
+        return sorted(set(previous["declared_scope"]["alert_ids"]) & set(context.alerts))
     path = (ref.get("source_path") or "").split(".")
     members = set(context.alerts)
     if ref.get("type") == "alert_material":

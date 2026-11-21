@@ -1,7 +1,7 @@
 """Service-owned C3 choices and deterministic, separately deduplicated routing."""
 from datetime import datetime
 
-from .baseline_evidence_tools import TOOLS
+from .baseline_evidence_tools import TOOLS, binding_subject
 from .baseline_semantics import EVENT_KINDS
 from .baseline_store import encoded
 from .followup_activity import activity, query_record
@@ -25,6 +25,9 @@ def ranked_bindings(catalog, members):
 
     def rank(item):
         bid, binding = item
+        if binding.get("contract_version") == "socai2.c4-lake.v2":
+            from .lake_evidence_v2 import rank_binding
+            return rank_binding(bid, binding, members or {})
         host, tool = binding["hostname"], binding["tool_name"]
         matched = [observations[aid][1] for aid in binding["alert_ids"]
             if aid in observations and observations[aid][0] == host]
@@ -52,7 +55,7 @@ def offered_bindings(catalog, limits, now, steps, lake, *, members=None):
             excluded.append({"binding_id": bid, "reason": reason})
             continue
         alias = "B" + str(len(options) + 1)
-        option = {"binding_id": alias, "tool_name": binding["tool_name"], "hostname": binding["hostname"],
+        option = {"binding_id": alias, "tool_name": binding["tool_name"], **binding_subject(binding),
             "alert_ids": binding["alert_ids"], "object_keys": sorted({o["object_key"] for o in binding["objects"]})}
         if len(encoded([*options, option])) > active_policy().model.max_prepared_bytes:
             excluded.append({"binding_id": bid, "reason": "binding_catalog_input_limit"})

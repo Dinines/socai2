@@ -20,13 +20,15 @@ PGPASSFILE = "/replace/private/pgpass"
 lock_timeout_seconds = 3
 statement_timeout_seconds = 30
 
-# Required for analysis-ingress and fusion-support; initialize-current uses ingress grants when selected.
+# Required for analysis-ingress, fusion-support, lake-alert-receipts (130), lake-alert-deliveries (131).
+# initialize-current includes ingress grants and 130/131 when selected.
 [analysis_ingress]
 role = "replace_ingress"
 lock_timeout_seconds = 3
 statement_timeout_seconds = 30
 
-# Required by analysis-lifecycle and initialize-current; select an existing writer.
+# Required by analysis-lifecycle, business-verdict and initialize-current among other analysis migrations.
+# Select an existing writer and the lock/statement timeouts for this database.
 [analysis]
 writer_role = "replace_processor"
 lock_timeout_seconds = 3

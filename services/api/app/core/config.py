@@ -595,6 +595,9 @@ class Settings(BaseSettings):
     CLICKHOUSE_HOST: str = "localhost"
     CLICKHOUSE_PORT: int = 9000
     CLICKHOUSE_DATABASE: str = "aisoc"
+    # Explicit file; migrations and lake purge refuse to guess a policy.
+    AISOC_LAKE_STORAGE_POLICY_FILE: str = ""
+    SOCAI2_LAKE_QUERY_PROFILE_FILE: str = ""
     CLICKHOUSE_USER: str = "default"
     CLICKHOUSE_PASSWORD: str = ""
 
@@ -648,6 +651,7 @@ class Settings(BaseSettings):
     # Observability
     OTEL_ENDPOINT: str = ""
     LOG_LEVEL: str = "INFO"
+    SOCAI2_LOGGING_PROFILE_FILE: str = ""
 
     # Multi-tenancy
     MAX_TENANTS: int = 1000

@@ -8,22 +8,27 @@ from pydantic.json_schema import SkipJsonSchema
 from .baseline_contracts import Contract
 from .case_contracts import CaseView
 from .enums import Severity
+from .risk_management_contracts import PriorityManagementFields
 
 
-class CaseManagementUpdate(Contract):
+class CaseManagementUpdate(PriorityManagementFields):
     operation_key: UUID = Field(description="一次逻辑修改的幂等键；同意图重试沿用原值。")
     expected_row_version: int = Field(ge=1, description="从当前Case读取的行版本；过期返回409。")
     title: str | SkipJsonSchema[None] = Field(default=None, min_length=1, max_length=200,
         description="案件名称；省略保持，不接受null或空白。", json_schema_extra=lambda s: s.pop('default', None))
     description: str | None = Field(default=None, max_length=20000, description="案件说明；省略保持，null清空。")
     owner_id: UUID | None = Field(default=None, description="同租户已有用户ID；省略保持，null取消分配；不自动改处理状态。")
-    severity: Severity | None = Field(default=None, description="人工严重程度；省略保持，null清空；不改变成员告警等级。")
+    severity: Severity | SkipJsonSchema[None] = Field(default=None,
+        description="人工严重程度；省略保持，不接受null，须severity_reason；后续新轮仍可自动上调，不改变成员告警等级。",
+        json_schema_extra=lambda s: s.pop('default', None))
+    severity_reason: str | None = Field(default=None, min_length=1, max_length=20000,
+        description="人工等级调整的非空理由；须与severity一起提交，保留操作者、时间和前后值。")
     tags: list[Annotated[str, Field(min_length=1, max_length=128)]] | SkipJsonSchema[None] = Field(default=None, max_length=50,
         description="完整标签集合；省略保持，[]清空，不接受null、空白或重复标签。", json_schema_extra=lambda s: s.pop('default', None))
     handling_status: Literal["new", "in_progress"] | SkipJsonSchema[None] = Field(default=None,
         description="未结案案件的人工处理状态；省略保持，结案和重开使用各自接口。", json_schema_extra=lambda s: s.pop('default', None))
 
-    @field_validator("title", "tags", "handling_status", mode="before")
+    @field_validator("title", "tags", "handling_status", "severity", mode="before")
     @classmethod
     def reject_explicit_null(cls, value):
         if value is None:
@@ -32,7 +37,9 @@ class CaseManagementUpdate(Contract):
 
     @model_validator(mode="after")
     def explicit_fields(self):
-        fields = self.model_fields_set - {"operation_key", "expected_row_version"}
+        fields = self.model_fields_set - {"operation_key", "expected_row_version", "severity_reason", "priority_reason"}
+        if not self.clear_priority_override:
+            fields.discard("clear_priority_override")
         if not fields:
             raise ValueError("at least one management field required")
         for name in fields & {"title", "tags", "handling_status"}:
@@ -42,6 +49,11 @@ class CaseManagementUpdate(Contract):
             raise ValueError("title must not be blank")
         if self.tags is not None and (any(not t.strip() for t in self.tags) or len(set(self.tags)) != len(self.tags)):
             raise ValueError("tags must be nonblank and unique")
+        if "severity" in fields:
+            if not self.severity_reason or not self.severity_reason.strip():
+                raise ValueError("severity requires a nonblank severity_reason")
+        elif "severity_reason" in self.model_fields_set:
+            raise ValueError("severity_reason requires severity")
         return self
 
 

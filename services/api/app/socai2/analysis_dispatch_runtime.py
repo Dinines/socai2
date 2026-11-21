@@ -6,12 +6,15 @@ import importlib
 import json
 import logging
 import signal
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import UUID
 
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from app.core.operational_logging import configure_file_logging, log_exception
 
 from .analysis_dispatch_config import KINDS, DispatchPolicy
 from .analysis_dispatch_redis import AnalysisQueues
@@ -28,12 +31,12 @@ def load_profile(path):
     value = json.loads(path.read_text())
     required = {"enabled", "tenant_id", "database_url_file", "database_connect_args", "database_pool_size",
                 "redis_url_file", "redis_socket_timeout_seconds", "redis_connect_timeout_seconds",
-                "lifecycle_policy_file", "executor_factory", "executor_config_file", "dispatch"}
+                "lifecycle_policy_file", "executor_factory", "executor_config_file", "logging_profile_file", "dispatch"}
     if set(value) != required or type(value["enabled"]) is not bool:
         raise ValueError("invalid dispatcher profile fields")
     UUID(value["tenant_id"])
     DispatchPolicy(**value["dispatch"])
-    for name in ("database_url_file", "redis_url_file", "lifecycle_policy_file", "executor_config_file"):
+    for name in ("database_url_file", "redis_url_file", "lifecycle_policy_file", "executor_config_file", "logging_profile_file"):
         if not Path(value[name]).is_absolute():
             raise ValueError("explicit absolute config path required: " + name)
     if type(value["database_pool_size"]) is not int or value["database_pool_size"] < 1:
@@ -68,6 +71,7 @@ async def run(profile):
     if not profile["enabled"]:
         logging.getLogger(__name__).info("analysis_dispatch_disabled")
         return
+    configure_file_logging(profile["logging_profile_file"])
     policy = DispatchPolicy(**profile["dispatch"])
     with exclusive_process(policy.lock_file):
         lifecycle = AnalysisTaskPolicy(**json.loads(Path(profile["lifecycle_policy_file"]).read_text()))
@@ -109,5 +113,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", required=True)
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(run(load_profile(args.profile)))
+    try:
+        asyncio.run(run(load_profile(args.profile)))
+    except Exception:  # noqa: BLE001 -- file handler keeps the stack, CLI never prints dependency bodies
+        logger = logging.getLogger(__name__)
+        if any(getattr(h, "_investigation_handler", False) for h in logging.getLogger().handlers):
+            log_exception(logger, "analysis_dispatch_runtime_failed", extra={"operation": "runtime", "stage": "startup"})
+        else:
+            sys.stderr.write('{"level":"ERROR","message":"analysis_dispatch_configuration_failed"}\n')
+        raise SystemExit(1) from None

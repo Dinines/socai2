@@ -9,6 +9,7 @@ from pydantic import Field, ValidationError
 from . import baseline_analysis_contract as analysis
 from .baseline_contracts import Contract
 from .baseline_model_view import blocked
+from .business_verdict import CASE_RULE
 from .case_citation_quality import normalized, reject_or_record
 from .case_source_scope import knowledge_context
 from .citation_quality import record_references
@@ -134,6 +135,17 @@ def parse(content, source_map, context, coverage, comparison, *, citation_review
     analysis.parse(json.dumps(raw["analysis"]), source_map, context, coverage,
                    citation_review=citation_review, root_path="$.analysis")
 
+    return validate_final_units(value, source_map, context, comparison, citation_review=citation_review)
+
+
+def validate_final_units(value, source_map, context, comparison, *, citation_review=None, sections=None, check_members=True):
+    """Shared final-field semantics for complete replies and independent units."""
+    sections = {"conclusion", "comparison", "impact", "recommendations"} if sections is None else set(sections)
+    path = "$"
+
+    def fail(code):
+        reject_or_record(citation_review, code, path)
+
     def scope(ids):
         ids = list(map(str, ids))
         if len(ids) != len(set(ids)) or not set(ids) <= set(context.alerts):
@@ -157,35 +169,39 @@ def parse(content, source_map, context, coverage, comparison, *, citation_review
         if not set(aids) <= owned:
             fail("delivery_source_coverage_missing")
 
-    path = "$.conclusion"
-    covered = scope(value.conclusion.alert_ids)
-    refs(value.conclusion.support_ids, covered, direct=value.conclusion.state == "supported")
-    members = {str(m.alert_id): m for m in value.analysis.members}
-    if any(members[a].state == "not_analyzed" for a in covered):
-        fail("unanalysed_member_in_conclusion")
-    if value.conclusion.state == "uncertain" and not value.conclusion.limitations:
-        fail("uncertain_conclusion_needs_limits")
-    path = "$.comparison"
-    refs(value.comparison.support_ids)
-    baseline_ids = comparable_source_ids(source_map, comparison)
-    if not comparison["result_id"] and comparison["state"] == "initial":
-        if value.comparison.kind != "initial" or value.comparison.summary is not None or value.comparison.support_ids:
-            fail("initial_delivery_must_not_invent_comparison")
-    elif not baseline_ids:
-        if value.comparison.kind != "not_comparable" or not value.comparison.summary:
-            fail("comparison_not_available")
-    elif value.comparison.kind == "initial" or not value.comparison.summary:
-        raise analysis.AnalysisRejected("comparison_needs_selected_baseline_and_current_sources")
-    elif (not (baseline_ids & set(value.comparison.support_ids))
-            or (value.comparison.kind != "not_comparable" and not (set(value.comparison.support_ids) - baseline_ids))):
-        fail("comparison_needs_selected_baseline_and_current_sources")
-    path = "$.impact"
-    affected = scope(value.impact.alert_ids)
-    refs(value.impact.support_ids, affected, direct=bool(value.impact.supported_changes))
-    if value.impact.supported_changes and not affected:
-        fail("supported_impact_needs_member_scope")
+    if "conclusion" in sections:
+        path = "$.conclusion"
+        covered = scope(value.conclusion.alert_ids)
+        refs(value.conclusion.support_ids, covered, direct=value.conclusion.state == "supported")
+        if check_members:
+            members = {str(m.alert_id): m for m in value.analysis.members}
+            if any(a not in members or members[a].state == "not_analyzed" for a in covered):
+                fail("unanalysed_member_in_conclusion")
+        if value.conclusion.state == "uncertain" and not value.conclusion.limitations:
+            fail("uncertain_conclusion_needs_limits")
+    if "comparison" in sections:
+        path = "$.comparison"
+        refs(value.comparison.support_ids)
+        baseline_ids = comparable_source_ids(source_map, comparison)
+        if not comparison["result_id"] and comparison["state"] == "initial":
+            if value.comparison.kind != "initial" or value.comparison.summary is not None or value.comparison.support_ids:
+                fail("initial_delivery_must_not_invent_comparison")
+        elif not baseline_ids:
+            if value.comparison.kind != "not_comparable" or not value.comparison.summary:
+                fail("comparison_not_available")
+        elif value.comparison.kind == "initial" or not value.comparison.summary:
+            raise analysis.AnalysisRejected("comparison_needs_selected_baseline_and_current_sources")
+        elif (not (baseline_ids & set(value.comparison.support_ids))
+                or (value.comparison.kind != "not_comparable" and not (set(value.comparison.support_ids) - baseline_ids))):
+            fail("comparison_needs_selected_baseline_and_current_sources")
+    if "impact" in sections:
+        path = "$.impact"
+        affected = scope(value.impact.alert_ids)
+        refs(value.impact.support_ids, affected, direct=bool(value.impact.supported_changes))
+        if value.impact.supported_changes and not affected:
+            fail("supported_impact_needs_member_scope")
     seen = set()
-    for index, item in enumerate(value.recommendations):
+    for index, item in enumerate(value.recommendations if "recommendations" in sections else []):
         path = f"$.recommendations.{index}"
         if item.id in seen or not set(item.object_keys) <= set(context.scope.object_keys):
             fail("recommendation_identity_or_target_invalid")
@@ -199,8 +215,13 @@ def parse(content, source_map, context, coverage, comparison, *, citation_review
 def citation_roles(payload):
     if not isinstance(payload, dict):
         return {}
-    if payload.get("type") == "delivery_report" and payload.get("delivery"):
-        return {"$.delivery": "prior_analysis", "$.result": "prior_analysis"}
+    if payload.get("type") == "delivery_report":
+        roles = {"$.result": "prior_analysis"}
+        if payload.get("delivery"):
+            roles["$.delivery"] = "prior_analysis"
+        if (payload.get("retained_output") or {}).get("fields"):
+            roles["$.retained_output.fields"] = "prior_analysis"
+        return roles
     if "result_id" in payload and "findings" in payload:
         return {"$.conclusion": "prior_analysis", "$.findings": "prior_analysis",
             **{f"$.findings.{i}": "prior_analysis" for i in range(len(payload["findings"]))}}
@@ -208,6 +229,7 @@ def citation_roles(payload):
 
 
 PROMPT = f"""C6输出单行紧凑JSON，不调工具，写全recommendations并闭合。
+{CASE_RULE}
 前序失败仍据可见事实汇总；缺证写uncertain及缺口，不推为无风险。
 source_groups组内共用角色/成员。observed须本成员直接observation，时间仅作上下文；成员属性不互移。标题/厂商/演练标签不证明授权或良性；未提供审批非无审批，端口不证明应用协议。
 analysis覆盖全员/六问/四领域；无资料用not_analyzed/undetermined，列限制/替代解释。identity核认证/MFA/会话/权限/授权；cloud核控制面/IAM/配置/影响；phishing核邮件/链接/附件/投递/点击/执行；insider核数据访问/外传量/目的地/基线/授权。{analysis.DOMAIN_FINDING_SCOPE}非applicable写限制，引用不决定适用性。conflicts仅列至少两条发现的实际矛盾；缺证不算。

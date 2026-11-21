@@ -1,4 +1,5 @@
 """Native local embeddings and a document-only Qdrant collection."""
+import asyncio
 import hashlib
 import json
 import math
@@ -42,6 +43,11 @@ class Vectors:
             result = response.json()
             record["state"] = "completed"
             return result
+        except (httpx.TransportError, asyncio.CancelledError):
+            # The owned client has closed, but a sent request's remote result
+            # remains unknown. Let the execution owner record that distinction.
+            record["state"] = "unknown"
+            raise
         except (httpx.HTTPError, ValueError):
             record["state"] = "failed"
             raise SourceUnavailable("knowledge_" + backend + "_request_failed") from None

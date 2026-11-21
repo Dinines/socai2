@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .baseline_contracts import Contract, EvidenceRef, Finding, Question, Recommendation
+from .enums import BusinessVerdict
 
 ALERT_EXECUTOR_VERSION = "socai2.alert-basic-executor.v4"
 ALERT_QUERY_RECEIPT_VERSIONS = {"socai2.alert-basic-executor.v3", ALERT_EXECUTOR_VERSION}
@@ -31,6 +32,7 @@ class AlertOutput(Contract):
 class IncidentOutput(Contract):
     summary: str = Field(min_length=1)
     conclusion: str = Field(min_length=1)
+    business_verdict: BusinessVerdict | None = None
     findings: list[Finding]
     source_refs: list[EvidenceRef]
     open_questions: list[Question]

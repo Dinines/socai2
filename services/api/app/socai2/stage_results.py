@@ -166,10 +166,16 @@ class StageResultService(BaselineService):
                     raise StoreError("operation_key_conflict")
                 return {"run_id": rid, "input_artifact_id": old["input_artifact_id"], "newly_claimed": False}
             from .runtime_policy import active_policy
+            if kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION:
+                from .subject_risk_opinions import initialize_for_analysis
+                await initialize_for_analysis(store, "incident", identity)
             with_queries = kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION
             source = frozen_source if dispatch_context is not None else await source_input(
                 store, kind, identity, validated_triage=producer == INCIDENT_EXECUTOR_VERSION,
                 with_queries=with_queries, with_citation_quality=producer == INCIDENT_EXECUTOR_VERSION)
+            if kind == "incident_diagnosis" and producer == INCIDENT_EXECUTOR_VERSION:
+                from .stage_inputs import RISK_INPUT_VERSION
+                source = {**source, "risk_input_version": RISK_INPUT_VERSION}
             if not source["members"]:
                 raise StoreError("stage_members_required", 422)
             now, input_id = await store.now(), uuid4()
@@ -197,6 +203,11 @@ class StageResultService(BaselineService):
                 await store.db.execute(insert(D).values(id=uuid5(rid, "diagnosis"), tenant_id=tenant_id,
                     incident_id=identity, source_run_id=rid, revision=rev, state="running",
                     input_artifact_id=input_id, source_fingerprint=digest(source), producer=producer, requested_at=now))
+                if producer == INCIDENT_EXECUTOR_VERSION:
+                    from .subject_risk_opinions import freeze
+                    claimed = await store.one(select(R).where(*store.where(R, R.c.id == rid)))
+                    await freeze(store, claimed, selected_members={m["alert"]["id"]:
+                        m["material"]["id"] if m["material"] else None for m in source["members"]})
         return {"run_id": rid, "input_artifact_id": input_id, "newly_claimed": True}
 
     async def locked(self, store, run_id):
@@ -212,6 +223,9 @@ class StageResultService(BaselineService):
     async def finish(self, tenant_id, run_id, output: AlertOutput | IncidentOutput, *, execution_step_id=None,
                      validated_members=None, alert_delivery_state=None, incident_delivery_state=None):
         payload = output.model_dump(mode="json")
+        if isinstance(output, IncidentOutput) and output.business_verdict is None:
+            # Preserve the publication hash used by saved pre-verdict replies.
+            payload.pop("business_verdict")
         async with self.transaction(tenant_id) as store:
             run, target, source = await self.locked(store, run_id)
             is_alert = run["kind"] == "alert_basic"
@@ -263,7 +277,8 @@ class StageResultService(BaselineService):
                 with_queries="query_receipts_version" in source,
                 with_citation_quality="triage_citation_quality_version" in source,
                 incident_limit=source.get("input_selection", {}).get("limit"))
-            fresh = digest(current_source.get("change_view", current_source)) == digest(source.get("change_view", source))
+            from .stage_inputs import comparison_source
+            fresh = digest(comparison_source(current_source, risk_version=source.get("risk_input_version"))) == digest(comparison_source(source))
             pointer = "latest_triage_id" if is_alert else "latest_diagnosis_id"
             result_table = AS if is_alert else D
             newer = False
@@ -299,7 +314,8 @@ class StageResultService(BaselineService):
                              "source_refs": refs, "limitations": output.limitations, "program_facts": facts,
                              "delivery_assessment": delivery}
                 await store.db.execute(update(D).where(*store.where(D, D.c.id == result_id)).values(state="completed",
-                    summary=output.summary, diagnosis=diagnosis, open_questions=payload["open_questions"], generated_at=now))
+                    summary=output.summary, diagnosis=diagnosis, open_questions=payload["open_questions"], generated_at=now,
+                    business_verdict=output.business_verdict))
             adopted = fresh and not newer
             if adopted:
                 values = {pointer: result_id}
@@ -324,6 +340,9 @@ class StageResultService(BaselineService):
             if execution_step_id is not None:
                 await store.db.execute(update(steps).where(*store.where(steps, steps.c.id == execution_step_id)).values(
                     state="completed", ended_at=now, output_artifact_id=receipt_id))
+            if not is_alert:
+                from .subject_risk_opinions import apply_saved
+                await apply_saved(store, run)
         # The publication has committed. Knowledge maintenance cannot alter it.
         from .knowledge_sync import after_triage
         await after_triage(self, tenant_id, run, outcome)
@@ -367,4 +386,6 @@ class StageResultService(BaselineService):
                 with_queries="query_receipts_version" in source,
                 with_citation_quality="triage_citation_quality_version" in source,
                 incident_limit=source.get("input_selection", {}).get("limit"))
-            return digest(source.get("change_view", source)) == digest(current_source.get("change_view", current_source))
+            from .stage_inputs import comparison_source
+            return digest(comparison_source(source)) == digest(comparison_source(
+                current_source, risk_version=source.get("risk_input_version")))

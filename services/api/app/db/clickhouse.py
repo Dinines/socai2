@@ -229,6 +229,7 @@ async def execute_lake_query(
     extra_settings: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
     query_id: str | None = None,
+    owned_policy: dict[str, Any] | None = None,
 ) -> LakeQueryResult:
     """Run a rewritten lake SQL statement and return columns + rows.
 
@@ -285,6 +286,10 @@ async def execute_lake_query(
     LakeQueryNotConfiguredError
         Driver missing or host unset.
     """
+    if owned_policy is not None:
+        from .clickhouse_owned import execute_owned
+        return await execute_owned(sql, policy=owned_policy, timeout_seconds=timeout_seconds,
+            extra_settings=extra_settings, params=params, query_id=query_id)
     client = await get_clickhouse_client()
 
     server_cap = float(DEFAULT_QUERY_SETTINGS["max_execution_time"])

@@ -26,6 +26,7 @@ from app.services.entity_risk import EntityRiskEngine
 from app.services.first_seen import FirstSeenStore
 from app.services.fusion_engine import FusionEngine
 from app.services.ioc_match import TenantIocMatcher
+from app.services.lake_ingress import IngressProfile
 from app.services.lake_writer import LakeWriter
 from app.services.sessions import SessionStore
 from app.services.socai2_sink import Socai2AlertSink
@@ -33,6 +34,7 @@ from app.services.tenant_overlay import OverlayCache
 from app.services.ueba_signal import UebaSignalCache
 from app.services.windowed_detection import WindowedDetectionEngine
 from app.workers.consumer import FusionWorker
+from app.workers.lake_consumer import LakeConsumerProfile
 
 
 def _log_worker_exit(task: asyncio.Task) -> None:
@@ -118,8 +120,12 @@ async def lifespan(app: FastAPI):
             database=settings.clickhouse_database,
             user=settings.clickhouse_user,
             password=settings.clickhouse_password,
+            connect_timeout_seconds=settings.clickhouse_connect_timeout_seconds,
+            send_receive_timeout_seconds=settings.clickhouse_send_receive_timeout_seconds,
             batch_size=settings.lake_batch_size,
             batch_max_age_seconds=settings.lake_batch_max_age_seconds,
+            ingress_profile=(IngressProfile.load(settings.lake_ingress_profile_file, database=settings.clickhouse_database)
+                             if settings.lake_ingress_profile_file else None),
         )
         if settings.lake_writer_enabled
         else None
@@ -155,6 +161,8 @@ async def lifespan(app: FastAPI):
 
     worker = FusionWorker(
         engine,
+        lake_consumer_profile=(LakeConsumerProfile.load(settings.lake_consumer_profile_file)
+                               if settings.lake_consumer_profile_file else None),
         sink=sink,
         dlq=dlq,
         lake=lake,

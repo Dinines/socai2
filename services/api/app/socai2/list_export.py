@@ -15,10 +15,12 @@ from .baseline_service import BaselineService
 from .baseline_store import StoreError
 from .case_contracts import CaseView, project
 from .case_reader import queue_filters, queue_open_tasks
+from .case_relationship_reader import case_view
 from .page_contracts import AlertFacts, IncidentFacts
 from .page_reader import PageReader
 from .program_facts import RANK
 from .read_sources import lookup_error
+from .subject_risk import incident_effective
 
 C, CA, A, I, L = (x.__table__ for x in (m.Cases, m.CaseAlerts, m.Alerts, m.Incidents, m.IncidentAlerts))
 OWNERS = table("users", column("tenant_id"), column("id"), column("username"), schema="public")
@@ -87,24 +89,25 @@ class ListExportService(BaselineService):
                 count = (await store.db.execute(select(func.count()).select_from(source).where(*clauses))).scalar_one()
                 if count > self.limits.max_rows:
                     raise StoreError("export_row_limit_exceeded", 413)
-                selected = (await store.db.execute(select(*[source.c[f] for f in model.model_fields], *extra)
+                selected = (await store.db.execute(select(source, *extra)
                     .where(*clauses).order_by(*lists.ordering(sort_column, source.c.id, order))
                     .limit(self.limits.max_rows + 1))).mappings().all()
                 if len(selected) != count:
                     raise StoreError("export_snapshot_incomplete", 503)
                 rows = []
                 for row in selected:
-                    item = {prefix: project(model, row).model_dump(mode="json")}
+                    value = await case_view(store, row) if kind == "cases" else project(model, row)
+                    item = {prefix: value.model_dump(mode="json")}
                     if kind == "cases":
                         item.update(member_count=row["member_count"], open_task_count=row["open_task_count"])
                     else:
                         item["owner_name"] = row["owner_name"]
                         if kind == "incidents":
                             automatic = REVERSE_RANK.get(row["severity_rank"])
-                            effective = row["severity_override"] or automatic
+                            effective, severity_source = incident_effective(row, automatic)
                             item["derived"] = {k: row[k] for k in ("member_count", "first_activity_at", "last_activity_at")}
                             item["derived"].update(severity_auto=automatic, severity_effective=effective,
-                                severity_source="manual_override" if row["severity_override"] else "member_max" if automatic else None)
+                                severity_source=severity_source)
                     rows.append(item)
                 return ExportRows(rows, await store.now(), self.limits.max_bytes)
         except DBAPIError as exc:

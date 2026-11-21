@@ -15,6 +15,7 @@ from .case_adoption_contracts import (
     ResultAdoptionReceipt,
 )
 from .case_comparison import project_comparison
+from .case_assessment_sources import adopted_result_id, adopted_verdict, source_query
 from .case_contracts import ResultView, RunView
 
 ASSESS, SOURCES, COVER = (m.CaseAssessments.__table__, m.CaseAssessmentSources.__table__,
@@ -29,15 +30,17 @@ async def rows(store, statement):
 
 async def assessment_view(store, case_id, assessment):
     aid = assessment["id"]
-    sources = await rows(store, select(SOURCES.c.result_id, SOURCES.c.task_revision_id,
-        SOURCES.c.artifact_id).where(*store.where(SOURCES, SOURCES.c.case_id == case_id,
+    sources = await rows(store, source_query(metadata=False).where(*store.where(SOURCES, SOURCES.c.case_id == case_id,
         SOURCES.c.assessment_id == aid)).order_by(SOURCES.c.id))
     members = await rows(store, select(COVER.c.alert_id, COVER.c.coverage_note).where(*store.where(
         COVER, COVER.c.case_id == case_id, COVER.c.assessment_id == aid)).order_by(COVER.c.alert_id))
     results = await rows(store, select(RES).where(*store.where(RES, RES.c.case_id == case_id,
         RES.c.id.in_([s["result_id"] for s in sources if s["result_id"]]))).order_by(RES.c.id))
+    rid = adopted_result_id(assessment, sources)
+    verdict = adopted_verdict(assessment, rid, results[0] if len(results) == 1 else None)
     return AdoptedAssessment(**{k: assessment[k] for k in AdoptedAssessment.model_fields
-        if k not in {"sources", "members", "results"}}, sources=sources, members=members,
+        if k not in {"sources", "members", "results", "business_verdict"}}, sources=sources, members=members,
+        business_verdict=verdict,
         results=[await project_comparison(store, ResultView, row) for row in results])
 
 

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     service_name: str = "aisoc-fusion"
     http_port: int = Field(default=8003, alias="HTTP_PORT")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    operational_logging_profile_file: str = Field(default="", alias="SOCAI2_LOGGING_PROFILE_FILE")
     environment: str = Field(default="development", alias="ENVIRONMENT")
 
     # Kafka
@@ -38,11 +39,15 @@ class Settings(BaseSettings):
     # that isn't promoted to an alert must still be queryable via /lake/sql.
     # Fail-soft; disables itself if clickhouse-driver / the server is absent.
     lake_writer_enabled: bool = Field(default=True, alias="AISOC_LAKE_WRITER_ENABLED")
+    lake_ingress_profile_file: str = Field(default="", alias="AISOC_LAKE_INGRESS_PROFILE_FILE")
+    lake_consumer_profile_file: str = Field(default="", alias="AISOC_LAKE_CONSUMER_PROFILE_FILE")
     clickhouse_host: str = Field(default="localhost", alias="CLICKHOUSE_HOST")
     clickhouse_port: int = Field(default=9000, alias="CLICKHOUSE_PORT")
     clickhouse_database: str = Field(default="aisoc", alias="CLICKHOUSE_DATABASE")
     clickhouse_user: str = Field(default="default", alias="CLICKHOUSE_USER")
     clickhouse_password: str = Field(default="", alias="CLICKHOUSE_PASSWORD")
+    clickhouse_connect_timeout_seconds: float = Field(default=10.0, gt=0, alias="CLICKHOUSE_CONNECT_TIMEOUT_SECONDS")
+    clickhouse_send_receive_timeout_seconds: float = Field(default=300.0, gt=0, alias="CLICKHOUSE_SEND_RECEIVE_TIMEOUT_SECONDS")
     lake_batch_size: int = Field(default=100, alias="AISOC_LAKE_BATCH_SIZE")
     lake_batch_max_age_seconds: float = Field(default=2.0, alias="AISOC_LAKE_BATCH_MAX_AGE_SECONDS")
 
