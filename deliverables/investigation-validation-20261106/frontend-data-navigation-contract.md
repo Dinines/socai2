@@ -88,7 +88,7 @@
 
 ## 跳转与关联规格
 
-表中 `{A}/{I}/{C}/{R}` 表示目标页的身份占位；HTTP 输入用业务 UUID，预览地址用前述显示 ID。每次查找同时限定授权租户、实体类型和父主体。对同页抽屉展开保留当前页上下文。
+表中 `{A}/{I}/{C}/{R}` 表示目标页的身份占位。HTTP 输入用业务 UUID，预览地址用前述显示 ID。查找同时限定租户、实体类型和父主体。同页抽屉保留当前页上下文。[正式 C173 跳转示例](../../docs/integration/c173-backend-handoff-20261121.md#页面跳转示例)
 
 | 编号／用户点击 | 起点需要传什么 | 目标、关联字段与异常处理 |
 | --- | --- | --- |
@@ -105,7 +105,7 @@
 | **J11 任务 → 指定人工版本** | `C + task_id`，当前版本取 `current_revision_id`，历史记录取所选 `revision_id` | 案件 `tasks` 页签内查看，`/cases/{C}/tasks/{task_id}/revisions/{revision_id}`。核 `task_revisions.task_id` 和任务所属 Case；范围、完成人、完成时间全部读该版本。 |
 | **J12 证据／对象 → 来源记录** | `C + evidence_id` 或同主体的对象身份；从条目读 `source_refs[].type/id/source_path`，对象用 `material_id + object_key` | 在 `evidence` 或 `tools` 页内展开。按引用类型定位同范围材料、结果、人工版本或回执，再定位保存的 JSON 路径；按需进 J02/J08/J10/J11。对象名称只展示。来源暂不可读时保留其身份和限制。 |
 | **J13 响应 → 外部审批、动作或回执** | 本主体、`result_id + proposal_id`（若来源为正式建议）、`external_namespace + approval_id/action_id`；回执另用 `receipt_artifact_id` | 响应页内按 `response_links` 查真实关联；已接且有权限时才打开命名空间对应的审批/动作详情或受控回执。当前未约定外部前端 URL，只有编号时显示编号与来源；没有回执就显示“无执行回执”。 |
-| **J14 新建／关联／移动／启动** | 建案传 `operation_key/title` 和至少一个选中的 `alert_ids/incident_ids`；关联带 `C + expected_scope_revision + operation_key` 和所选 ID。移动传源 C、`target_case_id/alert_ids/operation_key`、双方 `expected_*_scope_revision`。准备和启动各传 `operation_key/expected_scope_revision`，启动路径另带 `pending_run_id` | 用户明确提交后用服务回执返回的 Case/成员/Run 打开 J01/J06/J07。基础调查先 `/baseline/prepare` 后 `/runs/{R}/start`；查详情不触发执行。范围或版本冲突须刷新重新确认；预览的本地按钮不能当作成功写入。 |
+| **J14 新建／关联／移动／启动** | 建案传 `operation_key/title` 和至少一个选中的 `alert_ids/incident_ids`。关联带 `C + expected_scope_revision + operation_key` 和所选 ID。移动传源 C、`target_case_id/alert_ids/operation_key`、双方 `expected_*_scope_revision`。后轮调查传 `operation_key` 和 `mode`。 | `POST /cases` 返回 201，按 `allocations[]` 中的 `case_id/case_url` 跳转。有首轮任务时沿 `initial_task.status_url` 查进度。后轮用 `POST /cases/{case_id}/investigations`，按 202 回执的 `status_url` 查任务。范围或版本冲突时刷新重新确认。 |
 
 ## 案例签收
 

@@ -45,7 +45,7 @@ HTTP侧R1统一目录、R3/R4完整步骤/工件、分析任务、A自动分诊�
 
 ## 未完项与下一步
 
-C173 产品联调仍需业务后端回填人员目录与 `owner_id` 映射、资产查询与详情入口，并协同产品前端给出实际页面跳转示例。[双方交接清单](docs/integration/c173-backend-handoff-20261121.md)
+C173 页面跳转及 HTTP 入参示例由我方交付。产品联调请业务后端确认人员目录与 `owner_id` 映射、资产源及详情入口、联调环境和脱敏样例。Kafka 直写按既定接入方向确认生产端和首批范围。[双方交接清单](docs/integration/c173-backend-handoff-20261121.md)
 
 1. 工作台任务1/2、验收脚本3a–3d已完成各自直接验收和限定独审，现已发布21。任务4按§12.14完成4a准备、4c发布/清理/准入及4d本次两段正常链；[测试独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-test-review.json)与[HTTP独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-http-review.json)通过。4b来源识别子步已按[§12.15](openspec/changes/schedule-streaming-investigation-updates/test-service-and-4177-http-20261115.md#1215-4b当前子步按lyc来源直接识别测试材料2026-11-17)完成本机验证和限定独审；直接读取冻结来源替代紫色标识对账本的依赖，辅助账本未改为自动发布。报告指定主体/Run子步现按§12.16完成本机验收和限定复核，4b本机功能收口后，现按§12.17完成21分阶段发布与实际报告/页面/原件读回，测试模块跟进限定复核。新报告32个本地链接及6HTTP链接通过，临时预览已关闭，0新模型。D5a有效Deep答案进入C6的真实PG联验、D5b/c及D6另按原设计继续，本批不核销。
 2. 第11步完整覆盖核对、交接及未参与实现者的结束审计仍待。第8–9步人工定向/手动综合与第10步知识后台维护后置；不提前勾整体2.2–2.7或归档。本次D1–D4c分阶段发布已获用户明确授权并执行；不等于整个change完成。2026-11-17 批次的部署与 Git 同步各有独立回执。
