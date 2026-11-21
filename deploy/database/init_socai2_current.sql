@@ -9,6 +9,7 @@ SELECT current_database() = :'expected_database' AS current_target_matches \gset
 \ir subject_risk.sql
 \ir analysis_task_times.sql
 \ir business_verdict.sql
+\ir run_escalation_decision.sql
 \if :{?analysis_ingress_role}
 \ir lake_alert_receipts.sql
 \ir lake_alert_deliveries.sql

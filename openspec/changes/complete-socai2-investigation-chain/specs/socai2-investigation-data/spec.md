@@ -1176,3 +1176,15 @@ C3/C4 SHALL 沿现有工具能力和冻结绑定匹配业务目标。真实来�
 - **WHEN** 读取C4路由或Deep汇总
 - **THEN** 保留原计划方式、目标和绑定；程序依据真实查询回执独立记录是否派发、状态、返回数量及来源工件，不从Deep文字或完成状态推断新增取证
 - **AND** 无查询的材料分析、有返回的查询、成功查空、未查、失败和unknown保持区别，graph不计外部查询，human不自动创建任务
+
+### Requirement: Investigation runs expose a saved decision not to escalate
+
+自动告警分诊 SHALL 在完整、已采用的本轮结果判为正常行为或误报、置信度达到 profile 门槛且没有待核实建议时作出明确不升级决定，并与本轮结果和终态同事务保存。其他运行的该字段为空。统一运行目录 SHALL 返回每项已保存的决定及同一数据库快照下全部筛选命中的不升级 Run 数量。系统 MUST NOT 以是否关联 Case、缺少后续结果或仅结束执行推断该决定。
+
+#### Scenario: A sufficiently supported auto-triage decision is saved
+- **WHEN** 新鲜且完整的自动分诊给出满足门槛的正常或误报判定并明确没有待核实事项
+- **THEN** 本轮保存 `not_escalated`，统一运行目录在该条目和统计中读回实际决定；后续 Case 关联可独立变化
+
+#### Scenario: A run lacks an explicit decision
+- **WHEN** 同一查询包含旧记录、失败、部分交付或待复核运行并返回多页
+- **THEN** 缺决定的条目返回 null，同筛选范围的统计只计已保存决定的 Run，游标与 Case 关联不改写该口径

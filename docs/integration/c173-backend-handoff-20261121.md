@@ -1,17 +1,17 @@
 # 21 告警、事件和 Case 后端联调清单
 
-适用发布版本为 `c173-release-20261121-03`，业务代码提交为 `3fe265d07`。告警、事件和 Case 页面通过 21 的正式 HTTP 联调。
+适用发布版本为 `c173-release-20261121-04`。告警、事件和 Case 页面通过 21 的正式 HTTP 联调。
 
 ## 我方交付
 
 | 资料 | 地址或用法 |
 | --- | --- |
 | 正式 API | `http://192.168.1.21:18024/api/v1/socai2`。带 JSON 请求体时用 `Content-Type: application/json`。 |
-| 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) |
+| 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-04/contract/openapi.json) |
 | 前端设计稿 | 告警、事件和 Case 的可交互设计原型位于 `prototypes/security-pages-v2/`。[启动方式与预览入口](#前端页面设计稿) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
-| 验收回执 | 正式 HTTP 和 Swagger 同版，共 82 个操作。已完成隔离环境的真实告警联验，以及正式告警、事件和 Case 的读取核对。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) |
+| 验收回执 | 21 正式 HTTP 和 Swagger 同版，共 82 个操作。统一运行目录的计数和卡片标记已对照正式数据库，并用同版镜像完成隔离正例读回。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-04/release.json) · [正式读回](../operations/evidence/c173-escalation-release-20261121-04/README.md) |
 
 ## 前端页面设计稿
 
@@ -30,6 +30,7 @@ python3 prototypes/security-pages-v2/serve.py --port 4173
 | 告警列表及详情 | [打开告警](http://127.0.0.1:4173/#/alerts) |
 | 事件列表及详情 | [打开事件](http://127.0.0.1:4173/#/incidents) |
 | Case 列表与调查 | [打开 Case](http://127.0.0.1:4173/#/cases) |
+| 调查运行 | [打开调查运行](http://127.0.0.1:4173/#/investigations) |
 
 ## 页面怎么调用
 
@@ -49,6 +50,8 @@ python3 prototypes/security-pages-v2/serve.py --port 4173
 | Case 证据与探索 | Case 概览的 `evidence` 返回证据索引，发布索引用 `POST /cases/{case_id}/evidence-index`。`GET /cases/{case_id}/related-cases` 查关联案件。探索候选和基础图用 `GET /cases/{case_id}/exploration-candidates`、`GET /cases/{case_id}/exploration-base`，已保存视图用 `GET /cases/{case_id}/exploration` 读取、`PUT /cases/{case_id}/exploration` 保存。 |
 | 任务、轮次与原件 | 三类主体的任务详情都跟随 `status_url`，轮次跟随尝试中的 `run_url` 或统一目录的 `detail_url`，已保存结果跟随 `results[].url`。统一查询用 `GET /analysis-runs`，步骤和工件用服务返回的 `steps_url`、`artifacts_url`，原件用 `content_url`。 |
 | 日志湖取数 | `POST /lake/events/search` 按明确的来源、映射版本、带时区时间范围和可选对象查询。需要原文时跟随 `material_url`，保留查询返回的版本和时间参数。 |
+
+调查运行页一次调用 `GET /analysis-runs` 即可读取卡片与统计。运行记录取 `statistics.total_runs`，部分交付取 `statistics.by_delivery_state.partial`，关联 Case 取 `statistics.related_case_count`。「未升级调查」取 `statistics.not_escalated_count`，卡片按 `items[].escalation_decision` 显示。值为 `not_escalated` 时显示标记，为 `null` 时省略标记。[统计字段](run-directory-http.md#未升级调查) · [正式读回](../operations/evidence/c173-escalation-release-20261121-04/README.md)
 
 事件诊断和 Case 后轮使用相同请求结构。每次新操作生成新的 `operation_key`，同一请求重放沿用原键和原参数。
 

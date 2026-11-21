@@ -54,21 +54,24 @@ def case_relations(scope, tenant):
 
 
 async def statistics(store, filters):
-    scope = select(R.c.id, R.c.case_id, R.c.alert_id, R.c.incident_id, R.c.state, R.c.delivery_state).select_from(
-        run_source()).where(*filters).cte("filtered_runs")
+    scope = select(R.c.id, R.c.case_id, R.c.alert_id, R.c.incident_id, R.c.state, R.c.delivery_state,
+        R.c.escalation_decision).select_from(run_source()).where(*filters).cte("filtered_runs")
     by_state = {value.value: 0 for value in RunState}
     by_delivery = {value.value: 0 for value in Delivery}
-    counts = (await store.db.execute(select(scope.c.state, scope.c.delivery_state, func.count().label("count"))
+    counts = (await store.db.execute(select(scope.c.state, scope.c.delivery_state, func.count().label("count"),
+        func.count().filter(scope.c.escalation_decision == "not_escalated").label("not_escalated"))
         .group_by(scope.c.state, scope.c.delivery_state))).mappings()
-    total = 0
+    total = not_escalated = 0
     for row in counts:
         total += row["count"]
         by_state[row["state"]] += row["count"]
         by_delivery[row["delivery_state"]] += row["count"]
+        not_escalated += row["not_escalated"]
     relations = case_relations(scope, store.tenant_id)
     linked_runs, cases = (await store.db.execute(select(
         func.count(func.distinct(relations.c.run_id)), func.count(func.distinct(relations.c.case_id))))).one()
     return {"total_runs": total, "by_state": by_state, "by_delivery_state": by_delivery,
+            "not_escalated_count": not_escalated,
             "without_related_case_count": total - linked_runs, "related_case_count": cases}
 
 
@@ -132,7 +135,7 @@ class RunDirectoryService(BaselineService):
                     I, (I.c.id == R.c.incident_id) & (I.c.tenant_id == R.c.tenant_id)).outerjoin(
                     C, (C.c.id == R.c.case_id) & (C.c.tenant_id == R.c.tenant_id))
                 columns = [R.c[k] for k in ("id", "kind", "alert_id", "incident_id", "case_id", "state", "delivery_state",
-                           "requested_at", "started_at", "ended_at", "input_artifact_id")]
+                           "escalation_decision", "requested_at", "started_at", "ended_at", "input_artifact_id")]
                 rows = list((await store.db.execute(select(*columns, T.c.id.label("task_id"), T.c.intent,
                     func.coalesce(C.c.title, I.c.title, A.c.title).label("subject_title"))
                     .select_from(source).where(*filters).order_by(R.c.requested_at.desc(), R.c.id.desc()).limit(size + 1))).mappings())
@@ -141,7 +144,8 @@ class RunDirectoryService(BaselineService):
                 counts = await input_counts(store, rows)
                 results = await result_references(store, rows)
                 items = [{"run_id": row["id"], **subject(row), "subject_title": row["subject_title"], "run_kind": row["kind"],
-                          **{k: row[k] for k in ("task_id", "intent", "state", "delivery_state", "requested_at", "started_at", "ended_at")},
+                          **{k: row[k] for k in ("task_id", "intent", "state", "delivery_state", "escalation_decision",
+                                                 "requested_at", "started_at", "ended_at")},
                           "input_member_count": counts[row["id"]], "results": results[row["id"]]} for row in rows]
                 return {"items": items, "total": summary["total_runs"], "statistics": summary,
                         "next_cursor": make_cursor(fingerprint, rows[-1], "requested_at") if more else None,

@@ -524,6 +524,47 @@ async def run_checks(engine, record, only=None):
         return {"prior_run": str(good["run_id"]), "failed_run": str(failed["run_id"]),
             "partial_run": str(partial["run_id"]), "failed_judgment_adopted": False, "raw_preserved": True}
 
+    async def test_alert_persists_explicit_no_escalation():
+        scenarios = [
+            ("benign", .85, "stop", [], "not_escalated"),
+            ("false_positive", .84, "stop", [], None),
+            ("needs_review", .99, "stop", [], None),
+            ("benign", .99, "stop", ["Verify change approval"], None),
+            ("benign", .99, "length", [], None),
+        ]
+
+        class DecisionGateway(Gateway):
+            def __init__(self, verdict, confidence, finish_reason, recommendations):
+                super().__init__()
+                self.verdict = verdict
+                self.confidence = confidence
+                self.finish_reason = finish_reason
+                self.recommendations = recommendations
+
+            async def complete(self, body, timeout):
+                schema = body["response_format"]["json_schema"]["schema"]
+                branch = next(branch["properties"] for branch in schema["anyOf"]
+                              if branch["properties"]["verdict"]["enum"] == ["benign"])
+                evidence_id = branch["evidence_ids"]["items"]["enum"][0]
+                answer = {"verdict": self.verdict, "confidence": self.confidence,
+                          "rationale": "The supplied observation supports the synthetic assessment.",
+                          "evidence_ids": [evidence_id],
+                          "recommendations": [{"reason": reason, "source_ids": [evidence_id]}
+                                              for reason in self.recommendations]}
+                return {"choices": [{"finish_reason": self.finish_reason, "message": {"content": json.dumps(answer)}}],
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 60, "total_tokens": 160}}
+
+        for verdict, confidence, finish_reason, recommendations, decision in scenarios:
+            aid, _ = await fixture(background=False)
+            gateway = DecisionGateway(verdict, confidence, finish_reason, recommendations)
+            out = await service.execute_alert(T, aid, uuid4(), gateway=gateway)
+            run = (await rows(R, R.c.id == out["run_id"]))[0]
+            if finish_reason == "stop":
+                assert run["state"] == "completed", (verdict, run["stop_reason"])
+                assert (await rows(AS, AS.c.source_run_id == run["id"]))[0]["verdict"] == verdict
+            assert run["escalation_decision"] == decision, (verdict, confidence, finish_reason, run["stop_reason"])
+        return {"scenarios": len(scenarios)}
+
     checks = [v for k, v in locals().copy().items() if k.startswith("test_alert_")]
     for check in checks:
         if only and check.__name__ not in only:

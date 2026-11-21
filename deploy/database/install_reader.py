@@ -18,7 +18,8 @@ ENTRIES = {"initialize": "init_socai2_v1_2_reader.sql",
            "analysis-lifecycle": "analysis_lifecycle.sql", "analysis-ingress": "analysis_ingress_access.sql", "case-allocation": "case_allocation.sql",
            "fusion-support": "fusion_public_support_20261115.sql", "lake-alert-receipts": "lake_alert_receipts.sql",
            "lake-alert-deliveries": "lake_alert_deliveries.sql", "subject-risk": "subject_risk.sql",
-           "analysis-task-times": "analysis_task_times.sql", "business-verdict": "business_verdict.sql"}
+           "analysis-task-times": "analysis_task_times.sql", "business-verdict": "business_verdict.sql",
+           "run-escalation-decision": "run_escalation_decision.sql"}
 GRAPH_MIGRATION = "../../services/api/migrations/127_socai2_remove_unused_graph_table.sql"
 ANALYSIS_MIGRATION = "../../services/api/migrations/128_socai2_analysis_lifecycle.sql"
 CASE_MIGRATION = "../../services/api/migrations/129_socai2_case_allocation.sql"
@@ -27,12 +28,13 @@ LAKE_DELIVERY_MIGRATION = "../../services/api/migrations/131_socai2_lake_alert_d
 RISK_MIGRATION = "../../services/api/migrations/132_socai2_subject_risk.sql"
 TASK_TIMES_MIGRATION = "../../services/api/migrations/133_socai2_analysis_task_times.sql"
 VERDICT_MIGRATION = "../../services/api/migrations/134_socai2_business_verdict.sql"
+ESCALATION_MIGRATION = "../../services/api/migrations/135_socai2_run_escalation_decision.sql"
 
 
 def render(name, parents=()):
     """Inline repository-owned includes so local/SSH/container psql sees identical SQL."""
     increments = {GRAPH_MIGRATION, ANALYSIS_MIGRATION, CASE_MIGRATION, LAKE_MIGRATION,
-                  LAKE_DELIVERY_MIGRATION, RISK_MIGRATION, TASK_TIMES_MIGRATION, VERDICT_MIGRATION}
+                  LAKE_DELIVERY_MIGRATION, RISK_MIGRATION, TASK_TIMES_MIGRATION, VERDICT_MIGRATION, ESCALATION_MIGRATION}
     if (not re.fullmatch(r"[a-z0-9_]+\.sql", name) and name not in increments) or name in parents:
         raise ValueError("invalid_sql_include")
     lines = []
@@ -99,7 +101,7 @@ def execute(cfg, mode):
     if mode in {"initialize-current", "remove-unused-graph"} and "cleanup" not in cfg:
         raise ValueError("reader_cleanup_limits_required")
     if mode in {"initialize-current", "analysis-lifecycle", "case-allocation", "lake-alert-receipts", "lake-alert-deliveries",
-                "subject-risk", "analysis-task-times", "business-verdict"} and "analysis" not in cfg:
+                "subject-risk", "analysis-task-times", "business-verdict", "run-escalation-decision"} and "analysis" not in cfg:
         raise ValueError("analysis_migration_configuration_required")
     if mode in {"analysis-ingress", "fusion-support", "lake-alert-receipts", "lake-alert-deliveries"} and "analysis_ingress" not in cfg:
         raise ValueError("analysis_ingress_configuration_required")

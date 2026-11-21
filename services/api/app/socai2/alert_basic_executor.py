@@ -1,12 +1,13 @@
 """A: three bounded background queries and one model; no legacy side effects."""
 import asyncio
-from app.core.operational_logging import log_context
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
 from sqlalchemy import func, insert, null, select, update
 from sqlalchemy.exc import DBAPIError
+
+from app.core.operational_logging import log_context
 
 from . import ai_delivery_store
 from . import baseline_enrichment_sources as sources
@@ -168,8 +169,9 @@ class AlertBasicExecutor:
                     state="completed" if result else "failed", ended_at=now, output_artifact_id=response_id,
                     usage=recorded, error=error(rejection, now) if rejection and not result else null()))
             if result:
+                complete_answer = received["parse"]["state"] == "complete_json" and not received["parse"]["truncated"]
                 await self.service.finish(tenant, rid, result, execution_step_id=stage,
-                    alert_delivery_state=received["delivery"]["state"])
+                    alert_delivery_state=received["delivery"]["state"], alert_answer_complete=complete_answer)
             else:
                 await self.fail(tenant, rid, stage, rejection)
         except (Exception, asyncio.CancelledError) as exc:

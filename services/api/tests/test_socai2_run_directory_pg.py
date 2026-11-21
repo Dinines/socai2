@@ -88,6 +88,8 @@ async def run_checks(engine, record, only=None):
                 values = {"kind": {"alert": "alert_basic", "incident": "incident_diagnosis", "case": "baseline"}[kind],
                           kind + "_id": identity, "title": "Directory fixture Run", "purpose": "saved records test",
                           "trigger": "manual", "requested_at": at, "state": states[n], "delivery_state": deliveries[n]}
+                if n == 0:
+                    values.update(trigger="refresh", escalation_decision="not_escalated")
                 if kind == "case":
                     scope = (await store.db.execute(select(m.Cases.scope_revision).where(m.Cases.id == identity))).scalar_one()
                     values.update(scope_revision=scope, scope_kind="whole_case")
@@ -117,7 +119,7 @@ async def run_checks(engine, record, only=None):
             await add(store, R, id=run_ids[7], alert_id=alerts[0], kind="alert_basic", title="Time boundary", purpose="half open range",
                       trigger="manual", state="cancelled", ended_at=end, requested_at=end)
             await add(store, m.AlertAssessments, id=result_ids[0], alert_id=alerts[0], kind="triage", source_run_id=run_ids[0],
-                      verdict="needs_review", producer="synthetic.v1", actor={}, assessed_at=end, operation_key=str(uuid4()))
+                      verdict="benign", producer="synthetic.v1", actor={}, assessed_at=end, operation_key=str(uuid4()))
             await add(store, m.IncidentDiagnoses, id=result_ids[1], incident_id=incidents[0], source_run_id=run_ids[3],
                       revision=1, state="completed", input_artifact_id=artifact_ids[3], source_fingerprint="0" * 64,
                       producer="synthetic.v1", requested_at=at, generated_at=end, summary="Synthetic diagnosis")
@@ -203,7 +205,7 @@ async def run_checks(engine, record, only=None):
         expected = {"total_runs": 7, "by_state": {"pending_update": 1, "running": 0, "unknown": 2,
                     "completed": 3, "failed": 1, "cancelled": 0},
                     "by_delivery_state": {"none": 2, "partial": 1, "complete": 2, "unknown": 2},
-                    "without_related_case_count": 2, "related_case_count": 3}
+                    "not_escalated_count": 1, "without_related_case_count": 2, "related_case_count": 3}
         assert page["total"] == 7 and len(page["items"]) == 2 and page["statistics"] == expected, page
         cursor = page["next_cursor"]
         all_items = page["items"][:]
@@ -213,6 +215,8 @@ async def run_checks(engine, record, only=None):
             all_items += page["items"]
         assert [row["run_id"] for row in all_items] == sorted(run_ids[:7], reverse=True)
         rows = {row["run_id"]: row for row in all_items}
+        assert [row["run_id"] for row in all_items if row["escalation_decision"] == "not_escalated"] == [run_ids[0]]
+        assert all(row["escalation_decision"] is None for row in all_items if row["run_id"] != run_ids[0])
         assert [rows[rid]["input_member_count"] for rid in run_ids[:7]] == [1, 1, None, 1, 0, 1, None]
         assert len(rows[run_ids[5]]["results"]) == 2
         assert rows[run_ids[0]]["results"][0]["result_type"] == "alert_assessment"
@@ -298,12 +302,15 @@ async def run_checks(engine, record, only=None):
         incident = await read(subject_type="incident", subject_id=incidents[0])
         assert incident["total"] == 1 and incident["statistics"]["related_case_count"] == 3
         assert incident["statistics"]["without_related_case_count"] == 0
+        assert incident["statistics"]["not_escalated_count"] == 0
         alert = await read(subject_type="alert", subject_id=alerts[0])
         assert alert["total"] == 1 and alert["statistics"]["related_case_count"] == 2
+        assert alert["statistics"]["not_escalated_count"] == 1
         assert (await read(state="unknown"))["total"] == 2
         assert (await read(run_kind="baseline"))["total"] == 2
         empty = await read(subject_type="case", subject_id=uuid4())
         assert empty["total"] == 0 and empty["items"] == [] and empty["next_cursor"] is None
+        assert empty["statistics"]["not_escalated_count"] == 0
         assert all(n == 0 for n in empty["statistics"]["by_state"].values())
         boundary = await read(time_from=end, time_to=end + timedelta(seconds=1))
         assert [row["run_id"] for row in boundary["items"]] == [run_ids[7]]

@@ -51,11 +51,16 @@ def load_alert_profile(selection):
         raise ValueError("alert_profile_name_invalid")
     raw = Path(__file__).with_name(name).read_bytes()
     data = json.loads(raw)
-    if (not isinstance(data, dict) or set(data) != {"version", "render", "system_prompt", "output_validation"}
+    if (not isinstance(data, dict)
+            or set(data) - {"no_escalation_min_confidence"} != {"version", "render", "system_prompt", "output_validation"}
             or data["version"] != "socai2.alert-boundary.v1" or not isinstance(data["render"], dict)
             or not isinstance(data["system_prompt"], str) or not data["system_prompt"].strip()
             or data["output_validation"] != {"prose_alias_format": "namespaced_v1"}):
         raise ValueError("alert_profile_contract_invalid")
+    if "no_escalation_min_confidence" in data:
+        threshold = data["no_escalation_min_confidence"]
+        if type(threshold) not in {int, float} or not 0 < threshold <= 1:
+            raise ValueError("alert_profile_no_escalation_threshold_invalid")
     return IncidentProfile(data["version"], hashlib.sha256(raw).hexdigest(), raw)
 
 

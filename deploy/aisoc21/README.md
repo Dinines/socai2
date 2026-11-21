@@ -2,9 +2,9 @@
 
 ## 当前发布
 
-21 当前运行 `c173-release-20261121-03` 的 HTTP 18024、Swagger 18080、Fusion 和联合调度。业务接口共 82 个操作，正式 PostgreSQL 调查库为 35 表、565 列，ClickHouse 湖表为 62 列。4177 沿用已安装的 0.6.2/r9。
+21 当前运行 `c173-release-20261121-04` 的 HTTP 18024、Swagger 18080 与联合调度。业务接口共 82 个操作，正式 PostgreSQL 调查库为 35 表、566 列，ClickHouse 湖表为 62 列。Fusion 使用 `c173-release-20261121-03` 的实例，4177 为 0.6.2/r9。
 
-[C173 发布清单](c173-release-20261121-03/release.json) · [正式服务与库表读回](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md) · [后端联调交接清单](../../docs/integration/c173-backend-handoff-20261121.md)
+[C173 发布清单](c173-release-20261121-04/release.json) · [正式服务与库表读回](../../docs/operations/evidence/c173-escalation-release-20261121-04/README.md) · [后端联调交接清单](../../docs/integration/c173-backend-handoff-20261121.md)
 
 ## 2026-11-17 发布记录
 

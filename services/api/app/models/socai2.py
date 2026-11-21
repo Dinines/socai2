@@ -540,6 +540,7 @@ class Runs(Socai2Base):
     stop_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     stop_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     delivery_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'none'"))
+    escalation_decision: Mapped[str | None] = mapped_column(Text, nullable=True)
     limits: Mapped[object | None] = mapped_column(JSONB, nullable=True)
     row_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text('1'))
     __table_args__ = (
@@ -569,6 +570,9 @@ class Runs(Socai2Base):
         CheckConstraint('ended_at IS NULL OR started_at IS NULL OR ended_at>=started_at', name='runs_time_order'),
         CheckConstraint('(window_start IS NULL AND window_end IS NULL) OR (window_start IS NOT NULL AND window_end IS NOT NULL AND window_start<=window_end)', name='runs_window'),
         CheckConstraint('(operation_key IS NULL)=(request_hash IS NULL)', name='runs_request_pair'),
+        CheckConstraint("escalation_decision IS NULL OR (escalation_decision='not_escalated' AND kind='alert_basic' "
+                        "AND state='completed' AND delivery_state='complete' AND requested_by IS NULL)",
+                        name='runs_escalation_decision'),
         CheckConstraint('retry_of_run_id IS DISTINCT FROM id', name='runs_retry_self'),
         ForeignKeyConstraint(['tenant_id', 'alert_id'], ['socai2.alerts.tenant_id', 'socai2.alerts.id'], name='runs_alert_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),
         ForeignKeyConstraint(['tenant_id', 'incident_id'], ['socai2.incidents.tenant_id', 'socai2.incidents.id'], name='runs_incident_id_fk', ondelete='RESTRICT', deferrable=True, initially='DEFERRED'),

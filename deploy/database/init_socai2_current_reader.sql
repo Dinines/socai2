@@ -7,6 +7,7 @@
 \ir subject_risk.sql
 \ir analysis_task_times.sql
 \ir business_verdict.sql
+\ir run_escalation_decision.sql
 \if :{?analysis_ingress_role}
 \ir analysis_ingress_access.sql
 \ir lake_alert_receipts.sql

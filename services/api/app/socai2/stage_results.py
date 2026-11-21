@@ -221,7 +221,8 @@ class StageResultService(BaselineService):
         return run, target, source
 
     async def finish(self, tenant_id, run_id, output: AlertOutput | IncidentOutput, *, execution_step_id=None,
-                     validated_members=None, alert_delivery_state=None, incident_delivery_state=None):
+                     validated_members=None, alert_delivery_state=None, incident_delivery_state=None,
+                     alert_answer_complete=False):
         payload = output.model_dump(mode="json")
         if isinstance(output, IncidentOutput) and output.business_verdict is None:
             # Preserve the publication hash used by saved pre-verdict replies.
@@ -317,6 +318,15 @@ class StageResultService(BaselineService):
                     summary=output.summary, diagnosis=diagnosis, open_questions=payload["open_questions"], generated_at=now,
                     business_verdict=output.business_verdict))
             adopted = fresh and not newer
+            escalation_decision = None
+            if (is_alert and adopted and run["executor_version"] == ALERT_EXECUTOR_VERSION
+                    and run["requested_by"] is None and execution_step_id is not None
+                    and alert_delivery_state == "complete" and alert_answer_complete
+                    and output.verdict in {"benign", "false_positive"} and not output.recommendations):
+                from .runtime_policy import execution_policy
+                threshold = execution_policy("alert_io").alert_io.config.get("no_escalation_min_confidence")
+                if threshold is not None and output.confidence is not None and output.confidence >= threshold:
+                    escalation_decision = "not_escalated"
             if adopted:
                 values = {pointer: result_id}
                 if is_alert:
@@ -336,6 +346,7 @@ class StageResultService(BaselineService):
             await artifact(store, run, receipt_id, "source_snapshot", {"output_hash": digest(payload),
                 "output": payload, "outcome": outcome, **({"delivery_assessment": delivery} if not is_alert else {})}, now, refs)
             await store.db.execute(update(R).where(*store.where(R, R.c.id == run_id)).values(state="completed", ended_at=now,
+                escalation_decision=escalation_decision,
                 stop_reason="stage_output_saved", delivery_state=(alert_delivery_state or "partial") if is_alert else delivery["state"], row_version=R.c.row_version + 1))
             if execution_step_id is not None:
                 await store.db.execute(update(steps).where(*store.where(steps, steps.c.id == execution_step_id)).values(

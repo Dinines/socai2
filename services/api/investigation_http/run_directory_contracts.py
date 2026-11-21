@@ -34,6 +34,7 @@ class RunDirectoryItem(RecordView):
     task_id: UUID | None = Field(description="经真实attempt关联的任务ID；历史无关联为null，不根据trigger猜测。")
     state: RunState = Field(description="Run执行状态；unknown保持结果未知，不自动转为成功或失败。")
     delivery_state: Delivery = Field(description="交付完整性：none无、partial部分、complete完整、unknown未知；独立于执行状态。")
+    escalation_decision: Literal["not_escalated"] | None = Field(description="本轮已保存的不升级决定；无该决定时为null。")
     requested_at: datetime | None = Field(description="Run记录的请求时间；用于筛选和倒序分页，不取任务submitted_at。")
     started_at: datetime | None = Field(description="Run实际开始时间；未记录为null。")
     ended_at: datetime | None = Field(description="Run结束时间；未记录/unknown可为null，不用任务结束时间代替。")
@@ -46,6 +47,7 @@ class RunDirectoryStatistics(RecordView):
     total_runs: int = Field(ge=0, description="全部筛选结果的Run数，与分页total一致。")
     by_state: dict[RunState, int] = Field(description="全部筛选结果按Run状态计数；未出现的枚举为0。")
     by_delivery_state: dict[Delivery, int] = Field(description="全部筛选结果按交付状态计数；未出现的枚举为0。")
+    not_escalated_count: int = Field(ge=0, description="全部筛选结果中已保存不升级决定的Run数，与当前Case关联独立。")
     without_related_case_count: int = Field(ge=0, description="当前没有实际Case关联的Run数；不计候选关联。")
     related_case_count: int = Field(ge=0, description="全部筛选结果实际关联的不同Case数；多路径及多Run去重。")
 

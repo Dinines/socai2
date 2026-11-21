@@ -1,8 +1,6 @@
 # 统一分析记录查询接口
 
-2026-11-15更新。`GET /api/v1/socai2/analysis-runs`已完成本地实现和真实数据库验证，候选OpenAPI已生成。**本地常驻服务和21尚未发布此接口，正式Swagger仍为原71项操作。** 完整change验收后统一发布；候选代码80项操作。
-
-11-15[告警自动分诊查询联验](alert-auto-http.md)已完成，候选移除旧E36；原批OpenAPI/验收计数保留历史时点，当前候选见[80操作合同](../operations/evidence/alert-auto-http-20261115-01/candidate-openapi.json)。
+21 正式服务已提供 `GET /api/v1/socai2/analysis-runs`。以[同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-04/contract/openapi.json)为准。
 
 接口属于独立对外HTTP服务，通过只读用例读取调查模块保存的数据。它不受理任务、不启动调查、不调用模型；任务执行、调度和业务表由调查模块负责。此项为[OpenSpec任务2.7](../../openspec/changes/schedule-streaming-investigation-updates/tasks.md)中的R1。
 
@@ -64,9 +62,22 @@ Case Run关联自身；告警沿case_alerts；事件取case_incidents显式关�
 
 只有已存在Run的分析进入本目录；任务已受理但尚未创建Run时不造一行记录。每页与统计使用同一只读快照，跨HTTP分页不承诺永久冻结；变更筛选需重新取第一页。
 
+## 未升级调查
+
+从 `c173-release-20261121-04` 起，正式接口已提供「未升级调查」字段。数据库使用迁移 135。
+
+| 页面位置 | 返回字段 | 呈现方式 |
+| --- | --- | --- |
+| 调查运行顶部「未升级调查」 | `statistics.not_escalated_count` | 当前查询全部筛选范围内，保存了明确不升级决定的 Run 数。无匹配时为 0，翻页时沿用相同筛选范围。 |
+| 调查运行卡片「未升级调查」 | `items[].escalation_decision` | 值为 `"not_escalated"` 时展示。无该决定时为 `null`，包括增量前的历史记录。 |
+
+不升级决定与本轮自动分诊结果同事务保存。原答完整且正常结束、分诊结果已采用、判定为正常行为或误报、无核实建议且置信度达到 profile 门槛时，程序给出明确决定。初始门槛为 0.85。现有 `without_related_case_count` 反映当前没有实际 Case 关联的运行数。
+
+正式 API 已与 PostgreSQL 核对计数和卡片标记。同一发布镜像在隔离库确认了明确不升级的正例、空标记及分页统计。[正式读回](../operations/evidence/c173-escalation-release-20261121-04/README.md)
+
 ## 请求和响应示例
 
-发布后可调用：
+调用示例
 
 ```http
 GET /api/v1/socai2/analysis-runs?subject_type=alert&intent=initial&limit=1
@@ -80,6 +91,4 @@ GET /api/v1/socai2/analysis-runs?subject_type=alert&intent=initial&limit=1
 
 需同一目标数据库已应用调查侧迁移128，并使用配套ORM；不检测缺表后回退旧版。读取runs、analysis_attempts、analysis_tasks及主体、成员、输入工件和结果表，不创建/维护它们。迁移保证非空(tenant_id,run_id)只关联一个attempt；同任务重试的新Run各自保留，真实无关联的历史Run返回null。
 
-[本轮回执](../operations/evidence/run-directory-http-20261114-01/README.md)：真实核心受理→尝试→合成Run和输入保存→绑定→结束，再由HTTP读回；32次ASGI请求（其中1次503使用依赖替身），10次基础查询，15类测试记录读取前后内容摘要一致。覆盖混合分页、意图和状态筛选、重试关联、历史null、无Run任务、冻结输入数量和实际结果URL。没有真实模型或工具调用，未部署、提交推送。
-
-[任务列表与详情](analysis-tasks-http.md)随后也已完成本地验收，待统一发布；异步提交、调度及整个2.7仍未完成，按原依赖顺序推进。
+[2026-11-14 历史回执](../operations/evidence/run-directory-http-20261114-01/README.md)覆盖当时的核心任务受理、运行保存、分页筛选、历史空值及结果跳转。最新联调版本和验收范围见[后端交接清单](c173-backend-handoff-20261121.md)。

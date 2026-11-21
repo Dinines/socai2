@@ -1,6 +1,6 @@
 # 告警、事件与 Case 前后端交接
 
-**正式 21 已于 2026-11-21 切到 `c173-release-20261121-03`。** HTTP 18024 和 Swagger 18080 共 82 个业务操作，原告警字段合同沿用。调查库、湖查询、联合调度及 Fusion 的正式读回见[本批回执](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+**21 正式服务已更新到 `c173-release-20261121-04`。** HTTP 18024 和 Swagger 18080 共 82 个业务操作，调查运行目录已提供「未升级调查」计数与卡片标记。[正式验收](docs/operations/evidence/c173-escalation-release-20261121-04/README.md)
 
 产品端接入 C173 时，从交接清单查看正式接口、页面跳转参数、调用示例、联调检查项，以及业务后端需要回填的依赖。[C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md)
 
@@ -100,11 +100,11 @@ Content-Type: application/json
 | 产品功能与规则确认 | [逐页功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)：目的、操作结果、后端实现状态与接口；[规则记录：D01–D07 全部已确认](docs/design/investigation-product-decisions.md)；[产品需求](docs/design/alert-incident-case-product-requirements.md) |
 | 功能对应字段及跳转 | [F01–F28 字段／J01–J14 跳转附录](deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
 | 字段到存储、关联及读取 | [服务端数据交接](docs/investigation/socai2-page-data-handoff-20261106.md) |
-| 当前调查表与写入边界 | 21 的正式 `aisoc.socai2` 在应用增量 130–134 后核对为 35 表、565 列。产品从正式 HTTP 调用。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
+| 当前调查表与写入边界 | 正式 `aisoc.socai2` 应用增量 130–135，实际为 35 张表、566 列。[正式验收](docs/operations/evidence/c173-escalation-release-20261121-04/README.md) |
 | HTTP字段审计来源 | [基于原三份资料的核对结论](deliverables/investigation-validation-20261106/http-handoff-audit/README.md)：先按告警22/事件15/调查88项，原43操作/522字段已审，Case管理增加4操作/10字段，前批告警/事件管理增加6操作/8字段，前批列表封套增加2字段，前批新增3个CSV操作，前批新增E57归并统计，前批E58/E59普通评论、本批E60–E62附件引用；该历史批次为71操作，原JSON有542个固定字段出现位置，E57新增12个、评论新增22个、附件引用新增37个、采用新增42个、故事查询新增13个、候选查询新增35个、保存恢复新增22个、告警相似复核新增27个、同主机近期查询新增12个（合计764）与35组既有动态说明；新graph/view_state展示JSON见E67–E69指南，CSV另说明104个允许列；字段说明已合入当前Swagger |
-| HTTP逐项对接与在线文档 | 正式 API 18024 与 Swagger 18080 使用同版 82 个操作。[C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md) · [正式 Swagger](http://192.168.1.21:18080/) · [当前发布回执](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
+| HTTP逐项对接与在线文档 | 正式 API 18024 与 Swagger 18080 使用同版 82 个操作。[C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md) · [正式 Swagger](http://192.168.1.21:18080/) · [当前发布回执](docs/operations/evidence/c173-escalation-release-20261121-04/README.md) |
 | HTTP功能验证与后续实施 | [本机路由/真实隔离库验证](openspec/changes/complete-socai2-investigation-chain/http-functional-validation-20261112.md)：31项检查、43操作回执，模型为替身，真实质量未核销；[未实现功能计划](docs/investigation/http-implementation-plan-20261112.md)。[统一独立入口验收](openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已完成本机/21 TCP Case/H与SQL读回，详见下表 |
-| JSON 与 HTTP 合同 | HTTP 请求和响应以本版 OpenAPI 为准。数据库与原件可以查阅既有 JSON Schema。[正式 OpenAPI 下载](http://192.168.1.21:18080/handoff/openapi.json) · [同版仓库快照](deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) · [原件 JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json) |
+| JSON 与 HTTP 合同 | HTTP 请求和响应以本版 OpenAPI 为准。数据库与原件可以查阅既有 JSON Schema。[正式 OpenAPI 下载](http://192.168.1.21:18080/handoff/openapi.json) · [同版仓库快照](deploy/aisoc21/c173-release-20261121-04/contract/openapi.json) · [原件 JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json) |
 | 对外与内部接口边界 | [架构说明](docs/design/investigation-http-boundary.md)：列表/详情和显式业务提交属于独立对外HTTP，调查步骤/组件调用单独维护。当前提交合同为异步diagnose/investigations；旧analyze及prepare/start外部入口已退役，内部能力按自身归属保留 |
 | 有值、空值与原件 | [字段取数样例](deliverables/investigation-validation-20261106/page-field-samples.md)、[运行记录及离线材料](deliverables/investigation-validation-20261106/README.md) |
 | 程序流程和模型职责 | [执行账本](docs/investigation/current-execution-ledger.md)、[每个模型环节的输入输出](docs/investigation/model-input-output-current-20261109.md) |
@@ -114,7 +114,7 @@ Content-Type: application/json
 
 ## 2 当前运行环境
 
-21 当前运行 `c173-release-20261121-03`，包括 HTTP 18024、Swagger 18080、Fusion 和联合调度。业务路径前缀为 `/api/v1/socai2`。正式调查库为 `aisoc.socai2`，湖读取来自 ClickHouse。4177 沿用 0.6.2/r9 本机查阅入口。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)
+21 当前 HTTP 18024、Swagger 18080 与联合调度运行 `c173-release-20261121-04`。业务路径前缀为 `/api/v1/socai2`。正式调查库为 `aisoc.socai2`，Fusion 和 4177 分别使用当前配置。[正式读回](docs/operations/evidence/c173-escalation-release-20261121-04/README.md)
 
 ### 2026-11-17 环境记录
 

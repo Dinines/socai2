@@ -1,11 +1,11 @@
 # 当前调查数据库入口
 
-2026-11-21，21 正式 `aisoc.socai2` 已原位应用 130–134，实际为 **35 张表、565 列**。现有 HTTP 读写和调度继续使用同一正式库。正式湖表由 005 升至 62 列。[正式读回](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+2026-11-21，21 正式 `aisoc.socai2` 已原位应用 130–135，实际为 **35 张表、566 列**。正式湖表沿 005 为 62 列。[正式读回](../../docs/operations/evidence/c173-escalation-release-20261121-04/README.md)
 
 128新增analysis_tasks/attempts/subject_state，129增加Case分配字段及排除表，规格见[存储设计](../../openspec/changes/schedule-streaming-investigation-updates/storage-and-runtime-design-20261114.md)。独立候选socai2_streaming_20261115及本机v12_upgrade_dev已有各自32/521验证；本机其他旧库本轮未操作。资产、用户和租户沿业务后端基础数据。
-## 正式增量 130–134
+## 正式增量 130–135
 
-升级已有库时，通过 `install_reader.py <子命令> --profile <选定配置>` 应用缺少的增量。21 的发布已应用并读回以下五步。
+升级已有库时，通过 `install_reader.py <子命令> --profile <选定配置>` 应用缺少的增量。21 的发布已应用并读回以下六步。
 
 | 增量 | 安装子命令 | 用途和脚本 |
 | --- | --- | --- |
@@ -14,6 +14,7 @@
 | 132 | `subject-risk` | [事件与 Case 风险与人工优先级](subject_risk.sql) |
 | 133 | `analysis-task-times` | [任务与尝试入队及时间字段](analysis_task_times.sql) |
 | 134 | `business-verdict` | [事件诊断与 Case 结果业务判定](business_verdict.sql) |
+| 135 | `run-escalation-decision` | [调查运行不升级决定](run_escalation_decision.sql) |
 
 ## 任务生命周期增量128
 
@@ -54,7 +55,7 @@ statement_timeout_seconds = 30
 
 ## 核验与实际交付
 
-使用`install_reader.py verify --profile <选定配置>`；按实际迁移账本核对基线及已应用增量的计数，并核reader实际读权限。旧`install_aisoc21_v1.py verify`及冻结V1自检只适用于未清理基线，不能用来否定已完成增量的当前库。
+使用 `install_reader.py verify --profile <选定配置>` 按各环境的增量账本核基线、计数及 reader 读取。旧 `install_aisoc21_v1.py verify` 及冻结 V1 自检适用于未清理基线。
 
 当前reader公共查找包含`assets`、`users`及`aisoc_kb_documents`的SELECT。Case来源验收发现候选reader缺知识表读取，已通过同一[公共查找安装片段](reader_public_lookups_20261107.sql)补齐并同步verify；新装/升级继续复用此片段。该回执只证明当时候选读接线；正式当前连接与结构见本轮发布读回；无新表/业务字段/RLS或写权变化，见[读接线回执](../../docs/operations/evidence/streaming-case-20261115-01/knowledge-reader-access-01.json)。
 
@@ -67,3 +68,7 @@ statement_timeout_seconds = 30
 [支撑SQL](fusion_public_support_20261115.sql)引用053/102会话部分/110的现有表定义并记源摘要，保留原迁移；不执行102对旧`public.alerts`的扩展，不创建旧告警库或登记全平台迁移已完成，不修改socai2的32表521列。`[analysis_ingress]`沿现有`role`、`lock_timeout_seconds`、`statement_timeout_seconds`三项必填，角色需普通读写身份；owner、reader及目标库沿原profile。三表仅授予所选入口和reader必要权限；reader另获public.connectors只读以核对实际来源身份。最终脚本不改变其他既有角色授权。
 
 21候选实际安装及普通账号回滚写读记录在[本轮入站证据](../../docs/operations/evidence/streaming-ingress-20261115-01/README.md)。此安装不启模型或投消息；当前r4已分阶段发布，新批完整链验收与整个change结束审计分别跟进。
+
+## 未升级调查 135
+
+`socai2.runs.escalation_decision` 是可空文本列。数据库约束允许完整结束的自动告警分诊保存 `not_escalated`。已有记录保持空值。两个 current 新装入口复用本增量。升级用 `install_reader.py run-escalation-decision --profile <显式配置>`，再执行 `verify` 核对同一数据库。[迁移入口](run_escalation_decision.sql) · [接口合同](../../docs/integration/run-directory-http.md#未升级调查)
