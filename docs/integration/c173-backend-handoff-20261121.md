@@ -8,9 +8,28 @@
 | --- | --- |
 | 正式 API | `http://192.168.1.21:18024/api/v1/socai2`。带 JSON 请求体时用 `Content-Type: application/json`。 |
 | 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) |
+| 前端设计稿 | 告警、事件和 Case 的可交互设计原型位于 `prototypes/security-pages-v2/`。[启动方式与预览入口](#前端页面设计稿) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
 | 验收回执 | 正式 HTTP 和 Swagger 同版，共 82 个操作。已完成隔离环境的真实告警联验，以及正式告警、事件和 Case 的读取核对。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) |
+
+## 前端页面设计稿
+
+设计稿入口是仓库中的 `prototypes/security-pages-v2/index.html`。在 SpiritHub 仓库中对应 `server/prototypes/security-pages-v2/index.html`。[原型入口文件](../../prototypes/security-pages-v2/index.html) · [产品设计说明](../design/alert-incident-case-product-requirements.md)
+
+在自己的 `socai2` 仓库根目录运行以下命令。从 SpiritHub 检出时先进入 `server/`。
+
+```sh
+python3 prototypes/security-pages-v2/serve.py --port 4173
+```
+
+启动后用本机浏览器打开页面。预览用于查看布局和交互，正式数据联调使用上面的 21 HTTP 地址。[预览使用说明](test-page-4173.md#启动和入口)
+
+| 设计页 | 本机预览 |
+| --- | --- |
+| 告警列表及详情 | [打开告警](http://127.0.0.1:4173/#/alerts) |
+| 事件列表及详情 | [打开事件](http://127.0.0.1:4173/#/incidents) |
+| Case 列表与调查 | [打开 Case](http://127.0.0.1:4173/#/cases) |
 
 ## 页面怎么调用
 
