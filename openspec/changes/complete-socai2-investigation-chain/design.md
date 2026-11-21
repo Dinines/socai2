@@ -155,6 +155,14 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 
 当前不开展冗余可用性开发、压力/故障/恢复矩阵或新测试平台，已有保护保留，只有本次修改实际触及或正常流程被具体故障阻断才定向检查。规划不恢复消费者、不扩大额度；未验范围和质量结论继续如实保留。
 
+### 21 停用 UEBA 与 Kafka 退役顺序
+
+负责人要求停用 UEBA，并讨论去掉我方 Kafka。已读回 C173 正式 Fusion 的 `ueba_fusion_enabled=false`，当前 Kafka 仍承担新告警进入 Fusion。SpiritHub 转发器把 Redpanda 中已清洗的 OCSF 日志转入我方 Kafka。正式业务 HTTP 提供告警读写管理，Fusion 的内部 `/process` 仍依赖 Kafka 发布处理结果。
+
+21 的 `socai2-ueba-1` 已停用。运行配置和回退信息已保存，正式告警、事件、Case 查询及 Fusion 就绪状态已读回。[停用回执](../../../docs/operations/evidence/c173-ueba-disabled-20261121-01/README.md)
+
+若采用上游直写我方 Kafka 的接入方案，先用独立 Topic 核对消息和投递，再以源端分界收口 Vector，由直写接续分界后的数据。按稳定 `metadata.uid` 核对切换窗口是否漏发或重复。正式直写待联验。[双方交接](../../../docs/integration/c173-backend-handoff-20261121.md#kafka-日志接入)
+
 ## Risks / Trade-offs
 
 程序校验接受、有效保存和模型正文质量分别判断；不能通过改写原答、补造授权或把查空当安全来收口。历史失败、unknown 和原始引用保留；没有独立真值不报告准确率。当前手动链、实际知识消费和自动处理各自有未验范围，按原任务继续跟踪。

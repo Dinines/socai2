@@ -10,7 +10,7 @@
 | 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
-| 已验证的版本 | 正式 HTTP 与 Swagger 共 82 个操作，部署后通过 17 项读回。同一条真实告警在隔离环境走通接收、分诊、诊断、Case 首轮与结果读回。11 月 21 日正式核验时三个业务列表的空态与 PostgreSQL 一致。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) |
+| 已验证的版本 | 正式 HTTP 与 Swagger 共 82 个操作，部署后通过 17 项读回。同一条真实告警在隔离环境走通接收、分诊、诊断、Case 首轮与结果读回。11 月 21 日正式核验时三个业务列表的空态与 PostgreSQL 一致。独立 UEBA 停用后，Fusion 和三类业务列表也已读回。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) · [UEBA 停用读回](../operations/evidence/c173-ueba-disabled-20261121-01/README.md) |
 
 ## 页面怎么调用
 
@@ -96,7 +96,11 @@
 
 ## Kafka 日志接入
 
-沿既定直写约定，SpiritHub 作为生产方发往我方 Kafka，接收端地址、Topic 和 OCSF 1.9.0 消息约定由我方提供。请对方确认发送服务所在环境、可开始联调的时间、事件标识 `metadata.uid` 与 Kafka Key 如何生成及重试，以及首批发送范围和过渡转发的切换点。用一条脱敏 OCSF 结构样例核对字段和时间单位。页面和详情联调直接使用上面的正式 HTTP，Kafka 用于新日志入站联验。
+现有 Vector 从 SpiritHub 的 Redpanda 转发清洗日志，正式直写待双方联验。按上游直写我方 Kafka 的接入方案，我方提供接收地址、Topic 和 OCSF 1.9.0 消息约定。页面和详情联调使用上面的正式 HTTP。
+
+请业务后端确认发送程序的部署环境及联调时间，提供一条脱敏 OCSF 样例，说明时间字段与单位，并确认 `metadata.uid` 和 Kafka Key 的生成规则。两条路径发送同一记录及发送重试时，使用稳定的事件身份。还需确认首批范围、切换时间和可核对的源端分界，例如各分区的截止位置。
+
+直写先在独立测试 Topic 联验，核对投递回执的 Topic、分区、offset 和对应 `metadata.uid`。正式切换时，Vector 送达分界前已接收的记录后停用，直写从分界后的记录开始。双方按 `metadata.uid` 对照切换窗口，确认无漏发和重复。同一条日志同时进 Redpanda 与我方正式 Topic 时，两条路径会各写一次。
 
 Kafka 连通按 21 正式 SSL 监听的证书信任配置校验。[21 证书信任核验](../operations/deployment-datastores.md#21-正式证书信任核验)
 

@@ -60,6 +60,8 @@
 
 ## 已完成的限定范围
 
+- [x] 21 停用 UEBA。按[本步设计](design.md#21-停用-ueba-与-kafka-退役顺序)核对运行开关，停用单一 UEBA 实例后通过 Fusion 与告警、事件、Case 读回。[停用回执](../../../docs/operations/evidence/c173-ueba-disabled-20261121-01/README.md)
+
 以下仅保留交付内容；原始任务描述、调用数量、历史失败和对应回执集中在[整理前任务记录](../../../docs/handoff/history/2026-11-11-local-cleanup/investigation-change/tasks.md)，没有重新执行或扩大验收结论。
 
 - [x] 1.1 归并后台、设计和预览到普通项目目录，保留迁移与备份记录。
