@@ -1,6 +1,6 @@
-# C173 后端联调交接清单
+# 21 告警、事件和 Case 后端联调清单
 
-适用版本为 21 上的 `c173-release-20261121-03`，代码版本为 `3fe265d07`。本期接入告警、事件与 Case 调查的业务页面。现用业务前缀为 `/api/v1/socai2`，由可访问 21 的内网环境调用。
+适用发布版本为 `c173-release-20261121-03`，业务代码提交为 `3fe265d07`。告警、事件和 Case 页面通过 21 的正式 HTTP 联调。
 
 ## 我方交付
 
@@ -10,7 +10,7 @@
 | 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
-| 已验证的版本 | 正式 HTTP 与 Swagger 共 82 个操作，部署后通过 17 项读回。同一条真实告警在隔离环境走通接收、分诊、诊断、Case 首轮与结果读回。11 月 21 日正式核验时三个业务列表的空态与 PostgreSQL 一致。UEBA 已恢复，Fusion 和 UEBA 的 Kafka 连接已切到同机内部监听，三类业务列表读回通过。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) · [Kafka 切换回执](../operations/evidence/c173-kafka-plaintext-20261121-01/README.md) |
+| 验收回执 | 正式 HTTP 和 Swagger 同版，共 82 个操作。已完成隔离环境的真实告警联验，以及正式告警、事件和 Case 的读取核对。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) |
 
 ## 页面怎么调用
 
@@ -87,22 +87,27 @@
 
 | 待回填 | 请业务后端确认 |
 | --- | --- |
-| 人员目录及人员 ID | 负责人选择用的搜索入口及按 ID 查询的入口。给出实际联调地址、筛选和分页，或人员表/视图及字段。至少说明稳定 UUID、用户名或显示名、可分配状态、业务范围。确认平台人员 ID 到 `owner_id` 的映射，以及查不到或停用时的处理。 |
-| 资产来源及详情 | 给出现有接口的环境、查询和详情路径，或数据库、schema、资产表/视图全名及字段字典。标明主键如何对应 `asset_id`，以及主机名、FQDN 和 IP 列表从哪里读。给出资产名称、类型、标签、重要等级、系统及版本的来源。如标签单独存，给关联字段。按资产 ID 提供详情接口或页面入口，并说明同 IP 多匹配、无匹配时的口径。 |
+| 人员 | 确认负责人搜索和按 ID 查询的入口，给出可写入 `owner_id` 的人员 UUID、显示名和可分配状态。 |
+| 资产 | 确认资产查询和详情入口，给出 `asset_id` 对应的主键、主机名/FQDN、IP、标签和页面所需详情字段的映射。说明无匹配、多匹配的返回。 |
+| 联调数据 | 确认实际联调地址和对应租户或组织。给一组脱敏样例，覆盖可分配人员、资产命中及查无匹配。若实际使用库表或视图供数，请给数据库地址、库名、schema、表或视图名和字段映射。 |
 
-调查侧默认按 `public.users` 的 `tenant_id`、`id` 读 `username`。资产默认在同一租户的 `public.assets` 匹配，主机名或 FQDN 忽略大小写，IP 精确匹配。SpiritHub 的现有人员列表及详情为 `GET /api/v1/admin/users` 和 `GET /api/v1/admin/users/{user_id}`，资产列表及详情为 `GET /api/v1/assets` 和 `GET /api/v1/assets/{asset_id}`。请确认实际复用的数据入口、字段映射和环境。[SpiritHub OpenAPI](https://github.com/wangjuelong26/SpiritHub/blob/14053d46bb362e5c45441d87699c0e3c44f84a45/schemas/platform-api.v1.json)
-
-两项一起确认联调租户或组织、正式与测试入口，以及一组脱敏样例，覆盖一个可分配人员、一条可匹配资产的告警和一次查无匹配。联调验证负责人写回后能读出显示名，资产匹配后能按 ID 打开同一资产详情。
+SpiritHub 已有人员列表及详情 `GET /api/v1/admin/users` 和 `GET /api/v1/admin/users/{user_id}`，以及资产列表及详情 `GET /api/v1/assets` 和 `GET /api/v1/assets/{asset_id}`。请确认采用的现有入口。[SpiritHub OpenAPI](https://github.com/wangjuelong26/SpiritHub/blob/14053d46bb362e5c45441d87699c0e3c44f84a45/schemas/platform-api.v1.json)
 
 ## Kafka 日志接入
 
-现有 Vector 从 SpiritHub 的 Redpanda 转发清洗日志，正式直写待双方联验。按上游直写我方 Kafka 的接入方案，我方提供接收地址、Topic 和 OCSF 1.9.0 消息约定。页面和详情联调使用上面的正式 HTTP。
+当前由 Vector 从 SpiritHub 的 Redpanda 转发。上游直写待联验。发送服务位于 21 且接入同机 Kafka Docker 网络时，可以使用下面的已核对配置。其他部署环境按发送端所在位置核实可达入口。[21 Kafka 内部连接](../operations/deployment-datastores.md#21-kafka-内部连接)
 
-请业务后端确认发送程序的部署环境及联调时间，提供一条脱敏 OCSF 样例，说明时间字段与单位，并确认 `metadata.uid` 和 Kafka Key 的生成规则。两条路径发送同一记录及发送重试时，使用稳定的事件身份。还需确认首批范围、切换时间和可核对的源端分界，例如各分区的截止位置。
+| 项目 | 21 同机接入 |
+| --- | --- |
+| Docker 网络 | `sting-infra21_default` |
+| Broker | `kafka:29092` |
+| 协议 | `PLAINTEXT` |
+| 正式接收 Topic | `socai2.spirithub.events-ocsf-v1` |
+| 消息格式 | OCSF 1.9.0，每条消息承载一个 JSON 对象 |
 
-直写先在独立测试 Topic 联验，核对投递回执的 Topic、分区、offset 和对应 `metadata.uid`。正式切换时，Vector 送达分界前已接收的记录后停用，直写从分界后的记录开始。双方按 `metadata.uid` 对照切换窗口，确认无漏发和重复。同一条日志同时进 Redpanda 与我方正式 Topic 时，两条路径会各写一次。
+请后端确认发送服务所在环境及联调时间，提供一条脱敏 OCSF 样例、时间字段和单位、`metadata.uid` 与 Kafka Key 的规则。重试发送同一记录时保持 ID 和 Key。正式切换前确认首批范围和源端分界。
 
-21 上的 Fusion 和 UEBA 使用同机 Docker 网络内的明文监听。上游直写联验按发送端所在网络确认可达的 Kafka 接收地址。[21 Kafka 内部连接](../operations/deployment-datastores.md#21-kafka-内部连接)
+我方提供独立测试 Topic。试发后对照投递回执的 Topic、分区、offset 和 `metadata.uid` 核验接收。正式切换时，等 Vector 确认分界前的记录已送达后停用，直写从分界后的记录开始。双方按 `metadata.uid` 核对切换窗口的漏发和重复。
 
 调查报告、步骤记录和已保存的模型回执沿 Run 的步骤及工件接口读取。按已确认范围，附件、登录、来源与执行次数统计移出本期，AI 聊天、人工定向分析和真实响应审批执行继续暂缓。
 
