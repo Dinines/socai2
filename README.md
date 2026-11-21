@@ -2,9 +2,9 @@
 
 本仓库提供告警分诊、事件诊断、Case 调查，以及对应的管理、保存和查询服务。前后端从[交接指南](FRONTEND_BACKEND_HANDOFF.md)开始，通过 HTTP 对接。
 
-21当前正式API为 **[18024](http://192.168.1.21:18024)**，业务路径前缀`/api/v1/socai2`；[Swagger 18080](http://192.168.1.21:18080/)按告警、事件、调查展示80个业务操作，内部可信、无登录或Token要求。[4177执行页面](http://127.0.0.1:4177/viewer/)经本机SSH隧道读取21业务接口和测试账本。
+21 当前使用 `c173-release-20261121-03`。正式 API 为 `http://192.168.1.21:18024/api/v1/socai2`，Swagger 与 API 共 82 个业务操作。产品联调从 C173 清单开始。[C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md) · [在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI 下载](http://192.168.1.21:18080/handoff/openapi.json)
 
-2026-11-17已按本轮授权发布processing-20261117-r1、完整HTTP acceptance-http-20261117-r1、同版Swagger及4177 r8（0.6.1），正式aisoc保持32表521列。[完整服务发布](docs/operations/evidence/acceptance-release-20261117-01/README.md)后，[新两段正常流程](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)以2条告警/3份上下文形成同一事件、同一Case两轮，冻结成员1→2；7任务、6Run、48步骤、142工件及477次HTTP成功回执已核。8次真实模型均stop，5项质量问题保留。随后[4b发布](docs/operations/evidence/workbench-4b-release-20261117-01/README.md)通过报告精确Case/Run跳转、紫色逐轮来源及原件读回和7组限定独审；整个change仍未完成。
+2026-11-17 历史验收发布processing-20261117-r1、完整HTTP acceptance-http-20261117-r1、同版Swagger及4177 r8（0.6.1），正式aisoc保持32表521列。[完整服务发布](docs/operations/evidence/acceptance-release-20261117-01/README.md)后，[新两段正常流程](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)以2条告警/3份上下文形成同一事件、同一Case两轮，冻结成员1→2；7任务、6Run、48步骤、142工件及477次HTTP成功回执已核。8次真实模型均stop，5项质量问题保留。随后[4b发布](docs/operations/evidence/workbench-4b-release-20261117-01/README.md)通过报告精确Case/Run跳转、紫色逐轮来源及原件读回和7组限定独审；整个change仍未完成。
 
 工作台默认Case，事件、告警分别列出，每轮展示流程、HTTP接入、具体领域、组件和原答。独立[Docker验收CLI](tools/testdata/ACCEPTANCE.md)负责材料转换、检查、显式发送/追加、等待及报告汇总；新测试来源以lyc开头，后台来源与tenant关联保留，控制标记不进入模型。
 
@@ -14,7 +14,7 @@ D1–D4c的输入过滤、质量独立记录、C3闭合信息恢复与A/I部分�
 
 | 内容 | 入口 |
 | --- | --- |
-| 对接总入口 | [前后端交接指南](FRONTEND_BACKEND_HANDOFF.md) |
+| 对接总入口 | [C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md) · [前后端交接指南](FRONTEND_BACKEND_HANDOFF.md) |
 | 页面功能与产品规则 | [125 项功能清单](deliverables/investigation-validation-20261106/frontend-feature-list.md)：告警 22 项、事件 15 项、调查 88 项，包含目的、结果、后端实现状态和接口；[产品说明](docs/design/alert-incident-case-product-requirements.md)、[已确认的七类规则](docs/design/investigation-product-decisions.md) |
 | HTTP 接口与字段 | [接口交接包](deliverables/investigation-validation-20261106/http-handoff/README.md)、[逐接口说明](deliverables/investigation-validation-20261106/http-handoff/endpoints.md)、[页面字段与跳转](deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md) |
 | 对外与内部接口边界 | [调用分类与代码归属](docs/design/investigation-http-boundary.md)：对外查询/业务操作与内部步骤、内部HTTP分开；分离架构继续保持，列表新增参数及两个封套字段见当前交接 |

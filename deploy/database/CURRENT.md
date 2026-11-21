@@ -3,6 +3,18 @@
 2026-11-21，21 正式 `aisoc.socai2` 已原位应用 130–134，实际为 **35 张表、565 列**。现有 HTTP 读写和调度继续使用同一正式库。正式湖表由 005 升至 62 列。[正式读回](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
 
 128新增analysis_tasks/attempts/subject_state，129增加Case分配字段及排除表，规格见[存储设计](../../openspec/changes/schedule-streaming-investigation-updates/storage-and-runtime-design-20261114.md)。独立候选socai2_streaming_20261115及本机v12_upgrade_dev已有各自32/521验证；本机其他旧库本轮未操作。资产、用户和租户沿业务后端基础数据。
+## 正式增量 130–134
+
+升级已有库时，通过 `install_reader.py <子命令> --profile <选定配置>` 应用缺少的增量。21 的发布已应用并读回以下五步。
+
+| 增量 | 安装子命令 | 用途和脚本 |
+| --- | --- | --- |
+| 130 | `lake-alert-receipts` | [湖告警接收回执](lake_alert_receipts.sql) |
+| 131 | `lake-alert-deliveries` | [湖告警持久交付](lake_alert_deliveries.sql) |
+| 132 | `subject-risk` | [事件与 Case 风险与人工优先级](subject_risk.sql) |
+| 133 | `analysis-task-times` | [任务与尝试入队及时间字段](analysis_task_times.sql) |
+| 134 | `business-verdict` | [事件诊断与 Case 结果业务判定](business_verdict.sql) |
+
 ## 任务生命周期增量128
 
 部署连接按负责人2026-11-15确认简化为普通账号密码；[当前安装模板](reader-install.example.toml)默认`PGSSLMODE=require`，没有客户端CA/证书/私钥字段，密码仍由受控`PGPASSFILE`提供。安装器不再接受旧PGSSLROOTCERT配置；已有历史profile原件不改写，目标部署使用当前模板。具体参数及认证/服务端TLS区别见[数据库部署说明](../../docs/operations/deployment-datastores.md)。本轮没有修改21 HBA、角色密码或重启数据库。
@@ -33,16 +45,16 @@ statement_timeout_seconds = 30
 
 ## 新独立空库
 
-2026-11-15已在21新候选库`socai2_streaming_20261115`实际执行当前完整新装入口：123–129、32表521列及reader verify通过，普通reader/writer和基础tenant/actor就绪，业务记录为0。详见[供给回执](../../docs/operations/evidence/streaming-candidate-20261115-01/database-prepare-01.json)。这是当时独立候选的初始化证据；正式aisoc随后已应用128/129，当前不再停留127。
+2026-11-15已在21新候选库`socai2_streaming_20261115`实际执行当时的新装入口，覆盖 123–129、32表521列及reader verify通过，普通reader/writer和基础tenant/actor就绪，业务记录为0。详见[供给回执](../../docs/operations/evidence/streaming-candidate-20261115-01/database-prepare-01.json)。该证据对应当时的独立候选，正式库以页首版本为准。
 
-- [init_socai2_current.sql](init_socai2_current.sql)：先检查显式目标，再应用冻结V1、同一127/128/129增量。
+- [init_socai2_current.sql](init_socai2_current.sql)：先检查显式目标，再应用冻结 V1 和当前调查增量，湖接入增量由 profile 选择。
 - [init_socai2_current_reader.sql](init_socai2_current_reader.sql)：增加既有V1.2 reader依赖。使用`install_reader.py initialize-current --profile <选定配置>`，需cleanup和analysis两节及显式owner/reader/writer。128/129已验证升级及重复应用，本次21候选完整初始化亦已通过。
 
 这些独立运行入口复用 V1 的公共依赖支撑结构，仅用于新专用空库；它们不是业务后端的公共建表清单。共享业务库必须沿现有安装及后端提供的基础数据接入，不能运行空库初始化。
 
 ## 核验与实际交付
 
-使用`install_reader.py verify --profile <选定配置>`；它依据127/128/129账本核基线及增量计数（128增加3表61列，129增加1表10列），并核reader实际读权限。旧`install_aisoc21_v1.py verify`及冻结V1自检只适用于未清理基线，不能用来否定已完成增量的当前库。
+使用`install_reader.py verify --profile <选定配置>`；按实际迁移账本核对基线及已应用增量的计数，并核reader实际读权限。旧`install_aisoc21_v1.py verify`及冻结V1自检只适用于未清理基线，不能用来否定已完成增量的当前库。
 
 当前reader公共查找包含`assets`、`users`及`aisoc_kb_documents`的SELECT。Case来源验收发现候选reader缺知识表读取，已通过同一[公共查找安装片段](reader_public_lookups_20261107.sql)补齐并同步verify；新装/升级继续复用此片段。该回执只证明当时候选读接线；正式当前连接与结构见本轮发布读回；无新表/业务字段/RLS或写权变化，见[读接线回执](../../docs/operations/evidence/streaming-case-20261115-01/knowledge-reader-access-01.json)。
 

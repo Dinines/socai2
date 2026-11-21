@@ -1,6 +1,8 @@
 # 事件与案件异步提交接口
 
-2026-11-15：**事件E37已在候选源码接通并完成本地完整流程验证，尚未部署到本地18024或21。** 当前源码候选80操作（新增Case investigations；首轮切换已删除E11/E13）；21实际64操作、静态Swagger71，[本机旧服务仍在运行、未切候选](../operations/evidence/http-local-runtime-review-20261115-01/README.md)。本页描述待统一发布版本，不可把新请求体发给仍为同步合同的已部署E37。Case新的异步POST已挂载并完成真实调度/保存/HTTP读回：新批20次受理、41次终态读取/原key回放通过；另28次7A和47次7B已结束样本只读通过。模型和查询使用替身，正式TCP/真实模型验收仍待后续。
+2026-11-21，21 正式版 `c173-release-20261121-03` 提供异步事件诊断、Case 后轮调查及任务读取。建案返回 `allocations[]`，已受理的首轮从 `initial_task.status_url` 查进度。[正式合同与调用示例](c173-backend-handoff-20261121.md) · [实际验收](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md)
+
+2026-11-15 历史验证。**事件E37已在候选源码接通并完成本地完整流程验证，尚未部署到本地18024或21。** 当前源码候选80操作（新增Case investigations；首轮切换已删除E11/E13）；21实际64操作、静态Swagger71，[本机旧服务仍在运行、未切候选](../operations/evidence/http-local-runtime-review-20261115-01/README.md)。该次测试描述当时待统一发布的版本，不可把新请求体发给仍为同步合同的已部署E37。Case新的异步POST已挂载并完成真实调度/保存/HTTP读回：新批20次受理、41次终态读取/原key回放通过；另28次7A和47次7B已结束样本只读通过。模型和查询使用替身，正式TCP/真实模型验收仍待后续。
 
 事件已通过真实隔离PG、专用Redis、实际A/I执行器及受控模型的“提交→任务保存→消费→Run/诊断保存→HTTP读取”。本批103次无凭据HTTP请求通过，含范围/覆盖及失败、unknown样本；HTTP本身不调用模型。另只读复用已结束的真实模型样本，其正文质量NOT_PASSED保留。见[验收回执](../operations/evidence/incident-async-http-20261115-01/README.md)。
 

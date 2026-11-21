@@ -13,12 +13,12 @@
 | 内容 | 当前实际状态与证据 |
 | --- | --- |
 | 当前已发布版本 | `c173-release-20261121-03`。HTTP、Swagger、Fusion 与联合调度同版，82 个业务操作，调查库 35 表 565 列，湖表 62 列。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
-| 日常展示 | [4177](http://127.0.0.1:4177/viewer/)为21的0.6.1/r8，经现有SSH隧道访问；默认Case“进程活动及后续外联调查”，可选两轮，事件/告警独立列表。紫色测试来源按所选Run冻结告警直接识别；[最终报告](docs/operations/evidence/workbench-4b-release-20261117-01/report-02/report.md)可精确打开两轮，[本次浏览器](docs/operations/evidence/workbench-4b-release-20261117-01/browser-verification.json)通过。HTTP接入、领域和原答沿原批[浏览器](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-browser-01.json)及[13GET读回](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-http-verification.json)通过；历史业务未回灌 |
+| 日常展示 | [4177](http://127.0.0.1:4177/viewer/) 沿 0.6.2/r9 入口，仅监听本机。正式告警、事件和 Case 列表与当前正式数据库空态一致，历史批次资料留对应回执。 |
 | 本轮需求落点 | 21部署与新两段测试已完成；4b来源识别在本机完成并限定独审，20项模型输入边界检查通过。4b报告指定Run跳转已完成本机验证、21发布及实际读回，新配置/页面/验收工具已上线；D5/D6保持待办 |
 | 历史数据清理 | 本轮明确84业务表521行、湖15条、Redis13键、4个指定Kafka主题25条、24账本文件核零；127非目标表和Schema不变，4向量集合原为0。[核零](docs/operations/evidence/acceptance-release-20261117-01/cleanup-zero.json)；旧批UUID现在不可从正式库读取，离线原答和受控备份保留 |
-| 业务服务 | 唯一新版Fusion/联合调度器运行，HTTP18024、Swagger18080、4177就绪；旧执行入口停止。N=1实际峰值1，结束时0在途；I4h/Case6h、7天窗口及关联3600秒不变。本批显式check/append，不冒称自然周期等待已验 |
+| 业务服务 | 21 的新 HTTP 18024、Swagger 18080、联合调度和 Fusion 已就绪，上一版本的执行入口已停止。事件运行配置实际读回 8 字符和 8192 token。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
 | 其他入口 | 本机58482/58483已由实际4177替代并关闭；临时预览58477/58479/58481已关闭，本机4173旧静态演示已停止。旧源码、包/容器、模型原答及审计回执保留离线，不作为活动输入。旧库清理备份在本机/21 私密目录，不进入模型或索引 |
-| 数据库合同 | 正式 `aisoc.socai2` 已通过128/129增量和verify，当前32表521列；候选 `socai2_streaming_20261115` 仍32表521列。本机旧库保持其原schema。清理不改字段合同、迁移、账号/凭据及其他项目。[结构入口](deploy/database/CURRENT.md) |
+| 数据库合同 | 21 正式 `aisoc.socai2` 已应用增量 130–134，实际 35 表、565 列。旧候选与本机历史库沿原批次记录。[数据库入口](deploy/database/CURRENT.md) |
 | 模型容量 | 实际服务窗口 65536；A/I/Deep 输出8192、C3/C6输出16384，A/I每 Run 总预算各131072、Case393216，输入准备1 MiB。沿[已验预算配置](docs/operations/evidence/streaming-budget-20261116-01/README.md)，D1–D4c及后续发布未改这些预算；D2真实调用3次，D3为受控回放0次新生成，D4a新增真实A/I各1次；D4b新增0次；D4c真实9次、69015tokens，注入不重复计费 |
 | 输出兼容修正 | xgrammar兼容及D1–D4c已随r4发布，当前20261117-r1保持这些实现；下列各本机回执保持原验证范围。D2本机将六类缺说明改为独立诊断，程序还原1218字原观察不再受模型正文1200字限误拒收；真实3次stop、C6两项缺说明保留。D3本机C3支持完整JSON length与闭合单元恢复，最多一次补答，不丢初答；原失败不变、质量未全面通过。D4a本机A/I已保存完整、partial/none回执；D4b事件终结材料选择、Case门控/分配/C1冻结已通过，D4c已验partial/none→同Case两轮完整链，其他模型阶段/网络异常待D5 |
 | 新测试材料 | 本批2告警/3独立上下文分两段各发送一次；8份实际A/I/C3/C6输入无tenant_uid/tenant_id、来源控制ID/标签、execution/test_batch/expected标记。后台tenant/告警/来源关联保持。旧批16份残留和原答保持历史结论，不改写 |
@@ -45,8 +45,10 @@ HTTP侧R1统一目录、R3/R4完整步骤/工件、分析任务、A自动分诊�
 
 ## 未完项与下一步
 
+C173 产品联调仍需业务后端回填人员目录与 `owner_id` 映射、资产查询与详情入口，并协同产品前端给出实际页面跳转示例。[双方交接清单](docs/integration/c173-backend-handoff-20261121.md)
+
 1. 工作台任务1/2、验收脚本3a–3d已完成各自直接验收和限定独审，现已发布21。任务4按§12.14完成4a准备、4c发布/清理/准入及4d本次两段正常链；[测试独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-test-review.json)与[HTTP独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-http-review.json)通过。4b来源识别子步已按[§12.15](openspec/changes/schedule-streaming-investigation-updates/test-service-and-4177-http-20261115.md#1215-4b当前子步按lyc来源直接识别测试材料2026-11-17)完成本机验证和限定独审；直接读取冻结来源替代紫色标识对账本的依赖，辅助账本未改为自动发布。报告指定主体/Run子步现按§12.16完成本机验收和限定复核，4b本机功能收口后，现按§12.17完成21分阶段发布与实际报告/页面/原件读回，测试模块跟进限定复核。新报告32个本地链接及6HTTP链接通过，临时预览已关闭，0新模型。D5a有效Deep答案进入C6的真实PG联验、D5b/c及D6另按原设计继续，本批不核销。
-2. 第11步完整覆盖核对、交接及未参与实现者的结束审计仍待。第8–9步人工定向/手动综合与第10步知识后台维护后置；不提前勾整体2.2–2.7或归档。本次D1–D4c分阶段发布已获用户明确授权并执行；不等于整个change完成。本轮另获“确认可以发布后推送Git”及“全部”范围授权，按当前全部积累内容同步V1.1、main和父项目server引用；部署与Git同步各有独立回执。
+2. 第11步完整覆盖核对、交接及未参与实现者的结束审计仍待。第8–9步人工定向/手动综合与第10步知识后台维护后置；不提前勾整体2.2–2.7或归档。本次D1–D4c分阶段发布已获用户明确授权并执行；不等于整个change完成。2026-11-17 批次的部署与 Git 同步各有独立回执。
 3. 模型引用、范围和正文质量按负责人决定后置，保留原答与 `NOT_PASSED`，不追加采样追求通过。程序身份、材料、保存/读取阻断仍需直接修正。[问题清单](docs/investigation/current-issues.md)
 4. [内部可信HTTPchange](openspec/changes/trust-internal-investigation-http/tasks.md)保持其已完成本地交付与未完成统一发布/独审边界，不因候选无鉴权已运行就单独核销。
 

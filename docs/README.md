@@ -6,7 +6,7 @@
 | --- | --- |
 | 当前调查模块 | [调查导航](investigation/README.md) |
 | 现行设计与历史边界 | [设计入口](design/README.md)、[11-14旧设计与评审归档](handoff/history/2026-11-14-investigation-cleanup/README.md) |
-| 后端联调 | [HTTP总指南](../FRONTEND_BACKEND_HANDOFF.md)、[组件/Kafka](integration/component-handoff-current.md)、[测试数据与操作](integration/backend-test-guide.md)、[4173测试页面](integration/test-page-4173.md)、[本地Swagger](../deploy/api-docs/README.md) |
+| 后端联调 | [C173 正式 HTTP 交接](integration/c173-backend-handoff-20261121.md)、[HTTP总指南](../FRONTEND_BACKEND_HANDOFF.md)、[组件/Kafka](integration/component-handoff-current.md)、[测试数据与操作](integration/backend-test-guide.md)、[4173测试页面](integration/test-page-4173.md)、[本地Swagger](../deploy/api-docs/README.md) |
 | 对外与内部接口 | [调用分类、代码归属及兼容范围](design/investigation-http-boundary.md)、[独立HTTP部署](../deploy/http-service/README.md) |
 | 功能与页面需求 | [产品需求](design/alert-incident-case-product-requirements.md)、[功能与跳转清单](../deliverables/investigation-validation-20261106/frontend-feature-list.md) |
 | 表、字段及读取 | [字段字典](design/socai2-field-dictionary-20261103.md)、[数据交接](investigation/socai2-page-data-handoff-20261106.md)、[当前候选OpenAPI](operations/evidence/case-initial-http-20261115-01/candidate-openapi.json)、[Case首轮对接](integration/case-initial-http.md) |

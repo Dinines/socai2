@@ -1,8 +1,16 @@
 # 21部署：当前运行与统一交付
 
+## 当前发布
+
+21 当前运行 `c173-release-20261121-03` 的 HTTP 18024、Swagger 18080、Fusion 和联合调度。业务接口共 82 个操作，正式 PostgreSQL 调查库为 35 表、565 列，ClickHouse 湖表为 62 列。4177 沿用已安装的 0.6.2/r9。
+
+[C173 发布清单](c173-release-20261121-03/release.json) · [正式服务与库表读回](../../docs/operations/evidence/c173-bounded-json-20261121-01/README.md) · [后端联调交接清单](../../docs/integration/c173-backend-handoff-20261121.md)
+
+## 2026-11-17 发布记录
+
 2026-11-17。负责人明确要求“先部署到21 清除历史数据 然后再测试数据”。[acceptance-release-20261117-01](acceptance-release-20261117-01/release.json)已完成完整服务发布、受控备份与明确历史清理；[实际就绪](../../docs/operations/evidence/acceptance-release-20261117-01/deployment-ready.json)核五服务、源码/配置、合同和空态。后端采用3c.2真实正常两段所验的完整组合，工作台1/2及3a–3d入口已发布。[新两段测试](../../docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)已完成：2告警/3上下文、同事件/同Case两轮、477份HTTP回执和8次真实模型均stop。5项模型质量问题后置；4b后续按明确指令已[发布0.6.1/r8与验收工具并验实际链接](../../docs/operations/evidence/workbench-4b-release-20261117-01/README.md)，仅更新4177，不再清理或发告警。D5a异常存取及整个change不据此核销。
 
-## 当前资源
+### 当批资源
 
 | 服务 | 当前实际入口 |
 | --- | --- |
