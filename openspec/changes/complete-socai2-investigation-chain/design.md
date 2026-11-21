@@ -155,13 +155,14 @@ H 保存不自动创建 Run、采用结论或解决 Case。只有已完成、非
 
 当前不开展冗余可用性开发、压力/故障/恢复矩阵或新测试平台，已有保护保留，只有本次修改实际触及或正常流程被具体故障阻断才定向检查。规划不恢复消费者、不扩大额度；未验范围和质量结论继续如实保留。
 
-### 21 停用 UEBA 与 Kafka 退役顺序
+### 21 Kafka 免 SSL 接入
 
-负责人要求停用 UEBA，并讨论去掉我方 Kafka。已读回 C173 正式 Fusion 的 `ueba_fusion_enabled=false`，当前 Kafka 仍承担新告警进入 Fusion。SpiritHub 转发器把 Redpanda 中已清洗的 OCSF 日志转入我方 Kafka。正式业务 HTTP 提供告警读写管理，Fusion 的内部 `/process` 仍依赖 Kafka 发布处理结果。
+负责人澄清本轮变更为 21 的 Kafka 接入协议。Kafka 继续负责告警流转。前轮停用的 UEBA 已恢复至原容器。Fusion 和 UEBA 当前使用同一 broker 的 SSL 监听，SpiritHub 转发器已通过 Docker 内部监听发送。
 
-21 的 `socai2-ueba-1` 已停用。运行配置和回退信息已保存，正式告警、事件、Case 查询及 Fusion 就绪状态已读回。[停用回执](../../../docs/operations/evidence/c173-ueba-disabled-20261121-01/README.md)
+Fusion 和 UEBA 通过 21 已有的 Docker 内部监听接入 Kafka。每个实例沿用原镜像、业务网络的默认网关、数据依赖、HTTP 地址、Topic 和消费组，从客户端配置剥离 Kafka 专用 CA。共享 broker 和转发服务继续提供现有告警流转。
 
-若采用上游直写我方 Kafka 的接入方案，先用独立 Topic 核对消息和投递，再以源端分界收口 Vector，由直写接续分界后的数据。按稳定 `metadata.uid` 核对切换窗口是否漏发或重复。正式直写待联验。[双方交接](../../../docs/integration/c173-backend-handoff-20261121.md#kafka-日志接入)
+1. 在同镜像候选中核对 Kafka 的 DNS 目标和实际协议，验证原业务依赖地址一致，并在独立 Topic 合成投递后按分区及位点读回。
+2. 依次替换两个客户端。每次保存原实例和已提交位点，在新实例读取就绪状态、当前协议和组成员后对照位点。任一客户端失败时恢复该客户端的原实例。全部通过后更新本轮配置说明和回执。
 
 ## Risks / Trade-offs
 

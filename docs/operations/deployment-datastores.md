@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | PostgreSQL 16.15 | 告警、事件、Case、任务/执行/原件索引；核心和HTTP | `spirithub-postgres-1`；应用连接`192.168.1.21:5432`，容器没有直接发布5432，不能据此删掉既有转发入口 | `/var/lib/postgresql/data`，具名卷`spirithub_postgres-data` |
 | Redis 7 | Fusion去重/关联缓存、内部调度task/pending及运行集合；其他模块缓存 | `sting-infra21-redis-1`，`192.168.1.21:6379` | `/data`，具名卷`sting-infra21_redis` |
-| Kafka（镜像cp-kafka 7.5.0） | 输入告警/原始事件、归并输出；消费组记录位点 | `sting-infra21-kafka-1`；项目客户端使用TLS `192.168.1.21:19093` | `/var/lib/kafka/data`，具名卷`sting-infra21_kafka` |
+| Kafka（镜像cp-kafka 7.5.0） | 输入告警/原始事件、归并输出；消费组记录位点 | `sting-infra21-kafka-1`。21 的 Fusion 和 UEBA 使用同机 `kafka:29092`，共享 TLS 监听为 `192.168.1.21:19093` | `/var/lib/kafka/data`，具名卷`sting-infra21_kafka` |
 | ClickHouse 23.8 | 数据湖：原始事件及调查日志补查；Fusion写、调查读 | `sting-infra21-clickhouse-1`；Native `9000`，HTTP `8123` | `/var/lib/clickhouse`，具名卷`sting-infra21_clickhouse` |
 | Qdrant 1.7.0 | 向量检索；知识与情报使用各自collection | `sting-infra21-qdrant-1`；HTTP `6333`、gRPC `6334` | `/qdrant/storage`，具名卷`sting-infra21_qdrant` |
 | Neo4j 5.15 Community | 图关系来源、情报图；调查图来源当前关闭 | `sting-infra21-neo4j-1`；Bolt `7687`、管理HTTP `7474` | `/data`，具名卷`sting-infra21_neo4j`；插件另挂`/plugins` |
@@ -32,6 +32,8 @@
 ### 本轮认证口径
 
 **目标部署只填写地址、端口、库名、用户名和密码；应用不配置CA、客户端证书或私钥。** `sslmode=require`由模板给定，一般不修改，用于保留数据库已有TLS；它不要求客户端校验服务器证书。密码仍通过私密URL文件或PGPASSFILE提供，文件只是保存密码的方式，不是额外密钥。
+
+21 的独立 UEBA 实例使用账号密码和 `verify-full`。其 `PGSSLROOTCERT` 用于校验 PostgreSQL 服务端。2026-11-21 在同容器用现行 asyncpg 连接做只读核验，当前配置通过 TLS 和主机名校验。临时移除该变量后返回 `ClientConfigurationError`。[实测回执](evidence/c173-kafka-plaintext-20261121-01/README.md#postgresql-核验)
 
 [本次只读认证核对](evidence/deployment-docs-20261115-01/pg-auth-readback.json)显示21应用网络规则为`host all all all scram-sha-256`，没有客户端证书要求；容器内local/回环维护连接另为trust，不能用维护免密码证明应用密码已验证。原已发布profile采用verify-full，负责人本轮要求取消客户端CA配置；修改后的目标尚未正式发布。服务端自己的TLS证书/私钥保留，Kafka的CA也不在此次调整范围。
 
@@ -150,7 +152,7 @@ RDB和AOF是不同的持久化机制，备份/恢复须匹配实际启用方式�
 | `KAFKA_CONTROLLER_LISTENER_NAMES` | `CONTROLLER` | 控制器监听名称 | 程序生成/只读核对 |
 | `KAFKA_LISTENERS` | 地址列表 | 当前INTERNAL29092、EXTERNAL9092、CONTROLLER29093、SECURE19093 | 程序生成/只读核对 |
 | `KAFKA_ADVERTISED_LISTENERS` | 可达地址列表 | 客户端随后连接的地址；项目TLS入口公布`192.168.1.21:19093` | 程序生成/只读核对 |
-| `KAFKA_LISTENER_SECURITY_PROTOCOL_MAP` | 名称:协议列表 | SECURE为SSL，其余本次为PLAINTEXT；项目不能因9092可达而降级 | 程序生成/只读核对 |
+| `KAFKA_LISTENER_SECURITY_PROTOCOL_MAP` | 名称:协议列表 | SECURE 为 SSL，INTERNAL 为 PLAINTEXT。21 的 Fusion 和 UEBA 使用 INTERNAL | 程序生成/只读核对 |
 | `KAFKA_LOG_DIRS` | `/var/lib/kafka/data` | 消息及位点日志的持久目录 | 程序生成/只读核对 |
 | `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR` | int，1 | 位点内部Topic副本数 | 程序生成/只读核对 |
 | `KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR` | int，1 | 事务内部Topic副本数 | 程序生成/只读核对 |
@@ -168,14 +170,14 @@ RDB和AOF是不同的持久化机制，备份/恢复须匹配实际启用方式�
 
 | 参数 | 类型/目标值 | 含义 | 填写方式 |
 | --- | --- | --- | --- |
-| `KAFKA_BOOTSTRAP_SERVERS` | string，`192.168.1.21:19093` | 初始broker地址；候选可以共用broker，Topic/group必须独立 | 部署必填 |
-| `KAFKA_SECURITY_PROTOCOL` | enum，`SSL` | 当前目标TLS协议；启SASL时配完整SASL字段 | 保留默认 |
-| `KAFKA_SSL_CAFILE` | 文件路径 | 验证服务端的CA；示例`/run/certs/ca.crt` | 部署必填 |
+| `KAFKA_BOOTSTRAP_SERVERS` | string，21 内部 `kafka:29092` | 初始 broker 地址。候选联验使用独立 Topic 和消费状态 | 按部署 profile |
+| `KAFKA_SECURITY_PROTOCOL` | enum，21 内部 `PLAINTEXT` | 对应已选监听的协议。启用 SASL 时填写 SASL 字段 | 按部署 profile |
+| `KAFKA_SSL_CAFILE` | 文件路径 | SSL 配置中的服务端 CA。21 同机明文 profile 已移除此项 | 按部署 profile |
 | `KAFKA_SSL_CERTFILE` / `KAFKA_SSL_KEYFILE` | 私密文件路径，可选 | 需要客户端证书认证时成对提供；不与CA混用 | 启用时必填 |
 | `KAFKA_SASL_MECHANISM` | string，可选 | 仅SASL协议时必填，须与broker一致 | 启用时必填 |
 | `KAFKA_SASL_USERNAME` / `KAFKA_SASL_PASSWORD` | 私密值，可选 | SASL账号凭据；当前SSL不代表已经启SASL | 启用时必填 |
 | `ENVIRONMENT` | string，`production` | 传输校验所用环境标签 | 保留默认 |
-| `AISOC_ALLOW_CLEARTEXT_KAFKA` | bool，目标false | 代码存在明文例外开关，本轮不使用；不能靠改环境绕过TLS | 保留默认 |
+| `AISOC_ALLOW_CLEARTEXT_KAFKA` | bool，21 内部 profile 为 true | 21 的 Fusion 和 UEBA 使用 Docker 内部监听的显式选择 | 按部署 profile |
 | `KAFKA_TOPIC_ALERTS_RAW` | string | 输入告警Topic | 部署必填 |
 | `KAFKA_TOPIC_ALERTS_FUSED` | string | Fusion归并输出Topic | 部署必填 |
 | `KAFKA_TOPIC_RAW_EVENTS` | string | 原始事件Topic，供数据湖写入/适用上下文 | 部署必填 |
@@ -187,7 +189,11 @@ RDB和AOF是不同的持久化机制，备份/恢复须匹配实际启用方式�
 
 ### 21 正式证书信任核验
 
-2026-11-21，在正式版本 `c173-release-20261121-03` 的运行中 Fusion 容器，使用同一 SSL 监听 `19093` 对比两种信任配置。带当前 `KAFKA_SSL_CAFILE` 时通过证书校验并读取 Kafka 元数据。仅用容器默认信任库时，证书链校验返回 OpenSSL 19，签发链含未受信任的自签名证书。当前正式 Fusion 需要该 CA 信任配置。
+2026-11-21 切换前，在正式 Fusion 容器使用 SSL 监听 `19093` 对比两种信任配置。带当时的 `KAFKA_SSL_CAFILE` 时通过证书校验并读取 Kafka 元数据。容器默认信任库校验返回 OpenSSL 19，签发链含未受信任的自签名证书。这份结果针对共享 SSL 监听。
+
+### 21 Kafka 内部连接
+
+Fusion 和 UEBA 现用 Docker 网络 `sting-infra21_default` 内的 `kafka:29092`。已验证客户端明文收发、就绪状态和原消费位点。共享 SSL 监听继续提供外部接入。UEBA 的 `PGSSLROOTCERT` 属于 PostgreSQL 连接配置。[客户端 profile](../../deploy/aisoc21/c173-release-20261121-03/kafka-internal.json) · [实测回执](evidence/c173-kafka-plaintext-20261121-01/README.md)
 
 ## ClickHouse 数据湖
 

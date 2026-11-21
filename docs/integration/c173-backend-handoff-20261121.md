@@ -10,7 +10,7 @@
 | 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-03/contract/openapi.json) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
-| 已验证的版本 | 正式 HTTP 与 Swagger 共 82 个操作，部署后通过 17 项读回。同一条真实告警在隔离环境走通接收、分诊、诊断、Case 首轮与结果读回。11 月 21 日正式核验时三个业务列表的空态与 PostgreSQL 一致。独立 UEBA 停用后，Fusion 和三类业务列表也已读回。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) · [UEBA 停用读回](../operations/evidence/c173-ueba-disabled-20261121-01/README.md) |
+| 已验证的版本 | 正式 HTTP 与 Swagger 共 82 个操作，部署后通过 17 项读回。同一条真实告警在隔离环境走通接收、分诊、诊断、Case 首轮与结果读回。11 月 21 日正式核验时三个业务列表的空态与 PostgreSQL 一致。UEBA 已恢复，Fusion 和 UEBA 的 Kafka 连接已切到同机内部监听，三类业务列表读回通过。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-03/release.json) · [联验与正式读回](../operations/evidence/c173-bounded-json-20261121-01/README.md) · [Kafka 切换回执](../operations/evidence/c173-kafka-plaintext-20261121-01/README.md) |
 
 ## 页面怎么调用
 
@@ -102,7 +102,7 @@
 
 直写先在独立测试 Topic 联验，核对投递回执的 Topic、分区、offset 和对应 `metadata.uid`。正式切换时，Vector 送达分界前已接收的记录后停用，直写从分界后的记录开始。双方按 `metadata.uid` 对照切换窗口，确认无漏发和重复。同一条日志同时进 Redpanda 与我方正式 Topic 时，两条路径会各写一次。
 
-Kafka 连通按 21 正式 SSL 监听的证书信任配置校验。[21 证书信任核验](../operations/deployment-datastores.md#21-正式证书信任核验)
+21 上的 Fusion 和 UEBA 使用同机 Docker 网络内的明文监听。上游直写联验按发送端所在网络确认可达的 Kafka 接收地址。[21 Kafka 内部连接](../operations/deployment-datastores.md#21-kafka-内部连接)
 
 调查报告、步骤记录和已保存的模型回执沿 Run 的步骤及工件接口读取。按已确认范围，附件、登录、来源与执行次数统计移出本期，AI 聊天、人工定向分析和真实响应审批执行继续暂缓。
 

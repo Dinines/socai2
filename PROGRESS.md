@@ -16,7 +16,7 @@
 | 日常展示 | [4177](http://127.0.0.1:4177/viewer/) 沿 0.6.2/r9 入口，仅监听本机。正式告警、事件和 Case 列表与当前正式数据库空态一致，历史批次资料留对应回执。 |
 | 本轮需求落点 | 21部署与新两段测试已完成；4b来源识别在本机完成并限定独审，20项模型输入边界检查通过。4b报告指定Run跳转已完成本机验证、21发布及实际读回，新配置/页面/验收工具已上线；D5/D6保持待办 |
 | 历史数据清理 | 本轮明确84业务表521行、湖15条、Redis13键、4个指定Kafka主题25条、24账本文件核零；127非目标表和Schema不变，4向量集合原为0。[核零](docs/operations/evidence/acceptance-release-20261117-01/cleanup-zero.json)；旧批UUID现在不可从正式库读取，离线原答和受控备份保留 |
-| 业务服务 | 21 的 HTTP 18024、Swagger 18080、联合调度和 Fusion 已就绪。事件运行配置实际读回 8 字符和 8192 token。独立 UEBA 已停用，三类业务查询读回通过。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) · [UEBA 停用回执](docs/operations/evidence/c173-ueba-disabled-20261121-01/README.md) |
+| 业务服务 | 21 的 HTTP 18024、Swagger 18080、联合调度和 Fusion 已就绪。事件运行配置实际读回 8 字符和 8192 token。UEBA 已恢复，Fusion 和 UEBA 已通过 Kafka 内部明文连接读回，三类业务查询通过。[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) · [Kafka 切换回执](docs/operations/evidence/c173-kafka-plaintext-20261121-01/README.md) |
 | 其他入口 | 本机58482/58483已由实际4177替代并关闭；临时预览58477/58479/58481已关闭，本机4173旧静态演示已停止。旧源码、包/容器、模型原答及审计回执保留离线，不作为活动输入。旧库清理备份在本机/21 私密目录，不进入模型或索引 |
 | 数据库合同 | 21 正式 `aisoc.socai2` 已应用增量 130–134，实际 35 表、565 列。旧候选与本机历史库沿原批次记录。[数据库入口](deploy/database/CURRENT.md) |
 | 模型容量 | 实际服务窗口 65536；A/I/Deep 输出8192、C3/C6输出16384，A/I每 Run 总预算各131072、Case393216，输入准备1 MiB。沿[已验预算配置](docs/operations/evidence/streaming-budget-20261116-01/README.md)，D1–D4c及后续发布未改这些预算；D2真实调用3次，D3为受控回放0次新生成，D4a新增真实A/I各1次；D4b新增0次；D4c真实9次、69015tokens，注入不重复计费 |
