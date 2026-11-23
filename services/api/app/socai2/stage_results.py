@@ -10,6 +10,7 @@ from sqlalchemy import func, insert, select, text, update
 
 from app.models import socai2 as m
 
+from .alert_attck import BEHAVIOR_ROLES, CATALOG_VERSION
 from .baseline_contracts import Limits
 from .baseline_service import BaselineService
 from .baseline_store import StoreError, digest, encoded
@@ -224,6 +225,8 @@ class StageResultService(BaselineService):
                      validated_members=None, alert_delivery_state=None, incident_delivery_state=None,
                      alert_answer_complete=False):
         payload = output.model_dump(mode="json")
+        if isinstance(output, AlertOutput) and output.attck_mappings is None:
+            payload.pop("attck_mappings")  # Preserve the publication hash for old replies.
         if isinstance(output, IncidentOutput) and output.business_verdict is None:
             # Preserve the publication hash used by saved pre-verdict replies.
             payload.pop("business_verdict")
@@ -264,7 +267,21 @@ class StageResultService(BaselineService):
             if not is_alert and "query_receipts_version" in source:
                 from .incident_query_receipts import reference_roles
                 tool_refs = reference_roles(source)
-            validate_refs(payload, source, run["input_artifact_id"], tool_refs)
+            if "attck_mappings" in payload:
+                core = {k: v for k, v in payload.items() if k != "attck_mappings"}
+                validate_refs(core, source, run["input_artifact_id"], tool_refs)
+                attck_mappings = []
+                for mapping in payload["attck_mappings"]:
+                    if any(ref["role"] not in BEHAVIOR_ROLES for ref in mapping["source_refs"]):
+                        continue
+                    try:
+                        validate_refs(mapping, source, run["input_artifact_id"], tool_refs)
+                    except StoreError:
+                        continue
+                    attck_mappings.append(mapping)
+            else:
+                validate_refs(payload, source, run["input_artifact_id"], tool_refs)
+                attck_mappings = None
             if execution_step_id is not None:
                 step = await store.one(select(steps).where(*store.where(steps, steps.c.run_id == run_id,
                     steps.c.id == execution_step_id, steps.c.kind == "stage", steps.c.state == "running")))
@@ -297,6 +314,8 @@ class StageResultService(BaselineService):
                     "generation_method": output.generation_method, "generated_at": now.isoformat(),
                     "source_refs": refs, "recommendations": payload["recommendations"], "limitations": output.limitations,
                     "program_facts": facts}
+                if attck_mappings or payload.get("attck_mappings") == []:
+                    explanation.update(attck_mappings=attck_mappings, attck_catalog_version=CATALOG_VERSION)
                 explain_id = uuid5(run_id, "explanation")
                 await artifact(store, run, explain_id, "alert_explanation", explanation, now, refs)
                 await store.db.execute(insert(AS).values(id=result_id, tenant_id=tenant_id, alert_id=run[key], kind="triage",

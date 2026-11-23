@@ -1,4 +1,5 @@
-"""Configured A text input and five-field output, retaining the original storage contract."""
+"""Configured A text input and frozen model boundary."""
+from . import alert_attck
 from . import alert_basic_contract as legacy
 from .alert_input_text import prepare
 from .baseline_model_view import blocked, draft_limit
@@ -14,13 +15,15 @@ def build(source, input_id, queries, profile, *, execution_time=None):
         type(raw.get(key)).__name__ == kind for key, kind in cfg["render"]["raw_alert_envelope"]["required_fields"].items())
     data["prose_alias_format"] = cfg["output_validation"]["prose_alias_format"]
     prepared = prepare(data, source_map, cfg)
-    messages = [{"role": "system", "content": cfg["system_prompt"]}, {"role": "user", "content": prepared["user"]}]
+    messages = [{"role": "system", "content": cfg["system_prompt"] + alert_attck.PROMPT},
+                {"role": "user", "content": prepared["user"]}]
     if not prepared["source_map"] or blocked(messages) or len(encoded(messages)) > draft_limit():
         raise StoreError("alert_model_view_unavailable", 422)
     # The full frozen input stays in its source artifact; the request records
     # only the omission addresses/hashes and the actually visible aliases.
     prepared["boundary"] = {"version": profile.version, "profile_sha256": profile.sha256,
         "render_revision": cfg["render"]["revision"], "output_validation": cfg["output_validation"],
+        "attck_catalog_version": alert_attck.CATALOG_VERSION,
         "structural_omissions": [{k: v for k, v in entry.items() if k != "original"}
             | ({"value_sha256": digest(entry["original"])} if "original" in entry else {}) for entry in prepared["omissions"]]}
     return messages, prepared["source_map"], prepared["data"], prepared

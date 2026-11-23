@@ -524,6 +524,112 @@ async def run_checks(engine, record, only=None):
         return {"prior_run": str(good["run_id"]), "failed_run": str(failed["run_id"]),
             "partial_run": str(partial["run_id"]), "failed_judgment_adopted": False, "raw_preserved": True}
 
+    async def test_alert_attck_mappings_saved_and_read_for_current_material():
+        from pathlib import Path
+        from types import SimpleNamespace
+
+        import jsonschema
+        from app.socai2.page_reader import PageReadService
+        from fastapi import FastAPI
+        from httpx import ASGITransport, AsyncClient
+        from investigation_http.adapters.identity import configure_trusted_access
+        from investigation_http.external_routes import pages
+
+        app = FastAPI()
+        app.include_router(pages.router, prefix="/api/v1")
+        configure_trusted_access(app)
+        app.state.business_context = SimpleNamespace(tenant_id=T)
+        app.dependency_overrides[pages.get_service] = lambda: PageReadService(service.sessions)
+        schema_path = Path(__file__).resolve().parents[1] / "app/socai2/contracts.schema.json"
+        explanation_schema = {"$defs": json.loads(schema_path.read_text())["$defs"], "$ref": "#/$defs/alert_explanation"}
+
+        class AttckGateway(Gateway):
+            def __init__(self, scenario):
+                super().__init__()
+                self.scenario = scenario
+
+            async def complete(self, body, timeout):
+                self.calls += 1
+                branches = body["response_format"]["json_schema"]["schema"]["anyOf"]
+                assert all("attck_mappings" in branch["required"] for branch in branches)
+                assert "attck_mappings" in body["messages"][0]["content"]
+                branch = next(branch["properties"] for branch in branches
+                              if branch["properties"]["verdict"]["enum"] == ["benign"])
+                evidence_id = branch["evidence_ids"]["items"]["enum"][0]
+                answer = {"verdict": "needs_review", "confidence": None, "rationale": "Synthetic execution requires review.",
+                          "evidence_ids": [evidence_id], "recommendations": []}
+                if self.scenario != "legacy":
+                    answer["attck_mappings"] = []
+                if self.scenario in {"positive", "invalid"}:
+                    valid = {"tactic_id": "TA0002", "technique_id": "T1059.001", "evidence_ids": [evidence_id]}
+                    answer["attck_mappings"] = [
+                        {**valid, "evidence_ids": ["unknown-alias"]},
+                        {**valid, "tactic_id": "TA0001"},
+                        {**valid, "technique_id": "T9999"},
+                    ]
+                    if self.scenario == "positive":
+                        answer["attck_mappings"].insert(0, valid)
+                return {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(answer)}}],
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 60, "total_tokens": 160}}
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://synthetic.local") as client:
+            async def read_views(aid, title):
+                listed = await client.get("/api/v1/socai2/alerts", params={"q": title})
+                detail = await client.get(f"/api/v1/socai2/alerts/{aid}")
+                assert listed.status_code == detail.status_code == 200
+                item, = listed.json()["items"]
+                assert item["facts"]["id"] == detail.json()["facts"]["id"] == str(aid)
+                assert item["triage"] == detail.json()["triage"]
+                assert item["derived"]["tactics"] == detail.json()["derived"]["tactics"] == []
+                return detail.json()["triage"]
+
+            for scenario in ("positive", "empty", "invalid", "legacy"):
+                aid, mid = uuid4(), uuid4()
+                title = "lyc ATT&CK " + aid.hex
+                async with service.transaction(T) as s:
+                    await s.db.execute(insert(A).values(id=aid, tenant_id=T, title=title, source_namespace="lyc-attck",
+                        source_identity_key=str(aid), connector_type="lyc-attck", event_time=await s.now(),
+                        event_time_source="source"))
+                    await s.db.execute(insert(m.AlertMaterials).values(id=mid, tenant_id=T, alert_id=aid,
+                        revision=1, raw_json={"process": {"name": "powershell.exe"}}, detection={},
+                        source_scope={}, retention={}, material_state="complete"))
+                    await s.db.execute(update(A).where(A.c.id == aid).values(latest_material_id=mid))
+                gateway = AttckGateway(scenario)
+                out = await service.execute_alert(T, aid, uuid4(), gateway=gateway)
+                assert out["state"] == "completed" and gateway.calls == 1
+                run_id = out["run_id"]
+                triage = await read_views(aid, title)
+                assert triage["valid_for_current_input"] and triage["verdict"] == "needs_review"
+                assert triage["source_run_id"] == str(run_id) and triage["input_material_id"] == str(mid)
+                artifacts = await rows(F, F.c.run_id == run_id)
+                explanation = next(item["content_json"] for item in artifacts if item["kind"] == "alert_explanation")
+                jsonschema.validate(explanation, explanation_schema)
+                mappings = triage["attck_mappings"]
+                assert mappings == explanation.get("attck_mappings")
+                if scenario == "positive":
+                    mapping, = mappings
+                    assert mapping["tactic_id"] == "TA0002" and mapping["technique_id"] == "T1059.001"
+                    assert mapping["tactic_name"] and mapping["technique_name"]
+                    assert mapping["source_refs"][0]["id"] == str(mid)
+                    assert all(ref["role"] == "observation" for ref in mapping["source_refs"])
+                    current_material = uuid4()
+                    async with service.transaction(T) as s:
+                        await s.db.execute(insert(m.AlertMaterials).values(id=current_material, tenant_id=T, alert_id=aid,
+                            revision=2, raw_json={"process": {"name": "different synthetic process"}}, detection={},
+                            source_scope={}, retention={}, material_state="complete"))
+                        await s.db.execute(update(A).where(A.c.id == aid).values(latest_material_id=current_material))
+                    stale = await read_views(aid, title)
+                    assert stale["valid_for_current_input"] is False and stale["attck_mappings"] is None
+                elif scenario == "empty":
+                    assert mappings == []
+                else:
+                    assert mappings is None and "attck_mappings" not in explanation
+                if scenario in {"positive", "invalid"}:
+                    response = next(item["content_json"] for item in artifacts if item["kind"] == "model_response")
+                    assert {item["reason_code"] for item in response["attck_validation"]["invalid_units"]} == {
+                        "attck_evidence_unavailable", "attck_tactic_technique_mismatch", "attck_id_invalid"}
+        return {"current_and_stale_readback": True, "empty_and_legacy_readback": True, "invalid_mapping_isolated": True}
+
     async def test_alert_persists_explicit_no_escalation():
         scenarios = [
             ("benign", .85, "stop", [], "not_escalated"),
@@ -550,7 +656,8 @@ async def run_checks(engine, record, only=None):
                           "rationale": "The supplied observation supports the synthetic assessment.",
                           "evidence_ids": [evidence_id],
                           "recommendations": [{"reason": reason, "source_ids": [evidence_id]}
-                                              for reason in self.recommendations]}
+                                              for reason in self.recommendations],
+                          "attck_mappings": [{"tactic_id": "TA9999", "technique_id": None, "evidence_ids": [evidence_id]}]}
                 return {"choices": [{"finish_reason": self.finish_reason, "message": {"content": json.dumps(answer)}}],
                         "usage": {"prompt_tokens": 100, "completion_tokens": 60, "total_tokens": 160}}
 

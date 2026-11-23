@@ -108,6 +108,12 @@ class PageReader:
                     data["run_state"] = (await self.db.execute(select(R.c.state).where(*self.store.where(R,
                         R.c.id == val["source_run_id"], R.c.alert_id == self.identity, R.c.kind == "alert_basic")))).scalar_one_or_none()
                     data["valid_for_current_input"] = data["freshness"] == "current" and data["run_state"] == "completed" and val["input_material_id"] == row["latest_material_id"]
+                    data["attck_mappings"] = None
+                    if data["valid_for_current_input"] and row["latest_explanation_id"]:
+                        data["attck_mappings"] = (await self.db.execute(select(F.c.content_json["attck_mappings"]).where(
+                            *self.store.where(F, F.c.id == row["latest_explanation_id"], F.c.alert_id == self.identity,
+                                F.c.run_id == val["source_run_id"], F.c.kind == "alert_explanation",
+                                F.c.material_state == "complete", F.c.blob_ref.is_(None))))).scalar_one_or_none()
                 if kind == "triage":
                     triage = data
                 else:

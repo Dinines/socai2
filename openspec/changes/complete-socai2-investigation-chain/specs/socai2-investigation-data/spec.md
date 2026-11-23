@@ -1188,3 +1188,15 @@ C3/C4 SHALL 沿现有工具能力和冻结绑定匹配业务目标。真实来�
 #### Scenario: A run lacks an explicit decision
 - **WHEN** 同一查询包含旧记录、失败、部分交付或待复核运行并返回多页
 - **THEN** 缺决定的条目返回 null，同筛选范围的统计只计已保存决定的 Run，游标与 Case 关联不改写该口径
+
+### Requirement: Alert triage returns traceable ATT&CK mappings
+
+新 A 分诊 SHALL 输出 `attck_mappings` 数组，映射使用固定版本 ATT&CK 词表中的战术或技术 ID，引用本轮实际行为证据。程序 SHALL 独立判定映射是否可用，并同相应分诊 Run 及材料版本保存。告警列表和详情 SHALL 在当前有效分诊的 `triage.attck_mappings` 返回已校验映射，检测标签由 `derived.tactics` 提供。
+
+#### Scenario: Behavior is supported without a detector label
+- **WHEN** 当前材料或本轮查询有行为证据而检测方没有提供标签
+- **THEN** 有证据支持并通过 ID 与引用校验的 AI 映射可在同 ID 列表和详情读取，证据可追到该轮
+
+#### Scenario: An ATT&CK mapping is unavailable
+- **WHEN** 本轮没有足够证据、映射无效、分诊已失效或旧结果没有映射字段
+- **THEN** 读取保留明确空数组或不可用空值，标签问题独立于原分诊判定、依据及升级决定

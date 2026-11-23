@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
+from .alert_attck import AlertAttckMapping
 from .baseline_contracts import Contract, EvidenceRef, Finding, Question, Recommendation
 from .enums import BusinessVerdict
 
@@ -21,6 +22,7 @@ class AlertOutput(Contract):
     source_refs: list[EvidenceRef]
     recommendations: list[Recommendation]
     limitations: list[str]
+    attck_mappings: list[AlertAttckMapping] | None = None
 
     @model_validator(mode="after")
     def score_pair(self):

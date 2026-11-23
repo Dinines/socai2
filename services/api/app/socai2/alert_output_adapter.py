@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import Field, ValidationError
 
 from app.socai2 import alert_basic_contract as legacy
+from app.socai2.alert_attck import MAX_MAPPINGS, MappingAnswer
 from app.socai2.baseline_contracts import Contract
 from app.socai2.baseline_store import StoreError
 from app.socai2.stage_result_contracts import AlertOutput
@@ -20,8 +21,13 @@ class Answer(Contract):
     recommendations: list[legacy.Advice] = Field(max_length=5)
 
 
+class ModelAnswer(Answer):
+    attck_mappings: list[MappingAnswer] = Field(max_length=MAX_MAPPINGS)
+
+
 def schema(sources):
-    fmt = response_format(Answer, sources)
+    fmt = response_format(ModelAnswer, sources)
+    fmt["json_schema"]["name"] = "socai2_answer"
     base = fmt["json_schema"]["schema"]
     defs = base.pop("$defs", {})
     direct = [sid for sid, src in sources.items() if src["ref"]["role"] in {"observation", "human_statement"}]

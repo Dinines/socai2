@@ -160,6 +160,8 @@ Content-Type: application/json
 
 下列路径均以 `/api/v1/socai2` 为前缀。前端优先沿响应中的身份和内容链接取数；完整参数、返回类型和限制以 OpenAPI 为准。
 
+告警列表和详情的 `triage.attck_mappings` 返回当前有效 AI 分诊的 ATT&CK 映射（本地已验）。每项含 `tactic_id`、`tactic_name`、`technique_id`、`technique_name` 和 `source_refs`，战术和技术各自可空。显式无映射为 `[]`，旧结果、映射不可用或当前分诊失效为 `null`。前端按有效 AI 战术优先、`derived.tactics` 检测标签兜底取类别，来源标识由前端展示。[字段和验证](openspec/changes/complete-socai2-investigation-chain/alert-attck-mappings-20261123.md)
+
 | 页面需要的数据 | GET 路径与说明 |
 | --- | --- |
 | 告警／事件列表和详情 | `/alerts`、`/incidents` 及 `/{id}`；列表默认 20、上限 50，按返回游标分页 |

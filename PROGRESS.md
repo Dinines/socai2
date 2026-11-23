@@ -33,6 +33,8 @@
 
 ## 已交付与保留结论
 
+告警 AI 分诊 ATT&CK 映射已通过本地保存及同 ID 列表、详情读回。`triage.attck_mappings` 供前端按 AI 优先取值，检测标签由 `derived.tactics` 提供。正式服务及真实模型语义质量待验。[本地验证和合同](openspec/changes/complete-socai2-investigation-chain/alert-attck-mappings-20261123.md)
+
 第1–7步及F1–F5已完成本机程序/HTTP联验；[完整测试规划](openspec/changes/schedule-streaming-investigation-updates/full-flow-test-plan-20261115.md)、[当前任务](openspec/changes/schedule-streaming-investigation-updates/tasks.md)是唯一实施入口。
 
 历史 S01/Case 首轮、S04 原3000/length失败与预算续验保留原适用时点。[S04续验](docs/operations/evidence/streaming-budget-20261116-01/README.md)当时完成新I、整事件Case自动扩到4成员和第二轮，119项保存核对、48GET及上一轮身份/链接通过；单案保持1成员/1轮。原首轮10项引用问题、C3局部校验及后轮C6两项问题未修复，正文未全面通过。数据库清空不重写这些历史结论，也不能再从当前正式库直接查询旧UUID。

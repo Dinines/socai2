@@ -160,6 +160,7 @@ class AlertBasicExecutor:
                     {"schema_version": VERSION, "raw": payload, "usage": recorded, "validation_error": rejection,
                      "validation_diagnostics": received["invalid_units"], "partial_review": None,
                      "received_analysis": received["analysis"],
+                     "attck_validation": received["attck_validation"],
                      "citation_review": seal(citation_review, complete_content, result.model_dump(mode="json") if result else None),
                      "correction_feedback": None,
                      "alert_boundary_version": profile.version})

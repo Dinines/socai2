@@ -6,6 +6,7 @@ from collections import Counter
 
 from pydantic import TypeAdapter, ValidationError
 
+from . import alert_attck
 from . import alert_output_adapter as alert
 from . import business_verdict
 from . import incident_output_adapter as incident
@@ -27,7 +28,7 @@ CONTENT_PATH = "$.raw.choices[0].message.content"
 
 def selection(stage):
     if stage == "A":
-        return {"fields": tuple((key,) for key in A_FIELDS), "arrays": (("recommendations",),)}
+        return {"fields": tuple((key,) for key in A_FIELDS), "arrays": (("recommendations",), (alert_attck.FIELD,))}
     if stage == "I":
         return {"fields": tuple(("diagnosis", key) for key in I_FIELDS),
                 "arrays": tuple((key,) for key in I_ARRAYS)}
@@ -112,6 +113,11 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
     retained, analysis, quality = [], {}, new_review()
     invalid, missing = copy.deepcopy(scanned["invalid_units"]), copy.deepcopy(scanned["missing_units"])
     sources = prepared["source_map"]
+    attck_mappings, attck_validation = None, None
+    if stage == "A":
+        attck_mappings, attck_validation = alert_attck.receive(scanned, sources)
+        invalid = [unit for unit in invalid if not alert_attck.mapping_path(unit["path"])]
+        missing = [unit for unit in missing if not alert_attck.mapping_path(unit["path"])]
     member_counts = Counter(u["value"].get("alert_ref") for u in scanned["units"]
         if key_of(u["path"]) == "members" and isinstance(u["value"], dict)
         and isinstance(u["value"].get("alert_ref"), str))
@@ -122,6 +128,8 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
     for unit in scanned["units"]:
         path, raw = unit["path"], unit["value"]
         key, before = key_of(path), len(quality["issues"])
+        if stage == "A" and key == alert_attck.FIELD:
+            continue
         try:
             if key == business_verdict.FIELD:
                 record = business_verdict.receive_unit(unit, content, original_artifact_id, original_content_path)
@@ -208,8 +216,9 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
         try:
             result = alert.parse(json.dumps({**analysis, "recommendations": analysis.get("recommendations", [])}, ensure_ascii=False),
                                  prepared, citation_review=quality)
-            result = result.model_copy(update={"recommendations": [r.model_copy(update={"id": f"R{index + 1}"})
-                for r, index in zip(result.recommendations, array_indices.get("recommendations", []))]})
+            result = result.model_copy(update={"attck_mappings": attck_mappings,
+                "recommendations": [r.model_copy(update={"id": f"R{index + 1}"})
+                    for r, index in zip(result.recommendations, array_indices.get("recommendations", []))]})
         except StoreError as exc:
             invalid.append({"path": "$", "reason_code": exc.code})
     complete = not invalid and not any(g["path"] != "$" for g in missing)
@@ -221,6 +230,7 @@ def receive(stage, content, prepared, original_artifact_id, *, finish_reason="st
              "reasons": [*scanned["reasons"], *(["provider_length"] if finish_reason == "length" else [])]}
     return {"analysis": analysis, "result": result, "validated_members": members, "retained_units": retained,
         "missing_units": missing, "invalid_units": invalid, "quality": quality, "parse": parse,
+        **({"attck_validation": attck_validation} if stage == "A" else {}),
         "delivery": {"state": delivery, "reasons": [] if delivery == "complete" else ["required_units_missing_or_invalid"]},
         "use": {"material_paths": [u["path"] for u in retained], "dispatch_paths": [],
             "conclusion_available": result is not None, "adoption_eligible": False, "comparison_eligible": False,

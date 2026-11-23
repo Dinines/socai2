@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from app.socai2 import alert_model_boundary, alert_output_adapter, runtime_policy
+from app.socai2 import alert_attck, alert_model_boundary, alert_output_adapter, runtime_policy
 from app.socai2.baseline_model_view import blocked
 from app.socai2.baseline_store import StoreError
 from jsonschema import Draft202012Validator
@@ -38,7 +38,7 @@ def test_frozen_input_and_v3_prompt_are_preserved(sample):
     original = copy.deepcopy(sample)
     messages, mapping, data, prepared = alert_model_boundary.build(*sample)
     assert sample == original and mapping == prepared['source_map']
-    assert messages[0]['content'] == (ROOT / 'tools/testdata/alert_prompt_eval/five-field-system-v3.txt').read_text()
+    assert messages[0]['content'] == (ROOT / 'tools/testdata/alert_prompt_eval/five-field-system-v3.txt').read_text() + alert_attck.PROMPT
     raw = sample[0]['members'][0]['material']['raw_text']
     if blocked(raw):
         assert any(o['source']['source_path'] == '$.raw_text' and o['reason'] == 'input_guard'
@@ -80,7 +80,8 @@ def test_configured_input_checks_actual_messages_not_unused_legacy_prompt(sample
 
 def test_five_fields_restore_original_contract_without_rejudging(sample):
     prepared = build(sample); body = answer(prepared)
-    Draft202012Validator(alert_output_adapter.schema(prepared['source_map'])['json_schema']['schema']).validate(body)
+    Draft202012Validator(alert_output_adapter.schema(prepared['source_map'])['json_schema']['schema']).validate(
+        {**body, 'attck_mappings': []})
     result = alert_output_adapter.parse(json.dumps(body), prepared)
     assert result.verdict == body['verdict'] and result.rationale == body['rationale']
     assert result.confidence is None and result.score_state == 'not_computed'
