@@ -7,7 +7,7 @@ from pydantic import AwareDatetime
 
 from investigation_http import csv_export
 from investigation_http.contracts import (
-    AlertListQuery,
+    AlertExportQuery,
     AlertSort,
     AlertStatus,
     AssignmentState,
@@ -48,6 +48,7 @@ async def export_alerts(
     user: AlertUser,
     service: Service,
     columns: str | None = None,
+    ids: Annotated[list[UUID] | None, Query(description="勾选告警的 facts.id，可重复传入。省略时导出完整筛选结果。")] = None,
     q: Annotated[str | None, Query(max_length=200)] = None,
     severity: Severity | None = None,
     handling_status: AlertStatus | None = None,
@@ -60,7 +61,7 @@ async def export_alerts(
 ):
     csv_export.validate_parameters(request, "alerts")
     fields = csv_export.columns_for("alerts", columns)
-    query = query_input(AlertListQuery, q=q, severity=severity, handling_status=handling_status,
+    query = query_input(AlertExportQuery, ids=ids, q=q, severity=severity, handling_status=handling_status,
         owner_id=owner_id, assignment_state=assignment_state, time_from=time_from, time_to=time_to,
         sort_by=sort_by, sort_order=sort_order)
     result = await invoke(service.read(user.tenant_id, "alerts", query))

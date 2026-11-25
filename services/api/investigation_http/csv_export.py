@@ -38,7 +38,9 @@ def validate_parameters(request, kind):
         raise HTTPException(422, "export_pagination_not_supported")
     allowed = {"columns", "q", "severity", "handling_status", "owner_id", "assignment_state",
         "time_from", "time_to", "sort_by", "sort_order"}
-    if kind == "cases":
+    if kind == "alerts":
+        allowed.add("ids")
+    elif kind == "cases":
         allowed |= {"metric", "classification"}
     if set(request.query_params) - allowed:
         raise HTTPException(422, "export_query_parameter_not_supported")

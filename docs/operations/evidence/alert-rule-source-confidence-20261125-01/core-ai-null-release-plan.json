@@ -1,0 +1,88 @@
+{
+  "state": "proposed_for_coordinator_review",
+  "release_root": "/opt/sting-aisoc-socai2/deployments/alert-rule-source-confidence-20261125-01",
+  "local_payload": ".local/validation/alert-rule-source-confidence-20261125-01/ai-null/release-payload",
+  "runtime_observed_at_utc": "2026-11-25T04:13:12.552311+00:00",
+  "payload_manifest": {
+    "ai/alert-input-v1.json": {
+      "source": "services/api/app/socai2/alert-input-v1.json",
+      "sha256": "563db55ead3aa256ac37ba187b265fb54abc1b70b0cf929c69d1688d0aebd5c6"
+    },
+    "fusion/lake_alert_receiver.py": {
+      "source": "services/fusion/app/services/lake_alert_receiver.py",
+      "sha256": "29f40cc176576a8fced6a7519a705a5dcca317301b2676150b4ba6e0d11d7c9e"
+    }
+  },
+  "analysis": {
+    "current_container": "socai2-analysis-c173-attck-release-20261123-01",
+    "proposed_container": "socai2-analysis-alert-rule-source-confidence-20261125-01",
+    "base_image": "sha256:3688f5ad8c2c2144abe88ef5ce7c717f20de6a73130c2a40c9d2bf67a297cdf7",
+    "host_candidate_file": "/opt/sting-aisoc-socai2/deployments/alert-rule-source-confidence-20261125-01/ai/alert-input-v1.json",
+    "container_readonly_mount_target": "/app/app/socai2/alert-input-v1.json",
+    "baseline_sha256": "cd21c01de15b5143f606af57bea0189fc22acf8b057ef744f58afa9faf475ee3",
+    "candidate_sha256": "563db55ead3aa256ac37ba187b265fb54abc1b70b0cf929c69d1688d0aebd5c6",
+    "entrypoint_module": "app.socai2.analysis_dispatch_runtime",
+    "dispatcher_profile": "/run/c173-release/config/dispatcher.json",
+    "selected_policy": "/run/c173-release/config/investigation-policy.toml",
+    "executor_factory": "app.socai2.analysis_case_executor:executors",
+    "selected_alert_profile": "alert-input-v1.json",
+    "source_loading": "runtime_policy.load_alert_profile resolves the JSON beside runtime_policy.py",
+    "restart_required": true,
+    "restart_reason": "active_policy is cached in the existing dispatcher process",
+    "proposed_activation": "recreate one dispatcher from its inspected image and runtime specification with the sole additional readonly file mount, stop the idle previous dispatcher, start the replacement",
+    "pre_activation_check": "repeat readonly task status checks and verify image, baseline source and reviewed candidate fingerprints",
+    "validation": [
+      "offline selected profile load and candidate fingerprint",
+      "original schema and no-escalation gate fingerprints",
+      "running container mount and selected file fingerprint",
+      "dispatcher startup and normal scheduling status"
+    ],
+    "scope": [
+      "one candidate JSON file",
+      "one replacement analysis container"
+    ]
+  },
+  "lake_delivery": {
+    "base_image": "sha256:16ee9d626c42e42b3939f2e5134d34cd61c91bf4d74daf4f52dcfa226582cdd2",
+    "archive_source_root": "/opt/sting-aisoc-socai2/validation/spirithub-online-alert-20261124-01/fusion",
+    "candidate_source_root": "/opt/sting-aisoc-socai2/deployments/alert-rule-source-confidence-20261125-01/fusion",
+    "sole_replaced_relative_file": "app/services/lake_alert_receiver.py",
+    "baseline_sha256": "3cb72ade674d303541c3abba81dc93287ca141548695a447cc2d78bcb3054471",
+    "candidate_sha256": "29f40cc176576a8fced6a7519a705a5dcca317301b2676150b4ba6e0d11d7c9e",
+    "install_method": "copy the verified archived fusion source tree into the new release root and replace only the reviewed receiver file",
+    "loader": "app.workers.lake_alert_delivery.open_delivery",
+    "current_process_seen": false,
+    "restart_required": false,
+    "future_source_mount": "/opt/sting-aisoc-socai2/deployments/alert-rule-source-confidence-20261125-01/fusion -> /reviewed/fusion readonly",
+    "future_workdir": "/reviewed/fusion",
+    "future_pythonpath": "/reviewed/fusion",
+    "future_config_mount": "/opt/sting-aisoc-socai2/validation/alert-kafka-source-handoff-20261124-02 -> /delivery readonly",
+    "future_arguments": [
+      "python",
+      "-B",
+      "-m",
+      "app.workers.lake_alert_delivery",
+      "--profile",
+      "/delivery/profiles/delivery-confidence-enabled.json",
+      "--once"
+    ],
+    "future_profile_host_path": "/opt/sting-aisoc-socai2/validation/alert-kafka-source-handoff-20261124-02/profiles/delivery-confidence-enabled.json",
+    "profile_sha256": "371e3a9d29624907f4f60360eb083bac96a020f8dd8fe5cb3f53e5c3f15cf3bd",
+    "activation_condition": "a separately authorized new first-receive input exists and selects this source root and reviewed profile explicitly",
+    "current_install_validation": [
+      "archive and candidate manifest comparison shows one source file difference",
+      "offline import resolves the candidate receiver",
+      "DeliveryPolicy relative references and enabled scorer load successfully"
+    ],
+    "new_first_receive_persistence_verified": false
+  },
+  "task_status_observation": {
+    "formal_database": true,
+    "running_run_seen": false,
+    "running_attempt_seen": false,
+    "running_task_seen": false,
+    "pending_task_seen": false
+  },
+  "local_model_calls": 0,
+  "runtime_mutations_performed": 0
+}

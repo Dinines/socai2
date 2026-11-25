@@ -17,6 +17,8 @@ from investigation_http.contracts import (
     IncidentSort,
     IncidentSubjectPage,
     IncidentSubjectView,
+    OwnerDirectoryPage,
+    OwnerDirectoryQuery,
     RecordPage,
     Section,
     Severity,
@@ -40,6 +42,19 @@ User = Annotated[CurrentUser, Depends(require_permission("alerts:read"))]
 Service = Annotated[PageReads, Depends(get_service)]
 router = APIRouter(prefix="/socai2", tags=["socai2-page-fields"])
 router.include_router(management_router)
+
+
+@router.get("/people", response_model=OwnerDirectoryPage)
+async def people(
+    user: User,
+    service: Service,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    user_id: UUID | None = None,
+    offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+):
+    query = query_input(OwnerDirectoryQuery, q=q, user_id=user_id, offset=offset, limit=limit)
+    return await invoke(service.people(user.tenant_id, query))
 
 
 @router.get("/alerts", response_model=SubjectPage)

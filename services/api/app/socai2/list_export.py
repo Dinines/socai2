@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import column, func, select, table, text
+from sqlalchemy import any_, column, func, literal, select, table, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.exc import DBAPIError
 
 from app.models import socai2 as m
@@ -16,6 +17,7 @@ from .baseline_store import StoreError
 from .case_contracts import CaseView, project
 from .case_reader import queue_filters, queue_open_tasks
 from .case_relationship_reader import case_view
+from .list_query_contracts import AlertExportQuery
 from .page_contracts import AlertFacts, IncidentFacts
 from .page_reader import PageReader
 from .program_facts import RANK
@@ -76,6 +78,8 @@ class ListExportService(BaselineService):
                 else:
                     source, model, prefix = (A if kind == "alerts" else I), (AlertFacts if kind == "alerts" else IncidentFacts), "facts"
                     clauses, sort_column, _, order = PageReader(store, kind).selection(query)
+                    if kind == "alerts" and isinstance(query, AlertExportQuery) and query.ids is not None:
+                        clauses.append(A.c.id == any_(literal(query.ids, type_=ARRAY(A.c.id.type))))
                     extra = [select(OWNERS.c.username).where(OWNERS.c.tenant_id == tenant,
                         OWNERS.c.id == source.c.owner_id).correlate(source).scalar_subquery().label("owner_name")]
                     if kind == "incidents":

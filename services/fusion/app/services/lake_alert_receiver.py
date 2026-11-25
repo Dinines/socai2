@@ -113,6 +113,13 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
     for name, candidates in fields["entity_paths"].items():
         entities[name], paths[name] = string(candidates)
     description, _ = string(fields["description_paths"])
+    rule_id, rule_id_path = string(("finding_info.analytic.uid",))
+    rule_name, rule_name_path = string(("finding_info.analytic.name",))
+    rule_sources = {
+        key: path
+        for key, path in (("rule_id_source", rule_id_path), ("rule_name_source", rule_name_path))
+        if path is not None
+    }
     ref = current["lake_ref"]
     source_id = document["metadata"]["uid"]
     envelope = {"ocsf_event": document, "source_ocsf_json": row["ocsf_json"]}
@@ -123,10 +130,11 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
         source_alert_id=UUID(current["identity"]["source_subject_id"]), source=policy.body["source"],
         connector_type=policy.body["connector_type"], connector_id=policy.body["connector_id"],
         title=title, description=description or "", severity=fields["severity_mapping"][str(severity)],
+        rule_id=rule_id, rule_name=rule_name,
         external_id=source_id, source_event_ids=[source_id], ocsf_class_uid=ref["class_uid"],
         event_time=parse_received_time(ref["event_time"]) if row["event_time_source"] == "ocsf_time_ms" else None,
         raw_event=envelope, field_metadata={"entity_sources": paths, "title_source": title_path,
-            "severity_source": severity_path, "lake_ingress": {"schema_version": LAKE_INPUT_VERSION,
+            "severity_source": severity_path, **rule_sources, "lake_ingress": {"schema_version": LAKE_INPUT_VERSION,
                 "lake_database": selection.body["database"], "lake_ref": ref,
                 "source_subject_id": current["identity"]["source_subject_id"], "source_event_id": source_id}}, **entities)
     alert.id = alert.deterministic_id()

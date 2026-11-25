@@ -1086,6 +1086,11 @@ The system SHALL allow authenticated, tenant-scoped Case and human-task GET rout
 - **WHEN** both switches are false
 - **THEN** Case and human-task reads remain unavailable
 
+#### Scenario: Shared platform requests use the configured trusted C173 origin
+- **WHEN** 现有会话、路由权限和人员绑定均通过，且已配置可信 Origin 与当前 C173 调查上游一致
+- **THEN** 告警、事件、案件和调查分析沿现有登记路径和方法转发业务请求，参数和响应沿已有 HTTP 合同，网关不调用调查上游的旧身份预检
+- **AND** 未登录、无路由权限或没有本地绑定的请求继续在平台被拒绝，已配置租户对应及其他上游模式保持其现有校验
+
 ### Requirement: C3 completes seven sections with a configured five-finding limit
 
 新C3 SHALL 在正常一次回复中输出summary、members、findings、questions、domains、conflicts、followups，输出上限为配置的8192tokens。核心发现上限 SHALL 由单一profile配置为5并同步提示、生成Schema和接收；不要求填满、不限制为5个成员、不自动改变Deep/C6结构或额度。固定成员各一项、五个业务问题、四领域及最多2条可为空的补查保持。旧1800目标及固定3/24的不一致口径 SHALL 在C3受影响路径移除。
@@ -1191,12 +1196,52 @@ C3/C4 SHALL 沿现有工具能力和冻结绑定匹配业务目标。真实来�
 
 ### Requirement: Alert triage returns traceable ATT&CK mappings
 
-新 A 分诊 SHALL 输出 `attck_mappings` 数组，映射使用固定版本 ATT&CK 词表中的战术或技术 ID，引用本轮实际行为证据。程序 SHALL 独立判定映射是否可用，并同相应分诊 Run 及材料版本保存。告警列表和详情 SHALL 在当前有效分诊的 `triage.attck_mappings` 返回已校验映射，检测标签由 `derived.tactics` 提供。
+新 A 分诊 SHALL 输出 `attck_mappings` 数组，映射使用固定版本 ATT&CK 词表中的战术或技术 ID，引用本轮实际行为证据。程序 SHALL 独立判定映射是否可用，并同相应分诊 Run 及材料版本保存。告警列表和详情 SHALL 在最新已发布分诊的 `triage.attck_mappings` 返回该轮已校验映射，检测标签由 `derived.tactics` 提供。
 
 #### Scenario: Behavior is supported without a detector label
 - **WHEN** 当前材料或本轮查询有行为证据而检测方没有提供标签
 - **THEN** 有证据支持并通过 ID 与引用校验的 AI 映射可在同 ID 列表和详情读取，证据可追到该轮
 
 #### Scenario: An ATT&CK mapping is unavailable
-- **WHEN** 本轮没有足够证据、映射无效、分诊已失效或旧结果没有映射字段
+- **WHEN** 本轮没有足够证据、映射无效或旧结果没有映射字段
 - **THEN** 读取保留明确空数组或不可用空值，标签问题独立于原分诊判定、依据及升级决定
+
+#### Scenario: Alert pages display the mapping source
+- **WHEN** 用户打开告警列表或同一告警概况
+- **THEN** ATT&CK 类别使用最新已发布分诊的战术名称，缺少该名称时使用检测战术标签。概况的技术信息独立按最新已发布分诊、检测标签顺序取值，页面标注实际来源并呈现缺值空态。
+
+#### Scenario: Alert feedback and freshness are independent of the displayed triage
+- **WHEN** 告警有已发布的分诊，负责人或人工判定后续变更，或当前材料与该轮冻结输入不同
+- **THEN** 告警页面继续显示最新已发布的 AI 判定和同一轮映射，人工判定由 `feedback` 独立提供。新鲜度与采用资格仍按现有规则返回。运行中或未产出已发布评价的后续尝试不替换所展示的 AI 结论。
+### Requirement: Fusion confidence activation preserves the scoring source and first saved result
+
+湖告警接收 SHALL 按显式运行配置启用或停用既有 Fusion 检测评分。数值、状态、标签及来源 SHALL 沿既有材料合同保存，不把源 OCSF 置信度枚举或 AI 分诊置信度替代为 Fusion 分数。切换配置 MUST NOT 覆盖已保存的首次 Fusion 快照或重派既有分诊。
+
+#### Scenario: Confidence scoring is enabled for a newly received alert
+- **WHEN** 指定接收运行配置启用既有评分且有首次接收的告警
+- **THEN** 同材料的 Fusion 评分经既有投影保存，读取返回实际评分状态及原量纲，原 OCSF 与独立 AI 分诊合同保持
+
+#### Scenario: Confidence scoring is enabled after an alert was already saved
+- **WHEN** 配置从停用评分切换为启用，而某条告警的首次 Fusion 结果已经保存
+- **THEN** 该告警保留首次保存的评分状态和原快照，启用动作不通过重投、回填或重跑模型改写旧结果
+
+### Requirement: Alert detection display preserves rule and confidence provenance
+
+湖接收 SHALL 将源 OCSF 已提供的检测规则名称及标识映射到现有规范化规则字段，并保留原件及字段来源。产品页面 SHALL 分开显示源检测置信度、Fusion 评分和 AI 分诊置信度，使用同一指定材料及分诊版本，不改写冻结字段含义。
+
+#### Scenario: A source rule exists in an older material
+- **WHEN** 既有材料因历史接收遗漏而没有规范化规则，但同材料原件有规则名称或标识
+- **THEN** 页面可从该材料原路径展示并标明来源，不回填历史记录或取其他版本补值
+
+#### Scenario: Source confidence is a category
+- **WHEN** 源原件提供置信度枚举，未提供数值评分
+- **THEN** 页面显示源置信度等级，不把枚举编号当百分比；Fusion 状态及分数独立保留
+
+#### Scenario: A published triage has no numeric confidence
+- **WHEN** 同轮已发布模型答案显式返回合法 null
+- **THEN** 页面说明本轮未提供评分，保存并展示已记录的相关说明；原答没有专属原因时明确未记录原因，不推断或补造原因、分数及新执行结果
+
+#### Scenario: New triage instructions explain why a score cannot be estimated
+- **WHEN** 新一轮分诊能够合理估计本轮判定的把握
+- **THEN** 请求要求给出有限的 0–1 自评分数；只有本轮依据不足、相互矛盾或明确限制导致无法合理估计时才使用 null，并在现有 `rationale` 说明具体原因
+- **AND** 待复核本身不要求 null，源检测或 Fusion 数值不得替代 AI 自评；既有输出字段、空值兼容、旧原答及不升级门控保持

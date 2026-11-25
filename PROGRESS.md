@@ -1,6 +1,6 @@
 # 当前进度
 
-更新于 2026-11-21。正式 21 已切换为 c173-release-20261121-03，HTTP 与 Swagger 有 82 个业务操作。同一条真实告警完成独立候选联验，正式服务及数据库读回通过。[联验和正式回执](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+更新于 2026-11-25。本批已验告警页面、平台代理及调查 HTTP 已发布 21；HTTP 为 `c173-alert-attck-readback-20261125-01`、83 个业务操作，核心规则映射和新 A 提示保持已验版本。8181 既有业务验收沿原范围复用，本次另核实际版本、源码、静态资源和接口状态；正式页面业务正文复验未执行。范围、证据和限制见[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。事件与 Case 联合验收及整个 change 收口仍未完成。
 
 2026-11-18 历史记录。**21完整服务和两段流程测试已完成；4b工作台0.6.1/r8及验收工具现已发布，指定Case/轮次与紫色来源实际查阅通过。** [发布/核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，最终3d04验收容器发送2告警/3上下文，形成同一事件、同一Case的两轮结果，成员1→2，后轮比较实际首轮。7任务、6Run、48步骤、142工件及477次HTTP成功回执已核；8次真实模型均stop，共45207tokens，实际并发峰值1、结束时无在途。[本轮完整回执](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)与[输入输出报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)可查。
 
@@ -12,7 +12,7 @@
 
 | 内容 | 当前实际状态与证据 |
 | --- | --- |
-| 当前已发布版本 | `c173-release-20261121-04` 提供 HTTP、Swagger 和联合调度，82 个业务操作，调查库 35 表、566 列，湖表 62 列。[正式读回](docs/operations/evidence/c173-escalation-release-20261121-04/README.md) |
+| 当前已发布版本 | 调查 HTTP `c173-alert-attck-readback-20261125-01`（83 操作）；平台 API `spirithub-backend:alert-a-run-20261125-01`；web `spirithub-web:alert-20261125-729288945206`。联合调度 `alert-rule-source-confidence-20261125-01`；独立 Swagger 保持 `c173-release-20261121-04`（82 操作）。本批无数据库迁移。[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md) |
 | 日常展示 | [4177](http://127.0.0.1:4177/viewer/) 沿 0.6.2/r9 入口，仅监听本机。正式告警、事件和 Case 列表与当前正式数据库空态一致，历史批次资料留对应回执。 |
 | 本轮需求落点 | 21部署与新两段测试已完成；4b来源识别在本机完成并限定独审，20项模型输入边界检查通过。4b报告指定Run跳转已完成本机验证、21发布及实际读回，新配置/页面/验收工具已上线；D5/D6保持待办 |
 | 历史数据清理 | 本轮明确84业务表521行、湖15条、Redis13键、4个指定Kafka主题25条、24账本文件核零；127非目标表和Schema不变，4向量集合原为0。[核零](docs/operations/evidence/acceptance-release-20261117-01/cleanup-zero.json)；旧批UUID现在不可从正式库读取，离线原答和受控备份保留 |
@@ -46,6 +46,8 @@ W1–W4的账本/代理/浏览器/独立包证据保持；W5按用户要求恢�
 HTTP侧R1统一目录、R3/R4完整步骤/工件、分析任务、A自动分诊、I异步提交、Case分配/首轮/后轮及比较身份的已验边界见[前后端交接](FRONTEND_BACKEND_HANDOFF.md)。普通管理、评论、附件引用、CSV、归并统计、采用、故事、候选与探索等原交付不重新列缺口；AI对话、真实响应和产品页面接线保持各自未完成边界。告警字段合同未改变。
 
 ## 未完项与下一步
+
+告警本批交付已完成必要部署，Git 沿服务端 `V1.1`/`main`、父项目 `add-server-submoudle` 的 `server` 和前端 `codex/spirithub-4173` 同步，实际远端 SHA 及 gitlink 以固定同步回执为准。负责人可继续人工查看 8181；正式 21 页面数据内容复验、AI 置信度数值正例及空值理由语义仍未验。独立评论、材料目录与 UID 原文、相关告警正例、资产关联和持续接收按原未完项逐步处理，事件与 Case 联合验收后置。不增加模型采样或扩大测试。[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。
 
 C173 页面跳转及 HTTP 入参示例由我方交付。产品联调请业务后端确认人员目录与 `owner_id` 映射、资产源及详情入口、联调环境和脱敏样例。按上游直写我方 Kafka 的接入方案，当前确认过渡转发在运行，正式直写待联验。对方需确认发送环境、事件身份、首批范围和切换边界。[双方交接清单](docs/integration/c173-backend-handoff-20261121.md)
 

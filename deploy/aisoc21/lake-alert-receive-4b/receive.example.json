@@ -1,0 +1,28 @@
+{
+  "version": "socai2.lake-alert-receive.v1",
+  "postgres_database": "aisoc",
+  "source": "lyc-spirithub-lake-replay",
+  "connector_type": "lyc-ocsf",
+  "connector_id": null,
+  "projection": {
+    "title_paths": ["finding_info.title", "message", "activity_name", "class_name"],
+    "description_paths": ["finding_info.desc", "message"],
+    "entity_paths": {
+      "hostname": ["device.hostname", "src_endpoint.hostname", "dst_endpoint.hostname"],
+      "src_ip": ["src_endpoint.ip"],
+      "dst_ip": ["dst_endpoint.ip"],
+      "username": ["actor.user.name", "user.name"],
+      "domain": ["dns.query.hostname", "dst_endpoint.domain"],
+      "url": ["http_request.url.url_string"]
+    },
+    "severity_mapping": {"1":"info", "2":"low", "3":"medium", "4":"high", "5":"critical", "6":"critical"}
+  },
+  "limits": {
+    "material_bytes": 33554432,
+    "snapshot_bytes": 67108864,
+    "receive_timeout_seconds": 60,
+    "lock_timeout_seconds": 15,
+    "recovery_ttl_seconds": 3600
+  },
+  "initial_analysis": {"retry_limit": 2, "retry_delay_seconds": 10}
+}

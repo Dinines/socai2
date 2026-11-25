@@ -34,11 +34,12 @@ def answer(prepared):
             'evidence_ids': [sid], 'recommendations': []}
 
 
-def test_frozen_input_and_v3_prompt_are_preserved(sample):
+def test_frozen_input_and_selected_prompt_are_preserved(sample):
     original = copy.deepcopy(sample)
     messages, mapping, data, prepared = alert_model_boundary.build(*sample)
     assert sample == original and mapping == prepared['source_map']
-    assert messages[0]['content'] == (ROOT / 'tools/testdata/alert_prompt_eval/five-field-system-v3.txt').read_text() + alert_attck.PROMPT
+    assert messages[0]['content'] == sample[3].config['system_prompt'] + alert_attck.PROMPT
+    assert prepared['boundary']['profile_sha256'] == sample[3].sha256
     raw = sample[0]['members'][0]['material']['raw_text']
     if blocked(raw):
         assert any(o['source']['source_path'] == '$.raw_text' and o['reason'] == 'input_guard'

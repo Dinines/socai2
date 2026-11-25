@@ -22,6 +22,11 @@ class VersionedOperation(Operation):
     expected_row_version: int = Field(ge=1, description="当前详情facts.row_version；过期409。")
 
 
+class AlertOperation(Operation):
+    expected_row_version: int = Field(ge=1,
+        description="兼容保留的页面行版本；告警锁定最新行后仅应用明确修改字段，旧版本不拒绝，以最后成功保存为准。")
+
+
 class SelectedSubject(Contract):
     id: UUID = Field(description="用户明确选中的告警或事件ID。")
     expected_row_version: int = Field(ge=1, description="该对象当前facts.row_version。")
@@ -38,6 +43,16 @@ class Selection(Operation):
         return value
 
 
+class SelectedAlert(SelectedSubject):
+    expected_row_version: int = Field(ge=1,
+        description="兼容保留的告警行版本；旧版本不拒绝，按最新行应用本次明确修改。")
+
+
+class AlertSelection(Selection):
+    items: list[SelectedAlert] = Field(min_length=1,
+        description="仅明确勾选的告警ID；不允许重复，整批保存或拒绝。旧版本不拒绝，未提交字段保持最新值。")
+
+
 class FeedbackFields(Contract):
     disposition: Disposition = Field(description="人工判定；false_positive/benign关闭，已关闭改true_positive/needs_review恢复处理中。")
     reason: Reason = Field(description="人工判断的理由；原文保存，不替换模型分诊。")
@@ -50,11 +65,11 @@ class FeedbackFields(Contract):
         return value
 
 
-class AlertFeedback(FeedbackFields, VersionedOperation):
+class AlertFeedback(FeedbackFields, AlertOperation):
     pass
 
 
-class AlertFeedbackBatch(Selection):
+class AlertFeedbackBatch(AlertSelection):
     feedback: FeedbackFields = Field(description="应用于全部明确选中告警的人工判定及理由。")
 
 
@@ -105,6 +120,17 @@ class AlertManagementFields(ManagementFields):
         json_schema_extra=lambda s: s.pop('default', None))
 
 
+class AlertBatchManagementFields(AlertManagementFields):
+    tags: SkipJsonSchema[None] = Field(default=None, exclude=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_batch_tags(cls, value):
+        if isinstance(value, dict) and "tags" in value:
+            raise ValueError("batch alert tags are not supported; edit one alert")
+        return value
+
+
 class IncidentManagementFields(ManagementFields, PriorityManagementFields):
     handling_status: Literal["new", "in_progress", "resolved"] | SkipJsonSchema[None] = Field(default=None,
         description="人工处理状态；解决须resolution_note；分配默认推进未解决事件，已解决仅换负责人不重开。",
@@ -133,7 +159,7 @@ class IncidentManagementFields(ManagementFields, PriorityManagementFields):
         return self
 
 
-class AlertManagementUpdate(AlertManagementFields, VersionedOperation):
+class AlertManagementUpdate(AlertManagementFields, AlertOperation):
     pass
 
 
@@ -141,8 +167,8 @@ class IncidentManagementUpdate(IncidentManagementFields, VersionedOperation):
     pass
 
 
-class AlertManagementBatch(Selection):
-    changes: AlertManagementFields = Field(description="应用于所选告警的局部修改。")
+class AlertManagementBatch(AlertSelection):
+    changes: AlertBatchManagementFields = Field(description="应用于所选告警的局部修改；不接受tags，标签仅支持单条修改。")
 
 
 class IncidentManagementBatch(Selection):

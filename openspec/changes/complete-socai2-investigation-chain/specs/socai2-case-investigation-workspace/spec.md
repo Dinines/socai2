@@ -149,3 +149,48 @@ result_scope SHALL 显式列非空成员；对象仅在explicit_objects种类必
 #### Scenario: An H and member-change loop is reviewed through an export
 - **WHEN** H及成员关联/移动通过现有服务或驱动保存，真实流程及新旧版本随后导出
 - **THEN** 既有页面能回查保存值、成员范围变化、pending/活跃轮与判断依据状态；导出模式不宣称本地页面操作已写回服务，实时表单不是本阶段必要验收条件
+
+### Requirement: Spirit Hub provides four investigation product pages
+
+Spirit Hub new web SHALL 在现有应用外壳内挂载 4173 demo web 的告警、事件、案件和执行四页，分别使用告警、事件、案件和调查分析入口。`web` SHALL 从可编辑源码独立本地运行并支持热更新，复用所选环境的平台服务。其他页面 SHALL 沿用各自的页面记忆和状态逻辑。四页的业务数据 SHALL 完全通过 `socai2` 版本配套的 HTTP 合同读取和写入，沿用告警交接字段和主体、任务、Run、Result 的既有身份与状态含义。
+
+#### Scenario: Spirit Hub forwards an authorized investigation page request
+- **WHEN** 用户通过 Spirit Hub 打开告警、事件、案件或调查分析并请求 C173 业务数据
+- **THEN** 平台校验自己的会话、路由权限与租户，再经四页共用的可信 HTTP 接线转发。转发不得调用已退役的调查上游 `/api/v1/auth/me`。未登录的页面请求由平台原入口拒绝。
+
+#### Scenario: An analyst paginates the alert list
+- **WHEN** 用户打开告警列表、翻页或调整每页条数
+- **THEN** 页面默认按告警时间降序、每页 8 条，提供 8、15、25 条及上一页／下一页，按 HTTP 游标和筛选总数展示当前页。调整容量、筛选或排序时从首段读取，上一页使用已读页，当前页全选以当前页告警为范围。
+
+#### Scenario: An analyst reads the alert category and verdict
+- **WHEN** 用户查看交付的告警列表，又或者以现有人工反馈操作保存了新的判定
+- **THEN** ATT&CK 类别来自 `derived.tactics[].label`，无值显示「未记录」。列表、概况和告警预览各呈现一条当前判定，优先取实际保存的 `facts.disposition`，否则采用当前有效的 `triage.verdict`。无有效结论时显示「尚未判定」，实际返回待复核时呈现「待复核」。人工修改保存后，以保存读回结果更新当前判定和来源。
+
+#### Scenario: An analyst previews an alert from the alert list
+- **WHEN** 用户从告警列表打开某条告警的右侧预览
+- **THEN** 预览按 4173 贴右布局依次呈现「发生了什么」、告警信息、受影响实体和已读取的事件及 Case 关系。「发生了什么」优先展示来源描述，描述为空时在同一区块展示同一告警已读取的处理活动。底栏按「管理告警」「打开告警页」排列。可用的管理操作打开当前告警的管理表单，详情操作打开同一告警的概况。
+
+#### Scenario: An analyst reviews the explanation and related records of an alert
+- **WHEN** 用户打开告警概况
+- **THEN** 页面保留研判栏，并以已发布分诊的理由及同轮保存的解释正文展示「发生了什么」。已有的来源引用在表格中展示字段、原件值和来源，同一原件共用入口，可回查被引用版本或同轮工件。ATT&CK、相关告警和 Case 分区展示各自 HTTP 结果，并区分查询空态与读取失败。
+
+#### Scenario: An analyst reads the AI conclusion in the alert list sidebar
+- **WHEN** 用户从告警列表打开右侧预览并查看告警信息中的 AI 分诊
+- **THEN** 该区域只展示已发布分诊结论，不展开分诊理由或置信度；无分诊时保留明确空态。完整告警详情仍按原合同展示同轮解释及独立的来源检测、AI 分诊置信度，不能用其他分数补造缺失值。
+
+#### Scenario: An analyst distinguishes a missing detection score from a missing rule
+- **WHEN** 用户查看告警概况的检测卡且检测分数缺失
+- **THEN** 页面按既有 `material.detection.confidence_state` 显示未提供、未计算、未启用、计算失败或历史值未核实，未知状态才显示未记录。检测规则使用独立标签，不能把规则名称或 ID 接在检测置信度标签后；有效零值保持为零。
+
+#### Scenario: An analyst reviews the current owner in alert management
+- **WHEN** 用户打开单条告警的管理表单，且当前负责人在人员目录中有对应记录
+- **THEN** 「保持不变」括号内按当前负责人 ID 显示与候选人相同的显示名，随着候选搜索及分页保留身份含义。
+
+#### Scenario: An analyst opens the alert's original data
+- **WHEN** 用户打开告警原始数据并查看一个材料版本
+- **THEN** 默认显示该版本 HTTP 返回的 OCSF 原文或其空态。材料接口返回实际富化内容时，页面提供富化数据入口。
+
+#### Scenario: An analyst reviews an alert query skipped before execution
+- **WHEN** 告警 A 查询步骤保存为 `skipped`，并已返回原因及计划参数
+- **THEN** 查询列表和现有抽屉展示保存的原因，已知原因用中文解释，未知或缺失原因不猜测。没有实际开始记录时用时显示“未执行”；存在有效起止时间时保留实际耗时。跳过记录不得显示为成功查空或零耗时。
+- **AND** 已保存参数标为计划参数，预览可沿明确入口打开完整参数；不修改原步骤、参数、返回条数或冻结输入，也不触发新的查询或模型调用。已执行查询继续区分成功零行、有结果、失败和未知。

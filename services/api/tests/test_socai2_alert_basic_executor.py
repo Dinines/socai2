@@ -619,7 +619,9 @@ async def run_checks(engine, record, only=None):
                             source_scope={}, retention={}, material_state="complete"))
                         await s.db.execute(update(A).where(A.c.id == aid).values(latest_material_id=current_material))
                     stale = await read_views(aid, title)
-                    assert stale["valid_for_current_input"] is False and stale["attck_mappings"] is None
+                    assert stale["freshness"] == "stale" and stale["valid_for_current_input"] is False
+                    assert stale["attck_mappings"] == mappings and stale["verdict"] == triage["verdict"]
+                    assert stale["source_run_id"] == str(run_id) and stale["input_material_id"] == str(mid)
                 elif scenario == "empty":
                     assert mappings == []
                 else:

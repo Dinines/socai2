@@ -14,6 +14,7 @@ from .case_reader import ARTIFACT_FIELDS, usage_totals
 from .list_query_contracts import AlertListQuery, IncidentListQuery
 from .material_json import canonical_numbers
 from .material_json import loads as exact_json_loads
+from .owner_directory import OwnerDirectoryScope, read_owner_directory
 from .page_contracts import (
     AlertFacts,
     IncidentFacts,
@@ -109,7 +110,7 @@ class PageReader:
                         R.c.id == val["source_run_id"], R.c.alert_id == self.identity, R.c.kind == "alert_basic")))).scalar_one_or_none()
                     data["valid_for_current_input"] = data["freshness"] == "current" and data["run_state"] == "completed" and val["input_material_id"] == row["latest_material_id"]
                     data["attck_mappings"] = None
-                    if data["valid_for_current_input"] and row["latest_explanation_id"]:
+                    if data["run_state"] == "completed" and row["latest_explanation_id"]:
                         data["attck_mappings"] = (await self.db.execute(select(F.c.content_json["attck_mappings"]).where(
                             *self.store.where(F, F.c.id == row["latest_explanation_id"], F.c.alert_id == self.identity,
                                 F.c.run_id == val["source_run_id"], F.c.kind == "alert_explanation",
@@ -323,7 +324,9 @@ class PageReader:
             return await self.assets(limit, offset)
         sub = query.subquery()
         total = (await self.db.execute(select(func.count()).select_from(sub))).scalar_one()
-        rows = await self.rows(select(sub).order_by(sub.c.id).offset(offset).limit(limit))
+        ordering = ((sub.c.occurred_at.desc(), sub.c.id.desc())
+                    if self.kind == "alerts" and section == "activities" else (sub.c.id,))
+        rows = await self.rows(select(sub).order_by(*ordering).offset(offset).limit(limit))
         # Incident routing is exposed only by its dedicated E29/E30 contracts;
         # adding an internal column must not change the alert's incident records.
         items = [public(r, "active_case_id") for r in rows]
@@ -428,6 +431,14 @@ class PageReadService(BaselineService):
     def __init__(self, session_factory, *, read_sources=None):
         super().__init__(session_factory)
         self.read_sources = ReadSources.from_config(read_sources) if read_sources is not None else None
+
+    async def people(self, tenant, query):
+        scope = OwnerDirectoryScope.load()
+        try:
+            async with self.transaction(tenant, readonly=True) as store:
+                return await read_owner_directory(store, scope, query)
+        except DBAPIError as exc:
+            lookup_error(exc)
 
     async def read(self, tenant, kind, identity, method, **kwargs):
         try:

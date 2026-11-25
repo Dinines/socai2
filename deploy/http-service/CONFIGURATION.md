@@ -1,5 +1,13 @@
 # 当前 HTTP 候选配置字典
 
+## 告警负责人目录配置（Q04）
+
+告警人员目录通过 `SOCAI2_OWNER_DIRECTORY_PROFILE_FILE` 选择绝对路径的 JSON 文件，并在所选 HTTP profile 中只读挂载。结构见 [owner-directory.example.json](owner-directory.example.json)：`tenant_id` 是当前调查租户，非空 `user_ids` 列出已完成 SpiritHub 身份映射的人员。样例 UUID 仅为占位，部署时使用该环境的实际私密配置。
+
+目录从已有 `public.users` 的不可登录 SpiritHub 投影读取，按相同租户、人员范围及投影标记过滤，显示名取 `preferences.socai2_owner_projection.display_name`。`q` 支持姓名或账号搜索，`user_id` 支持保持当前负责人的稳定查询，分页沿 `offset/limit`。缺配置返回明确不可用，不回落其他人员目录；此配置不创建人员，也不改变告警 `owner_id` 保存合同。
+
+21 当前文件为 `/run/c173-release/config/owner-directory.json`，与既有 HTTP 上下文、读写连接、管理配置一起保留；私密文件不进入 Git。[本批部署及读回](../../docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。
+
 适用版本 `streaming-http-20261115-r2`，仅解释[本候选profile](streaming-20261115-01/profile.json)及实际加载的配置。完整部署顺序见[部署入口](README.md)。下面“当前值”来自仓库候选，不代表21已加载。所有文件路径都必须按实际运行主机/容器解释；没有配置时不改用其他环境。
 
 ## 加载与生效

@@ -117,7 +117,7 @@ class SubjectView(Contract):
     owner_resolution: Literal["unassigned", "resolved", "unresolved"]
     derived: DerivedFields
     material: dict[str, Any] | None
-    triage: dict[str, Any] | None = Field(description="分诊评估。当前有效分诊的 attck_mappings 为已校验映射数组。旧评估、无可用映射或失效分诊为 null。")
+    triage: dict[str, Any] | None = Field(description="最新已发布的分诊评估。attck_mappings 为同一轮已校验映射，无可用映射时为 null。新鲜度及采用资格独立返回。")
     feedback: dict[str, Any] | None
     analysis_url: str
     section_urls: dict[str, str]

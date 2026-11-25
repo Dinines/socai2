@@ -44,8 +44,11 @@ async def test_export_parameters_and_empty_csv_use_dedicated_routes(monkeypatch)
     monkeypatch.setattr(app, "dependency_overrides", {})
     app.dependency_overrides[get_current_user] = lambda: CurrentUser(UUID(int=3), UUID(int=1),
         "viewer", "export@example.invalid", scopes=["cases:read", "alerts:read"])
+    queries = []
+
     class Empty:
         async def read(self, tenant, kind, query):
+            queries.append(query)
             return ExportRows([], datetime(2026, 11, 13, tzinfo=UTC), 10000)
     app.dependency_overrides[export_service] = Empty
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://synthetic.local") as client:
@@ -60,3 +63,12 @@ async def test_export_parameters_and_empty_csv_use_dedicated_routes(monkeypatch)
             r = await client.get(path)
             assert r.status_code == 200 and r.headers["x-export-count"] == "0"
             assert len(list(csv.reader(io.StringIO(r.content.decode("utf-8-sig"))))) == 1
+            ids = [UUID(int=12), UUID(int=15)]
+            r = await client.get(path, params=[("ids", str(identity)) for identity in ids])
+            if kind == "alerts":
+                assert r.status_code == 200 and queries[-1].ids == ids
+                for invalid in ("", "not-a-uuid"):
+                    r = await client.get(path, params=[("ids", str(ids[0])), ("ids", invalid)])
+                    assert r.status_code == 422
+            else:
+                assert r.status_code == 422

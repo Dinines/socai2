@@ -57,7 +57,7 @@ class SubjectManagementService(BaselineService):
                 row = await store.one(select(table).where(*store.where(table, table.c.id == target.id)).with_for_update())
                 if row is None:
                     raise StoreError("subject_not_found", 404)
-                if row["row_version"] != target.expected_row_version:
+                if kind != "alerts" and row["row_version"] != target.expected_row_version:
                     raise StoreError("subject_row_version_conflict")
                 rows.append(row)
             if (not feedback and changes.owner_id is not None

@@ -62,6 +62,10 @@ class AlertListQuery(SubjectListQuery):
     sort_by: AlertSort | None = None
 
 
+class AlertExportQuery(AlertListQuery):
+    ids: list[UUID] | None = None
+
+
 class IncidentListQuery(SubjectListQuery):
     handling_status: WorkStatus | None = None
     sort_by: IncidentSort | None = None

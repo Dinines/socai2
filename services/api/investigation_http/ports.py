@@ -71,6 +71,7 @@ class AnalysisReads(Protocol):
 
 class PageReads(Protocol):
     async def read(self, tenant, kind, identity, method, **kwargs): ...
+    async def people(self, tenant, query): ...
 
 
 class SubjectManagement(Protocol):

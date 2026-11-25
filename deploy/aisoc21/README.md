@@ -2,7 +2,7 @@
 
 ## 当前发布
 
-21 当前运行 `c173-release-20261121-04` 的 HTTP 18024、Swagger 18080 与联合调度。业务接口共 82 个操作，正式 PostgreSQL 调查库为 35 表、566 列，ClickHouse 湖表为 62 列。Fusion 使用 `c173-release-20261121-03` 的实例，4177 为 0.6.2/r9。
+当前告警发布：调查 HTTP 18024 为 `c173-alert-attck-readback-20261125-01`（83 操作）；web 为 `spirithub-web:alert-20261125-729288945206`，平台 API 为 `spirithub-backend:alert-a-run-20261125-01`。联合调度保持 `alert-rule-source-confidence-20261125-01`；Fusion 基础镜像仍为 `c173-release-20261121-03`，接收规则映射使用已验单次 worker 源码覆盖；独立 Swagger 保持 `c173-release-20261121-04`（82 操作），4177 保持 r9。本批无迁移、Kafka 投递或模型调用。实际镜像、挂载保留、回退点和只读核验见[本批发布回执](../../docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。
 
 [C173 发布清单](c173-release-20261121-04/release.json) · [正式服务与库表读回](../../docs/operations/evidence/c173-escalation-release-20261121-04/README.md) · [后端联调交接清单](../../docs/integration/c173-backend-handoff-20261121.md)
 

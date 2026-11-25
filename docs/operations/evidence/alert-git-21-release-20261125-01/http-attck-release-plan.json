@@ -1,0 +1,95 @@
+{
+  "state": "approved_narrow_http_release",
+  "release": "c173-alert-attck-readback-20261125-01",
+  "base": {
+    "release": "c173-alert-management-20261124-01",
+    "image_id": "sha256:fe1f65c38579e7d4f54e4a33540caf3c130bfd28a5a4cfe4e9034e477e62f586",
+    "container_id": "53257c6ed679",
+    "operations": 83,
+    "port": 18024,
+    "source_count": 751,
+    "source_sha256": "458441e571ba4ab6cf504cf1d716181a08b2cbaae8d5d5fd3b7315deb6167d14",
+    "evidence": "docs/operations/evidence/alert-management-feedback-21-20261124-01/deployment.json"
+  },
+  "source_files": {
+    "services/api/app/socai2/page_contracts.py": {
+      "before_sha256": "af25016c086b83619b9c6f102651a66a794111725ddd835991a1b997d71a51af",
+      "after_sha256": "ee1cb3a4d1c6f95a60a8975b82e5d43587d6cb7378ae7806f98042f1fac79fe1",
+      "hunks": [
+        "@@ -117,7 +117,7 @@"
+      ]
+    },
+    "services/api/app/socai2/page_reader.py": {
+      "before_sha256": "674add39635fe1633786a3b08fcb4cb969206f56cee1d4bd81cddee015a98558",
+      "after_sha256": "4bc37066d723475e8a000d24cfd2be24a043e6b729df6cc3809ce1bdda249533",
+      "hunks": [
+        "@@ -110,7 +110,7 @@"
+      ]
+    }
+  },
+  "candidate_source_sha256": "ac9f488175226d0b2e4d19cad870899e5d50b652e94b71e60f42fda0fc7571f4",
+  "approved_patch_sha256": "7e86c9d4a2e0aaf05e61fe28dce3b0908a26dc9c1ce7dba83e401302381e6dea",
+  "configuration": {
+    "release_timeouts_profile": "deploy/aisoc21/acceptance-release-20261117-01/release.json",
+    "existing_config_mount": "/run/c173-release/config",
+    "existing_logs_mount": "/run/c173-release/logs",
+    "owner_profile_env": "SOCAI2_OWNER_DIRECTORY_PROFILE_FILE",
+    "owner_profile_container_path": "/run/c173-release/config/owner-directory.json",
+    "owner_profile_example": "deploy/http-service/owner-directory.example.json",
+    "owner_profile_example_sha256": "48dcd9f58909651b906f2063260902ba38c6026dc9f272727c4f27258bb64e58",
+    "preserve": [
+      "listening_address_and_port",
+      "user",
+      "command",
+      "network",
+      "security",
+      "read_and_write_database",
+      "existing_context_and_policy_bindings",
+      "owner_profile"
+    ],
+    "new_release_only": [
+      "release_version",
+      "independent_http_log_path_and_instance"
+    ]
+  },
+  "openapi": {
+    "operations": 83,
+    "allowed_changes": [
+      "info.version",
+      "components.schemas.SubjectView.properties.triage.description",
+      "components.schemas.IncidentSubjectView.properties.triage.description"
+    ],
+    "inheritance": "IncidentSubjectView inherits the one approved SubjectView.triage description"
+  },
+  "steps": [
+    "offline_base_and_candidate_source_manifest",
+    "offline_same_openapi_contract_except_description",
+    "verify_original_config_and_prepare_single_service",
+    "cutover_and_retain_old_container",
+    "readiness_source_contract_and_q04_readback",
+    "reuse_prior_approved_alert_readback_receipts"
+  ],
+  "rollback": "restore_existing_http_container_if_health_source_or_required_readback_fails",
+  "limits": {
+    "affected_service": "investigation_http_18024",
+    "models": 0,
+    "new_inputs": 0,
+    "business_writes": 0,
+    "new_business_response_bodies_collected": 0
+  },
+  "prior_evidence": "http-git-freeze.md",
+  "openspec_strict_validation": "passed",
+  "current_readback_scope": {
+    "live": [
+      "image_source_hashes",
+      "runtime_config_and_mounts",
+      "readyz",
+      "openapi",
+      "q04_status_only"
+    ],
+    "business_evidence_reused": [
+      "../alert-score-first-receive-20261125-01/http-readback.json",
+      "../alert-query-skipped-display-20261125-01/independent-review.json"
+    ]
+  }
+}
