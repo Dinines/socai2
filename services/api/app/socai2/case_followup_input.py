@@ -14,6 +14,7 @@ from .baseline_evidence_tools import binding_subject
 from .baseline_final_evidence import query_candidates
 from .baseline_model_view import blocked, blocked_message, draft_limit
 from .baseline_store import StoreError, digest, encoded
+from .case_c3_input_selection import UNMAPPED_REASON, within
 from .case_c3_input_selection import describe as business_provenance
 from .case_c3_input_selection import semantic as material_semantic
 from .case_input_hierarchy import project, render, render_tools, shared_fields
@@ -108,6 +109,27 @@ class Sources:
         number = self.query_numbers.setdefault(str(ref["id"]), len(self.query_numbers) + 1)
         return f"Q{number}R{ref['source_path'].split('.')[2]}"
 
+    def unmapped_dependency(self, ref, source):
+        """Frozen C1/C4 paths cannot resurrect material excluded from the base."""
+        path = ref.get("source_path") or "$"
+        policy = selected_profile(self.context).config["c3_input_selection"]
+        excluded = any(within(path, root) for root in policy.get("material_unmapped_paths", []))
+        for item in self.omissions:
+            if item.get("reason") != UNMAPPED_REASON:
+                continue
+            original = item.get("original_reference", item.get("ref", {}))
+            if "material_id" not in item and original.get("type") != "alert_material":
+                continue
+            identity = item.get("material_id", original.get("id"))
+            omitted = item.get("path", original.get("source_path"))
+            if str(identity) == str(ref["id"]) and omitted and (within(path, omitted) or within(omitted, path)):
+                excluded = True
+                break
+        if excluded:
+            self.omissions.append({"ref": copy.deepcopy(source), "reason": UNMAPPED_REASON,
+                                   "original_reference": copy.deepcopy(ref)})
+        return excluded
+
     def add(self, ref, value, owners, block, *, original=None, **extra):
         ref, owners = copy.deepcopy(ref), list(map(str, owners))
         config = selected_profile(self.context).config
@@ -199,6 +221,12 @@ class Sources:
                 return self.add(ref, projected, source["alert_ids"], "dependency", original=value)
             # Compatibility with valid earlier parent-level A/I references.
             # Use the same configured backend-field selection as the base view.
+            parts = path.split(".")
+            if len(parts) > 4 and parts[:2] == ["$", "alerts"] and parts[3] == "material":
+                member = payload.get("alerts", {}).get(parts[2], {}).get("material") or {}
+                if member.get("id") and self.unmapped_dependency(
+                        reference("alert_material", member["id"], ref["role"], "$." + ".".join(parts[4:])), ref):
+                    return None
             from .case_input_text import select
             kind = "triage" if path.endswith(".triage") else "incident" if path.endswith(".diagnosis") else None
             projected = select(value, cfg["rules"][kind], self.omissions, path) if kind else value
@@ -218,6 +246,8 @@ class Sources:
             basis = "frozen_material"
             member = payload["members"][owners[0]]
             raw_ref = reference("alert_material", member["material_id"], ref["role"], value["source_path"])
+            if self.unmapped_dependency(raw_ref, ref):
+                return None
             raw = self.base_records.get(encoded(raw_ref))
             # Only exact, unchanged scalars share a source number. Mapped enums,
             # conflicts and other derived values retain their own provenance.

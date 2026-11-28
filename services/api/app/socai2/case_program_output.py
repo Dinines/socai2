@@ -26,7 +26,10 @@ def observation_literals(records, aliases, *, event_roots=()):
         key = (ref["type"], str(ref["id"]), tuple(ref.get("row_keys") or []), row.get("record_key"), members)
         if key not in groups:
             groups[key] = len(groups) + 1
-        value = row.get("original_value", row["value"])
+        # A material parent may have an explicitly excluded subtree. Preserve
+        # its original backstage, but do not restore it into observed prose
+        # that will be consumed as the next stage's prior analysis.
+        value = row.get("visible_observation_value", row.get("original_value", row["value"]))
         path = ref.get("source_path") or "$"
         result[row["id"]] = {"group": f"{'、'.join(members) or '共同范围'}/原记录{groups[key]}",
             "path": path, "value": value}

@@ -1,6 +1,6 @@
 # 当前进度
 
-更新于 2026-11-25。本批已验告警页面、平台代理及调查 HTTP 已发布 21；HTTP 为 `c173-alert-attck-readback-20261125-01`、83 个业务操作，核心规则映射和新 A 提示保持已验版本。8181 既有业务验收沿原范围复用，本次另核实际版本、源码、静态资源和接口状态；正式页面业务正文复验未执行。范围、证据和限制见[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。事件与 Case 联合验收及整个 change 收口仍未完成。
+当前交付 Case 输入 M0f 的本地修正及必要依赖：明确 OCSF unmapped 过滤、同材料镜像选择、已知入站台账选择，以及后续观察正文不恢复已排除内容。原件、角色、来源和成员保持。[本阶段方案](openspec/changes/complete-socai2-investigation-chain/case-input-capacity-20261128.md)、[限定验收](docs/operations/evidence/case-input-unmapped-m0f-20261128-01/README.md)。拟提交源码在 Git HEAD 独立候选中的 84 项生成结构检查通过，另批 tokenizer-only 入口已执行并关闭临时 SSH；实际报告只在获准的当前统筹会话核对，不进入 Git。按负责人分阶段授权提交 V1.1，其他工作区改动及 main/父项目保持。没有模型生成、数据库写入或 21 发布；后续 Case 业务验收和第二方案不由此次输入修正核销。
 
 2026-11-18 历史记录。**21完整服务和两段流程测试已完成；4b工作台0.6.1/r8及验收工具现已发布，指定Case/轮次与紫色来源实际查阅通过。** [发布/核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，最终3d04验收容器发送2告警/3上下文，形成同一事件、同一Case的两轮结果，成员1→2，后轮比较实际首轮。7任务、6Run、48步骤、142工件及477次HTTP成功回执已核；8次真实模型均stop，共45207tokens，实际并发峰值1、结束时无在途。[本轮完整回执](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)与[输入输出报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)可查。
 

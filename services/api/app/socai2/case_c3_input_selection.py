@@ -7,6 +7,93 @@ from .case_context_input import human_refs
 from .case_input_hierarchy import project
 from .knowledge_content import project_content
 
+UNMAPPED_REASON = "configured_case_unmapped_material"
+MISSING = object()
+
+
+def material_path(value, path):
+    """Read only the existing material reference syntax; never guess dotted keys."""
+    if path == "$":
+        return value
+    for key in path.removeprefix("$.").split("."):
+        if isinstance(value, dict):
+            value = value.get(key, MISSING)
+        elif isinstance(value, list) and key.isdecimal() and int(key) < len(value):
+            value = value[int(key)]
+        else:
+            return MISSING
+    return value
+
+
+def within(path, root):
+    return path == root or path.startswith(root + ".")
+
+
+def unmapped_value(value, path, policy):
+    """Exclude declared containers even when a dotted business key retains a parent."""
+    roots = policy.get("material_unmapped_paths", [])
+    if any(within(path, root) for root in roots):
+        return MISSING
+    selected = copy.deepcopy(value)
+    for root in roots:
+        if not within(root, path):
+            continue
+        relative = root[len(path) + 1:].split(".")
+        parent = selected
+        for key in relative[:-1]:
+            parent = parent.get(key, MISSING) if isinstance(parent, dict) else MISSING
+        if isinstance(parent, dict):
+            parent.pop(relative[-1], None)
+    return selected
+
+
+def unmapped_material(material, policy, omissions):
+    """Project fixed OCSF roots and proven same-material JSON wrappers only."""
+    roots = policy.get("material_unmapped_paths", [])
+    selected = unmapped_value(material, "$", policy)
+
+    def replace(path, value):
+        parent_path, key = path.rsplit(".", 1)
+        parent = material_path(selected, parent_path)
+        if isinstance(parent, dict):
+            if value is MISSING:
+                parent.pop(key, None)
+            else:
+                parent[key] = value
+
+    # Only these configured string fields are decoded. Parsing failure or a
+    # different structure is not evidence of equivalence or successful filtering.
+    parsed = {}
+    for path in policy.get("material_unmapped_serialized_paths", []):
+        value = material_path(material, path)
+        if isinstance(value, str):
+            try:
+                decoded = json.loads(value, object_pairs_hook=unique_object)
+                encoded(decoded)
+                if isinstance(decoded, (dict, list)):
+                    parsed[path] = decoded
+            except (ValueError, TypeError, RecursionError):
+                pass
+    # Remove exact copies of an excluded container before projecting full OCSF
+    # mirrors, so an outer mirror cannot retain its raw_data copy.
+    for path, value in parsed.items():
+        if any(same_json_value(value, material_path(material, root)) for root in roots):
+            replace(path, MISSING)
+    objects = [root.removesuffix(".unmapped") for root in roots]
+    for path in sorted(parsed, key=lambda p: not p.endswith(".raw_data")):
+        if material_path(selected, path) is MISSING:
+            continue
+        root = next((root for root in objects if isinstance(material_path(material, root), dict)
+                     and same_json_value(parsed[path], material_path(material, root))), None)
+        if root and not same_json_value(material_path(selected, root), material_path(material, root)):
+            replace(path, encoded(material_path(selected, root)).decode())
+    for path in dict.fromkeys([*roots, *parsed]):
+        original, visible = material_path(material, path), material_path(selected, path)
+        if original is not MISSING and (visible is MISSING or not same_json_value(original, visible)):
+            omissions.append({"material_id": material["id"], "path": path, "reason": UNMAPPED_REASON,
+                              "value_sha256": digest(original)})
+    return selected
+
 
 def semantic(row, business, config):
     path = row["ref"].get("source_path") or ""
@@ -34,20 +121,64 @@ def prior_refs(rows):
     return result
 
 
+def unique_object(pairs):
+    result = {}
+    for key, child in pairs:
+        if key in result:
+            raise ValueError("duplicate_source_key")
+        result[key] = child
+    return result
+
+
+def same_json_value(left, right):
+    """JSON equality includes scalar types, object keys and array positions."""
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(
+            isinstance(key, str) and same_json_value(child, right[key]) for key, child in left.items())
+    if isinstance(left, list):
+        return len(left) == len(right) and all(same_json_value(a, b) for a, b in zip(left, right, strict=True))
+    return type(left) in {str, int, float, bool, type(None)} and left == right
+
+
+def serialized_mirror_path(value, material, path, policy):
+    """Compare the complete originals before metadata/field selection loses keys."""
+    rule = next((r for r in policy.get("material_mirrors", []) if r["source_path"] == path), None)
+    if rule is None or not isinstance(value, str):
+        return None
+    original = material
+    for key in rule["object_path"][2:].split("."):
+        if not isinstance(original, dict) or key not in original:
+            return None
+        original = original[key]
+    if not isinstance(original, dict):
+        return None
+    try:
+        parsed = json.loads(value, object_pairs_hook=unique_object)
+        encoded(parsed)  # Reject non-finite numbers and invalid JSON strings.
+        return rule["object_path"] if same_json_value(parsed, original) else None
+    except (ValueError, TypeError, RecursionError):
+        return None
+
+
+def mirror_referenced(ref, refs):
+    """A whole material or ancestor attachment also depends on the original text."""
+    path = ref.get("source_path") or "$"
+    for other in refs:
+        if other.get("type") != ref["type"] or other.get("id") != ref["id"]:
+            continue
+        required = other.get("source_path") or "$"
+        if required == path or path.startswith(required + ".") or required.startswith(path + "."):
+            return True
+    return False
+
+
 def serialized_fields(value, available):
     if not isinstance(value, str):
         return value
-
-    def unique(pairs):
-        result = {}
-        for key, child in pairs:
-            if key in result:
-                raise ValueError("duplicate_source_key")
-            result[key] = child
-        return result
-
     try:
-        parsed = json.loads(value, object_pairs_hook=unique)
+        parsed = json.loads(value, object_pairs_hook=unique_object)
         encoded(parsed)
     except (ValueError, TypeError):
         return value
@@ -93,6 +224,20 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
     for row in rows:
         ref, value = row["ref"], copy.deepcopy(row["value"])
         path, kind = ref.get("source_path") or "", row["block"]
+        if kind == "material":
+            projected = unmapped_value(value, path, policy)
+            if projected is MISSING:
+                omit(row, UNMAPPED_REASON)
+                continue  # Explicit references cannot restore excluded material.
+            if not same_json_value(projected, value):
+                omit(row, UNMAPPED_REASON)
+                value = projected
+                row["visible_observation_value"] = copy.deepcopy(projected)
+        if (kind == "material" and row.get("typed_raw_alert_envelope") and row.get("serialized_mirror_of")
+                and not mirror_referenced(ref, refs)):
+            omit(row, "same_material_serialized_mirror")
+            omissions[-1]["equivalent_ref"] = copy.deepcopy(row["serialized_mirror_of"])
+            continue
         historical = tools.get(ref["id"]) == "history" and path.startswith("$.rows.")
         if row.get("knowledge") or historical:
             kind = "prior_analysis" if ref["role"] == "prior_analysis" else (
@@ -145,8 +290,14 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
                             for full in member.get("objects", [])) for obj in value):
                 reason = "object_index_already_in_directory"
         if row["block"] == "material":
-            if row.get("typed_raw_alert_envelope") and path in policy["material_backend_paths"]:
-                reason = "configured_c3_material_backend_field"
+            if row.get("typed_raw_alert_envelope"):
+                backend = next((root for root in policy["material_backend_paths"]
+                                if path == root or path.startswith(root + ".")), None)
+                # Opt in only the new subtree; existing exact-reference
+                # behavior for other backend fields remains below in required().
+                protected = backend in policy.get("material_backend_reference_paths", []) and mirror_referenced(ref, refs)
+                if backend is not None and not protected:
+                    reason = "configured_c3_material_backend_field"
             if path == "$.raw_json.title" and row.get("typed_raw_alert_envelope") and all(
                     context["alerts"][a]["alert"].get("title") == value for a in row["alert_ids"]):
                 reason = "same_alert_title_already_visible"
@@ -175,6 +326,8 @@ def select_rows(rows, context, config, business, omissions, *, required_refs=())
             omit(row, reason)
             continue
         row["value"] = value
+        if "visible_observation_value" in row:
+            row["visible_observation_value"] = copy.deepcopy(value)
         kept.append(row)
     return kept
 

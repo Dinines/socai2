@@ -2,11 +2,11 @@
 
 import asyncio
 import logging
-from app.core.operational_logging import log_exception
 
 import httpx
 
 from app.core.airgap import AirgapViolation, enforce_airgap_for_url
+from app.core.operational_logging import log_exception
 
 from .baseline_store import StoreError, digest, encoded
 
@@ -21,6 +21,48 @@ async def measure_with_deadline(gateway, body, stage, remaining_seconds):
         # Tokenization never starts generation. A timed-out count is a known
         # pre-dispatch stop, not an unknown model call or an automatic retry.
         raise StoreError("token_measurement_deadline_reached", 422) from None
+
+
+def context_admission(policy, body, stage, chat_tokens, envelope_tokens):
+    """Separate declared server-side schema constraints from the prompt window."""
+    response = body.get("response_format")
+    tagged = response.get("format") if isinstance(response, dict) else None
+    schema = response.get("json_schema") if isinstance(response, dict) else None
+    grammar_format = isinstance(response, dict) and (
+        (set(response) == {"type", "format"} and response["type"] == "structural_tag"
+         and isinstance(tagged, dict) and set(tagged) == {"type", "json_schema", "max_whitespace_cnt"}
+         and tagged["type"] == "json_schema" and isinstance(tagged["json_schema"], dict)
+         and type(tagged["max_whitespace_cnt"]) is int and tagged["max_whitespace_cnt"] >= 0)
+        or (set(response) == {"type", "json_schema"} and response["type"] == "json_schema"
+            and isinstance(schema, dict) and set(schema) == {"name", "schema", "strict"}
+            and isinstance(schema["name"], str) and bool(schema["name"].strip())
+            and isinstance(schema["schema"], dict) and schema["strict"] is True)
+    )
+    messages = body.get("messages")
+    # Only these text-chat shapes use the declared vLLM grammar capability.
+    # Extra tool, template or multimodal fields can add unmeasured prompt tokens.
+    grammar = (
+        set(body) == {"model", "messages", "max_tokens", "temperature", "response_format"}
+        and isinstance(messages, list) and bool(messages)
+        and all(isinstance(message, dict) and set(message) == {"role", "content"}
+                and isinstance(message["role"], str)
+                and message["role"] in {"system", "user", "assistant"}
+                and isinstance(message["content"], str) for message in messages)
+        and grammar_format
+    )
+    prompt_only = (policy.protocol == "chat_completions"
+                   and policy.schema_profile == "vllm_grammar_v1" and grammar)
+    input_tokens = chat_tokens + policy.tokenizer["safety_tokens"]
+    if not prompt_only:
+        input_tokens += envelope_tokens
+    required = input_tokens + policy.output_tokens[stage]
+    return {
+        "context_accounting": "chat_template_plus_output_and_safety" if prompt_only
+            else "chat_template_plus_wire_envelope_plus_output_and_safety",
+        "context_input_tokens": input_tokens,
+        "context_required_tokens": required,
+        "context_fits": required <= policy.context_tokens,
+    }
 
 
 class BackendTokenMeter:
@@ -67,5 +109,5 @@ class BackendTokenMeter:
             "chat_tokens": counts[0], "envelope_tokens": counts[1], "safety_tokens": config["safety_tokens"],
             "reserved_input_tokens": estimated_input, "output_tokens": policy.output_tokens[stage],
             "reserved_total_tokens": total, "context_tokens": policy.context_tokens,
-            "context_fits": total <= policy.context_tokens, "wire_bytes": len(encoded(body)),
+            **context_admission(policy, body, stage, *counts), "wire_bytes": len(encoded(body)),
             "limitations": ["envelope_is_conservative_extra_input_not_provider_reported_usage"]}

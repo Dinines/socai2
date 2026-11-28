@@ -9,7 +9,15 @@ from .alert_basic_contract import raw_field_role
 from .baseline_context import reference
 from .baseline_model_view import blocked
 from .baseline_store import digest, encoded
-from .case_c3_input_selection import describe, select_rows
+from .case_c3_input_selection import (
+    MISSING,
+    describe,
+    material_path,
+    same_json_value,
+    select_rows,
+    serialized_mirror_path,
+    unmapped_material,
+)
 from .case_c3_input_selection import semantic as material_semantic
 from .case_input_hierarchy import (
     enrichment,
@@ -69,6 +77,7 @@ def material_entries(aid, material, config, omissions, candidate=None):
     raw = material.get("raw_json")
     known_envelope = isinstance(raw, dict) and all(type(raw.get(k)).__name__ == typ
                                                   for k, typ in envelope["required_fields"].items())
+    selected = unmapped_material(material, candidate["c3_input_selection"], omissions) if candidate else material
     result = []
     for name in ("raw_text", "ocsf_json", "raw_json", "detection", "enrichment", "source_scope"):
         value = material.get(name)
@@ -83,7 +92,10 @@ def material_entries(aid, material, config, omissions, candidate=None):
                 omissions.append({"material_id": material["id"], "path": path,
                                   "reason": "configured_backend_field", "value_sha256": digest(original)})
                 continue
-            projected = original
+            projected = material_path(selected, path)
+            if projected is MISSING:
+                continue
+            unmapped_projected = not same_json_value(projected, original)
             if candidate and known_envelope and (path in candidate["material_backend_paths"] or
                     path in candidate["material_optional_paths"] and original in ([], {})):
                 omissions.append({"material_id": material["id"], "path": path,
@@ -105,6 +117,15 @@ def material_entries(aid, material, config, omissions, candidate=None):
             result.append({"ref": reference("alert_material", material["id"], raw_field_role(path), path),
                 "alert_ids": [aid], "value": projected, "original_value": original, "block": "material",
                 "typed_raw_alert_envelope": known_envelope})
+            if unmapped_projected:
+                # Program-owned observed statements later become prior prose.
+                # They must not restore fields excluded from this visible source.
+                result[-1]["visible_observation_value"] = copy.deepcopy(projected)
+            mirror_path = (serialized_mirror_path(original, material, path, candidate["c3_input_selection"])
+                           if candidate and known_envelope else None)
+            if mirror_path:
+                result[-1]["serialized_mirror_of"] = reference(
+                    "alert_material", material["id"], raw_field_role(mirror_path), mirror_path)
     return result
 
 

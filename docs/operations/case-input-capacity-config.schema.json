@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned Case candidate request measurement",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "snapshot", "run_id", "artifacts", "policy", "candidate_case_profile", "tokenizer", "output_dir", "stages"],
+  "properties": {
+    "mode": {"const": "candidate_rebuild_tokenizer_only"},
+    "snapshot": {"$ref": "#/$defs/pinned_file"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "artifacts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["context", "enrichment_summary", "c3_bindings", "c3_result", "c4_dispatch", "c6_report"],
+      "properties": {
+        "context": {"type": "string", "format": "uuid"},
+        "enrichment_summary": {"type": ["string", "null"], "format": "uuid"},
+        "c3_bindings": {"type": ["string", "null"], "format": "uuid"},
+        "c3_result": {"type": ["string", "null"], "format": "uuid"},
+        "c4_dispatch": {"type": ["string", "null"], "format": "uuid"},
+        "c6_report": {"type": ["string", "null"], "format": "uuid"}
+      }
+    },
+    "policy": {"$ref": "#/$defs/pinned_file"},
+    "candidate_case_profile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "sha256", "business_sha256"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "business_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "tokenizer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["endpoint"],
+      "properties": {"endpoint": {"type": "string", "format": "uri"}}
+    },
+    "output_dir": {"type": "string", "pattern": "^/"},
+    "stages": {"const": ["C3", "C6"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pinned_file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "pattern": "^/"}, "sha256": {"$ref": "#/$defs/sha256"}}
+    }
+  }
+}

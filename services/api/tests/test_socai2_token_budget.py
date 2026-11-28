@@ -1,7 +1,9 @@
 """Full-wire accounting includes schema and chat template; no generated answers."""
 
 import asyncio
+import copy
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -120,3 +122,131 @@ def test_expanded_run_budget_keeps_two_full_c6_calls_available(monkeypatch):
             steps.append({"kind": "model", "state": "completed",
                           "usage": {"usage_state": "reported", "total_tokens": window}})
         assert budget_reason(steps, limits, 0, now, measurement=measurement) == "model_call_budget_exhausted"
+
+
+def incident_grammar_request(policy):
+    return {"model": policy.alias, "messages": [{"role": "user", "content": "synthetic evidence"}],
+            "max_tokens": policy.output_tokens["I"], "temperature": 0,
+            "response_format": {"type": "structural_tag", "format": {
+                "type": "json_schema", "json_schema": {"type": "object"}, "max_whitespace_cnt": 8}}}
+
+
+def measure_saved_counts(policy, body, stage, chat, envelope):
+    def handle(req):
+        payload = json.loads(req.content)
+        return httpx.Response(200, json={"count": chat if "messages" in payload else envelope,
+                                        "max_model_len": policy.context_tokens})
+    return asyncio.run(BackendTokenMeter(policy, transport=httpx.MockTransport(handle)).measure(body, stage))
+
+
+@pytest.mark.parametrize("excess", [0, 1])
+def test_incident_grammar_window_uses_chat_but_run_budget_keeps_envelope(excess):
+    from datetime import UTC, datetime
+
+    from app.socai2.baseline_analysis import budget_reason
+
+    selected = load_policy(FILE.with_name("investigation-policy-case-v1.toml"))
+    policy = replace(selected.model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    body = incident_grammar_request(policy)
+    original = copy.deepcopy(body)
+    chat = policy.context_tokens - policy.output_tokens["I"] - policy.tokenizer["safety_tokens"] + excess
+    envelope = 1024
+    measured = measure_saved_counts(policy, body, "I", chat, envelope)
+    assert measured["context_accounting"] == "chat_template_plus_output_and_safety"
+    assert measured["context_input_tokens"] == chat + policy.tokenizer["safety_tokens"]
+    assert measured["context_required_tokens"] == policy.context_tokens + excess
+    assert measured["context_fits"] == (excess == 0)
+    assert measured["envelope_tokens"] == envelope
+    assert measured["reserved_input_tokens"] == measured["context_input_tokens"] + envelope
+    assert measured["reserved_total_tokens"] == measured["context_required_tokens"] + envelope
+    assert measured["body_sha256"] == digest(body) and body == original
+    now = datetime.now(UTC)
+    limits = selected.incident_diagnosis.limits(now, selected.identity)
+    assert budget_reason([], limits, 0, now, measurement=measured) == (
+        None if excess == 0 else "model_context_capacity_exceeded")
+    if excess == 0:
+        smaller = limits.model_copy(update={"max_tokens": measured["reserved_total_tokens"] - 1})
+        assert budget_reason([], smaller, 0, now, measurement=measured) == "model_token_budget_insufficient"
+
+
+@pytest.mark.parametrize("stage", ["A", "C3", "Deep", "C6"])
+def test_grammar_context_uses_protocol_capability_not_stage(stage):
+    policy = replace(load_policy(FILE).model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    body = {**incident_grammar_request(policy), "max_tokens": policy.output_tokens[stage]}
+    chat = policy.context_tokens - policy.output_tokens[stage] - policy.tokenizer["safety_tokens"]
+    measured = measure_saved_counts(policy, body, stage, chat, 1)
+    assert measured["context_accounting"] == "chat_template_plus_output_and_safety"
+    assert measured["context_required_tokens"] == policy.context_tokens
+    assert measured["reserved_total_tokens"] == policy.context_tokens + 1
+    assert measured["context_fits"]
+
+
+@pytest.mark.parametrize("excess", [0, 1])
+def test_json_schema_window_keeps_full_reservation_and_real_capacity_limit(excess):
+    from datetime import UTC, datetime
+
+    from app.socai2.baseline_analysis import budget_reason
+
+    selected = load_policy(FILE.with_name("investigation-policy-case-v1.toml"))
+    policy = replace(selected.model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    body = {**incident_grammar_request(policy), "max_tokens": policy.output_tokens["C3"],
+            "response_format": {"type": "json_schema", "json_schema": {
+                "name": "result", "schema": {"type": "object"}, "strict": True}}}
+    original = copy.deepcopy(body)
+    chat = policy.context_tokens - policy.output_tokens["C3"] - policy.tokenizer["safety_tokens"] + excess
+    measured = measure_saved_counts(policy, body, "C3", chat, 1024)
+    assert measured["context_required_tokens"] == policy.context_tokens + excess
+    assert measured["context_fits"] == (excess == 0)
+    assert measured["reserved_total_tokens"] == measured["context_required_tokens"] + 1024
+    assert measured["body_sha256"] == digest(body) and body == original
+    now = datetime.now(UTC)
+    limits = selected.case.limits(now, selected.identity)
+    assert budget_reason([], limits, 0, now, measurement=measured) == (
+        None if excess == 0 else "model_context_capacity_exceeded")
+    if excess == 0:
+        smaller = limits.model_copy(update={"max_tokens": measured["reserved_total_tokens"] - 1})
+        assert budget_reason([], smaller, 0, now, measurement=measured) == "model_token_budget_insufficient"
+
+
+@pytest.mark.parametrize("extension", ["loose_schema", "format_extension", "template", "multimodal"])
+def test_json_schema_unknown_shape_keeps_conservative_context(extension):
+    policy = replace(load_policy(FILE).model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    body = {**incident_grammar_request(policy), "max_tokens": policy.output_tokens["C3"],
+            "response_format": {"type": "json_schema", "json_schema": {
+                "name": "result", "schema": {"type": "object"}, "strict": True}}}
+    if extension == "loose_schema":
+        body["response_format"]["json_schema"]["strict"] = False
+    elif extension == "format_extension":
+        body["response_format"]["extra"] = True
+    elif extension == "template":
+        body["chat_template_kwargs"] = {}
+    else:
+        body["messages"][0]["content"] = []
+    measured = measure_saved_counts(policy, body, "C3", 1, policy.context_tokens)
+    assert measured["context_accounting"] == "chat_template_plus_wire_envelope_plus_output_and_safety"
+    assert measured["context_required_tokens"] == measured["reserved_total_tokens"]
+    assert not measured["context_fits"]
+
+
+@pytest.mark.parametrize("extension", ["unknown_format", "tools"])
+def test_incident_unknown_wire_shape_keeps_conservative_context(extension):
+    policy = replace(load_policy(FILE).model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    body = incident_grammar_request(policy)
+    if extension == "unknown_format":
+        body["response_format"] = {"type": "json_object"}
+    else:
+        body["tools"] = []
+    measured = measure_saved_counts(policy, body, "I", 1, policy.context_tokens)
+    assert measured["context_accounting"] == "chat_template_plus_wire_envelope_plus_output_and_safety"
+    assert measured["context_required_tokens"] == measured["reserved_total_tokens"]
+    assert not measured["context_fits"]
+
+
+@pytest.mark.parametrize("override", [{"protocol": "other"}, {"schema_profile": "standard"}])
+def test_incident_unverified_protocol_or_profile_keeps_conservative_context(override):
+    policy = replace(load_policy(FILE).model, protocol="chat_completions", schema_profile="vllm_grammar_v1")
+    policy = replace(policy, **override)
+    measured = measure_saved_counts(policy, incident_grammar_request(policy), "I", 1, policy.context_tokens)
+    assert measured["context_accounting"] == "chat_template_plus_wire_envelope_plus_output_and_safety"
+    assert measured["context_required_tokens"] == measured["reserved_total_tokens"]
+    assert not measured["context_fits"]

@@ -2,6 +2,23 @@
 
 ## ADDED Requirements
 
+### Requirement: Declared grammar capability uses actual prompt context accounting
+
+显式配置的`chat_completions`、`vllm_grammar_v1`在已识别的纯文本聊天请求及服务端grammar响应格式下，SHALL 按后端聊天模板计数、安全余量和输出预约判断上下文窗口；此能力按协议和请求结构识别，不按A/I/C3/Deep/C6阶段、Case或测试样本识别。已识别格式包括严格`json_schema`和带既有空白限制的`structural_tag/json_schema`。Schema封装计量 SHALL 保留在回执及既有保守累计token预约中，不作为该路径的实际prompt计入窗口。实际窗口、累计预算、调用数及期限 MUST 保持原配置；未知协议、配置、响应格式、额外工具/模板/多模态字段沿原保守计量。原body、来源范围及输出验证 MUST 保持。
+
+#### Scenario: A declared server-side schema is outside the prompt window
+- **WHEN** 任一已配置阶段的已识别grammar请求，其聊天计数加安全余量及输出预约在窗口内，而加上非消息封装计量后超过窗口
+- **THEN** 上下文检查允许继续其余预算检查，记录协议口径和窗口需求；完整请求与封装计量仍保存，累计预算未被隐式扩大
+
+#### Scenario: The real prompt exceeds the serving window or its shape is unverified
+- **WHEN** 聊天模板计数、安全余量及输出预约之和超过实际核对的窗口，或当前格式不在已确认grammar路径内
+- **THEN** 前者仍在生成前拒绝，后者沿原保守口径；不自动改模型容量、阶段预算或删减材料
+
+#### Scenario: A previously rejected Run is inspected after the fix
+- **WHEN** 复算旧失败请求的计量或读取旧Run
+- **THEN** 复算只报告新准入规则的结果，旧失败、原工件、无输出和采用指针保持；不自动重跑或追认调查成功
+
+
 ### Requirement: Model inputs select business information for the stage goal
 
 每个模型环节 SHALL 先明确使用模型的原因、待完成的业务判断和输出用途，再按字段选择有助于该目标的材料。程序 MUST NOT 将原始记录、数据库对象、工具回执或上游请求整包序列化透传；只换格式、去重或未超限不构成完成。完整原件、身份、范围、版本和执行台账保持后台可回查；所选业务事实与正文保留原值/原文和角色，必要依据及反证不得因未被前序模型引用而丢弃。
@@ -69,6 +86,33 @@
 #### Scenario: C3 has no available tool binding
 - **WHEN** 当前工具目录没有可用查询候选
 - **THEN** 输入只说明无可用查询候选，不列全套不可执行能力/参数；有候选时提供选择所需业务描述及原绑定，后台目录和输出约束不变
+
+#### Scenario: Case material repeats an intact OCSF object as a serialized mirror
+- **WHEN** 已识别 RawAlert 外壳的配置镜像路径保存 OCSF 原始字符串，严格解析后与同材料指定结构对象逐值同类型一致，且所选前序或人工材料没有对该镜像的明确依赖
+- **THEN** C3 的模型视图省去这份重复字符串，C6 沿冻结记录及既有筛选路径使用所选业务材料；原结构字段、角色、成员、原件与来源映射保持，省略原因留在后台台账
+- **AND** JSON 重复键/解析失败、非结构 JSON、未识别外壳、字段/类型/数组次序有差异时保留原表示；显式引用包含镜像本身、后代、祖先容器或整份材料时保留依赖，不重写原文或把镜像标签升级为观察证据
+
+#### Scenario: Case material includes known lake ingress administration
+- **WHEN** Case 按既有结构确认 RawAlert 外壳，材料包含配置指定的 `field_metadata.lake_ingress` 入站台账
+- **THEN** C3 及沿其冻结记录取材的 C6 将该明确后台子树留在原件/选择台账中，不默认把库定位、来源标识等逐字段送入业务分析；原件、输出/存储合同和 M0c 镜像规则保持
+- **AND** 选择按完整路径边界进行，未知兄弟项、其他位置的同名业务字段、未识别外壳以及明确前序/人工/整材料引用保持原角色和范围；无法安全按既有路径拆分的非空父对象保守保留，不整根删除未知内容
+
+### Requirement: Case model materials exclude explicitly unmapped content
+
+新 Case C3、Deep、C6 的材料模型视图 SHALL 排除已声明 OCSF 结构根中的 `unmapped` 容器及其后代。现有原文/序列化包装和明确前序引用 MUST NOT 绕过此边界重新透传已排除内容；既有镜像和引用保留规则仅在本边界允许的材料内适用。程序 SHALL 保留完整原件、原来源及成员关系，在后台记录省略与不可见依赖；不得把排除解释为源数据不存在、查询无结果或已证实安全。公共告警合同、旧 Run、模型预算和内容检查保持。
+
+#### Scenario: Mapped observations and unmapped extensions coexist
+- **WHEN** Case 材料在已声明的 OCSF 结构根中同时含已映射字段和 `unmapped`
+- **THEN** 新模型视图只排除该容器及后代；其余业务字段、有效的零/false/空列表、原角色及来源保持，不全局按同名键或样本值删除其他业务内容
+
+#### Scenario: A serialized material or prior dependency refers to unmapped content
+- **WHEN** 已有材料包装或明确前序来源引用涉及排除的 `unmapped` 内容
+- **THEN** 不因重复包装或引用保护将其重新带入；按照既有不可见来源/依赖口径表达未提供，完整原文仍在后台，不伪造可见引用或将保留的前序判断当作当前独立证据
+
+#### Scenario: Followup reads a saved selected input
+- **WHEN** 新 C3 输入工件保存读回后用于 Deep 或 C6 构造
+- **THEN** 后续输入保持同一 unmapped 边界，并保留有效已映射事实、来源角色和成员范围；本地预览或结构验证不能替代真实容量和模型业务验收
+
 
 ### Requirement: Structured knowledge reaches the model as selected intact business fields
 
@@ -769,7 +813,7 @@ H SHALL 保存人工确认内容、主体、完成时间和事实范围，并能
 
 ### Requirement: Full-run resource allocation protects a feasible final synthesis
 
-新版本完整C执行 SHALL 从显式配置读取单次 300 秒、Case 1500 秒及 C6 预留 300 秒，单次上下文、输出、整轮累计 tokens、模型/Tool 次数和存储字节上限分别管理。模型和 tokenizer 派发前 SHALL 检查截止、次数及未知用量；计量本身受扣除 C6 预留后的剩余时间约束，生成前再次检查。计量 MUST 使用协议转换后的完整请求及实际后端 tokenizer/chat template，包含消息、Schema/协议包络、安全余量和输出预留，不以字节充当 tokens。不得重置 usage、删除必要事实/H/反证/原计划或运行中自动提高额度。预留参数、配置指纹和未执行原因 SHALL 保存在同 Run 执行计划。
+新版本完整C执行 SHALL 从显式配置读取单次 300 秒、Case 1500 秒及 C6 预留 300 秒，单次上下文、输出、整轮累计 tokens、模型/Tool 次数和存储字节上限分别管理。模型和 tokenizer 派发前 SHALL 检查截止、次数及未知用量；计量本身受扣除 C6 预留后的剩余时间约束，生成前再次检查。计量 MUST 使用协议转换后的完整请求及实际后端 tokenizer/chat template，记录消息、Schema/协议包络、安全余量和输出预留，不以字节充当 tokens；上下文窗口按已声明且请求结构吻合的grammar能力判断，累计预约继续包含完整封装。不得重置 usage、删除必要事实/H/反证/原计划或运行中自动提高额度。预留参数、配置指纹和未执行原因 SHALL 保存在同 Run 执行计划。
 
 阶段1配置目标为Case 6模型/4 Tool/131072累计tokens、C3输出8192/C6输出8192，C3最多5个核心发现。初答及最多一次字段补答共用Run额度，C6仍保留既有两次容量预留，更低显式上限只预留实际可用次数；不因引用问题触发额外C6调用，也不自动把闲置预留转给C3。运行配置尚待实施及实际加载核对，旧4096批次及原用量不追认改变。当前后端计量仅支持已核实的 chat_completions/vLLM；未支持的协议 SHALL 明确拒绝，不沿用其他后端计数冒充兼容。
 

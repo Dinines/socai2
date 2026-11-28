@@ -95,6 +95,47 @@ def validate_c3_completion(policy, *, frozen=False):
 
 
 
+def validate_material_mirrors(rules):
+    # Remain standalone: deployment validation imports this module directly.
+    def path(value):
+        return (isinstance(value, str) and value.startswith("$.raw_json.raw_event.")
+                and all(part.isidentifier() for part in value[2:].split(".")))
+
+    if (not isinstance(rules, list)
+            or any(not isinstance(rule, dict) or set(rule) != {"source_path", "object_path"}
+                   or not all(path(rule[key]) for key in ("source_path", "object_path"))
+                   or rule["source_path"] == rule["object_path"] for rule in rules)
+            or len({rule["source_path"] for rule in rules}) != len(rules)):
+        raise ValueError("case_material_mirrors_invalid")
+
+
+def validate_material_backend_paths(policy):
+    paths = policy.get("material_backend_paths")
+    referenced = policy.get("material_backend_reference_paths", [])
+    if (any(not isinstance(group, list) or any(
+            not isinstance(path, str) or not path.startswith("$.raw_json.")
+            or not all(part.isidentifier() for part in path[2:].split(".")) for path in group)
+            or len(group) != len(set(group)) for group in (paths, referenced))
+            or not set(referenced) <= set(paths)):
+        raise ValueError("case_material_backend_paths_invalid")
+
+
+def validate_material_unmapped_paths(policy):
+    # This Case-only boundary deliberately cannot become a recursive key filter.
+    allowed = {
+        "material_unmapped_paths": {"$.ocsf_json.unmapped", "$.raw_json.raw_event.ocsf_event.unmapped"},
+        "material_unmapped_serialized_paths": {"$.raw_text", "$.raw_json.raw_event.source_ocsf_json",
+            "$.ocsf_json.raw_data", "$.raw_json.raw_event.ocsf_event.raw_data"},
+    }
+    for key, paths in allowed.items():
+        value = policy.get(key, [])
+        if (not isinstance(value, list) or any(not isinstance(path, str) or path not in paths for path in value)
+                or len(value) != len(set(value))):
+            raise ValueError("case_material_unmapped_paths_invalid")
+    if policy.get("material_unmapped_serialized_paths") and not policy.get("material_unmapped_paths"):
+        raise ValueError("case_material_unmapped_paths_invalid")
+
+
 def load_case_profile(selection):
     if not isinstance(selection, dict) or set(selection) != {"profile"}:
         raise ValueError("case_profile_selection_invalid")
@@ -169,6 +210,9 @@ def load_case_profile(selection):
         raise ValueError("case_profile_enrichment_or_citation_invalid")
     followup = data.get("followup")
     c3_selection, c6_selection = data.get("c3_input_selection", {}), data.get("followup_input_selection", {})
+    validate_material_backend_paths(c3_selection)
+    validate_material_mirrors(c3_selection.get("material_mirrors", []))
+    validate_material_unmapped_paths(c3_selection)
     if (any(key in c3_selection and type(c3_selection[key]) is not bool
             for key in ("omit_unusable_prior_results", "prefer_incident_conclusion"))
             or "defer_prior_context" in c6_selection and type(c6_selection["defer_prior_context"]) is not bool

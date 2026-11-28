@@ -43,6 +43,8 @@
 
 ## 尚未完成
 
+- [ ] M0e 后续真实模型生成、Case 保存/读取及页面业务验收仍按独立批次推进；本次源码/输入容量交付不等于完整 Case 或 change 完成。第二步单告警事实提取/按需原文检索先设计，未随本次实施。
+
 按负责人关于大量工具返回的补充，第16节已本地实现：保留现有查询/请求容量边界，补普通查询字段按记录关联的共同值展示及内部身份筛选；1项已有字段检查及1项正常隔离库替身保存/读取流程通过，结果/当前评估GET一致。[07批证据](../../../docs/operations/evidence/model-input-selection-20261112-07/README.md)明确区分合成预览、实际替身请求、accepted/partial结果与前置脚本失败；不新增翻页、模型摘要或压力测试，真实模型质量和旧失败不追认。
 
 第14/15节已依次完成 Deep/C6 的本地程序筛选和[完整输入预览](../../../docs/operations/evidence/model-input-selection-20261112-06/README.md)，7项不同直接检查通过；范围/引用补充定向复验及限定独审通过。该批没有新模型/数据库/HTTP调用；随后07批替身保存读取证据如上。固定05批已补实际导入与真实固定流程失败读回证据；07批补了一次接受并采用的C6保存读取，正文质量仍未通过，保持表结构及接口合同，不提前勾选以下整体任务。
@@ -63,6 +65,8 @@
 本轮固定流程的四项直接修复、一次真实 A/I→Case 和保存读回见[2026-11-12 验证](fixed-flow-validation-20261112.md)。A2 修后仅离线重建，C6 建议 Schema 随拒收补齐；原 Result partial/rejected/null 保留。上述未完任务不因此勾选，流式继续后置。
 
 ## 已完成的限定范围
+
+- [x] M0c/M0d/M0f：完成同材料镜像、明确入站台账及 [Case unmapped 选择](case-input-capacity-20261128.md#第一步-m0fcase-材料的-unmapped-选择边界)，补齐 C3→Deep/C6 与观察正文装配的边界；原件及来源范围保持。[本地直接验证及统筹独审](../../../docs/operations/evidence/case-input-unmapped-m0f-20261128-01/README.md)已完成，拟交付独立候选的 84 项生成结构检查通过。相应 tokenizer-only 工具和既有计量口径依赖一起交付；实际数据报告保留本机，按负责人许可在当前统筹会话单独核对，不纳入 Git。
 
 - [x] 21 Fusion 和 UEBA 的 Kafka 协议切换。两套现用镜像的合成收发通过，实际客户端已切换，原消费组稳定，已提交位点读回。[免 SSL 接入设计](design.md#21-kafka-免-ssl-接入) · [实测回执](../../../docs/operations/evidence/c173-kafka-plaintext-20261121-01/README.md)
 
